@@ -1,0 +1,308 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "SourcePawn",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#builtIns"
+		},
+		{
+			"match": "(\\#include)\\s*[<\"](.+)[>\"]",
+			"name": "meta.include.sourcepawn",
+			"captures": {
+				"1": {
+					"name": "keyword.other.sourcepawn"
+				},
+				"2": {
+					"name": "string.sourcepawn"
+				}
+			}
+		},
+		{
+			"comment": "Core types",
+			"match": "\\b(bool|char|float|int|void)\\b",
+			"name": "support.type.core.sourcepawn"
+		},
+		{
+			"comment": "Function call",
+			"match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*\\(",
+			"captures": {
+				"1": {
+					"name": "entity.name.function.sourcepawn"
+				}
+			}
+		},
+		{
+			"comment": "Integer literal",
+			"match": "\\b[0-9]+\\b",
+			"name": "constant.numeric.integer.sourcepawn"
+		},
+		{
+			"comment": "Float literal",
+			"match": "\\b[0-9]+\\.[0-9]+\\b",
+			"name": "constant.numeric.float.sourcepawn"
+		},
+		{
+			"comment": "Boolean literal",
+			"match": "\\b(true|false)\\b",
+			"name": "constant.language.boolean.sourcepawn"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [
+				{
+					"comment": "Control statements",
+					"name": "keyword.control.statement.sourcepawn",
+					"match": "\\b(if|else|for|while|do|switch|case|default)\\b"
+				}, 
+				{
+					"comment": "keywords",
+					"name": "keyword.sourcepawn",
+					"match": "\\b(return|break|continue|new|decl|delete|forward|native|property|public|stock|enum|funcenum|functag|methodmap|struct|typedef|typeset)\\b"
+				}
+			]
+		},
+		"strings": {
+			"name": "string.quoted.double.sourcepawn",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.sourcepawn",
+					"match": "\\\\."
+				}
+			]
+		},
+		"comments": {
+			"patterns": [
+				{
+					"match": "\\/\\/.*",
+					"name": "comment.sourcepawn"
+				},
+				{
+					"begin": "/\\*",
+					"captures": {
+						"0": {
+							"name": "comment.sourcepawn"
+						}
+					},
+					"end": "\\*/",
+					"name": "comment.block.SourcePawn"
+				}
+			]
+		},
+		"builtIns": {
+			"patterns": [
+				{
+					"include": "#enums"
+				},
+				{
+					"include": "#constants"
+				},
+				{
+					"comment": "Built in types",
+					"match": "\\b(Action|Timer|AdminId|GroupId|AdminFlag|OverrideType|OverrideRule|AdminCachePart|AdmAccessMode|CookieAccess|CookieMenu|CookieMenuAction|CookieMenuHandler|AuthIdType|NetFlow|QueryCookie|ReplySource|ConVarBounds|ConVarQueryResult|Identity|PluginInfo|PluginStatus|CSRoundEndReason|CSWeaponID|DataPackPos|DBBindType|DBPriority|DBResult|PropFieldType|PropType|MoveType|RenderFx|RenderMode|EventHookMode|FileTimeMode|FileType|PathType|ExecType|ParamType|ClientRangeType|DialogType|EngineVersion|FindMapResult|KvDataTypes|MapChange|NominateResult|MenuAction|MenuSource|MenuStyle|RegexError|SDKHookType|UseType|SDKCallType|SDKFuncConfSource|SDKLibrary|SDKPassMethod|SDKType|RoundState|RayType|ListenOverride|SortOrder|SortType|Address|APLRes|FeatureStatus|FeatureType|NumberType|SMCError|SMCResult|TFClassType|TFCond|TFHoliday|TFObjectMode|TFObjectType|TFTeam|TFResourceType|TopMenuAction|TopMenuObject|TopMenuObjectType|TopMenuPosition|UserMessageType|UserMsg)\\b",
+					"name": "support.type.core.sourcepawn"
+				},
+				{
+					"comment": "Built in data structures",
+					"match": "\\b(ArrayList|ArrayStack|StringMap|StringMapSnapshot|BfRead|BfWrite|DataPack)\\b",
+					"name": "support.type.core.sourcepawn"
+				},
+				{
+					"comment": "Built in classes",
+					"match": "\\b(Plugin|Handle|ConVar|Database|DBDriver|DBResultSet|DBStatement|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu)\\b",
+					"name": "support.type.core.sourcepawn"
+				}
+			]
+		},
+		"constants": {
+			"patterns": [
+				{
+					"comment": "cstrike team constants",
+					"match": "\\b(CS_TEAM_NONE|CS_TEAM_SPECTATOR|CS_TEAM_T|CS_TEAM_CT)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "cstrike slot constants",
+					"match": "\\b(CS_SLOT_PRIMARY|CS_SLOT_SECONDARY|CS_SLOT_KNIFE|CS_SLOT_GRENADE|CS_SLOT_C4)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "cstrike misc constants",
+					"match": "\\b(CS_DMG_HEADSHOT)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "FCVAR constants",
+					"match": "\\b(FCVAR_NONE|FCVAR_UNREGISTERED|FCVAR_DEVELOPMENTONLY|FCVAR_GAMEDLL|FCVAR_CLIENTDLL|FCVAR_MATERIAL_SYSTEM|FCVAR_HIDDEN|FCVAR_PROTECTED|FCVAR_SPONLY|FCVAR_ARCHIVE|FCVAR_NOTIFY|FCVAR_USERINFO|FCVAR_PRINTABLEONLY|FCVAR_UNLOGGED|FCVAR_NEVER_AS_STRING|FCVAR_REPLICATED|FCVAR_CHEAT|FCVAR_SS|FCVAR_DEMO|FCVAR_DONTRECORD|FCVAR_SS_ADDED|FCVAR_RELEASE|FCVAR_RELOAD_MATERIALS|FCVAR_RELOAD_TEXTURES|FCVAR_NOT_CONNECTED|FCVAR_MATERIAL_SYSTEM_THREAD|FCVAR_ARCHIVE_XBOX|FCVAR_ARCHIVE_GAMECONSOLE|FCVAR_ACCESSIBLE_FROM_THREADS|FCVAR_SERVER_CAN_EXECUTE|FCVAR_SERVER_CANNOT_QUERY|FCVAR_CLIENTCMD_CAN_EXECUTE)\\b",
+					"name": "support.constant.core.sourcepawn"
+				}
+			]
+		},
+		"enums": {
+			"patterns": [
+				{
+					"comment": "Enum Action",
+					"match": "\\b(Plugin_Handled|Plugin_Continue|Plugin_Stop|Plugin_Changed)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum Identity",
+					"match": "\\b(Identity_Core|Identity_Extension|Identity_Plugin)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum PluginStatus",
+					"match": "\\b(Plugin_Running|Plugin_Paused|Plugin_Error|Plugin_Loaded|Plugin_Failed|Plugin_Created|Plugin_Uncompiled|Plugin_BadLoad|Plugin_Evicted)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum AdminFlags",
+					"match": "\\b(Admin_Reservation|Admin_Generic|Admin_Kick|Admin_Ban|Admin_Unban|Admin_Slay|Admin_Changemap|Admin_Convars|Admin_Config|Admin_Chat|Admin_Vote|Admin_Password|Admin_RCON|Admin_Cheats|Admin_Root|Admin_Custom1|Admin_Custom2|Admin_Custom3|Admin_Custom4|Admin_Custom5|Admin_Custom6)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum Admin access modes",
+					"match": "\\b(Access_Real|Access_Effective)\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum Admin cache parts",
+					"match": "\\b(AdminCache_Overrides|AdminCache_Groups|AdminCache_Admins)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum Override rules",
+					"match": "\\b(Command_Deny|Command_Allow)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum Override types",
+					"match": "\\b(Override_Command|Override_CommandGroup)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum APLRes",
+					"match": "\\b(APLRes_Success|APLRes_Failure|APLRes_SilentFailure)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum Address",
+					"match": "\\b(Address_Null|Address_MinimumValid)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum SortOrder",
+					"match": "\\b(Sort_Ascending|Sort_Descending|Sort_Random)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum SortType",
+					"match": "\\b(Sort_Integer|Sort_Float|Sort_String)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum ListenOverride",
+					"match": "\\b(Listen_Default|Listen_Yes|Listen_No)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum RayType",
+					"match": "\\b(RayType_Infinite|RayType_Endpoint)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum CSRoundEndReason",
+					"match": "\\b(CSRoundEnd_TargetBombed|CSRoundEnd_VIPEscaped|CSRoundEnd_VIPKilled|CSRoundEnd_TerroristsEscaped|CSRoundEnd_CTStoppedEscape|CSRoundEnd_TerroristsStopped|CSRoundEnd_BombDefused|CSRoundEnd_CTWin|CSRoundEnd_TerroristWin|CSRoundEnd_Draw|CSRoundEnd_HostagesRescued|CSRoundEnd_TargetSaved|CSRoundEnd_HostagesNotRescued|CSRoundEnd_TerroristsNotEscaped|CSRoundEnd_VIPNotEscaped|CSRoundEnd_GameStart|CSRoundEnd_TerroristsSurrender|CSRoundEnd_CTSurrender|CSRoundEnd_TerroristsPlanted|CSRoundEnd_CTsReachedHostage)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum CSWeaponID",
+					"match": "\\b(CSWeapon_NONE|CSWeapon_P228|CSWeapon_GLOCK|CSWeapon_SCOUT|CSWeapon_HEGRENADE|CSWeapon_XM1014|CSWeapon_C4|CSWeapon_MAC10|CSWeapon_AUG|CSWeapon_SMOKEGRENADE|CSWeapon_ELITE|CSWeapon_FIVESEVEN|CSWeapon_UMP45|CSWeapon_SG550|CSWeapon_GALIL|CSWeapon_FAMAS|CSWeapon_USP|CSWeapon_AWP|CSWeapon_MP5NAVY|CSWeapon_M249|CSWeapon_M3|CSWeapon_M4A1|CSWeapon_TMP|CSWeapon_G3SG1|CSWeapon_FLASHBANG|CSWeapon_DEAGLE|CSWeapon_SG552|CSWeapon_AK47|CSWeapon_KNIFE|CSWeapon_P90|CSWeapon_SHIELD|CSWeapon_KEVLAR|CSWeapon_ASSAULTSUIT|CSWeapon_NIGHTVISION|CSWeapon_GALILAR|CSWeapon_BIZON|CSWeapon_MAG7|CSWeapon_NEGEV|CSWeapon_SAWEDOFF|CSWeapon_TEC9|CSWeapon_TASER|CSWeapon_HKP2000|CSWeapon_MP7|CSWeapon_MP9|CSWeapon_NOVA|CSWeapon_P250|CSWeapon_SCAR17|CSWeapon_SCAR20|CSWeapon_SG556|CSWeapon_SSG08|CSWeapon_KNIFE_GG|CSWeapon_MOLOTOV|CSWeapon_DECOY|CSWeapon_INCGRENADE|CSWeapon_DEFUSER)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum AuthIdType",
+					"match": "\\b(AuthId_Engine|AuthId_Steam2|AuthId_Steam3|AuthId_SteamID64)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum NetFlow",
+					"match": "\\b(NetFlow_Outgoing|NetFlow_Incoming|NetFlow_Both)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum MenuAction",
+					"match": "\\b(MenuAction_Start|MenuAction_Display|MenuAction_Select|MenuAction_Cancel|MenuAction_End|MenuAction_VoteEnd|MenuAction_VoteStart|MenuAction_VoteCancel|MenuAction_DrawItem|MenuAction_DisplayItem)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum TopMenuAction",
+					"match": "\\b(TopMenuAction_DisplayOption|TopMenuAction_DisplayTitle|TopMenuAction_SelectOption|TopMenuAction_DrawOption|TopMenuAction_RemoveObject)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum TopMenuObjectType",
+					"match": "\\b(TopMenuObject_Category|TopMenuObject_Item)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum TopMenuPosition",
+					"match": "\\b(TopMenuPosition_Start|TopMenuPosition_LastRoot|TopMenuPosition_LastCategory)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum TFClassType",
+					"match": "\\b(TFClass_Unknown|TFClass_Scout|TFClass_Sniper|TFClass_Soldier|TFClass_DemoMan|TFClass_Medic|TFClass_Heavy|TFClass_Pyro|TFClass_Spy|TFClass_Engineer)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum TFCond",
+					"match": "\\b(TFCond_Slowed|TFCond_Zoomed|TFCond_Disguising|TFCond_Disguised|TFCond_Cloaked|TFCond_Ubercharged|TFCond_TeleportedGlow|TFCond_Taunting|TFCond_UberchargeFading|TFCond_Unknown1|TFCond_CloakFlicker|TFCond_Teleporting|TFCond_Kritzkrieged|TFCond_Unknown2|TFCond_TmpDamageBonus|TFCond_DeadRingered|TFCond_Bonked|TFCond_Dazed|TFCond_Buffed|TFCond_Charging|TFCond_DemoBuff|TFCond_CritCola|TFCond_InHealRadius|TFCond_Healing|TFCond_OnFire|TFCond_Overhealed|TFCond_Jarated|TFCond_Bleeding|TFCond_DefenseBuffed|TFCond_Milked|TFCond_MegaHeal|TFCond_RegenBuffed|TFCond_MarkedForDeath|TFCond_NoHealingDamageBuff|TFCond_SpeedBuffAlly|TFCond_HalloweenCritCandy|TFCond_CritCanteen|TFCond_CritDemoCharge|TFCond_CritHype|TFCond_CritOnFirstBlood|TFCond_CritOnWin|TFCond_CritOnFlagCapture|TFCond_CritOnKill|TFCond_RestrictToMelee|TFCond_DefenseBuffNoCritBlock|TFCond_Reprogrammed|TFCond_CritMmmph|TFCond_DefenseBuffMmmph|TFCond_FocusBuff|TFCond_DisguiseRemoved|TFCond_MarkedForDeathSilent|TFCond_DisguisedAsDispenser|TFCond_Sapped|TFCond_UberchargedHidden|TFCond_UberchargedCanteen|TFCond_HalloweenBombHead|TFCond_HalloweenThriller|TFCond_RadiusHealOnDamage|TFCond_CritOnDamage|TFCond_UberchargedOnTakeDamage|TFCond_UberBulletResist|TFCond_UberBlastResist|TFCond_UberFireResist|TFCond_SmallBulletResist|TFCond_SmallBlastResist|TFCond_SmallFireResist|TFCond_Stealthed|TFCond_MedigunDebuff|TFCond_StealthedUserBuffFade|TFCond_BulletImmune|TFCond_BlastImmune|TFCond_FireImmune|TFCond_PreventDeath|TFCond_MVMBotRadiowave|TFCond_HalloweenSpeedBoost|TFCond_HalloweenQuickHeal|TFCond_HalloweenGiant|TFCond_HalloweenTiny|TFCond_HalloweenInHell|TFCond_HalloweenGhostMode|TFCond_DodgeChance|TFCond_Parachute|TFCond_BlastJumping|TFCond_HalloweenKart|TFCond_HalloweenKartDash|TFCond_BalloonHead|TFCond_MeleeOnly|TFCond_SwimmingCurse|TFCond_HalloweenKartNoTurn|TFCond_HalloweenKartCage|TFCond_HasRune|TFCond_RuneStrength|TFCond_RuneHaste|TFCond_RuneRegen|TFCond_RuneResist|TFCond_RuneVampire|TFCond_RuneWarlock|TFCond_RunePrecision|TFCond_RuneAgility|TFCond_MiniCritOnKill|TFCond_ObscuredSmoke|TFCond_FreezeInput|TFCond_GrapplingHook|TFCond_GrapplingHookSafeFall|TFCond_GrapplingHookLatched|TFCond_GrapplingHookBleeding|TFCond_AfterburnImmune|TFCond_RuneKnockout|TFCond_RuneImbalance|TFCond_CritRuneTemp|TFCond_PasstimeInterception|TFCond_SwimmingNoEffects|TFCond_EyeaductUnderworld|TFCond_KingRune|TFCond_PlagueRune|TFCond_SupernovaRune|TFCond_Plague|TFCond_KingAura|TFCond_SpawnOutline|TFCond_KnockedIntoAir|TFCond_CompetitiveWinner|TFCond_CompetitiveLoser|TFCond_NoTaunting)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum TFObjectMode",
+					"match": "\\b(TFObjectMode_None|TFObjectMode_Entrance|TFObjectMode_Exit)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum TFObjectType",
+					"match": "\\b(TFObject_CartDispenser|TFObject_Dispenser|TFObject_Teleporter|TFObject_Sentry|TFObject_Sapper)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum TFTeam",
+					"match": "\\b(TFTeam_Unassigned|TFTeam_Spectator|TFTeam_Red|TFTeam_Blue)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum FeatureStatus",
+					"match": "\\b(FeatureStatus_Available|FeatureStatus_Unavailable|FeatureStatus_Unknown)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum NumberType",
+					"match": "\\b(NumberType_Int8|NumberType_Int16|NumberType_Int32)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum FeatureType",
+					"match": "\\b(FeatureType_Native|FeatureType_Capability)\\b",
+					"name": "support.constant.core.sourcepawn"
+				}
+			]
+		}
+	},
+	"scopeName": "source.sourcepawn"
+}

@@ -1,0 +1,26 @@
+{
+    "name": "sourcepawn-vscode",
+    "displayName": "SourcePawn",
+    "description": "SourcePawn syntax highlighting for VSCode. Supports the new syntax.",
+    "version": "0.0.2",
+    "publisher": "Dreae",
+    "engines": {
+        "vscode": "^1.14.0"
+    },
+    "categories": [
+        "Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "sourcepawn",
+            "aliases": ["SourcePawn", "sourcepawn"],
+            "extensions": [".sp",".inc"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "sourcepawn",
+            "scopeName": "source.sourcepawn",
+            "path": "./syntaxes/sourcepawn.tmLanguage.json"
+        }]
+    }
+}
