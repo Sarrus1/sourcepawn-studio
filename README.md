@@ -4,6 +4,9 @@ SourcePawn highlighting for Visual Studio Code. Supports the SourceMod 1.7+ synt
 
 ## Release Notes
 
+### 0.0.3
+ - Add support for a variety of enums and constants
+
 ### 0.0.2
  - Add support for `#include` and the `FeatureType` and `FeatureStatus` enums
  - Add `Action` as a core type

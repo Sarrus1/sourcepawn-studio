@@ -2,7 +2,7 @@
     "name": "sourcepawn-vscode",
     "displayName": "SourcePawn",
     "description": "SourcePawn syntax highlighting for VSCode. Supports the new syntax.",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "publisher": "Dreae",
     "engines": {
         "vscode": "^1.14.0"

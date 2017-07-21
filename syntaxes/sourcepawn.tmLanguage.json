@@ -67,7 +67,7 @@
 				{
 					"comment": "keywords",
 					"name": "keyword.sourcepawn",
-					"match": "\\b(return|break|continue|new|decl|delete|forward|native|property|public|stock|enum|funcenum|functag|methodmap|struct|typedef|typeset)\\b"
+					"match": "\\b(return|break|continue|new|decl|delete|forward|native|property|public|stock|enum|funcenum|functag|methodmap|struct|typedef|typeset|static)\\b"
 				}
 			]
 		},
@@ -127,6 +127,21 @@
 		},
 		"constants": {
 			"patterns": [
+				{
+					"comment": "Misc constants",
+					"match": "\\b(MAXPLAYERS|MaxClients)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Timer constants",
+					"match": "\\b(TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE|TIMER_HNDL_CLOSE|TIMER_DATA_HNDL_CLOSE)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "SDKHook constants",
+					"match": "\\b(DMG_GENERIC|DMG_CRUSH|DMG_BULLET|DMG_SLASH|DMG_BURN|DMG_VEHICLE|DMG_FALL|DMG_BLAST|DMG_CLUB|DMG_SHOCK|DMG_SONIC|DMG_ENERGYBEAM|DMG_PREVENT|DMG_NEVERGIB|DMG_ALWAYSGIB|DMG_DROWN|DMG_PARALYZE|DMG_NERVEGAS|DMG_POISON|DMG_RADIATION|DMG_DROWNRECOVER|DMG_ACID|DMG_SLOWBURN|DMG_REMOVENORAGDOLL|DMG_PHYSGUN|DMG_PLASMA|DMG_AIRBOAT|DMG_DISSOLVE|DMG_BLAST|DMG_DIRECT|DMG_BUCKSHOT)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
 				{
 					"comment": "cstrike team constants",
 					"match": "\\b(CS_TEAM_NONE|CS_TEAM_SPECTATOR|CS_TEAM_T|CS_TEAM_CT)\\b",
@@ -299,6 +314,11 @@
 				{
 					"comment": "Enum FeatureType",
 					"match": "\\b(FeatureType_Native|FeatureType_Capability)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum SDKHookType",
+					"match": "\\b(SDKHook_EndTouch|SDKHook_FireBulletsPost|SDKHook_OnTakeDamage|SDKHook_OnTakeDamagePost|SDKHook_PreThink|SDKHook_PostThink|SDKHook_SetTransmit|SDKHook_Spawn|SDKHook_StartTouch|SDKHook_Think|SDKHook_Touch|SDKHook_TraceAttack|SDKHook_TraceAttackPost|SDKHook_WeaponCanSwitchTo|SDKHook_WeaponCanUse|SDKHook_WeaponDrop|SDKHook_WeaponEquip|SDKHook_WeaponSwitch|SDKHook_ShouldCollide|SDKHook_PreThinkPost|SDKHook_PostThinkPost|SDKHook_ThinkPost|SDKHook_EndTouchPost|SDKHook_GroundEntChangedPost|SDKHook_SpawnPost|SDKHook_StartTouchPost|SDKHook_TouchPost|SDKHook_VPhysicsUpdate|SDKHook_VPhysicsUpdatePost|SDKHook_WeaponCanSwitchToPost|SDKHook_WeaponCanUsePost|SDKHook_WeaponDropPost|SDKHook_WeaponEquipPost|SDKHook_WeaponSwitchPost|SDKHook_Use|SDKHook_UsePost|SDKHook_Reload|SDKHook_ReloadPost|SDKHook_GetMaxHealth|SDKHook_Blocked|SDKHook_BlockedPost|SDKHook_OnTakeDamageAlive|SDKHook_OnTakeDamageAlivePost|SDKHook_CanBeAutobalanced)\\b",
 					"name": "support.constant.core.sourcepawn"
 				}
 			]
