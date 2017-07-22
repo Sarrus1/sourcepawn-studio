@@ -19,6 +19,10 @@
             "type": "object",
             "title": "SourcePawn Language Server configuration",
             "properties": {
+                "sourcepawnLanguageServer.sourcemod_home": {
+                    "type": "string",
+                    "description": "The location of the SourceMod API include files found in addons/sourcemod/scripting/include"
+                },
                 "sourcepawnLanguageServer.trace.server": {
                     "type": "string",
                     "enum": [
@@ -28,7 +32,7 @@
                     ],
                     "default": "off",
                     "description": "Traces the communication between VSCode and the language server service."
-                }        
+                }
             }
         },
         "languages": [
@@ -54,6 +58,7 @@
         ]
     },
     "dependencies": {
+        "glob": "^7.1.2",
         "vscode": "^1.1.4",
         "vscode-languageclient": "^3.3.0"
     },

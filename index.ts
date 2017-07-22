@@ -1,11 +1,19 @@
+import { ExtensionContext, Disposable, workspace, window, StatusBarAlignment } from 'vscode';
+import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind } from 'vscode-languageclient';
+import * as glob from 'glob';
 import * as path from 'path';
 
-import { ExtensionContext, Disposable, workspace } from 'vscode';
-import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind } from 'vscode-languageclient';
-
 export function activate(context: ExtensionContext) {
-    let serverModule = context.asAbsolutePath(path.join("out/server/server.js"));
+    let serverModule = context.asAbsolutePath("out/server/server.js");
     let debugOptions = { execArgv: ["--nolazy", "--debug=6009"] };
+   
+    glob(path.join(workspace.rootPath, "**/include/sourcemod.inc"), (err, files) => {
+        if (files.length === 0) {
+            if (!workspace.getConfiguration("sourcepawnLanguageServer").get("sourcemod_home")) {
+                window.showWarningMessage("SourceMod API not found in the project. You may need to set SourceMod Home for autocompletion to work");
+            }
+        }
+    });
 
     let serverOptions: ServerOptions = {
         run: { module: serverModule, transport: TransportKind.ipc },
@@ -16,11 +24,12 @@ export function activate(context: ExtensionContext) {
         documentSelector: ['sourcepawn'],
         synchronize: {
             configurationSection: 'sourcepawnLanguageServer',
-            fileEvents: workspace.createFileSystemWatcher('**/*.sp')
+            fileEvents: [workspace.createFileSystemWatcher('**/*.sp'), workspace.createFileSystemWatcher('**/*.inc')]
         }
     };
 
-    let disposable = new LanguageClient('sourcepawnLanguageServer', serverOptions, clientOptions).start();
+    let client = new LanguageClient('sourcepawnLanguageServer', serverOptions, clientOptions);
+    let disposable = client.start();
 
     context.subscriptions.push(disposable);
 }

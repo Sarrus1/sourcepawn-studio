@@ -19,11 +19,6 @@ let workspaceRoot: string;
 
 connection.onInitialize((params) => {
     workspaceRoot = params.rootPath;
-    glob(path.join(workspaceRoot, "**/*.inc"), (err, files) => {
-        for (let file of files) {
-            parse_file(file, completions);
-        }
-    });
 
     return {
         capabilities: {
@@ -37,6 +32,13 @@ connection.onInitialize((params) => {
         }
     };
 });
+
+connection.onDidChangeConfiguration((change) => {
+    let sm_home = change.settings.sourcepawnLanguageServer.sourcemod_home;
+    if (sm_home) {
+        completions.parse_sm_api(sm_home);
+    }
+})
 
 connection.onCompletion((textDocumentPosition) => {
     return completions.get_completions(textDocumentPosition);

@@ -1,4 +1,12 @@
-import { CompletionItemKind, CompletionItem, TextDocumentPositionParams, SignatureHelp, SignatureInformation, TextDocuments } from 'vscode-languageserver';
+import { 
+    CompletionItemKind, CompletionItem, TextDocumentPositionParams, SignatureHelp, SignatureInformation, TextDocuments,
+    TextDocumentChangeEvent
+} from 'vscode-languageserver';
+
+import { parse_blob, parse_file } from './parser';
+
+import * as glob from 'glob';
+import * as path from 'path';
 
 export interface Completion {
     name: string;
@@ -65,13 +73,13 @@ export class DefineCompletion implements Completion {
     }
 }
 
-export class CompletionRepository {
+export class FileCompletions {
     completions: Map<string, Completion>;
-    documents: TextDocuments;
+    includes: string[]
 
-    constructor(documents: TextDocuments) {
+    constructor() {
         this.completions = new Map();
-        this.documents = documents;
+        this.includes = [];
     }
 
     add(id: string, completion: Completion) {
@@ -82,14 +90,82 @@ export class CompletionRepository {
         return this.completions.get(id);
     }
 
-    get_completions(position: TextDocumentPositionParams): CompletionItem[] {
-        // TODO: Filter completions
+    get_completions(repo: CompletionRepository): Completion[] {
         let completions = [];
         for (let completion of this.completions.values()) {
-            completions.push(completion.to_completion_item());
+            completions.push(completion);
+        }
+
+        for (let file of this.includes) {
+            completions = completions.concat(repo.get_file_completions(file))
         }
 
         return completions;
+    }
+
+    add_include(include: string) {
+        this.includes.push(include);
+    }
+
+    resolve_import(file: string, relative: boolean = false) {
+        let uri = file + ".inc";
+        if (!relative) {
+            uri = "file://__sourcemod_builtin/" + uri;
+        }
+
+        this.add_include(uri);
+    }
+}
+
+export class CompletionRepository {
+    completions: Map<string, FileCompletions>;
+    documents: TextDocuments;
+
+    constructor(documents: TextDocuments) {
+        this.completions = new Map();
+        this.documents = documents;
+
+        documents.onDidOpen(this.handle_open_document.bind(this));
+        documents.onDidChangeContent(this.handle_document_change.bind(this));
+    }
+
+    handle_open_document(event: TextDocumentChangeEvent) {
+        let completions = new FileCompletions();
+        parse_blob(event.document.getText(), completions);
+
+        this.completions.set(event.document.uri, completions);
+    }
+
+    handle_document_change(event: TextDocumentChangeEvent) {
+        let completions = new FileCompletions();
+        parse_blob(event.document.getText(), completions);
+
+        this.completions.set(event.document.uri, completions);
+    }
+
+    parse_sm_api(sourcemod_home: string) {
+        glob(path.join(sourcemod_home, '**/*.inc'), (err, files) => {
+            for (let file of files) {
+                let completions = new FileCompletions();
+                parse_file(file, completions);
+
+                let uri = "file://__sourcemod_builtin/" + path.basename(file);
+                this.completions.set(uri, completions);
+            }
+        });
+    }
+
+    get_completions(position: TextDocumentPositionParams): CompletionItem[] {
+        return this.get_file_completions(position.textDocument.uri).map((completion) => completion.to_completion_item());
+    }
+
+    get_file_completions(file: string): Completion[] {
+        let completions = this.completions.get(file);
+        if (completions) {
+            return completions.get_completions(this);
+        }
+        
+        return [];
     }
 
     get_signature(position: TextDocumentPositionParams): SignatureHelp {
@@ -126,10 +202,13 @@ export class CompletionRepository {
                 return {method, parameter_count};
             })();
 
-            let completion = this.get(method);
-            if (completion) {
+            let completions = this.get_file_completions(position.textDocument.uri).filter((completion) => {
+                return completion.name === method;
+            });
+
+            if (completions.length > 0) {
                 return {
-                    signatures: [ completion.get_signature() ],
+                    signatures: [ completions[0].get_signature() ],
                     activeParameter: parameter_count,
                     activeSignature: 0
                 };
