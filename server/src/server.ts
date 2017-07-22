@@ -1,6 +1,6 @@
 import { 
     IPCMessageReader, IPCMessageWriter ,IConnection, createConnection,
-    TextDocuments, CompletionItemKind, CompletionItem
+    TextDocuments, CompletionItemKind, CompletionItem, TextDocumentSyncKind
 } from "vscode-languageserver";
 
 import * as glob from 'glob';
@@ -11,7 +11,9 @@ import { parse_file } from './parser';
 
 let connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
 let documents = new TextDocuments();
-let completions = new CompletionRepository();
+documents.listen(connection);
+
+let completions = new CompletionRepository(documents);
 
 let workspaceRoot: string;
 
@@ -27,7 +29,10 @@ connection.onInitialize((params) => {
         capabilities: {
             textDocumentSync: documents.syncKind,
             completionProvider: {
-                resolveProvider: true
+                resolveProvider: false
+            },
+            signatureHelpProvider: {
+                triggerCharacters: ["("]
             }
         }
     };
@@ -37,8 +42,8 @@ connection.onCompletion((textDocumentPosition) => {
     return completions.get_completions(textDocumentPosition);
 });
 
-connection.onCompletionResolve((item) => {
-    return completions.resolve_completion(item);
+connection.onSignatureHelp((textDocumentPosition) => {
+    return completions.get_signature(textDocumentPosition);
 });
 
 connection.listen();

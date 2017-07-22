@@ -38,8 +38,7 @@ class Parser {
 
         let match = line.match(/\s*#define\s+([A-Za-z0-9_]+)/);
         if (match) {
-            let id = uuid();
-            this.completions.add(id, new DefineCompletion(id, match[1]));
+            this.completions.add(match[1], new DefineCompletion(match[1]));
         }
     
         match = line.match(/\s*\/\*/);
@@ -49,11 +48,21 @@ class Parser {
 
             this.consume_multiline_comment(line);
         }
+
+        match = line.match(/^\s*\/\//);
+        if (match) {
+            if (this.lines[1] && this.lines[1].match(/^\s*\/\//)) {
+                this.state = State.MultilineComment;
+                this.scratch = [];
+
+                this.consume_multiline_comment(line, true);
+            }
+        }
         this.parse();
     }
 
-    consume_multiline_comment(current_line: string) {
-        let match = current_line.match(/\*\//);
+    consume_multiline_comment(current_line: string, use_line_comment: boolean = false) {
+        let match: any = (use_line_comment) ? !/^\s*\/\//.test(current_line) : /\*\//.test(current_line);
         if (match) {
             if (this.state == State.DocComment) {
                 this.read_function(this.lines.shift());
@@ -62,7 +71,12 @@ class Parser {
             this.state = State.None;
             this.parse();
         } else {
-            match = current_line.match(/^\s*\*\s*@(?:param|return)\s*([A-Za-z_\.][A-Za-z0-9_\.]*)\s*(.*)/);
+            if (!use_line_comment) {
+                match = current_line.match(/^\s*\*\s*@(?:param|return)\s*([A-Za-z_\.][A-Za-z0-9_\.]*)\s*(.*)/);
+            } else {
+                match = current_line.match(/^\s*\/\/\s*@(?:param|return)\s*([A-Za-z_\.][A-Za-z0-9_\.]*)\s*(.*)/);
+            }
+
             if (match) {
                 this.state = State.DocComment;
             }
@@ -74,10 +88,25 @@ class Parser {
     }
 
     read_function(line: string) {
-        let match = line.match(/\s*(?:native|stock|public)\s*([^\s]+)\s*([A-Za-z_][A-Za-z0-9_]*)/);
+        let match = line.match(/\s*(?:native|stock|public)\s*([^\s]+)\s*([A-Za-z_].*)/);
         if (match) {
             let id = uuid();
-            this.completions.add(id, new FunctionCompletion(id, match[2], this.scratch.join("\n")));
+
+            let description = this.scratch.filter((line) => {
+                return /^\s*\*\s+([^@].*)/.test(line) || /^\s*\/\/\s+([^@].*)/.test(line);
+            }).map((line) => {
+                return line.replace(/^\s*\*\s+/, "").replace(/^\s*\/\/\s+/, "");
+            }).join(' ');
+            
+            const paramRegex = /@param\s+([A-Za-z0-9_\.]+)\s+(.*)/;
+            let params = this.scratch.filter((line) => {
+                return paramRegex.test(line);
+            }).map((line) => {
+                let match = paramRegex.exec(line);
+                return {label: match[1], documentation: match[2]};
+            });
+            let name_match = match[2].match(/^([A-Za-z_][A-Za-z0-9_]*)/);
+            this.completions.add(name_match[1], new FunctionCompletion(name_match[1], match[2], description, params));
         }
 
         this.state = State.None;
