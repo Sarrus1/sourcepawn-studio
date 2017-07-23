@@ -5,6 +5,11 @@
     "version": "0.0.3",
     "publisher": "Dreae",
     "main": "out/index",
+    "icon": "sm.png",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Dreae/sourcepawn-vscode.git"
+    },
     "engines": {
         "vscode": "^1.14.0"
     },
