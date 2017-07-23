@@ -1,4 +1,4 @@
-import { FileCompletions, FunctionCompletion, DefineCompletion } from './completions';
+import { FileCompletions, FunctionCompletion, DefineCompletion, FunctionParam } from './completions';
 import * as fs from 'fs';
 
 export function parse_file(file: string, completions: FileCompletions) {
@@ -114,27 +114,72 @@ class Parser {
     }
 
     read_function(line: string) {
+        if (typeof line === 'undefined') {
+            return;
+        }
+        
         // TODO: Support multiline function definitions
-        let match = line.match(/\s*(?:native|stock|public)\s*([^\s]+)\s*([A-Za-z_].*)/);
+        let match = line.match(/\s*(?:(?:native|stock|public)\s*)+\s+([^\s]+)\s*([A-Za-z_].*)/);
         if (match) {
-            let description = this.scratch.filter((line) => {
-                return /^\s*\*\s+([^@].*)/.test(line) || /^\s*\/\/\s+([^@].*)/.test(line);
-            }).map((line) => {
-                return line.replace(/^\s*\*\s+/, "").replace(/^\s*\/\/\s+/, "");
-            }).join(' ');
-            
-            const paramRegex = /@param\s+([A-Za-z0-9_\.]+)\s+(.*)/;
-            let params = this.scratch.filter((line) => {
-                return paramRegex.test(line);
-            }).map((line) => {
-                let match = paramRegex.exec(line);
-                return {label: match[1], documentation: match[2]};
-            });
+            let {description, params} = this.parse_doc_comment();
+
             let name_match = match[2].match(/^([A-Za-z_][A-Za-z0-9_]*)/);
             this.completions.add(name_match[1], new FunctionCompletion(name_match[1], match[2], description, params));
         }
 
         this.state = State.None;
         this.parse();
+    }
+
+    parse_doc_comment(): {description: string, params: FunctionParam[]} {
+        let description = (() => {
+            let lines = [];
+            for (let line of this.scratch) {
+                if (!(/^\s*\*\s+([^@].*)/.test(line) || /^\s*\/\/\s+([^@].*)/.test(line))) {
+                    break;
+                }
+
+                lines.push(line.replace(/^\s*\*\s+/, "").replace(/^\s*\/\/\s+/, ""));
+            }
+
+            return lines.join(' ');
+        })();
+        
+        const paramRegex = /@param\s+([A-Za-z0-9_\.]+)\s+(.*)/;
+        let params = (() => {
+            let params = [];
+            let current_param;
+            for (let line of this.scratch) {
+                let match = line.match(paramRegex);
+                if (match) {
+                    if (current_param) {
+                        current_param.documentation = current_param.documentation.join(' ');
+                        params.push(current_param);
+                    }
+
+                    current_param = {label: match[1], documentation: [match[2]]};
+                } else {
+                    if (!/@(?:return|error)/.test(line)) {
+                        let match = line.match(/\s*(?:\*|\/\/)\s*(.*)/);
+                        if (match) {
+                            if (current_param) {
+                                current_param.documentation.push(match[1])
+                            }
+                        }
+                    } else {
+                        if (current_param) {
+                            current_param.documentation = current_param.documentation.join(' ');
+                            params.push(current_param);
+                            
+                            current_param = undefined;
+                        }
+                    }
+                }
+            }
+
+            return params;
+        })();
+
+        return {description, params}
     }
 }

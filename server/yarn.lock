@@ -103,6 +103,10 @@ vscode-languageserver@^3.3.0:
     vscode-jsonrpc "^3.3.0"
     vscode-languageserver-types "^3.3.0"
 
+vscode-uri@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/vscode-uri/-/vscode-uri-1.0.1.tgz#11a86befeac3c4aa3ec08623651a3c81a6d0bbc8"
+
 wrappy@1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/wrappy/-/wrappy-1.0.2.tgz#b5243d8f3ec1aa35f1364605bc0d1036e30ab69f"

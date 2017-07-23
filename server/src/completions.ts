@@ -1,12 +1,14 @@
 import { 
     CompletionItemKind, CompletionItem, TextDocumentPositionParams, SignatureHelp, SignatureInformation, TextDocuments,
-    TextDocumentChangeEvent
+    TextDocumentChangeEvent, Files
 } from 'vscode-languageserver';
 
 import { parse_blob, parse_file } from './parser';
 
 import * as glob from 'glob';
 import * as path from 'path';
+import Uri from 'vscode-uri';
+import * as fs from 'fs';
 
 export interface Completion {
     name: string;
@@ -76,10 +78,12 @@ export class DefineCompletion implements Completion {
 export class FileCompletions {
     completions: Map<string, Completion>;
     includes: string[]
+    uri: string;
 
-    constructor() {
+    constructor(uri: string) {
         this.completions = new Map();
         this.includes = [];
+        this.uri = uri;
     }
 
     add(id: string, completion: Completion) {
@@ -111,9 +115,20 @@ export class FileCompletions {
         let uri = file + ".inc";
         if (!relative) {
             uri = "file://__sourcemod_builtin/" + uri;
-        }
+            this.add_include(uri);
+        } else {
+            let base_file = Files.uriToFilePath(this.uri);
+            let base_directory = path.dirname(base_file);
 
-        this.add_include(uri);
+            let inc_file = path.resolve(base_directory, uri);
+            if (fs.existsSync(inc_file)) {
+                uri = Uri.file(inc_file).toString();
+                this.add_include(uri);
+            } else {
+                uri = Uri.file(path.resolve(file + ".sp")).toString();
+                this.add_include(uri);
+            }
+        }
     }
 }
 
@@ -125,28 +140,38 @@ export class CompletionRepository {
         this.completions = new Map();
         this.documents = documents;
 
-        documents.onDidOpen(this.handle_open_document.bind(this));
+        documents.onDidOpen(this.handle_document_change.bind(this));
         documents.onDidChangeContent(this.handle_document_change.bind(this));
     }
 
-    handle_open_document(event: TextDocumentChangeEvent) {
-        let completions = new FileCompletions();
+    handle_document_change(event: TextDocumentChangeEvent) {
+        let completions = new FileCompletions(event.document.uri);
         parse_blob(event.document.getText(), completions);
+
+        this.read_unscanned_imports(completions);
 
         this.completions.set(event.document.uri, completions);
     }
 
-    handle_document_change(event: TextDocumentChangeEvent) {
-        let completions = new FileCompletions();
-        parse_blob(event.document.getText(), completions);
+    read_unscanned_imports(completions: FileCompletions) {
+        for (let import_file of completions.includes) {
+            let completion = this.completions.get(import_file);
+            if (!completion) {
+                let file = Files.uriToFilePath(import_file);
+                let new_completions = new FileCompletions(import_file);
+                parse_file(file, new_completions);
 
-        this.completions.set(event.document.uri, completions);
+                this.read_unscanned_imports(new_completions);
+
+                this.completions.set(import_file, new_completions);
+            }
+        }
     }
 
     parse_sm_api(sourcemod_home: string) {
         glob(path.join(sourcemod_home, '**/*.inc'), (err, files) => {
             for (let file of files) {
-                let completions = new FileCompletions();
+                let completions = new FileCompletions(Uri.file(file).toString());
                 parse_file(file, completions);
 
                 let uri = "file://__sourcemod_builtin/" + path.basename(file);
