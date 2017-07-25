@@ -8,6 +8,10 @@ export function parse_file(file: string, completions: FileCompletions) {
 }
 
 export function parse_blob(data: string, completions: FileCompletions) {
+    if (typeof data === 'undefined') {
+        return // Asked to parse empty file
+    }
+    
     let lines = data.split("\n");
     let parser = new Parser(lines, completions);
 

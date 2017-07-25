@@ -1,4 +1,4 @@
-import { ExtensionContext, Disposable, workspace, window, StatusBarAlignment } from 'vscode';
+import { ExtensionContext, Disposable, workspace, window, StatusBarAlignment, commands } from 'vscode';
 import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind } from 'vscode-languageclient';
 import * as glob from 'glob';
 import * as path from 'path';
@@ -10,7 +10,15 @@ export function activate(context: ExtensionContext) {
     glob(path.join(workspace.rootPath, "**/include/sourcemod.inc"), (err, files) => {
         if (files.length === 0) {
             if (!workspace.getConfiguration("sourcepawnLanguageServer").get("sourcemod_home")) {
-                window.showWarningMessage("SourceMod API not found in the project. You may need to set SourceMod Home for autocompletion to work");
+                window.showWarningMessage("SourceMod API not found in the project. You may need to set SourceMod Home for autocompletion to work", "Open Settings").then((choice) => {
+                    if (choice === 'Open Settings') {
+                        commands.executeCommand("workbench.action.openWorkspaceSettings");
+                    }
+                });
+            }
+        } else {
+            if (!workspace.getConfiguration("sourcepawnLanguageServer").get("sourcemod_home")) {
+                workspace.getConfiguration("sourcepawnLanguageServer").update("sourcemod_home", path.dirname(files[0]));
             }
         }
     });
