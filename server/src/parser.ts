@@ -1,4 +1,4 @@
-import { FileCompletions, FunctionCompletion, DefineCompletion, FunctionParam } from './completions';
+import { FileCompletions, FunctionCompletion, DefineCompletion, FunctionParam, MethodCompletion } from './completions';
 import * as fs from 'fs';
 
 export function parse_file(file: string, completions: FileCompletions) {
@@ -23,18 +23,21 @@ enum State {
     MultilineComment,
     DocComment,
     Enum,
+    Methodmap,
+    Property
 }
 
 class Parser {
     lines: string[];
     completions: FileCompletions;
-    state: State;
+    state: State[];
     scratch: any;
+    state_data: any;
 
     constructor(lines: string[], completions: FileCompletions) {
         this.lines = lines;
         this.completions = completions;
-        this.state = State.None;
+        this.state = [State.None];
     }
 
     parse() {
@@ -46,40 +49,67 @@ class Parser {
         let match = line.match(/\s*#define\s+([A-Za-z0-9_]+)/);
         if (match) {
             this.completions.add(match[1], new DefineCompletion(match[1]));
-            this.parse();
+            return this.parse();
         }
 
         match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/]+)>\s*$/);
         if (match) {
             this.completions.resolve_import(match[1]);
-            this.parse();
+            return this.parse();
         }
 
         match = line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/]+)"\s*$/);
         if (match) {
             this.completions.resolve_import(match[1], true);
-            this.parse();
+            return this.parse();
         }
     
         match = line.match(/\s*\/\*/);
         if (match) {
-            this.state = State.MultilineComment;
+            this.state.push(State.MultilineComment);
             this.scratch = [];
 
             this.consume_multiline_comment(line);
-            this.parse();
+            return this.parse();
         }
 
         match = line.match(/^\s*\/\//);
         if (match) {
             if (this.lines[0] && this.lines[0].match(/^\s*\/\//)) {
-                this.state = State.MultilineComment;
+                this.state.push(State.MultilineComment);
                 this.scratch = [];
 
                 this.consume_multiline_comment(line, true);
-                this.parse();
+                return this.parse();
             }
         }
+
+        match = line.match(/^\s*methodmap\s+([a-zA-Z][a-zA-Z0-9_]*)(?:\s+<\s+([a-zA-Z][a-zA-Z0-9_]*))?/);
+        if (match) {
+            this.state.push(State.Methodmap);
+            this.state_data = {
+                name: match[1]
+            };
+
+            return this.parse();
+        }
+
+        match = line.match(/^\s*property\s+([a-zA-Z][a-zA-Z0-9_]*)\s+([a-zA-Z][a-zA-Z0-9_]*)/);
+        if (match) {
+            if (this.state[this.state.length - 1] === State.Methodmap) {
+                this.state.push(State.Property);
+            }
+
+            return this.parse();
+        }
+
+        match = line.match(/}/);
+        if (match) {
+            this.state.pop();
+
+            return this.parse;
+        }
+
         this.parse();
     }
 
@@ -90,16 +120,19 @@ class Parser {
 
         let match: any = (use_line_comment) ? !/^\s*\/\//.test(current_line) : /\*\//.test(current_line);
         if (match) {
-            if (this.state == State.DocComment) {
+            if (this.state[this.state.length - 1] === State.DocComment) {
+                this.state.pop();
+                this.state.pop();
+                
                 if (use_line_comment) {
-                    this.read_function(current_line);
+                    return this.read_function(current_line);
                 } else {
-                    this.read_function(this.lines.shift());
+                    return this.read_function(this.lines.shift());
                 }
             }
 
-            this.state = State.None;
-            this.parse();
+            this.state.pop();
+            return this.parse();
         } else {
             if (!use_line_comment) {
                 match = current_line.match(/^\s*\*\s*@(?:param|return)\s*([A-Za-z_\.][A-Za-z0-9_\.]*)\s*(.*)/);
@@ -108,7 +141,9 @@ class Parser {
             }
 
             if (match) {
-                this.state = State.DocComment;
+                if (this.state[this.state.length - 1] !== State.DocComment) {
+                    this.state.push(State.DocComment);
+                }
             }
 
             this.scratch.push(current_line);
@@ -128,10 +163,14 @@ class Parser {
             let {description, params} = this.parse_doc_comment();
 
             let name_match = match[2].match(/^([A-Za-z_][A-Za-z0-9_]*)/);
-            this.completions.add(name_match[1], new FunctionCompletion(name_match[1], match[2], description, params));
+            if (this.state[this.state.length - 1] === State.Methodmap) {
+                this.completions.add(name_match[1], new MethodCompletion(this.state_data.name, name_match[1], match[2], description, params))
+            } else {
+                this.completions.add(name_match[1], new FunctionCompletion(name_match[1], match[2], description, params));
+            }
         }
 
-        this.state = State.None;
+        this.state.pop();
         this.parse();
     }
 

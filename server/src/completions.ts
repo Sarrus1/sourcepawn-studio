@@ -55,6 +55,41 @@ export class FunctionCompletion implements Completion {
     }
 }
 
+export class MethodCompletion implements Completion {
+    name: string;
+    method_map: string;
+    description: string;
+    detail: string;
+    params: FunctionParam[];
+    kind = CompletionItemKind.Method;
+    
+    constructor(method_map: string, name: string, detail: string, description: string, params: FunctionParam[]) {
+        this.method_map = method_map;
+        this.name = name;
+        this.detail = detail;
+        this.description = description;
+        this.params = params;
+    }
+
+    to_completion_item(): CompletionItem {
+        return {
+            label: `${this.method_map}.${this.name}`,
+            insertText: this.name,
+            filterText: this.name,
+            kind: this.kind,
+            detail: this.description
+        };
+    }
+
+    get_signature(): SignatureInformation {
+        return {
+            label: this.detail,
+            documentation: this.description,
+            parameters: this.params
+        };
+    }
+}
+
 export class DefineCompletion implements Completion {
     name: string;
     kind = CompletionItemKind.Variable;
@@ -181,7 +216,31 @@ export class CompletionRepository {
     }
 
     get_completions(position: TextDocumentPositionParams): CompletionItem[] {
-        return this.get_file_completions(position.textDocument.uri).map((completion) => completion.to_completion_item());
+        let document = this.documents.get(position.textDocument.uri);
+        let is_method = false;
+        if (document) {
+            let line = document.getText().split("\n")[position.position.line].trim();
+            for (let i = line.length - 2; i >= 0; i--) {
+                if (line[i].match(/[a-zA-Z0-9_]/)) {
+                    continue;
+                }
+
+                if (line[i] === '.') {
+                    is_method = true;
+                    break;
+                }
+
+                break;
+            }
+        }
+
+        let all_completions = this.get_file_completions(position.textDocument.uri).map((completion) => completion.to_completion_item());
+    
+        if (is_method) {
+            return all_completions.filter(completion => completion.kind === CompletionItemKind.Method);
+        } else {
+            return all_completions.filter(completion => completion.kind !== CompletionItemKind.Method);
+        }
     }
 
     get_file_completions(file: string): Completion[] {
