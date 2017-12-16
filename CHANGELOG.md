@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 0.1.0
+ - Add support for simple autocompletion
+
 ### 0.0.3
  - Add support for a variety of enums and constants
 
