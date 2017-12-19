@@ -107,7 +107,7 @@ class Parser {
         if (match) {
             this.state.pop();
 
-            return this.parse;
+            return this.parse();
         }
 
         this.parse();
