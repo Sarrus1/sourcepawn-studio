@@ -135,10 +135,6 @@ export class FileCompletions {
             completions.push(completion);
         }
 
-        for (let file of this.includes) {
-            completions = completions.concat(repo.get_file_completions(file))
-        }
-
         return completions;
     }
 
@@ -233,8 +229,12 @@ export class CompletionRepository {
                 break;
             }
         }
-
-        let all_completions = this.get_file_completions(position.textDocument.uri).map((completion) => completion.to_completion_item());
+        let completions = this.completions.get(position.textDocument.uri);
+        let includes = new Set();
+        this.get_included_files(completions, includes);
+        let all_completions = [...includes].map((file) => {
+            return this.get_file_completions(file).map((completion) => completion.to_completion_item());
+        }).reduce((completions, file_completions) => completions.concat(file_completions), []);
     
         if (is_method) {
             return all_completions.filter(completion => completion.kind === CompletionItemKind.Method);
@@ -250,6 +250,18 @@ export class CompletionRepository {
         }
         
         return [];
+    }
+
+    get_included_files(completions: FileCompletions, files: Set<string>) {
+        for (let include of completions.includes) {
+            if (!files.has(include)) {
+                files.add(include);
+                let include_completions = this.completions.get(include);
+                if (include_completions) {
+                    this.get_included_files(include_completions, files);
+                }
+            }
+        }
     }
 
     get_signature(position: TextDocumentPositionParams): SignatureHelp {
