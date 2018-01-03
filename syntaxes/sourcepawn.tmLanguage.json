@@ -15,7 +15,7 @@
 			"include": "#builtIns"
 		},
 		{
-			"match": "(\\#include)\\s*[<\"](.+)[>\"]",
+			"match": "(\\#include|\\#tryinclude)\\s*[<\"](.+)[>\"]",
 			"name": "meta.include.sourcepawn",
 			"captures": {
 				"1": {
@@ -27,8 +27,28 @@
 			}
 		},
 		{
+			"match": "(\\#define)\\s([^ ]*)\\s(.*)",
+			"name": "meta.define.sourcepawn",
+			"captures": {
+				"1": {
+					"name": "keyword.other.sourcepawn"
+				},
+				"2": {
+					"name": "support.constant.core.sourcepawn"
+				},
+				"3": {
+					"name": "string.sourcepawn"
+				}
+			}
+		},
+		{
+			"comment": "Misc types",
+			"match": "#(endif|if|pragma|undef)",
+			"name": "keyword.other.sourcepawn"
+		},
+		{
 			"comment": "Core types",
-			"match": "\\b(bool|char|float|int|void)\\b",
+			"match": "\\b(bool|char|const|float|int|void)\\b",
 			"name": "support.type.core.sourcepawn"
 		},
 		{
@@ -63,7 +83,7 @@
 					"comment": "Control statements",
 					"name": "keyword.control.statement.sourcepawn",
 					"match": "\\b(if|else|for|while|do|switch|case|default)\\b"
-				}, 
+				},
 				{
 					"comment": "keywords",
 					"name": "keyword.sourcepawn",
@@ -120,7 +140,7 @@
 				},
 				{
 					"comment": "Built in classes",
-					"match": "\\b(Plugin|Handle|ConVar|Database|DBDriver|DBResultSet|DBStatement|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu)\\b",
+					"match": "\\b(Plugin|Handle|ConVar|Database|DBDriver|DBResultSet|DBStatement|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu|Timer)\\b",
 					"name": "support.type.core.sourcepawn"
 				}
 			]
@@ -129,7 +149,12 @@
 			"patterns": [
 				{
 					"comment": "Misc constants",
-					"match": "\\b(MAXPLAYERS|MaxClients)\\b",
+					"match": "\\b(MAXPLAYERS|MaxClients|REQUIRE_PLUGIN)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Database constants",
+					"match": "\\b(DBPrio_High|DBPrio_Normal|DBPrio_Low)\\b",
 					"name": "support.constant.core.sourcepawn"
 				},
 				{
