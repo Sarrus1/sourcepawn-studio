@@ -209,7 +209,7 @@ export class CompletionRepository {
                 let completions = new FileCompletions(Uri.file(file).toString());
                 parse_file(file, completions);
 
-                let uri = "file://__sourcemod_builtin/" + path.basename(file);
+                let uri = "file://__sourcemod_builtin/" + path.relative(sourcemod_home, file);
                 this.completions.set(uri, completions);
             }
         });
