@@ -158,7 +158,26 @@ class Parser {
         }
         
         // TODO: Support multiline function definitions
-        let match = line.match(/\s*(?:(?:native|stock|public)\s*)+\s+([^\s]+)\s*([A-Za-z_].*)/);
+        if (line.includes(":")) {
+            this.read_old_style_function(line);
+        } else {
+            this.read_new_style_function(line);
+        }
+
+        this.state.pop();
+        this.parse();
+    }
+
+    read_old_style_function(line: string) {
+        let match = line.match(/\s*(?:(?:static|native|stock|public)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/);
+        if (match) {
+            let {description, params} = this.parse_doc_comment();
+            this.completions.add(match[1], new FunctionCompletion(match[1], match[2], description, params));
+        }
+    }
+
+    read_new_style_function(line: string) {
+        let match = line.match(/\s*(?:(?:static|native|stock|public)+\s*)+\s+([^\s]+)\s*([A-Za-z_].*)/);
         if (match) {
             let {description, params} = this.parse_doc_comment();
 
@@ -169,9 +188,6 @@ class Parser {
                 this.completions.add(name_match[1], new FunctionCompletion(name_match[1], match[2], description, params));
             }
         }
-
-        this.state.pop();
-        this.parse();
     }
 
     parse_doc_comment(): {description: string, params: FunctionParam[]} {

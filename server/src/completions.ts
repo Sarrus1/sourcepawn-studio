@@ -229,18 +229,24 @@ export class CompletionRepository {
                 break;
             }
         }
-        let completions = this.completions.get(position.textDocument.uri);
-        let includes = new Set();
-        this.get_included_files(completions, includes);
-        let all_completions = [...includes].map((file) => {
-            return this.get_file_completions(file).map((completion) => completion.to_completion_item());
-        }).reduce((completions, file_completions) => completions.concat(file_completions), []);
+        let all_completions = this.get_all_completions(position.textDocument.uri).map((completion) => completion.to_completion_item());
     
         if (is_method) {
             return all_completions.filter(completion => completion.kind === CompletionItemKind.Method);
         } else {
             return all_completions.filter(completion => completion.kind !== CompletionItemKind.Method);
         }
+    }
+
+    get_all_completions(file: string): Completion[] {
+        let completions = this.completions.get(file);
+
+        let includes = new Set();
+        this.get_included_files(completions, includes);
+
+        return [...includes].map((file) => {
+            return this.get_file_completions(file);
+        }).reduce((completions, file_completions) => completions.concat(file_completions), []);
     }
 
     get_file_completions(file: string): Completion[] {
@@ -298,7 +304,7 @@ export class CompletionRepository {
                 return {method, parameter_count};
             })();
 
-            let completions = this.get_file_completions(position.textDocument.uri).filter((completion) => {
+            let completions = this.get_all_completions(position.textDocument.uri).filter((completion) => {
                 return completion.name === method;
             });
 
