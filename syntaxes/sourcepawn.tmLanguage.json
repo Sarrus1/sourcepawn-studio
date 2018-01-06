@@ -27,7 +27,7 @@
 			}
 		},
 		{
-			"match": "(\\#define)\\s([^ ]*)\\s(.*)",
+			"match": "(\\#define)\\s([^ ]*)",
 			"name": "meta.define.sourcepawn",
 			"captures": {
 				"1": {
@@ -35,15 +35,12 @@
 				},
 				"2": {
 					"name": "support.constant.core.sourcepawn"
-				},
-				"3": {
-					"name": "string.sourcepawn"
 				}
 			}
 		},
 		{
 			"comment": "Misc types",
-			"match": "#(endif|if|pragma|undef)",
+			"match": "#(endif|if|pragma|undef|endinput)",
 			"name": "keyword.other.sourcepawn"
 		},
 		{
@@ -64,6 +61,16 @@
 			"comment": "Integer literal",
 			"match": "\\b[0-9]+\\b",
 			"name": "constant.numeric.integer.sourcepawn"
+		},
+		{
+			"comment": "Binary number",
+			"match": "\\b0b[0-1]+\\b",
+			"name": "constant.numeric.sourcepawn"
+		},
+		{
+			"comment": "Hexadecimal number",
+			"match": "\\b0x[0-9a-fA-F]+\\b",
+			"name": "constant.numeric.sourcepawn"
 		},
 		{
 			"comment": "Float literal",
@@ -87,18 +94,33 @@
 				{
 					"comment": "keywords",
 					"name": "keyword.sourcepawn",
-					"match": "\\b(return|break|continue|new|decl|delete|forward|native|property|public|stock|enum|funcenum|functag|methodmap|struct|typedef|typeset|static)\\b"
+					"match": "\\b(return|break|continue|new|decl|delete|forward|native|property|public|stock|enum|funcenum|functag|methodmap|struct|typedef|typeset|static|view_as)\\b"
 				}
 			]
 		},
 		"strings": {
-			"name": "string.quoted.double.sourcepawn",
-			"begin": "\"",
-			"end": "\"",
-			"patterns": [
+			"patterns":[
 				{
-					"name": "constant.character.escape.sourcepawn",
-					"match": "\\\\."
+					"name":	"string.quoted.single.sourcepawn",
+					"begin": "'",
+					"end": "'",
+					"patterns": [
+						{
+							"name": "constant.character.escape.sourcepawn",
+							"match": "\\\\."
+						}
+					]
+				},
+				{
+					"name": "string.quoted.double.sourcepawn",
+					"begin": "\"",
+					"end": "\"",
+					"patterns": [
+						{
+							"name": "constant.character.escape.sourcepawn",
+							"match": "\\\\."
+						}
+					]
 				}
 			]
 		},
@@ -130,7 +152,7 @@
 				},
 				{
 					"comment": "Built in types",
-					"match": "\\b(Action|Timer|AdminId|GroupId|AdminFlag|OverrideType|OverrideRule|AdminCachePart|AdmAccessMode|CookieAccess|CookieMenu|CookieMenuAction|CookieMenuHandler|AuthIdType|NetFlow|QueryCookie|ReplySource|ConVarBounds|ConVarQueryResult|Identity|PluginInfo|PluginStatus|CSRoundEndReason|CSWeaponID|DataPackPos|DBBindType|DBPriority|DBResult|PropFieldType|PropType|MoveType|RenderFx|RenderMode|EventHookMode|FileTimeMode|FileType|PathType|ExecType|ParamType|ClientRangeType|DialogType|EngineVersion|FindMapResult|KvDataTypes|MapChange|NominateResult|MenuAction|MenuSource|MenuStyle|RegexError|SDKHookType|UseType|SDKCallType|SDKFuncConfSource|SDKLibrary|SDKPassMethod|SDKType|RoundState|RayType|ListenOverride|SortOrder|SortType|Address|APLRes|FeatureStatus|FeatureType|NumberType|SMCError|SMCResult|TFClassType|TFCond|TFHoliday|TFObjectMode|TFObjectType|TFTeam|TFResourceType|TopMenuAction|TopMenuObject|TopMenuObjectType|TopMenuPosition|UserMessageType|UserMsg)\\b",
+					"match": "\\b(Action|AmbientSHook|NormalSHook|Timer|AdminId|GroupId|AdminFlag|OverrideType|OverrideRule|AdminCachePart|AdmAccessMode|CookieAccess|CookieMenu|CookieMenuAction|CookieMenuHandler|AuthIdType|NetFlow|QueryCookie|Extension|SharedPlugin|ReplySource|CommandListener|ConCmd|SrvCmd|ConVarBounds|ConVar_Bounds|ConVarQueryResult|ConVarChanged|ConVarQueryFinished|Identity|ImmunityType|PluginInfo|PluginStatus|CSRoundEndReason|CSWeaponID|EventHook|DataPackPos|DBBindType|DBPriority|DBResult|PropFieldType|PropType|MoveType|RenderFx|RenderMode|EventHookMode|FileTimeMode|FileType|PathType|ExecType|ParamType|ClientRangeType|DialogType|EngineVersion|FindMapResult|KvDataTypes|MapChange|NominateResult|MenuAction|MenuSource|SQLConnectCallback|SQLQueryCallback|SQLTCallback|SQLTxnFailure|SQLTxnSuccess|GameLogHook|EntityOutput|MenuStyle|SDKHookCB|MenuHandler|VoteHandler|MultiTargetFilter|PlVers|RegexError|SDKHookType|UseType|SDKCallType|SDKFuncConfSource|TEHook|SortFunc1D|SortFunc2D|SortFuncADTArray|SDKLibrary|TraceEntityFilter|SDKPassMethod|SDKType|RoundState|RayType|ListenOverride|SortOrder|SortType|Address|APLRes|FeatureStatus|FeatureType|NumberType|TopMenuHandler|MsgHook|MsgPostHook|NativeCall|RequestFrameCallback|SMC_EndSection|SMC_KeyValue|SMC_NewSection|SMC_ParseEnd|SMC_ParseStart|SMC_RawLine|SMCError|SMCResult|TFClassType|TFCond|TFHoliday|TFObjectMode|TFObjectType|TFTeam|TFResourceType|TopMenuAction|TopMenuObject|TopMenuObjectType|TopMenuPosition|UserMessageType|UserMsg)\\b",
 					"name": "support.type.core.sourcepawn"
 				},
 				{
@@ -149,7 +171,202 @@
 			"patterns": [
 				{
 					"comment": "Misc constants",
-					"match": "\\b(MAXPLAYERS|MaxClients|REQUIRE_PLUGIN)\\b",
+					"match": "\\b(MAXPLAYERS|MaxClients|REQUIRE_PLUGIN|REQUIRE_EXTENSIONS|MAX_NAME_LENGTH|MAX_TARGET_LENGTH|INVALID_FCVAR_FLAGS|NULL_VECTOR|NULL_STRING|AUTOLOAD_EXTENSIONS|PLATFORM_MAX_PATH|Path_SM|SP_PARAMFLAG_BYREF|INVALID_ENT_REFERENCE|INVALID_HANDLE|null|LANG_SERVER|PB_FIELD_NOT_REPEATED|MAX_LIGHTSTYLES|FEATURECAP_PLAYERRUNCMD_11PARAMS|INVALID_STRING_TABLE|INVALID_STRING_INDEX|INVALID_TOPMENUOBJECT|INVALID_MESSAGE_ID|QUERYCOOKIE_FAILED)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Adminflag constans",
+					"match": "\\b(ADMFLAG_RESERVATION|ADMFLAG_GENERIC|ADMFLAG_KICK|ADMFLAG_BAN|ADMFLAG_UNBAN|ADMFLAG_SLAY|ADMFLAG_CHANGEMAP|ADMFLAG_CONVARS|ADMFLAG_CONFIG|ADMFLAG_CHAT|ADMFLAG_VOTE|ADMFLAG_PASSWORD|ADMFLAG_RCON|ADMFLAG_CHEATS|ADMFLAG_ROOT|ADMFLAG_CUSTOM1|ADMFLAG_CUSTOM2|ADMFLAG_CUSTOM3|ADMFLAG_CUSTOM4|ADMFLAG_CUSTOM5|ADMFLAG_CUSTOM6)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Authmethod constants",
+					"match": "\\b(AUTHMETHOD_STEAM|AUTHMETHOD_IP|AUTHMETHOD_NAME)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Admin misc constants",
+					"match": "\\b(INVALID_GROUP_ID|INVALID_ADMIN_ID)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Admin menu constants",
+					"match": "\\b(ADMINMENU_PLAYERCOMMANDS|ADMINMENU_SERVERCOMMANDS|ADMINMENU_VOTINGCOMMANDS)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Ban flag constants",
+					"match": "\\b(BANFLAG_AUTO|BANFLAG_IP|BANFLAG_AUTHID|BANFLAG_NOKICK)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Command filter constants",
+					"match": "\\b(COMMAND_FILTER_ALIVE|COMMAND_FILTER_DEAD|COMMAND_FILTER_CONNECTED|COMMAND_FILTER_NO_IMMUNITY|COMMAND_FILTER_NO_MULTI|COMMAND_FILTER_NO_BOTS)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Command target constants",
+					"match": "\\b(COMMAND_TARGET_NONE|COMMAND_TARGET_NOT_ALIVE|COMMAND_TARGET_NOT_DEAD|COMMAND_TARGET_NOT_IN_GAME|COMMAND_TARGET_IMMUNE|COMMAND_TARGET_EMPTY_FILTER|COMMAND_TARGET_NOT_HUMAN|COMMAND_TARGET_AMBIGUOUS)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Edict flag constants",
+					"match": "\\b(FL_EDICT_CHANGED|FL_EDICT_FREE|FL_EDICT_FULL|FL_EDICT_FULLCHECK|FL_EDICT_ALWAYS|FL_EDICT_DONTSEND|FL_EDICT_PVSCHECK|FL_EDICT_PENDING_DORMANT_CHECK|FL_EDICT_DIRTY_PVS_INFORMATION|FL_FULL_EDICT_CHANGED)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Movetype constants",
+					"match": "\\b(MOVETYPE_NONE|MOVETYPE_ISOMETRIC|MOVETYPE_WALK|MOVETYPE_STEP|MOVETYPE_FLY|MOVETYPE_FLYGRAVITY|MOVETYPE_VPHYSICS|MOVETYPE_PUSH|MOVETYPE_NOCLIP|MOVETYPE_LADDER|MOVETYPE_OBSERVER|MOVETYPE_CUSTOM)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Render constants",
+					"match": "\\b(RENDER_NORMAL|RENDER_TRANSCOLOR|RENDER_TRANSTEXTURE|RENDER_GLOW|RENDER_TRANSALPHA|RENDER_TRANSADD|RENDER_ENVIRONMENTAL|RENDER_TRANSADDFRAMEBLEND|RENDER_TRANSALPHAADD|RENDER_WORLDGLOW|RENDER_NONE)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "RenderFX constants",
+					"match": "\\b(RENDERFX_NONE|RENDERFX_PULSE_SLOW|RENDERFX_PULSE_FAST|RENDERFX_PULSE_SLOW_WIDE|RENDERFX_PULSE_FAST_WIDE|RENDERFX_FADE_SLOW|RENDERFX_FADE_FAST|RENDERFX_SOLID_SLOW|RENDERFX_SOLID_FAST|RENDERFX_STROBE_SLOW|RENDERFX_STROBE_FAST|RENDERFX_STROBE_FASTER|RENDERFX_FLICKER_SLOW|RENDERFX_FLICKER_FAST|RENDERFX_NO_DISSIPATION|RENDERFX_DISTORT|RENDERFX_HOLOGRAM|RENDERFX_EXPLODE|RENDERFX_GLOWSHELL|RENDERFX_CLAMP_MIN_SCALE|RENDERFX_ENV_RAIN|RENDERFX_ENV_SNOW|RENDERFX_SPOTLIGHT|RENDERFX_RAGDOLL|RENDERFX_PULSE_FAST_WIDER|RENDERFX_MAX)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Player button constants",
+					"match": "\\b(IN_ATTACK|IN_JUMP|IN_DUCK|IN_FORWARD|IN_BACK|IN_USE|IN_CANCEL|IN_LEFT|IN_RIGHT|IN_MOVELEFT|IN_MOVERIGHT|IN_ATTACK2|IN_RUN|IN_RELOAD|IN_ALT1|IN_ALT2|IN_SCORE|IN_SPEED|IN_WALK|IN_ZOOM|IN_WEAPON1|IN_WEAPON2|IN_BULLRUSH|IN_GRENADE1|IN_GRENADE2|IN_ATTACK3)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Player flag constants",
+					"match": "\\b(FL_ONGROUND|FL_DUCKING|FL_WATERJUMP|FL_ONTRAIN|FL_INRAIN|FL_FROZEN|FL_ATCONTROLS|FL_CLIENT|FL_FAKECLIENT|PLAYER_FLAG_BITS|FL_INWATER|FL_FLY|FL_SWIM|FL_CONVEYOR|FL_NPC|FL_GODMODE|FL_NOTARGET|FL_AIMTARGET|FL_PARTIALGROUND|FL_STATICPROP|FL_GRAPHED|FL_GRENADE|FL_STEPMOVEMENT|FL_DONTTOUCH|FL_BASEVELOCITY|FL_WORLDBRUSH|FL_OBJECT|FL_KILLME|FL_ONFIRE|FL_DISSOLVING|FL_TRANSRAGDOLL|FL_UNBLOCKABLE_BY_PLAYER|FL_FREEZING|FL_EP2V_UNKNOWN1)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "File seek mode constants",
+					"match": "\\b(SEEK_SET|SEEK_CUR|SEEK_END)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Func string/array constants",
+					"match": "\\b(SM_PARAM_COPYBACK|SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY|SM_PARAM_STRING_BINARY)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Func call error code constants",
+					"match": "\\b(SP_ERROR_NONE|SP_ERROR_FILE_FORMAT|SP_ERROR_DECOMPRESSOR|SP_ERROR_HEAPLOW|SP_ERROR_PARAM|SP_ERROR_INVALID_ADDRESS|SP_ERROR_NOT_FOUND|SP_ERROR_INDEX|SP_ERROR_STACKLOW|SP_ERROR_NOTDEBUGGING|SP_ERROR_INVALID_INSTRUCTION|SP_ERROR_MEMACCESS|SP_ERROR_STACKMIN|SP_ERROR_HEAPMIN|SP_ERROR_DIVIDE_BY_ZERO|SP_ERROR_ARRAY_BOUNDS|SP_ERROR_INSTRUCTION_PARAM|SP_ERROR_STACKLEAK|SP_ERROR_HEAPLEAK|SP_ERROR_ARRAY_TOO_BIG|SP_ERROR_TRACKER_BOUNDS|SP_ERROR_INVALID_NATIVE|SP_ERROR_PARAMS_MAX|SP_ERROR_NATIVE|SP_ERROR_NOT_RUNNABLE|SP_ERROR_ABORTED)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Engine constants",
+					"match": "\\b(SOURCE_SDK_UNKNOWN|SOURCE_SDK_ORIGINAL|SOURCE_SDK_DARKMESSIAH|SOURCE_SDK_EPISODE1|SOURCE_SDK_EPISODE2|SOURCE_SDK_BLOODYGOODTIME|SOURCE_SDK_EYE|SOURCE_SDK_CSS|SOURCE_SDK_EPISODE2VALVE|SOURCE_SDK_LEFT4DEAD|SOURCE_SDK_LEFT4DEAD2|SOURCE_SDK_ALIENSWARM|SOURCE_SDK_CSGO|SOURCE_SDK_DOTA)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "MOTD panel type constants",
+					"match": "\\b(MOTDPANEL_TYPE_TEXT|MOTDPANEL_TYPE_INDEX|MOTDPANEL_TYPE_URL|MOTDPANEL_TYPE_FILE)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Menu action constants",
+					"match": "\\b(MENU_ACTIONS_DEFAULT|MENU_ACTIONS_ALL|MENU_NO_PAGINATION|MENU_TIME_FOREVER)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Menu item drawing constants",
+					"match": "\\b(ITEMDRAW_DEFAULT|ITEMDRAW_DISABLED|ITEMDRAW_RAWLINE|ITEMDRAW_NOTEXT|ITEMDRAW_SPACER|ITEMDRAW_IGNORE|ITEMDRAW_CONTROL)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Menu flag constants",
+					"match": "\\b(MENUFLAG_BUTTON_EXIT|MENUFLAG_BUTTON_EXITBACK|MENUFLAG_NO_SOUND|MENUFLAG_BUTTON_NOVOTE)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Vote info constants",
+					"match": "\\b(VOTEINFO_CLIENT_INDEX|VOTEINFO_CLIENT_ITEM|VOTEINFO_ITEM_INDEX|VOTEINFO_ITEM_VOTES|VOTEFLAG_NO_REVOTES)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Regex compilation flag constants",
+					"match": "\\b(PCRE_CASELESS|PCRE_MULTILINE|PCRE_DOTALL|PCRE_EXTENDED|PCRE_ANCHORED|PCRE_DOLLAR_ENDONLY|PCRE_UNGREEDY|PCRE_NOTEMPTY|PCRE_UTF8|PCRE_NO_UTF8_CHECK|PCRE_UCP)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "SDKTools encoding/decoding flag constants",
+					"match": "\\b(VDECODE_FLAG_ALLOWNULL|VDECODE_FLAG_ALLOWNOTINGAME|VDECODE_FLAG_ALLOWWORLD|VDECODE_FLAG_BYREF|VENCODE_FLAG_COPYBACK)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Sound from flag constants",
+					"match": "\\b(SOUND_FROM_PLAYER|SOUND_FROM_LOCAL_PLAYER|SOUND_FROM_WORLD)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Sound channel constants",
+					"match": "\\b(SNDCHAN_REPLACE|SNDCHAN_AUTO|SNDCHAN_WEAPON|SNDCHAN_VOICE|SNDCHAN_ITEM|SNDCHAN_BODY|SNDCHAN_STREAM|SNDCHAN_STATIC|SNDCHAN_VOICE_BASE|SNDCHAN_USER_BASE)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Sound flag constants",
+					"match": "\\b(SND_NOFLAGS|SND_CHANGEVOL|SND_CHANGEPITCH|SND_STOP|SND_SPAWNING|SND_DELAY|SND_STOPLOOPING|SND_SPEAKER|SND_SHOULDPAUSE)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Sound level constants",
+					"match": "\\b(SNDLEVEL_NONE|SNDLEVEL_RUSTLE|SNDLEVEL_WHISPER|SNDLEVEL_LIBRARY|SNDLEVEL_FRIDGE|SNDLEVEL_HOME|SNDLEVEL_CONVO|SNDLEVEL_DRYER|SNDLEVEL_DISHWASHER|SNDLEVEL_CAR|SNDLEVEL_NORMAL|SNDLEVEL_TRAFFIC|SNDLEVEL_MINIBIKE|SNDLEVEL_SCREAMING|SNDLEVEL_TRAIN|SNDLEVEL_HELICOPTER|SNDLEVEL_SNOWMOBILE|SNDLEVEL_AIRCRAFT|SNDLEVEL_RAIDSIREN|SNDLEVEL_GUNFIRE|SNDLEVEL_ROCKET)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Sound property constants",
+					"match": "\\b(SNDVOL_NORMAL|SNDPITCH_NORMAL|SNDPITCH_LOW|SNDPITCH_HIGH|SNDATTN_NONE|SNDATTN_NORMAL|SNDATTN_STATIC|SNDATTN_RICOCHET|SNDATTN_IDLE)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "TE explosion constants",
+					"match": "\\b(TE_EXPLFLAG_NONE|TE_EXPLFLAG_NOADDITIVE|TE_EXPLFLAG_NODLIGHTS|TE_EXPLFLAG_NOSOUND|TE_EXPLFLAG_NOPARTICLES|TE_EXPLFLAG_DRAWALPHA|TE_EXPLFLAG_ROTATE|TE_EXPLFLAG_NOFIREBALL|TE_EXPLFLAG_NOFIREBALLSMOKE)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "TE beam constants",
+					"match": "\\b(FBEAM_STARTENTITY|FBEAM_ENDENTITY|FBEAM_FADEIN|FBEAM_FADEOUT|FBEAM_SINENOISE|FBEAM_SOLID|FBEAM_SHADEIN|FBEAM_SHADEOUT|FBEAM_ONLYNOISEONCE|FBEAM_NOTILE|FBEAM_USE_HITBOXES|FBEAM_STARTVISIBLE|FBEAM_ENDVISIBLE|FBEAM_ISACTIVE|FBEAM_FOREVER|FBEAM_HALOBEAM)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Trace content constants",
+					"match": "\\b(CONTENTS_EMPTY|CONTENTS_SOLID|CONTENTS_WINDOW|CONTENTS_AUX|CONTENTS_GRATE|CONTENTS_SLIME|CONTENTS_WATER|CONTENTS_MIST|CONTENTS_OPAQUE|LAST_VISIBLE_CONTENTS|ALL_VISIBLE_CONTENTS|CONTENTS_TESTFOGVOLUME|CONTENTS_UNUSED5|CONTENTS_UNUSED6|CONTENTS_TEAM1|CONTENTS_TEAM2|CONTENTS_IGNORE_NODRAW_OPAQUE|CONTENTS_MOVEABLE|CONTENTS_AREAPORTAL|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP|CONTENTS_CURRENT_0|CONTENTS_CURRENT_90|CONTENTS_CURRENT_180|CONTENTS_CURRENT_270|CONTENTS_CURRENT_UP|CONTENTS_CURRENT_DOWN|CONTENTS_ORIGIN|CONTENTS_MONSTER|CONTENTS_DEBRIS|CONTENTS_DETAIL|CONTENTS_TRANSLUCENT|CONTENTS_LADDER|CONTENTS_HITBOX)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Trace mask constants",
+					"match": "\\b(MASK_ALL|MASK_SOLID|MASK_PLAYERSOLID|MASK_NPCSOLID|MASK_WATER|MASK_OPAQUE|MASK_OPAQUE_AND_NPCS|MASK_VISIBLE|MASK_VISIBLE_AND_NPCS|MASK_SHOT|MASK_SHOT_HULL|MASK_SHOT_PORTAL|MASK_SOLID_BRUSHONLY|MASK_PLAYERSOLID_BRUSHONLY|MASK_NPCSOLID_BRUSHONLY|MASK_NPCWORLDSTATIC|MASK_SPLITAREAPORTAL)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Voice flag constants",
+					"match": "\\b(VOICE_NORMAL|VOICE_MUTED|VOICE_SPEAKALL|VOICE_LISTENALL|VOICE_TEAM|VOICE_LISTENTEAM)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "TF2 stun flag constants",
+					"match": "\\b(TF_STUNFLAG_SLOWDOWN|TF_STUNFLAG_BONKSTUCK|TF_STUNFLAG_LIMITMOVEMENT|TF_STUNFLAG_CHEERSOUND|TF_STUNFLAG_NOSOUNDOREFFECT|TF_STUNFLAG_THIRDPERSON|TF_STUNFLAG_GHOSTEFFECT|TF_STUNFLAGS_LOSERSTATE|TF_STUNFLAGS_GHOSTSCARE|TF_STUNFLAGS_SMALLBONK|TF_STUNFLAGS_NORMALBONK|TF_STUNFLAGS_BIGBONK)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "TF2 cond flag constants",
+					"match": "\\b(TF_CONDFLAG_NONE|TF_CONDFLAG_SLOWED|TF_CONDFLAG_ZOOMED|TF_CONDFLAG_DISGUISING|TF_CONDFLAG_DISGUISED|TF_CONDFLAG_CLOAKED|TF_CONDFLAG_UBERCHARGED|TF_CONDFLAG_TELEPORTGLOW|TF_CONDFLAG_TAUNTING|TF_CONDFLAG_UBERCHARGEFADE|TF_CONDFLAG_CLOAKFLICKER|TF_CONDFLAG_TELEPORTING|TF_CONDFLAG_KRITZKRIEGED|TF_CONDFLAG_DEADRINGERED|TF_CONDFLAG_BONKED|TF_CONDFLAG_DAZED|TF_CONDFLAG_BUFFED|TF_CONDFLAG_CHARGING|TF_CONDFLAG_DEMOBUFF|TF_CONDFLAG_CRITCOLA|TF_CONDFLAG_INHEALRADIUS|TF_CONDFLAG_HEALING|TF_CONDFLAG_ONFIRE|TF_CONDFLAG_OVERHEALED|TF_CONDFLAG_JARATED|TF_CONDFLAG_BLEEDING|TF_CONDFLAG_DEFENSEBUFFED|TF_CONDFLAG_MILKED|TF_CONDFLAG_MEGAHEAL|TF_CONDFLAG_REGENBUFFED|TF_CONDFLAG_MARKEDFORDEATH)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "TF2 death flag constants",
+					"match": "\\b(TF_DEATHFLAG_KILLERDOMINATION|TF_DEATHFLAG_ASSISTERDOMINATION|TF_DEATHFLAG_KILLERREVENGE|TF_DEATHFLAG_ASSISTERREVENGE|TF_DEATHFLAG_FIRSTBLOOD|TF_DEATHFLAG_DEADRINGER|TF_DEATHFLAG_INTERRUPTED|TF_DEATHFLAG_GIBBED|TF_DEATHFLAG_PURGATORY)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Usermessage flag constants",
+					"match": "\\b(USERMSG_RELIABLE|USERMSG_INITMSG|USERMSG_BLOCKHOOKS)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Version constants",
+					"match": "\\b(SOURCEMOD_V_TAG|SOURCEMOD_V_REV|SOURCEMOD_V_CSET|SOURCEMOD_V_MAJOR|SOURCEMOD_V_MINOR|SOURCEMOD_V_RELEASE|SOURCEMOD_VERSION)\\b",
 					"name": "support.constant.core.sourcepawn"
 				},
 				{
@@ -158,13 +375,13 @@
 					"name": "support.constant.core.sourcepawn"
 				},
 				{
-					"comment": "Timer constants",
+					"comment": "Timer flag constants",
 					"match": "\\b(TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE|TIMER_HNDL_CLOSE|TIMER_DATA_HNDL_CLOSE)\\b",
 					"name": "support.constant.core.sourcepawn"
 				},
 				{
-					"comment": "SDKHook constants",
-					"match": "\\b(DMG_GENERIC|DMG_CRUSH|DMG_BULLET|DMG_SLASH|DMG_BURN|DMG_VEHICLE|DMG_FALL|DMG_BLAST|DMG_CLUB|DMG_SHOCK|DMG_SONIC|DMG_ENERGYBEAM|DMG_PREVENT|DMG_NEVERGIB|DMG_ALWAYSGIB|DMG_DROWN|DMG_PARALYZE|DMG_NERVEGAS|DMG_POISON|DMG_RADIATION|DMG_DROWNRECOVER|DMG_ACID|DMG_SLOWBURN|DMG_REMOVENORAGDOLL|DMG_PHYSGUN|DMG_PLASMA|DMG_AIRBOAT|DMG_DISSOLVE|DMG_BLAST|DMG_DIRECT|DMG_BUCKSHOT)\\b",
+					"comment": "SDKHook damage constants",
+					"match": "\\b(DMG_GENERIC|DMG_CRUSH|DMG_BULLET|DMG_SLASH|DMG_BURN|DMG_VEHICLE|DMG_FALL|DMG_BLAST|DMG_CLUB|DMG_SHOCK|DMG_SONIC|DMG_ENERGYBEAM|DMG_PREVENT_PHYSICS_FORCE|DMG_NEVERGIB|DMG_ALWAYSGIB|DMG_DROWN|DMG_PARALYZE|DMG_NERVEGAS|DMG_POISON|DMG_RADIATION|DMG_DROWNRECOVER|DMG_ACID|DMG_SLOWBURN|DMG_REMOVENORAGDOLL|DMG_PHYSGUN|DMG_PLASMA|DMG_AIRBOAT|DMG_DISSOLVE|DMG_BLAST_SURFACE|DMG_DIRECT|DMG_BUCKSHOT|DMG_CRIT)\\b",
 					"name": "support.constant.core.sourcepawn"
 				},
 				{
@@ -184,7 +401,7 @@
 				},
 				{
 					"comment": "FCVAR constants",
-					"match": "\\b(FCVAR_NONE|FCVAR_UNREGISTERED|FCVAR_DEVELOPMENTONLY|FCVAR_GAMEDLL|FCVAR_CLIENTDLL|FCVAR_MATERIAL_SYSTEM|FCVAR_HIDDEN|FCVAR_PROTECTED|FCVAR_SPONLY|FCVAR_ARCHIVE|FCVAR_NOTIFY|FCVAR_USERINFO|FCVAR_PRINTABLEONLY|FCVAR_UNLOGGED|FCVAR_NEVER_AS_STRING|FCVAR_REPLICATED|FCVAR_CHEAT|FCVAR_SS|FCVAR_DEMO|FCVAR_DONTRECORD|FCVAR_SS_ADDED|FCVAR_RELEASE|FCVAR_RELOAD_MATERIALS|FCVAR_RELOAD_TEXTURES|FCVAR_NOT_CONNECTED|FCVAR_MATERIAL_SYSTEM_THREAD|FCVAR_ARCHIVE_XBOX|FCVAR_ARCHIVE_GAMECONSOLE|FCVAR_ACCESSIBLE_FROM_THREADS|FCVAR_SERVER_CAN_EXECUTE|FCVAR_SERVER_CANNOT_QUERY|FCVAR_CLIENTCMD_CAN_EXECUTE)\\b",
+					"match": "\\b(FCVAR_PLUGIN|FCVAR_LAUNCHER|FCVAR_NONE|FCVAR_UNREGISTERED|FCVAR_DEVELOPMENTONLY|FCVAR_GAMEDLL|FCVAR_CLIENTDLL|FCVAR_MATERIAL_SYSTEM|FCVAR_HIDDEN|FCVAR_PROTECTED|FCVAR_SPONLY|FCVAR_ARCHIVE|FCVAR_NOTIFY|FCVAR_USERINFO|FCVAR_PRINTABLEONLY|FCVAR_UNLOGGED|FCVAR_NEVER_AS_STRING|FCVAR_REPLICATED|FCVAR_CHEAT|FCVAR_SS|FCVAR_DEMO|FCVAR_DONTRECORD|FCVAR_SS_ADDED|FCVAR_RELEASE|FCVAR_RELOAD_MATERIALS|FCVAR_RELOAD_TEXTURES|FCVAR_NOT_CONNECTED|FCVAR_MATERIAL_SYSTEM_THREAD|FCVAR_ARCHIVE_XBOX|FCVAR_ARCHIVE_GAMECONSOLE|FCVAR_ACCESSIBLE_FROM_THREADS|FCVAR_SERVER_CAN_EXECUTE|FCVAR_SERVER_CANNOT_QUERY|FCVAR_CLIENTCMD_CAN_EXECUTE)\\b",
 					"name": "support.constant.core.sourcepawn"
 				}
 			]
@@ -213,12 +430,232 @@
 				},
 				{
 					"comment": "Enum Admin access modes",
-					"match": "\\b(Access_Real|Access_Effective)\b",
+					"match": "\\b(Access_Real|Access_Effective)\\b",
 					"name": "support.constant.core.sourcepawn"
 				},
 				{
 					"comment": "Enum Admin cache parts",
 					"match": "\\b(AdminCache_Overrides|AdminCache_Groups|AdminCache_Admins)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum CookieAccess",
+					"match": "\\b(CookieAccess_Public|CookieAccess_Protected|CookieAccess_Private)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum CookieMenu",
+					"match": "\\b(CookieMenu_YesNo|CookieMenu_YesNo_Int|CookieMenu_OnOff|CookieMenu_OnOff_Int)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum CookieMenuAction",
+					"match": "\\b(CookieMenuAction_DisplayOption|CookieMenuAction_SelectOption)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum ReplySource",
+					"match": "\\b(SM_REPLY_TO_CONSOLE|SM_REPLY_TO_CHAT)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum ConVar_Bounds",
+					"match": "\\b(ConVarBound_Upper|ConVarBound_Lower)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum ConVarQueryResult",
+					"match": "\\b(ConVarQuery_Okay|ConVarQuery_NotFound|ConVarQuery_NotValid|ConVarQuery_Protected)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum PluginInfo",
+					"match": "\\b(PlInfo_Name|PlInfo_Author|PlInfo_Description|PlInfo_Version|PlInfo_URL)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum DBResult",
+					"match": "\\b(DBVal_Error|DBVal_TypeMismatch|DBVal_Null|DBVal_Data)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum DBBindType",
+					"match": "\\b(DBBind_Int|DBBind_Float|DBBind_String)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum PropType",
+					"match": "\\b(Prop_Send|Prop_Data)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum PropFieldType",
+					"match": "\\b(PropField_Unsupported|PropField_Integer|PropField_Float|PropField_Entity|PropField_Vector|PropField_String|PropField_String_T)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum EventHookMode",
+					"match": "\\b(EventHookMode_Pre|EventHookMode_Post|EventHookMode_PostNoCopy)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum FileType",
+					"match": "\\b(FileType_Unknown|FileType_Directory|FileType_File)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum FileTime",
+					"match": "\\b(FileTime_LastAccess|FileTime_Created|FileTime_LastChange)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum ParamType",
+					"match": "\\b(Param_Any|Param_Cell|Param_Float|Param_String|Param_Array|Param_VarArgs|Param_CellByRef|Param_FloatByRef)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum ExecType",
+					"match": "\\b(ET_Ignore|ET_Single|ET_Event|ET_Hook)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum DialogType",
+					"match": "\\b(DialogType_Msg|DialogType_Menu|DialogType_Text|DialogType_Entry|DialogType_AskConnect)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum EngineVersion",
+					"match": "\\b(Engine_Unknown|Engine_Original|Engine_SourceSDK2006|Engine_SourceSDK2007|Engine_Left4Dead|Engine_DarkMessiah|Engine_Left4Dead2|Engine_AlienSwarm|Engine_BloodyGoodTime|Engine_EYE|Engine_Portal2|Engine_CSGO|Engine_CSS|Engine_DOTA|Engine_HL2DM|Engine_DODS|Engine_TF2|Engine_NuclearDawn|Engine_SDK2013|Engine_Blade|Engine_Insurgency|Engine_Contagion|Engine_BlackMesa)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum FindMapResult",
+					"match": "\\b(FindMap_Found|FindMap_NotFound|FindMap_FuzzyMatch|FindMap_NonCanonical|FindMap_PossiblyAvailable)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum KvDataTypes",
+					"match": "\\b(KvData_None|KvData_String|KvData_Int|KvData_Float|KvData_Ptr|KvData_WString|KvData_Color|KvData_UInt64|KvData_NUMTYPES)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum NominateResult",
+					"match": "\\b(Nominate_Added|Nominate_Replaced|Nominate_AlreadyInVote|Nominate_InvalidMap|Nominate_VoteFull)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum MapChange",
+					"match": "\\b(MapChange_Instant|MapChange_RoundEnd|MapChange_MapEnd)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum MenuStyle",
+					"match": "\\b(MenuStyle_Default|MenuStyle_Valve|MenuStyle_Radio)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum MenuCancel Reason",
+					"match": "\\b(MenuCancel_Disconnected|MenuCancel_Interrupted|MenuCancel_Exit|MenuCancel_NoDisplay|MenuCancel_Timeout|MenuCancel_ExitBack)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum VoteCancel Reason",
+					"match": "\\b(VoteCancel_Generic|VoteCancel_NoVotes)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum MenuEnd Reason",
+					"match": "\\b(MenuEnd_Selected|MenuEnd_VotingDone|MenuEnd_VotingCancelled|MenuEnd_Cancelled|MenuEnd_Exit|MenuEnd_ExitBack)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum MenuSource",
+					"match": "\\b(MenuSource_None|MenuSource_External|MenuSource_Normal|MenuSource_RawPanel)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum RegexError",
+					"match": "\\b(REGEX_ERROR_NONE|REGEX_ERROR_NOMATCH|REGEX_ERROR_NULL|REGEX_ERROR_BADOPTION|REGEX_ERROR_BADMAGIC|REGEX_ERROR_UNKNOWN_OPCODE|REGEX_ERROR_NOMEMORY|REGEX_ERROR_NOSUBSTRING|REGEX_ERROR_MATCHLIMIT|REGEX_ERROR_CALLOUT|REGEX_ERROR_BADUTF8|REGEX_ERROR_BADUTF8_OFFSET|REGEX_ERROR_PARTIAL|REGEX_ERROR_BADPARTIAL|REGEX_ERROR_INTERNAL|REGEX_ERROR_BADCOUNT|REGEX_ERROR_DFA_UITEM|REGEX_ERROR_DFA_UCOND|REGEX_ERROR_DFA_UMLIMIT|REGEX_ERROR_DFA_WSSIZE|REGEX_ERROR_DFA_RECURSE|REGEX_ERROR_RECURSIONLIMIT|REGEX_ERROR_NULLWSLIMIT|REGEX_ERROR_BADNEWLINE|REGEX_ERROR_BADOFFSET|REGEX_ERROR_SHORTUTF8|REGEX_ERROR_RECURSELOOP|REGEX_ERROR_JIT_STACKLIMIT|REGEX_ERROR_BADMODE|REGEX_ERROR_BADENDIANNESS|REGEX_ERROR_DFA_BADRESTART|REGEX_ERROR_JIT_BADOPTION|REGEX_ERROR_BADLENGTH)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum UseType",
+					"match": "\\b(Use_Off|Use_On|Use_Set|Use_Toggle)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum SDKCallType",
+					"match": "\\b(SDKCall_Static|SDKCall_Entity|SDKCall_Player|SDKCall_GameRules|SDKCall_EntityList|SDKCall_Raw)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum SDKLibrary",
+					"match": "\\b(SDKLibrary_Server|SDKLibrary_Engine)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum SDKFuncConfSource",
+					"match": "\\b(SDKConf_Virtual|SDKConf_Signature|SDKConf_Address)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum SDKType",
+					"match": "\\b(SDKType_CBaseEntity|SDKType_CBasePlayer|SDKType_Vector|SDKType_QAngle|SDKType_PlainOldData|SDKType_Float|SDKType_Edict|SDKType_String|SDKType_Bool)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum SDKPassMethod",
+					"match": "\\b(SDKPass_Pointer|SDKPass_Plain|SDKPass_ByValue|SDKPass_ByRef)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum RoundState",
+					"match": "\\b(RoundState_Init|RoundState_Pregame|RoundState_StartGame|RoundState_Preround|RoundState_RoundRunning|RoundState_TeamWin|RoundState_Restart|RoundState_Stalemate|RoundState_GameOver|RoundState_Bonus|RoundState_BetweenRounds)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum SMCResult",
+					"match": "\\b(SMCParse_Continue|SMCParse_Halt|SMCParse_HaltFail)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum SMCError",
+					"match": "\\b(SMCError_Okay|SMCError_StreamOpen|SMCError_StreamError|SMCError_Custom|SMCError_InvalidSection1|SMCError_InvalidSection2|SMCError_InvalidSection3|SMCError_InvalidSection4|SMCError_InvalidSection5|SMCError_InvalidTokens|SMCError_TokenOverflow|SMCError_InvalidProperty1)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum TFHoliday",
+					"match": "\\b(TFHoliday_Invalid|TFHoliday_Birthday|TFHoliday_Halloween|TFHoliday_Christmas|TFHoliday_EndOfTheLine|TFHoliday_CommunityUpdate|TFHoliday_ValentinesDay|TFHoliday_MeetThePyro|TFHoliday_SpyVsEngyWar|TFHoliday_FullMoon|TFHoliday_HalloweenOrFullMoon|TFHoliday_HalloweenOrFullMoonOrValentines|TFHoliday_AprilFools)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum TF_Custom",
+					"match": "\\b(TF_CUSTOM_HEADSHOT|TF_CUSTOM_BACKSTAB|TF_CUSTOM_BURNING|TF_CUSTOM_WRENCH_FIX|TF_CUSTOM_MINIGUN|TF_CUSTOM_SUICIDE|TF_CUSTOM_TAUNT_HADOUKEN|TF_CUSTOM_BURNING_FLARE|TF_CUSTOM_TAUNT_HIGH_NOON|TF_CUSTOM_TAUNT_GRAND_SLAM|TF_CUSTOM_PENETRATE_MY_TEAM|TF_CUSTOM_PENETRATE_ALL_PLAYERS|TF_CUSTOM_TAUNT_FENCING|TF_CUSTOM_PENETRATE_HEADSHOT|TF_CUSTOM_TAUNT_ARROW_STAB|TF_CUSTOM_TELEFRAG|TF_CUSTOM_BURNING_ARROW|TF_CUSTOM_FLYINGBURN|TF_CUSTOM_PUMPKIN_BOMB|TF_CUSTOM_DECAPITATION|TF_CUSTOM_TAUNT_GRENADE|TF_CUSTOM_BASEBALL|TF_CUSTOM_CHARGE_IMPACT|TF_CUSTOM_TAUNT_BARBARIAN_SWING|TF_CUSTOM_AIR_STICKY_BURST|TF_CUSTOM_DEFENSIVE_STICKY|TF_CUSTOM_PICKAXE|TF_CUSTOM_ROCKET_DIRECTHIT|TF_CUSTOM_TAUNT_UBERSLICE|TF_CUSTOM_PLAYER_SENTRY|TF_CUSTOM_STANDARD_STICKY|TF_CUSTOM_SHOTGUN_REVENGE_CRIT|TF_CUSTOM_TAUNT_ENGINEER_SMASH|TF_CUSTOM_BLEEDING|TF_CUSTOM_GOLD_WRENCH|TF_CUSTOM_CARRIED_BUILDING|TF_CUSTOM_COMBO_PUNCH|TF_CUSTOM_TAUNT_ENGINEER_ARM|TF_CUSTOM_FISH_KILL|TF_CUSTOM_TRIGGER_HURT|TF_CUSTOM_DECAPITATION_BOSS|TF_CUSTOM_STICKBOMB_EXPLOSION|TF_CUSTOM_AEGIS_ROUND|TF_CUSTOM_FLARE_EXPLOSION|TF_CUSTOM_BOOTS_STOMP|TF_CUSTOM_PLASMA|TF_CUSTOM_PLASMA_CHARGED|TF_CUSTOM_PLASMA_GIB|TF_CUSTOM_PRACTICE_STICKY|TF_CUSTOM_EYEBALL_ROCKET|TF_CUSTOM_HEADSHOT_DECAPITATION|TF_CUSTOM_TAUNT_ARMAGEDDON|TF_CUSTOM_FLARE_PELLET|TF_CUSTOM_CLEAVER|TF_CUSTOM_CLEAVER_CRIT|TF_CUSTOM_SAPPER_RECORDER_DEATH|TF_CUSTOM_MERASMUS_PLAYER_BOMB|TF_CUSTOM_MERASMUS_GRENADE|TF_CUSTOM_MERASMUS_ZAP|TF_CUSTOM_MERASMUS_DECAPITATION|TF_CUSTOM_CANNONBALL_PUSH|TF_CUSTOM_TAUNT_ALLCLASS_GUITAR_RIFF|TF_CUSTOM_THROWABLE|TF_CUSTOM_THROWABLE_KILL|TF_CUSTOM_SPELL_TELEPORT|TF_CUSTOM_SPELL_SKELETON|TF_CUSTOM_SPELL_MIRV|TF_CUSTOM_SPELL_METEOR|TF_CUSTOM_SPELL_LIGHTNING|TF_CUSTOM_SPELL_FIREBALL|TF_CUSTOM_SPELL_MONOCULUS|TF_CUSTOM_SPELL_BLASTJUMP|TF_CUSTOM_SPELL_BATS|TF_CUSTOM_SPELL_TINY|TF_CUSTOM_KART|TF_CUSTOM_GIANT_HAMMER|TF_CUSTOM_RUNE_REFLECT)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum TF_WeaponCodes",
+					"match": "\\b(TF_WEAPON_NONE|TF_WEAPON_BAT|TF_WEAPON_BAT_WOOD|TF_WEAPON_BOTTLE|TF_WEAPON_FIREAXE|TF_WEAPON_CLUB|TF_WEAPON_CROWBAR|TF_WEAPON_KNIFE|TF_WEAPON_FISTS|TF_WEAPON_SHOVEL|TF_WEAPON_WRENCH|TF_WEAPON_BONESAW|TF_WEAPON_SHOTGUN_PRIMARY|TF_WEAPON_SHOTGUN_SOLDIER|TF_WEAPON_SHOTGUN_HWG|TF_WEAPON_SHOTGUN_PYRO|TF_WEAPON_SCATTERGUN|TF_WEAPON_SNIPERRIFLE|TF_WEAPON_MINIGUN|TF_WEAPON_SMG|TF_WEAPON_SYRINGEGUN_MEDIC|TF_WEAPON_TRANQ|TF_WEAPON_ROCKETLAUNCHER|TF_WEAPON_GRENADELAUNCHER|TF_WEAPON_PIPEBOMBLAUNCHER|TF_WEAPON_FLAMETHROWER|TF_WEAPON_GRENADE_NORMAL|TF_WEAPON_GRENADE_CONCUSSION|TF_WEAPON_GRENADE_NAIL|TF_WEAPON_GRENADE_MIRV|TF_WEAPON_GRENADE_MIRV_DEMOMAN|TF_WEAPON_GRENADE_NAPALM|TF_WEAPON_GRENADE_GAS|TF_WEAPON_GRENADE_EMP|TF_WEAPON_GRENADE_CALTROP|TF_WEAPON_GRENADE_PIPEBOMB|TF_WEAPON_GRENADE_SMOKE_BOMB|TF_WEAPON_GRENADE_HEAL|TF_WEAPON_GRENADE_STUNBALL|TF_WEAPON_GRENADE_JAR|TF_WEAPON_GRENADE_JAR_MILK|TF_WEAPON_PISTOL|TF_WEAPON_PISTOL_SCOUT|TF_WEAPON_REVOLVER|TF_WEAPON_NAILGUN|TF_WEAPON_PDA|TF_WEAPON_PDA_ENGINEER_BUILD|TF_WEAPON_PDA_ENGINEER_DESTROY|TF_WEAPON_PDA_SPY|TF_WEAPON_BUILDER|TF_WEAPON_MEDIGUN|TF_WEAPON_GRENADE_MIRVBOMB|TF_WEAPON_FLAMETHROWER_ROCKET|TF_WEAPON_GRENADE_DEMOMAN|TF_WEAPON_SENTRY_BULLET|TF_WEAPON_SENTRY_ROCKET|TF_WEAPON_DISPENSER|TF_WEAPON_INVIS|TF_WEAPON_FLAREGUN|TF_WEAPON_LUNCHBOX|TF_WEAPON_JAR|TF_WEAPON_COMPOUND_BOW|TF_WEAPON_BUFF_ITEM|TF_WEAPON_PUMPKIN_BOMB|TF_WEAPON_SWORD|TF_WEAPON_DIRECTHIT|TF_WEAPON_LIFELINE|TF_WEAPON_LASER_POINTER|TF_WEAPON_DISPENSER_GUN|TF_WEAPON_SENTRY_REVENGE|TF_WEAPON_JAR_MILK|TF_WEAPON_HANDGUN_SCOUT_PRIMARY|TF_WEAPON_BAT_FISH|TF_WEAPON_CROSSBOW|TF_WEAPON_STICKBOMB|TF_WEAPON_HANDGUN_SCOUT_SEC|TF_WEAPON_SODA_POPPER|TF_WEAPON_SNIPERRIFLE_DECAP|TF_WEAPON_RAYGUN|TF_WEAPON_PARTICLE_CANNON|TF_WEAPON_MECHANICAL_ARM|TF_WEAPON_DRG_POMSON|TF_WEAPON_BAT_GIFTWRAP|TF_WEAPON_GRENADE_ORNAMENT|TF_WEAPON_RAYGUN_REVENGE|TF_WEAPON_PEP_BRAWLER_BLASTER|TF_WEAPON_CLEAVER|TF_WEAPON_GRENADE_CLEAVER|TF_WEAPON_STICKY_BALL_LAUNCHER|TF_WEAPON_GRENADE_STICKY_BALL|TF_WEAPON_SHOTGUN_BUILDING_RESCUE|TF_WEAPON_CANNON|TF_WEAPON_THROWABLE|TF_WEAPON_GRENADE_THROWABLE|TF_WEAPON_PDA_SPY_BUILD|TF_WEAPON_GRENADE_WATERBALLOON|TF_WEAPON_HARVESTER_SAW|TF_WEAPON_SPELLBOOK|TF_WEAPON_SPELLBOOK_PROJECTILE|TF_WEAPON_SNIPERRIFLE_CLASSIC|TF_WEAPON_PARACHUTE|TF_WEAPON_GRAPPLINGHOOK|TF_WEAPON_PASSTIME_GUN|TF_WEAPON_CHARGED_SMG)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum TFWeaponSlot",
+					"match": "\\b(TFWeaponSlot_Primary|TFWeaponSlot_Secondary|TFWeaponSlot_Melee|TFWeaponSlot_Grenade|TFWeaponSlot_Building|TFWeaponSlot_PDA|TFWeaponSlot_Item1|TFWeaponSlot_Item2)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum TF_FlagEvent",
+					"match": "\\b(TF_FLAGEVENT_PICKEDUP|TF_FLAGEVENT_CAPTURED|TF_FLAGEVENT_DEFENDED|TF_FLAGEVENT_DROPPED|TF_FLAGEVENT_RETURNED)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum TFResourceType",
+					"match": "\\b(TFResource_Ping|TFResource_Score|TFResource_Deaths|TFResource_TotalScore|TFResource_Captures|TFResource_Defenses|TFResource_Dominations|TFResource_Revenge|TFResource_BuildingsDestroyed|TFResource_Headshots|TFResource_Backstabs|TFResource_HealPoints|TFResource_Invulns|TFResource_Teleports|TFResource_ResupplyPoints|TFResource_KillAssists|TFResource_MaxHealth|TFResource_PlayerClass)\\b",
+					"name": "support.constant.core.sourcepawn"
+				},
+				{
+					"comment": "Enum UserMessageType",
+					"match": "\\b(UM_BitBuf|UM_Protobuf)\\b",
 					"name": "support.constant.core.sourcepawn"
 				},
 				{
@@ -258,7 +695,7 @@
 				},
 				{
 					"comment": "Enum RayType",
-					"match": "\\b(RayType_Infinite|RayType_Endpoint)\\b",
+					"match": "\\b(RayType_Infinite|RayType_EndPoint)\\b",
 					"name": "support.constant.core.sourcepawn"
 				},
 				{
@@ -308,7 +745,7 @@
 				},
 				{
 					"comment": "Enum TFCond",
-					"match": "\\b(TFCond_Slowed|TFCond_Zoomed|TFCond_Disguising|TFCond_Disguised|TFCond_Cloaked|TFCond_Ubercharged|TFCond_TeleportedGlow|TFCond_Taunting|TFCond_UberchargeFading|TFCond_Unknown1|TFCond_CloakFlicker|TFCond_Teleporting|TFCond_Kritzkrieged|TFCond_Unknown2|TFCond_TmpDamageBonus|TFCond_DeadRingered|TFCond_Bonked|TFCond_Dazed|TFCond_Buffed|TFCond_Charging|TFCond_DemoBuff|TFCond_CritCola|TFCond_InHealRadius|TFCond_Healing|TFCond_OnFire|TFCond_Overhealed|TFCond_Jarated|TFCond_Bleeding|TFCond_DefenseBuffed|TFCond_Milked|TFCond_MegaHeal|TFCond_RegenBuffed|TFCond_MarkedForDeath|TFCond_NoHealingDamageBuff|TFCond_SpeedBuffAlly|TFCond_HalloweenCritCandy|TFCond_CritCanteen|TFCond_CritDemoCharge|TFCond_CritHype|TFCond_CritOnFirstBlood|TFCond_CritOnWin|TFCond_CritOnFlagCapture|TFCond_CritOnKill|TFCond_RestrictToMelee|TFCond_DefenseBuffNoCritBlock|TFCond_Reprogrammed|TFCond_CritMmmph|TFCond_DefenseBuffMmmph|TFCond_FocusBuff|TFCond_DisguiseRemoved|TFCond_MarkedForDeathSilent|TFCond_DisguisedAsDispenser|TFCond_Sapped|TFCond_UberchargedHidden|TFCond_UberchargedCanteen|TFCond_HalloweenBombHead|TFCond_HalloweenThriller|TFCond_RadiusHealOnDamage|TFCond_CritOnDamage|TFCond_UberchargedOnTakeDamage|TFCond_UberBulletResist|TFCond_UberBlastResist|TFCond_UberFireResist|TFCond_SmallBulletResist|TFCond_SmallBlastResist|TFCond_SmallFireResist|TFCond_Stealthed|TFCond_MedigunDebuff|TFCond_StealthedUserBuffFade|TFCond_BulletImmune|TFCond_BlastImmune|TFCond_FireImmune|TFCond_PreventDeath|TFCond_MVMBotRadiowave|TFCond_HalloweenSpeedBoost|TFCond_HalloweenQuickHeal|TFCond_HalloweenGiant|TFCond_HalloweenTiny|TFCond_HalloweenInHell|TFCond_HalloweenGhostMode|TFCond_DodgeChance|TFCond_Parachute|TFCond_BlastJumping|TFCond_HalloweenKart|TFCond_HalloweenKartDash|TFCond_BalloonHead|TFCond_MeleeOnly|TFCond_SwimmingCurse|TFCond_HalloweenKartNoTurn|TFCond_HalloweenKartCage|TFCond_HasRune|TFCond_RuneStrength|TFCond_RuneHaste|TFCond_RuneRegen|TFCond_RuneResist|TFCond_RuneVampire|TFCond_RuneWarlock|TFCond_RunePrecision|TFCond_RuneAgility|TFCond_MiniCritOnKill|TFCond_ObscuredSmoke|TFCond_FreezeInput|TFCond_GrapplingHook|TFCond_GrapplingHookSafeFall|TFCond_GrapplingHookLatched|TFCond_GrapplingHookBleeding|TFCond_AfterburnImmune|TFCond_RuneKnockout|TFCond_RuneImbalance|TFCond_CritRuneTemp|TFCond_PasstimeInterception|TFCond_SwimmingNoEffects|TFCond_EyeaductUnderworld|TFCond_KingRune|TFCond_PlagueRune|TFCond_SupernovaRune|TFCond_Plague|TFCond_KingAura|TFCond_SpawnOutline|TFCond_KnockedIntoAir|TFCond_CompetitiveWinner|TFCond_CompetitiveLoser|TFCond_NoTaunting)\\b",
+					"match": "\\b(TFCond_Slowed|TFCond_Zoomed|TFCond_Disguising|TFCond_Disguised|TFCond_Cloaked|TFCond_Ubercharged|TFCond_TeleportedGlow|TFCond_Taunting|TFCond_UberchargeFading|TFCond_Unknown1|TFCond_CloakFlicker|TFCond_Teleporting|TFCond_Kritzkrieged|TFCond_Unknown2|TFCond_TmpDamageBonus|TFCond_DeadRingered|TFCond_Bonked|TFCond_Dazed|TFCond_Buffed|TFCond_Charging|TFCond_DemoBuff|TFCond_CritCola|TFCond_InHealRadius|TFCond_Healing|TFCond_OnFire|TFCond_Overhealed|TFCond_Jarated|TFCond_Bleeding|TFCond_DefenseBuffed|TFCond_Milked|TFCond_MegaHeal|TFCond_RegenBuffed|TFCond_MarkedForDeath|TFCond_NoHealingDamageBuff|TFCond_SpeedBuffAlly|TFCond_HalloweenCritCandy|TFCond_CritCanteen|TFCond_CritDemoCharge|TFCond_CritHype|TFCond_CritOnFirstBlood|TFCond_CritOnWin|TFCond_CritOnFlagCapture|TFCond_CritOnKill|TFCond_RestrictToMelee|TFCond_DefenseBuffNoCritBlock|TFCond_Reprogrammed|TFCond_CritMmmph|TFCond_DefenseBuffMmmph|TFCond_FocusBuff|TFCond_DisguiseRemoved|TFCond_MarkedForDeathSilent|TFCond_DisguisedAsDispenser|TFCond_Sapped|TFCond_UberchargedHidden|TFCond_UberchargedCanteen|TFCond_HalloweenBombHead|TFCond_HalloweenThriller|TFCond_RadiusHealOnDamage|TFCond_CritOnDamage|TFCond_UberchargedOnTakeDamage|TFCond_UberBulletResist|TFCond_UberBlastResist|TFCond_UberFireResist|TFCond_SmallBulletResist|TFCond_SmallBlastResist|TFCond_SmallFireResist|TFCond_Stealthed|TFCond_MedigunDebuff|TFCond_StealthedUserBuffFade|TFCond_BulletImmune|TFCond_BlastImmune|TFCond_FireImmune|TFCond_PreventDeath|TFCond_MVMBotRadiowave|TFCond_HalloweenSpeedBoost|TFCond_HalloweenQuickHeal|TFCond_HalloweenGiant|TFCond_HalloweenTiny|TFCond_HalloweenInHell|TFCond_HalloweenGhostMode|TFCond_DodgeChance|TFCond_Parachute|TFCond_BlastJumping|TFCond_HalloweenKart|TFCond_HalloweenKartDash|TFCond_BalloonHead|TFCond_MeleeOnly|TFCond_SwimmingCurse|TFCond_HalloweenKartNoTurn|TFCond_HalloweenKartCage|TFCond_HasRune|TFCond_RuneStrength|TFCond_RuneHaste|TFCond_RuneRegen|TFCond_RuneResist|TFCond_RuneVampire|TFCond_RuneWarlock|TFCond_RunePrecision|TFCond_RuneAgility|TFCond_MiniCritOnKill|TFCond_ObscuredSmoke|TFCond_FreezeInput|TFCond_GrapplingHook|TFCond_GrapplingHookSafeFall|TFCond_GrapplingHookLatched|TFCond_GrapplingHookBleeding|TFCond_AfterburnImmune|TFCond_RuneKnockout|TFCond_RuneImbalance|TFCond_CritRuneTemp|TFCond_PasstimeInterception|TFCond_SwimmingNoEffects|TFCond_EyeaductUnderworld|TFCond_KingRune|TFCond_PlagueRune|TFCond_SupernovaRune|TFCond_Plague|TFCond_KingAura|TFCond_SpawnOutline|TFCond_KnockedIntoAir|TFCond_CompetitiveWinner|TFCond_CompetitiveLoser|TFCond_NoTaunting|TFCondDuration_Infinite)\\b",
 					"name": "support.constant.core.sourcepawn"
 				},
 				{
