@@ -45,7 +45,7 @@
 		},
 		{
 			"comment": "Core types",
-			"match": "\\b(bool|char|const|float|int|void)\\b",
+			"match": "\\b(bool|char|const|float|int|void|any)\\b",
 			"name": "support.type.core.sourcepawn"
 		},
 		{
