@@ -39,7 +39,7 @@
 		},
 		{
 			"comment": "Misc types",
-			"match": "#(endif|if|pragma|undef|endinput)",
+			"match": "#(if|else|endif|pragma|undef|endinput|endscript|assert|define|error|warning|file)",
 			"name": "keyword.other.sourcepawn"
 		},
 		{
@@ -57,6 +57,16 @@
 			}
 		},
 		{
+			"comment": "Brackets array",
+			"match": "\\b\\[[A-Za-z_][A-Za-z0-9_]]\\b",
+			"name": "meta.brackets.sourcepawn"
+		},
+		{
+			"comment": "Float literal",
+			"match": "\\b[0-9]+\\.[0-9]+\\b",
+			"name": "constant.numeric.float.sourcepawn"
+		},
+		{
 			"comment": "Integer literal",
 			"match": "\\b[0-9]+\\b",
 			"name": "constant.numeric.integer.sourcepawn"
@@ -72,11 +82,6 @@
 			"name": "constant.numeric.sourcepawn"
 		},
 		{
-			"comment": "Float literal",
-			"match": "\\b[0-9]+\\.[0-9]+\\b",
-			"name": "constant.numeric.float.sourcepawn"
-		},
-		{
 			"comment": "Boolean literal",
 			"match": "\\b(true|false)\\b",
 			"name": "constant.language.boolean.sourcepawn"
@@ -85,6 +90,11 @@
 	"repository": {
 		"keywords": {
 			"patterns": [
+				{
+					"comment": "Operator",
+					"name": "keyword.operator.sourcepawn",
+					"match": "%|&|\\*|\\-|\\+|~|=|<|>|!|\\||\\?|\\:|\\^"
+				},
 				{
 					"comment": "Control statements",
 					"name": "keyword.control.statement.sourcepawn",
@@ -161,7 +171,7 @@
 				},
 				{
 					"comment": "Built in classes",
-					"match": "\\b(Plugin|Handle|ConVar|Database|DBDriver|DBResultSet|DBStatement|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu|Timer)\\b",
+					"match": "\\b(Plugin|Handle|ConVar|Cookie|Database|DBDriver|DBResultSet|DBStatement|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu|Timer|FrameIterator|GlobalForward|PrivateForward)\\b",
 					"name": "support.type.core.sourcepawn"
 				}
 			]
@@ -704,7 +714,7 @@
 				},
 				{
 					"comment": "Enum CSWeaponID",
-					"match": "\\b(CSWeapon_NONE|CSWeapon_P228|CSWeapon_GLOCK|CSWeapon_SCOUT|CSWeapon_HEGRENADE|CSWeapon_XM1014|CSWeapon_C4|CSWeapon_MAC10|CSWeapon_AUG|CSWeapon_SMOKEGRENADE|CSWeapon_ELITE|CSWeapon_FIVESEVEN|CSWeapon_UMP45|CSWeapon_SG550|CSWeapon_GALIL|CSWeapon_FAMAS|CSWeapon_USP|CSWeapon_AWP|CSWeapon_MP5NAVY|CSWeapon_M249|CSWeapon_M3|CSWeapon_M4A1|CSWeapon_TMP|CSWeapon_G3SG1|CSWeapon_FLASHBANG|CSWeapon_DEAGLE|CSWeapon_SG552|CSWeapon_AK47|CSWeapon_KNIFE|CSWeapon_P90|CSWeapon_SHIELD|CSWeapon_KEVLAR|CSWeapon_ASSAULTSUIT|CSWeapon_NIGHTVISION|CSWeapon_GALILAR|CSWeapon_BIZON|CSWeapon_MAG7|CSWeapon_NEGEV|CSWeapon_SAWEDOFF|CSWeapon_TEC9|CSWeapon_TASER|CSWeapon_HKP2000|CSWeapon_MP7|CSWeapon_MP9|CSWeapon_NOVA|CSWeapon_P250|CSWeapon_SCAR17|CSWeapon_SCAR20|CSWeapon_SG556|CSWeapon_SSG08|CSWeapon_KNIFE_GG|CSWeapon_MOLOTOV|CSWeapon_DECOY|CSWeapon_INCGRENADE|CSWeapon_DEFUSER)\\b",
+					"match": "\\b(CSWeapon_NONE|CSWeapon_P228|CSWeapon_GLOCK|CSWeapon_SCOUT|CSWeapon_HEGRENADE|CSWeapon_XM1014|CSWeapon_C4|CSWeapon_MAC10|CSWeapon_AUG|CSWeapon_SMOKEGRENADE|CSWeapon_ELITE|CSWeapon_FIVESEVEN|CSWeapon_UMP45|CSWeapon_SG550|CSWeapon_GALIL|CSWeapon_FAMAS|CSWeapon_USP|CSWeapon_AWP|CSWeapon_MP5NAVY|CSWeapon_M249|CSWeapon_M3|CSWeapon_M4A1|CSWeapon_TMP|CSWeapon_G3SG1|CSWeapon_FLASHBANG|CSWeapon_DEAGLE|CSWeapon_SG552|CSWeapon_AK47|CSWeapon_KNIFE|CSWeapon_P90|CSWeapon_SHIELD|CSWeapon_KEVLAR|CSWeapon_ASSAULTSUIT|CSWeapon_NIGHTVISION|CSWeapon_GALILAR|CSWeapon_BIZON|CSWeapon_MAG7|CSWeapon_NEGEV|CSWeapon_SAWEDOFF|CSWeapon_TEC9|CSWeapon_TASER|CSWeapon_HKP2000|CSWeapon_MP7|CSWeapon_MP9|CSWeapon_NOVA|CSWeapon_P250|CSWeapon_SCAR17|CSWeapon_SCAR20|CSWeapon_SG556|CSWeapon_SSG08|CSWeapon_KNIFE_GG|CSWeapon_MOLOTOV|CSWeapon_DECOY|CSWeapon_INCGRENADE|CSWeapon_DEFUSER|CSWeapon_HEAVYASSAULTSUIT|CSWeapon_CUTTERS|CSWeapon_HEALTHSHOT|CSWeapon_KNIFE_T|CSWeapon_M4A1_SILENCER|CSWeapon_USP_SILENCER|CSWeapon_CZ75A|CSWeapon_REVOLVER|CSWeapon_TAGGRENADE|CSWeapon_FISTS|CSWeapon_BREACHCHARGE|CSWeapon_TABLET|CSWeapon_MELEE|CSWeapon_AXE|CSWeapon_HAMMER|CSWeapon_SPANNER|CSWeapon_KNIFE_GHOST|CSWeapon_FIREBOMB|CSWeapon_DIVERSION|CSWeapon_FRAGGRENADE|CSWeapon_SNOWBALL|CSWeapon_MAX_WEAPONS_NO_KNIFESCSWeapon_BAYONET|CSWeapon_KNIFE_FLIP|CSWeapon_KNIFE_GUT|CSWeapon_KNIFE_KARAMBIT|CSWeapon_KNIFE_M9_BAYONET|CSWeapon_KNIFE_TATICAL|CSWeapon_KNIFE_FALCHION|CSWeapon_KNIFE_SURVIVAL_BOWIE|CSWeapon_KNIFE_BUTTERFLY|CSWeapon_KNIFE_PUSH|CSWeapon_KNIFE_URSUS|CSWeapon_KNIFE_GYPSY_JACKKNIFE|CSWeapon_KNIFE_STILETTO|CSWeapon_KNIFE_WIDOWMAKER|CSWeapon_MAX_WEAPONS)\\b",
 					"name": "support.constant.core.sourcepawn"
 				},
 				{
