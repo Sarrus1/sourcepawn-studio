@@ -39,7 +39,7 @@
 		},
 		{
 			"comment": "Misc types",
-			"match": "#(if|else|endif|pragma|undef|endinput|endscript|assert|define|error|warning|file)",
+			"match": "#(if|else|endif|pragma|deprecated|undef|endinput|endscript|assert|define|error|warning|file)",
 			"name": "keyword.other.sourcepawn"
 		},
 		{
@@ -171,7 +171,7 @@
 				},
 				{
 					"comment": "Built in classes",
-					"match": "\\b(Plugin|Handle|ConVar|Cookie|Database|DBDriver|DBResultSet|DBStatement|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu|Timer|FrameIterator|GlobalForward|PrivateForward)\\b",
+					"match": "\\b(Plugin|Handle|ConVar|Cookie|Database|DBDriver|DBResultSet|DBStatement|GameData|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu|Timer|FrameIterator|GlobalForward|PrivateForward|Profiler)\\b",
 					"name": "support.type.core.sourcepawn"
 				}
 			]
