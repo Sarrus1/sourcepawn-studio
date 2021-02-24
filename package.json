@@ -60,6 +60,12 @@
                 "scopeName": "source.sourcepawn",
                 "path": "./syntaxes/sourcepawn.tmLanguage.json"
             }
+        ],
+        "snippets": [
+            {
+              "language": "sourcepawn",
+              "path": "./snippets/snippets.json"
+            }
         ]
     },
     "dependencies": {
