@@ -1,7 +1,9 @@
 import { 
-    IPCMessageReader, IPCMessageWriter ,IConnection, createConnection,
+    IPCMessageReader, IPCMessageWriter, createConnection,
     TextDocuments, CompletionItemKind, CompletionItem, TextDocumentSyncKind
 } from "vscode-languageserver";
+
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import * as glob from 'glob';
 import * as path from 'path';
@@ -10,7 +12,7 @@ import { Completion, CompletionRepository } from './completions';
 import { parse_file } from './parser';
 
 let connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
-let documents = new TextDocuments();
+let documents: TextDocuments = new TextDocuments();
 documents.listen(connection);
 
 let completions = new CompletionRepository(documents);

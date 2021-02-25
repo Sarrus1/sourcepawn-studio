@@ -2,13 +2,13 @@ import {
     CompletionItemKind, CompletionItem, TextDocumentPositionParams, SignatureHelp, SignatureInformation, TextDocuments,
     TextDocumentChangeEvent, Files
 } from 'vscode-languageserver';
-
 import { parse_blob, parse_file } from './parser';
 
 import * as glob from 'glob';
 import * as path from 'path';
-import Uri from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import * as fs from 'fs';
+import { TextDocument } from 'vscode';
 
 export interface Completion {
     name: string;
@@ -153,10 +153,10 @@ export class FileCompletions {
 
             let inc_file = path.resolve(base_directory, uri);
             if (fs.existsSync(inc_file)) {
-                uri = Uri.file(inc_file).toString();
+                uri = URI.file(inc_file).toString();
                 this.add_include(uri);
             } else {
-                uri = Uri.file(path.resolve(file + ".sp")).toString();
+                uri = URI.file(path.resolve(file + ".sp")).toString();
                 this.add_include(uri);
             }
         }
@@ -202,7 +202,7 @@ export class CompletionRepository {
     parse_sm_api(sourcemod_home: string) {
         glob(path.join(sourcemod_home, '**/*.inc'), (err, files) => {
             for (let file of files) {
-                let completions = new FileCompletions(Uri.file(file).toString());
+                let completions = new FileCompletions(URI.file(file).toString());
                 parse_file(file, completions);
 
                 let uri = "file://__sourcemod_builtin/" + path.relative(sourcemod_home, file);
@@ -241,7 +241,7 @@ export class CompletionRepository {
     get_all_completions(file: string): Completion[] {
         let completions = this.completions.get(file);
 
-        let includes = new Set();
+        let includes = new Set<string>();
         this.get_included_files(completions, includes);
 
         return [...includes].map((file) => {
