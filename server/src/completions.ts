@@ -1,14 +1,16 @@
 import { 
     CompletionItemKind, CompletionItem, TextDocumentPositionParams, SignatureHelp, SignatureInformation, TextDocuments,
-    TextDocumentChangeEvent, Files
-} from 'vscode-languageserver';
+    TextDocumentChangeEvent
+} from 'vscode-languageserver/node';
 import { parse_blob, parse_file } from './parser';
+import {
+	TextDocument
+} from 'vscode-languageserver-textdocument';
 
 import * as glob from 'glob';
 import * as path from 'path';
-import { URI } from 'vscode-uri';
+import  { URI } from 'vscode-uri';
 import * as fs from 'fs';
-import { TextDocument } from 'vscode';
 
 export interface Completion {
     name: string;
@@ -148,7 +150,7 @@ export class FileCompletions {
             uri = "file://__sourcemod_builtin/" + uri;
             this.add_include(uri);
         } else {
-            let base_file = Files.uriToFilePath(this.uri);
+            let base_file = URI.parse(this.uri).fsPath; 
             let base_directory = path.dirname(base_file);
 
             let inc_file = path.resolve(base_directory, uri);
@@ -165,17 +167,16 @@ export class FileCompletions {
 
 export class CompletionRepository {
     completions: Map<string, FileCompletions>;
-    documents: TextDocuments;
+    documents: TextDocuments<TextDocument>;
 
-    constructor(documents: TextDocuments) {
+    constructor(documents: TextDocuments<TextDocument>) {
         this.completions = new Map();
         this.documents = documents;
-
         documents.onDidOpen(this.handle_document_change.bind(this));
         documents.onDidChangeContent(this.handle_document_change.bind(this));
     }
 
-    handle_document_change(event: TextDocumentChangeEvent) {
+    handle_document_change(event: TextDocumentChangeEvent<TextDocument>) {
         let completions = new FileCompletions(event.document.uri);
         parse_blob(event.document.getText(), completions);
 
@@ -188,7 +189,8 @@ export class CompletionRepository {
         for (let import_file of completions.includes) {
             let completion = this.completions.get(import_file);
             if (!completion) {
-                let file = Files.uriToFilePath(import_file);
+                
+                let file = URI.parse(import_file).fsPath; 
                 let new_completions = new FileCompletions(import_file);
                 parse_file(file, new_completions);
 
@@ -212,11 +214,17 @@ export class CompletionRepository {
     }
 
     get_completions(position: TextDocumentPositionParams): CompletionItem[] {
+        let Document = this.documents.get("file://c:/Users/Charles/CloudStation/Documents/Perso/Dev/AssaultSuitGiver/scripting/AssaultSuitGiver.sp");
+        if(Document){
+            console.error("test");
+        }
         let document = this.documents.get(position.textDocument.uri);
+        console.error(position.textDocument.uri);
         let is_method = false;
         if (document) {
             let line = document.getText().split("\n")[position.position.line].trim();
             for (let i = line.length - 2; i >= 0; i--) {
+                console.error("test2");
                 if (line[i].match(/[a-zA-Z0-9_]/)) {
                     continue;
                 }
@@ -230,7 +238,7 @@ export class CompletionRepository {
             }
         }
         let all_completions = this.get_all_completions(position.textDocument.uri).map((completion) => completion.to_completion_item());
-    
+        console.error("test3");
         if (is_method) {
             return all_completions.filter(completion => completion.kind === CompletionItemKind.Method);
         } else {

@@ -1,18 +1,16 @@
+import {
+	TextDocument
+} from 'vscode-languageserver-textdocument';
 import { 
-    IPCMessageReader, IPCMessageWriter, createConnection,
-    TextDocuments, CompletionItemKind, CompletionItem, TextDocumentSyncKind
-} from "vscode-languageserver";
+    createConnection,
+    TextDocuments,
+    TextDocumentSyncKind,
+    ProposedFeatures
+} from "vscode-languageserver/node";
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
-
-import * as glob from 'glob';
-import * as path from 'path';
-
-import { Completion, CompletionRepository } from './completions';
-import { parse_file } from './parser';
-
-let connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
-let documents: TextDocuments = new TextDocuments();
+import { CompletionRepository } from './completions';
+let connection = createConnection(ProposedFeatures.all);
+let documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 documents.listen(connection);
 
 let completions = new CompletionRepository(documents);
@@ -20,11 +18,11 @@ let completions = new CompletionRepository(documents);
 let workspaceRoot: string;
 
 connection.onInitialize((params) => {
-    workspaceRoot = params.rootPath;
+    workspaceRoot = params.rootUri;
 
     return {
         capabilities: {
-            textDocumentSync: documents.syncKind,
+            textDocumentSync: TextDocumentSyncKind.Full,
             completionProvider: {
                 resolveProvider: false
             },

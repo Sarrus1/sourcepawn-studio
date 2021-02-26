@@ -120,7 +120,7 @@
 				{
 					"comment": "keywords",
 					"name": "keyword.sourcepawn",
-					"match": "\\b(?:return|break|continue|new|any|static|decl|delete|forward|native|property|public|stock|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)\\b"
+					"match": "\\b(?:return|break|continue|new|static|decl|delete|forward|native|property|public|stock|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)\\b"
 				}
 			]
 		},
