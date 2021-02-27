@@ -69,9 +69,9 @@
         ]
     },
     "dependencies": {
+        "@types/vscode": "^1.53.0",
         "glob": "^7.1.2",
         "supports-color": "^8.1.1",
-        "@types/vscode": "^1.53.0",
         "vscode-languageclient": "^7.0.0",
         "vscode-languageserver-textdocument": "^1.0.1"
     },

@@ -54,7 +54,8 @@ class Parser {
 
         match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/]+)>\s*$/);
         if (match) {
-            this.completions.resolve_import(match[1]);
+            
+            this.completions.resolve_import(match[1], false);
             return this.parse();
         }
 
@@ -180,10 +181,10 @@ class Parser {
         let match = line.match(/\s*(?:(?:static|native|stock|public)+\s*)+\s+([^\s]+)\s*([A-Za-z_].*)/);
         if (match) {
             let {description, params} = this.parse_doc_comment();
-
             let name_match = match[2].match(/^([A-Za-z_][A-Za-z0-9_]*)/);
             if (this.state[this.state.length - 1] === State.Methodmap) {
                 this.completions.add(name_match[1], new MethodCompletion(this.state_data.name, name_match[1], match[2], description, params))
+                
             } else {
                 this.completions.add(name_match[1], new FunctionCompletion(name_match[1], match[2], description, params));
             }

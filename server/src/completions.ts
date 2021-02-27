@@ -146,6 +146,7 @@ export class FileCompletions {
 
     resolve_import(file: string, relative: boolean = false) {
         let uri = file + ".inc";
+        console.debug("The file name", uri);
         if (!relative) {
             uri = "file://__sourcemod_builtin/" + uri;
             this.add_include(uri);
@@ -182,6 +183,8 @@ export class CompletionRepository {
 
         this.read_unscanned_imports(completions);
 
+        console.debug("Document changed", completions);
+
         this.completions.set(event.document.uri, completions);
     }
 
@@ -202,8 +205,11 @@ export class CompletionRepository {
     }
 
     parse_sm_api(sourcemod_home: string) {
+        sourcemod_home = "C:\\Users\\Charles\\CloudStation\\Documents\\Perso\\Dev\\sourcemod\\addons\\sourcemod\\scripting\\include";
+        console.debug("parsing sourcemod", sourcemod_home);
         glob(path.join(sourcemod_home, '**/*.inc'), (err, files) => {
             for (let file of files) {
+                
                 let completions = new FileCompletions(URI.file(file).toString());
                 parse_file(file, completions);
 
@@ -214,17 +220,11 @@ export class CompletionRepository {
     }
 
     get_completions(position: TextDocumentPositionParams): CompletionItem[] {
-        let Document = this.documents.get("file://c:/Users/Charles/CloudStation/Documents/Perso/Dev/AssaultSuitGiver/scripting/AssaultSuitGiver.sp");
-        if(Document){
-            console.error("test");
-        }
         let document = this.documents.get(position.textDocument.uri);
-        console.error(position.textDocument.uri);
         let is_method = false;
         if (document) {
             let line = document.getText().split("\n")[position.position.line].trim();
             for (let i = line.length - 2; i >= 0; i--) {
-                console.error("test2");
                 if (line[i].match(/[a-zA-Z0-9_]/)) {
                     continue;
                 }
@@ -238,7 +238,6 @@ export class CompletionRepository {
             }
         }
         let all_completions = this.get_all_completions(position.textDocument.uri).map((completion) => completion.to_completion_item());
-        console.error("test3");
         if (is_method) {
             return all_completions.filter(completion => completion.kind === CompletionItemKind.Method);
         } else {
@@ -258,8 +257,10 @@ export class CompletionRepository {
     }
 
     get_file_completions(file: string): Completion[] {
+        console.debug("trying to get ", URI.parse(file).fsPath);
         let completions = this.completions.get(file);
         if (completions) {
+            console.debug("file", file, "  completion", completions);
             return completions.get_completions(this);
         }
         

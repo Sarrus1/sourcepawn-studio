@@ -8,7 +8,10 @@ import {
     ProposedFeatures
 } from "vscode-languageserver/node";
 
+//import { workspace as Workspace } from 'vscode';
 import { CompletionRepository } from './completions';
+import {sm_home} from '../../index'
+//let sm_home: string = Workspace.getConfiguration("sourcepawnLanguageServer").get("sourcemod_home");
 let connection = createConnection(ProposedFeatures.all);
 let documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 documents.listen(connection);
@@ -18,8 +21,8 @@ let completions = new CompletionRepository(documents);
 let workspaceRoot: string;
 
 connection.onInitialize((params) => {
-    workspaceRoot = params.rootUri;
-
+    workspaceRoot = params.workspaceFolders[0].uri;
+    init_parse_sm_api(sm_home);
     return {
         capabilities: {
             textDocumentSync: TextDocumentSyncKind.Full,
@@ -33,11 +36,16 @@ connection.onInitialize((params) => {
     };
 });
 
-connection.onDidChangeConfiguration((change) => {
-    let sm_home = change.settings.sourcepawnLanguageServer.sourcemod_home;
+
+function init_parse_sm_api(sm_home: string) {
     if (sm_home) {
         completions.parse_sm_api(sm_home);
     }
+}
+
+connection.onDidChangeConfiguration((change) => {
+    let sm_home = change.settings.sourcepawnLanguageServer.sourcemod_home;
+    init_parse_sm_api(sm_home);
 })
 
 connection.onCompletion((textDocumentPosition) => {
