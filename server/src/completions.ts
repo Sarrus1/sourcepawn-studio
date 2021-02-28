@@ -205,7 +205,7 @@ export class CompletionRepository {
     }
 
     parse_sm_api(sourcemod_home: string) {
-        sourcemod_home = "C:\\Users\\Charles\\CloudStation\\Documents\\Perso\\Dev\\sourcemod\\addons\\sourcemod\\scripting\\include";
+        //sourcemod_home = "C:\\Users\\Charles\\CloudStation\\Documents\\Perso\\Dev\\sourcemod\\addons\\sourcemod\\scripting\\include";
         console.debug("parsing sourcemod", sourcemod_home);
         glob(path.join(sourcemod_home, '**/*.inc'), (err, files) => {
             for (let file of files) {

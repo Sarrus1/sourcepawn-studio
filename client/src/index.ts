@@ -7,7 +7,7 @@ export const sm_home: string = 'Workspace.getConfiguration("sourcepawnLanguageSe
 
 export function activate(context: ExtensionContext) {
     let serverModule = context.asAbsolutePath(
-        path.join('out', 'server', 'server.js')
+        path.join('server', 'out', 'server.js')
     );
     let debugOptions = { execArgv: ["--nolazy", "--inspect=6009"] };
     glob(path.join(Workspace.workspaceFolders[0].name || "", "scripting/include/sourcemod.inc"), (err, files) => {

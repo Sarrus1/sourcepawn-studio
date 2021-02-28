@@ -4,7 +4,7 @@
     "description": "SourcePawn highlighting and autocompletion.",
     "version": "0.1.4",
     "publisher": "Dreae",
-    "main": "out/index",
+    "main": "client/out/index",
     "icon": "sm.png",
     "repository": {
         "type": "git",
@@ -80,6 +80,10 @@
         "typescript": "^4.2.2"
     },
     "scripts": {
-        "pkgvars": "node ./node_modules/vscode/bin/install"
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -b",
+        "watch": "tsc -b -w",
+        "postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+        "test": "sh ./scripts/e2e.sh"
     }
 }
