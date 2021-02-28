@@ -205,7 +205,6 @@ export class CompletionRepository {
     }
 
     parse_sm_api(sourcemod_home: string) {
-        //sourcemod_home = "C:\\Users\\Charles\\CloudStation\\Documents\\Perso\\Dev\\sourcemod\\addons\\sourcemod\\scripting\\include";
         console.debug("parsing sourcemod", sourcemod_home);
         glob(path.join(sourcemod_home, '**/*.inc'), (err, files) => {
             for (let file of files) {
@@ -251,7 +250,7 @@ export class CompletionRepository {
         let includes = new Set<string>();
         this.get_included_files(completions, includes);
 
-        return [...includes].map((file) => {
+        return [...includes, file].map((file) => {
             return this.get_file_completions(file);
         }).reduce((completions, file_completions) => completions.concat(file_completions), []);
     }

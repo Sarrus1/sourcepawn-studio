@@ -1,5 +1,6 @@
 import { FileCompletions, FunctionCompletion, DefineCompletion, FunctionParam, MethodCompletion } from './completions';
 import * as fs from 'fs';
+import { stringify } from 'querystring';
 
 export function parse_file(file: string, completions: FileCompletions) {
     fs.readFile(file, "utf-8", (err, data) => {
@@ -95,11 +96,29 @@ class Parser {
             return this.parse();
         }
 
+        // Match properties
         match = line.match(/^\s*property\s+([a-zA-Z][a-zA-Z0-9_]*)\s+([a-zA-Z][a-zA-Z0-9_]*)/);
         if (match) {
             if (this.state[this.state.length - 1] === State.Methodmap) {
                 this.state.push(State.Property);
             }
+
+            return this.parse();
+        }
+
+        // Match function without descriptions
+        match = line.match(/\s*(?:(?:static|native|stock|public)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/);
+        if (match) {
+            let name_match = match[1].match(/^([A-Za-z_][A-Za-z0-9_]*)/);
+            let params_match = match[2].match(/([^,\)]+\(.+?\))|([^,\)]+)/g);
+            let params = [];
+            let current_param;
+            for(let i in params_match){
+                current_param = {label: params_match[i], documentation: params_match[i]};
+                params.push(current_param);
+            }
+
+            this.completions.add(name_match[1], new FunctionCompletion(name_match[1], name_match[1], "", params));
 
             return this.parse();
         }

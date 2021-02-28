@@ -1,0 +1,15 @@
+﻿{
+  "iconDefinitions": {
+    "_sp_file": {
+      "iconPath": "./images/SP.png"
+    },
+		"_smx_file": {
+      "iconPath": "./images/SM.png"
+    }
+  },
+  "file": "_sp_file",
+  "fileExtensions": {
+    "sp": "_sp_file",
+		"smx": "_smx_file"
+  },
+}

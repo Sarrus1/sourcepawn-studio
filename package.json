@@ -40,6 +40,13 @@
                 }
             }
         },
+        "iconThemes": [
+            {
+              "id": "sourcepawn",
+              "label": "SourcePawn",
+              "path": "./fileicons/sourcepawn-icon-theme.json"
+            }
+          ],
         "languages": [
             {
                 "id": "sourcepawn",
