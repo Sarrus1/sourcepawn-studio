@@ -9,9 +9,7 @@
 	},
 	"include": [
 		"src",
-		"src/**/*.ts",
-		"./node_modules/vscode/vscode.d.ts",
-		"./node_modules/vscode/lib/*"
+		"src/**/*.ts"
 	],
 	"exclude": [
 		"node_modules",

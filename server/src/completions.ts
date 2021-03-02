@@ -146,14 +146,13 @@ export class FileCompletions {
 
     resolve_import(file: string, relative: boolean = false) {
         let uri = file + ".inc";
-        console.debug("The file name", uri);
         if (!relative) {
             uri = "file://__sourcemod_builtin/" + uri;
             this.add_include(uri);
         } else {
             let base_file = URI.parse(this.uri).fsPath; 
             let base_directory = path.dirname(base_file);
-
+						//base_directory = path.join(base_directory, "include");
             let inc_file = path.resolve(base_directory, uri);
             if (fs.existsSync(inc_file)) {
                 uri = URI.file(inc_file).toString();
@@ -183,8 +182,6 @@ export class CompletionRepository {
 
         this.read_unscanned_imports(completions);
 
-        console.debug("Document changed", completions);
-
         this.completions.set(event.document.uri, completions);
     }
 
@@ -193,7 +190,7 @@ export class CompletionRepository {
             let completion = this.completions.get(import_file);
             if (!completion) {
                 
-                let file = URI.parse(import_file).fsPath; 
+                let file = URI.parse(import_file).fsPath;
                 let new_completions = new FileCompletions(import_file);
                 parse_file(file, new_completions);
 
@@ -205,7 +202,6 @@ export class CompletionRepository {
     }
 
     parse_sm_api(sourcemod_home: string) {
-        console.debug("parsing sourcemod", sourcemod_home);
         glob(path.join(sourcemod_home, '**/*.inc'), (err, files) => {
             for (let file of files) {
                 
@@ -249,17 +245,15 @@ export class CompletionRepository {
 
         let includes = new Set<string>();
         this.get_included_files(completions, includes);
-
-        return [...includes, file].map((file) => {
+				includes.add(file);
+        return [...includes].map((file) => {
             return this.get_file_completions(file);
         }).reduce((completions, file_completions) => completions.concat(file_completions), []);
     }
 
     get_file_completions(file: string): Completion[] {
-        console.debug("trying to get ", URI.parse(file).fsPath);
         let completions = this.completions.get(file);
         if (completions) {
-            console.debug("file", file, "  completion", completions);
             return completions.get_completions(this);
         }
         
@@ -276,6 +270,10 @@ export class CompletionRepository {
                 }
             }
         }
+				// Add the file itself to make it search itself for completions
+				if (!files.has(completions.uri)) {
+					files.add(completions.uri);
+				}
     }
 
     get_signature(position: TextDocumentPositionParams): SignatureHelp {

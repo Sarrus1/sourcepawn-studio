@@ -3,7 +3,6 @@ import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } f
 import * as glob from 'glob';
 import * as path from 'path';
 
-export const sm_home: string = 'Workspace.getConfiguration("sourcepawnLanguageServer").get("sourcemod_home")';
 
 export function activate(context: ExtensionContext) {
     let serverModule = context.asAbsolutePath(
