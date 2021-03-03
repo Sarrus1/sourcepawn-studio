@@ -1,14 +1,14 @@
 {
     "name": "sourcepawn-vscode",
-    "displayName": "SourcePawn",
+    "displayName": "SourcePawn for VScode",
     "description": "SourcePawn highlighting and autocompletion.",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "publisher": "Dreae",
     "main": "client/out/index",
     "icon": "sm.png",
     "repository": {
         "type": "git",
-        "url": "https://github.com/Dreae/sourcepawn-vscode.git"
+        "url": "https://github.com/Sarrus1/sourcepawn-vscode.git"
     },
     "engines": {
         "vscode": "^1.14.0"
