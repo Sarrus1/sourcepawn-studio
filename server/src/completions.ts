@@ -204,8 +204,6 @@ export class CompletionRepository {
     parse_sm_api(sourcemod_home: string) {
         glob(path.join(sourcemod_home, '**/*.inc'), (err, files) => {
             for (let file of files) {
-								console.debug("DEBUG", file);
-                
                 let completions = new FileCompletions(URI.file(file).toString());
                 parse_file(file, completions);
 

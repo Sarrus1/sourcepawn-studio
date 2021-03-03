@@ -1,3 +1,5 @@
 **/*.ts
 **/tsconfig.json
 !file.ts
+fileicons/SM.afphoto
+fileicons/SP.afphoto

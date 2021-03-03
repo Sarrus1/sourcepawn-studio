@@ -82,6 +82,14 @@
 		"description": "pragma"
 	},
 
+	"define":{
+		"prefix": "#define",
+		"body":[
+			"#define ${1:define name} ${2:define value}"
+		],
+		"description": "pragma"
+	},
+
 	"myinfo":{
 		"prefix": "myinfo",
 		"body":[

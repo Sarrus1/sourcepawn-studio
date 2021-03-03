@@ -7,7 +7,7 @@
       "iconPath": "./images/SM.png"
     }
   },
-  "file": "_sp_file",
+  "file": "",
   "fileExtensions": {
     "sp": "_sp_file",
 		"smx": "_smx_file"
