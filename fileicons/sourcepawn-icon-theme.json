@@ -5,11 +5,30 @@
     },
 		"_smx_file": {
       "iconPath": "./images/SM.png"
+    },
+    "_inc_file": {
+      "iconPath": "./images/INC.png"
+    },
+    "_default_file": {
+      "iconPath": "./images/default_file.svg"
+    },
+    "_default_folder": {
+      "iconPath": "./images/default_folder.svg"
+    },
+    "_default_folder_open": {
+      "iconPath": "./images/default_folder_opened.svg"
+    },
+    "_json_file": {
+      "iconPath": "./images/file_type_json.svg"
     }
   },
-  "file": "",
+  "file": "_default_file",
+  "folder": "_default_folder",
+  "folderExpanded": "_default_folder_open",
   "fileExtensions": {
     "sp": "_sp_file",
-		"smx": "_smx_file"
+		"smx": "_smx_file",
+    "inc": "_inc_file",
+    "json": "_json_file"
   },
 }
