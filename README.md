@@ -3,6 +3,8 @@
 
 SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the SourceMod 1.7+ syntax.
 
+![Version](https://vsmarketplacebadge.apphb.com/version/Sarrus.sourcepawn-vscode.svg) ![Installs](https://vsmarketplacebadge.apphb.com/installs-short/Sarrus.sourcepawn-vscode.svg) ![Last commit](https://img.shields.io/github/last-commit/Sarrus1/fuckZonesAntiCamp) ![Open issues](https://img.shields.io/github/issues/Sarrus1/fuckZonesAntiCamp) ![Closed issues](https://img.shields.io/github/issues-closed/Sarrus1/fuckZonesAntiCamp) ![Size](https://img.shields.io/github/repo-size/Sarrus1/fuckZonesAntiCamp) 
+
 ![Example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/example.gif)
 
 ## Features
