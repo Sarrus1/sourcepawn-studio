@@ -14,7 +14,6 @@ import * as glob from "glob";
 import * as path from "path";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
-import { CompletionItemTag } from "vscode";
 
 export interface Completion {
   name: string;
@@ -214,7 +213,7 @@ export class CompletionRepository {
 
   handle_document_change(event: TextDocumentChangeEvent<TextDocument>) {
     let completions = new FileCompletions(event.document.uri);
-    parse_blob(event.document.getText(), completions);
+    parse_blob(event.document.getText(), completions, true);
     this.read_unscanned_imports(completions);
 
     this.completions.set(event.document.uri, completions);
