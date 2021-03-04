@@ -1,5 +1,11 @@
 ## Release Notes
 
+### 0.1.6
+
+ - Fixed parsing from include files.
+ - Added variables autocompletion.
+ - Added a few snippets.
+
 ### 0.1.4
  - Add a massive number of new keywords and constants (thanks to [@Obuss](https://github.com/Obuss))
 

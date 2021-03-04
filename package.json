@@ -3,7 +3,7 @@
     "displayName": "SourcePawn for VScode",
     "description": "SourcePawn highlighting and autocompletion.",
     "version": "0.1.6",
-    "publisher": "Sarrus1",
+    "publisher": "Sarrus",
     "main": "client/out/index",
     "icon": "sm.png",
     "repository": {
