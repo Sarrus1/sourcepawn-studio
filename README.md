@@ -1,17 +1,34 @@
-# SourcePawn
+
+# SourcePawn for VSCode
 
 SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the SourceMod 1.7+ syntax.
 
-![Example](images/example.gif)
+![Example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/example.gif)
 
-The extension automatically scans `.inc` files for functions and documentation comments to generate
-autocompletion for your SourceMod projects. It scans for the SourceMod API functions in the `include/`
-relative to the currently open SourcePawn file, if you keep your code seperate from the SourceMod
-includes you can tell the extension where to find SourceMod with the `sourcepawnLanguageServer.sourcemod_home`
-setting:
+## Features
+- Automatically scan include files for natives, defines, methodmaps and more.
+- Useful snippets.
+- Variables autocompletion.
+- Functions autocompletion with arguments descriptions.
+- Detailed highlighting.
+- Allows to parse sourcemod files from a custom location.
 
+## Settings
+The only setting allows to define the position of the default sourcemod include files :
 ```json
 {
     "sourcepawnLanguageServer.sourcemod_home": "/path/to/sourcemod/include"
 }
 ```
+
+## Credits
+This is an improved version of [Dreae's](https://github.com/Dreae/sourcepawn-vscode) extension which doesn't seem to be supported anymore.
+
+## To do
+- Add _hover_ help for functions.
+- Add _Goto Definition_ for functions and natives.
+- Add a compile from VSCode feature.
+- Add auto-formatting.
+- Add dynamic syntax highlighting for imported types.
+- Add project templates.
+- Add more snippets.
