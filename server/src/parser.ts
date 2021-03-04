@@ -70,14 +70,38 @@ class Parser {
 		}
 
 		// Match variables only in the current file
-		match = line.match(/(?:bool|char|const|float|int|anyPlugin|Handle|ConVar|Cookie|Database|DBDriver|DBResultSet|DBStatement|GameData|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu|Timer|FrameIterator|GlobalForward|PrivateForward|Profiler)\s+(.*);/);
+		match = line.match(/^(?:\s*)?(?:bool|char|const|float|int|anyPlugin|Handle|ConVar|Cookie|Database|DBDriver|DBResultSet|DBStatement|GameData|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu|Timer|FrameIterator|GlobalForward|PrivateForward|Profiler)\s+(.*)/);
 		if(match) {
-			// Separate potential multiple declarations
-			let match_variables = match[1].match(/(?:\s*)?([A-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g);
-			for(let variable of match_variables){
-				let variable_completion = variable.match(/(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/)[1]
-				this.completions.add(variable_completion, new VariableCompletion(variable_completion, file));
+			let match_variables = [];
+			// Check if it's a multiline declaration
+			if(match[1].match(/(;)(?:\s*|)$/))
+			{
+				// Separate potential multiple declarations
+				match_variables = match[1].match(/(?:\s*)?([A-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g);
+				console.debug("test1", match_variables);
+				for(let variable of match_variables){
+					let variable_completion = variable.match(/(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/)[1]
+					this.completions.add(variable_completion, new VariableCompletion(variable_completion, file));
+				}
 			}
+			else{
+				console.debug(line, match);
+				while(!match[1].match(/(;)(?:\s*|)$/)){
+					// Separate potential multiple declarations
+					match_variables = match[1].match(/(?:\s*)?([A-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g);
+					console.debug("test2", match_variables);
+					if(!match_variables){
+						break;
+					}
+					for(let variable of match_variables){
+						let variable_completion = variable.match(/(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/)[1]
+						this.completions.add(variable_completion, new VariableCompletion(variable_completion, file));
+					}
+					match[1] = this.lines.shift();
+				}
+			}
+
+			
 			return this.parse(file);
 		}
 	
