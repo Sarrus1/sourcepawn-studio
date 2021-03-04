@@ -2,8 +2,8 @@
     "name": "sourcepawn-vscode",
     "displayName": "SourcePawn for VScode",
     "description": "SourcePawn highlighting and autocompletion.",
-    "version": "0.1.5",
-    "publisher": "Dreae",
+    "version": "0.1.6",
+    "publisher": "Sarrus1",
     "main": "client/out/index",
     "icon": "sm.png",
     "repository": {
