@@ -8,19 +8,19 @@ import {
 } from "./completions";
 import * as fs from "fs";
 
-export function parse_file(file: string, completions: FileCompletions, IsMainFile=false) {
+export function parse_file(file: string, completions: FileCompletions) {
 	fs.readFile(file, "utf-8", (err, data) => {
-		parse_blob(data, completions, IsMainFile);
+		parse_blob(data, completions, file);
 	});
 }
 
-export function parse_blob(data: string, completions: FileCompletions, IsMainFile=false) {
+export function parse_blob(data: string, completions: FileCompletions, file="",) {
 	if (typeof data === "undefined") {
 		return; // Asked to parse empty file
 	}
 	let lines = data.split("\n");
 	let parser = new Parser(lines, completions);
-	parser.parse(IsMainFile);
+	parser.parse(file);
 }
 
 enum State {
@@ -45,7 +45,7 @@ class Parser {
 		this.state = [State.None];
 	}
 
-	parse(IsMainFile) {
+	parse(file) {
 		let line = this.lines.shift();
 		if (typeof line === "undefined") {
 			return;
@@ -54,28 +54,26 @@ class Parser {
 		let match = line.match(/\s*#define\s+([A-Za-z0-9_]+)/);
 		if (match) {
 			this.completions.add(match[1], new DefineCompletion(match[1]));
-			return this.parse(IsMainFile);
+			return this.parse(file);
 		}
 
 		match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/]+)>\s*$/);
 		if (match) {
 			this.completions.resolve_import(match[1], false);
-			return this.parse(IsMainFile);
+			return this.parse(file);
 		}
 
 		match = line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/]+)"\s*$/);
 		if (match) {
 			this.completions.resolve_import(match[1], true);
-			return this.parse(IsMainFile);
+			return this.parse(file);
 		}
 
 		// Match variables only in the current file
-		if(IsMainFile) {
-			match = line.match(/(?:(int|float|bool|char)+\s*)+\s+([A-Za-z_]*)+=*.+;/);
-			if(match) {
-				this.completions.add(match[2], new VariableCompletion(match[2]));
-				return this.parse(IsMainFile);
-			}
+		match = line.match(/(?:(int|float|bool|char)+\s*)+\s+([A-Za-z_]*)+=*.+;/);
+		if(match) {
+			this.completions.add(match[2], new VariableCompletion(match[2], file));
+			return this.parse(file);
 		}
 	
 
@@ -84,8 +82,8 @@ class Parser {
 			this.state.push(State.MultilineComment);
 			this.scratch = [];
 
-			this.consume_multiline_comment(line, false, IsMainFile);
-			return this.parse(IsMainFile);
+			this.consume_multiline_comment(line, false, file);
+			return this.parse(file);
 		}
 
 		match = line.match(/^\s*\/\//);
@@ -94,8 +92,8 @@ class Parser {
 				this.state.push(State.MultilineComment);
 				this.scratch = [];
 
-				this.consume_multiline_comment(line, true, IsMainFile);
-				return this.parse(IsMainFile);
+				this.consume_multiline_comment(line, true, file);
+				return this.parse(file);
 			}
 		}
 
@@ -108,7 +106,7 @@ class Parser {
 				name: match[1],
 			};
 
-			return this.parse(IsMainFile);
+			return this.parse(file);
 		}
 
 		// Match properties
@@ -120,7 +118,7 @@ class Parser {
 				this.state.push(State.Property);
 			}
 
-			return this.parse(IsMainFile);
+			return this.parse(file);
 		}
 
 		// Match new style functions without description
@@ -156,23 +154,23 @@ class Parser {
 				new FunctionCompletion(name_match, name_match, "", params)
 			);
 
-			return this.parse(IsMainFile);
+			return this.parse(file);
 		}
 
 		match = line.match(/}/);
 		if (match) {
 			this.state.pop();
 
-			return this.parse(IsMainFile);
+			return this.parse(file);
 		}
 
-		this.parse(IsMainFile);
+		this.parse(file);
 	}
 
 	consume_multiline_comment(
 		current_line: string,
 		use_line_comment: boolean = false,
-		IsMainFile: boolean
+		file: string
 	) {
 		if (typeof current_line === "undefined") {
 			return; // EOF
@@ -187,14 +185,14 @@ class Parser {
 				this.state.pop();
 
 				if (use_line_comment) {
-					return this.read_function(current_line, IsMainFile);
+					return this.read_function(current_line, file);
 				} else {
-					return this.read_function(this.lines.shift(), IsMainFile);
+					return this.read_function(this.lines.shift(), file);
 				}
 			}
 
 			this.state.pop();
-			return this.parse(IsMainFile);
+			return this.parse(file);
 		} else {
 			if (!use_line_comment) {
 				match = current_line.match(
@@ -214,11 +212,11 @@ class Parser {
 
 			this.scratch.push(current_line);
 
-			this.consume_multiline_comment(this.lines.shift(), use_line_comment, IsMainFile);
+			this.consume_multiline_comment(this.lines.shift(), use_line_comment, file);
 		}
 	}
 
-	read_function(line: string, IsMainFile:boolean) {
+	read_function(line: string, file: string) {
 		if (typeof line === "undefined") {
 			return;
 		}
@@ -231,7 +229,7 @@ class Parser {
 		}
 
 		this.state.pop();
-		this.parse(IsMainFile);
+		this.parse(file);
 	}
 
 	read_old_style_function(line: string) {

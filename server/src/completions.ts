@@ -20,7 +20,7 @@ export interface Completion {
   kind: CompletionItemKind;
   description?: string;
 
-  to_completion_item(): CompletionItem;
+  to_completion_item(file: string): CompletionItem;
   get_signature(): SignatureInformation;
 }
 
@@ -48,7 +48,7 @@ export class FunctionCompletion implements Completion {
     this.detail = detail;
   }
 
-  to_completion_item(): CompletionItem {
+  to_completion_item(file: string): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -87,7 +87,7 @@ export class MethodCompletion implements Completion {
     this.params = params;
   }
 
-  to_completion_item(): CompletionItem {
+  to_completion_item(file: string): CompletionItem {
     return {
       label: `${this.method_map}.${this.name}`,
       insertText: this.name,
@@ -115,7 +115,7 @@ export class DefineCompletion implements Completion {
     this.name = name;
   }
 
-  to_completion_item(): CompletionItem {
+  to_completion_item(file: string): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -125,6 +125,36 @@ export class DefineCompletion implements Completion {
   get_signature(): SignatureInformation {
     return undefined;
   }
+}
+
+export class VariableCompletion implements Completion {
+    name: string;
+    file: string;
+    kind = CompletionItemKind.Variable;
+
+    constructor(name: string, file: string) {
+        this.name = name;
+        this.file = file;
+    }
+
+    to_completion_item(file: string): CompletionItem {
+        // Only return variables local to the document being edited
+        if(file===this.file) {
+            return {
+                label: this.name,
+                kind: this.kind,
+                };
+        }
+        return {
+            label: "",
+            kind: this.kind,
+        };
+        
+    }
+
+    get_signature(): SignatureInformation {
+        return undefined;
+    }
 }
 
 export class FileCompletions {
@@ -180,26 +210,6 @@ export class FileCompletions {
   }
 }
 
-export class VariableCompletion implements Completion {
-  name: string;
-  kind = CompletionItemKind.Variable;
-
-  constructor(name: string) {
-    this.name = name;
-  }
-
-  to_completion_item(): CompletionItem {
-    return {
-      label: this.name,
-      kind: this.kind,
-    };
-  }
-
-  get_signature(): SignatureInformation {
-    return undefined;
-  }
-}
-
 export class CompletionRepository {
   completions: Map<string, FileCompletions>;
   documents: TextDocuments<TextDocument>;
@@ -213,7 +223,7 @@ export class CompletionRepository {
 
   handle_document_change(event: TextDocumentChangeEvent<TextDocument>) {
     let completions = new FileCompletions(event.document.uri);
-    parse_blob(event.document.getText(), completions, true);
+    parse_blob(event.document.getText(), completions, event.document.uri);
     this.read_unscanned_imports(completions);
 
     this.completions.set(event.document.uri, completions);
@@ -267,7 +277,7 @@ export class CompletionRepository {
     }
     let all_completions = this.get_all_completions(
       position.textDocument.uri
-    ).map((completion) => completion.to_completion_item());
+    ).map((completion) => completion.to_completion_item(position.textDocument.uri));
     if (is_method) {
       return all_completions.filter(
         (completion) => completion.kind === CompletionItemKind.Method
