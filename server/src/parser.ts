@@ -72,12 +72,9 @@ class Parser {
 		// Match variables only in the current file
 		match = line.match(/(?:bool|char|const|float|int|anyPlugin|Handle|ConVar|Cookie|Database|DBDriver|DBResultSet|DBStatement|GameData|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu|Timer|FrameIterator|GlobalForward|PrivateForward|Profiler)\s+(.*);/);
 		if(match) {
-			console.debug("match",match);
 			// Separate potential multiple declarations
-			let match_variables = match[1].match(/(?:\s*)?([A-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(\{\"\'].*?[\)\}\"\'])?(?:[A-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g);
-			console.debug("match_variables",match_variables);
+			let match_variables = match[1].match(/(?:\s*)?([A-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g);
 			for(let variable of match_variables){
-				console.debug("v",variable);
 				let variable_completion = variable.match(/(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/)[1]
 				this.completions.add(variable_completion, new VariableCompletion(variable_completion, file));
 			}
