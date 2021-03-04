@@ -4,9 +4,9 @@ import {
 	DefineCompletion,
 	FunctionParam,
 	MethodCompletion,
+	VariableCompletion
 } from "./completions";
 import * as fs from "fs";
-import { stringify } from "querystring";
 
 export function parse_file(file: string, completions: FileCompletions) {
 	fs.readFile(file, "utf-8", (err, data) => {
@@ -18,7 +18,6 @@ export function parse_blob(data: string, completions: FileCompletions) {
 	if (typeof data === "undefined") {
 		return; // Asked to parse empty file
 	}
-
 	let lines = data.split("\n");
 	let parser = new Parser(lines, completions);
 
@@ -71,6 +70,13 @@ class Parser {
 			return this.parse();
 		}
 
+		// Match variables
+		match = line.match(/(?:(int|float|bool|char)+\s*)+\s+([A-Za-z_]*)+=*.+;/);
+		if(match) {
+			this.completions.add(match[2], new VariableCompletion(match[2]));
+			return this.parse();
+		}
+
 		match = line.match(/\s*\/\*/);
 		if (match) {
 			this.state.push(State.MultilineComment);
@@ -116,9 +122,7 @@ class Parser {
 		}
 
 		// Match new style functions without description
-		match = line.match(
-			/(?:(?:static|native|stock|public|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\((.*)\).*(?<!;)$/
-		);
+		match = line.match(/(?:(?:static|native|stock|public|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\((.*)\)(?:\s|\{|)(?!;)$/);
 		if (match) {
 			let name_match = "";
 			let params_match = [];
@@ -145,7 +149,6 @@ class Parser {
 				};
 				params.push(current_param);
 			}
-
 			this.completions.add(
 				name_match,
 				new FunctionCompletion(name_match, name_match, "", params)
