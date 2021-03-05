@@ -46,6 +46,6 @@ To run the extension in dev mode, do the following:
  - Install [node.js](https://nodejs.org/en/) on your machine.
  - Fork this reposetory and clone it to your machine (do this with VSCode for easier manipulation).
  - Run `npm install` from the root of the project folder.
- - Press `ctrl+B` and then `enter` to compile the typescript files.
+ - Press `Ctrl+Shift+B` and then `enter` to compile the typescript files.
  - Press `f5` to run the extension in dev mode.
  - Once you're done, save and commit and create a new pull request.

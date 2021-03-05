@@ -103,5 +103,44 @@
 			"};"
 		],
 		"description": "myinfo part"
+	},
+
+	"template":{
+		"prefix": "::template",
+		"body":[
+			"#include <sourcemod>",
+			"#include <sdkhooks>",
+			"#include <sdktools>",
+			"",
+			"#pragma newdecls required",
+			"#pragma semicolon 1",
+			"",
+			"",
+			"public Plugin myinfo =",
+			"{",
+				"\tname = '',",
+				"\tauthor = '',",
+				"\tdescription = '',",
+				"\tversion = '',",
+				"\turl = ''",
+			"};",
+			"",
+			"",
+			"public void OnPluginStart()",
+			"{",
+			"",
+			"}"
+		],
+		"description": "Plugin template"
+	},
+
+	"descriptive comment":{
+		"prefix": "::descscription",
+		"body":[
+			"/*----------------------------------------------",
+			"-------------------${1:Description}------------------",
+			"----------------------------------------------*/"
+		],
+		"description": "Code description"
 	}
 }

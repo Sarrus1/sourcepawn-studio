@@ -209,7 +209,7 @@ class Parser {
       return this.parse(file);
     }
 
-    match = line.match(/}/);
+    match = line.match(/}/);     
     if (match) {
       this.state.pop();
 
