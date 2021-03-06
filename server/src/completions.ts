@@ -52,7 +52,7 @@ export class FunctionCompletion implements Completion {
     return {
       label: this.name,
       kind: this.kind,
-      detail: this.description
+      detail: this.description,
     };
   }
 
@@ -128,38 +128,37 @@ export class DefineCompletion implements Completion {
 }
 
 export class VariableCompletion implements Completion {
-    name: string;
-    file: string;
-    kind = CompletionItemKind.Variable;
+  name: string;
+  file: string;
+  kind = CompletionItemKind.Variable;
 
-    constructor(name: string, file: string) {
-        this.name = name;
-        this.file = file;
-    }
+  constructor(name: string, file: string) {
+    this.name = name;
+    this.file = file;
+  }
 
-    to_completion_item(file: string): CompletionItem {
-        // Only return variables local to the document being edited
-        if(file===this.file) {
-            return {
-                label: this.name,
-                kind: this.kind,
-                };
-        }
-        return {
-            label: "",
-            kind: this.kind,
-        };
-        
+  to_completion_item(file: string): CompletionItem {
+    // Only return variables local to the document being edited
+    if (file === this.file) {
+      return {
+        label: this.name,
+        kind: this.kind,
+      };
     }
+    return {
+      label: "",
+      kind: this.kind,
+    };
+  }
 
-    get_signature(): SignatureInformation {
-        return undefined;
-    }
+  get_signature(): SignatureInformation {
+    return undefined;
+  }
 }
 
 export class Include {
   uri: string;
-  IsBuiltIn: boolean
+  IsBuiltIn: boolean;
 
   constructor(uri: string, IsBuiltIn: boolean) {
     this.uri = uri;
@@ -199,16 +198,33 @@ export class FileCompletions {
     this.includes.push(new Include(include, IsBuiltIn));
   }
 
-  resolve_import(file: string, relative: boolean = false, IsBuiltIn : boolean = false) {
+  resolve_import(
+    file: string,
+    relative: boolean = false,
+    IsBuiltIn: boolean = false
+  ) {
     let uri = file + ".inc";
+    let base_file = URI.parse(this.uri).fsPath;
+    let base_directory = path.dirname(base_file);
+    let inc_file = path.join(base_directory, uri);
+    // If the include is not relative, check if the file exists in the include folder
+    // this is more beginner friendly
     if (!relative) {
-      uri = "file://__sourcemod_builtin/" + uri;
-      this.add_include(uri, IsBuiltIn);
+      if (fs.existsSync(inc_file)) {
+        uri = URI.file(inc_file).toString();
+        this.add_include(uri, IsBuiltIn);
+      } else {
+        inc_file = path.join(base_directory, "include", uri);
+        if (fs.existsSync(inc_file)) {
+          uri = URI.file(inc_file).toString();
+          this.add_include(uri, IsBuiltIn);
+        } else {
+          uri = "file://__sourcemod_builtin/" + uri;
+          this.add_include(uri, IsBuiltIn);
+        }
+      }
     } else {
-      let base_file = URI.parse(this.uri).fsPath;
-      let base_directory = path.dirname(base_file);
-      //base_directory = path.join(base_directory, "include");
-      let inc_file = path.resolve(base_directory, uri);
+      inc_file = path.resolve(base_directory, uri);
       if (fs.existsSync(inc_file)) {
         uri = URI.file(inc_file).toString();
         this.add_include(uri, IsBuiltIn);
@@ -287,7 +303,9 @@ export class CompletionRepository {
     }
     let all_completions = this.get_all_completions(
       position.textDocument.uri
-    ).map((completion) => completion.to_completion_item(position.textDocument.uri));
+    ).map((completion) =>
+      completion.to_completion_item(position.textDocument.uri)
+    );
     if (is_method) {
       return all_completions.filter(
         (completion) => completion.kind === CompletionItemKind.Method

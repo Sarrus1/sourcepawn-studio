@@ -4,7 +4,9 @@
 
  - Added multiline function parsing.
  - Improved snippets and added new ones.
- - Added support for simple // descriptions above functions
+ - Added support for simple // descriptions above functions.
+ - Fixed internal sourcemod functions being parsed.
+ - Added beginner friendly include parsing.
 
 ### 0.1.6
 
