@@ -206,22 +206,18 @@ export class FileCompletions {
     let uri = file + ".inc";
     let base_file = URI.parse(this.uri).fsPath;
     let base_directory = path.dirname(base_file);
-    let inc_file = path.join(base_directory, uri);
+    let inc_file = "";
     // If the include is not relative, check if the file exists in the include folder
     // this is more beginner friendly
     if (!relative) {
+      inc_file = path.join(base_directory, "include/", uri);
       if (fs.existsSync(inc_file)) {
         uri = URI.file(inc_file).toString();
         this.add_include(uri, IsBuiltIn);
       } else {
-        inc_file = path.join(base_directory, "include", uri);
-        if (fs.existsSync(inc_file)) {
-          uri = URI.file(inc_file).toString();
-          this.add_include(uri, IsBuiltIn);
-        } else {
-          uri = "file://__sourcemod_builtin/" + uri;
-          this.add_include(uri, IsBuiltIn);
-        }
+        uri = "file://__sourcemod_builtin/" + uri;
+        console.debug(uri);
+        this.add_include(uri, IsBuiltIn);
       }
     } else {
       inc_file = path.resolve(base_directory, uri);
@@ -278,6 +274,7 @@ export class CompletionRepository {
 
         let uri =
           "file://__sourcemod_builtin/" + path.relative(sourcemod_home, file);
+        console.debug("parsing sm", uri);
         this.completions.set(uri, completions);
       }
     });
