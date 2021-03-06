@@ -157,9 +157,19 @@ export class VariableCompletion implements Completion {
     }
 }
 
+export class Include {
+  uri: string;
+  IsBuiltIn: boolean
+
+  constructor(uri: string, IsBuiltIn: boolean) {
+    this.uri = uri;
+    this.IsBuiltIn = IsBuiltIn;
+  }
+}
+
 export class FileCompletions {
   completions: Map<string, Completion>;
-  includes: string[];
+  includes: Include[];
   uri: string;
 
   constructor(uri: string) {
@@ -185,15 +195,15 @@ export class FileCompletions {
     return completions;
   }
 
-  add_include(include: string) {
-    this.includes.push(include);
+  add_include(include: string, IsBuiltIn: boolean) {
+    this.includes.push(new Include(include, IsBuiltIn));
   }
 
-  resolve_import(file: string, relative: boolean = false) {
+  resolve_import(file: string, relative: boolean = false, IsBuiltIn : boolean = false) {
     let uri = file + ".inc";
     if (!relative) {
       uri = "file://__sourcemod_builtin/" + uri;
-      this.add_include(uri);
+      this.add_include(uri, IsBuiltIn);
     } else {
       let base_file = URI.parse(this.uri).fsPath;
       let base_directory = path.dirname(base_file);
@@ -201,10 +211,10 @@ export class FileCompletions {
       let inc_file = path.resolve(base_directory, uri);
       if (fs.existsSync(inc_file)) {
         uri = URI.file(inc_file).toString();
-        this.add_include(uri);
+        this.add_include(uri, IsBuiltIn);
       } else {
         uri = URI.file(path.resolve(file + ".sp")).toString();
-        this.add_include(uri);
+        this.add_include(uri, IsBuiltIn);
       }
     }
   }
@@ -231,15 +241,15 @@ export class CompletionRepository {
 
   read_unscanned_imports(completions: FileCompletions) {
     for (let import_file of completions.includes) {
-      let completion = this.completions.get(import_file);
+      let completion = this.completions.get(import_file.uri);
       if (!completion) {
-        let file = URI.parse(import_file).fsPath;
-        let new_completions = new FileCompletions(import_file);
-        parse_file(file, new_completions);
+        let file = URI.parse(import_file.uri).fsPath;
+        let new_completions = new FileCompletions(import_file.uri);
+        parse_file(file, new_completions, import_file.IsBuiltIn);
 
         this.read_unscanned_imports(new_completions);
 
-        this.completions.set(import_file, new_completions);
+        this.completions.set(import_file.uri, new_completions);
       }
     }
   }
@@ -248,7 +258,7 @@ export class CompletionRepository {
     glob(path.join(sourcemod_home, "**/*.inc"), (err, files) => {
       for (let file of files) {
         let completions = new FileCompletions(URI.file(file).toString());
-        parse_file(file, completions);
+        parse_file(file, completions, true);
 
         let uri =
           "file://__sourcemod_builtin/" + path.relative(sourcemod_home, file);
@@ -316,9 +326,9 @@ export class CompletionRepository {
 
   get_included_files(completions: FileCompletions, files: Set<string>) {
     for (let include of completions.includes) {
-      if (!files.has(include)) {
-        files.add(include);
-        let include_completions = this.completions.get(include);
+      if (!files.has(include.uri)) {
+        files.add(include.uri);
+        let include_completions = this.completions.get(include.uri);
         if (include_completions) {
           this.get_included_files(include_completions, files);
         }
