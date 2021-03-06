@@ -22,7 +22,7 @@ let workspaceRoot: string;
 let hasConfigurationCapability: boolean = false;
 
 connection.onInitialize((params) => {
-  workspaceRoot = params.workspaceFolders[0].uri;
+  workspaceRoot = params.workspaceFolders?.[0].uri || "";
   let capabilities = params.capabilities;
   hasConfigurationCapability = !!(
     capabilities.workspace && !!capabilities.workspace.configuration
