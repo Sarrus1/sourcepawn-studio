@@ -75,7 +75,7 @@ class Parser {
 
     // Match variables only in the current file
     match = line.match(
-      /^(?:\s*)?(?:bool|char|const|float|int|anyPlugin|Handle|ConVar|Cookie|Database|DBDriver|DBResultSet|DBStatement|GameData|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu|Timer|FrameIterator|GlobalForward|PrivateForward|Profiler)\s+(.*)/
+      /^(?:\s*)?(?:bool|char|const|float|int|any|Plugin|Handle|ConVar|Cookie|Database|DBDriver|DBResultSet|DBStatement|GameData|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu|Timer|FrameIterator|GlobalForward|PrivateForward|Profiler)\s+(.*)/
     );
     if (match) {
       let match_variables = [];
@@ -85,7 +85,6 @@ class Parser {
         match_variables = match[1].match(
           /(?:\s*)?([A-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g
         );
-        console.debug("test1", match_variables);
         for (let variable of match_variables) {
           let variable_completion = variable.match(
             /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
@@ -96,13 +95,11 @@ class Parser {
           );
         }
       } else {
-        console.debug(line, match);
         while (!match[1].match(/(;)(?:\s*|)$/)) {
           // Separate potential multiple declarations
           match_variables = match[1].match(
             /(?:\s*)?([A-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g
           );
-          console.debug("test2", match_variables);
           if (!match_variables) {
             break;
           }
@@ -320,10 +317,17 @@ class Parser {
           )
         );
       } else {
+        let paramsMatch = match[2];
+        // Iteration safety in case something goes wrong
+        let maxiter=0;
+        while(!paramsMatch.includes(')') && maxiter<20) {
+          paramsMatch += this.lines.shift();
+          maxiter++;
+        }
         this.completions.add(
           name_match[1],
-          new FunctionCompletion(name_match[1], match[2], description, params)
-        );
+          new FunctionCompletion(name_match[1], paramsMatch, description, params)
+          );
       }
     }
   }
