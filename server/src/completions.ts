@@ -52,7 +52,7 @@ export class FunctionCompletion implements Completion {
     return {
       label: this.name,
       kind: this.kind,
-      detail: this.description,
+      data: this.description
     };
   }
 
@@ -93,7 +93,7 @@ export class MethodCompletion implements Completion {
       insertText: this.name,
       filterText: this.name,
       kind: this.kind,
-      detail: this.description,
+      data: this.description,
     };
   }
 
@@ -190,8 +190,13 @@ export class FileCompletions {
     for (let completion of this.completions.values()) {
       completions.push(completion);
     }
-
     return completions;
+  }
+
+  to_completion_resolve(item: CompletionItem): CompletionItem {
+    item.label= item.label;
+    item.documentation = item.documentation;
+    return item;
   }
 
   add_include(include: string, IsBuiltIn: boolean) {
@@ -216,7 +221,6 @@ export class FileCompletions {
         this.add_include(uri, IsBuiltIn);
       } else {
         uri = "file://__sourcemod_builtin/" + uri;
-        console.debug(uri);
         this.add_include(uri, IsBuiltIn);
       }
     } else {
@@ -274,7 +278,6 @@ export class CompletionRepository {
 
         let uri =
           "file://__sourcemod_builtin/" + path.relative(sourcemod_home, file);
-        console.debug("parsing sm", uri);
         this.completions.set(uri, completions);
       }
     });

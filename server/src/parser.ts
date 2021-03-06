@@ -140,6 +140,7 @@ class Parser {
       }
     }
 
+    // Match comments to find short function descriptions
     match = line.match(/^\s*\/\/\s*(.*)/);
     if(match) {
       let description : string = match[1];
@@ -148,7 +149,7 @@ class Parser {
         /(?:(?:static|native|stock|public|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\((.*\)?)(?:\)?)(?:\s*?)(?:\{?)(?:\s*?)(?<!;)$/
       );
       if (match) {
-        this.read_non_descripted_function(match, file, description, IsBuiltIn);
+        return this.read_non_descripted_function(match, file, description, IsBuiltIn);
       }
       else {
         this.parse(file, IsBuiltIn);
