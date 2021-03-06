@@ -1,5 +1,11 @@
 ## Release Notes
 
+### 0.1.7
+
+ - Added multiline function parsing.
+ - Improved snippets and added new ones.
+ - Added support for simple // descriptions above functions
+
 ### 0.1.6
 
  - Fixed parsing from include files.

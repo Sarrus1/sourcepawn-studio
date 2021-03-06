@@ -52,7 +52,7 @@ export class FunctionCompletion implements Completion {
     return {
       label: this.name,
       kind: this.kind,
-      detail: this.description,
+      detail: this.description
     };
   }
 

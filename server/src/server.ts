@@ -86,7 +86,7 @@ connection.onDidChangeConfiguration((change) => {
     completions.parse_sm_api(sm_home);
   }
 });
-// Qu'est ce qu'on passe à la fonction en fait?
+
 function getDocumentSettings(resource: string): Thenable<SourcepawnSettings> {
   if (!hasConfigurationCapability) {
     return Promise.resolve(globalSettings);

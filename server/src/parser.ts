@@ -139,6 +139,21 @@ class Parser {
       }
     }
 
+    match = line.match(/^\s*\/\/\s*(.*)/);
+    if(match) {
+      let description : string = match[1];
+      line = this.lines.shift()
+      match = line.match(
+        /(?:(?:static|native|stock|public|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\((.*\)?)(?:\)?)(?:\s*?)(?:\{?)(?:\s*?)(?<!;)$/
+      );
+      if (match) {
+        this.read_non_descripted_function(match, file, description);
+      }
+      else {
+        this.parse(file);
+      }
+    }
+
     match = line.match(
       /^\s*methodmap\s+([a-zA-Z][a-zA-Z0-9_]*)(?:\s+<\s+([a-zA-Z][a-zA-Z0-9_]*))?/
     );
@@ -163,29 +178,48 @@ class Parser {
       return this.parse(file);
     }
 
-    // Match new style functions without description
+    // Match functions without description
     match = line.match(
-      /(?:(?:static|native|stock|public|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\((.*)\)(?:\s|\{|)(?!;)$/
+      /(?:(?:static|native|stock|public|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\((.*\)?)(?:\)?)(?:\s*?)(?:\{?)(?:\s*?)(?<!;)$/
     );
     if (match) {
-      let name_match = "";
-      let params_match = [];
-      // Separation for old and new style functions
-      // New style
-      if (match[2] != "") {
-        name_match = match[2];
-      }
-      // Old style
-      else {
-        name_match = match[1];
-      }
+      this.read_non_descripted_function(match, file);
+    }
 
-      // Check if function takes arguments
-      if (match[3]) {
-        params_match = match[3].match(/([^,\)]+\(.+?\))|([^,\)]+)/g);
-      }
-      let params = [];
-      let current_param;
+    match = line.match(/}/);     
+    if (match) {
+      this.state.pop();
+
+      return this.parse(file);
+    }
+
+    this.parse(file);
+  }
+
+  read_non_descripted_function(match, file: string, description: string = "") {
+    let name_match = "";
+    let partial_params_match = "";
+    let params_match = [];
+    // Separation for old and new style functions
+    // New style
+    if (match[2] != "") {
+      name_match = match[2];
+    }
+    // Old style
+    else {
+      name_match = match[1];
+    }
+    partial_params_match = match[3];
+    // Check if function takes arguments
+    let maxiter = 0;
+    while (!partial_params_match.match(/(\))(?:\s*)(?:;)?(?:\s*)$/) && maxiter<20) {
+      partial_params_match+=this.lines.shift();
+      maxiter++;
+    }
+    params_match = partial_params_match.match(/([^,\)]+\(.+?\))|([^,\)]+)/g);
+    let params = [];
+    let current_param;
+    if(params_match){
       for (let param of params_match) {
         current_param = {
           label: param,
@@ -199,22 +233,14 @@ class Parser {
           new VariableCompletion(paramAsVariable, file)
         );
       }
-      this.completions.add(
-        name_match,
-        new FunctionCompletion(name_match, name_match, "", params)
-      );
-      return this.parse(file);
     }
-
-    match = line.match(/}/);     
-    if (match) {
-      this.state.pop();
-
-      return this.parse(file);
-    }
-
-    this.parse(file);
-  }
+    partial_params_match = this.clean_param(partial_params_match);
+    this.completions.add(
+      name_match,
+      new FunctionCompletion(name_match, partial_params_match, description, params)
+    );
+    return this.parse(file);
+  };
 
   consume_multiline_comment(
     current_line: string,
@@ -269,12 +295,19 @@ class Parser {
     }
   }
 
+  clean_param(partial_params_match: string){
+    let unused_comma = partial_params_match.match(/(\))(?:\s*)(?:;)?(?:\s*)$/);
+    if(unused_comma) {
+      partial_params_match = partial_params_match.replace(unused_comma[1], "");
+    }
+    return partial_params_match;
+  }
+
   read_function(line: string, file: string) {
     if (typeof line === "undefined") {
       return;
     }
 
-    // TODO: Support multiline function definitions
     if (line.includes(":")) {
       this.read_old_style_function(line);
     } else {
