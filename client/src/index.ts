@@ -9,7 +9,7 @@ export function activate(context: ExtensionContext) {
         path.join('server', 'out', 'server.js')
     );
     let debugOptions = { execArgv: ["--nolazy", "--inspect=6009"] };
-    glob(path.join(Workspace.workspaceFolders[0].name || "", "scripting/include/sourcemod.inc"), (err, files) => {
+    glob(path.join(Workspace.workspaceFolders?.[0].name || "", "scripting/include/sourcemod.inc"), (err, files) => {
         if (files.length === 0) {
             if (!Workspace.getConfiguration("sourcepawnLanguageServer").get("sourcemod_home")) {
                 window.showWarningMessage("SourceMod API not found in the project. You may need to set SourceMod Home for autocompletion to work", "Open Settings").then((choice) => {
