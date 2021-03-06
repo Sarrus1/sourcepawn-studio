@@ -145,9 +145,7 @@ class Parser {
     if(match) {
       let description : string = match[1];
       line = this.lines.shift()
-      match = line.match(
-        /(?:(?:static|native|stock|public|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\((.*\)?)(?:\)?)(?:\s*?)(?:\{?)(?:\s*?)(?<!;)$/
-      );
+      match = line.match(/(?:(?:static|native|stock|public|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*)$/);
       if (match) {
         return this.read_non_descripted_function(match, file, description, IsBuiltIn);
       }
@@ -188,9 +186,8 @@ class Parser {
     }
 
     // Match functions without description
-    match = line.match(
-      /(?:(?:static|native|stock|public|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\((.*\)?)(?:\)?)(?:\s*?)(?:\{?)(?:\s*?)(?<!;)$/
-    );
+    match = line.match(/(?:(?:static|native|stock|public|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*)$/);
+    console.debug(line);
     if (match && !IsBuiltIn) {
       this.read_non_descripted_function(match, file, "", IsBuiltIn);
     }
@@ -199,6 +196,8 @@ class Parser {
   }
 
   read_non_descripted_function(match, file: string, description: string = "", IsBuiltIn:boolean=false) {
+    let match_buffer = "";
+    let line = "";
     let name_match = "";
     let partial_params_match = "";
     let params_match = [];
@@ -212,10 +211,13 @@ class Parser {
       name_match = match[1];
     }
     partial_params_match = match[3];
+    match_buffer = match[0];
     // Check if function takes arguments
     let maxiter = 0;
-    while (!partial_params_match.match(/(\))(?:\s*)(?:;)?(?:\s*)$/) && maxiter<20) {
-      partial_params_match+=this.lines.shift();
+    while (!match_buffer.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) && maxiter<20) {
+      line = this.lines.shift();
+      partial_params_match+=line;
+      match_buffer+=line;
       maxiter++;
     }
     params_match = partial_params_match.match(/([^,\)]+\(.+?\))|([^,\)]+)/g);
@@ -357,7 +359,7 @@ class Parser {
         let paramsMatch = match[2];
         // Iteration safety in case something goes wrong
         let maxiter=0;
-        while(!paramsMatch.includes(')') && maxiter<20) {
+        while(!paramsMatch.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) && maxiter<20) {
           paramsMatch += this.lines.shift();
           maxiter++;
         }
