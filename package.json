@@ -2,7 +2,7 @@
     "name": "sourcepawn-vscode",
     "displayName": "SourcePawn for VScode",
     "description": "SourcePawn highlighting and autocompletion.",
-    "version": "1.7.1",
+    "version": "1.8.0",
     "publisher": "Sarrus",
     "main": "client/out/index",
     "icon": "sm.png",
@@ -20,6 +20,11 @@
         "onLanguage:sourcepawn"
     ],
     "contributes": {
+				"commands":[{
+					"command": "extension.createTask",
+					"title": "Create SM Task File",
+					"category": "Project"
+				}],
         "configuration": {
             "type": "object",
             "title": "SourcePawn Language Server configuration",
@@ -28,6 +33,10 @@
                     "type": "string",
                     "description": "The location of the SourceMod API include files found in addons/sourcemod/scripting/include"
                 },
+								"sourcepawnLanguageServer.spcomp_path": {
+									"type": "string",
+									"description": "The location of the SourceMod compiler"
+								},
                 "sourcepawnLanguageServer.trace.server": {
                     "type": "string",
                     "enum": [
