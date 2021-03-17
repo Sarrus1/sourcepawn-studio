@@ -1,6 +1,13 @@
 ## Release Notes
 
+### 1.8
+ - Added support for for loops variable completion.
+
 ### 1.7.1
+ - Added full icons support.
+ - Fixed potential missing dependencies crash.
+
+### 1.7
 
  - Added multiline function parsing.
  - Improved snippets and added new ones.

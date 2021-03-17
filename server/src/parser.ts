@@ -74,6 +74,16 @@ class Parser {
       return this.parse(file, IsBuiltIn);
     }
 
+		// Match for loop iteration variable only in the current file
+		match = line.match(/^\s*(?:for\s*\(\s*int\s+)([A-z0-9_]*)/);
+		if (match && !IsBuiltIn) {
+			this.completions.add(
+				match[1],
+				new VariableCompletion(match[1], file)
+				)
+			return this.parse(file, IsBuiltIn);
+		}
+
     // Match variables only in the current file
     match = line.match(
       /^(?:\s*)?(?:bool|char|const|float|int|any|Plugin|Handle|ConVar|Cookie|Database|DBDriver|DBResultSet|DBStatement|GameData|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu|Timer|FrameIterator|GlobalForward|PrivateForward|Profiler)\s+(.*)/
