@@ -187,7 +187,6 @@ class Parser {
 
     // Match functions without description
     match = line.match(/(?:(?:static|native|stock|public|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*)$/);
-    console.debug(line);
     if (match && !IsBuiltIn) {
       this.read_non_descripted_function(match, file, "", IsBuiltIn);
     }

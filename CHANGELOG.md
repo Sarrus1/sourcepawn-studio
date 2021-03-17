@@ -7,6 +7,7 @@
  - Added support for simple `//` descriptions above functions.
  - Fixed internal sourcemod functions being parsed.
  - Added beginner friendly include parsing.
+ - Fixed descriptions not showing.
 
 ### 0.1.6
 
