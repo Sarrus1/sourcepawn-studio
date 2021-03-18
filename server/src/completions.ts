@@ -52,7 +52,7 @@ export class FunctionCompletion implements Completion {
     return {
       label: this.name,
       kind: this.kind,
-      data: this.description
+      data: this.description,
     };
   }
 
@@ -156,6 +156,53 @@ export class VariableCompletion implements Completion {
   }
 }
 
+export class EnumCompletion implements Completion {
+  name: string;
+  file: string;
+  kind = CompletionItemKind.Enum;
+
+  constructor(name: string, file: string) {
+    this.name = name;
+    this.file = file;
+  }
+
+  to_completion_item(file: string): CompletionItem {
+		return {
+			label: this.name,
+			kind: this.kind,
+		};
+  }
+
+  get_signature(): SignatureInformation {
+    return undefined;
+  }
+}
+
+
+export class EnumMemberCompletion implements Completion {
+  name: string;
+	enum: EnumCompletion;
+  file: string;
+  kind = CompletionItemKind.EnumMember;
+
+  constructor(name: string, file: string, Enum:EnumCompletion) {
+    this.name = name;
+    this.file = file;
+		this.enum = Enum;
+  }
+
+  to_completion_item(file: string): CompletionItem {
+		return {
+			label: this.name,
+			kind: this.kind,
+		};
+  }
+
+  get_signature(): SignatureInformation {
+    return undefined;
+  }
+}
+
 export class Include {
   uri: string;
   IsBuiltIn: boolean;
@@ -194,7 +241,7 @@ export class FileCompletions {
   }
 
   to_completion_resolve(item: CompletionItem): CompletionItem {
-    item.label= item.label;
+    item.label = item.label;
     item.documentation = item.documentation;
     return item;
   }

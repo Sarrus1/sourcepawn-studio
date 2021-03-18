@@ -5,6 +5,8 @@ import {
   FunctionParam,
   MethodCompletion,
   VariableCompletion,
+	EnumCompletion,
+	EnumMemberCompletion
 } from "./completions";
 import * as fs from "fs";
 
@@ -73,6 +75,53 @@ class Parser {
       this.completions.resolve_import(match[1], true, IsBuiltIn);
       return this.parse(file, IsBuiltIn);
     }
+
+		// Match enums
+		match = line.match(/^\s*(?:enum\s+)([A-z0-9_]*)/);
+		if (match) {
+			// Create a completion for the enum itself
+			let enumCompletion : EnumCompletion = new EnumCompletion(match[1], file);
+			this.completions.add(
+				match[1],
+				enumCompletion
+				)
+			
+			// Set max number of iterations for safety
+			let iter = 0;
+
+			// Proceed to the next line
+			line = this.lines.shift();
+
+			// Stop early if it's the end of the file
+			if(!line)
+			{
+				return this.parse(file, IsBuiltIn);
+			}
+
+			// Match all the params of the enum
+			while(iter<20 && !line.match(/^\s*(\}\s*\;)/))
+			{
+				iter++;
+				match = line.match(/^\s*([A-z0-9_]*)\s*.*/);
+				line = this.lines.shift();
+				
+				// Skip if didn't match
+				if(!match)
+				{
+					continue;
+				}
+				this.completions.add(
+					match[1],
+					new EnumMemberCompletion(match[1], file, enumCompletion)
+					)
+				if(!line)
+				{
+					break;
+				}
+			}
+			return this.parse(file, IsBuiltIn);
+		}
+		
 
 		// Match for loop iteration variable only in the current file
 		match = line.match(/^\s*(?:for\s*\(\s*int\s+)([A-z0-9_]*)/);
