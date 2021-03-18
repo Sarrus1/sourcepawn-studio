@@ -23,12 +23,17 @@
     "commands": [
       {
         "command": "extension.createTask",
-        "title": "Create SM Task File",
+        "title": "SM Create Task File",
         "category": "Project"
       },
       {
         "command": "extension.createScript",
-        "title": "Create SM Script File",
+        "title": "SM Create Script File",
+        "category": "Project"
+      },
+			{
+        "command": "extension.createREADME",
+        "title": "SM Create README File",
         "category": "Project"
       }
     ],

@@ -14,6 +14,7 @@ import * as glob from "glob";
 import * as path from "path";
 import CreateTaskCommand = require("./commands/createTask");
 import CreateScriptCommand = require("./commands/createScript");
+import CreateREADMECommand = require("./commands/createREADME");
 
 export function activate(context: ExtensionContext) {
   let serverModule = context.asAbsolutePath(
@@ -100,4 +101,10 @@ export function activate(context: ExtensionContext) {
 		CreateScriptCommand.run.bind(undefined)
 	)
   context.subscriptions.push(createScript);
+	let createREADME = commands.registerCommand(
+		"extension.createREADME",
+		CreateREADMECommand.run.bind(undefined)
+	)
+  context.subscriptions.push(createREADME);
+	
 }
