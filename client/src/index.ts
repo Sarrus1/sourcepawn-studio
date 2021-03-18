@@ -13,6 +13,7 @@ import {
 import * as glob from "glob";
 import * as path from "path";
 import CreateTaskCommand = require("./commands/createTask");
+import CreateScriptCommand = require("./commands/createScript");
 
 export function activate(context: ExtensionContext) {
   let serverModule = context.asAbsolutePath(
@@ -93,5 +94,10 @@ export function activate(context: ExtensionContext) {
     "extension.createTask",
     CreateTaskCommand.run.bind(undefined)
   );
-  context.subscriptions.push(createTask);
+	context.subscriptions.push(createTask);
+	let createScript = commands.registerCommand(
+		"extension.createScript",
+		CreateScriptCommand.run.bind(undefined)
+	)
+  context.subscriptions.push(createScript);
 }

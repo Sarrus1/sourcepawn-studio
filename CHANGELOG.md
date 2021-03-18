@@ -2,7 +2,10 @@
 
 ### 1.8.0
  - Added support for for loops variable completion.
- - Added tasks.json generation.
+ - Added support for enums parsing.
+ - Added a command for tasks.json generation from template.
+ - Added a command for .sp file generation from template.
+ - Added more settings to support the above features.
 
 ### 1.7.1
  - Added full icons support.

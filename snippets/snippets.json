@@ -2,7 +2,7 @@
   "for loop": {
     "prefix": "for",
     "body": [
-      "for(int ${1|i,current_client,iClient|} = ${2:0}; $1 <= ${3:MaxClients}; $1++)",
+      "for(int ${1|i,iClient,current_client|} = ${2:0}; $1 <= ${3:MaxClients}; $1++)",
       "{",
       "\t${4:$LINE_COMMENT Content}",
       "}"
@@ -124,7 +124,7 @@
   },
 
   "descriptive comment": {
-    "prefix": "::descscription",
+    "prefix": "::description",
     "body": [
       "/*----------------------------------------------",
       "-------------------${1:Description}------------------",
