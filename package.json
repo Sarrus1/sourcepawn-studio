@@ -35,6 +35,11 @@
         "command": "extension.createREADME",
         "title": "SM Create README File",
         "category": "Project"
+      },
+			{
+        "command": "extension.createMaster",
+        "title": "SM Create GitHub Actions",
+        "category": "Project"
       }
     ],
     "configuration": {

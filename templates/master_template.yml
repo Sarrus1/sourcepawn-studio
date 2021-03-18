@@ -1,0 +1,36 @@
+name: Compile with SourceMod
+
+on:
+  pull_request:
+    branches: master
+  push:
+    branches: master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        SM_VERSION: ["1.10", "1.11"]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set environment variables
+        run: |
+          # echo "SCRIPTS_PATH=scripting" >> $GITHUB_ENV
+          echo "SCRIPTS_PATH=scripting" >> $GITHUB_ENV
+      - name: Setup SourcePawn Compiler ${{ matrix.SM_VERSION }}
+        uses: rumblefrog/setup-sp@master
+        with:
+          version: ${{ matrix.SM_VERSION }}
+
+      - name: Compile plugins
+        run: |
+          for file in scripting/${plugin_name}*.sp
+          do
+            echo -e "\nCompiling $file..."
+            spcomp -E -w234 -O2 -v2 -i include $file
+          done
+        working-directory: ${{ env.SCRIPTS_PATH }}

@@ -6,6 +6,7 @@
  - Added a command for tasks.json generation from a template.
  - Added a command for .sp file generation from a template.
  - Added a command for README.md file generation from a template.
+ - Added a command for github Actions file generation from a template.
  - Added more settings to support the above features.
 
 ### 1.7.1
