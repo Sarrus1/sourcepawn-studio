@@ -16,6 +16,7 @@ import CreateTaskCommand = require("./commands/createTask");
 import CreateScriptCommand = require("./commands/createScript");
 import CreateREADMECommand = require("./commands/createREADME");
 import CreateMasterCommand = require("./commands/createGitHubActions");
+import CreateProjectCommand = require("./commands/createProject");
 
 export function activate(context: ExtensionContext) {
   let serverModule = context.asAbsolutePath(
@@ -114,5 +115,11 @@ export function activate(context: ExtensionContext) {
 		CreateMasterCommand.run.bind(undefined)
 	)
   context.subscriptions.push(createMaster);
+
+	let createProject = commands.registerCommand(
+		"extension.createProject",
+		CreateProjectCommand.run.bind(undefined)
+	)
+  context.subscriptions.push(createProject);
 	
 }

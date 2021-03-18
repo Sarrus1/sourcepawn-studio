@@ -29,7 +29,7 @@ export async function run(args: any) {
 		// Check if master.yml already exists
 		let masterFilePath = path.join(rootpath.fsPath, ".github/workflows/master.yml");
 		if (fs.existsSync(masterFilePath)){
-			vscode.window.showErrorMessage("File already exists, aborting.");
+			vscode.window.showErrorMessage("master.yml already exists, aborting.");
 			return;
 		}
 		let myExtDir : string = vscode.extensions.getExtension ("Sarrus.sourcepawn-vscode").extensionPath;
@@ -39,7 +39,6 @@ export async function run(args: any) {
 				vscode.window.showErrorMessage("An error has occured.");
 				throw err;
 			} 
-			vscode.window.showInformationMessage("The file was generated.");
 		});
 
 		// Replace placeholders

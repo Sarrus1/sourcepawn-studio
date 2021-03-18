@@ -36,7 +36,7 @@ export async function run(args: any) {
 		// Check if README.md already exists
 		let readmeFilePath = path.join(rootpath.fsPath, "README.md");
 		if (fs.existsSync(readmeFilePath)){
-			vscode.window.showErrorMessage("File already exists, aborting.");
+			vscode.window.showErrorMessage("README.md already exists, aborting.");
 			return;
 		}
 		let myExtDir : string = vscode.extensions.getExtension ("Sarrus.sourcepawn-vscode").extensionPath;
@@ -46,7 +46,6 @@ export async function run(args: any) {
 				vscode.window.showErrorMessage("An error has occured.");
 				throw err;
 			} 
-			vscode.window.showInformationMessage("The README was generated.");
 		});
 
 		// Replace placeholders

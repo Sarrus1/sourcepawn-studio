@@ -47,7 +47,7 @@ export async function run(args: any) {
 		let scriptFileName:string = rootname + ".sp";
 		let scriptFilePath = path.join(rootpath.fsPath, "scripting", scriptFileName);
 		if (fs.existsSync(scriptFilePath)){
-			vscode.window.showErrorMessage("File already exists, aborting.");
+			vscode.window.showErrorMessage(scriptFileName+ " already exists, aborting.");
 			return;
 		}
 		let myExtDir : string = vscode.extensions.getExtension ("Sarrus.sourcepawn-vscode").extensionPath;
@@ -57,7 +57,6 @@ export async function run(args: any) {
 				vscode.window.showErrorMessage("An error has occured.");
 				throw err;
 			} 
-			vscode.window.showInformationMessage("The script file was generated.");
 		});
 
 		// Replace placeholders

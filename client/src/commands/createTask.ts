@@ -61,7 +61,7 @@ export async function run(args: any) {
 		// Check if file already exists
 		let taskFilePath = path.join(rootpath.fsPath, ".vscode/tasks.json");
 		if (fs.existsSync(taskFilePath)){
-			vscode.window.showErrorMessage("Tasks file already exists.");
+			vscode.window.showErrorMessage("tasks.json file already exists.");
 			return;
 		}
 		let myExtDir : string = vscode.extensions.getExtension ("Sarrus.sourcepawn-vscode").extensionPath;
@@ -70,8 +70,7 @@ export async function run(args: any) {
 			if (err){
 				vscode.window.showErrorMessage("An error has occured.");
 				throw err;
-			} 
-			vscode.window.showInformationMessage("The tasks file was generated.");
+			}
 		});
 
 		// Replace placeholders

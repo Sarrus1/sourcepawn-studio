@@ -17,7 +17,12 @@
     "Programming Languages"
   ],
   "activationEvents": [
-    "onLanguage:sourcepawn"
+    "onLanguage:sourcepawn",
+		"onCommand:extension.createTask",
+		"onCommand:extension.createScript",
+		"onCommand:extension.createREADME",
+		"onCommand:extension.createMaster",
+		"onCommand:extension.createProject"
   ],
   "contributes": {
     "commands": [
@@ -39,6 +44,11 @@
 			{
         "command": "extension.createMaster",
         "title": "SM Create GitHub Actions",
+        "category": "Project"
+      },
+			{
+        "command": "extension.createProject",
+        "title": "SM Create Project",
         "category": "Project"
       }
     ],
