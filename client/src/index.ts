@@ -3,6 +3,7 @@ import {
   workspace as Workspace,
   window,
   commands,
+  languages,
 } from "vscode";
 import {
   LanguageClient,
@@ -12,11 +13,12 @@ import {
 } from "vscode-languageclient/node";
 import * as glob from "glob";
 import * as path from "path";
-import CreateTaskCommand = require("./commands/createTask");
-import CreateScriptCommand = require("./commands/createScript");
-import CreateREADMECommand = require("./commands/createREADME");
-import CreateMasterCommand = require("./commands/createGitHubActions");
-import CreateProjectCommand = require("./commands/createProject");
+import * as CreateTaskCommand from "./commands/createTask";
+import * as CreateScriptCommand from "./commands/createScript";
+import * as CreateREADMECommand from "./commands/createREADME";
+import * as CreateMasterCommand from "./commands/createGitHubActions";
+import * as CreateProjectCommand from "./commands/createProject";
+import * as linter from "./linter";
 
 export function activate(context: ExtensionContext) {
   let serverModule = context.asAbsolutePath(
@@ -90,36 +92,41 @@ export function activate(context: ExtensionContext) {
   let disposable = client.start();
 
   context.subscriptions.push(disposable);
-	
+
   // Register commands
   let createTask = commands.registerCommand(
     "extension.createTask",
     CreateTaskCommand.run.bind(undefined)
   );
-	context.subscriptions.push(createTask);
+  context.subscriptions.push(createTask);
 
-	let createScript = commands.registerCommand(
-		"extension.createScript",
-		CreateScriptCommand.run.bind(undefined)
-	)
+  let createScript = commands.registerCommand(
+    "extension.createScript",
+    CreateScriptCommand.run.bind(undefined)
+  );
   context.subscriptions.push(createScript);
 
-	let createREADME = commands.registerCommand(
-		"extension.createREADME",
-		CreateREADMECommand.run.bind(undefined)
-	)
+  let createREADME = commands.registerCommand(
+    "extension.createREADME",
+    CreateREADMECommand.run.bind(undefined)
+  );
   context.subscriptions.push(createREADME);
 
-	let createMaster = commands.registerCommand(
-		"extension.createMaster",
-		CreateMasterCommand.run.bind(undefined)
-	)
+  let createMaster = commands.registerCommand(
+    "extension.createMaster",
+    CreateMasterCommand.run.bind(undefined)
+  );
   context.subscriptions.push(createMaster);
 
-	let createProject = commands.registerCommand(
-		"extension.createProject",
-		CreateProjectCommand.run.bind(undefined)
-	)
+  let createProject = commands.registerCommand(
+    "extension.createProject",
+    CreateProjectCommand.run.bind(undefined)
+  );
   context.subscriptions.push(createProject);
-	
+
+	// Register linter
+  context.subscriptions.push(linter.compilerDiagnostics);
+  context.subscriptions.push(linter.activeEditorChanged);
+  context.subscriptions.push(linter.textDocumentChanged);
+  context.subscriptions.push(linter.textDocumentClosed);
 }

@@ -15,12 +15,22 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 - Functions autocompletion with arguments descriptions.
 - Detailed highlighting.
 - Allows to parse sourcemod files from a custom location.
+- Linter capabilities.
 
 ## Settings
 The only setting allows to define the position of the default sourcemod include files :
 ```json
 {
-    "sourcepawnLanguageServer.sourcemod_home": "/path/to/sourcemod/include"
+  "sourcepawnLanguageServer.sourcemod_home": "/path/to/sourcemod/include"
+}
+{
+	"sourcepawnLanguageServer.author_name": "The name of the plugin's author (you)."
+},
+{
+	"sourcepawnLanguageServer.github_name": "The GitHub username of the plugin's author (you)."
+},
+{
+	"sourcepawnLanguageServer.spcomp_path": "The location of the SourceMod compiler"
 }
 ```
 
@@ -34,7 +44,7 @@ The only setting allows to define the position of the default sourcemod include 
 - Add more snippets.
 
 ## Credits
-This is an improved version of [Dreae's](https://github.com/Dreae/sourcepawn-vscode) extension which doesn't seem to be supported anymore.
+This is an improved version of [Dreae's](https://github.com/Dreae/sourcepawn-vscode) extension which is not supported anymore.
 
 ## How to contribute
 Pull requests and suggestions are welcome.
