@@ -3,7 +3,6 @@ import {
   workspace as Workspace,
   window,
   commands,
-  languages,
 } from "vscode";
 import {
   LanguageClient,
@@ -18,6 +17,7 @@ import * as CreateScriptCommand from "./commands/createScript";
 import * as CreateREADMECommand from "./commands/createREADME";
 import * as CreateMasterCommand from "./commands/createGitHubActions";
 import * as CreateProjectCommand from "./commands/createProject";
+import * as CompileSMCommand from "./commands/compileSM";
 import * as linter from "./linter";
 
 export function activate(context: ExtensionContext) {
@@ -123,6 +123,12 @@ export function activate(context: ExtensionContext) {
     CreateProjectCommand.run.bind(undefined)
   );
   context.subscriptions.push(createProject);
+
+	let compileSM = commands.registerCommand(
+    "extension.compileSM",
+    CompileSMCommand.run.bind(undefined)
+  );
+  context.subscriptions.push(compileSM);
 
 	// Register linter
   context.subscriptions.push(linter.compilerDiagnostics);

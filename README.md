@@ -8,6 +8,7 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 ![Example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/example.gif)
 
 ## Features
+- Compile the current .sp file.
 - Add icons for `.smx`, `.sp` and `.inc` files
 - Automatically scan include files for natives, defines, methodmaps and more.
 - Useful snippets.
@@ -37,11 +38,8 @@ The only setting allows to define the position of the default sourcemod include 
 ## To do
 - Add _hover_ help for functions.
 - Add _Goto Definition_ for functions and natives.
-- Add a compile from VSCode feature.
 - Add auto-formatting.
 - Add dynamic syntax highlighting for imported types.
-- Add project templates.
-- Add more snippets.
 
 ## Credits
 This is an improved version of [Dreae's](https://github.com/Dreae/sourcepawn-vscode) extension which is not supported anymore.

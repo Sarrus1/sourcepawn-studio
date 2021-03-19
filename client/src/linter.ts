@@ -9,10 +9,14 @@ import {
   Position,
   DiagnosticSeverity,
   languages,
+	extensions
 } from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 import { execFileSync } from "child_process";
+
+let myExtDir : string = extensions.getExtension ("Sarrus.sourcepawn-vscode").extensionPath;
+let TempPath : string = path.join(myExtDir, "tmp/tmpCompiled.smx");
 
 const tempFile = path.join(__dirname, "temp.sp");
 
@@ -52,7 +56,7 @@ export function refreshDiagnostics(
     (spcomp !== "" && !fs.existsSync(spcomp))
   ) {
     window
-      .showWarningMessage(
+      .showErrorMessage(
         "SourceMod compiler not found in the project. You need to set the spcomp path for the Linter to work.",
         "Open Settings"
       )
@@ -80,15 +84,16 @@ export function refreshDiagnostics(
 
         execFileSync(spcomp, [
           // Set the path for sm_home
-          "-iD" +
+          "-i" +
             Workspace.getConfiguration("sourcepawnLanguageServer").get(
               "sourcemod_home"
             ) || "",
           "-v0",
           tempFile,
-          "-oNUL",
+          "-o"+TempPath,
         ]);
-      } catch (error) {
+				fs.unlinkSync(TempPath);
+	      } catch (error) {
         let regex = /\((\d+)+\) : ((error|fatal error|warning).+)/gm;
         let matches: RegExpExecArray | null;
         while ((matches = regex.exec(error.stdout?.toString() || ""))) {
@@ -120,6 +125,10 @@ export let activeEditorChanged = window.onDidChangeActiveTextEditor(
     }
   }
 );
+
+export let textDocumentOpened = Workspace.onDidOpenTextDocument((event) => {
+  refreshDiagnostics(event, compilerDiagnostics);
+});
 
 export let textDocumentChanged = Workspace.onDidChangeTextDocument((event) => {
   refreshDiagnostics(event.document, compilerDiagnostics);

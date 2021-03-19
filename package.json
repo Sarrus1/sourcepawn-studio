@@ -22,7 +22,8 @@
 		"onCommand:extension.createScript",
 		"onCommand:extension.createREADME",
 		"onCommand:extension.createMaster",
-		"onCommand:extension.createProject"
+		"onCommand:extension.createProject",
+		"onCommand:extension.compileSM"
   ],
   "contributes": {
     "commands": [
@@ -49,6 +50,11 @@
 			{
         "command": "extension.createProject",
         "title": "SM Create Project",
+        "category": "Project"
+      },
+			{
+        "command": "extension.compileSM",
+        "title": "SM Compile file",
         "category": "Project"
       }
     ],
