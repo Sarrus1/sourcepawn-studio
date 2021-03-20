@@ -76,6 +76,7 @@ export function refreshDiagnostics(
   throttle.cancel();
   throttle.start(function () {
     if (path.extname(document.fileName) === ".sp") {
+			let scriptingFolder = path.dirname(document.uri.fsPath);
       let diagnostics: Diagnostic[] = [];
       try {
         let file = fs.openSync(tempFile, "w", 0o765);
@@ -88,6 +89,7 @@ export function refreshDiagnostics(
             Workspace.getConfiguration("sourcepawnLanguageServer").get(
               "sourcemod_home"
             ) || "",
+					"-i" + path.join(scriptingFolder, "include"),
           "-v0",
           tempFile,
           "-o"+TempPath,

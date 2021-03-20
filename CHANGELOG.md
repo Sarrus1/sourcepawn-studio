@@ -9,7 +9,7 @@
  - Added a command for github Actions file generation from a template.
  - Added a command to generate a Project from a template.
  - Added a linter based on spcomp.
- - Added a command to compile the current .sp file.
+ - Added a command and a button to compile the current .sp file.
  - Added more settings to support the above features.
 
 ### 1.7.1

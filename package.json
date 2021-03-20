@@ -80,8 +80,8 @@
 		"keybindings": [
       {
         "command": "extension.compileSM",
-        "key": "ctrl+s",
-        "mac": "cmd+s",
+        "key": "ctrl+d",
+        "mac": "cmd+d",
         "when": "editorTextFocus"
       }
     ],
