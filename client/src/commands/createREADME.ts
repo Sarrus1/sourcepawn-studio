@@ -41,12 +41,7 @@ export async function run(args: any) {
 		}
 		let myExtDir : string = vscode.extensions.getExtension ("Sarrus.sourcepawn-vscode").extensionPath;
 		let tasksTemplatesPath : string = path.join(myExtDir, "templates/README_template.MD");
-		fs.copyFile(tasksTemplatesPath, readmeFilePath, (err) => {
-			if (err){
-				vscode.window.showErrorMessage("An error has occured.");
-				throw err;
-			} 
-		});
+		fs.copyFileSync(tasksTemplatesPath, readmeFilePath);
 
 		// Replace placeholders
 		fs.readFile(readmeFilePath, 'utf8', function (err,data) {

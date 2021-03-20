@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn for VScode",
   "description": "SourcePawn highlighting and autocompletion.",
-  "version": "1.8.2",
+  "version": "1.8.3",
   "publisher": "Sarrus",
   "main": "client/out/index",
   "icon": "sm.png",
@@ -56,7 +56,7 @@
         "command": "extension.compileSM",
         "title": "SM Compile file",
         "category": "ShortcutMenuBar",
-				"icon": {
+        "icon": {
           "light": "fileicons/images/compile.svg",
           "dark": "fileicons/images/compile.svg"
         }
@@ -69,15 +69,15 @@
           "command": "extension.compileSM"
         }
       ],
-			"editor/title": [
+      "editor/title": [
         {
           "when": "editorTextFocus && resourceLangId == sourcepawn",
           "command": "extension.compileSM",
           "group": "navigation@1"
         }
-			]
+      ]
     },
-		"keybindings": [
+    "keybindings": [
       {
         "command": "extension.compileSM",
         "key": "ctrl+d",

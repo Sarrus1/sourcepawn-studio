@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 1.8.3
+ - Fixed an error on Windows when generating files.
+ - Fixed a syntax error on Windows for paths in json files.
+
 ### 1.8.2
  - Fixed an error where the linter was unable to write the compiled file.
 

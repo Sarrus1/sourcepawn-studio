@@ -66,13 +66,9 @@ export async function run(args: any) {
 		}
 		let myExtDir : string = vscode.extensions.getExtension ("Sarrus.sourcepawn-vscode").extensionPath;
 		let tasksTemplatesPath : string = path.join(myExtDir, "templates/tasks.json");
-		fs.copyFile(tasksTemplatesPath, taskFilePath, (err) => {
-			if (err){
-				vscode.window.showErrorMessage("An error has occured.");
-				throw err;
-			}
-		});
-
+		fs.copyFileSync(tasksTemplatesPath, taskFilePath);
+		spcomp_path = spcomp_path.replace(/\\/gm, "\\\\");
+		sm_home = sm_home.replace(/\\/gm, "\\\\");
 		// Replace placeholders
 		fs.readFile(taskFilePath, 'utf8', function (err,data) {
 			if (err) {
