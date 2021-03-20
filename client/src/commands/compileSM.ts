@@ -35,8 +35,32 @@ export async function run(args: any) {
 		return;
 	}
 
-	let terminal = vscode.window.createTerminal("SourcePawn compile");
+	// Open a terminal window
+	let terminals = vscode.window.terminals;
+	let terminal;
+	// Try to open current terminal window instead of opening a new one.
+	if(!terminals)
+	{
+		terminal = vscode.window.createTerminal("SourcePawn compile");
+	}
+	else {
+		let found : boolean = false;
+		for(let terminal_elt of terminals)
+		{
+			if (terminal_elt.name.includes("SourcePawn compile"))
+			{
+				terminal = terminal_elt;
+				found = true;
+				break;
+			}
+		}
+		if(!found)
+		{
+			terminal = vscode.window.createTerminal("SourcePawn compile");
+		}
+	}
 	terminal.show();
+
 	let workspaceFolderPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath || "";
 	// Create plugins folder if it doesn't exist.
 	let pluginsFolderPath = path.join(workspaceFolderPath, "plugins/");
@@ -55,18 +79,6 @@ export async function run(args: any) {
 	);
 	try{
 		terminal.sendText(command);
-		// execFileSync(spcomp, [
-		// 	activeDocumentPath,
-		// 	"-E", // Treat warnings as errors
-		// 	"-O2", // Optimization level (0=none, 2=full)
-		// 	"-v2", // "erbosity level; 0=quiet, 1=normal, 2=verbose
-		// 	// Set the path for sm_home
-		// 	"-iD" +
-		// 		vscode.workspace.getConfiguration("sourcepawnLanguageServer").get(
-		// 			"sourcemod_home"
-		// 		) || "",
-		// 	"-o"+pluginsFolderPath+activeDocumentName // Output path for the smx file
-		// ]);
 	}
 	catch (error) {
 		console.debug(error);

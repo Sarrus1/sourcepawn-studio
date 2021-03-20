@@ -18,12 +18,12 @@
   ],
   "activationEvents": [
     "onLanguage:sourcepawn",
-		"onCommand:extension.createTask",
-		"onCommand:extension.createScript",
-		"onCommand:extension.createREADME",
-		"onCommand:extension.createMaster",
-		"onCommand:extension.createProject",
-		"onCommand:extension.compileSM"
+    "onCommand:extension.createTask",
+    "onCommand:extension.createScript",
+    "onCommand:extension.createREADME",
+    "onCommand:extension.createMaster",
+    "onCommand:extension.createProject",
+    "onCommand:extension.compileSM"
   ],
   "contributes": {
     "commands": [
@@ -37,25 +37,52 @@
         "title": "SM Create Script File",
         "category": "Project"
       },
-			{
+      {
         "command": "extension.createREADME",
         "title": "SM Create README File",
         "category": "Project"
       },
-			{
+      {
         "command": "extension.createMaster",
         "title": "SM Create GitHub Actions",
         "category": "Project"
       },
-			{
+      {
         "command": "extension.createProject",
         "title": "SM Create Project",
         "category": "Project"
       },
-			{
+      {
         "command": "extension.compileSM",
         "title": "SM Compile file",
-        "category": "Project"
+        "category": "ShortcutMenuBar",
+				"icon": {
+          "light": "fileicons/images/compile.svg",
+          "dark": "fileicons/images/compile.svg"
+        }
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceLangId == sourcepawn",
+          "command": "extension.compileSM"
+        }
+      ],
+			"editor/title": [
+        {
+          "when": "editorTextFocus && resourceLangId == sourcepawn",
+          "command": "extension.compileSM",
+          "group": "navigation@1"
+        }
+			]
+    },
+		"keybindings": [
+      {
+        "command": "extension.compileSM",
+        "key": "ctrl+s",
+        "mac": "cmd+s",
+        "when": "editorTextFocus"
       }
     ],
     "configuration": {
