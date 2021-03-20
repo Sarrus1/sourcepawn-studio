@@ -1,5 +1,12 @@
 ## Release Notes
 
+### 1.8.2
+ - Fixed an error where the linter was unable to write the compiled file.
+
+### 1.8.1
+ - Fixed a key bind issue.
+ - Fixed a linter error for include files.
+
 ### 1.8.0
  - Added support for for loops variable completion.
  - Added support for enums parsing.
