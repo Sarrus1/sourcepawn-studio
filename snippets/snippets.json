@@ -1,107 +1,135 @@
 ﻿{
-	"for loop":{
-		"prefix": "for",
-		"body":[
-			"for(int ${1:iClient}=${2:0};$1<=${3:MaxClients};$1++)",
-			"{",
-			"\t${4:$LINE_COMMENT Content}",
-			"}"
-		],
-		"description": "for loop"
-	},
+  "for loop": {
+    "prefix": "for",
+    "body": [
+      "for(int ${1|i,iClient,current_client|} = ${2:0}; $1 <= ${3:MaxClients}; $1++)",
+      "{",
+      "\t${4:$LINE_COMMENT Content}",
+      "}"
+    ],
+    "description": "for loop"
+  },
 
-	"while loop":{
-		"prefix": "while",
-		"body":[
-			"while(${1:$BLOCK_COMMENT_START Condition $BLOCK_COMMENT_END})",
-			"{",
-			"\t${2:$LINE_COMMENT Content}",
-			"}"
-		]
-	},
+  "while loop": {
+    "prefix": "while",
+    "body": [
+      "while(${1:$BLOCK_COMMENT_START Condition $BLOCK_COMMENT_END})",
+      "{",
+      "\t${2:$LINE_COMMENT Content}",
+      "}"
+    ]
+  },
 
-	"do while loop":{
-		"prefix": "do",
-		"body":[
-			"do",
-			"{",
-			"\t${2:$LINE_COMMENT Content}",
-			"}",
-			"while(${1:$BLOCK_COMMENT_START Condition $BLOCK_COMMENT_END})"
-		]
-	},
+  "do while loop": {
+    "prefix": "do",
+    "body": [
+      "do",
+      "{",
+      "\t${2:$LINE_COMMENT Content}",
+      "}",
+      "while(${1:$BLOCK_COMMENT_START Condition $BLOCK_COMMENT_END})"
+    ]
+  },
 
+  "if statement": {
+    "prefix": "if",
+    "body": [
+      "if(${1:$BLOCK_COMMENT_START Condition $BLOCK_COMMENT_END})",
+      "{",
+      "\t${2:$LINE_COMMENT Content}",
+      "}"
+    ],
+    "description": "if statement"
+  },
 
-	"if statement":{
-		"prefix": "if",
-		"body":[
-			"if(${1:$BLOCK_COMMENT_START Condition $BLOCK_COMMENT_END})",
-			"{",
-			"\t${2:$LINE_COMMENT Content}",
-			"}"
-		],
-		"description": "if statement"
-	},
+  "else statement": {
+    "prefix": "else",
+    "body": ["else", "{", "\t${1:$LINE_COMMENT Content}", "}"],
+    "description": "else statement"
+  },
 
-	"else statement":{
-		"prefix": "else",
-		"body":[
-			"else",
-			"{",
-			"\t${1:$LINE_COMMENT Content}",
-			"}"
-		],
-		"description": "else statement"
-	},
+  "if else statement": {
+    "prefix": "if else",
+    "body": [
+      "if else(${1:$BLOCK_COMMENT_START Condition $BLOCK_COMMENT_END})",
+      "{",
+      "\t${2:$LINE_COMMENT Content}",
+      "}"
+    ],
+    "description": "if else statement"
+  },
 
-	"if else statement":{
-		"prefix": "if else",
-		"body":[
-			"if else(${1:$BLOCK_COMMENT_START Condition $BLOCK_COMMENT_END})",
-			"{",
-			"\t${2:$LINE_COMMENT Content}",
-			"}"
-		],
-		"description": "if else statement"
-	},
+  "include statement": {
+    "prefix": "#include",
+    "body": [
+      "#include <${1:$BLOCK_COMMENT_START File to include $BLOCK_COMMENT_END}>"
+    ],
+    "description": "include"
+  },
 
-	
-	"include statement":{
-		"prefix": "#include",
-		"body":[
-			"#include <${1:$BLOCK_COMMENT_START File to include $BLOCK_COMMENT_END}>"
-		],
-		"description": "include"	
-	},
+  "pragma": {
+    "prefix": "#pragma",
+    "body": ["#pragma ${1|newdecls required,semicolon 1|}"],
+    "description": "pragma"
+  },
 
-	"pragma":{
-		"prefix": "#pragma",
-		"body":[
-			"#pragma ${1|newdecls required,semicolon 1|}"
-		],
-		"description": "pragma"
-	},
+  "define": {
+    "prefix": "#define",
+    "body": ["#define ${1:define name} ${2:define value}"],
+    "description": "define"
+  },
 
-	"define":{
-		"prefix": "#define",
-		"body":[
-			"#define ${1:define name} ${2:define value}"
-		],
-		"description": "pragma"
-	},
+  "myinfo": {
+    "prefix": "myinfo",
+    "body": [
+      "public Plugin myinfo =",
+      "{",
+      "\tname = '${1:Name}',",
+      "\tauthor = '${2:Author}',",
+      "\tdescription = '${3:Description}',",
+      "\tversion = '${4:Version}',",
+      "\turl = '${5:URL}'",
+      "};"
+    ],
+    "description": "myinfo part"
+  },
 
-	"myinfo":{
-		"prefix": "myinfo",
-		"body":[
-			"public Plugin myinfo =",
-			"{",
-			"\tname = '${1:Name}',",
-			"\tauthor = '${2:Author}',",
-			"\tdescription = '${3:Description}',",
-			"\tversion = '${4:Version}',",
-			"\turl = '${5:URL}'",
-			"};"
-		],
-		"description": "myinfo part"
-	}
+  "template": {
+    "prefix": "::template",
+    "body": [
+      "#include <sourcemod>",
+      "#include <sdkhooks>",
+      "#include <sdktools>",
+      "",
+      "#pragma newdecls required",
+      "#pragma semicolon 1",
+      "",
+      "",
+      "public Plugin myinfo =",
+      "{",
+      "\tname = '',",
+      "\tauthor = '',",
+      "\tdescription = '',",
+      "\tversion = '',",
+      "\turl = ''",
+      "};",
+      "",
+      "",
+      "public void OnPluginStart()",
+      "{",
+      "",
+      "}"
+    ],
+    "description": "Plugin template"
+  },
+
+  "descriptive comment": {
+    "prefix": "::description",
+    "body": [
+      "/*----------------------------------------------",
+      "-------------------${1:Description}------------------",
+      "----------------------------------------------*/"
+    ],
+    "description": "Code description"
+  }
 }

@@ -52,7 +52,7 @@ export class FunctionCompletion implements Completion {
     return {
       label: this.name,
       kind: this.kind,
-      detail: this.description,
+      data: this.description,
     };
   }
 
@@ -93,7 +93,7 @@ export class MethodCompletion implements Completion {
       insertText: this.name,
       filterText: this.name,
       kind: this.kind,
-      detail: this.description,
+      data: this.description,
     };
   }
 
@@ -128,38 +128,94 @@ export class DefineCompletion implements Completion {
 }
 
 export class VariableCompletion implements Completion {
-    name: string;
-    file: string;
-    kind = CompletionItemKind.Variable;
+  name: string;
+  file: string;
+  kind = CompletionItemKind.Variable;
 
-    constructor(name: string, file: string) {
-        this.name = name;
-        this.file = file;
-    }
+  constructor(name: string, file: string) {
+    this.name = name;
+    this.file = file;
+  }
 
-    to_completion_item(file: string): CompletionItem {
-        // Only return variables local to the document being edited
-        if(file===this.file) {
-            return {
-                label: this.name,
-                kind: this.kind,
-                };
-        }
-        return {
-            label: "",
-            kind: this.kind,
-        };
-        
+  to_completion_item(file: string): CompletionItem {
+    // Only return variables local to the document being edited
+    if (file === this.file) {
+      return {
+        label: this.name,
+        kind: this.kind,
+      };
     }
+    return {
+      label: "",
+      kind: this.kind,
+    };
+  }
 
-    get_signature(): SignatureInformation {
-        return undefined;
-    }
+  get_signature(): SignatureInformation {
+    return undefined;
+  }
+}
+
+export class EnumCompletion implements Completion {
+  name: string;
+  file: string;
+  kind = CompletionItemKind.Enum;
+
+  constructor(name: string, file: string) {
+    this.name = name;
+    this.file = file;
+  }
+
+  to_completion_item(file: string): CompletionItem {
+		return {
+			label: this.name,
+			kind: this.kind,
+		};
+  }
+
+  get_signature(): SignatureInformation {
+    return undefined;
+  }
+}
+
+
+export class EnumMemberCompletion implements Completion {
+  name: string;
+	enum: EnumCompletion;
+  file: string;
+  kind = CompletionItemKind.EnumMember;
+
+  constructor(name: string, file: string, Enum:EnumCompletion) {
+    this.name = name;
+    this.file = file;
+		this.enum = Enum;
+  }
+
+  to_completion_item(file: string): CompletionItem {
+		return {
+			label: this.name,
+			kind: this.kind,
+		};
+  }
+
+  get_signature(): SignatureInformation {
+    return undefined;
+  }
+}
+
+export class Include {
+  uri: string;
+  IsBuiltIn: boolean;
+
+  constructor(uri: string, IsBuiltIn: boolean) {
+    this.uri = uri;
+    this.IsBuiltIn = IsBuiltIn;
+  }
 }
 
 export class FileCompletions {
   completions: Map<string, Completion>;
-  includes: string[];
+  includes: Include[];
   uri: string;
 
   constructor(uri: string) {
@@ -181,30 +237,47 @@ export class FileCompletions {
     for (let completion of this.completions.values()) {
       completions.push(completion);
     }
-
     return completions;
   }
 
-  add_include(include: string) {
-    this.includes.push(include);
+  to_completion_resolve(item: CompletionItem): CompletionItem {
+    item.label = item.label;
+    item.documentation = item.documentation;
+    return item;
   }
 
-  resolve_import(file: string, relative: boolean = false) {
+  add_include(include: string, IsBuiltIn: boolean) {
+    this.includes.push(new Include(include, IsBuiltIn));
+  }
+
+  resolve_import(
+    file: string,
+    relative: boolean = false,
+    IsBuiltIn: boolean = false
+  ) {
     let uri = file + ".inc";
+    let base_file = URI.parse(this.uri).fsPath;
+    let base_directory = path.dirname(base_file);
+    let inc_file = "";
+    // If the include is not relative, check if the file exists in the include folder
+    // this is more beginner friendly
     if (!relative) {
-      uri = "file://__sourcemod_builtin/" + uri;
-      this.add_include(uri);
-    } else {
-      let base_file = URI.parse(this.uri).fsPath;
-      let base_directory = path.dirname(base_file);
-      //base_directory = path.join(base_directory, "include");
-      let inc_file = path.resolve(base_directory, uri);
+      inc_file = path.join(base_directory, "include/", uri);
       if (fs.existsSync(inc_file)) {
         uri = URI.file(inc_file).toString();
-        this.add_include(uri);
+        this.add_include(uri, IsBuiltIn);
+      } else {
+        uri = "file://__sourcemod_builtin/" + uri;
+        this.add_include(uri, IsBuiltIn);
+      }
+    } else {
+      inc_file = path.resolve(base_directory, uri);
+      if (fs.existsSync(inc_file)) {
+        uri = URI.file(inc_file).toString();
+        this.add_include(uri, IsBuiltIn);
       } else {
         uri = URI.file(path.resolve(file + ".sp")).toString();
-        this.add_include(uri);
+        this.add_include(uri, IsBuiltIn);
       }
     }
   }
@@ -231,15 +304,15 @@ export class CompletionRepository {
 
   read_unscanned_imports(completions: FileCompletions) {
     for (let import_file of completions.includes) {
-      let completion = this.completions.get(import_file);
+      let completion = this.completions.get(import_file.uri);
       if (!completion) {
-        let file = URI.parse(import_file).fsPath;
-        let new_completions = new FileCompletions(import_file);
-        parse_file(file, new_completions);
+        let file = URI.parse(import_file.uri).fsPath;
+        let new_completions = new FileCompletions(import_file.uri);
+        parse_file(file, new_completions, import_file.IsBuiltIn);
 
         this.read_unscanned_imports(new_completions);
 
-        this.completions.set(import_file, new_completions);
+        this.completions.set(import_file.uri, new_completions);
       }
     }
   }
@@ -248,7 +321,7 @@ export class CompletionRepository {
     glob(path.join(sourcemod_home, "**/*.inc"), (err, files) => {
       for (let file of files) {
         let completions = new FileCompletions(URI.file(file).toString());
-        parse_file(file, completions);
+        parse_file(file, completions, true);
 
         let uri =
           "file://__sourcemod_builtin/" + path.relative(sourcemod_home, file);
@@ -277,7 +350,9 @@ export class CompletionRepository {
     }
     let all_completions = this.get_all_completions(
       position.textDocument.uri
-    ).map((completion) => completion.to_completion_item(position.textDocument.uri));
+    ).map((completion) =>
+      completion.to_completion_item(position.textDocument.uri)
+    );
     if (is_method) {
       return all_completions.filter(
         (completion) => completion.kind === CompletionItemKind.Method
@@ -316,9 +391,9 @@ export class CompletionRepository {
 
   get_included_files(completions: FileCompletions, files: Set<string>) {
     for (let include of completions.includes) {
-      if (!files.has(include)) {
-        files.add(include);
-        let include_completions = this.completions.get(include);
+      if (!files.has(include.uri)) {
+        files.add(include.uri);
+        let include_completions = this.completions.get(include.uri);
         if (include_completions) {
           this.get_included_files(include_completions, files);
         }

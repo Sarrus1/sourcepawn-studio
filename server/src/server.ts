@@ -6,11 +6,11 @@ import {
   ProposedFeatures,
   DidChangeConfigurationNotification,
   InitializeParams,
+  CompletionItem
 } from "vscode-languageserver/node";
 
 import { CompletionRepository } from "./completions";
 
-//let sm_home: string = Workspace.getConfiguration("sourcepawnLanguageServer").get("sourcemod_home");
 let connection = createConnection(ProposedFeatures.all);
 let documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 documents.listen(connection);
@@ -22,7 +22,7 @@ let workspaceRoot: string;
 let hasConfigurationCapability: boolean = false;
 
 connection.onInitialize((params) => {
-  workspaceRoot = params.workspaceFolders[0].uri;
+  workspaceRoot = params.workspaceFolders?.[0].uri || "";
   let capabilities = params.capabilities;
   hasConfigurationCapability = !!(
     capabilities.workspace && !!capabilities.workspace.configuration
@@ -31,7 +31,7 @@ connection.onInitialize((params) => {
     capabilities: {
       textDocumentSync: TextDocumentSyncKind.Incremental,
       completionProvider: {
-        resolveProvider: false,
+        resolveProvider: true,
       },
       signatureHelpProvider: {
         triggerCharacters: ["("],
@@ -86,7 +86,7 @@ connection.onDidChangeConfiguration((change) => {
     completions.parse_sm_api(sm_home);
   }
 });
-// Qu'est ce qu'on passe à la fonction en fait?
+
 function getDocumentSettings(resource: string): Thenable<SourcepawnSettings> {
   if (!hasConfigurationCapability) {
     return Promise.resolve(globalSettings);
@@ -105,6 +105,14 @@ function getDocumentSettings(resource: string): Thenable<SourcepawnSettings> {
 connection.onCompletion((textDocumentPosition) => {
   return completions.get_completions(textDocumentPosition);
 });
+
+connection.onCompletionResolve(
+	(item: CompletionItem): CompletionItem => {
+    item.detail = item.data;
+    item.documentation = item.data
+		return item;
+	}
+);
 
 connection.onSignatureHelp((textDocumentPosition) => {
   return completions.get_signature(textDocumentPosition);

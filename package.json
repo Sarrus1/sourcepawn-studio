@@ -1,96 +1,173 @@
 {
-    "name": "sourcepawn-vscode",
-    "displayName": "SourcePawn for VScode",
-    "description": "SourcePawn highlighting and autocompletion.",
-    "version": "0.1.6",
-    "publisher": "Sarrus",
-    "main": "client/out/index",
-    "icon": "sm.png",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/Sarrus1/sourcepawn-vscode.git"
-    },
-    "engines": {
-        "vscode": "^1.14.0"
-    },
-    "categories": [
-        "Programming Languages"
+  "name": "sourcepawn-vscode",
+  "displayName": "SourcePawn for VScode",
+  "description": "SourcePawn highlighting and autocompletion.",
+  "version": "1.8.3",
+  "publisher": "Sarrus",
+  "main": "client/out/index",
+  "icon": "sm.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sarrus1/sourcepawn-vscode.git"
+  },
+  "engines": {
+    "vscode": "^1.14.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:sourcepawn",
+    "onCommand:extension.createTask",
+    "onCommand:extension.createScript",
+    "onCommand:extension.createREADME",
+    "onCommand:extension.createMaster",
+    "onCommand:extension.createProject",
+    "onCommand:extension.compileSM"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension.createTask",
+        "title": "SM Create Task File",
+        "category": "Project"
+      },
+      {
+        "command": "extension.createScript",
+        "title": "SM Create Script File",
+        "category": "Project"
+      },
+      {
+        "command": "extension.createREADME",
+        "title": "SM Create README File",
+        "category": "Project"
+      },
+      {
+        "command": "extension.createMaster",
+        "title": "SM Create GitHub Actions",
+        "category": "Project"
+      },
+      {
+        "command": "extension.createProject",
+        "title": "SM Create Project",
+        "category": "Project"
+      },
+      {
+        "command": "extension.compileSM",
+        "title": "SM Compile file",
+        "category": "ShortcutMenuBar",
+        "icon": {
+          "light": "fileicons/images/compile.svg",
+          "dark": "fileicons/images/compile.svg"
+        }
+      }
     ],
-    "activationEvents": [
-        "onLanguage:sourcepawn"
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceLangId == sourcepawn",
+          "command": "extension.compileSM"
+        }
+      ],
+      "editor/title": [
+        {
+          "when": "editorTextFocus && resourceLangId == sourcepawn",
+          "command": "extension.compileSM",
+          "group": "navigation@1"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "extension.compileSM",
+        "key": "ctrl+d",
+        "mac": "cmd+d",
+        "when": "editorTextFocus"
+      }
     ],
-    "contributes": {
-        "configuration": {
-            "type": "object",
-            "title": "SourcePawn Language Server configuration",
-            "properties": {
-                "sourcepawnLanguageServer.sourcemod_home": {
-                    "type": "string",
-                    "description": "The location of the SourceMod API include files found in addons/sourcemod/scripting/include"
-                },
-                "sourcepawnLanguageServer.trace.server": {
-                    "type": "string",
-                    "enum": [
-                        "off",
-                        "messages",
-                        "verbose"
-                    ],
-                    "default": "off",
-                    "description": "Traces the communication between VSCode and the language server service."
-                }
-            }
+    "configuration": {
+      "type": "object",
+      "title": "SourcePawn Language Server configuration",
+      "properties": {
+        "sourcepawnLanguageServer.sourcemod_home": {
+          "type": "string",
+          "description": "The location of the SourceMod API include files found in addons/sourcemod/scripting/include"
         },
-        "iconThemes": [
-            {
-                "id": "sourcepawn",
-                "label": "SourcePawn",
-                "path": "./fileicons/sourcepawn-icon-theme.json"
-            }
-        ],
-        "languages": [
-            {
-                "id": "sourcepawn",
-                "aliases": [
-                    "SourcePawn",
-                    "sourcepawn"
-                ],
-                "extensions": [
-                    ".sp",
-                    ".inc"
-                ],
-                "configuration": "./language-configuration.json"
-            }
-        ],
-        "grammars": [
-            {
-                "language": "sourcepawn",
-                "scopeName": "source.sourcepawn",
-                "path": "./syntaxes/sourcepawn.tmLanguage.json"
-            }
-        ],
-        "snippets": [
-            {
-                "language": "sourcepawn",
-                "path": "./snippets/snippets.json"
-            }
-        ]
+        "sourcepawnLanguageServer.author_name": {
+          "type": "string",
+          "description": "The name of the plugin's author (you)."
+        },
+        "sourcepawnLanguageServer.github_name": {
+          "type": "string",
+          "description": "The GitHub username of the plugin's author (you)."
+        },
+        "sourcepawnLanguageServer.spcomp_path": {
+          "type": "string",
+          "description": "The location of the SourceMod compiler"
+        },
+        "sourcepawnLanguageServer.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Traces the communication between VSCode and the language server service."
+        }
+      }
     },
-    "dependencies": {
-        "@types/vscode": "^1.53.0",
-        "glob": "^7.1.2",
-        "supports-color": "^8.1.1",
-        "vscode-languageclient": "^7.0.0",
-        "vscode-languageserver-textdocument": "^1.0.1"
-    },
-    "devDependencies": {
-        "@types/node": "^8.0.14",
-        "typescript": "^4.2.2"
-    },
-    "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -b",
-        "watch": "tsc -b -w",
-        "postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
-        "test": "sh ./scripts/e2e.sh"
-    }
+    "iconThemes": [
+      {
+        "id": "sourcepawn",
+        "label": "SourcePawn",
+        "path": "./fileicons/sourcepawn-icon-theme.json"
+      }
+    ],
+    "languages": [
+      {
+        "id": "sourcepawn",
+        "aliases": [
+          "SourcePawn",
+          "sourcepawn"
+        ],
+        "extensions": [
+          ".sp",
+          ".inc"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "sourcepawn",
+        "scopeName": "source.sourcepawn",
+        "path": "./syntaxes/sourcepawn.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "sourcepawn",
+        "path": "./snippets/snippets.json"
+      }
+    ]
+  },
+  "dependencies": {
+    "@types/vscode": "^1.53.0",
+    "glob": "^7.1.2",
+    "supports-color": "^8.1.1",
+    "vscode-languageclient": "^7.0.0",
+    "vscode-languageserver-textdocument": "^1.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^8.0.14",
+    "typescript": "^4.2.2"
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -b",
+    "watch": "tsc -b -w",
+    "postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+    "test": "sh ./scripts/e2e.sh"
+  }
 }
