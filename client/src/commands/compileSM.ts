@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as path from 'path';
 import * as fs from "fs";
+import * as os from "os";
 import { execFileSync } from "child_process";
 
 export async function run(args: any) {
@@ -67,10 +68,8 @@ export async function run(args: any) {
 	if (!fs.existsSync(pluginsFolderPath)){
 		fs.mkdirSync(pluginsFolderPath);
 	}
-	let command = "".concat(
-		// Execute as command
-		".",
-
+	
+	let command = (os.platform() == 'win32' ? "." : "").concat(
 		// Compiler path
 		"\'" +
 			spcomp +
@@ -99,7 +98,7 @@ export async function run(args: any) {
 				pluginsFolderPath + activeDocumentName +
 			"\'",
 
-	// Set the path for sm_home
+		// Set the path for sm_home
 		" -i=" +	
 			"\'",
 				vscode.workspace.getConfiguration("sourcepawnLanguageServer").get("sourcemod_home") || "",
