@@ -79,9 +79,9 @@
     },
     "keybindings": [
       {
-        "command": "extension.compileSM",
-        "key": "ctrl+d",
-        "mac": "cmd+d",
+        "command": "editorTextFocus && resourceLangId == sourcepawn",
+        "key": "ctrl+shift+d",
+        "mac": "cmd+shift+d",
         "when": "editorTextFocus"
       }
     ],

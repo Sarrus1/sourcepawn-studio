@@ -16,7 +16,6 @@ import * as path from "path";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
 import * as parser from "./smParser"
-import { type } from "os";
 
 
 export interface Completion {
