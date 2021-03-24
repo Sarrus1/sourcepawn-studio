@@ -105,6 +105,11 @@
           "type": "string",
           "description": "The location of the SourceMod compiler"
         },
+				"sourcepawnLanguageServer.showCompileIconInEditorTitleMenu": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to show the 'Compile Code' icon in editor title menu."
+        },
         "sourcepawnLanguageServer.trace.server": {
           "type": "string",
           "enum": [
