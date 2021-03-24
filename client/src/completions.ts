@@ -1,25 +1,30 @@
+// <reference path="index.ts" />
+
 import {
   CompletionItemKind,
   CompletionItem,
   TextDocumentPositionParams,
   SignatureHelp,
   SignatureInformation,
+	TextDocumentIdentifier,
 } from "vscode-languageclient/node";
 import * as vscode from "vscode";
-import {TextDocument} from "vscode-languageserver-textdocument"
 //import { parse_blob, parse_file } from "./parser";
 
 import * as glob from "glob";
 import * as path from "path";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
+import * as parser from "./parser"
+import { type } from "os";
+
 
 export interface Completion {
   name: string;
   kind: CompletionItemKind;
   description?: string;
 
-  to_completion_item(file: string): CompletionItem;
+  to_completion_item(file: string): vscode.CompletionItem;
   get_signature(): SignatureInformation;
 }
 
@@ -47,11 +52,11 @@ export class FunctionCompletion implements Completion {
     this.detail = detail;
   }
 
-  to_completion_item(file: string): CompletionItem {
+  to_completion_item(file: string): vscode.CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
-      data: this.description,
+      detail: this.description,
     };
   }
 
@@ -86,13 +91,13 @@ export class MethodCompletion implements Completion {
     this.params = params;
   }
 
-  to_completion_item(file: string): CompletionItem {
+  to_completion_item(file: string): vscode.CompletionItem {
     return {
       label: `${this.method_map}.${this.name}`,
       insertText: this.name,
       filterText: this.name,
       kind: this.kind,
-      data: this.description,
+      detail: this.description,
     };
   }
 
@@ -114,7 +119,7 @@ export class DefineCompletion implements Completion {
     this.name = name;
   }
 
-  to_completion_item(file: string): CompletionItem {
+  to_completion_item(file: string): vscode.CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -136,7 +141,7 @@ export class VariableCompletion implements Completion {
     this.file = file;
   }
 
-  to_completion_item(file: string): CompletionItem {
+  to_completion_item(file: string): vscode.CompletionItem {
     // Only return variables local to the document being edited
     if (file === this.file) {
       return {
@@ -165,7 +170,7 @@ export class EnumCompletion implements Completion {
     this.file = file;
   }
 
-  to_completion_item(file: string): CompletionItem {
+  to_completion_item(file: string): vscode.CompletionItem {
 		return {
 			label: this.name,
 			kind: this.kind,
@@ -190,7 +195,7 @@ export class EnumMemberCompletion implements Completion {
 		this.enum = Enum;
   }
 
-  to_completion_item(file: string): CompletionItem {
+  to_completion_item(file: string): vscode.CompletionItem {
 		return {
 			label: this.name,
 			kind: this.kind,
@@ -284,9 +289,12 @@ export class FileCompletions {
 
 export class CompletionRepository implements vscode.CompletionItemProvider, vscode.Disposable {
 	public completions: Map<string, FileCompletions>;
+	documents : Set<vscode.Uri>;
 	private globalState: vscode.Memento;
 
 	constructor(globalState?: vscode.Memento) {
+		this.completions = new Map();
+		this.documents = new Set();
 		this.globalState = globalState;
 	}
 
@@ -295,191 +303,191 @@ export class CompletionRepository implements vscode.CompletionItemProvider, vsco
 		position: vscode.Position,
 		token: vscode.CancellationToken
 	): vscode.CompletionList {
-		//let comp_test = this.completions.get("test");
-		//let new_var = new VariableCompletion("test", "file");
-		let comp_t = new vscode.CompletionList;
-		comp_t.items.push({
-			label: "test",
-			kind: vscode.CompletionItemKind.Variable,
-		});
-		console.error("yo", comp_t);
-		return comp_t;
+		let completions : vscode.CompletionList = this.get_completions(document, position);
+		//let completions : vscode.CompletionList = new vscode.CompletionList;
+		return completions;
 	}
 
 	public dispose() {
 
 	}
 
-	public parser(
-		document: vscode.TextDocument
-	) : void {
-		let new_completions = new FileCompletions(document.uri.toString());
-		let new_var = new VariableCompletion("test", "file");
-		new_completions.add("test", new_var);
-		this.completions.set("test", new_completions);
+	handle_new_document(document : vscode.TextDocument) {
+		//this.documents.add(document.uri);
+		let completions = new FileCompletions(document.uri.toString());
+		parser.parse_blob(document.getText(), completions, document.uri.toString());
+		this.read_unscanned_imports(completions);
+		this.completions.set(document.uri.toString(), completions);
 	}
 
 	handle_document_change(event: vscode.TextDocumentChangeEvent) {
-		this.parser(event.document);
-    // let completions = new FileCompletions(event.document.uri.toString());
-    // parse_blob(event.document.getText(), completions, event.document.uri);
-    // this.read_unscanned_imports(completions);
-
-    // this.completions.set(event.document.uri, completions);
+		let this_completions = new FileCompletions(event.document.uri.toString());
+		parser.parse_blob(event.document.getText(), this_completions, event.document.uri.toString());
+		//this.read_unscanned_imports(completions);
+		this.completions.set(event.document.uri.toString(), this_completions);
   }
 
-  // read_unscanned_imports(completions: FileCompletions) {
-  //   for (let import_file of completions.includes) {
-  //     let completion = this.completions.get(import_file.uri);
-  //     if (!completion) {
-  //       let file = URI.parse(import_file.uri).fsPath;
-  //       let new_completions = new FileCompletions(import_file.uri);
-  //       parse_file(file, new_completions, import_file.IsBuiltIn);
+  read_unscanned_imports(completions: FileCompletions) {
+    for (let import_file of completions.includes) {
+      let completion = this.completions.get(import_file.uri);
+      if (!completion) {
+        let file = URI.parse(import_file.uri).fsPath;
+        let new_completions = new FileCompletions(import_file.uri);
+        parser.parse_file(file, new_completions, import_file.IsBuiltIn);
 
-  //       this.read_unscanned_imports(new_completions);
+        this.read_unscanned_imports(new_completions);
 
-  //       this.completions.set(import_file.uri, new_completions);
-  //     }
-  //   }
-  // }
+        this.completions.set(import_file.uri, new_completions);
+      }
+    }
+  }
 
-  // parse_sm_api(sourcemod_home: string) {
-  //   glob(path.join(sourcemod_home, "**/*.inc"), (err, files) => {
-  //     for (let file of files) {
-  //       let completions = new FileCompletions(URI.file(file).toString());
-  //       parse_file(file, completions, true);
+  parse_sm_api(sourcemod_home: string) : void {
+		if(!sourcemod_home) return;
+    glob(path.join(sourcemod_home, "**/*.inc"), (err, files) => {
+      for (let file of files) {
+        let completions = new FileCompletions(URI.file(file).toString());
+        parser.parse_file(file, completions, true);
 
-  //       let uri =
-  //         "file://__sourcemod_builtin/" + path.relative(sourcemod_home, file);
-  //       this.completions.set(uri, completions);
-  //     }
-  //   });
-  // }
+        let uri =
+          "file://__sourcemod_builtin/" + path.relative(sourcemod_home, file);
+        this.completions.set(uri, completions);
+      }
+    });
+  }
 
-  // get_completions(position: TextDocumentPositionParams): CompletionItem[] {
-  //   let document = this.documents.get(position.textDocument.uri);
-  //   let is_method = false;
-  //   if (document) {
-  //     let line = document.getText().split("\n")[position.position.line].trim();
-  //     for (let i = line.length - 2; i >= 0; i--) {
-  //       if (line[i].match(/[a-zA-Z0-9_]/)) {
-  //         continue;
-  //       }
+  get_completions(document : vscode.TextDocument, position : vscode.Position): vscode.CompletionList {
+    let is_method = false;
+    if (document) {
+      let line = document.getText().split("\n")[position.line].trim();
+      for (let i = line.length - 2; i >= 0; i--) {
+        if (line[i].match(/[a-zA-Z0-9_]/)) {
+          continue;
+        }
 
-  //       if (line[i] === ".") {
-  //         is_method = true;
-  //         break;
-  //       }
+        if (line[i] === ".") {
+          is_method = true;
+          break;
+        }
+        break;
+      }
+    }
+    let all_completions : Completion[] = this.get_all_completions(document.uri.toString());
+		let all_completions_list : vscode.CompletionList = new vscode.CompletionList();
+		if(all_completions){
+			all_completions_list.items = all_completions.map((completion) => {
+				if(completion){
+				if(completion.to_completion_item){
+					return completion.to_completion_item(document.uri.toString());
+				}}
+      });
+		}
+		//return all_completions_list;
+    if (is_method) {
+			all_completions_list.items.filter(
+        (completion) => completion.kind === CompletionItemKind.Method
+      );
+      return all_completions_list;
+    } else {
+			all_completions_list.items.filter(
+        (completion) => completion.kind !== CompletionItemKind.Method
+      );
+      return all_completions_list;
+    }
+  }
 
-  //       break;
-  //     }
-  //   }
-  //   let all_completions = this.get_all_completions(
-  //     position.textDocument.uri
-  //   ).map((completion) =>
-  //     completion.to_completion_item(position.textDocument.uri)
-  //   );
-  //   if (is_method) {
-  //     return all_completions.filter(
-  //       (completion) => completion.kind === CompletionItemKind.Method
-  //     );
-  //   } else {
-  //     return all_completions.filter(
-  //       (completion) => completion.kind !== CompletionItemKind.Method
-  //     );
-  //   }
-  // }
+  get_all_completions(file: string): Completion[] {
+    let completion = this.completions.get(file);
+    let includes = new Set<string>();
+		if(completion){
+			this.get_included_files(completion, includes);
+		}
+    includes.add(file);
+    return [...includes]
+      .map((file) => {
+        return this.get_file_completions(file);
+      })
+      .reduce(
+        (completion, file_completions) => completion.concat(file_completions),
+        []
+      );
+  }
 
-  // get_all_completions(file: string): Completion[] {
-  //   let completions = this.completions.get(file);
+  get_file_completions(file: string): Completion[] {
+    let file_completions : FileCompletions = this.completions.get(file);
+		let completion_list : Completion[] = [];
+    if (file_completions) {
+      return file_completions.get_completions(this);
+    }
+    return completion_list;
+  }
 
-  //   let includes = new Set<string>();
-  //   this.get_included_files(completions, includes);
-  //   includes.add(file);
-  //   return [...includes]
-  //     .map((file) => {
-  //       return this.get_file_completions(file);
-  //     })
-  //     .reduce(
-  //       (completions, file_completions) => completions.concat(file_completions),
-  //       []
-  //     );
-  // }
+  get_included_files(completions: FileCompletions, files: Set<string>) {
+    for (let include of completions.includes) {
+      if (!files.has(include.uri)) {
+        files.add(include.uri);
+        let include_completions = this.completions.get(include.uri);
+        if (include_completions) {
+          this.get_included_files(include_completions, files);
+        }
+      }
+    }
+  }
+	/*
+  get_signature(position: TextDocumentPositionParams): SignatureHelp {
+    let document = this.documents.get(URI.parse(position.textDocument.uri));
+    if (document) {
+      let { method, parameter_count } = (() => {
+        let line = document.getText().split("\n")[position.position.line];
 
-  // get_file_completions(file: string): Completion[] {
-  //   let completions = this.completions.get(file);
-  //   if (completions) {
-  //     return completions.get_completions(this);
-  //   }
+        if (line[position.position.character - 1] === ")") {
+          // We've finished this call
+          return { method: undefined, parameter_count: 0 };
+        }
 
-  //   return [];
-  // }
+        let method = "";
+        let end_parameters = false;
+        let parameter_count = 0;
 
-  // get_included_files(completions: FileCompletions, files: Set<string>) {
-  //   for (let include of completions.includes) {
-  //     if (!files.has(include.uri)) {
-  //       files.add(include.uri);
-  //       let include_completions = this.completions.get(include.uri);
-  //       if (include_completions) {
-  //         this.get_included_files(include_completions, files);
-  //       }
-  //     }
-  //   }
-  // }
+        for (let i = position.position.character; i >= 0; i--) {
+          if (end_parameters) {
+            if (line[i].match(/[A-Za-z0-9_]/)) {
+              method = line[i] + method;
+            } else {
+              break;
+            }
+          } else {
+            if (line[i] === "(") {
+              end_parameters = true;
+            } else if (line[i] === ",") {
+              parameter_count++;
+            }
+          }
+        }
 
-  // get_signature(position: TextDocumentPositionParams): SignatureHelp {
-  //   let document = this.documents.get(position.textDocument.uri);
-  //   if (document) {
-  //     let { method, parameter_count } = (() => {
-  //       let line = document.getText().split("\n")[position.position.line];
+        return { method, parameter_count };
+      })();
 
-  //       if (line[position.position.character - 1] === ")") {
-  //         // We've finished this call
-  //         return { method: undefined, parameter_count: 0 };
-  //       }
+      let completions = this.get_all_completions(
+        position.textDocument.uri
+      ).filter((completion) => {
+        return completion.name === method;
+      });
 
-  //       let method = "";
-  //       let end_parameters = false;
-  //       let parameter_count = 0;
+      if (completions.length > 0) {
+        return {
+          signatures: [completions[0].get_signature()],
+          activeParameter: parameter_count,
+          activeSignature: 0,
+        };
+      }
+    }
 
-  //       for (let i = position.position.character; i >= 0; i--) {
-  //         if (end_parameters) {
-  //           if (line[i].match(/[A-Za-z0-9_]/)) {
-  //             method = line[i] + method;
-  //           } else {
-  //             break;
-  //           }
-  //         } else {
-  //           if (line[i] === "(") {
-  //             end_parameters = true;
-  //           } else if (line[i] === ",") {
-  //             parameter_count++;
-  //           }
-  //         }
-  //       }
-
-  //       return { method, parameter_count };
-  //     })();
-
-  //     let completions = this.get_all_completions(
-  //       position.textDocument.uri
-  //     ).filter((completion) => {
-  //       return completion.name === method;
-  //     });
-
-  //     if (completions.length > 0) {
-  //       return {
-  //         signatures: [completions[0].get_signature()],
-  //         activeParameter: parameter_count,
-  //         activeSignature: 0,
-  //       };
-  //     }
-  //   }
-
-  //   return {
-  //     signatures: [],
-  //     activeSignature: 0,
-  //     activeParameter: 0,
-  //   };
-  // }
+    return {
+      signatures: [],
+      activeSignature: 0,
+      activeParameter: 0,
+    };
+  }
+	*/
 }

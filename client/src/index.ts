@@ -31,10 +31,14 @@ export function activate(context: vscode.ExtensionContext) {
     },
   };
 	let completions = new CompletionRepository(context.globalState);
+
+	let sm_home : string = vscode.workspace.getConfiguration("sourcepawnLanguageServer").get(
+		"sourcemod_home");
+	completions.parse_sm_api(sm_home);
 	context.subscriptions.push(completions);
-	context.subscriptions.push(vscode.languages.registerCompletionItemProvider(SM_MODE ,completions, '.', '"'));
-	vscode.workspace.onDidChangeTextDocument(completions.handle_document_change, null, context.subscriptions);
-	//vscode.workspace.onDidOpenTextDocument(parser.test_parser, null, context.subscriptions);
+	context.subscriptions.push(vscode.languages.registerCompletionItemProvider(SM_MODE ,completions));
+	vscode.workspace.onDidChangeTextDocument(completions.handle_document_change, completions, context.subscriptions);
+	vscode.workspace.onDidOpenTextDocument(completions.handle_new_document, null, context.subscriptions);
   
 	
 	
