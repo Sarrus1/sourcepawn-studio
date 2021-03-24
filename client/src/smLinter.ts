@@ -1,21 +1,9 @@
-import {
-  workspace as Workspace,
-  window,
-  commands,
-  TextDocument,
-  DiagnosticCollection,
-  Diagnostic,
-  Range,
-  Position,
-  DiagnosticSeverity,
-  languages,
-	extensions
-} from "vscode";
+import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 import { execFileSync } from "child_process";
 
-let myExtDir : string = extensions.getExtension ("Sarrus.sourcepawn-vscode").extensionPath;
+let myExtDir : string = vscode.extensions.getExtension ("Sarrus.sourcepawn-vscode").extensionPath;
 let TempPath : string = path.join(myExtDir, "tmp/tmpCompiled.smx");
 
 const tempFile = path.join(__dirname, "temp.sp");
@@ -42,27 +30,27 @@ export class TimeoutFunction {
 export let throttles: { [key: string]: TimeoutFunction } = {};
 
 export function refreshDiagnostics(
-  document: TextDocument,
-  compilerDiagnostics: DiagnosticCollection
+  document: vscode.TextDocument,
+  compilerDiagnostics: vscode.DiagnosticCollection
 ) {
   const spcomp =
-    Workspace.getConfiguration("sourcepawnLanguageServer").get<string>(
+    vscode.workspace.getConfiguration("sourcepawnLanguageServer").get<string>(
       "spcomp_path"
     ) || "";
   if (
-    !Workspace.getConfiguration("sourcepawnLanguageServer").get(
+    !vscode.workspace.getConfiguration("sourcepawnLanguageServer").get(
       "spcomp_path"
     ) ||
     (spcomp !== "" && !fs.existsSync(spcomp))
   ) {
-    window
+    vscode.window
       .showErrorMessage(
         "SourceMod compiler not found in the project. You need to set the spcomp path for the Linter to work.",
         "Open Settings"
       )
       .then((choice) => {
         if (choice === "Open Settings") {
-          commands.executeCommand("workbench.action.openWorkspaceSettings");
+          vscode.commands.executeCommand("workbench.action.openWorkspaceSettings");
         }
       });
   }
@@ -77,7 +65,7 @@ export function refreshDiagnostics(
   throttle.start(function () {
     if (path.extname(document.fileName) === ".sp") {
 			let scriptingFolder = path.dirname(document.uri.fsPath);
-      let diagnostics: Diagnostic[] = [];
+      let diagnostics: vscode.Diagnostic[] = [];
       try {
         let file = fs.openSync(tempFile, "w", 0o765);
         fs.writeSync(file, document.getText());
@@ -86,7 +74,7 @@ export function refreshDiagnostics(
         execFileSync(spcomp, [
           // Set the path for sm_home
           "-i" +
-            Workspace.getConfiguration("sourcepawnLanguageServer").get(
+            vscode.workspace.getConfiguration("sourcepawnLanguageServer").get(
               "sourcemod_home"
             ) || "",
 					"-i" + path.join(scriptingFolder, "include"),
@@ -99,15 +87,15 @@ export function refreshDiagnostics(
         let regex = /\((\d+)+\) : ((error|fatal error|warning).+)/gm;
         let matches: RegExpExecArray | null;
         while ((matches = regex.exec(error.stdout?.toString() || ""))) {
-          const range = new Range(
-            new Position(Number(matches[1]) - 1, 0),
-            new Position(Number(matches[1]) - 1, 256)
+          const range = new vscode.Range(
+            new vscode.Position(Number(matches[1]) - 1, 0),
+            new vscode.Position(Number(matches[1]) - 1, 256)
           );
           const severity =
             matches[3] === "warning"
-              ? DiagnosticSeverity.Warning
-              : DiagnosticSeverity.Error;
-          diagnostics.push(new Diagnostic(range, matches[2], severity));
+              ? vscode.DiagnosticSeverity.Warning
+              : vscode.DiagnosticSeverity.Error;
+          diagnostics.push(new vscode.Diagnostic(range, matches[2], severity));
         }
       }
 
@@ -116,11 +104,11 @@ export function refreshDiagnostics(
   }, 300);
 }
 
-export let compilerDiagnostics = languages.createDiagnosticCollection(
+export let compilerDiagnostics = vscode.languages.createDiagnosticCollection(
   "compiler"
 );
 
-export let activeEditorChanged = window.onDidChangeActiveTextEditor(
+export let activeEditorChanged = vscode.window.onDidChangeActiveTextEditor(
   (editor) => {
     if (editor) {
       refreshDiagnostics(editor.document, compilerDiagnostics);
@@ -128,15 +116,15 @@ export let activeEditorChanged = window.onDidChangeActiveTextEditor(
   }
 );
 
-export let textDocumentOpened = Workspace.onDidOpenTextDocument((event) => {
+export let textDocumentOpened = vscode.workspace.onDidOpenTextDocument((event) => {
   refreshDiagnostics(event, compilerDiagnostics);
 });
 
-export let textDocumentChanged = Workspace.onDidChangeTextDocument((event) => {
+export let textDocumentChanged = vscode.workspace.onDidChangeTextDocument((event) => {
   refreshDiagnostics(event.document, compilerDiagnostics);
 });
 
-export let textDocumentClosed = Workspace.onDidCloseTextDocument((document) => {
+export let textDocumentClosed = vscode.workspace.onDidCloseTextDocument((document) => {
   compilerDiagnostics.delete(document.uri);
   delete throttles[document.uri.path];
 });

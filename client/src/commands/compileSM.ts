@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as path from 'path';
 import * as fs from "fs";
+import * as os from "os";
 import { execFileSync } from "child_process";
 
 export async function run(args: any) {
@@ -67,21 +68,47 @@ export async function run(args: any) {
 	if (!fs.existsSync(pluginsFolderPath)){
 		fs.mkdirSync(pluginsFolderPath);
 	}
-	let command = "".concat(spcomp, " ", activeDocumentPath, " ", "-E", // Treat warnings as errors
-	" -O2", // Optimization level (0=none, 2=full)
-	" -v2", // "erbosity level; 0=quiet, 1=normal, 2=verbose
-	// Set the path for sm_home
-	" -i" +
-		vscode.workspace.getConfiguration("sourcepawnLanguageServer").get(
-			"sourcemod_home"
-		) || "",
-	" -o "+pluginsFolderPath+activeDocumentName // Output path for the smx file
+	
+	let command = (os.platform() == 'win32' ? "." : "").concat(
+		// Compiler path
+		"\'" +
+			spcomp +
+		"\'",
+
+		// Seperate compiler and script path
+		" ",
+
+		// Script path (script to compile)
+		"\'" +
+			activeDocumentPath +
+		"\'",
+
+		// Treat warnings as errors
+		" -E",
+
+		// Optimization level (0=none, 2=full)
+		" -O2", 
+
+		// "erbosity level; 0=quiet, 1=normal, 2=verbose
+		" -v2",
+
+		// Output path for the smx file
+		" -o=" +
+			"\'" +
+				pluginsFolderPath + activeDocumentName +
+			"\'",
+
+		// Set the path for sm_home
+		" -i=" +	
+			"\'",
+				vscode.workspace.getConfiguration("sourcepawnLanguageServer").get("sourcemod_home") || "",
+			"\'",
 	);
-	try{
+
+	try {
 		terminal.sendText(command);
 	}
 	catch (error) {
 		console.debug(error);
 	}
-
 }
