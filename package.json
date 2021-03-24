@@ -108,7 +108,7 @@
 				"sourcepawnLanguageServer.showCompileIconInEditorTitleMenu": {
           "type": "boolean",
           "default": true,
-          "description": "Whether to show the 'Compile Code' icon in editor title menu.",
+          "description": "Whether to show the 'Compile Code' icon in editor title menu."
         },
         "sourcepawnLanguageServer.trace.server": {
           "type": "string",
