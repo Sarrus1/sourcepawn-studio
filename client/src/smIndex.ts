@@ -1,12 +1,4 @@
 import * as vscode from "vscode";
-import {
-  LanguageClient,
-  LanguageClientOptions,
-  ServerOptions,
-  TransportKind
-} from "vscode-languageclient/node";
-import * as glob from "glob";
-import * as path from "path";
 import * as CreateTaskCommand from "./commands/createTask";
 import * as CreateScriptCommand from "./commands/createScript";
 import * as CreateREADMECommand from "./commands/createREADME";
@@ -14,22 +6,12 @@ import * as CreateMasterCommand from "./commands/createGitHubActions";
 import * as CreateProjectCommand from "./commands/createProject";
 import * as CompileSMCommand from "./commands/compileSM";
 import * as linter from "./smLinter";
-import {SM_MODE} from "./smMode";
+import { SM_MODE } from "./smMode";
 import { CompletionRepository } from "./smCompletions"
 
 
 
 export function activate(context: vscode.ExtensionContext) {
-  let clientOptions: LanguageClientOptions = {
-    documentSelector: [{ scheme: "file", language: "sourcepawn" }],
-    synchronize: {
-      //configurationSection: 'sourcepawnLanguageServer',
-      fileEvents: [
-        vscode.workspace.createFileSystemWatcher("**/*.sp"),
-        vscode.workspace.createFileSystemWatcher("**/*.inc"),
-      ],
-    },
-  };
 	let completions = new CompletionRepository(context.globalState);
 
 	let sm_home : string = vscode.workspace.getConfiguration("sourcepawnLanguageServer").get(

@@ -1,16 +1,4 @@
-// <reference path="index.ts" />
-
-import {
-  CompletionItemKind,
-  CompletionItem,
-  TextDocumentPositionParams,
-  SignatureHelp,
-  SignatureInformation,
-	TextDocumentIdentifier,
-} from "vscode-languageclient/node";
 import * as vscode from "vscode";
-//import { parse_blob, parse_file } from "./parser";
-
 import * as glob from "glob";
 import * as path from "path";
 import { URI } from "vscode-uri";
@@ -20,7 +8,7 @@ import * as parser from "./smParser"
 
 export interface Completion {
   name: string;
-  kind: CompletionItemKind;
+  kind: vscode.CompletionItemKind;
   description?: string;
 
   to_completion_item(file: string): vscode.CompletionItem;
@@ -37,7 +25,7 @@ export class FunctionCompletion implements Completion {
   description: string;
   detail: string;
   params: FunctionParam[];
-  kind = CompletionItemKind.Function;
+  kind = vscode.CompletionItemKind.Function;
 
   constructor(
     name: string,
@@ -74,7 +62,7 @@ export class MethodCompletion implements Completion {
   description: string;
   detail: string;
   params: FunctionParam[];
-  kind = CompletionItemKind.Method;
+  kind = vscode.CompletionItemKind.Method;
 
   constructor(
     method_map: string,
@@ -112,7 +100,7 @@ export class MethodCompletion implements Completion {
 export class DefineCompletion implements Completion {
   name: string;
   type: string;
-  kind = CompletionItemKind.Variable;
+  kind = vscode.CompletionItemKind.Variable;
 
   constructor(name: string) {
     this.name = name;
@@ -133,7 +121,7 @@ export class DefineCompletion implements Completion {
 export class VariableCompletion implements Completion {
   name: string;
   file: string;
-  kind = CompletionItemKind.Variable;
+  kind = vscode.CompletionItemKind.Variable;
 
   constructor(name: string, file: string) {
     this.name = name;
@@ -162,7 +150,7 @@ export class VariableCompletion implements Completion {
 export class EnumCompletion implements Completion {
   name: string;
   file: string;
-  kind = CompletionItemKind.Enum;
+  kind = vscode.CompletionItemKind.Enum;
 
   constructor(name: string, file: string) {
     this.name = name;
@@ -186,7 +174,7 @@ export class EnumMemberCompletion implements Completion {
   name: string;
 	enum: EnumCompletion;
   file: string;
-  kind = CompletionItemKind.EnumMember;
+  kind = vscode.CompletionItemKind.EnumMember;
 
   constructor(name: string, file: string, Enum:EnumCompletion) {
     this.name = name;
@@ -243,7 +231,7 @@ export class FileCompletions {
     return completions;
   }
 
-  to_completion_resolve(item: CompletionItem): CompletionItem {
+  to_completion_resolve(item: vscode.CompletionItem): vscode.CompletionItem {
     item.label = item.label;
     item.documentation = item.documentation;
     return item;
@@ -384,12 +372,12 @@ export class CompletionRepository implements vscode.CompletionItemProvider, vsco
 		//return all_completions_list;
     if (is_method) {
 			all_completions_list.items.filter(
-        (completion) => completion.kind === CompletionItemKind.Method
+        (completion) => completion.kind === vscode.CompletionItemKind.Method
       );
       return all_completions_list;
     } else {
 			all_completions_list.items.filter(
-        (completion) => completion.kind !== CompletionItemKind.Method
+        (completion) => completion.kind !== vscode.CompletionItemKind.Method
       );
       return all_completions_list;
     }
