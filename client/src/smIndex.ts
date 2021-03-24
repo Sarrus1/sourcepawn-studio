@@ -13,9 +13,9 @@ import * as CreateREADMECommand from "./commands/createREADME";
 import * as CreateMasterCommand from "./commands/createGitHubActions";
 import * as CreateProjectCommand from "./commands/createProject";
 import * as CompileSMCommand from "./commands/compileSM";
-import * as linter from "./linter";
-import {SM_MODE} from "./SMMode";
-import { CompletionRepository } from "./completions"
+import * as linter from "./smLinter";
+import {SM_MODE} from "./smMode";
+import { CompletionRepository } from "./smCompletions"
 
 
 

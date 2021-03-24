@@ -7,7 +7,7 @@ import {
   VariableCompletion,
 	EnumCompletion,
 	EnumMemberCompletion
-} from "./completions";
+} from "./smCompletions";
 import * as fs from "fs";
 
 export function parse_file(file: string, completions: FileCompletions, IsBuiltIn:boolean=false) {

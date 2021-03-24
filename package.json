@@ -4,7 +4,7 @@
   "description": "SourcePawn highlighting and autocompletion.",
   "version": "1.8.3",
   "publisher": "Sarrus",
-  "main": "client/out/index",
+  "main": "client/out/smIndex",
   "icon": "sm.png",
   "repository": {
     "type": "git",

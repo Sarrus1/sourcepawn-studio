@@ -15,7 +15,7 @@ import * as glob from "glob";
 import * as path from "path";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
-import * as parser from "./parser"
+import * as parser from "./smParser"
 import { type } from "os";
 
 
