@@ -25,7 +25,7 @@ export interface Completion {
   description?: string;
 
   to_completion_item(file: string): vscode.CompletionItem;
-  get_signature(): SignatureInformation;
+  get_signature(): vscode.SignatureInformation;
 }
 
 export type FunctionParam = {
@@ -60,7 +60,7 @@ export class FunctionCompletion implements Completion {
     };
   }
 
-  get_signature(): SignatureInformation {
+  get_signature(): vscode.SignatureInformation {
     return {
       label: this.detail,
       documentation: this.description,
@@ -101,7 +101,7 @@ export class MethodCompletion implements Completion {
     };
   }
 
-  get_signature(): SignatureInformation {
+  get_signature(): vscode.SignatureInformation {
     return {
       label: this.detail,
       documentation: this.description,
@@ -126,7 +126,7 @@ export class DefineCompletion implements Completion {
     };
   }
 
-  get_signature(): SignatureInformation {
+  get_signature(): vscode.SignatureInformation {
     return undefined;
   }
 }
@@ -155,7 +155,7 @@ export class VariableCompletion implements Completion {
     };
   }
 
-  get_signature(): SignatureInformation {
+  get_signature(): vscode.SignatureInformation {
     return undefined;
   }
 }
@@ -177,7 +177,7 @@ export class EnumCompletion implements Completion {
 		};
   }
 
-  get_signature(): SignatureInformation {
+  get_signature(): vscode.SignatureInformation {
     return undefined;
   }
 }
@@ -202,7 +202,7 @@ export class EnumMemberCompletion implements Completion {
 		};
   }
 
-  get_signature(): SignatureInformation {
+  get_signature(): vscode.SignatureInformation {
     return undefined;
   }
 }
@@ -433,14 +433,18 @@ export class CompletionRepository implements vscode.CompletionItemProvider, vsco
       }
     }
   }
-	/*
-  get_signature(position: TextDocumentPositionParams): SignatureHelp {
-    let document = this.documents.get(URI.parse(position.textDocument.uri));
+	
+  provideSignatureHelp(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		token: vscode.CancellationToken
+	): vscode.SignatureHelp {
+    //let document = this.documents.get(URI.parse(position.textDocument.uri));
     if (document) {
       let { method, parameter_count } = (() => {
-        let line = document.getText().split("\n")[position.position.line];
+        let line = document.getText().split("\n")[position.line];
 
-        if (line[position.position.character - 1] === ")") {
+        if (line[position.character - 1] === ")") {
           // We've finished this call
           return { method: undefined, parameter_count: 0 };
         }
@@ -449,7 +453,7 @@ export class CompletionRepository implements vscode.CompletionItemProvider, vsco
         let end_parameters = false;
         let parameter_count = 0;
 
-        for (let i = position.position.character; i >= 0; i--) {
+        for (let i = position.character; i >= 0; i--) {
           if (end_parameters) {
             if (line[i].match(/[A-Za-z0-9_]/)) {
               method = line[i] + method;
@@ -469,7 +473,7 @@ export class CompletionRepository implements vscode.CompletionItemProvider, vsco
       })();
 
       let completions = this.get_all_completions(
-        position.textDocument.uri
+        document.uri.toString()
       ).filter((completion) => {
         return completion.name === method;
       });
@@ -489,5 +493,4 @@ export class CompletionRepository implements vscode.CompletionItemProvider, vsco
       activeParameter: 0,
     };
   }
-	*/
 }

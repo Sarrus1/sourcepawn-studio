@@ -37,6 +37,7 @@ export function activate(context: vscode.ExtensionContext) {
 	completions.parse_sm_api(sm_home);
 	context.subscriptions.push(completions);
 	context.subscriptions.push(vscode.languages.registerCompletionItemProvider(SM_MODE ,completions));
+	context.subscriptions.push(vscode.languages.registerSignatureHelpProvider(SM_MODE, completions, "("));
 	vscode.workspace.onDidChangeTextDocument(completions.handle_document_change, completions, context.subscriptions);
 	vscode.workspace.onDidOpenTextDocument(completions.handle_new_document, null, context.subscriptions);
   
