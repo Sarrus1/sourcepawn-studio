@@ -4,7 +4,7 @@
   "description": "SourcePawn highlighting and autocompletion.",
   "version": "1.8.3",
   "publisher": "Sarrus",
-  "main": "client/out/index",
+  "main": "client/out/smIndex",
   "icon": "sm.png",
   "repository": {
     "type": "git",
@@ -71,7 +71,7 @@
       ],
       "editor/title": [
         {
-          "when": "editorTextFocus && resourceLangId == sourcepawn",
+          "when": "editorTextFocus && resourceLangId == sourcepawn && config.sourcepawnLanguageServer.showCompileIconInEditorTitleMenu",
           "command": "extension.compileSM",
           "group": "navigation@1"
         }
@@ -79,9 +79,9 @@
     },
     "keybindings": [
       {
-        "command": "extension.compileSM",
-        "key": "ctrl+d",
-        "mac": "cmd+d",
+        "command": "editorTextFocus && resourceLangId == sourcepawn",
+        "key": "ctrl+shift+d",
+        "mac": "cmd+shift+d",
         "when": "editorTextFocus"
       }
     ],
@@ -104,6 +104,11 @@
         "sourcepawnLanguageServer.spcomp_path": {
           "type": "string",
           "description": "The location of the SourceMod compiler"
+        },
+				"sourcepawnLanguageServer.showCompileIconInEditorTitleMenu": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to show the 'Compile Code' icon in editor title menu.",
         },
         "sourcepawnLanguageServer.trace.server": {
           "type": "string",

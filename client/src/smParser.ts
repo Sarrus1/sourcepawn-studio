@@ -1,16 +1,7 @@
-import {
-  FileCompletions,
-  FunctionCompletion,
-  DefineCompletion,
-  FunctionParam,
-  MethodCompletion,
-  VariableCompletion,
-	EnumCompletion,
-	EnumMemberCompletion
-} from "./completions";
+import * as smCompletions from "./smCompletions";
 import * as fs from "fs";
 
-export function parse_file(file: string, completions: FileCompletions, IsBuiltIn:boolean=false) {
+export function parse_file(file: string, completions: smCompletions.FileCompletions, IsBuiltIn:boolean=false) {
   fs.readFile(file, "utf-8", (err, data) => {
     parse_blob(data, completions, file, IsBuiltIn);
   });
@@ -18,7 +9,7 @@ export function parse_file(file: string, completions: FileCompletions, IsBuiltIn
 
 export function parse_blob(
   data: string,
-  completions: FileCompletions,
+  completions: smCompletions.FileCompletions,
   file = "",
   IsBuiltIn:boolean=false
 ) {
@@ -41,12 +32,12 @@ enum State {
 
 class Parser {
   lines: string[];
-  completions: FileCompletions;
+  completions: smCompletions.FileCompletions;
   state: State[];
   scratch: any;
   state_data: any;
 
-  constructor(lines: string[], completions: FileCompletions) {
+  constructor(lines: string[], completions: smCompletions.FileCompletions) {
     this.lines = lines;
     this.completions = completions;
     this.state = [State.None];
@@ -60,7 +51,7 @@ class Parser {
 
     let match = line.match(/\s*#define\s+([A-Za-z0-9_]+)/);
     if (match) {
-      this.completions.add(match[1], new DefineCompletion(match[1]));
+      this.completions.add(match[1], new smCompletions.DefineCompletion(match[1]));
       return this.parse(file, IsBuiltIn);
     }
 
@@ -80,7 +71,7 @@ class Parser {
 		match = line.match(/^\s*(?:enum\s+)([A-z0-9_]*)/);
 		if (match) {
 			// Create a completion for the enum itself
-			let enumCompletion : EnumCompletion = new EnumCompletion(match[1], file);
+			let enumCompletion : smCompletions.EnumCompletion = new smCompletions.EnumCompletion(match[1], file);
 			this.completions.add(
 				match[1],
 				enumCompletion
@@ -112,7 +103,7 @@ class Parser {
 				}
 				this.completions.add(
 					match[1],
-					new EnumMemberCompletion(match[1], file, enumCompletion)
+					new smCompletions.EnumMemberCompletion(match[1], file, enumCompletion)
 					)
 				if(!line)
 				{
@@ -128,7 +119,7 @@ class Parser {
 		if (match && !IsBuiltIn) {
 			this.completions.add(
 				match[1],
-				new VariableCompletion(match[1], file)
+				new smCompletions.VariableCompletion(match[1], file)
 				)
 			return this.parse(file, IsBuiltIn);
 		}
@@ -151,7 +142,7 @@ class Parser {
           )[1];
           this.completions.add(
             variable_completion,
-            new VariableCompletion(variable_completion, file)
+            new smCompletions.VariableCompletion(variable_completion, file)
           );
         }
       } else {
@@ -169,7 +160,7 @@ class Parser {
             )[1];
             this.completions.add(
               variable_completion,
-              new VariableCompletion(variable_completion, file)
+              new smCompletions.VariableCompletion(variable_completion, file)
             );
           }
           match[1] = this.lines.shift();
@@ -292,14 +283,14 @@ class Parser {
         let paramAsVariable = param.match(/([^\s:]*)$/)[1];
         this.completions.add(
           paramAsVariable,
-          new VariableCompletion(paramAsVariable, file)
+          new smCompletions.VariableCompletion(paramAsVariable, file)
         );
       }
     }
     partial_params_match = this.clean_param(partial_params_match);
     this.completions.add(
       name_match,
-      new FunctionCompletion(name_match, partial_params_match, description, params)
+      new smCompletions.FunctionCompletion(name_match, partial_params_match, description, params)
     );
     return this.parse(file, IsBuiltIn);
   };
@@ -390,7 +381,7 @@ class Parser {
       let { description, params } = this.parse_doc_comment();
       this.completions.add(
         match[1],
-        new FunctionCompletion(match[1], match[2], description, params)
+        new smCompletions.FunctionCompletion(match[1], match[2], description, params)
       );
     }
   }
@@ -405,7 +396,7 @@ class Parser {
       if (this.state[this.state.length - 1] === State.Methodmap) {
         this.completions.add(
           name_match[1],
-          new MethodCompletion(
+          new smCompletions.MethodCompletion(
             this.state_data.name,
             name_match[1],
             match[2],
@@ -423,13 +414,13 @@ class Parser {
         }
         this.completions.add(
           name_match[1],
-          new FunctionCompletion(name_match[1], paramsMatch, description, params)
+          new smCompletions.FunctionCompletion(name_match[1], paramsMatch, description, params)
           );
       }
     }
   }
 
-  parse_doc_comment(): { description: string; params: FunctionParam[] } {
+  parse_doc_comment(): { description: string; params: smCompletions.FunctionParam[] } {
     let description = (() => {
       let lines = [];
       for (let line of this.scratch) {

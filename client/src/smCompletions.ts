@@ -1,27 +1,18 @@
-import {
-  CompletionItemKind,
-  CompletionItem,
-  TextDocumentPositionParams,
-  SignatureHelp,
-  SignatureInformation,
-  TextDocuments,
-  TextDocumentChangeEvent,
-} from "vscode-languageserver/node";
-import { parse_blob, parse_file } from "./parser";
-import { TextDocument } from "vscode-languageserver-textdocument";
-
+import * as vscode from "vscode";
 import * as glob from "glob";
 import * as path from "path";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
+import * as parser from "./smParser"
+
 
 export interface Completion {
   name: string;
-  kind: CompletionItemKind;
+  kind: vscode.CompletionItemKind;
   description?: string;
 
-  to_completion_item(file: string): CompletionItem;
-  get_signature(): SignatureInformation;
+  to_completion_item(file: string): vscode.CompletionItem;
+  get_signature(): vscode.SignatureInformation;
 }
 
 export type FunctionParam = {
@@ -34,7 +25,7 @@ export class FunctionCompletion implements Completion {
   description: string;
   detail: string;
   params: FunctionParam[];
-  kind = CompletionItemKind.Function;
+  kind = vscode.CompletionItemKind.Function;
 
   constructor(
     name: string,
@@ -48,15 +39,15 @@ export class FunctionCompletion implements Completion {
     this.detail = detail;
   }
 
-  to_completion_item(file: string): CompletionItem {
+  to_completion_item(file: string): vscode.CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
-      data: this.description,
+      detail: this.description,
     };
   }
 
-  get_signature(): SignatureInformation {
+  get_signature(): vscode.SignatureInformation {
     return {
       label: this.detail,
       documentation: this.description,
@@ -71,7 +62,7 @@ export class MethodCompletion implements Completion {
   description: string;
   detail: string;
   params: FunctionParam[];
-  kind = CompletionItemKind.Method;
+  kind = vscode.CompletionItemKind.Method;
 
   constructor(
     method_map: string,
@@ -87,17 +78,17 @@ export class MethodCompletion implements Completion {
     this.params = params;
   }
 
-  to_completion_item(file: string): CompletionItem {
+  to_completion_item(file: string): vscode.CompletionItem {
     return {
       label: `${this.method_map}.${this.name}`,
       insertText: this.name,
       filterText: this.name,
       kind: this.kind,
-      data: this.description,
+      detail: this.description,
     };
   }
 
-  get_signature(): SignatureInformation {
+  get_signature(): vscode.SignatureInformation {
     return {
       label: this.detail,
       documentation: this.description,
@@ -109,20 +100,20 @@ export class MethodCompletion implements Completion {
 export class DefineCompletion implements Completion {
   name: string;
   type: string;
-  kind = CompletionItemKind.Variable;
+  kind = vscode.CompletionItemKind.Variable;
 
   constructor(name: string) {
     this.name = name;
   }
 
-  to_completion_item(file: string): CompletionItem {
+  to_completion_item(file: string): vscode.CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
     };
   }
 
-  get_signature(): SignatureInformation {
+  get_signature(): vscode.SignatureInformation {
     return undefined;
   }
 }
@@ -130,14 +121,14 @@ export class DefineCompletion implements Completion {
 export class VariableCompletion implements Completion {
   name: string;
   file: string;
-  kind = CompletionItemKind.Variable;
+  kind = vscode.CompletionItemKind.Variable;
 
   constructor(name: string, file: string) {
     this.name = name;
     this.file = file;
   }
 
-  to_completion_item(file: string): CompletionItem {
+  to_completion_item(file: string): vscode.CompletionItem {
     // Only return variables local to the document being edited
     if (file === this.file) {
       return {
@@ -151,7 +142,7 @@ export class VariableCompletion implements Completion {
     };
   }
 
-  get_signature(): SignatureInformation {
+  get_signature(): vscode.SignatureInformation {
     return undefined;
   }
 }
@@ -159,21 +150,21 @@ export class VariableCompletion implements Completion {
 export class EnumCompletion implements Completion {
   name: string;
   file: string;
-  kind = CompletionItemKind.Enum;
+  kind = vscode.CompletionItemKind.Enum;
 
   constructor(name: string, file: string) {
     this.name = name;
     this.file = file;
   }
 
-  to_completion_item(file: string): CompletionItem {
+  to_completion_item(file: string): vscode.CompletionItem {
 		return {
 			label: this.name,
 			kind: this.kind,
 		};
   }
 
-  get_signature(): SignatureInformation {
+  get_signature(): vscode.SignatureInformation {
     return undefined;
   }
 }
@@ -183,7 +174,7 @@ export class EnumMemberCompletion implements Completion {
   name: string;
 	enum: EnumCompletion;
   file: string;
-  kind = CompletionItemKind.EnumMember;
+  kind = vscode.CompletionItemKind.EnumMember;
 
   constructor(name: string, file: string, Enum:EnumCompletion) {
     this.name = name;
@@ -191,14 +182,14 @@ export class EnumMemberCompletion implements Completion {
 		this.enum = Enum;
   }
 
-  to_completion_item(file: string): CompletionItem {
+  to_completion_item(file: string): vscode.CompletionItem {
 		return {
 			label: this.name,
 			kind: this.kind,
 		};
   }
 
-  get_signature(): SignatureInformation {
+  get_signature(): vscode.SignatureInformation {
     return undefined;
   }
 }
@@ -240,7 +231,7 @@ export class FileCompletions {
     return completions;
   }
 
-  to_completion_resolve(item: CompletionItem): CompletionItem {
+  to_completion_resolve(item: vscode.CompletionItem): vscode.CompletionItem {
     item.label = item.label;
     item.documentation = item.documentation;
     return item;
@@ -283,23 +274,44 @@ export class FileCompletions {
   }
 }
 
-export class CompletionRepository {
-  completions: Map<string, FileCompletions>;
-  documents: TextDocuments<TextDocument>;
+export class CompletionRepository implements vscode.CompletionItemProvider, vscode.Disposable {
+	public completions: Map<string, FileCompletions>;
+	documents : Set<vscode.Uri>;
+	private globalState: vscode.Memento;
 
-  constructor(documents: TextDocuments<TextDocument>) {
-    this.completions = new Map();
-    this.documents = documents;
-    documents.onDidOpen(this.handle_document_change.bind(this));
-    documents.onDidChangeContent(this.handle_document_change.bind(this));
-  }
+	constructor(globalState?: vscode.Memento) {
+		this.completions = new Map();
+		this.documents = new Set();
+		this.globalState = globalState;
+	}
 
-  handle_document_change(event: TextDocumentChangeEvent<TextDocument>) {
-    let completions = new FileCompletions(event.document.uri);
-    parse_blob(event.document.getText(), completions, event.document.uri);
-    this.read_unscanned_imports(completions);
+	public provideCompletionItems(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		token: vscode.CancellationToken
+	): vscode.CompletionList {
+		let completions : vscode.CompletionList = this.get_completions(document, position);
+		//let completions : vscode.CompletionList = new vscode.CompletionList;
+		return completions;
+	}
 
-    this.completions.set(event.document.uri, completions);
+	public dispose() {
+
+	}
+
+	handle_new_document(document : vscode.TextDocument) {
+		//this.documents.add(document.uri);
+		let completions = new FileCompletions(document.uri.toString());
+		parser.parse_blob(document.getText(), completions, document.uri.toString());
+		this.read_unscanned_imports(completions);
+		this.completions.set(document.uri.toString(), completions);
+	}
+
+	handle_document_change(event: vscode.TextDocumentChangeEvent) {
+		let this_completions = new FileCompletions(event.document.uri.toString());
+		parser.parse_blob(event.document.getText(), this_completions, event.document.uri.toString());
+		//this.read_unscanned_imports(completions);
+		this.completions.set(event.document.uri.toString(), this_completions);
   }
 
   read_unscanned_imports(completions: FileCompletions) {
@@ -308,7 +320,7 @@ export class CompletionRepository {
       if (!completion) {
         let file = URI.parse(import_file.uri).fsPath;
         let new_completions = new FileCompletions(import_file.uri);
-        parse_file(file, new_completions, import_file.IsBuiltIn);
+        parser.parse_file(file, new_completions, import_file.IsBuiltIn);
 
         this.read_unscanned_imports(new_completions);
 
@@ -317,11 +329,12 @@ export class CompletionRepository {
     }
   }
 
-  parse_sm_api(sourcemod_home: string) {
+  parse_sm_api(sourcemod_home: string) : void {
+		if(!sourcemod_home) return;
     glob(path.join(sourcemod_home, "**/*.inc"), (err, files) => {
       for (let file of files) {
         let completions = new FileCompletions(URI.file(file).toString());
-        parse_file(file, completions, true);
+        parser.parse_file(file, completions, true);
 
         let uri =
           "file://__sourcemod_builtin/" + path.relative(sourcemod_home, file);
@@ -330,11 +343,10 @@ export class CompletionRepository {
     });
   }
 
-  get_completions(position: TextDocumentPositionParams): CompletionItem[] {
-    let document = this.documents.get(position.textDocument.uri);
+  get_completions(document : vscode.TextDocument, position : vscode.Position): vscode.CompletionList {
     let is_method = false;
     if (document) {
-      let line = document.getText().split("\n")[position.position.line].trim();
+      let line = document.getText().split("\n")[position.line].trim();
       for (let i = line.length - 2; i >= 0; i--) {
         if (line[i].match(/[a-zA-Z0-9_]/)) {
           continue;
@@ -344,49 +356,57 @@ export class CompletionRepository {
           is_method = true;
           break;
         }
-
         break;
       }
     }
-    let all_completions = this.get_all_completions(
-      position.textDocument.uri
-    ).map((completion) =>
-      completion.to_completion_item(position.textDocument.uri)
-    );
+    let all_completions : Completion[] = this.get_all_completions(document.uri.toString());
+		let all_completions_list : vscode.CompletionList = new vscode.CompletionList();
+		if(all_completions){
+			all_completions_list.items = all_completions.map((completion) => {
+				if(completion){
+				if(completion.to_completion_item){
+					return completion.to_completion_item(document.uri.toString());
+				}}
+      });
+		}
+		//return all_completions_list;
     if (is_method) {
-      return all_completions.filter(
-        (completion) => completion.kind === CompletionItemKind.Method
+			all_completions_list.items.filter(
+        (completion) => completion.kind === vscode.CompletionItemKind.Method
       );
+      return all_completions_list;
     } else {
-      return all_completions.filter(
-        (completion) => completion.kind !== CompletionItemKind.Method
+			all_completions_list.items.filter(
+        (completion) => completion.kind !== vscode.CompletionItemKind.Method
       );
+      return all_completions_list;
     }
   }
 
   get_all_completions(file: string): Completion[] {
-    let completions = this.completions.get(file);
-
+    let completion = this.completions.get(file);
     let includes = new Set<string>();
-    this.get_included_files(completions, includes);
+		if(completion){
+			this.get_included_files(completion, includes);
+		}
     includes.add(file);
     return [...includes]
       .map((file) => {
         return this.get_file_completions(file);
       })
       .reduce(
-        (completions, file_completions) => completions.concat(file_completions),
+        (completion, file_completions) => completion.concat(file_completions),
         []
       );
   }
 
   get_file_completions(file: string): Completion[] {
-    let completions = this.completions.get(file);
-    if (completions) {
-      return completions.get_completions(this);
+    let file_completions : FileCompletions = this.completions.get(file);
+		let completion_list : Completion[] = [];
+    if (file_completions) {
+      return file_completions.get_completions(this);
     }
-
-    return [];
+    return completion_list;
   }
 
   get_included_files(completions: FileCompletions, files: Set<string>) {
@@ -400,14 +420,18 @@ export class CompletionRepository {
       }
     }
   }
-
-  get_signature(position: TextDocumentPositionParams): SignatureHelp {
-    let document = this.documents.get(position.textDocument.uri);
+	
+  provideSignatureHelp(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		token: vscode.CancellationToken
+	): vscode.SignatureHelp {
+    //let document = this.documents.get(URI.parse(position.textDocument.uri));
     if (document) {
       let { method, parameter_count } = (() => {
-        let line = document.getText().split("\n")[position.position.line];
+        let line = document.getText().split("\n")[position.line];
 
-        if (line[position.position.character - 1] === ")") {
+        if (line[position.character - 1] === ")") {
           // We've finished this call
           return { method: undefined, parameter_count: 0 };
         }
@@ -416,7 +440,7 @@ export class CompletionRepository {
         let end_parameters = false;
         let parameter_count = 0;
 
-        for (let i = position.position.character; i >= 0; i--) {
+        for (let i = position.character; i >= 0; i--) {
           if (end_parameters) {
             if (line[i].match(/[A-Za-z0-9_]/)) {
               method = line[i] + method;
@@ -436,7 +460,7 @@ export class CompletionRepository {
       })();
 
       let completions = this.get_all_completions(
-        position.textDocument.uri
+        document.uri.toString()
       ).filter((completion) => {
         return completion.name === method;
       });
