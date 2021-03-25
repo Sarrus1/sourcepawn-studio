@@ -85,7 +85,11 @@ export class FileCompletions {
       } 
       // Otherwise consider it's a .sp relative to script file.
       else {
-        uri = URI.file(path.resolve(file + ".sp")).toString();
+        if(!/.sp\s*$/g.test)
+        {
+          file += ".sp";
+        }
+        uri = URI.file(path.resolve(base_directory, file)).toString();
         this.add_include(uri, IsBuiltIn);
       }
     }
