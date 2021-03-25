@@ -200,7 +200,7 @@ class Parser {
       let description : string = match[1];
       if(line = this.liner.next().toString()){
         this.lineNb++;
-        match = line.match(/(?:(?:static|native|stock|public|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*)$/);
+        match = line.match(/(?:(?:static|native|stock|public|forward|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*)$/);
           if (match) {
             this.read_non_descripted_function(match, file, description, IsBuiltIn);
           }
@@ -240,7 +240,7 @@ class Parser {
     }
 
     // Match functions without description
-    match = line.match(/(?:(?:static|native|stock|public|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*)$/);
+    match = line.match(/(?:(?:static|native|stock|public|forward|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*)$/);
     if (match && !IsBuiltIn) {
       this.read_non_descripted_function(match, file, "", IsBuiltIn);
     }
@@ -314,7 +314,6 @@ class Parser {
     if (typeof current_line === "undefined") {
       return; // EOF
     }
-
     let match: any = use_line_comment
       ? !/^\s*\/\//.test(current_line)
       : /\*\//.test(current_line);
@@ -336,11 +335,11 @@ class Parser {
     } else {
       if (!use_line_comment) {
         match = current_line.match(
-          /^\s*\*\s*@(?:param|return)\s*([A-Za-z_\.][A-Za-z0-9_\.]*)\s*(.*)/
+          /^\s*\*\s*@*(?:param|return)*\s*([A-Za-z_\.][A-Za-z0-9_\.]*)\s*(.*)/
         );
       } else {
         match = current_line.match(
-          /^\s*\/\/\s*@(?:param|return)\s*([A-Za-z_\.][A-Za-z0-9_\.]*)\s*(.*)/
+          /^\s*\/\/\s*@*(?:param|return)*\s*([A-Za-z_\.][A-Za-z0-9_\.]*)\s*(.*)/
         );
       }
 
@@ -376,7 +375,6 @@ class Parser {
     if (typeof line === "undefined") {
       return;
     }
-
     if (line.includes(":")) {
       this.read_old_style_function(line, file);
     } else {
@@ -389,7 +387,7 @@ class Parser {
 
   read_old_style_function(line: string, file:string) {
     let match = line.match(
-      /\s*(?:(?:static|native|stock|public)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/
+      /\s*(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/
     );
     if (match) {
       let def : vscode.Location = new vscode.Location(URI.file(file), new vscode.Range(this.lineNb, 0, this.lineNb, 0));
@@ -404,7 +402,7 @@ class Parser {
 
   read_new_style_function(line: string, file:string) {
     let match = line.match(
-      /\s*(?:(?:static|native|stock|public)+\s*)+\s+([^\s]+)\s*([A-Za-z_].*)/
+      /\s*(?:(?:static|native|stock|public|forward)+\s*)+\s+([^\s]+)\s*([A-Za-z_].*)/
     );
     if (match) {
       let { description, params } = this.parse_doc_comment();
@@ -444,6 +442,10 @@ class Parser {
     let description = (() => {
       let lines = [];
       for (let line of this.scratch) {
+        if(/^\s*\/\*\*\s*/.test(line))
+        {
+          continue;
+        }
         if (
           !(/^\s*\*\s+([^@].*)/.test(line) || /^\s*\/\/\s+([^@].*)/.test(line))
         ) {
