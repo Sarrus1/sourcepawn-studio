@@ -291,7 +291,6 @@ export class CompletionRepository implements vscode.CompletionItemProvider, vsco
 		token: vscode.CancellationToken
 	): vscode.CompletionList {
 		let completions : vscode.CompletionList = this.get_completions(document, position);
-		//let completions : vscode.CompletionList = new vscode.CompletionList;
 		return completions;
 	}
 
@@ -299,20 +298,16 @@ export class CompletionRepository implements vscode.CompletionItemProvider, vsco
 
 	}
 
-	handle_new_document(document : vscode.TextDocument) {
-		//this.documents.add(document.uri);
-		let completions = new FileCompletions(document.uri.toString());
-		parser.parse_blob(document.getText(), completions, document.uri.toString());
-		this.read_unscanned_imports(completions);
-		this.completions.set(document.uri.toString(), completions);
-	}
-
-	handle_document_change(event: vscode.TextDocumentChangeEvent) {
-		let this_completions = new FileCompletions(event.document.uri.toString());
-		parser.parse_blob(event.document.getText(), this_completions, event.document.uri.toString());
-		//this.read_unscanned_imports(completions);
-		this.completions.set(event.document.uri.toString(), this_completions);
+  handle_document_change(event: vscode.TextDocumentChangeEvent) {
+    this.handle_new_document(event.document);
   }
+
+	handle_new_document(document : vscode.TextDocument) {
+		let this_completions = new FileCompletions(document.uri.toString());
+    parser.parse_file(document.uri.fsPath, this_completions);
+		//this.read_unscanned_imports(this_completions);
+		this.completions.set(document.uri.toString(), this_completions);
+	}
 
   read_unscanned_imports(completions: FileCompletions) {
     for (let import_file of completions.includes) {
@@ -365,7 +360,7 @@ export class CompletionRepository implements vscode.CompletionItemProvider, vsco
 			all_completions_list.items = all_completions.map((completion) => {
 				if(completion){
 				if(completion.to_completion_item){
-					return completion.to_completion_item(document.uri.toString());
+					return completion.to_completion_item(document.uri.fsPath);
 				}}
       });
 		}

@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn for VScode",
   "description": "SourcePawn highlighting and autocompletion.",
-  "version": "1.8.3",
+  "version": "1.9.0",
   "publisher": "Sarrus",
   "main": "client/out/smIndex",
   "icon": "sm.png",
@@ -105,7 +105,7 @@
           "type": "string",
           "description": "The location of the SourceMod compiler"
         },
-				"sourcepawnLanguageServer.showCompileIconInEditorTitleMenu": {
+        "sourcepawnLanguageServer.showCompileIconInEditorTitleMenu": {
           "type": "boolean",
           "default": true,
           "description": "Whether to show the 'Compile Code' icon in editor title menu."
@@ -160,9 +160,7 @@
   "dependencies": {
     "@types/vscode": "^1.53.0",
     "glob": "^7.1.2",
-    "supports-color": "^8.1.1",
-    "vscode-languageclient": "^7.0.0",
-    "vscode-languageserver-textdocument": "^1.0.1"
+    "n-readlines": "^1.0.1"
   },
   "devDependencies": {
     "@types/node": "^8.0.14",
@@ -172,7 +170,7 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -b",
     "watch": "tsc -b -w",
-    "postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+    "postinstall": "cd client && npm install && cd ..",
     "test": "sh ./scripts/e2e.sh"
   }
 }

@@ -1,5 +1,6 @@
 import * as smCompletions from "./smCompletions";
 import * as fs from "fs";
+import * as lineByLine from "n-readlines";
 
 export function parse_file(file: string, completions: smCompletions.FileCompletions, IsBuiltIn:boolean=false) {
   fs.readFile(file, "utf-8", (err, data) => {
@@ -17,8 +18,8 @@ export function parse_blob(
     return; // Asked to parse empty file
   }
   let lines = data.split("\n");
-  let parser = new Parser(lines, completions);
-  parser.parse(file, IsBuiltIn);
+  let parser = new Parser(file, lines, completions);
+  parser.parsef(file, IsBuiltIn);
 }
 
 enum State {
@@ -36,35 +37,42 @@ class Parser {
   state: State[];
   scratch: any;
   state_data: any;
+  liner : lineByLine;
 
-  constructor(lines: string[], completions: smCompletions.FileCompletions) {
+  constructor(file : string, lines: string[], completions: smCompletions.FileCompletions) {
     this.lines = lines;
     this.completions = completions;
     this.state = [State.None];
+    this.liner = new lineByLine(file);
   }
 
-  parse(file, IsBuiltIn:boolean = false) {
-    let line = this.lines.shift();
-    if (typeof line === "undefined") {
-      return;
+  parsef(file, IsBuiltIn:boolean = false){
+    let line : string
+    while (line = this.liner.next()) {
+      this.interpLine(line.toString(), file, IsBuiltIn);
     }
-
+  }
+  
+  interpLine(line:string, file, IsBuiltIn:boolean = false) {
+    // Match local define
     let match = line.match(/\s*#define\s+([A-Za-z0-9_]+)/);
     if (match) {
       this.completions.add(match[1], new smCompletions.DefineCompletion(match[1]));
-      return this.parse(file, IsBuiltIn);
+      return;
     }
 
+    // Match global include
     match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/]+)>\s*$/);
     if (match) {
       this.completions.resolve_import(match[1], false, IsBuiltIn);
-      return this.parse(file, IsBuiltIn);
+      return;
     }
 
+    // Match local include
     match = line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/]+)"\s*$/);
     if (match) {
       this.completions.resolve_import(match[1], true, IsBuiltIn);
-      return this.parse(file, IsBuiltIn);
+      return;
     }
 
 		// Match enums
@@ -81,12 +89,12 @@ class Parser {
 			let iter = 0;
 
 			// Proceed to the next line
-			line = this.lines.shift();
+			line = this.liner.next().toString();
 
 			// Stop early if it's the end of the file
 			if(!line)
 			{
-				return this.parse(file, IsBuiltIn);
+				return;
 			}
 
 			// Match all the params of the enum
@@ -94,7 +102,7 @@ class Parser {
 			{
 				iter++;
 				match = line.match(/^\s*([A-z0-9_]*)\s*.*/);
-				line = this.lines.shift();
+				line = this.liner.next().toString();
 				
 				// Skip if didn't match
 				if(!match)
@@ -110,7 +118,7 @@ class Parser {
 					break;
 				}
 			}
-			return this.parse(file, IsBuiltIn);
+			return;
 		}
 		
 
@@ -121,7 +129,7 @@ class Parser {
 				match[1],
 				new smCompletions.VariableCompletion(match[1], file)
 				)
-			return this.parse(file, IsBuiltIn);
+			return;
 		}
 
     // Match variables only in the current file
@@ -163,11 +171,11 @@ class Parser {
               new smCompletions.VariableCompletion(variable_completion, file)
             );
           }
-          match[1] = this.lines.shift();
+          match[1] = this.liner.next().toString();
         }
       }
 
-      return this.parse(file, IsBuiltIn);
+      return;
     }
 
     match = line.match(/\s*\/\*/);
@@ -176,7 +184,7 @@ class Parser {
       this.scratch = [];
 
       this.consume_multiline_comment(line, false, file, IsBuiltIn);
-      return this.parse(file, IsBuiltIn);
+      return;
     }
 
     match = line.match(/^\s*\/\//);
@@ -186,7 +194,7 @@ class Parser {
         this.scratch = [];
 
         this.consume_multiline_comment(line, true, file, IsBuiltIn);
-        return this.parse(file, IsBuiltIn);
+        return;
       }
     }
 
@@ -194,14 +202,13 @@ class Parser {
     match = line.match(/^\s*\/\/\s*(.*)/);
     if(match) {
       let description : string = match[1];
-      line = this.lines.shift()
-      match = line.match(/(?:(?:static|native|stock|public|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*)$/);
-      if (match) {
-        return this.read_non_descripted_function(match, file, description, IsBuiltIn);
+      if(line = this.liner.next().toString()){
+        match = line.match(/(?:(?:static|native|stock|public|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*)$/);
+          if (match) {
+            this.read_non_descripted_function(match, file, description, IsBuiltIn);
+          }
       }
-      else {
-        this.parse(file, IsBuiltIn);
-      }
+      return;
     }
 
     match = line.match(
@@ -213,7 +220,7 @@ class Parser {
         name: match[1],
       };
 
-      return this.parse(file, IsBuiltIn);
+      return;
     }
 
     // Match properties
@@ -225,14 +232,14 @@ class Parser {
         this.state.push(State.Property);
       }
 
-      return this.parse(file, IsBuiltIn);
+      return;
     }
 
     match = line.match(/}/);     
     if (match) {
       this.state.pop();
 
-      return this.parse(file, IsBuiltIn);
+      return;
     }
 
     // Match functions without description
@@ -240,8 +247,7 @@ class Parser {
     if (match && !IsBuiltIn) {
       this.read_non_descripted_function(match, file, "", IsBuiltIn);
     }
-
-    this.parse(file, IsBuiltIn);
+    return;
   }
 
   read_non_descripted_function(match, file: string, description: string = "", IsBuiltIn:boolean=false) {
@@ -264,7 +270,10 @@ class Parser {
     // Check if function takes arguments
     let maxiter = 0;
     while (!match_buffer.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) && maxiter<20) {
-      line = this.lines.shift();
+      if(!(line = this.liner.next().toString()))
+      {
+        return;
+      }
       partial_params_match+=line;
       match_buffer+=line;
       maxiter++;
@@ -292,7 +301,7 @@ class Parser {
       name_match,
       new smCompletions.FunctionCompletion(name_match, partial_params_match, description, params)
     );
-    return this.parse(file, IsBuiltIn);
+    return;
   };
 
   consume_multiline_comment(
@@ -316,12 +325,12 @@ class Parser {
         if (use_line_comment) {
           return this.read_function(current_line, file, IsBuiltIn);
         } else {
-          return this.read_function(this.lines.shift(), file, IsBuiltIn);
+          return this.read_function(this.liner.next().toString(), file, IsBuiltIn);
         }
       }
 
       this.state.pop();
-      return this.parse(file, IsBuiltIn);
+      return;
     } else {
       if (!use_line_comment) {
         match = current_line.match(
@@ -342,7 +351,7 @@ class Parser {
       this.scratch.push(current_line);
 
       this.consume_multiline_comment(
-        this.lines.shift(),
+        this.liner.next().toString(),
         use_line_comment,
         file,
         IsBuiltIn
@@ -370,7 +379,7 @@ class Parser {
     }
 
     this.state.pop();
-    this.parse(file, IsBuiltIn);
+    return;
   }
 
   read_old_style_function(line: string) {
@@ -408,8 +417,9 @@ class Parser {
         let paramsMatch = match[2];
         // Iteration safety in case something goes wrong
         let maxiter=0;
-        while(!paramsMatch.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) && maxiter<20) {
-          paramsMatch += this.lines.shift();
+        let line:string;
+        while(!paramsMatch.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) && (line = this.liner.next().toString()) && maxiter<20) {
+          paramsMatch += line;
           maxiter++;
         }
         this.completions.add(

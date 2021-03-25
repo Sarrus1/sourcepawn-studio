@@ -109,6 +109,6 @@ export async function run(args: any) {
 		terminal.sendText(command);
 	}
 	catch (error) {
-		console.debug(error);
+		console.log(error);
 	}
 }

@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 1.9.0
+ - Switched to a client-based extension, removing support for LSP.
+ - Added an option to hide the compile button.
+
 ### 1.8.3
  - Fixed an error on Windows when generating files.
  - Fixed a syntax error on Windows for paths in json files.
