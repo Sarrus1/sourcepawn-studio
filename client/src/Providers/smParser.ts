@@ -84,79 +84,34 @@ class Parser {
   }
 
   interpLine(line: string) {
-    // Match local define
+    // Match define
     let match = line.match(/\s*#define\s+([A-Za-z0-9_]+)/);
     if (match) {
-      this.completions.add(match[1], new DefineCompletion(match[1]));
-      return;
+      this.read_define(match);
     }
 
     // Match global include
     match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/]+)>\s*$/);
     if (match) {
-      this.completions.resolve_import(match[1], false, this.IsBuiltIn);
-      return;
+      this.read_global_include(match);
     }
 
     // Match local include
     match = line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/]+)"\s*$/);
     if (match) {
-      this.completions.resolve_import(match[1], true, this.IsBuiltIn);
-      return;
+      this.read_local_include(match);
     }
 
     // Match enums
     match = line.match(/^\s*(?:enum\s+)([A-z0-9_]*)/);
     if (match) {
-      // Create a completion for the enum itself
-      let enumCompletion: EnumCompletion = new EnumCompletion(
-        match[1],
-        this.file
-      );
-      this.completions.add(match[1], enumCompletion);
-
-      // Set max number of iterations for safety
-      let iter = 0;
-
-      // Proceed to the next line
-      line = this.lines.shift();
-      this.lineNb++;
-
-      // Stop early if it's the end of the file
-      if (!line) {
-        return;
-      }
-
-      // Match all the params of the enum
-      while (iter < 20 && !line.match(/^\s*(\}\s*\;)/)) {
-        iter++;
-        match = line.match(/^\s*([A-z0-9_]*)\s*.*/);
-        line = this.lines.shift();
-        this.lineNb++;
-
-        // Skip if didn't match
-        if (!match) {
-          continue;
-        }
-        this.completions.add(
-          match[1],
-          new EnumMemberCompletion(match[1], this.file, enumCompletion)
-        );
-        if (!line) {
-          break;
-        }
-      }
-      return;
+      this.read_enums(match);
     }
 
     // Match for loop iteration variable only in the current file
     match = line.match(/^\s*(?:for\s*\(\s*int\s+)([A-z0-9_]*)/);
     if (match && !this.IsBuiltIn) {
-      this.completions.add(
-        match[1],
-        new VariableCompletion(match[1], this.file)
-      );
-      return;
+      this.read_loop_variables(match);
     }
 
     // Match variables only in the current file
@@ -164,46 +119,7 @@ class Parser {
       /^(?:\s*)?(?:bool|char|const|float|int|any|Plugin|Handle|ConVar|Cookie|Database|DBDriver|DBResultSet|DBStatement|GameData|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu|Timer|FrameIterator|GlobalForward|PrivateForward|Profiler)\s+(.*)/
     );
     if (match && !this.IsBuiltIn) {
-      let match_variables = [];
-      // Check if it's a multiline declaration
-      if (match[1].match(/(;)(?:\s*|)$/)) {
-        // Separate potential multiple declarations
-        match_variables = match[1].match(
-          /(?:\s*)?([A-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g
-        );
-        for (let variable of match_variables) {
-          let variable_completion = variable.match(
-            /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
-          )[1];
-          this.completions.add(
-            variable_completion,
-            new VariableCompletion(variable_completion, this.file)
-          );
-        }
-      } else {
-        while (!match[1].match(/(;)(?:\s*|)$/)) {
-          // Separate potential multiple declarations
-          match_variables = match[1].match(
-            /(?:\s*)?([A-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g
-          );
-          if (!match_variables) {
-            break;
-          }
-          for (let variable of match_variables) {
-            let variable_completion = variable.match(
-              /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
-            )[1];
-            this.completions.add(
-              variable_completion,
-              new VariableCompletion(variable_completion, this.file)
-            );
-          }
-          match[1] = this.lines.shift();
-          this.lineNb++;
-        }
-      }
-
-      return;
+      this.read_variables(match);
     }
 
     match = line.match(/\s*\/\*/);
@@ -261,6 +177,119 @@ class Parser {
     if (match && !this.IsBuiltIn) {
       this.read_non_descripted_function(match, "");
     }
+    return;
+  }
+
+  read_define(match)
+  {
+    this.completions.add(match[1], new DefineCompletion(match[1]));
+    return;
+  }
+
+  read_global_include(match)
+  {
+    this.completions.resolve_import(match[1], false, this.IsBuiltIn);
+    return;
+  }
+
+  read_local_include(match)
+  {
+    this.completions.resolve_import(match[1], true, this.IsBuiltIn);
+    return;
+  }
+
+  read_enums(match)
+  {
+    // Create a completion for the enum itself
+    let enumCompletion: EnumCompletion = new EnumCompletion(
+      match[1],
+      this.file
+    );
+    this.completions.add(match[1], enumCompletion);
+
+    // Set max number of iterations for safety
+    let iter = 0;
+
+    // Proceed to the next line
+    let line:string = this.lines.shift();
+    this.lineNb++;
+
+    // Stop early if it's the end of the file
+    if (!line) {
+      return;
+    }
+
+    // Match all the params of the enum
+    while (iter < 20 && !line.match(/^\s*(\}\s*\;)/)) {
+      iter++;
+      match = line.match(/^\s*([A-z0-9_]*)\s*.*/);
+      line = this.lines.shift();
+      this.lineNb++;
+
+      // Skip if didn't match
+      if (!match) {
+        continue;
+      }
+      this.completions.add(
+        match[1],
+        new EnumMemberCompletion(match[1], this.file, enumCompletion)
+      );
+      if (!line) {
+        break;
+      }
+    }
+    return;
+  }
+
+  read_loop_variables(match)
+  {
+    this.completions.add(
+      match[1],
+      new VariableCompletion(match[1], this.file)
+    );
+    return;
+  }
+
+  read_variables(match){
+    let match_variables = [];
+    // Check if it's a multiline declaration
+    if (match[1].match(/(;)(?:\s*|)$/)) {
+      // Separate potential multiple declarations
+      match_variables = match[1].match(
+        /(?:\s*)?([A-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g
+      );
+      for (let variable of match_variables) {
+        let variable_completion = variable.match(
+          /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
+        )[1];
+        this.completions.add(
+          variable_completion,
+          new VariableCompletion(variable_completion, this.file)
+        );
+      }
+    } else {
+      while (!match[1].match(/(;)(?:\s*|)$/)) {
+        // Separate potential multiple declarations
+        match_variables = match[1].match(
+          /(?:\s*)?([A-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g
+        );
+        if (!match_variables) {
+          break;
+        }
+        for (let variable of match_variables) {
+          let variable_completion = variable.match(
+            /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
+          )[1];
+          this.completions.add(
+            variable_completion,
+            new VariableCompletion(variable_completion, this.file)
+          );
+        }
+        match[1] = this.lines.shift();
+        this.lineNb++;
+      }
+    }
+
     return;
   }
 
