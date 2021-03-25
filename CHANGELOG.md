@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 1.9.1
+ - Hotfix for relative includes not working if they are .sp files (Pointed out by [Bara](https://github.com/Bara)).
+
 ### 1.9.0
  - Added Go-To-Definition for functions and for global variables (in the same file).
  - Added forward parsing.

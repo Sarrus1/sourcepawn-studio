@@ -91,15 +91,15 @@ class Parser {
     }
 
     // Match global include
-    match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/]+)>\s*$/);
+    match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>\s*$/);
     if (match) {
-      this.read_global_include(match);
+      this.read_include(match, false);
     }
 
-    // Match local include
-    match = line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/]+)"\s*$/);
+    // Match relative include
+    match = line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"\s*$/);
     if (match) {
-      this.read_local_include(match);
+      this.read_include(match, true);
     }
 
     // Match enums
@@ -185,13 +185,8 @@ class Parser {
     return;
   }
 
-  read_global_include(match) {
-    this.completions.resolve_import(match[1], false, this.IsBuiltIn);
-    return;
-  }
-
-  read_local_include(match) {
-    this.completions.resolve_import(match[1], true, this.IsBuiltIn);
+  read_include(match, isRelative : boolean) {
+    this.completions.resolve_import(match[1], isRelative, this.IsBuiltIn);
     return;
   }
 
