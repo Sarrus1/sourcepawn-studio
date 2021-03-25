@@ -1,5 +1,14 @@
 import * as smCompletions from "./smCompletions";
 import * as smDefinitions from "./smDefinitions";
+import {
+  FunctionCompletion,
+  DefineCompletion,
+  EnumCompletion,
+  EnumMemberCompletion,
+  VariableCompletion,
+  MethodCompletion,
+  FunctionParam,
+} from "./smCompletionsKinds";
 import * as vscode from "vscode";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
@@ -78,10 +87,7 @@ class Parser {
     // Match local define
     let match = line.match(/\s*#define\s+([A-Za-z0-9_]+)/);
     if (match) {
-      this.completions.add(
-        match[1],
-        new smCompletions.DefineCompletion(match[1])
-      );
+      this.completions.add(match[1], new DefineCompletion(match[1]));
       return;
     }
 
@@ -103,7 +109,7 @@ class Parser {
     match = line.match(/^\s*(?:enum\s+)([A-z0-9_]*)/);
     if (match) {
       // Create a completion for the enum itself
-      let enumCompletion: smCompletions.EnumCompletion = new smCompletions.EnumCompletion(
+      let enumCompletion: EnumCompletion = new EnumCompletion(
         match[1],
         this.file
       );
@@ -134,11 +140,7 @@ class Parser {
         }
         this.completions.add(
           match[1],
-          new smCompletions.EnumMemberCompletion(
-            match[1],
-            this.file,
-            enumCompletion
-          )
+          new EnumMemberCompletion(match[1], this.file, enumCompletion)
         );
         if (!line) {
           break;
@@ -152,7 +154,7 @@ class Parser {
     if (match && !this.IsBuiltIn) {
       this.completions.add(
         match[1],
-        new smCompletions.VariableCompletion(match[1], this.file)
+        new VariableCompletion(match[1], this.file)
       );
       return;
     }
@@ -175,7 +177,7 @@ class Parser {
           )[1];
           this.completions.add(
             variable_completion,
-            new smCompletions.VariableCompletion(variable_completion, this.file)
+            new VariableCompletion(variable_completion, this.file)
           );
         }
       } else {
@@ -193,10 +195,7 @@ class Parser {
             )[1];
             this.completions.add(
               variable_completion,
-              new smCompletions.VariableCompletion(
-                variable_completion,
-                this.file
-              )
+              new VariableCompletion(variable_completion, this.file)
             );
           }
           match[1] = this.lines.shift();
@@ -316,14 +315,14 @@ class Parser {
         let paramAsVariable = param.match(/([^\s:]*)$/)[1];
         this.completions.add(
           paramAsVariable,
-          new smCompletions.VariableCompletion(paramAsVariable, this.file)
+          new VariableCompletion(paramAsVariable, this.file)
         );
       }
     }
     partial_params_match = this.clean_param(partial_params_match);
     this.completions.add(
       name_match,
-      new smCompletions.FunctionCompletion(
+      new FunctionCompletion(
         name_match,
         partial_params_match,
         description,
@@ -418,12 +417,7 @@ class Parser {
       let { description, params } = this.parse_doc_comment();
       this.completions.add(
         match[1],
-        new smCompletions.FunctionCompletion(
-          match[1],
-          match[2],
-          description,
-          params
-        )
+        new FunctionCompletion(match[1], match[2], description, params)
       );
     }
   }
@@ -443,7 +437,7 @@ class Parser {
       if (this.state[this.state.length - 1] === State.Methodmap) {
         this.completions.add(
           name_match[1],
-          new smCompletions.MethodCompletion(
+          new MethodCompletion(
             this.state_data.name,
             name_match[1],
             match[2],
@@ -467,7 +461,7 @@ class Parser {
         }
         this.completions.add(
           name_match[1],
-          new smCompletions.FunctionCompletion(
+          new FunctionCompletion(
             name_match[1],
             paramsMatch,
             description,
@@ -480,7 +474,7 @@ class Parser {
 
   parse_doc_comment(): {
     description: string;
-    params: smCompletions.FunctionParam[];
+    params: FunctionParam[];
   } {
     let description = (() => {
       let lines = [];

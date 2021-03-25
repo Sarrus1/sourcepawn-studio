@@ -48,7 +48,7 @@ export class Providers {
     this.completionsProvider.completions.set(document.uri.toString(), this_completions);
   }
 
-	read_unscanned_imports(completions: smCompletions.FileCompletions) {
+	public read_unscanned_imports(completions: smCompletions.FileCompletions) {
     for (let import_file of completions.includes) {
       let completion = this.completionsProvider.completions.get(import_file.uri);
       if (typeof completion === "undefined") {
@@ -65,7 +65,7 @@ export class Providers {
     }
   }
 
-	parse_sm_api(sourcemod_home: string): void {
+	public parse_sm_api(sourcemod_home: string): void {
     if (!sourcemod_home) return;
     glob(path.join(sourcemod_home, "**/*.inc"), (err, files) => {
       for (let file of files) {
