@@ -1,5 +1,10 @@
 ## Release Notes
 
+### 1.9.0
+ - Added Go-To-Definition.
+ - Implemented forward parsing.
+ - Implemented better description support.
+
 ### 1.8.4
  - Switched to a client-based extension, removing support for LSP.
  - Switched to an iterative parser, instead of a recursive one, thus fixing Call Stack Overflow errors when parsing large files.

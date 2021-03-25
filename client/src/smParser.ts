@@ -194,20 +194,6 @@ class Parser {
       return;
     }
 
-    // Match comments to find short function descriptions
-    match = line.match(/^\s*\/\/\s*(.*)/);
-    if(match) {
-      let description : string = match[1];
-      if(line = this.liner.next().toString()){
-        this.lineNb++;
-        match = line.match(/(?:(?:static|native|stock|public|forward|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*)$/);
-          if (match) {
-            this.read_non_descripted_function(match, file, description, IsBuiltIn);
-          }
-      }
-      return;
-    }
-
     match = line.match(
       /^\s*methodmap\s+([a-zA-Z][a-zA-Z0-9_]*)(?:\s+<\s+([a-zA-Z][a-zA-Z0-9_]*))?/
     );
