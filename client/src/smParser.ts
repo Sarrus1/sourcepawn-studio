@@ -1,17 +1,22 @@
 import * as smCompletions from "./smCompletions";
 import * as smDefinitions from "./smDefinitions";
-import * as lineByLine from "n-readlines";
 import * as vscode from "vscode";
 import {URI} from "vscode-uri";
+import * as fs from "fs";
 
 export function parse_file(file: string, completions: smCompletions.FileCompletions, definitions : smDefinitions.Definitions, IsBuiltIn:boolean=false) {
-  let parser = new Parser(file, completions, definitions);
-  parser.parse(file, IsBuiltIn);
+  fs.readFile(file, "utf-8", (err, data) => {
+    parse_text(data, file, completions, definitions, IsBuiltIn);
+  });
 }
 
-export function parse_line(line: string, file: string, completions: smCompletions.FileCompletions, definitions : smDefinitions.Definitions, IsBuiltIn:boolean=false) {
-  let parser = new Parser(file, completions, definitions);
-  parser.interpLine(line, file, IsBuiltIn);
+export function parse_text(data: string, file: string, completions: smCompletions.FileCompletions, definitions : smDefinitions.Definitions, IsBuiltIn:boolean=false) {
+  if (typeof data === "undefined") {
+    return; // Asked to parse empty file
+  }
+  let lines = data.split("\n");
+  let parser = new Parser(lines, file, completions, definitions);
+  parser.parse(file, IsBuiltIn);
 }
 
 enum State {
@@ -29,22 +34,22 @@ class Parser {
   state: State[];
   scratch: any;
   state_data: any;
-  liner : lineByLine;
+  lines: string[];
   lineNb : number
 
-  constructor(file : string, completions: smCompletions.FileCompletions, definitions: smDefinitions.Definitions) {
+  constructor(lines : string[], file : string, completions: smCompletions.FileCompletions, definitions: smDefinitions.Definitions) {
     this.completions = completions;
     this.definitions = definitions;
     this.state = [State.None];
-    this.liner = new lineByLine(file);
     this.lineNb = -1;
+    this.lines = lines;
   }
 
   parse(file, IsBuiltIn:boolean = false){
     let line : string
-    while (line = this.liner.next()) {
+    while (line = this.lines.shift()) {
       this.lineNb++;
-      this.interpLine(line.toString(), file, IsBuiltIn);
+      this.interpLine(line, file, IsBuiltIn);
     }
   }
   
@@ -84,7 +89,7 @@ class Parser {
 			let iter = 0;
 
 			// Proceed to the next line
-			line = this.liner.next().toString();
+			line = this.lines.shift()
       this.lineNb++;
 
 			// Stop early if it's the end of the file
@@ -98,7 +103,7 @@ class Parser {
 			{
 				iter++;
 				match = line.match(/^\s*([A-z0-9_]*)\s*.*/);
-				line = this.liner.next().toString();
+				line = this.lines.shift()
         this.lineNb++;
 				
 				// Skip if didn't match
@@ -168,7 +173,7 @@ class Parser {
               new smCompletions.VariableCompletion(variable_completion, file)
             );
           }
-          match[1] = this.liner.next().toString();
+          match[1] = this.lines.shift()
           this.lineNb++;
         }
       }
@@ -256,7 +261,7 @@ class Parser {
     // Check if function takes arguments
     let maxiter = 0;
     while (!match_buffer.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) && maxiter<20) {
-      if(!(line = this.liner.next().toString()))
+      if(!(line = this.lines.shift()))
       {
         return;
       }
@@ -310,9 +315,9 @@ class Parser {
 
         if (use_line_comment) {
           return this.read_function(current_line, file, IsBuiltIn);
-        } else if (current_line = this.liner.next()){
+        } else if (current_line = this.lines.shift()){
           this.lineNb++;
-          return this.read_function(current_line.toString(), file, IsBuiltIn);
+          return this.read_function(current_line, file, IsBuiltIn);
         }
       }
 
@@ -336,10 +341,10 @@ class Parser {
       }
 
       this.scratch.push(current_line);
-      if(current_line = this.liner.next()){
+      if(current_line = this.lines.shift()){
         this.lineNb++;
         this.consume_multiline_comment(
-          current_line.toString(),
+          current_line,
           use_line_comment,
           file,
           IsBuiltIn
@@ -411,7 +416,7 @@ class Parser {
         // Iteration safety in case something goes wrong
         let maxiter=0;
         let line:string;
-        while(!paramsMatch.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) && (line = this.liner.next().toString()) && maxiter<20) {
+        while(!paramsMatch.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) && (line = this.lines.shift()) && maxiter<20) {
           this.lineNb++;
           paramsMatch += line;
           maxiter++;

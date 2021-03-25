@@ -21,7 +21,17 @@ export class Providers {
   }
 
 	public handle_document_change(event: vscode.TextDocumentChangeEvent) {
-    this.handle_new_document(event.document);
+    let this_completions : smCompletions.FileCompletions = new smCompletions.FileCompletions(event.document.uri.toString());
+		let path : string = event.document.uri.fsPath;
+		// Some file paths are appened with .git
+		path = path.replace(".git", "");
+    // We use parse_text here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
+		try{
+			smParser.parse_text(event.document.getText(), path, this_completions, this.definitionsProvider.definitions);
+		}
+		catch(error){console.log(error)}
+		this.read_unscanned_imports(this_completions);
+    this.completionsProvider.completions.set(event.document.uri.toString(), this_completions);
   }
 
   public handle_new_document(document: vscode.TextDocument) {
@@ -32,13 +42,9 @@ export class Providers {
 		try{
 			smParser.parse_file(path, this_completions, this.definitionsProvider.definitions);
 		}
-		catch(error)
-		{
-			console.log(error);
-		}
+		catch(error){console.log(error);}
 
 		this.read_unscanned_imports(this_completions);
-    
     this.completionsProvider.completions.set(document.uri.toString(), this_completions);
   }
 

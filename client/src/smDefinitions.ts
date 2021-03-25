@@ -1,8 +1,4 @@
 ﻿import * as vscode from "vscode";
-import * as glob from "glob";
-import * as path from "path";
-import { URI } from "vscode-uri";
-import * as fs from "fs";
 
 export type Definitions = Map<string, vscode.Location>;
 

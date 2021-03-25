@@ -10,7 +10,6 @@ import { SM_MODE } from "./smMode";
 import { Providers } from "./smProviders";
 
 
-
 export function activate(context: vscode.ExtensionContext) {
   let providers = new Providers(context.globalState);
 	let sm_home : string = vscode.workspace.getConfiguration("sourcepawnLanguageServer").get(
@@ -24,8 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
 	vscode.workspace.onDidChangeTextDocument(providers.handle_document_change, providers, context.subscriptions);
 	vscode.workspace.onDidOpenTextDocument(providers.handle_new_document, providers, context.subscriptions);
   
-	
-	
+
 	// Register commands
   let createTask = vscode.commands.registerCommand(
     "extension.createTask",
