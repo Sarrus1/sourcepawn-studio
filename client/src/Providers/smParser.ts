@@ -180,26 +180,22 @@ class Parser {
     return;
   }
 
-  read_define(match)
-  {
+  read_define(match) {
     this.completions.add(match[1], new DefineCompletion(match[1]));
     return;
   }
 
-  read_global_include(match)
-  {
+  read_global_include(match) {
     this.completions.resolve_import(match[1], false, this.IsBuiltIn);
     return;
   }
 
-  read_local_include(match)
-  {
+  read_local_include(match) {
     this.completions.resolve_import(match[1], true, this.IsBuiltIn);
     return;
   }
 
-  read_enums(match)
-  {
+  read_enums(match) {
     // Create a completion for the enum itself
     let enumCompletion: EnumCompletion = new EnumCompletion(
       match[1],
@@ -211,7 +207,7 @@ class Parser {
     let iter = 0;
 
     // Proceed to the next line
-    let line:string = this.lines.shift();
+    let line: string = this.lines.shift();
     this.lineNb++;
 
     // Stop early if it's the end of the file
@@ -241,16 +237,12 @@ class Parser {
     return;
   }
 
-  read_loop_variables(match)
-  {
-    this.completions.add(
-      match[1],
-      new VariableCompletion(match[1], this.file)
-    );
+  read_loop_variables(match) {
+    this.completions.add(match[1], new VariableCompletion(match[1], this.file));
     return;
   }
 
-  read_variables(match){
+  read_variables(match) {
     let match_variables = [];
     // Check if it's a multiline declaration
     if (match[1].match(/(;)(?:\s*|)$/)) {
@@ -266,6 +258,15 @@ class Parser {
           variable_completion,
           new VariableCompletion(variable_completion, this.file)
         );
+        // Save as definition if it's a global variable
+        if(/g_.*/g.test(variable_completion)){
+          let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+            URI.file(this.file),
+            new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+            smDefinitions.DefinitionKind.Variable
+          );
+          this.definitions.set(variable_completion, def);
+        }
       }
     } else {
       while (!match[1].match(/(;)(?:\s*|)$/)) {
@@ -284,6 +285,17 @@ class Parser {
             variable_completion,
             new VariableCompletion(variable_completion, this.file)
           );
+
+          // Save as definition if it's a global variable
+          if(/g_.*/g.test(variable_completion)){
+            let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+              URI.file(this.file),
+              new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+              smDefinitions.DefinitionKind.Variable
+            );
+            this.definitions.set(variable_completion, def);
+          }
+
         }
         match[1] = this.lines.shift();
         this.lineNb++;
@@ -309,9 +321,10 @@ class Parser {
       name_match = match[1];
     }
     // Save as definition
-    let def: vscode.Location = new vscode.Location(
+    let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
       URI.file(this.file),
-      new vscode.Range(this.lineNb, 0, this.lineNb, 0)
+      new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+      smDefinitions.DefinitionKind.Function
     );
     this.definitions.set(name_match, def);
     partial_params_match = match[3];
@@ -438,9 +451,10 @@ class Parser {
       /\s*(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/
     );
     if (match) {
-      let def: vscode.Location = new vscode.Location(
+      let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
         URI.file(this.file),
-        new vscode.Range(this.lineNb, 0, this.lineNb, 0)
+        new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+        smDefinitions.DefinitionKind.Function
       );
       this.definitions.set(match[1], def);
       let { description, params } = this.parse_doc_comment();
@@ -458,9 +472,10 @@ class Parser {
     if (match) {
       let { description, params } = this.parse_doc_comment();
       let name_match = match[2].match(/^([A-Za-z_][A-Za-z0-9_]*)/);
-      let def: vscode.Location = new vscode.Location(
+      let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
         URI.file(this.file),
-        new vscode.Range(this.lineNb, 0, this.lineNb, 0)
+        new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+        smDefinitions.DefinitionKind.Function
       );
       this.definitions.set(name_match[1], def);
       if (this.state[this.state.length - 1] === State.Methodmap) {

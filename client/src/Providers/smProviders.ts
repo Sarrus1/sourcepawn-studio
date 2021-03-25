@@ -48,6 +48,21 @@ export class Providers {
     this.completionsProvider.completions.set(document.uri.toString(), this_completions);
   }
 
+  public handle_document_opening(path : string)
+  {
+    let uri : string = URI.file(path).toString();
+    let this_completions : smCompletions.FileCompletions = new smCompletions.FileCompletions(uri);
+		// Some file paths are appened with .git
+		path = path.replace(".git", "");
+		try{
+			smParser.parse_file(path, this_completions, this.definitionsProvider.definitions);
+		}
+		catch(error){console.log(error);}
+
+		this.read_unscanned_imports(this_completions);
+    this.completionsProvider.completions.set(uri, this_completions);
+  }
+
 	public read_unscanned_imports(completions: smCompletions.FileCompletions) {
     for (let import_file of completions.includes) {
       let completion = this.completionsProvider.completions.get(import_file.uri);

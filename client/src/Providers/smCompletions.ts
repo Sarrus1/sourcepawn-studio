@@ -207,7 +207,6 @@ export class CompletionRepository
     position: vscode.Position,
     token: vscode.CancellationToken
   ): vscode.SignatureHelp {
-    //let document = this.documents.get(URI.parse(position.textDocument.uri));
     if (document) {
       let { method, parameter_count } = (() => {
         let line = document.getText().split("\n")[position.line];

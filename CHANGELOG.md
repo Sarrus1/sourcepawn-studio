@@ -1,7 +1,7 @@
 ## Release Notes
 
 ### 1.9.0
- - Added Go-To-Definition.
+ - Added Go-To-Definition for functions and for global variables (in the same file).
  - Added forward parsing.
  - Added better description support.
  - Added better iterative parsing, it is no longer required to save the document for completions to take effect.
