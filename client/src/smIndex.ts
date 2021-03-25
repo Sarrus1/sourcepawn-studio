@@ -7,21 +7,22 @@ import * as CreateProjectCommand from "./commands/createProject";
 import * as CompileSMCommand from "./commands/compileSM";
 import * as linter from "./smLinter";
 import { SM_MODE } from "./smMode";
-import { CompletionRepository } from "./smCompletions"
+import { Providers } from "./smProviders";
 
 
 
 export function activate(context: vscode.ExtensionContext) {
-	let completions = new CompletionRepository(context.globalState);
-
+  let providers = new Providers(context.globalState);
 	let sm_home : string = vscode.workspace.getConfiguration("sourcepawnLanguageServer").get(
 		"sourcemod_home");
-	completions.parse_sm_api(sm_home);
-	context.subscriptions.push(completions);
-	context.subscriptions.push(vscode.languages.registerCompletionItemProvider(SM_MODE ,completions));
-	context.subscriptions.push(vscode.languages.registerSignatureHelpProvider(SM_MODE, completions, "("));
-	vscode.workspace.onDidChangeTextDocument(completions.handle_document_change, completions, context.subscriptions);
-	vscode.workspace.onDidOpenTextDocument(completions.handle_new_document, null, context.subscriptions);
+  providers.parse_sm_api(sm_home);
+  context.subscriptions.push(providers.completionsProvider);
+	context.subscriptions.push(vscode.languages.registerCompletionItemProvider(SM_MODE , providers.completionsProvider));
+	context.subscriptions.push(vscode.languages.registerSignatureHelpProvider(SM_MODE, providers.completionsProvider, "("));
+  context.subscriptions.push(vscode.languages.registerDefinitionProvider(SM_MODE, providers.definitionsProvider));
+  // Passing providers as an arguments is required to be able to use 'this' in the callbacks.
+	vscode.workspace.onDidChangeTextDocument(providers.handle_document_change, providers, context.subscriptions);
+	vscode.workspace.onDidOpenTextDocument(providers.handle_new_document, providers, context.subscriptions);
   
 	
 	

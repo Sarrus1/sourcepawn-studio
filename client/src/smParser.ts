@@ -1,13 +1,16 @@
 import * as smCompletions from "./smCompletions";
+import * as smDefinitions from "./smDefinitions";
 import * as lineByLine from "n-readlines";
+import * as vscode from "vscode";
+import {URI} from "vscode-uri";
 
-export function parse_file(file: string, completions: smCompletions.FileCompletions, IsBuiltIn:boolean=false) {
-  let parser = new Parser(file, completions);
+export function parse_file(file: string, completions: smCompletions.FileCompletions, definitions : smDefinitions.Definitions, IsBuiltIn:boolean=false) {
+  let parser = new Parser(file, completions, definitions);
   parser.parse(file, IsBuiltIn);
 }
 
-export function parse_line(line: string, file: string, completions: smCompletions.FileCompletions, IsBuiltIn:boolean=false) {
-  let parser = new Parser(file, completions);
+export function parse_line(line: string, file: string, completions: smCompletions.FileCompletions, definitions : smDefinitions.Definitions, IsBuiltIn:boolean=false) {
+  let parser = new Parser(file, completions, definitions);
   parser.interpLine(line, file, IsBuiltIn);
 }
 
@@ -22,20 +25,25 @@ enum State {
 
 class Parser {
   completions: smCompletions.FileCompletions;
+  definitions: smDefinitions.Definitions;
   state: State[];
   scratch: any;
   state_data: any;
   liner : lineByLine;
+  lineNb : number
 
-  constructor(file : string, completions: smCompletions.FileCompletions) {
+  constructor(file : string, completions: smCompletions.FileCompletions, definitions: smDefinitions.Definitions) {
     this.completions = completions;
+    this.definitions = definitions;
     this.state = [State.None];
     this.liner = new lineByLine(file);
+    this.lineNb = -1;
   }
 
   parse(file, IsBuiltIn:boolean = false){
     let line : string
     while (line = this.liner.next()) {
+      this.lineNb++;
       this.interpLine(line.toString(), file, IsBuiltIn);
     }
   }
@@ -77,6 +85,7 @@ class Parser {
 
 			// Proceed to the next line
 			line = this.liner.next().toString();
+      this.lineNb++;
 
 			// Stop early if it's the end of the file
 			if(!line)
@@ -90,6 +99,7 @@ class Parser {
 				iter++;
 				match = line.match(/^\s*([A-z0-9_]*)\s*.*/);
 				line = this.liner.next().toString();
+        this.lineNb++;
 				
 				// Skip if didn't match
 				if(!match)
@@ -159,6 +169,7 @@ class Parser {
             );
           }
           match[1] = this.liner.next().toString();
+          this.lineNb++;
         }
       }
 
@@ -188,6 +199,7 @@ class Parser {
     if(match) {
       let description : string = match[1];
       if(line = this.liner.next().toString()){
+        this.lineNb++;
         match = line.match(/(?:(?:static|native|stock|public|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*)$/);
           if (match) {
             this.read_non_descripted_function(match, file, description, IsBuiltIn);
@@ -250,6 +262,9 @@ class Parser {
     else {
       name_match = match[1];
     }
+    // Save as definition
+    let def : vscode.Location = new vscode.Location(URI.file(file), new vscode.Range(this.lineNb, 0, this.lineNb, 0));
+    this.definitions.set(name_match, def);
     partial_params_match = match[3];
     match_buffer = match[0];
     // Check if function takes arguments
@@ -259,6 +274,7 @@ class Parser {
       {
         return;
       }
+      this.lineNb++;
       partial_params_match+=line;
       match_buffer+=line;
       maxiter++;
@@ -309,8 +325,9 @@ class Parser {
 
         if (use_line_comment) {
           return this.read_function(current_line, file, IsBuiltIn);
-        } else {
-          return this.read_function(this.liner.next().toString(), file, IsBuiltIn);
+        } else if (current_line = this.liner.next()){
+          this.lineNb++;
+          return this.read_function(current_line.toString(), file, IsBuiltIn);
         }
       }
 
@@ -334,13 +351,16 @@ class Parser {
       }
 
       this.scratch.push(current_line);
+      if(current_line = this.liner.next()){
+        this.lineNb++;
+        this.consume_multiline_comment(
+          current_line.toString(),
+          use_line_comment,
+          file,
+          IsBuiltIn
+        )
+      }
 
-      this.consume_multiline_comment(
-        this.liner.next().toString(),
-        use_line_comment,
-        file,
-        IsBuiltIn
-      );
     }
   }
 
@@ -358,20 +378,22 @@ class Parser {
     }
 
     if (line.includes(":")) {
-      this.read_old_style_function(line);
+      this.read_old_style_function(line, file);
     } else {
-      this.read_new_style_function(line);
+      this.read_new_style_function(line, file);
     }
 
     this.state.pop();
     return;
   }
 
-  read_old_style_function(line: string) {
+  read_old_style_function(line: string, file:string) {
     let match = line.match(
       /\s*(?:(?:static|native|stock|public)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/
     );
     if (match) {
+      let def : vscode.Location = new vscode.Location(URI.file(file), new vscode.Range(this.lineNb, 0, this.lineNb, 0));
+      this.definitions.set(match[1], def);
       let { description, params } = this.parse_doc_comment();
       this.completions.add(
         match[1],
@@ -380,13 +402,15 @@ class Parser {
     }
   }
 
-  read_new_style_function(line: string) {
+  read_new_style_function(line: string, file:string) {
     let match = line.match(
       /\s*(?:(?:static|native|stock|public)+\s*)+\s+([^\s]+)\s*([A-Za-z_].*)/
     );
     if (match) {
       let { description, params } = this.parse_doc_comment();
       let name_match = match[2].match(/^([A-Za-z_][A-Za-z0-9_]*)/);
+      let def : vscode.Location = new vscode.Location(URI.file(file), new vscode.Range(this.lineNb, 0, this.lineNb, 0));
+      this.definitions.set(name_match[1], def);
       if (this.state[this.state.length - 1] === State.Methodmap) {
         this.completions.add(
           name_match[1],
@@ -404,6 +428,7 @@ class Parser {
         let maxiter=0;
         let line:string;
         while(!paramsMatch.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) && (line = this.liner.next().toString()) && maxiter<20) {
+          this.lineNb++;
           paramsMatch += line;
           maxiter++;
         }

@@ -4,6 +4,7 @@ import * as path from "path";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
 import * as parser from "./smParser";
+import * as smDefinitions from "./smDefinitions";
 
 export interface Completion {
   name: string;
@@ -315,48 +316,6 @@ export class CompletionRepository
 
   public dispose() {}
 
-  handle_document_change(event: vscode.TextDocumentChangeEvent) {
-    this.handle_new_document(event.document);
-  }
-
-  handle_new_document(document: vscode.TextDocument) {
-    let this_completions = new FileCompletions(document.uri.toString());
-    parser.parse_file(document.uri.fsPath, this_completions);
-    this.read_unscanned_imports(this_completions);
-    this.completions.set(document.uri.toString(), this_completions);
-  }
-
-  read_unscanned_imports(completions: FileCompletions) {
-    for (let import_file of completions.includes) {
-      let completion = this.completions.get(import_file.uri);
-      if (typeof completion === "undefined") {
-        let file = URI.parse(import_file.uri).fsPath;
-        if (fs.existsSync(file)) {
-          let new_completions = new FileCompletions(import_file.uri);
-          parser.parse_file(file, new_completions, import_file.IsBuiltIn);
-
-          this.read_unscanned_imports(new_completions);
-
-          this.completions.set(import_file.uri, new_completions);
-        }
-      }
-    }
-  }
-
-  parse_sm_api(sourcemod_home: string): void {
-    if (!sourcemod_home) return;
-    glob(path.join(sourcemod_home, "**/*.inc"), (err, files) => {
-      for (let file of files) {
-        let completions = new FileCompletions(URI.file(file).toString());
-        parser.parse_file(file, completions, true);
-
-        let uri =
-          "file://__sourcemod_builtin/" + path.relative(sourcemod_home, file);
-        this.completions.set(uri, completions);
-      }
-    });
-  }
-
   get_completions(
     document: vscode.TextDocument,
     position: vscode.Position
@@ -380,7 +339,7 @@ export class CompletionRepository
       document.uri.toString()
     );
     let all_completions_list: vscode.CompletionList = new vscode.CompletionList();
-    if (all_completions) {
+    if (all_completions != []) {
       all_completions_list.items = all_completions.map((completion) => {
         if (completion) {
           if (completion.to_completion_item) {
