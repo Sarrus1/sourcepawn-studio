@@ -32,6 +32,12 @@ The only setting allows to define the position of the default sourcemod include 
 },
 {
 	"sourcepawnLanguageServer.spcomp_path": "The location of the SourceMod compiler"
+},
+{
+	"sourcepawnLanguageServer.showCompileIconInEditorTitleMenu": "Whether to show the 'Compile Code' icon in editor title menu."
+},
+{
+	"sourcepawnLanguageServer.optionalIncludeDirsPaths": "Optional additional include folders paths for the compiler. Use this if you know what you are doing. Leave blank to disable."
 }
 ```
 

@@ -249,22 +249,39 @@ export class FileCompletions {
     let base_directory = path.dirname(base_file);
     let inc_file = "";
     // If the include is not relative, check if the file exists in the include folder
-    // this is more beginner friendly
+    // this is more beginner friendly.
     if (!relative) {
+      // First, check the include folder.
       inc_file = path.join(base_directory, "include/", uri);
       if (fs.existsSync(inc_file)) {
         uri = URI.file(inc_file).toString();
         this.add_include(uri, IsBuiltIn);
-      } else {
-        uri = "file://__sourcemod_builtin/" + uri;
-        this.add_include(uri, IsBuiltIn);
+        return;
       }
+      // Check the optional include folders
+      let includes_dirs: string[] = vscode.workspace
+        .getConfiguration("sourcepawnLanguageServer")
+        .get("optionalIncludeDirsPaths");
+      for (let includes_dir of includes_dirs) {
+        inc_file = path.join(includes_dir, uri);
+        if (fs.existsSync(inc_file)) {
+          uri = URI.file(inc_file).toString();
+          this.add_include(uri, IsBuiltIn);
+          return;
+        }
+      }
+      // Otherwise consider this a builtin
+      uri = "file://__sourcemod_builtin/" + uri;
+      this.add_include(uri, IsBuiltIn);
     } else {
+      // First check if it's a .inc relative to the script file.
       inc_file = path.resolve(base_directory, uri);
       if (fs.existsSync(inc_file)) {
         uri = URI.file(inc_file).toString();
         this.add_include(uri, IsBuiltIn);
-      } else {
+      } 
+      // Otherwise consider it's a .sp relative to script file.
+      else {
         uri = URI.file(path.resolve(file + ".sp")).toString();
         this.add_include(uri, IsBuiltIn);
       }

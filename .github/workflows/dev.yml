@@ -1,12 +1,15 @@
-﻿name: Deploy Extension
+﻿name: Package Extension
 
 on:
   push:
     branches:
-      - master
+      - dev
+  pull_request:
+    branches:
+      - dev
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -15,6 +18,4 @@ jobs:
       - run: npm install
       - uses: lannonbr/vsce-action@master
         with:
-          args: "publish -p $VSCE_TOKEN"
-        env:
-          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+          args: "package"

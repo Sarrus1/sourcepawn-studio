@@ -68,7 +68,6 @@ export async function run(args: any) {
 	if (!fs.existsSync(pluginsFolderPath)){
 		fs.mkdirSync(pluginsFolderPath);
 	}
-	
 	let command = (os.platform() == 'win32' ? "." : "").concat(
 		// Compiler path
 		"\'" +
@@ -104,6 +103,17 @@ export async function run(args: any) {
 				vscode.workspace.getConfiguration("sourcepawnLanguageServer").get("sourcemod_home") || "",
 			"\'",
 	);
+
+	let optional_includes : string[] = [];
+	let includes_dirs: string[] = vscode.workspace
+	.getConfiguration("sourcepawnLanguageServer")
+	.get("optionalIncludeDirsPaths");
+	// Add the optional includes folders.
+	for (let includes_dir of includes_dirs) {
+		if (includes_dir != "") {
+			command += (" -i=" + "\'" + includes_dir + "\'");
+		}
+	}
 
 	try {
 		terminal.sendText(command);

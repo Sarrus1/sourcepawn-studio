@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn for VScode",
   "description": "SourcePawn highlighting and autocompletion.",
-  "version": "1.9.0",
+  "version": "1.8.4",
   "publisher": "Sarrus",
   "main": "client/out/smIndex",
   "icon": "sm.png",
@@ -109,6 +109,11 @@
           "type": "boolean",
           "default": true,
           "description": "Whether to show the 'Compile Code' icon in editor title menu."
+        },
+        "sourcepawnLanguageServer.optionalIncludeDirsPaths": {
+          "type": "array",
+          "default": [],
+          "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable."
         },
         "sourcepawnLanguageServer.trace.server": {
           "type": "string",

@@ -1,8 +1,11 @@
 ## Release Notes
 
-### 1.9.0
+### 1.8.4
  - Switched to a client-based extension, removing support for LSP.
- - Added an option to hide the compile button.
+ - Switched to an iterative parser, instead of a recursive one, thus fixing Call Stack Overflow errors when parsing large files.
+ - Added an option to hide the compile button (Suggested by [NullifidianSF](https://github.com/NullifidianSF)).
+ - Added an option to add additional include folders location (Suggested by [Bara](https://github.com/Bara)).
+ - Fixed an error where the compiler would not resolve the path correctly (Fixed by [Natanel-Shitrit](https://github.com/Natanel-Shitrit)).
 
 ### 1.8.3
  - Fixed an error on Windows when generating files.
