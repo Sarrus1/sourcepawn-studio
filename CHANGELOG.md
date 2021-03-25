@@ -2,8 +2,10 @@
 
 ### 1.9.0
  - Added Go-To-Definition.
- - Implemented forward parsing.
- - Implemented better description support.
+ - Added forward parsing.
+ - Added better description support.
+ - Added better iterative parsing, it is no longer required to save the document for completions to take effect.
+ - Improved the overall quality and readability of the code.
 
 ### 1.8.4
  - Switched to a client-based extension, removing support for LSP.
