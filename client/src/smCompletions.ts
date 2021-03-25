@@ -3,8 +3,7 @@ import * as glob from "glob";
 import * as path from "path";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
-import * as parser from "./smParser"
-
+import * as parser from "./smParser";
 
 export interface Completion {
   name: string;
@@ -158,10 +157,10 @@ export class EnumCompletion implements Completion {
   }
 
   to_completion_item(file: string): vscode.CompletionItem {
-		return {
-			label: this.name,
-			kind: this.kind,
-		};
+    return {
+      label: this.name,
+      kind: this.kind,
+    };
   }
 
   get_signature(): vscode.SignatureInformation {
@@ -169,24 +168,23 @@ export class EnumCompletion implements Completion {
   }
 }
 
-
 export class EnumMemberCompletion implements Completion {
   name: string;
-	enum: EnumCompletion;
+  enum: EnumCompletion;
   file: string;
   kind = vscode.CompletionItemKind.EnumMember;
 
-  constructor(name: string, file: string, Enum:EnumCompletion) {
+  constructor(name: string, file: string, Enum: EnumCompletion) {
     this.name = name;
     this.file = file;
-		this.enum = Enum;
+    this.enum = Enum;
   }
 
   to_completion_item(file: string): vscode.CompletionItem {
-		return {
-			label: this.name,
-			kind: this.kind,
-		};
+    return {
+      label: this.name,
+      kind: this.kind,
+    };
   }
 
   get_signature(): vscode.SignatureInformation {
@@ -274,58 +272,62 @@ export class FileCompletions {
   }
 }
 
-export class CompletionRepository implements vscode.CompletionItemProvider, vscode.Disposable {
-	public completions: Map<string, FileCompletions>;
-	documents : Set<vscode.Uri>;
-	private globalState: vscode.Memento;
+export class CompletionRepository
+  implements vscode.CompletionItemProvider, vscode.Disposable {
+  public completions: Map<string, FileCompletions>;
+  documents: Set<vscode.Uri>;
+  private globalState: vscode.Memento;
 
-	constructor(globalState?: vscode.Memento) {
-		this.completions = new Map();
-		this.documents = new Set();
-		this.globalState = globalState;
-	}
+  constructor(globalState?: vscode.Memento) {
+    this.completions = new Map();
+    this.documents = new Set();
+    this.globalState = globalState;
+  }
 
-	public provideCompletionItems(
-		document: vscode.TextDocument,
-		position: vscode.Position,
-		token: vscode.CancellationToken
-	): vscode.CompletionList {
-		let completions : vscode.CompletionList = this.get_completions(document, position);
-		return completions;
-	}
+  public provideCompletionItems(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    token: vscode.CancellationToken
+  ): vscode.CompletionList {
+    let completions: vscode.CompletionList = this.get_completions(
+      document,
+      position
+    );
+    return completions;
+  }
 
-	public dispose() {
-
-	}
+  public dispose() {}
 
   handle_document_change(event: vscode.TextDocumentChangeEvent) {
     this.handle_new_document(event.document);
   }
 
-	handle_new_document(document : vscode.TextDocument) {
-		let this_completions = new FileCompletions(document.uri.toString());
+  handle_new_document(document: vscode.TextDocument) {
+    let this_completions = new FileCompletions(document.uri.toString());
     parser.parse_file(document.uri.fsPath, this_completions);
-		//this.read_unscanned_imports(this_completions);
-		this.completions.set(document.uri.toString(), this_completions);
-	}
+    this.read_unscanned_imports(this_completions);
+    this.completions.set(document.uri.toString(), this_completions);
+  }
 
   read_unscanned_imports(completions: FileCompletions) {
     for (let import_file of completions.includes) {
       let completion = this.completions.get(import_file.uri);
-      if (!completion) {
+      if (typeof completion === "undefined") {
         let file = URI.parse(import_file.uri).fsPath;
-        let new_completions = new FileCompletions(import_file.uri);
-        parser.parse_file(file, new_completions, import_file.IsBuiltIn);
+        if (fs.existsSync(file)) {
+          let new_completions = new FileCompletions(import_file.uri);
+          parser.parse_file(file, new_completions, import_file.IsBuiltIn);
 
-        this.read_unscanned_imports(new_completions);
+          this.read_unscanned_imports(new_completions);
 
-        this.completions.set(import_file.uri, new_completions);
+          this.completions.set(import_file.uri, new_completions);
+        }
       }
     }
   }
 
-  parse_sm_api(sourcemod_home: string) : void {
-		if(!sourcemod_home) return;
+  parse_sm_api(sourcemod_home: string): void {
+    if (!sourcemod_home) return;
     glob(path.join(sourcemod_home, "**/*.inc"), (err, files) => {
       for (let file of files) {
         let completions = new FileCompletions(URI.file(file).toString());
@@ -338,7 +340,10 @@ export class CompletionRepository implements vscode.CompletionItemProvider, vsco
     });
   }
 
-  get_completions(document : vscode.TextDocument, position : vscode.Position): vscode.CompletionList {
+  get_completions(
+    document: vscode.TextDocument,
+    position: vscode.Position
+  ): vscode.CompletionList {
     let is_method = false;
     if (document) {
       let line = document.getText().split("\n")[position.line].trim();
@@ -354,24 +359,27 @@ export class CompletionRepository implements vscode.CompletionItemProvider, vsco
         break;
       }
     }
-    let all_completions : Completion[] = this.get_all_completions(document.uri.toString());
-		let all_completions_list : vscode.CompletionList = new vscode.CompletionList();
-		if(all_completions){
-			all_completions_list.items = all_completions.map((completion) => {
-				if(completion){
-				if(completion.to_completion_item){
-					return completion.to_completion_item(document.uri.fsPath);
-				}}
+    let all_completions: Completion[] = this.get_all_completions(
+      document.uri.toString()
+    );
+    let all_completions_list: vscode.CompletionList = new vscode.CompletionList();
+    if (all_completions) {
+      all_completions_list.items = all_completions.map((completion) => {
+        if (completion) {
+          if (completion.to_completion_item) {
+            return completion.to_completion_item(document.uri.fsPath);
+          }
+        }
       });
-		}
-		//return all_completions_list;
+    }
+    //return all_completions_list;
     if (is_method) {
-			all_completions_list.items.filter(
+      all_completions_list.items.filter(
         (completion) => completion.kind === vscode.CompletionItemKind.Method
       );
       return all_completions_list;
     } else {
-			all_completions_list.items.filter(
+      all_completions_list.items.filter(
         (completion) => completion.kind !== vscode.CompletionItemKind.Method
       );
       return all_completions_list;
@@ -381,9 +389,9 @@ export class CompletionRepository implements vscode.CompletionItemProvider, vsco
   get_all_completions(file: string): Completion[] {
     let completion = this.completions.get(file);
     let includes = new Set<string>();
-		if(completion){
-			this.get_included_files(completion, includes);
-		}
+    if (completion) {
+      this.get_included_files(completion, includes);
+    }
     includes.add(file);
     return [...includes]
       .map((file) => {
@@ -396,8 +404,8 @@ export class CompletionRepository implements vscode.CompletionItemProvider, vsco
   }
 
   get_file_completions(file: string): Completion[] {
-    let file_completions : FileCompletions = this.completions.get(file);
-		let completion_list : Completion[] = [];
+    let file_completions: FileCompletions = this.completions.get(file);
+    let completion_list: Completion[] = [];
     if (file_completions) {
       return file_completions.get_completions(this);
     }
@@ -415,12 +423,12 @@ export class CompletionRepository implements vscode.CompletionItemProvider, vsco
       }
     }
   }
-	
+
   provideSignatureHelp(
-		document: vscode.TextDocument,
-		position: vscode.Position,
-		token: vscode.CancellationToken
-	): vscode.SignatureHelp {
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    token: vscode.CancellationToken
+  ): vscode.SignatureHelp {
     //let document = this.documents.get(URI.parse(position.textDocument.uri));
     if (document) {
       let { method, parameter_count } = (() => {

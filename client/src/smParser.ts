@@ -1,25 +1,14 @@
 import * as smCompletions from "./smCompletions";
-import * as fs from "fs";
 import * as lineByLine from "n-readlines";
 
 export function parse_file(file: string, completions: smCompletions.FileCompletions, IsBuiltIn:boolean=false) {
-  fs.readFile(file, "utf-8", (err, data) => {
-    parse_blob(data, completions, file, IsBuiltIn);
-  });
+  let parser = new Parser(file, completions);
+  parser.parse(file, IsBuiltIn);
 }
 
-export function parse_blob(
-  data: string,
-  completions: smCompletions.FileCompletions,
-  file = "",
-  IsBuiltIn:boolean=false
-) {
-  if (typeof data === "undefined") {
-    return; // Asked to parse empty file
-  }
-  let lines = data.split("\n");
-  let parser = new Parser(file, lines, completions);
-  parser.parsef(file, IsBuiltIn);
+export function parse_line(line: string, file: string, completions: smCompletions.FileCompletions, IsBuiltIn:boolean=false) {
+  let parser = new Parser(file, completions);
+  parser.interpLine(line, file, IsBuiltIn);
 }
 
 enum State {
@@ -32,21 +21,19 @@ enum State {
 }
 
 class Parser {
-  lines: string[];
   completions: smCompletions.FileCompletions;
   state: State[];
   scratch: any;
   state_data: any;
   liner : lineByLine;
 
-  constructor(file : string, lines: string[], completions: smCompletions.FileCompletions) {
-    this.lines = lines;
+  constructor(file : string, completions: smCompletions.FileCompletions) {
     this.completions = completions;
     this.state = [State.None];
     this.liner = new lineByLine(file);
   }
 
-  parsef(file, IsBuiltIn:boolean = false){
+  parse(file, IsBuiltIn:boolean = false){
     let line : string
     while (line = this.liner.next()) {
       this.interpLine(line.toString(), file, IsBuiltIn);
@@ -189,13 +176,11 @@ class Parser {
 
     match = line.match(/^\s*\/\//);
     if (match) {
-      if (this.lines[0] && this.lines[0].match(/^\s*\/\//)) {
-        this.state.push(State.MultilineComment);
-        this.scratch = [];
+      this.state.push(State.MultilineComment);
+      this.scratch = [];
 
-        this.consume_multiline_comment(line, true, file, IsBuiltIn);
-        return;
-      }
+      this.consume_multiline_comment(line, true, file, IsBuiltIn);
+      return;
     }
 
     // Match comments to find short function descriptions
