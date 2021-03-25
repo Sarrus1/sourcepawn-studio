@@ -147,3 +147,10 @@ export let textDocumentClosed = vscode.workspace.onDidCloseTextDocument(
     delete throttles[document.uri.path];
   }
 );
+
+export function registerSMLinter (context : vscode.ExtensionContext){
+  context.subscriptions.push(compilerDiagnostics);
+  context.subscriptions.push(activeEditorChanged);
+  context.subscriptions.push(textDocumentChanged);
+  context.subscriptions.push(textDocumentClosed);
+}

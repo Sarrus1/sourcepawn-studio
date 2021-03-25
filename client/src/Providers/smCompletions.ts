@@ -1,206 +1,9 @@
 import * as vscode from "vscode";
-import * as glob from "glob";
 import * as path from "path";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
-import * as parser from "./smParser";
+import { Completion, Include } from "./smCompletionsKinds";
 
-export interface Completion {
-  name: string;
-  kind: vscode.CompletionItemKind;
-  description?: string;
-
-  to_completion_item(file: string): vscode.CompletionItem;
-  get_signature(): vscode.SignatureInformation;
-}
-
-export type FunctionParam = {
-  label: string;
-  documentation: string;
-};
-
-export class FunctionCompletion implements Completion {
-  name: string;
-  description: string;
-  detail: string;
-  params: FunctionParam[];
-  kind = vscode.CompletionItemKind.Function;
-
-  constructor(
-    name: string,
-    detail: string,
-    description: string,
-    params: FunctionParam[]
-  ) {
-    this.description = description;
-    this.name = name;
-    this.params = params;
-    this.detail = detail;
-  }
-
-  to_completion_item(file: string): vscode.CompletionItem {
-    return {
-      label: this.name,
-      kind: this.kind,
-      detail: this.description,
-    };
-  }
-
-  get_signature(): vscode.SignatureInformation {
-    return {
-      label: this.detail,
-      documentation: this.description,
-      parameters: this.params,
-    };
-  }
-}
-
-export class MethodCompletion implements Completion {
-  name: string;
-  method_map: string;
-  description: string;
-  detail: string;
-  params: FunctionParam[];
-  kind = vscode.CompletionItemKind.Method;
-
-  constructor(
-    method_map: string,
-    name: string,
-    detail: string,
-    description: string,
-    params: FunctionParam[]
-  ) {
-    this.method_map = method_map;
-    this.name = name;
-    this.detail = detail;
-    this.description = description;
-    this.params = params;
-  }
-
-  to_completion_item(file: string): vscode.CompletionItem {
-    return {
-      label: `${this.method_map}.${this.name}`,
-      insertText: this.name,
-      filterText: this.name,
-      kind: this.kind,
-      detail: this.description,
-    };
-  }
-
-  get_signature(): vscode.SignatureInformation {
-    return {
-      label: this.detail,
-      documentation: this.description,
-      parameters: this.params,
-    };
-  }
-}
-
-export class DefineCompletion implements Completion {
-  name: string;
-  type: string;
-  kind = vscode.CompletionItemKind.Variable;
-
-  constructor(name: string) {
-    this.name = name;
-  }
-
-  to_completion_item(file: string): vscode.CompletionItem {
-    return {
-      label: this.name,
-      kind: this.kind,
-    };
-  }
-
-  get_signature(): vscode.SignatureInformation {
-    return undefined;
-  }
-}
-
-export class VariableCompletion implements Completion {
-  name: string;
-  file: string;
-  kind = vscode.CompletionItemKind.Variable;
-
-  constructor(name: string, file: string) {
-    this.name = name;
-    this.file = file;
-  }
-
-  to_completion_item(file: string): vscode.CompletionItem {
-    // Only return variables local to the document being edited
-    if (file === this.file) {
-      return {
-        label: this.name,
-        kind: this.kind,
-      };
-    }
-    return {
-      label: "",
-      kind: this.kind,
-    };
-  }
-
-  get_signature(): vscode.SignatureInformation {
-    return undefined;
-  }
-}
-
-export class EnumCompletion implements Completion {
-  name: string;
-  file: string;
-  kind = vscode.CompletionItemKind.Enum;
-
-  constructor(name: string, file: string) {
-    this.name = name;
-    this.file = file;
-  }
-
-  to_completion_item(file: string): vscode.CompletionItem {
-    return {
-      label: this.name,
-      kind: this.kind,
-    };
-  }
-
-  get_signature(): vscode.SignatureInformation {
-    return undefined;
-  }
-}
-
-export class EnumMemberCompletion implements Completion {
-  name: string;
-  enum: EnumCompletion;
-  file: string;
-  kind = vscode.CompletionItemKind.EnumMember;
-
-  constructor(name: string, file: string, Enum: EnumCompletion) {
-    this.name = name;
-    this.file = file;
-    this.enum = Enum;
-  }
-
-  to_completion_item(file: string): vscode.CompletionItem {
-    return {
-      label: this.name,
-      kind: this.kind,
-    };
-  }
-
-  get_signature(): vscode.SignatureInformation {
-    return undefined;
-  }
-}
-
-export class Include {
-  uri: string;
-  IsBuiltIn: boolean;
-
-  constructor(uri: string, IsBuiltIn: boolean) {
-    this.uri = uri;
-    this.IsBuiltIn = IsBuiltIn;
-  }
-}
 
 export class FileCompletions {
   completions: Map<string, Completion>;
@@ -315,48 +118,6 @@ export class CompletionRepository
 
   public dispose() {}
 
-  handle_document_change(event: vscode.TextDocumentChangeEvent) {
-    this.handle_new_document(event.document);
-  }
-
-  handle_new_document(document: vscode.TextDocument) {
-    let this_completions = new FileCompletions(document.uri.toString());
-    parser.parse_file(document.uri.fsPath, this_completions);
-    this.read_unscanned_imports(this_completions);
-    this.completions.set(document.uri.toString(), this_completions);
-  }
-
-  read_unscanned_imports(completions: FileCompletions) {
-    for (let import_file of completions.includes) {
-      let completion = this.completions.get(import_file.uri);
-      if (typeof completion === "undefined") {
-        let file = URI.parse(import_file.uri).fsPath;
-        if (fs.existsSync(file)) {
-          let new_completions = new FileCompletions(import_file.uri);
-          parser.parse_file(file, new_completions, import_file.IsBuiltIn);
-
-          this.read_unscanned_imports(new_completions);
-
-          this.completions.set(import_file.uri, new_completions);
-        }
-      }
-    }
-  }
-
-  parse_sm_api(sourcemod_home: string): void {
-    if (!sourcemod_home) return;
-    glob(path.join(sourcemod_home, "**/*.inc"), (err, files) => {
-      for (let file of files) {
-        let completions = new FileCompletions(URI.file(file).toString());
-        parser.parse_file(file, completions, true);
-
-        let uri =
-          "file://__sourcemod_builtin/" + path.relative(sourcemod_home, file);
-        this.completions.set(uri, completions);
-      }
-    });
-  }
-
   get_completions(
     document: vscode.TextDocument,
     position: vscode.Position
@@ -380,7 +141,7 @@ export class CompletionRepository
       document.uri.toString()
     );
     let all_completions_list: vscode.CompletionList = new vscode.CompletionList();
-    if (all_completions) {
+    if (all_completions != []) {
       all_completions_list.items = all_completions.map((completion) => {
         if (completion) {
           if (completion.to_completion_item) {
@@ -446,7 +207,6 @@ export class CompletionRepository
     position: vscode.Position,
     token: vscode.CancellationToken
   ): vscode.SignatureHelp {
-    //let document = this.documents.get(URI.parse(position.textDocument.uri));
     if (document) {
       let { method, parameter_count } = (() => {
         let line = document.getText().split("\n")[position.line];

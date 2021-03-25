@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn for VScode",
   "description": "SourcePawn highlighting and autocompletion.",
-  "version": "1.8.4",
+  "version": "1.9.0",
   "publisher": "Sarrus",
   "main": "client/out/smIndex",
   "icon": "sm.png",

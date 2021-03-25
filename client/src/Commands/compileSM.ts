@@ -104,7 +104,6 @@ export async function run(args: any) {
 			"\'",
 	);
 
-	let optional_includes : string[] = [];
 	let includes_dirs: string[] = vscode.workspace
 	.getConfiguration("sourcepawnLanguageServer")
 	.get("optionalIncludeDirsPaths");

@@ -1,5 +1,12 @@
 ## Release Notes
 
+### 1.9.0
+ - Added Go-To-Definition for functions and for global variables (in the same file).
+ - Added forward parsing.
+ - Added better description support.
+ - Added better iterative parsing, it is no longer required to save the document for completions to take effect.
+ - Improved the overall quality and readability of the code.
+
 ### 1.8.4
  - Switched to a client-based extension, removing support for LSP.
  - Switched to an iterative parser, instead of a recursive one, thus fixing Call Stack Overflow errors when parsing large files.
