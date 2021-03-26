@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
+import { existsSync } from "fs";
 import { URI } from "vscode-uri";
-import * as fs from "fs";
 import { Completion, Include } from "./smCompletionsKinds";
 
 
@@ -44,71 +44,45 @@ export class FileCompletions {
 
   resolve_import(
     file: string,
-    relative: boolean = false,
+    documents: Map<string, URI>,
     IsBuiltIn: boolean = false
   ) {
-    let uri = file + ".inc";
-    let base_file = URI.parse(this.uri).fsPath;
-    let base_directory = path.dirname(base_file);
-    let roothpath = vscode.workspace.workspaceFolders[0].uri.fsPath;
-    let inc_file = "";
-    // If the include is not relative, check if the file exists in the include folder
-    // this is more beginner friendly.
-    if (!relative) {
-      // First, check the include folder.
-      //inc_file = path.join(base_directory, "include/", uri);
-      inc_file = path. resolve(roothpath, uri);
-      console.debug(inc_file);
-      if (fs.existsSync(inc_file)) {
-        uri = URI.file(inc_file).toString();
-        this.add_include(uri, IsBuiltIn);
-        return;
-      }
-      // Check the optional include folders
+    let inc_file : string;
+    // If no extension is provided, it's a .inc file
+    if(!/.sp\s*$/g.test(file))
+    {
+      file += ".inc";
+    }
+    let uri : URI;
+    if(!(uri = documents.get(file))){
       let includes_dirs: string[] = vscode.workspace
         .getConfiguration("sourcepawnLanguageServer")
         .get("optionalIncludeDirsPaths");
       for (let includes_dir of includes_dirs) {
-        inc_file = path.join(includes_dir, uri);
-        if (fs.existsSync(inc_file)) {
-          uri = URI.file(inc_file).toString();
-          this.add_include(uri, IsBuiltIn);
+        inc_file = path.join(includes_dir, file);
+        if (existsSync(inc_file)) {
+          this.add_include(URI.file(inc_file).toString(), IsBuiltIn);
           return;
         }
       }
-      // Otherwise consider this a builtin
-      uri = "file://__sourcemod_builtin/" + uri;
-      this.add_include(uri, IsBuiltIn);
-    } else {
-      // First check if it's a .inc relative to the script file.
-      inc_file = path.resolve(roothpath, uri);
-      console.debug(inc_file);
-      if (fs.existsSync(inc_file)) {
-        uri = URI.file(inc_file).toString();
-        this.add_include(uri, IsBuiltIn);
-      } 
-      // Otherwise consider it's a .sp relative to script file.
-      else {
-        if(!/.sp\s*$/g.test)
-        {
-          file += ".sp";
-        }
-        uri = URI.file(path.resolve(roothpath, file)).toString();
-        this.add_include(uri, IsBuiltIn);
-      }
+      this.add_include("file://__sourcemod_builtin/" + file, IsBuiltIn);
     }
+    else{
+      this.add_include(uri.toString(), IsBuiltIn);
+    }
+    
   }
 }
 
 export class CompletionRepository
   implements vscode.CompletionItemProvider, vscode.Disposable {
   public completions: Map<string, FileCompletions>;
-  documents: Set<vscode.Uri>;
+  public documents: Map<string, vscode.Uri>;
   private globalState: vscode.Memento;
 
   constructor(globalState?: vscode.Memento) {
     this.completions = new Map();
-    this.documents = new Set();
+    this.documents = new Map();
     this.globalState = globalState;
   }
 

@@ -17,10 +17,11 @@ export function parse_file(
   file: string,
   completions: smCompletions.FileCompletions,
   definitions: smDefinitions.Definitions,
+  documents: Map<string, URI>,
   IsBuiltIn: boolean = false
 ) {
   fs.readFile(file, "utf-8", (err, data) => {
-    parse_text(data, file, completions, definitions, IsBuiltIn);
+    parse_text(data, file, completions, definitions, documents, IsBuiltIn);
   });
 }
 
@@ -29,13 +30,14 @@ export function parse_text(
   file: string,
   completions: smCompletions.FileCompletions,
   definitions: smDefinitions.Definitions,
-  IsBuiltIn: boolean = false
+  documents: Map<string, URI>,
+  IsBuiltIn: boolean = false,
 ) {
   if (typeof data === "undefined") {
     return; // Asked to parse empty file
   }
   let lines = data.split("\n");
-  let parser = new Parser(lines, file, IsBuiltIn, completions, definitions);
+  let parser = new Parser(lines, file, IsBuiltIn, completions, definitions, documents);
   parser.parse();
 }
 
@@ -58,13 +60,15 @@ class Parser {
   lineNb: number;
   file: string;
   IsBuiltIn: boolean;
+  documents: Map<string, URI>;
 
   constructor(
     lines: string[],
     file: string,
     IsBuiltIn: boolean,
     completions: smCompletions.FileCompletions,
-    definitions: smDefinitions.Definitions
+    definitions: smDefinitions.Definitions,
+    documents: Map<string, URI>
   ) {
     this.completions = completions;
     this.definitions = definitions;
@@ -73,6 +77,7 @@ class Parser {
     this.lines = lines;
     this.file = file;
     this.IsBuiltIn = IsBuiltIn;
+    this.documents = documents;
   }
 
   parse() {
@@ -186,7 +191,7 @@ class Parser {
   }
 
   read_include(match, isRelative : boolean) {
-    this.completions.resolve_import(match[1], isRelative, this.IsBuiltIn);
+    this.completions.resolve_import(match[1], this.documents, this.IsBuiltIn);
     return;
   }
 
@@ -528,10 +533,6 @@ class Parser {
         //}
 
         lines.push(line.replace(/^\s*\*\s+/, "\n").replace(/^\s*\/\/\s+/, "\n"));
-      }
-      if(this.file.includes("console.inc"))
-      {
-        console.debug(lines);
       }
       return lines.join(" ");
     })();
