@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 1.9.2
+ - Improved styling of signature helps.
+ - Improved include parsing speed and reliability, no longer random guessing.
+
 ### 1.9.1
  - Hotfix for relative includes not working if they are .sp files (Pointed out by [Bara](https://github.com/Bara)).
 

@@ -20,14 +20,22 @@ export class Providers {
     );	
   }
 
+  public handle_added_document(event : vscode.FileCreateEvent) {
+    for(let file of event.files)
+    {
+      this.completionsProvider.documents.set(path.basename(file.fsPath), file);
+    }
+  }
+
 	public handle_document_change(event: vscode.TextDocumentChangeEvent) {
     let this_completions : smCompletions.FileCompletions = new smCompletions.FileCompletions(event.document.uri.toString());
-		let path : string = event.document.uri.fsPath;
+		let file_path : string = event.document.uri.fsPath;
+    this.completionsProvider.documents.set(path.basename(file_path), event.document.uri);
 		// Some file paths are appened with .git
-		path = path.replace(".git", "");
+		file_path = file_path.replace(".git", "");
     // We use parse_text here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
 		try{
-			smParser.parse_text(event.document.getText(), path, this_completions, this.definitionsProvider.definitions);
+			smParser.parse_text(event.document.getText(), file_path, this_completions, this.definitionsProvider.definitions, this.completionsProvider.documents);
 		}
 		catch(error){console.log(error)}
 		this.read_unscanned_imports(this_completions);
@@ -36,11 +44,12 @@ export class Providers {
 
   public handle_new_document(document: vscode.TextDocument) {
     let this_completions : smCompletions.FileCompletions = new smCompletions.FileCompletions(document.uri.toString());
-		let path : string =document.uri.fsPath;
+		let file_path : string =document.uri.fsPath;
+    this.completionsProvider.documents.set(path.basename(file_path), document.uri);
 		// Some file paths are appened with .git
-		path = path.replace(".git", "");
+		file_path = file_path.replace(".git", "");
 		try{
-			smParser.parse_file(path, this_completions, this.definitionsProvider.definitions);
+			smParser.parse_file(file_path, this_completions, this.definitionsProvider.definitions, this.completionsProvider.documents);
 		}
 		catch(error){console.log(error);}
 
@@ -55,7 +64,7 @@ export class Providers {
 		// Some file paths are appened with .git
 		path = path.replace(".git", "");
 		try{
-			smParser.parse_file(path, this_completions, this.definitionsProvider.definitions);
+			smParser.parse_file(path, this_completions, this.definitionsProvider.definitions, this.completionsProvider.documents);
 		}
 		catch(error){console.log(error);}
 
@@ -70,7 +79,7 @@ export class Providers {
         let file = URI.parse(import_file.uri).fsPath;
         if (fs.existsSync(file)) {
           let new_completions = new smCompletions.FileCompletions(import_file.uri);
-          smParser.parse_file(file, new_completions, this.definitionsProvider.definitions, import_file.IsBuiltIn);
+          smParser.parse_file(file, new_completions, this.definitionsProvider.definitions, this.completionsProvider.documents, import_file.IsBuiltIn);
 
           this.read_unscanned_imports(new_completions);
 
@@ -85,7 +94,7 @@ export class Providers {
     glob(path.join(sourcemod_home, "**/*.inc"), (err, files) => {
       for (let file of files) {
         let completions = new smCompletions.FileCompletions(URI.file(file).toString());
-        smParser.parse_file(file, completions, this.definitionsProvider.definitions, true);
+        smParser.parse_file(file, completions, this.definitionsProvider.definitions, this.completionsProvider.documents, true);
 
         let uri =
           "file://__sourcemod_builtin/" + path.relative(sourcemod_home, file);
