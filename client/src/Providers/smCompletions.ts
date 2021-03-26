@@ -50,12 +50,15 @@ export class FileCompletions {
     let uri = file + ".inc";
     let base_file = URI.parse(this.uri).fsPath;
     let base_directory = path.dirname(base_file);
+    let roothpath = vscode.workspace.workspaceFolders[0].uri.fsPath;
     let inc_file = "";
     // If the include is not relative, check if the file exists in the include folder
     // this is more beginner friendly.
     if (!relative) {
       // First, check the include folder.
-      inc_file = path.join(base_directory, "include/", uri);
+      //inc_file = path.join(base_directory, "include/", uri);
+      inc_file = path. resolve(roothpath, uri);
+      console.debug(inc_file);
       if (fs.existsSync(inc_file)) {
         uri = URI.file(inc_file).toString();
         this.add_include(uri, IsBuiltIn);
@@ -78,7 +81,8 @@ export class FileCompletions {
       this.add_include(uri, IsBuiltIn);
     } else {
       // First check if it's a .inc relative to the script file.
-      inc_file = path.resolve(base_directory, uri);
+      inc_file = path.resolve(roothpath, uri);
+      console.debug(inc_file);
       if (fs.existsSync(inc_file)) {
         uri = URI.file(inc_file).toString();
         this.add_include(uri, IsBuiltIn);
@@ -89,7 +93,7 @@ export class FileCompletions {
         {
           file += ".sp";
         }
-        uri = URI.file(path.resolve(base_directory, file)).toString();
+        uri = URI.file(path.resolve(roothpath, file)).toString();
         this.add_include(uri, IsBuiltIn);
       }
     }

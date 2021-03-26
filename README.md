@@ -44,11 +44,13 @@ The only setting allows to define the position of the default sourcemod include 
 
 ## To do
 - Add _hover_ help for functions.
-- Add _Goto Definition_ for functions and natives.
 - Add auto-formatting.
+- Incrementally Format Code as the User Types
 - Add dynamic syntax highlighting for imported types.
 - Download sourcemod files automatically.
-- Add syntax highlighting for .cfg files and translations.
+- Add syntax highlighting for .cfg files and translations files.
+- Automatic callback generation.
+- Automatic convert to new syntax (partially).
 
 ## Credits
  - [Dreae's](https://github.com/Dreae/sourcepawn-vscode) extension which is not supported anymore, and on which this extension is based on.

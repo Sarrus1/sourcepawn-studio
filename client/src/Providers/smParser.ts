@@ -522,10 +522,10 @@ class Parser {
         if (/^\s*\/\*\*\s*/.test(line)) {
           continue;
         }
-        if (!(/^\s*\*\s*(@(?!param)|[^@])*$/.test(line) || /^\s*\/\/\s*(@(?!param)|[^@])*$/.test(line))) 
-        {
-          continue;
-        }
+        //if (!(/^\s*\*\s*(@(?!param)|[^@])*$/.test(line) || /^\s*\/\/\s*(@(?!param)|[^@])*$/.test(line))) 
+        //{
+          //continue;
+        //}
 
         lines.push(line.replace(/^\s*\*\s+/, "\n").replace(/^\s*\/\/\s+/, "\n"));
       }
