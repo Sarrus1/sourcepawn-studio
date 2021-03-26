@@ -518,18 +518,21 @@ class Parser {
     let description = (() => {
       let lines = [];
       for (let line of this.scratch) {
+        //Check if @return or @error
         if (/^\s*\/\*\*\s*/.test(line)) {
           continue;
         }
-        if (
-          !(/^\s*\*\s+([^@].*)/.test(line) || /^\s*\/\/\s+([^@].*)/.test(line))
-        ) {
-          break;
+        if (!(/^\s*\*\s*(@(?!param)|[^@])*$/.test(line) || /^\s*\/\/\s*(@(?!param)|[^@])*$/.test(line))) 
+        {
+          continue;
         }
 
-        lines.push(line.replace(/^\s*\*\s+/, "").replace(/^\s*\/\/\s+/, ""));
+        lines.push(line.replace(/^\s*\*\s+/, "\n").replace(/^\s*\/\/\s+/, "\n"));
       }
-
+      if(this.file.includes("console.inc"))
+      {
+        console.debug(lines);
+      }
       return lines.join(" ");
     })();
 
