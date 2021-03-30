@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn for VScode",
   "description": "SourcePawn highlighting and autocompletion.",
-  "version": "1.9.2",
+  "version": "1.10.0",
   "publisher": "Sarrus",
   "main": "client/out/smIndex",
   "icon": "sm.png",
@@ -113,6 +113,38 @@
         "sourcepawnLanguageServer.optionalIncludeDirsPaths": {
           "type": "array",
           "default": [],
+          "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable."
+        },
+				"sourcepawnLanguageServer.formatterSettings": {
+          "type": "array",
+          "default": [
+						"AlignOperands: 'true'",
+						"AlignTrailingComments: 'true'",
+						"AllowAllArgumentsOnNextLine: 'false'",
+						"AllowAllConstructorInitializersOnNextLine: 'false'",
+						"AllowAllParametersOfDeclarationOnNextLine: 'false'",
+						"AllowShortBlocksOnASingleLine: 'true'",
+						"AllowShortCaseLabelsOnASingleLine: 'true'",
+						"AlwaysBreakAfterDefinitionReturnType: None",
+						"AlwaysBreakAfterReturnType: None",
+						"AlwaysBreakBeforeMultilineStrings: 'false'",
+						"BinPackArguments: 'false'",
+						"BinPackParameters: 'false'",
+						"BreakBeforeBraces: Allman",
+						"BreakBeforeTernaryOperators: 'false'",
+						"BreakStringLiterals: 'false'",
+						"ColumnLimit: '0'",
+						"ContinuationIndentWidth: '2'",
+						"IndentWidth: '${TabSize}'",
+						"MaxEmptyLinesToKeep: '2'",
+						"MaxEmptyLinesToKeep: '2'",
+						"SpaceAfterLogicalNot: 'false'",
+						"SpaceBeforeParens: Never",
+						"SpaceBeforeRangeBasedForLoopColon: 'false'",
+						"SpaceInEmptyParentheses: 'false'",
+						"TabWidth: '2'",
+						"UseTab: '${UseTab}'"
+					],
           "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable."
         },
         "sourcepawnLanguageServer.trace.server": {

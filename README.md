@@ -44,7 +44,6 @@ The only setting allows to define the position of the default sourcemod include 
 
 ## To do
 - Add _hover_ help for functions.
-- Add auto-formatting.
 - Incrementally Format Code as the User Types
 - Add dynamic syntax highlighting for imported types.
 - Download sourcemod files automatically.

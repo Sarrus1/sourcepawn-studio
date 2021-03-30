@@ -1,21 +1,13 @@
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import * as vscode from "vscode";
 import * as child from 'child_process';
 
-/**
- * Starts a child process running the native clang-format binary.
- *
- * @param file a Vinyl virtual file reference
- * @param enc the encoding to use for reading stdout
- * @param style valid argument to clang-format's '-style' flag
- * @param done callback invoked when the child process terminates
- * @returns {stream.Readable} the formatted code as a Readable stream
- */
-export function clangFormat(file : vscode.TextDocument, enc : string, style, done) {
-	let args = [`-style=${style}`, file.uri.fsPath];
-  let result = spawnClangFormat(args, done, ['ignore', 'pipe', process.stderr]);
+
+export function clangFormat(file : vscode.TextDocument, enc : string, style) {
+	let args = [`-style=${style}` ,file.uri.fsPath];
+  let result = spawnClangFormat(args, ['ignore', 'pipe', process.stderr]);
   if (result) {
     return result;
   } else {
@@ -26,9 +18,7 @@ export function clangFormat(file : vscode.TextDocument, enc : string, style, don
 /**
  * Spawn the clang-format binary with given arguments.
  */
-function spawnClangFormat(args, done, stdio) {
-  // WARNING: This function's interface should stay stable across versions for the cross-version
-  // loading below to work.
+function spawnClangFormat(args, stdio) {
   let nativeBinary;
 
   try {
@@ -45,11 +35,6 @@ function spawnClangFormat(args, done, stdio) {
   }    
 }
 
-
-/**
- * @returns the native `clang-format` binary for the current platform
- * @throws when the `clang-format` executable can not be found
- */
 function getNativeBinary() {
   let nativeBinary;
   const platform = os.platform();
@@ -74,6 +59,6 @@ function getNativeBinary() {
   }
   const message = 'This module doesn\'t bundle the clang-format executable for your platform. ' +
       `(${platform}_${arch})\n` +
-      'Consider installing it with your native package manager instead.\n';
+      'Please let the author know on GitHub.\n';
   throw new Error(message);
 }

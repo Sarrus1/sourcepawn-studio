@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 1.10.0
+ - Fixed a bug where files would not get parsed properly sometimes.
+ - Added a formatter based on clang-format, which the user can (almost) fully customize.
+
 ### 1.9.2
  - Improved styling of signature helps.
  - Improved include parsing speed and reliability, no longer random guessing.
