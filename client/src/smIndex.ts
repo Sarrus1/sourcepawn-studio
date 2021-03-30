@@ -4,7 +4,7 @@ import * as glob from "glob";
 import { SM_MODE } from "./smMode";
 import { Providers } from "./Providers/smProviders";
 import { registerSMCommands } from "./Commands/registerCommands"; 
-import { DocumentFormattingEditProvider } from "./smFormater";
+import { DocumentFormattingEditProvider } from "./smFormat";
 import * as path from "path";
 import {URI } from "vscode-uri";
 
@@ -24,7 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
   let workspace : vscode.WorkspaceFolder = vscode.workspace.workspaceFolders[0];
   if(typeof workspace != "undefined")
   {
-    getDirectories(workspace.uri.fsPath, ".sp", function (err, res) {
+    getDirectories(workspace.uri.fsPath, "sp", function (err, res) {
       if (err) {
         console.log("Couldn't read .sp file, ignoring : ", err);
       } else {
@@ -35,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
       }
     });
-    getDirectories(workspace.uri.fsPath, ".inc", function (err, res) {
+    getDirectories(workspace.uri.fsPath, "inc", function (err, res) {
       if (err) {
         console.log("Couldn't read .inc file, ignoring : ", err);
       } else {

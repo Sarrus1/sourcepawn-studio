@@ -82,10 +82,13 @@ class Parser {
 
   parse() {
     let line: string;
-    while ((line = this.lines.shift())) {
-      this.lineNb++;
-      this.interpLine(line);
+		line = this.lines[0];
+    while (typeof line != "undefined") {
+			this.interpLine(line);
+			line = this.lines.shift();
+			this.lineNb++;
     }
+		console.debug("found", this.completions);
   }
 
   interpLine(line: string) {
@@ -96,8 +99,10 @@ class Parser {
     }
 
     // Match global include
+		//if(this.file.includes("hex"))console.debug("line", line);
     match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>\s*$/);
     if (match) {
+			//if(this.file.includes("hex"))console.debug("matched", match[1]);
       this.read_include(match, false);
     }
 
@@ -127,23 +132,23 @@ class Parser {
       this.read_variables(match);
     }
 
-    match = line.match(/\s*\/\*/);
-    if (match) {
-      this.state.push(State.MultilineComment);
-      this.scratch = [];
+		match = line.match(/\s*\/\*/);
+		if (match) {
+		  this.state.push(State.MultilineComment);
+		  this.scratch = [];
 
-      this.consume_multiline_comment(line, false);
-      return;
-    }
+		  this.consume_multiline_comment(line, false);
+		  return;
+		}
 
-    match = line.match(/^\s*\/\//);
-    if (match) {
-      this.state.push(State.MultilineComment);
-      this.scratch = [];
+		match = line.match(/^\s*\/\//);
+		if (match) {
+		  this.state.push(State.MultilineComment);
+		  this.scratch = [];
 
-      this.consume_multiline_comment(line, true);
-      return;
-    }
+		  this.consume_multiline_comment(line, true);
+		  return;
+		}
 
     match = line.match(
       /^\s*methodmap\s+([a-zA-Z][a-zA-Z0-9_]*)(?:\s+<\s+([a-zA-Z][a-zA-Z0-9_]*))?/
@@ -211,7 +216,7 @@ class Parser {
     this.lineNb++;
 
     // Stop early if it's the end of the file
-    if (!line) {
+    if (typeof line === "undefined") {
       return;
     }
 
@@ -230,7 +235,7 @@ class Parser {
         match[1],
         new EnumMemberCompletion(match[1], this.file, enumCompletion)
       );
-      if (!line) {
+      if (typeof line === "undefined") {
         break;
       }
     }
@@ -335,10 +340,11 @@ class Parser {
       !match_buffer.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) &&
       maxiter < 20
     ) {
-      if (!(line = this.lines.shift())) {
+			line = this.lines.shift();
+			this.lineNb++;
+      if (typeof line === "undefined") {
         return;
       }
-      this.lineNb++;
       partial_params_match += line;
       match_buffer += line;
       maxiter++;
@@ -391,10 +397,14 @@ class Parser {
 
         if (use_line_comment) {
           return this.read_function(current_line);
-        } else if ((current_line = this.lines.shift())) {
-          this.lineNb++;
-          return this.read_function(current_line);
-        }
+        } else {
+					current_line = this.lines.shift();
+					this.lineNb++;
+					if (!(typeof current_line === "undefined")) {
+						return this.read_function(current_line);
+					}
+					else{return;}
+				}
       }
 
       this.state.pop();
@@ -417,8 +427,9 @@ class Parser {
       }
 
       this.scratch.push(current_line);
-      if ((current_line = this.lines.shift())) {
-        this.lineNb++;
+			current_line = this.lines.shift();
+			this.lineNb++;
+      if (!(typeof current_line === "undefined")) {
         this.consume_multiline_comment(current_line, use_line_comment);
       }
     }
@@ -494,14 +505,17 @@ class Parser {
         // Iteration safety in case something goes wrong
         let maxiter = 0;
         let line: string;
+				line = this.lines.shift();
+				this.lineNb++;
         while (
           !paramsMatch.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) &&
-          (line = this.lines.shift()) &&
+          (typeof line != "undefined") &&
           maxiter < 20
         ) {
-          this.lineNb++;
           paramsMatch += line;
           maxiter++;
+					line = this.lines.shift();
+					this.lineNb++;
         }
         this.completions.add(
           name_match[1],

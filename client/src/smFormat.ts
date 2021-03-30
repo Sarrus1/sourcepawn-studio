@@ -45,8 +45,7 @@ export class DocumentFormattingEditProvider
   }
 
   Callback(e) {
-    console.debug("hey");
-    console.debug(e);
+    console.error(e);
   }
 
 	clangFormat(file : vscode.TextDocument, enc : string, style) {
