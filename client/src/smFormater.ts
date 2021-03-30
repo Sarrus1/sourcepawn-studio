@@ -9,7 +9,6 @@ export class DocumentFormattingEditProvider
     token: vscode.CancellationToken
   ): vscode.ProviderResult<vscode.TextEdit[]> {
     const result = [];
-		
 		let style = "{AlignOperands: 'true',";
 		style += "AlignTrailingComments: 'true',";
 		style += "AllowAllArgumentsOnNextLine: 'false',";
@@ -50,4 +49,8 @@ export class DocumentFormattingEditProvider
     result.push(new vscode.TextEdit(range, text));
     return result;
   }
+
+	Callback(e){
+		console.debug(e);
+	}
 }
