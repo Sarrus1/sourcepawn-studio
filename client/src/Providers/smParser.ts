@@ -88,7 +88,6 @@ class Parser {
 			line = this.lines.shift();
 			this.lineNb++;
     }
-		console.debug("found", this.completions);
   }
 
   interpLine(line: string) {
@@ -99,10 +98,8 @@ class Parser {
     }
 
     // Match global include
-		//if(this.file.includes("hex"))console.debug("line", line);
     match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>\s*$/);
     if (match) {
-			//if(this.file.includes("hex"))console.debug("matched", match[1]);
       this.read_include(match, false);
     }
 
@@ -182,7 +179,7 @@ class Parser {
 
     // Match functions without description
     match = line.match(
-      /(?:(?:static|native|stock|public|forward|\n)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*)$/
+      /(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*)$/
     );
     if (match && !this.IsBuiltIn) {
       this.read_non_descripted_function(match, "");
