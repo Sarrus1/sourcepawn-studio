@@ -2,7 +2,9 @@
 
 ### 1.10.0
  - Fixed a bug where files would not get parsed properly sometimes.
+ - Fixed nested includes not parsing.
  - Added a formatter based on clang-format, which the user can (almost) fully customize.
+ - Added a way to disable the linter per documents : add `//linter=false` at the top of the document you want to block.
 
 ### 1.9.2
  - Improved styling of signature helps.

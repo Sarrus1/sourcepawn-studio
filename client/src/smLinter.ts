@@ -35,6 +35,18 @@ export function refreshDiagnostics(
   document: vscode.TextDocument,
   compilerDiagnostics: vscode.DiagnosticCollection
 ) {
+	let diagnostics: vscode.Diagnostic[] = [];
+
+	// Check if the user specified not to enable the linter for this file
+	const start = new vscode.Position(0, 0);
+	const end = new vscode.Position(1, 0);
+	const range = new vscode.Range(start, end);
+	const text : string = document.getText(range);
+	if(text == "" || /\/\/linter=false/.test(text)) 
+	{
+		compilerDiagnostics.set(document.uri, diagnostics);
+		return;
+	}
   const spcomp =
     vscode.workspace
       .getConfiguration("sourcepawnLanguageServer")
@@ -69,7 +81,6 @@ export function refreshDiagnostics(
   throttle.start(function () {
     if (path.extname(document.fileName) === ".sp") {
       let scriptingFolder = path.dirname(document.uri.fsPath);
-      let diagnostics: vscode.Diagnostic[] = [];
       try {
         let file = fs.openSync(tempFile, "w", 0o765);
         fs.writeSync(file, document.getText());
