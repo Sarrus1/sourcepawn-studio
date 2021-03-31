@@ -393,14 +393,28 @@ class Parser {
         this.state.pop();
 
         if (use_line_comment) {
-          return this.read_function(current_line);
+          //return this.read_function(current_line);
+					if(/\s*(?:(?:static|native|stock|public|forward)+\s*)+\s+([^\s]+)\s*([A-Za-z_].*)/.test(current_line) || /\s*(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/.test(current_line))
+					{
+						return this.read_function(current_line);
+					}
+					else{
+						this.interpLine(current_line);
+						return;
+					}
         } else {
 					current_line = this.lines.shift();
 					this.lineNb++;
 					if (!(typeof current_line === "undefined")) {
-						return this.read_function(current_line);
+						if(/\s*(?:(?:static|native|stock|public|forward)+\s*)+\s+([^\s]+)\s*([A-Za-z_].*)/.test(current_line) || /\s*(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/.test(current_line))
+						{
+							return this.read_function(current_line);
+						}
+						else {
+							this.interpLine(current_line);
+							return;
+						}
 					}
-					else{return;}
 				}
       }
 
