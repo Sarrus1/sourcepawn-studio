@@ -52,6 +52,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.languages.registerSignatureHelpProvider(SM_MODE, providers.completionsProvider, "("));
   context.subscriptions.push(vscode.languages.registerDefinitionProvider(SM_MODE, providers.definitionsProvider));
   context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(SM_MODE, formatter));
+	context.subscriptions.push(vscode.languages.registerHoverProvider(SM_MODE, providers.hoverProvider));
   // Passing providers as an arguments is required to be able to use 'this' in the callbacks.
 	vscode.workspace.onDidChangeTextDocument(providers.handle_document_change, providers, context.subscriptions);
 	vscode.workspace.onDidOpenTextDocument(providers.handle_new_document, providers, context.subscriptions);

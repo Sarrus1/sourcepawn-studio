@@ -10,14 +10,17 @@ import * as smParser from "./smParser";
 export class Providers {
   completionsProvider: smCompletions.CompletionRepository;
   definitionsProvider: smDefinitions.DefinitionRepository;
+	hoverProvider: smCompletions.CompletionRepository;
 
   constructor(globalState?: vscode.Memento) {
-    this.completionsProvider = new smCompletions.CompletionRepository(
+		let CompletionRepo = new smCompletions.CompletionRepository(
       globalState
     );
+    this.completionsProvider = CompletionRepo;
     this.definitionsProvider = new smDefinitions.DefinitionRepository(
       globalState
-    );	
+    );
+		this.hoverProvider = CompletionRepo;
   }
 
   public handle_added_document(event : vscode.FileCreateEvent) {

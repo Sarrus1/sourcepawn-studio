@@ -7,6 +7,7 @@ export interface Completion {
 
   to_completion_item(file: string): vscode.CompletionItem;
   get_signature(): vscode.SignatureInformation;
+	get_hover(): vscode.Hover;
 }
 
 export type FunctionParam = {
@@ -48,6 +49,13 @@ export class FunctionCompletion implements Completion {
       parameters: this.params,
     };
   }
+
+	get_hover(): vscode.Hover{
+		return new vscode.Hover({
+			language: "JSDoc",
+			value: this.description
+	});
+	}
 }
 
 export class MethodCompletion implements Completion {
@@ -89,6 +97,13 @@ export class MethodCompletion implements Completion {
       parameters: this.params,
     };
   }
+
+	get_hover(): vscode.Hover{
+		return new vscode.Hover({
+			language: "JSDoc",
+			value: this.description
+	});
+	}
 }
 
 export class DefineCompletion implements Completion {
@@ -110,6 +125,10 @@ export class DefineCompletion implements Completion {
   get_signature(): vscode.SignatureInformation {
     return undefined;
   }
+
+	get_hover(): vscode.Hover{
+		return;
+	}
 }
 
 export class VariableCompletion implements Completion {
@@ -139,6 +158,10 @@ export class VariableCompletion implements Completion {
   get_signature(): vscode.SignatureInformation {
     return undefined;
   }
+
+	get_hover(): vscode.Hover{
+		return;
+	}
 }
 
 export class EnumCompletion implements Completion {
@@ -161,6 +184,10 @@ export class EnumCompletion implements Completion {
   get_signature(): vscode.SignatureInformation {
     return undefined;
   }
+
+	get_hover(): vscode.Hover{
+		return;
+	}
 }
 
 export class EnumMemberCompletion implements Completion {
@@ -185,6 +212,10 @@ export class EnumMemberCompletion implements Completion {
   get_signature(): vscode.SignatureInformation {
     return undefined;
   }
+
+	get_hover(): vscode.Hover{
+		return;
+	}
 }
 
 export class Include {
@@ -195,4 +226,8 @@ export class Include {
     this.uri = uri;
     this.IsBuiltIn = IsBuiltIn;
   }
+
+	get_hover(): vscode.Hover{
+		return;
+	}
 }
