@@ -10,6 +10,7 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 ## Features
 - Compile from vscode with a simple button.
 - Go to definition.
+- Hover for help.
 - Add icons for `.smx`, `.sp` and `.inc` files
 - Automatically scan include files for natives, defines, methodmaps and more.
 - Useful snippets.
