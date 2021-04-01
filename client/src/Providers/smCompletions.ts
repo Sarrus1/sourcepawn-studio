@@ -53,6 +53,8 @@ export class FileCompletions {
     {
       file += ".inc";
     }
+		let match = file.match(/[A-z0-9_.]*$/)
+		if(match) file = match[0];
     let uri : URI;
     if(!(uri = documents.get(file))){
       let includes_dirs: string[] = vscode.workspace
@@ -183,6 +185,24 @@ export class CompletionRepository
       }
     }
   }
+
+	provideHover(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    token: vscode.CancellationToken
+  ): vscode.Hover {
+		let range = document.getWordRangeAtPosition(position);
+		let word = document.getText(range);
+		let completions = this.get_all_completions(
+			document.uri.toString()
+		).filter((completion) => {
+			return completion.name === word;
+		});
+
+		if (completions.length > 0) {
+			return completions[0].get_hover();
+	}
+}
 
   provideSignatureHelp(
     document: vscode.TextDocument,

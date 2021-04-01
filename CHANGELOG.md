@@ -1,5 +1,13 @@
 ## Release Notes
 
+### 1.10.0
+ - Fixed a bug where files would not get parsed properly sometimes.
+ - Fixed nested includes not parsing.
+ - Added a formatter based on clang-format, which the user can (almost) fully customize.
+ - Added a way to disable the linter per documents : add `//linter=false` at the top of the document you want to block (Suggested by [Kyle](https://github.com/Kxnrl)).
+ - Added a setting for specifying the `main.sp` file in a project with multiple `.sp` files. Please note that all files have to be saved in order for the linter to work if that setting is configured.
+ - Added Hover description and help for functions.
+
 ### 1.9.2
  - Improved styling of signature helps.
  - Improved include parsing speed and reliability, no longer random guessing.

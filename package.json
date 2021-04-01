@@ -1,8 +1,8 @@
 {
   "name": "sourcepawn-vscode",
-  "displayName": "SourcePawn for VScode",
-  "description": "SourcePawn highlighting and autocompletion.",
-  "version": "1.9.2",
+  "displayName": "SourcePawn",
+  "description": "SourcePawn highlighting, autocompletion and much more",
+  "version": "1.10.0",
   "publisher": "Sarrus",
   "main": "client/out/smIndex",
   "icon": "sm.png",
@@ -105,6 +105,10 @@
           "type": "string",
           "description": "The location of the SourceMod compiler"
         },
+				"sourcepawnLanguageServer.main_path": {
+          "type": "string",
+          "description": "The location of the main.sp file for projects with sub-scripting files, which allows the linter to work correctly. You should use this setting per workspace."
+        },
         "sourcepawnLanguageServer.showCompileIconInEditorTitleMenu": {
           "type": "boolean",
           "default": true,
@@ -113,6 +117,38 @@
         "sourcepawnLanguageServer.optionalIncludeDirsPaths": {
           "type": "array",
           "default": [],
+          "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable."
+        },
+				"sourcepawnLanguageServer.formatterSettings": {
+          "type": "array",
+          "default": [
+						"AlignOperands: 'true'",
+						"AlignTrailingComments: 'true'",
+						"AllowAllArgumentsOnNextLine: 'false'",
+						"AllowAllConstructorInitializersOnNextLine: 'false'",
+						"AllowAllParametersOfDeclarationOnNextLine: 'false'",
+						"AllowShortBlocksOnASingleLine: 'true'",
+						"AllowShortCaseLabelsOnASingleLine: 'true'",
+						"AlwaysBreakAfterDefinitionReturnType: None",
+						"AlwaysBreakAfterReturnType: None",
+						"AlwaysBreakBeforeMultilineStrings: 'false'",
+						"BinPackArguments: 'false'",
+						"BinPackParameters: 'false'",
+						"BreakBeforeBraces: Allman",
+						"BreakBeforeTernaryOperators: 'false'",
+						"BreakStringLiterals: 'false'",
+						"ColumnLimit: '0'",
+						"ContinuationIndentWidth: '2'",
+						"IndentWidth: '${TabSize}'",
+						"MaxEmptyLinesToKeep: '2'",
+						"MaxEmptyLinesToKeep: '2'",
+						"SpaceAfterLogicalNot: 'false'",
+						"SpaceBeforeParens: Never",
+						"SpaceBeforeRangeBasedForLoopColon: 'false'",
+						"SpaceInEmptyParentheses: 'false'",
+						"TabWidth: '2'",
+						"UseTab: '${UseTab}'"
+					],
           "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable."
         },
         "sourcepawnLanguageServer.trace.server": {
@@ -164,8 +200,10 @@
   },
   "dependencies": {
     "@types/vscode": "^1.53.0",
+    "clang-format": "^1.5.0",
     "glob": "^7.1.2",
-    "n-readlines": "^1.0.1"
+    "n-readlines": "^1.0.1",
+    "prettier": "2.2.1"
   },
   "devDependencies": {
     "@types/node": "^8.0.14",

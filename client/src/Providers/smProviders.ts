@@ -10,14 +10,17 @@ import * as smParser from "./smParser";
 export class Providers {
   completionsProvider: smCompletions.CompletionRepository;
   definitionsProvider: smDefinitions.DefinitionRepository;
+	hoverProvider: smCompletions.CompletionRepository;
 
   constructor(globalState?: vscode.Memento) {
-    this.completionsProvider = new smCompletions.CompletionRepository(
+		let CompletionRepo = new smCompletions.CompletionRepository(
       globalState
     );
+    this.completionsProvider = CompletionRepo;
     this.definitionsProvider = new smDefinitions.DefinitionRepository(
       globalState
-    );	
+    );
+		this.hoverProvider = CompletionRepo;
   }
 
   public handle_added_document(event : vscode.FileCreateEvent) {
@@ -45,9 +48,10 @@ export class Providers {
   public handle_new_document(document: vscode.TextDocument) {
     let this_completions : smCompletions.FileCompletions = new smCompletions.FileCompletions(document.uri.toString());
 		let file_path : string =document.uri.fsPath;
+		if(path.extname(file_path)=="git") return;
     this.completionsProvider.documents.set(path.basename(file_path), document.uri);
 		// Some file paths are appened with .git
-		file_path = file_path.replace(".git", "");
+		//file_path = file_path.replace(".git", "");
 		try{
 			smParser.parse_file(file_path, this_completions, this.definitionsProvider.definitions, this.completionsProvider.documents);
 		}
