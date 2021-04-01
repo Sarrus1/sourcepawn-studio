@@ -1,7 +1,7 @@
 {
   "name": "sourcepawn-vscode",
-  "displayName": "SourcePawn for VScode",
-  "description": "SourcePawn highlighting and autocompletion.",
+  "displayName": "SourcePawn",
+  "description": "SourcePawn highlighting, autocompletion and much more",
   "version": "1.10.0",
   "publisher": "Sarrus",
   "main": "client/out/smIndex",
@@ -104,6 +104,10 @@
         "sourcepawnLanguageServer.spcomp_path": {
           "type": "string",
           "description": "The location of the SourceMod compiler"
+        },
+				"sourcepawnLanguageServer.main_path": {
+          "type": "string",
+          "description": "The location of the main.sp file for projects with sub-scripting files, which allows the linter to work correctly. You should use this setting per workspace."
         },
         "sourcepawnLanguageServer.showCompileIconInEditorTitleMenu": {
           "type": "boolean",

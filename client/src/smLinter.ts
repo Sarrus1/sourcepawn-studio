@@ -2,11 +2,12 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 import { execFileSync } from "child_process";
+import { URI } from "vscode-uri";
 
 let myExtDir: string = vscode.extensions.getExtension(
   "Sarrus.sourcepawn-vscode"
 ).extensionPath;
-let TempPath: string = path.join(myExtDir, "tmp/tmpCompiled.smx");
+let TempPath: string = path.join(myExtDir, "tmpCompiled.smx");
 
 const tempFile = path.join(__dirname, "temp.sp");
 
@@ -35,8 +36,8 @@ export function refreshDiagnostics(
   document: vscode.TextDocument,
   compilerDiagnostics: vscode.DiagnosticCollection
 ) {
-	let diagnostics: vscode.Diagnostic[] = [];
 
+	const DocumentDiagnostics : Map<string, vscode.Diagnostic[]> = new Map();
 	// Check if the user specified not to enable the linter for this file
 	const start = new vscode.Position(0, 0);
 	const end = new vscode.Position(1, 0);
@@ -44,8 +45,7 @@ export function refreshDiagnostics(
 	const text : string = document.getText(range);
 	if(text == "" || /\/\/linter=false/.test(text)) 
 	{
-		compilerDiagnostics.set(document.uri, diagnostics);
-		return;
+		return ReturnNone(document.uri);
 	}
   const spcomp =
     vscode.workspace
@@ -79,12 +79,44 @@ export function refreshDiagnostics(
 
   throttle.cancel();
   throttle.start(function () {
-    if (path.extname(document.fileName) === ".sp") {
-      let scriptingFolder = path.dirname(document.uri.fsPath);
+		let filename : string = document.fileName;
+		let MainPath : string = vscode.workspace.getConfiguration("sourcepawnLanguageServer").get("main_path") || "";
+		if(MainPath != ""){
+			try{
+				let workspace : vscode.WorkspaceFolder = vscode.workspace.workspaceFolders[0];
+				MainPath = path.join(workspace.uri.fsPath, MainPath);
+				filename = path.basename(MainPath);
+			}
+			catch(error){
+				ReturnNone(document.uri);
+				vscode.window
+				.showErrorMessage(
+					"A setting for the main.sp file was specified, but seems invalid. Please make sure it is valid.",
+					"Open Settings"
+				).then((choice) => {
+					if (choice === "Open Settings") {
+						vscode.commands.executeCommand(
+							"workbench.action.openWorkspaceSettings"
+						);
+					}
+				});
+			}
+		}
+    if (path.extname(filename) === ".sp") {
+      let scriptingFolder : string;
+			let filePath : string;
       try {
-        let file = fs.openSync(tempFile, "w", 0o765);
-        fs.writeSync(file, document.getText());
-        fs.closeSync(file);
+				if(MainPath != ""){
+					scriptingFolder = path.dirname(MainPath);
+					filePath = MainPath;
+				}
+				else{
+					scriptingFolder = path.dirname(document.uri.fsPath);
+					let file = fs.openSync(tempFile, "w", 0o765);
+					fs.writeSync(file, document.getText());
+					fs.closeSync(file);
+					filePath = tempFile;
+				}
         let spcomp_opt: string[] = [
           "-i" +
             vscode.workspace
@@ -92,7 +124,7 @@ export function refreshDiagnostics(
               .get("sourcemod_home") || "",
           "-i" + path.join(scriptingFolder, "include"),
           "-v0",
-          tempFile,
+          filePath,
           "-o" + TempPath,
         ];
         let includes_dirs: string[] = vscode.workspace
@@ -108,24 +140,43 @@ export function refreshDiagnostics(
         execFileSync(spcomp, spcomp_opt);
         fs.unlinkSync(TempPath);
       } catch (error) {
-        let regex = /\((\d+)+\) : ((error|fatal error|warning).+)/gm;
+        let regex = /([\/A-z-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning).+)/gm;
         let matches: RegExpExecArray | null;
+				let path : string;
+				let diagnostics : vscode.Diagnostic[];
+				let range :vscode.Range;
+				let severity : vscode.DiagnosticSeverity;
         while ((matches = regex.exec(error.stdout?.toString() || ""))) {
-          const range = new vscode.Range(
-            new vscode.Position(Number(matches[1]) - 1, 0),
-            new vscode.Position(Number(matches[1]) - 1, 256)
+          range = new vscode.Range(
+            new vscode.Position(Number(matches[2]) - 1, 0),
+            new vscode.Position(Number(matches[2]) - 1, 256)
           );
-          const severity =
-            matches[3] === "warning"
+          severity =
+            matches[4] === "warning"
               ? vscode.DiagnosticSeverity.Warning
               : vscode.DiagnosticSeverity.Error;
-          diagnostics.push(new vscode.Diagnostic(range, matches[2], severity));
+					path = MainPath != "" ? matches[1] : document.uri.fsPath;
+					if(DocumentDiagnostics.has(path)){
+						diagnostics = DocumentDiagnostics.get(path);
+					}
+					else{
+						diagnostics = [];
+					}
+					diagnostics.push(new vscode.Diagnostic(range, matches[3], severity));
+					DocumentDiagnostics.set(path, diagnostics);
         }
       }
-
-      compilerDiagnostics.set(document.uri, diagnostics);
+			compilerDiagnostics.clear();
+			for(let [path, diagnostics] of DocumentDiagnostics) {
+				compilerDiagnostics.set(URI.parse(path), diagnostics);
+			}
     }
-  }, 300);
+  }, 300);	
+}
+
+function ReturnNone(uri:vscode.Uri){
+	let diagnostics: vscode.Diagnostic[] = [];
+	return compilerDiagnostics.set(uri, diagnostics);
 }
 
 export let compilerDiagnostics = vscode.languages.createDiagnosticCollection(
