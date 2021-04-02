@@ -7,7 +7,8 @@ export interface Completion {
 
   to_completion_item(file: string): vscode.CompletionItem;
   get_signature(): vscode.SignatureInformation;
-	get_hover(): vscode.Hover;
+  get_hover(): vscode.Hover;
+  documentation_to_md(string): vscode.MarkdownString;
 }
 
 export type FunctionParam = {
@@ -45,17 +46,38 @@ export class FunctionCompletion implements Completion {
   get_signature(): vscode.SignatureInformation {
     return {
       label: this.detail,
-      documentation: this.description,
+      documentation: this.documentation_to_md(this.description),
       parameters: this.params,
     };
   }
 
-	get_hover(): vscode.Hover{
-		return new vscode.Hover({
-			language: "JSDoc",
-			value: this.description
-	});
-	}
+  get_hover(): vscode.Hover {
+    let description: string = "";
+    if ((description = this.description) == "") {
+      return;
+    }
+    return new vscode.Hover(this.documentation_to_md(description));
+  }
+
+  documentation_to_md(description: string): vscode.MarkdownString {
+		// // Remove line breaks in the description
+    // description = description.replace(/([^@])/g, function (doc) {
+    //   return doc.replace(/+/gm, " ");
+    // });
+		// Make the @params nicer
+    description = description.replace(
+      /\s*(@param|@return)\s+([A-z0-9_]+)\s+/gm,
+      "\n\n_$1_ `$2` - "
+    );
+		// Make other @ nicer
+		description = description.replace(
+      /\s*(@[A-z])\s+/gm,
+      "\n\n_$1_ - "
+    );
+		// Format other functions which are referenced in the description
+		description = description.replace(/([A-z0-9_]+\([A-z0-9_ \:]*\))/gm, "`$1`");
+    return new vscode.MarkdownString(description);
+  }
 }
 
 export class MethodCompletion implements Completion {
@@ -98,12 +120,24 @@ export class MethodCompletion implements Completion {
     };
   }
 
-	get_hover(): vscode.Hover{
-		return new vscode.Hover({
-			language: "JSDoc",
-			value: this.description
-	});
-	}
+  get_hover(): vscode.Hover {
+    let description: string = "";
+    if ((description = this.description) == "") {
+      return;
+    }
+    return new vscode.Hover(this.documentation_to_md(description));
+  }
+
+  documentation_to_md(description: string): vscode.MarkdownString {
+    description = description.replace(/([^@])/g, function (doc) {
+      return doc.replace(/\n+/gm, " ");
+    });
+    description = description.replace(
+      /\s*(@[A-z0-9_]+)\s+([A-z0-9_]+)\s+/gm,
+      "\n\n_$1_ `$2` - "
+    );
+    return new vscode.MarkdownString(description);
+  }
 }
 
 export class DefineCompletion implements Completion {
@@ -126,9 +160,13 @@ export class DefineCompletion implements Completion {
     return undefined;
   }
 
-	get_hover(): vscode.Hover{
-		return;
-	}
+  get_hover(): vscode.Hover {
+    return;
+  }
+
+  documentation_to_md(description: string): vscode.MarkdownString {
+    return;
+  }
 }
 
 export class VariableCompletion implements Completion {
@@ -159,9 +197,13 @@ export class VariableCompletion implements Completion {
     return undefined;
   }
 
-	get_hover(): vscode.Hover{
-		return;
-	}
+  get_hover(): vscode.Hover {
+    return;
+  }
+
+  documentation_to_md(description: string): vscode.MarkdownString {
+    return;
+  }
 }
 
 export class EnumCompletion implements Completion {
@@ -185,9 +227,13 @@ export class EnumCompletion implements Completion {
     return undefined;
   }
 
-	get_hover(): vscode.Hover{
-		return;
-	}
+  get_hover(): vscode.Hover {
+    return;
+  }
+
+  documentation_to_md(description: string): vscode.MarkdownString {
+    return;
+  }
 }
 
 export class EnumMemberCompletion implements Completion {
@@ -213,9 +259,13 @@ export class EnumMemberCompletion implements Completion {
     return undefined;
   }
 
-	get_hover(): vscode.Hover{
-		return;
-	}
+  get_hover(): vscode.Hover {
+    return;
+  }
+
+  documentation_to_md(description: string): vscode.MarkdownString {
+    return;
+  }
 }
 
 export class Include {
@@ -227,7 +277,11 @@ export class Include {
     this.IsBuiltIn = IsBuiltIn;
   }
 
-	get_hover(): vscode.Hover{
-		return;
-	}
+  get_hover(): vscode.Hover {
+    return;
+  }
+
+  documentation_to_md(description: string): vscode.MarkdownString {
+    return;
+  }
 }
