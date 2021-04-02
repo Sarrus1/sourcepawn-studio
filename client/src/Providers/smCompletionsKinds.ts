@@ -1,4 +1,6 @@
 ﻿import * as vscode from "vscode";
+import { description_to_md } from "../smUtils";
+import {basename} from "path";
 
 export interface Completion {
   name: string;
@@ -8,7 +10,6 @@ export interface Completion {
   to_completion_item(file: string): vscode.CompletionItem;
   get_signature(): vscode.SignatureInformation;
   get_hover(): vscode.Hover;
-  documentation_to_md(string): vscode.MarkdownString;
 }
 
 export type FunctionParam = {
@@ -21,62 +22,44 @@ export class FunctionCompletion implements Completion {
   description: string;
   detail: string;
   params: FunctionParam[];
+  file: string;
   kind = vscode.CompletionItemKind.Function;
 
   constructor(
     name: string,
     detail: string,
     description: string,
-    params: FunctionParam[]
+    params: FunctionParam[],
+    file: string
   ) {
     this.description = description;
     this.name = name;
     this.params = params;
     this.detail = detail;
+    this.file = file;
   }
 
   to_completion_item(file: string): vscode.CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
-      detail: this.description,
+      detail: basename(this.file),
     };
   }
 
   get_signature(): vscode.SignatureInformation {
     return {
       label: this.detail,
-      documentation: this.documentation_to_md(this.description),
+      documentation: description_to_md(this.description),
       parameters: this.params,
     };
   }
 
   get_hover(): vscode.Hover {
-    let description: string = "";
-    if ((description = this.description) == "") {
-      return;
+    if (this.description == "") {
+      return new vscode.Hover({language:"sourcepawn", value:this.detail});
     }
-    return new vscode.Hover(this.documentation_to_md(description));
-  }
-
-  documentation_to_md(description: string): vscode.MarkdownString {
-		// // Remove line breaks in the description
-    // description = description.replace(/([^@])/g, function (doc) {
-    //   return doc.replace(/+/gm, " ");
-    // });
-		// Make the @params nicer
-    description = description.replace(
-      /\s*(@param|@return)\s+([A-z0-9_]+)\s+/gm,
-      "\n\n_$1_ `$2` - "
-    );
-		// Make other @ nicer
-		description = description.replace(
-      /\s*(@[A-z])\s+/gm,
-      "\n\n_$1_ - "
-    );
-		// Format other functions which are referenced in the description
-		description = description.replace(/([A-z0-9_]+\([A-z0-9_ \:]*\))/gm, "`$1`");
-    return new vscode.MarkdownString(description);
+    return new vscode.Hover([{language:"sourcepawn", value:this.detail}, description_to_md(this.description)]);
   }
 }
 
@@ -122,50 +105,39 @@ export class MethodCompletion implements Completion {
 
   get_hover(): vscode.Hover {
     let description: string = "";
-    if ((description = this.description) == "") {
+    if (!this.description) {
       return;
     }
-    return new vscode.Hover(this.documentation_to_md(description));
-  }
-
-  documentation_to_md(description: string): vscode.MarkdownString {
-    description = description.replace(/([^@])/g, function (doc) {
-      return doc.replace(/\n+/gm, " ");
-    });
-    description = description.replace(
-      /\s*(@[A-z0-9_]+)\s+([A-z0-9_]+)\s+/gm,
-      "\n\n_$1_ `$2` - "
-    );
-    return new vscode.MarkdownString(description);
+    return new vscode.Hover([{language:"sourcepawn", value: this.detail}, description_to_md(this.description)]);
   }
 }
 
 export class DefineCompletion implements Completion {
   name: string;
-  type: string;
+  value: string;
+  file: string;
   kind = vscode.CompletionItemKind.Variable;
 
-  constructor(name: string) {
+  constructor(name: string, value: string, file: string) {
     this.name = name;
+    this.value = value;
+    this.file = basename(file);
   }
 
   to_completion_item(file: string): vscode.CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
+      detail: this.file
     };
   }
 
   get_signature(): vscode.SignatureInformation {
-    return undefined;
+    return;
   }
 
   get_hover(): vscode.Hover {
-    return;
-  }
-
-  documentation_to_md(description: string): vscode.MarkdownString {
-    return;
+      return new vscode.Hover({language:"sourcepawn", value: `#define ${this.name} ${this.value}`});
   }
 }
 
@@ -200,10 +172,6 @@ export class VariableCompletion implements Completion {
   get_hover(): vscode.Hover {
     return;
   }
-
-  documentation_to_md(description: string): vscode.MarkdownString {
-    return;
-  }
 }
 
 export class EnumCompletion implements Completion {
@@ -220,6 +188,7 @@ export class EnumCompletion implements Completion {
     return {
       label: this.name,
       kind: this.kind,
+      detail: basename(this.file)
     };
   }
 
@@ -228,10 +197,6 @@ export class EnumCompletion implements Completion {
   }
 
   get_hover(): vscode.Hover {
-    return;
-  }
-
-  documentation_to_md(description: string): vscode.MarkdownString {
     return;
   }
 }
@@ -252,6 +217,7 @@ export class EnumMemberCompletion implements Completion {
     return {
       label: this.name,
       kind: this.kind,
+      detail: this.enum.name
     };
   }
 
@@ -260,10 +226,6 @@ export class EnumMemberCompletion implements Completion {
   }
 
   get_hover(): vscode.Hover {
-    return;
-  }
-
-  documentation_to_md(description: string): vscode.MarkdownString {
     return;
   }
 }
@@ -278,10 +240,6 @@ export class Include {
   }
 
   get_hover(): vscode.Hover {
-    return;
-  }
-
-  documentation_to_md(description: string): vscode.MarkdownString {
     return;
   }
 }

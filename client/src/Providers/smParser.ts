@@ -92,7 +92,7 @@ class Parser {
 
   interpLine(line: string) {
     // Match define
-    let match = line.match(/\s*#define\s+([A-Za-z0-9_]+)/);
+    let match = line.match(/\s*#define\s+([A-Za-z0-9_]+)\s+([^]+)/);
     if (match) {
       this.read_define(match);
     }
@@ -188,7 +188,13 @@ class Parser {
   }
 
   read_define(match) {
-    this.completions.add(match[1], new DefineCompletion(match[1]));
+    this.completions.add(match[1], new DefineCompletion(match[1], match[2], this.file));
+    let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+      URI.file(this.file),
+      new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+      smDefinitions.DefinitionKind.Define
+    );
+    this.definitions.set(match[1], def);
     return;
   }
 
@@ -204,25 +210,29 @@ class Parser {
       this.file
     );
     this.completions.add(match[1], enumCompletion);
+    let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+      URI.file(this.file),
+      new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+      smDefinitions.DefinitionKind.Enum
+    );
+    this.definitions.set(match[1], def);
 
     // Set max number of iterations for safety
     let iter = 0;
 
     // Proceed to the next line
-    let line: string = this.lines.shift();
-    this.lineNb++;
-
-    // Stop early if it's the end of the file
-    if (typeof line === "undefined") {
-      return;
-    }
+    let line: string = "";
 
     // Match all the params of the enum
     while (iter < 20 && !line.match(/^\s*(\}\s*\;)/)) {
       iter++;
-      match = line.match(/^\s*([A-z0-9_]*)\s*.*/);
       line = this.lines.shift();
       this.lineNb++;
+      // Stop early if it's the end of the file
+      if (typeof line === "undefined") {
+        return;
+      }
+      match = line.match(/^\s*([A-z0-9_]*)\s*.*/);
 
       // Skip if didn't match
       if (!match) {
@@ -232,9 +242,12 @@ class Parser {
         match[1],
         new EnumMemberCompletion(match[1], this.file, enumCompletion)
       );
-      if (typeof line === "undefined") {
-        break;
-      }
+      let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+        URI.file(this.file),
+        new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+        smDefinitions.DefinitionKind.EnumMember
+      );
+      this.definitions.set(match[1], def);
     }
     return;
   }
@@ -311,7 +324,6 @@ class Parser {
     let match_buffer = "";
     let line = "";
     let name_match = "";
-    let partial_params_match = "";
     let params_match = [];
     // Separation for old and new style functions
     // New style
@@ -329,7 +341,6 @@ class Parser {
       smDefinitions.DefinitionKind.Function
     );
     this.definitions.set(name_match, def);
-    partial_params_match = match[3];
     match_buffer = match[0];
     // Check if function takes arguments
     let maxiter = 0;
@@ -342,11 +353,10 @@ class Parser {
       if (typeof line === "undefined") {
         return;
       }
-      partial_params_match += line;
+      //partial_params_match += line;
       match_buffer += line;
       maxiter++;
     }
-    params_match = partial_params_match.match(/([^,\)]+\(.+?\))|([^,\)]+)/g);
     let params = [];
     let current_param;
     if (params_match) {
@@ -364,14 +374,14 @@ class Parser {
         );
       }
     }
-    partial_params_match = this.clean_param(partial_params_match);
     this.completions.add(
       name_match,
       new FunctionCompletion(
         name_match,
-        partial_params_match,
+        match_buffer.replace(/;\s*$/g, ""),
         description,
-        params
+        params,
+        this.file
       )
     );
     return;
@@ -482,7 +492,7 @@ class Parser {
       let { description, params } = this.parse_doc_comment();
       this.completions.add(
         match[1],
-        new FunctionCompletion(match[1], match[2], description, params)
+        new FunctionCompletion(match[1], match[0].replace(/;\s*$/g, ""), description, params, this.file)
       );
     }
   }
@@ -528,13 +538,16 @@ class Parser {
 					line = this.lines.shift();
 					this.lineNb++;
         }
+        // Treat differently if the function is declared on multiple lines
+        paramsMatch = /\)\s*(?:\{|;)?\s*$/.test(match[0]) ? match[0] : match[0] + paramsMatch.replace(/\s*[A-z0-9_]+\s*\(\s*/g, "").replace(/\s+/gm, " ");
         this.completions.add(
           name_match[1],
           new FunctionCompletion(
             name_match[1],
-            paramsMatch,
+            paramsMatch.replace(/;\s*$/g, ""),
             description,
-            params
+            params,
+            this.file
           )
         );
       }

@@ -1,5 +1,13 @@
 ## Release Notes
 
+### 1.10.1
+ - Added file origin as function and enums autocompletion details.
+ - Added parent enum name as enum members autocompletions details.
+ - Improved the parsing of functions.
+ - Improved the hover informations styling.
+ - Improving the signature informations styling.
+ - Added go to definition and hover help for defines, enum and enum members.
+
 ### 1.10.0
  - Fixed a bug where files would not get parsed properly sometimes.
  - Fixed nested includes not parsing.

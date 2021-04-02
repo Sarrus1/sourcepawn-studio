@@ -2,7 +2,6 @@ import * as vscode from "vscode";
 import * as path from 'path';
 import * as fs from "fs";
 import * as os from "os";
-import { execFileSync } from "child_process";
 
 export async function run(args: any) {
 	let activeDocumentPath = vscode.window.activeTextEditor.document.uri.fsPath;
