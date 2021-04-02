@@ -1,4 +1,6 @@
 ﻿import * as vscode from "vscode";
+import { description_to_md } from "../smUtils";
+import {basename} from "path";
 
 export interface Completion {
   name: string;
@@ -7,7 +9,7 @@ export interface Completion {
 
   to_completion_item(file: string): vscode.CompletionItem;
   get_signature(): vscode.SignatureInformation;
-	get_hover(): vscode.Hover;
+  get_hover(): vscode.Hover;
 }
 
 export type FunctionParam = {
@@ -20,42 +22,45 @@ export class FunctionCompletion implements Completion {
   description: string;
   detail: string;
   params: FunctionParam[];
+  file: string;
   kind = vscode.CompletionItemKind.Function;
 
   constructor(
     name: string,
     detail: string,
     description: string,
-    params: FunctionParam[]
+    params: FunctionParam[],
+    file: string
   ) {
     this.description = description;
     this.name = name;
     this.params = params;
     this.detail = detail;
+    this.file = file;
   }
 
   to_completion_item(file: string): vscode.CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
-      detail: this.description,
+      detail: basename(this.file),
     };
   }
 
   get_signature(): vscode.SignatureInformation {
     return {
       label: this.detail,
-      documentation: this.description,
+      documentation: description_to_md(this.description),
       parameters: this.params,
     };
   }
 
-	get_hover(): vscode.Hover{
-		return new vscode.Hover({
-			language: "JSDoc",
-			value: this.description
-	});
-	}
+  get_hover(): vscode.Hover {
+    if (this.description == "") {
+      return new vscode.Hover({language:"sourcepawn", value:this.detail});
+    }
+    return new vscode.Hover([{language:"sourcepawn", value:this.detail}, description_to_md(this.description)]);
+  }
 }
 
 export class MethodCompletion implements Completion {
@@ -98,37 +103,42 @@ export class MethodCompletion implements Completion {
     };
   }
 
-	get_hover(): vscode.Hover{
-		return new vscode.Hover({
-			language: "JSDoc",
-			value: this.description
-	});
-	}
+  get_hover(): vscode.Hover {
+    let description: string = "";
+    if (!this.description) {
+      return;
+    }
+    return new vscode.Hover([{language:"sourcepawn", value: this.detail}, description_to_md(this.description)]);
+  }
 }
 
 export class DefineCompletion implements Completion {
   name: string;
-  type: string;
+  value: string;
+  file: string;
   kind = vscode.CompletionItemKind.Variable;
 
-  constructor(name: string) {
+  constructor(name: string, value: string, file: string) {
     this.name = name;
+    this.value = value;
+    this.file = basename(file);
   }
 
   to_completion_item(file: string): vscode.CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
+      detail: this.file
     };
   }
 
   get_signature(): vscode.SignatureInformation {
-    return undefined;
+    return;
   }
 
-	get_hover(): vscode.Hover{
-		return;
-	}
+  get_hover(): vscode.Hover {
+      return new vscode.Hover({language:"sourcepawn", value: `#define ${this.name} ${this.value}`});
+  }
 }
 
 export class VariableCompletion implements Completion {
@@ -159,9 +169,9 @@ export class VariableCompletion implements Completion {
     return undefined;
   }
 
-	get_hover(): vscode.Hover{
-		return;
-	}
+  get_hover(): vscode.Hover {
+    return;
+  }
 }
 
 export class EnumCompletion implements Completion {
@@ -178,6 +188,7 @@ export class EnumCompletion implements Completion {
     return {
       label: this.name,
       kind: this.kind,
+      detail: basename(this.file)
     };
   }
 
@@ -185,9 +196,9 @@ export class EnumCompletion implements Completion {
     return undefined;
   }
 
-	get_hover(): vscode.Hover{
-		return;
-	}
+  get_hover(): vscode.Hover {
+    return;
+  }
 }
 
 export class EnumMemberCompletion implements Completion {
@@ -206,6 +217,7 @@ export class EnumMemberCompletion implements Completion {
     return {
       label: this.name,
       kind: this.kind,
+      detail: this.enum.name
     };
   }
 
@@ -213,9 +225,9 @@ export class EnumMemberCompletion implements Completion {
     return undefined;
   }
 
-	get_hover(): vscode.Hover{
-		return;
-	}
+  get_hover(): vscode.Hover {
+    return;
+  }
 }
 
 export class Include {
@@ -227,7 +239,7 @@ export class Include {
     this.IsBuiltIn = IsBuiltIn;
   }
 
-	get_hover(): vscode.Hover{
-		return;
-	}
+  get_hover(): vscode.Hover {
+    return;
+  }
 }
