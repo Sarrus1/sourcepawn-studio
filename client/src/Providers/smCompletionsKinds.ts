@@ -56,10 +56,11 @@ export class FunctionCompletion implements Completion {
   }
 
   get_hover(): vscode.Hover {
+    let filename : string = basename(this.file, ".inc");
     if (this.description == "") {
       return new vscode.Hover({language:"sourcepawn", value:this.detail});
     }
-    return new vscode.Hover([{language:"sourcepawn", value:this.detail}, description_to_md(this.description)]);
+    return new vscode.Hover([{language:"sourcepawn", value:this.detail}, description_to_md(this.description), `[Online Documentation](https://sourcemod.dev/#/${filename}/function.${this.name})`]);
   }
 }
 
