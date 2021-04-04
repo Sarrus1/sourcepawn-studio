@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 1.10.2
+ - Added link to documentation in hover help.
+ - Fixed a keybinding issue.
+
 ### 1.10.1
  - Added file origin as function and enums autocompletion details.
  - Added parent enum name as enum members autocompletions details.

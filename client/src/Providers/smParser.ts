@@ -381,7 +381,8 @@ class Parser {
         match_buffer.replace(/;\s*$/g, ""),
         description,
         params,
-        this.file
+        this.file,
+        this.IsBuiltIn
       )
     );
     return;
@@ -492,7 +493,7 @@ class Parser {
       let { description, params } = this.parse_doc_comment();
       this.completions.add(
         match[1],
-        new FunctionCompletion(match[1], match[0].replace(/;\s*$/g, ""), description, params, this.file)
+        new FunctionCompletion(match[1], match[0].replace(/;\s*$/g, ""), description, params, this.file, this.IsBuiltIn)
       );
     }
   }
@@ -547,7 +548,8 @@ class Parser {
             paramsMatch.replace(/;\s*$/g, ""),
             description,
             params,
-            this.file
+            this.file, 
+            this.IsBuiltIn
           )
         );
       }

@@ -23,6 +23,7 @@ export class FunctionCompletion implements Completion {
   detail: string;
   params: FunctionParam[];
   file: string;
+  IsBuiltIn: boolean;
   kind = vscode.CompletionItemKind.Function;
 
   constructor(
@@ -30,13 +31,15 @@ export class FunctionCompletion implements Completion {
     detail: string,
     description: string,
     params: FunctionParam[],
-    file: string
+    file: string,
+    IsBuiltIn: boolean
   ) {
     this.description = description;
     this.name = name;
     this.params = params;
     this.detail = detail;
     this.file = file;
+    this.IsBuiltIn = IsBuiltIn;
   }
 
   to_completion_item(file: string): vscode.CompletionItem {
@@ -60,7 +63,11 @@ export class FunctionCompletion implements Completion {
     if (this.description == "") {
       return new vscode.Hover({language:"sourcepawn", value:this.detail});
     }
-    return new vscode.Hover([{language:"sourcepawn", value:this.detail}, description_to_md(this.description), `[Online Documentation](https://sourcemod.dev/#/${filename}/function.${this.name})`]);
+    if(this.IsBuiltIn)
+    {
+      return new vscode.Hover([{language:"sourcepawn", value:this.detail}, `[Online Documentation](https://sourcemod.dev/#/${filename}/function.${this.name})`, description_to_md(this.description)]);
+    }
+    return new vscode.Hover([{language:"sourcepawn", value:this.detail}, description_to_md(this.description)]);
   }
 }
 
