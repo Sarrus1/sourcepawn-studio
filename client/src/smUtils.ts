@@ -1,7 +1,7 @@
 ﻿import {MarkdownString} from "vscode";
 
 export function description_to_md(description: string): MarkdownString {
-	description = description.replace(/ *\n+ */gm, " ").replace(/(?:[^.])(\.)(?:\s*([^@\s.]))/gm, '.\n\n$2');
+	description = description.replace(/([^.])(\.) *[\n]+(?:\s*([^@\s.]))/gm, '$1. $3').replace(/\s+\*\s*/gm, "\n\n");
 	// Make all @ nicer
 	description = description.replace(
 		/\s*(@[A-z]+)\s+/gm,
@@ -15,6 +15,5 @@ export function description_to_md(description: string): MarkdownString {
 
 	// Format other functions which are referenced in the description
 	description = description.replace(/([A-z0-9_]+\([A-z0-9_ \:]*\))/gm, "`$1`");
-	console.debug(description);
 	return new MarkdownString(description);
 }

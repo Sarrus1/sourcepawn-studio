@@ -5,6 +5,7 @@ import * as os from "os";
 
 export async function run(args: any) {
 	let activeDocumentPath = vscode.window.activeTextEditor.document.uri.fsPath;
+	let scriptingPath = path.dirname(activeDocumentPath);
 	let activeDocumentName = path.basename(activeDocumentPath);
 	activeDocumentName = activeDocumentName.replace(".sp", ".smx");
 	let activeDocumentExt = path.extname(activeDocumentPath);
@@ -100,6 +101,10 @@ export async function run(args: any) {
 		" -i=" +	
 			"\'",
 				vscode.workspace.getConfiguration("sourcepawnLanguageServer").get("sourcemod_home") || "",
+			"\'",
+		" -i=" +	
+			"\'",
+				scriptingPath+"/include" || "",
 			"\'",
 	);
 
