@@ -79,10 +79,10 @@
     },
     "keybindings": [
       {
-        "command": "editorTextFocus && resourceLangId == sourcepawn",
+        "command": "extension.compileSM",
         "key": "ctrl+shift+d",
         "mac": "cmd+shift+d",
-        "when": "editorTextFocus"
+        "when": "editorTextFocus && resourceLangId == sourcepawn"
       }
     ],
     "configuration": {
