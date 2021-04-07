@@ -1,5 +1,5 @@
-import * as smCompletions from "./smCompletions";
-import * as smDefinitions from "./smDefinitions";
+import * as smCompletions from "./spCompletions";
+import * as smDefinitions from "./spDefinitions";
 import {
   FunctionCompletion,
   DefineCompletion,
@@ -8,7 +8,7 @@ import {
   VariableCompletion,
   MethodCompletion,
   FunctionParam,
-} from "./smCompletionsKinds";
+} from "./spCompletionsKinds";
 import * as vscode from "vscode";
 import { URI } from "vscode-uri";
 import * as fs from "fs";

@@ -181,7 +181,18 @@
           ".sp",
           ".inc"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./LanguageConfigurations/SPConfiguration.json"
+      },
+			{
+        "id": "sp-translations",
+        "aliases": [
+          "SourcePawn Translations",
+          "Phrases"
+        ],
+        "extensions": [
+          ".phrases.txt"
+        ],
+        "configuration": "./LanguageConfigurations/SPTranslationsConfiguration.json"
       }
     ],
     "grammars": [
@@ -189,6 +200,11 @@
         "language": "sourcepawn",
         "scopeName": "source.sourcepawn",
         "path": "./syntaxes/sourcepawn.tmLanguage.json"
+      },
+			{
+        "language": "sp-translations",
+        "scopeName": "source.sp-translations",
+        "path": "./syntaxes/sp-translations.tmLanguage.json"
       }
     ],
     "snippets": [

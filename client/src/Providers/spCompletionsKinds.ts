@@ -1,5 +1,5 @@
 ﻿import * as vscode from "vscode";
-import { description_to_md } from "../smUtils";
+import { description_to_md } from "../spUtils";
 import {basename} from "path";
 
 export interface Completion {

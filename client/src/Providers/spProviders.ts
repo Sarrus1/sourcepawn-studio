@@ -3,9 +3,9 @@ import * as glob from "glob";
 import * as path from "path";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
-import * as smCompletions from "./smCompletions";
-import * as smDefinitions from "./smDefinitions";
-import * as smParser from "./smParser";
+import * as smCompletions from "./spCompletions";
+import * as smDefinitions from "./spDefinitions";
+import * as smParser from "./spParser";
 
 export class Providers {
   completionsProvider: smCompletions.CompletionRepository;

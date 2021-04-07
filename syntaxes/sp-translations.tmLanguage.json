@@ -1,0 +1,56 @@
+{
+  "scopeName": "source.sp-translations",
+  "patterns": [
+		{
+      "include": "#keys"
+    },
+    { "include": "#strings" }
+  ],
+  "repository": {
+		"keys": {
+      "patterns": [
+        {
+          "name": "support.type.property-name",
+					"match": "\"Phrases\""
+        },
+				{
+          "name": "markup.underline",
+					"begin": "{\\s*\"",
+					"end": "\"",
+					"patterns": [
+						{
+							"name": "support.type.property-name",
+							"match": ".*"
+						}
+					]
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.single.sourcepawn",
+          "begin": "'",
+          "end": "'|\\n",
+          "patterns": [
+            {
+              "name": "constant.character.escape.sourcepawn",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.double.sourcepawn",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.sourcepawn",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

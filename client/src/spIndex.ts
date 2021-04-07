@@ -1,10 +1,10 @@
 import {ExtensionContext, workspace as Workspace, WorkspaceFolder, languages} from "vscode";
-import { registerSMLinter } from "./smLinter";
+import { registerSMLinter } from "./spLinter";
 import * as glob from "glob";
-import { SM_MODE } from "./smMode";
-import { Providers } from "./Providers/smProviders";
+import { SM_MODE } from "./spMode";
+import { Providers } from "./Providers/spProviders";
 import { registerSMCommands } from "./Commands/registerCommands"; 
-import { SMDocumentFormattingEditProvider } from "./smFormat";
+import { SMDocumentFormattingEditProvider } from "./spFormat";
 import {basename} from "path";
 import {URI } from "vscode-uri";
 

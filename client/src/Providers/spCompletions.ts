@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
-import { Completion, Include } from "./smCompletionsKinds";
+import { Completion, Include } from "./spCompletionsKinds";
 
 
 export class FileCompletions {
