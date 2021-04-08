@@ -47,7 +47,7 @@ The only setting allows to define the position of the default sourcemod include 
 - Add FTP/SFTP support and auto `sm_refresh`.
 - Add dynamic syntax highlighting for imported types.
 - Download sourcemod files automatically.
-- Add syntax highlighting for .cfg files and translations files.
+- Add syntax highlighting for .cfg files.
 - Automatic callback generation.
 - Automatic convert to new syntax (partially).
 

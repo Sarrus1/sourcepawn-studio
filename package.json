@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "1.10.2",
+  "version": "1.10.3",
   "publisher": "Sarrus",
   "main": "client/out/smIndex",
   "icon": "sm.png",
@@ -193,6 +193,17 @@
           ".phrases.txt"
         ],
         "configuration": "./LanguageConfigurations/SPTranslationsConfiguration.json"
+      },
+			{
+        "id": "sp-gamedata",
+        "aliases": [
+          "SourcePawn Gamedata",
+          "Gamedata"
+        ],
+        "extensions": [
+          ".games.txt"
+        ],
+        "configuration": "./LanguageConfigurations/SPGamedataConfiguration.json"
       }
     ],
     "grammars": [
@@ -205,6 +216,11 @@
         "language": "sp-translations",
         "scopeName": "source.sp-translations",
         "path": "./syntaxes/sp-translations.tmLanguage.json"
+      },
+			{
+        "language": "sp-gamedata",
+        "scopeName": "source.sp-gamedata",
+        "path": "./syntaxes/sp-gamedata.tmLanguage.json"
       }
     ],
     "snippets": [

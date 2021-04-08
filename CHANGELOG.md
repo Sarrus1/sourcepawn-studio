@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 1.1O.3
+ - Added syntax highlighting for translations.
+ - Added syntax highlighting for gamedata files.
+
 ### 1.10.2
  - Added link to documentation in hover help.
  - Fixed a keybinding issue.
