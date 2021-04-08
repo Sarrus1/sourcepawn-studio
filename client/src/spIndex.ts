@@ -57,7 +57,7 @@ export function activate(context: ExtensionContext) {
 	Workspace.onDidChangeTextDocument(providers.handle_document_change, providers, context.subscriptions);
 	Workspace.onDidOpenTextDocument(providers.handle_new_document, providers, context.subscriptions);
   Workspace.onDidCreateFiles(providers.handle_added_document, providers, context.subscriptions);
-  
+
   // Register SM Commands
   registerSMCommands(context);
 
