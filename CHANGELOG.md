@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 1.1O.4
+ - Hotfix for commands not working anymore.
+
 ### 1.10.3
  - Added syntax highlighting for translations.
  - Added syntax highlighting for gamedata files.
