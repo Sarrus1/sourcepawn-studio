@@ -3,6 +3,8 @@
 ### 1.1O.3
  - Added syntax highlighting for translations.
  - Added syntax highlighting for gamedata files.
+ - Added syntax highlighting for cfg files.
+ - Added a fileicon for .cfg files.
 
 ### 1.10.2
  - Added link to documentation in hover help.

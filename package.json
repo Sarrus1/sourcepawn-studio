@@ -192,7 +192,7 @@
         "extensions": [
           ".phrases.txt"
         ],
-        "configuration": "./LanguageConfigurations/SPTranslationsConfiguration.json"
+        "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
       },
 			{
         "id": "sp-gamedata",
@@ -203,7 +203,18 @@
         "extensions": [
           ".games.txt"
         ],
-        "configuration": "./LanguageConfigurations/SPGamedataConfiguration.json"
+        "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
+      },
+			{
+        "id": "valve-cfg",
+        "aliases": [
+          "Valve CFG",
+          "CFG"
+        ],
+        "extensions": [
+          ".cfg"
+        ],
+        "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
       }
     ],
     "grammars": [
@@ -214,13 +225,18 @@
       },
 			{
         "language": "sp-translations",
-        "scopeName": "source.sp-translations",
+        "scopeName": "text.sourcepawn-misc",
         "path": "./syntaxes/sp-translations.tmLanguage.json"
       },
 			{
         "language": "sp-gamedata",
-        "scopeName": "source.sp-gamedata",
+        "scopeName": "text.sourcepawn-misc",
         "path": "./syntaxes/sp-gamedata.tmLanguage.json"
+      },
+			{
+        "language": "valve-cfg",
+        "scopeName": "text.sourcepawn-misc",
+        "path": "./syntaxes/sourcepawn-misc.tmLanguage.json"
       }
     ],
     "snippets": [
