@@ -1,6 +1,6 @@
 ## Release Notes
 
-### 1.1O.3
+### 1.10.3
  - Added syntax highlighting for translations.
  - Added syntax highlighting for gamedata files.
  - Added syntax highlighting for cfg files.
