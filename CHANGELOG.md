@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 1.1O.5
+ - Second hotfix for commands not working anymore.
+
 ### 1.1O.4
  - Hotfix for commands not working anymore.
 
