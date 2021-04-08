@@ -127,6 +127,12 @@ export function refreshDiagnostics(
           filePath,
           "-o" + TempPath,
         ];
+				let compilerOptions : string[] = vscode.workspace.getConfiguration("sourcepawnLanguageServer")
+				.get("linterCompilerOptions");
+				// Add a space at the beginning of every element, for security.
+				for(let i=0;i<compilerOptions.length;i++){
+					spcomp_opt.push(" "+compilerOptions[i]);
+				}
         let includes_dirs: string[] = vscode.workspace
           .getConfiguration("sourcepawnLanguageServer")
           .get("optionalIncludeDirsPaths");

@@ -81,16 +81,6 @@ export async function run(args: any) {
 		"\'" +
 			activeDocumentPath +
 		"\'",
-
-		// Treat warnings as errors
-		" -E",
-
-		// Optimization level (0=none, 2=full)
-		" -O2", 
-
-		// "erbosity level; 0=quiet, 1=normal, 2=verbose
-		" -v2",
-
 		// Output path for the smx file
 		" -o=" +
 			"\'" +
@@ -107,6 +97,12 @@ export async function run(args: any) {
 				scriptingPath+"/include" || "",
 			"\'",
 	);
+	let compilerOptions : string[] = vscode.workspace.getConfiguration("sourcepawnLanguageServer")
+	.get("compilerOptions");
+	// Add a space at the beginning of every element, for security.
+	for(let i=0;i<compilerOptions.length;i++){
+    command+=(" "+compilerOptions[i]);
+	}
 
 	let includes_dirs: string[] = vscode.workspace
 	.getConfiguration("sourcepawnLanguageServer")

@@ -119,6 +119,16 @@
           "default": [],
           "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable."
         },
+				"sourcepawnLanguageServer.compilerOptions": {
+          "type": "array",
+          "default": ["-O2", "-v2"],
+          "description": "SourcePawn compiler options. Don't add paths here."
+        },
+				"sourcepawnLanguageServer.linterCompilerOptions": {
+          "type": "array",
+          "default": [],
+          "description": "SourcePawn linter compiler options. Don't add paths here."
+        },
 				"sourcepawnLanguageServer.formatterSettings": {
           "type": "array",
           "default": [
