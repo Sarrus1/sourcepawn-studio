@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "1.10.2",
+  "version": "1.10.3",
   "publisher": "Sarrus",
   "main": "client/out/smIndex",
   "icon": "sm.png",
@@ -119,6 +119,16 @@
           "default": [],
           "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable."
         },
+				"sourcepawnLanguageServer.compilerOptions": {
+          "type": "array",
+          "default": ["-O2", "-v2"],
+          "description": "SourcePawn compiler options. Don't add paths here."
+        },
+				"sourcepawnLanguageServer.linterCompilerOptions": {
+          "type": "array",
+          "default": [],
+          "description": "SourcePawn linter compiler options. Don't add paths here."
+        },
 				"sourcepawnLanguageServer.formatterSettings": {
           "type": "array",
           "default": [
@@ -181,7 +191,40 @@
           ".sp",
           ".inc"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./LanguageConfigurations/SPConfiguration.json"
+      },
+			{
+        "id": "sp-translations",
+        "aliases": [
+          "SourcePawn Translations",
+          "Phrases"
+        ],
+        "extensions": [
+          ".phrases.txt"
+        ],
+        "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
+      },
+			{
+        "id": "sp-gamedata",
+        "aliases": [
+          "SourcePawn Gamedata",
+          "Gamedata"
+        ],
+        "extensions": [
+          ".games.txt"
+        ],
+        "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
+      },
+			{
+        "id": "valve-cfg",
+        "aliases": [
+          "Valve CFG",
+          "CFG"
+        ],
+        "extensions": [
+          ".cfg"
+        ],
+        "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
       }
     ],
     "grammars": [
@@ -189,6 +232,21 @@
         "language": "sourcepawn",
         "scopeName": "source.sourcepawn",
         "path": "./syntaxes/sourcepawn.tmLanguage.json"
+      },
+			{
+        "language": "sp-translations",
+        "scopeName": "text.sourcepawn-misc",
+        "path": "./syntaxes/sp-translations.tmLanguage.json"
+      },
+			{
+        "language": "sp-gamedata",
+        "scopeName": "text.sourcepawn-misc",
+        "path": "./syntaxes/sp-gamedata.tmLanguage.json"
+      },
+			{
+        "language": "valve-cfg",
+        "scopeName": "text.sourcepawn-misc",
+        "path": "./syntaxes/sourcepawn-misc.tmLanguage.json"
       }
     ],
     "snippets": [

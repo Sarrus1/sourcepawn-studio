@@ -10,6 +10,9 @@
     "_inc_file": {
       "iconPath": "./images/INC.png"
     },
+		"_cfg_file": {
+			"iconPath": "./images/cfg.svg"
+		},
     "_default_file": {
       "iconPath": "./images/default_file.svg"
     },
@@ -691,6 +694,7 @@
 		".out": "_fd_build_open"
 	},
 	"fileExtensions": {
+		"cfg": "_cfg_file",
 		"sp": "_sp_file",
 		"smx": "_smx_file",
     "inc": "_inc_file",

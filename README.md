@@ -16,7 +16,7 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 - Useful snippets.
 - Variables autocompletion.
 - Functions autocompletion with arguments descriptions.
-- Detailed highlighting.
+- Detailed highlighting for .sp, .inc, .cfg, .games.txt and .phrases.txt.
 - Allows to parse sourcemod files from a custom location.
 - Linter capabilities.
 
@@ -48,7 +48,6 @@ The only setting allows to define the position of the default sourcemod include 
 - Add FTP/SFTP support and auto `sm_refresh`.
 - Add dynamic syntax highlighting for imported types.
 - Download sourcemod files automatically.
-- Add syntax highlighting for .cfg files and translations files.
 - Automatic callback generation.
 - Automatic convert to new syntax (partially).
 
