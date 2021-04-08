@@ -1,54 +1,80 @@
 {
   "scopeName": "source.sp-translations",
   "patterns": [
-		{
+    {
       "include": "#keys"
     },
-    { "include": "#strings" }
+    { "include": "#translation-element" }
   ],
   "repository": {
-		"keys": {
+    "keys": {
       "patterns": [
         {
-          "name": "support.type.property-name",
-					"match": "\"Phrases\""
+          "name": "support.type.property-name.single.sp-translations",
+          "match": "^\\s*'[^']*'\n"
         },
-				{
-          "name": "markup.underline",
-					"begin": "{\\s*\"",
-					"end": "\"",
-					"patterns": [
-						{
-							"name": "support.type.property-name",
-							"match": ".*"
-						}
-					]
+        {
+          "name": "support.type.property-name.double.sp-translations",
+          "match": "^\\s*\"[^\"]*\"\n"
         }
       ]
     },
-    "strings": {
+    "translation-element": {
       "patterns": [
         {
-          "name": "string.quoted.single.sourcepawn",
+          "name": "string.quoted.single.sp-translations",
           "begin": "'",
           "end": "'|\\n",
           "patterns": [
             {
-              "name": "constant.character.escape.sourcepawn",
-              "match": "\\\\."
+              "name": "constant.character.sp-translations",
+              "match": "\\{[0-9]+\\}"
             }
           ]
         },
         {
-          "name": "string.quoted.double.sourcepawn",
-          "begin": "\"",
-          "end": "\"",
-          "patterns": [
-            {
-              "name": "constant.character.escape.sourcepawn",
-              "match": "\\\\."
+          "name": "string.quoted.double.sp-translations",
+          "match": "(\"[^\"]+\")\\s*(\"[^\"]+\")",
+          "captures": {
+            "1": {
+              "name": "support.type.property-name.double.sp-translations"
+            },
+						"2": {
+              "name": "string.quoted.double.sp-translations",
+							"patterns": [
+								{
+									"name": "constant.character.sp-translations",
+									"match": "\\{([\\d]+)\\}",
+									"captures": {
+										"1": {
+											"name": "constant.numeric.sp-translations"
+										}
+									}
+								},
+								{
+									"name": "constant.character.sp-translations",
+									"match": "\\{([A-z]+)\\}",
+									"captures": {
+										"1": {
+											"name": "constant.character.escape.sp-translations"
+										}
+									}
+								},
+								{
+									"name": "constant.character.sp-translations",
+									"match": "\\{([\\d]+):([A-z]+)\\}",
+									"captures": {
+										"1": {
+											"name": "constant.numeric.sp-translations"
+										},
+										"2": {
+											"name": "string.regexp.sp-translations"
+										}
+									}
+								}
+							]
             }
-          ]
+          }
         }
       ]
     }
