@@ -2,7 +2,7 @@ import vscode = require("vscode");
 import * as fs from "fs";
 import * as path from 'path';
 
-export async function run(args: any) {
+export function run(args: any) {
 
 		// Get configuration
 		let sm_home : string = vscode.workspace.getConfiguration("sourcepawnLanguageServer").get(
@@ -39,14 +39,14 @@ export async function run(args: any) {
 					);
 				}
 			});
-			return;
+			return 1;
 		}
 
     // get workspace folder
     let workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders) {
         vscode.window.showErrorMessage("No workspace are opened.");
-        return;
+        return 1;
     }
 
 		//Select the rootpath
@@ -62,7 +62,7 @@ export async function run(args: any) {
 		let taskFilePath = path.join(rootpath.fsPath, ".vscode/tasks.json");
 		if (fs.existsSync(taskFilePath)){
 			vscode.window.showErrorMessage("tasks.json file already exists.");
-			return;
+			return 1;
 		}
 		let myExtDir : string = vscode.extensions.getExtension ("Sarrus.sourcepawn-vscode").extensionPath;
 		let tasksTemplatesPath : string = path.join(myExtDir, "templates/tasks.json");
@@ -72,12 +72,17 @@ export async function run(args: any) {
 		// Replace placeholders
 		fs.readFile(taskFilePath, 'utf8', function (err,data) {
 			if (err) {
-				return console.log(err);
+				console.log(err)
+				return 1;
 			}
 			let result = data.replace(/\${spcomp_path}/gm, spcomp_path);
 			result = result.replace(/\${include_path}/gm, sm_home);
 			fs.writeFile(taskFilePath, result, 'utf8', function (err) {
-				 if (err) return console.log(err);
+				 if (err) {
+					console.log(err);
+					return 1;
+				 }
 			});
 		});
+		return 0;
 }
