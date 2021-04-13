@@ -107,7 +107,7 @@
         },
 				"sourcepawnLanguageServer.main_path": {
           "type": "string",
-          "description": "The location of the main.sp file for projects with sub-scripting files, which allows the linter to work correctly. You should use this setting per workspace."
+          "description": "The location of the main.sp file for projects with sub-scripting files, which allows the linter and the compiler to work correctly. You should use this setting per workspace."
         },
         "sourcepawnLanguageServer.showCompileIconInEditorTitleMenu": {
           "type": "boolean",

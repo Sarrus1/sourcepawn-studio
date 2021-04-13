@@ -4,7 +4,32 @@ import * as fs from "fs";
 import * as os from "os";
 
 export async function run(args: any) {
-	let activeDocumentPath = vscode.window.activeTextEditor.document.uri.fsPath;
+	let activeDocumentPath:string = vscode.workspace.getConfiguration("sourcepawnLanguageServer").get("main_path") || "";
+	if(activeDocumentPath != ""){
+		try{
+			let workspace : vscode.WorkspaceFolder = vscode.workspace.workspaceFolders[0];
+			activeDocumentPath = path.join(workspace.uri.fsPath, activeDocumentPath);
+		}
+		catch(error){
+			vscode.window
+			.showErrorMessage(
+				"A setting for the main.sp file was specified, but seems invalid. Please make sure it is valid.",
+				"Open Settings"
+			).then((choice) => {
+				if (choice === "Open Settings") {
+					vscode.commands.executeCommand(
+						"workbench.action.openWorkspaceSettings"
+					);
+				}
+			});
+			return;
+		}
+	}
+	else{
+		activeDocumentPath = vscode.window.activeTextEditor.document.uri.fsPath;
+	}
+	
+	
 	let scriptingPath = path.dirname(activeDocumentPath);
 	let activeDocumentName = path.basename(activeDocumentPath);
 	activeDocumentName = activeDocumentName.replace(".sp", ".smx");
