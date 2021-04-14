@@ -34,7 +34,7 @@ export function run(args: any) {
 			let err: string = "master.yml already exists, aborting."
 			vscode.window.showErrorMessage(err);
 			console.log(err);
-			return 1;
+			return 2;
 		}
 		let myExtDir : string = vscode.extensions.getExtension ("Sarrus.sourcepawn-vscode").extensionPath;
 		let tasksTemplatesPath : string = path.join(myExtDir, "templates/master_template.yml");
@@ -48,7 +48,7 @@ export function run(args: any) {
 		}
 		catch(err){
 			console.log(err);
-			return 1;
+			return 3;
 		}
 	return 0;
 }
