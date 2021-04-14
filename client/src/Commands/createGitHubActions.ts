@@ -2,13 +2,15 @@ import vscode = require("vscode");
 import * as fs from "fs";
 import * as path from 'path';
 
-export async function run(args: any) {
+export function run(args: any) {
 
     // get workspace folder
     let workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders) {
-        vscode.window.showErrorMessage("No workspace are opened.");
-        return;
+				let err: string = "No workspace are opened."
+				vscode.window.showErrorMessage(err);
+				console.log(err);
+        return 1;
     }
 
 		//Select the rootpath
@@ -29,21 +31,24 @@ export async function run(args: any) {
 		// Check if master.yml already exists
 		let masterFilePath = path.join(rootpath.fsPath, ".github/workflows/master.yml");
 		if (fs.existsSync(masterFilePath)){
-			vscode.window.showErrorMessage("master.yml already exists, aborting.");
-			return;
+			let err: string = "master.yml already exists, aborting."
+			vscode.window.showErrorMessage(err);
+			console.log(err);
+			return 2;
 		}
 		let myExtDir : string = vscode.extensions.getExtension ("Sarrus.sourcepawn-vscode").extensionPath;
 		let tasksTemplatesPath : string = path.join(myExtDir, "templates/master_template.yml");
 		fs.copyFileSync(tasksTemplatesPath, masterFilePath);
 
 		// Replace placeholders
-		fs.readFile(masterFilePath, 'utf8', function (err,data) {
-			if (err) {
-				return console.log(err);
-			}
-			let result = data.replace(/\${plugin_name}/gm, rootname);
-			fs.writeFile(masterFilePath, result, 'utf8', function (err) {
-				 if (err) return console.log(err);
-			});
-		});
+		try{
+			let result = fs.readFileSync(masterFilePath, 'utf8');
+			result = result.replace(/\${plugin_name}/gm, rootname);
+			fs.writeFileSync(masterFilePath, result, 'utf8');
+		}
+		catch(err){
+			console.log(err);
+			return 3;
+		}
+	return 0;
 }

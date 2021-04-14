@@ -2,9 +2,9 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "1.10.4",
+  "version": "1.10.5",
   "publisher": "Sarrus",
-  "main": "client/out/smIndex",
+  "main": "client/out/spIndex",
   "icon": "sm.png",
   "repository": {
     "type": "git",
@@ -105,60 +105,68 @@
           "type": "string",
           "description": "The location of the SourceMod compiler"
         },
-				"sourcepawnLanguageServer.main_path": {
+        "sourcepawnLanguageServer.main_path": {
           "type": "string",
-          "description": "The location of the main.sp file for projects with sub-scripting files, which allows the linter to work correctly. You should use this setting per workspace."
+          "description": "The location of the main.sp file for projects with sub-scripting files, which allows the linter and the compiler to work correctly. You should use this setting per workspace."
         },
         "sourcepawnLanguageServer.showCompileIconInEditorTitleMenu": {
           "type": "boolean",
           "default": true,
           "description": "Whether to show the 'Compile Code' icon in editor title menu."
         },
+				"sourcepawnLanguageServer.enableLinter": {
+          "type": "boolean",
+          "default": true,
+          "description": "Toggle the linter on or off."
+        },
         "sourcepawnLanguageServer.optionalIncludeDirsPaths": {
           "type": "array",
           "default": [],
           "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable."
         },
-				"sourcepawnLanguageServer.compilerOptions": {
+        "sourcepawnLanguageServer.compilerOptions": {
           "type": "array",
-          "default": ["-O2", "-v2"],
+          "default": [
+            "-O2",
+            "-v2"
+          ],
           "description": "SourcePawn compiler options. Don't add paths here."
         },
-				"sourcepawnLanguageServer.linterCompilerOptions": {
+        "sourcepawnLanguageServer.linterCompilerOptions": {
           "type": "array",
           "default": [],
           "description": "SourcePawn linter compiler options. Don't add paths here."
         },
-				"sourcepawnLanguageServer.formatterSettings": {
+        "sourcepawnLanguageServer.formatterSettings": {
           "type": "array",
           "default": [
-						"AlignOperands: 'true'",
-						"AlignTrailingComments: 'true'",
-						"AllowAllArgumentsOnNextLine: 'false'",
-						"AllowAllConstructorInitializersOnNextLine: 'false'",
-						"AllowAllParametersOfDeclarationOnNextLine: 'false'",
-						"AllowShortBlocksOnASingleLine: 'true'",
-						"AllowShortCaseLabelsOnASingleLine: 'true'",
-						"AlwaysBreakAfterDefinitionReturnType: None",
-						"AlwaysBreakAfterReturnType: None",
-						"AlwaysBreakBeforeMultilineStrings: 'false'",
-						"BinPackArguments: 'false'",
-						"BinPackParameters: 'false'",
-						"BreakBeforeBraces: Allman",
-						"BreakBeforeTernaryOperators: 'false'",
-						"BreakStringLiterals: 'false'",
-						"ColumnLimit: '0'",
-						"ContinuationIndentWidth: '2'",
-						"IndentWidth: '${TabSize}'",
-						"MaxEmptyLinesToKeep: '2'",
-						"MaxEmptyLinesToKeep: '2'",
-						"SpaceAfterLogicalNot: 'false'",
-						"SpaceBeforeParens: Never",
-						"SpaceBeforeRangeBasedForLoopColon: 'false'",
-						"SpaceInEmptyParentheses: 'false'",
-						"TabWidth: '2'",
-						"UseTab: '${UseTab}'"
-					],
+            "AlignOperands: 'true'",
+            "AlignTrailingComments: 'true'",
+            "AllowAllArgumentsOnNextLine: 'false'",
+            "AllowAllConstructorInitializersOnNextLine: 'false'",
+            "AllowAllParametersOfDeclarationOnNextLine: 'false'",
+            "AllowShortBlocksOnASingleLine: 'true'",
+            "AllowShortCaseLabelsOnASingleLine: 'true'",
+            "AlwaysBreakAfterDefinitionReturnType: None",
+            "AlwaysBreakAfterReturnType: None",
+            "AlwaysBreakBeforeMultilineStrings: 'false'",
+            "BinPackArguments: 'false'",
+            "BinPackParameters: 'false'",
+            "BreakBeforeBraces: Allman",
+            "BreakBeforeTernaryOperators: 'false'",
+            "BreakStringLiterals: 'false'",
+            "ColumnLimit: '0'",
+            "ContinuationIndentWidth: '2'",
+            "IndentWidth: '${TabSize}'",
+            "MaxEmptyLinesToKeep: '2'",
+            "MaxEmptyLinesToKeep: '2'",
+            "SpaceAfterLogicalNot: 'false'",
+            "SpaceBeforeParens: Never",
+            "SpaceBeforeRangeBasedForLoopColon: 'false'",
+            "SpaceInEmptyParentheses: 'false'",
+            "TabWidth: '2'",
+            "UseTab: '${UseTab}'"
+          ],
           "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable."
         },
         "sourcepawnLanguageServer.trace.server": {
@@ -193,7 +201,7 @@
         ],
         "configuration": "./LanguageConfigurations/SPConfiguration.json"
       },
-			{
+      {
         "id": "sp-translations",
         "aliases": [
           "SourcePawn Translations",
@@ -204,7 +212,7 @@
         ],
         "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
       },
-			{
+      {
         "id": "sp-gamedata",
         "aliases": [
           "SourcePawn Gamedata",
@@ -215,7 +223,7 @@
         ],
         "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
       },
-			{
+      {
         "id": "valve-cfg",
         "aliases": [
           "Valve CFG",
@@ -233,17 +241,17 @@
         "scopeName": "source.sourcepawn",
         "path": "./syntaxes/sourcepawn.tmLanguage.json"
       },
-			{
+      {
         "language": "sp-translations",
         "scopeName": "text.sourcepawn-misc",
         "path": "./syntaxes/sp-translations.tmLanguage.json"
       },
-			{
+      {
         "language": "sp-gamedata",
         "scopeName": "text.sourcepawn-misc",
         "path": "./syntaxes/sp-gamedata.tmLanguage.json"
       },
-			{
+      {
         "language": "valve-cfg",
         "scopeName": "text.sourcepawn-misc",
         "path": "./syntaxes/sourcepawn-misc.tmLanguage.json"
@@ -261,17 +269,21 @@
     "clang-format": "^1.5.0",
     "glob": "^7.1.2",
     "n-readlines": "^1.0.1",
-    "prettier": "2.2.1"
+    "prettier": "2.2.1",
+    "vscode-uri": "^3.0.2"
   },
   "devDependencies": {
+    "@types/mocha": "^8.2.2",
     "@types/node": "^8.0.14",
-    "typescript": "^4.2.2"
+    "mocha": "^8.3.2",
+    "typescript": "^4.2.2",
+    "vscode-test": "^1.5.2"
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -b",
+    "compile": "tsc -b tsconfig.json",
     "watch": "tsc -b -w",
     "postinstall": "cd client && npm install && cd ..",
-    "test": "sh ./scripts/e2e.sh"
+    "test": "node ./client/out/test/runTest.js"
   }
 }
