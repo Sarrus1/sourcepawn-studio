@@ -20,6 +20,7 @@ jobs:
         shell: bash
         if: ${{ success() }}
       - run: npm install
+      - run: npm run compile
       - run: npm run test
         env:
           DISPLAY: ":99.0"

@@ -279,6 +279,6 @@
     "compile": "tsc -b tsconfig.json",
     "watch": "tsc -b -w",
     "postinstall": "cd client && npm install && cd ..",
-    "test": "npm run compile && node ./client/out/test/runTest.js"
+    "test": "node ./client/out/test/runTest.js"
   }
 }
