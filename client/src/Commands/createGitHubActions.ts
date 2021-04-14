@@ -7,7 +7,9 @@ export function run(args: any) {
     // get workspace folder
     let workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders) {
-        vscode.window.showErrorMessage("No workspace are opened.");
+				let err: string = "No workspace are opened."
+				vscode.window.showErrorMessage(err);
+				console.log(err);
         return 1;
     }
 
@@ -29,7 +31,9 @@ export function run(args: any) {
 		// Check if master.yml already exists
 		let masterFilePath = path.join(rootpath.fsPath, ".github/workflows/master.yml");
 		if (fs.existsSync(masterFilePath)){
-			vscode.window.showErrorMessage("master.yml already exists, aborting.");
+			let err: string = "master.yml already exists, aborting."
+			vscode.window.showErrorMessage(err);
+			console.log(err);
 			return 1;
 		}
 		let myExtDir : string = vscode.extensions.getExtension ("Sarrus.sourcepawn-vscode").extensionPath;
