@@ -32,7 +32,6 @@ jobs:
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
             ${{ runner.os }}-
-      - run: npm run compile
       - run: npm run test
         env:
           DISPLAY: ":99.0"
