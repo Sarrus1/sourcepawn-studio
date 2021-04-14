@@ -4,7 +4,7 @@
   "description": "SourcePawn highlighting, autocompletion and much more",
   "version": "1.10.5",
   "publisher": "Sarrus",
-  "main": "client/out/smIndex",
+  "main": "client/out/spIndex",
   "icon": "sm.png",
   "repository": {
     "type": "git",
@@ -113,6 +113,11 @@
           "type": "boolean",
           "default": true,
           "description": "Whether to show the 'Compile Code' icon in editor title menu."
+        },
+				"sourcepawnLanguageServer.enableLinter": {
+          "type": "boolean",
+          "default": true,
+          "description": "Toggle the linter on or off."
         },
         "sourcepawnLanguageServer.optionalIncludeDirsPaths": {
           "type": "array",

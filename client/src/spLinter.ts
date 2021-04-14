@@ -43,7 +43,8 @@ export function refreshDiagnostics(
 	const end = new vscode.Position(1, 0);
 	const range = new vscode.Range(start, end);
 	const text : string = document.getText(range);
-	if(text == "" || /\/\/linter=false/.test(text)) 
+	const enableLinter : boolean = vscode.workspace.getConfiguration("sourcepawnLanguageServer").get<boolean>("enableLinter");
+	if(text == "" || /\/\/linter=false/.test(text) || !enableLinter) 
 	{
 		return ReturnNone(document.uri);
 	}
