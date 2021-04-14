@@ -264,7 +264,8 @@
     "clang-format": "^1.5.0",
     "glob": "^7.1.2",
     "n-readlines": "^1.0.1",
-    "prettier": "2.2.1"
+    "prettier": "2.2.1",
+    "vscode-uri": "^3.0.2"
   },
   "devDependencies": {
     "@types/mocha": "^8.2.2",
@@ -278,6 +279,7 @@
     "compile": "tsc -b",
     "watch": "tsc -b -w",
     "postinstall": "cd client && npm install && cd ..",
-    "test": "node ./client/out/tests/runTest.js"
+    "test": "node ./client/out/test/runTest.js",
+		"coverage": "nyc npm run test"
   }
 }

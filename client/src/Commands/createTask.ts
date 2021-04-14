@@ -70,19 +70,15 @@ export function run(args: any) {
 		spcomp_path = spcomp_path.replace(/\\/gm, "\\\\");
 		sm_home = sm_home.replace(/\\/gm, "\\\\");
 		// Replace placeholders
-		fs.readFile(taskFilePath, 'utf8', function (err,data) {
-			if (err) {
-				console.log(err)
-				return 1;
-			}
+		try{
+			let data = fs.readFileSync(taskFilePath, 'utf8');
 			let result = data.replace(/\${spcomp_path}/gm, spcomp_path);
 			result = result.replace(/\${include_path}/gm, sm_home);
-			fs.writeFile(taskFilePath, result, 'utf8', function (err) {
-				 if (err) {
-					console.log(err);
-					return 1;
-				 }
-			});
-		});
+			fs.writeFileSync(taskFilePath, result, 'utf8');
+		}
+		catch(err){
+			console.log(err);
+			return 1;
+		}
 		return 0;
 }
