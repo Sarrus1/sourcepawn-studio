@@ -21,7 +21,7 @@ jobs:
         if: ${{ success() }}
       - run: npm install
       - run: npm run compile
-      - run: /home/runner/work/sourcepawn-vscode/sourcepawn-vscode/client/out/test/
+      - run: cd /home/runner/work/sourcepawn-vscode/sourcepawn-vscode/client/out/test/ && ls
         shell: bash
       - run: npm run test
         env:
