@@ -10,7 +10,7 @@ export function run(args: any) {
 				let err: string = "No workspace are opened."
 				vscode.window.showErrorMessage(err);
 				console.log(err);
-        return 10;
+        return 1;
     }
 
 		//Select the rootpath

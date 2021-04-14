@@ -37,7 +37,7 @@ export function run(args: any) {
 	let readmeFilePath = path.join(rootpath.fsPath, "README.md");
 	if (fs.existsSync(readmeFilePath)){
 		vscode.window.showErrorMessage("README.md already exists, aborting.");
-		return 1;
+		return 2;
 	}
 	let myExtDir : string = vscode.extensions.getExtension ("Sarrus.sourcepawn-vscode").extensionPath;
 	let tasksTemplatesPath : string = path.join(myExtDir, "templates/README_template.MD");
@@ -52,7 +52,7 @@ export function run(args: any) {
 	}
 	catch(err){
 		console.log(err);
-		return 1;
+		return 3;
 	}
 	return 0;
 }

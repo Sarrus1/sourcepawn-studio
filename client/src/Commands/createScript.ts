@@ -48,7 +48,7 @@ export function run(args: any) {
 		let scriptFilePath = path.join(rootpath.fsPath, "scripting", scriptFileName);
 		if (fs.existsSync(scriptFilePath)){
 			vscode.window.showErrorMessage(scriptFileName+ " already exists, aborting.");
-			return 1;
+			return 2;
 		}
 		let myExtDir : string = vscode.extensions.getExtension ("Sarrus.sourcepawn-vscode").extensionPath;
 		let tasksTemplatesPath : string = path.join(myExtDir, "templates/plugin_template.sp");
@@ -64,7 +64,7 @@ export function run(args: any) {
 		}
 		catch(err){
 			console.log(err);
-			return 1;
+			return 3;
 		}
 		return 0;
 }

@@ -46,7 +46,7 @@ export function run(args: any) {
     let workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders) {
         vscode.window.showErrorMessage("No workspace are opened.");
-        return 1;
+        return 2;
     }
 
 		//Select the rootpath
@@ -62,7 +62,7 @@ export function run(args: any) {
 		let taskFilePath = path.join(rootpath.fsPath, ".vscode/tasks.json");
 		if (fs.existsSync(taskFilePath)){
 			vscode.window.showErrorMessage("tasks.json file already exists.");
-			return 1;
+			return 3;
 		}
 		let myExtDir : string = vscode.extensions.getExtension ("Sarrus.sourcepawn-vscode").extensionPath;
 		let tasksTemplatesPath : string = path.join(myExtDir, "templates/tasks.json");
@@ -78,7 +78,7 @@ export function run(args: any) {
 		}
 		catch(err){
 			console.log(err);
-			return 1;
+			return 4;
 		}
 		return 0;
 }
