@@ -71,7 +71,7 @@
       ],
       "editor/title": [
         {
-          "when": "editorTextFocus && resourceLangId == sourcepawn && config.sourcepawnLanguageServer.showCompileIconInEditorTitleMenu",
+          "when": "editorTextFocus && resourceLangId == sourcepawn && config.sourcepawn.showCompileIconInEditorTitleMenu",
           "command": "extension.compileSM",
           "group": "navigation@1"
         }
@@ -87,44 +87,44 @@
     ],
     "configuration": {
       "type": "object",
-      "title": "SourcePawn Language Server configuration",
+      "title": "SourcePawn configuration",
       "properties": {
-        "sourcepawnLanguageServer.sourcemod_home": {
+        "sourcepawn.sourcemod_home": {
           "type": "string",
           "description": "The location of the SourceMod API include files found in addons/sourcemod/scripting/include"
         },
-        "sourcepawnLanguageServer.author_name": {
+        "sourcepawn.AuthorName": {
           "type": "string",
           "description": "The name of the plugin's author (you)."
         },
-        "sourcepawnLanguageServer.github_name": {
+        "sourcepawn.GithubName": {
           "type": "string",
           "description": "The GitHub username of the plugin's author (you)."
         },
-        "sourcepawnLanguageServer.spcomp_path": {
+        "sourcepawn.SpcompPath": {
           "type": "string",
           "description": "The location of the SourceMod compiler"
         },
-        "sourcepawnLanguageServer.main_path": {
+        "sourcepawn.MainPath": {
           "type": "string",
           "description": "The location of the main.sp file for projects with sub-scripting files, which allows the linter and the compiler to work correctly. You should use this setting per workspace."
         },
-        "sourcepawnLanguageServer.showCompileIconInEditorTitleMenu": {
+        "sourcepawn.showCompileIconInEditorTitleMenu": {
           "type": "boolean",
           "default": true,
           "description": "Whether to show the 'Compile Code' icon in editor title menu."
         },
-				"sourcepawnLanguageServer.enableLinter": {
+				"sourcepawn.enableLinter": {
           "type": "boolean",
           "default": true,
           "description": "Toggle the linter on or off."
         },
-        "sourcepawnLanguageServer.optionalIncludeDirsPaths": {
+        "sourcepawn.optionalIncludeDirsPaths": {
           "type": "array",
           "default": [],
           "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable."
         },
-        "sourcepawnLanguageServer.compilerOptions": {
+        "sourcepawn.compilerOptions": {
           "type": "array",
           "default": [
             "-O2",
@@ -132,12 +132,12 @@
           ],
           "description": "SourcePawn compiler options. Don't add paths here."
         },
-        "sourcepawnLanguageServer.linterCompilerOptions": {
+        "sourcepawn.linterCompilerOptions": {
           "type": "array",
           "default": [],
           "description": "SourcePawn linter compiler options. Don't add paths here."
         },
-        "sourcepawnLanguageServer.formatterSettings": {
+        "sourcepawn.formatterSettings": {
           "type": "array",
           "default": [
             "AlignOperands: 'true'",
@@ -169,7 +169,7 @@
           ],
           "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable."
         },
-        "sourcepawnLanguageServer.trace.server": {
+        "sourcepawn.trace.server": {
           "type": "string",
           "enum": [
             "off",

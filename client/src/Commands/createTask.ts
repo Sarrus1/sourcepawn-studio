@@ -5,7 +5,7 @@ import * as path from 'path';
 export function run(args: any) {
 
 		// Get configuration
-		let sm_home : string = vscode.workspace.getConfiguration("sourcepawnLanguageServer").get(
+		let sm_home : string = vscode.workspace.getConfiguration("sourcepawn").get(
 			"sourcemod_home"
 		)
 		if(!sm_home){
@@ -23,13 +23,13 @@ export function run(args: any) {
 			});
 		}
 
-		let spcomp_path : string = vscode.workspace.getConfiguration("sourcepawnLanguageServer").get(
-			"spcomp_path"
+		let SpcompPath : string = vscode.workspace.getConfiguration("sourcepawn").get(
+			"SpcompPath"
 		)
-		if(!spcomp_path){
+		if(!SpcompPath){
 			vscode.window
 			.showErrorMessage(
-				"SourceMod compiler not found in the project. You need to set spcomp path for tasks generation to work.",
+				"SourceMod compiler not found in the project. You need to set SpcompPath for tasks generation to work.",
 				"Open Settings"
 			)
 			.then((choice) => {
@@ -67,12 +67,12 @@ export function run(args: any) {
 		let myExtDir : string = vscode.extensions.getExtension ("Sarrus.sourcepawn-vscode").extensionPath;
 		let tasksTemplatesPath : string = path.join(myExtDir, "templates/tasks.json");
 		fs.copyFileSync(tasksTemplatesPath, taskFilePath);
-		spcomp_path = spcomp_path.replace(/\\/gm, "\\\\");
+		SpcompPath = SpcompPath.replace(/\\/gm, "\\\\");
 		sm_home = sm_home.replace(/\\/gm, "\\\\");
 		// Replace placeholders
 		try{
 			let data = fs.readFileSync(taskFilePath, 'utf8');
-			let result = data.replace(/\${spcomp_path}/gm, spcomp_path);
+			let result = data.replace(/\${SpcompPath}/gm, SpcompPath);
 			result = result.replace(/\${include_path}/gm, sm_home);
 			fs.writeFileSync(taskFilePath, result, 'utf8');
 		}

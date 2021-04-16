@@ -1,7 +1,7 @@
 # ${plugin_name}
 
 
-![Downloads](https://img.shields.io/github/downloads/${github_name}/${plugin_name}/total?style=flat-square) ![Last commit](https://img.shields.io/github/last-commit/${github_name}/${plugin_name}?style=flat-square) ![Open issues](https://img.shields.io/github/issues/${github_name}/${plugin_name}?style=flat-square) ![Closed issues](https://img.shields.io/github/issues-closed/${github_name}/${plugin_name}?style=flat-square) ![Size](https://img.shields.io/github/repo-size/${github_name}/${plugin_name}?style=flat-square) ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/${github_name}/${plugin_name}/Compile%20with%20SourceMod?style=flat-square)
+![Downloads](https://img.shields.io/github/downloads/${GithubName}/${plugin_name}/total?style=flat-square) ![Last commit](https://img.shields.io/github/last-commit/${GithubName}/${plugin_name}?style=flat-square) ![Open issues](https://img.shields.io/github/issues/${GithubName}/${plugin_name}?style=flat-square) ![Closed issues](https://img.shields.io/github/issues-closed/${GithubName}/${plugin_name}?style=flat-square) ![Size](https://img.shields.io/github/repo-size/${GithubName}/${plugin_name}?style=flat-square) ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/${GithubName}/${plugin_name}/Compile%20with%20SourceMod?style=flat-square)
 
 ## Description ##
 

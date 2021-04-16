@@ -58,7 +58,7 @@ export class FileCompletions {
     let uri : URI;
     if(!(uri = documents.get(file))){
       let includes_dirs: string[] = vscode.workspace
-        .getConfiguration("sourcepawnLanguageServer")
+        .getConfiguration("sourcepawn")
         .get("optionalIncludeDirsPaths");
       for (let includes_dir of includes_dirs) {
         inc_file = path.join(includes_dir, file);

@@ -8,10 +8,10 @@
 public Plugin myinfo =
 {
 	name = "${plugin_name}",
-	author = "${author_name}",
+	author = "${AuthorName}",
 	description = "",
 	version = "1.0",
-	url = "https://github.com/${github_name}/${plugin_name}"
+	url = "https://github.com/${GithubName}/${plugin_name}"
 };
 
 

@@ -4,10 +4,10 @@ import * as path from 'path';
 
 export function run(args: any) {
 
-	let github_name : string = vscode.workspace.getConfiguration("sourcepawnLanguageServer").get(
-		"github_name"
+	let GithubName : string = vscode.workspace.getConfiguration("sourcepawn").get(
+		"GithubName"
 	)
-	if(!github_name){
+	if(!GithubName){
 		vscode.window
 		.showWarningMessage(
 			"You didn't specify a GitHub username.",
@@ -47,7 +47,7 @@ export function run(args: any) {
 	try {
 		let result = fs.readFileSync(readmeFilePath, 'utf8');
 		result = result.replace(/\${plugin_name}/gm, rootname);
-		result = result.replace(/\${github_name}/gm, github_name);
+		result = result.replace(/\${GithubName}/gm, GithubName);
 		fs.writeFileSync(readmeFilePath, result, 'utf8');
 	}
 	catch(err){

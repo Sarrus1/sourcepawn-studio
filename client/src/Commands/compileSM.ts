@@ -4,7 +4,7 @@ import * as fs from "fs";
 import * as os from "os";
 
 export async function run(args: any) {
-	let activeDocumentPath:string = vscode.workspace.getConfiguration("sourcepawnLanguageServer").get("main_path") || "";
+	let activeDocumentPath:string = vscode.workspace.getConfiguration("sourcepawn").get("MainPath") || "";
 	if(activeDocumentPath != ""){
 		try{
 			let workspace : vscode.WorkspaceFolder = vscode.workspace.workspaceFolders[0];
@@ -42,15 +42,15 @@ export async function run(args: any) {
 		return;
 	}
 	const spcomp =
-    vscode.workspace.getConfiguration("sourcepawnLanguageServer").get<string>(
-      "spcomp_path"
+    vscode.workspace.getConfiguration("sourcepawn").get<string>(
+      "SpcompPath"
     ) || "";
 	
 	if(!spcomp)
 	{
     vscode.window
       .showErrorMessage(
-        "SourceMod compiler not found in the project. You need to set the spcomp path for the Linter to work.",
+        "SourceMod compiler not found in the project. You need to set the SpcompPath for the Linter to work.",
         "Open Settings"
       )
       .then((choice) => {
@@ -115,14 +115,14 @@ export async function run(args: any) {
 		// Set the path for sm_home
 		" -i=" +	
 			"\'",
-				vscode.workspace.getConfiguration("sourcepawnLanguageServer").get("sourcemod_home") || "",
+				vscode.workspace.getConfiguration("sourcepawn").get("sourcemod_home") || "",
 			"\'",
 		" -i=" +	
 			"\'",
 				scriptingPath+"/include" || "",
 			"\'",
 	);
-	let compilerOptions : string[] = vscode.workspace.getConfiguration("sourcepawnLanguageServer")
+	let compilerOptions : string[] = vscode.workspace.getConfiguration("sourcepawn")
 	.get("compilerOptions");
 	// Add a space at the beginning of every element, for security.
 	for(let i=0;i<compilerOptions.length;i++){
@@ -130,7 +130,7 @@ export async function run(args: any) {
 	}
 
 	let includes_dirs: string[] = vscode.workspace
-	.getConfiguration("sourcepawnLanguageServer")
+	.getConfiguration("sourcepawn")
 	.get("optionalIncludeDirsPaths");
 	// Add the optional includes folders.
 	for (let includes_dir of includes_dirs) {

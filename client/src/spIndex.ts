@@ -18,7 +18,7 @@ export function activate(context: ExtensionContext) {
   let providers = new Providers(context.globalState);
   let formatter = new SMDocumentFormattingEditProvider();
   // Parse files at document opening.
-  let sm_home : string = Workspace.getConfiguration("sourcepawnLanguageServer").get(
+  let sm_home : string = Workspace.getConfiguration("sourcepawn").get(
 		"sourcemod_home");
   providers.parse_sm_api(sm_home);
   let workspace : WorkspaceFolder = Workspace.workspaceFolders[0];

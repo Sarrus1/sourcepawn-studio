@@ -43,34 +43,15 @@ export function refreshDiagnostics(
 	const end = new vscode.Position(1, 0);
 	const range = new vscode.Range(start, end);
 	const text : string = document.getText(range);
-	const enableLinter : boolean = vscode.workspace.getConfiguration("sourcepawnLanguageServer").get<boolean>("enableLinter");
+	const enableLinter : boolean = vscode.workspace.getConfiguration("sourcepawn").get<boolean>("enableLinter");
 	if(text == "" || /\/\/linter=false/.test(text) || !enableLinter) 
 	{
 		return ReturnNone(document.uri);
 	}
   const spcomp =
     vscode.workspace
-      .getConfiguration("sourcepawnLanguageServer")
-      .get<string>("spcomp_path") || "";
-  if (
-    !vscode.workspace
-      .getConfiguration("sourcepawnLanguageServer")
-      .get("spcomp_path") ||
-    (spcomp !== "" && !fs.existsSync(spcomp))
-  ) {
-    vscode.window
-      .showErrorMessage(
-        "SourceMod compiler not found in the project. You need to set the spcomp path for the Linter to work.",
-        "Open Settings"
-      )
-      .then((choice) => {
-        if (choice === "Open Settings") {
-          vscode.commands.executeCommand(
-            "workbench.action.openWorkspaceSettings"
-          );
-        }
-      });
-  }
+      .getConfiguration("sourcepawn")
+      .get<string>("SpcompPath") || "";
 
   let throttle = throttles[document.uri.path];
   if (throttle === undefined) {
@@ -81,7 +62,7 @@ export function refreshDiagnostics(
   throttle.cancel();
   throttle.start(function () {
 		let filename : string = document.fileName;
-		let MainPath : string = vscode.workspace.getConfiguration("sourcepawnLanguageServer").get("main_path") || "";
+		let MainPath : string = vscode.workspace.getConfiguration("sourcepawn").get("MainPath") || "";
 		if(MainPath != ""){
 			try{
 				let workspace : vscode.WorkspaceFolder = vscode.workspace.workspaceFolders[0];
@@ -121,21 +102,21 @@ export function refreshDiagnostics(
         let spcomp_opt: string[] = [
           "-i" +
             vscode.workspace
-              .getConfiguration("sourcepawnLanguageServer")
+              .getConfiguration("sourcepawn")
               .get("sourcemod_home") || "",
           "-i" + path.join(scriptingFolder, "include"),
           "-v0",
           filePath,
           "-o" + TempPath,
         ];
-				let compilerOptions : string[] = vscode.workspace.getConfiguration("sourcepawnLanguageServer")
+				let compilerOptions : string[] = vscode.workspace.getConfiguration("sourcepawn")
 				.get("linterCompilerOptions");
 				// Add a space at the beginning of every element, for security.
 				for(let i=0;i<compilerOptions.length;i++){
 					spcomp_opt.push(" "+compilerOptions[i]);
 				}
         let includes_dirs: string[] = vscode.workspace
-          .getConfiguration("sourcepawnLanguageServer")
+          .getConfiguration("sourcepawn")
           .get("optionalIncludeDirsPaths");
         // Add the optional includes folders.
         for (let includes_dir of includes_dirs) {

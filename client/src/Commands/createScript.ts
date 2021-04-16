@@ -4,10 +4,10 @@ import * as path from 'path';
 
 export function run(args: any) {
 
-		let author_name : string = vscode.workspace.getConfiguration("sourcepawnLanguageServer").get(
-			"author_name"
+		let AuthorName : string = vscode.workspace.getConfiguration("sourcepawn").get(
+			"AuthorName"
 		)
-		if(!author_name){
+		if(!AuthorName){
 			vscode.window
 			.showWarningMessage(
 				"You didn't specify an author name.",
@@ -22,8 +22,8 @@ export function run(args: any) {
 			});
 		}
 
-		let github_name : string = vscode.workspace.getConfiguration("sourcepawnLanguageServer").get(
-			"github_name"
+		let GithubName : string = vscode.workspace.getConfiguration("sourcepawn").get(
+			"GithubName"
 		)
 
     // get workspace folder
@@ -57,9 +57,9 @@ export function run(args: any) {
 		// Replace placeholders
 		try{
 			let data = fs.readFileSync(scriptFilePath, 'utf8')
-			let result = data.replace(/\${author_name}/gm, author_name);
+			let result = data.replace(/\${AuthorName}/gm, AuthorName);
 			result = result.replace(/\${plugin_name}/gm, rootname);
-			result = result.replace(/\${github_name}/gm, github_name);
+			result = result.replace(/\${GithubName}/gm, GithubName);
 			fs.writeFileSync(scriptFilePath, result, 'utf8');
 		}
 		catch(err){

@@ -2,7 +2,7 @@
 
 ### 1.1O.6
  - Added a config to toggle the linter on and off.
- - The `main_path` setting now applies to the compile command as well.
+ - The `MainPath` setting now applies to the compile command as well.
  - Unit tests have been implemented for better reliability.
  - The code has been cleaned up.
 
