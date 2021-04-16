@@ -115,7 +115,7 @@ export async function run(args: any) {
 		// Set the path for sm_home
 		" -i=" +	
 			"\'",
-				vscode.workspace.getConfiguration("sourcepawn").get("sourcemod_home") || "",
+				vscode.workspace.getConfiguration("sourcepawn").get("SourcemodHome") || "",
 			"\'",
 		" -i=" +	
 			"\'",

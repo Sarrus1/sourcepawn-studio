@@ -23,7 +23,7 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 The only setting allows to define the position of the default sourcemod include files :
 ```json
 {
-  "sourcepawn.sourcemod_home": "/path/to/sourcemod/include"
+  "sourcepawn.SourcemodHome": "/path/to/sourcemod/include"
 }
 {
 	"sourcepawn.AuthorName": "The name of the plugin's author (you)."

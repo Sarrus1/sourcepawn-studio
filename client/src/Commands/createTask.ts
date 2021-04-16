@@ -6,7 +6,7 @@ export function run(args: any) {
 
 		// Get configuration
 		let sm_home : string = vscode.workspace.getConfiguration("sourcepawn").get(
-			"sourcemod_home"
+			"SourcemodHome"
 		)
 		if(!sm_home){
 			vscode.window

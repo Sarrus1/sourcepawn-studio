@@ -89,7 +89,7 @@
       "type": "object",
       "title": "SourcePawn configuration",
       "properties": {
-        "sourcepawn.sourcemod_home": {
+        "sourcepawn.SourcemodHome": {
           "type": "string",
           "description": "The location of the SourceMod API include files found in addons/sourcemod/scripting/include"
         },

@@ -15,11 +15,11 @@ let getDirectories = function (src, ext, callback) {
 
 
 export function activate(context: ExtensionContext) {
-  let providers = new Providers(context.globalState);
+  const providers = new Providers(context.globalState);
   let formatter = new SMDocumentFormattingEditProvider();
   // Parse files at document opening.
   let sm_home : string = Workspace.getConfiguration("sourcepawn").get(
-		"sourcemod_home");
+		"SourcemodHome");
   providers.parse_sm_api(sm_home);
   let workspace : WorkspaceFolder = Workspace.workspaceFolders[0];
   if(typeof workspace != "undefined")

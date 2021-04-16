@@ -103,7 +103,7 @@ export function refreshDiagnostics(
           "-i" +
             vscode.workspace
               .getConfiguration("sourcepawn")
-              .get("sourcemod_home") || "",
+              .get("SourcemodHome") || "",
           "-i" + path.join(scriptingFolder, "include"),
           "-v0",
           filePath,

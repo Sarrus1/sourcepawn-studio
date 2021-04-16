@@ -82,26 +82,24 @@ export class Providers {
       if (typeof completion === "undefined") {
         let file = URI.parse(import_file.uri).fsPath;
         if (fs.existsSync(file)) {
-          let new_completions = new smCompletions.FileCompletions(import_file.uri);
+          let new_completions : smCompletions.FileCompletions = new smCompletions.FileCompletions(import_file.uri);
           smParser.parse_file(file, new_completions, this.definitionsProvider.definitions, this.completionsProvider.documents, import_file.IsBuiltIn);
-
-          this.read_unscanned_imports(new_completions);
-
-          this.completionsProvider.completions.set(import_file.uri, new_completions);
+					this.read_unscanned_imports(new_completions);
+					this.completionsProvider.completions.set(import_file.uri, new_completions);
         }
       }
     }
   }
 
-	public parse_sm_api(sourcemod_home: string): void {
-    if (!sourcemod_home) return;
-    glob(path.join(sourcemod_home, "**/*.inc"), (err, files) => {
+	public parse_sm_api(SourcemodHome: string): void {
+    if (!SourcemodHome) return;
+    glob(path.join(SourcemodHome, "**/*.inc"), (err, files) => {
       for (let file of files) {
         let completions = new smCompletions.FileCompletions(URI.file(file).toString());
         smParser.parse_file(file, completions, this.definitionsProvider.definitions, this.completionsProvider.documents, true);
 
         let uri =
-          "file://__sourcemod_builtin/" + path.relative(sourcemod_home, file);
+          "file://__sourcemod_builtin/" + path.relative(SourcemodHome, file);
         this.completionsProvider.completions.set(uri, completions);
       }
     });

@@ -20,9 +20,8 @@ export function parse_file(
   documents: Map<string, URI>,
   IsBuiltIn: boolean = false
 ) {
-  fs.readFile(file, "utf-8", (err, data) => {
-    parse_text(data, file, completions, definitions, documents, IsBuiltIn);
-  });
+  let data = fs.readFileSync(file, "utf-8")
+  parse_text(data, file, completions, definitions, documents, IsBuiltIn);
 }
 
 export function parse_text(
@@ -100,13 +99,13 @@ class Parser {
     // Match global include
     match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>\s*$/);
     if (match) {
-      this.read_include(match, false);
+      this.read_include(match);
     }
 
     // Match relative include
     match = line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"\s*$/);
     if (match) {
-      this.read_include(match, true);
+      this.read_include(match);
     }
 
     // Match enums
@@ -198,7 +197,7 @@ class Parser {
     return;
   }
 
-  read_include(match, isRelative : boolean) {
+  read_include(match) {
     this.completions.resolve_import(match[1], this.documents, this.IsBuiltIn);
     return;
   }
