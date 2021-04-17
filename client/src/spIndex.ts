@@ -1,7 +1,7 @@
 import {ExtensionContext, workspace as Workspace, WorkspaceFolder, languages} from "vscode";
 import { registerSMLinter } from "./spLinter";
 import * as glob from "glob";
-import { SM_MODE } from "./spMode";
+import { SP_MODE } from "./spMode";
 import { Providers } from "./Providers/spProviders";
 import { registerSMCommands } from "./Commands/registerCommands"; 
 import { SMDocumentFormattingEditProvider } from "./spFormat";
@@ -48,11 +48,13 @@ export function activate(context: ExtensionContext) {
   }
 
   context.subscriptions.push(providers.completionsProvider);
-	context.subscriptions.push(languages.registerCompletionItemProvider(SM_MODE , providers.completionsProvider));
-	context.subscriptions.push(languages.registerSignatureHelpProvider(SM_MODE, providers.completionsProvider, "("));
-  context.subscriptions.push(languages.registerDefinitionProvider(SM_MODE, providers.definitionsProvider));
-  context.subscriptions.push(languages.registerDocumentFormattingEditProvider(SM_MODE, formatter));
-	context.subscriptions.push(languages.registerHoverProvider(SM_MODE, providers.hoverProvider));
+	context.subscriptions.push(languages.registerCompletionItemProvider(SP_MODE , providers.completionsProvider));
+	context.subscriptions.push(languages.registerCompletionItemProvider(SP_MODE, providers.documentationProvider, "*"));
+	context.subscriptions.push(languages.registerSignatureHelpProvider(SP_MODE, providers.completionsProvider, "("));
+  context.subscriptions.push(languages.registerDefinitionProvider(SP_MODE, providers.definitionsProvider));
+
+  context.subscriptions.push(languages.registerDocumentFormattingEditProvider(SP_MODE, formatter));
+	context.subscriptions.push(languages.registerHoverProvider(SP_MODE, providers.hoverProvider));
   // Passing providers as an arguments is required to be able to use 'this' in the callbacks.
 	Workspace.onDidChangeTextDocument(providers.handle_document_change, providers, context.subscriptions);
 	Workspace.onDidOpenTextDocument(providers.handle_new_document, providers, context.subscriptions);

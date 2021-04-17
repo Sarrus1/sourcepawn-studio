@@ -4,11 +4,13 @@ import * as path from "path";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
 import * as smCompletions from "./spCompletions";
+import * as spDocCompletions from "./spDocCompletions";
 import * as smDefinitions from "./spDefinitions";
 import * as smParser from "./spParser";
 
 export class Providers {
   completionsProvider: smCompletions.CompletionRepository;
+	documentationProvider: spDocCompletions.JsDocCompletionProvider;
   definitionsProvider: smDefinitions.DefinitionRepository;
 	hoverProvider: smCompletions.CompletionRepository;
 
@@ -21,6 +23,7 @@ export class Providers {
       globalState
     );
 		this.hoverProvider = CompletionRepo;
+		this.documentationProvider = new spDocCompletions.JsDocCompletionProvider;
   }
 
   public handle_added_document(event : vscode.FileCreateEvent) {

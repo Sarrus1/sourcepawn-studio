@@ -23,7 +23,8 @@
     "onCommand:extension.createREADME",
     "onCommand:extension.createMaster",
     "onCommand:extension.createProject",
-    "onCommand:extension.compileSM"
+    "onCommand:extension.compileSM",
+		"onCommand:extension.createDocumentation"
   ],
   "contributes": {
     "commands": [
@@ -52,6 +53,11 @@
         "title": "SM Create Project",
         "category": "Project"
       },
+			{
+        "command": "extension.createDocumentation",
+        "title": "SM Create Documentation",
+        "category": "Project"
+      },
       {
         "command": "extension.compileSM",
         "title": "SM Compile file",
@@ -67,6 +73,10 @@
         {
           "when": "resourceLangId == sourcepawn",
           "command": "extension.compileSM"
+        },
+				{
+          "when": "resourceLangId == sourcepawn",
+          "command": "extension.createDocumentation"
         }
       ],
       "editor/title": [
