@@ -270,7 +270,8 @@
     "glob": "^7.1.2",
     "n-readlines": "^1.0.1",
     "prettier": "2.2.1",
-    "vscode-uri": "^3.0.2"
+    "vscode-uri": "^3.0.2",
+		"ftp-deploy": "^2.4.1"
   },
   "devDependencies": {
     "@types/mocha": "^8.2.2",

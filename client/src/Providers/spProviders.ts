@@ -29,7 +29,9 @@ export class Providers {
   public handle_added_document(event : vscode.FileCreateEvent) {
     for(let file of event.files)
     {
-      this.completionsProvider.documents.set(path.basename(file.fsPath), file);
+			let Path=file.fsPath;
+			Path = Path.replace(".git", "");
+      this.completionsProvider.documents.set(path.basename(Path), file);
     }
   }
 
@@ -51,10 +53,9 @@ export class Providers {
   public handle_new_document(document: vscode.TextDocument) {
     let this_completions : smCompletions.FileCompletions = new smCompletions.FileCompletions(document.uri.toString());
 		let file_path : string =document.uri.fsPath;
-		if(path.extname(file_path)=="git") return;
-    this.completionsProvider.documents.set(path.basename(file_path), document.uri);
 		// Some file paths are appened with .git
-		//file_path = file_path.replace(".git", "");
+		if(file_path.includes(".git")) return;
+    this.completionsProvider.documents.set(path.basename(file_path), document.uri);
 		try{
 			smParser.parse_file(file_path, this_completions, this.definitionsProvider.definitions, this.completionsProvider.documents);
 		}
