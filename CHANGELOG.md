@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 1.11.0
+ - Added automatic documentation generation for functions.
+ - Improved the parsing of parsed includes.
+
 ### 1.1O.6
  - Added a config to toggle the linter on and off.
  - The `MainPath` setting now applies to the compile command as well.

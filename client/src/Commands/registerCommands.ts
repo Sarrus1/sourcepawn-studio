@@ -5,7 +5,6 @@ import * as CreateREADMECommand from "./createREADME";
 import * as CreateMasterCommand from "./createGitHubActions";
 import * as CreateProjectCommand from "./createProject";
 import * as CompileSMCommand from "./compileSM";
-import * as CreateDocumentation from "./createDocumentation";
 	
 export function registerSMCommands (context : ExtensionContext){
 	let createTask = commands.registerCommand(
@@ -43,11 +42,5 @@ export function registerSMCommands (context : ExtensionContext){
     CompileSMCommand.run.bind(undefined)
   );
   context.subscriptions.push(compileSM);
-
-	let createDocumentation = commands.registerCommand(
-    "extension.createDocumentation",
-    CreateDocumentation.run.bind(undefined)
-  );
-  context.subscriptions.push(createDocumentation);
 }
   
