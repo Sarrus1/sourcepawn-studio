@@ -36,7 +36,6 @@ export function refreshDiagnostics(
   document: vscode.TextDocument,
   compilerDiagnostics: vscode.DiagnosticCollection
 ) {
-
 	const DocumentDiagnostics : Map<string, vscode.Diagnostic[]> = new Map();
 	// Check if the user specified not to enable the linter for this file
 	const start = new vscode.Position(0, 0);
@@ -65,8 +64,15 @@ export function refreshDiagnostics(
 		let MainPath : string = vscode.workspace.getConfiguration("sourcepawn").get("MainPath") || "";
 		if(MainPath != ""){
 			try{
-				let workspace : vscode.WorkspaceFolder = vscode.workspace.workspaceFolders[0];
-				MainPath = path.join(workspace.uri.fsPath, MainPath);
+				if(!fs.existsSync(MainPath))
+				{
+					let workspace : vscode.WorkspaceFolder = vscode.workspace.workspaceFolders[0];
+					MainPath = path.join(workspace.uri.fsPath, MainPath);
+					if(!fs.existsSync(MainPath))
+					{
+						throw "MainPath is incorrect."
+					}
+				}
 				filename = path.basename(MainPath);
 			}
 			catch(error){

@@ -7,8 +7,15 @@ export async function run(args: any) {
 	let activeDocumentPath:string = vscode.workspace.getConfiguration("sourcepawn").get("MainPath") || "";
 	if(activeDocumentPath != ""){
 		try{
-			let workspace : vscode.WorkspaceFolder = vscode.workspace.workspaceFolders[0];
-			activeDocumentPath = path.join(workspace.uri.fsPath, activeDocumentPath);
+			if(!fs.existsSync(activeDocumentPath))
+			{
+				let workspace : vscode.WorkspaceFolder = vscode.workspace.workspaceFolders[0];
+				activeDocumentPath = path.join(workspace.uri.fsPath, activeDocumentPath);
+				if(!fs.existsSync(activeDocumentPath))
+				{
+					throw "MainPath is incorrect."
+				}
+			}
 		}
 		catch(error){
 			vscode.window

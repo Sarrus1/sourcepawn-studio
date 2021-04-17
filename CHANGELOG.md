@@ -3,6 +3,8 @@
 ### 1.11.0
  - Added automatic documentation generation for functions.
  - Improved the parsing of parsed includes.
+ - Changed the name of the settings prefix for better consistency.
+ - sourcepawn.MainPath setting can now be relative or absolute.
 
 ### 1.1O.6
  - Added a config to toggle the linter on and off.
