@@ -191,7 +191,7 @@ class Parser {
 
     // Match functions without description
     match = line.match(
-      /(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*)$/
+      /(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?$/
     );
     if (match && !this.IsBuiltIn) {
       this.read_non_descripted_function(match, "");
@@ -446,10 +446,10 @@ class Parser {
         if (use_line_comment) {
           //return this.read_function(current_line);
           if (
-            /\s*(?:(?:static|native|stock|public|forward)+\s*)+\s+([^\s]+)\s*([A-Za-z_].*)/.test(
+            /\s*(?:static|native|stock|public|forward)?\s*([^\s]+)\s*([A-Za-z_].*)/.test(
               current_line
             ) ||
-            /\s*(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/.test(
+            /\s*(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/.test(
               current_line
             )
           ) {
@@ -463,10 +463,10 @@ class Parser {
           this.lineNb++;
           if (!(typeof current_line === "undefined")) {
             if (
-              /\s*(?:(?:static|native|stock|public|forward)+\s*)+\s+([^\s]+)\s*([A-Za-z_].*)/.test(
+              /\s*(?:static|native|stock|public|forward)?\s*([^\s]+)\s*([A-Za-z_].*)/.test(
                 current_line
               ) ||
-              /\s*(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/.test(
+              /\s*(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/.test(
                 current_line
               )
             ) {

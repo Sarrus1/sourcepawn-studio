@@ -6,6 +6,8 @@
  - Changed the name of the settings prefix for better consistency.
  - The `sourcepawn.MainPath` setting can now be relative or absolute.
  - Added support for enum's member documentation on hover.
+ - Fixed the linter on Windows.
+ - Added support for functions without a `public/stock/static/native` prefix.
 
 ### 1.10.6
  - Added a config to toggle the linter on and off.
