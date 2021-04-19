@@ -267,16 +267,27 @@ class Parser {
         if (!match) {
           continue;
         }
+        let enumMemberName = match[1];
+        // Try to match multiblock comments
+        let enumMemberDescription:string;
+        match = line.match(/\/\*\*<?\s*(.+?(?=\*\/))/)
+        if(match){
+          enumMemberDescription = match[1];
+        }
+        match = line.match(/\/\/<?\s*(.*)/)
+        if(match){
+          enumMemberDescription = match[1];
+        }
         this.completions.add(
-          match[1],
-          new EnumMemberCompletion(match[1], this.file, enumCompletion)
+          enumMemberName,
+          new EnumMemberCompletion(enumMemberName, this.file, enumMemberDescription, enumCompletion)
         );
         let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
           URI.file(this.file),
           new vscode.Range(this.lineNb, 0, this.lineNb, 0),
           smDefinitions.DefinitionKind.EnumMember
         );
-        this.definitions.set(match[1], def);
+        this.definitions.set(enumMemberName, def);
       }
       console.debug("end", iter);
       return;

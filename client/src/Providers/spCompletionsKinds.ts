@@ -213,11 +213,13 @@ export class EnumMemberCompletion implements Completion {
   name: string;
   enum: EnumCompletion;
   file: string;
+  description: string;
   kind = vscode.CompletionItemKind.EnumMember;
 
-  constructor(name: string, file: string, Enum: EnumCompletion) {
+  constructor(name: string, file: string, description: string, Enum: EnumCompletion) {
     this.name = name;
     this.file = file;
+    this.description = description;
     this.enum = Enum;
   }
 
@@ -234,7 +236,7 @@ export class EnumMemberCompletion implements Completion {
   }
 
   get_hover(): vscode.Hover {
-    return;
+    return new vscode.Hover([{language:"sourcepawn", value:this.name}, description_to_md(this.description)]);
   }
 }
 
