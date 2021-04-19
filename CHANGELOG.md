@@ -4,18 +4,19 @@
  - Added automatic documentation generation for functions.
  - Improved the parsing of parsed includes.
  - Changed the name of the settings prefix for better consistency.
- - sourcepawn.MainPath setting can now be relative or absolute.
+ - The `sourcepawn.MainPath` setting can now be relative or absolute.
+ - Added support for enum's member documentation on hover.
 
-### 1.1O.6
+### 1.10.6
  - Added a config to toggle the linter on and off.
  - The `MainPath` setting now applies to the compile command as well.
  - Unit tests have been implemented for better reliability.
  - The code has been cleaned up.
 
-### 1.1O.5
+### 1.10.5
  - Second hotfix for commands not working anymore.
 
-### 1.1O.4
+### 1.10.4
  - Hotfix for commands not working anymore.
 
 ### 1.10.3

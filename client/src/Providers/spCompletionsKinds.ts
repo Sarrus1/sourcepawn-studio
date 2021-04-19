@@ -227,7 +227,7 @@ export class EnumMemberCompletion implements Completion {
     return {
       label: this.name,
       kind: this.kind,
-      detail: this.enum.name
+      detail: this.enum.name == "" ? basename(this.file) : this.enum.name
     };
   }
 

@@ -289,7 +289,6 @@ class Parser {
         );
         this.definitions.set(enumMemberName, def);
       }
-      console.debug("end", iter);
       return;
     }
   }
