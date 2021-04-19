@@ -156,6 +156,23 @@ export class CompletionRepository
       this.get_included_files(completion, includes);
     }
     includes.add(file);
+    let MainPath : string = vscode.workspace.getConfiguration("sourcepawn").get("MainPath") || "";
+		if(MainPath != ""){
+      if(!existsSync(MainPath))
+      {
+        let workspace : vscode.WorkspaceFolder = vscode.workspace.workspaceFolders[0];
+        MainPath = path.join(workspace.uri.fsPath, MainPath);
+        if(!existsSync(MainPath))
+        {
+          throw "MainPath is incorrect."
+        }
+      }
+      let uri = URI.file(MainPath).toString();
+      if(!includes.has(uri))
+      {
+        includes.add(uri);
+      }
+    }
     return [...includes]
       .map((file) => {
         return this.get_file_completions(file);
