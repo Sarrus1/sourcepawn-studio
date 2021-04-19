@@ -230,10 +230,10 @@ class Parser {
           this.file
         );
         this.completions.add(matchBis[1], enumCompletion);
-
-        let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+        var def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
           URI.file(this.file),
-          new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+          // For some reason, function declared at the top of the file will cause an error here
+          new vscode.Range(this.lineNb >= 0 ? this.lineNb : 0, 0, this.lineNb >= 0 ? this.lineNb : 0, 0),
           smDefinitions.DefinitionKind.Enum
         );
         this.definitions.set(match[1], def);
@@ -377,7 +377,8 @@ class Parser {
     // Save as definition
     let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
       URI.file(this.file),
-      new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+      // For some reason, function declared at the top of the file will cause an error here
+      new vscode.Range(this.lineNb >= 0 ? this.lineNb : 0, 0, this.lineNb >= 0 ? this.lineNb : 0, 0),
       smDefinitions.DefinitionKind.Function
     );
     this.definitions.set(name_match, def);
@@ -393,7 +394,6 @@ class Parser {
       if (typeof line === "undefined") {
         return;
       }
-      //partial_params_match += line;
       match_buffer += line;
       maxiter++;
     }

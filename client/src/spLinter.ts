@@ -134,7 +134,7 @@ export function refreshDiagnostics(
         execFileSync(spcomp, spcomp_opt);
         fs.unlinkSync(TempPath);
       } catch (error) {
-        let regex = /([\/A-z-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning).+)/gm;
+        let regex = /([:\/\\A-z-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning).+)/gm;
         let matches: RegExpExecArray | null;
 				let path : string;
 				let diagnostics : vscode.Diagnostic[];
@@ -162,7 +162,7 @@ export function refreshDiagnostics(
       }
 			compilerDiagnostics.clear();
 			for(let [path, diagnostics] of DocumentDiagnostics) {
-				compilerDiagnostics.set(URI.parse(path), diagnostics);
+				compilerDiagnostics.set(URI.file(path), diagnostics);
 			}
     }
   }, 300);	

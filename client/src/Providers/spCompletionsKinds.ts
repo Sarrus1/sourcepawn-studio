@@ -236,7 +236,16 @@ export class EnumMemberCompletion implements Completion {
   }
 
   get_hover(): vscode.Hover {
-    return new vscode.Hover([{language:"sourcepawn", value:this.name}, description_to_md(this.description)]);
+    let enumName = this.enum.name;
+    if(enumName=="")
+    {
+      return new vscode.Hover([{language:"sourcepawn", value:this.name}, description_to_md(this.description)]);
+    }
+    else
+    {
+      return new vscode.Hover([{language:"sourcepawn", value:this.enum.name+" "+this.name}, description_to_md(this.description)]);
+    }
+    
   }
 }
 
