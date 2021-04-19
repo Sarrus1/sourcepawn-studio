@@ -5,6 +5,7 @@ import * as CreateREADMECommand from "./createREADME";
 import * as CreateMasterCommand from "./createGitHubActions";
 import * as CreateProjectCommand from "./createProject";
 import * as CompileSMCommand from "./compileSM";
+import * as UploadToServerCommand from "./uploadToServer";
 	
 export function registerSMCommands (context : ExtensionContext){
 	let createTask = commands.registerCommand(
@@ -42,5 +43,12 @@ export function registerSMCommands (context : ExtensionContext){
     CompileSMCommand.run.bind(undefined)
   );
   context.subscriptions.push(compileSM);
+
+  let UploadToServer = commands.registerCommand(
+    "extension.uploadToServer",
+    UploadToServerCommand.run.bind(undefined)
+  );
+  context.subscriptions.push(UploadToServer);
+  
 }
   

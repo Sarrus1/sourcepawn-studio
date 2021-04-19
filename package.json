@@ -23,7 +23,8 @@
     "onCommand:extension.createREADME",
     "onCommand:extension.createMaster",
     "onCommand:extension.createProject",
-    "onCommand:extension.compileSM"
+    "onCommand:extension.compileSM",
+    "onCommand:extension.uploadToServer"
   ],
   "contributes": {
     "commands": [
@@ -50,6 +51,11 @@
       {
         "command": "extension.createProject",
         "title": "SM Create Project",
+        "category": "Project"
+      },
+      {
+        "command": "extension.uploadToServer",
+        "title": "SM Upload to Server",
         "category": "Project"
       },
       {
@@ -114,7 +120,7 @@
           "default": true,
           "description": "Whether to show the 'Compile Code' icon in editor title menu."
         },
-				"sourcepawn.enableLinter": {
+        "sourcepawn.enableLinter": {
           "type": "boolean",
           "default": true,
           "description": "Toggle the linter on or off."
@@ -137,6 +143,23 @@
           "default": [],
           "description": "SourcePawn linter compiler options. Don't add paths here."
         },
+        "sourcepawn.UploadOptions": {
+            "type": "object",
+            "default": {
+              "user": "",
+              "password": "",
+              "host": "",
+              "port": 21,
+              "localRoot": "",
+              "remoteRoot": "/public_html/remote-folder/",
+              "include": ["**"],
+              "exclude": ["scripting/**/*.sp", ".vscode/", ".gitignore", "*.md", ".git"],
+              "deleteRemote": false,
+              "forcePasv": true,
+              "sftp": false
+            }
+        },
+
         "sourcepawn.formatterSettings": {
           "type": "array",
           "default": [
@@ -271,7 +294,7 @@
     "n-readlines": "^1.0.1",
     "prettier": "2.2.1",
     "vscode-uri": "^3.0.2",
-		"ftp-deploy": "^2.4.1"
+    "ftp-deploy": "^2.4.1"
   },
   "devDependencies": {
     "@types/mocha": "^8.2.2",
