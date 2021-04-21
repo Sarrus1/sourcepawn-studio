@@ -8,7 +8,7 @@ import {
   VariableCompletion,
   MethodCompletion,
   FunctionParam,
-  PropertyCompletion
+  PropertyCompletion,
 } from "./spCompletionsKinds";
 import * as vscode from "vscode";
 import { URI } from "vscode-uri";
@@ -224,7 +224,7 @@ class Parser {
       // TODO: Add enum struct support here
     } else {
       let matchBis = match[0].match(/^\s*(?:enum\s+)([A-z0-9_]*)/);
-      if(matchBis){
+      if (matchBis) {
         // Create a completion for the enum itself if it has a name
         var enumCompletion: EnumCompletion = new EnumCompletion(
           matchBis[1],
@@ -234,16 +234,17 @@ class Parser {
         var def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
           URI.file(this.file),
           // For some reason, function declared at the top of the file will cause an error here
-          new vscode.Range(this.lineNb >= 0 ? this.lineNb : 0, 0, this.lineNb >= 0 ? this.lineNb : 0, 0),
+          new vscode.Range(
+            this.lineNb >= 0 ? this.lineNb : 0,
+            0,
+            this.lineNb >= 0 ? this.lineNb : 0,
+            0
+          ),
           smDefinitions.DefinitionKind.Enum
         );
         this.definitions.set(match[1], def);
-      }
-      else{
-        var enumCompletion: EnumCompletion = new EnumCompletion(
-          "",
-          this.file
-        );
+      } else {
+        var enumCompletion: EnumCompletion = new EnumCompletion("", this.file);
         this.completions.add(matchBis[1], enumCompletion);
       }
 
@@ -270,18 +271,23 @@ class Parser {
         }
         let enumMemberName = match[1];
         // Try to match multiblock comments
-        let enumMemberDescription:string;
-        match = line.match(/\/\*\*<?\s*(.+?(?=\*\/))/)
-        if(match){
+        let enumMemberDescription: string;
+        match = line.match(/\/\*\*<?\s*(.+?(?=\*\/))/);
+        if (match) {
           enumMemberDescription = match[1];
         }
-        match = line.match(/\/\/<?\s*(.*)/)
-        if(match){
+        match = line.match(/\/\/<?\s*(.*)/);
+        if (match) {
           enumMemberDescription = match[1];
         }
         this.completions.add(
           enumMemberName,
-          new EnumMemberCompletion(enumMemberName, this.file, enumMemberDescription, enumCompletion)
+          new EnumMemberCompletion(
+            enumMemberName,
+            this.file,
+            enumMemberDescription,
+            enumCompletion
+          )
         );
         let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
           URI.file(this.file),
@@ -379,7 +385,12 @@ class Parser {
     let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
       URI.file(this.file),
       // For some reason, function declared at the top of the file will cause an error here
-      new vscode.Range(this.lineNb >= 0 ? this.lineNb : 0, 0, this.lineNb >= 0 ? this.lineNb : 0, 0),
+      new vscode.Range(
+        this.lineNb >= 0 ? this.lineNb : 0,
+        0,
+        this.lineNb >= 0 ? this.lineNb : 0,
+        0
+      ),
       smDefinitions.DefinitionKind.Function
     );
     this.definitions.set(name_match, def);
@@ -508,8 +519,13 @@ class Parser {
   }
 
   read_property(match) {
-    let name_match:string = match[2];
-    let NewPropertyCompletion = new PropertyCompletion(this.state_data.name, name_match, this.file, "");
+    let name_match: string = match[2];
+    let NewPropertyCompletion = new PropertyCompletion(
+      this.state_data.name,
+      name_match,
+      this.file,
+      ""
+    );
     this.completions.add(name_match, NewPropertyCompletion);
   }
 

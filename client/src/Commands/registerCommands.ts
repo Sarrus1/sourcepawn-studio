@@ -1,4 +1,4 @@
-﻿import {commands, ExtensionContext} from "vscode";
+﻿import { commands, ExtensionContext } from "vscode";
 import * as CreateTaskCommand from "./createTask";
 import * as CreateScriptCommand from "./createScript";
 import * as CreateREADMECommand from "./createREADME";
@@ -7,9 +7,9 @@ import * as CreateProjectCommand from "./createProject";
 import * as CompileSMCommand from "./compileSM";
 import * as UploadToServerCommand from "./uploadToServer";
 import * as RefreshPluginsCommand from "./refreshPlugins";
-	
-export function registerSMCommands (context : ExtensionContext){
-	let createTask = commands.registerCommand(
+
+export function registerSMCommands(context: ExtensionContext) {
+  let createTask = commands.registerCommand(
     "sourcepawn-vscode.createTask",
     CreateTaskCommand.run.bind(undefined)
   );
@@ -39,7 +39,7 @@ export function registerSMCommands (context : ExtensionContext){
   );
   context.subscriptions.push(createProject);
 
-	let compileSM = commands.registerCommand(
+  let compileSM = commands.registerCommand(
     "sourcepawn-vscode.compileSM",
     CompileSMCommand.run.bind(undefined)
   );
@@ -56,6 +56,4 @@ export function registerSMCommands (context : ExtensionContext){
     RefreshPluginsCommand.run.bind(undefined)
   );
   context.subscriptions.push(RefreshPlugins);
-  
 }
-  

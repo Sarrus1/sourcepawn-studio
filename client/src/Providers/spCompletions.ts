@@ -4,7 +4,6 @@ import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 import { Completion, Include } from "./spCompletionsKinds";
 
-
 export class FileCompletions {
   completions: Map<string, Completion>;
   includes: Include[];
@@ -47,17 +46,16 @@ export class FileCompletions {
     documents: Map<string, URI>,
     IsBuiltIn: boolean = false
   ) {
-    let inc_file : string;
+    let inc_file: string;
     // If no extension is provided, it's a .inc file
-    if(!/.sp\s*$/g.test(file)||!/.inc\s*$/g.test(file))
-    {
+    if (!/.sp\s*$/g.test(file) || !/.inc\s*$/g.test(file)) {
       file += ".inc";
     }
-		
-		let match = file.match(/[A-z0-9_.]*$/)
-		if(match) file = match[0];
-    let uri : URI;
-    if(!(uri = documents.get(file))){
+
+    let match = file.match(/[A-z0-9_.]*$/);
+    if (match) file = match[0];
+    let uri: URI;
+    if (!(uri = documents.get(file))) {
       let includes_dirs: string[] = vscode.workspace
         .getConfiguration("sourcepawn")
         .get("optionalIncludeDirsPaths");
@@ -69,11 +67,9 @@ export class FileCompletions {
         }
       }
       this.add_include("file://__sourcemod_builtin/" + file, IsBuiltIn);
-    }
-    else{
+    } else {
       this.add_include(uri.toString(), IsBuiltIn);
     }
-    
   }
 }
 
@@ -138,12 +134,18 @@ export class CompletionRepository
     //return all_completions_list;
     if (is_method) {
       all_completions_list.items = all_completions_list.items.filter(
-        (completion) => (completion.kind === vscode.CompletionItemKind.Method || completion.kind === vscode.CompletionItemKind.Property)
+        (completion) =>
+          completion.kind === vscode.CompletionItemKind.Method ||
+          completion.kind === vscode.CompletionItemKind.Property
       );
       return all_completions_list;
     } else {
       all_completions_list.items = all_completions_list.items.filter(
-        (completion) => (!(completion.kind === vscode.CompletionItemKind.Method || completion.kind === vscode.CompletionItemKind.Property))
+        (completion) =>
+          !(
+            completion.kind === vscode.CompletionItemKind.Method ||
+            completion.kind === vscode.CompletionItemKind.Property
+          )
       );
       return all_completions_list;
     }
@@ -157,20 +159,19 @@ export class CompletionRepository
     }
     includes.add(file);
     // TODO: Add MainPath's includes as well if needed.
-    let MainPath : string = vscode.workspace.getConfiguration("sourcepawn").get("MainPath") || "";
-		if(MainPath != ""){
-      if(!existsSync(MainPath))
-      {
-        let workspace : vscode.WorkspaceFolder = vscode.workspace.workspaceFolders[0];
+    let MainPath: string =
+      vscode.workspace.getConfiguration("sourcepawn").get("MainPath") || "";
+    if (MainPath != "") {
+      if (!existsSync(MainPath)) {
+        let workspace: vscode.WorkspaceFolder =
+          vscode.workspace.workspaceFolders[0];
         MainPath = path.join(workspace.uri.fsPath, MainPath);
-        if(!existsSync(MainPath))
-        {
-          throw "MainPath is incorrect."
+        if (!existsSync(MainPath)) {
+          throw "MainPath is incorrect.";
         }
       }
       let uri = URI.file(MainPath).toString();
-      if(!includes.has(uri))
-      {
+      if (!includes.has(uri)) {
         includes.add(uri);
       }
     }
@@ -205,23 +206,23 @@ export class CompletionRepository
     }
   }
 
-	provideHover(
+  provideHover(
     document: vscode.TextDocument,
     position: vscode.Position,
     token: vscode.CancellationToken
   ): vscode.Hover {
-		let range = document.getWordRangeAtPosition(position);
-		let word = document.getText(range);
-		let completions = this.get_all_completions(
-			document.uri.toString()
-		).filter((completion) => {
-			return completion.name === word;
-		});
+    let range = document.getWordRangeAtPosition(position);
+    let word = document.getText(range);
+    let completions = this.get_all_completions(document.uri.toString()).filter(
+      (completion) => {
+        return completion.name === word;
+      }
+    );
 
-		if (completions.length > 0) {
-			return completions[0].get_hover();
-	}
-}
+    if (completions.length > 0) {
+      return completions[0].get_hover();
+    }
+  }
 
   provideSignatureHelp(
     document: vscode.TextDocument,
