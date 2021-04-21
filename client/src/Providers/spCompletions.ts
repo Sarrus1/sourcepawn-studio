@@ -137,13 +137,13 @@ export class CompletionRepository
     }
     //return all_completions_list;
     if (is_method) {
-      all_completions_list.items.filter(
-        (completion) => completion.kind === vscode.CompletionItemKind.Method
+      all_completions_list.items = all_completions_list.items.filter(
+        (completion) => (completion.kind === vscode.CompletionItemKind.Method || completion.kind === vscode.CompletionItemKind.Property)
       );
       return all_completions_list;
     } else {
-      all_completions_list.items.filter(
-        (completion) => completion.kind !== vscode.CompletionItemKind.Method
+      all_completions_list.items = all_completions_list.items.filter(
+        (completion) => (!(completion.kind === vscode.CompletionItemKind.Method || completion.kind === vscode.CompletionItemKind.Property))
       );
       return all_completions_list;
     }

@@ -8,6 +8,7 @@ import {
   VariableCompletion,
   MethodCompletion,
   FunctionParam,
+  PropertyCompletion
 } from "./spCompletionsKinds";
 import * as vscode from "vscode";
 import { URI } from "vscode-uri";
@@ -179,7 +180,7 @@ class Parser {
       if (this.state[this.state.length - 1] === State.Methodmap) {
         this.state.push(State.Property);
       }
-
+      this.read_property(match);
       return;
     }
 
@@ -372,7 +373,7 @@ class Parser {
     }
     // Old style
     else {
-      name_match = match[1];
+      name_match = match[1].replace(/[A-z0-9_]+:/, "");
     }
     // Save as definition
     let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
@@ -445,10 +446,10 @@ class Parser {
 
         if (use_line_comment) {
           if (
-            /\s*(?:static|native|stock|public|forward)?\s*([^\s]+)\s*([A-Za-z_].*)/.test(
+            /\s*(?:static|native|stock|public|forward)?\s*([^\s]+)\s*([A-Za-z_].*)\s*\(/.test(
               current_line
             ) ||
-            /\s*(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/.test(
+            /\s*(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)\s*\(/.test(
               current_line
             )
           ) {
@@ -504,6 +505,12 @@ class Parser {
         this.consume_multiline_comment(current_line, use_line_comment);
       }
     }
+  }
+
+  read_property(match) {
+    let name_match:string = match[2];
+    let NewPropertyCompletion = new PropertyCompletion(this.state_data.name, name_match, this.file, "");
+    this.completions.add(name_match, NewPropertyCompletion);
   }
 
   clean_param(partial_params_match: string) {

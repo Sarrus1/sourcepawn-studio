@@ -95,24 +95,21 @@ export class MethodCompletion implements Completion {
 
   to_completion_item(file: string): vscode.CompletionItem {
     return {
-      label: `${this.method_map}.${this.name}`,
-      insertText: this.name,
-      filterText: this.name,
+      label: this.name,
       kind: this.kind,
-      detail: this.description,
+      detail: this.method_map,
     };
   }
 
   get_signature(): vscode.SignatureInformation {
     return {
       label: this.detail,
-      documentation: this.description,
+      documentation: description_to_md(this.description),
       parameters: this.params,
     };
   }
 
   get_hover(): vscode.Hover {
-    let description: string = "";
     if (!this.description) {
       return;
     }
@@ -246,6 +243,40 @@ export class EnumMemberCompletion implements Completion {
       return new vscode.Hover([{language:"sourcepawn", value:this.enum.name+" "+this.name}, description_to_md(this.description)]);
     }
     
+  }
+}
+
+export class PropertyCompletion implements Completion {
+  method_map:string;
+  name: string;
+  file: string;
+  description: string;
+  kind = vscode.CompletionItemKind.Property;
+
+  constructor(method_map: string, name: string, file: string, description: string) {
+    this.method_map = method_map;
+    this.name = name;
+    this.file = file;
+    this.description = description;
+  }
+
+  to_completion_item(file: string): vscode.CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: this.method_map
+    };
+  }
+
+  get_signature(): vscode.SignatureInformation {
+    return undefined;
+  }
+
+  get_hover(): vscode.Hover {
+    if (!this.description) {
+      return;
+    }
+    return new vscode.Hover([{language:"sourcepawn", value: this.name}, description_to_md(this.description)]);
   }
 }
 
