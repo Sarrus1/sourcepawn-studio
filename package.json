@@ -24,7 +24,8 @@
     "onCommand:extension.createMaster",
     "onCommand:extension.createProject",
     "onCommand:extension.compileSM",
-    "onCommand:extension.uploadToServer"
+    "onCommand:extension.uploadToServer",
+    "onCommand:extension.refreshPlugins"
   ],
   "contributes": {
     "commands": [
@@ -56,6 +57,11 @@
       {
         "command": "extension.uploadToServer",
         "title": "SM Upload to Server",
+        "category": "Project"
+      },
+      {
+        "command": "extension.refreshPlugins",
+        "title": "SM Refresh Server Plugins",
         "category": "Project"
       },
       {
@@ -144,22 +150,39 @@
           "description": "SourcePawn linter compiler options. Don't add paths here."
         },
         "sourcepawn.UploadOptions": {
-            "type": "object",
-            "default": {
-              "user": "",
-              "password": "",
-              "host": "",
-              "port": 21,
-              "localRoot": "",
-              "remoteRoot": "/public_html/remote-folder/",
-              "include": ["**"],
-              "exclude": ["scripting/**/*.sp", ".vscode/", ".gitignore", "*.md", ".git"],
-              "deleteRemote": false,
-              "forcePasv": true,
-              "sftp": false
-            }
+          "type": "object",
+          "default": {
+            "user": "",
+            "password": "",
+            "host": "",
+            "port": 21,
+            "localRoot": "",
+            "remoteRoot": "/public_html/remote-folder/",
+            "include": [
+              "**"
+            ],
+            "exclude": [
+              "scripting/**/*.sp",
+              ".vscode/",
+              ".gitignore",
+              "*.md",
+              ".git"
+            ],
+            "deleteRemote": false,
+            "forcePasv": true,
+            "sftp": false
+          }
         },
-
+        "sourcepawn.SourceServerOptions": {
+          "type": "object",
+          "default": {
+            "host": "",
+            "port": 27015,
+            "encoding": "ascii",
+            "timeout": 1000,
+            "password": ""
+          }
+        },
         "sourcepawn.formatterSettings": {
           "type": "array",
           "default": [
@@ -294,7 +317,8 @@
     "n-readlines": "^1.0.1",
     "prettier": "2.2.1",
     "vscode-uri": "^3.0.2",
-    "ftp-deploy": "^2.4.1"
+    "ftp-deploy": "^2.4.1",
+    "rcon-srcds": "^2.0.1"
   },
   "devDependencies": {
     "@types/mocha": "^8.2.2",

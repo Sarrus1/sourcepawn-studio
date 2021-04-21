@@ -8,6 +8,7 @@
  - Added support for enum's member documentation on hover.
  - Fixed the linter on Windows.
  - Added support for functions without a `public/stock/static/native` prefix.
+ - Sub .sp files now inherit from MainPath's completions.
 
 ### 1.10.6
  - Added a config to toggle the linter on and off.

@@ -6,6 +6,7 @@ import * as CreateMasterCommand from "./createGitHubActions";
 import * as CreateProjectCommand from "./createProject";
 import * as CompileSMCommand from "./compileSM";
 import * as UploadToServerCommand from "./uploadToServer";
+import * as RefreshPluginsCommand from "./refreshPlugins";
 	
 export function registerSMCommands (context : ExtensionContext){
 	let createTask = commands.registerCommand(
@@ -49,6 +50,12 @@ export function registerSMCommands (context : ExtensionContext){
     UploadToServerCommand.run.bind(undefined)
   );
   context.subscriptions.push(UploadToServer);
+
+  let RefreshPlugins = commands.registerCommand(
+    "extension.refreshPlugins",
+    RefreshPluginsCommand.run.bind(undefined)
+  );
+  context.subscriptions.push(RefreshPlugins);
   
 }
   

@@ -156,6 +156,7 @@ export class CompletionRepository
       this.get_included_files(completion, includes);
     }
     includes.add(file);
+    // TODO: Add MainPath's includes as well if needed.
     let MainPath : string = vscode.workspace.getConfiguration("sourcepawn").get("MainPath") || "";
 		if(MainPath != ""){
       if(!existsSync(MainPath))
