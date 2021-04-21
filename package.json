@@ -18,54 +18,54 @@
   ],
   "activationEvents": [
     "onLanguage:sourcepawn",
-    "onCommand:extension.createTask",
-    "onCommand:extension.createScript",
-    "onCommand:extension.createREADME",
-    "onCommand:extension.createMaster",
-    "onCommand:extension.createProject",
-    "onCommand:extension.compileSM",
-    "onCommand:extension.uploadToServer",
-    "onCommand:extension.refreshPlugins"
+    "onCommand:sourcepawn-vscode.createTask",
+    "onCommand:sourcepawn-vscode.createScript",
+    "onCommand:sourcepawn-vscode.createREADME",
+    "onCommand:sourcepawn-vscode.createMaster",
+    "onCommand:sourcepawn-vscode.createProject",
+    "onCommand:sourcepawn-vscode.compileSM",
+    "onCommand:sourcepawn-vscode.uploadToServer",
+    "onCommand:sourcepawn-vscode.refreshPlugins"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "extension.createTask",
+        "command": "sourcepawn-vscode.createTask",
         "title": "SM Create Task File",
         "category": "Project"
       },
       {
-        "command": "extension.createScript",
+        "command": "sourcepawn-vscode.createScript",
         "title": "SM Create Script File",
         "category": "Project"
       },
       {
-        "command": "extension.createREADME",
+        "command": "sourcepawn-vscode.createREADME",
         "title": "SM Create README File",
         "category": "Project"
       },
       {
-        "command": "extension.createMaster",
+        "command": "sourcepawn-vscode.createMaster",
         "title": "SM Create GitHub Actions",
         "category": "Project"
       },
       {
-        "command": "extension.createProject",
+        "command": "sourcepawn-vscode.createProject",
         "title": "SM Create Project",
         "category": "Project"
       },
       {
-        "command": "extension.uploadToServer",
+        "command": "sourcepawn-vscode.uploadToServer",
         "title": "SM Upload to Server",
         "category": "Project"
       },
       {
-        "command": "extension.refreshPlugins",
+        "command": "sourcepawn-vscode.refreshPlugins",
         "title": "SM Refresh Server Plugins",
         "category": "Project"
       },
       {
-        "command": "extension.compileSM",
+        "command": "sourcepawn-vscode.compileSM",
         "title": "SM Compile file",
         "category": "ShortcutMenuBar",
         "icon": {
@@ -78,20 +78,20 @@
       "editor/context": [
         {
           "when": "resourceLangId == sourcepawn",
-          "command": "extension.compileSM"
+          "command": "sourcepawn-vscode.compileSM"
         }
       ],
       "editor/title": [
         {
           "when": "editorTextFocus && resourceLangId == sourcepawn && config.sourcepawn.showCompileIconInEditorTitleMenu",
-          "command": "extension.compileSM",
+          "command": "sourcepawn-vscode.compileSM",
           "group": "navigation@1"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "extension.compileSM",
+        "command": "sourcepawn-vscode.compileSM",
         "key": "ctrl+shift+d",
         "mac": "cmd+shift+d",
         "when": "editorTextFocus && resourceLangId == sourcepawn"
@@ -125,6 +125,16 @@
           "type": "boolean",
           "default": true,
           "description": "Whether to show the 'Compile Code' icon in editor title menu."
+        },
+        "sourcepawn.refreshAfterSuccessfulUpload": {
+          "type": "boolean",
+          "default": false,
+          "description": "Should the plugins list on the server be refreshed with `sm plugins refresh` when the upload command executed successfully."
+        },
+        "sourcepawn.uploadAfterSuccessfulCompile": {
+          "type": "boolean",
+          "default": false,
+          "description": "Should the upload command be executed on a successful compile."
         },
         "sourcepawn.enableLinter": {
           "type": "boolean",
@@ -171,7 +181,8 @@
             "deleteRemote": false,
             "forcePasv": true,
             "sftp": false
-          }
+          },
+          "description": "Upload options for the FTP/SFTP client."
         },
         "sourcepawn.SourceServerOptions": {
           "type": "object",
@@ -181,7 +192,8 @@
             "encoding": "ascii",
             "timeout": 1000,
             "password": ""
-          }
+          },
+          "description": "Options for the Source server to refresh the plugins on."
         },
         "sourcepawn.formatterSettings": {
           "type": "array",

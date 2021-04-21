@@ -2,7 +2,11 @@
 
 ### 1.11.0
  - Added automatic documentation generation for functions.
- - Improved the parsing of parsed includes.
+ - Added a command to refresh plugins on a Source server.
+ - Added a command to upload plugins to an FTP/SFTP server.
+ - Added a setting to automatically deploy the plugin to an FTP/SFTP server after a successful compile.
+ - Added a setting to automatically refresh the Source server's plugins list after a successful upload.
+ - Improved the parsing of already parsed includes.
  - Changed the name of the settings prefix for better consistency.
  - The `sourcepawn.MainPath` setting can now be relative or absolute.
  - Added support for enum's member documentation on hover.

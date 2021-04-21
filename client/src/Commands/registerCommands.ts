@@ -10,49 +10,49 @@ import * as RefreshPluginsCommand from "./refreshPlugins";
 	
 export function registerSMCommands (context : ExtensionContext){
 	let createTask = commands.registerCommand(
-    "extension.createTask",
+    "sourcepawn-vscode.createTask",
     CreateTaskCommand.run.bind(undefined)
   );
   context.subscriptions.push(createTask);
 
   let createScript = commands.registerCommand(
-    "extension.createScript",
+    "sourcepawn-vscode.createScript",
     CreateScriptCommand.run.bind(undefined)
   );
   context.subscriptions.push(createScript);
 
   let createREADME = commands.registerCommand(
-    "extension.createREADME",
+    "sourcepawn-vscode.createREADME",
     CreateREADMECommand.run.bind(undefined)
   );
   context.subscriptions.push(createREADME);
 
   let createMaster = commands.registerCommand(
-    "extension.createMaster",
+    "sourcepawn-vscode.createMaster",
     CreateMasterCommand.run.bind(undefined)
   );
   context.subscriptions.push(createMaster);
 
   let createProject = commands.registerCommand(
-    "extension.createProject",
+    "sourcepawn-vscode.createProject",
     CreateProjectCommand.run.bind(undefined)
   );
   context.subscriptions.push(createProject);
 
 	let compileSM = commands.registerCommand(
-    "extension.compileSM",
+    "sourcepawn-vscode.compileSM",
     CompileSMCommand.run.bind(undefined)
   );
   context.subscriptions.push(compileSM);
 
   let UploadToServer = commands.registerCommand(
-    "extension.uploadToServer",
+    "sourcepawn-vscode.uploadToServer",
     UploadToServerCommand.run.bind(undefined)
   );
   context.subscriptions.push(UploadToServer);
 
   let RefreshPlugins = commands.registerCommand(
-    "extension.refreshPlugins",
+    "sourcepawn-vscode.refreshPlugins",
     RefreshPluginsCommand.run.bind(undefined)
   );
   context.subscriptions.push(RefreshPlugins);
