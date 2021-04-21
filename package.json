@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "1.10.6",
+  "version": "1.11.0",
   "publisher": "Sarrus",
   "main": "client/out/spIndex",
   "icon": "sm.png",
@@ -18,42 +18,54 @@
   ],
   "activationEvents": [
     "onLanguage:sourcepawn",
-    "onCommand:extension.createTask",
-    "onCommand:extension.createScript",
-    "onCommand:extension.createREADME",
-    "onCommand:extension.createMaster",
-    "onCommand:extension.createProject",
-    "onCommand:extension.compileSM"
+    "onCommand:sourcepawn-vscode.createTask",
+    "onCommand:sourcepawn-vscode.createScript",
+    "onCommand:sourcepawn-vscode.createREADME",
+    "onCommand:sourcepawn-vscode.createMaster",
+    "onCommand:sourcepawn-vscode.createProject",
+    "onCommand:sourcepawn-vscode.compileSM",
+    "onCommand:sourcepawn-vscode.uploadToServer",
+    "onCommand:sourcepawn-vscode.refreshPlugins"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "extension.createTask",
+        "command": "sourcepawn-vscode.createTask",
         "title": "SM Create Task File",
         "category": "Project"
       },
       {
-        "command": "extension.createScript",
+        "command": "sourcepawn-vscode.createScript",
         "title": "SM Create Script File",
         "category": "Project"
       },
       {
-        "command": "extension.createREADME",
+        "command": "sourcepawn-vscode.createREADME",
         "title": "SM Create README File",
         "category": "Project"
       },
       {
-        "command": "extension.createMaster",
+        "command": "sourcepawn-vscode.createMaster",
         "title": "SM Create GitHub Actions",
         "category": "Project"
       },
       {
-        "command": "extension.createProject",
+        "command": "sourcepawn-vscode.createProject",
         "title": "SM Create Project",
         "category": "Project"
       },
       {
-        "command": "extension.compileSM",
+        "command": "sourcepawn-vscode.uploadToServer",
+        "title": "SM Upload to Server",
+        "category": "Project"
+      },
+      {
+        "command": "sourcepawn-vscode.refreshPlugins",
+        "title": "SM Refresh Server Plugins",
+        "category": "Project"
+      },
+      {
+        "command": "sourcepawn-vscode.compileSM",
         "title": "SM Compile file",
         "category": "ShortcutMenuBar",
         "icon": {
@@ -66,20 +78,20 @@
       "editor/context": [
         {
           "when": "resourceLangId == sourcepawn",
-          "command": "extension.compileSM"
+          "command": "sourcepawn-vscode.compileSM"
         }
       ],
       "editor/title": [
         {
-          "when": "editorTextFocus && resourceLangId == sourcepawn && config.sourcepawnLanguageServer.showCompileIconInEditorTitleMenu",
-          "command": "extension.compileSM",
+          "when": "editorTextFocus && resourceLangId == sourcepawn && config.sourcepawn.showCompileIconInEditorTitleMenu",
+          "command": "sourcepawn-vscode.compileSM",
           "group": "navigation@1"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "extension.compileSM",
+        "command": "sourcepawn-vscode.compileSM",
         "key": "ctrl+shift+d",
         "mac": "cmd+shift+d",
         "when": "editorTextFocus && resourceLangId == sourcepawn"
@@ -87,44 +99,54 @@
     ],
     "configuration": {
       "type": "object",
-      "title": "SourcePawn Language Server configuration",
+      "title": "SourcePawn configuration",
       "properties": {
-        "sourcepawnLanguageServer.sourcemod_home": {
+        "sourcepawn.SourcemodHome": {
           "type": "string",
           "description": "The location of the SourceMod API include files found in addons/sourcemod/scripting/include"
         },
-        "sourcepawnLanguageServer.author_name": {
+        "sourcepawn.AuthorName": {
           "type": "string",
           "description": "The name of the plugin's author (you)."
         },
-        "sourcepawnLanguageServer.github_name": {
+        "sourcepawn.GithubName": {
           "type": "string",
           "description": "The GitHub username of the plugin's author (you)."
         },
-        "sourcepawnLanguageServer.spcomp_path": {
+        "sourcepawn.SpcompPath": {
           "type": "string",
           "description": "The location of the SourceMod compiler"
         },
-        "sourcepawnLanguageServer.main_path": {
+        "sourcepawn.MainPath": {
           "type": "string",
           "description": "The location of the main.sp file for projects with sub-scripting files, which allows the linter and the compiler to work correctly. You should use this setting per workspace."
         },
-        "sourcepawnLanguageServer.showCompileIconInEditorTitleMenu": {
+        "sourcepawn.showCompileIconInEditorTitleMenu": {
           "type": "boolean",
           "default": true,
           "description": "Whether to show the 'Compile Code' icon in editor title menu."
         },
-				"sourcepawnLanguageServer.enableLinter": {
+        "sourcepawn.refreshAfterSuccessfulUpload": {
+          "type": "boolean",
+          "default": false,
+          "description": "Should the plugins list on the server be refreshed with `sm plugins refresh` when the upload command executed successfully."
+        },
+        "sourcepawn.uploadAfterSuccessfulCompile": {
+          "type": "boolean",
+          "default": false,
+          "description": "Should the upload command be executed on a successful compile."
+        },
+        "sourcepawn.enableLinter": {
           "type": "boolean",
           "default": true,
           "description": "Toggle the linter on or off."
         },
-        "sourcepawnLanguageServer.optionalIncludeDirsPaths": {
+        "sourcepawn.optionalIncludeDirsPaths": {
           "type": "array",
           "default": [],
           "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable."
         },
-        "sourcepawnLanguageServer.compilerOptions": {
+        "sourcepawn.compilerOptions": {
           "type": "array",
           "default": [
             "-O2",
@@ -132,12 +154,48 @@
           ],
           "description": "SourcePawn compiler options. Don't add paths here."
         },
-        "sourcepawnLanguageServer.linterCompilerOptions": {
+        "sourcepawn.linterCompilerOptions": {
           "type": "array",
           "default": [],
           "description": "SourcePawn linter compiler options. Don't add paths here."
         },
-        "sourcepawnLanguageServer.formatterSettings": {
+        "sourcepawn.UploadOptions": {
+          "type": "object",
+          "default": {
+            "user": "",
+            "password": "",
+            "host": "",
+            "port": 21,
+            "localRoot": "",
+            "remoteRoot": "/public_html/remote-folder/",
+            "include": [
+              "**"
+            ],
+            "exclude": [
+              "scripting/**/*.sp",
+              ".vscode/",
+              ".gitignore",
+              "*.md",
+              ".git"
+            ],
+            "deleteRemote": false,
+            "forcePasv": true,
+            "sftp": false
+          },
+          "description": "Upload options for the FTP/SFTP client."
+        },
+        "sourcepawn.SourceServerOptions": {
+          "type": "object",
+          "default": {
+            "host": "",
+            "port": 27015,
+            "encoding": "ascii",
+            "timeout": 1000,
+            "password": ""
+          },
+          "description": "Options for the Source server to refresh the plugins on."
+        },
+        "sourcepawn.formatterSettings": {
           "type": "array",
           "default": [
             "AlignOperands: 'true'",
@@ -169,7 +227,7 @@
           ],
           "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable."
         },
-        "sourcepawnLanguageServer.trace.server": {
+        "sourcepawn.trace.server": {
           "type": "string",
           "enum": [
             "off",
@@ -270,7 +328,9 @@
     "glob": "^7.1.2",
     "n-readlines": "^1.0.1",
     "prettier": "2.2.1",
-    "vscode-uri": "^3.0.2"
+    "vscode-uri": "^3.0.2",
+    "ftp-deploy": "^2.4.1",
+    "rcon-srcds": "^2.0.1"
   },
   "devDependencies": {
     "@types/mocha": "^8.2.2",

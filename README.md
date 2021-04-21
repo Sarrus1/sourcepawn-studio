@@ -24,22 +24,22 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 The only setting allows to define the position of the default sourcemod include files :
 ```json
 {
-  "sourcepawnLanguageServer.sourcemod_home": "/path/to/sourcemod/include"
+  "sourcepawn.SourcemodHome": "/path/to/sourcemod/include"
 }
 {
-	"sourcepawnLanguageServer.author_name": "The name of the plugin's author (you)."
+	"sourcepawn.AuthorName": "The name of the plugin's author (you)."
 },
 {
-	"sourcepawnLanguageServer.github_name": "The GitHub username of the plugin's author (you)."
+	"sourcepawn.GithubName": "The GitHub username of the plugin's author (you)."
 },
 {
-	"sourcepawnLanguageServer.spcomp_path": "The location of the SourceMod compiler"
+	"sourcepawn.SpcompPath": "The location of the SourceMod compiler"
 },
 {
-	"sourcepawnLanguageServer.showCompileIconInEditorTitleMenu": "Whether to show the 'Compile Code' icon in editor title menu."
+	"sourcepawn.showCompileIconInEditorTitleMenu": "Whether to show the 'Compile Code' icon in editor title menu."
 },
 {
-	"sourcepawnLanguageServer.optionalIncludeDirsPaths": "Optional additional include folders paths for the compiler. Use this if you know what you are doing. Leave blank to disable."
+	"sourcepawn.optionalIncludeDirsPaths": "Optional additional include folders paths for the compiler. Use this if you know what you are doing. Leave blank to disable."
 }
 ```
 

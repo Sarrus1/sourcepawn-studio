@@ -1,5 +1,6 @@
-'use strict';
+import { DocumentFilter } from "vscode";
 
-import {DocumentFilter} from "vscode";
-
-export const SM_MODE: DocumentFilter = { language: 'sourcepawn', scheme: 'file' };
+export const SP_MODE: DocumentFilter = {
+  language: "sourcepawn",
+  scheme: "file",
+};

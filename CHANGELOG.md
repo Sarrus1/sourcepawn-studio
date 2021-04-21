@@ -1,15 +1,32 @@
 ## Release Notes
 
-### 1.1O.6
+### 1.11.0
+ - Added automatic documentation generation for functions.
+ - Added a command to refresh plugins on a Source server.
+ - Added a command to upload plugins to an FTP/SFTP server.
+ - Added a setting to automatically deploy the plugin to an FTP/SFTP server after a successful compile.
+ - Added a setting to automatically refresh the Source server's plugins list after a successful upload.
+ - Added basic support for properties autocompletion.
+ - Added support for functions without a `public/stock/static/native` prefix.
+ - Added support for enum's member documentation on hover.
+ - Fixed wrong name parsing or old syntax functions.
+ - Methods will now show their parent Methodmap as detail in the autocompletion prompt.
+ - Improved the parsing of already parsed includes.
+ - Changed the name of the settings prefix for better consistency.
+ - The `sourcepawn.MainPath` setting can now be relative or absolute.
+ - Fixed the linter on Windows.
+ - Sub .sp files now inherit from MainPath's completions.
+
+### 1.10.6
  - Added a config to toggle the linter on and off.
- - The `main_path` setting now applies to the compile command as well.
+ - The `MainPath` setting now applies to the compile command as well.
  - Unit tests have been implemented for better reliability.
  - The code has been cleaned up.
 
-### 1.1O.5
+### 1.10.5
  - Second hotfix for commands not working anymore.
 
-### 1.1O.4
+### 1.10.4
  - Hotfix for commands not working anymore.
 
 ### 1.10.3
