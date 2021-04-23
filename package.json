@@ -172,8 +172,9 @@
               "**"
             ],
             "exclude": [
-              "scripting/**/*.sp",
-              ".vscode/",
+              "scripting/**/",
+              ".vscode/**/",
+              ".github/**/",
               ".gitignore",
               "*.md",
               ".git"
