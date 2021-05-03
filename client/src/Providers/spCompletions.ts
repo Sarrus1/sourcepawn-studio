@@ -52,8 +52,8 @@ export class FileCompletions {
       file += ".inc";
     }
 
-    let match = file.match(/[A-z0-9_.]*$/);
-    if (match) file = match[0];
+    let match = file.match(/include\/(.*)/);
+    if (match) file = match[1];
     let uri: URI;
     if (!(uri = documents.get(file))) {
       let includes_dirs: string[] = vscode.workspace
