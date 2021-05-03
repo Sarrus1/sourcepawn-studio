@@ -1,5 +1,10 @@
 ## Release Notes
 
+### 1.11.1
+ - Support for nested includes.
+ - Added main file includes completions in secondary .sp files.
+ - Fixed a bug where only one letter of the method name was parsed for the autocompletion.
+
 ### 1.11.0
  - Added automatic documentation generation for functions.
  - Added a command to refresh plugins on a Source server.
