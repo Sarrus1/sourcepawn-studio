@@ -48,7 +48,7 @@ export class FileCompletions {
   ) {
     let inc_file: string;
     // If no extension is provided, it's a .inc file
-    if (!/.sp\s*$/g.test(file) || !/.inc\s*$/g.test(file)) {
+    if (!/.sp\s*$/g.test(file) && !/.inc\s*$/g.test(file)) {
       file += ".inc";
     }
 
