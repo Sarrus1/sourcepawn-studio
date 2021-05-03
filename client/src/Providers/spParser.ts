@@ -463,7 +463,8 @@ class Parser {
               current_line
             )
           ) {
-            return this.read_function(current_line);
+            this.read_function(current_line);
+						return;
           } else {
             this.interpLine(current_line);
             return;
@@ -546,7 +547,7 @@ class Parser {
       this.read_new_style_function(line);
     }
 
-    this.state.pop();
+    //this.state.pop();
     return;
   }
 
