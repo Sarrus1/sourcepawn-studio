@@ -155,7 +155,6 @@ class Parser {
     if (match) {
       this.state.push(State.MultilineComment);
       this.scratch = [];
-
       this.consume_multiline_comment(line, true);
       return;
     }
@@ -460,11 +459,12 @@ class Parser {
             /\s*(?:static|native|stock|public|forward)?\s*([^\s]+)\s*([A-Za-z_].*)\s*\(/.test(
               current_line
             ) ||
-            /\s*(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)\s*\(/.test(
+            /\s*(?:static|native|stock|public|forward\s*)?(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/.test(
               current_line
             )
           ) {
-            return this.read_function(current_line);
+            this.read_function(current_line);
+						return;
           } else {
             this.interpLine(current_line);
             return;
@@ -477,7 +477,7 @@ class Parser {
               /\s*(?:static|native|stock|public|forward)?\s*([^\s]+)\s*([A-Za-z_].*)\s*\(/.test(
                 current_line
               ) ||
-              /\s*(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)\s*\(/.test(
+              /\s*(?:static|native|stock|public|forward\s*)?(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/.test(
                 current_line
               )
             ) {
@@ -547,7 +547,7 @@ class Parser {
       this.read_new_style_function(line);
     }
 
-    this.state.pop();
+    //this.state.pop();
     return;
   }
 
@@ -579,23 +579,23 @@ class Parser {
 
   read_new_style_function(line: string) {
     let match = line.match(
-      /\s*(?:(?:static|native|stock|public|forward)+\s*)+\s+([^\s]+)\s*([A-Za-z_].*)/
+      /\s*(?:(?:static|native|stock|public|forward)\s*)+(?:[A-z]*\s+)?\s*([A-z0-9_]+)\s*\(\s*([A-z_].*)/
     );
     if (match) {
       let { description, params } = this.parse_doc_comment();
-      let name_match = match[2].match(/^([A-Za-z_][A-Za-z0-9_]*)/);
+			let name_match = match[1];
       let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
         URI.file(this.file),
         new vscode.Range(this.lineNb, 0, this.lineNb, 0),
         smDefinitions.DefinitionKind.Function
       );
-      this.definitions.set(name_match[1], def);
+      this.definitions.set(name_match, def);
       if (this.state[this.state.length - 1] === State.Methodmap) {
         this.completions.add(
-          name_match[1],
+          name_match,
           new MethodCompletion(
             this.state_data.name,
-            name_match[1],
+            name_match,
             match[2],
             description,
             params
@@ -626,9 +626,9 @@ class Parser {
               .replace(/\s*[A-z0-9_]+\s*\(\s*/g, "")
               .replace(/\s+/gm, " ");
         this.completions.add(
-          name_match[1],
+          name_match,
           new FunctionCompletion(
-            name_match[1],
+            name_match,
             paramsMatch.replace(/;\s*$/g, ""),
             description,
             params,

@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import * as path from "path";
+import {basename, join} from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 import { Completion, Include } from "./spCompletionsKinds";
@@ -48,19 +48,19 @@ export class FileCompletions {
   ) {
     let inc_file: string;
     // If no extension is provided, it's a .inc file
-    if (!/.sp\s*$/g.test(file) || !/.inc\s*$/g.test(file)) {
+    if (!/.sp\s*$/g.test(file) && !/.inc\s*$/g.test(file)) {
       file += ".inc";
     }
 
-    let match = file.match(/[A-z0-9_.]*$/);
-    if (match) file = match[0];
+    let match = file.match(/include\/(.*)/);
+    if (match) file = match[1];
     let uri: URI;
-    if (!(uri = documents.get(file))) {
+    if (!(uri = documents.get(basename(file)))) {
       let includes_dirs: string[] = vscode.workspace
         .getConfiguration("sourcepawn")
         .get("optionalIncludeDirsPaths");
       for (let includes_dir of includes_dirs) {
-        inc_file = path.join(includes_dir, file);
+        inc_file = join(includes_dir, file);
         if (existsSync(inc_file)) {
           this.add_include(URI.file(inc_file).toString(), IsBuiltIn);
           return;
@@ -158,18 +158,21 @@ export class CompletionRepository
       this.get_included_files(completion, includes);
     }
     includes.add(file);
-    // TODO: Add MainPath's includes as well if needed.
     let MainPath: string =
       vscode.workspace.getConfiguration("sourcepawn").get("MainPath") || "";
     if (MainPath != "") {
       if (!existsSync(MainPath)) {
         let workspace: vscode.WorkspaceFolder =
           vscode.workspace.workspaceFolders[0];
-        MainPath = path.join(workspace.uri.fsPath, MainPath);
+        MainPath = join(workspace.uri.fsPath, MainPath);
         if (!existsSync(MainPath)) {
           throw "MainPath is incorrect.";
         }
       }
+			let MainCompletion = this.completions.get(URI.file(MainPath).toString());
+			if(MainCompletion) {
+				this.get_included_files(MainCompletion, includes);
+			}
       let uri = URI.file(MainPath).toString();
       if (!includes.has(uri)) {
         includes.add(uri);
