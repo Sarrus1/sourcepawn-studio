@@ -158,7 +158,6 @@ export class CompletionRepository
       this.get_included_files(completion, includes);
     }
     includes.add(file);
-    // TODO: Add MainPath's includes as well if needed.
     let MainPath: string =
       vscode.workspace.getConfiguration("sourcepawn").get("MainPath") || "";
     if (MainPath != "") {
@@ -170,6 +169,10 @@ export class CompletionRepository
           throw "MainPath is incorrect.";
         }
       }
+			let MainCompletion = this.completions.get(URI.file(MainPath).toString());
+			if(MainCompletion) {
+				this.get_included_files(MainCompletion, includes);
+			}
       let uri = URI.file(MainPath).toString();
       if (!includes.has(uri)) {
         includes.add(uri);
