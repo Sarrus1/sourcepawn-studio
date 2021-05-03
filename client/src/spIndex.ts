@@ -11,12 +11,12 @@ import { SP_MODE } from "./spMode";
 import { Providers } from "./Providers/spProviders";
 import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./spFormat";
-import { basename } from "path";
+import { basename, extname } from "path";
 import { URI } from "vscode-uri";
 import { type } from "os";
 
 let getDirectories = function (src, ext, callback) {
-  glob(src + "/**/*." + ext, callback);
+  glob(src + "/**/*", callback);
 };
 
 export function activate(context: ExtensionContext) {
@@ -42,23 +42,18 @@ export function activate(context: ExtensionContext) {
         console.log("Couldn't read .sp file, ignoring : ", err);
       } else {
         for (let file of res) {
-          providers.handle_document_opening(file);
-          providers.completionsProvider.documents.set(
-            basename(file),
-            URI.file(file)
-          );
-        }
-      }
-    });
-    getDirectories(workspace.uri.fsPath, "inc", function (err, res) {
-      if (err) {
-        console.log("Couldn't read .inc file, ignoring : ", err);
-      } else {
-        for (let file of res) {
-          providers.completionsProvider.documents.set(
-            basename(file),
-            URI.file(file)
-          );
+					let FileExt:string = extname(file);
+					if(FileExt == ".sp")
+					{
+						providers.handle_document_opening(file);
+					}
+					if(FileExt == ".sp" || FileExt == ".inc")
+					{
+						providers.completionsProvider.documents.set(
+							basename(file),
+							URI.file(file)
+						);
+					}
         }
       }
     });

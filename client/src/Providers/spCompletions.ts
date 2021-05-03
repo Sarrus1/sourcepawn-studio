@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import * as path from "path";
+import {basename, join} from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 import { Completion, Include } from "./spCompletionsKinds";
@@ -55,12 +55,12 @@ export class FileCompletions {
     let match = file.match(/include\/(.*)/);
     if (match) file = match[1];
     let uri: URI;
-    if (!(uri = documents.get(file))) {
+    if (!(uri = documents.get(basename(file)))) {
       let includes_dirs: string[] = vscode.workspace
         .getConfiguration("sourcepawn")
         .get("optionalIncludeDirsPaths");
       for (let includes_dir of includes_dirs) {
-        inc_file = path.join(includes_dir, file);
+        inc_file = join(includes_dir, file);
         if (existsSync(inc_file)) {
           this.add_include(URI.file(inc_file).toString(), IsBuiltIn);
           return;
@@ -164,7 +164,7 @@ export class CompletionRepository
       if (!existsSync(MainPath)) {
         let workspace: vscode.WorkspaceFolder =
           vscode.workspace.workspaceFolders[0];
-        MainPath = path.join(workspace.uri.fsPath, MainPath);
+        MainPath = join(workspace.uri.fsPath, MainPath);
         if (!existsSync(MainPath)) {
           throw "MainPath is incorrect.";
         }
