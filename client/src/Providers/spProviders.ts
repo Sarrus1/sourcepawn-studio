@@ -3,21 +3,22 @@ import * as glob from "glob";
 import * as path from "path";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
-import * as smCompletions from "./spCompletions";
+import * as spCompletions from "./spCompletions";
+import { Include } from "./spCompletionsKinds";
 import * as spDocCompletions from "./spDocCompletions";
-import * as smDefinitions from "./spDefinitions";
-import * as smParser from "./spParser";
+import * as spDefinitions from "./spDefinitions";
+import * as spParser from "./spParser";
 
 export class Providers {
-  completionsProvider: smCompletions.CompletionRepository;
+  completionsProvider: spCompletions.CompletionRepository;
   documentationProvider: spDocCompletions.JsDocCompletionProvider;
-  definitionsProvider: smDefinitions.DefinitionRepository;
-  hoverProvider: smCompletions.CompletionRepository;
+  definitionsProvider: spDefinitions.DefinitionRepository;
+  hoverProvider: spCompletions.CompletionRepository;
 
   constructor(globalState?: vscode.Memento) {
-    let CompletionRepo = new smCompletions.CompletionRepository(globalState);
+    let CompletionRepo = new spCompletions.CompletionRepository(globalState);
     this.completionsProvider = CompletionRepo;
-    this.definitionsProvider = new smDefinitions.DefinitionRepository(
+    this.definitionsProvider = new spDefinitions.DefinitionRepository(
       globalState
     );
     this.hoverProvider = CompletionRepo;
@@ -33,7 +34,7 @@ export class Providers {
   }
 
   public handle_document_change(event: vscode.TextDocumentChangeEvent) {
-    let this_completions: smCompletions.FileCompletions = new smCompletions.FileCompletions(
+    let this_completions: spCompletions.FileCompletions = new spCompletions.FileCompletions(
       event.document.uri.toString()
     );
     let file_path: string = event.document.uri.fsPath;
@@ -45,7 +46,7 @@ export class Providers {
     file_path = file_path.replace(".git", "");
     // We use parse_text here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
     try {
-      smParser.parse_text(
+      spParser.parse_text(
         event.document.getText(),
         file_path,
         this_completions,
@@ -55,7 +56,7 @@ export class Providers {
     } catch (error) {
       console.log(error);
     }
-    this.read_unscanned_imports(this_completions);
+    this.read_unscanned_imports(this_completions.includes);
     this.completionsProvider.completions.set(
       event.document.uri.toString(),
       this_completions
@@ -63,7 +64,7 @@ export class Providers {
   }
 
   public handle_new_document(document: vscode.TextDocument) {
-    let this_completions: smCompletions.FileCompletions = new smCompletions.FileCompletions(
+    let this_completions: spCompletions.FileCompletions = new spCompletions.FileCompletions(
       document.uri.toString()
     );
     let file_path: string = document.uri.fsPath;
@@ -74,7 +75,7 @@ export class Providers {
       document.uri
     );
     try {
-      smParser.parse_file(
+      spParser.parse_file(
         file_path,
         this_completions,
         this.definitionsProvider.definitions,
@@ -84,7 +85,7 @@ export class Providers {
       console.log(error);
     }
 
-    this.read_unscanned_imports(this_completions);
+    this.read_unscanned_imports(this_completions.includes);
     this.completionsProvider.completions.set(
       document.uri.toString(),
       this_completions
@@ -93,13 +94,13 @@ export class Providers {
 
   public handle_document_opening(path: string) {
     let uri: string = URI.file(path).toString();
-    let this_completions: smCompletions.FileCompletions = new smCompletions.FileCompletions(
+    let this_completions: spCompletions.FileCompletions = new spCompletions.FileCompletions(
       uri
     );
     // Some file paths are appened with .git
     path = path.replace(".git", "");
     try {
-      smParser.parse_file(
+      spParser.parse_file(
         path,
         this_completions,
         this.definitionsProvider.definitions,
@@ -109,31 +110,31 @@ export class Providers {
       console.log(error);
     }
 
-    this.read_unscanned_imports(this_completions);
+    this.read_unscanned_imports(this_completions.includes);
     this.completionsProvider.completions.set(uri, this_completions);
   }
 
-  public read_unscanned_imports(completions: smCompletions.FileCompletions) {
-    for (let import_file of completions.includes) {
+  public read_unscanned_imports(includes: Include[]) {
+    for (let include of includes) {
       let completion = this.completionsProvider.completions.get(
-        import_file.uri
+        include.uri
       );
       if (typeof completion === "undefined") {
-        let file = URI.parse(import_file.uri).fsPath;
+        let file = URI.parse(include.uri).fsPath;
         if (fs.existsSync(file)) {
-          let new_completions: smCompletions.FileCompletions = new smCompletions.FileCompletions(
-            import_file.uri
+          let new_completions: spCompletions.FileCompletions = new spCompletions.FileCompletions(
+            include.uri
           );
-          smParser.parse_file(
+          spParser.parse_file(
             file,
             new_completions,
             this.definitionsProvider.definitions,
             this.completionsProvider.documents,
-            import_file.IsBuiltIn
+            include.IsBuiltIn
           );
-          this.read_unscanned_imports(new_completions);
+          this.read_unscanned_imports(new_completions.includes);
           this.completionsProvider.completions.set(
-            import_file.uri,
+            include.uri,
             new_completions
           );
         }
@@ -146,10 +147,10 @@ export class Providers {
     let files = glob.sync(path.join(SourcemodHome, "**/*.inc"));
     for (let file of files) {
       try {
-        let completions = new smCompletions.FileCompletions(
+        let completions = new spCompletions.FileCompletions(
           URI.file(file).toString()
         );
-        smParser.parse_file(
+        spParser.parse_file(
           file,
           completions,
           this.definitionsProvider.definitions,
