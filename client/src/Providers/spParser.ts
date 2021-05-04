@@ -13,6 +13,7 @@ import {
 import * as vscode from "vscode";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
+import { basename } from "path";
 
 export function parse_file(
   file: string,
@@ -215,7 +216,7 @@ class Parser {
 
   read_include(match) {
     // Include guard to avoid extension crashs.
-    if (this.file.includes(match[1])) return;
+    if (IsIncludeSelfFile(this.file, match[1])) return;
     this.completions.resolve_import(match[1], this.documents, this.IsBuiltIn);
     return;
   }
@@ -588,4 +589,15 @@ function PositiveRange(lineNb:number):vscode.Range
 {
 	lineNb=lineNb>0?lineNb:0;
 	return new vscode.Range(lineNb, 0, lineNb, 0);
+}
+
+function IsIncludeSelfFile(file:string, include:string):boolean
+{
+	let baseName:string = basename(file);
+	let match = include.match(/([A-z0-9]*)(?:.sp|.inc)?$/);
+	if (match)
+	{
+		return (baseName == match[1]);
+	}
+	return false;
 }

@@ -115,24 +115,34 @@ export class Providers {
   }
 
   public read_unscanned_imports(includes: Include[]) {
+		let debug = vscode.workspace.getConfiguration("sourcepawn").get("trace.server");
+		(debug=="messages"||debug=="verbose")? debug=true:debug=false;
     for (let include of includes) {
+			if(debug) console.log(include.uri.toString()); //<-- Add this please
       let completion = this.completionsProvider.completions.get(
         include.uri
       );
       if (typeof completion === "undefined") {
+				if(debug) console.log("reading", include.uri.toString());
         let file = URI.parse(include.uri).fsPath;
         if (fs.existsSync(file)) {
+					if(debug) console.log("found", include.uri.toString());
           let new_completions: spCompletions.FileCompletions = new spCompletions.FileCompletions(
             include.uri
           );
-          spParser.parse_file(
-            file,
-            new_completions,
-            this.definitionsProvider.definitions,
-            this.completionsProvider.documents,
-            include.IsBuiltIn
-          );
+					try{
+						spParser.parse_file(
+							file,
+							new_completions,
+							this.definitionsProvider.definitions,
+							this.completionsProvider.documents,
+							include.IsBuiltIn
+						);
+					}
+					catch(err) {console.error(err, include.uri.toString());}
+					if(debug) console.log("parsed", include.uri.toString());
           this.read_unscanned_imports(new_completions.includes);
+					if(debug) console.log("adding", include.uri.toString());
           this.completionsProvider.completions.set(
             include.uri,
             new_completions
