@@ -5,6 +5,7 @@
  - Added an include guard to avoid parsing the same files multiple times.
  - Parsing performances improvements.
  - Fixed a bug where a line number would sometimes be negative, causing an extension crash.
+ - Added some debugging messages for contributors.
 
 ### 1.11.1
  - Better support for nested includes.
