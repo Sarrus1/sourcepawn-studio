@@ -143,8 +143,9 @@ export class Providers {
 
   public parse_sm_api(SourcemodHome: string): void {
     if (!SourcemodHome) return;
-    glob(path.join(SourcemodHome, "**/*.inc"), (err, files) => {
-      for (let file of files) {
+    let files = glob.sync(path.join(SourcemodHome, "**/*.inc"));
+    for (let file of files) {
+      try {
         let completions = new smCompletions.FileCompletions(
           URI.file(file).toString()
         );
@@ -159,7 +160,9 @@ export class Providers {
         let uri =
           "file://__sourcemod_builtin/" + path.relative(SourcemodHome, file);
         this.completionsProvider.completions.set(uri, completions);
+      } catch (e) {
+        console.error(e);
       }
-    });
+    }
   }
 }
