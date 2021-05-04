@@ -51,6 +51,7 @@ export class JsDocCompletionProvider implements vscode.CompletionItemProvider {
     const lines = document.getText().split("\n");
     let old_style: boolean;
     let line = lines[position.line + 1];
+		if(typeof line == "undefined") return [];
     let match = line.match(
       /(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*)$/
     );

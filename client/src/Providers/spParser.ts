@@ -214,6 +214,8 @@ class Parser {
   }
 
   read_include(match) {
+		// Include guard to avoid extension crashs.
+		if(this.file.includes(match[1])) return;
     this.completions.resolve_import(match[1], this.documents, this.IsBuiltIn);
     return;
   }

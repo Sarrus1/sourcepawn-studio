@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 1.11.2
+ - Fixed a bug where enums without a space after the name wouldn't be parsed.
+ - Added an include guard to avoid parsing the same files multiple times.
+
 ### 1.11.1
  - Better support for nested includes.
  - Added main file includes completions in secondary .sp files.
