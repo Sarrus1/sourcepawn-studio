@@ -477,7 +477,7 @@ class Parser {
       this.definitions.set(name_match, def);
       if (this.state[this.state.length - 2] === State.Methodmap) {
         this.completions.add(
-          name_match,
+          name_match+"__method",
           new MethodCompletion(
             this.state_data.name,
             name_match,
