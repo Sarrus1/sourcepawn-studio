@@ -13,6 +13,7 @@ import {
 import * as vscode from "vscode";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
+import { basename } from "path";
 
 export function parse_file(
   file: string,
@@ -123,7 +124,7 @@ class Parser {
       this.read_enums(match, true);
     }
     // Match enums
-    match = line.match(/^\s*(?:enum\s+)(.*)/);
+    match = line.match(/^\s*(?:enum\s*)(.*)/);
     if (match) {
       this.read_enums(match, false);
     }
@@ -167,7 +168,6 @@ class Parser {
       this.state_data = {
         name: match[1],
       };
-
       return;
     }
 
@@ -191,10 +191,11 @@ class Parser {
 
     // Match functions without description
     match = line.match(
-      /(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?$/
+      /(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
     );
-    if (match && !this.IsBuiltIn) {
-      this.read_non_descripted_function(match, "");
+
+    if (match) {
+      this.read_function(line);
     }
     return;
   }
@@ -206,7 +207,7 @@ class Parser {
     );
     let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
       URI.file(this.file),
-      new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+      PositiveRange(this.lineNb),
       smDefinitions.DefinitionKind.Define
     );
     this.definitions.set(match[1], def);
@@ -214,6 +215,8 @@ class Parser {
   }
 
   read_include(match) {
+    // Include guard to avoid extension crashs.
+    if (IsIncludeSelfFile(this.file, match[1])) return;
     this.completions.resolve_import(match[1], this.documents, this.IsBuiltIn);
     return;
   }
@@ -222,7 +225,7 @@ class Parser {
     if (IsStruct) {
       // TODO: Add enum struct support here
     } else {
-      let matchBis = match[0].match(/^\s*(?:enum\s+)([A-z0-9_]*)/);
+      let matchBis = match[0].match(/^\s*(?:enum\s*)([A-z0-9_]*)/);
       if (matchBis) {
         // Create a completion for the enum itself if it has a name
         var enumCompletion: EnumCompletion = new EnumCompletion(
@@ -232,19 +235,13 @@ class Parser {
         this.completions.add(matchBis[1], enumCompletion);
         var def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
           URI.file(this.file),
-          // For some reason, function declared at the top of the file will cause an error here
-          new vscode.Range(
-            this.lineNb >= 0 ? this.lineNb : 0,
-            0,
-            this.lineNb >= 0 ? this.lineNb : 0,
-            0
-          ),
+					PositiveRange(this.lineNb),
           smDefinitions.DefinitionKind.Enum
         );
         this.definitions.set(match[1], def);
       } else {
         var enumCompletion: EnumCompletion = new EnumCompletion("", this.file);
-        this.completions.add(matchBis[1], enumCompletion);
+        this.completions.add("", enumCompletion);
       }
 
       // Set max number of iterations for safety
@@ -290,7 +287,7 @@ class Parser {
         );
         let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
           URI.file(this.file),
-          new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+          PositiveRange(this.lineNb),
           smDefinitions.DefinitionKind.EnumMember
         );
         this.definitions.set(enumMemberName, def);
@@ -324,7 +321,7 @@ class Parser {
         if (/g_.*/g.test(variable_completion)) {
           let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
             URI.file(this.file),
-            new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+            PositiveRange(this.lineNb),
             smDefinitions.DefinitionKind.Variable
           );
           this.definitions.set(variable_completion, def);
@@ -352,7 +349,7 @@ class Parser {
           if (/g_.*/g.test(variable_completion)) {
             let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
               URI.file(this.file),
-              new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+              PositiveRange(this.lineNb),
               smDefinitions.DefinitionKind.Variable
             );
             this.definitions.set(variable_completion, def);
@@ -366,156 +363,40 @@ class Parser {
     return;
   }
 
-  read_non_descripted_function(match, description: string = "") {
-    let match_buffer = "";
-    let line = "";
-    let name_match = "";
-    let params_match = [];
-    // Separation for old and new style functions
-    // New style
-    if (match[2] != "") {
-      name_match = match[2];
-    }
-    // Old style
-    else {
-      name_match = match[1].replace(/[A-z0-9_]+:/, "");
-    }
-    // Save as definition
-    let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
-      URI.file(this.file),
-      // For some reason, function declared at the top of the file will cause an error here
-      new vscode.Range(
-        this.lineNb >= 0 ? this.lineNb : 0,
-        0,
-        this.lineNb >= 0 ? this.lineNb : 0,
-        0
-      ),
-      smDefinitions.DefinitionKind.Function
-    );
-    this.definitions.set(name_match, def);
-    match_buffer = match[0];
-    // Check if function takes arguments
-    let maxiter = 0;
-    while (
-      !match_buffer.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) &&
-      maxiter < 20
-    ) {
-      line = this.lines.shift();
-      this.lineNb++;
-      if (typeof line === "undefined") {
-        return;
-      }
-      match_buffer += line;
-      maxiter++;
-    }
-    let params = [];
-    let current_param;
-    if (params_match) {
-      for (let param of params_match) {
-        current_param = {
-          label: param,
-          documentation: param,
-        };
-        params.push(current_param);
-        // Add the params as variables
-        let paramAsVariable = param.match(/([^\s:]*)$/)[1];
-        this.completions.add(
-          paramAsVariable,
-          new VariableCompletion(paramAsVariable, this.file)
-        );
-      }
-    }
-    this.completions.add(
-      name_match,
-      new FunctionCompletion(
-        name_match,
-        match_buffer.replace(/;\s*$/g, ""),
-        description,
-        params,
-        this.file,
-        this.IsBuiltIn
-      )
-    );
-    return;
-  }
-
   consume_multiline_comment(
     current_line: string,
     use_line_comment: boolean = false
   ) {
-    if (typeof current_line === "undefined") {
-      return; // EOF
-    }
-    let match: any = use_line_comment
-      ? !/^\s*\/\//.test(current_line)
-      : /\*\//.test(current_line);
-    if (match) {
-      if (this.state[this.state.length - 1] === State.DocComment) {
-        this.state.pop();
-        this.state.pop();
-
-        if (use_line_comment) {
-          if (
-            /\s*(?:static|native|stock|public|forward)?\s*([^\s]+)\s*([A-Za-z_].*)\s*\(/.test(
-              current_line
-            ) ||
-            /\s*(?:static|native|stock|public|forward\s*)?(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/.test(
-              current_line
-            )
-          ) {
-            this.read_function(current_line);
-						return;
-          } else {
-            this.interpLine(current_line);
-            return;
-          }
-        } else {
-          current_line = this.lines.shift();
-          this.lineNb++;
-          if (!(typeof current_line === "undefined")) {
-            if (
-              /\s*(?:static|native|stock|public|forward)?\s*([^\s]+)\s*([A-Za-z_].*)\s*\(/.test(
-                current_line
-              ) ||
-              /\s*(?:static|native|stock|public|forward\s*)?(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/.test(
-                current_line
-              )
-            ) {
-              return this.read_function(current_line);
-            } else {
-              this.interpLine(current_line);
-              return;
-            }
-          }
-        }
-      }
-
-      this.state.pop();
-      return;
-    } else {
-      if (!use_line_comment) {
-        match = current_line.match(
-          /^\s*\*\s*@*(?:param|return)*\s*([A-Za-z_\.][A-Za-z0-9_\.]*)\s*(.*)/
-        );
-      } else {
+    let match;
+    let iter = 0;
+    while (
+      typeof current_line != "undefined" &&
+      iter < 100 &&
+      ((/^\s*\/\//.test(current_line) && use_line_comment) ||
+        (!/\*\//.test(current_line) && !use_line_comment))
+    ) {
+      iter++;
+      if (use_line_comment) {
         match = current_line.match(
           /^\s*\/\/\s*@*(?:param|return)*\s*([A-Za-z_\.][A-Za-z0-9_\.]*)\s*(.*)/
         );
+      } else {
+        match = current_line.match(
+          /^\s*\*\s*@*(?:param|return)*\s*([A-Za-z_\.][A-Za-z0-9_\.]*)\s*(.*)/
+        );
       }
-
-      if (match) {
-        if (this.state[this.state.length - 1] !== State.DocComment) {
-          this.state.push(State.DocComment);
-        }
-      }
-
       this.scratch.push(current_line);
       current_line = this.lines.shift();
       this.lineNb++;
-      if (!(typeof current_line === "undefined")) {
-        this.consume_multiline_comment(current_line, use_line_comment);
-      }
     }
+    // Removes the */ from the doc comment
+    if (!use_line_comment) {
+      current_line = this.lines.shift();
+      this.lineNb++;
+    }
+    this.interpLine(current_line);
+    this.state.pop();
+    return;
   }
 
   read_property(match) {
@@ -546,8 +427,6 @@ class Parser {
     } else {
       this.read_new_style_function(line);
     }
-
-    //this.state.pop();
     return;
   }
 
@@ -558,7 +437,7 @@ class Parser {
     if (match) {
       let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
         URI.file(this.file),
-        new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+        PositiveRange(this.lineNb),
         smDefinitions.DefinitionKind.Function
       );
       this.definitions.set(match[1], def);
@@ -579,30 +458,31 @@ class Parser {
 
   read_new_style_function(line: string) {
     let match = line.match(
-      /\s*(?:(?:static|native|stock|public|forward)\s*)+(?:[A-z]*\s+)?\s*([A-z0-9_]+)\s*\(\s*([A-z_].*)/
+      ///(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
+      /(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^]*)/
     );
     if (match) {
       let { description, params } = this.parse_doc_comment();
-			let name_match = match[1];
+      let name_match = match[2];
       let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
         URI.file(this.file),
-        new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+        PositiveRange(this.lineNb),
         smDefinitions.DefinitionKind.Function
       );
       this.definitions.set(name_match, def);
-      if (this.state[this.state.length - 1] === State.Methodmap) {
+      if (this.state[this.state.length - 2] === State.Methodmap) {
         this.completions.add(
-          name_match,
+          name_match+"__method",
           new MethodCompletion(
             this.state_data.name,
             name_match,
-            match[2],
+            match[3],
             description,
             params
           )
         );
       } else {
-        let paramsMatch = match[2];
+        let paramsMatch = match[3];
         // Iteration safety in case something goes wrong
         let maxiter = 0;
         let line: string;
@@ -644,6 +524,11 @@ class Parser {
     description: string;
     params: FunctionParam[];
   } {
+    if (typeof this.scratch == "undefined") {
+      let description = "";
+      let params = [];
+      return { description, params };
+    }
     let description = (() => {
       let lines = [];
       for (let line of this.scratch) {
@@ -651,10 +536,6 @@ class Parser {
         if (/^\s*\/\*\*\s*/.test(line)) {
           continue;
         }
-        //if (!(/^\s*\*\s*(@(?!param)|[^@])*$/.test(line) || /^\s*\/\/\s*(@(?!param)|[^@])*$/.test(line)))
-        //{
-        //continue;
-        //}
 
         lines.push(
           line.replace(/^\s*\*\s+/, "\n").replace(/^\s*\/\/\s+/, "\n")
@@ -702,4 +583,21 @@ class Parser {
 
     return { description, params };
   }
+}
+
+function PositiveRange(lineNb:number):vscode.Range
+{
+	lineNb=lineNb>0?lineNb:0;
+	return new vscode.Range(lineNb, 0, lineNb, 0);
+}
+
+function IsIncludeSelfFile(file:string, include:string):boolean
+{
+	let baseName:string = basename(file);
+	let match = include.match(/([A-z0-9]*)(?:.sp|.inc)?$/);
+	if (match)
+	{
+		return (baseName == match[1]);
+	}
+	return false;
 }

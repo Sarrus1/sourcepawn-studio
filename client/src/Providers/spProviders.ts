@@ -3,21 +3,22 @@ import * as glob from "glob";
 import * as path from "path";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
-import * as smCompletions from "./spCompletions";
+import * as spCompletions from "./spCompletions";
+import { Include } from "./spCompletionsKinds";
 import * as spDocCompletions from "./spDocCompletions";
-import * as smDefinitions from "./spDefinitions";
-import * as smParser from "./spParser";
+import * as spDefinitions from "./spDefinitions";
+import * as spParser from "./spParser";
 
 export class Providers {
-  completionsProvider: smCompletions.CompletionRepository;
+  completionsProvider: spCompletions.CompletionRepository;
   documentationProvider: spDocCompletions.JsDocCompletionProvider;
-  definitionsProvider: smDefinitions.DefinitionRepository;
-  hoverProvider: smCompletions.CompletionRepository;
+  definitionsProvider: spDefinitions.DefinitionRepository;
+  hoverProvider: spCompletions.CompletionRepository;
 
   constructor(globalState?: vscode.Memento) {
-    let CompletionRepo = new smCompletions.CompletionRepository(globalState);
+    let CompletionRepo = new spCompletions.CompletionRepository(globalState);
     this.completionsProvider = CompletionRepo;
-    this.definitionsProvider = new smDefinitions.DefinitionRepository(
+    this.definitionsProvider = new spDefinitions.DefinitionRepository(
       globalState
     );
     this.hoverProvider = CompletionRepo;
@@ -33,7 +34,7 @@ export class Providers {
   }
 
   public handle_document_change(event: vscode.TextDocumentChangeEvent) {
-    let this_completions: smCompletions.FileCompletions = new smCompletions.FileCompletions(
+    let this_completions: spCompletions.FileCompletions = new spCompletions.FileCompletions(
       event.document.uri.toString()
     );
     let file_path: string = event.document.uri.fsPath;
@@ -45,7 +46,7 @@ export class Providers {
     file_path = file_path.replace(".git", "");
     // We use parse_text here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
     try {
-      smParser.parse_text(
+      spParser.parse_text(
         event.document.getText(),
         file_path,
         this_completions,
@@ -55,7 +56,7 @@ export class Providers {
     } catch (error) {
       console.log(error);
     }
-    this.read_unscanned_imports(this_completions);
+    this.read_unscanned_imports(this_completions.includes);
     this.completionsProvider.completions.set(
       event.document.uri.toString(),
       this_completions
@@ -63,7 +64,7 @@ export class Providers {
   }
 
   public handle_new_document(document: vscode.TextDocument) {
-    let this_completions: smCompletions.FileCompletions = new smCompletions.FileCompletions(
+    let this_completions: spCompletions.FileCompletions = new spCompletions.FileCompletions(
       document.uri.toString()
     );
     let file_path: string = document.uri.fsPath;
@@ -74,7 +75,7 @@ export class Providers {
       document.uri
     );
     try {
-      smParser.parse_file(
+      spParser.parse_file(
         file_path,
         this_completions,
         this.definitionsProvider.definitions,
@@ -84,7 +85,7 @@ export class Providers {
       console.log(error);
     }
 
-    this.read_unscanned_imports(this_completions);
+    this.read_unscanned_imports(this_completions.includes);
     this.completionsProvider.completions.set(
       document.uri.toString(),
       this_completions
@@ -93,13 +94,13 @@ export class Providers {
 
   public handle_document_opening(path: string) {
     let uri: string = URI.file(path).toString();
-    let this_completions: smCompletions.FileCompletions = new smCompletions.FileCompletions(
+    let this_completions: spCompletions.FileCompletions = new spCompletions.FileCompletions(
       uri
     );
     // Some file paths are appened with .git
     path = path.replace(".git", "");
     try {
-      smParser.parse_file(
+      spParser.parse_file(
         path,
         this_completions,
         this.definitionsProvider.definitions,
@@ -109,31 +110,41 @@ export class Providers {
       console.log(error);
     }
 
-    this.read_unscanned_imports(this_completions);
+    this.read_unscanned_imports(this_completions.includes);
     this.completionsProvider.completions.set(uri, this_completions);
   }
 
-  public read_unscanned_imports(completions: smCompletions.FileCompletions) {
-    for (let import_file of completions.includes) {
+  public read_unscanned_imports(includes: Include[]) {
+		let debug = vscode.workspace.getConfiguration("sourcepawn").get("trace.server");
+		(debug=="messages"||debug=="verbose")? debug=true:debug=false;
+    for (let include of includes) {
+			if(debug) console.log(include.uri.toString()); //<-- Add this please
       let completion = this.completionsProvider.completions.get(
-        import_file.uri
+        include.uri
       );
       if (typeof completion === "undefined") {
-        let file = URI.parse(import_file.uri).fsPath;
+				if(debug) console.log("reading", include.uri.toString());
+        let file = URI.parse(include.uri).fsPath;
         if (fs.existsSync(file)) {
-          let new_completions: smCompletions.FileCompletions = new smCompletions.FileCompletions(
-            import_file.uri
+					if(debug) console.log("found", include.uri.toString());
+          let new_completions: spCompletions.FileCompletions = new spCompletions.FileCompletions(
+            include.uri
           );
-          smParser.parse_file(
-            file,
-            new_completions,
-            this.definitionsProvider.definitions,
-            this.completionsProvider.documents,
-            import_file.IsBuiltIn
-          );
-          this.read_unscanned_imports(new_completions);
+					try{
+						spParser.parse_file(
+							file,
+							new_completions,
+							this.definitionsProvider.definitions,
+							this.completionsProvider.documents,
+							include.IsBuiltIn
+						);
+					}
+					catch(err) {console.error(err, include.uri.toString());}
+					if(debug) console.log("parsed", include.uri.toString());
+          this.read_unscanned_imports(new_completions.includes);
+					if(debug) console.log("adding", include.uri.toString());
           this.completionsProvider.completions.set(
-            import_file.uri,
+            include.uri,
             new_completions
           );
         }
@@ -143,12 +154,13 @@ export class Providers {
 
   public parse_sm_api(SourcemodHome: string): void {
     if (!SourcemodHome) return;
-    glob(path.join(SourcemodHome, "**/*.inc"), (err, files) => {
-      for (let file of files) {
-        let completions = new smCompletions.FileCompletions(
+    let files = glob.sync(path.join(SourcemodHome, "**/*.inc"));
+    for (let file of files) {
+      try {
+        let completions = new spCompletions.FileCompletions(
           URI.file(file).toString()
         );
-        smParser.parse_file(
+        spParser.parse_file(
           file,
           completions,
           this.definitionsProvider.definitions,
@@ -159,7 +171,9 @@ export class Providers {
         let uri =
           "file://__sourcemod_builtin/" + path.relative(SourcemodHome, file);
         this.completionsProvider.completions.set(uri, completions);
+      } catch (e) {
+        console.error(e);
       }
-    });
+    }
   }
 }

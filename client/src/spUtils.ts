@@ -1,6 +1,7 @@
 ﻿import { MarkdownString } from "vscode";
 
 export function description_to_md(description: string): MarkdownString {
+	if(typeof description === "undefined") return new MarkdownString("");
   description = description
     .replace(/([^.])(\.) *[\n]+(?:\s*([^@\s.]))/gm, "$1. $3")
     .replace(/\s+\*\s*/gm, "\n\n");
