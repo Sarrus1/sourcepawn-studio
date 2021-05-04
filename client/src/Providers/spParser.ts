@@ -123,7 +123,7 @@ class Parser {
       this.read_enums(match, true);
     }
     // Match enums
-    match = line.match(/^\s*(?:enum\s+)(.*)/);
+    match = line.match(/^\s*(?:enum\s*)(.*)/);
     if (match) {
       this.read_enums(match, false);
     }
@@ -222,7 +222,7 @@ class Parser {
     if (IsStruct) {
       // TODO: Add enum struct support here
     } else {
-      let matchBis = match[0].match(/^\s*(?:enum\s+)([A-z0-9_]*)/);
+      let matchBis = match[0].match(/^\s*(?:enum\s*)([A-z0-9_]*)/);
       if (matchBis) {
         // Create a completion for the enum itself if it has a name
         var enumCompletion: EnumCompletion = new EnumCompletion(
@@ -244,7 +244,7 @@ class Parser {
         this.definitions.set(match[1], def);
       } else {
         var enumCompletion: EnumCompletion = new EnumCompletion("", this.file);
-        this.completions.add(matchBis[1], enumCompletion);
+        this.completions.add("", enumCompletion);
       }
 
       // Set max number of iterations for safety
