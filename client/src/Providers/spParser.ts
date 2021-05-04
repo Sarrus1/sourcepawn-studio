@@ -206,7 +206,7 @@ class Parser {
     );
     let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
       URI.file(this.file),
-      new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+      PositiveRange(this.lineNb),
       smDefinitions.DefinitionKind.Define
     );
     this.definitions.set(match[1], def);
@@ -234,13 +234,7 @@ class Parser {
         this.completions.add(matchBis[1], enumCompletion);
         var def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
           URI.file(this.file),
-          // For some reason, function declared at the top of the file will cause an error here
-          new vscode.Range(
-            this.lineNb >= 0 ? this.lineNb : 0,
-            0,
-            this.lineNb >= 0 ? this.lineNb : 0,
-            0
-          ),
+					PositiveRange(this.lineNb),
           smDefinitions.DefinitionKind.Enum
         );
         this.definitions.set(match[1], def);
@@ -292,7 +286,7 @@ class Parser {
         );
         let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
           URI.file(this.file),
-          new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+          PositiveRange(this.lineNb),
           smDefinitions.DefinitionKind.EnumMember
         );
         this.definitions.set(enumMemberName, def);
@@ -326,7 +320,7 @@ class Parser {
         if (/g_.*/g.test(variable_completion)) {
           let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
             URI.file(this.file),
-            new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+            PositiveRange(this.lineNb),
             smDefinitions.DefinitionKind.Variable
           );
           this.definitions.set(variable_completion, def);
@@ -354,7 +348,7 @@ class Parser {
           if (/g_.*/g.test(variable_completion)) {
             let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
               URI.file(this.file),
-              new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+              PositiveRange(this.lineNb),
               smDefinitions.DefinitionKind.Variable
             );
             this.definitions.set(variable_completion, def);
@@ -442,7 +436,7 @@ class Parser {
     if (match) {
       let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
         URI.file(this.file),
-        new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+        PositiveRange(this.lineNb),
         smDefinitions.DefinitionKind.Function
       );
       this.definitions.set(match[1], def);
@@ -471,7 +465,7 @@ class Parser {
       let name_match = match[2];
       let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
         URI.file(this.file),
-        new vscode.Range(this.lineNb, 0, this.lineNb, 0),
+        PositiveRange(this.lineNb),
         smDefinitions.DefinitionKind.Function
       );
       this.definitions.set(name_match, def);
@@ -588,4 +582,10 @@ class Parser {
 
     return { description, params };
   }
+}
+
+function PositiveRange(lineNb:number):vscode.Range
+{
+	lineNb=lineNb>0?lineNb:0;
+	return new vscode.Range(lineNb, 0, lineNb, 0);
 }
