@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 1.11.3
+ - Fixed a major bug that would cause infinite parsing and crash the extension after a while, thanks a lot to Adrián, sze and JustSad for helping me to fix it!
+
 ### 1.11.2
  - Fixed a bug where enums without a space after the name wouldn't be parsed.
  - Added an include guard to avoid parsing the same files multiple times.
