@@ -25,7 +25,8 @@
     "onCommand:sourcepawn-vscode.createProject",
     "onCommand:sourcepawn-vscode.compileSM",
     "onCommand:sourcepawn-vscode.uploadToServer",
-    "onCommand:sourcepawn-vscode.refreshPlugins"
+    "onCommand:sourcepawn-vscode.refreshPlugins",
+    "onCommand:sourcepawn-vscode.insertParameters"
   ],
   "contributes": {
     "commands": [
@@ -72,6 +73,11 @@
           "light": "fileicons/images/compile.svg",
           "dark": "fileicons/images/compile.svg"
         }
+      },
+      {
+        "command": "sourcepawn-vscode.insertParameters",
+        "title": "SM Insert Function Parameters",
+        "category": "Project"
       }
     ],
     "menus": {
@@ -95,6 +101,11 @@
         "key": "ctrl+shift+d",
         "mac": "cmd+shift+d",
         "when": "editorTextFocus && resourceLangId == sourcepawn"
+      },
+      {
+        "command": "sourcepawn-vscode.insertParameters",
+        "key": "tab",
+        "when": "editorTextFocus && resourceLangId == sourcepawn && parameterHintsVisible"
       }
     ],
     "configuration": {
