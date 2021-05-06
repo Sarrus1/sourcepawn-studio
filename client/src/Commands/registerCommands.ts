@@ -7,6 +7,7 @@ import * as CreateProjectCommand from "./createProject";
 import * as CompileSMCommand from "./compileSM";
 import * as UploadToServerCommand from "./uploadToServer";
 import * as RefreshPluginsCommand from "./refreshPlugins";
+import * as InsertParametersCommand from "./insertParameters";
 
 export function registerSMCommands(context: ExtensionContext) {
   let createTask = commands.registerCommand(
@@ -56,4 +57,10 @@ export function registerSMCommands(context: ExtensionContext) {
     RefreshPluginsCommand.run.bind(undefined)
   );
   context.subscriptions.push(RefreshPlugins);
+
+  let InsertParameters = commands.registerTextEditorCommand(
+    "sourcepawn-vscode.insertParameters",
+    InsertParametersCommand.run.bind(undefined)
+  );
+  context.subscriptions.push(InsertParameters);
 }
