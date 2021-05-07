@@ -1,7 +1,6 @@
 import {
   ExtensionContext,
   workspace as Workspace,
-  WorkspaceFolder,
   languages,
 	window,
 } from "vscode";
@@ -13,7 +12,6 @@ import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./spFormat";
 import { basename, extname } from "path";
 import { URI } from "vscode-uri";
-import { type } from "os";
 
 let getDirectories = function (src, ext, callback) {
   glob(src + "/**/*", callback);

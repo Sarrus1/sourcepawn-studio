@@ -458,7 +458,6 @@ class Parser {
 
   read_new_style_function(line: string) {
     let match = line.match(
-      ///(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
       /(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^]*)/
     );
     if (match) {
@@ -501,7 +500,7 @@ class Parser {
         // Treat differently if the function is declared on multiple lines
         paramsMatch = /\)\s*(?:\{|;)?\s*$/.test(match[0])
           ? match[0]
-          : match[0] +
+          : match[0].replace(/\(.*\s*$/, "(") +
             paramsMatch
               .replace(/\s*[A-z0-9_]+\s*\(\s*/g, "")
               .replace(/\s+/gm, " ");

@@ -115,8 +115,8 @@ export class Providers {
   }
 
   public read_unscanned_imports(includes: Include[]) {
-		let debug = vscode.workspace.getConfiguration("sourcepawn").get("trace.server");
-		(debug=="messages"||debug=="verbose")? debug=true:debug=false;
+		let debugSetting = vscode.workspace.getConfiguration("sourcepawn").get("trace.server");
+		let debug = (debugSetting=="messages"||debugSetting=="verbose");
     for (let include of includes) {
 			if(debug) console.log(include.uri.toString());
       let completion = this.completionsProvider.completions.get(
