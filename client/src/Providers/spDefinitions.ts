@@ -3,10 +3,12 @@ import { URI } from "vscode-uri";
 
 export enum DefinitionKind {
   Variable = 0,
-  Function = 1,
-  Define = 2,
-  Enum = 3,
-  EnumMember = 4,
+  Function,
+  Define,
+  Enum,
+  EnumMember,
+	EnumStruct,
+	EnumStructMember
 }
 
 export class DefLocation extends vscode.Location {

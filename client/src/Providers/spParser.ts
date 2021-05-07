@@ -9,6 +9,8 @@ import {
   MethodCompletion,
   FunctionParam,
   PropertyCompletion,
+	EnumStructCompletion,
+	EnumStructMemberCompletion
 } from "./spCompletionsKinds";
 import * as vscode from "vscode";
 import { URI } from "vscode-uri";
@@ -103,36 +105,41 @@ class Parser {
     let match = line.match(/\s*#define\s+([A-Za-z0-9_]+)\s+([^]+)/);
     if (match) {
       this.read_define(match);
+			return;
     }
 
     // Match global include
     match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>\s*$/);
     if (match) {
       this.read_include(match);
+			return;
     }
 
     // Match relative include
     match = line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"\s*$/);
     if (match) {
       this.read_include(match);
+			return;
     }
 
-    // TODO: Separate enums in the callback here.
     // Match enum structs
     match = line.match(/^\s*(?:enum\s+struct)(.*)/);
     if (match) {
       this.read_enums(match, true);
+			return;
     }
     // Match enums
     match = line.match(/^\s*(?:enum\s*)(.*)/);
     if (match) {
       this.read_enums(match, false);
+			return;
     }
 
     // Match for loop iteration variable only in the current file
     match = line.match(/^\s*(?:for\s*\(\s*int\s+)([A-z0-9_]*)/);
     if (match && !this.IsBuiltIn) {
       this.read_loop_variables(match);
+			return;
     }
 
     // Match variables only in the current file
@@ -141,6 +148,7 @@ class Parser {
     );
     if (match && !this.IsBuiltIn) {
       this.read_variables(match);
+			return;
     }
 
     match = line.match(/\s*\/\*/);
@@ -223,16 +231,77 @@ class Parser {
 
   read_enums(match, IsStruct: boolean) {
     if (IsStruct) {
-      // TODO: Add enum struct support here
+			// Create a completion for the enum struct itself if it has a name
+			var enumStructCompletion: EnumStructCompletion = new EnumStructCompletion(
+				match[1],
+				this.file
+			);
+			this.completions.add(match[1], enumStructCompletion);
+			var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
+				URI.file(this.file),
+				PositiveRange(this.lineNb),
+				spDefinitions.DefinitionKind.EnumStruct
+			);
+			this.definitions.set(match[1], def);
+
+      // Set max number of iterations for safety
+      let iter = 0;
+
+      // Proceed to the next line
+      let line: string = "";
+
+      // Match all the enum members
+      while (iter < 100 && !line.match(/\s*(\}\s*\;?)/)) {
+        iter++;
+        line = this.lines.shift();
+        this.lineNb++;
+        // Stop early if it's the end of the file
+        if (typeof line === "undefined") {
+          return;
+        }
+        match = line.match(/^\s*(?:[A-z0-9_]*)\s+([A-z0-9_]*)\s*.*/);
+
+        // Skip if didn't match
+        if (!match) {
+          continue;
+        }
+        let enumStructMemberName = match[1];
+        // Try to match multiblock comments
+        let enumStructMemberDescription: string;
+        match = line.match(/\/\*\*<?\s*(.+?(?=\*\/))/);
+        if (match) {
+          enumStructMemberDescription = match[1];
+        }
+        match = line.match(/\/\/<?\s*(.*)/);
+        if (match) {
+          enumStructMemberDescription = match[1];
+        }
+        this.completions.add(
+          enumStructMemberName+"___property",
+          new EnumStructMemberCompletion(
+            enumStructMemberName,
+            this.file,
+            enumStructMemberDescription,
+            enumStructCompletion
+          )
+        );
+        let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
+          URI.file(this.file),
+          PositiveRange(this.lineNb),
+          spDefinitions.DefinitionKind.EnumStructMember
+        );
+        this.definitions.set(enumStructMemberName, def);
+      }
+
     } else {
-      let matchBis = match[0].match(/^\s*(?:enum\s*)([A-z0-9_]*)/);
-      if (matchBis) {
+      let nameMatch = match[0].match(/^\s*(?:enum\s*)([A-z0-9_]*)/);
+      if (nameMatch) {
         // Create a completion for the enum itself if it has a name
         var enumCompletion: EnumCompletion = new EnumCompletion(
-          matchBis[1],
+          nameMatch[1],
           this.file
         );
-        this.completions.add(matchBis[1], enumCompletion);
+        this.completions.add(nameMatch[1], enumCompletion);
         var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
           URI.file(this.file),
 					PositiveRange(this.lineNb),
