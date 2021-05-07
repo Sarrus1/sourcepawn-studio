@@ -123,7 +123,7 @@ class Parser {
     }
 
     // Match enum structs
-    match = line.match(/^\s*(?:enum\s+struct)(.*)/);
+    match = line.match(/^\s*(?:enum\s+struct\s+)(.*)/);
     if (match) {
       this.read_enums(match, true);
 			return;
