@@ -1,5 +1,5 @@
-import * as smCompletions from "./spCompletions";
-import * as smDefinitions from "./spDefinitions";
+import * as spCompletions from "./spCompletions";
+import * as spDefinitions from "./spDefinitions";
 import {
   FunctionCompletion,
   DefineCompletion,
@@ -17,8 +17,8 @@ import { basename } from "path";
 
 export function parse_file(
   file: string,
-  completions: smCompletions.FileCompletions,
-  definitions: smDefinitions.Definitions,
+  completions: spCompletions.FileCompletions,
+  definitions: spDefinitions.Definitions,
   documents: Map<string, URI>,
   IsBuiltIn: boolean = false
 ) {
@@ -29,8 +29,8 @@ export function parse_file(
 export function parse_text(
   data: string,
   file: string,
-  completions: smCompletions.FileCompletions,
-  definitions: smDefinitions.Definitions,
+  completions: spCompletions.FileCompletions,
+  definitions: spDefinitions.Definitions,
   documents: Map<string, URI>,
   IsBuiltIn: boolean = false
 ) {
@@ -59,8 +59,8 @@ enum State {
 }
 
 class Parser {
-  completions: smCompletions.FileCompletions;
-  definitions: smDefinitions.Definitions;
+  completions: spCompletions.FileCompletions;
+  definitions: spDefinitions.Definitions;
   state: State[];
   scratch: any;
   state_data: any;
@@ -74,8 +74,8 @@ class Parser {
     lines: string[],
     file: string,
     IsBuiltIn: boolean,
-    completions: smCompletions.FileCompletions,
-    definitions: smDefinitions.Definitions,
+    completions: spCompletions.FileCompletions,
+    definitions: spDefinitions.Definitions,
     documents: Map<string, URI>
   ) {
     this.completions = completions;
@@ -205,10 +205,10 @@ class Parser {
       match[1],
       new DefineCompletion(match[1], match[2], this.file)
     );
-    let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+    let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
       URI.file(this.file),
       PositiveRange(this.lineNb),
-      smDefinitions.DefinitionKind.Define
+      spDefinitions.DefinitionKind.Define
     );
     this.definitions.set(match[1], def);
     return;
@@ -233,10 +233,10 @@ class Parser {
           this.file
         );
         this.completions.add(matchBis[1], enumCompletion);
-        var def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+        var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
           URI.file(this.file),
 					PositiveRange(this.lineNb),
-          smDefinitions.DefinitionKind.Enum
+          spDefinitions.DefinitionKind.Enum
         );
         this.definitions.set(match[1], def);
       } else {
@@ -285,10 +285,10 @@ class Parser {
             enumCompletion
           )
         );
-        let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+        let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
           URI.file(this.file),
           PositiveRange(this.lineNb),
-          smDefinitions.DefinitionKind.EnumMember
+          spDefinitions.DefinitionKind.EnumMember
         );
         this.definitions.set(enumMemberName, def);
       }
@@ -319,10 +319,10 @@ class Parser {
         );
         // Save as definition if it's a global variable
         if (/g_.*/g.test(variable_completion)) {
-          let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+          let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
             URI.file(this.file),
             PositiveRange(this.lineNb),
-            smDefinitions.DefinitionKind.Variable
+            spDefinitions.DefinitionKind.Variable
           );
           this.definitions.set(variable_completion, def);
         }
@@ -347,10 +347,10 @@ class Parser {
 
           // Save as definition if it's a global variable
           if (/g_.*/g.test(variable_completion)) {
-            let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+            let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
               URI.file(this.file),
               PositiveRange(this.lineNb),
-              smDefinitions.DefinitionKind.Variable
+              spDefinitions.DefinitionKind.Variable
             );
             this.definitions.set(variable_completion, def);
           }
@@ -435,10 +435,10 @@ class Parser {
       /\s*(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/
     );
     if (match) {
-      let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+      let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
         URI.file(this.file),
         PositiveRange(this.lineNb),
-        smDefinitions.DefinitionKind.Function
+        spDefinitions.DefinitionKind.Function
       );
       this.definitions.set(match[1], def);
       let { description, params } = this.parse_doc_comment();
@@ -463,10 +463,10 @@ class Parser {
     if (match) {
       let { description, params } = this.parse_doc_comment();
       let name_match = match[2];
-      let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+      let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
         URI.file(this.file),
         PositiveRange(this.lineNb),
-        smDefinitions.DefinitionKind.Function
+        spDefinitions.DefinitionKind.Function
       );
       this.definitions.set(name_match, def);
       if (this.state[this.state.length - 2] === State.Methodmap) {
