@@ -149,7 +149,7 @@ class Parser {
     }
 
     // Match for loop iteration variable only in the current file
-    match = line.match(/^\s*(?:for\s*\(\s*int\s+)([A-z0-9_]*)/);
+    match = line.match(/^\s*(?:for\s*\(\s*int\s+)([A-Za-z0-9_]*)/);
     if (match && !this.IsBuiltIn) {
       this.read_loop_variables(match);
 			return;
@@ -387,7 +387,7 @@ class Parser {
 
   read_variables(match) {
 		// Add the type as a highlight token
-		let token = match[0].match(/^\s*(?:(?:new|static|const|decl|public|stock)\s+)*([A-z0-9_]+)/);
+		let token = match[0].match(/^\s*(?:(?:new|static|const|decl|public|stock)\s+)*([A-Za-z0-9_]+)/);
 		if(token){
 			let pos = GetWordStartEnd( token[0],token[1]);
 			let range = new vscode.Range(this.lineNb, pos.start, this.lineNb, pos.end);
