@@ -161,6 +161,7 @@ class Parser {
 			/^\s*(?:(?:new|static|const|decl|public|stock)\s+)*[A-z0-9_]+\s+([A-z0-9_\[\]+-]+\s*(?:=\s*[^;,]+)?(?:,|;))/
 			);
     if (match && !this.IsBuiltIn) {
+      if(match[0].match(/^\s*(return|break|continue|delete|forward|native|property|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)/)) return;
       this.read_variables(match);
 			return;
     }
