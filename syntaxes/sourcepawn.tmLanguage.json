@@ -123,12 +123,12 @@
 				{
 					"comment": "Control statements",
 					"name": "keyword.control.statement.sourcepawn",
-					"match": "\\b(?:if|else|for|while|do|switch|case|default)\\b"
+					"match": "\\b(?:if|else|for|while|do|switch|case|default|return)\\b"
 				},
 				{
 					"comment": "keywords",
 					"name": "keyword.sourcepawn",
-					"match": "\\b(?:return|break|continue|new|static|decl|const|delete|forward|native|property|public|stock|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)\\b"
+					"match": "\\b(?:break|continue|new|static|decl|const|delete|forward|native|property|public|stock|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)\\b"
 				}
 			]
 		},
