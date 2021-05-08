@@ -59,7 +59,7 @@
 		},
 		{
 			"comment": "Core types",
-			"match": "\\b(?:bool|char|const|float|int|void|any)\\b",
+			"match": "\\b(?:bool|char|float|int|void|any)\\b",
 			"name": "support.type.core.sourcepawn"
 		},
 		{
@@ -128,7 +128,7 @@
 				{
 					"comment": "keywords",
 					"name": "keyword.sourcepawn",
-					"match": "\\b(?:return|break|continue|new|static|decl|delete|forward|native|property|public|stock|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)\\b"
+					"match": "\\b(?:return|break|continue|new|static|decl|const|delete|forward|native|property|public|stock|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)\\b"
 				}
 			]
 		},

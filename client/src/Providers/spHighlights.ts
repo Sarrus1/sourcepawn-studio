@@ -18,7 +18,7 @@ export class HighlightingRepository
   public provideDocumentSemanticTokens(
     document: vscode.TextDocument
   ): vscode.ProviderResult<vscode.SemanticTokens> {
-
+    console.debug("running");
     const tokensBuilder = new vscode.SemanticTokensBuilder(SP_LEGENDS);
 		for(let range of this.highlightTokens.get(document.uri.toString())){
 			tokensBuilder.push(

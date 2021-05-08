@@ -88,7 +88,12 @@ class Parser {
   ) {
     this.completions = completions;
     this.definitions = definitions;
-		this.highlights = highlights;
+    let uri = URI.file(file).toString();
+    // Reset the highlights every time we parse the file
+    if(highlights.has(uri)){
+      highlights.set(uri, []);
+    }
+    this.highlights = highlights;
     this.state = [State.None];
     this.lineNb = -1;
     this.lines = lines;
@@ -108,6 +113,7 @@ class Parser {
   }
 
   interpLine(line: string) {
+    if(typeof line === "undefined") return;
     // Match define
     let match = line.match(/\s*#define\s+([A-Za-z0-9_]+)\s+([^]+)/);
     if (match) {
@@ -152,7 +158,7 @@ class Parser {
     // Match variables only in the current file
     match = line.match(
       ///^(?:\s*)?(?:bool|char|const|float|int|any|Plugin|Handle|ConVar|Cookie|Database|DBDriver|DBResultSet|DBStatement|GameData|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu|Timer|FrameIterator|GlobalForward|PrivateForward|Profiler)\s+(.*)/
-			/^\s*[A-z0-9_]*\s+([A-z0-9_]+\s*(?:=?[^;,]+)(?:,|;)?)/
+			/^\s*(?:(?:new|static|const|decl|public|stock)\s+)*[A-z0-9_]+\s+([A-z0-9_\[\]+-]+\s*(?:=\s*[^;,]+)?(?:,|;))/
 			);
     if (match && !this.IsBuiltIn) {
       this.read_variables(match);
@@ -380,14 +386,13 @@ class Parser {
 
   read_variables(match) {
 		// Add the type as a highlight token
-		let token = match[0].match(/^\s*([A-z0-9_]*)/);
+		let token = match[0].match(/^\s*(?:(?:new|static|const|decl|public|stock)\s+)*([A-z0-9_]+)/);
 		if(token){
 			let pos = GetWordStartEnd( token[0],token[1]);
 			let range = new vscode.Range(this.lineNb, pos.start, this.lineNb, pos.end);
 			let uri:string=URI.file(this.file).toString();
 			if(this.highlights.has(uri)){
-				let ThisDocRange;
-				ThisDocRange = this.highlights.get(uri);
+				let ThisDocRange:vscode.Range[] = this.highlights.get(uri);
 				ThisDocRange.push(range);
 				this.highlights.set(uri, ThisDocRange);
 			}
