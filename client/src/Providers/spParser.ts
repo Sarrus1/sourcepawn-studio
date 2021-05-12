@@ -1,5 +1,6 @@
-import * as smCompletions from "./spCompletions";
-import * as smDefinitions from "./spDefinitions";
+import * as spCompletions from "./spCompletions";
+import * as spDefinitions from "./spDefinitions";
+import * as spHighlights from "./spHighlights";
 import {
   FunctionCompletion,
   DefineCompletion,
@@ -9,6 +10,8 @@ import {
   MethodCompletion,
   FunctionParam,
   PropertyCompletion,
+  EnumStructCompletion,
+  EnumStructMemberCompletion,
 } from "./spCompletionsKinds";
 import * as vscode from "vscode";
 import { URI } from "vscode-uri";
@@ -17,20 +20,30 @@ import { basename } from "path";
 
 export function parse_file(
   file: string,
-  completions: smCompletions.FileCompletions,
-  definitions: smDefinitions.Definitions,
+  completions: spCompletions.FileCompletions,
+  definitions: spDefinitions.Definitions,
+  highlights: spHighlights.HighlightTokens,
   documents: Map<string, URI>,
   IsBuiltIn: boolean = false
 ) {
   let data = fs.readFileSync(file, "utf-8");
-  parse_text(data, file, completions, definitions, documents, IsBuiltIn);
+  parse_text(
+    data,
+    file,
+    completions,
+    definitions,
+    highlights,
+    documents,
+    IsBuiltIn
+  );
 }
 
 export function parse_text(
   data: string,
   file: string,
-  completions: smCompletions.FileCompletions,
-  definitions: smDefinitions.Definitions,
+  completions: spCompletions.FileCompletions,
+  definitions: spDefinitions.Definitions,
+  highlights: spHighlights.HighlightTokens,
   documents: Map<string, URI>,
   IsBuiltIn: boolean = false
 ) {
@@ -44,6 +57,7 @@ export function parse_text(
     IsBuiltIn,
     completions,
     definitions,
+    highlights,
     documents
   );
   parser.parse();
@@ -59,8 +73,9 @@ enum State {
 }
 
 class Parser {
-  completions: smCompletions.FileCompletions;
-  definitions: smDefinitions.Definitions;
+  completions: spCompletions.FileCompletions;
+  definitions: spDefinitions.Definitions;
+  highlights: spHighlights.HighlightTokens;
   state: State[];
   scratch: any;
   state_data: any;
@@ -74,12 +89,19 @@ class Parser {
     lines: string[],
     file: string,
     IsBuiltIn: boolean,
-    completions: smCompletions.FileCompletions,
-    definitions: smDefinitions.Definitions,
+    completions: spCompletions.FileCompletions,
+    definitions: spDefinitions.Definitions,
+    highlights: spHighlights.HighlightTokens,
     documents: Map<string, URI>
   ) {
     this.completions = completions;
     this.definitions = definitions;
+    let uri = URI.file(file).toString();
+    // Reset the highlights every time we parse the file
+    if (highlights.has(uri)) {
+      highlights.set(uri, []);
+    }
+    this.highlights = highlights;
     this.state = [State.None];
     this.lineNb = -1;
     this.lines = lines;
@@ -99,48 +121,62 @@ class Parser {
   }
 
   interpLine(line: string) {
+    if (typeof line === "undefined") return;
     // Match define
     let match = line.match(/\s*#define\s+([A-Za-z0-9_]+)\s+([^]+)/);
     if (match) {
       this.read_define(match);
+      return;
     }
 
     // Match global include
     match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>\s*$/);
     if (match) {
       this.read_include(match);
+      return;
     }
 
     // Match relative include
     match = line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"\s*$/);
     if (match) {
       this.read_include(match);
+      return;
     }
 
-    // TODO: Separate enums in the callback here.
     // Match enum structs
-    match = line.match(/^\s*(?:enum\s+struct)(.*)/);
+    match = line.match(/^\s*(?:enum\s+struct\s+)(.*)/);
     if (match) {
       this.read_enums(match, true);
+      return;
     }
     // Match enums
     match = line.match(/^\s*(?:enum\s*)(.*)/);
     if (match) {
       this.read_enums(match, false);
+      return;
     }
 
     // Match for loop iteration variable only in the current file
-    match = line.match(/^\s*(?:for\s*\(\s*int\s+)([A-z0-9_]*)/);
+    match = line.match(/^\s*(?:for\s*\(\s*int\s+)([A-Za-z0-9_]*)/);
     if (match && !this.IsBuiltIn) {
       this.read_loop_variables(match);
+      return;
     }
 
     // Match variables only in the current file
     match = line.match(
-      /^(?:\s*)?(?:bool|char|const|float|int|any|Plugin|Handle|ConVar|Cookie|Database|DBDriver|DBResultSet|DBStatement|GameData|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu|Timer|FrameIterator|GlobalForward|PrivateForward|Profiler)\s+(.*)/
+      ///^(?:\s*)?(?:bool|char|const|float|int|any|Plugin|Handle|ConVar|Cookie|Database|DBDriver|DBResultSet|DBStatement|GameData|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu|Timer|FrameIterator|GlobalForward|PrivateForward|Profiler)\s+(.*)/
+      /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*[A-z0-9_]+\s+([A-z0-9_\[\]+-]+\s*(?:=\s*[^;,]+)?(?:,|;))/
     );
     if (match && !this.IsBuiltIn) {
+      if (
+        match[0].match(
+          /^\s*(return|break|continue|delete|forward|native|property|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)/
+        )
+      )
+        return;
       this.read_variables(match);
+      return;
     }
 
     match = line.match(/\s*\/\*/);
@@ -195,7 +231,15 @@ class Parser {
     );
 
     if (match) {
-      this.read_function(line);
+			let testWords=["if", "else", "for", "while"];
+			for(let word of testWords){
+				let regExp=new RegExp(`\\b${word}\\b`)
+				if(regExp.test(match[1])||regExp.test(match[2])) return;
+			}
+			
+			let isOldStyle:boolean=(match[2]=="")
+			this.read_function(line, isOldStyle);
+
     }
     return;
   }
@@ -205,12 +249,12 @@ class Parser {
       match[1],
       new DefineCompletion(match[1], match[2], this.file)
     );
-    let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+    let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
       URI.file(this.file),
       PositiveRange(this.lineNb),
-      smDefinitions.DefinitionKind.Define
+      spDefinitions.DefinitionKind.Define
     );
-    this.definitions.set(match[1], def);
+    this.AddDefinition(match[1], def);
     return;
   }
 
@@ -223,22 +267,82 @@ class Parser {
 
   read_enums(match, IsStruct: boolean) {
     if (IsStruct) {
-      // TODO: Add enum struct support here
+      // Create a completion for the enum struct itself if it has a name
+      var enumStructCompletion: EnumStructCompletion = new EnumStructCompletion(
+        match[1],
+        this.file
+      );
+      this.completions.add(match[1], enumStructCompletion);
+      var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
+        URI.file(this.file),
+        PositiveRange(this.lineNb),
+        spDefinitions.DefinitionKind.EnumStruct
+      );
+      this.AddDefinition(match[1], def);
+
+      // Set max number of iterations for safety
+      let iter = 0;
+
+      // Proceed to the next line
+      let line: string = "";
+
+      // Match all the enum members
+      while (iter < 100 && !line.match(/\s*(\}\s*\;?)/)) {
+        iter++;
+        line = this.lines.shift();
+        this.lineNb++;
+        // Stop early if it's the end of the file
+        if (typeof line === "undefined") {
+          return;
+        }
+        match = line.match(/^\s*(?:[A-z0-9_]*)\s+([A-z0-9_]*)\s*.*/);
+
+        // Skip if didn't match
+        if (!match) {
+          continue;
+        }
+        let enumStructMemberName = match[1];
+        // Try to match multiblock comments
+        let enumStructMemberDescription: string;
+        match = line.match(/\/\*\*<?\s*(.+?(?=\*\/))/);
+        if (match) {
+          enumStructMemberDescription = match[1];
+        }
+        match = line.match(/\/\/<?\s*(.*)/);
+        if (match) {
+          enumStructMemberDescription = match[1];
+        }
+        this.completions.add(
+          enumStructMemberName + "___property",
+          new EnumStructMemberCompletion(
+            enumStructMemberName,
+            this.file,
+            enumStructMemberDescription,
+            enumStructCompletion
+          )
+        );
+        let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
+          URI.file(this.file),
+          PositiveRange(this.lineNb),
+          spDefinitions.DefinitionKind.EnumStructMember
+        );
+        this.AddDefinition(enumStructMemberName, def);
+      }
     } else {
-      let matchBis = match[0].match(/^\s*(?:enum\s*)([A-z0-9_]*)/);
-      if (matchBis) {
+      let nameMatch = match[0].match(/^\s*(?:enum\s*)([A-z0-9_]*)/);
+      if (nameMatch) {
         // Create a completion for the enum itself if it has a name
         var enumCompletion: EnumCompletion = new EnumCompletion(
-          matchBis[1],
+          nameMatch[1],
           this.file
         );
-        this.completions.add(matchBis[1], enumCompletion);
-        var def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+        this.completions.add(nameMatch[1], enumCompletion);
+        var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
           URI.file(this.file),
-					PositiveRange(this.lineNb),
-          smDefinitions.DefinitionKind.Enum
+          PositiveRange(this.lineNb),
+          spDefinitions.DefinitionKind.Enum
         );
-        this.definitions.set(match[1], def);
+        this.AddDefinition(match[1], def);
       } else {
         var enumCompletion: EnumCompletion = new EnumCompletion("", this.file);
         this.completions.add("", enumCompletion);
@@ -285,12 +389,12 @@ class Parser {
             enumCompletion
           )
         );
-        let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+        let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
           URI.file(this.file),
           PositiveRange(this.lineNb),
-          smDefinitions.DefinitionKind.EnumMember
+          spDefinitions.DefinitionKind.EnumMember
         );
-        this.definitions.set(enumMemberName, def);
+        this.AddDefinition(enumMemberName, def);
       }
       return;
     }
@@ -302,6 +406,27 @@ class Parser {
   }
 
   read_variables(match) {
+    // Add the type as a highlight token
+    let token = match[0].match(
+      /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*([A-Za-z0-9_]+)/
+    );
+    if (token) {
+      let pos = GetWordStartEnd(token[0], token[1]);
+      let range = new vscode.Range(
+        this.lineNb,
+        pos.start,
+        this.lineNb,
+        pos.end
+      );
+      let uri: string = URI.file(this.file).toString();
+      if (this.highlights.has(uri)) {
+        let ThisDocRange: vscode.Range[] = this.highlights.get(uri);
+        ThisDocRange.push(range);
+        this.highlights.set(uri, ThisDocRange);
+      } else {
+        this.highlights.set(uri, [range]);
+      }
+    }
     let match_variables = [];
     // Check if it's a multiline declaration
     if (match[1].match(/(;)(?:\s*|)$/)) {
@@ -319,12 +444,12 @@ class Parser {
         );
         // Save as definition if it's a global variable
         if (/g_.*/g.test(variable_completion)) {
-          let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+          let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
             URI.file(this.file),
             PositiveRange(this.lineNb),
-            smDefinitions.DefinitionKind.Variable
+            spDefinitions.DefinitionKind.Variable
           );
-          this.definitions.set(variable_completion, def);
+          this.AddDefinition(variable_completion, def);
         }
       }
     } else {
@@ -347,12 +472,12 @@ class Parser {
 
           // Save as definition if it's a global variable
           if (/g_.*/g.test(variable_completion)) {
-            let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+            let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
               URI.file(this.file),
               PositiveRange(this.lineNb),
-              smDefinitions.DefinitionKind.Variable
+              spDefinitions.DefinitionKind.Variable
             );
-            this.definitions.set(variable_completion, def);
+            this.AddDefinition(variable_completion, def);
           }
         }
         match[1] = this.lines.shift();
@@ -418,11 +543,11 @@ class Parser {
     return partial_params_match;
   }
 
-  read_function(line: string) {
+  read_function(line: string, isOldStyle:boolean) {
     if (typeof line === "undefined") {
       return;
     }
-    if (line.includes(":")) {
+    if (isOldStyle) {
       this.read_old_style_function(line);
     } else {
       this.read_new_style_function(line);
@@ -435,12 +560,12 @@ class Parser {
       /\s*(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/
     );
     if (match) {
-      let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+      let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
         URI.file(this.file),
         PositiveRange(this.lineNb),
-        smDefinitions.DefinitionKind.Function
+        spDefinitions.DefinitionKind.Function
       );
-      this.definitions.set(match[1], def);
+      this.AddDefinition(match[1], def);
       let { description, params } = this.parse_doc_comment();
       this.completions.add(
         match[1],
@@ -458,21 +583,20 @@ class Parser {
 
   read_new_style_function(line: string) {
     let match = line.match(
-      ///(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
       /(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^]*)/
     );
     if (match) {
       let { description, params } = this.parse_doc_comment();
       let name_match = match[2];
-      let def: smDefinitions.DefLocation = new smDefinitions.DefLocation(
+      let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
         URI.file(this.file),
         PositiveRange(this.lineNb),
-        smDefinitions.DefinitionKind.Function
+        spDefinitions.DefinitionKind.Function
       );
-      this.definitions.set(name_match, def);
+      this.AddDefinition(name_match, def);
       if (this.state[this.state.length - 2] === State.Methodmap) {
         this.completions.add(
-          name_match+"__method",
+          name_match + "__method",
           new MethodCompletion(
             this.state_data.name,
             name_match,
@@ -485,23 +609,21 @@ class Parser {
         let paramsMatch = match[3];
         // Iteration safety in case something goes wrong
         let maxiter = 0;
-        let line: string;
-        line = this.lines.shift();
-        this.lineNb++;
+				this.AddParamHighLights(line, paramsMatch);
         while (
           !paramsMatch.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) &&
           typeof line != "undefined" &&
           maxiter < 20
         ) {
-          paramsMatch += line;
           maxiter++;
           line = this.lines.shift();
           this.lineNb++;
+          paramsMatch += line;
         }
         // Treat differently if the function is declared on multiple lines
         paramsMatch = /\)\s*(?:\{|;)?\s*$/.test(match[0])
           ? match[0]
-          : match[0] +
+          : match[0].replace(/\(.*\s*$/, "(") +
             paramsMatch
               .replace(/\s*[A-z0-9_]+\s*\(\s*/g, "")
               .replace(/\s+/gm, " ");
@@ -583,21 +705,61 @@ class Parser {
 
     return { description, params };
   }
-}
 
-function PositiveRange(lineNb:number):vscode.Range
-{
-	lineNb=lineNb>0?lineNb:0;
-	return new vscode.Range(lineNb, 0, lineNb, 0);
-}
+  AddDefinition(name: string, def: spDefinitions.DefLocation): void {
+    if (!this.definitions.has(name)||!this.IsBuiltIn) {
+      this.definitions.set(name, def);
+    }
+    return;
+  }
 
-function IsIncludeSelfFile(file:string, include:string):boolean
-{
-	let baseName:string = basename(file);
-	let match = include.match(/([A-z0-9]*)(?:.sp|.inc)?$/);
-	if (match)
-	{
-		return (baseName == match[1]);
+	AddParamHighLights(line: string, paramsMatch:string): void {
+		let maxiter = 20;
+		let iter = 0;
+		let uri: string = URI.file(this.file).toString();
+		let regExp:RegExp = /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*([A-Za-z0-9_]+)/;
+		let token:RegExpMatchArray = paramsMatch.match(regExp);
+		while(typeof token != "undefined" && token != null && iter<maxiter){
+			iter++;
+			let start = line.search(token[1]);
+			let end = start+token[1].length;
+			let range = new vscode.Range(
+				this.lineNb,
+				start,
+				this.lineNb,
+				end
+			);
+			if (this.highlights.has(uri)) {
+				let ThisDocRange: vscode.Range[] = this.highlights.get(uri);
+				ThisDocRange.push(range);
+				this.highlights.set(uri, ThisDocRange);
+			} else {
+				this.highlights.set(uri, [range]);
+			}
+			if(!/,/.test(paramsMatch)) break;
+			paramsMatch = paramsMatch.replace(/[^,]+,/, "");
+			token = paramsMatch.match(regExp);
+		}
 	}
-	return false;
+}
+
+function PositiveRange(lineNb: number): vscode.Range {
+  lineNb = lineNb > 0 ? lineNb : 0;
+  return new vscode.Range(lineNb, 0, lineNb, 10);
+}
+
+function IsIncludeSelfFile(file: string, include: string): boolean {
+  let baseName: string = basename(file);
+  let match = include.match(/([A-z0-9]*)(?:.sp|.inc)?$/);
+  if (match) {
+    return baseName == match[1];
+  }
+  return false;
+}
+
+function GetWordStartEnd(WordWithSpaces: string, WordWithoutSpaces: string) {
+  return {
+    start: WordWithSpaces.length - WordWithoutSpaces.length,
+    end: WordWithSpaces.length,
+  };
 }

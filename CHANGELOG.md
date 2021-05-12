@@ -1,5 +1,13 @@
 ## Release Notes
 
+### 1.11.4
+ - Added a new command to automatically insert function parameters (thanks to [BoomShotKapow](https://github.com/BoomShotKapow) for the implementation !)
+ - Fixed an issue were multiline function arguments would appear twice (#30).
+ - Fixed an issue where two functions (usually natives) declared on two consecutive lines would not be parsed properly.
+ - Fixed an issue where a function overcall (like `OnPluginStart`) would not always override the inc definition.
+ - Implemented semantic syntax highlighting.
+ - Static syntax highlighting tweaks.
+
 ### 1.11.3
  - Fixed a major bug that would cause infinite parsing and crash the extension after a while, thanks a lot to Adrián, sze and JustSad for helping me to fix it!
 

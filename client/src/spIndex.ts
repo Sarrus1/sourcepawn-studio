@@ -1,9 +1,8 @@
 import {
   ExtensionContext,
   workspace as Workspace,
-  WorkspaceFolder,
   languages,
-	window,
+  window,
 } from "vscode";
 import { registerSMLinter } from "./spLinter";
 import * as glob from "glob";
@@ -13,7 +12,7 @@ import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./spFormat";
 import { basename, extname } from "path";
 import { URI } from "vscode-uri";
-import { type } from "os";
+import { SP_LEGENDS } from "./spLegends";
 
 let getDirectories = function (src, ext, callback) {
   glob(src + "/**/*", callback);
@@ -28,32 +27,29 @@ export function activate(context: ExtensionContext) {
   );
   providers.parse_sm_api(sm_home);
   let workspaceFolders = Workspace.workspaceFolders;
-	if(typeof workspaceFolders == "undefined")
-	{
-		window.showErrorMessage(
-			"No workspace or folder found. \n Please open the folder containing your .sp file, not just the .sp file."
-		);
-		return;
-	}
-	let workspace = workspaceFolders[0];
+  if (typeof workspaceFolders == "undefined") {
+    window.showErrorMessage(
+      "No workspace or folder found. \n Please open the folder containing your .sp file, not just the .sp file."
+    );
+    return;
+  }
+  let workspace = workspaceFolders[0];
   if (typeof workspace != "undefined") {
     getDirectories(workspace.uri.fsPath, "sp", function (err, res) {
       if (err) {
         console.log("Couldn't read .sp file, ignoring : ", err);
       } else {
         for (let file of res) {
-					let FileExt:string = extname(file);
-					if(FileExt == ".sp")
-					{
-						providers.handle_document_opening(file);
-					}
-					if(FileExt == ".sp" || FileExt == ".inc")
-					{
-						providers.completionsProvider.documents.set(
-							basename(file),
-							URI.file(file)
-						);
-					}
+          let FileExt: string = extname(file);
+          if (FileExt == ".sp") {
+            providers.handle_document_opening(file);
+          }
+          if (FileExt == ".sp" || FileExt == ".inc") {
+            providers.completionsProvider.documents.set(
+              basename(file),
+              URI.file(file)
+            );
+          }
         }
       }
     });
@@ -89,6 +85,14 @@ export function activate(context: ExtensionContext) {
   );
   context.subscriptions.push(
     languages.registerHoverProvider(SP_MODE, providers.hoverProvider)
+  );
+
+  context.subscriptions.push(
+    languages.registerDocumentSemanticTokensProvider(
+      SP_MODE,
+      providers.HighlightsProvider,
+      SP_LEGENDS
+    )
   );
   // Passing providers as an arguments is required to be able to use 'this' in the callbacks.
   Workspace.onDidChangeTextDocument(

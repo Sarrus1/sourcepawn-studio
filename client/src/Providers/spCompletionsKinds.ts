@@ -265,6 +265,81 @@ export class EnumMemberCompletion implements Completion {
   }
 }
 
+export class EnumStructCompletion implements Completion {
+  name: string;
+  file: string;
+  kind = vscode.CompletionItemKind.Struct;
+
+  constructor(name: string, file: string) {
+    this.name = name;
+    this.file = file;
+  }
+
+  to_completion_item(file: string): vscode.CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: basename(this.file),
+    };
+  }
+
+  get_signature(): vscode.SignatureInformation {
+    return undefined;
+  }
+
+  get_hover(): vscode.Hover {
+    return;
+  }
+}
+
+
+export class EnumStructMemberCompletion implements Completion {
+  name: string;
+  enumStruct: EnumStructCompletion;
+  file: string;
+  description: string;
+  kind = vscode.CompletionItemKind.Property;
+
+  constructor(
+    name: string,
+    file: string,
+    description: string,
+    EnumStruct: EnumStructCompletion
+  ) {
+    this.name = name;
+    this.file = file;
+    this.description = description;
+    this.enumStruct = EnumStruct;
+  }
+
+  to_completion_item(file: string): vscode.CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: this.enumStruct.name,
+    };
+  }
+
+  get_signature(): vscode.SignatureInformation {
+    return undefined;
+  }
+
+  get_hover(): vscode.Hover {
+    let enumName = this.enumStruct.name;
+    if (enumName == "") {
+      return new vscode.Hover([
+        { language: "sourcepawn", value: this.name },
+        description_to_md(this.description),
+      ]);
+    } else {
+      return new vscode.Hover([
+        { language: "sourcepawn", value: this.enumStruct.name + " " + this.name },
+        description_to_md(this.description),
+      ]);
+    }
+  }
+}
+
 export class PropertyCompletion implements Completion {
   method_map: string;
   name: string;

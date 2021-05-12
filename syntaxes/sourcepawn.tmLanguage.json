@@ -59,7 +59,7 @@
 		},
 		{
 			"comment": "Core types",
-			"match": "\\b(?:bool|char|const|float|int|void|any)\\b",
+			"match": "\\b(?:bool|char|float|int|void|any)\\b",
 			"name": "support.type.core.sourcepawn"
 		},
 		{
@@ -102,6 +102,11 @@
 			"comment": "Boolean literal",
 			"match": "\\b(?:true|false)\\b",
 			"name": "constant.language.boolean.sourcepawn"
+		},
+		{
+			"comment": "Null constant",
+			"match": "\\bnull\\b",
+			"name": "constant.language.sourcepawn"
 		}
 	],
 	"repository":
@@ -118,12 +123,12 @@
 				{
 					"comment": "Control statements",
 					"name": "keyword.control.statement.sourcepawn",
-					"match": "\\b(?:if|else|for|while|do|switch|case|default)\\b"
+					"match": "\\b(?:if|else|for|while|do|switch|case|default|return)\\b"
 				},
 				{
 					"comment": "keywords",
 					"name": "keyword.sourcepawn",
-					"match": "\\b(?:return|break|continue|new|static|decl|delete|forward|native|property|public|stock|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)\\b"
+					"match": "\\b(?:break|continue|new|static|decl|const|delete|forward|native|property|public|stock|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)\\b"
 				}
 			]
 		},
@@ -277,7 +282,7 @@
 			[
 				{
 					"comment": "Misc constants",
-					"match": "\\b(?:MAXPLAYERS|MaxClients|REQUIRE_PLUGIN|REQUIRE_EXTENSIONS|MAX_NAME_LENGTH|MAX_TARGET_LENGTH|INVALID_FCVAR_FLAGS|NULL_VECTOR|NULL_STRING|INVALID_FUNCTION|AUTOLOAD_EXTENSIONS|PLATFORM_MAX_PATH|Path_SM|SP_PARAMFLAG_BYREF|INVALID_ENT_REFERENCE|INVALID_HANDLE|null|LANG_SERVER|PB_FIELD_NOT_REPEATED|MAX_LIGHTSTYLES|FEATURECAP_PLAYERRUNCMD_11PARAMS|INVALID_STRING_TABLE|INVALID_STRING_INDEX|INVALID_TOPMENUOBJECT|INVALID_MESSAGE_ID|QUERYCOOKIE_FAILED)\\b",
+					"match": "\\b(?:MAXPLAYERS|MaxClients|REQUIRE_PLUGIN|REQUIRE_EXTENSIONS|MAX_NAME_LENGTH|MAX_TARGET_LENGTH|INVALID_FCVAR_FLAGS|NULL_VECTOR|NULL_STRING|INVALID_FUNCTION|AUTOLOAD_EXTENSIONS|PLATFORM_MAX_PATH|Path_SM|SP_PARAMFLAG_BYREF|INVALID_ENT_REFERENCE|INVALID_HANDLE|LANG_SERVER|PB_FIELD_NOT_REPEATED|MAX_LIGHTSTYLES|FEATURECAP_PLAYERRUNCMD_11PARAMS|INVALID_STRING_TABLE|INVALID_STRING_INDEX|INVALID_TOPMENUOBJECT|INVALID_MESSAGE_ID|QUERYCOOKIE_FAILED)\\b",
 					"name": "support.constant.core.sourcepawn"
 				},
 				{
