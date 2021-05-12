@@ -698,7 +698,7 @@ class Parser {
   }
 
   AddDefinition(name: string, def: spDefinitions.DefLocation): void {
-    if (!this.definitions.has(name)) {
+    if (!this.definitions.has(name)||!this.IsBuiltIn) {
       this.definitions.set(name, def);
     }
     return;
