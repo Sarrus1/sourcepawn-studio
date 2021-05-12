@@ -231,7 +231,15 @@ class Parser {
     );
 
     if (match) {
-      this.read_function(line);
+			let testWords=["if", "else", "for", "while"];
+			for(let word of testWords){
+				let regExp=new RegExp(`\\b${word}\\b`)
+				if(regExp.test(match[1])||regExp.test(match[2])) return;
+			}
+			
+			let isOldStyle:boolean=(match[2]=="")
+			this.read_function(line, isOldStyle);
+
     }
     return;
   }
@@ -535,11 +543,11 @@ class Parser {
     return partial_params_match;
   }
 
-  read_function(line: string) {
+  read_function(line: string, isOldStyle:boolean) {
     if (typeof line === "undefined") {
       return;
     }
-    if (line.includes(":")) {
+    if (isOldStyle) {
       this.read_old_style_function(line);
     } else {
       this.read_new_style_function(line);
@@ -601,6 +609,7 @@ class Parser {
         let paramsMatch = match[3];
         // Iteration safety in case something goes wrong
         let maxiter = 0;
+				this.AddParamHighLights(line, paramsMatch);
         while (
           !paramsMatch.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) &&
           typeof line != "undefined" &&
@@ -703,6 +712,35 @@ class Parser {
     }
     return;
   }
+
+	AddParamHighLights(line: string, paramsMatch:string): void {
+		let maxiter = 20;
+		let iter = 0;
+		let uri: string = URI.file(this.file).toString();
+		let regExp:RegExp = /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*([A-Za-z0-9_]+)/;
+		let token:RegExpMatchArray = paramsMatch.match(regExp);
+		while(typeof token != "undefined" && token != null && iter<maxiter){
+			iter++;
+			let start = line.search(token[1]);
+			let end = start+token[1].length;
+			let range = new vscode.Range(
+				this.lineNb,
+				start,
+				this.lineNb,
+				end
+			);
+			if (this.highlights.has(uri)) {
+				let ThisDocRange: vscode.Range[] = this.highlights.get(uri);
+				ThisDocRange.push(range);
+				this.highlights.set(uri, ThisDocRange);
+			} else {
+				this.highlights.set(uri, [range]);
+			}
+			if(!/,/.test(paramsMatch)) break;
+			paramsMatch = paramsMatch.replace(/[^,]+,/, "");
+			token = paramsMatch.match(regExp);
+		}
+	}
 }
 
 function PositiveRange(lineNb: number): vscode.Range {
