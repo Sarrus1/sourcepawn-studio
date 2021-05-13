@@ -1,5 +1,9 @@
 ## Release Notes
 
+### 1.11.5
+ - Dropped support for semantic syntax highlighting as it was too unreliable.
+ - Added support for better token bases syntax highlighting (types like `JSONObject` are now highlighted correctly).
+
 ### 1.11.4
  - Added a new command to automatically insert function parameters (thanks to [BoomShotKapow](https://github.com/BoomShotKapow) for the implementation !)
  - Fixed an issue were multiline function arguments would appear twice (#30).
