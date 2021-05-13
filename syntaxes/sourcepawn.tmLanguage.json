@@ -62,6 +62,35 @@
         }
       }
     },
+		{
+			"comment": "Control statements",
+			"name": "keyword.control.statement.sourcepawn",
+			"match": "\\b(?:if|else|for|while|do|switch|case|default|return)\\b"
+		},
+		{
+			"comment": "Enum structs",
+			"match": "^\\s*(enum\\s+struct\\s+)(\\w*)",
+      "captures": {
+        "1": {
+          "name": "keyword.sourcepawn"
+        },
+				"2": {
+          "name": "support.type.core.sourcepawn"
+        }
+      }
+		},
+		{
+			"comment": "Enums",
+			"match": "^\\s*(enum\\s*)(\\w*)",
+      "captures": {
+        "1": {
+          "name": "keyword.sourcepawn"
+        },
+				"2": {
+          "name": "support.type.core.sourcepawn"
+        }
+      }
+		},
     {
       "comment": "Variable declaration new syntax",
       "match": "^\\s*(?:(?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\-])\\])?\\s+(\\w+)\\s*(?:,|;|=)",
@@ -167,14 +196,9 @@
           "match": "%|&|\\*|/(?!\\*|/)|\\+|\\-|~|=|<|>|!|\\||\\?|:|\\^"
         },
         {
-          "comment": "Control statements",
-          "name": "keyword.control.statement.sourcepawn",
-          "match": "\\b(?:if|else|for|while|do|switch|case|default|return)\\b"
-        },
-        {
           "comment": "keywords",
           "name": "keyword.sourcepawn",
-          "match": "\\b(?:break|continue|new|static|decl|const|delete|forward|native|property|public|stock|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|sizeof)\\b"
+          "match": "\\b(?:break|continue|new|static|decl|const|delete|forward|native|property|public|stock|funcenum|functag|methodmap|typedef|typeset|this|sizeof)\\b"
         }
       ]
     },
