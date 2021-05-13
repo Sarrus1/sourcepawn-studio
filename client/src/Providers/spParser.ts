@@ -723,10 +723,11 @@ class Parser {
 			iter++;
 			let start = line.search(token[1]);
 			let end = start+token[1].length;
+      let lineNb = this.lineNb > 0 ? this.lineNb : 0;
 			let range = new vscode.Range(
-				this.lineNb,
+				lineNb,
 				start,
-				this.lineNb,
+				lineNb,
 				end
 			);
 			if (this.highlights.has(uri)) {
