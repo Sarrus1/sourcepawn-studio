@@ -7,12 +7,10 @@ import * as spCompletions from "./spCompletions";
 import { Include } from "./spCompletionsKinds";
 import * as spDocCompletions from "./spDocCompletions";
 import * as spDefinitions from "./spDefinitions";
-import * as spHighlights from "./spHighlights"
 import * as spParser from "./spParser";
 
 export class Providers {
   completionsProvider: spCompletions.CompletionRepository;
-	HighlightsProvider: spHighlights.HighlightingRepository;
   documentationProvider: spDocCompletions.JsDocCompletionProvider;
   definitionsProvider: spDefinitions.DefinitionRepository;
   hoverProvider: spCompletions.CompletionRepository;
@@ -25,7 +23,6 @@ export class Providers {
     );
     this.hoverProvider = CompletionRepo;
     this.documentationProvider = new spDocCompletions.JsDocCompletionProvider();
-		this.HighlightsProvider = new spHighlights.HighlightingRepository(globalState);
   }
 
   public handle_added_document(event: vscode.FileCreateEvent) {
@@ -54,7 +51,6 @@ export class Providers {
         file_path,
         this_completions,
         this.definitionsProvider.definitions,
-				this.HighlightsProvider.highlightTokens,
         this.completionsProvider.documents
       );
     } catch (error) {
@@ -83,7 +79,6 @@ export class Providers {
         file_path,
         this_completions,
         this.definitionsProvider.definitions,
-				this.HighlightsProvider.highlightTokens,
         this.completionsProvider.documents
       );
     } catch (error) {
@@ -109,7 +104,6 @@ export class Providers {
         path,
         this_completions,
         this.definitionsProvider.definitions,
-				this.HighlightsProvider.highlightTokens,
         this.completionsProvider.documents
       );
     } catch (error) {
@@ -141,7 +135,6 @@ export class Providers {
 							file,
 							new_completions,
 							this.definitionsProvider.definitions,
-							this.HighlightsProvider.highlightTokens,
 							this.completionsProvider.documents,
 							include.IsBuiltIn
 						);
@@ -171,7 +164,6 @@ export class Providers {
           file,
           completions,
           this.definitionsProvider.definitions,
-					this.HighlightsProvider.highlightTokens,
           this.completionsProvider.documents,
           true
         );

@@ -1,6 +1,5 @@
 import * as spCompletions from "./spCompletions";
 import * as spDefinitions from "./spDefinitions";
-import * as spHighlights from "./spHighlights";
 import {
   FunctionCompletion,
   DefineCompletion,
@@ -22,7 +21,6 @@ export function parse_file(
   file: string,
   completions: spCompletions.FileCompletions,
   definitions: spDefinitions.Definitions,
-  highlights: spHighlights.HighlightTokens,
   documents: Map<string, URI>,
   IsBuiltIn: boolean = false
 ) {
@@ -32,7 +30,6 @@ export function parse_file(
     file,
     completions,
     definitions,
-    highlights,
     documents,
     IsBuiltIn
   );
@@ -43,7 +40,6 @@ export function parse_text(
   file: string,
   completions: spCompletions.FileCompletions,
   definitions: spDefinitions.Definitions,
-  highlights: spHighlights.HighlightTokens,
   documents: Map<string, URI>,
   IsBuiltIn: boolean = false
 ) {
@@ -57,7 +53,6 @@ export function parse_text(
     IsBuiltIn,
     completions,
     definitions,
-    highlights,
     documents
   );
   parser.parse();
@@ -75,7 +70,6 @@ enum State {
 class Parser {
   completions: spCompletions.FileCompletions;
   definitions: spDefinitions.Definitions;
-  highlights: spHighlights.HighlightTokens;
   state: State[];
   scratch: any;
   state_data: any;
@@ -91,17 +85,11 @@ class Parser {
     IsBuiltIn: boolean,
     completions: spCompletions.FileCompletions,
     definitions: spDefinitions.Definitions,
-    highlights: spHighlights.HighlightTokens,
     documents: Map<string, URI>
   ) {
     this.completions = completions;
     this.definitions = definitions;
     let uri = URI.file(file).toString();
-    // Reset the highlights every time we parse the file
-    if (highlights.has(uri)) {
-      highlights.set(uri, []);
-    }
-    this.highlights = highlights;
     this.state = [State.None];
     this.lineNb = -1;
     this.lines = lines;
@@ -406,27 +394,6 @@ class Parser {
   }
 
   read_variables(match) {
-    // Add the type as a highlight token
-    let token = match[0].match(
-      /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*([A-Za-z0-9_]+)/
-    );
-    if (token) {
-      let pos = GetWordStartEnd(token[0], token[1]);
-      let range = new vscode.Range(
-        this.lineNb,
-        pos.start,
-        this.lineNb,
-        pos.end
-      );
-      let uri: string = URI.file(this.file).toString();
-      if (this.highlights.has(uri)) {
-        let ThisDocRange: vscode.Range[] = this.highlights.get(uri);
-        ThisDocRange.push(range);
-        this.highlights.set(uri, ThisDocRange);
-      } else {
-        this.highlights.set(uri, [range]);
-      }
-    }
     let match_variables = [];
     // Check if it's a multiline declaration
     if (match[1].match(/(;)(?:\s*|)$/)) {
@@ -730,13 +697,6 @@ class Parser {
 				lineNb,
 				end
 			);
-			if (this.highlights.has(uri)) {
-				let ThisDocRange: vscode.Range[] = this.highlights.get(uri);
-				ThisDocRange.push(range);
-				this.highlights.set(uri, ThisDocRange);
-			} else {
-				this.highlights.set(uri, [range]);
-			}
 			if(!/,/.test(paramsMatch)) break;
 			paramsMatch = paramsMatch.replace(/[^,]+,/, "");
 			token = paramsMatch.match(regExp);

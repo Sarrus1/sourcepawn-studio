@@ -65,8 +65,13 @@
 		{
 			"comment": "Control statements",
 			"name": "keyword.control.statement.sourcepawn",
-			"match": "\\b(?:if|else|for|while|do|switch|case|default|return)\\b"
+			"match": "\\s*\\b(?:if|else|for|while|do|switch|case|default|return)\\b"
 		},
+    {
+      "comment": "keywords",
+      "name": "keyword.sourcepawn",
+      "match": "\\s*\\b(?:break|continue|new|static|decl|const|delete|forward|native|property|public|stock|funcenum|functag|methodmap|typedef|typeset|this|sizeof)\\b"
+    },
 		{
 			"comment": "Enum structs",
 			"match": "^\\s*(enum\\s+struct\\s+)(\\w*)",
@@ -92,8 +97,17 @@
       }
 		},
     {
+      "comment": "Function params middle",
+			"match": ",\\s*(?:(?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\-])*\\]|\\s*&)?\\s+",
+      "captures": {
+        "1": {
+          "name": "support.type.core.sourcepawn"
+        }
+      }
+    },
+    {
       "comment": "Variable declaration new syntax",
-      "match": "^\\s*(?:(?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\-])\\])?\\s+(\\w+)\\s*(?:,|;|=)",
+      "match": "^\\s*(?:(?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\-]*)\\])?\\s+(\\w+)\\s*(?:,|;|=)",
       "captures": {
         "1": {
           "name": "support.type.core.sourcepawn"
@@ -102,7 +116,7 @@
     },
     {
       "comment": "Variable declaration old syntax",
-      "match": "^\\s*(?:(?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\-])\\])?\\s*:\\s*(\\w+)\\s*(?:,|;|=)",
+      "match": "^\\s*(?:(?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\-]*)\\])?\\s*:\\s*(\\w+)\\s*(?:,|;|=)",
       "captures": {
         "1": {
           "name": "support.type.core.sourcepawn"
@@ -111,7 +125,7 @@
     },
     {
       "comment": "Function declaration new syntax",
-      "match": "^\\s*((?:static|native|stock|public|forward)\\s+)*\\s*(\\w+)\\s+(\\w+)\\s*\\(",
+      "match": "^\\s*((?:static|native|stock|public|forward)\\s+)*\\s*(\\w+)\\s+(\\w+)\\s*\\(\\s*(?:(?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\-])*\\]|\\s*&)?",
       "captures": {
         "1": {
           "name": "keyword.sourcepawn"
@@ -121,6 +135,9 @@
         },
         "3": {
           "name": "entity.name.function.sourcepawn"
+        },
+        "4": {
+          "name": "support.type.core.sourcepawn"
         }
       }
     },
@@ -194,11 +211,6 @@
           "comment": "Operator",
           "name": "keyword.operator.sourcepawn",
           "match": "%|&|\\*|/(?!\\*|/)|\\+|\\-|~|=|<|>|!|\\||\\?|:|\\^"
-        },
-        {
-          "comment": "keywords",
-          "name": "keyword.sourcepawn",
-          "match": "\\b(?:break|continue|new|static|decl|const|delete|forward|native|property|public|stock|funcenum|functag|methodmap|typedef|typeset|this|sizeof)\\b"
         }
       ]
     },
