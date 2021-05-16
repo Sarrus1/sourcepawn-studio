@@ -1,37 +1,96 @@
 {
-    "comments": {
-        "lineComment": "//",
-        "blockComment": [ "/*", "*/" ]
+  "comments": {
+    "lineComment": "//",
+    "blockComment": ["/*", "*/"]
+  },
+  "brackets": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"]
+  ],
+  "autoClosingPairs": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"],
+    {
+      "open": "\"",
+      "close": "\"",
+      "notIn": ["string"]
     },
-    "brackets": [
-        ["{", "}"],
-        ["[", "]"],
-        ["(", ")"]
-    ],
-    "autoClosingPairs": [
-        ["{", "}"],
-        ["[", "]"],
-        ["(", ")"],
-        {
-            "open": "\"",
-            "close": "\"",
-            "notIn": [
-                "string"
-            ]
-        },
-        {
-            "open": "'",
-            "close": "'",
-            "notIn": [
-                "string"
-            ]
-        }
-    ],
-    "surroundingPairs": [
-        ["{", "}"],
-        ["[", "]"],
-        ["(", ")"],
-        ["\"", "\""],
-        ["'", "'"]
-    ]
+    {
+      "open": "'",
+      "close": "'",
+      "notIn": ["string"]
+    }
+  ],
+  "surroundingPairs": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"],
+    ["\"", "\""],
+    ["'", "'"]
+  ],
+  "simpleTerms": {
+    "\"struct\"": "control",
+    "\"enum\"": "control",
+    "\"union\"": "control",
+    "\"typedef\"": "control",
+    "\"class\"": "control",
+    "\"using\"": "control",
+    "\"namespace\"": "control",
+    "\"template\"": "control",
+    "\"typename\"": "control",
+    "\"try\"": "control",
+    "\"catch\"": "control",
+    "\"throw\"": "control",
+
+    "\"sizeof\"": "operator",
+    "\"new\"": "operator",
+    "\".\"": "operator",
+    "\"->\"": "operator",
+    "\"*\"": "operator",
+    "\"-\"": "operator",
+    "\"+\"": "operator",
+    "\"/\"": "operator",
+    "\"%\"": "operator",
+    "\"++\"": "operator",
+    "\"--\"": "operator",
+    "\"==\"": "operator",
+    "\"!\"": "operator",
+    "\"!=\"": "operator",
+    "\"<\"": "operator",
+    "\">\"": "operator",
+    "\">=\"": "operator",
+    "\"<=\"": "operator",
+    "\"&&\"": "operator",
+    "\"||\"": "operator",
+    "\"&\"": "operator",
+    "\"|\"": "operator",
+    "\"^\"": "operator",
+    "\"~\"": "operator",
+    "\"<<\"": "operator",
+    "\">>\"": "operator",
+    "\"=\"": "operator",
+    "\"+=\"": "operator",
+    "\"-=\"": "operator",
+    "\"*=\"": "operator",
+    "\"/=\"": "operator",
+    "\"%=\"": "operator",
+    "\"<<=\"": "operator",
+    "\">>=\"": "operator",
+    "\"&=\"": "operator",
+    "\"^=\"": "operator",
+    "\"|=\"": "operator",
+    "\"?\"": "operator",
+    "\"::\"": "operator",
+
+    "\"#if\"": "directive",
+    "\"#ifdef\"": "directive",
+    "\"#ifndef\"": "directive",
+    "\"#elif\"": "directive",
+    "\"#else\"": "directive",
+    "\"#endif\"": "directive",
+    "\"#define\"": "directive",
+    "\"#include\"": "directive"
+  }
 }

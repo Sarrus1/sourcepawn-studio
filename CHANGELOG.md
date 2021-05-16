@@ -1,8 +1,17 @@
 ## Release Notes
 
+### 1.11.5
+ - Added support for range in function definitions.
+ - Added hover support for enum (struct) and properties.
+ - Dropped support for semantic syntax highlighting as it was too unreliable.
+ - Added support for better token bases syntax highlighting (types like `JSONObject` are now highlighted correctly).
+ - Fixed a parsing bug where functions definitions would get overwritten.
+ - Fixed syntax highlighting for old style declarations.
+ - Fixed typeset being parsed as functions, causing problems with `int` pointing to a definition.
+
 ### 1.11.4
  - Added a new command to automatically insert function parameters (thanks to [BoomShotKapow](https://github.com/BoomShotKapow) for the implementation !)
- - Fixed an issue were multiline function arguments would appear twice (#30).
+ - Fixed an issue where multiline function arguments would appear twice (#30).
  - Fixed an issue where two functions (usually natives) declared on two consecutive lines would not be parsed properly.
  - Fixed an issue where a function overcall (like `OnPluginStart`) would not always override the inc definition.
  - Implemented semantic syntax highlighting.

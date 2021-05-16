@@ -195,10 +195,12 @@ export class EnumCompletion implements Completion {
   name: string;
   file: string;
   kind = vscode.CompletionItemKind.Enum;
+	description:string;
 
-  constructor(name: string, file: string) {
+  constructor(name: string, file: string, description:string) {
     this.name = name;
     this.file = file;
+		this.description = description;
   }
 
   to_completion_item(file: string): vscode.CompletionItem {
@@ -214,7 +216,13 @@ export class EnumCompletion implements Completion {
   }
 
   get_hover(): vscode.Hover {
-    return;
+    if (!this.description) {
+      return;
+    }
+    return new vscode.Hover([
+      { language: "sourcepawn", value: this.name },
+      description_to_md(this.description),
+    ]);
   }
 }
 
@@ -268,11 +276,13 @@ export class EnumMemberCompletion implements Completion {
 export class EnumStructCompletion implements Completion {
   name: string;
   file: string;
+	description: string;
   kind = vscode.CompletionItemKind.Struct;
 
-  constructor(name: string, file: string) {
+  constructor(name: string, file: string, description:string) {
     this.name = name;
     this.file = file;
+		this.description = description;
   }
 
   to_completion_item(file: string): vscode.CompletionItem {
@@ -288,7 +298,13 @@ export class EnumStructCompletion implements Completion {
   }
 
   get_hover(): vscode.Hover {
-    return;
+    if (!this.description) {
+      return;
+    }
+    return new vscode.Hover([
+      { language: "sourcepawn", value: this.name },
+      description_to_md(this.description),
+    ]);
   }
 }
 

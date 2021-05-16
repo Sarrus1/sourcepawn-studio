@@ -12,7 +12,6 @@ import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./spFormat";
 import { basename, extname } from "path";
 import { URI } from "vscode-uri";
-import { SP_LEGENDS } from "./spLegends";
 
 let getDirectories = function (src, ext, callback) {
   glob(src + "/**/*", callback);
@@ -87,13 +86,13 @@ export function activate(context: ExtensionContext) {
     languages.registerHoverProvider(SP_MODE, providers.hoverProvider)
   );
 
-  context.subscriptions.push(
-    languages.registerDocumentSemanticTokensProvider(
-      SP_MODE,
-      providers.HighlightsProvider,
-      SP_LEGENDS
-    )
-  );
+  // context.subscriptions.push(
+  //   languages.registerDocumentSemanticTokensProvider(
+  //     SP_MODE,
+  //     providers.HighlightsProvider,
+  //     SP_LEGENDS
+  //   )
+  // );
   // Passing providers as an arguments is required to be able to use 'this' in the callbacks.
   Workspace.onDidChangeTextDocument(
     providers.handle_document_change,

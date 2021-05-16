@@ -1,6 +1,5 @@
 import * as spCompletions from "./spCompletions";
 import * as spDefinitions from "./spDefinitions";
-import * as spHighlights from "./spHighlights";
 import {
   FunctionCompletion,
   DefineCompletion,
@@ -22,7 +21,6 @@ export function parse_file(
   file: string,
   completions: spCompletions.FileCompletions,
   definitions: spDefinitions.Definitions,
-  highlights: spHighlights.HighlightTokens,
   documents: Map<string, URI>,
   IsBuiltIn: boolean = false
 ) {
@@ -32,7 +30,6 @@ export function parse_file(
     file,
     completions,
     definitions,
-    highlights,
     documents,
     IsBuiltIn
   );
@@ -43,7 +40,6 @@ export function parse_text(
   file: string,
   completions: spCompletions.FileCompletions,
   definitions: spDefinitions.Definitions,
-  highlights: spHighlights.HighlightTokens,
   documents: Map<string, URI>,
   IsBuiltIn: boolean = false
 ) {
@@ -57,7 +53,6 @@ export function parse_text(
     IsBuiltIn,
     completions,
     definitions,
-    highlights,
     documents
   );
   parser.parse();
@@ -75,7 +70,6 @@ enum State {
 class Parser {
   completions: spCompletions.FileCompletions;
   definitions: spDefinitions.Definitions;
-  highlights: spHighlights.HighlightTokens;
   state: State[];
   scratch: any;
   state_data: any;
@@ -91,17 +85,11 @@ class Parser {
     IsBuiltIn: boolean,
     completions: spCompletions.FileCompletions,
     definitions: spDefinitions.Definitions,
-    highlights: spHighlights.HighlightTokens,
     documents: Map<string, URI>
   ) {
     this.completions = completions;
     this.definitions = definitions;
     let uri = URI.file(file).toString();
-    // Reset the highlights every time we parse the file
-    if (highlights.has(uri)) {
-      highlights.set(uri, []);
-    }
-    this.highlights = highlights;
     this.state = [State.None];
     this.lineNb = -1;
     this.lines = lines;
@@ -165,7 +153,6 @@ class Parser {
 
     // Match variables only in the current file
     match = line.match(
-      ///^(?:\s*)?(?:bool|char|const|float|int|any|Plugin|Handle|ConVar|Cookie|Database|DBDriver|DBResultSet|DBStatement|GameData|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu|Timer|FrameIterator|GlobalForward|PrivateForward|Profiler)\s+(.*)/
       /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*[A-z0-9_]+\s+([A-z0-9_\[\]+-]+\s*(?:=\s*[^;,]+)?(?:,|;))/
     );
     if (match && !this.IsBuiltIn) {
@@ -266,11 +253,13 @@ class Parser {
   }
 
   read_enums(match, IsStruct: boolean) {
+		let { description, params } = this.parse_doc_comment();
     if (IsStruct) {
       // Create a completion for the enum struct itself if it has a name
       var enumStructCompletion: EnumStructCompletion = new EnumStructCompletion(
         match[1],
-        this.file
+        this.file,
+				description
       );
       this.completions.add(match[1], enumStructCompletion);
       var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
@@ -334,7 +323,8 @@ class Parser {
         // Create a completion for the enum itself if it has a name
         var enumCompletion: EnumCompletion = new EnumCompletion(
           nameMatch[1],
-          this.file
+          this.file,
+					description
         );
         this.completions.add(nameMatch[1], enumCompletion);
         var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
@@ -344,7 +334,7 @@ class Parser {
         );
         this.AddDefinition(match[1], def);
       } else {
-        var enumCompletion: EnumCompletion = new EnumCompletion("", this.file);
+        var enumCompletion: EnumCompletion = new EnumCompletion("", this.file, description);
         this.completions.add("", enumCompletion);
       }
 
@@ -406,27 +396,6 @@ class Parser {
   }
 
   read_variables(match) {
-    // Add the type as a highlight token
-    let token = match[0].match(
-      /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*([A-Za-z0-9_]+)/
-    );
-    if (token) {
-      let pos = GetWordStartEnd(token[0], token[1]);
-      let range = new vscode.Range(
-        this.lineNb,
-        pos.start,
-        this.lineNb,
-        pos.end
-      );
-      let uri: string = URI.file(this.file).toString();
-      if (this.highlights.has(uri)) {
-        let ThisDocRange: vscode.Range[] = this.highlights.get(uri);
-        ThisDocRange.push(range);
-        this.highlights.set(uri, ThisDocRange);
-      } else {
-        this.highlights.set(uri, [range]);
-      }
-    }
     let match_variables = [];
     // Check if it's a multiline declaration
     if (match[1].match(/(;)(?:\s*|)$/)) {
@@ -525,12 +494,13 @@ class Parser {
   }
 
   read_property(match) {
+		let { description, params } = this.parse_doc_comment();
     let name_match: string = match[2];
     let NewPropertyCompletion = new PropertyCompletion(
       this.state_data.name,
       name_match,
       this.file,
-      ""
+      description
     );
     this.completions.add(name_match, NewPropertyCompletion);
   }
@@ -546,51 +516,23 @@ class Parser {
   read_function(line: string, isOldStyle:boolean) {
     if (typeof line === "undefined") {
       return;
-    }
-    if (isOldStyle) {
-      this.read_old_style_function(line);
-    } else {
-      this.read_new_style_function(line);
-    }
-    return;
-  }
-
-  read_old_style_function(line: string) {
+		}
     let match = line.match(
-      /\s*(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/
+      /^\s*(?:(?:stock|public)\s+)*(?:(\w*)\s+)?(\w*)\s*\(([^]*)(?:\)|,|{)\s*$/
     );
-    if (match) {
-      let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
-        URI.file(this.file),
-        PositiveRange(this.lineNb),
-        spDefinitions.DefinitionKind.Function
-      );
-      this.AddDefinition(match[1], def);
-      let { description, params } = this.parse_doc_comment();
-      this.completions.add(
-        match[1],
-        new FunctionCompletion(
-          match[1],
-          match[0].replace(/;\s*$/g, ""),
-          description,
-          params,
-          this.file,
-          this.IsBuiltIn
-        )
-      );
-    }
-  }
-
-  read_new_style_function(line: string) {
-    let match = line.match(
-      /(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^]*)/
-    );
+		if(!match){
+			match = line.match(
+				/^\s*(?:(?:forward|static|native)\s+)+(?:(\w*)\s+)?(\w*)\s*\(([^]*)(?:,|;)\s*$/
+			)
+		}
     if (match) {
       let { description, params } = this.parse_doc_comment();
       let name_match = match[2];
+			let start:number=line.search(name_match);
+			let end:number=start+name_match.length;
       let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
         URI.file(this.file),
-        PositiveRange(this.lineNb),
+        PositiveRange(this.lineNb, start, end),
         spDefinitions.DefinitionKind.Function
       );
       this.AddDefinition(name_match, def);
@@ -609,7 +551,6 @@ class Parser {
         let paramsMatch = match[3];
         // Iteration safety in case something goes wrong
         let maxiter = 0;
-				this.AddParamHighLights(line, paramsMatch);
         while (
           !paramsMatch.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) &&
           typeof line != "undefined" &&
@@ -712,40 +653,11 @@ class Parser {
     }
     return;
   }
-
-	AddParamHighLights(line: string, paramsMatch:string): void {
-		let maxiter = 20;
-		let iter = 0;
-		let uri: string = URI.file(this.file).toString();
-		let regExp:RegExp = /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*([A-Za-z0-9_]+)/;
-		let token:RegExpMatchArray = paramsMatch.match(regExp);
-		while(typeof token != "undefined" && token != null && iter<maxiter){
-			iter++;
-			let start = line.search(token[1]);
-			let end = start+token[1].length;
-			let range = new vscode.Range(
-				this.lineNb,
-				start,
-				this.lineNb,
-				end
-			);
-			if (this.highlights.has(uri)) {
-				let ThisDocRange: vscode.Range[] = this.highlights.get(uri);
-				ThisDocRange.push(range);
-				this.highlights.set(uri, ThisDocRange);
-			} else {
-				this.highlights.set(uri, [range]);
-			}
-			if(!/,/.test(paramsMatch)) break;
-			paramsMatch = paramsMatch.replace(/[^,]+,/, "");
-			token = paramsMatch.match(regExp);
-		}
-	}
 }
 
-function PositiveRange(lineNb: number): vscode.Range {
+function PositiveRange(lineNb: number, start:number=0, end:number=0): vscode.Range {
   lineNb = lineNb > 0 ? lineNb : 0;
-  return new vscode.Range(lineNb, 0, lineNb, 10);
+  return new vscode.Range(lineNb, start, lineNb, end);
 }
 
 function IsIncludeSelfFile(file: string, include: string): boolean {
@@ -755,11 +667,4 @@ function IsIncludeSelfFile(file: string, include: string): boolean {
     return baseName == match[1];
   }
   return false;
-}
-
-function GetWordStartEnd(WordWithSpaces: string, WordWithoutSpaces: string) {
-  return {
-    start: WordWithSpaces.length - WordWithoutSpaces.length,
-    end: WordWithSpaces.length,
-  };
 }
