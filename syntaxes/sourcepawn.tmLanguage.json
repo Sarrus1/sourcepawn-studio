@@ -22,6 +22,15 @@
         }
       }
     },
+		{
+      "match": "(\\#pragma)\\s+\\w+",
+      "name": "meta.include.sourcepawn",
+      "captures": {
+        "1": {
+          "name": "keyword.other.sourcepawn"
+        }
+      }
+    },
     {
       "match": "(\\#define)\\s*([A-z0-9_]*)\\s*((\".*\")|([0-9]*))",
       "name": "meta.define.sourcepawn",
@@ -96,20 +105,26 @@
         }
       }
 		},
-    {
-      "comment": "Function params middle",
-			"match": ",\\s*(?:(?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\-])*\\]|\\s*&)?\\s+",
-      "captures": {
-        "1": {
+		{
+			"comment": "Function params",
+			"match": "\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\-])*\\]|\\s*&)?\\s+\\w+\\s*(?:\\)|,|=)",
+			"captures": {
+				"1": {
+					"name": "keyword.sourcepawn"
+				},
+        "2": {
           "name": "support.type.core.sourcepawn"
         }
-      }
-    },
+			}
+		},
     {
       "comment": "Variable declaration new syntax",
-      "match": "^\\s*(?:(?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\-]*)\\])?\\s+(\\w+)\\s*(?:,|;|=)",
+      "match": "^\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\-]*)\\])?\\s+(\\w+)\\s*(?:,|;|=)",
       "captures": {
-        "1": {
+				"1": {
+					"name": "keyword.sourcepawn"
+				},
+        "2": {
           "name": "support.type.core.sourcepawn"
         }
       }
@@ -125,10 +140,10 @@
     },
     {
       "comment": "Function declaration new syntax",
-      "match": "^\\s*((?:static|native|stock|public|forward)\\s+)*\\s*(\\w+)\\s+(\\w+)\\s*\\(\\s*(?:(?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\-])*\\]|\\s*&)?",
+      "match": "^\\s*((?:static|native|stock|public|forward)\\s+)*\\s*(\\w+)\\s+(\\w+)\\s*\\(",
       "captures": {
         "1": {
-          "name": "keyword.sourcepawn"
+          "name": "keyword.sourcepawng"
         },
         "2": {
           "name": "support.type.core.sourcepawn"
