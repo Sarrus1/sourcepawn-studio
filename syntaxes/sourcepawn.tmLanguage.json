@@ -106,8 +106,20 @@
       }
 		},
 		{
-			"comment": "Function params",
-			"match": "\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\-])*\\]|\\s*&)?\\s+\\w+\\s*(?:\\)|,|=)",
+			"comment": "Function params new syntax",
+			"match": "\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\:?\\s+\\w+\\s*(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\s*(?:\\)|,|=)",
+			"captures": {
+				"1": {
+					"name": "keyword.sourcepawn"
+				},
+        "2": {
+          "name": "support.type.core.sourcepawn"
+        }
+			}
+		},
+		{
+			"comment": "Function params old syntax",
+			"match": "\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\s*\\:\\s*\\w+\\s*(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\s*(?:\\)|,|=)",
 			"captures": {
 				"1": {
 					"name": "keyword.sourcepawn"
@@ -119,7 +131,7 @@
 		},
     {
       "comment": "Variable declaration new syntax",
-      "match": "^\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\-]*)\\])?\\s+(\\w+)\\s*(?:,|;|=)",
+      "match": "^\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\s+(\\w+)\\s*(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\s*(?:,|;|=)",
       "captures": {
 				"1": {
 					"name": "keyword.sourcepawn"
@@ -131,10 +143,10 @@
     },
     {
       "comment": "Variable declaration old syntax",
-      "match": "^\\s*(?:(?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\-]*)\\])?\\s*:\\s*(\\w+)\\s*(?:,|;|=)",
+      "match": "(\\w+):\\w+",
       "captures": {
-        "1": {
-          "name": "support.type.core.sourcepawn"
+				"1": {
+          "name": "support.type.core.sourcepawng"
         }
       }
     },
@@ -153,21 +165,6 @@
         },
         "4": {
           "name": "support.type.core.sourcepawn"
-        }
-      }
-    },
-    {
-      "comment": "Function declaration old syntax",
-      "match": "^\\s*((?:static|native|stock|public|forward)\\s+)*\\s*(\\w+)\\s+(\\w+)\\s*\\(",
-      "captures": {
-        "1": {
-          "name": "keyword.sourcepawn"
-        },
-        "2": {
-          "name": "support.type.core.sourcepawn"
-        },
-        "3": {
-          "name": "entity.name.function.sourcepawn"
         }
       }
     },

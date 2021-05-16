@@ -515,8 +515,13 @@ class Parser {
       return;
 		}
     let match = line.match(
-      /^(?:(?:static|native|stock|public|forward)\s+)*(?:(\w*)\s+)?(\w*)\s*\(([^]*)/
+      /^\s*(?:(?:stock|public)\s+)*(?:(\w*)\s+)?(\w*)\s*\(([^]*)(?:\)|,|{)\s*$/
     );
+		if(!match){
+			match = line.match(
+				/^\s*(?:(?:forward|static|native)\s+)+(?:(\w*)\s+)?(\w*)\s*\(([^]*)(?:,|;)\s*$/
+			)
+		}
     if (match) {
       let { description, params } = this.parse_doc_comment();
       let name_match = match[2];
