@@ -513,51 +513,18 @@ class Parser {
   read_function(line: string, isOldStyle:boolean) {
     if (typeof line === "undefined") {
       return;
-    }
-    if (isOldStyle) {
-      this.read_old_style_function(line);
-    } else {
-      this.read_new_style_function(line);
-    }
-    return;
-  }
-
-  read_old_style_function(line: string) {
+		}
     let match = line.match(
-      /\s*(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*\(\s*([A-Za-z_].*)/
-    );
-    if (match) {
-      let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
-        URI.file(this.file),
-        PositiveRange(this.lineNb),
-        spDefinitions.DefinitionKind.Function
-      );
-      this.AddDefinition(match[1], def);
-      let { description, params } = this.parse_doc_comment();
-      this.completions.add(
-        match[1],
-        new FunctionCompletion(
-          match[1],
-          match[0].replace(/;\s*$/g, ""),
-          description,
-          params,
-          this.file,
-          this.IsBuiltIn
-        )
-      );
-    }
-  }
-
-  read_new_style_function(line: string) {
-    let match = line.match(
-      /(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^]*)/
+      /^(?:(?:static|native|stock|public|forward)\s+)*(?:(\w*)\s+)?(\w*)\s*\(([^]*)/
     );
     if (match) {
       let { description, params } = this.parse_doc_comment();
       let name_match = match[2];
+			let start:number=line.search(name_match);
+			let end:number=start+name_match.length;
       let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
         URI.file(this.file),
-        PositiveRange(this.lineNb),
+        PositiveRange(this.lineNb, start, end),
         spDefinitions.DefinitionKind.Function
       );
       this.AddDefinition(name_match, def);
@@ -704,9 +671,9 @@ class Parser {
 	}
 }
 
-function PositiveRange(lineNb: number): vscode.Range {
+function PositiveRange(lineNb: number, start:number=0, end:number=0): vscode.Range {
   lineNb = lineNb > 0 ? lineNb : 0;
-  return new vscode.Range(lineNb, 0, lineNb, 10);
+  return new vscode.Range(lineNb, start, lineNb, end);
 }
 
 function IsIncludeSelfFile(file: string, include: string): boolean {

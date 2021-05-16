@@ -1,8 +1,10 @@
 ## Release Notes
 
 ### 1.11.5
+ - Added support for range in function definitions.
  - Dropped support for semantic syntax highlighting as it was too unreliable.
  - Added support for better token bases syntax highlighting (types like `JSONObject` are now highlighted correctly).
+ - Fixed a parsing bug where functions definitions would get overwritten.
 
 ### 1.11.4
  - Added a new command to automatically insert function parameters (thanks to [BoomShotKapow](https://github.com/BoomShotKapow) for the implementation !)
