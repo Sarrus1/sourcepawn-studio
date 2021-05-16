@@ -12,7 +12,6 @@ import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./spFormat";
 import { basename, extname } from "path";
 import { URI } from "vscode-uri";
-import { SP_LEGENDS } from "./spLegends";
 
 let getDirectories = function (src, ext, callback) {
   glob(src + "/**/*", callback);

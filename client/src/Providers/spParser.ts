@@ -153,7 +153,6 @@ class Parser {
 
     // Match variables only in the current file
     match = line.match(
-      ///^(?:\s*)?(?:bool|char|const|float|int|any|Plugin|Handle|ConVar|Cookie|Database|DBDriver|DBResultSet|DBStatement|GameData|Transaction|Event|File|DirectoryListing|KeyValues|Menu|Panel|Protobuf|Regex|SMCParser|TopMenu|Timer|FrameIterator|GlobalForward|PrivateForward|Profiler)\s+(.*)/
       /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*[A-z0-9_]+\s+([A-z0-9_\[\]+-]+\s*(?:=\s*[^;,]+)?(?:,|;))/
     );
     if (match && !this.IsBuiltIn) {
@@ -254,11 +253,13 @@ class Parser {
   }
 
   read_enums(match, IsStruct: boolean) {
+		let { description, params } = this.parse_doc_comment();
     if (IsStruct) {
       // Create a completion for the enum struct itself if it has a name
       var enumStructCompletion: EnumStructCompletion = new EnumStructCompletion(
         match[1],
-        this.file
+        this.file,
+				description
       );
       this.completions.add(match[1], enumStructCompletion);
       var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
@@ -322,7 +323,8 @@ class Parser {
         // Create a completion for the enum itself if it has a name
         var enumCompletion: EnumCompletion = new EnumCompletion(
           nameMatch[1],
-          this.file
+          this.file,
+					description
         );
         this.completions.add(nameMatch[1], enumCompletion);
         var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
@@ -332,7 +334,7 @@ class Parser {
         );
         this.AddDefinition(match[1], def);
       } else {
-        var enumCompletion: EnumCompletion = new EnumCompletion("", this.file);
+        var enumCompletion: EnumCompletion = new EnumCompletion("", this.file, description);
         this.completions.add("", enumCompletion);
       }
 
@@ -492,12 +494,13 @@ class Parser {
   }
 
   read_property(match) {
+		let { description, params } = this.parse_doc_comment();
     let name_match: string = match[2];
     let NewPropertyCompletion = new PropertyCompletion(
       this.state_data.name,
       name_match,
       this.file,
-      ""
+      description
     );
     this.completions.add(name_match, NewPropertyCompletion);
   }
@@ -664,11 +667,4 @@ function IsIncludeSelfFile(file: string, include: string): boolean {
     return baseName == match[1];
   }
   return false;
-}
-
-function GetWordStartEnd(WordWithSpaces: string, WordWithoutSpaces: string) {
-  return {
-    start: WordWithSpaces.length - WordWithoutSpaces.length,
-    end: WordWithSpaces.length,
-  };
 }

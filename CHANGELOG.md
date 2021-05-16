@@ -2,6 +2,7 @@
 
 ### 1.11.5
  - Added support for range in function definitions.
+ - Added hover support for enum (struct) and properties.
  - Dropped support for semantic syntax highlighting as it was too unreliable.
  - Added support for better token bases syntax highlighting (types like `JSONObject` are now highlighted correctly).
  - Fixed a parsing bug where functions definitions would get overwritten.
