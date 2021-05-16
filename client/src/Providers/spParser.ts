@@ -548,7 +548,6 @@ class Parser {
         let paramsMatch = match[3];
         // Iteration safety in case something goes wrong
         let maxiter = 0;
-				this.AddParamHighLights(line, paramsMatch);
         while (
           !paramsMatch.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) &&
           typeof line != "undefined" &&
@@ -651,29 +650,6 @@ class Parser {
     }
     return;
   }
-
-	AddParamHighLights(line: string, paramsMatch:string): void {
-		let maxiter = 20;
-		let iter = 0;
-		let uri: string = URI.file(this.file).toString();
-		let regExp:RegExp = /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*([A-Za-z0-9_]+)/;
-		let token:RegExpMatchArray = paramsMatch.match(regExp);
-		while(typeof token != "undefined" && token != null && iter<maxiter){
-			iter++;
-			let start = line.search(token[1]);
-			let end = start+token[1].length;
-      let lineNb = this.lineNb > 0 ? this.lineNb : 0;
-			let range = new vscode.Range(
-				lineNb,
-				start,
-				lineNb,
-				end
-			);
-			if(!/,/.test(paramsMatch)) break;
-			paramsMatch = paramsMatch.replace(/[^,]+,/, "");
-			token = paramsMatch.match(regExp);
-		}
-	}
 }
 
 function PositiveRange(lineNb: number, start:number=0, end:number=0): vscode.Range {
