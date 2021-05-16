@@ -6,6 +6,7 @@
  - Added support for better token bases syntax highlighting (types like `JSONObject` are now highlighted correctly).
  - Fixed a parsing bug where functions definitions would get overwritten.
  - Fixed syntax highlighting for old style declarations.
+ - Fixed typeset being parsed as functions, causing problems with `int` pointing to a definition.
 
 ### 1.11.4
  - Added a new command to automatically insert function parameters (thanks to [BoomShotKapow](https://github.com/BoomShotKapow) for the implementation !)
