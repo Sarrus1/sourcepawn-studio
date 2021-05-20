@@ -69,7 +69,7 @@
 
   "pragma": {
     "prefix": "#pragma",
-    "body": ["#pragma ${1|newdecls required,semicolon 1|}"],
+    "body": ["#pragma ${1|newdecls required,semicolon 1,tabsize,ctrlchar,deprecated,dynamic,rational,unused|}"],
     "description": "pragma"
   },
 
