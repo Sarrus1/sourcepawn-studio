@@ -3,6 +3,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { execFileSync } from "child_process";
 import { URI } from "vscode-uri";
+import { errorDetails } from "./spIndex";
 
 let myExtDir: string = vscode.extensions.getExtension(
   "Sarrus.sourcepawn-vscode"
@@ -134,7 +135,7 @@ export function refreshDiagnostics(
         execFileSync(spcomp, spcomp_opt);
         fs.unlinkSync(TempPath);
       } catch (error) {
-        let regex = /([:\/\\A-z-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning).+)/gm;
+        let regex = /([:\/\\A-z-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning) ([0-9]*))/gm;
         let matches: RegExpExecArray | null;
         let path: string;
         let diagnostics: vscode.Diagnostic[];
@@ -155,7 +156,13 @@ export function refreshDiagnostics(
           } else {
             diagnostics = [];
           }
-          diagnostics.push(new vscode.Diagnostic(range, matches[3], severity));
+          let message: string = GenerateDetailedError(matches[5], matches[3]);
+          let diagnostic: vscode.Diagnostic = new vscode.Diagnostic(
+            range,
+            message,
+            severity
+          );
+          diagnostics.push(diagnostic);
           DocumentDiagnostics.set(path, diagnostics);
         }
       }
@@ -165,6 +172,13 @@ export function refreshDiagnostics(
       }
     }
   }, 300);
+}
+
+function GenerateDetailedError(errorCode: string, errorMsg: string): string {
+  if (typeof errorDetails[errorCode] != "undefined") {
+    errorMsg += "\n\n" + errorDetails[errorCode];
+    return errorMsg;
+  }
 }
 
 function ReturnNone(uri: vscode.Uri) {
