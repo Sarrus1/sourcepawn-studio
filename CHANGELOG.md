@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 1.12.0
+ - Added more detailed error messages to the linter, thanks to [ShufflexDD's post](https://forums.alliedmods.net/showthread.php?t=201044).
+
 ### 1.11.5
  - Added support for range in function definitions.
  - Added hover support for enum (struct) and properties.
