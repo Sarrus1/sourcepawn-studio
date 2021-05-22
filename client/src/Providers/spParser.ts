@@ -154,12 +154,13 @@ class Parser {
     );
     if (match && !this.IsBuiltIn) {
       if (
-        match[0].match(
-          /^\s*(if|else|while|do|return|break|continue|delete|forward|native|property|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)/
+        /^\s*(if|else|while|do|return|break|continue|delete|forward|native|property|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)/.test(
+          match[0]
         )
       )
         return;
-      this.read_variables(match);
+      if (/^\s*public\s+native/.test(line)) return;
+      this.read_variables(match, line);
       return;
     }
 
@@ -211,11 +212,10 @@ class Parser {
 
     // Match functions without description
     match = line.match(
-      /(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
+      /(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
     );
-
     if (match) {
-      let testWords = ["if", "else", "for", "while"];
+      let testWords = ["if", "else", "for", "while", "function"];
       for (let word of testWords) {
         let regExp = new RegExp(`\\b${word}\\b`);
         if (regExp.test(match[1]) || regExp.test(match[2])) return;
@@ -272,7 +272,7 @@ class Parser {
       let line: string = "";
 
       // Match all the enum members
-      while (iter < 100 && !line.match(/\s*(\}\s*\;?)/)) {
+      while (iter < 100 && !/\s*(\}\s*\;?)/.test(line)) {
         iter++;
         line = this.lines.shift();
         this.lineNb++;
@@ -283,7 +283,7 @@ class Parser {
         match = line.match(/^\s*(?:[A-z0-9_]*)\s+([A-z0-9_]*)\s*.*/);
 
         // Skip if didn't match
-        if (!match) {
+        if (!match && !/\s*\{/.test(line)) {
           continue;
         }
         let enumStructMemberName = match[1];
@@ -345,7 +345,7 @@ class Parser {
       let line: string = "";
 
       // Match all the enum members
-      while (iter < 100 && !line.match(/\s*(\}\s*\;?)/)) {
+      while (iter < 100 && !/\s*(\}\s*\;?)/.test(line)) {
         iter++;
         line = this.lines.shift();
         this.lineNb++;
@@ -356,7 +356,7 @@ class Parser {
         match = line.match(/^\s*([A-z0-9_]*)\s*.*/);
 
         // Skip if didn't match
-        if (!match) {
+        if (!match && !/\s*\{/.test(line)) {
           continue;
         }
         let enumMemberName = match[1];
@@ -395,7 +395,7 @@ class Parser {
     return;
   }
 
-  read_variables(match) {
+  read_variables(match, line: string) {
     let match_variables = [];
     let match_variable: RegExpExecArray;
     // Check if it's a multiline declaration
@@ -414,24 +414,24 @@ class Parser {
           new VariableCompletion(variable_completion, this.file)
         );
         if (this.lastFuncLine == 0) {
+          let start: number = line.search(variable_completion);
+          let end: number = start + variable_completion.length;
           var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
             URI.file(this.file),
-            PositiveRange(this.lineNb),
+            PositiveRange(this.lineNb, start, end),
             spDefinitions.DefinitionKind.Variable
           );
           this.AddDefinition(variable_completion, def);
         } else {
+          let start: number = line.search(variable_completion);
+          let end: number = start + variable_completion.length;
           var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
             URI.file(this.file),
-            PositiveRange(this.lineNb),
+            PositiveRange(this.lineNb, start, end),
             spDefinitions.DefinitionKind.Variable,
             this.lastFuncName
           );
-          this.AddDefinition(
-            variable_completion,
-            def,
-						this.lastFuncName
-          );
+          this.AddDefinition(variable_completion, def, this.lastFuncName);
         }
       }
     } else {
@@ -560,7 +560,7 @@ class Parser {
         );
       } else {
         let paramsMatch = match[3];
-        this.AddParamsDef(paramsMatch, name_match);
+        this.AddParamsDef(paramsMatch, name_match, line);
         // Iteration safety in case something goes wrong
         let maxiter = 0;
         while (
@@ -571,7 +571,7 @@ class Parser {
           maxiter++;
           line = this.lines.shift();
           this.lineNb++;
-					this.AddParamsDef(line, name_match);
+          this.AddParamsDef(line, name_match, line);
           paramsMatch += line;
         }
         // Treat differently if the function is declared on multiple lines
@@ -662,15 +662,20 @@ class Parser {
     return { description, params };
   }
 
-  AddDefinition(name: string, def: spDefinitions.DefLocation, definitionSuffix:string="___gLobaL"): void {
-		if(definitionSuffix != "___gLobaL") definitionSuffix = "___"+definitionSuffix;
-    if (!this.definitions.has(name+definitionSuffix) || !this.IsBuiltIn) {
-      this.definitions.set(name+definitionSuffix, def);
+  AddDefinition(
+    name: string,
+    def: spDefinitions.DefLocation,
+    definitionSuffix: string = "___gLobaL"
+  ): void {
+    if (definitionSuffix != "___gLobaL")
+      definitionSuffix = "___" + definitionSuffix;
+    if (!this.definitions.has(name + definitionSuffix) || !this.IsBuiltIn) {
+      this.definitions.set(name + definitionSuffix, def);
     }
     return;
   }
 
-  AddParamsDef(params: string, funcName: string) {
+  AddParamsDef(params: string, funcName: string, line: string) {
     let match_variable: RegExpExecArray;
     let match_variables: RegExpExecArray[] = [];
     let re = /(?:\s*)?([A-Za-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g;
@@ -685,9 +690,11 @@ class Parser {
         variable_completion,
         new VariableCompletion(variable_completion, this.file)
       );
+      let start: number = line.search(variable_completion);
+      let end: number = start + variable_completion.length;
       var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
         URI.file(this.file),
-        PositiveRange(this.lineNb),
+        PositiveRange(this.lineNb, start, end),
         spDefinitions.DefinitionKind.Variable,
         funcName
       );
