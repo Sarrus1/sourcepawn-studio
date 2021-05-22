@@ -71,8 +71,8 @@ class Parser {
   file: string;
   IsBuiltIn: boolean;
   documents: Map<string, URI>;
-	lastFuncLine: number;
-	lastFuncName: string;
+  lastFuncLine: number;
+  lastFuncName: string;
 
   constructor(
     lines: string[],
@@ -91,8 +91,8 @@ class Parser {
     this.file = file;
     this.IsBuiltIn = IsBuiltIn;
     this.documents = documents;
-		this.lastFuncLine = 0;
-		this.lastFuncName = "";
+    this.lastFuncLine = 0;
+    this.lastFuncName = "";
   }
 
   parse() {
@@ -155,7 +155,7 @@ class Parser {
     if (match && !this.IsBuiltIn) {
       if (
         match[0].match(
-          /^\s*(return|break|continue|delete|forward|native|property|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)/
+          /^\s*(if|else|while|do|return|break|continue|delete|forward|native|property|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)/
         )
       )
         return;
@@ -413,23 +413,26 @@ class Parser {
           variable_completion,
           new VariableCompletion(variable_completion, this.file)
         );
-				if (this.lastFuncLine==0) {
-					var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
-						URI.file(this.file),
-						PositiveRange(this.lineNb),
-						spDefinitions.DefinitionKind.Variable
-					);
-					this.AddDefinition(variable_completion+"___gLobaL", def);
-				}
-				else {
-					var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
-						URI.file(this.file),
-						PositiveRange(this.lineNb),
-						spDefinitions.DefinitionKind.Variable,
+        if (this.lastFuncLine == 0) {
+          var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
+            URI.file(this.file),
+            PositiveRange(this.lineNb),
+            spDefinitions.DefinitionKind.Variable
+          );
+          this.AddDefinition(variable_completion, def);
+        } else {
+          var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
+            URI.file(this.file),
+            PositiveRange(this.lineNb),
+            spDefinitions.DefinitionKind.Variable,
+            this.lastFuncName
+          );
+          this.AddDefinition(
+            variable_completion,
+            def,
 						this.lastFuncName
-					);
-					this.AddDefinition(variable_completion+"___"+this.lastFuncName, def);
-				}
+          );
+        }
       }
     } else {
       while (!match[1].match(/(;)(?:\s*|)$/)) {
@@ -448,15 +451,15 @@ class Parser {
             variable_completion,
             new VariableCompletion(variable_completion, this.file)
           );
-        // Save as definition if it's a global variable
-        if (/g_.*/g.test(variable_completion)) {
-          let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
-            URI.file(this.file),
-            PositiveRange(this.lineNb),
-            spDefinitions.DefinitionKind.Variable
-          );
-          this.AddDefinition(variable_completion, def);
-        }
+          // Save as definition if it's a global variable
+          if (/g_.*/g.test(variable_completion)) {
+            let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
+              URI.file(this.file),
+              PositiveRange(this.lineNb),
+              spDefinitions.DefinitionKind.Variable
+            );
+            this.AddDefinition(variable_completion, def);
+          }
         }
         match[1] = this.lines.shift();
         this.lineNb++;
@@ -557,6 +560,7 @@ class Parser {
         );
       } else {
         let paramsMatch = match[3];
+        this.AddParamsDef(paramsMatch, name_match);
         // Iteration safety in case something goes wrong
         let maxiter = 0;
         while (
@@ -567,6 +571,7 @@ class Parser {
           maxiter++;
           line = this.lines.shift();
           this.lineNb++;
+					this.AddParamsDef(line, name_match);
           paramsMatch += line;
         }
         // Treat differently if the function is declared on multiple lines
@@ -576,8 +581,8 @@ class Parser {
             paramsMatch
               .replace(/\s*[A-z0-9_]+\s*\(\s*/g, "")
               .replace(/\s+/gm, " ");
-				this.lastFuncLine = this.lineNb;
-				this.lastFuncName = name_match;
+        this.lastFuncLine = this.lineNb;
+        this.lastFuncName = name_match;
         this.completions.add(
           name_match,
           new FunctionCompletion(
@@ -657,11 +662,37 @@ class Parser {
     return { description, params };
   }
 
-  AddDefinition(name: string, def: spDefinitions.DefLocation): void {
-    if (!this.definitions.has(name) || !this.IsBuiltIn) {
-      this.definitions.set(name, def);
+  AddDefinition(name: string, def: spDefinitions.DefLocation, definitionSuffix:string="___gLobaL"): void {
+		if(definitionSuffix != "___gLobaL") definitionSuffix = "___"+definitionSuffix;
+    if (!this.definitions.has(name+definitionSuffix) || !this.IsBuiltIn) {
+      this.definitions.set(name+definitionSuffix, def);
     }
     return;
+  }
+
+  AddParamsDef(params: string, funcName: string) {
+    let match_variable: RegExpExecArray;
+    let match_variables: RegExpExecArray[] = [];
+    let re = /(?:\s*)?([A-Za-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g;
+    while ((match_variable = re.exec(params)) != null) {
+      match_variables.push(match_variable);
+    }
+    for (let variable of match_variables) {
+      let variable_completion = variable[1].match(
+        /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
+      )[1];
+      this.completions.add(
+        variable_completion,
+        new VariableCompletion(variable_completion, this.file)
+      );
+      var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
+        URI.file(this.file),
+        PositiveRange(this.lineNb),
+        spDefinitions.DefinitionKind.Variable,
+        funcName
+      );
+      this.AddDefinition(variable_completion, def, funcName);
+    }
   }
 }
 
