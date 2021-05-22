@@ -283,7 +283,7 @@ class Parser {
         match = line.match(/^\s*(?:[A-z0-9_]*)\s+([A-z0-9_]*)\s*.*/);
 
         // Skip if didn't match
-        if (!match && !/\s*\{/.test(line)) {
+        if (!match || !/\s*\{/.test(line)) {
           continue;
         }
         let enumStructMemberName = match[1];
@@ -356,7 +356,7 @@ class Parser {
         match = line.match(/^\s*([A-z0-9_]*)\s*.*/);
 
         // Skip if didn't match
-        if (!match && !/\s*\{/.test(line)) {
+        if (!match || !/\s*\{/.test(line)) {
           continue;
         }
         let enumMemberName = match[1];
@@ -401,7 +401,7 @@ class Parser {
     // Check if it's a multiline declaration
     if (/(;)(?:\s*|)$/.test(match[1])) {
       // Separate potential multiple declarations
-      let re = /(?:\s*)?([A-Za-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g;
+      let re = /\s*(?:(?:const|static|public)\s+)*\w+\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:(?:\"[^]*\")|(?:[^,]+)))?/g;
       while ((match_variable = re.exec(match[1])) != null) {
         match_variables.push(match_variable);
       }
@@ -678,7 +678,7 @@ class Parser {
   AddParamsDef(params: string, funcName: string, line: string) {
     let match_variable: RegExpExecArray;
     let match_variables: RegExpExecArray[] = [];
-    let re = /(?:\s*)?([A-Za-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g;
+    let re = /\s*(?:(?:const|static)\s+)?\w+\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
     while ((match_variable = re.exec(params)) != null) {
       match_variables.push(match_variable);
     }
