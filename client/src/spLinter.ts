@@ -186,8 +186,8 @@ export function refreshDiagnostics(
 function GenerateDetailedError(errorCode: string, errorMsg: string): string {
   if (typeof errorDetails[errorCode] != "undefined") {
     errorMsg += "\n\n" + errorDetails[errorCode];
-    return errorMsg;
   }
+	return errorMsg;
 }
 
 function ReturnNone(uri: vscode.Uri) {
