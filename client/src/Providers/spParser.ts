@@ -461,15 +461,26 @@ class Parser {
             variable_completion,
             new VariableCompletion(variable_completion, this.file)
           );
-          // Save as definition if it's a global variable
-          if (/g_.*/g.test(variable_completion)) {
-            let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
-              URI.file(this.file),
-              PositiveRange(this.lineNb),
-              spDefinitions.DefinitionKind.Variable
-            );
-            this.AddDefinition(variable_completion, def);
-          }
+					if (this.lastFuncLine == 0) {
+						let start: number = match[1].search(variable_completion);
+						let end: number = start + variable_completion.length;
+						var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
+							URI.file(this.file),
+							PositiveRange(this.lineNb, start, end),
+							spDefinitions.DefinitionKind.Variable
+						);
+						this.AddDefinition(variable_completion, def);
+					} else {
+						let start: number = match[1].search(variable_completion);
+						let end: number = start + variable_completion.length;
+						var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
+							URI.file(this.file),
+							PositiveRange(this.lineNb, start, end),
+							spDefinitions.DefinitionKind.Variable,
+							this.lastFuncName
+						);
+						this.AddDefinition(variable_completion, def, this.lastFuncName);
+					}
         }
         match[1] = this.lines.shift();
         this.lineNb++;
@@ -675,9 +686,9 @@ class Parser {
   AddDefinition(
     name: string,
     def: spDefinitions.DefLocation,
-    definitionSuffix: string = "___gLobaL"
+    definitionSuffix: string = "___global"
   ): void {
-    if (definitionSuffix != "___gLobaL")
+    if (definitionSuffix != "___global")
       definitionSuffix = "___" + definitionSuffix;
     if (!this.definitions.has(name + definitionSuffix) || !this.IsBuiltIn) {
       this.definitions.set(name + definitionSuffix, def);
