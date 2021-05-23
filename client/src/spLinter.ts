@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
-import { execFileSync } from "child_process";
+import { execFile } from "child_process";
 import { URI } from "vscode-uri";
 import { errorDetails } from "./spIndex";
 
@@ -132,43 +132,52 @@ export function refreshDiagnostics(
           }
         }
         // Run the blank compile.
-        execFileSync(spcomp, spcomp_opt);
-        fs.unlinkSync(TempPath);
-      } catch (error) {
-        let regex = /([:\/\\A-z-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning) ([0-9]*))/gm;
-        let matches: RegExpExecArray | null;
-        let path: string;
-        let diagnostics: vscode.Diagnostic[];
-        let range: vscode.Range;
-        let severity: vscode.DiagnosticSeverity;
-        while ((matches = regex.exec(error.stdout?.toString() || ""))) {
-          range = new vscode.Range(
-            new vscode.Position(Number(matches[2]) - 1, 0),
-            new vscode.Position(Number(matches[2]) - 1, 256)
-          );
-          severity =
-            matches[4] === "warning"
-              ? vscode.DiagnosticSeverity.Warning
-              : vscode.DiagnosticSeverity.Error;
-          path = MainPath != "" ? matches[1] : document.uri.fsPath;
-          if (DocumentDiagnostics.has(path)) {
-            diagnostics = DocumentDiagnostics.get(path);
-          } else {
-            diagnostics = [];
+        execFile(spcomp, spcomp_opt, (error, stdout) => {
+          // If it compiled successfully, unlink the temporary files.
+          if (!error) {
+            fs.unlink(TempPath, (err) => {
+              if (err) {
+                console.error(err);
+              }
+            });
           }
-          let message: string = GenerateDetailedError(matches[5], matches[3]);
-          let diagnostic: vscode.Diagnostic = new vscode.Diagnostic(
-            range,
-            message,
-            severity
-          );
-          diagnostics.push(diagnostic);
-          DocumentDiagnostics.set(path, diagnostics);
-        }
-      }
-      compilerDiagnostics.clear();
-      for (let [path, diagnostics] of DocumentDiagnostics) {
-        compilerDiagnostics.set(URI.file(path), diagnostics);
+          let regex = /([:\/\\A-z-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning) ([0-9]*))/gm;
+          let matches: RegExpExecArray | null;
+          let path: string;
+          let diagnostics: vscode.Diagnostic[];
+          let range: vscode.Range;
+          let severity: vscode.DiagnosticSeverity;
+          while ((matches = regex.exec(stdout.toString() || ""))) {
+            range = new vscode.Range(
+              new vscode.Position(Number(matches[2]) - 1, 0),
+              new vscode.Position(Number(matches[2]) - 1, 256)
+            );
+            severity =
+              matches[4] === "warning"
+                ? vscode.DiagnosticSeverity.Warning
+                : vscode.DiagnosticSeverity.Error;
+            path = MainPath != "" ? matches[1] : document.uri.fsPath;
+            if (DocumentDiagnostics.has(path)) {
+              diagnostics = DocumentDiagnostics.get(path);
+            } else {
+              diagnostics = [];
+            }
+            let message: string = GenerateDetailedError(matches[5], matches[3]);
+            let diagnostic: vscode.Diagnostic = new vscode.Diagnostic(
+              range,
+              message,
+              severity
+            );
+            diagnostics.push(diagnostic);
+            DocumentDiagnostics.set(path, diagnostics);
+          }
+          compilerDiagnostics.clear();
+          for (let [path, diagnostics] of DocumentDiagnostics) {
+            compilerDiagnostics.set(URI.file(path), diagnostics);
+          }
+        });
+      } catch (err) {
+        console.error(err);
       }
     }
   }, 300);
