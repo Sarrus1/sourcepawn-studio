@@ -6,8 +6,10 @@
  - Added more `#pragma` snippets.
  - Added support for range in enum (struct), enum members, variable and define definitions.
  - The linter now runs asynchronously, thanks to [CirnoV](https://github.com/CirnoV).
+ - Fixed the linter's regex.
+ - Fixed enum parsing regex.
  - Fixed a bug that occured when parsing arrays.
- - Fixed a highlighting for numeric constants in arrays' size declarations.
+ - Fixed a highlighting bug for numeric constants in arrays' size declarations.
 
 ### 1.11.5
  - Added support for range in function definitions.

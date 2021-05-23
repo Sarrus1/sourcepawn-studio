@@ -129,13 +129,13 @@ class Parser {
     }
 
     // Match enum structs
-    match = line.match(/^\s*(?:enum\s+struct\s+)([^\{]*)/);
+    match = line.match(/^\s*(?:enum\s+struct\s+)(\w*)\s*[^\{]*/);
     if (match) {
       this.read_enums(match, line, true);
       return;
     }
     // Match enums
-    match = line.match(/^\s*(?:enum\s*)([^\{]*)/);
+    match = line.match(/^\s*(?:enum\s+)(\w*)\s*[^\{]*/);
     if (match) {
       this.read_enums(match, line, false);
       return;
@@ -258,8 +258,12 @@ class Parser {
         description
       );
       this.completions.add(match[1], enumStructCompletion);
-      let start: number = line.search(match[1]);
-      let end: number = start + match[1].length;
+      let start: number = 0;
+      let end: number = 0;
+      if (match[1] == "") {
+        start = line.search(match[1]);
+        end = start + match[1].length;
+      }
       var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
         URI.file(this.file),
         PositiveRange(this.lineNb, start, end),
@@ -305,11 +309,11 @@ class Parser {
             enumStructCompletion
           )
         );
-				let start: number = line.search(enumStructMemberName);
-				let end: number = start + enumStructMemberName.length;
+        let start: number = line.search(enumStructMemberName);
+        let end: number = start + enumStructMemberName.length;
         let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
           URI.file(this.file),
-          PositiveRange(this.lineNb, start,end),
+          PositiveRange(this.lineNb, start, end),
           spDefinitions.DefinitionKind.EnumStructMember
         );
         this.AddDefinition(enumStructMemberName, def);
@@ -324,8 +328,12 @@ class Parser {
           description
         );
         this.completions.add(nameMatch[1], enumCompletion);
-				let start: number = line.search(match[1]);
-				let end: number = start + match[1].length;
+        let start: number = 0;
+        let end: number = 0;
+        if (match[1] == "") {
+          start = line.search(match[1]);
+          end = start + match[1].length;
+        }
         var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
           URI.file(this.file),
           PositiveRange(this.lineNb, start, end),
@@ -379,8 +387,8 @@ class Parser {
             enumCompletion
           )
         );
-				let start: number = line.search(enumMemberName);
-				let end: number = start + enumMemberName.length;
+        let start: number = line.search(enumMemberName);
+        let end: number = start + enumMemberName.length;
         let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
           URI.file(this.file),
           PositiveRange(this.lineNb, start, end),
