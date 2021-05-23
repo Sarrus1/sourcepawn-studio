@@ -26,7 +26,8 @@
     "onCommand:sourcepawn-vscode.compileSM",
     "onCommand:sourcepawn-vscode.uploadToServer",
     "onCommand:sourcepawn-vscode.refreshPlugins",
-    "onCommand:sourcepawn-vscode.insertParameters"
+    "onCommand:sourcepawn-vscode.insertParameters",
+    "onCommand:sourcepawn-vscode.setFileAsMain"
   ],
   "contributes": {
     "commands": [
@@ -78,6 +79,11 @@
         "command": "sourcepawn-vscode.insertParameters",
         "title": "SM Insert Function Parameters",
         "category": "Project"
+      },
+      {
+        "command": "sourcepawn-vscode.setFileAsMain",
+        "title": "SM Set current file as main",
+        "category": "Project"
       }
     ],
     "menus": {
@@ -85,6 +91,20 @@
         {
           "when": "resourceLangId == sourcepawn",
           "command": "sourcepawn-vscode.compileSM"
+        },
+        {
+          "when": "resourceLangId == sourcepawn",
+          "command": "sourcepawn-vscode.setFileAsMain"
+        }
+      ],
+      "explorer/context": [
+        {
+          "when": "resourceLangId == sourcepawn",
+          "command": "sourcepawn-vscode.compileSM"
+        },
+        {
+          "when": "resourceLangId == sourcepawn",
+          "command": "sourcepawn-vscode.setFileAsMain"
         }
       ],
       "editor/title": [

@@ -5,6 +5,8 @@
  - Added support for go-to-definition for scopped variable.
  - Added more `#pragma` snippets.
  - Added support for range in enum (struct), enum members, variable and define definitions.
+ - Added a command to set the current file as main.
+ - SM Compile will now always point to the current file.
  - The linter now runs asynchronously, thanks to [CirnoV](https://github.com/CirnoV).
  - Fixed the linter's regex.
  - Fixed enum parsing regex.
