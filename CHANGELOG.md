@@ -4,6 +4,7 @@
  - Added more detailed error messages to the linter, thanks to [ShufflexDD's post](https://forums.alliedmods.net/showthread.php?t=201044).
  - Added support for go-to-definition for scopped variable.
  - Added more `#pragma` snippets.
+ - Added support for range in enum (struct), enum members, variable and define definitions.
  - Fixed a bug that occured when parsing arrays.
  - Fixed a highlighting for numeric constants in arrays' size declarations.
 

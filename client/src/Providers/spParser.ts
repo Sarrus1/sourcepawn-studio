@@ -131,13 +131,13 @@ class Parser {
     // Match enum structs
     match = line.match(/^\s*(?:enum\s+struct\s+)([^\{]*)/);
     if (match) {
-      this.read_enums(match, true);
+      this.read_enums(match, line, true);
       return;
     }
     // Match enums
     match = line.match(/^\s*(?:enum\s*)([^\{]*)/);
     if (match) {
-      this.read_enums(match, false);
+      this.read_enums(match, line, false);
       return;
     }
 
@@ -248,7 +248,7 @@ class Parser {
     return;
   }
 
-  read_enums(match, IsStruct: boolean) {
+  read_enums(match, line: string, IsStruct: boolean) {
     let { description, params } = this.parse_doc_comment();
     if (IsStruct) {
       // Create a completion for the enum struct itself if it has a name
@@ -258,18 +258,17 @@ class Parser {
         description
       );
       this.completions.add(match[1], enumStructCompletion);
+      let start: number = line.search(match[1]);
+      let end: number = start + match[1].length;
       var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
         URI.file(this.file),
-        PositiveRange(this.lineNb),
+        PositiveRange(this.lineNb, start, end),
         spDefinitions.DefinitionKind.EnumStruct
       );
       this.AddDefinition(match[1], def);
 
       // Set max number of iterations for safety
       let iter = 0;
-
-      // Proceed to the next line
-      let line: string = "";
 
       // Match all the enum members
       while (iter < 100 && !/\s*(\}\s*\;?)/.test(line)) {
@@ -306,9 +305,11 @@ class Parser {
             enumStructCompletion
           )
         );
+				let start: number = line.search(enumStructMemberName);
+				let end: number = start + enumStructMemberName.length;
         let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
           URI.file(this.file),
-          PositiveRange(this.lineNb),
+          PositiveRange(this.lineNb, start,end),
           spDefinitions.DefinitionKind.EnumStructMember
         );
         this.AddDefinition(enumStructMemberName, def);
@@ -323,9 +324,11 @@ class Parser {
           description
         );
         this.completions.add(nameMatch[1], enumCompletion);
+				let start: number = line.search(match[1]);
+				let end: number = start + match[1].length;
         var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
           URI.file(this.file),
-          PositiveRange(this.lineNb),
+          PositiveRange(this.lineNb, start, end),
           spDefinitions.DefinitionKind.Enum
         );
         this.AddDefinition(match[1], def);
@@ -340,9 +343,6 @@ class Parser {
 
       // Set max number of iterations for safety
       let iter = 0;
-
-      // Proceed to the next line
-      let line: string = "";
 
       // Match all the enum members
       while (iter < 100 && !/\s*(\}\s*\;?)/.test(line)) {
@@ -379,9 +379,11 @@ class Parser {
             enumCompletion
           )
         );
+				let start: number = line.search(enumMemberName);
+				let end: number = start + enumMemberName.length;
         let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
           URI.file(this.file),
-          PositiveRange(this.lineNb),
+          PositiveRange(this.lineNb, start, end),
           spDefinitions.DefinitionKind.EnumMember
         );
         this.AddDefinition(enumMemberName, def);
@@ -528,7 +530,7 @@ class Parser {
     if (typeof line === "undefined") {
       return;
     }
-    let match = line.match(
+    let match: RegExpMatchArray = line.match(
       /^\s*(?:(?:stock|public)\s+)*(?:(\w*)\s+)?(\w*)\s*\(([^]*(?:\)|,|{))\s*$/
     );
     if (!match) {
