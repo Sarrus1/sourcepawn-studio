@@ -150,7 +150,7 @@ class Parser {
 
     // Match variables only in the current file
     match = line.match(
-      /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*[A-z0-9_]+\s+(\w+\s*(?:\[[A-Za-z0-9 +\-\*]*\])?\s*(?:=\s*[^;,]+)?(?:,|;))/
+      /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*[A-z0-9_]+\s+(\w+\s*(?:\[[A-Za-z0-9 +\-\*_]*\])*\s*(?:=\s*[^;,]+)?(?:,|;))/
     );
     if (match && !this.IsBuiltIn) {
       if (
@@ -399,10 +399,10 @@ class Parser {
     let match_variables = [];
     let match_variable: RegExpExecArray;
     // Check if it's a multiline declaration
-    if (/(;)(?:\s*|)$/.test(match[1])) {
+    if (/(;)(?:\s*|)$/.test(line)) {
       // Separate potential multiple declarations
-      let re = /\s*(?:(?:const|static|public)\s+)*\w+\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:(?:\"[^]*\")|(?:[^,]+)))?/g;
-      while ((match_variable = re.exec(match[1])) != null) {
+      let re = /\s*(?:(?:const|static|public)\s+)*\w+\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])*\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])*(?:\s*=\s*(?:(?:\"[^]*\")|(?:\'[^]*\')|(?:[^,]+)))?/g;
+      while ((match_variable = re.exec(line)) != null) {
         match_variables.push(match_variable);
       }
       for (let variable of match_variables) {
