@@ -129,13 +129,13 @@ class Parser {
     }
 
     // Match enum structs
-    match = line.match(/^\s*(?:enum\s+struct\s+)(.*)/);
+    match = line.match(/^\s*(?:enum\s+struct\s+)([^\{]*)/);
     if (match) {
       this.read_enums(match, true);
       return;
     }
     // Match enums
-    match = line.match(/^\s*(?:enum\s*)(.*)/);
+    match = line.match(/^\s*(?:enum\s*)([^\{]*)/);
     if (match) {
       this.read_enums(match, false);
       return;
@@ -155,7 +155,7 @@ class Parser {
     if (match && !this.IsBuiltIn) {
       if (
         /^\s*(if|else|while|do|return|break|continue|delete|forward|native|property|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)/.test(
-          match[0]
+          line
         )
       )
         return;
@@ -283,7 +283,7 @@ class Parser {
         match = line.match(/^\s*(?:[A-z0-9_]*)\s+([A-z0-9_]*)\s*.*/);
 
         // Skip if didn't match
-        if (!match || !/\s*\{/.test(line)) {
+        if (!match) {
           continue;
         }
         let enumStructMemberName = match[1];
@@ -356,7 +356,7 @@ class Parser {
         match = line.match(/^\s*([A-z0-9_]*)\s*.*/);
 
         // Skip if didn't match
-        if (!match || !/\s*\{/.test(line)) {
+        if (!match) {
           continue;
         }
         let enumMemberName = match[1];
