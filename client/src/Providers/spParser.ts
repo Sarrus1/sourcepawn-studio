@@ -536,9 +536,6 @@ class Parser {
         /^\s*(?:(?:forward|static|native)\s+)+(?:(\w*)\s+)?(\w*)\s*\(([^]*)(?:,|;)?\s*$/
       );
     }
-		if(this.file.includes("convars.inc")){
-			console.debug(line, match);
-		}
     if (match) {
       let { description, params } = this.parse_doc_comment();
       let name_match = match[2];
