@@ -5,6 +5,7 @@
  - Added support for go-to-definition for scopped variable.
  - Added more `#pragma` snippets.
  - Added support for range in enum (struct), enum members, variable and define definitions.
+ - The linter now runs asynchronously, thanks to [CirnoV](https://github.com/CirnoV).
  - Fixed a bug that occured when parsing arrays.
  - Fixed a highlighting for numeric constants in arrays' size declarations.
 
