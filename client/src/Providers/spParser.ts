@@ -110,7 +110,7 @@ class Parser {
     // Match define
     let match = line.match(/\s*#define\s+([A-Za-z0-9_]+)\s+([^]+)/);
     if (match) {
-      this.read_define(match);
+      this.read_define(match, line);
       return;
     }
 
@@ -227,17 +227,12 @@ class Parser {
     return;
   }
 
-  read_define(match) {
+  read_define(match, line: string) {
     this.completions.add(
       match[1],
       new DefineCompletion(match[1], match[2], this.file)
     );
-    let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
-      URI.file(this.file),
-      PositiveRange(this.lineNb),
-      spDefinitions.DefinitionKind.Define
-    );
-    this.AddDefinition(match[1], def);
+    this.AddDefinition(match[1], line, spDefinitions.DefinitionKind.Define);
     return;
   }
 
@@ -258,18 +253,13 @@ class Parser {
         description
       );
       this.completions.add(match[1], enumStructCompletion);
-      let start: number = 0;
-      let end: number = 0;
-      if (match[1] == "") {
-        start = line.search(match[1]);
-        end = start + match[1].length;
-      }
-      var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
-        URI.file(this.file),
-        PositiveRange(this.lineNb, start, end),
-        spDefinitions.DefinitionKind.EnumStruct
+      this.AddDefinition(
+        match[1],
+        line,
+        spDefinitions.DefinitionKind.EnumStruct,
+        undefined,
+        match[1] != ""
       );
-      this.AddDefinition(match[1], def);
 
       // Set max number of iterations for safety
       let iter = 0;
@@ -309,14 +299,11 @@ class Parser {
             enumStructCompletion
           )
         );
-        let start: number = line.search(enumStructMemberName);
-        let end: number = start + enumStructMemberName.length;
-        let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
-          URI.file(this.file),
-          PositiveRange(this.lineNb, start, end),
+        this.AddDefinition(
+          enumStructMemberName,
+          line,
           spDefinitions.DefinitionKind.EnumStructMember
         );
-        this.AddDefinition(enumStructMemberName, def);
       }
     } else {
       let nameMatch = match[0].match(/^\s*(?:enum\s*)([A-z0-9_]*)/);
@@ -328,18 +315,13 @@ class Parser {
           description
         );
         this.completions.add(nameMatch[1], enumCompletion);
-        let start: number = 0;
-        let end: number = 0;
-        if (match[1] == "") {
-          start = line.search(match[1]);
-          end = start + match[1].length;
-        }
-        var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
-          URI.file(this.file),
-          PositiveRange(this.lineNb, start, end),
-          spDefinitions.DefinitionKind.Enum
+        this.AddDefinition(
+          match[1],
+          line,
+          spDefinitions.DefinitionKind.Enum,
+          undefined,
+          match[1] != ""
         );
-        this.AddDefinition(match[1], def);
       } else {
         var enumCompletion: EnumCompletion = new EnumCompletion(
           "",
@@ -387,14 +369,11 @@ class Parser {
             enumCompletion
           )
         );
-        let start: number = line.search(enumMemberName);
-        let end: number = start + enumMemberName.length;
-        let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
-          URI.file(this.file),
-          PositiveRange(this.lineNb, start, end),
+        this.AddDefinition(
+          enumMemberName,
+          line,
           spDefinitions.DefinitionKind.EnumMember
         );
-        this.AddDefinition(enumMemberName, def);
       }
       return;
     }
@@ -424,24 +403,18 @@ class Parser {
           new VariableCompletion(variable_completion, this.file)
         );
         if (this.lastFuncLine == 0) {
-          let start: number = line.search(variable_completion);
-          let end: number = start + variable_completion.length;
-          var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
-            URI.file(this.file),
-            PositiveRange(this.lineNb, start, end),
+          this.AddDefinition(
+            variable_completion,
+            line,
             spDefinitions.DefinitionKind.Variable
           );
-          this.AddDefinition(variable_completion, def);
         } else {
-          let start: number = line.search(variable_completion);
-          let end: number = start + variable_completion.length;
-          var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
-            URI.file(this.file),
-            PositiveRange(this.lineNb, start, end),
+          this.AddDefinition(
+            variable_completion,
+            line,
             spDefinitions.DefinitionKind.Variable,
             this.lastFuncName
           );
-          this.AddDefinition(variable_completion, def, this.lastFuncName);
         }
       }
     } else {
@@ -461,26 +434,20 @@ class Parser {
             variable_completion,
             new VariableCompletion(variable_completion, this.file)
           );
-					if (this.lastFuncLine == 0) {
-						let start: number = match[1].search(variable_completion);
-						let end: number = start + variable_completion.length;
-						var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
-							URI.file(this.file),
-							PositiveRange(this.lineNb, start, end),
-							spDefinitions.DefinitionKind.Variable
-						);
-						this.AddDefinition(variable_completion, def);
-					} else {
-						let start: number = match[1].search(variable_completion);
-						let end: number = start + variable_completion.length;
-						var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
-							URI.file(this.file),
-							PositiveRange(this.lineNb, start, end),
-							spDefinitions.DefinitionKind.Variable,
-							this.lastFuncName
-						);
-						this.AddDefinition(variable_completion, def, this.lastFuncName);
-					}
+          if (this.lastFuncLine == 0) {
+            this.AddDefinition(
+              variable_completion,
+              line,
+              spDefinitions.DefinitionKind.Variable
+            );
+          } else {
+            this.AddDefinition(
+              variable_completion,
+              line,
+              spDefinitions.DefinitionKind.Variable,
+              this.lastFuncName
+            );
+          }
         }
         match[1] = this.lines.shift();
         this.lineNb++;
@@ -567,7 +534,11 @@ class Parser {
         PositiveRange(this.lineNb, start, end),
         spDefinitions.DefinitionKind.Function
       );
-      this.AddDefinition(name_match, def);
+      this.AddDefinition(
+        name_match,
+        line,
+        spDefinitions.DefinitionKind.Function
+      );
       if (this.state[this.state.length - 2] === State.Methodmap) {
         this.completions.add(
           name_match + "__method",
@@ -685,9 +656,18 @@ class Parser {
 
   AddDefinition(
     name: string,
-    def: spDefinitions.DefLocation,
-    definitionSuffix: string = "___global"
+    line: string,
+    kind: spDefinitions.DefinitionKind,
+    definitionSuffix: string = "___global",
+    search: boolean = true
   ): void {
+    let start: number = search ? line.search(name) : 0;
+    let end: number = search ? start + name.length : 0;
+    var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
+      URI.file(this.file),
+      PositiveRange(this.lineNb, start, end),
+      kind
+    );
     if (definitionSuffix != "___global")
       definitionSuffix = "___" + definitionSuffix;
     if (!this.definitions.has(name + definitionSuffix) || !this.IsBuiltIn) {
@@ -711,15 +691,12 @@ class Parser {
         variable_completion,
         new VariableCompletion(variable_completion, this.file)
       );
-      let start: number = line.search(variable_completion);
-      let end: number = start + variable_completion.length;
-      var def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
-        URI.file(this.file),
-        PositiveRange(this.lineNb, start, end),
+      this.AddDefinition(
+        variable_completion,
+        line,
         spDefinitions.DefinitionKind.Variable,
         funcName
       );
-      this.AddDefinition(variable_completion, def, funcName);
     }
   }
 }
