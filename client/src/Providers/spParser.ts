@@ -390,7 +390,7 @@ class Parser {
     // Check if it's a multiline declaration
     if (/(;)(?:\s*|)$/.test(line)) {
       // Separate potential multiple declarations
-      let re = /\s*(?:(?:const|static|public)\s+)*\w+\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])*\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])*(?:\s*=\s*(?:(?:\"[^]*\")|(?:\'[^]*\')|(?:[^,]+)))?/g;
+      let re = /\s*(?:(?:const|static|public|stock)\s+)*\w+\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])*\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])*(?:\s*=\s*(?:(?:\"[^]*\")|(?:\'[^]*\')|(?:[^,]+)))?/g;
       while ((match_variable = re.exec(line)) != null) {
         match_variables.push(match_variable);
       }
@@ -402,6 +402,9 @@ class Parser {
           variable_completion,
           new VariableCompletion(variable_completion, this.file)
         );
+				if(variable_completion.includes("const")){
+					console.debug(match_variables, this.lineNb);
+				}
         if (this.lastFuncLine == 0) {
           this.AddDefinition(
             variable_completion,
