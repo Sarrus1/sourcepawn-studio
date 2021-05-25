@@ -31,11 +31,13 @@ export type Definitions = Map<string, DefLocation>;
 
 export class DefinitionRepository
   implements vscode.DefinitionProvider, vscode.Disposable {
-  public definitions: Definitions;
+  public otherDefinitions: Definitions;
+  public functionDefinitions: Definitions;
   private globalState: vscode.Memento;
 
   constructor(globalState?: vscode.Memento) {
-    this.definitions = new Map();
+    this.otherDefinitions = new Map();
+    this.functionDefinitions = new Map();
     this.globalState = globalState;
   }
 
@@ -44,13 +46,27 @@ export class DefinitionRepository
     position: vscode.Position,
     token: vscode.CancellationToken
   ): vscode.Location | vscode.DefinitionLink[] {
-    let word: string = document.getText(
-      document.getWordRangeAtPosition(position)
+    let range = document.getWordRangeAtPosition(position);
+    let word: string = document.getText(range);
+    let definition: DefLocation;
+    let isFunction = this.isFunction(
+      range,
+      document,
+      document.getText().split("\n")[position.line].length
     );
-    let definition: DefLocation = this.definitions.get(word + "___global");
+    if (isFunction) {
+      definition = this.functionDefinitions.get(word + "___global");
+      if (
+        typeof definition != "undefined" &&
+        this.isLocalFileVariable(document, definition)
+      ) {
+        return new vscode.Location(definition.uri, definition.range);
+      }
+    }
+    definition = this.otherDefinitions.get(word + "___global");
     if (typeof definition == "undefined") {
       let lastFuncName: string = GetLastFuncName(position.line, document);
-      definition = this.definitions.get(word + "___" + lastFuncName);
+      definition = this.otherDefinitions.get(word + "___" + lastFuncName);
     }
     if (
       typeof definition != "undefined" &&
@@ -70,6 +86,18 @@ export class DefinitionRepository
       return document.uri.fsPath == definition.uri.fsPath;
     }
     return true;
+  }
+
+  public isFunction(
+    range: vscode.Range,
+    document: vscode.TextDocument,
+    lineLength: number
+  ): boolean {
+    let start = new vscode.Position(range.start.line, range.end.character);
+    let end = new vscode.Position(range.end.line, lineLength + 1);
+    let rangeAfter = new vscode.Range(start, end);
+    let wordsAfter: string = document.getText(rangeAfter);
+    return /^\s*\(/.test(wordsAfter);
   }
 }
 

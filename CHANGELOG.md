@@ -8,6 +8,8 @@
  - Added a command to set the current file as main.
  - SM Compile will now always point to the current file.
  - The linter now runs asynchronously, thanks to [CirnoV](https://github.com/CirnoV).
+ - Fixed an issue where the signature of a function would not reappear when typing a comma.
+ - Fixed an issue where function definitions could collide with other definitions.
  - Fixed the linter's regex.
  - Fixed enum parsing regex.
  - Fixed a bug that occured when parsing arrays.

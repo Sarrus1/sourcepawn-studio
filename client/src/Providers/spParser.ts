@@ -20,19 +20,29 @@ import { basename } from "path";
 export function parse_file(
   file: string,
   completions: spCompletions.FileCompletions,
-  definitions: spDefinitions.Definitions,
+  otherDefinitions: spDefinitions.Definitions,
+  functionDefinitions: spDefinitions.Definitions,
   documents: Map<string, URI>,
   IsBuiltIn: boolean = false
 ) {
   let data = fs.readFileSync(file, "utf-8");
-  parse_text(data, file, completions, definitions, documents, IsBuiltIn);
+  parse_text(
+    data,
+    file,
+    completions,
+    otherDefinitions,
+    functionDefinitions,
+    documents,
+    IsBuiltIn
+  );
 }
 
 export function parse_text(
   data: string,
   file: string,
   completions: spCompletions.FileCompletions,
-  definitions: spDefinitions.Definitions,
+  otherDefinitions: spDefinitions.Definitions,
+  functionDefinitions: spDefinitions.Definitions,
   documents: Map<string, URI>,
   IsBuiltIn: boolean = false
 ) {
@@ -45,7 +55,8 @@ export function parse_text(
     file,
     IsBuiltIn,
     completions,
-    definitions,
+    otherDefinitions,
+    functionDefinitions,
     documents
   );
   parser.parse();
@@ -62,7 +73,8 @@ enum State {
 
 class Parser {
   completions: spCompletions.FileCompletions;
-  definitions: spDefinitions.Definitions;
+  otherDefinitions: spDefinitions.Definitions;
+  functionDefinitions: spDefinitions.Definitions;
   state: State[];
   scratch: any;
   state_data: any;
@@ -79,11 +91,13 @@ class Parser {
     file: string,
     IsBuiltIn: boolean,
     completions: spCompletions.FileCompletions,
-    definitions: spDefinitions.Definitions,
+    otherDefinitions: spDefinitions.Definitions,
+    functionDefinitions: spDefinitions.Definitions,
     documents: Map<string, URI>
   ) {
     this.completions = completions;
-    this.definitions = definitions;
+    this.otherDefinitions = otherDefinitions;
+    this.functionDefinitions = functionDefinitions;
     let uri = URI.file(file).toString();
     this.state = [State.None];
     this.lineNb = -1;
@@ -402,9 +416,6 @@ class Parser {
           variable_completion,
           new VariableCompletion(variable_completion, this.file)
         );
-				if(variable_completion.includes("const")){
-					console.debug(match_variables, this.lineNb);
-				}
         if (this.lastFuncLine == 0) {
           this.AddDefinition(
             variable_completion,
@@ -530,17 +541,13 @@ class Parser {
     if (match) {
       let { description, params } = this.parse_doc_comment();
       let name_match = match[2];
-      let start: number = line.search(name_match);
-      let end: number = start + name_match.length;
-      let def: spDefinitions.DefLocation = new spDefinitions.DefLocation(
-        URI.file(this.file),
-        PositiveRange(this.lineNb, start, end),
-        spDefinitions.DefinitionKind.Function
-      );
       this.AddDefinition(
         name_match,
         line,
-        spDefinitions.DefinitionKind.Function
+        spDefinitions.DefinitionKind.Function,
+        undefined,
+        undefined,
+        true
       );
       if (this.state[this.state.length - 2] === State.Methodmap) {
         this.completions.add(
@@ -662,7 +669,8 @@ class Parser {
     line: string,
     kind: spDefinitions.DefinitionKind,
     definitionSuffix: string = "___global",
-    search: boolean = true
+    search: boolean = true,
+    isFunction: boolean = false
   ): void {
     let start: number = search ? line.search(name) : 0;
     let end: number = search ? start + name.length : 0;
@@ -673,8 +681,20 @@ class Parser {
     );
     if (definitionSuffix != "___global")
       definitionSuffix = "___" + definitionSuffix;
-    if (!this.definitions.has(name + definitionSuffix) || !this.IsBuiltIn) {
-      this.definitions.set(name + definitionSuffix, def);
+    if (isFunction) {
+      if (
+        !this.functionDefinitions.has(name + definitionSuffix) ||
+        !this.IsBuiltIn
+      ) {
+        this.functionDefinitions.set(name + definitionSuffix, def);
+      }
+      return;
+    }
+    if (
+      !this.otherDefinitions.has(name + definitionSuffix) ||
+      !this.IsBuiltIn
+    ) {
+      this.otherDefinitions.set(name + definitionSuffix, def);
     }
     return;
   }

@@ -50,7 +50,8 @@ export class Providers {
         event.document.getText(),
         file_path,
         this_completions,
-        this.definitionsProvider.definitions,
+        this.definitionsProvider.otherDefinitions,
+        this.definitionsProvider.functionDefinitions,
         this.completionsProvider.documents
       );
     } catch (error) {
@@ -78,7 +79,8 @@ export class Providers {
       spParser.parse_file(
         file_path,
         this_completions,
-        this.definitionsProvider.definitions,
+        this.definitionsProvider.otherDefinitions,
+        this.definitionsProvider.functionDefinitions,
         this.completionsProvider.documents
       );
     } catch (error) {
@@ -103,7 +105,8 @@ export class Providers {
       spParser.parse_file(
         path,
         this_completions,
-        this.definitionsProvider.definitions,
+        this.definitionsProvider.otherDefinitions,
+        this.definitionsProvider.functionDefinitions,
         this.completionsProvider.documents
       );
     } catch (error) {
@@ -115,38 +118,40 @@ export class Providers {
   }
 
   public read_unscanned_imports(includes: Include[]) {
-		let debugSetting = vscode.workspace.getConfiguration("sourcepawn").get("trace.server");
-		let debug = (debugSetting=="messages"||debugSetting=="verbose");
+    let debugSetting = vscode.workspace
+      .getConfiguration("sourcepawn")
+      .get("trace.server");
+    let debug = debugSetting == "messages" || debugSetting == "verbose";
     for (let include of includes) {
-			if(debug) console.log(include.uri.toString());
-      let completion = this.completionsProvider.completions.get(
-        include.uri
-      );
+      if (debug) console.log(include.uri.toString());
+      let completion = this.completionsProvider.completions.get(include.uri);
       if (typeof completion === "undefined") {
-				if(debug) console.log("reading", include.uri.toString());
+        if (debug) console.log("reading", include.uri.toString());
         let file = URI.parse(include.uri).fsPath;
         if (fs.existsSync(file)) {
-					if(debug) console.log("found", include.uri.toString());
+          if (debug) console.log("found", include.uri.toString());
           let new_completions: spCompletions.FileCompletions = new spCompletions.FileCompletions(
             include.uri
           );
-					try{
-						spParser.parse_file(
-							file,
-							new_completions,
-							this.definitionsProvider.definitions,
-							this.completionsProvider.documents,
-							include.IsBuiltIn
-						);
-					}
-					catch(err) {console.error(err, include.uri.toString());}
-					if(debug) console.log("parsed", include.uri.toString());
+          try {
+            spParser.parse_file(
+              file,
+              new_completions,
+              this.definitionsProvider.otherDefinitions,
+              this.definitionsProvider.functionDefinitions,
+              this.completionsProvider.documents,
+              include.IsBuiltIn
+            );
+          } catch (err) {
+            console.error(err, include.uri.toString());
+          }
+          if (debug) console.log("parsed", include.uri.toString());
           this.completionsProvider.completions.set(
             include.uri,
             new_completions
           );
-					if(debug) console.log("added", include.uri.toString());
-					this.read_unscanned_imports(new_completions.includes);
+          if (debug) console.log("added", include.uri.toString());
+          this.read_unscanned_imports(new_completions.includes);
         }
       }
     }
@@ -163,7 +168,8 @@ export class Providers {
         spParser.parse_file(
           file,
           completions,
-          this.definitionsProvider.definitions,
+          this.definitionsProvider.otherDefinitions,
+          this.definitionsProvider.functionDefinitions,
           this.completionsProvider.documents,
           true
         );
