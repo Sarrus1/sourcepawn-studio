@@ -79,7 +79,7 @@ export function activate(context: ExtensionContext) {
     languages.registerSignatureHelpProvider(
       SP_MODE,
       providers.completionsProvider,
-      "("
+      "(", ","
     )
   );
   context.subscriptions.push(
@@ -93,14 +93,6 @@ export function activate(context: ExtensionContext) {
     languages.registerHoverProvider(SP_MODE, providers.hoverProvider)
   );
 
-  // context.subscriptions.push(
-  //   languages.registerDocumentSemanticTokensProvider(
-  //     SP_MODE,
-  //     providers.HighlightsProvider,
-  //     SP_LEGENDS
-  //   )
-  // );
-  // Passing providers as an arguments is required to be able to use 'this' in the callbacks.
   Workspace.onDidChangeTextDocument(
     providers.handle_document_change,
     providers,
