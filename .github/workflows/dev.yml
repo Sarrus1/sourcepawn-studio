@@ -42,27 +42,26 @@ jobs:
       fail-fast: false
     steps:
       - name: Test Packaging
-      - uses: actions/checkout@v2
+        uses: actions/checkout@v2
       - run: npm install
       - uses: lannonbr/vsce-action@master
         with:
           args: "package"
-
+      - name: package-version
+        run: node -p -e '`PACKAGE_VERSION=${require("./package.json").version}`' >> $GITHUB_ENV
       - name: Changelog
-      - uses: scottbrenner/generate-changelog-action@master
-      - id: Changelog
-        env:
-          REPO: ${{ github.repository }}
-
+        id: changelog
+        uses: mindsers/changelog-reader-action@v2.0.0
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@latest
+        uses: ncipollo/release-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Beta release for ${{ github.ref }}
-          body: |
-            ${{ steps.Changelog.outputs.changelog }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: v${{ env.PACKAGE_VERSION }}
+          artifacts: "*.vsix"
+          body: ${{ steps.changelog.outputs.changes }}
           draft: false
-          prerelease: false
+          allowUpdates: true
+          prerelease: true
+          replacesArtifacts: true
