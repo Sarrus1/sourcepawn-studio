@@ -49,10 +49,10 @@ jobs:
           args: "package"
 
       - name: Changelog
-      uses: scottbrenner/generate-changelog-action@master
-      id: Changelog
-      env:
-        REPO: ${{ github.repository }}
+        uses: scottbrenner/generate-changelog-action@master
+        id: Changelog
+        env:
+          REPO: ${{ github.repository }}
 
       - name: Create Release
         id: create_release
