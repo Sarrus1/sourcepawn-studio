@@ -20,6 +20,7 @@
  - Fixed enum parsing regex.
  - Fixed a bug that occured when parsing arrays.
  - Fixed a highlighting bug for numeric constants in arrays' size declarations.
+ - Fixed a highlighting bug for turnary operators, thanks to [Холя](https://github.com/HolyHender) for reporting this.
 
 ## [1.11.5]
 ### Added

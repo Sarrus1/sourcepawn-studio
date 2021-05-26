@@ -157,8 +157,11 @@ export class Providers {
     }
   }
 
-  public parse_sm_api(SourcemodHome: string): void {
-    if (!SourcemodHome){
+  public parse_sm_api(): void {
+		let sm_home: string = vscode.workspace.getConfiguration("sourcepawn").get(
+			"SourcemodHome"
+		) || "";
+    if (sm_home == ""){
 			vscode.window
       .showWarningMessage(
         "SourceMod API not found in the project. You should set SourceMod Home for tasks generation to work. Do you want to install it automatically?",
@@ -179,7 +182,7 @@ export class Providers {
       });
 			return;
 		};
-    let files = glob.sync(path.join(SourcemodHome, "**/*.inc"));
+    let files = glob.sync(path.join(sm_home, "**/*.inc"));
     for (let file of files) {
       try {
         let completions = new spCompletions.FileCompletions(
@@ -195,7 +198,7 @@ export class Providers {
         );
 
         let uri =
-          "file://__sourcemod_builtin/" + path.relative(SourcemodHome, file);
+          "file://__sourcemod_builtin/" + path.relative(sm_home, file);
         this.completionsProvider.completions.set(uri, completions);
       } catch (e) {
         console.error(e);

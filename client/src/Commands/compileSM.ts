@@ -61,10 +61,13 @@ export async function run(args: any) {
   }
   terminal.show();
 
-  let workspaceFolderPath =
-    vscode.workspace.workspaceFolders?.[0].uri.fsPath || "";
   // Create plugins folder if it doesn't exist.
-  let pluginsFolderPath = path.join(workspaceFolderPath, "plugins/");
+  let pluginsFolderPath: string;
+  if (scriptingPath.endsWith("scripting")) {
+    pluginsFolderPath = path.join(scriptingPath, "../", "plugins/");
+  } else {
+    pluginsFolderPath = path.join(scriptingPath, "compiled/");
+  }
   if (!fs.existsSync(pluginsFolderPath)) {
     fs.mkdirSync(pluginsFolderPath);
   }
