@@ -2,13 +2,14 @@
 
 ## [1.12.0]
 ### Added
- - More detailed error messages to the linter, thanks to [ShufflexDD's post](https://forums.alliedmods.net/showthread.php?t=201044).
+ - More detailed error messages for the linter, thanks to [ShufflexDD's post](https://forums.alliedmods.net/showthread.php?t=201044).
  - Support for go-to-definition for scopped variable.
  - More `#pragma` snippets.
  - Support for range in enum (struct), enum members, variable and define definitions.
  - New command to set the current file as main.
  - Dev builds are now released automatically.
  - Support for variables completion across multiple .sp files
+ - Command to download sourcemod automatically.
 
 ### Fixed
  - SM Compile will now always point to the current file.

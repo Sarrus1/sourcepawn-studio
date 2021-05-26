@@ -158,7 +158,27 @@ export class Providers {
   }
 
   public parse_sm_api(SourcemodHome: string): void {
-    if (!SourcemodHome) return;
+    if (!SourcemodHome){
+			vscode.window
+      .showWarningMessage(
+        "SourceMod API not found in the project. You should set SourceMod Home for tasks generation to work. Do you want to install it automatically?",
+        "Yes",
+				"No, open Settings"
+      )
+      .then((choice) => {
+				if (choice == "Yes"){
+					vscode.commands.executeCommand(
+            "sourcepawn-vscode.installSM"
+          );
+				}
+        else if (choice === "No, open Settings") {
+          vscode.commands.executeCommand(
+            "workbench.action.openWorkspaceSettings"
+          );
+        }
+      });
+			return;
+		};
     let files = glob.sync(path.join(SourcemodHome, "**/*.inc"));
     for (let file of files) {
       try {

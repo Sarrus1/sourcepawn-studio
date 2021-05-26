@@ -3,11 +3,13 @@ const wget = require("wget-improved");
 import { window, ProgressLocation, CancellationToken, Progress } from "vscode";
 import { join } from "path";
 const decompress = require("decompress");
+import { platform, arch } from "os";
 
 const outputDir = join(
   vscode.extensions.getExtension("Sarrus.sourcepawn-vscode").extensionPath,
   "misc/"
 );
+const Platform = platform();
 
 export async function run(args: any) {
   await window.withProgress(
@@ -28,7 +30,12 @@ export async function run(args: any) {
       .getConfiguration("sourcepawn")
       .get<string>("SourcemodHome") || "";
   let smDir = join(outputDir, "addons/sourcemod/scripting/include");
-  let spComp = join(outputDir, "addons/sourcemod/scripting/spcomp");
+  let spComp: string;
+  if (Platform === "win32") {
+    spComp = join(outputDir, "addons/sourcemod/scripting/spcomp.exe");
+  } else {
+    spComp = join(outputDir, "addons/sourcemod/scripting/spcomp.exe");
+  }
   if (spCompPath != "" || smHome != "") {
     vscode.window
       .showInformationMessage(
@@ -57,8 +64,14 @@ async function downloadSM(
 ): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     let oldStatus: number = 0;
-    const src =
-      "https://sm.alliedmods.net/smdrop/1.10/sourcemod-1.10.0-git6502-linux.tar.gz";
+    var src: string;
+    if (Platform === "win32") {
+      src = "http://sourcemod.net/latest.php?os=windows&version=1.10";
+    } else if (Platform === "darwin") {
+      src = "http://sourcemod.net/latest.php?os=mac&version=1.10";
+    } else {
+      src = "http://sourcemod.net/latest.php?os=linux&version=1.10";
+    }
     const output = join(outputDir, "sm.gz");
     const options = {
       gunzip: false,
