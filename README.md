@@ -19,31 +19,6 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 - Parse sourcemod files from a custom location.
 - Linting capabilities.
 
-## Settings
-
-The only setting allows to define the position of the default sourcemod include files :
-
-```json
-{
-  "sourcepawn.SourcemodHome": "/path/to/sourcemod/include"
-}
-{
-	"sourcepawn.AuthorName": "The name of the plugin's author (you)."
-},
-{
-	"sourcepawn.GithubName": "The GitHub username of the plugin's author (you)."
-},
-{
-	"sourcepawn.SpcompPath": "The location of the SourceMod compiler"
-},
-{
-	"sourcepawn.showCompileIconInEditorTitleMenu": "Whether to show the 'Compile Code' icon in editor title menu."
-},
-{
-	"sourcepawn.optionalIncludeDirsPaths": "Optional additional include folders paths for the compiler. Use this if you know what you are doing. Leave blank to disable."
-}
-```
-
 ## To do
 
 - Incrementally Format Code as the User Types
@@ -58,11 +33,17 @@ The only setting allows to define the position of the default sourcemod include 
 
 ## Frequently Asked Questions
 
+- [How can I donate ?](#How-can-I-donate-?)
 - [How to fix "Not a .sp file, aborting" ?](#How-to-fix-"Not-a-.sp-file,-aborting"-?)
 - [How to fix "Command not found" ?](#How-to-fix-"command-not-found"-?)
 - [How to install the beta build ?](#How-to-install-the-beta-build-?)
 - [How can I contribute ?](#How-to-contribute-?)
 - [How to run the dev version ?](#How-to-run-?)
+
+### How can I donate ?
+
+Thanks for considering this. But please remember that all of this wouldn't be possible without the Alliedmodders community. If you wish to make a donation for this community, you can make it [here](https://sourcemod.net/donate.php).
+If you prefer to make a donation to me for this project, you can [buy me a coffee](https://www.buymeacoffee.com/sarrus)
 
 ### How to fix "Not a .sp file, aborting" ?
 
