@@ -3,6 +3,7 @@ import {
   workspace as Workspace,
   languages,
   window,
+  WorkspaceFolder,
 } from "vscode";
 import { registerSMLinter } from "./spLinter";
 import * as glob from "glob";
@@ -10,29 +11,33 @@ import { SP_MODE } from "./spMode";
 import { Providers } from "./Providers/spProviders";
 import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./spFormat";
-import { basename, extname } from "path";
+import { basename, extname, resolve } from "path";
 import { URI } from "vscode-uri";
+import { readFileSync } from "fs";
 
 let getDirectories = function (src, ext, callback) {
   glob(src + "/**/*", callback);
 };
 
+let errorDetailsPath: string = "./Misc/error-messages.json";
+errorDetailsPath = resolve(__dirname, errorDetailsPath).replace("out", "src");
+export const errorDetails = JSON.parse(
+  readFileSync(errorDetailsPath).toString()
+);
+
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
   let formatter = new SMDocumentFormattingEditProvider();
-  // Parse files at document opening.
-  let sm_home: string = Workspace.getConfiguration("sourcepawn").get(
-    "SourcemodHome"
-  );
-  providers.parse_sm_api(sm_home);
+  let workspace: WorkspaceFolder;
+  providers.parse_sm_api();
   let workspaceFolders = Workspace.workspaceFolders;
   if (typeof workspaceFolders == "undefined") {
-    window.showErrorMessage(
+    window.showWarningMessage(
       "No workspace or folder found. \n Please open the folder containing your .sp file, not just the .sp file."
     );
-    return;
+  } else {
+    workspace = workspaceFolders[0];
   }
-  let workspace = workspaceFolders[0];
   if (typeof workspace != "undefined") {
     getDirectories(workspace.uri.fsPath, "sp", function (err, res) {
       if (err) {
@@ -72,7 +77,8 @@ export function activate(context: ExtensionContext) {
     languages.registerSignatureHelpProvider(
       SP_MODE,
       providers.completionsProvider,
-      "("
+      "(",
+      ","
     )
   );
   context.subscriptions.push(
@@ -86,14 +92,6 @@ export function activate(context: ExtensionContext) {
     languages.registerHoverProvider(SP_MODE, providers.hoverProvider)
   );
 
-  // context.subscriptions.push(
-  //   languages.registerDocumentSemanticTokensProvider(
-  //     SP_MODE,
-  //     providers.HighlightsProvider,
-  //     SP_LEGENDS
-  //   )
-  // );
-  // Passing providers as an arguments is required to be able to use 'this' in the callbacks.
   Workspace.onDidChangeTextDocument(
     providers.handle_document_change,
     providers,

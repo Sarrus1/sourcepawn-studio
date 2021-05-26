@@ -18,3 +18,25 @@ jobs:
           args: "publish -p $VSCE_TOKEN"
         env:
           VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+      - uses: lannonbr/vsce-action@master
+        name: Edit last release
+        with:
+          args: "package"
+      - name: package-version
+        run: node -p -e '`PACKAGE_VERSION=${require("./package.json").version}`' >> $GITHUB_ENV
+      - name: Changelog
+        id: changelog
+        uses: mindsers/changelog-reader-action@v2.0.0
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: v${{ env.PACKAGE_VERSION }}
+          artifacts: "*.vsix"
+          body: ${{ steps.changelog.outputs.changes }}
+          draft: false
+          allowUpdates: true
+          prerelease: false
+          replacesArtifacts: true

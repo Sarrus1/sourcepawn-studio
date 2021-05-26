@@ -22,7 +22,7 @@
         }
       }
     },
-		{
+    {
       "match": "(\\#pragma)\\s+\\w+",
       "name": "meta.include.sourcepawn",
       "captures": {
@@ -71,81 +71,105 @@
         }
       }
     },
-		{
-			"comment": "Control statements",
-			"name": "keyword.control.statement.sourcepawn",
-			"match": "\\s*\\b(?:if|else|for|while|do|switch|case|default|return)\\b"
-		},
+    {
+      "comment": "Control statements",
+      "name": "keyword.control.statement.sourcepawn",
+      "match": "\\s*\\b(?:if|else|for|while|do|switch|case|default|return)\\b"
+    },
     {
       "comment": "keywords",
       "name": "keyword.sourcepawn",
       "match": "\\s*\\b(?:break|continue|new|static|decl|const|delete|forward|native|property|public|stock|funcenum|functag|methodmap|typedef|typeset|this|sizeof)\\b"
     },
-		{
-			"comment": "Enum structs",
-			"match": "^\\s*(enum\\s+struct\\s+)(\\w*)",
-      "captures": {
-        "1": {
-          "name": "keyword.sourcepawn"
-        },
-				"2": {
-          "name": "support.type.core.sourcepawn"
-        }
-      }
-		},
-		{
-			"comment": "Enums",
-			"match": "^\\s*(enum\\s*)(\\w*)",
-      "captures": {
-        "1": {
-          "name": "keyword.sourcepawn"
-        },
-				"2": {
-          "name": "support.type.core.sourcepawn"
-        }
-      }
-		},
-		{
-			"comment": "Function params new syntax",
-			"match": "\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\:?\\s+\\w+\\s*(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\s*(?:\\)|,|=)",
-			"captures": {
-				"1": {
-					"name": "keyword.sourcepawn"
-				},
-        "2": {
-          "name": "support.type.core.sourcepawn"
-        }
-			}
-		},
-		{
-			"comment": "Function params old syntax",
-			"match": "\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\s*\\:\\s*\\w+\\s*(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\s*(?:\\)|,|=)",
-			"captures": {
-				"1": {
-					"name": "keyword.sourcepawn"
-				},
-        "2": {
-          "name": "support.type.core.sourcepawn"
-        }
-			}
-		},
     {
-      "comment": "Variable declaration new syntax",
-      "match": "^\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\s+(\\w+)\\s*(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\s*(?:,|;|=)",
+      "comment": "Enum structs",
+      "match": "^\\s*(enum\\s+struct\\s+)(\\w*)",
       "captures": {
-				"1": {
-					"name": "keyword.sourcepawn"
-				},
+        "1": {
+          "name": "keyword.sourcepawn"
+        },
         "2": {
           "name": "support.type.core.sourcepawn"
         }
       }
     },
     {
-      "comment": "Variable declaration old syntax",
-      "match": "(\\w+):\\w+",
+      "comment": "Enums",
+      "match": "^\\s*(enum\\s*)(\\w*)",
       "captures": {
-				"1": {
+        "1": {
+          "name": "keyword.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.sourcepawn"
+        }
+      }
+    },
+    {
+      "comment": "Function params new syntax",
+      "match": "\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\:?\\s+\\w+\\s*(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\s*(?:\\)|,|=)",
+      "captures": {
+        "1": {
+          "name": "keyword.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.sourcepawn"
+        }
+      }
+    },
+    {
+      "comment": "Function params old syntax",
+      "match": "\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\s*\\:\\s*\\w+\\s*(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\s*(?:\\)|,|=)",
+      "captures": {
+        "1": {
+          "name": "keyword.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.sourcepawn"
+        }
+      }
+    },
+    {
+      "comment": "Variable declaration new syntax",
+      "match": "^\\s*((?:const|static)\\s+)*\\s*(\\w+)((?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])*)\\s+(\\w+)\\s*((?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])*)\\s*(?:,|;|=)",
+      "captures": {
+        "1": {
+          "name": "keyword.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.sourcepawn"
+        },
+        "3": {
+          "patterns": [
+            {
+              "match": "(\\d+)",
+              "captures": {
+                "1": {
+                  "name": "constant.numeric.sourcepawn"
+                }
+              }
+            }
+          ]
+        },
+        "5": {
+          "patterns": [
+            {
+              "match": "(\\d+)",
+              "captures": {
+                "1": {
+                  "name": "constant.numeric.sourcepawn"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "comment": "Variable declaration old syntax",
+      "match": "(?<!\\?\\s*)(\b\\w+\b)\\s*:\\s*\\w+",
+      "captures": {
+        "1": {
           "name": "support.type.core.sourcepawng"
         }
       }

@@ -50,7 +50,8 @@ export class Providers {
         event.document.getText(),
         file_path,
         this_completions,
-        this.definitionsProvider.definitions,
+        this.definitionsProvider.otherDefinitions,
+        this.definitionsProvider.functionDefinitions,
         this.completionsProvider.documents
       );
     } catch (error) {
@@ -78,7 +79,8 @@ export class Providers {
       spParser.parse_file(
         file_path,
         this_completions,
-        this.definitionsProvider.definitions,
+        this.definitionsProvider.otherDefinitions,
+        this.definitionsProvider.functionDefinitions,
         this.completionsProvider.documents
       );
     } catch (error) {
@@ -103,7 +105,8 @@ export class Providers {
       spParser.parse_file(
         path,
         this_completions,
-        this.definitionsProvider.definitions,
+        this.definitionsProvider.otherDefinitions,
+        this.definitionsProvider.functionDefinitions,
         this.completionsProvider.documents
       );
     } catch (error) {
@@ -115,46 +118,71 @@ export class Providers {
   }
 
   public read_unscanned_imports(includes: Include[]) {
-		let debugSetting = vscode.workspace.getConfiguration("sourcepawn").get("trace.server");
-		let debug = (debugSetting=="messages"||debugSetting=="verbose");
+    let debugSetting = vscode.workspace
+      .getConfiguration("sourcepawn")
+      .get("trace.server");
+    let debug = debugSetting == "messages" || debugSetting == "verbose";
     for (let include of includes) {
-			if(debug) console.log(include.uri.toString());
-      let completion = this.completionsProvider.completions.get(
-        include.uri
-      );
+      if (debug) console.log(include.uri.toString());
+      let completion = this.completionsProvider.completions.get(include.uri);
       if (typeof completion === "undefined") {
-				if(debug) console.log("reading", include.uri.toString());
+        if (debug) console.log("reading", include.uri.toString());
         let file = URI.parse(include.uri).fsPath;
         if (fs.existsSync(file)) {
-					if(debug) console.log("found", include.uri.toString());
+          if (debug) console.log("found", include.uri.toString());
           let new_completions: spCompletions.FileCompletions = new spCompletions.FileCompletions(
             include.uri
           );
-					try{
-						spParser.parse_file(
-							file,
-							new_completions,
-							this.definitionsProvider.definitions,
-							this.completionsProvider.documents,
-							include.IsBuiltIn
-						);
-					}
-					catch(err) {console.error(err, include.uri.toString());}
-					if(debug) console.log("parsed", include.uri.toString());
+          try {
+            spParser.parse_file(
+              file,
+              new_completions,
+              this.definitionsProvider.otherDefinitions,
+              this.definitionsProvider.functionDefinitions,
+              this.completionsProvider.documents,
+              include.IsBuiltIn
+            );
+          } catch (err) {
+            console.error(err, include.uri.toString());
+          }
+          if (debug) console.log("parsed", include.uri.toString());
           this.completionsProvider.completions.set(
             include.uri,
             new_completions
           );
-					if(debug) console.log("added", include.uri.toString());
-					this.read_unscanned_imports(new_completions.includes);
+          if (debug) console.log("added", include.uri.toString());
+          this.read_unscanned_imports(new_completions.includes);
         }
       }
     }
   }
 
-  public parse_sm_api(SourcemodHome: string): void {
-    if (!SourcemodHome) return;
-    let files = glob.sync(path.join(SourcemodHome, "**/*.inc"));
+  public parse_sm_api(): void {
+		let sm_home: string = vscode.workspace.getConfiguration("sourcepawn").get(
+			"SourcemodHome"
+		) || "";
+    if (sm_home == ""){
+			vscode.window
+      .showWarningMessage(
+        "SourceMod API not found in the project. You should set SourceMod Home for tasks generation to work. Do you want to install it automatically?",
+        "Yes",
+				"No, open Settings"
+      )
+      .then((choice) => {
+				if (choice == "Yes"){
+					vscode.commands.executeCommand(
+            "sourcepawn-vscode.installSM"
+          );
+				}
+        else if (choice === "No, open Settings") {
+          vscode.commands.executeCommand(
+            "workbench.action.openWorkspaceSettings"
+          );
+        }
+      });
+			return;
+		};
+    let files = glob.sync(path.join(sm_home, "**/*.inc"));
     for (let file of files) {
       try {
         let completions = new spCompletions.FileCompletions(
@@ -163,13 +191,14 @@ export class Providers {
         spParser.parse_file(
           file,
           completions,
-          this.definitionsProvider.definitions,
+          this.definitionsProvider.otherDefinitions,
+          this.definitionsProvider.functionDefinitions,
           this.completionsProvider.documents,
           true
         );
 
         let uri =
-          "file://__sourcemod_builtin/" + path.relative(SourcemodHome, file);
+          "file://__sourcemod_builtin/" + path.relative(sm_home, file);
         this.completionsProvider.completions.set(uri, completions);
       } catch (e) {
         console.error(e);

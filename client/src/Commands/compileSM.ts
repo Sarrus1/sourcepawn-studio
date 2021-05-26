@@ -4,40 +4,12 @@ import * as fs from "fs";
 import * as os from "os";
 
 export async function run(args: any) {
-  let activeDocumentPath: string =
-    vscode.workspace.getConfiguration("sourcepawn").get("MainPath") || "";
-  if (activeDocumentPath != "") {
-    try {
-      if (!fs.existsSync(activeDocumentPath)) {
-        let workspace: vscode.WorkspaceFolder =
-          vscode.workspace.workspaceFolders[0];
-        activeDocumentPath = path.join(
-          workspace.uri.fsPath,
-          activeDocumentPath
-        );
-        if (!fs.existsSync(activeDocumentPath)) {
-          throw "MainPath is incorrect.";
-        }
-      }
-    } catch (error) {
-      vscode.window
-        .showErrorMessage(
-          "A setting for the main.sp file was specified, but seems invalid. Please make sure it is valid.",
-          "Open Settings"
-        )
-        .then((choice) => {
-          if (choice === "Open Settings") {
-            vscode.commands.executeCommand(
-              "workbench.action.openWorkspaceSettings"
-            );
-          }
-        });
-      return;
-    }
-  } else {
+  let activeDocumentPath: string;
+  try {
+    activeDocumentPath = args.document.uri.fsPath;
+  } catch {
     activeDocumentPath = vscode.window.activeTextEditor.document.uri.fsPath;
   }
-
   let scriptingPath = path.dirname(activeDocumentPath);
   let activeDocumentName = path.basename(activeDocumentPath);
   activeDocumentName = activeDocumentName.replace(".sp", ".smx");
@@ -89,10 +61,13 @@ export async function run(args: any) {
   }
   terminal.show();
 
-  let workspaceFolderPath =
-    vscode.workspace.workspaceFolders?.[0].uri.fsPath || "";
   // Create plugins folder if it doesn't exist.
-  let pluginsFolderPath = path.join(workspaceFolderPath, "plugins/");
+  let pluginsFolderPath: string;
+  if (scriptingPath.endsWith("scripting")) {
+    pluginsFolderPath = path.join(scriptingPath, "../", "plugins/");
+  } else {
+    pluginsFolderPath = path.join(scriptingPath, "compiled/");
+  }
   if (!fs.existsSync(pluginsFolderPath)) {
     fs.mkdirSync(pluginsFolderPath);
   }

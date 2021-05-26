@@ -169,15 +169,8 @@ export class VariableCompletion implements Completion {
   }
 
   to_completion_item(file: string): vscode.CompletionItem {
-    // Only return variables local to the document being edited
-    if (file === this.file) {
-      return {
-        label: this.name,
-        kind: this.kind,
-      };
-    }
     return {
-      label: "",
+      label: this.name,
       kind: this.kind,
     };
   }

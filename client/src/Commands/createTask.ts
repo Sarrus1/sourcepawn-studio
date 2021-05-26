@@ -10,11 +10,17 @@ export function run(args: any) {
   if (!sm_home) {
     vscode.window
       .showWarningMessage(
-        "SourceMod API not found in the project. You should set SourceMod Home for tasks generation to work.",
-        "Open Settings"
+        "SourceMod API not found in the project. You should set SourceMod Home for tasks generation to work. Do you want to install it automatically?",
+        "Yes",
+				"No, open Settings"
       )
       .then((choice) => {
-        if (choice === "Open Settings") {
+				if (choice == "Yes"){
+					vscode.commands.executeCommand(
+            "sourcepawn-vscode.installSM"
+          );
+				}
+        else if (choice === "No, open Settings") {
           vscode.commands.executeCommand(
             "workbench.action.openWorkspaceSettings"
           );
