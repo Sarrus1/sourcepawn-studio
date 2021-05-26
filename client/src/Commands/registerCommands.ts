@@ -9,6 +9,7 @@ import * as UploadToServerCommand from "./uploadToServer";
 import * as RefreshPluginsCommand from "./refreshPlugins";
 import * as InsertParametersCommand from "./insertParameters";
 import * as setFileAsMainCommand from "./setFileAsMain";
+import * as installSMCommand from "./installSM";
 
 export function registerSMCommands(context: ExtensionContext) {
   let createTask = commands.registerCommand(
@@ -70,4 +71,11 @@ export function registerSMCommands(context: ExtensionContext) {
     setFileAsMainCommand.run.bind(undefined)
   );
   context.subscriptions.push(setFileAsMain);
+
+	let installSM = commands.registerTextEditorCommand(
+    "sourcepawn-vscode.installSM",
+    installSMCommand.run.bind(undefined)
+  );
+  context.subscriptions.push(installSM);
+	
 }

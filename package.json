@@ -84,6 +84,11 @@
         "command": "sourcepawn-vscode.setFileAsMain",
         "title": "SM Set current file as main",
         "category": "Project"
+      },
+      {
+        "command": "sourcepawn-vscode.installSM",
+        "title": "SM Install sourcemod",
+        "category": "Project"
       }
     ],
     "menus": {
@@ -362,11 +367,13 @@
     "n-readlines": "^1.0.1",
     "prettier": "2.2.1",
     "rcon-srcds": "^2.0.1",
-    "vscode-uri": "^3.0.2"
+    "vscode-uri": "^3.0.2",
+    "wget-improved": "^3.2.1"
   },
   "devDependencies": {
     "@types/mocha": "^8.2.2",
     "@types/node": "^8.0.14",
+    "decompress": "^4.2.1",
     "mocha": "^8.3.2",
     "typescript": "^4.2.2",
     "vscode-test": "^1.5.2"
