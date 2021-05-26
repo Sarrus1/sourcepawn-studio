@@ -1,7 +1,8 @@
 ## Release Notes
 
 ## [1.12.1]
-### Added
+### Fixed
+ - Fixed a missing dependency.
 
 ## [1.12.0]
 ### Added
