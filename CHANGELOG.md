@@ -1,5 +1,8 @@
 ## Release Notes
 
+## [1.12.1]
+### Added
+
 ## [1.12.0]
 ### Added
  - More detailed error messages for the linter, thanks to [ShufflexDD's post](https://forums.alliedmods.net/showthread.php?t=201044).

@@ -33,12 +33,12 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 
 ## Frequently Asked Questions
 
-- [How can I donate ?](#How-can-I-donate-?)
-- [How to fix "Not a .sp file, aborting" ?](#How-to-fix-"Not-a-.sp-file,-aborting"-?)
-- [How to fix "Command not found" ?](#How-to-fix-"command-not-found"-?)
-- [How to install the beta build ?](#How-to-install-the-beta-build-?)
-- [How can I contribute ?](#How-to-contribute-?)
-- [How to run the dev version ?](#How-to-run-?)
+- [How can I donate ?](#how-can-i-donate-)
+- [How to fix "Not a .sp file, aborting" ?](#how-to-fix-not-a-sp-file-aborting-")
+- [How to fix "Command not found" ?](#how-to-fix-command-not-found-)
+- [How to install the beta build ?](#how-to-install-the-beta-build-)
+- [How can I contribute ?](#how-to-contribute-)
+- [How to run the dev version ?](#how-to-run-)
 
 ### How can I donate ?
 
