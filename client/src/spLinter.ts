@@ -91,7 +91,8 @@ export function refreshDiagnostics(
           });
       }
     }
-    if (path.extname(filename) === ".sp") {
+		let extName = path.extname(filename);
+    if (extName === ".sp"|| extName===".inc") {
       let scriptingFolder: string;
       let filePath: string;
       try {
