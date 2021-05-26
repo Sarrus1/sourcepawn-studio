@@ -19,7 +19,7 @@ export class DefLocation extends vscode.Location {
     uri: URI,
     range: vscode.Range,
     type: DefinitionKind,
-    scope: string = "___global"
+    scope: string = "___GLOBALLL"
   ) {
     super(uri, range);
     this.type = type;
@@ -55,7 +55,7 @@ export class DefinitionRepository
       document.getText().split("\n")[position.line].length
     );
     if (isFunction) {
-      definition = this.functionDefinitions.get(word + "___global");
+      definition = this.functionDefinitions.get(word + "___GLOBALLL");
       if (
         typeof definition != "undefined" &&
         this.isLocalFileVariable(document, definition)
@@ -63,7 +63,7 @@ export class DefinitionRepository
         return new vscode.Location(definition.uri, definition.range);
       }
     }
-    definition = this.otherDefinitions.get(word + "___global");
+    definition = this.otherDefinitions.get(word + "___GLOBALLL");
     if (typeof definition == "undefined") {
       let lastFuncName: string = GetLastFuncName(position.line, document);
       definition = this.otherDefinitions.get(word + "___" + lastFuncName);

@@ -25,6 +25,7 @@ export function parse_file(
   documents: Map<string, URI>,
   IsBuiltIn: boolean = false
 ) {
+	if(!fs.existsSync(file)) return;
   let data = fs.readFileSync(file, "utf-8");
   parse_text(
     data,
@@ -531,7 +532,7 @@ class Parser {
       return;
     }
     let match: RegExpMatchArray = line.match(
-      /^\s*(?:(?:stock|public)\s+)*(?:(\w*)\s+)?(\w*)\s*\(([^]*(?:\)|,|{))\s*$/
+      /^\s*(?:(?:stock|public)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))\s*$/
     );
     if (!match) {
       match = line.match(
@@ -668,7 +669,7 @@ class Parser {
     name: string,
     line: string,
     kind: spDefinitions.DefinitionKind,
-    definitionSuffix: string = "___global",
+    definitionSuffix: string = "___GLOBALLL",
     search: boolean = true,
     isFunction: boolean = false
   ): void {
@@ -679,25 +680,30 @@ class Parser {
       PositiveRange(this.lineNb, start, end),
       kind
     );
-    if (definitionSuffix != "___global")
+    if (definitionSuffix != "___GLOBALLL")
       definitionSuffix = "___" + definitionSuffix;
     if (isFunction) {
-      if (
-        !this.functionDefinitions.has(name + definitionSuffix) ||
-        !this.IsBuiltIn
-      ) {
+      if (this.ShouldAddToDefinitions(name, definitionSuffix, def)) {
         this.functionDefinitions.set(name + definitionSuffix, def);
       }
       return;
     }
-    if (
-      !this.otherDefinitions.has(name + definitionSuffix) ||
-      !this.IsBuiltIn
-    ) {
+    if (this.ShouldAddToDefinitions(name, definitionSuffix, def)) {
       this.otherDefinitions.set(name + definitionSuffix, def);
     }
     return;
   }
+
+	ShouldAddToDefinitions(name:string, definitionSuffix:string, def:spDefinitions.DefLocation):boolean{
+		let DefAlreadyExists = this.functionDefinitions.has(name + definitionSuffix);
+		// If definition already exists, check if it's in the same file, to see if we should override it
+		if(DefAlreadyExists){
+			if(!this.IsBuiltIn) return true;
+			let oldDef = this.functionDefinitions.get(name+definitionSuffix);
+			return oldDef.uri==def.uri;
+		}
+		return true
+	}
 
   AddParamsDef(params: string, funcName: string, line: string) {
     let match_variable: RegExpExecArray;
@@ -730,6 +736,8 @@ function PositiveRange(
   end: number = 0
 ): vscode.Range {
   lineNb = lineNb > 0 ? lineNb : 0;
+	start = start > 0 ? start : 0;
+	end = end > 0 ? end : 0;
   return new vscode.Range(lineNb, start, lineNb, end);
 }
 
