@@ -395,6 +395,7 @@ class Parser {
   }
 
   read_loop_variables(match) {
+		if(this.IsBuiltIn) return;
     this.completions.add(match[1], new VariableCompletion(match[1], this.file));
     return;
   }
@@ -413,10 +414,12 @@ class Parser {
         let variable_completion = variable[1].match(
           /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
         )[1];
-        this.completions.add(
-          variable_completion,
-          new VariableCompletion(variable_completion, this.file)
-        );
+				if(!this.IsBuiltIn){
+					this.completions.add(
+						variable_completion,
+						new VariableCompletion(variable_completion, this.file)
+					);
+				}
         if (this.lastFuncLine == 0) {
           this.AddDefinition(
             variable_completion,
@@ -445,10 +448,12 @@ class Parser {
           let variable_completion = variable.match(
             /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
           )[1];
+					if(!this.IsBuiltIn){
           this.completions.add(
             variable_completion,
             new VariableCompletion(variable_completion, this.file)
           );
+					}
           if (this.lastFuncLine == 0) {
             this.AddDefinition(
               variable_completion,
@@ -716,10 +721,12 @@ class Parser {
       let variable_completion = variable[1].match(
         /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
       )[1];
+			if(!this.IsBuiltIn){
       this.completions.add(
         variable_completion,
         new VariableCompletion(variable_completion, this.file)
       );
+			}
       this.AddDefinition(
         variable_completion,
         line,
