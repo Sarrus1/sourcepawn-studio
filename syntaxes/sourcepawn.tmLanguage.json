@@ -167,7 +167,7 @@
     },
     {
       "comment": "Variable declaration old syntax",
-      "match": "(\\w+):\\w+",
+      "match": "(?<!\\?\\s*)(\b\\w+\b)\\s*:\\s*\\w+",
       "captures": {
         "1": {
           "name": "support.type.core.sourcepawng"
