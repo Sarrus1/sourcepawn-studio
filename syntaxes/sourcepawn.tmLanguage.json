@@ -23,12 +23,15 @@
       }
     },
     {
-      "match": "(\\#pragma)\\s+\\w+",
+      "match": "(\\#pragma)\\s+(.*)",
       "name": "meta.include.sourcepawn",
       "captures": {
         "1": {
           "name": "keyword.other.sourcepawn"
-        }
+        },
+				"2":{
+					"name": "string.sourcepawn"
+				}
       }
     },
     {
@@ -53,11 +56,6 @@
       "comment": "Misc types",
       "match": "#(if|else|endif|emit|pragma|deprecated|undef|endinput|endscript|assert|define|error|warning|file)",
       "name": "keyword.other.sourcepawn"
-    },
-    {
-      "comment": "Core types",
-      "match": "\\b(?:bool|char|float|int|void|any)\\b",
-      "name": "support.type.core.sourcepawn"
     },
     {
       "comment": "view_as",
@@ -119,7 +117,7 @@
     },
     {
       "comment": "Function params old syntax",
-      "match": "\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\s*\\:\\s*\\w+\\s*(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\s*(?:\\)|,|=)",
+      "match": "\\s*(?<!\\?\\s*)\\s*((?:const|static)\\s+)*\\s*(\\b\\w+\\b)(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\s*\\:\\s*\\w+\\s*(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\s*(?:\\)|,|=)",
       "captures": {
         "1": {
           "name": "keyword.sourcepawn"
@@ -200,6 +198,11 @@
           "name": "entity.name.function.sourcepawn"
         }
       }
+    },
+		{
+      "comment": "Core types",
+      "match": "\\b(?:bool|char|float|int|void|any)\\b",
+      "name": "support.type.core.sourcepawn"
     },
     {
       "comment": "Float literal",
