@@ -1,5 +1,10 @@
 ## Release Notes
 
+## [1.12.2]
+### Fixed
+ - Fixed issue #34 thanks to [BoomShotKapow](https://github.com/BoomShotKapow).
+ - Switched default keybind for `smInsertParameters` from `tab` to `ctrl+shift+i`.
+
 ## [1.12.1]
 ### Fixed
  - Fixed a missing dependency.
