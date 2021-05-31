@@ -24,13 +24,13 @@
     },
     {
       "match": "(\\#pragma)\\s+(.*)",
-      "name": "meta.include.sourcepawn",
+      "name": "meta.pragma.sourcepawn",
       "captures": {
         "1": {
-          "name": "keyword.other.sourcepawn"
+          "name": "keyword.other.pragma.sourcepawn"
         },
 				"2":{
-					"name": "string.sourcepawn"
+					"name": "string.pragma.sourcepawn"
 				}
       }
     },
@@ -39,33 +39,33 @@
       "name": "meta.define.sourcepawn",
       "captures": {
         "1": {
-          "name": "keyword.other.sourcepawn"
+          "name": "keyword.other.define.sourcepawn"
         },
         "2": {
-          "name": "support.constant.core.sourcepawn"
+          "name": "support.constant.core.define.sourcepawn"
         },
         "4": {
-          "name": "string.sourcepawn"
+          "name": "string.define.sourcepawn"
         },
         "5": {
-          "name": "constant.numeric.sourcepawn"
+          "name": "constant.numeric.define.sourcepawn"
         }
       }
     },
     {
       "comment": "Misc types",
       "match": "#(if|else|endif|emit|pragma|deprecated|undef|endinput|endscript|assert|define|error|warning|file)",
-      "name": "keyword.other.sourcepawn"
+      "name": "keyword.other.misc.sourcepawn"
     },
     {
       "comment": "view_as",
       "match": "(view_as)\\s*<\\s*([A-Za-z0-9_]*)\\s*>",
       "captures": {
         "1": {
-          "name": "keyword.sourcepawn"
+          "name": "keyword.view_as.sourcepawn"
         },
         "2": {
-          "name": "support.type.core.sourcepawn"
+          "name": "support.type.core.view_as.sourcepawn"
         }
       }
     },
@@ -84,10 +84,10 @@
       "match": "^\\s*(enum\\s+struct\\s+)(\\w*)",
       "captures": {
         "1": {
-          "name": "keyword.sourcepawn"
+          "name": "keyword.enum_struct.sourcepawn"
         },
         "2": {
-          "name": "support.type.core.sourcepawn"
+          "name": "support.type.core.enum_struct.sourcepawn"
         }
       }
     },
@@ -96,34 +96,82 @@
       "match": "^\\s*(enum\\s*)(\\w*)",
       "captures": {
         "1": {
-          "name": "keyword.sourcepawn"
+          "name": "keyword.enum.sourcepawn"
         },
         "2": {
-          "name": "support.type.core.sourcepawn"
+          "name": "support.type.core.enum.sourcepawn"
         }
       }
     },
     {
       "comment": "Function params new syntax",
-      "match": "\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\:?\\s+\\w+\\s*(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\s*(?:\\)|,|=)",
+      "match": "\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\:?\\s+\\w+\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\s*(?:\\)|,|=)",
       "captures": {
         "1": {
-          "name": "keyword.sourcepawn"
+          "name": "keyword.function_params_new.sourcepawn"
         },
         "2": {
-          "name": "support.type.core.sourcepawn"
+          "name": "support.type.core.function_params_new.sourcepawn"
+        },
+				"3": {
+          "patterns": [
+            {
+              "match": "(\\d+)",
+              "captures": {
+                "1": {
+                  "name": "constant.numeric.function_params_new.sourcepawn"
+                }
+              }
+            }
+          ]
+        },
+				"4": {
+          "patterns": [
+            {
+              "match": "(\\d+)",
+              "captures": {
+                "1": {
+                  "name": "constant.numeric.function_params_new.sourcepawn"
+                }
+              }
+            }
+          ]
         }
       }
     },
     {
       "comment": "Function params old syntax",
-      "match": "\\s*(?<!\\?\\s*)\\s*((?:const|static)\\s+)*\\s*(\\b\\w+\\b)(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\s*\\:\\s*\\w+\\s*(?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-])*\\]|\\s*&)?\\s*(?:\\)|,|=)",
+      "match": "\\s*(?<!\\?\\s*)\\s*((?:const|static)\\s+)*\\s*(\\b\\w+\\b)(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\s*\\:\\s*\\w+\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\s*(?:\\)|,|=)",
       "captures": {
         "1": {
-          "name": "keyword.sourcepawn"
+          "name": "keyword.function_params_old.sourcepawn"
         },
         "2": {
-          "name": "support.type.core.sourcepawn"
+          "name": "support.type.core.function_params_old.sourcepawn"
+        },
+				"3": {
+          "patterns": [
+            {
+              "match": "(\\d+)",
+              "captures": {
+                "1": {
+                  "name": "constant.numeric.function_params_new.sourcepawn"
+                }
+              }
+            }
+          ]
+        },
+				"4": {
+          "patterns": [
+            {
+              "match": "(\\d+)",
+              "captures": {
+                "1": {
+                  "name": "constant.numeric.function_params_new.sourcepawn"
+                }
+              }
+            }
+          ]
         }
       }
     },
@@ -132,10 +180,10 @@
       "match": "^\\s*((?:const|static)\\s+)*\\s*(\\w+)((?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])*)\\s+(\\w+)\\s*((?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])*)\\s*(?:,|;|=)",
       "captures": {
         "1": {
-          "name": "keyword.sourcepawn"
+          "name": "keyword.variable_new.sourcepawn"
         },
         "2": {
-          "name": "support.type.core.sourcepawn"
+          "name": "support.type.core.variable_new.sourcepawn"
         },
         "3": {
           "patterns": [
@@ -143,7 +191,7 @@
               "match": "(\\d+)",
               "captures": {
                 "1": {
-                  "name": "constant.numeric.sourcepawn"
+                  "name": "constant.numeric.variable_new.sourcepawn"
                 }
               }
             }
@@ -155,7 +203,7 @@
               "match": "(\\d+)",
               "captures": {
                 "1": {
-                  "name": "constant.numeric.sourcepawn"
+                  "name": "constant.numeric.variable_new_bis.sourcepawn"
                 }
               }
             }
@@ -168,7 +216,7 @@
       "match": "(?<!\\?\\s*)(\b\\w+\b)\\s*:\\s*\\w+",
       "captures": {
         "1": {
-          "name": "support.type.core.sourcepawng"
+          "name": "support.type.core.variable_old.sourcepawn"
         }
       }
     },
@@ -177,16 +225,16 @@
       "match": "^\\s*((?:static|native|stock|public|forward)\\s+)*\\s*(\\w+)\\s+(\\w+)\\s*\\(",
       "captures": {
         "1": {
-          "name": "keyword.sourcepawng"
+          "name": "keyword.function_new.sourcepawn"
         },
         "2": {
-          "name": "support.type.core.sourcepawn"
+          "name": "support.type.core.function_new.sourcepawn"
         },
         "3": {
-          "name": "entity.name.function.sourcepawn"
+          "name": "entity.name.function.function_new.sourcepawn"
         },
         "4": {
-          "name": "support.type.core.sourcepawn"
+          "name": "support.type.core.function_new.sourcepawn"
         }
       }
     },
@@ -195,7 +243,7 @@
       "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*\\(",
       "captures": {
         "1": {
-          "name": "entity.name.function.sourcepawn"
+          "name": "entity.name.function.function_call.sourcepawn"
         }
       }
     },
