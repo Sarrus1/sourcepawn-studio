@@ -81,7 +81,7 @@
 								},
 								{
 									"name": "constant.character.sp-translations",
-									"match": "\\{([A-z]+)\\}",
+									"match": "\\{([A-Za-z]+)\\}",
 									"captures": {
 										"1": {
 											"name": "constant.character.escape.sp-translations"
@@ -90,7 +90,7 @@
 								},
 								{
 									"name": "constant.character.sp-translations",
-									"match": "\\{([\\d]+):([A-z]+)\\}",
+									"match": "\\{([\\d]+):([A-Za-z]+)\\}",
 									"captures": {
 										"1": {
 											"name": "constant.numeric.sp-translations"

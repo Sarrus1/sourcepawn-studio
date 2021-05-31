@@ -142,7 +142,7 @@ export function refreshDiagnostics(
               }
             });
           }
-          let regex = /([:\/\\A-z-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning) ([0-9]*)):\s+(.*)/gm;
+          let regex = /([:\/\\A-Za-z\-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning) ([0-9]*)):\s+(.*)/gm;
           let matches: RegExpExecArray | null;
           let path: string;
           let diagnostics: vscode.Diagnostic[];
