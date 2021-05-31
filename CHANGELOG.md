@@ -1,6 +1,9 @@
 ## Release Notes
 
 ## [1.12.2]
+### Added
+ - Added autocompletion for `#include`.
+
 ### Fixed
  - Fixed issue #34 thanks to [BoomShotKapow](https://github.com/BoomShotKapow).
  - Fixed issue #35 related to highlighting glitches.

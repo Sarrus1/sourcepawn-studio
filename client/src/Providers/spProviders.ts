@@ -29,7 +29,7 @@ export class Providers {
     for (let file of event.files) {
       let Path = file.fsPath;
       Path = Path.replace(".git", "");
-      this.completionsProvider.documents.set(path.basename(Path), file);
+      this.completionsProvider.documents.set(path.basename(Path), file.toString());
     }
   }
 
@@ -40,7 +40,7 @@ export class Providers {
     let file_path: string = event.document.uri.fsPath;
     this.completionsProvider.documents.set(
       path.basename(file_path),
-      event.document.uri
+      event.document.uri.toString()
     );
     // Some file paths are appened with .git
     file_path = file_path.replace(".git", "");
@@ -73,7 +73,7 @@ export class Providers {
     if (file_path.includes(".git")) return;
     this.completionsProvider.documents.set(
       path.basename(file_path),
-      document.uri
+      document.uri.toString()
     );
     try {
       spParser.parse_file(
@@ -200,6 +200,7 @@ export class Providers {
         let uri =
           "file://__sourcemod_builtin/" + path.relative(sm_home, file);
         this.completionsProvider.completions.set(uri, completions);
+				this.completionsProvider.documents.set(file, uri);
       } catch (e) {
         console.error(e);
       }

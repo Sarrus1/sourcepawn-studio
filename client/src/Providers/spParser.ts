@@ -22,7 +22,7 @@ export function parse_file(
   completions: spCompletions.FileCompletions,
   otherDefinitions: spDefinitions.Definitions,
   functionDefinitions: spDefinitions.Definitions,
-  documents: Map<string, URI>,
+  documents: Map<string, string>,
   IsBuiltIn: boolean = false
 ) {
 	if(!fs.existsSync(file)) return;
@@ -44,7 +44,7 @@ export function parse_text(
   completions: spCompletions.FileCompletions,
   otherDefinitions: spDefinitions.Definitions,
   functionDefinitions: spDefinitions.Definitions,
-  documents: Map<string, URI>,
+  documents: Map<string, string>,
   IsBuiltIn: boolean = false
 ) {
   if (typeof data === "undefined") {
@@ -83,7 +83,7 @@ class Parser {
   lineNb: number;
   file: string;
   IsBuiltIn: boolean;
-  documents: Map<string, URI>;
+  documents: Map<string, string>;
   lastFuncLine: number;
   lastFuncName: string;
 
@@ -94,7 +94,7 @@ class Parser {
     completions: spCompletions.FileCompletions,
     otherDefinitions: spDefinitions.Definitions,
     functionDefinitions: spDefinitions.Definitions,
-    documents: Map<string, URI>
+    documents: Map<string, string>
   ) {
     this.completions = completions;
     this.otherDefinitions = otherDefinitions;

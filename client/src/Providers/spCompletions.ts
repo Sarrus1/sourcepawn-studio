@@ -1,8 +1,10 @@
 import * as vscode from "vscode";
-import {basename, join} from "path";
+import { basename, join } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 import { Completion, Include } from "./spCompletionsKinds";
+import { CompletionItem } from "vscode";
+import { dir } from "console";
 
 export class FileCompletions {
   completions: Map<string, Completion>;
@@ -43,7 +45,7 @@ export class FileCompletions {
 
   resolve_import(
     file: string,
-    documents: Map<string, URI>,
+    documents: Map<string, string>,
     IsBuiltIn: boolean = false
   ) {
     let inc_file: string;
@@ -54,7 +56,7 @@ export class FileCompletions {
 
     let match = file.match(/include\/(.*)/);
     if (match) file = match[1];
-    let uri: URI;
+    let uri: string;
     if (!(uri = documents.get(basename(file)))) {
       let includes_dirs: string[] = vscode.workspace
         .getConfiguration("sourcepawn")
@@ -68,7 +70,7 @@ export class FileCompletions {
       }
       this.add_include("file://__sourcemod_builtin/" + file, IsBuiltIn);
     } else {
-      this.add_include(uri.toString(), IsBuiltIn);
+      this.add_include(uri, IsBuiltIn);
     }
   }
 }
@@ -76,7 +78,7 @@ export class FileCompletions {
 export class CompletionRepository
   implements vscode.CompletionItemProvider, vscode.Disposable {
   public completions: Map<string, FileCompletions>;
-  public documents: Map<string, vscode.Uri>;
+  public documents: Map<string, string>;
   private globalState: vscode.Memento;
 
   constructor(globalState?: vscode.Memento) {
@@ -90,14 +92,47 @@ export class CompletionRepository
     position: vscode.Position,
     token: vscode.CancellationToken
   ): vscode.CompletionList {
-    let completions: vscode.CompletionList = this.get_completions(
-      document,
-      position
-    );
-    return completions;
+    const text = document
+      .lineAt(position.line)
+      .text.substr(0, position.character);
+    const match = text.match(/^\s*#\s*include\s*(<[^>]*|"[^"]*)$/);
+
+    if (!match) {
+      return this.get_completions(document, position);
+    }
+    return this.get_include_completions(document);
   }
 
   public dispose() {}
+
+  get_include_completions(
+    document: vscode.TextDocument
+  ): vscode.CompletionList {
+    let scriptingDirname: string = document.uri.toString();
+    scriptingDirname =
+      scriptingDirname.replace(basename(document.uri.fsPath), "") + "include/";
+    let items: CompletionItem[] = [];
+    let cleanedUri: string;
+    for (let uri of this.documents.values()) {
+      if (uri.includes("file://__sourcemod_builtin/")) {
+        cleanedUri = uri.replace("file://__sourcemod_builtin/", "");
+        items.push({
+          label: cleanedUri,
+          kind: vscode.CompletionItemKind.File,
+          detail: "Sourcemod BuiltIn",
+        });
+      } else if (uri.includes(scriptingDirname)) {
+        cleanedUri = uri.replace(scriptingDirname, "");
+        items.push({
+          label: cleanedUri,
+          kind: vscode.CompletionItemKind.File,
+          detail: URI.parse(uri).fsPath,
+        });
+      }
+    }
+
+    return new vscode.CompletionList(items);
+  }
 
   get_completions(
     document: vscode.TextDocument,
@@ -131,7 +166,6 @@ export class CompletionRepository
         }
       });
     }
-    //return all_completions_list;
     if (is_method) {
       all_completions_list.items = all_completions_list.items.filter(
         (completion) =>
@@ -169,10 +203,10 @@ export class CompletionRepository
           throw "MainPath is incorrect.";
         }
       }
-			let MainCompletion = this.completions.get(URI.file(MainPath).toString());
-			if(MainCompletion) {
-				this.get_included_files(MainCompletion, includes);
-			}
+      let MainCompletion = this.completions.get(URI.file(MainPath).toString());
+      if (MainCompletion) {
+        this.get_included_files(MainCompletion, includes);
+      }
       let uri = URI.file(MainPath).toString();
       if (!includes.has(uri)) {
         includes.add(uri);
