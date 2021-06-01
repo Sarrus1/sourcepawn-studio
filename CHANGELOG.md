@@ -1,5 +1,16 @@
 ## Release Notes
 
+## [1.12.2]
+### Added
+ - Added autocompletion for `#include`.
+
+### Fixed
+ - Fixed issue #34 thanks to [BoomShotKapow](https://github.com/BoomShotKapow).
+ - Fixed issue #35 related to highlighting glitches.
+ - Switched default keybind for `smInsertParameters` from `tab` to `ctrl+shift+i`.
+ - Fixed a bug causing control statements to be interpreted as functions by the go-to-definition function parser.
+ - Fixed an error when parsing arrays in enum struct.
+
 ## [1.12.1]
 ### Fixed
  - Fixed a missing dependency.

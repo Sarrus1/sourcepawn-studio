@@ -25,4 +25,9 @@ export async function run(args: any) {
       editBuilder.insert(position, parameters);
     });
   }
+  else {
+    vscode.window.activeTextEditor.edit(function (editBuilder) {
+      editBuilder.insert(position, "\t");
+    })
+  }
 }

@@ -132,11 +132,16 @@ function GetLastFuncName(
 }
 
 function CheckIfControlStatement(line: string): boolean {
-  let toCheck = [/\s*if/, /\s*while/, /\s*case/, /\s*switch/];
+  let toCheck: RegExp[] = [
+    /\s*\bif\b/,
+    /\s*\bwhile\b/,
+    /\s*\bcase\b/,
+    /\s*\bswitch\b/,
+  ];
   for (let re of toCheck) {
     if (re.test(line)) {
       return false;
     }
-    return true;
   }
+  return true;
 }

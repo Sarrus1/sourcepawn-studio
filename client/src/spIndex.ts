@@ -51,7 +51,7 @@ export function activate(context: ExtensionContext) {
           if (FileExt == ".sp" || FileExt == ".inc") {
             providers.completionsProvider.documents.set(
               basename(file),
-              URI.file(file)
+              URI.file(file).toString()
             );
           }
         }
@@ -63,7 +63,11 @@ export function activate(context: ExtensionContext) {
   context.subscriptions.push(
     languages.registerCompletionItemProvider(
       SP_MODE,
-      providers.completionsProvider
+      providers.completionsProvider,
+      "<",
+      '"',
+      "/",
+      "\\"
     )
   );
   context.subscriptions.push(

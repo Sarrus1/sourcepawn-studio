@@ -29,7 +29,10 @@ export class Providers {
     for (let file of event.files) {
       let Path = file.fsPath;
       Path = Path.replace(".git", "");
-      this.completionsProvider.documents.set(path.basename(Path), file);
+      this.completionsProvider.documents.set(
+        path.basename(Path),
+        file.toString()
+      );
     }
   }
 
@@ -40,7 +43,7 @@ export class Providers {
     let file_path: string = event.document.uri.fsPath;
     this.completionsProvider.documents.set(
       path.basename(file_path),
-      event.document.uri
+      event.document.uri.toString()
     );
     // Some file paths are appened with .git
     file_path = file_path.replace(".git", "");
@@ -73,7 +76,7 @@ export class Providers {
     if (file_path.includes(".git")) return;
     this.completionsProvider.documents.set(
       path.basename(file_path),
-      document.uri
+      document.uri.toString()
     );
     try {
       spParser.parse_file(
@@ -158,30 +161,27 @@ export class Providers {
   }
 
   public parse_sm_api(): void {
-		let sm_home: string = vscode.workspace.getConfiguration("sourcepawn").get(
-			"SourcemodHome"
-		) || "";
-    if (sm_home == ""){
-			vscode.window
-      .showWarningMessage(
-        "SourceMod API not found in the project. You should set SourceMod Home for tasks generation to work. Do you want to install it automatically?",
-        "Yes",
-				"No, open Settings"
-      )
-      .then((choice) => {
-				if (choice == "Yes"){
-					vscode.commands.executeCommand(
-            "sourcepawn-vscode.installSM"
-          );
-				}
-        else if (choice === "No, open Settings") {
-          vscode.commands.executeCommand(
-            "workbench.action.openWorkspaceSettings"
-          );
-        }
-      });
-			return;
-		};
+    let sm_home: string =
+      vscode.workspace.getConfiguration("sourcepawn").get("SourcemodHome") ||
+      "";
+    if (sm_home == "") {
+      vscode.window
+        .showWarningMessage(
+          "SourceMod API not found in the project. You should set SourceMod Home for tasks generation to work. Do you want to install it automatically?",
+          "Yes",
+          "No, open Settings"
+        )
+        .then((choice) => {
+          if (choice == "Yes") {
+            vscode.commands.executeCommand("sourcepawn-vscode.installSM");
+          } else if (choice === "No, open Settings") {
+            vscode.commands.executeCommand(
+              "workbench.action.openWorkspaceSettings"
+            );
+          }
+        });
+      return;
+    }
     let files = glob.sync(path.join(sm_home, "**/*.inc"));
     for (let file of files) {
       try {
@@ -197,9 +197,9 @@ export class Providers {
           true
         );
 
-        let uri =
-          "file://__sourcemod_builtin/" + path.relative(sm_home, file);
+        let uri = "file://__sourcemod_builtin/" + path.relative(sm_home, file);
         this.completionsProvider.completions.set(uri, completions);
+        this.completionsProvider.documents.set(file, uri);
       } catch (e) {
         console.error(e);
       }

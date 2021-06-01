@@ -22,7 +22,7 @@ export function parse_file(
   completions: spCompletions.FileCompletions,
   otherDefinitions: spDefinitions.Definitions,
   functionDefinitions: spDefinitions.Definitions,
-  documents: Map<string, URI>,
+  documents: Map<string, string>,
   IsBuiltIn: boolean = false
 ) {
 	if(!fs.existsSync(file)) return;
@@ -44,7 +44,7 @@ export function parse_text(
   completions: spCompletions.FileCompletions,
   otherDefinitions: spDefinitions.Definitions,
   functionDefinitions: spDefinitions.Definitions,
-  documents: Map<string, URI>,
+  documents: Map<string, string>,
   IsBuiltIn: boolean = false
 ) {
   if (typeof data === "undefined") {
@@ -83,7 +83,7 @@ class Parser {
   lineNb: number;
   file: string;
   IsBuiltIn: boolean;
-  documents: Map<string, URI>;
+  documents: Map<string, string>;
   lastFuncLine: number;
   lastFuncName: string;
 
@@ -94,7 +94,7 @@ class Parser {
     completions: spCompletions.FileCompletions,
     otherDefinitions: spDefinitions.Definitions,
     functionDefinitions: spDefinitions.Definitions,
-    documents: Map<string, URI>
+    documents: Map<string, string>
   ) {
     this.completions = completions;
     this.otherDefinitions = otherDefinitions;
@@ -288,7 +288,7 @@ class Parser {
         if (typeof line === "undefined") {
           return;
         }
-        match = line.match(/^\s*(?:[A-z0-9_]*)\s+([A-z0-9_]*)\s*.*/);
+        match = line.match(/^\s*(?:\w+)\s+(\w+)\s*.*/);
 
         // Skip if didn't match
         if (!match) {
@@ -321,7 +321,7 @@ class Parser {
         );
       }
     } else {
-      let nameMatch = match[0].match(/^\s*(?:enum\s*)([A-z0-9_]*)/);
+      let nameMatch = match[0].match(/^\s*(?:enum\s*)(\w*)/);
       if (nameMatch) {
         // Create a completion for the enum itself if it has a name
         var enumCompletion: EnumCompletion = new EnumCompletion(
@@ -358,7 +358,7 @@ class Parser {
         if (typeof line === "undefined") {
           return;
         }
-        match = line.match(/^\s*([A-z0-9_]*)\s*.*/);
+        match = line.match(/^\s*(\w*)\s*.*/);
 
         // Skip if didn't match
         if (!match) {
