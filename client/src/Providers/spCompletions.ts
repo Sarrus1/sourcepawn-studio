@@ -120,6 +120,7 @@ export class CompletionRepository
           label: cleanedUri,
           kind: vscode.CompletionItemKind.File,
           detail: "Sourcemod BuiltIn",
+					insertText: cleanedUri.replace(".inc", "")
         });
       } else if (uri.includes(scriptingDirname)) {
         cleanedUri = uri.replace(scriptingDirname, "");
@@ -127,6 +128,7 @@ export class CompletionRepository
           label: cleanedUri,
           kind: vscode.CompletionItemKind.File,
           detail: URI.parse(uri).fsPath,
+					insertText: cleanedUri.replace(".inc", "")
         });
       }
     }
