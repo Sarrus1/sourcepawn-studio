@@ -61,15 +61,15 @@
 
   "include statement": {
     "prefix": "#include",
-    "body": [
-      "#include <${1:$BLOCK_COMMENT_START File to include $BLOCK_COMMENT_END}>"
-    ],
+    "body": ["#include "],
     "description": "include"
   },
 
   "pragma": {
     "prefix": "#pragma",
-    "body": ["#pragma ${1|newdecls required,semicolon 1,tabsize,ctrlchar,deprecated,dynamic,rational,unused|}"],
+    "body": [
+      "#pragma ${1|newdecls required,semicolon 1,tabsize,ctrlchar,deprecated,dynamic,rational,unused|}"
+    ],
     "description": "pragma"
   },
 

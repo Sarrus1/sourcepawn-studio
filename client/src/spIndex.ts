@@ -64,7 +64,10 @@ export function activate(context: ExtensionContext) {
     languages.registerCompletionItemProvider(
       SP_MODE,
       providers.completionsProvider,
-			"<", '"', "/", "\\"
+      "<",
+      '"',
+      "/",
+      "\\"
     )
   );
   context.subscriptions.push(

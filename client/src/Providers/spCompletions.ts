@@ -96,40 +96,88 @@ export class CompletionRepository
       .lineAt(position.line)
       .text.substr(0, position.character);
     const match = text.match(/^\s*#\s*include\s*(<[^>]*|"[^"]*)$/);
-
     if (!match) {
       return this.get_completions(document, position);
     }
-    return this.get_include_completions(document);
+
+    return this.get_include_completions(document, match[1]);
   }
 
   public dispose() {}
 
   get_include_completions(
-    document: vscode.TextDocument
+    document: vscode.TextDocument,
+    tempName: string
   ): vscode.CompletionList {
+    tempName = tempName.replace("<", "").replace('"', "");
+    let match = tempName.match(/([^\/]+\/)+/);
+    tempName = match ? match[0] : "";
     let scriptingDirname: string = document.uri.toString();
+    let itemsNames: string[] = [];
     scriptingDirname =
       scriptingDirname.replace(basename(document.uri.fsPath), "") + "include/";
+    let scriptingDirnames: string[] = [scriptingDirname];
+    let includes_dirs: string[] = vscode.workspace
+      .getConfiguration("sourcepawn")
+      .get("optionalIncludeDirsPaths");
+    scriptingDirnames = scriptingDirnames.concat(includes_dirs);
     let items: CompletionItem[] = [];
     let cleanedUri: string;
     for (let uri of this.documents.values()) {
-      if (uri.includes("file://__sourcemod_builtin/")) {
-        cleanedUri = uri.replace("file://__sourcemod_builtin/", "");
-        items.push({
-          label: cleanedUri,
-          kind: vscode.CompletionItemKind.File,
-          detail: "Sourcemod BuiltIn",
-					insertText: cleanedUri.replace(".inc", "")
-        });
-      } else if (uri.includes(scriptingDirname)) {
-        cleanedUri = uri.replace(scriptingDirname, "");
-        items.push({
-          label: cleanedUri,
-          kind: vscode.CompletionItemKind.File,
-          detail: URI.parse(uri).fsPath,
-					insertText: cleanedUri.replace(".inc", "")
-        });
+      if (uri.includes("file://__sourcemod_builtin/" + tempName)) {
+        cleanedUri = uri.replace("file://__sourcemod_builtin/" + tempName, "");
+        let match = cleanedUri.match(/([^\/]+\/)?/);
+        if (match[0] != "") {
+          let item = {
+            label: match[0].replace("/", ""),
+            kind: vscode.CompletionItemKind.Folder,
+            detail: "Sourcemod BuiltIn",
+          };
+          if (itemsNames.indexOf(match[0]) == -1) {
+            items.push(item);
+            itemsNames.push(match[0]);
+          }
+        } else {
+          let item = {
+            label: cleanedUri,
+            kind: vscode.CompletionItemKind.File,
+            detail: "Sourcemod BuiltIn",
+            insertText: cleanedUri.replace(".inc", ""),
+          };
+          if (itemsNames.indexOf(cleanedUri) == -1) {
+            items.push(item);
+            itemsNames.push(cleanedUri);
+          }
+        }
+      } else {
+        for (scriptingDirname of scriptingDirnames) {
+          if (uri.includes(scriptingDirname + tempName)) {
+            cleanedUri = uri.replace(scriptingDirname + tempName, tempName);
+            let match = cleanedUri.match(/([^\/]+\/)?/);
+            if (match[0] != "") {
+              let item = {
+                label: match[0].replace("/", ""),
+                kind: vscode.CompletionItemKind.Folder,
+                detail: URI.parse(uri).fsPath,
+              };
+              if (itemsNames.indexOf(match[0]) == -1) {
+                items.push(item);
+                itemsNames.push(match[0]);
+              }
+            } else {
+              let item = {
+                label: cleanedUri,
+                kind: vscode.CompletionItemKind.File,
+                detail: URI.parse(uri).fsPath,
+                insertText: cleanedUri.replace(".inc", ""),
+              };
+              if (itemsNames.indexOf(cleanedUri) == -1) {
+                items.push(item);
+                itemsNames.push(cleanedUri);
+              }
+            }
+          }
+        }
       }
     }
 
