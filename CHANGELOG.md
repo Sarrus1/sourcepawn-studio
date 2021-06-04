@@ -1,5 +1,9 @@
 ## Release Notes
 
+## [1.12.3]
+### Fixed
+ - Fixed scopped variables not being parsed correctly if below a `for` loop.
+
 ## [1.12.2]
 ### Added
  - Added autocompletion for `#include`.
