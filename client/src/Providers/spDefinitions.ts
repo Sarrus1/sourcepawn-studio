@@ -134,6 +134,7 @@ function GetLastFuncName(
 function CheckIfControlStatement(line: string): boolean {
   let toCheck: RegExp[] = [
     /\s*\bif\b/,
+		/\s*\bfor\b/,
     /\s*\bwhile\b/,
     /\s*\bcase\b/,
     /\s*\bswitch\b/,

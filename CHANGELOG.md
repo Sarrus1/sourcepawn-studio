@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [1.12.3]
+### Fixed
+ - Fixed scopped variables not being parsed correctly if below a `for` loop.
+ - Fixed newly added includes not being parsed automatically.
+ - Fixed formatter overwritting unsaved changes (#44). Thanks to [Adrianilloo](https://github.com/Adrianilloo) for reporting.
+
 ## [1.12.2]
 ### Added
  - Added autocompletion for `#include`.

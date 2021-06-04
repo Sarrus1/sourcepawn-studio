@@ -3,6 +3,7 @@ name: Bug Report
 about: Found a bug? Raise a report.
 title: "[BUG]"
 labels: 'bug'
+project: '1'
 assignees: 'Sarrus1'
 
 ---
