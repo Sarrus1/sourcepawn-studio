@@ -47,7 +47,11 @@ export class SMDocumentFormattingEditProvider
       document.lineAt(document.lineCount - 1).text.length
     );
     const range = new Range(start, end);
-    let text: string = this.clangFormat(document, "utf-8", default_style);
+		const tempFile = path.join(__dirname, "temp_format.sp");
+		let file = fs.openSync(tempFile, "w", 0o765);
+		fs.writeSync(file, document.getText());
+		fs.closeSync(file);
+    let text: string = this.clangFormat(tempFile, "utf-8", default_style);
 
     // If process failed,
     if (text === "") {
@@ -66,8 +70,8 @@ export class SMDocumentFormattingEditProvider
     console.error(e);
   }
 
-  clangFormat(file: TextDocument, enc: string, style) {
-    let args = [`-style=${style}`, file.uri.fsPath];
+  clangFormat(path: string, enc: string, style) {
+    let args = [`-style=${style}`, path];
     let result = this.spawnClangFormat(args, [
       "ignore",
       "pipe",
