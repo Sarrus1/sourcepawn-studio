@@ -4,7 +4,6 @@ import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 import { Completion, Include } from "./spCompletionsKinds";
 import { CompletionItem } from "vscode";
-import { dir } from "console";
 
 export class FileCompletions {
   completions: Map<string, Completion>;

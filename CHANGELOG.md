@@ -3,6 +3,7 @@
 ## [1.12.3]
 ### Fixed
  - Fixed scopped variables not being parsed correctly if below a `for` loop.
+ - Fixed newly added includes not being parsed automatically.
 
 ## [1.12.2]
 ### Added

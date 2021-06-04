@@ -27,12 +27,7 @@ export class Providers {
 
   public handle_added_document(event: vscode.FileCreateEvent) {
     for (let file of event.files) {
-      let Path = file.fsPath;
-      Path = Path.replace(".git", "");
-      this.completionsProvider.documents.set(
-        path.basename(Path),
-        file.toString()
-      );
+			this.newDocumentCallback(URI.file(file.fsPath));
     }
   }
 
@@ -68,15 +63,21 @@ export class Providers {
   }
 
   public handle_new_document(document: vscode.TextDocument) {
-    let this_completions: spCompletions.FileCompletions = new spCompletions.FileCompletions(
-      document.uri.toString()
+    this.newDocumentCallback(document.uri);
+  }
+
+	public newDocumentCallback(uri: vscode.Uri){
+		let ext:string = path.extname(uri.fsPath);
+		if(ext != ".inc" && ext != ".sp") return;
+		let this_completions: spCompletions.FileCompletions = new spCompletions.FileCompletions(
+      uri.toString()
     );
-    let file_path: string = document.uri.fsPath;
+    let file_path: string = uri.fsPath;
     // Some file paths are appened with .git
     if (file_path.includes(".git")) return;
     this.completionsProvider.documents.set(
       path.basename(file_path),
-      document.uri.toString()
+      uri.toString()
     );
     try {
       spParser.parse_file(
@@ -92,10 +93,10 @@ export class Providers {
 
     this.read_unscanned_imports(this_completions.includes);
     this.completionsProvider.completions.set(
-      document.uri.toString(),
+      uri.toString(),
       this_completions
     );
-  }
+	}
 
   public handle_document_opening(path: string) {
     let uri: string = URI.file(path).toString();
