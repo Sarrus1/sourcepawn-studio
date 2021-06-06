@@ -230,7 +230,7 @@ class Parser {
       /(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
     );
     if (match) {
-      let testWords = ["if", "else", "for", "while", "function"];
+      let testWords = ["if", "else", "for", "while", "function", "return"];
       for (let word of testWords) {
         let regExp = new RegExp(`\\b${word}\\b`);
         if (regExp.test(match[1]) || regExp.test(match[2])) return;
@@ -544,7 +544,7 @@ class Parser {
     );
     if (!match) {
       match = line.match(
-        /^\s*(?:(?:forward|static|native)\s+)+(?:(\w*)\s+)?(\w*)\s*\(([^]*)(?:,|;)?\s*$/
+        /^\s*(?:(?:forward|static|native)\s+)+(\w*\s*:\s*|\w*\s+)?(\w*)\s*\(([^]*)(?:,|;)?\s*$/
       );
     }
     if (match) {
