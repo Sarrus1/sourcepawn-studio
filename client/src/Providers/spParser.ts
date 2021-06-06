@@ -165,7 +165,7 @@ class Parser {
 
     // Match variables only in the current file
     match = line.match(
-      /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*[A-z0-9_]+\s+(\w+\s*(?:\[[A-Za-z0-9 +\-\*_]*\])*\s*(?:=\s*[^;,]+)?(?:,|;))/
+      /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*\w+\s+(\w+\s*(?:\[[A-Za-z0-9 +\-\*_]*\])*\s*(?:=\s*[^;,]+)?(?:,|;))/
     );
     if (match && !this.IsBuiltIn) {
       if (
@@ -406,7 +406,7 @@ class Parser {
     // Check if it's a multiline declaration
     if (/(;)(?:\s*|)$/.test(line)) {
       // Separate potential multiple declarations
-      let re = /\s*(?:(?:const|static|public|stock)\s+)*\w+\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])*\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])*(?:\s*=\s*(?:(?:\"[^]*\")|(?:\'[^]*\')|(?:[^,]+)))?/g;
+      let re = /\s*(?:(?:const|static|public|stock)\s+)*\w*\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])*\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])*(?:\s*=\s*(?:(?:\"[^]*\")|(?:\'[^]*\')|(?:[^,]+)))?/g;
       while ((match_variable = re.exec(line)) != null) {
         match_variables.push(match_variable);
       }
@@ -436,10 +436,12 @@ class Parser {
         }
       }
     } else {
-      while (!match[1].match(/(;)(?:\s*|)$/)) {
+			let parseLine: boolean = true;
+      while (parseLine) {
+				parseLine = !match[1].match(/(;)\s*$/);
         // Separate potential multiple declarations
         match_variables = match[1].match(
-          /(?:\s*)?([A-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g
+          /(?:\s*)?([A-Za-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-Za-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g
         );
         if (!match_variables) {
           break;
@@ -470,6 +472,7 @@ class Parser {
           }
         }
         match[1] = this.lines.shift();
+				line = match[1];
         this.lineNb++;
       }
     }
@@ -587,7 +590,7 @@ class Parser {
           ? match[0]
           : match[0].replace(/\(.*\s*$/, "(") +
             paramsMatch
-              .replace(/\s*[A-z0-9_]+\s*\(\s*/g, "")
+              .replace(/\s*\w+\s*\(\s*/g, "")
               .replace(/\s+/gm, " ");
         this.lastFuncLine = this.lineNb;
         this.lastFuncName = name_match;
@@ -750,7 +753,7 @@ function PositiveRange(
 
 function IsIncludeSelfFile(file: string, include: string): boolean {
   let baseName: string = basename(file);
-  let match = include.match(/([A-z0-9]*)(?:.sp|.inc)?$/);
+  let match = include.match(/(\w*)(?:.sp|.inc)?$/);
   if (match) {
     return baseName == match[1];
   }

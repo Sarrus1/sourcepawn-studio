@@ -138,6 +138,7 @@ function CheckIfControlStatement(line: string): boolean {
     /\s*\bwhile\b/,
     /\s*\bcase\b/,
     /\s*\bswitch\b/,
+		/\s*\breturn\b/
   ];
   for (let re of toCheck) {
     if (re.test(line)) {

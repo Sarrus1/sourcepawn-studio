@@ -35,7 +35,7 @@
       }
     },
     {
-      "match": "(\\#define)\\s*([A-z0-9_]*)\\s*((\".*\")|([0-9]*))",
+      "match": "(\\#define)\\s*(\\w*)\\s*((\".*\")|([0-9]*))",
       "name": "meta.define.sourcepawn",
       "captures": {
         "1": {

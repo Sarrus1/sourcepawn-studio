@@ -85,7 +85,7 @@ export class JsDocCompletionProvider implements vscode.CompletionItemProvider {
       match_buffer += line;
       maxiter++;
     }
-    params_match = match_buffer.match(/([A-z_0-9.]*)(?:\)|,)/gm);
+    params_match = match_buffer.match(/([A-Za-z_0-9.]*)(?:\)|,)/gm);
     let params: string[] = [];
     for (let param of params_match) {
       params.push(param.replace(",", "").replace(")", ""));
