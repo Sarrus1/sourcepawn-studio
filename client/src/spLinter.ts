@@ -92,7 +92,7 @@ export function refreshDiagnostics(
       }
     }
 		let extName = path.extname(filename);
-    if (extName === ".sp"|| extName===".inc") {
+    if (extName === ".sp") {
       let scriptingFolder: string;
       let filePath: string;
       try {

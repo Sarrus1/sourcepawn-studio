@@ -4,6 +4,8 @@
 ### Fixed
  - Partially fixed a highlighting issue where the bitwise operator `&` would be interpreted as a pointer derefencement.
 
+### Removed
+ - Removed linter support for .inc files.
 
 ## [1.12.3]
 ### Fixed
