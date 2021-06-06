@@ -53,7 +53,7 @@ export class JsDocCompletionProvider implements vscode.CompletionItemProvider {
     let line = lines[position.line + 1];
 		if(typeof line == "undefined") return [];
     let match = line.match(
-      /(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:\w:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*)$/
+      /(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:\w:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)/
     );
     if (!match) return [];
     let match_buffer = "";

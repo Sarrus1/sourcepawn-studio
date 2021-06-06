@@ -3,6 +3,8 @@
 ## [1.12.4]
 ### Fixed
  - Partially fixed a highlighting issue where the bitwise operator `&` would be interpreted as a pointer derefencement.
+ - Fixed a parsing bug for array declarations separated by a `,`.
+ - Fixed incomplete JSDoc completions.
 
 ### Removed
  - Removed linter support for .inc files.
