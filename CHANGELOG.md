@@ -1,5 +1,10 @@
 ## Release Notes
 
+## [1.12.4]
+### Fixed
+ - Partially fixed a highlighting issue where the bitwise operator `&` would be interpreted as a pointer derefencement.
+
+
 ## [1.12.3]
 ### Fixed
  - Fixed scopped variables not being parsed correctly if below a `for` loop.
