@@ -1,6 +1,9 @@
 ## Release Notes
 
 ## [1.12.4]
+### Added
+ - Addedd auto-closing `>` to include completions.
+
 ### Fixed
  - Partially fixed a highlighting issue where the bitwise operator `&` would be interpreted as a pointer derefencement.
  - Fixed a parsing bug for array declarations separated by a `,`.

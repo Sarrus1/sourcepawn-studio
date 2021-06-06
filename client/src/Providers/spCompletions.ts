@@ -108,6 +108,7 @@ export class CompletionRepository
     document: vscode.TextDocument,
     tempName: string
   ): vscode.CompletionList {
+		let isQuoteInclude:boolean = tempName.includes('"');
     tempName = tempName.replace("<", "").replace('"', "");
     let match = tempName.match(/([^\/]+\/)+/);
     tempName = match ? match[0] : "";
@@ -137,11 +138,13 @@ export class CompletionRepository
             itemsNames.push(match[0]);
           }
         } else {
+					let insertText = cleanedUri.replace(".inc", "");
+					insertText += isQuoteInclude? "":">";
           let item = {
             label: cleanedUri,
             kind: vscode.CompletionItemKind.File,
             detail: "Sourcemod BuiltIn",
-            insertText: cleanedUri.replace(".inc", ""),
+            insertText: insertText,
           };
           if (itemsNames.indexOf(cleanedUri) == -1) {
             items.push(item);
@@ -164,11 +167,13 @@ export class CompletionRepository
                 itemsNames.push(match[0]);
               }
             } else {
+							let insertText = cleanedUri.replace(".inc", "");
+							insertText += isQuoteInclude? "":">";
               let item = {
                 label: cleanedUri,
                 kind: vscode.CompletionItemKind.File,
                 detail: URI.parse(uri).fsPath,
-                insertText: cleanedUri.replace(".inc", ""),
+                insertText: insertText,
               };
               if (itemsNames.indexOf(cleanedUri) == -1) {
                 items.push(item);
@@ -191,7 +196,7 @@ export class CompletionRepository
     if (document) {
       let line = document.getText().split("\n")[position.line].trim();
       for (let i = line.length - 2; i >= 0; i--) {
-        if (line[i].match(/[a-zA-Z0-9_]/)) {
+        if (line[i].match(/\w/)) {
           continue;
         }
 
