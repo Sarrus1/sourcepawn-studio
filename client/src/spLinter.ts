@@ -3,7 +3,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { execFile } from "child_process";
 import { URI } from "vscode-uri";
-import { errorDetails } from "./spIndex";
+import { errorDetails } from "./Misc/errorMessages";
 
 let myExtDir: string = vscode.extensions.getExtension(
   "Sarrus.sourcepawn-vscode"
