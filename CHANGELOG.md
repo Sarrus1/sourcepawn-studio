@@ -2,13 +2,14 @@
 
 ## [1.12.4]
 ### Added
- - Addedd auto-closing `>` to include completions.
+ - Added auto-closing `>` to include completions.
 
 ### Fixed
  - Partially fixed a highlighting issue where the bitwise operator `&` would be interpreted as a pointer derefencement.
  - Fixed a parsing bug for array declarations separated by a `,`.
  - Fixed incomplete JSDoc completions.
  - Fixed a bug with old-style function declarations parsing.
+ - Fixed a bug where the linter would return the wrong path when a MainPath was not null.
 
 ### Removed
  - Removed linter support for .inc files.
