@@ -66,6 +66,7 @@ export function activate(context: ExtensionContext) {
       providers.completionsProvider,
       "<",
       '"',
+			'\'',
       "/",
       "\\"
     )

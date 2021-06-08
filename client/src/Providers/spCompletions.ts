@@ -94,17 +94,31 @@ export class CompletionRepository
     const text = document
       .lineAt(position.line)
       .text.substr(0, position.character);
-    const match = text.match(/^\s*#\s*include\s*(<[^>]*|"[^"]*)$/);
-    if (!match) {
-      return this.get_completions(document, position);
+    let match = text.match(/^\s*#\s*include\s*(<[^>]*|"[^"]*)$/);
+    if (match) {
+			return this.getIncludeCompletions(document, match[1]);
     }
-
-    return this.get_include_completions(document, match[1]);
+		match = text.match(/^\s*(?:HookEvent|HookEventEx)\s*\(\s*(\"[^\"]*|\'[^\']*)$/);
+		if (match) {
+      return this.getEventCompletions();
+    }
+		if(["\"", "'"].includes(text[text.length-1])) return undefined;
+		return this.get_completions(document, position);
   }
 
   public dispose() {}
 
-  get_include_completions(
+	getEventCompletions():vscode.CompletionList {
+		let items: CompletionItem[] = [];
+		items.push({
+			label: "team_info",
+			kind: vscode.CompletionItemKind.Keyword,
+			detail: "Generic Source Event",
+		})
+		return new vscode.CompletionList(items);
+	}
+
+  getIncludeCompletions(
     document: vscode.TextDocument,
     tempName: string
   ): vscode.CompletionList {
