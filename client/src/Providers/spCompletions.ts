@@ -4,6 +4,7 @@ import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 import { Completion, Include } from "./spCompletionsKinds";
 import { CompletionItem } from "vscode";
+import { events } from "../Misc/sourceEvents";
 
 export class FileCompletions {
   completions: Map<string, Completion>;
@@ -109,13 +110,7 @@ export class CompletionRepository
   public dispose() {}
 
 	getEventCompletions():vscode.CompletionList {
-		let items: CompletionItem[] = [];
-		items.push({
-			label: "team_info",
-			kind: vscode.CompletionItemKind.Keyword,
-			detail: "Generic Source Event",
-		})
-		return new vscode.CompletionList(items);
+		return new vscode.CompletionList(events);
 	}
 
   getIncludeCompletions(
