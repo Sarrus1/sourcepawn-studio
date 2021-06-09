@@ -3,7 +3,7 @@
 ## [1.12.4]
 ### Added
  - Added auto-closing `>` to include completions.
- - Added autocompletion for Source Generic Events and CS:GO Events (triggered when calling `EventHook` and `EventHookEx`).
+ - Added autocompletion for Source Generic Events and CS:GO Events (triggered when calling `EventHook` and `EventHookEx`). Huge thanks to HolyHender for the webscraping.
 
 ### Fixed
  - Partially fixed a highlighting issue where the bitwise operator `&` would be interpreted as a pointer derefencement.
