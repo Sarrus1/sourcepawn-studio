@@ -196,6 +196,11 @@
           "default": [],
           "description": "SourcePawn linter compiler options. Don't add paths here."
         },
+				"sourcepawn.outputDirectoryPath": {
+          "type": "string",
+          "default": "",
+          "description": "The path to the output directory for the compiled .smx file. Ends with a `/`."
+        },
         "sourcepawn.UploadOptions": {
           "type": "object",
           "default": {
