@@ -1,4 +1,4 @@
-{
+export const errorDetails = {
   "001": "A required token is omitted.",
   "002": "Every case in a switch statement can hold exactly one statement. To put multiple statements in a case, enclose these statements between braces (which creates a compound statement).",
   "003": "The declaration of a local variable must appear between braces (“{. . .}”) at the active scope level. When the parser flags this error, a variable declaration appears as the only statement of a function or the only statement below an if, else, for, while or do statement. Note that, since local variables are accessible only from (or below) the scope that their declaration appears in, having a variable declaration as the only statement at any scope is useless.",

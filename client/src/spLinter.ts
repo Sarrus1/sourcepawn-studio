@@ -3,7 +3,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { execFile } from "child_process";
 import { URI } from "vscode-uri";
-import { errorDetails } from "./spIndex";
+import { errorDetails } from "./Misc/errorMessages";
 
 let myExtDir: string = vscode.extensions.getExtension(
   "Sarrus.sourcepawn-vscode"
@@ -92,7 +92,7 @@ export function refreshDiagnostics(
       }
     }
 		let extName = path.extname(filename);
-    if (extName === ".sp"|| extName===".inc") {
+    if (extName === ".sp") {
       let scriptingFolder: string;
       let filePath: string;
       try {
@@ -157,7 +157,7 @@ export function refreshDiagnostics(
               matches[4] === "warning"
                 ? vscode.DiagnosticSeverity.Warning
                 : vscode.DiagnosticSeverity.Error;
-            path = MainPath != "" ? matches[1] : document.uri.fsPath;
+            path = matches[1];
             if (DocumentDiagnostics.has(path)) {
               diagnostics = DocumentDiagnostics.get(path);
             } else {

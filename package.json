@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "1.12.3",
+  "version": "1.12.4",
   "publisher": "Sarrus",
   "main": "client/out/spIndex",
   "icon": "sm.png",
@@ -195,6 +195,11 @@
           "type": "array",
           "default": [],
           "description": "SourcePawn linter compiler options. Don't add paths here."
+        },
+				"sourcepawn.outputDirectoryPath": {
+          "type": "string",
+          "default": "",
+          "description": "The path to the output directory for the compiled .smx file. Ends with a `/`."
         },
         "sourcepawn.UploadOptions": {
           "type": "object",

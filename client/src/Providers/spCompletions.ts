@@ -4,6 +4,7 @@ import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 import { Completion, Include } from "./spCompletionsKinds";
 import { CompletionItem } from "vscode";
+import { events } from "../Misc/sourceEvents";
 
 export class FileCompletions {
   completions: Map<string, Completion>;
@@ -94,20 +95,29 @@ export class CompletionRepository
     const text = document
       .lineAt(position.line)
       .text.substr(0, position.character);
-    const match = text.match(/^\s*#\s*include\s*(<[^>]*|"[^"]*)$/);
-    if (!match) {
-      return this.get_completions(document, position);
+    let match = text.match(/^\s*#\s*include\s*(<[^>]*|"[^"]*)$/);
+    if (match) {
+			return this.getIncludeCompletions(document, match[1]);
     }
-
-    return this.get_include_completions(document, match[1]);
+		match = text.match(/^\s*(?:HookEvent|HookEventEx)\s*\(\s*(\"[^\"]*|\'[^\']*)$/);
+		if (match) {
+      return this.getEventCompletions();
+    }
+		if(["\"", "'"].includes(text[text.length-1])) return undefined;
+		return this.get_completions(document, position);
   }
 
   public dispose() {}
 
-  get_include_completions(
+	getEventCompletions():vscode.CompletionList {
+		return new vscode.CompletionList(events);
+	}
+
+  getIncludeCompletions(
     document: vscode.TextDocument,
     tempName: string
   ): vscode.CompletionList {
+		let isQuoteInclude:boolean = tempName.includes('"');
     tempName = tempName.replace("<", "").replace('"', "");
     let match = tempName.match(/([^\/]+\/)+/);
     tempName = match ? match[0] : "";
@@ -137,11 +147,13 @@ export class CompletionRepository
             itemsNames.push(match[0]);
           }
         } else {
+					let insertText = cleanedUri.replace(".inc", "");
+					insertText += isQuoteInclude? "":">";
           let item = {
             label: cleanedUri,
             kind: vscode.CompletionItemKind.File,
             detail: "Sourcemod BuiltIn",
-            insertText: cleanedUri.replace(".inc", ""),
+            insertText: insertText,
           };
           if (itemsNames.indexOf(cleanedUri) == -1) {
             items.push(item);
@@ -164,11 +176,13 @@ export class CompletionRepository
                 itemsNames.push(match[0]);
               }
             } else {
+							let insertText = cleanedUri.replace(".inc", "");
+							insertText += isQuoteInclude? "":">";
               let item = {
                 label: cleanedUri,
                 kind: vscode.CompletionItemKind.File,
                 detail: URI.parse(uri).fsPath,
-                insertText: cleanedUri.replace(".inc", ""),
+                insertText: insertText,
               };
               if (itemsNames.indexOf(cleanedUri) == -1) {
                 items.push(item);
@@ -191,7 +205,7 @@ export class CompletionRepository
     if (document) {
       let line = document.getText().split("\n")[position.line].trim();
       for (let i = line.length - 2; i >= 0; i--) {
-        if (line[i].match(/[a-zA-Z0-9_]/)) {
+        if (line[i].match(/\w/)) {
           continue;
         }
 

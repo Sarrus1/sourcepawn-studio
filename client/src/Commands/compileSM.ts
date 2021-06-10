@@ -71,6 +71,34 @@ export async function run(args: any) {
   if (!fs.existsSync(pluginsFolderPath)) {
     fs.mkdirSync(pluginsFolderPath);
   }
+  let outputDir: string =
+    vscode.workspace
+      .getConfiguration("sourcepawn")
+      .get("outputDirectoryPath") || "";
+  if (outputDir == "") {
+    outputDir = pluginsFolderPath;
+  } else {
+    if (!fs.existsSync(outputDir)) {
+      let workspaceFolder = vscode.workspace.workspaceFolders[0];
+      outputDir = path.join(workspaceFolder.uri.fsPath, outputDir);
+      if (!fs.existsSync(outputDir)) {
+        vscode.window
+          .showErrorMessage(
+            "The output directory does not exist.",
+            "Open Settings"
+          )
+          .then((choice) => {
+            if (choice === "Open Settings") {
+              vscode.commands.executeCommand(
+                "workbench.action.openWorkspaceSettings"
+              );
+            }
+          });
+        return;
+      }
+    }
+  }
+  outputDir += activeDocumentName;
   let command = (os.platform() == "win32" ? "." : "").concat(
     // Compiler path
     "'" + spcomp + "'",
@@ -81,7 +109,7 @@ export async function run(args: any) {
     // Script path (script to compile)
     "'" + activeDocumentPath + "'",
     // Output path for the smx file
-    " -o=" + "'" + pluginsFolderPath + activeDocumentName + "'",
+    " -o=" + "'" + outputDir + "'",
 
     // Set the path for sm_home
     " -i=" + "'",

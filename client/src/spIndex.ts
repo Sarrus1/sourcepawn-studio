@@ -19,11 +19,6 @@ let getDirectories = function (src, ext, callback) {
   glob(src + "/**/*", callback);
 };
 
-let errorDetailsPath: string = "./Misc/error-messages.json";
-errorDetailsPath = resolve(__dirname, errorDetailsPath).replace("out", "src");
-export const errorDetails = JSON.parse(
-  readFileSync(errorDetailsPath).toString()
-);
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
@@ -66,6 +61,7 @@ export function activate(context: ExtensionContext) {
       providers.completionsProvider,
       "<",
       '"',
+			'\'',
       "/",
       "\\"
     )

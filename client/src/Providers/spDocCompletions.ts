@@ -53,7 +53,7 @@ export class JsDocCompletionProvider implements vscode.CompletionItemProvider {
     let line = lines[position.line + 1];
 		if(typeof line == "undefined") return [];
     let match = line.match(
-      /(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:\w:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*)$/
+      /(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:\w:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)/
     );
     if (!match) return [];
     let match_buffer = "";
@@ -85,7 +85,7 @@ export class JsDocCompletionProvider implements vscode.CompletionItemProvider {
       match_buffer += line;
       maxiter++;
     }
-    params_match = match_buffer.match(/([A-z_0-9.]*)(?:\)|,)/gm);
+    params_match = match_buffer.match(/([A-Za-z_0-9.]*)(?:\)|,)/gm);
     let params: string[] = [];
     for (let param of params_match) {
       params.push(param.replace(",", "").replace(")", ""));
