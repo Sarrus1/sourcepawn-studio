@@ -2,9 +2,14 @@
 
 ## [1.12.5]
 
+### Added
+
+ - Added highlighting in strings for chat  color placeholders such as `{green}`.
+
 ### Fixed
 
  - Fixed `%5.2f` highlighting in strings. Thanks to [zer0.k](https://github.com/zer0k-z) for letting me know.
+ - Fixed escaped characters not being highlighted in single quoted strings.
 
 ## [1.12.4]
 

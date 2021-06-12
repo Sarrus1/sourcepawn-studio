@@ -304,25 +304,23 @@
     "strings": {
       "patterns": [
         {
-          "name": "string.quoted.single.sourcepawn",
-          "begin": "'",
-          "end": "'|\\n",
-          "patterns": [
-            {
-              "name": "constant.character.escape.sourcepawn",
-              "match": "\\\\."
-            }
-          ]
-        },
-        {
           "name": "string.quoted.double.sourcepawn",
-          "begin": "\"",
-          "end": "\"",
+          "begin": "\"|'",
+          "end": "\"|'|\\n",
           "patterns": [
             {
               "name": "constant.character.format.sourcepawn",
               "match": "%(?:c|b|d|i|u|f|L|N|s|T|t|X|x|%|(?:\\d+)?\\.\\d+(?:b|d|i|u|f|s|X|x))"
             },
+						{
+							"name": "constant.character.sp-translations",
+							"match": "\\{([A-Za-z]+)\\}",
+							"captures": {
+								"1": {
+									"name": "constant.character.escape.sp-translations"
+								}
+							}
+						},
             {
               "name": "constant.character.white.sourcepawn",
               "match": "(\\\\(x|i|u)01)|\u0001"
