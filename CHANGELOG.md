@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [1.12.5]
+
+### Fixed
+
+ - Fixed `%5.2f` highlighting in strings. Thanks to [zer0.k](https://github.com/zer0k-z) for letting me know.
+
 ## [1.12.4]
 
 ### Added
