@@ -21,7 +21,7 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 
 ## Screenshots
 
-### .sp file highlighting
+### .sp and .inc file highlighting
 
 ![.sp highlighting example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/highlighting-example-1.png)
 
@@ -33,11 +33,11 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 
 ![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/completion-example-1.png)
 
-### Events auto-completion
+### Event auto-completion
 
 ![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/completion-example-2.png)
 
-### Includes auto-completion
+### Include auto-completion
 
 ![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/completion-example-3.png)
 
