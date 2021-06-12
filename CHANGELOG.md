@@ -10,6 +10,7 @@
 
  - Fixed `%5.2f` highlighting in strings. Thanks to [zer0.k](https://github.com/zer0k-z) for letting me know.
  - Fixed escaped characters not being highlighted in single quoted strings.
+ - Fixed keys not being highlighted if the value was empty in .cfg files.
 
 ## [1.12.4]
 
