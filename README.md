@@ -19,6 +19,28 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 - Parse sourcemod files from a custom location.
 - Linting capabilities.
 
+## Screenshots
+
+### .sp file highlighting
+
+![.sp highlighting example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/highlighting-example-1.png)
+
+### .cfg file highlighting
+
+![Highlighting example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/highlighting-example-2.png)
+
+### Code auto-completion
+
+![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/completion-example-1.png)
+
+### Events auto-completion
+
+![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/completion-example-2.png)
+
+### Includes auto-completion
+
+![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/completion-example-3.png)
+
 ## To do
 
 - Incrementally Format Code as the User Types
