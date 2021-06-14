@@ -23,23 +23,39 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 
 ### .sp and .inc file highlighting
 
-![.sp highlighting example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/highlighting-example-1.png)
+![.sp highlighting example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/highlighting-example-1.png)
 
 ### .cfg file highlighting
 
-![Highlighting example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/highlighting-example-2.png)
+![Highlighting example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/highlighting-example-2.png)
 
 ### Code auto-completion
 
-![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/completion-example-1.png)
+![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/completion-example-1.png)
 
 ### Event auto-completion
 
-![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/completion-example-2.png)
+![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/completion-example-2.png)
 
 ### Include auto-completion
 
-![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/completion-example-3.png)
+![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/completion-example-3.png)
+
+### Functions signature help
+
+![Signature example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/signature-example-1.png)
+
+### Hover help
+
+![Hover example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/hover-example-1.png)
+
+### Go To Definition
+
+![Go to definition example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/go-to-definition-example-1.png)
+
+### Linter
+
+![Linter example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/linter-example-1.png)
 
 ## To do
 
