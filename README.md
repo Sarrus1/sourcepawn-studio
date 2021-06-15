@@ -11,6 +11,8 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 - Compile from VSCode with a simple button.
 - Autocompletion.
 - Go to definition.
+- Upload to an FTP/SFTP server on successful compile.
+- Automatically run `sm plugins refresh` on a successful upload.
 - Add icons for `.smx`, `.sp` and `.inc` files
 - Automatically scan include files for natives, defines, methodmaps and more.
 - Useful snippets.
@@ -57,12 +59,6 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 
 ![Linter example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/linter-example-1.png)
 
-## To do
-
-- Incrementally Format Code as the User Types
-- Automatic callback generation.
-- Automatic convert to new syntax (partially).
-
 ## Credits
 
 - [Dreae's](https://github.com/Dreae/sourcepawn-vscode) extension which is not supported anymore, and on which this extension is based on.
@@ -108,13 +104,12 @@ Pull requests and suggestions are welcome.
 - To make a suggestion or to report an issue, please create a new issue [here](https://github.com/Sarrus1/sourcepawn-vscode/issues).
 - To make a contribution, fork the repository, make the desired changes, and open a pull request.
 
-### How to run ?
+### How to run the extension from it's source code ?
 
-To run the extension in dev mode, do the following:
+To run the extension from the source, do the following:
 
-- Install [node.js](https://nodejs.org/en/) on your machine.
+- Install [node.js](https://nodejs.org) on your machine.
 - Fork this repository and clone it to your machine (do this with VSCode for easier manipulation).
 - Run `npm install` from the root of the project folder.
-- Run `npm run watch`
+- Run `npm run watch`.
 - Press `f5` to run the extension in dev mode.
-- Once you're done, save and commit and create a new pull request.
