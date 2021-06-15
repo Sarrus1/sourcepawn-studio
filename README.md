@@ -13,6 +13,7 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 - Go to definition.
 - Upload to an FTP/SFTP server on successful compile.
 - Automatically run `sm plugins refresh` on a successful upload.
+- Hover for help.
 - Add icons for `.smx`, `.sp` and `.inc` files
 - Automatically scan include files for natives, defines, methodmaps and more.
 - Useful snippets.
