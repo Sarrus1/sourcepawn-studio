@@ -1,5 +1,20 @@
 ## Release Notes
 
+## [1.12.5]
+
+### Added
+
+ - Added highlighting in strings for chat  color placeholders such as `{green}`.
+
+### Fixed
+
+ - Fixed `%5.2f` highlighting in strings. Thanks to [zer0.k](https://github.com/zer0k-z) for letting me know.
+ - Fixed escaped characters not being highlighted in single quoted strings.
+ - Fixed keys not being highlighted if the value was empty in .cfg files.
+ - Fixed an error where files wouldn't get linted properly if `MainPath` wasn't defined.
+ - Allow multiple instances of "${TabSize}" and "${UseTab}" in formatter settings. Thanks to [llamasking](https://github.com/llamasking) for implementing this.
+ - Fixed incorrect formatting of the `myinfo` array.
+
 ## [1.12.4]
 
 ### Added

@@ -39,18 +39,18 @@ export class SMDocumentFormattingEditProvider
 
     // Apply user settings
     default_style = default_style
-      .replace(/\${TabSize}/, tabSize)
-      .replace(/\${UseTab}/, UseTab);
+      .replace(/\${TabSize}/g, tabSize)
+      .replace(/\${UseTab}/g, UseTab);
     const start = new Position(0, 0);
     const end = new Position(
       document.lineCount - 1,
       document.lineAt(document.lineCount - 1).text.length
     );
     const range = new Range(start, end);
-		const tempFile = path.join(__dirname, "temp_format.sp");
-		let file = fs.openSync(tempFile, "w", 0o765);
-		fs.writeSync(file, document.getText());
-		fs.closeSync(file);
+    const tempFile = path.join(__dirname, "temp_format.sp");
+    let file = fs.openSync(tempFile, "w", 0o765);
+    fs.writeSync(file, document.getText());
+    fs.closeSync(file);
     let text: string = this.clangFormat(tempFile, "utf-8", default_style);
 
     // If process failed,
@@ -60,8 +60,7 @@ export class SMDocumentFormattingEditProvider
       );
       return;
     }
-    // clang-format gets confused with 'public' so we have to replace it manually.
-    text = text.replace(/^ *public\s*\n/gm, "public ");
+    text = fixFormatting(text);
     result.push(new TextEdit(range, text));
     return result;
   }
@@ -133,4 +132,24 @@ export class SMDocumentFormattingEditProvider
       "Please let the author know on GitHub.\n";
     throw new Error(message);
   }
+}
+
+function fixFormatting(text: string): string {
+  // clang-format gets confused with 'public' so we have to replace it manually.
+  text = text.replace(/^ *public\s*\n/gm, "public ");
+
+  // clang-format also messes up the myinfo array.
+  text = text.replace(
+    /^(\s*public\s+Plugin\s+myinfo\s*=)\s*(\{(?:\s*\w+\s*=\s*["'A-Za-z_0-9.\/:]+,?)+)\s*(\}\;)/m,
+    "$1\n$2\n$3"
+  );
+  let lines: string[] = text.split("\n");
+  let lineNb: number = lines.findIndex(
+    (value: string) => value === "public Plugin myinfo ="
+  );
+  for (let i: number = lineNb + 2; i <= lineNb + 6; i++) {
+    lines[i] = lines[i].replace(/^\s*/, "\t");
+  }
+  text = lines.join("\n");
+  return text;
 }

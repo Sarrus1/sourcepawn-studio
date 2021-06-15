@@ -62,7 +62,7 @@
         },
         {
           "name": "string.quoted.double.sp-translations",
-          "match": "(\"[^\"]+\")\\s*(\"[^\"]+\")",
+          "match": "(\"[^\"]+\")\\s*(\"[^\"]*\")",
           "captures": {
             "1": {
               "name": "support.type.property-name.double.sp-translations"
