@@ -11,6 +11,7 @@
  - Fixed `%5.2f` highlighting in strings. Thanks to [zer0.k](https://github.com/zer0k-z) for letting me know.
  - Fixed escaped characters not being highlighted in single quoted strings.
  - Fixed keys not being highlighted if the value was empty in .cfg files.
+ - Fixed an error where files wouldn't get linted properly if `MainPath` wasn't defined.
 
 ## [1.12.4]
 

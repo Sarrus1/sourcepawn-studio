@@ -157,7 +157,7 @@ export function refreshDiagnostics(
               matches[4] === "warning"
                 ? vscode.DiagnosticSeverity.Warning
                 : vscode.DiagnosticSeverity.Error;
-            path = matches[1];
+            path = (MainPath != "") ? matches[1] : document.uri.fsPath;
             if (DocumentDiagnostics.has(path)) {
               diagnostics = DocumentDiagnostics.get(path);
             } else {
