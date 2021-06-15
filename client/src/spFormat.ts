@@ -39,8 +39,8 @@ export class SMDocumentFormattingEditProvider
 
     // Apply user settings
     default_style = default_style
-      .replace(/\${TabSize}/, tabSize)
-      .replace(/\${UseTab}/, UseTab);
+      .replace(/\${TabSize}/g, tabSize)
+      .replace(/\${UseTab}/g, UseTab);
     const start = new Position(0, 0);
     const end = new Position(
       document.lineCount - 1,
