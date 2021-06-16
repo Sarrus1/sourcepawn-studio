@@ -85,7 +85,8 @@ export function refreshDiagnostics(
           .then((choice) => {
             if (choice === "Open Settings") {
               vscode.commands.executeCommand(
-                "workbench.action.openWorkspaceSettings"
+								"workbench.action.openSettings",
+								"@ext:sarrus.sourcepawn-vscode"
               );
             }
           });

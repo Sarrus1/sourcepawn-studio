@@ -27,13 +27,14 @@ export async function run(args: any) {
   if (!spcomp) {
     vscode.window
       .showErrorMessage(
-        "SourceMod compiler not found in the project. You need to set the SpcompPath for the Linter to work.",
+        "SourceMod compiler not found in the project. You need to set the spCompPath setting to be able to compile a plugin.",
         "Open Settings"
       )
       .then((choice) => {
         if (choice === "Open Settings") {
           vscode.commands.executeCommand(
-            "workbench.action.openWorkspaceSettings"
+            "workbench.action.openSettings",
+						"@ext:sarrus.sourcepawn-vscode"
           );
         }
       });
@@ -90,7 +91,8 @@ export async function run(args: any) {
           .then((choice) => {
             if (choice === "Open Settings") {
               vscode.commands.executeCommand(
-                "workbench.action.openWorkspaceSettings"
+								"workbench.action.openSettings",
+								"@ext:sarrus.sourcepawn-vscode"
               );
             }
           });
