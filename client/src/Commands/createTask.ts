@@ -22,7 +22,8 @@ export function run(args: any) {
 				}
         else if (choice === "No, open Settings") {
           vscode.commands.executeCommand(
-            "workbench.action.openWorkspaceSettings"
+						"workbench.action.openSettings",
+						"@ext:sarrus.sourcepawn-vscode"
           );
         }
       });
@@ -40,7 +41,8 @@ export function run(args: any) {
       .then((choice) => {
         if (choice === "Open Settings") {
           vscode.commands.executeCommand(
-            "workbench.action.openWorkspaceSettings"
+						"workbench.action.openSettings",
+						"@ext:sarrus.sourcepawn-vscode"
           );
         }
       });

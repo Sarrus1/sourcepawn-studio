@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [1.12.6]
+
+### Fixed
+
+ - Fixed a bug where the installer wouldn't add paths to the settings after installing sourcemod.
+
 ## [1.12.5]
 
 ### Added

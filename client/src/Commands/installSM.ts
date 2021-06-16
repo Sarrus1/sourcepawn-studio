@@ -34,7 +34,7 @@ export async function run(args: any) {
   if (Platform === "win32") {
     spComp = join(outputDir, "addons/sourcemod/scripting/spcomp.exe");
   } else {
-    spComp = join(outputDir, "addons/sourcemod/scripting/spcomp.exe");
+    spComp = join(outputDir, "addons/sourcemod/scripting/spcomp");
   }
   if (spCompPath != "" || smHome != "") {
     vscode.window
@@ -45,17 +45,22 @@ export async function run(args: any) {
       )
       .then((choice) => {
         if (choice === "Yes") {
-          vscode.workspace
-            .getConfiguration("sourcepawn")
-            .update("SourcemodHome", smDir, true);
-          vscode.workspace
-            .getConfiguration("sourcepawn")
-            .update("SpcompPath", spComp, true);
+					updatePath(smDir, spComp);
         }
       });
-    return 1;
+    return 0;
   }
+	updatePath(smDir, spComp);
   return 0;
+}
+
+function updatePath(smDir: string, spComp: string):void {
+	vscode.workspace
+	.getConfiguration("sourcepawn")
+	.update("SourcemodHome", smDir, true);
+	vscode.workspace
+	.getConfiguration("sourcepawn")
+	.update("SpcompPath", spComp, true);
 }
 
 async function downloadSM(
