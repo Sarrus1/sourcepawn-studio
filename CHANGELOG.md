@@ -1,5 +1,15 @@
 ## Release Notes
 
+## [1.12.7]
+
+### Added
+
+ - Added support for .ini files syntax highlighting. Thanks to [HolyHender](https://github.com/HolyHender) for suggesting this.
+
+### Fixed
+
+ - Fixed issue #54 where a _compiled_ folder would be generated even if the output directory was configured to something else. Thanks to [DRAN1X](https://github.com/dran1x) for reporting this.
+
 ## [1.12.6]
 
 ### Fixed
@@ -26,7 +36,7 @@
 ### Added
 
 - Added auto-closing `>` to include completions.
-- Added autocompletion for Source Generic Events and CS:GO Events (triggered when calling `EventHook` and `EventHookEx`). Huge thanks to HolyHender for the webscraping.
+- Added autocompletion for Source Generic Events and CS:GO Events (triggered when calling `EventHook` and `EventHookEx`). Huge thanks to [HolyHender](https://github.com/HolyHender) for the webscraping.
 - Added a setting to change the path of the output directory as suggested by [Pheubel](https://github.com/Pheubel).
 
 ### Fixed
