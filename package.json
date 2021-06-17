@@ -334,6 +334,17 @@
           ".cfg"
         ],
         "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
+      },
+      {
+        "id": "valve-ini",
+        "aliases": [
+          "Valve INI",
+          "INI"
+        ],
+        "extensions": [
+          ".ini"
+        ],
+        "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
       }
     ],
     "grammars": [
