@@ -114,7 +114,7 @@
       ],
       "editor/title": [
         {
-          "when": "editorTextFocus && resourceLangId == sourcepawn && config.sourcepawn.showCompileIconInEditorTitleMenu",
+          "when": "resourceLangId == sourcepawn && config.sourcepawn.showCompileIconInEditorTitleMenu",
           "command": "sourcepawn-vscode.compileSM",
           "group": "navigation@1"
         }
@@ -125,7 +125,7 @@
         "command": "sourcepawn-vscode.compileSM",
         "key": "ctrl+shift+d",
         "mac": "cmd+shift+d",
-        "when": "editorTextFocus && resourceLangId == sourcepawn"
+        "when": "resourceLangId == sourcepawn"
       },
       {
         "command": "sourcepawn-vscode.insertParameters",
