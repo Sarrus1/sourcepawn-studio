@@ -305,8 +305,96 @@
       "patterns": [
         {
           "name": "string.quoted.double.sourcepawn",
-          "begin": "\"|'",
-          "end": "\"|'|\\n",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.format.sourcepawn",
+              "match": "%(?:c|b|d|i|u|f|L|N|s|T|t|X|x|%|(?:\\d+)?\\.\\d+(?:b|d|i|u|f|s|X|x))"
+            },
+						{
+							"name": "constant.character.sp-translations",
+							"match": "\\{([A-Za-z]+)\\}",
+							"captures": {
+								"1": {
+									"name": "constant.character.escape.sp-translations"
+								}
+							}
+						},
+            {
+              "name": "constant.character.white.sourcepawn",
+              "match": "(\\\\(x|i|u)01)|\u0001"
+            },
+            {
+              "name": "constant.character.red.sourcepawn",
+              "match": "\\\\(x|i|u)02|\u0002"
+            },
+            {
+              "name": "constant.character.team.sourcepawn",
+              "match": "\\\\(x|i|u)03|\u0003"
+            },
+            {
+              "name": "constant.character.green.sourcepawn",
+              "match": "\\\\(x|i|u)04|\u0004"
+            },
+            {
+              "name": "constant.character.lime.sourcepawn",
+              "match": "\\\\(x|i|u)05|\u0005"
+            },
+            {
+              "name": "constant.character.lightgreen.sourcepawn",
+              "match": "\\\\(x|i|u)06|\u0006"
+            },
+            {
+              "name": "constant.character.lightred.sourcepawn",
+              "match": "\\\\(x|i|u)07|\u0007"
+            },
+            {
+              "name": "constant.character.gray.sourcepawn",
+              "match": "\\\\(x|i|u)08|\u0008"
+            },
+            {
+              "name": "constant.character.lightolive.sourcepawn",
+              "match": "\\\\(x|i|u)09|\u0009"
+            },
+            {
+              "name": "constant.character.grayblue.sourcepawn",
+              "match": "\\\\(x0A|i10|u10)|\u0010"
+            },
+            {
+              "name": "constant.character.lightblue.sourcepawn",
+              "match": "\\\\(x0B|i11|u11)|\u0011"
+            },
+            {
+              "name": "constant.character.blue.sourcepawn",
+              "match": "\\\\(x0C|i12|u12)|\u0012"
+            },
+            {
+              "name": "constant.character.purple.sourcepawn",
+              "match": "\\\\(x0D|i13|u13)|\u0013"
+            },
+            {
+              "name": "constant.character.pink.sourcepawn",
+              "match": "\\\\(x0E|i14|u14)|\u0014"
+            },
+            {
+              "name": "constant.character.brightred.sourcepawn",
+              "match": "\\\\(x0F|i15|u15)|\u0015"
+            },
+            {
+              "name": "constant.character.olive.sourcepawn",
+              "match": "\\\\(x10|i16|u16)|\u0016"
+            },
+            {
+              "name": "constant.character.escape.sourcepawn",
+              "match": "\\\\."
+            }
+          ]
+        },
+				{
+          "name": "string.quoted.single.sourcepawn",
+          "begin": "'",
+          "end": "'",
           "patterns": [
             {
               "name": "constant.character.format.sourcepawn",

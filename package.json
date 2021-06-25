@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "1.12.6",
+  "version": "1.12.7",
   "publisher": "Sarrus",
   "main": "client/out/spIndex",
   "icon": "sm.png",
@@ -114,7 +114,7 @@
       ],
       "editor/title": [
         {
-          "when": "editorTextFocus && resourceLangId == sourcepawn && config.sourcepawn.showCompileIconInEditorTitleMenu",
+          "when": "resourceLangId == sourcepawn && config.sourcepawn.showCompileIconInEditorTitleMenu",
           "command": "sourcepawn-vscode.compileSM",
           "group": "navigation@1"
         }
@@ -125,7 +125,7 @@
         "command": "sourcepawn-vscode.compileSM",
         "key": "ctrl+shift+d",
         "mac": "cmd+shift+d",
-        "when": "editorTextFocus && resourceLangId == sourcepawn"
+        "when": "resourceLangId == sourcepawn"
       },
       {
         "command": "sourcepawn-vscode.insertParameters",
@@ -157,6 +157,11 @@
         "sourcepawn.MainPath": {
           "type": "string",
           "description": "The location of the main.sp file for projects with sub-scripting files, which allows the linter and the compiler to work correctly. You should use this setting per workspace."
+        },
+				"sourcepawn.MainPathCompilation": {
+          "type": "boolean",
+					"default": true,
+          "description": "Whether the compile button always compiles the MainPath file (true) or the currently opened file (false)."
         },
         "sourcepawn.showCompileIconInEditorTitleMenu": {
           "type": "boolean",
@@ -334,6 +339,28 @@
           ".cfg"
         ],
         "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
+      },
+      {
+        "id": "valve-ini",
+        "aliases": [
+          "Valve INI",
+          "INI"
+        ],
+        "extensions": [
+          ".ini"
+        ],
+        "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
+      },
+      {
+        "id": "sourcemod-kv",
+        "aliases": [
+          "Sourcemod KV",
+          "KV"
+        ],
+        "extensions": [
+          ".kv"
+        ],
+        "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
       }
     ],
     "grammars": [
@@ -354,6 +381,16 @@
       },
       {
         "language": "valve-cfg",
+        "scopeName": "text.sourcepawn-misc",
+        "path": "./syntaxes/sourcepawn-misc.tmLanguage.json"
+      },
+      {
+        "language": "valve-ini",
+        "scopeName": "text.sourcepawn-misc",
+        "path": "./syntaxes/sourcepawn-misc.tmLanguage.json"
+      },
+      {
+        "language": "sourcemod-kv",
         "scopeName": "text.sourcepawn-misc",
         "path": "./syntaxes/sourcepawn-misc.tmLanguage.json"
       }

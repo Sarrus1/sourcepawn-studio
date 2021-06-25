@@ -5,12 +5,14 @@ import * as os from "os";
 
 export async function run(args: any) {
   let activeDocumentPath: string;
+	let mainPath: string = vscode.workspace.getConfiguration("sourcepawn").get<string>("MainPath") || "";
+	let mainPathCompile: boolean = vscode.workspace.getConfiguration("sourcepawn").get<boolean>("MainPathCompilation");
   try {
-    activeDocumentPath = args.document.uri.fsPath;
+    activeDocumentPath = (mainPathCompile && mainPath != "") ? mainPath : args.document.uri.fsPath;
   } catch {
-    activeDocumentPath = vscode.window.activeTextEditor.document.uri.fsPath;
+    activeDocumentPath = (mainPathCompile && mainPath != "") ? mainPath : vscode.window.activeTextEditor.document.uri.fsPath;
   }
-  let scriptingPath = path.dirname(activeDocumentPath);
+  let scriptingPath = activeDocumentPath.replace(/[\w\-. ]+$/, "");
   let activeDocumentName = path.basename(activeDocumentPath);
   activeDocumentName = activeDocumentName.replace(".sp", ".smx");
   let activeDocumentExt = path.extname(activeDocumentPath);
@@ -34,7 +36,7 @@ export async function run(args: any) {
         if (choice === "Open Settings") {
           vscode.commands.executeCommand(
             "workbench.action.openSettings",
-						"@ext:sarrus.sourcepawn-vscode"
+            "@ext:sarrus.sourcepawn-vscode"
           );
         }
       });
@@ -69,15 +71,15 @@ export async function run(args: any) {
   } else {
     pluginsFolderPath = path.join(scriptingPath, "compiled/");
   }
-  if (!fs.existsSync(pluginsFolderPath)) {
-    fs.mkdirSync(pluginsFolderPath);
-  }
   let outputDir: string =
     vscode.workspace
       .getConfiguration("sourcepawn")
       .get("outputDirectoryPath") || "";
   if (outputDir == "") {
     outputDir = pluginsFolderPath;
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir);
+    }
   } else {
     if (!fs.existsSync(outputDir)) {
       let workspaceFolder = vscode.workspace.workspaceFolders[0];
@@ -91,8 +93,8 @@ export async function run(args: any) {
           .then((choice) => {
             if (choice === "Open Settings") {
               vscode.commands.executeCommand(
-								"workbench.action.openSettings",
-								"@ext:sarrus.sourcepawn-vscode"
+                "workbench.action.openSettings",
+                "@ext:sarrus.sourcepawn-vscode"
               );
             }
           });
