@@ -5,10 +5,12 @@ import * as os from "os";
 
 export async function run(args: any) {
   let activeDocumentPath: string;
+	let mainPath: string = vscode.workspace.getConfiguration("sourcepawn").get<string>("MainPath") || "";
+	let mainPathCompile: boolean = vscode.workspace.getConfiguration("sourcepawn").get<boolean>("MainPathCompilation");
   try {
-    activeDocumentPath = args.document.uri.fsPath;
+    activeDocumentPath = (mainPathCompile && mainPath != "") ? mainPath : args.document.uri.fsPath;
   } catch {
-    activeDocumentPath = vscode.window.activeTextEditor.document.uri.fsPath;
+    activeDocumentPath = (mainPathCompile && mainPath != "") ? mainPath : vscode.window.activeTextEditor.document.uri.fsPath;
   }
   let scriptingPath = activeDocumentPath.replace(/[\w\-. ]+$/, "");
   let activeDocumentName = path.basename(activeDocumentPath);

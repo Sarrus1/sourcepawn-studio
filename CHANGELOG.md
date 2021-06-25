@@ -5,6 +5,7 @@
 ### Added
 
  - Added support for .ini files syntax highlighting. Thanks to [HolyHender](https://github.com/HolyHender) for suggesting this.
+ - Added a setting for choosing whether to always compile the MainPath file (if it's set) or to always compile the currently opened file.
 
 ### Fixed
 

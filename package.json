@@ -158,6 +158,11 @@
           "type": "string",
           "description": "The location of the main.sp file for projects with sub-scripting files, which allows the linter and the compiler to work correctly. You should use this setting per workspace."
         },
+				"sourcepawn.MainPathCompilation": {
+          "type": "boolean",
+					"default": true,
+          "description": "Whether the compile button always compiles the MainPath file (true) or the currently opened file (false)."
+        },
         "sourcepawn.showCompileIconInEditorTitleMenu": {
           "type": "boolean",
           "default": true,
