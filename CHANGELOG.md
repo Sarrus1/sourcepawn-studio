@@ -13,6 +13,7 @@
  - Fixed issue #54 where a _compiled_ folder would be generated even if the output directory was configured to something else. Thanks to [DRAN1X](https://github.com/dran1x) for reporting this.
  - Compile button is now more persistent in the menu.
  - Fixed issue #58 regarding syntax highlighting for .cfg files.
+ - Fixed issue #56 regarding syntax highlighting for multiline strings and `'` inside double quoted strings and vice-versa.
 
 ## [1.12.6]
 
