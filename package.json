@@ -350,6 +350,17 @@
           ".ini"
         ],
         "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
+      },
+      {
+        "id": "sourcemod-kv",
+        "aliases": [
+          "Sourcemod KV",
+          "KV"
+        ],
+        "extensions": [
+          ".kv"
+        ],
+        "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
       }
     ],
     "grammars": [
@@ -370,6 +381,16 @@
       },
       {
         "language": "valve-cfg",
+        "scopeName": "text.sourcepawn-misc",
+        "path": "./syntaxes/sourcepawn-misc.tmLanguage.json"
+      },
+      {
+        "language": "valve-ini",
+        "scopeName": "text.sourcepawn-misc",
+        "path": "./syntaxes/sourcepawn-misc.tmLanguage.json"
+      },
+      {
+        "language": "sourcemod-kv",
         "scopeName": "text.sourcepawn-misc",
         "path": "./syntaxes/sourcepawn-misc.tmLanguage.json"
       }
