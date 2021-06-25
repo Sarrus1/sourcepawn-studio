@@ -110,7 +110,7 @@
 			"patterns": [
 				{
 					"name": "keyword.control.cfg",
-					"match": "^[a-z]+\\s"
+					"match": "^[a-z_]+\\s"
 				},
 				{
 					"name": "support.function",
