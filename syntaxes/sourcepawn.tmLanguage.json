@@ -15,7 +15,7 @@
       "name": "meta.include.sourcepawn",
       "captures": {
         "1": {
-          "name": "keyword.other.sourcepawn"
+          "name": "keyword.control.sourcepawn"
         },
         "2": {
           "name": "string.sourcepawn"
@@ -27,7 +27,7 @@
       "name": "meta.include.sourcepawn",
       "captures": {
         "1": {
-          "name": "keyword.other.sourcepawn"
+          "name": "keyword.control.sourcepawn"
         },
         "2": {
           "name": "string.sourcepawn"
@@ -39,7 +39,7 @@
       "name": "meta.include.sourcepawn",
       "captures": {
         "1": {
-          "name": "keyword.other.sourcepawn"
+          "name": "keyword.control.sourcepawn"
         },
         "2": {
           "name": "string.sourcepawn"
@@ -51,10 +51,10 @@
       "name": "meta.pragma.line-comment.sourcepawn",
       "captures": {
         "1": {
-          "name": "keyword.other.pragma.sourcepawn"
+          "name": "keyword.control.pragma.sourcepawn"
         },
         "2": {
-          "name": "string.pragma.sourcepawn"
+          "name": "entity.other.attribute-name.sourcepawn"
         }
       }
     },
@@ -63,10 +63,10 @@
       "name": "meta.pragma.block-comment.sourcepawn",
       "captures": {
         "1": {
-          "name": "keyword.other.pragma.sourcepawn"
+          "name": "keyword.control.pragma.sourcepawn"
         },
         "2": {
-          "name": "string.pragma.sourcepawn"
+          "name": "entity.other.attribute-name.sourcepawn"
         }
       }
     },
@@ -75,35 +75,29 @@
       "name": "meta.pragma.sourcepawn",
       "captures": {
         "1": {
-          "name": "keyword.other.pragma.sourcepawn"
+          "name": "keyword.control.pragma.sourcepawn"
         },
         "2": {
-          "name": "string.pragma.sourcepawn"
+          "name": "entity.other.attribute-name.sourcepawn"
         }
       }
     },
     {
-      "match": "(\\#define)\\s*(\\w*)\\s*((\".*\")|([0-9]*))",
+      "match": "(\\#define)\\s*(\\w*)",
       "name": "meta.define.sourcepawn",
       "captures": {
         "1": {
-          "name": "keyword.other.define.sourcepawn"
+          "name": "keyword.control.define.sourcepawn"
         },
         "2": {
-          "name": "support.constant.core.define.sourcepawn"
-        },
-        "4": {
-          "name": "string.define.sourcepawn"
-        },
-        "5": {
-          "name": "constant.numeric.define.sourcepawn"
+          "name": "entity.name.function.preprocessor.sourcepawn"
         }
       }
     },
     {
       "comment": "Misc types",
-      "match": "#(if|else|endif|emit|deprecated|undef|endinput|endscript|assert|define|error|warning|file)",
-      "name": "keyword.other.misc.sourcepawn"
+      "match": "#\\b(if|else|endif|emit|deprecated|undef|endinput|endscript|assert|define|error|warning|file)\\b",
+      "name": "keyword.control.misc.sourcepawn"
     },
     {
       "comment": "view_as",
