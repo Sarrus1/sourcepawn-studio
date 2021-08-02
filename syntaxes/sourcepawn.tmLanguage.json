@@ -11,6 +11,30 @@
       "include": "#builtIns"
     },
     {
+      "match": "(\\#include|\\#tryinclude)\\s+(.+?(?=//))",
+      "name": "meta.include.sourcepawn",
+      "captures": {
+        "1": {
+          "name": "keyword.other.sourcepawn"
+        },
+        "2": {
+          "name": "string.sourcepawn"
+        }
+      }
+    },
+    {
+      "match": "(\\#include|\\#tryinclude)\\s+(.+?(?=/\\*))",
+      "name": "meta.include.sourcepawn",
+      "captures": {
+        "1": {
+          "name": "keyword.other.sourcepawn"
+        },
+        "2": {
+          "name": "string.sourcepawn"
+        }
+      }
+    },
+    {
       "match": "(\\#include|\\#tryinclude)\\s(.+)",
       "name": "meta.include.sourcepawn",
       "captures": {
@@ -23,15 +47,39 @@
       }
     },
     {
+      "match": "(\\#pragma)\\s+(.+?(?=//))",
+      "name": "meta.pragma.line-comment.sourcepawn",
+      "captures": {
+        "1": {
+          "name": "keyword.other.pragma.sourcepawn"
+        },
+        "2": {
+          "name": "string.pragma.sourcepawn"
+        }
+      }
+    },
+    {
+      "match": "(\\#pragma)\\s+(.+?(?=/\\*))",
+      "name": "meta.pragma.block-comment.sourcepawn",
+      "captures": {
+        "1": {
+          "name": "keyword.other.pragma.sourcepawn"
+        },
+        "2": {
+          "name": "string.pragma.sourcepawn"
+        }
+      }
+    },
+    {
       "match": "(\\#pragma)\\s+(.*)",
       "name": "meta.pragma.sourcepawn",
       "captures": {
         "1": {
           "name": "keyword.other.pragma.sourcepawn"
         },
-				"2":{
-					"name": "string.pragma.sourcepawn"
-				}
+        "2": {
+          "name": "string.pragma.sourcepawn"
+        }
       }
     },
     {
@@ -54,7 +102,7 @@
     },
     {
       "comment": "Misc types",
-      "match": "#(if|else|endif|emit|pragma|deprecated|undef|endinput|endscript|assert|define|error|warning|file)",
+      "match": "#(if|else|endif|emit|deprecated|undef|endinput|endscript|assert|define|error|warning|file)",
       "name": "keyword.other.misc.sourcepawn"
     },
     {
@@ -113,7 +161,7 @@
         "2": {
           "name": "support.type.core.function_params_new.sourcepawn"
         },
-				"3": {
+        "3": {
           "patterns": [
             {
               "match": "(\\d+)",
@@ -125,7 +173,7 @@
             }
           ]
         },
-				"4": {
+        "4": {
           "patterns": [
             {
               "match": "(\\d+)",
@@ -149,7 +197,7 @@
         "2": {
           "name": "support.type.core.function_params_old.sourcepawn"
         },
-				"3": {
+        "3": {
           "patterns": [
             {
               "match": "(\\d+)",
@@ -161,7 +209,7 @@
             }
           ]
         },
-				"4": {
+        "4": {
           "patterns": [
             {
               "match": "(\\d+)",
@@ -247,7 +295,7 @@
         }
       }
     },
-		{
+    {
       "comment": "Core types",
       "match": "\\b(?:bool|char|float|int|void|any)\\b",
       "name": "support.type.core.sourcepawn"
@@ -312,15 +360,15 @@
               "name": "constant.character.format.sourcepawn",
               "match": "%(?:c|b|d|i|u|f|L|N|s|T|t|X|x|%|(?:\\d+)?\\.\\d+(?:b|d|i|u|f|s|X|x))"
             },
-						{
-							"name": "constant.character.sp-translations",
-							"match": "\\{([A-Za-z]+)\\}",
-							"captures": {
-								"1": {
-									"name": "constant.character.escape.sp-translations"
-								}
-							}
-						},
+            {
+              "name": "constant.character.sp-translations",
+              "match": "\\{([A-Za-z]+)\\}",
+              "captures": {
+                "1": {
+                  "name": "constant.character.escape.sp-translations"
+                }
+              }
+            },
             {
               "name": "constant.character.white.sourcepawn",
               "match": "(\\\\(x|i|u)01)|\u0001"
@@ -391,7 +439,7 @@
             }
           ]
         },
-				{
+        {
           "name": "string.quoted.single.sourcepawn",
           "begin": "'",
           "end": "'",
@@ -400,15 +448,15 @@
               "name": "constant.character.format.sourcepawn",
               "match": "%(?:c|b|d|i|u|f|L|N|s|T|t|X|x|%|(?:\\d+)?\\.\\d+(?:b|d|i|u|f|s|X|x))"
             },
-						{
-							"name": "constant.character.sp-translations",
-							"match": "\\{([A-Za-z]+)\\}",
-							"captures": {
-								"1": {
-									"name": "constant.character.escape.sp-translations"
-								}
-							}
-						},
+            {
+              "name": "constant.character.sp-translations",
+              "match": "\\{([A-Za-z]+)\\}",
+              "captures": {
+                "1": {
+                  "name": "constant.character.escape.sp-translations"
+                }
+              }
+            },
             {
               "name": "constant.character.white.sourcepawn",
               "match": "(\\\\(x|i|u)01)|\u0001"
