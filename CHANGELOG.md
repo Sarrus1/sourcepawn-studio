@@ -1,5 +1,15 @@
 ## Release Notes
 
+## [1.12.8]
+
+### Added
+
+ - Added an option to specify a path relative to the workspace when creating a new project.
+
+### Fixed
+
+ - Made `#include`, `#pragma`, etc statements highlighting closer to C/C++ highlighting.
+
 ## [1.12.7]
 
 ### Added
