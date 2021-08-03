@@ -14,19 +14,27 @@ export async function run(args: any) {
     return;
   }
 
+	const inputOptions: vscode.InputBoxOptions = {
+		prompt: "Relative path for the root of the project. Leave empty for the root path."
+	}
+
+	const input = await vscode.window.showInputBox(inputOptions);
+
   //Select the rootpath
-  let rootpath = workspaceFolders?.[0].uri;
-  let rootname = workspaceFolders?.[0].name;
+	let rootpath = path.join(workspaceFolders?.[0].uri.fsPath, input);
+	if (!fs.existsSync(rootpath)){
+		fs.mkdirSync(rootpath);
+  }
 
   // Create the plugins folder
-  let pluginsFolderPath = path.join(rootpath.fsPath, "plugins");
+  let pluginsFolderPath = path.join(rootpath, "plugins");
   if (!fs.existsSync(pluginsFolderPath)) {
     fs.mkdirSync(pluginsFolderPath);
   }
 
   // Running the other commands
-  CreateTaskCommand.run(undefined);
-  CreateScriptCommand.run(undefined);
-  CreateREADMECommand.run(undefined);
-  CreateMasterCommand.run(undefined);
+  CreateTaskCommand.run(rootpath);
+  CreateScriptCommand.run(rootpath);
+  CreateREADMECommand.run(rootpath);
+  CreateMasterCommand.run(rootpath);
 }

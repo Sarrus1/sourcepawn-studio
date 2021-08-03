@@ -2,7 +2,7 @@ import vscode = require("vscode");
 import * as fs from "fs";
 import * as path from "path";
 
-export function run(args: any) {
+export function run(rootpath: string = undefined) {
   let GithubName: string = vscode.workspace
     .getConfiguration("sourcepawn")
     .get("GithubName");
@@ -30,11 +30,14 @@ export function run(args: any) {
   }
 
   //Select the rootpath
-  let rootpath = workspaceFolders?.[0].uri;
-  let rootname = workspaceFolders?.[0].name;
+	if(typeof rootpath === "undefined"){
+		rootpath = workspaceFolders?.[0].uri.fsPath;
+	}
+  
+  let rootname = path.basename(rootpath);
 
   // Check if README.md already exists
-  let readmeFilePath = path.join(rootpath.fsPath, "README.md");
+  let readmeFilePath = path.join(rootpath, "README.md");
   if (fs.existsSync(readmeFilePath)) {
     vscode.window.showErrorMessage("README.md already exists, aborting.");
     return 2;

@@ -1,8 +1,9 @@
 import vscode = require("vscode");
 import * as fs from "fs";
 import * as path from "path";
+import { type } from "os";
 
-export function run(args: any) {
+export function run(rootpath: string = undefined) {
   // Get configuration
   let sm_home: string = vscode.workspace
     .getConfiguration("sourcepawn")
@@ -57,16 +58,18 @@ export function run(args: any) {
   }
 
   //Select the rootpath
-  let rootpath = workspaceFolders?.[0].uri;
+	if(typeof rootpath === "undefined"){
+		rootpath = workspaceFolders?.[0].uri.fsPath;
+	}
 
   // create task folder if it doesn't exist
-  let taskFolderPath = path.join(rootpath.fsPath, ".vscode");
+  let taskFolderPath = path.join(rootpath, ".vscode");
   if (!fs.existsSync(taskFolderPath)) {
     fs.mkdirSync(taskFolderPath);
   }
 
   // Check if file already exists
-  let taskFilePath = path.join(rootpath.fsPath, ".vscode/tasks.json");
+  let taskFilePath = path.join(rootpath, ".vscode/tasks.json");
   if (fs.existsSync(taskFilePath)) {
     vscode.window.showErrorMessage("tasks.json file already exists.");
     return 3;

@@ -2,7 +2,7 @@ import vscode = require("vscode");
 import * as fs from "fs";
 import * as path from "path";
 
-export function run(args: any) {
+export function run(rootpath: string = undefined) {
   let AuthorName: string = vscode.workspace
     .getConfiguration("sourcepawn")
     .get("AuthorName");
@@ -31,18 +31,21 @@ export function run(args: any) {
   }
 
   //Select the rootpath
-  let rootpath = workspaceFolders?.[0].uri;
-  let rootname = workspaceFolders?.[0].name;
+	if(typeof rootpath === "undefined"){
+		rootpath = workspaceFolders?.[0].uri.fsPath;
+	}
+  
+  let rootname = path.basename(rootpath);
 
   // create a scripting folder if it doesn't exist
-  let scriptingFolderPath = path.join(rootpath.fsPath, "scripting");
+  let scriptingFolderPath = path.join(rootpath, "scripting");
   if (!fs.existsSync(scriptingFolderPath)) {
     fs.mkdirSync(scriptingFolderPath);
   }
 
   // Check if file already exists
   let scriptFileName: string = rootname + ".sp";
-  let scriptFilePath = path.join(rootpath.fsPath, "scripting", scriptFileName);
+  let scriptFilePath = path.join(rootpath, "scripting", scriptFileName);
   if (fs.existsSync(scriptFilePath)) {
     vscode.window.showErrorMessage(
       scriptFileName + " already exists, aborting."

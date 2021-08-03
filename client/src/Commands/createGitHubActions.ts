@@ -2,7 +2,7 @@ import vscode = require("vscode");
 import * as fs from "fs";
 import * as path from "path";
 
-export function run(args: any) {
+export function run(rootpath: string = undefined) {
   // get workspace folder
   let workspaceFolders = vscode.workspace.workspaceFolders;
   if (!workspaceFolders) {
@@ -13,23 +13,26 @@ export function run(args: any) {
   }
 
   //Select the rootpath
-  let rootpath = workspaceFolders?.[0].uri;
-  let rootname = workspaceFolders?.[0].name;
+	if(typeof rootpath === "undefined"){
+		rootpath = workspaceFolders?.[0].uri.fsPath;
+	}
+  
+  let rootname = path.basename(rootpath);
 
   // create .github folder if it doesn't exist
-  let masterFolderPath = path.join(rootpath.fsPath, ".github");
+  let masterFolderPath = path.join(rootpath, ".github");
   if (!fs.existsSync(masterFolderPath)) {
     fs.mkdirSync(masterFolderPath);
   }
   // create workflows folder if it doesn't exist
-  masterFolderPath = path.join(rootpath.fsPath, ".github", "workflows");
+  masterFolderPath = path.join(rootpath, ".github", "workflows");
   if (!fs.existsSync(masterFolderPath)) {
     fs.mkdirSync(masterFolderPath);
   }
 
   // Check if master.yml already exists
   let masterFilePath = path.join(
-    rootpath.fsPath,
+    rootpath,
     ".github/workflows/master.yml"
   );
   if (fs.existsSync(masterFilePath)) {
