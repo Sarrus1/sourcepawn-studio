@@ -1,14 +1,17 @@
 ﻿import * as vscode from "vscode";
 import { description_to_md } from "../spUtils";
 import { basename } from "path";
+import { URI } from "vscode-uri";
 
 export interface Completion {
   name: string;
   kind: vscode.CompletionItemKind;
   description?: string;
+	range?: vscode.Range;
 	scope?: string;
 
   to_completion_item(file: string, lastFuncName: string): vscode.CompletionItem;
+	toDefinitionItem(): vscode.Location;
   get_signature(): vscode.SignatureInformation;
   get_hover(): vscode.Hover;
 }
@@ -24,6 +27,7 @@ export class FunctionCompletion implements Completion {
   detail: string;
   params: FunctionParam[];
   file: string;
+	range: vscode.Range;
   IsBuiltIn: boolean;
   kind = vscode.CompletionItemKind.Function;
 
@@ -33,7 +37,8 @@ export class FunctionCompletion implements Completion {
     description: string,
     params: FunctionParam[],
     file: string,
-    IsBuiltIn: boolean
+    IsBuiltIn: boolean,
+		range: vscode.Range
   ) {
     this.description = description;
     this.name = name;
@@ -41,6 +46,7 @@ export class FunctionCompletion implements Completion {
     this.detail = detail;
     this.file = file;
     this.IsBuiltIn = IsBuiltIn;
+		this.range = range;
   }
 
   to_completion_item(file: string, lastFuncName: string = undefined): vscode.CompletionItem {
@@ -76,6 +82,10 @@ export class FunctionCompletion implements Completion {
       description_to_md(this.description),
     ]);
   }
+
+	toDefinitionItem(): vscode.Location {
+		return new vscode.Location(URI.file(this.file), this.range);
+	}
 }
 
 export class MethodCompletion implements Completion {
@@ -108,6 +118,10 @@ export class MethodCompletion implements Completion {
     };
   }
 
+	toDefinitionItem(): vscode.Location {
+		return undefined;
+	}
+
   get_signature(): vscode.SignatureInformation {
     return {
       label: this.detail,
@@ -132,11 +146,13 @@ export class DefineCompletion implements Completion {
   value: string;
   file: string;
   kind = vscode.CompletionItemKind.Variable;
+	range: vscode.Range;
 
-  constructor(name: string, value: string, file: string) {
+  constructor(name: string, value: string, file: string, range: vscode.Range) {
     this.name = name;
     this.value = value;
     this.file = basename(file);
+		this.range = range;
   }
 
   to_completion_item(file: string, lastFuncName: string = undefined): vscode.CompletionItem {
@@ -146,6 +162,10 @@ export class DefineCompletion implements Completion {
       detail: this.file,
     };
   }
+
+	toDefinitionItem(): vscode.Location {
+		return new vscode.Location(URI.file(this.file), this.range);
+	}
 
   get_signature(): vscode.SignatureInformation {
     return;
@@ -164,11 +184,13 @@ export class VariableCompletion implements Completion {
   file: string;
   kind = vscode.CompletionItemKind.Variable;
 	scope: string;
+	range: vscode.Range;
 
-  constructor(name: string, file: string, scope: string) {
+  constructor(name: string, file: string, scope: string, range: vscode.Range) {
     this.name = name;
     this.file = file;
 		this.scope = scope;
+		this.range = range;
   }
 
   to_completion_item(file: string, lastFuncName: string = undefined): vscode.CompletionItem {
@@ -198,6 +220,10 @@ export class VariableCompletion implements Completion {
 		}
   }
 
+	toDefinitionItem(): vscode.Location {
+		return new vscode.Location(URI.file(this.file), this.range);
+	}
+
   get_signature(): vscode.SignatureInformation {
     return undefined;
   }
@@ -211,12 +237,14 @@ export class EnumCompletion implements Completion {
   name: string;
   file: string;
   kind = vscode.CompletionItemKind.Enum;
-	description:string;
+	description: string;
+	range: vscode.Range;
 
-  constructor(name: string, file: string, description:string) {
+  constructor(name: string, file: string, description:string, range: vscode.Range) {
     this.name = name;
     this.file = file;
 		this.description = description;
+		this.range = range;
   }
 
   to_completion_item(file: string, lastFuncName: string = undefined): vscode.CompletionItem {
@@ -226,6 +254,10 @@ export class EnumCompletion implements Completion {
       detail: basename(this.file),
     };
   }
+
+	toDefinitionItem(): vscode.Location {
+		return new vscode.Location(URI.file(this.file), this.range);
+	}
 
   get_signature(): vscode.SignatureInformation {
     return undefined;
@@ -248,17 +280,20 @@ export class EnumMemberCompletion implements Completion {
   file: string;
   description: string;
   kind = vscode.CompletionItemKind.EnumMember;
+	range: vscode.Range;
 
   constructor(
     name: string,
     file: string,
     description: string,
-    Enum: EnumCompletion
+    Enum: EnumCompletion,
+		range: vscode.Range
   ) {
     this.name = name;
     this.file = file;
     this.description = description;
     this.enum = Enum;
+		this.range = range;
   }
 
   to_completion_item(file: string, lastFuncName: string = undefined): vscode.CompletionItem {
@@ -268,6 +303,10 @@ export class EnumMemberCompletion implements Completion {
       detail: this.enum.name == "" ? basename(this.file) : this.enum.name,
     };
   }
+
+	toDefinitionItem(): vscode.Location {
+		return new vscode.Location(URI.file(this.file), this.range);
+	}
 
   get_signature(): vscode.SignatureInformation {
     return undefined;
@@ -294,8 +333,9 @@ export class EnumStructCompletion implements Completion {
   file: string;
 	description: string;
   kind = vscode.CompletionItemKind.Struct;
+	range: vscode.Range;
 
-  constructor(name: string, file: string, description:string) {
+  constructor(name: string, file: string, description:string, range: vscode.Range) {
     this.name = name;
     this.file = file;
 		this.description = description;
@@ -308,6 +348,10 @@ export class EnumStructCompletion implements Completion {
       detail: basename(this.file),
     };
   }
+
+	toDefinitionItem(): vscode.Location {
+		return new vscode.Location(URI.file(this.file), this.range);
+	}
 
   get_signature(): vscode.SignatureInformation {
     return undefined;
@@ -331,17 +375,20 @@ export class EnumStructMemberCompletion implements Completion {
   file: string;
   description: string;
   kind = vscode.CompletionItemKind.Property;
+	range: vscode.Range;
 
   constructor(
     name: string,
     file: string,
     description: string,
-    EnumStruct: EnumStructCompletion
+    EnumStruct: EnumStructCompletion,
+		range: vscode.Range
   ) {
     this.name = name;
     this.file = file;
     this.description = description;
     this.enumStruct = EnumStruct;
+		this.range = range;
   }
 
   to_completion_item(file: string, lastFuncName: string = undefined): vscode.CompletionItem {
@@ -351,6 +398,10 @@ export class EnumStructMemberCompletion implements Completion {
       detail: this.enumStruct.name,
     };
   }
+
+	toDefinitionItem(): vscode.Location {
+		return new vscode.Location(URI.file(this.file), this.range);
+	}
 
   get_signature(): vscode.SignatureInformation {
     return undefined;
@@ -378,17 +429,20 @@ export class PropertyCompletion implements Completion {
   file: string;
   description: string;
   kind = vscode.CompletionItemKind.Property;
+	range: vscode.Range;
 
   constructor(
     method_map: string,
     name: string,
     file: string,
-    description: string
+    description: string,
+		range: vscode.Range
   ) {
     this.method_map = method_map;
     this.name = name;
     this.file = file;
     this.description = description;
+		this.range = range;
   }
 
   to_completion_item(file: string, lastFuncName: string = undefined): vscode.CompletionItem {
@@ -398,6 +452,10 @@ export class PropertyCompletion implements Completion {
       detail: this.method_map,
     };
   }
+
+	toDefinitionItem(): vscode.Location {
+		return new vscode.Location(URI.file(this.file), this.range);
+	}
 
   get_signature(): vscode.SignatureInformation {
     return undefined;
