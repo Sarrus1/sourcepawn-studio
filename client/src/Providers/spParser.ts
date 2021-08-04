@@ -20,8 +20,6 @@ import { basename } from "path";
 export function parse_file(
   file: string,
   completions: spCompletions.FileCompletions,
-  otherDefinitions: spDefinitions.Definitions,
-  functionDefinitions: spDefinitions.Definitions,
   documents: Map<string, string>,
   IsBuiltIn: boolean = false
 ) {
@@ -31,8 +29,6 @@ export function parse_file(
     data,
     file,
     completions,
-    otherDefinitions,
-    functionDefinitions,
     documents,
     IsBuiltIn
   );
@@ -42,8 +38,6 @@ export function parse_text(
   data: string,
   file: string,
   completions: spCompletions.FileCompletions,
-  otherDefinitions: spDefinitions.Definitions,
-  functionDefinitions: spDefinitions.Definitions,
   documents: Map<string, string>,
   IsBuiltIn: boolean = false
 ) {
@@ -56,8 +50,6 @@ export function parse_text(
     file,
     IsBuiltIn,
     completions,
-    otherDefinitions,
-    functionDefinitions,
     documents
   );
   parser.parse();
@@ -92,13 +84,9 @@ class Parser {
     file: string,
     IsBuiltIn: boolean,
     completions: spCompletions.FileCompletions,
-    otherDefinitions: spDefinitions.Definitions,
-    functionDefinitions: spDefinitions.Definitions,
     documents: Map<string, string>
   ) {
     this.completions = completions;
-    this.otherDefinitions = otherDefinitions;
-    this.functionDefinitions = functionDefinitions;
     let uri = URI.file(file).toString();
     this.state = [State.None];
     this.lineNb = -1;
@@ -629,7 +617,9 @@ class Parser {
 		if(this.lastFuncLine !== 0){
 			scope = this.lastFuncName;
 		}
-		this.completions.add(name, new VariableCompletion(name, this.file, scope, range));
+		// Custom key name for the map so the definitions don't override each others
+		let mapName = name + scope;
+		this.completions.add(mapName, new VariableCompletion(name, this.file, scope, range));
 	}
 
   makeDefinitionRange(

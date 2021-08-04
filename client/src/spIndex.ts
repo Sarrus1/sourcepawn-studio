@@ -81,8 +81,9 @@ export function activate(context: ExtensionContext) {
       ","
     )
   );
+
   context.subscriptions.push(
-    languages.registerDefinitionProvider(SP_MODE, providers.definitionsProvider)
+    languages.registerDefinitionProvider(SP_MODE, providers.completionsProvider)
   );
 
   context.subscriptions.push(

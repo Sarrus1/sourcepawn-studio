@@ -12,15 +12,11 @@ import * as spParser from "./spParser";
 export class Providers {
   completionsProvider: spCompletions.CompletionRepository;
   documentationProvider: spDocCompletions.JsDocCompletionProvider;
-  definitionsProvider: spDefinitions.DefinitionRepository;
   hoverProvider: spCompletions.CompletionRepository;
 
   constructor(globalState?: vscode.Memento) {
     let CompletionRepo = new spCompletions.CompletionRepository(globalState);
     this.completionsProvider = CompletionRepo;
-    this.definitionsProvider = new spDefinitions.DefinitionRepository(
-      globalState
-    );
     this.hoverProvider = CompletionRepo;
     this.documentationProvider = new spDocCompletions.JsDocCompletionProvider();
   }
@@ -48,8 +44,6 @@ export class Providers {
         event.document.getText(),
         file_path,
         this_completions,
-        this.definitionsProvider.otherDefinitions,
-        this.definitionsProvider.functionDefinitions,
         this.completionsProvider.documents
       );
     } catch (error) {
@@ -83,8 +77,6 @@ export class Providers {
       spParser.parse_file(
         file_path,
         this_completions,
-        this.definitionsProvider.otherDefinitions,
-        this.definitionsProvider.functionDefinitions,
         this.completionsProvider.documents
       );
     } catch (error) {
@@ -109,8 +101,6 @@ export class Providers {
       spParser.parse_file(
         path,
         this_completions,
-        this.definitionsProvider.otherDefinitions,
-        this.definitionsProvider.functionDefinitions,
         this.completionsProvider.documents
       );
     } catch (error) {
@@ -141,8 +131,6 @@ export class Providers {
             spParser.parse_file(
               file,
               new_completions,
-              this.definitionsProvider.otherDefinitions,
-              this.definitionsProvider.functionDefinitions,
               this.completionsProvider.documents,
               include.IsBuiltIn
             );
@@ -193,8 +181,6 @@ export class Providers {
         spParser.parse_file(
           file,
           completions,
-          this.definitionsProvider.otherDefinitions,
-          this.definitionsProvider.functionDefinitions,
           this.completionsProvider.documents,
           true
         );

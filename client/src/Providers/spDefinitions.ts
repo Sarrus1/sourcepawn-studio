@@ -29,76 +29,14 @@ export class DefLocation extends vscode.Location {
 
 export type Definitions = Map<string, DefLocation>;
 
-export class DefinitionRepository
-  implements vscode.DefinitionProvider, vscode.Disposable {
-  public otherDefinitions: Definitions;
-  public functionDefinitions: Definitions;
-  private globalState: vscode.Memento;
-
-  constructor(globalState?: vscode.Memento) {
-    this.otherDefinitions = new Map();
-    this.functionDefinitions = new Map();
-    this.globalState = globalState;
-  }
-
-  public provideDefinition(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    token: vscode.CancellationToken
-  ): vscode.Location | vscode.DefinitionLink[] {
-    let range = document.getWordRangeAtPosition(position);
-    let word: string = document.getText(range);
-    let definition: DefLocation;
-    let isFunction = this.isFunction(
-      range,
-      document,
-      document.getText().split("\n")[position.line].length
-    );
-    if (isFunction) {
-      definition = this.functionDefinitions.get(word + "___GLOBALLL");
-      if (
-        typeof definition != "undefined" &&
-        this.isLocalFileVariable(document, definition)
-      ) {
-        return new vscode.Location(definition.uri, definition.range);
-      }
-    }
-    definition = this.otherDefinitions.get(word + "___GLOBALLL");
-    if (typeof definition == "undefined") {
-      let lastFuncName: string = GetLastFuncName(position.line, document);
-      definition = this.otherDefinitions.get(word + "___" + lastFuncName);
-    }
-    if (
-      typeof definition != "undefined" &&
-      this.isLocalFileVariable(document, definition)
-    ) {
-      return new vscode.Location(definition.uri, definition.range);
-    }
-  }
-
-  public dispose() {}
-
-  public isLocalFileVariable(
-    document: vscode.TextDocument,
-    definition: DefLocation
-  ) {
-    if (definition.type === DefinitionKind.Variable) {
-      return document.uri.fsPath == definition.uri.fsPath;
-    }
-    return true;
-  }
-
-  public isFunction(
-    range: vscode.Range,
-    document: vscode.TextDocument,
-    lineLength: number
-  ): boolean {
-    let start = new vscode.Position(range.start.line, range.end.character);
-    let end = new vscode.Position(range.end.line, lineLength + 1);
-    let rangeAfter = new vscode.Range(start, end);
-    let wordsAfter: string = document.getText(rangeAfter);
-    return /^\s*\(/.test(wordsAfter);
-  }
+export function isLocalFileVariable(
+	document: vscode.TextDocument,
+	definition: DefLocation
+) {
+	if (definition.type === DefinitionKind.Variable) {
+		return document.uri.fsPath == definition.uri.fsPath;
+	}
+	return true;
 }
 
 export function GetLastFuncName(
@@ -128,6 +66,18 @@ export function GetLastFuncName(
   let match = text[lineNB].match(re);
   // Deal with old syntax here
   return match[2] == "" ? match[1] : match[2];
+}
+
+export function isFunction(
+	range: vscode.Range,
+	document: vscode.TextDocument,
+	lineLength: number
+): boolean {
+	let start = new vscode.Position(range.start.line, range.end.character);
+	let end = new vscode.Position(range.end.line, lineLength + 1);
+	let rangeAfter = new vscode.Range(start, end);
+	let wordsAfter: string = document.getText(rangeAfter);
+	return /^\s*\(/.test(wordsAfter);
 }
 
 function CheckIfControlStatement(line: string): boolean {

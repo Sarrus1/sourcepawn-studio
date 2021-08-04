@@ -5,7 +5,7 @@ import { URI } from "vscode-uri";
 import { Completion, Include } from "./spCompletionsKinds";
 import { CompletionItem } from "vscode";
 import { events } from "../Misc/sourceEvents";
-import {GetLastFuncName} from "./spDefinitions";
+import { GetLastFuncName, isFunction, isLocalFileVariable } from "./spDefinitions";
 
 export class FileCompletions {
   completions: Map<string, Completion>;
@@ -383,5 +383,44 @@ export class CompletionRepository
       activeSignature: 0,
       activeParameter: 0,
     };
+  }
+
+	public provideDefinition(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    token: vscode.CancellationToken
+  ): vscode.Location | vscode.DefinitionLink[] {
+    let range = document.getWordRangeAtPosition(position);
+    let word: string = document.getText(range);
+		let definitions = this.get_all_completions(document.uri.toString()).filter(
+      (completion) => {
+        return completion.name === word;
+      }
+    );
+    let bIsFunction = isFunction(
+      range,
+      document,
+      document.getText().split("\n")[position.line].length
+    );
+		let definition = undefined;
+    if (bIsFunction) {
+			definition = definitions[0];
+      if (
+        typeof definition !== "undefined" &&
+        isLocalFileVariable(document, definition)
+      ) {
+        return definition.toDefinitionItem();
+      }
+    }
+		let lastFuncName: string = GetLastFuncName(position.line, document);
+		definition = definitions.filter((def) => def.scope===lastFuncName)[0];
+		console.debug(definitions);
+    if (
+      typeof definition != "undefined" &&
+      isLocalFileVariable(document, definition)
+    ) {
+      return definition.toDefinitionItem();
+    }
+		return definitions[0].toDefinitionItem();
   }
 }
