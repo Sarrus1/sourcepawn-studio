@@ -6,6 +6,7 @@ export interface Completion {
   name: string;
   kind: vscode.CompletionItemKind;
   description?: string;
+	scope?: string;
 
   to_completion_item(file: string, lastFuncName: string): vscode.CompletionItem;
   get_signature(): vscode.SignatureInformation;
@@ -162,25 +163,25 @@ export class VariableCompletion implements Completion {
   name: string;
   file: string;
   kind = vscode.CompletionItemKind.Variable;
+	scope: string;
 
-  constructor(name: string, file: string) {
+  constructor(name: string, file: string, scope: string) {
     this.name = name;
     this.file = file;
+		this.scope = scope;
   }
 
   to_completion_item(file: string, lastFuncName: string = undefined): vscode.CompletionItem {
-		let scopeName: string;
 		if(typeof lastFuncName !== "undefined"){
-			scopeName = "___"+lastFuncName;
-			if(this.name.endsWith(scopeName)){
+			if(this.scope === lastFuncName){
 				return {
-					label: this.name.replace(scopeName, ""),
+					label: this.name,
 					kind: this.kind,
 				};
 			}
-			else if(this.name.endsWith("___GLOBALLL")){
+			else if(this.scope === "$GLOBAL"){
 				return {
-					label: this.name.replace("___GLOBALLL", ""),
+					label: this.name,
 					kind: this.kind,
 				};
 			}
@@ -191,7 +192,7 @@ export class VariableCompletion implements Completion {
 		}
 		else{
 			return {
-				label: this.name.replace(/___(.*)$/, ""),
+				label: this.name,
 				kind: this.kind,
 			};
 		}

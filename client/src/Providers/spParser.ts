@@ -670,11 +670,11 @@ class Parser {
 	AddVariableCompletion(
 		name: string
 	): void {
-		let definitionSuffix: string = "___GLOBALLL";
+		let scope: string = "$GLOBAL";
 		if(this.lastFuncLine !== 0){
-			definitionSuffix = "___" + this.lastFuncName;
+			scope = this.lastFuncName;
 		}
-		this.completions.add(name+definitionSuffix, new VariableCompletion(name+definitionSuffix, this.file));
+		this.completions.add(name, new VariableCompletion(name, this.file, scope));
 	}
 
   AddDefinition(
