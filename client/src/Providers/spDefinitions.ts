@@ -101,13 +101,12 @@ export class DefinitionRepository
   }
 }
 
-function GetLastFuncName(
+export function GetLastFuncName(
   lineNB: number,
   document: vscode.TextDocument
 ): string {
   let re = /(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/;
   let text = document.getText().split("\n");
-  let found = false;
   let Match;
   let line: string;
   for (lineNB; lineNB > 0; lineNB--) {

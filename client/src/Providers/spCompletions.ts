@@ -5,6 +5,7 @@ import { URI } from "vscode-uri";
 import { Completion, Include } from "./spCompletionsKinds";
 import { CompletionItem } from "vscode";
 import { events } from "../Misc/sourceEvents";
+import {GetLastFuncName} from "./spDefinitions";
 
 export class FileCompletions {
   completions: Map<string, Completion>;
@@ -221,10 +222,11 @@ export class CompletionRepository
     );
     let all_completions_list: vscode.CompletionList = new vscode.CompletionList();
     if (all_completions != []) {
+			let lastFunc: string = GetLastFuncName(position.line, document);
       all_completions_list.items = all_completions.map((completion) => {
         if (completion) {
           if (completion.to_completion_item) {
-            return completion.to_completion_item(document.uri.fsPath);
+            return completion.to_completion_item(document.uri.fsPath, lastFunc);
           }
         }
       });

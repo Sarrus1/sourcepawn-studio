@@ -396,7 +396,7 @@ class Parser {
 
   read_loop_variables(match) {
 		if(this.IsBuiltIn) return;
-    this.completions.add(match[1], new VariableCompletion(match[1], this.file));
+		this.AddVariableCompletion(match[1]);
     return;
   }
 
@@ -415,10 +415,7 @@ class Parser {
           /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
         )[1];
 				if(!this.IsBuiltIn){
-					this.completions.add(
-						variable_completion,
-						new VariableCompletion(variable_completion, this.file)
-					);
+					this.AddVariableCompletion(variable_completion);
 				}
         if (this.lastFuncLine == 0) {
           this.AddDefinition(
@@ -451,10 +448,7 @@ class Parser {
             /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
           )[1];
 					if(!this.IsBuiltIn){
-          this.completions.add(
-            variable_completion,
-            new VariableCompletion(variable_completion, this.file)
-          );
+						this.AddVariableCompletion(variable_completion);
 					}
           if (this.lastFuncLine == 0) {
             this.AddDefinition(
@@ -570,6 +564,8 @@ class Parser {
           )
         );
       } else {
+				this.lastFuncLine = this.lineNb;
+        this.lastFuncName = name_match;
         let paramsMatch = match[3];
         this.AddParamsDef(paramsMatch, name_match, line);
         // Iteration safety in case something goes wrong
@@ -592,8 +588,6 @@ class Parser {
             paramsMatch
               .replace(/\s*\w+\s*\(\s*/g, "")
               .replace(/\s+/gm, " ");
-        this.lastFuncLine = this.lineNb;
-        this.lastFuncName = name_match;
         this.completions.add(
           name_match,
           new FunctionCompletion(
@@ -673,6 +667,16 @@ class Parser {
     return { description, params };
   }
 
+	AddVariableCompletion(
+		name: string
+	): void {
+		let definitionSuffix: string = "___GLOBALLL";
+		if(this.lastFuncLine !== 0){
+			definitionSuffix = "___" + this.lastFuncName;
+		}
+		this.completions.add(name+definitionSuffix, new VariableCompletion(name+definitionSuffix, this.file));
+	}
+
   AddDefinition(
     name: string,
     line: string,
@@ -725,10 +729,7 @@ class Parser {
         /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
       )[1];
 			if(!this.IsBuiltIn){
-      this.completions.add(
-        variable_completion,
-        new VariableCompletion(variable_completion, this.file)
-      );
+			this.AddVariableCompletion(variable_completion);
 			}
       this.AddDefinition(
         variable_completion,

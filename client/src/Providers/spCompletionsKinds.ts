@@ -7,7 +7,7 @@ export interface Completion {
   kind: vscode.CompletionItemKind;
   description?: string;
 
-  to_completion_item(file: string): vscode.CompletionItem;
+  to_completion_item(file: string, lastFuncName: string): vscode.CompletionItem;
   get_signature(): vscode.SignatureInformation;
   get_hover(): vscode.Hover;
 }
@@ -42,7 +42,7 @@ export class FunctionCompletion implements Completion {
     this.IsBuiltIn = IsBuiltIn;
   }
 
-  to_completion_item(file: string): vscode.CompletionItem {
+  to_completion_item(file: string, lastFuncName: string = undefined): vscode.CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -99,7 +99,7 @@ export class MethodCompletion implements Completion {
     this.params = params;
   }
 
-  to_completion_item(file: string): vscode.CompletionItem {
+  to_completion_item(file: string, lastFuncName: string = undefined): vscode.CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -138,7 +138,7 @@ export class DefineCompletion implements Completion {
     this.file = basename(file);
   }
 
-  to_completion_item(file: string): vscode.CompletionItem {
+  to_completion_item(file: string, lastFuncName: string = undefined): vscode.CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -168,11 +168,33 @@ export class VariableCompletion implements Completion {
     this.file = file;
   }
 
-  to_completion_item(file: string): vscode.CompletionItem {
-    return {
-      label: this.name,
-      kind: this.kind,
-    };
+  to_completion_item(file: string, lastFuncName: string = undefined): vscode.CompletionItem {
+		let scopeName: string;
+		if(typeof lastFuncName !== "undefined"){
+			scopeName = "___"+lastFuncName;
+			if(this.name.endsWith(scopeName)){
+				return {
+					label: this.name.replace(scopeName, ""),
+					kind: this.kind,
+				};
+			}
+			else if(this.name.endsWith("___GLOBALLL")){
+				return {
+					label: this.name.replace("___GLOBALLL", ""),
+					kind: this.kind,
+				};
+			}
+			return {
+				label: "",
+				kind: this.kind,
+			};
+		}
+		else{
+			return {
+				label: this.name.replace(/___(.*)$/, ""),
+				kind: this.kind,
+			};
+		}
   }
 
   get_signature(): vscode.SignatureInformation {
@@ -196,7 +218,7 @@ export class EnumCompletion implements Completion {
 		this.description = description;
   }
 
-  to_completion_item(file: string): vscode.CompletionItem {
+  to_completion_item(file: string, lastFuncName: string = undefined): vscode.CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -238,7 +260,7 @@ export class EnumMemberCompletion implements Completion {
     this.enum = Enum;
   }
 
-  to_completion_item(file: string): vscode.CompletionItem {
+  to_completion_item(file: string, lastFuncName: string = undefined): vscode.CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -278,7 +300,7 @@ export class EnumStructCompletion implements Completion {
 		this.description = description;
   }
 
-  to_completion_item(file: string): vscode.CompletionItem {
+  to_completion_item(file: string, lastFuncName: string = undefined): vscode.CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -321,7 +343,7 @@ export class EnumStructMemberCompletion implements Completion {
     this.enumStruct = EnumStruct;
   }
 
-  to_completion_item(file: string): vscode.CompletionItem {
+  to_completion_item(file: string, lastFuncName: string = undefined): vscode.CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -368,7 +390,7 @@ export class PropertyCompletion implements Completion {
     this.description = description;
   }
 
-  to_completion_item(file: string): vscode.CompletionItem {
+  to_completion_item(file: string, lastFuncName: string = undefined): vscode.CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
