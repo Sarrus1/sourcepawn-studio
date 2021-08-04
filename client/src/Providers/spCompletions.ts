@@ -414,7 +414,6 @@ export class CompletionRepository
     }
 		let lastFuncName: string = GetLastFuncName(position.line, document);
 		definition = definitions.filter((def) => def.scope===lastFuncName)[0];
-		console.debug(definitions);
     if (
       typeof definition != "undefined" &&
       isLocalFileVariable(document, definition)

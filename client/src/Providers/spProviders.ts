@@ -6,7 +6,6 @@ import * as fs from "fs";
 import * as spCompletions from "./spCompletions";
 import { Include } from "./spCompletionsKinds";
 import * as spDocCompletions from "./spDocCompletions";
-import * as spDefinitions from "./spDefinitions";
 import * as spParser from "./spParser";
 
 export class Providers {

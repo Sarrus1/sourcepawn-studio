@@ -1,39 +1,10 @@
 ﻿import * as vscode from "vscode";
-import { URI } from "vscode-uri";
-
-export enum DefinitionKind {
-  Variable = 0,
-  Function,
-  Define,
-  Enum,
-  EnumMember,
-  EnumStruct,
-  EnumStructMember,
-}
-
-export class DefLocation extends vscode.Location {
-  type: DefinitionKind;
-  scope: string;
-
-  constructor(
-    uri: URI,
-    range: vscode.Range,
-    type: DefinitionKind,
-    scope: string = "___GLOBALLL"
-  ) {
-    super(uri, range);
-    this.type = type;
-    this.scope = scope;
-  }
-}
-
-export type Definitions = Map<string, DefLocation>;
 
 export function isLocalFileVariable(
 	document: vscode.TextDocument,
-	definition: DefLocation
+	definition
 ) {
-	if (definition.type === DefinitionKind.Variable) {
+	if (definition.kind === vscode.CompletionItemKind.Variable) {
 		return document.uri.fsPath == definition.uri.fsPath;
 	}
 	return true;

@@ -1,5 +1,4 @@
 import * as spCompletions from "./spCompletions";
-import * as spDefinitions from "./spDefinitions";
 import {
   FunctionCompletion,
   DefineCompletion,
@@ -66,8 +65,6 @@ enum State {
 
 class Parser {
   completions: spCompletions.FileCompletions;
-  otherDefinitions: spDefinitions.Definitions;
-  functionDefinitions: spDefinitions.Definitions;
   state: State[];
   scratch: any;
   state_data: any;
@@ -631,30 +628,7 @@ class Parser {
     let end: number = search ? start + name.length : 0;
 		var range = PositiveRange(this.lineNb, start, end);
 		return range;
-		/*
-    if (isFunction) {
-      if (this.ShouldAddToDefinitions(name, definitionSuffix, def)) {
-        return range;
-      }
-      return undefined;
-    }
-    if (this.ShouldAddToDefinitions(name, definitionSuffix, def)) {
-      return range;
-    }
-    return undefined;
-		*/
   }
-
-	ShouldAddToDefinitions(name:string, definitionSuffix:string, def:spDefinitions.DefLocation):boolean{
-		let DefAlreadyExists = this.functionDefinitions.has(name + definitionSuffix);
-		// If definition already exists, check if it's in the same file, to see if we should override it
-		if(DefAlreadyExists){
-			if(!this.IsBuiltIn) return true;
-			let oldDef = this.functionDefinitions.get(name+definitionSuffix);
-			return oldDef.uri==def.uri;
-		}
-		return true
-	}
 
   AddParamsDef(params: string, funcName: string, line: string) {
     let match_variable: RegExpExecArray;

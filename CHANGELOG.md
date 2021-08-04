@@ -7,6 +7,7 @@
  - Added an option to specify a path relative to the workspace when creating a new project.
  - Implemented scopped completions for variables. A variable won't be suggested if the user is typing outside of the variable's scope.
  - Extension is now bundled, this will improve performances.
+ - Complete refactoring of the GoToDefinition system, which now updates the location of an item every parsing.
 
 ### Fixed
 
