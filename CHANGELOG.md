@@ -5,6 +5,7 @@
 ### Added
 
  - Added an option to specify a path relative to the workspace when creating a new project.
+ - Implemented scopped completions for variables. A variable won't be suggested if the user is typing outside of the variable's scope.
 
 ### Fixed
 
