@@ -9,6 +9,7 @@
 ### Fixed
 
  - Made `#include`, `#pragma`, etc statements highlighting closer to C/C++ highlighting.
+ - Fixed an issue for include files not inside an `include` folder.
 
 ## [1.12.7]
 

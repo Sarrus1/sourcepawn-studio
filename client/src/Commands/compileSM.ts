@@ -120,7 +120,10 @@ export async function run(args: any) {
     vscode.workspace.getConfiguration("sourcepawn").get("SourcemodHome") || "",
     "'",
     " -i=" + "'",
-    scriptingPath + "/include" || "",
+    path.join(scriptingPath, "include") || "",
+    "'",
+    " -i=" + "'",
+    scriptingPath,
     "'"
   );
   let compilerOptions: string[] = vscode.workspace
