@@ -353,7 +353,7 @@
             },
             {
               "name": "constant.character.escape.sourcepawn",
-              "match": "\\\\(?:n|t|\"|')"
+              "match": "\\\\(?:n|t|\"|'|r|\\|f|v|0|xFF)"
             },
             {
               "name": "constant.character.sp-translations",
@@ -377,7 +377,7 @@
             },
             {
               "name": "constant.character.escape.sourcepawn",
-              "match": "\\\\(?:n|t|\"|')"
+              "match": "\\\\(?:n|t|\"|'|r|\\|f|v|0|xFF)"
             },
             {
               "name": "constant.character.sp-translations",
