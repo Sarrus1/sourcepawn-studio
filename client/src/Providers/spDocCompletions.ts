@@ -1,12 +1,21 @@
-import * as vscode from "vscode";
+import {
+  CompletionItem,
+  CompletionItemKind,
+  Position,
+  SnippetString,
+  Range,
+  CompletionItemProvider,
+  TextDocument,
+  CancellationToken,
+} from "vscode";
 
 const indentSize: number = 5;
 
-class SpDocCompletionItem extends vscode.CompletionItem {
-  constructor(position: vscode.Position, FunctionDesc: string[]) {
-    super("/** */", vscode.CompletionItemKind.Text);
+class SpDocCompletionItem extends CompletionItem {
+  constructor(position: Position, FunctionDesc: string[]) {
+    super("/** */", CompletionItemKind.Text);
     FunctionDesc.shift();
-    let snippet = new vscode.SnippetString();
+    let snippet = new SnippetString();
     let max = getMaxLength(FunctionDesc);
     snippet.appendText("/**\n * ");
     snippet.appendPlaceholder("Description");
@@ -21,18 +30,18 @@ class SpDocCompletionItem extends vscode.CompletionItem {
     snippet.appendPlaceholder("Return description");
     snippet.appendText("\n */");
     this.insertText = snippet;
-    let start: vscode.Position = new vscode.Position(position.line, 0);
-    let end: vscode.Position = new vscode.Position(position.line, 0);
-    this.range = new vscode.Range(start, end);
+    let start: Position = new Position(position.line, 0);
+    let end: Position = new Position(position.line, 0);
+    this.range = new Range(start, end);
   }
 }
 
-export class JsDocCompletionProvider implements vscode.CompletionItemProvider {
+export class JsDocCompletionProvider implements CompletionItemProvider {
   public async provideCompletionItems(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    token: vscode.CancellationToken
-  ): Promise<vscode.CompletionItem[] | undefined> {
+    document: TextDocument,
+    position: Position,
+    token: CancellationToken
+  ): Promise<CompletionItem[] | undefined> {
     if (!document) {
       return undefined;
     }
@@ -45,13 +54,13 @@ export class JsDocCompletionProvider implements vscode.CompletionItemProvider {
   }
 
   private getFunctionArgs(
-    document: vscode.TextDocument,
-    position: vscode.Position
+    document: TextDocument,
+    position: Position
   ): string[] {
     const lines = document.getText().split("\n");
     let old_style: boolean;
     let line = lines[position.line + 1];
-		if(typeof line == "undefined") return [];
+    if (typeof line == "undefined") return [];
     let match = line.match(
       /(?:(?:static|native|stock|public|forward)+\s*)+\s+(?:\w:)?([^\s]+)\s*([A-Za-z_]*)\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)/
     );

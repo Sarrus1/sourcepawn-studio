@@ -1,4 +1,4 @@
-﻿import vscode = require("vscode");
+﻿import { workspace as Workspace, window, commands } from "vscode";
 import { join } from "path";
 // Keep the include like this,
 // otherwise FTPDeploy is not
@@ -7,33 +7,33 @@ const FTPDeploy = require("ftp-deploy");
 
 export async function run(args: any) {
   let ftpDeploy = new FTPDeploy();
-  let config: object = vscode.workspace
-    .getConfiguration("sourcepawn")
-    .get("UploadOptions");
+  let config: object = Workspace.getConfiguration("sourcepawn").get(
+    "UploadOptions"
+  );
   if (typeof config == "undefined") {
-    vscode.window
+    window
       .showErrorMessage("Upload settings are empty.", "Open Settings")
       .then((choice) => {
         if (choice === "Open Settings") {
-          vscode.commands.executeCommand(
-						"workbench.action.openSettings",
-						"@ext:sarrus.sourcepawn-vscode"
+          commands.executeCommand(
+            "workbench.action.openSettings",
+            "@ext:sarrus.sourcepawn-vscode"
           );
         }
       });
     return 1;
   }
   if (config["user"] == "" || config["host"] == "") {
-    vscode.window
+    window
       .showErrorMessage(
         "Some settings are improperly defined in the upload settings.",
         "Open Settings"
       )
       .then((choice) => {
         if (choice === "Open Settings") {
-          vscode.commands.executeCommand(
-						"workbench.action.openSettings",
-						"@ext:sarrus.sourcepawn-vscode"
+          commands.executeCommand(
+            "workbench.action.openSettings",
+            "@ext:sarrus.sourcepawn-vscode"
           );
         }
       });
@@ -42,20 +42,18 @@ export async function run(args: any) {
   // Override the "deleteRemote" setting for safety.
   config["deleteRemote"] = false;
   // Make sure the path to upload is relative to avoid uploading the whole disk.
-  let workspaceRoot: string = vscode.workspace.workspaceFolders[0].uri.fsPath;
+  let workspaceRoot: string = Workspace.workspaceFolders[0].uri.fsPath;
   config["localRoot"] = join(workspaceRoot, config["localRoot"]);
   ftpDeploy
     .deploy(config)
     .then(async (res) => {
       console.log("Upload is finished.");
       if (
-        vscode.workspace
-          .getConfiguration("sourcepawn")
-          .get("uploadAfterSuccessfulCompile")
+        Workspace.getConfiguration("sourcepawn").get(
+          "uploadAfterSuccessfulCompile"
+        )
       ) {
-        await vscode.commands.executeCommand(
-          "sourcepawn-vscode.refreshPlugins"
-        );
+        await commands.executeCommand("sourcepawn-refreshPlugins");
       }
     })
     .catch((err) => console.error(err));

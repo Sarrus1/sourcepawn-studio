@@ -22,7 +22,7 @@ export class Providers {
 
   public handle_added_document(event: vscode.FileCreateEvent) {
     for (let file of event.files) {
-			this.newDocumentCallback(URI.file(file.fsPath));
+      this.newDocumentCallback(URI.file(file.fsPath));
     }
   }
 
@@ -59,10 +59,10 @@ export class Providers {
     this.newDocumentCallback(document.uri);
   }
 
-	public newDocumentCallback(uri: vscode.Uri){
-		let ext:string = path.extname(uri.fsPath);
-		if(ext != ".inc" && ext != ".sp") return;
-		let this_completions: spCompletions.FileCompletions = new spCompletions.FileCompletions(
+  public newDocumentCallback(uri: vscode.Uri) {
+    let ext: string = path.extname(uri.fsPath);
+    if (ext != ".inc" && ext != ".sp") return;
+    let this_completions: spCompletions.FileCompletions = new spCompletions.FileCompletions(
       uri.toString()
     );
     let file_path: string = uri.fsPath;
@@ -83,11 +83,8 @@ export class Providers {
     }
 
     this.read_unscanned_imports(this_completions.includes);
-    this.completionsProvider.completions.set(
-      uri.toString(),
-      this_completions
-    );
-	}
+    this.completionsProvider.completions.set(uri.toString(), this_completions);
+  }
 
   public handle_document_opening(path: string) {
     let uri: string = URI.file(path).toString();
@@ -164,8 +161,8 @@ export class Providers {
             vscode.commands.executeCommand("sourcepawn-vscode.installSM");
           } else if (choice === "No, open Settings") {
             vscode.commands.executeCommand(
-							"workbench.action.openSettings",
-							"@ext:sarrus.sourcepawn-vscode"
+              "workbench.action.openSettings",
+              "@ext:sarrus.sourcepawn-vscode"
             );
           }
         });

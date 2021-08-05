@@ -1,21 +1,21 @@
-﻿import vscode = require("vscode");
+﻿import { workspace as Workspace, window, commands } from "vscode";
 import Rcon from "rcon-srcds";
 
 export async function run(args: any) {
-  const serverOptions: Object = vscode.workspace
-    .getConfiguration("sourcepawn")
-    .get("SourceServerOptions");
+  const serverOptions: Object = Workspace.getConfiguration("sourcepawn").get(
+    "SourceServerOptions"
+  );
   if (serverOptions["host"] == "" || serverOptions["password"] == "") {
-    vscode.window
+    window
       .showErrorMessage(
         "The host or the password was not set.",
         "Open Settings"
       )
       .then((choice) => {
         if (choice === "Open Settings") {
-          vscode.commands.executeCommand(
-						"workbench.action.openSettings",
-						"@ext:sarrus.sourcepawn-vscode"
+          commands.executeCommand(
+            "workbench.action.openSettings",
+            "@ext:sarrus.sourcepawn-vscode"
           );
         }
       });

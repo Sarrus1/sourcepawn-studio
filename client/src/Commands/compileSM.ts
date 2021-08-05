@@ -1,40 +1,46 @@
-import * as vscode from "vscode";
-import * as path from "path";
-import * as fs from "fs";
-import * as os from "os";
+import { workspace as Workspace, window, commands } from "vscode";
+import { basename, extname, join } from "path";
+import { existsSync, mkdirSync } from "fs";
+import { platform } from "os";
 
 export async function run(args: any) {
   let activeDocumentPath: string;
-	let mainPath: string = vscode.workspace.getConfiguration("sourcepawn").get<string>("MainPath") || "";
-	let mainPathCompile: boolean = vscode.workspace.getConfiguration("sourcepawn").get<boolean>("MainPathCompilation");
+  let mainPath: string =
+    Workspace.getConfiguration("sourcepawn").get<string>("MainPath") || "";
+  let mainPathCompile: boolean = Workspace.getConfiguration(
+    "sourcepawn"
+  ).get<boolean>("MainPathCompilation");
   try {
-    activeDocumentPath = (mainPathCompile && mainPath != "") ? mainPath : args.document.uri.fsPath;
+    activeDocumentPath =
+      mainPathCompile && mainPath != "" ? mainPath : args.document.uri.fsPath;
   } catch {
-    activeDocumentPath = (mainPathCompile && mainPath != "") ? mainPath : vscode.window.activeTextEditor.document.uri.fsPath;
+    activeDocumentPath =
+      mainPathCompile && mainPath != ""
+        ? mainPath
+        : window.activeTextEditor.document.uri.fsPath;
   }
   let scriptingPath = activeDocumentPath.replace(/[\w\-. ]+$/, "");
-  let activeDocumentName = path.basename(activeDocumentPath);
+  let activeDocumentName = basename(activeDocumentPath);
   activeDocumentName = activeDocumentName.replace(".sp", ".smx");
-  let activeDocumentExt = path.extname(activeDocumentPath);
+  let activeDocumentExt = extname(activeDocumentPath);
 
   // Don't compile if it's not a .sp file.
   if (activeDocumentExt != ".sp") {
-    vscode.window.showErrorMessage("Not a .sp file, aborting");
+    window.showErrorMessage("Not a .sp file, aborting");
     return;
   }
   const spcomp =
-    vscode.workspace.getConfiguration("sourcepawn").get<string>("SpcompPath") ||
-    "";
+    Workspace.getConfiguration("sourcepawn").get<string>("SpcompPath") || "";
 
   if (!spcomp) {
-    vscode.window
+    window
       .showErrorMessage(
         "SourceMod compiler not found in the project. You need to set the spCompPath setting to be able to compile a plugin.",
         "Open Settings"
       )
       .then((choice) => {
         if (choice === "Open Settings") {
-          vscode.commands.executeCommand(
+          commands.executeCommand(
             "workbench.action.openSettings",
             "@ext:sarrus.sourcepawn-vscode"
           );
@@ -44,11 +50,11 @@ export async function run(args: any) {
   }
 
   // Open a terminal window
-  let terminals = vscode.window.terminals;
+  let terminals = window.terminals;
   let terminal;
   // Try to open current terminal window instead of opening a new one.
   if (!terminals) {
-    terminal = vscode.window.createTerminal("SourcePawn compile");
+    terminal = window.createTerminal("SourcePawn compile");
   } else {
     let found: boolean = false;
     for (let terminal_elt of terminals) {
@@ -59,7 +65,7 @@ export async function run(args: any) {
       }
     }
     if (!found) {
-      terminal = vscode.window.createTerminal("SourcePawn compile");
+      terminal = window.createTerminal("SourcePawn compile");
     }
   }
   terminal.show();
@@ -67,32 +73,30 @@ export async function run(args: any) {
   // Create plugins folder if it doesn't exist.
   let pluginsFolderPath: string;
   if (scriptingPath.endsWith("scripting")) {
-    pluginsFolderPath = path.join(scriptingPath, "../", "plugins/");
+    pluginsFolderPath = join(scriptingPath, "../", "plugins/");
   } else {
-    pluginsFolderPath = path.join(scriptingPath, "compiled/");
+    pluginsFolderPath = join(scriptingPath, "compiled/");
   }
   let outputDir: string =
-    vscode.workspace
-      .getConfiguration("sourcepawn")
-      .get("outputDirectoryPath") || "";
+    Workspace.getConfiguration("sourcepawn").get("outputDirectoryPath") || "";
   if (outputDir == "") {
     outputDir = pluginsFolderPath;
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir);
+    if (!existsSync(outputDir)) {
+      mkdirSync(outputDir);
     }
   } else {
-    if (!fs.existsSync(outputDir)) {
-      let workspaceFolder = vscode.workspace.workspaceFolders[0];
-      outputDir = path.join(workspaceFolder.uri.fsPath, outputDir);
-      if (!fs.existsSync(outputDir)) {
-        vscode.window
+    if (!existsSync(outputDir)) {
+      let workspaceFolder = Workspace.workspaceFolders[0];
+      outputDir = join(workspaceFolder.uri.fsPath, outputDir);
+      if (!existsSync(outputDir)) {
+        window
           .showErrorMessage(
             "The output directory does not exist.",
             "Open Settings"
           )
           .then((choice) => {
             if (choice === "Open Settings") {
-              vscode.commands.executeCommand(
+              commands.executeCommand(
                 "workbench.action.openSettings",
                 "@ext:sarrus.sourcepawn-vscode"
               );
@@ -103,7 +107,7 @@ export async function run(args: any) {
     }
   }
   outputDir += activeDocumentName;
-  let command = (os.platform() == "win32" ? "." : "").concat(
+  let command = (platform() == "win32" ? "." : "").concat(
     // Compiler path
     "'" + spcomp + "'",
 
@@ -117,26 +121,26 @@ export async function run(args: any) {
 
     // Set the path for sm_home
     " -i=" + "'",
-    vscode.workspace.getConfiguration("sourcepawn").get("SourcemodHome") || "",
+    Workspace.getConfiguration("sourcepawn").get("SourcemodHome") || "",
     "'",
     " -i=" + "'",
-    path.join(scriptingPath, "include") || "",
+    join(scriptingPath, "include") || "",
     "'",
     " -i=" + "'",
     scriptingPath,
     "'"
   );
-  let compilerOptions: string[] = vscode.workspace
-    .getConfiguration("sourcepawn")
-    .get("compilerOptions");
+  let compilerOptions: string[] = Workspace.getConfiguration("sourcepawn").get(
+    "compilerOptions"
+  );
   // Add a space at the beginning of every element, for security.
   for (let i = 0; i < compilerOptions.length; i++) {
     command += " " + compilerOptions[i];
   }
 
-  let includes_dirs: string[] = vscode.workspace
-    .getConfiguration("sourcepawn")
-    .get("optionalIncludeDirsPaths");
+  let includes_dirs: string[] = Workspace.getConfiguration("sourcepawn").get(
+    "optionalIncludeDirsPaths"
+  );
   // Add the optional includes folders.
   for (let includes_dir of includes_dirs) {
     if (includes_dir != "") {
@@ -147,11 +151,11 @@ export async function run(args: any) {
   try {
     terminal.sendText(command);
     if (
-      vscode.workspace
-        .getConfiguration("sourcepawn")
-        .get("refreshAfterSuccessfulUpload")
+      Workspace.getConfiguration("sourcepawn").get(
+        "refreshAfterSuccessfulUpload"
+      )
     ) {
-      await vscode.commands.executeCommand("sourcepawn-vscode.uploadToServer");
+      await commands.executeCommand("sourcepawn-uploadToServer");
     }
   } catch (error) {
     console.log(error);

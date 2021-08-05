@@ -1,8 +1,8 @@
-﻿import * as vscode from "vscode";
+﻿import { TextDocument, Range, Position } from "vscode";
 
 export function GetLastFuncName(
   lineNB: number,
-  document: vscode.TextDocument
+  document: TextDocument
 ): string {
   let re = /(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/;
   let text = document.getText().split("\n");
@@ -30,25 +30,25 @@ export function GetLastFuncName(
 }
 
 export function isFunction(
-	range: vscode.Range,
-	document: vscode.TextDocument,
-	lineLength: number
+  range: Range,
+  document: TextDocument,
+  lineLength: number
 ): boolean {
-	let start = new vscode.Position(range.start.line, range.end.character);
-	let end = new vscode.Position(range.end.line, lineLength + 1);
-	let rangeAfter = new vscode.Range(start, end);
-	let wordsAfter: string = document.getText(rangeAfter);
-	return /^\s*\(/.test(wordsAfter);
+  let start = new Position(range.start.line, range.end.character);
+  let end = new Position(range.end.line, lineLength + 1);
+  let rangeAfter = new Range(start, end);
+  let wordsAfter: string = document.getText(rangeAfter);
+  return /^\s*\(/.test(wordsAfter);
 }
 
 export function isControlStatement(line: string): boolean {
   let toCheck: RegExp[] = [
     /\s*\bif\b/,
-		/\s*\bfor\b/,
+    /\s*\bfor\b/,
     /\s*\bwhile\b/,
     /\s*\bcase\b/,
     /\s*\bswitch\b/,
-		/\s*\breturn\b/
+    /\s*\breturn\b/,
   ];
   for (let re of toCheck) {
     if (re.test(line)) {

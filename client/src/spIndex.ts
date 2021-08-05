@@ -11,14 +11,12 @@ import { SP_MODE } from "./spMode";
 import { Providers } from "./Providers/spProviders";
 import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./spFormat";
-import { basename, extname, resolve } from "path";
+import { basename, extname } from "path";
 import { URI } from "vscode-uri";
-import { readFileSync } from "fs";
 
 let getDirectories = function (src, ext, callback) {
   glob(src + "/**/*", callback);
 };
-
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
@@ -61,7 +59,7 @@ export function activate(context: ExtensionContext) {
       providers.completionsProvider,
       "<",
       '"',
-			'\'',
+      "'",
       "/",
       "\\"
     )

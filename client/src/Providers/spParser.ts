@@ -1,4 +1,4 @@
-import * as spCompletions from "./spCompletions";
+import { FileCompletions, } from "./spCompletions";
 import {
   FunctionCompletion,
   DefineCompletion,
@@ -12,19 +12,19 @@ import {
   EnumStructMemberCompletion,
 } from "./spCompletionsKinds";
 import { isControlStatement } from "./spDefinitions";
-import * as vscode from "vscode";
+import { Range } from "vscode";
 import { URI } from "vscode-uri";
-import * as fs from "fs";
+import { existsSync, readFileSync } from "fs";
 import { basename } from "path";
 
 export function parse_file(
   file: string,
-  completions: spCompletions.FileCompletions,
+  completions: FileCompletions,
   documents: Map<string, string>,
   IsBuiltIn: boolean = false
 ) {
-	if(!fs.existsSync(file)) return;
-  let data = fs.readFileSync(file, "utf-8");
+	if(!existsSync(file)) return;
+  let data = readFileSync(file, "utf-8");
   parse_text(
     data,
     file,
@@ -37,7 +37,7 @@ export function parse_file(
 export function parse_text(
   data: string,
   file: string,
-  completions: spCompletions.FileCompletions,
+  completions: FileCompletions,
   documents: Map<string, string>,
   IsBuiltIn: boolean = false
 ) {
@@ -65,7 +65,7 @@ enum State {
 }
 
 class Parser {
-  completions: spCompletions.FileCompletions;
+  completions: FileCompletions;
   state: State[];
   scratch: any;
   state_data: any;
@@ -81,7 +81,7 @@ class Parser {
     lines: string[],
     file: string,
     IsBuiltIn: boolean,
-    completions: spCompletions.FileCompletions,
+    completions: FileCompletions,
     documents: Map<string, string>
   ) {
     this.completions = completions;
@@ -621,7 +621,7 @@ class Parser {
     name: string,
     line: string,
     search: boolean = true,
-  ): vscode.Range {
+  ): Range {
     let start: number = search ? line.search(name) : 0;
     let end: number = search ? start + name.length : 0;
 		var range = PositiveRange(this.lineNb, start, end);
@@ -650,11 +650,11 @@ function PositiveRange(
   lineNb: number,
   start: number = 0,
   end: number = 0
-): vscode.Range {
+): Range {
   lineNb = lineNb > 0 ? lineNb : 0;
 	start = start > 0 ? start : 0;
 	end = end > 0 ? end : 0;
-  return new vscode.Range(lineNb, start, lineNb, end);
+  return new Range(lineNb, start, lineNb, end);
 }
 
 function IsIncludeSelfFile(file: string, include: string): boolean {

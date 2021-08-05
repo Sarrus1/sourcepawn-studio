@@ -1,9 +1,24 @@
-import * as vscode from "vscode";
+import {
+  CompletionItem,
+  workspace as Workspace,
+  CompletionItemProvider,
+  Memento,
+  Disposable,
+  TextDocument,
+  Position,
+  CancellationToken,
+  CompletionList,
+  CompletionItemKind,
+	WorkspaceFolder,
+	Hover,
+	SignatureHelp,
+	Location,
+	DefinitionLink
+} from "vscode";
 import { basename, join } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 import { Completion, Include } from "./spCompletionsKinds";
-import { CompletionItem } from "vscode";
 import { events } from "../Misc/sourceEvents";
 import { GetLastFuncName, isFunction } from "./spDefinitions";
 
@@ -34,7 +49,7 @@ export class FileCompletions {
     return completions;
   }
 
-  to_completion_resolve(item: vscode.CompletionItem): vscode.CompletionItem {
+  to_completion_resolve(item: CompletionItem): CompletionItem {
     item.label = item.label;
     item.documentation = item.documentation;
     return item;
@@ -59,7 +74,7 @@ export class FileCompletions {
     if (match) file = match[1];
     let uri: string;
     if (!(uri = documents.get(basename(file)))) {
-      let includes_dirs: string[] = vscode.workspace
+      let includes_dirs: string[] = Workspace
         .getConfiguration("sourcepawn")
         .get("optionalIncludeDirsPaths");
       for (let includes_dir of includes_dirs) {
@@ -77,48 +92,50 @@ export class FileCompletions {
 }
 
 export class CompletionRepository
-  implements vscode.CompletionItemProvider, vscode.Disposable {
+  implements CompletionItemProvider, Disposable {
   public completions: Map<string, FileCompletions>;
   public documents: Map<string, string>;
-  private globalState: vscode.Memento;
+  private globalState: Memento;
 
-  constructor(globalState?: vscode.Memento) {
+  constructor(globalState?: Memento) {
     this.completions = new Map();
     this.documents = new Map();
     this.globalState = globalState;
   }
 
   public provideCompletionItems(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    token: vscode.CancellationToken
-  ): vscode.CompletionList {
+    document: TextDocument,
+    position: Position,
+    token: CancellationToken
+  ): CompletionList {
     const text = document
       .lineAt(position.line)
       .text.substr(0, position.character);
     let match = text.match(/^\s*#\s*include\s*(<[^>]*|"[^"]*)$/);
     if (match) {
-			return this.getIncludeCompletions(document, match[1]);
+      return this.getIncludeCompletions(document, match[1]);
     }
-		match = text.match(/^\s*(?:HookEvent|HookEventEx)\s*\(\s*(\"[^\"]*|\'[^\']*)$/);
-		if (match) {
+    match = text.match(
+      /^\s*(?:HookEvent|HookEventEx)\s*\(\s*(\"[^\"]*|\'[^\']*)$/
+    );
+    if (match) {
       return this.getEventCompletions();
     }
-		if(["\"", "'"].includes(text[text.length-1])) return undefined;
-		return this.get_completions(document, position);
+    if (['"', "'"].includes(text[text.length - 1])) return undefined;
+    return this.get_completions(document, position);
   }
 
   public dispose() {}
 
-	getEventCompletions():vscode.CompletionList {
-		return new vscode.CompletionList(events);
-	}
+  getEventCompletions(): CompletionList {
+    return new CompletionList(events);
+  }
 
   getIncludeCompletions(
-    document: vscode.TextDocument,
+    document: TextDocument,
     tempName: string
-  ): vscode.CompletionList {
-		let isQuoteInclude:boolean = tempName.includes('"');
+  ): CompletionList {
+    let isQuoteInclude: boolean = tempName.includes('"');
     tempName = tempName.replace("<", "").replace('"', "");
     let match = tempName.match(/([^\/]+\/)+/);
     tempName = match ? match[0] : "";
@@ -127,7 +144,7 @@ export class CompletionRepository
     scriptingDirname =
       scriptingDirname.replace(basename(document.uri.fsPath), "") + "include/";
     let scriptingDirnames: string[] = [scriptingDirname];
-    let includes_dirs: string[] = vscode.workspace
+    let includes_dirs: string[] = Workspace
       .getConfiguration("sourcepawn")
       .get("optionalIncludeDirsPaths");
     scriptingDirnames = scriptingDirnames.concat(includes_dirs);
@@ -140,7 +157,7 @@ export class CompletionRepository
         if (match[0] != "") {
           let item = {
             label: match[0].replace("/", ""),
-            kind: vscode.CompletionItemKind.Folder,
+            kind: CompletionItemKind.Folder,
             detail: "Sourcemod BuiltIn",
           };
           if (itemsNames.indexOf(match[0]) == -1) {
@@ -148,11 +165,11 @@ export class CompletionRepository
             itemsNames.push(match[0]);
           }
         } else {
-					let insertText = cleanedUri.replace(".inc", "");
-					insertText += isQuoteInclude? "":">";
+          let insertText = cleanedUri.replace(".inc", "");
+          insertText += isQuoteInclude ? "" : ">";
           let item = {
             label: cleanedUri,
-            kind: vscode.CompletionItemKind.File,
+            kind: CompletionItemKind.File,
             detail: "Sourcemod BuiltIn",
             insertText: insertText,
           };
@@ -169,7 +186,7 @@ export class CompletionRepository
             if (match[0] != "") {
               let item = {
                 label: match[0].replace("/", ""),
-                kind: vscode.CompletionItemKind.Folder,
+                kind: CompletionItemKind.Folder,
                 detail: URI.parse(uri).fsPath,
               };
               if (itemsNames.indexOf(match[0]) == -1) {
@@ -177,11 +194,11 @@ export class CompletionRepository
                 itemsNames.push(match[0]);
               }
             } else {
-							let insertText = cleanedUri.replace(".inc", "");
-							insertText += isQuoteInclude? "":">";
+              let insertText = cleanedUri.replace(".inc", "");
+              insertText += isQuoteInclude ? "" : ">";
               let item = {
                 label: cleanedUri,
-                kind: vscode.CompletionItemKind.File,
+                kind: CompletionItemKind.File,
                 detail: URI.parse(uri).fsPath,
                 insertText: insertText,
               };
@@ -195,13 +212,13 @@ export class CompletionRepository
       }
     }
 
-    return new vscode.CompletionList(items);
+    return new CompletionList(items);
   }
 
   get_completions(
-    document: vscode.TextDocument,
-    position: vscode.Position
-  ): vscode.CompletionList {
+    document: TextDocument,
+    position: Position
+  ): CompletionList {
     let is_method = false;
     if (document) {
       let line = document.getText().split("\n")[position.line].trim();
@@ -220,9 +237,9 @@ export class CompletionRepository
     let all_completions: Completion[] = this.get_all_completions(
       document.uri.toString()
     );
-    let all_completions_list: vscode.CompletionList = new vscode.CompletionList();
+    let all_completions_list: CompletionList = new CompletionList();
     if (all_completions != []) {
-			let lastFunc: string = GetLastFuncName(position.line, document);
+      let lastFunc: string = GetLastFuncName(position.line, document);
       all_completions_list.items = all_completions.map((completion) => {
         if (completion) {
           if (completion.to_completion_item) {
@@ -234,16 +251,16 @@ export class CompletionRepository
     if (is_method) {
       all_completions_list.items = all_completions_list.items.filter(
         (completion) =>
-          completion.kind === vscode.CompletionItemKind.Method ||
-          completion.kind === vscode.CompletionItemKind.Property
+          completion.kind === CompletionItemKind.Method ||
+          completion.kind === CompletionItemKind.Property
       );
       return all_completions_list;
     } else {
       all_completions_list.items = all_completions_list.items.filter(
         (completion) =>
           !(
-            completion.kind === vscode.CompletionItemKind.Method ||
-            completion.kind === vscode.CompletionItemKind.Property
+            completion.kind === CompletionItemKind.Method ||
+            completion.kind === CompletionItemKind.Property
           )
       );
       return all_completions_list;
@@ -258,11 +275,11 @@ export class CompletionRepository
     }
     includes.add(file);
     let MainPath: string =
-      vscode.workspace.getConfiguration("sourcepawn").get("MainPath") || "";
+      Workspace.getConfiguration("sourcepawn").get("MainPath") || "";
     if (MainPath != "") {
       if (!existsSync(MainPath)) {
-        let workspace: vscode.WorkspaceFolder =
-          vscode.workspace.workspaceFolders[0];
+        let workspace: WorkspaceFolder =
+          Workspace.workspaceFolders[0];
         MainPath = join(workspace.uri.fsPath, MainPath);
         if (!existsSync(MainPath)) {
           throw "MainPath is incorrect.";
@@ -309,10 +326,10 @@ export class CompletionRepository
   }
 
   provideHover(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    token: vscode.CancellationToken
-  ): vscode.Hover {
+    document: TextDocument,
+    position: Position,
+    token: CancellationToken
+  ): Hover {
     let range = document.getWordRangeAtPosition(position);
     let word = document.getText(range);
     let completions = this.get_all_completions(document.uri.toString()).filter(
@@ -327,10 +344,10 @@ export class CompletionRepository
   }
 
   provideSignatureHelp(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    token: vscode.CancellationToken
-  ): vscode.SignatureHelp {
+    document: TextDocument,
+    position: Position,
+    token: CancellationToken
+  ): SignatureHelp {
     if (document) {
       let { method, parameter_count } = (() => {
         let line = document.getText().split("\n")[position.line];
@@ -385,14 +402,14 @@ export class CompletionRepository
     };
   }
 
-	public provideDefinition(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    token: vscode.CancellationToken
-  ): vscode.Location | vscode.DefinitionLink[] {
+  public provideDefinition(
+    document: TextDocument,
+    position: Position,
+    token: CancellationToken
+  ): Location | DefinitionLink[] {
     let range = document.getWordRangeAtPosition(position);
     let word: string = document.getText(range);
-		let definitions = this.get_all_completions(document.uri.toString()).filter(
+    let definitions = this.get_all_completions(document.uri.toString()).filter(
       (completion) => {
         return completion.name === word;
       }
@@ -402,20 +419,20 @@ export class CompletionRepository
       document,
       document.getText().split("\n")[position.line].length
     );
-		let definition = undefined;
+    let definition = undefined;
     if (bIsFunction) {
-			definition = definitions.find((def)=> def.kind === vscode.CompletionItemKind.Function);
-      if (
-        typeof definition !== "undefined"
-      ) {
+      definition = definitions.find(
+        (def) => def.kind === CompletionItemKind.Function
+      );
+      if (typeof definition !== "undefined") {
         return definition.toDefinitionItem();
       }
     }
-		let lastFuncName: string = GetLastFuncName(position.line, document);
-		definition = definitions.find((def) => def.scope === lastFuncName);
+    let lastFuncName: string = GetLastFuncName(position.line, document);
+    definition = definitions.find((def) => def.scope === lastFuncName);
     if (typeof definition !== "undefined") {
       return definition.toDefinitionItem();
     }
-		return definitions[0].toDefinitionItem();
+    return definitions[0].toDefinitionItem();
   }
 }
