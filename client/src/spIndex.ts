@@ -76,7 +76,8 @@ export function activate(context: ExtensionContext) {
       SP_MODE,
       providers.completionsProvider,
       "(",
-      ","
+      ",",
+      "\n"
     )
   );
 

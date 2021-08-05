@@ -9,7 +9,9 @@ export function getSignatureAttributes(
   document: TextDocument,
   position: Position
 ): SignatureAttributes {
-  let line = document.getText().split("\n")[position.line];
+  let lineNB: number = position.line;
+  let lines = document.getText().split("\n");
+  let line = lines[lineNB];
 
   let blankReturn = { functionName: undefined, parameterCount: 0 };
 
@@ -21,14 +23,22 @@ export function getSignatureAttributes(
   let functionName: string = "";
   let parameterCount: number = 0;
 
-  // Get first parenthesis
   let i: number = position.character - 1;
   let parenthesisCount: number = 0;
   let char: string;
   while (parenthesisCount < 1) {
     char = line[i];
     if (i < 0) {
-      return blankReturn;
+      // If we didn't find an opening parenthesis, go to the preceding line
+      // if it exists.
+      if (lineNB >= 0) {
+        lineNB--;
+        line = lines[lineNB];
+        i = line.length;
+        continue;
+      } else {
+        return blankReturn;
+      }
     }
     if (char === "(") {
       parenthesisCount++;

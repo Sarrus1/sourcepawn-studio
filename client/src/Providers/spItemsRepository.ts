@@ -342,25 +342,21 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       activeSignature: 0,
       activeParameter: 0,
     };
-    if (document) {
-      let { functionName, parameterCount } = getSignatureAttributes(
-        document,
-        position
-      );
-      if (typeof functionName === "undefined") {
-        return blankReturn;
-      }
-      let completions = this.getAllItems(document.uri.toString()).find(
-        (completion) => completion.name === functionName
-      );
-      return {
-        signatures: [completions.toSignature()],
-        activeParameter: parameterCount,
-        activeSignature: 0,
-      };
+    let { functionName, parameterCount } = getSignatureAttributes(
+      document,
+      position
+    );
+    if (typeof functionName === "undefined") {
+      return blankReturn;
     }
-
-    return blankReturn;
+    let completions = this.getAllItems(document.uri.toString()).find(
+      (completion) => completion.name === functionName
+    );
+    return {
+      signatures: [completions.toSignature()],
+      activeParameter: parameterCount,
+      activeSignature: 0,
+    };
   }
 
   public provideDefinition(
