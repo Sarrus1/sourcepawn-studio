@@ -11,6 +11,7 @@ import {
   EnumStructCompletion,
   EnumStructMemberCompletion,
 } from "./spCompletionsKinds";
+import { isControlStatement } from "./spDefinitions";
 import * as vscode from "vscode";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
@@ -215,12 +216,9 @@ class Parser {
       /(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
     );
     if (match) {
-      let testWords = ["if", "else", "for", "while", "function", "return"];
-      for (let word of testWords) {
-        let regExp = new RegExp(`\\b${word}\\b`);
-        if (regExp.test(match[1]) || regExp.test(match[2])) return;
+      if(isControlStatement(line)){
+				return;
       }
-
       let isOldStyle: boolean = match[2] == "";
       this.read_function(line, isOldStyle);
     }

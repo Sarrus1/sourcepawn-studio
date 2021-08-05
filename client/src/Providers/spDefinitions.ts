@@ -1,15 +1,5 @@
 ﻿import * as vscode from "vscode";
 
-export function isLocalFileVariable(
-	document: vscode.TextDocument,
-	definition
-) {
-	if (definition.kind === vscode.CompletionItemKind.Variable) {
-		return document.uri.fsPath == definition.uri.fsPath;
-	}
-	return true;
-}
-
 export function GetLastFuncName(
   lineNB: number,
   document: vscode.TextDocument
@@ -30,7 +20,7 @@ export function GetLastFuncName(
           /^\s*(?:(?:forward|static|native)\s+)+(?:(\w*)\s+)?(\w*)\s*\(([^]*)(?:,|;)\s*$/
         );
       }
-      if (match && CheckIfControlStatement(line)) break;
+      if (match && !isControlStatement(line)) break;
     }
   }
   if (lineNB == 0) return undefined;
@@ -51,7 +41,7 @@ export function isFunction(
 	return /^\s*\(/.test(wordsAfter);
 }
 
-function CheckIfControlStatement(line: string): boolean {
+export function isControlStatement(line: string): boolean {
   let toCheck: RegExp[] = [
     /\s*\bif\b/,
 		/\s*\bfor\b/,
@@ -62,8 +52,8 @@ function CheckIfControlStatement(line: string): boolean {
   ];
   for (let re of toCheck) {
     if (re.test(line)) {
-      return false;
+      return true;
     }
   }
-  return true;
+  return false;
 }

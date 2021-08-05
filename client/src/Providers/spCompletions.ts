@@ -5,7 +5,7 @@ import { URI } from "vscode-uri";
 import { Completion, Include } from "./spCompletionsKinds";
 import { CompletionItem } from "vscode";
 import { events } from "../Misc/sourceEvents";
-import { GetLastFuncName, isFunction, isLocalFileVariable } from "./spDefinitions";
+import { GetLastFuncName, isFunction } from "./spDefinitions";
 
 export class FileCompletions {
   completions: Map<string, Completion>;
@@ -404,20 +404,16 @@ export class CompletionRepository
     );
 		let definition = undefined;
     if (bIsFunction) {
-			definition = definitions[0];
+			definition = definitions.find((def)=> def.kind === vscode.CompletionItemKind.Function);
       if (
-        typeof definition !== "undefined" &&
-        isLocalFileVariable(document, definition)
+        typeof definition !== "undefined"
       ) {
         return definition.toDefinitionItem();
       }
     }
 		let lastFuncName: string = GetLastFuncName(position.line, document);
-		definition = definitions.filter((def) => def.scope===lastFuncName)[0];
-    if (
-      typeof definition != "undefined" &&
-      isLocalFileVariable(document, definition)
-    ) {
+		definition = definitions.find((def) => def.scope === lastFuncName);
+    if (typeof definition !== "undefined") {
       return definition.toDefinitionItem();
     }
 		return definitions[0].toDefinitionItem();
