@@ -24,8 +24,7 @@ export function getSignatureAttributes(
   // Get first parenthesis
   let i: number = position.character - 1;
   let parenthesisCount: number = 0;
-  let quoteCount: number = 0;
-  let char: string = "";
+  let char: string;
   while (parenthesisCount < 1) {
     char = line[i];
     if (i < 0) {
@@ -35,7 +34,7 @@ export function getSignatureAttributes(
       parenthesisCount++;
     } else if (char === ")") {
       parenthesisCount--;
-    } else if (char === ",") {
+    } else if (char === "," && !isInAStringOrArray(line, i)) {
       parameterCount++;
     }
     i--;
@@ -47,4 +46,30 @@ export function getSignatureAttributes(
     return { functionName, parameterCount };
   }
   return blankReturn;
+}
+
+// TODO: Handle escaped quotation marks
+function isInAStringOrArray(line: string, position: number): boolean {
+  let doubleQuoteCount: number = 0;
+  let singleQuoteCount: number = 0;
+  let bracketCount: number = 0;
+  let char: string;
+  while (position >= 0) {
+    char = line[position];
+    if (char === '"') {
+      doubleQuoteCount++;
+    } else if (char === "'") {
+      singleQuoteCount++;
+    } else if (char === "{") {
+      bracketCount++;
+    } else if (char === "}") {
+      bracketCount--;
+    }
+    position--;
+  }
+  return (
+    singleQuoteCount % 2 === 1 ||
+    doubleQuoteCount % 2 === 1 ||
+    bracketCount !== 0
+  );
 }
