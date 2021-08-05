@@ -16,6 +16,7 @@
 - Made `#include`, `#pragma`, etc statements highlighting closer to C/C++ highlighting.
 - Fixed an issue for include files not inside an `include` folder.
 - Fixed an error where function signatures would get confused if a `,` was in a string or an array.
+- Fixed unprompted autocompletion when typing misc characters like `\` or `"`.
 
 ## [1.12.7]
 

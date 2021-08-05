@@ -121,7 +121,8 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     if (match) {
       return this.getEventCompletions();
     }
-    if (['"', "'"].includes(text[text.length - 1])) return undefined;
+    if (['"', "'", "<", "/", "\\"].includes(text[text.length - 1]))
+      return undefined;
     return this.getCompletions(document, position);
   }
 
