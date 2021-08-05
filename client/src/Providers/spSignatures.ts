@@ -48,22 +48,34 @@ export function getSignatureAttributes(
   return blankReturn;
 }
 
-// TODO: Handle escaped quotation marks
 function isInAStringOrArray(line: string, position: number): boolean {
   let doubleQuoteCount: number = 0;
+  let foundDoubleQuote: boolean = false;
   let singleQuoteCount: number = 0;
+  let foundSingleQuote: boolean = false;
   let bracketCount: number = 0;
   let char: string;
+
   while (position >= 0) {
     char = line[position];
     if (char === '"') {
+      foundDoubleQuote = true;
       doubleQuoteCount++;
     } else if (char === "'") {
+      foundSingleQuote = true;
       singleQuoteCount++;
     } else if (char === "{") {
       bracketCount++;
     } else if (char === "}") {
       bracketCount--;
+    } else if (char === "\\") {
+      if (foundDoubleQuote) {
+        foundDoubleQuote = false;
+        doubleQuoteCount--;
+      } else if (foundSingleQuote) {
+        foundSingleQuote = false;
+        singleQuoteCount--;
+      }
     }
     position--;
   }
