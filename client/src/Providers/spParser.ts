@@ -13,11 +13,10 @@ import {
 } from "./spCompletions";
 import { isControlStatement } from "./spDefinitions";
 import { Range } from "vscode";
-import { URI } from "vscode-uri";
 import { existsSync, readFileSync } from "fs";
 import { basename } from "path";
 
-export function parse_file(
+export function parseFile(
   file: string,
   completions: FileItems,
   documents: Map<string, string>,
@@ -25,10 +24,10 @@ export function parse_file(
 ) {
   if (!existsSync(file)) return;
   let data = readFileSync(file, "utf-8");
-  parse_text(data, file, completions, documents, IsBuiltIn);
+  parseText(data, file, completions, documents, IsBuiltIn);
 }
 
-export function parse_text(
+export function parseText(
   data: string,
   file: string,
   completions: FileItems,
@@ -73,7 +72,6 @@ class Parser {
     documents: Map<string, string>
   ) {
     this.completions = completions;
-    let uri = URI.file(file).toString();
     this.state = [State.None];
     this.lineNb = -1;
     this.lines = lines;

@@ -15,7 +15,7 @@ import { existsSync } from "fs";
 import { ItemsRepository, FileItems } from "./spItemsRepository";
 import { Include } from "./spCompletions";
 import { JsDocCompletionProvider } from "./spDocCompletions";
-import { parse_text, parse_file } from "./spParser";
+import { parseText, parseFile } from "./spParser";
 
 export class Providers {
   completionsProvider: ItemsRepository;
@@ -29,13 +29,13 @@ export class Providers {
     this.documentationProvider = new JsDocCompletionProvider();
   }
 
-  public handle_added_document(event: FileCreateEvent) {
+  public handleAddedDocument(event: FileCreateEvent) {
     for (let file of event.files) {
       this.newDocumentCallback(URI.file(file.fsPath));
     }
   }
 
-  public handle_document_change(event: TextDocumentChangeEvent) {
+  public handleDocumentChange(event: TextDocumentChangeEvent) {
     let this_completions: FileItems = new FileItems(
       event.document.uri.toString()
     );
@@ -48,7 +48,7 @@ export class Providers {
     file_path = file_path.replace(".git", "");
     // We use parse_text here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
     try {
-      parse_text(
+      parseText(
         event.document.getText(),
         file_path,
         this_completions,
@@ -57,14 +57,14 @@ export class Providers {
     } catch (error) {
       console.log(error);
     }
-    this.read_unscanned_imports(this_completions.includes);
+    this.readUnscannedImports(this_completions.includes);
     this.completionsProvider.completions.set(
       event.document.uri.toString(),
       this_completions
     );
   }
 
-  public handle_new_document(document: TextDocument) {
+  public handleNewDocument(document: TextDocument) {
     this.newDocumentCallback(document.uri);
   }
 
@@ -77,7 +77,7 @@ export class Providers {
     if (file_path.includes(".git")) return;
     this.completionsProvider.documents.set(basename(file_path), uri.toString());
     try {
-      parse_file(
+      parseFile(
         file_path,
         this_completions,
         this.completionsProvider.documents
@@ -86,7 +86,7 @@ export class Providers {
       console.log(error);
     }
 
-    this.read_unscanned_imports(this_completions.includes);
+    this.readUnscannedImports(this_completions.includes);
     this.completionsProvider.completions.set(uri.toString(), this_completions);
   }
 
@@ -96,16 +96,16 @@ export class Providers {
     // Some file paths are appened with .git
     path = path.replace(".git", "");
     try {
-      parse_file(path, this_completions, this.completionsProvider.documents);
+      parseFile(path, this_completions, this.completionsProvider.documents);
     } catch (error) {
       console.log(error);
     }
 
-    this.read_unscanned_imports(this_completions.includes);
+    this.readUnscannedImports(this_completions.includes);
     this.completionsProvider.completions.set(uri, this_completions);
   }
 
-  public read_unscanned_imports(includes: Include[]) {
+  public readUnscannedImports(includes: Include[]) {
     let debugSetting = Workspace.getConfiguration("sourcepawn").get(
       "trace.server"
     );
@@ -120,7 +120,7 @@ export class Providers {
           if (debug) console.log("found", include.uri.toString());
           let new_completions: FileItems = new FileItems(include.uri);
           try {
-            parse_file(
+            parseFile(
               file,
               new_completions,
               this.completionsProvider.documents,
@@ -135,13 +135,13 @@ export class Providers {
             new_completions
           );
           if (debug) console.log("added", include.uri.toString());
-          this.read_unscanned_imports(new_completions.includes);
+          this.readUnscannedImports(new_completions.includes);
         }
       }
     }
   }
 
-  public parse_sm_api(): void {
+  public parseSMApi(): void {
     let sm_home: string =
       Workspace.getConfiguration("sourcepawn").get("SourcemodHome") || "";
     if (sm_home == "") {
@@ -167,7 +167,7 @@ export class Providers {
     for (let file of files) {
       try {
         let completions = new FileItems(URI.file(file).toString());
-        parse_file(file, completions, this.completionsProvider.documents, true);
+        parseFile(file, completions, this.completionsProvider.documents, true);
 
         let uri = "file://__sourcemod_builtin/" + relative(sm_home, file);
         this.completionsProvider.completions.set(uri, completions);

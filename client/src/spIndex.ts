@@ -22,7 +22,7 @@ export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
   let formatter = new SMDocumentFormattingEditProvider();
   let workspace: WorkspaceFolder;
-  providers.parse_sm_api();
+  providers.parseSMApi();
   let workspaceFolders = Workspace.workspaceFolders;
   if (typeof workspaceFolders == "undefined") {
     window.showWarningMessage(
@@ -92,17 +92,17 @@ export function activate(context: ExtensionContext) {
   );
 
   Workspace.onDidChangeTextDocument(
-    providers.handle_document_change,
+    providers.handleDocumentChange,
     providers,
     context.subscriptions
   );
   Workspace.onDidOpenTextDocument(
-    providers.handle_new_document,
+    providers.handleNewDocument,
     providers,
     context.subscriptions
   );
   Workspace.onDidCreateFiles(
-    providers.handle_added_document,
+    providers.handleAddedDocument,
     providers,
     context.subscriptions
   );

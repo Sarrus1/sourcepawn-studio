@@ -121,7 +121,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       return this.getEventCompletions();
     }
     if (['"', "'"].includes(text[text.length - 1])) return undefined;
-    return this.get_completions(document, position);
+    return this.getCompletions(document, position);
   }
 
   public dispose() {}
@@ -214,7 +214,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     return new CompletionList(items);
   }
 
-  get_completions(document: TextDocument, position: Position): CompletionList {
+  getCompletions(document: TextDocument, position: Position): CompletionList {
     let is_method = false;
     if (document) {
       let line = document.getText().split("\n")[position.line].trim();
@@ -230,9 +230,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
         break;
       }
     }
-    let all_completions: SPItem[] = this.get_all_completions(
-      document.uri.toString()
-    );
+    let all_completions: SPItem[] = this.getAllItems(document.uri.toString());
     let all_completions_list: CompletionList = new CompletionList();
     if (all_completions != []) {
       let lastFunc: string = GetLastFuncName(position.line, document);
@@ -263,11 +261,11 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     }
   }
 
-  get_all_completions(file: string): SPItem[] {
+  getAllItems(file: string): SPItem[] {
     let completion = this.completions.get(file);
     let includes = new Set<string>();
     if (completion) {
-      this.get_included_files(completion, includes);
+      this.getIncludedFiles(completion, includes);
     }
     includes.add(file);
     let MainPath: string =
@@ -282,7 +280,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       }
       let MainCompletion = this.completions.get(URI.file(MainPath).toString());
       if (MainCompletion) {
-        this.get_included_files(MainCompletion, includes);
+        this.getIncludedFiles(MainCompletion, includes);
       }
       let uri = URI.file(MainPath).toString();
       if (!includes.has(uri)) {
@@ -291,7 +289,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     }
     return [...includes]
       .map((file) => {
-        return this.get_file_completions(file);
+        return this.getFileItems(file);
       })
       .reduce(
         (completion, file_completions) => completion.concat(file_completions),
@@ -299,7 +297,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       );
   }
 
-  get_file_completions(file: string): SPItem[] {
+  getFileItems(file: string): SPItem[] {
     let file_completions: FileItems = this.completions.get(file);
     let completion_list: SPItem[] = [];
     if (file_completions) {
@@ -308,13 +306,13 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     return completion_list;
   }
 
-  get_included_files(completions: FileItems, files: Set<string>) {
+  getIncludedFiles(completions: FileItems, files: Set<string>) {
     for (let include of completions.includes) {
       if (!files.has(include.uri)) {
         files.add(include.uri);
         let include_completions = this.completions.get(include.uri);
         if (include_completions) {
-          this.get_included_files(include_completions, files);
+          this.getIncludedFiles(include_completions, files);
         }
       }
     }
@@ -327,15 +325,10 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
   ): Hover {
     let range = document.getWordRangeAtPosition(position);
     let word = document.getText(range);
-    let completions = this.get_all_completions(document.uri.toString()).filter(
-      (completion) => {
-        return completion.name === word;
-      }
+    let item = this.getAllItems(document.uri.toString()).find(
+      (item) => item.name === word
     );
-
-    if (completions.length > 0) {
-      return completions[0].toHover();
-    }
+    return item.toHover();
   }
 
   provideSignatureHelp(
@@ -375,11 +368,11 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
         return { method, parameter_count };
       })();
 
-      let completions = this.get_all_completions(
-        document.uri.toString()
-      ).filter((completion) => {
-        return completion.name === method;
-      });
+      let completions = this.getAllItems(document.uri.toString()).filter(
+        (completion) => {
+          return completion.name === method;
+        }
+      );
 
       if (completions.length > 0) {
         return {
@@ -404,7 +397,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
   ): Location | DefinitionLink[] {
     let range = document.getWordRangeAtPosition(position);
     let word: string = document.getText(range);
-    let definitions = this.get_all_completions(document.uri.toString()).filter(
+    let definitions = this.getAllItems(document.uri.toString()).filter(
       (completion) => {
         return completion.name === word;
       }
