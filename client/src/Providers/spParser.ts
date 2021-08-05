@@ -1,4 +1,4 @@
-import { FileCompletions, } from "./spCompletions";
+import { FileItems } from "./spItemsRepository";
 import {
   FunctionCompletion,
   DefineCompletion,
@@ -10,7 +10,7 @@ import {
   PropertyCompletion,
   EnumStructCompletion,
   EnumStructMemberCompletion,
-} from "./spCompletionsKinds";
+} from "./spCompletions";
 import { isControlStatement } from "./spDefinitions";
 import { Range } from "vscode";
 import { URI } from "vscode-uri";
@@ -19,25 +19,19 @@ import { basename } from "path";
 
 export function parse_file(
   file: string,
-  completions: FileCompletions,
+  completions: FileItems,
   documents: Map<string, string>,
   IsBuiltIn: boolean = false
 ) {
-	if(!existsSync(file)) return;
+  if (!existsSync(file)) return;
   let data = readFileSync(file, "utf-8");
-  parse_text(
-    data,
-    file,
-    completions,
-    documents,
-    IsBuiltIn
-  );
+  parse_text(data, file, completions, documents, IsBuiltIn);
 }
 
 export function parse_text(
   data: string,
   file: string,
-  completions: FileCompletions,
+  completions: FileItems,
   documents: Map<string, string>,
   IsBuiltIn: boolean = false
 ) {
@@ -45,13 +39,7 @@ export function parse_text(
     return; // Asked to parse empty file
   }
   let lines = data.split("\n");
-  let parser = new Parser(
-    lines,
-    file,
-    IsBuiltIn,
-    completions,
-    documents
-  );
+  let parser = new Parser(lines, file, IsBuiltIn, completions, documents);
   parser.parse();
 }
 
@@ -65,7 +53,7 @@ enum State {
 }
 
 class Parser {
-  completions: FileCompletions;
+  completions: FileItems;
   state: State[];
   scratch: any;
   state_data: any;
@@ -81,7 +69,7 @@ class Parser {
     lines: string[],
     file: string,
     IsBuiltIn: boolean,
-    completions: FileCompletions,
+    completions: FileItems,
     documents: Map<string, string>
   ) {
     this.completions = completions;
@@ -216,8 +204,8 @@ class Parser {
       /(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
     );
     if (match) {
-      if(isControlStatement(line)){
-				return;
+      if (isControlStatement(line)) {
+        return;
       }
       let isOldStyle: boolean = match[2] == "";
       this.read_function(line, isOldStyle);
@@ -226,7 +214,7 @@ class Parser {
   }
 
   read_define(match, line: string) {
-		let range = this.makeDefinitionRange(match[1], line);
+    let range = this.makeDefinitionRange(match[1], line);
     this.completions.add(
       match[1],
       new DefineCompletion(match[1], match[2], this.file, range)
@@ -245,12 +233,12 @@ class Parser {
     let { description, params } = this.parse_doc_comment();
     if (IsStruct) {
       // Create a completion for the enum struct itself if it has a name
-			let range = this.makeDefinitionRange(match[1], line);
+      let range = this.makeDefinitionRange(match[1], line);
       var enumStructCompletion: EnumStructCompletion = new EnumStructCompletion(
         match[1],
         this.file,
         description,
-				range
+        range
       );
       this.completions.add(match[1], enumStructCompletion);
 
@@ -283,7 +271,7 @@ class Parser {
         if (match) {
           enumStructMemberDescription = match[1];
         }
-				let range = this.makeDefinitionRange(enumStructMemberName, line);
+        let range = this.makeDefinitionRange(enumStructMemberName, line);
         this.completions.add(
           enumStructMemberName + "___property",
           new EnumStructMemberCompletion(
@@ -291,7 +279,7 @@ class Parser {
             this.file,
             enumStructMemberDescription,
             enumStructCompletion,
-						range
+            range
           )
         );
       }
@@ -299,12 +287,12 @@ class Parser {
       let nameMatch = match[0].match(/^\s*(?:enum\s*)(\w*)/);
       if (nameMatch) {
         // Create a completion for the enum itself if it has a name
-				let range = this.makeDefinitionRange(match[1], line);
+        let range = this.makeDefinitionRange(match[1], line);
         var enumCompletion: EnumCompletion = new EnumCompletion(
           nameMatch[1],
           this.file,
           description,
-					range
+          range
         );
         this.completions.add(nameMatch[1], enumCompletion);
       } else {
@@ -312,7 +300,7 @@ class Parser {
           "",
           this.file,
           description,
-					undefined
+          undefined
         );
         this.completions.add("", enumCompletion);
       }
@@ -346,7 +334,7 @@ class Parser {
         if (match) {
           enumMemberDescription = match[1];
         }
-				let range = this.makeDefinitionRange(enumMemberName, line);
+        let range = this.makeDefinitionRange(enumMemberName, line);
         this.completions.add(
           enumMemberName,
           new EnumMemberCompletion(
@@ -354,7 +342,7 @@ class Parser {
             this.file,
             enumMemberDescription,
             enumCompletion,
-						range
+            range
           )
         );
       }
@@ -363,8 +351,8 @@ class Parser {
   }
 
   read_loop_variables(match, line: string) {
-		if(this.IsBuiltIn) return;
-		this.AddVariableCompletion(match[1], line);
+    if (this.IsBuiltIn) return;
+    this.AddVariableCompletion(match[1], line);
     return;
   }
 
@@ -382,14 +370,14 @@ class Parser {
         let variable_completion = variable[1].match(
           /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
         )[1];
-				if(!this.IsBuiltIn){
-					this.AddVariableCompletion(variable_completion, line);
-				}
+        if (!this.IsBuiltIn) {
+          this.AddVariableCompletion(variable_completion, line);
+        }
       }
     } else {
-			let parseLine: boolean = true;
+      let parseLine: boolean = true;
       while (parseLine) {
-				parseLine = !match[1].match(/(;)\s*$/);
+        parseLine = !match[1].match(/(;)\s*$/);
         // Separate potential multiple declarations
         match_variables = match[1].match(
           /(?:\s*)?([A-Za-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-Za-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g
@@ -401,12 +389,12 @@ class Parser {
           let variable_completion = variable.match(
             /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
           )[1];
-					if(!this.IsBuiltIn){
-						this.AddVariableCompletion(variable_completion, line);
-					}
+          if (!this.IsBuiltIn) {
+            this.AddVariableCompletion(variable_completion, line);
+          }
         }
         match[1] = this.lines.shift();
-				line = match[1];
+        line = match[1];
         this.lineNb++;
       }
     }
@@ -452,13 +440,13 @@ class Parser {
   read_property(match, line) {
     let { description, params } = this.parse_doc_comment();
     let name_match: string = match[2];
-		let range = this.makeDefinitionRange(name_match, line);
+    let range = this.makeDefinitionRange(name_match, line);
     let NewPropertyCompletion = new PropertyCompletion(
       this.state_data.name,
       name_match,
       this.file,
       description,
-			line
+      line
     );
     this.completions.add(name_match, NewPropertyCompletion);
   }
@@ -498,7 +486,7 @@ class Parser {
           )
         );
       } else {
-				this.lastFuncLine = this.lineNb;
+        this.lastFuncLine = this.lineNb;
         this.lastFuncName = name_match;
         let paramsMatch = match[3];
         this.AddParamsDef(paramsMatch, name_match, line);
@@ -519,10 +507,8 @@ class Parser {
         paramsMatch = /\)\s*(?:\{|;)?\s*$/.test(match[0])
           ? match[0]
           : match[0].replace(/\(.*\s*$/, "(") +
-            paramsMatch
-              .replace(/\s*\w+\s*\(\s*/g, "")
-              .replace(/\s+/gm, " ");
-				let range = this.makeDefinitionRange(name_match, line);
+            paramsMatch.replace(/\s*\w+\s*\(\s*/g, "").replace(/\s+/gm, " ");
+        let range = this.makeDefinitionRange(name_match, line);
         this.completions.add(
           name_match,
           new FunctionCompletion(
@@ -532,7 +518,7 @@ class Parser {
             params,
             this.file,
             this.IsBuiltIn,
-						range
+            range
           )
         );
       }
@@ -603,29 +589,29 @@ class Parser {
     return { description, params };
   }
 
-	AddVariableCompletion(
-		name: string,
-		line: string
-	): void {
-		let range = this.makeDefinitionRange(name, line);
-		let scope: string = "$GLOBAL";
-		if(this.lastFuncLine !== 0){
-			scope = this.lastFuncName;
-		}
-		// Custom key name for the map so the definitions don't override each others
-		let mapName = name + scope;
-		this.completions.add(mapName, new VariableCompletion(name, this.file, scope, range));
-	}
+  AddVariableCompletion(name: string, line: string): void {
+    let range = this.makeDefinitionRange(name, line);
+    let scope: string = "$GLOBAL";
+    if (this.lastFuncLine !== 0) {
+      scope = this.lastFuncName;
+    }
+    // Custom key name for the map so the definitions don't override each others
+    let mapName = name + scope;
+    this.completions.add(
+      mapName,
+      new VariableCompletion(name, this.file, scope, range)
+    );
+  }
 
   makeDefinitionRange(
     name: string,
     line: string,
-    search: boolean = true,
+    search: boolean = true
   ): Range {
     let start: number = search ? line.search(name) : 0;
     let end: number = search ? start + name.length : 0;
-		var range = PositiveRange(this.lineNb, start, end);
-		return range;
+    var range = PositiveRange(this.lineNb, start, end);
+    return range;
   }
 
   AddParamsDef(params: string, funcName: string, line: string) {
@@ -639,9 +625,9 @@ class Parser {
       let variable_completion = variable[1].match(
         /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
       )[1];
-			if(!this.IsBuiltIn){
-				this.AddVariableCompletion(variable_completion, line);
-			}
+      if (!this.IsBuiltIn) {
+        this.AddVariableCompletion(variable_completion, line);
+      }
     }
   }
 }
@@ -652,8 +638,8 @@ function PositiveRange(
   end: number = 0
 ): Range {
   lineNb = lineNb > 0 ? lineNb : 0;
-	start = start > 0 ? start : 0;
-	end = end > 0 ? end : 0;
+  start = start > 0 ? start : 0;
+  end = end > 0 ? end : 0;
   return new Range(lineNb, start, lineNb, end);
 }
 

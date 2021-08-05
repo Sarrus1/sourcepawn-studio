@@ -12,18 +12,18 @@ import * as glob from "glob";
 import { basename, extname, join, relative } from "path";
 import { URI } from "vscode-uri";
 import { existsSync } from "fs";
-import { CompletionRepository, FileCompletions } from "./spCompletions";
-import { Include } from "./spCompletionsKinds";
+import { ItemsRepository, FileItems } from "./spItemsRepository";
+import { Include } from "./spCompletions";
 import { JsDocCompletionProvider } from "./spDocCompletions";
 import { parse_text, parse_file } from "./spParser";
 
 export class Providers {
-  completionsProvider: CompletionRepository;
+  completionsProvider: ItemsRepository;
   documentationProvider: JsDocCompletionProvider;
-  hoverProvider: CompletionRepository;
+  hoverProvider: ItemsRepository;
 
   constructor(globalState?: Memento) {
-    let CompletionRepo = new CompletionRepository(globalState);
+    let CompletionRepo = new ItemsRepository(globalState);
     this.completionsProvider = CompletionRepo;
     this.hoverProvider = CompletionRepo;
     this.documentationProvider = new JsDocCompletionProvider();
@@ -36,7 +36,7 @@ export class Providers {
   }
 
   public handle_document_change(event: TextDocumentChangeEvent) {
-    let this_completions: FileCompletions = new FileCompletions(
+    let this_completions: FileItems = new FileItems(
       event.document.uri.toString()
     );
     let file_path: string = event.document.uri.fsPath;
@@ -71,7 +71,7 @@ export class Providers {
   public newDocumentCallback(uri: Uri) {
     let ext: string = extname(uri.fsPath);
     if (ext != ".inc" && ext != ".sp") return;
-    let this_completions: FileCompletions = new FileCompletions(uri.toString());
+    let this_completions: FileItems = new FileItems(uri.toString());
     let file_path: string = uri.fsPath;
     // Some file paths are appened with .git
     if (file_path.includes(".git")) return;
@@ -92,7 +92,7 @@ export class Providers {
 
   public handle_document_opening(path: string) {
     let uri: string = URI.file(path).toString();
-    let this_completions: FileCompletions = new FileCompletions(uri);
+    let this_completions: FileItems = new FileItems(uri);
     // Some file paths are appened with .git
     path = path.replace(".git", "");
     try {
@@ -118,9 +118,7 @@ export class Providers {
         let file = URI.parse(include.uri).fsPath;
         if (existsSync(file)) {
           if (debug) console.log("found", include.uri.toString());
-          let new_completions: FileCompletions = new FileCompletions(
-            include.uri
-          );
+          let new_completions: FileItems = new FileItems(include.uri);
           try {
             parse_file(
               file,
@@ -168,7 +166,7 @@ export class Providers {
     let files = glob.sync(join(sm_home, "**/*.inc"));
     for (let file of files) {
       try {
-        let completions = new FileCompletions(URI.file(file).toString());
+        let completions = new FileItems(URI.file(file).toString());
         parse_file(file, completions, this.completionsProvider.documents, true);
 
         let uri = "file://__sourcemod_builtin/" + relative(sm_home, file);
