@@ -21,6 +21,7 @@ import { URI } from "vscode-uri";
 import { SPItem, Include } from "./spCompletions";
 import { events } from "../Misc/sourceEvents";
 import { GetLastFuncName, isFunction } from "./spDefinitions";
+import { getSignatureAttributes } from "./spSignatures";
 
 export class FileItems {
   completions: Map<string, SPItem>;
@@ -336,58 +337,30 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     position: Position,
     token: CancellationToken
   ): SignatureHelp {
-    if (document) {
-      let { method, parameter_count } = (() => {
-        let line = document.getText().split("\n")[position.line];
-
-        if (line[position.character - 1] === ")") {
-          // We've finished this call
-          return { method: undefined, parameter_count: 0 };
-        }
-
-        let method = "";
-        let end_parameters = false;
-        let parameter_count = 0;
-
-        for (let i = position.character; i >= 0; i--) {
-          if (end_parameters) {
-            if (line[i].match(/[A-Za-z0-9_]/)) {
-              method = line[i] + method;
-            } else {
-              break;
-            }
-          } else {
-            if (line[i] === "(") {
-              end_parameters = true;
-            } else if (line[i] === ",") {
-              parameter_count++;
-            }
-          }
-        }
-
-        return { method, parameter_count };
-      })();
-
-      let completions = this.getAllItems(document.uri.toString()).filter(
-        (completion) => {
-          return completion.name === method;
-        }
-      );
-
-      if (completions.length > 0) {
-        return {
-          signatures: [completions[0].toSignature()],
-          activeParameter: parameter_count,
-          activeSignature: 0,
-        };
-      }
-    }
-
-    return {
+    let blankReturn = {
       signatures: [],
       activeSignature: 0,
       activeParameter: 0,
     };
+    if (document) {
+      let { functionName, parameterCount } = getSignatureAttributes(
+        document,
+        position
+      );
+      if (typeof functionName === "undefined") {
+        return blankReturn;
+      }
+      let completions = this.getAllItems(document.uri.toString()).find(
+        (completion) => completion.name === functionName
+      );
+      return {
+        signatures: [completions.toSignature()],
+        activeParameter: parameterCount,
+        activeSignature: 0,
+      };
+    }
+
+    return blankReturn;
   }
 
   public provideDefinition(
