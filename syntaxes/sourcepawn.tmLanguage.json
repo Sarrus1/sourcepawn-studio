@@ -345,7 +345,7 @@
         {
           "name": "string.quoted.double.sourcepawn",
           "begin": "\"",
-          "end": "[^\\\\]\"",
+          "end": "[^\\\\]?\"",
           "patterns": [
             {
               "name": "constant.character.format.sourcepawn",
@@ -353,7 +353,7 @@
             },
             {
               "name": "constant.character.escape.sourcepawn",
-              "match": "\\\\(?:n|t|\"|'|r|\\|f|v|0|xFF)"
+              "match": "\\\\(?:a|b|e|f|n|r|t|v|\"|'|%|x[A-Fa-f0-9]{1,2})"
             },
             {
               "name": "constant.character.sp-translations",
@@ -369,7 +369,7 @@
         {
           "name": "string.quoted.single.sourcepawn",
           "begin": "'",
-          "end": "[^\\\\]'",
+          "end": "[^\\\\]?'",
           "patterns": [
             {
               "name": "constant.character.format.sourcepawn",
@@ -377,7 +377,7 @@
             },
             {
               "name": "constant.character.escape.sourcepawn",
-              "match": "\\\\(?:n|t|\"|'|r|\\|f|v|0|xFF)"
+              "match": "\\\\(?:a|b|e|f|n|r|t|v|\"|'|%|x[A-Fa-f0-9]{1,2})"
             },
             {
               "name": "constant.character.sp-translations",
