@@ -427,7 +427,8 @@
   "scripts": {
     "vscode:prepublish": "webpack --mode production",
     "compile": "tsc -b tsconfig.json",
-    "watch": "tsc -b -w",
+    "watch": "webpack --mode development --watch",
+    "webpack": "webpack --mode development",
     "postinstall": "cd client && npm install && cd ..",
     "test": "node ./client/out/test/runTest.js"
   }

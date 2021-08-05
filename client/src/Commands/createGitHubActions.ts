@@ -1,60 +1,62 @@
-import vscode = require("vscode");
-import * as fs from "fs";
-import * as path from "path";
+import { workspace as Workspace, window, extensions } from "vscode";
+import {
+  existsSync,
+  mkdirSync,
+  copyFileSync,
+  readFileSync,
+  writeFileSync,
+} from "fs";
+import { basename, join } from "path";
 
 export function run(rootpath: string = undefined) {
   // get workspace folder
-  let workspaceFolders = vscode.workspace.workspaceFolders;
+  let workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
     let err: string = "No workspace are opened.";
-    vscode.window.showErrorMessage(err);
+    window.showErrorMessage(err);
     console.log(err);
     return 1;
   }
 
   //Select the rootpath
-	if(typeof rootpath === "undefined"){
-		rootpath = workspaceFolders?.[0].uri.fsPath;
-	}
-  
-  let rootname = path.basename(rootpath);
+  if (typeof rootpath === "undefined") {
+    rootpath = workspaceFolders?.[0].uri.fsPath;
+  }
+
+  let rootname = basename(rootpath);
 
   // create .github folder if it doesn't exist
-  let masterFolderPath = path.join(rootpath, ".github");
-  if (!fs.existsSync(masterFolderPath)) {
-    fs.mkdirSync(masterFolderPath);
+  let masterFolderPath = join(rootpath, ".github");
+  if (!existsSync(masterFolderPath)) {
+    mkdirSync(masterFolderPath);
   }
   // create workflows folder if it doesn't exist
-  masterFolderPath = path.join(rootpath, ".github", "workflows");
-  if (!fs.existsSync(masterFolderPath)) {
-    fs.mkdirSync(masterFolderPath);
+  masterFolderPath = join(rootpath, ".github", "workflows");
+  if (!existsSync(masterFolderPath)) {
+    mkdirSync(masterFolderPath);
   }
 
   // Check if master.yml already exists
-  let masterFilePath = path.join(
-    rootpath,
-    ".github/workflows/master.yml"
-  );
-  if (fs.existsSync(masterFilePath)) {
+  let masterFilePath = join(rootpath, ".github/workflows/master.yml");
+  if (existsSync(masterFilePath)) {
     let err: string = "master.yml already exists, aborting.";
-    vscode.window.showErrorMessage(err);
+    window.showErrorMessage(err);
     console.log(err);
     return 2;
   }
-  let myExtDir: string = vscode.extensions.getExtension(
-    "Sarrus.sourcepawn-vscode"
-  ).extensionPath;
-  let tasksTemplatesPath: string = path.join(
+  let myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
+    .extensionPath;
+  let tasksTemplatesPath: string = join(
     myExtDir,
     "templates/master_template.yml"
   );
-  fs.copyFileSync(tasksTemplatesPath, masterFilePath);
+  copyFileSync(tasksTemplatesPath, masterFilePath);
 
   // Replace placeholders
   try {
-    let result = fs.readFileSync(masterFilePath, "utf8");
+    let result = readFileSync(masterFilePath, "utf8");
     result = result.replace(/\${plugin_name}/gm, rootname);
-    fs.writeFileSync(masterFilePath, result, "utf8");
+    writeFileSync(masterFilePath, result, "utf8");
   } catch (err) {
     console.log(err);
     return 3;

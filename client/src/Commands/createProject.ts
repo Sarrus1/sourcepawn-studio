@@ -1,40 +1,41 @@
-import vscode = require("vscode");
-import * as fs from "fs";
-import * as path from "path";
-import CreateTaskCommand = require("./createTask");
-import CreateScriptCommand = require("./createScript");
-import CreateREADMECommand = require("./createREADME");
-import CreateMasterCommand = require("./createGitHubActions");
+import { workspace as Workspace, window, InputBoxOptions } from "vscode";
+import { existsSync, mkdirSync } from "fs";
+import { join } from "path";
+import { run as CreateTaskCommand } from "./createTask";
+import { run as CreateScriptCommand } from "./createScript";
+import { run as CreateREADMECommand } from "./createREADME";
+import { run as CreateMasterCommand } from "./createGitHubActions";
 
 export async function run(args: any) {
   // get workspace folder
-  let workspaceFolders = vscode.workspace.workspaceFolders;
+  let workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
-    vscode.window.showErrorMessage("No workspace are opened.");
+    window.showErrorMessage("No workspace are opened.");
     return;
   }
 
-	const inputOptions: vscode.InputBoxOptions = {
-		prompt: "Relative path for the root of the project. Leave empty for the root path."
-	}
+  const inputOptions: InputBoxOptions = {
+    prompt:
+      "Relative path for the root of the project. Leave empty for the root ",
+  };
 
-	const input = await vscode.window.showInputBox(inputOptions);
+  const input = await window.showInputBox(inputOptions);
 
   //Select the rootpath
-	let rootpath = path.join(workspaceFolders?.[0].uri.fsPath, input);
-	if (!fs.existsSync(rootpath)){
-		fs.mkdirSync(rootpath);
+  let rootpath = join(workspaceFolders?.[0].uri.fsPath, input);
+  if (!existsSync(rootpath)) {
+    mkdirSync(rootpath);
   }
 
   // Create the plugins folder
-  let pluginsFolderPath = path.join(rootpath, "plugins");
-  if (!fs.existsSync(pluginsFolderPath)) {
-    fs.mkdirSync(pluginsFolderPath);
+  let pluginsFolderPath = join(rootpath, "plugins");
+  if (!existsSync(pluginsFolderPath)) {
+    mkdirSync(pluginsFolderPath);
   }
 
   // Running the other commands
-  CreateTaskCommand.run(rootpath);
-  CreateScriptCommand.run(rootpath);
-  CreateREADMECommand.run(rootpath);
-  CreateMasterCommand.run(rootpath);
+  CreateTaskCommand(rootpath);
+  CreateScriptCommand(rootpath);
+  CreateREADMECommand(rootpath);
+  CreateMasterCommand(rootpath);
 }

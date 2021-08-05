@@ -1,13 +1,27 @@
-import * as vscode from "vscode";
+import {
+  extensions,
+  TextDocument,
+  DiagnosticCollection,
+  Diagnostic,
+  workspace as Workspace,
+  WorkspaceFolder,
+  Position,
+  Range,
+  window,
+  DiagnosticSeverity,
+  commands,
+  Uri,
+  languages,
+  ExtensionContext,
+} from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 import { execFile } from "child_process";
 import { URI } from "vscode-uri";
 import { errorDetails } from "./Misc/errorMessages";
 
-let myExtDir: string = vscode.extensions.getExtension(
-  "Sarrus.sourcepawn-vscode"
-).extensionPath;
+let myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
+  .extensionPath;
 let TempPath: string = path.join(myExtDir, "tmpCompiled.smx");
 
 const tempFile = path.join(__dirname, "temp.sp");
@@ -34,24 +48,23 @@ export class TimeoutFunction {
 export let throttles: { [key: string]: TimeoutFunction } = {};
 
 export function refreshDiagnostics(
-  document: vscode.TextDocument,
-  compilerDiagnostics: vscode.DiagnosticCollection
+  document: TextDocument,
+  compilerDiagnostics: DiagnosticCollection
 ) {
-  const DocumentDiagnostics: Map<string, vscode.Diagnostic[]> = new Map();
+  const DocumentDiagnostics: Map<string, Diagnostic[]> = new Map();
   // Check if the user specified not to enable the linter for this file
-  const start = new vscode.Position(0, 0);
-  const end = new vscode.Position(1, 0);
-  const range = new vscode.Range(start, end);
+  const start = new Position(0, 0);
+  const end = new Position(1, 0);
+  const range = new Range(start, end);
   const text: string = document.getText(range);
-  const enableLinter: boolean = vscode.workspace
-    .getConfiguration("sourcepawn")
-    .get<boolean>("enableLinter");
+  const enableLinter: boolean = Workspace.getConfiguration(
+    "sourcepawn"
+  ).get<boolean>("enableLinter");
   if (text == "" || /\/\/linter=false/.test(text) || !enableLinter) {
     return ReturnNone(document.uri);
   }
   const spcomp =
-    vscode.workspace.getConfiguration("sourcepawn").get<string>("SpcompPath") ||
-    "";
+    Workspace.getConfiguration("sourcepawn").get<string>("SpcompPath") || "";
 
   let throttle = throttles[document.uri.path];
   if (throttle === undefined) {
@@ -63,12 +76,11 @@ export function refreshDiagnostics(
   throttle.start(function () {
     let filename: string = document.fileName;
     let MainPath: string =
-      vscode.workspace.getConfiguration("sourcepawn").get("MainPath") || "";
+      Workspace.getConfiguration("sourcepawn").get("MainPath") || "";
     if (MainPath != "") {
       try {
         if (!fs.existsSync(MainPath)) {
-          let workspace: vscode.WorkspaceFolder =
-            vscode.workspace.workspaceFolders[0];
+          let workspace: WorkspaceFolder = Workspace.workspaceFolders[0];
           MainPath = path.join(workspace.uri.fsPath, MainPath);
           if (!fs.existsSync(MainPath)) {
             throw "MainPath is incorrect.";
@@ -77,22 +89,22 @@ export function refreshDiagnostics(
         filename = path.basename(MainPath);
       } catch (error) {
         ReturnNone(document.uri);
-        vscode.window
+        window
           .showErrorMessage(
             "A setting for the main.sp file was specified, but seems invalid. Please make sure it is valid.",
             "Open Settings"
           )
           .then((choice) => {
             if (choice === "Open Settings") {
-              vscode.commands.executeCommand(
-								"workbench.action.openSettings",
-								"@ext:sarrus.sourcepawn-vscode"
+              commands.executeCommand(
+                "workbench.action.openSettings",
+                "@ext:sarrus.sourcepawn-vscode"
               );
             }
           });
       }
     }
-		let extName = path.extname(filename);
+    let extName = path.extname(filename);
     if (extName === ".sp") {
       let scriptingFolder: string;
       let filePath: string;
@@ -109,25 +121,23 @@ export function refreshDiagnostics(
         }
         let spcomp_opt: string[] = [
           "-i" +
-            vscode.workspace
-              .getConfiguration("sourcepawn")
-              .get("SourcemodHome") || "",
-					"-i" + scriptingFolder,
+            Workspace.getConfiguration("sourcepawn").get("SourcemodHome") || "",
+          "-i" + scriptingFolder,
           "-i" + path.join(scriptingFolder, "include"),
           "-v0",
           filePath,
           "-o" + TempPath,
         ];
-        let compilerOptions: string[] = vscode.workspace
-          .getConfiguration("sourcepawn")
-          .get("linterCompilerOptions");
+        let compilerOptions: string[] = Workspace.getConfiguration(
+          "sourcepawn"
+        ).get("linterCompilerOptions");
         // Add a space at the beginning of every element, for security.
         for (let i = 0; i < compilerOptions.length; i++) {
           spcomp_opt.push(" " + compilerOptions[i]);
         }
-        let includes_dirs: string[] = vscode.workspace
-          .getConfiguration("sourcepawn")
-          .get("optionalIncludeDirsPaths");
+        let includes_dirs: string[] = Workspace.getConfiguration(
+          "sourcepawn"
+        ).get("optionalIncludeDirsPaths");
         // Add the optional includes folders.
         for (let includes_dir of includes_dirs) {
           if (includes_dir != "") {
@@ -147,26 +157,26 @@ export function refreshDiagnostics(
           let regex = /([:\/\\A-Za-z\-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning) ([0-9]*)):\s+(.*)/gm;
           let matches: RegExpExecArray | null;
           let path: string;
-          let diagnostics: vscode.Diagnostic[];
-          let range: vscode.Range;
-          let severity: vscode.DiagnosticSeverity;
+          let diagnostics: Diagnostic[];
+          let range: Range;
+          let severity: DiagnosticSeverity;
           while ((matches = regex.exec(stdout.toString() || ""))) {
-            range = new vscode.Range(
-              new vscode.Position(Number(matches[2]) - 1, 0),
-              new vscode.Position(Number(matches[2]) - 1, 256)
+            range = new Range(
+              new Position(Number(matches[2]) - 1, 0),
+              new Position(Number(matches[2]) - 1, 256)
             );
             severity =
               matches[4] === "warning"
-                ? vscode.DiagnosticSeverity.Warning
-                : vscode.DiagnosticSeverity.Error;
-            path = (MainPath != "") ? matches[1] : document.uri.fsPath;
+                ? DiagnosticSeverity.Warning
+                : DiagnosticSeverity.Error;
+            path = MainPath != "" ? matches[1] : document.uri.fsPath;
             if (DocumentDiagnostics.has(path)) {
               diagnostics = DocumentDiagnostics.get(path);
             } else {
               diagnostics = [];
             }
             let message: string = GenerateDetailedError(matches[5], matches[6]);
-            let diagnostic: vscode.Diagnostic = new vscode.Diagnostic(
+            let diagnostic: Diagnostic = new Diagnostic(
               range,
               message,
               severity
@@ -190,19 +200,19 @@ function GenerateDetailedError(errorCode: string, errorMsg: string): string {
   if (typeof errorDetails[errorCode] != "undefined") {
     errorMsg += "\n\n" + errorDetails[errorCode];
   }
-	return errorMsg;
+  return errorMsg;
 }
 
-function ReturnNone(uri: vscode.Uri) {
-  let diagnostics: vscode.Diagnostic[] = [];
+function ReturnNone(uri: Uri) {
+  let diagnostics: Diagnostic[] = [];
   return compilerDiagnostics.set(uri, diagnostics);
 }
 
-export let compilerDiagnostics = vscode.languages.createDiagnosticCollection(
+export let compilerDiagnostics = languages.createDiagnosticCollection(
   "compiler"
 );
 
-export let activeEditorChanged = vscode.window.onDidChangeActiveTextEditor(
+export let activeEditorChanged = window.onDidChangeActiveTextEditor(
   (editor) => {
     if (editor) {
       refreshDiagnostics(editor.document, compilerDiagnostics);
@@ -210,26 +220,20 @@ export let activeEditorChanged = vscode.window.onDidChangeActiveTextEditor(
   }
 );
 
-export let textDocumentOpened = vscode.workspace.onDidOpenTextDocument(
-  (event) => {
-    refreshDiagnostics(event, compilerDiagnostics);
-  }
-);
+export let textDocumentOpened = Workspace.onDidOpenTextDocument((event) => {
+  refreshDiagnostics(event, compilerDiagnostics);
+});
 
-export let textDocumentChanged = vscode.workspace.onDidChangeTextDocument(
-  (event) => {
-    refreshDiagnostics(event.document, compilerDiagnostics);
-  }
-);
+export let textDocumentChanged = Workspace.onDidChangeTextDocument((event) => {
+  refreshDiagnostics(event.document, compilerDiagnostics);
+});
 
-export let textDocumentClosed = vscode.workspace.onDidCloseTextDocument(
-  (document) => {
-    compilerDiagnostics.delete(document.uri);
-    delete throttles[document.uri.path];
-  }
-);
+export let textDocumentClosed = Workspace.onDidCloseTextDocument((document) => {
+  compilerDiagnostics.delete(document.uri);
+  delete throttles[document.uri.path];
+});
 
-export function registerSMLinter(context: vscode.ExtensionContext) {
+export function registerSMLinter(context: ExtensionContext) {
   context.subscriptions.push(compilerDiagnostics);
   context.subscriptions.push(activeEditorChanged);
   context.subscriptions.push(textDocumentChanged);

@@ -1,19 +1,19 @@
-import * as vscode from "vscode";
+import { window, commands, SignatureHelp } from "vscode";
 
 export async function run(args: any) {
-  let document = vscode.window.activeTextEditor.document;
-  let position = vscode.window.activeTextEditor.selection.active;
+  let document = window.activeTextEditor.document;
+  let position = window.activeTextEditor.selection.active;
   const linetext = document.lineAt(position).text;
 
   if (
     linetext[position.character] === ")" &&
     linetext[position.character - 1] === "("
   ) {
-    let signatureHelp = (await vscode.commands.executeCommand(
-      "vscode.executeSignatureHelpProvider",
+    let signatureHelp = (await commands.executeCommand(
+      "executeSignatureHelpProvider",
       document.uri,
       position
-    )) as vscode.SignatureHelp;
+    )) as SignatureHelp;
 
     let label = signatureHelp.signatures[0].label;
     let parameters = label.substring(
@@ -21,13 +21,12 @@ export async function run(args: any) {
       label.indexOf(")")
     );
 
-    vscode.window.activeTextEditor.edit(function (editBuilder) {
+    window.activeTextEditor.edit(function (editBuilder) {
       editBuilder.insert(position, parameters);
     });
-  }
-  else {
-    vscode.window.activeTextEditor.edit(function (editBuilder) {
+  } else {
+    window.activeTextEditor.edit(function (editBuilder) {
       editBuilder.insert(position, "\t");
-    })
+    });
   }
 }

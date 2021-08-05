@@ -11,20 +11,18 @@ import { SP_MODE } from "./spMode";
 import { Providers } from "./Providers/spProviders";
 import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./spFormat";
-import { basename, extname, resolve } from "path";
+import { basename, extname } from "path";
 import { URI } from "vscode-uri";
-import { readFileSync } from "fs";
 
 let getDirectories = function (src, ext, callback) {
   glob(src + "/**/*", callback);
 };
 
-
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
   let formatter = new SMDocumentFormattingEditProvider();
   let workspace: WorkspaceFolder;
-  providers.parse_sm_api();
+  providers.parseSMApi();
   let workspaceFolders = Workspace.workspaceFolders;
   if (typeof workspaceFolders == "undefined") {
     window.showWarningMessage(
@@ -61,7 +59,7 @@ export function activate(context: ExtensionContext) {
       providers.completionsProvider,
       "<",
       '"',
-			'\'',
+      "'",
       "/",
       "\\"
     )
@@ -81,8 +79,9 @@ export function activate(context: ExtensionContext) {
       ","
     )
   );
+
   context.subscriptions.push(
-    languages.registerDefinitionProvider(SP_MODE, providers.definitionsProvider)
+    languages.registerDefinitionProvider(SP_MODE, providers.completionsProvider)
   );
 
   context.subscriptions.push(
@@ -93,17 +92,17 @@ export function activate(context: ExtensionContext) {
   );
 
   Workspace.onDidChangeTextDocument(
-    providers.handle_document_change,
+    providers.handleDocumentChange,
     providers,
     context.subscriptions
   );
   Workspace.onDidOpenTextDocument(
-    providers.handle_new_document,
+    providers.handleNewDocument,
     providers,
     context.subscriptions
   );
   Workspace.onDidCreateFiles(
-    providers.handle_added_document,
+    providers.handleAddedDocument,
     providers,
     context.subscriptions
   );

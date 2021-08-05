@@ -1,387 +1,521 @@
-import * as vscode from "vscode";
-import { basename, join } from "path";
-import { existsSync } from "fs";
+﻿import {
+  CompletionItemKind,
+  Range,
+  CompletionItem,
+  Location,
+  SignatureInformation,
+  Hover,
+} from "vscode";
+import { description_to_md } from "../spUtils";
+import { basename } from "path";
 import { URI } from "vscode-uri";
-import { Completion, Include } from "./spCompletionsKinds";
-import { CompletionItem } from "vscode";
-import { events } from "../Misc/sourceEvents";
-import {GetLastFuncName} from "./spDefinitions";
 
-export class FileCompletions {
-  completions: Map<string, Completion>;
-  includes: Include[];
-  uri: string;
+export interface SPItem {
+  name: string;
+  kind: CompletionItemKind;
+  description?: string;
+  range?: Range;
+  scope?: string;
 
-  constructor(uri: string) {
-    this.completions = new Map();
-    this.includes = [];
-    this.uri = uri;
-  }
+  toCompletionItem(file: string, lastFuncName: string): CompletionItem;
+  toDefinitionItem(): Location;
+  toSignature(): SignatureInformation;
+  toHover(): Hover;
+}
 
-  add(id: string, completion: Completion) {
-    this.completions.set(id, completion);
-  }
+export type FunctionParam = {
+  label: string;
+  documentation: string;
+};
 
-  get(id: string): Completion {
-    return this.completions.get(id);
-  }
+export class FunctionCompletion implements SPItem {
+  name: string;
+  description: string;
+  detail: string;
+  params: FunctionParam[];
+  file: string;
+  range: Range;
+  IsBuiltIn: boolean;
+  kind = CompletionItemKind.Function;
 
-  get_completions(repo: CompletionRepository): Completion[] {
-    let completions = [];
-    for (let completion of this.completions.values()) {
-      completions.push(completion);
-    }
-    return completions;
-  }
-
-  to_completion_resolve(item: vscode.CompletionItem): vscode.CompletionItem {
-    item.label = item.label;
-    item.documentation = item.documentation;
-    return item;
-  }
-
-  add_include(include: string, IsBuiltIn: boolean) {
-    this.includes.push(new Include(include, IsBuiltIn));
-  }
-
-  resolve_import(
+  constructor(
+    name: string,
+    detail: string,
+    description: string,
+    params: FunctionParam[],
     file: string,
-    documents: Map<string, string>,
-    IsBuiltIn: boolean = false
+    IsBuiltIn: boolean,
+    range: Range
   ) {
-    let inc_file: string;
-    // If no extension is provided, it's a .inc file
-    if (!/.sp\s*$/g.test(file) && !/.inc\s*$/g.test(file)) {
-      file += ".inc";
-    }
+    this.description = description;
+    this.name = name;
+    this.params = params;
+    this.detail = detail;
+    this.file = file;
+    this.IsBuiltIn = IsBuiltIn;
+    this.range = range;
+  }
 
-    let match = file.match(/include\/(.*)/);
-    if (match) file = match[1];
-    let uri: string;
-    if (!(uri = documents.get(basename(file)))) {
-      let includes_dirs: string[] = vscode.workspace
-        .getConfiguration("sourcepawn")
-        .get("optionalIncludeDirsPaths");
-      for (let includes_dir of includes_dirs) {
-        inc_file = join(includes_dir, file);
-        if (existsSync(inc_file)) {
-          this.add_include(URI.file(inc_file).toString(), IsBuiltIn);
-          return;
-        }
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: basename(this.file),
+    };
+  }
+
+  toSignature(): SignatureInformation {
+    return {
+      label: this.detail,
+      documentation: description_to_md(this.description),
+      parameters: this.params,
+    };
+  }
+
+  toHover(): Hover {
+    let filename: string = basename(this.file, ".inc");
+    if (this.description == "") {
+      return new Hover({ language: "sourcepawn", value: this.detail });
+    }
+    if (this.IsBuiltIn) {
+      return new Hover([
+        { language: "sourcepawn", value: this.detail },
+        `[Online Documentation](https://sourcemod.dev/#/${filename}/function.${this.name})`,
+        description_to_md(this.description),
+      ]);
+    }
+    return new Hover([
+      { language: "sourcepawn", value: this.detail },
+      description_to_md(this.description),
+    ]);
+  }
+
+  toDefinitionItem(): Location {
+    return new Location(URI.file(this.file), this.range);
+  }
+}
+
+export class MethodCompletion implements SPItem {
+  name: string;
+  method_map: string;
+  description: string;
+  detail: string;
+  params: FunctionParam[];
+  kind = CompletionItemKind.Method;
+
+  constructor(
+    method_map: string,
+    name: string,
+    detail: string,
+    description: string,
+    params: FunctionParam[]
+  ) {
+    this.method_map = method_map;
+    this.name = name;
+    this.detail = detail;
+    this.description = description;
+    this.params = params;
+  }
+
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: this.method_map,
+    };
+  }
+
+  toDefinitionItem(): Location {
+    return undefined;
+  }
+
+  toSignature(): SignatureInformation {
+    return {
+      label: this.detail,
+      documentation: description_to_md(this.description),
+      parameters: this.params,
+    };
+  }
+
+  toHover(): Hover {
+    if (!this.description) {
+      return;
+    }
+    return new Hover([
+      { language: "sourcepawn", value: this.detail },
+      description_to_md(this.description),
+    ]);
+  }
+}
+
+export class DefineCompletion implements SPItem {
+  name: string;
+  value: string;
+  file: string;
+  kind = CompletionItemKind.Variable;
+  range: Range;
+
+  constructor(name: string, value: string, file: string, range: Range) {
+    this.name = name;
+    this.value = value;
+    this.file = basename(file);
+    this.range = range;
+  }
+
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: this.file,
+    };
+  }
+
+  toDefinitionItem(): Location {
+    return new Location(URI.file(this.file), this.range);
+  }
+
+  toSignature(): SignatureInformation {
+    return;
+  }
+
+  toHover(): Hover {
+    return new Hover({
+      language: "sourcepawn",
+      value: `#define ${this.name} ${this.value}`,
+    });
+  }
+}
+
+export class VariableCompletion implements SPItem {
+  name: string;
+  file: string;
+  kind = CompletionItemKind.Variable;
+  scope: string;
+  range: Range;
+
+  constructor(name: string, file: string, scope: string, range: Range) {
+    this.name = name;
+    this.file = file;
+    this.scope = scope;
+    this.range = range;
+  }
+
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
+    if (typeof lastFuncName !== "undefined") {
+      if (this.scope === lastFuncName) {
+        return {
+          label: this.name,
+          kind: this.kind,
+        };
+      } else if (this.scope === "$GLOBAL") {
+        return {
+          label: this.name,
+          kind: this.kind,
+        };
       }
-      this.add_include("file://__sourcemod_builtin/" + file, IsBuiltIn);
+      return {
+        label: "",
+        kind: this.kind,
+      };
     } else {
-      this.add_include(uri, IsBuiltIn);
+      return {
+        label: this.name,
+        kind: this.kind,
+      };
+    }
+  }
+
+  toDefinitionItem(): Location {
+    return new Location(URI.file(this.file), this.range);
+  }
+
+  toSignature(): SignatureInformation {
+    return undefined;
+  }
+
+  toHover(): Hover {
+    return;
+  }
+}
+
+export class EnumCompletion implements SPItem {
+  name: string;
+  file: string;
+  kind = CompletionItemKind.Enum;
+  description: string;
+  range: Range;
+
+  constructor(name: string, file: string, description: string, range: Range) {
+    this.name = name;
+    this.file = file;
+    this.description = description;
+    this.range = range;
+  }
+
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: basename(this.file),
+    };
+  }
+
+  toDefinitionItem(): Location {
+    return new Location(URI.file(this.file), this.range);
+  }
+
+  toSignature(): SignatureInformation {
+    return undefined;
+  }
+
+  toHover(): Hover {
+    if (!this.description) {
+      return;
+    }
+    return new Hover([
+      { language: "sourcepawn", value: this.name },
+      description_to_md(this.description),
+    ]);
+  }
+}
+
+export class EnumMemberCompletion implements SPItem {
+  name: string;
+  enum: EnumCompletion;
+  file: string;
+  description: string;
+  kind = CompletionItemKind.EnumMember;
+  range: Range;
+
+  constructor(
+    name: string,
+    file: string,
+    description: string,
+    Enum: EnumCompletion,
+    range: Range
+  ) {
+    this.name = name;
+    this.file = file;
+    this.description = description;
+    this.enum = Enum;
+    this.range = range;
+  }
+
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: this.enum.name == "" ? basename(this.file) : this.enum.name,
+    };
+  }
+
+  toDefinitionItem(): Location {
+    return new Location(URI.file(this.file), this.range);
+  }
+
+  toSignature(): SignatureInformation {
+    return undefined;
+  }
+
+  toHover(): Hover {
+    let enumName = this.enum.name;
+    if (enumName == "") {
+      return new Hover([
+        { language: "sourcepawn", value: this.name },
+        description_to_md(this.description),
+      ]);
+    } else {
+      return new Hover([
+        { language: "sourcepawn", value: this.enum.name + " " + this.name },
+        description_to_md(this.description),
+      ]);
     }
   }
 }
 
-export class CompletionRepository
-  implements vscode.CompletionItemProvider, vscode.Disposable {
-  public completions: Map<string, FileCompletions>;
-  public documents: Map<string, string>;
-  private globalState: vscode.Memento;
+export class EnumStructCompletion implements SPItem {
+  name: string;
+  file: string;
+  description: string;
+  kind = CompletionItemKind.Struct;
+  range: Range;
 
-  constructor(globalState?: vscode.Memento) {
-    this.completions = new Map();
-    this.documents = new Map();
-    this.globalState = globalState;
+  constructor(name: string, file: string, description: string, range: Range) {
+    this.name = name;
+    this.file = file;
+    this.description = description;
   }
 
-  public provideCompletionItems(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    token: vscode.CancellationToken
-  ): vscode.CompletionList {
-    const text = document
-      .lineAt(position.line)
-      .text.substr(0, position.character);
-    let match = text.match(/^\s*#\s*include\s*(<[^>]*|"[^"]*)$/);
-    if (match) {
-			return this.getIncludeCompletions(document, match[1]);
-    }
-		match = text.match(/^\s*(?:HookEvent|HookEventEx)\s*\(\s*(\"[^\"]*|\'[^\']*)$/);
-		if (match) {
-      return this.getEventCompletions();
-    }
-		if(["\"", "'"].includes(text[text.length-1])) return undefined;
-		return this.get_completions(document, position);
-  }
-
-  public dispose() {}
-
-	getEventCompletions():vscode.CompletionList {
-		return new vscode.CompletionList(events);
-	}
-
-  getIncludeCompletions(
-    document: vscode.TextDocument,
-    tempName: string
-  ): vscode.CompletionList {
-		let isQuoteInclude:boolean = tempName.includes('"');
-    tempName = tempName.replace("<", "").replace('"', "");
-    let match = tempName.match(/([^\/]+\/)+/);
-    tempName = match ? match[0] : "";
-    let scriptingDirname: string = document.uri.toString();
-    let itemsNames: string[] = [];
-    scriptingDirname =
-      scriptingDirname.replace(basename(document.uri.fsPath), "") + "include/";
-    let scriptingDirnames: string[] = [scriptingDirname];
-    let includes_dirs: string[] = vscode.workspace
-      .getConfiguration("sourcepawn")
-      .get("optionalIncludeDirsPaths");
-    scriptingDirnames = scriptingDirnames.concat(includes_dirs);
-    let items: CompletionItem[] = [];
-    let cleanedUri: string;
-    for (let uri of this.documents.values()) {
-      if (uri.includes("file://__sourcemod_builtin/" + tempName)) {
-        cleanedUri = uri.replace("file://__sourcemod_builtin/" + tempName, "");
-        let match = cleanedUri.match(/([^\/]+\/)?/);
-        if (match[0] != "") {
-          let item = {
-            label: match[0].replace("/", ""),
-            kind: vscode.CompletionItemKind.Folder,
-            detail: "Sourcemod BuiltIn",
-          };
-          if (itemsNames.indexOf(match[0]) == -1) {
-            items.push(item);
-            itemsNames.push(match[0]);
-          }
-        } else {
-					let insertText = cleanedUri.replace(".inc", "");
-					insertText += isQuoteInclude? "":">";
-          let item = {
-            label: cleanedUri,
-            kind: vscode.CompletionItemKind.File,
-            detail: "Sourcemod BuiltIn",
-            insertText: insertText,
-          };
-          if (itemsNames.indexOf(cleanedUri) == -1) {
-            items.push(item);
-            itemsNames.push(cleanedUri);
-          }
-        }
-      } else {
-        for (scriptingDirname of scriptingDirnames) {
-          if (uri.includes(scriptingDirname + tempName)) {
-            cleanedUri = uri.replace(scriptingDirname + tempName, tempName);
-            let match = cleanedUri.match(/([^\/]+\/)?/);
-            if (match[0] != "") {
-              let item = {
-                label: match[0].replace("/", ""),
-                kind: vscode.CompletionItemKind.Folder,
-                detail: URI.parse(uri).fsPath,
-              };
-              if (itemsNames.indexOf(match[0]) == -1) {
-                items.push(item);
-                itemsNames.push(match[0]);
-              }
-            } else {
-							let insertText = cleanedUri.replace(".inc", "");
-							insertText += isQuoteInclude? "":">";
-              let item = {
-                label: cleanedUri,
-                kind: vscode.CompletionItemKind.File,
-                detail: URI.parse(uri).fsPath,
-                insertText: insertText,
-              };
-              if (itemsNames.indexOf(cleanedUri) == -1) {
-                items.push(item);
-                itemsNames.push(cleanedUri);
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return new vscode.CompletionList(items);
-  }
-
-  get_completions(
-    document: vscode.TextDocument,
-    position: vscode.Position
-  ): vscode.CompletionList {
-    let is_method = false;
-    if (document) {
-      let line = document.getText().split("\n")[position.line].trim();
-      for (let i = line.length - 2; i >= 0; i--) {
-        if (line[i].match(/\w/)) {
-          continue;
-        }
-
-        if (line[i] === ".") {
-          is_method = true;
-          break;
-        }
-        break;
-      }
-    }
-    let all_completions: Completion[] = this.get_all_completions(
-      document.uri.toString()
-    );
-    let all_completions_list: vscode.CompletionList = new vscode.CompletionList();
-    if (all_completions != []) {
-			let lastFunc: string = GetLastFuncName(position.line, document);
-      all_completions_list.items = all_completions.map((completion) => {
-        if (completion) {
-          if (completion.to_completion_item) {
-            return completion.to_completion_item(document.uri.fsPath, lastFunc);
-          }
-        }
-      });
-    }
-    if (is_method) {
-      all_completions_list.items = all_completions_list.items.filter(
-        (completion) =>
-          completion.kind === vscode.CompletionItemKind.Method ||
-          completion.kind === vscode.CompletionItemKind.Property
-      );
-      return all_completions_list;
-    } else {
-      all_completions_list.items = all_completions_list.items.filter(
-        (completion) =>
-          !(
-            completion.kind === vscode.CompletionItemKind.Method ||
-            completion.kind === vscode.CompletionItemKind.Property
-          )
-      );
-      return all_completions_list;
-    }
-  }
-
-  get_all_completions(file: string): Completion[] {
-    let completion = this.completions.get(file);
-    let includes = new Set<string>();
-    if (completion) {
-      this.get_included_files(completion, includes);
-    }
-    includes.add(file);
-    let MainPath: string =
-      vscode.workspace.getConfiguration("sourcepawn").get("MainPath") || "";
-    if (MainPath != "") {
-      if (!existsSync(MainPath)) {
-        let workspace: vscode.WorkspaceFolder =
-          vscode.workspace.workspaceFolders[0];
-        MainPath = join(workspace.uri.fsPath, MainPath);
-        if (!existsSync(MainPath)) {
-          throw "MainPath is incorrect.";
-        }
-      }
-      let MainCompletion = this.completions.get(URI.file(MainPath).toString());
-      if (MainCompletion) {
-        this.get_included_files(MainCompletion, includes);
-      }
-      let uri = URI.file(MainPath).toString();
-      if (!includes.has(uri)) {
-        includes.add(uri);
-      }
-    }
-    return [...includes]
-      .map((file) => {
-        return this.get_file_completions(file);
-      })
-      .reduce(
-        (completion, file_completions) => completion.concat(file_completions),
-        []
-      );
-  }
-
-  get_file_completions(file: string): Completion[] {
-    let file_completions: FileCompletions = this.completions.get(file);
-    let completion_list: Completion[] = [];
-    if (file_completions) {
-      return file_completions.get_completions(this);
-    }
-    return completion_list;
-  }
-
-  get_included_files(completions: FileCompletions, files: Set<string>) {
-    for (let include of completions.includes) {
-      if (!files.has(include.uri)) {
-        files.add(include.uri);
-        let include_completions = this.completions.get(include.uri);
-        if (include_completions) {
-          this.get_included_files(include_completions, files);
-        }
-      }
-    }
-  }
-
-  provideHover(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    token: vscode.CancellationToken
-  ): vscode.Hover {
-    let range = document.getWordRangeAtPosition(position);
-    let word = document.getText(range);
-    let completions = this.get_all_completions(document.uri.toString()).filter(
-      (completion) => {
-        return completion.name === word;
-      }
-    );
-
-    if (completions.length > 0) {
-      return completions[0].get_hover();
-    }
-  }
-
-  provideSignatureHelp(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    token: vscode.CancellationToken
-  ): vscode.SignatureHelp {
-    if (document) {
-      let { method, parameter_count } = (() => {
-        let line = document.getText().split("\n")[position.line];
-
-        if (line[position.character - 1] === ")") {
-          // We've finished this call
-          return { method: undefined, parameter_count: 0 };
-        }
-
-        let method = "";
-        let end_parameters = false;
-        let parameter_count = 0;
-
-        for (let i = position.character; i >= 0; i--) {
-          if (end_parameters) {
-            if (line[i].match(/[A-Za-z0-9_]/)) {
-              method = line[i] + method;
-            } else {
-              break;
-            }
-          } else {
-            if (line[i] === "(") {
-              end_parameters = true;
-            } else if (line[i] === ",") {
-              parameter_count++;
-            }
-          }
-        }
-
-        return { method, parameter_count };
-      })();
-
-      let completions = this.get_all_completions(
-        document.uri.toString()
-      ).filter((completion) => {
-        return completion.name === method;
-      });
-
-      if (completions.length > 0) {
-        return {
-          signatures: [completions[0].get_signature()],
-          activeParameter: parameter_count,
-          activeSignature: 0,
-        };
-      }
-    }
-
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
     return {
-      signatures: [],
-      activeSignature: 0,
-      activeParameter: 0,
+      label: this.name,
+      kind: this.kind,
+      detail: basename(this.file),
     };
+  }
+
+  toDefinitionItem(): Location {
+    return new Location(URI.file(this.file), this.range);
+  }
+
+  toSignature(): SignatureInformation {
+    return undefined;
+  }
+
+  toHover(): Hover {
+    if (!this.description) {
+      return;
+    }
+    return new Hover([
+      { language: "sourcepawn", value: this.name },
+      description_to_md(this.description),
+    ]);
+  }
+}
+
+export class EnumStructMemberCompletion implements SPItem {
+  name: string;
+  enumStruct: EnumStructCompletion;
+  file: string;
+  description: string;
+  kind = CompletionItemKind.Property;
+  range: Range;
+
+  constructor(
+    name: string,
+    file: string,
+    description: string,
+    EnumStruct: EnumStructCompletion,
+    range: Range
+  ) {
+    this.name = name;
+    this.file = file;
+    this.description = description;
+    this.enumStruct = EnumStruct;
+    this.range = range;
+  }
+
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: this.enumStruct.name,
+    };
+  }
+
+  toDefinitionItem(): Location {
+    return new Location(URI.file(this.file), this.range);
+  }
+
+  toSignature(): SignatureInformation {
+    return undefined;
+  }
+
+  toHover(): Hover {
+    let enumName = this.enumStruct.name;
+    if (enumName == "") {
+      return new Hover([
+        { language: "sourcepawn", value: this.name },
+        description_to_md(this.description),
+      ]);
+    } else {
+      return new Hover([
+        {
+          language: "sourcepawn",
+          value: this.enumStruct.name + " " + this.name,
+        },
+        description_to_md(this.description),
+      ]);
+    }
+  }
+}
+
+export class PropertyCompletion implements SPItem {
+  method_map: string;
+  name: string;
+  file: string;
+  description: string;
+  kind = CompletionItemKind.Property;
+  range: Range;
+
+  constructor(
+    method_map: string,
+    name: string,
+    file: string,
+    description: string,
+    range: Range
+  ) {
+    this.method_map = method_map;
+    this.name = name;
+    this.file = file;
+    this.description = description;
+    this.range = range;
+  }
+
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: this.method_map,
+    };
+  }
+
+  toDefinitionItem(): Location {
+    return new Location(URI.file(this.file), this.range);
+  }
+
+  toSignature(): SignatureInformation {
+    return undefined;
+  }
+
+  toHover(): Hover {
+    if (!this.description) {
+      return;
+    }
+    return new Hover([
+      { language: "sourcepawn", value: this.name },
+      description_to_md(this.description),
+    ]);
+  }
+}
+
+export class Include {
+  uri: string;
+  IsBuiltIn: boolean;
+
+  constructor(uri: string, IsBuiltIn: boolean) {
+    this.uri = uri;
+    this.IsBuiltIn = IsBuiltIn;
+  }
+
+  get_hover(): Hover {
+    return;
   }
 }
