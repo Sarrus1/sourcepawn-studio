@@ -264,12 +264,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
   }
 
   getAllItems(file: string): SPItem[] {
-    let completion = this.completions.get(file);
     let includes = new Set<string>();
-    if (completion) {
-      this.getIncludedFiles(completion, includes);
-    }
-    includes.add(file);
     let MainPath: string =
       Workspace.getConfiguration("sourcepawn").get("MainPath") || "";
     if (MainPath != "") {
@@ -289,6 +284,12 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
         includes.add(uri);
       }
     }
+    let completion = this.completions.get(file);
+
+    if (completion) {
+      this.getIncludedFiles(completion, includes);
+    }
+    includes.add(file);
     return [...includes]
       .map((file) => {
         return this.getFileItems(file);
