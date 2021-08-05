@@ -10,17 +10,17 @@ import { description_to_md } from "../spUtils";
 import { basename } from "path";
 import { URI } from "vscode-uri";
 
-export interface Completion {
+export interface SPItem {
   name: string;
   kind: CompletionItemKind;
   description?: string;
   range?: Range;
   scope?: string;
 
-  to_completion_item(file: string, lastFuncName: string): CompletionItem;
+  toCompletionItem(file: string, lastFuncName: string): CompletionItem;
   toDefinitionItem(): Location;
-  get_signature(): SignatureInformation;
-  get_hover(): Hover;
+  toSignature(): SignatureInformation;
+  toHover(): Hover;
 }
 
 export type FunctionParam = {
@@ -28,7 +28,7 @@ export type FunctionParam = {
   documentation: string;
 };
 
-export class FunctionCompletion implements Completion {
+export class FunctionCompletion implements SPItem {
   name: string;
   description: string;
   detail: string;
@@ -56,7 +56,7 @@ export class FunctionCompletion implements Completion {
     this.range = range;
   }
 
-  to_completion_item(
+  toCompletionItem(
     file: string,
     lastFuncName: string = undefined
   ): CompletionItem {
@@ -67,7 +67,7 @@ export class FunctionCompletion implements Completion {
     };
   }
 
-  get_signature(): SignatureInformation {
+  toSignature(): SignatureInformation {
     return {
       label: this.detail,
       documentation: description_to_md(this.description),
@@ -75,7 +75,7 @@ export class FunctionCompletion implements Completion {
     };
   }
 
-  get_hover(): Hover {
+  toHover(): Hover {
     let filename: string = basename(this.file, ".inc");
     if (this.description == "") {
       return new Hover({ language: "sourcepawn", value: this.detail });
@@ -98,7 +98,7 @@ export class FunctionCompletion implements Completion {
   }
 }
 
-export class MethodCompletion implements Completion {
+export class MethodCompletion implements SPItem {
   name: string;
   method_map: string;
   description: string;
@@ -120,7 +120,7 @@ export class MethodCompletion implements Completion {
     this.params = params;
   }
 
-  to_completion_item(
+  toCompletionItem(
     file: string,
     lastFuncName: string = undefined
   ): CompletionItem {
@@ -135,7 +135,7 @@ export class MethodCompletion implements Completion {
     return undefined;
   }
 
-  get_signature(): SignatureInformation {
+  toSignature(): SignatureInformation {
     return {
       label: this.detail,
       documentation: description_to_md(this.description),
@@ -143,7 +143,7 @@ export class MethodCompletion implements Completion {
     };
   }
 
-  get_hover(): Hover {
+  toHover(): Hover {
     if (!this.description) {
       return;
     }
@@ -154,7 +154,7 @@ export class MethodCompletion implements Completion {
   }
 }
 
-export class DefineCompletion implements Completion {
+export class DefineCompletion implements SPItem {
   name: string;
   value: string;
   file: string;
@@ -168,7 +168,7 @@ export class DefineCompletion implements Completion {
     this.range = range;
   }
 
-  to_completion_item(
+  toCompletionItem(
     file: string,
     lastFuncName: string = undefined
   ): CompletionItem {
@@ -183,11 +183,11 @@ export class DefineCompletion implements Completion {
     return new Location(URI.file(this.file), this.range);
   }
 
-  get_signature(): SignatureInformation {
+  toSignature(): SignatureInformation {
     return;
   }
 
-  get_hover(): Hover {
+  toHover(): Hover {
     return new Hover({
       language: "sourcepawn",
       value: `#define ${this.name} ${this.value}`,
@@ -195,7 +195,7 @@ export class DefineCompletion implements Completion {
   }
 }
 
-export class VariableCompletion implements Completion {
+export class VariableCompletion implements SPItem {
   name: string;
   file: string;
   kind = CompletionItemKind.Variable;
@@ -209,7 +209,7 @@ export class VariableCompletion implements Completion {
     this.range = range;
   }
 
-  to_completion_item(
+  toCompletionItem(
     file: string,
     lastFuncName: string = undefined
   ): CompletionItem {
@@ -241,16 +241,16 @@ export class VariableCompletion implements Completion {
     return new Location(URI.file(this.file), this.range);
   }
 
-  get_signature(): SignatureInformation {
+  toSignature(): SignatureInformation {
     return undefined;
   }
 
-  get_hover(): Hover {
+  toHover(): Hover {
     return;
   }
 }
 
-export class EnumCompletion implements Completion {
+export class EnumCompletion implements SPItem {
   name: string;
   file: string;
   kind = CompletionItemKind.Enum;
@@ -264,7 +264,7 @@ export class EnumCompletion implements Completion {
     this.range = range;
   }
 
-  to_completion_item(
+  toCompletionItem(
     file: string,
     lastFuncName: string = undefined
   ): CompletionItem {
@@ -279,11 +279,11 @@ export class EnumCompletion implements Completion {
     return new Location(URI.file(this.file), this.range);
   }
 
-  get_signature(): SignatureInformation {
+  toSignature(): SignatureInformation {
     return undefined;
   }
 
-  get_hover(): Hover {
+  toHover(): Hover {
     if (!this.description) {
       return;
     }
@@ -294,7 +294,7 @@ export class EnumCompletion implements Completion {
   }
 }
 
-export class EnumMemberCompletion implements Completion {
+export class EnumMemberCompletion implements SPItem {
   name: string;
   enum: EnumCompletion;
   file: string;
@@ -316,7 +316,7 @@ export class EnumMemberCompletion implements Completion {
     this.range = range;
   }
 
-  to_completion_item(
+  toCompletionItem(
     file: string,
     lastFuncName: string = undefined
   ): CompletionItem {
@@ -331,11 +331,11 @@ export class EnumMemberCompletion implements Completion {
     return new Location(URI.file(this.file), this.range);
   }
 
-  get_signature(): SignatureInformation {
+  toSignature(): SignatureInformation {
     return undefined;
   }
 
-  get_hover(): Hover {
+  toHover(): Hover {
     let enumName = this.enum.name;
     if (enumName == "") {
       return new Hover([
@@ -351,7 +351,7 @@ export class EnumMemberCompletion implements Completion {
   }
 }
 
-export class EnumStructCompletion implements Completion {
+export class EnumStructCompletion implements SPItem {
   name: string;
   file: string;
   description: string;
@@ -364,7 +364,7 @@ export class EnumStructCompletion implements Completion {
     this.description = description;
   }
 
-  to_completion_item(
+  toCompletionItem(
     file: string,
     lastFuncName: string = undefined
   ): CompletionItem {
@@ -379,11 +379,11 @@ export class EnumStructCompletion implements Completion {
     return new Location(URI.file(this.file), this.range);
   }
 
-  get_signature(): SignatureInformation {
+  toSignature(): SignatureInformation {
     return undefined;
   }
 
-  get_hover(): Hover {
+  toHover(): Hover {
     if (!this.description) {
       return;
     }
@@ -394,7 +394,7 @@ export class EnumStructCompletion implements Completion {
   }
 }
 
-export class EnumStructMemberCompletion implements Completion {
+export class EnumStructMemberCompletion implements SPItem {
   name: string;
   enumStruct: EnumStructCompletion;
   file: string;
@@ -416,7 +416,7 @@ export class EnumStructMemberCompletion implements Completion {
     this.range = range;
   }
 
-  to_completion_item(
+  toCompletionItem(
     file: string,
     lastFuncName: string = undefined
   ): CompletionItem {
@@ -431,11 +431,11 @@ export class EnumStructMemberCompletion implements Completion {
     return new Location(URI.file(this.file), this.range);
   }
 
-  get_signature(): SignatureInformation {
+  toSignature(): SignatureInformation {
     return undefined;
   }
 
-  get_hover(): Hover {
+  toHover(): Hover {
     let enumName = this.enumStruct.name;
     if (enumName == "") {
       return new Hover([
@@ -454,7 +454,7 @@ export class EnumStructMemberCompletion implements Completion {
   }
 }
 
-export class PropertyCompletion implements Completion {
+export class PropertyCompletion implements SPItem {
   method_map: string;
   name: string;
   file: string;
@@ -476,7 +476,7 @@ export class PropertyCompletion implements Completion {
     this.range = range;
   }
 
-  to_completion_item(
+  toCompletionItem(
     file: string,
     lastFuncName: string = undefined
   ): CompletionItem {
@@ -491,11 +491,11 @@ export class PropertyCompletion implements Completion {
     return new Location(URI.file(this.file), this.range);
   }
 
-  get_signature(): SignatureInformation {
+  toSignature(): SignatureInformation {
     return undefined;
   }
 
-  get_hover(): Hover {
+  toHover(): Hover {
     if (!this.description) {
       return;
     }

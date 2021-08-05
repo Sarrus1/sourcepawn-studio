@@ -18,12 +18,12 @@ import {
 import { basename, join } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
-import { Completion, Include } from "./spCompletions";
+import { SPItem, Include } from "./spCompletions";
 import { events } from "../Misc/sourceEvents";
 import { GetLastFuncName, isFunction } from "./spDefinitions";
 
 export class FileItems {
-  completions: Map<string, Completion>;
+  completions: Map<string, SPItem>;
   includes: Include[];
   uri: string;
 
@@ -33,15 +33,15 @@ export class FileItems {
     this.uri = uri;
   }
 
-  add(id: string, completion: Completion) {
+  add(id: string, completion: SPItem) {
     this.completions.set(id, completion);
   }
 
-  get(id: string): Completion {
+  get(id: string): SPItem {
     return this.completions.get(id);
   }
 
-  getCompletions(repo: ItemsRepository): Completion[] {
+  getCompletions(repo: ItemsRepository): SPItem[] {
     let completions = [];
     for (let completion of this.completions.values()) {
       completions.push(completion);
@@ -230,7 +230,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
         break;
       }
     }
-    let all_completions: Completion[] = this.get_all_completions(
+    let all_completions: SPItem[] = this.get_all_completions(
       document.uri.toString()
     );
     let all_completions_list: CompletionList = new CompletionList();
@@ -238,8 +238,8 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       let lastFunc: string = GetLastFuncName(position.line, document);
       all_completions_list.items = all_completions.map((completion) => {
         if (completion) {
-          if (completion.to_completion_item) {
-            return completion.to_completion_item(document.uri.fsPath, lastFunc);
+          if (completion.toCompletionItem) {
+            return completion.toCompletionItem(document.uri.fsPath, lastFunc);
           }
         }
       });
@@ -263,7 +263,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     }
   }
 
-  get_all_completions(file: string): Completion[] {
+  get_all_completions(file: string): SPItem[] {
     let completion = this.completions.get(file);
     let includes = new Set<string>();
     if (completion) {
@@ -299,9 +299,9 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       );
   }
 
-  get_file_completions(file: string): Completion[] {
+  get_file_completions(file: string): SPItem[] {
     let file_completions: FileItems = this.completions.get(file);
-    let completion_list: Completion[] = [];
+    let completion_list: SPItem[] = [];
     if (file_completions) {
       return file_completions.getCompletions(this);
     }
@@ -334,7 +334,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     );
 
     if (completions.length > 0) {
-      return completions[0].get_hover();
+      return completions[0].toHover();
     }
   }
 
@@ -383,7 +383,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
 
       if (completions.length > 0) {
         return {
-          signatures: [completions[0].get_signature()],
+          signatures: [completions[0].toSignature()],
           activeParameter: parameter_count,
           activeSignature: 0,
         };
