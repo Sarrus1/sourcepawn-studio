@@ -345,11 +345,15 @@
         {
           "name": "string.quoted.double.sourcepawn",
           "begin": "\"",
-          "end": "\"",
+          "end": "[^\\\\]\"",
           "patterns": [
             {
               "name": "constant.character.format.sourcepawn",
               "match": "%(?:c|b|d|i|u|f|L|N|s|T|t|X|x|%|(?:\\d+)?\\.\\d+(?:b|d|i|u|f|s|X|x))"
+            },
+            {
+              "name": "constant.character.escape.sourcepawn",
+              "match": "\\\\(?:n|t|\"|')"
             },
             {
               "name": "constant.character.sp-translations",
@@ -365,11 +369,15 @@
         {
           "name": "string.quoted.single.sourcepawn",
           "begin": "'",
-          "end": "'",
+          "end": "[^\\\\]'",
           "patterns": [
             {
               "name": "constant.character.format.sourcepawn",
               "match": "%(?:c|b|d|i|u|f|L|N|s|T|t|X|x|%|(?:\\d+)?\\.\\d+(?:b|d|i|u|f|s|X|x))"
+            },
+            {
+              "name": "constant.character.escape.sourcepawn",
+              "match": "\\\\(?:n|t|\"|')"
             },
             {
               "name": "constant.character.sp-translations",
