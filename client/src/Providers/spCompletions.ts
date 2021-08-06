@@ -164,7 +164,7 @@ export class DefineCompletion implements SPItem {
   constructor(name: string, value: string, file: string, range: Range) {
     this.name = name;
     this.value = value;
-    this.file = basename(file);
+    this.file = file;
     this.range = range;
   }
 
