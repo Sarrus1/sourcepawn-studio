@@ -1,4 +1,4 @@
-import { FileItems } from "./spItemsRepository";
+import { ItemsRepository, FileItems } from "./spItemsRepository";
 import {
   FunctionItem,
   DefineItem,
@@ -10,9 +10,15 @@ import {
   PropertyItem,
   EnumStructItem,
   EnumStructMemberItem,
+  SPItem,
 } from "./spItems";
 import { isControlStatement } from "./spDefinitions";
-import { Location, Range } from "vscode";
+import {
+  CompletionItemKind,
+  Location,
+  Range,
+  workspace as Workspace,
+} from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { basename } from "path";
 import { URI } from "vscode-uri";
@@ -20,26 +26,26 @@ import { URI } from "vscode-uri";
 export function parseFile(
   file: string,
   completions: FileItems,
-  documents: Map<string, string>,
+  itemsRepository: ItemsRepository,
   IsBuiltIn: boolean = false
 ) {
   if (!existsSync(file)) return;
   let data = readFileSync(file, "utf-8");
-  parseText(data, file, completions, documents, IsBuiltIn);
+  parseText(data, file, completions, itemsRepository, IsBuiltIn);
 }
 
 export function parseText(
   data: string,
   file: string,
   completions: FileItems,
-  documents: Map<string, string>,
+  itemsRepository: ItemsRepository,
   IsBuiltIn: boolean = false
 ) {
   if (typeof data === "undefined") {
     return; // Asked to parse empty file
   }
   let lines = data.split("\n");
-  let parser = new Parser(lines, file, IsBuiltIn, completions, documents);
+  let parser = new Parser(lines, file, IsBuiltIn, completions, itemsRepository);
   parser.parse();
 }
 
@@ -64,14 +70,15 @@ class Parser {
   documents: Map<string, string>;
   lastFuncLine: number;
   lastFuncName: string;
-  definesList: string[];
+  definesMap: Map<string, string>;
+  itemsRepository: ItemsRepository;
 
   constructor(
     lines: string[],
     file: string,
     IsBuiltIn: boolean,
     completions: FileItems,
-    documents: Map<string, string>
+    itemsRepository: ItemsRepository
   ) {
     this.completions = completions;
     this.state = [State.None];
@@ -79,10 +86,11 @@ class Parser {
     this.lines = lines;
     this.file = file;
     this.IsBuiltIn = IsBuiltIn;
-    this.documents = documents;
+    this.documents = itemsRepository.documents;
     this.lastFuncLine = 0;
     this.lastFuncName = "";
-    this.definesList = [];
+    this.definesMap = this.getAllDefines(itemsRepository);
+    this.itemsRepository = itemsRepository;
   }
 
   parse() {
@@ -97,11 +105,15 @@ class Parser {
   }
 
   interpLine(line: string) {
+    // EOF
     if (typeof line === "undefined") return;
+
     // Match define
     let match = line.match(/\s*#define\s+([A-Za-z0-9_]+)\s+([^]+)/);
     if (match) {
       this.read_define(match, line);
+      // Re-read the line now that define has been added to the array.
+      this.searchForDefinesInString(line);
       return;
     }
 
@@ -216,11 +228,11 @@ class Parser {
   }
 
   read_define(match, line: string) {
-    this.definesList.push(match[1]);
+    this.definesMap.set(match[1], this.file);
     let range = this.makeDefinitionRange(match[1], line);
     this.completions.add(
       match[1],
-      new DefineItem(match[1], match[2], this.file, range)
+      new DefineItem(match[1], match[2], this.file, range, this.IsBuiltIn)
     );
     return;
   }
@@ -637,8 +649,9 @@ class Parser {
   searchForDefinesInString(line: string): void {
     let matchDefine: RegExpExecArray;
     const re: RegExp = /\w+/g;
+    let defineFile: string;
     while ((matchDefine = re.exec(line))) {
-      if (this.definesList.includes(matchDefine[0])) {
+      if ((defineFile = this.definesMap.get(matchDefine[0]))) {
         let range = new Range(
           this.lineNb,
           matchDefine.index,
@@ -646,16 +659,66 @@ class Parser {
           matchDefine.index + matchDefine[0].length
         );
         let location = new Location(URI.file(this.file), range);
-        let define = this.completions.get(matchDefine[0]);
+        // Treat defines from the current file differently or they will get
+        // overwritten at the end of the parsing.
+        if (defineFile === this.file) {
+          let define = this.completions.get(matchDefine[0]);
+          if (typeof define === "undefined") {
+            return;
+          }
+          define.calls.push(location);
+          this.completions.add(matchDefine[0], define);
+          return;
+        }
+        defineFile = defineFile.startsWith("file://")
+          ? defineFile
+          : URI.file(defineFile).toString();
+        let items = this.itemsRepository.completions.get(defineFile);
+        if (typeof items === "undefined") {
+          return;
+        }
+        let define = items.get(matchDefine[0]);
         if (typeof define === "undefined") {
           return;
         }
         define.calls.push(location);
-        this.completions.add(matchDefine[0], define);
+        items.add(matchDefine[0], define);
       }
     }
     return;
   }
+
+  getAllDefines(itemsRepository: ItemsRepository): Map<string, string> {
+    let items = itemsRepository.getAllItems(URI.file(this.file).toString());
+    if (typeof items === "undefined") {
+      return new Map();
+    }
+    let defines = new Map();
+    let smHome =
+      Workspace.getConfiguration("sourcepawn").get<string>("SourcemodHome") ||
+      "";
+    if (smHome === "") {
+      return new Map();
+    }
+    for (let item of items) {
+      if (item.kind === CompletionItemKind.Constant) {
+        purgeCalls(item, this.file);
+        let file = item.file;
+        if (item.IsBuiltIn) {
+          file = file.replace(smHome, "file://__sourcemod_builtin");
+        }
+        defines.set(item.name, file);
+      }
+    }
+    return defines;
+  }
+}
+
+function purgeCalls(item: SPItem, file: string): void {
+  let uri = URI.file(file);
+  item.calls = item.calls.filter((e) => {
+    uri === e.uri;
+  });
 }
 
 function PositiveRange(

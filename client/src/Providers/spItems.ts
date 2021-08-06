@@ -13,10 +13,12 @@ import { URI } from "vscode-uri";
 export interface SPItem {
   name: string;
   kind: CompletionItemKind;
+  file?: string;
   description?: string;
   range?: Range;
   scope?: string;
   calls?: Location[];
+  IsBuiltIn?: boolean;
 
   toCompletionItem(file: string, lastFuncName: string): CompletionItem;
   toDefinitionItem(): Location;
@@ -160,15 +162,23 @@ export class DefineItem implements SPItem {
   value: string;
   file: string;
   kind = CompletionItemKind.Constant;
+  IsBuiltIn: boolean;
   range: Range;
   calls: Location[];
 
-  constructor(name: string, value: string, file: string, range: Range) {
+  constructor(
+    name: string,
+    value: string,
+    file: string,
+    range: Range,
+    IsBuiltIn: boolean
+  ) {
     this.name = name;
     this.value = value;
     this.file = file;
     this.range = range;
     this.calls = [];
+    this.IsBuiltIn = IsBuiltIn;
   }
 
   toCompletionItem(

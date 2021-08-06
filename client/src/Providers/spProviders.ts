@@ -54,7 +54,7 @@ export class Providers {
         event.document.getText(),
         file_path,
         this_completions,
-        this.completionsProvider.documents
+        this.completionsProvider
       );
     } catch (error) {
       console.log(error);
@@ -79,11 +79,7 @@ export class Providers {
     if (file_path.includes(".git")) return;
     this.completionsProvider.documents.set(basename(file_path), uri.toString());
     try {
-      parseFile(
-        file_path,
-        this_completions,
-        this.completionsProvider.documents
-      );
+      parseFile(file_path, this_completions, this.completionsProvider);
     } catch (error) {
       console.log(error);
     }
@@ -98,7 +94,7 @@ export class Providers {
     // Some file paths are appened with .git
     path = path.replace(".git", "");
     try {
-      parseFile(path, this_completions, this.completionsProvider.documents);
+      parseFile(path, this_completions, this.completionsProvider);
     } catch (error) {
       console.log(error);
     }
@@ -125,7 +121,7 @@ export class Providers {
             parseFile(
               file,
               new_completions,
-              this.completionsProvider.documents,
+              this.completionsProvider,
               include.IsBuiltIn
             );
           } catch (err) {
@@ -169,7 +165,7 @@ export class Providers {
     for (let file of files) {
       try {
         let completions = new FileItems(URI.file(file).toString());
-        parseFile(file, completions, this.completionsProvider.documents, true);
+        parseFile(file, completions, this.completionsProvider, true);
 
         let uri = "file://__sourcemod_builtin/" + relative(sm_home, file);
         this.completionsProvider.completions.set(uri, completions);

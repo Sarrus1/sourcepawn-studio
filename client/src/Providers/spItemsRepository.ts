@@ -4,7 +4,6 @@ import {
   CompletionItemProvider,
   Memento,
   Disposable,
-  Range,
   TextDocument,
   Position,
   CancellationToken,
