@@ -16,6 +16,7 @@ export interface SPItem {
   description?: string;
   range?: Range;
   scope?: string;
+  calls?: Location[];
 
   toCompletionItem(file: string, lastFuncName: string): CompletionItem;
   toDefinitionItem(): Location;
@@ -158,14 +159,16 @@ export class DefineItem implements SPItem {
   name: string;
   value: string;
   file: string;
-  kind = CompletionItemKind.Variable;
+  kind = CompletionItemKind.Constant;
   range: Range;
+  calls: Location[];
 
   constructor(name: string, value: string, file: string, range: Range) {
     this.name = name;
     this.value = value;
     this.file = file;
     this.range = range;
+    this.calls = [];
   }
 
   toCompletionItem(

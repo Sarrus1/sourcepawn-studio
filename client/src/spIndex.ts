@@ -13,6 +13,7 @@ import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./spFormat";
 import { basename, extname } from "path";
 import { URI } from "vscode-uri";
+import { SP_LEGENDS } from "./spLegends";
 
 let getDirectories = function (src, ext, callback) {
   glob(src + "/**/*", callback);
@@ -78,6 +79,14 @@ export function activate(context: ExtensionContext) {
       "(",
       ",",
       "\n"
+    )
+  );
+
+  context.subscriptions.push(
+    languages.registerDocumentSemanticTokensProvider(
+      SP_MODE,
+      providers.highlightsProvider,
+      SP_LEGENDS
     )
   );
 

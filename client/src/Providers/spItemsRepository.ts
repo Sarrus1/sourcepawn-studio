@@ -4,6 +4,7 @@ import {
   CompletionItemProvider,
   Memento,
   Disposable,
+  Range,
   TextDocument,
   Position,
   CancellationToken,
@@ -14,6 +15,9 @@ import {
   SignatureHelp,
   Location,
   DefinitionLink,
+  ProviderResult,
+  SemanticTokens,
+  SemanticTokensBuilder,
 } from "vscode";
 import { basename, join } from "path";
 import { existsSync } from "fs";
@@ -22,6 +26,7 @@ import { SPItem, Include } from "./spItems";
 import { events } from "../Misc/sourceEvents";
 import { GetLastFuncName, isFunction } from "./spDefinitions";
 import { getSignatureAttributes } from "./spSignatures";
+import { SP_LEGENDS } from "../spLegends";
 
 export class FileItems {
   completions: Map<string, SPItem>;
@@ -393,5 +398,20 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       return definition.toDefinitionItem();
     }
     return definitions[0].toDefinitionItem();
+  }
+
+  public provideDocumentSemanticTokens(
+    document: TextDocument
+  ): ProviderResult<SemanticTokens> {
+    const tokensBuilder = new SemanticTokensBuilder(SP_LEGENDS);
+    let allItems: SPItem[] = this.getAllItems(document.uri.toString());
+    for (let item of allItems) {
+      if (item.kind === CompletionItemKind.Constant) {
+        for (let call of item.calls) {
+          tokensBuilder.push(call.range, "variable", ["readonly"]);
+        }
+      }
+    }
+    return tokensBuilder.build();
   }
 }

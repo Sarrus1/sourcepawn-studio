@@ -12,9 +12,10 @@ import {
   EnumStructMemberItem,
 } from "./spItems";
 import { isControlStatement } from "./spDefinitions";
-import { Range } from "vscode";
+import { Location, Range } from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { basename } from "path";
+import { URI } from "vscode-uri";
 
 export function parseFile(
   file: string,
@@ -63,6 +64,7 @@ class Parser {
   documents: Map<string, string>;
   lastFuncLine: number;
   lastFuncName: string;
+  definesList: string[];
 
   constructor(
     lines: string[],
@@ -80,12 +82,14 @@ class Parser {
     this.documents = documents;
     this.lastFuncLine = 0;
     this.lastFuncName = "";
+    this.definesList = [];
   }
 
   parse() {
     let line: string;
     line = this.lines[0];
     while (typeof line != "undefined") {
+      this.searchForDefinesInString(line);
       this.interpLine(line);
       line = this.lines.shift();
       this.lineNb++;
@@ -212,6 +216,7 @@ class Parser {
   }
 
   read_define(match, line: string) {
+    this.definesList.push(match[1]);
     let range = this.makeDefinitionRange(match[1], line);
     this.completions.add(
       match[1],
@@ -627,6 +632,29 @@ class Parser {
         this.AddVariableCompletion(variable_completion, line);
       }
     }
+  }
+
+  searchForDefinesInString(line: string): void {
+    let matchDefine: RegExpExecArray;
+    const re: RegExp = /\w+/g;
+    while ((matchDefine = re.exec(line))) {
+      if (this.definesList.includes(matchDefine[0])) {
+        let range = new Range(
+          this.lineNb,
+          matchDefine.index,
+          this.lineNb,
+          matchDefine.index + matchDefine[0].length
+        );
+        let location = new Location(URI.file(this.file), range);
+        let define = this.completions.get(matchDefine[0]);
+        if (typeof define === "undefined") {
+          return;
+        }
+        define.calls.push(location);
+        this.completions.add(matchDefine[0], define);
+      }
+    }
+    return;
   }
 }
 

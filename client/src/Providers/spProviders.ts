@@ -19,14 +19,16 @@ import { parseText, parseFile } from "./spParser";
 
 export class Providers {
   completionsProvider: ItemsRepository;
+  highlightsProvider: ItemsRepository;
   documentationProvider: JsDocCompletionProvider;
   hoverProvider: ItemsRepository;
 
   constructor(globalState?: Memento) {
-    let CompletionRepo = new ItemsRepository(globalState);
-    this.completionsProvider = CompletionRepo;
-    this.hoverProvider = CompletionRepo;
+    let itemsRepository = new ItemsRepository(globalState);
+    this.completionsProvider = itemsRepository;
+    this.hoverProvider = itemsRepository;
     this.documentationProvider = new JsDocCompletionProvider();
+    this.highlightsProvider = itemsRepository;
   }
 
   public handleAddedDocument(event: FileCreateEvent) {
