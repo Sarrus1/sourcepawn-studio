@@ -13,7 +13,7 @@ import { basename, extname, join, relative } from "path";
 import { URI } from "vscode-uri";
 import { existsSync } from "fs";
 import { ItemsRepository, FileItems } from "./spItemsRepository";
-import { Include } from "./spCompletions";
+import { Include } from "./spItems";
 import { JsDocCompletionProvider } from "./spDocCompletions";
 import { parseText, parseFile } from "./spParser";
 

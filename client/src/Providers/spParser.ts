@@ -1,16 +1,16 @@
 import { FileItems } from "./spItemsRepository";
 import {
-  FunctionCompletion,
-  DefineCompletion,
-  EnumCompletion,
-  EnumMemberCompletion,
-  VariableCompletion,
-  MethodCompletion,
+  FunctionItem,
+  DefineItem,
+  EnumItem,
+  EnumMemberItem,
+  VariableItem,
+  MethodItem,
   FunctionParam,
-  PropertyCompletion,
-  EnumStructCompletion,
-  EnumStructMemberCompletion,
-} from "./spCompletions";
+  PropertyItem,
+  EnumStructItem,
+  EnumStructMemberItem,
+} from "./spItems";
 import { isControlStatement } from "./spDefinitions";
 import { Range } from "vscode";
 import { existsSync, readFileSync } from "fs";
@@ -215,7 +215,7 @@ class Parser {
     let range = this.makeDefinitionRange(match[1], line);
     this.completions.add(
       match[1],
-      new DefineCompletion(match[1], match[2], this.file, range)
+      new DefineItem(match[1], match[2], this.file, range)
     );
     return;
   }
@@ -232,7 +232,7 @@ class Parser {
     if (IsStruct) {
       // Create a completion for the enum struct itself if it has a name
       let range = this.makeDefinitionRange(match[1], line);
-      var enumStructCompletion: EnumStructCompletion = new EnumStructCompletion(
+      var enumStructCompletion: EnumStructItem = new EnumStructItem(
         match[1],
         this.file,
         description,
@@ -272,7 +272,7 @@ class Parser {
         let range = this.makeDefinitionRange(enumStructMemberName, line);
         this.completions.add(
           enumStructMemberName + "___property",
-          new EnumStructMemberCompletion(
+          new EnumStructMemberItem(
             enumStructMemberName,
             this.file,
             enumStructMemberDescription,
@@ -286,7 +286,7 @@ class Parser {
       if (nameMatch) {
         // Create a completion for the enum itself if it has a name
         let range = this.makeDefinitionRange(match[1], line);
-        var enumCompletion: EnumCompletion = new EnumCompletion(
+        var enumCompletion: EnumItem = new EnumItem(
           nameMatch[1],
           this.file,
           description,
@@ -294,7 +294,7 @@ class Parser {
         );
         this.completions.add(nameMatch[1], enumCompletion);
       } else {
-        var enumCompletion: EnumCompletion = new EnumCompletion(
+        var enumCompletion: EnumItem = new EnumItem(
           "",
           this.file,
           description,
@@ -335,7 +335,7 @@ class Parser {
         let range = this.makeDefinitionRange(enumMemberName, line);
         this.completions.add(
           enumMemberName,
-          new EnumMemberCompletion(
+          new EnumMemberItem(
             enumMemberName,
             this.file,
             enumMemberDescription,
@@ -439,7 +439,7 @@ class Parser {
     let { description, params } = this.parse_doc_comment();
     let name_match: string = match[2];
     let range = this.makeDefinitionRange(name_match, line);
-    let NewPropertyCompletion = new PropertyCompletion(
+    let NewPropertyCompletion = new PropertyItem(
       this.state_data.name,
       name_match,
       this.file,
@@ -475,7 +475,7 @@ class Parser {
       if (this.state[this.state.length - 2] === State.Methodmap) {
         this.completions.add(
           name_match + "__method",
-          new MethodCompletion(
+          new MethodItem(
             this.state_data.name,
             name_match,
             match[3],
@@ -509,7 +509,7 @@ class Parser {
         let range = this.makeDefinitionRange(name_match, line);
         this.completions.add(
           name_match,
-          new FunctionCompletion(
+          new FunctionItem(
             name_match,
             paramsMatch.replace(/;\s*$/g, ""),
             description,
@@ -597,7 +597,7 @@ class Parser {
     let mapName = name + scope;
     this.completions.add(
       mapName,
-      new VariableCompletion(name, this.file, scope, range)
+      new VariableItem(name, this.file, scope, range)
     );
   }
 

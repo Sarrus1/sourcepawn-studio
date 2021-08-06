@@ -28,7 +28,7 @@ export type FunctionParam = {
   documentation: string;
 };
 
-export class FunctionCompletion implements SPItem {
+export class FunctionItem implements SPItem {
   name: string;
   description: string;
   detail: string;
@@ -98,7 +98,7 @@ export class FunctionCompletion implements SPItem {
   }
 }
 
-export class MethodCompletion implements SPItem {
+export class MethodItem implements SPItem {
   name: string;
   method_map: string;
   description: string;
@@ -154,7 +154,7 @@ export class MethodCompletion implements SPItem {
   }
 }
 
-export class DefineCompletion implements SPItem {
+export class DefineItem implements SPItem {
   name: string;
   value: string;
   file: string;
@@ -195,7 +195,7 @@ export class DefineCompletion implements SPItem {
   }
 }
 
-export class VariableCompletion implements SPItem {
+export class VariableItem implements SPItem {
   name: string;
   file: string;
   kind = CompletionItemKind.Variable;
@@ -250,7 +250,7 @@ export class VariableCompletion implements SPItem {
   }
 }
 
-export class EnumCompletion implements SPItem {
+export class EnumItem implements SPItem {
   name: string;
   file: string;
   kind = CompletionItemKind.Enum;
@@ -294,9 +294,9 @@ export class EnumCompletion implements SPItem {
   }
 }
 
-export class EnumMemberCompletion implements SPItem {
+export class EnumMemberItem implements SPItem {
   name: string;
-  enum: EnumCompletion;
+  enum: EnumItem;
   file: string;
   description: string;
   kind = CompletionItemKind.EnumMember;
@@ -306,7 +306,7 @@ export class EnumMemberCompletion implements SPItem {
     name: string,
     file: string,
     description: string,
-    Enum: EnumCompletion,
+    Enum: EnumItem,
     range: Range
   ) {
     this.name = name;
@@ -351,7 +351,7 @@ export class EnumMemberCompletion implements SPItem {
   }
 }
 
-export class EnumStructCompletion implements SPItem {
+export class EnumStructItem implements SPItem {
   name: string;
   file: string;
   description: string;
@@ -394,9 +394,9 @@ export class EnumStructCompletion implements SPItem {
   }
 }
 
-export class EnumStructMemberCompletion implements SPItem {
+export class EnumStructMemberItem implements SPItem {
   name: string;
-  enumStruct: EnumStructCompletion;
+  enumStruct: EnumStructItem;
   file: string;
   description: string;
   kind = CompletionItemKind.Property;
@@ -406,7 +406,7 @@ export class EnumStructMemberCompletion implements SPItem {
     name: string,
     file: string,
     description: string,
-    EnumStruct: EnumStructCompletion,
+    EnumStruct: EnumStructItem,
     range: Range
   ) {
     this.name = name;
@@ -454,7 +454,7 @@ export class EnumStructMemberCompletion implements SPItem {
   }
 }
 
-export class PropertyCompletion implements SPItem {
+export class PropertyItem implements SPItem {
   method_map: string;
   name: string;
   file: string;

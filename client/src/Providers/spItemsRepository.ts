@@ -18,7 +18,7 @@ import {
 import { basename, join } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
-import { SPItem, Include } from "./spCompletions";
+import { SPItem, Include } from "./spItems";
 import { events } from "../Misc/sourceEvents";
 import { GetLastFuncName, isFunction } from "./spDefinitions";
 import { getSignatureAttributes } from "./spSignatures";
