@@ -269,6 +269,7 @@ class Parser {
         if (typeof line === "undefined") {
           return;
         }
+        this.searchForDefinesInString(line);
         match = line.match(/^\s*(?:\w+)\s+(\w+)\s*.*/);
 
         // Skip if didn't match
@@ -332,6 +333,7 @@ class Parser {
         if (typeof line === "undefined") {
           return;
         }
+        this.searchForDefinesInString(line);
         match = line.match(/^\s*(\w*)\s*.*/);
 
         // Skip if didn't match
@@ -447,6 +449,7 @@ class Parser {
       current_line = this.lines.shift();
       this.lineNb++;
     }
+    this.searchForDefinesInString(current_line);
     this.interpLine(current_line);
     this.state.pop();
     return;
@@ -515,6 +518,7 @@ class Parser {
           maxiter++;
           line = this.lines.shift();
           this.lineNb++;
+          this.searchForDefinesInString(line);
           this.AddParamsDef(line, name_match, line);
           paramsMatch += line;
         }
@@ -647,6 +651,9 @@ class Parser {
   }
 
   searchForDefinesInString(line: string): void {
+    if (typeof line === "undefined") {
+      return;
+    }
     let matchDefine: RegExpExecArray;
     const re: RegExp = /\w+/g;
     let defineFile: string;
