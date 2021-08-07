@@ -14,6 +14,7 @@ export interface SPItem {
   name: string;
   kind: CompletionItemKind;
   file?: string;
+  type?: string;
   description?: string;
   range?: Range;
   scope?: string;
@@ -214,12 +215,20 @@ export class VariableItem implements SPItem {
   kind = CompletionItemKind.Variable;
   scope: string;
   range: Range;
+  type: string;
 
-  constructor(name: string, file: string, scope: string, range: Range) {
+  constructor(
+    name: string,
+    file: string,
+    scope: string,
+    range: Range,
+    type: string
+  ) {
     this.name = name;
     this.file = file;
     this.scope = scope;
     this.range = range;
+    this.type = type;
   }
 
   toCompletionItem(

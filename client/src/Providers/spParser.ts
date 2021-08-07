@@ -369,7 +369,7 @@ class Parser {
 
   read_loop_variables(match, line: string) {
     if (this.IsBuiltIn) return;
-    this.AddVariableCompletion(match[1], line);
+    this.AddVariableCompletion(match[1], line, "int");
     return;
   }
 
@@ -379,16 +379,16 @@ class Parser {
     // Check if it's a multiline declaration
     if (/(;)(?:\s*|)$/.test(line)) {
       // Separate potential multiple declarations
-      let re = /\s*(?:(?:const|static|public|stock)\s+)*\w*\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])*\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])*(?:\s*=\s*(?:(?:\"[^]*\")|(?:\'[^]*\')|(?:[^,]+)))?/g;
+      let re = /\s*(?:(?:const|static|public|stock)\s+)*(\w*)\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])*\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])*(?:\s*=\s*(?:(?:\"[^]*\")|(?:\'[^]*\')|(?:[^,]+)))?/g;
       while ((match_variable = re.exec(line)) != null) {
         match_variables.push(match_variable);
       }
       for (let variable of match_variables) {
-        let variable_completion = variable[1].match(
+        let variable_completion = variable[2].match(
           /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
         )[1];
         if (!this.IsBuiltIn) {
-          this.AddVariableCompletion(variable_completion, line);
+          this.AddVariableCompletion(variable_completion, line, variable[1]);
         }
       }
     } else {
@@ -407,7 +407,7 @@ class Parser {
             /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
           )[1];
           if (!this.IsBuiltIn) {
-            this.AddVariableCompletion(variable_completion, line);
+            this.AddVariableCompletion(variable_completion, line, "");
           }
         }
         match[1] = this.lines.shift();
@@ -608,7 +608,7 @@ class Parser {
     return { description, params };
   }
 
-  AddVariableCompletion(name: string, line: string): void {
+  AddVariableCompletion(name: string, line: string, type: string): void {
     let range = this.makeDefinitionRange(name, line);
     let scope: string = "$GLOBAL";
     if (this.lastFuncLine !== 0) {
@@ -618,7 +618,7 @@ class Parser {
     let mapName = name + scope;
     this.completions.add(
       mapName,
-      new VariableItem(name, this.file, scope, range)
+      new VariableItem(name, this.file, scope, range, type)
     );
   }
 
@@ -636,16 +636,16 @@ class Parser {
   AddParamsDef(params: string, funcName: string, line: string) {
     let match_variable: RegExpExecArray;
     let match_variables: RegExpExecArray[] = [];
-    let re = /\s*(?:(?:const|static)\s+)?\w+\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
+    let re = /\s*(?:(?:const|static)\s+)?(\w+)\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
     while ((match_variable = re.exec(params)) != null) {
       match_variables.push(match_variable);
     }
     for (let variable of match_variables) {
-      let variable_completion = variable[1].match(
+      let variable_completion = variable[2].match(
         /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
       )[1];
       if (!this.IsBuiltIn) {
-        this.AddVariableCompletion(variable_completion, line);
+        this.AddVariableCompletion(variable_completion, line, variable[1]);
       }
     }
   }

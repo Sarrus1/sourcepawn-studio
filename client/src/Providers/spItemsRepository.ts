@@ -227,29 +227,31 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     let all_completions_list: CompletionList = new CompletionList();
     if (all_completions != []) {
       let lastFunc: string = GetLastFuncName(position.line, document);
-      all_completions_list.items = all_completions.map((completion) => {
-        if (completion) {
-          if (completion.toCompletionItem) {
-            return completion.toCompletionItem(document.uri.fsPath, lastFunc);
+      if (is_method) {
+        for (let item of all_completions) {
+          if (
+            item.kind === CompletionItemKind.Method ||
+            item.kind === CompletionItemKind.Property
+          ) {
+            all_completions_list.items.push(
+              item.toCompletionItem(document.uri.fsPath, lastFunc)
+            );
           }
         }
-      });
-    }
-    if (is_method) {
-      all_completions_list.items = all_completions_list.items.filter(
-        (completion) =>
-          completion.kind === CompletionItemKind.Method ||
-          completion.kind === CompletionItemKind.Property
-      );
-      return all_completions_list;
-    } else {
-      all_completions_list.items = all_completions_list.items.filter(
-        (completion) =>
+        return all_completions_list;
+      }
+      for (let item of all_completions) {
+        if (
           !(
-            completion.kind === CompletionItemKind.Method ||
-            completion.kind === CompletionItemKind.Property
+            item.kind === CompletionItemKind.Method ||
+            item.kind === CompletionItemKind.Property
           )
-      );
+        ) {
+          all_completions_list.items.push(
+            item.toCompletionItem(document.uri.fsPath, lastFunc)
+          );
+        }
+      }
       return all_completions_list;
     }
   }
