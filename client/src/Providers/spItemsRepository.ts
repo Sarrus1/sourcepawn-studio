@@ -290,8 +290,10 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     }
     let completion = this.completions.get(file);
 
-    if (completion) {
+    if (typeof completion !== "undefined") {
       this.getIncludedFiles(completion, includes);
+    } else {
+      return [];
     }
     includes.add(file);
     return [...includes]
@@ -407,7 +409,9 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     for (let item of allItems) {
       if (item.kind === CompletionItemKind.Constant) {
         for (let call of item.calls) {
-          tokensBuilder.push(call.range, "variable", ["readonly"]);
+          if (call.uri.fsPath === document.uri.fsPath) {
+            tokensBuilder.push(call.range, "variable", ["readonly"]);
+          }
         }
       }
     }
