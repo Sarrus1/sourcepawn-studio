@@ -221,21 +221,8 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
   }
 
   getCompletions(document: TextDocument, position: Position): CompletionList {
-    let is_method = false;
-    if (document) {
-      let line = document.getText().split("\n")[position.line].trim();
-      for (let i = line.length - 2; i >= 0; i--) {
-        if (line[i].match(/\w/)) {
-          continue;
-        }
-
-        if (line[i] === ".") {
-          is_method = true;
-          break;
-        }
-        break;
-      }
-    }
+    let line = document.lineAt(position.line).text.trim();
+    let is_method = line[position.character - 1] === ".";
     let all_completions: SPItem[] = this.getAllItems(document.uri.toString());
     let all_completions_list: CompletionList = new CompletionList();
     if (all_completions != []) {
@@ -382,7 +369,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     let bIsFunction = isFunction(
       range,
       document,
-      document.getText().split("\n")[position.line].length
+      document.lineAt(position.line).text.length
     );
     let definition = undefined;
     if (bIsFunction) {
