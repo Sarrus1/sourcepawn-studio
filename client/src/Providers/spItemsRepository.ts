@@ -221,7 +221,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
   }
 
   getCompletions(document: TextDocument, position: Position): CompletionList {
-    let line = document.lineAt(position.line).text.trim();
+    let line = document.lineAt(position.line).text;
     let is_method = line[position.character - 1] === ".";
     let all_completions: SPItem[] = this.getAllItems(document.uri.toString());
     let all_completions_list: CompletionList = new CompletionList();

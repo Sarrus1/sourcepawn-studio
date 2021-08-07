@@ -15,6 +15,7 @@
 
 ### Fixed
 
+- Improved overall performances by over 50% in some cases (completions were sometimes iterated over twice, which caused delays in large files).
 - Made `#include`, `#pragma`, etc statements highlighting closer to C/C++ highlighting.
 - Fixed an issue for include files not inside an `include` folder.
 - Fixed an error where function signatures would get confused if a `,` was in a string or an array.
