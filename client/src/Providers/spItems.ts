@@ -15,6 +15,7 @@ export interface SPItem {
   kind: CompletionItemKind;
   file?: string;
   type?: string;
+  method_map?: string;
   description?: string;
   range?: Range;
   scope?: string;

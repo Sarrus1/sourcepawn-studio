@@ -225,13 +225,26 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     let is_method = line[position.character - 1] === ".";
     let all_completions: SPItem[] = this.getAllItems(document.uri.toString());
     let all_completions_list: CompletionList = new CompletionList();
-    if (all_completions != []) {
+    if (all_completions !== []) {
       let lastFunc: string = GetLastFuncName(position.line, document);
       if (is_method) {
+        let variablePosition: Position = new Position(
+          position.line,
+          position.character - 2
+        );
+        let variableRange = document.getWordRangeAtPosition(variablePosition);
+        let variableName = document.getText(variableRange);
+        let variableType = all_completions.find(
+          (item) =>
+            item.kind === CompletionItemKind.Variable &&
+            item.name === variableName &&
+            item.scope === lastFunc
+        ).type;
         for (let item of all_completions) {
           if (
-            item.kind === CompletionItemKind.Method ||
-            item.kind === CompletionItemKind.Property
+            (item.kind === CompletionItemKind.Method ||
+              item.kind === CompletionItemKind.Property) &&
+            item.method_map === variableType
           ) {
             all_completions_list.items.push(
               item.toCompletionItem(document.uri.fsPath, lastFunc)

@@ -23,7 +23,7 @@ export function GetLastFuncName(
       if (match && !isControlStatement(line)) break;
     }
   }
-  if (lineNB == 0) return undefined;
+  if (lineNB == 0) return "$GLOBAL";
   let match = text[lineNB].match(re);
   // Deal with old syntax here
   return match[2] == "" ? match[1] : match[2];
