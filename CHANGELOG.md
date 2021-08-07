@@ -1,6 +1,6 @@
 ## Release Notes
 
-## [1.12.8]
+## [2.0.0]
 
 ### Added
 
@@ -10,6 +10,7 @@
 - Complete refactoring of the GoToDefinition system, which now updates the location of an item every parsing.
 - Added support for signatures help in multi-line function calls.
 - Added escaped characters highlighting.
+- Added dynamic syntax highlighting for defines.
 
 ### Fixed
 
