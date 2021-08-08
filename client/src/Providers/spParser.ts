@@ -11,6 +11,7 @@ import {
   EnumStructItem,
   EnumStructMemberItem,
   SPItem,
+  MethodMapItem,
 } from "./spItems";
 import { isControlStatement } from "./spDefinitions";
 import {
@@ -181,13 +182,25 @@ class Parser {
     }
 
     match = line.match(
-      /^\s*methodmap\s+([a-zA-Z][a-zA-Z0-9_]*)(?:\s+<\s+([a-zA-Z][a-zA-Z0-9_]*))?/
+      /^\s*methodmap\s+([a-zA-Z][a-zA-Z0-9_]*)(?:\s*<\s*([a-zA-Z][a-zA-Z0-9_]*))?/
     );
     if (match) {
       this.state.push(State.Methodmap);
       this.state_data = {
         name: match[1],
       };
+      let { description, params } = this.parse_doc_comment();
+      let range = this.makeDefinitionRange(match[1], line);
+      var methodMapCompletion = new MethodMapItem(
+        match[1],
+        match[2],
+        line.trim(),
+        description,
+        this.file,
+        range,
+        this.IsBuiltIn
+      );
+      this.completions.add(match[1], methodMapCompletion);
       return;
     }
 
@@ -470,7 +483,7 @@ class Parser {
     if (typeof line === "undefined") {
       return;
     }
-		// Methodmap's methods have a ";" at the end so we need to use a different regex
+    // Methodmap's methods have a ";" at the end so we need to use a different regex
     let newSyntaxRe: RegExp = this.state.includes(State.Methodmap)
       ? /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))\s*/
       : /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))\s*$/;
@@ -484,7 +497,7 @@ class Parser {
       let { description, params } = this.parse_doc_comment();
       let name_match = match[2];
       if (this.state.includes(State.Methodmap)) {
-				let range = this.makeDefinitionRange(name_match, line);
+        let range = this.makeDefinitionRange(name_match, line);
         this.completions.add(
           name_match + this.state_data.name,
           new MethodItem(
@@ -494,9 +507,9 @@ class Parser {
             description,
             params,
             match[1],
-						this.file,
-						range,
-						this.IsBuiltIn
+            this.file,
+            range,
+            this.IsBuiltIn
           )
         );
       } else {

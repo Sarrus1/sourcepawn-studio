@@ -103,6 +103,73 @@ export class FunctionItem implements SPItem {
   }
 }
 
+export class MethodMapItem implements SPItem {
+  name: string;
+  parent: string;
+  description: string;
+  detail: string;
+  kind = CompletionItemKind.Class;
+  type: string;
+  range: Range;
+  IsBuiltIn: boolean;
+  file: string;
+
+  constructor(
+    name: string,
+    parent: string,
+    detail: string,
+    description: string,
+    file: string,
+    range: Range,
+    IsBuiltIn: boolean = false
+  ) {
+    this.name = name;
+    this.parent = parent;
+    this.detail = detail;
+    this.description = description;
+    this.IsBuiltIn = IsBuiltIn;
+    this.file = file;
+    this.range = range;
+  }
+
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: basename(this.file, ".inc"),
+    };
+  }
+
+  toDefinitionItem(): Location {
+    return new Location(URI.file(this.file), this.range);
+  }
+
+  toSignature(): SignatureInformation {
+    return undefined;
+  }
+
+  toHover(): Hover {
+    if (!this.description) {
+      return;
+    }
+    let filename: string = basename(this.file, ".inc");
+    if (this.IsBuiltIn) {
+      return new Hover([
+        { language: "sourcepawn", value: this.detail },
+        `[Online Documentation](https://sourcemod.dev/#/${filename}/methodmap.${this.name})`,
+        description_to_md(this.description),
+      ]);
+    }
+    return new Hover([
+      { language: "sourcepawn", value: this.detail },
+      description_to_md(this.description),
+    ]);
+  }
+}
+
 export class MethodItem implements SPItem {
   name: string;
   parent: string;

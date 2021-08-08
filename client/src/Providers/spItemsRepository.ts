@@ -222,37 +222,27 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
 
   getCompletions(document: TextDocument, position: Position): CompletionList {
     let line = document.lineAt(position.line).text;
-    let is_method = line[position.character - 1] === ".";
+    let is_method = checkIfMethod(line, position);
     let all_completions: SPItem[] = this.getAllItems(document.uri.toString());
     let all_completions_list: CompletionList = new CompletionList();
     if (all_completions !== []) {
       let lastFunc: string = GetLastFuncName(position.line, document);
       if (is_method) {
-        let variablePosition: Position = new Position(
-          position.line,
-          position.character - 2
-        );
-        let variableRange = document.getWordRangeAtPosition(variablePosition);
-        let variableName = document.getText(variableRange);
-        /*
-        let variableType = all_completions.find(
-          (item) =>
-            item.kind === CompletionItemKind.Variable &&
-            item.name === variableName &&
-            item.scope === lastFunc
-        ).type;
-				*/
         let variableType = this.getTypeOfVariable(
           line,
           position,
           all_completions,
           lastFunc
         );
+        let variableTypes: string[] = this.getAllInheritances(
+          variableType,
+          all_completions
+        );
         for (let item of all_completions) {
           if (
             (item.kind === CompletionItemKind.Method ||
               item.kind === CompletionItemKind.Property) &&
-            item.parent === variableType
+            variableType.includes(item.parent)
           ) {
             all_completions_list.items.push(
               item.toCompletionItem(document.uri.fsPath, lastFunc)
@@ -277,13 +267,36 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     }
   }
 
+  getAllInheritances(variableType: string, allCompletions: SPItem[]): string[] {
+    let methodMapItem = allCompletions.find(
+      (e) => e.kind === CompletionItemKind.Class && e.name === variableType
+    );
+    if (
+      typeof methodMapItem === "undefined" ||
+      typeof methodMapItem.parent === "undefined"
+    ) {
+      return [variableType];
+    }
+    return [variableType].concat(
+      this.getAllInheritances(methodMapItem.parent, allCompletions)
+    );
+  }
+
   getTypeOfVariable(
     line: string,
     position: Position,
     allItems: SPItem[],
     lastFuncName: string
   ): string {
-    let i = position.character - 2;
+    let i = position.character - 1;
+    while (i >= 0) {
+      if (/\w/.test(line[i])) {
+        i--;
+      } else if (line[i] === ".") {
+        i--;
+        break;
+      }
+    }
     let wordCounter = 0;
     let words: string[] = [""];
     while (i >= 0) {
@@ -471,4 +484,18 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     }
     return tokensBuilder.build();
   }
+}
+
+function checkIfMethod(line: string, position: Position): boolean {
+  let i = position.character - 1;
+  while (i > 0) {
+    if (/\w/.test(line[i])) {
+      i--;
+    } else if (line[i] === ".") {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  return false;
 }
