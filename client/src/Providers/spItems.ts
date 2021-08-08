@@ -15,7 +15,7 @@ export interface SPItem {
   kind: CompletionItemKind;
   file?: string;
   type?: string;
-  method_map?: string;
+  parent?: string;
   description?: string;
   range?: Range;
   scope?: string;
@@ -105,20 +105,20 @@ export class FunctionItem implements SPItem {
 
 export class MethodItem implements SPItem {
   name: string;
-  method_map: string;
+  parent: string;
   description: string;
   detail: string;
   params: FunctionParam[];
   kind = CompletionItemKind.Method;
 
   constructor(
-    method_map: string,
+    parent: string,
     name: string,
     detail: string,
     description: string,
     params: FunctionParam[]
   ) {
-    this.method_map = method_map;
+    this.parent = parent;
     this.name = name;
     this.detail = detail;
     this.description = description;
@@ -132,7 +132,7 @@ export class MethodItem implements SPItem {
     return {
       label: this.name,
       kind: this.kind,
-      detail: this.method_map,
+      detail: this.parent,
     };
   }
 
@@ -423,6 +423,7 @@ export class EnumStructMemberItem implements SPItem {
   file: string;
   description: string;
   kind = CompletionItemKind.Property;
+  parent: string;
   range: Range;
 
   constructor(
@@ -437,6 +438,7 @@ export class EnumStructMemberItem implements SPItem {
     this.description = description;
     this.enumStruct = EnumStruct;
     this.range = range;
+    this.parent = EnumStruct.name;
   }
 
   toCompletionItem(
@@ -478,7 +480,7 @@ export class EnumStructMemberItem implements SPItem {
 }
 
 export class PropertyItem implements SPItem {
-  method_map: string;
+  parent: string;
   name: string;
   file: string;
   description: string;
@@ -486,13 +488,13 @@ export class PropertyItem implements SPItem {
   range: Range;
 
   constructor(
-    method_map: string,
+    parent: string,
     name: string,
     file: string,
     description: string,
     range: Range
   ) {
-    this.method_map = method_map;
+    this.parent = parent;
     this.name = name;
     this.file = file;
     this.description = description;
@@ -506,7 +508,7 @@ export class PropertyItem implements SPItem {
     return {
       label: this.name,
       kind: this.kind,
-      detail: this.method_map,
+      detail: this.parent,
     };
   }
 

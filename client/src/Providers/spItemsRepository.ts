@@ -244,7 +244,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
           if (
             (item.kind === CompletionItemKind.Method ||
               item.kind === CompletionItemKind.Property) &&
-            item.method_map === variableType
+            item.parent === variableType
           ) {
             all_completions_list.items.push(
               item.toCompletionItem(document.uri.fsPath, lastFunc)
