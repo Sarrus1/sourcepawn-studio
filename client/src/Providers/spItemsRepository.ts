@@ -234,12 +234,20 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
         );
         let variableRange = document.getWordRangeAtPosition(variablePosition);
         let variableName = document.getText(variableRange);
+        /*
         let variableType = all_completions.find(
           (item) =>
             item.kind === CompletionItemKind.Variable &&
             item.name === variableName &&
             item.scope === lastFunc
         ).type;
+				*/
+        let variableType = this.getTypeOfVariable(
+          line,
+          position,
+          all_completions,
+          lastFunc
+        );
         for (let item of all_completions) {
           if (
             (item.kind === CompletionItemKind.Method ||
@@ -267,6 +275,44 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       }
       return all_completions_list;
     }
+  }
+
+  getTypeOfVariable(
+    line: string,
+    position: Position,
+    allItems: SPItem[],
+    lastFuncName: string
+  ): string {
+    let i = position.character - 2;
+    let wordCounter = 0;
+    let words: string[] = [""];
+    while (i >= 0) {
+      if (typeof line[i] !== "undefined") {
+        if (/\w/.test(line[i])) {
+          words[wordCounter] = line[i] + words[wordCounter];
+        } else if (line[i] === ".") {
+          wordCounter++;
+          words[wordCounter] = "";
+        } else {
+          break;
+        }
+      }
+      i--;
+    }
+    let variableType = allItems.find(
+      (e) => e.kind === CompletionItemKind.Variable && e.scope === lastFuncName
+    ).type;
+    words = words.slice(0, words.length - 1).reverse();
+    for (let word of words) {
+      variableType = allItems.find(
+        (e) =>
+          (e.kind === CompletionItemKind.Method ||
+            e.kind === CompletionItemKind.Property) &&
+          e.parent === variableType &&
+          e.name === word
+      ).type;
+    }
+    return variableType;
   }
 
   getAllItems(file: string): SPItem[] {

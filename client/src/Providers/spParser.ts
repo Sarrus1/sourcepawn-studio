@@ -270,13 +270,14 @@ class Parser {
           return;
         }
         this.searchForDefinesInString(line);
-        match = line.match(/^\s*(?:\w+)\s+(\w+)\s*.*/);
+        match = line.match(/^\s*(\w+)\s+(\w+)\s*.*/);
 
         // Skip if didn't match
         if (!match) {
           continue;
         }
-        let enumStructMemberName = match[1];
+        let enumStructMemberName = match[2];
+        let enumStructMemberType = match[1];
         // Try to match multiblock comments
         let enumStructMemberDescription: string;
         match = line.match(/\/\*\*<?\s*(.+?(?=\*\/))/);
@@ -295,7 +296,8 @@ class Parser {
             this.file,
             enumStructMemberDescription,
             enumStructCompletion,
-            range
+            range,
+            enumStructMemberType
           )
         );
       }
@@ -464,7 +466,8 @@ class Parser {
       name_match,
       this.file,
       description,
-      line
+      range,
+      match[1]
     );
     this.completions.add(name_match, NewPropertyCompletion);
   }
@@ -500,7 +503,8 @@ class Parser {
             name_match,
             match[3],
             description,
-            params
+            params,
+            match[1]
           )
         );
       } else {

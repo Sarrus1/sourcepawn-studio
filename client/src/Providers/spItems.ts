@@ -110,19 +110,22 @@ export class MethodItem implements SPItem {
   detail: string;
   params: FunctionParam[];
   kind = CompletionItemKind.Method;
+  type: string;
 
   constructor(
     parent: string,
     name: string,
     detail: string,
     description: string,
-    params: FunctionParam[]
+    params: FunctionParam[],
+    type: string
   ) {
     this.parent = parent;
     this.name = name;
     this.detail = detail;
     this.description = description;
     this.params = params;
+    this.type = type;
   }
 
   toCompletionItem(
@@ -422,6 +425,7 @@ export class EnumStructMemberItem implements SPItem {
   enumStruct: EnumStructItem;
   file: string;
   description: string;
+  type: string;
   kind = CompletionItemKind.Property;
   parent: string;
   range: Range;
@@ -431,7 +435,8 @@ export class EnumStructMemberItem implements SPItem {
     file: string,
     description: string,
     EnumStruct: EnumStructItem,
-    range: Range
+    range: Range,
+    type: string
   ) {
     this.name = name;
     this.file = file;
@@ -439,6 +444,7 @@ export class EnumStructMemberItem implements SPItem {
     this.enumStruct = EnumStruct;
     this.range = range;
     this.parent = EnumStruct.name;
+    this.type = type;
   }
 
   toCompletionItem(
@@ -484,6 +490,7 @@ export class PropertyItem implements SPItem {
   name: string;
   file: string;
   description: string;
+  type: string;
   kind = CompletionItemKind.Property;
   range: Range;
 
@@ -492,13 +499,15 @@ export class PropertyItem implements SPItem {
     name: string,
     file: string,
     description: string,
-    range: Range
+    range: Range,
+    type: string
   ) {
     this.parent = parent;
     this.name = name;
     this.file = file;
     this.description = description;
     this.range = range;
+    this.type = type;
   }
 
   toCompletionItem(
