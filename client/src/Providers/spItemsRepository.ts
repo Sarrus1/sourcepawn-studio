@@ -300,18 +300,24 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       i--;
     }
     let variableType = allItems.find(
-      (e) => e.kind === CompletionItemKind.Variable && e.scope === lastFuncName
+      (e) =>
+        e.kind === CompletionItemKind.Variable &&
+        e.scope === lastFuncName &&
+        e.name === words[words.length - 1]
     ).type;
-    words = words.slice(0, words.length - 1).reverse();
-    for (let word of words) {
-      variableType = allItems.find(
-        (e) =>
-          (e.kind === CompletionItemKind.Method ||
-            e.kind === CompletionItemKind.Property) &&
-          e.parent === variableType &&
-          e.name === word
-      ).type;
+    if (words.length > 1) {
+      words = words.slice(0, words.length - 1).reverse();
+      for (let word of words) {
+        variableType = allItems.find(
+          (e) =>
+            (e.kind === CompletionItemKind.Method ||
+              e.kind === CompletionItemKind.Property) &&
+            e.parent === variableType &&
+            e.name === word
+        ).type;
+      }
     }
+
     return variableType;
   }
 
