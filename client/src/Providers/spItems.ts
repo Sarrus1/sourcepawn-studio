@@ -42,6 +42,7 @@ export class FunctionItem implements SPItem {
   range: Range;
   IsBuiltIn: boolean;
   kind = CompletionItemKind.Function;
+  type: string;
 
   constructor(
     name: string,
@@ -50,7 +51,8 @@ export class FunctionItem implements SPItem {
     params: FunctionParam[],
     file: string,
     IsBuiltIn: boolean,
-    range: Range
+    range: Range,
+    type: string
   ) {
     this.description = description;
     this.name = name;
@@ -59,6 +61,7 @@ export class FunctionItem implements SPItem {
     this.file = file;
     this.IsBuiltIn = IsBuiltIn;
     this.range = range;
+    this.type = type;
   }
 
   toCompletionItem(

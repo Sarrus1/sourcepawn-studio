@@ -515,6 +515,7 @@ class Parser {
       } else {
         this.lastFuncLine = this.lineNb;
         this.lastFuncName = name_match;
+        let type = match[1];
         let paramsMatch = match[3];
         this.AddParamsDef(paramsMatch, name_match, line);
         // Iteration safety in case something goes wrong
@@ -546,7 +547,8 @@ class Parser {
             params,
             this.file,
             this.IsBuiltIn,
-            range
+            range,
+            type
           )
         );
       }

@@ -6,6 +6,7 @@
 
 - Completion now only suggest methods and properties that belong to the methodmap or the enum struct of the variable.
 - MethodMap completions now suggest inherited properties and methods.
+- MethodMap and enum structs' completions are now suggested even for arrays elements and function calls.
 - Added support for autocompletion for nested enum structs' properties and methods.
 - Added an option to specify a path relative to the workspace when creating a new project.
 - Implemented scopped completions for variables. A variable won't be suggested if the user is typing outside of the variable's scope.

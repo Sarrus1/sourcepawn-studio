@@ -242,7 +242,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
           if (
             (item.kind === CompletionItemKind.Method ||
               item.kind === CompletionItemKind.Property) &&
-            variableType.includes(item.parent)
+            variableTypes.includes(item.parent)
           ) {
             all_completions_list.items.push(
               item.toCompletionItem(document.uri.fsPath, lastFunc)
@@ -289,6 +289,8 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     lastFuncName: string
   ): string {
     let i = position.character - 1;
+    let bCounter = 0;
+    let pCounter = 0;
     while (i >= 0) {
       if (/\w/.test(line[i])) {
         i--;
@@ -300,7 +302,27 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     let wordCounter = 0;
     let words: string[] = [""];
     while (i >= 0) {
-      if (typeof line[i] !== "undefined") {
+      if (line[i] === "]") {
+        bCounter++;
+        i--;
+        continue;
+      }
+      if (line[i] === "[") {
+        bCounter--;
+        i--;
+        continue;
+      }
+      if (line[i] === ")") {
+        pCounter++;
+        i--;
+        continue;
+      }
+      if (line[i] === "(") {
+        pCounter--;
+        i--;
+        continue;
+      }
+      if (bCounter === 0 && pCounter === 0) {
         if (/\w/.test(line[i])) {
           words[wordCounter] = line[i] + words[wordCounter];
         } else if (line[i] === ".") {
@@ -314,9 +336,11 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     }
     let variableType = allItems.find(
       (e) =>
-        e.kind === CompletionItemKind.Variable &&
-        e.scope === lastFuncName &&
-        e.name === words[words.length - 1]
+        (e.kind === CompletionItemKind.Variable &&
+          e.scope === lastFuncName &&
+          e.name === words[words.length - 1]) ||
+        (e.kind === CompletionItemKind.Function &&
+          e.name === words[words.length - 1])
     ).type;
     if (words.length > 1) {
       words = words.slice(0, words.length - 1).reverse();
@@ -439,6 +463,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     position: Position,
     token: CancellationToken
   ): Location | DefinitionLink[] {
+    // TODO: Make definitions more precise, instead of picking the first match
     let range = document.getWordRangeAtPosition(position);
     let word: string = document.getText(range);
     let definitions = this.getAllItems(document.uri.toString()).filter(
