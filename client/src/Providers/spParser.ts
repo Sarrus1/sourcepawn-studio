@@ -51,7 +51,6 @@ export function parseText(
 
 enum State {
   None,
-  MultilineComment,
   DocComment,
   Enum,
   Methodmap,
@@ -169,16 +168,13 @@ class Parser {
 
     match = line.match(/\s*\/\*/);
     if (match) {
-      this.state.push(State.MultilineComment);
       this.scratch = [];
-
       this.consume_multiline_comment(line, false);
       return;
     }
 
     match = line.match(/^\s*\/\//);
     if (match) {
-      this.state.push(State.MultilineComment);
       this.scratch = [];
       this.consume_multiline_comment(line, true);
       return;
@@ -200,7 +196,7 @@ class Parser {
       /^\s*property\s+([a-zA-Z][a-zA-Z0-9_]*)\s+([a-zA-Z][a-zA-Z0-9_]*)/
     );
     if (match) {
-      if (this.state[this.state.length - 1] === State.Methodmap) {
+      if (this.state.includes(State.Methodmap)) {
         this.state.push(State.Property);
       }
       this.read_property(match, line);
@@ -218,7 +214,7 @@ class Parser {
       /(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
     );
     if (match) {
-      if (isControlStatement(line)) {
+      if (isControlStatement(line) || this.state.includes(State.Property)) {
         return;
       }
       let isOldStyle: boolean = match[2] == "";
@@ -290,7 +286,7 @@ class Parser {
         }
         let range = this.makeDefinitionRange(enumStructMemberName, line);
         this.completions.add(
-          enumStructMemberName + "___property",
+          enumStructMemberName + enumStructCompletion.name,
           new EnumStructMemberItem(
             enumStructMemberName,
             this.file,
@@ -424,7 +420,6 @@ class Parser {
     current_line: string,
     use_line_comment: boolean = false
   ) {
-    let match;
     let iter = 0;
     while (
       typeof current_line != "undefined" &&
@@ -433,17 +428,9 @@ class Parser {
         (!/\*\//.test(current_line) && !use_line_comment))
     ) {
       iter++;
-      if (use_line_comment) {
-        match = current_line.match(
-          /^\s*\/\/\s*@*(?:param|return)*\s*([A-Za-z_\.][A-Za-z0-9_\.]*)\s*(.*)/
-        );
-      } else {
-        match = current_line.match(
-          /^\s*\*\s*@*(?:param|return)*\s*([A-Za-z_\.][A-Za-z0-9_\.]*)\s*(.*)/
-        );
-      }
       this.scratch.push(current_line);
       current_line = this.lines.shift();
+
       this.lineNb++;
     }
     // Removes the */ from the doc comment
@@ -453,7 +440,6 @@ class Parser {
     }
     this.searchForDefinesInString(current_line);
     this.interpLine(current_line);
-    this.state.pop();
     return;
   }
 
@@ -484,9 +470,11 @@ class Parser {
     if (typeof line === "undefined") {
       return;
     }
-    let match: RegExpMatchArray = line.match(
-      /^\s*(?:(?:stock|public)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))\s*$/
-    );
+		// Methodmap's methods have a ";" at the end so we need to use a different regex
+    let newSyntaxRe: RegExp = this.state.includes(State.Methodmap)
+      ? /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))\s*/
+      : /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))\s*$/;
+    let match: RegExpMatchArray = line.match(newSyntaxRe);
     if (!match) {
       match = line.match(
         /^\s*(?:(?:forward|static|native)\s+)+(\w*\s*:\s*|\w*\s+)?(\w*)\s*\(([^]*)(?:,|;)?\s*$/
@@ -495,16 +483,20 @@ class Parser {
     if (match) {
       let { description, params } = this.parse_doc_comment();
       let name_match = match[2];
-      if (this.state[this.state.length - 2] === State.Methodmap) {
+      if (this.state.includes(State.Methodmap)) {
+				let range = this.makeDefinitionRange(name_match, line);
         this.completions.add(
-          name_match + "__method",
+          name_match + this.state_data.name,
           new MethodItem(
             this.state_data.name,
             name_match,
-            match[3],
+            line.trim(),
             description,
             params,
-            match[1]
+            match[1],
+						this.file,
+						range,
+						this.IsBuiltIn
           )
         );
       } else {

@@ -111,6 +111,9 @@ export class MethodItem implements SPItem {
   params: FunctionParam[];
   kind = CompletionItemKind.Method;
   type: string;
+  range: Range;
+  IsBuiltIn: boolean;
+  file: string;
 
   constructor(
     parent: string,
@@ -118,7 +121,10 @@ export class MethodItem implements SPItem {
     detail: string,
     description: string,
     params: FunctionParam[],
-    type: string
+    type: string,
+    file: string,
+    range: Range,
+    IsBuiltIn: boolean = false
   ) {
     this.parent = parent;
     this.name = name;
@@ -126,6 +132,9 @@ export class MethodItem implements SPItem {
     this.description = description;
     this.params = params;
     this.type = type;
+    this.IsBuiltIn = IsBuiltIn;
+    this.file = file;
+    this.range = range;
   }
 
   toCompletionItem(
@@ -140,7 +149,7 @@ export class MethodItem implements SPItem {
   }
 
   toDefinitionItem(): Location {
-    return undefined;
+    return new Location(URI.file(this.file), this.range);
   }
 
   toSignature(): SignatureInformation {
@@ -154,6 +163,14 @@ export class MethodItem implements SPItem {
   toHover(): Hover {
     if (!this.description) {
       return;
+    }
+    let filename: string = basename(this.file, ".inc");
+    if (this.IsBuiltIn) {
+      return new Hover([
+        { language: "sourcepawn", value: this.detail },
+        `[Online Documentation](https://sourcemod.dev/#/${filename}/methodmap.${this.parent}/function.${this.name})`,
+        description_to_md(this.description),
+      ]);
     }
     return new Hover([
       { language: "sourcepawn", value: this.detail },
