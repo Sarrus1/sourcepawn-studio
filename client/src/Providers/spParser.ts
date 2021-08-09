@@ -71,6 +71,7 @@ class Parser {
   lastFuncLine: number;
   lastFuncName: string;
   definesMap: Map<string, string>;
+  enumMemberMap: Map<string, string>;
   itemsRepository: ItemsRepository;
 
   constructor(
@@ -89,7 +90,14 @@ class Parser {
     this.documents = itemsRepository.documents;
     this.lastFuncLine = 0;
     this.lastFuncName = "";
-    this.definesMap = this.getAllDefines(itemsRepository);
+    this.definesMap = this.getAllMembers(
+      itemsRepository,
+      CompletionItemKind.Constant
+    );
+    this.enumMemberMap = this.getAllMembers(
+      itemsRepository,
+      CompletionItemKind.EnumMember
+    );
     this.itemsRepository = itemsRepository;
   }
 
@@ -370,7 +378,8 @@ class Parser {
             this.file,
             enumMemberDescription,
             enumCompletion,
-            range
+            range,
+            this.IsBuiltIn
           )
         );
       }
@@ -669,7 +678,10 @@ class Parser {
     const re: RegExp = /\w+/g;
     let defineFile: string;
     while ((matchDefine = re.exec(line))) {
-      if ((defineFile = this.definesMap.get(matchDefine[0]))) {
+      defineFile =
+        this.definesMap.get(matchDefine[0]) ||
+        this.enumMemberMap.get(matchDefine[0]);
+      if (typeof defineFile !== "undefined") {
         let range = new Range(
           this.lineNb,
           matchDefine.index,
@@ -706,7 +718,10 @@ class Parser {
     return;
   }
 
-  getAllDefines(itemsRepository: ItemsRepository): Map<string, string> {
+  getAllMembers(
+    itemsRepository: ItemsRepository,
+    kind: CompletionItemKind
+  ): Map<string, string> {
     let items = itemsRepository.getAllItems(URI.file(this.file).toString());
     if (typeof items === "undefined") {
       return new Map();
@@ -719,7 +734,7 @@ class Parser {
       return new Map();
     }
     for (let item of items) {
-      if (item.kind === CompletionItemKind.Constant) {
+      if (item.kind === kind) {
         purgeCalls(item, this.file);
         let file = item.file;
         if (item.IsBuiltIn) {

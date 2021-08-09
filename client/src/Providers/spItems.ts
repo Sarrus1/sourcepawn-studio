@@ -414,19 +414,24 @@ export class EnumMemberItem implements SPItem {
   description: string;
   kind = CompletionItemKind.EnumMember;
   range: Range;
+  calls: Location[];
+  IsBuiltIn: boolean;
 
   constructor(
     name: string,
     file: string,
     description: string,
     Enum: EnumItem,
-    range: Range
+    range: Range,
+    IsBuiltItn: boolean
   ) {
     this.name = name;
     this.file = file;
     this.description = description;
     this.enum = Enum;
     this.range = range;
+    this.calls = [];
+    this.IsBuiltIn = IsBuiltItn;
   }
 
   toCompletionItem(
