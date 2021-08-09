@@ -114,11 +114,6 @@
       "match": "\\s*\\b(?:if|else|for|while|do|switch|case|default|return)\\b"
     },
     {
-      "comment": "keywords",
-      "name": "keyword.sourcepawn",
-      "match": "\\s*\\b(?:break|continue|new|static|decl|const|delete|forward|native|property|public|stock|funcenum|functag|methodmap|typedef|typeset|this|sizeof)\\b"
-    },
-    {
       "comment": "Enum structs",
       "match": "^\\s*(enum\\s+struct\\s+)(\\w*)",
       "captures": {
@@ -141,6 +136,26 @@
           "name": "support.type.core.enum.sourcepawn"
         }
       }
+    },
+    {
+      "comment": "Function declaration new syntax",
+      "match": "^\\s*((?:(?:static|native|stock|public|forward)\\s*)*)(\\w*)\\s+(\\w+)\\s*\\(",
+      "captures": {
+        "1": {
+          "name": "keyword.function_new.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.function_new.sourcepawn"
+        },
+        "3": {
+          "name": "entity.name.function.function_new.sourcepawn"
+        }
+      }
+    },
+    {
+      "comment": "keywords",
+      "name": "keyword.sourcepawn",
+      "match": "\\s*\\b(?:break|continue|new|static|decl|const|delete|forward|native|property|public|stock|funcenum|functag|methodmap|typedef|typeset|this|sizeof)\\b"
     },
     {
       "comment": "Function params new syntax",
@@ -256,24 +271,6 @@
       "captures": {
         "1": {
           "name": "support.type.core.variable_old.sourcepawn"
-        }
-      }
-    },
-    {
-      "comment": "Function declaration new syntax",
-      "match": "^\\s*((?:static|native|stock|public|forward)\\s+)*\\s*(\\w+)\\s+(\\w+)\\s*\\(",
-      "captures": {
-        "1": {
-          "name": "keyword.function_new.sourcepawn"
-        },
-        "2": {
-          "name": "support.type.core.function_new.sourcepawn"
-        },
-        "3": {
-          "name": "entity.name.function.function_new.sourcepawn"
-        },
-        "4": {
-          "name": "support.type.core.function_new.sourcepawn"
         }
       }
     },

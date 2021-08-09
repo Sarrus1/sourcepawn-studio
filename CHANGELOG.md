@@ -24,6 +24,7 @@
 - Fixed an error where function signatures would get confused if a `,` was in a string or an array.
 - Fixed unprompted autocompletion when typing misc characters like `\` or `"`.
 - Fixed an issue where signatures helpers wouldn't work properly on secondary .sp files.
+- Improved syntax highlighting for function return types.
 
 ## [1.12.7]
 
