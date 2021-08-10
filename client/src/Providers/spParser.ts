@@ -242,8 +242,7 @@ class Parser {
       if (isControlStatement(line) || this.state.includes(State.Property)) {
         return;
       }
-      let isOldStyle: boolean = match[2] == "";
-      this.read_function(line, isOldStyle);
+      this.read_function(line);
     }
     return;
   }
@@ -458,7 +457,7 @@ class Parser {
     return partial_params_match;
   }
 
-  read_function(line: string, isOldStyle: boolean) {
+  read_function(line: string) {
     if (typeof line === "undefined") {
       return;
     }
@@ -473,68 +472,71 @@ class Parser {
         /^\s*(?:(?:forward|static|native)\s+)+(\w*\s*:\s*|\w*\s+)?(\w*)\s*\(([^]*)(?:,|;)?\s*$/
       );
     }
+    let isMethod: boolean =
+      this.state.includes(State.Methodmap) ||
+      this.state.includes(State.EnumStruct);
+
     if (match) {
       let { description, params } = this.parse_doc_comment();
-      let name_match = match[2];
-      if (
-        this.state.includes(State.Methodmap) ||
-        this.state.includes(State.EnumStruct)
+      let nameMatch = match[2];
+      this.lastFuncLine = this.lineNb;
+      this.lastFuncName = nameMatch;
+      let type = match[1];
+      let paramsMatch = match[3];
+      this.AddParamsDef(paramsMatch, nameMatch, line);
+      // Iteration safety in case something goes wrong
+      let maxiter = 0;
+      while (
+        !paramsMatch.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) &&
+        typeof line != "undefined" &&
+        maxiter < 20
       ) {
-        let range = this.makeDefinitionRange(name_match, line);
+        maxiter++;
+        line = this.lines.shift();
+        this.lineNb++;
+        this.searchForDefinesInString(line);
+        this.AddParamsDef(line, nameMatch, line);
+        paramsMatch += line;
+      }
+      // Treat differently if the function is declared on multiple lines
+      paramsMatch = /\)\s*(?:\{|;)?\s*$/.test(match[0])
+        ? match[0]
+        : match[0].replace(/\(.*\s*$/, "(") +
+          paramsMatch.replace(/\s*\w+\s*\(\s*/g, "").replace(/\s+/gm, " ");
+      let range = this.makeDefinitionRange(nameMatch, line);
+      if (isMethod) {
+        if (this.file.includes("Test.sp")) {
+          console.debug("");
+        }
         this.completions.add(
-          name_match + this.state_data.name,
+          nameMatch + this.state_data.name,
           new MethodItem(
             this.state_data.name,
-            name_match,
-            line.trim().replace(/\s*\{\s*$/, ""),
+            nameMatch,
+            paramsMatch.replace(/;\s*$/g, ""),
             description,
             params,
-            match[1],
+            type,
             this.file,
             range,
             this.IsBuiltIn
           )
         );
-      } else {
-        this.lastFuncLine = this.lineNb;
-        this.lastFuncName = name_match;
-        let type = match[1];
-        let paramsMatch = match[3];
-        this.AddParamsDef(paramsMatch, name_match, line);
-        // Iteration safety in case something goes wrong
-        let maxiter = 0;
-        while (
-          !paramsMatch.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) &&
-          typeof line != "undefined" &&
-          maxiter < 20
-        ) {
-          maxiter++;
-          line = this.lines.shift();
-          this.lineNb++;
-          this.searchForDefinesInString(line);
-          this.AddParamsDef(line, name_match, line);
-          paramsMatch += line;
-        }
-        // Treat differently if the function is declared on multiple lines
-        paramsMatch = /\)\s*(?:\{|;)?\s*$/.test(match[0])
-          ? match[0]
-          : match[0].replace(/\(.*\s*$/, "(") +
-            paramsMatch.replace(/\s*\w+\s*\(\s*/g, "").replace(/\s+/gm, " ");
-        let range = this.makeDefinitionRange(name_match, line);
-        this.completions.add(
-          name_match,
-          new FunctionItem(
-            name_match,
-            paramsMatch.replace(/;\s*$/g, ""),
-            description,
-            params,
-            this.file,
-            this.IsBuiltIn,
-            range,
-            type
-          )
-        );
+        return;
       }
+      this.completions.add(
+        nameMatch,
+        new FunctionItem(
+          nameMatch,
+          paramsMatch.replace(/;\s*$/g, ""),
+          description,
+          params,
+          this.file,
+          this.IsBuiltIn,
+          range,
+          type
+        )
+      );
     }
   }
 
