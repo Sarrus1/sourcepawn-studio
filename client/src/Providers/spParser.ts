@@ -461,7 +461,6 @@ class Parser {
     if (typeof line === "undefined") {
       return;
     }
-    this.state.push(State.Function);
     // Methodmap's methods have a ";" at the end so we need to use a different regex
     let newSyntaxRe: RegExp = this.state.includes(State.Methodmap)
       ? /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))\s*/
@@ -475,7 +474,6 @@ class Parser {
     let isMethod: boolean =
       this.state.includes(State.Methodmap) ||
       this.state.includes(State.EnumStruct);
-
     if (match) {
       let { description, params } = this.parse_doc_comment();
       let nameMatch = match[2];
@@ -503,6 +501,9 @@ class Parser {
         ? match[0]
         : match[0].replace(/\(.*\s*$/, "(") +
           paramsMatch.replace(/\s*\w+\s*\(\s*/g, "").replace(/\s+/gm, " ");
+      if (!/\bnative\b|\bforward\b/.test(paramsMatch)) {
+        this.state.push(State.Function);
+      }
       if (params.length === 0) {
         params = getParamsFromDeclaration(paramsMatch);
       }
