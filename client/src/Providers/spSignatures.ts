@@ -50,14 +50,6 @@ export function getSignatureAttributes(
   }
   let croppedLine: string = line.slice(0, i + 1);
   return { croppedLine, parameterCount };
-  /*
-  let match: RegExpMatchArray = croppedLine.match(/(\w+)\s*$/);
-  if (match) {
-    functionName = match[1];
-    return { functionName, parameterCount };
-  }
-  return blankReturn;
-  */
 }
 
 function isInAStringOrArray(line: string, position: number): boolean {
