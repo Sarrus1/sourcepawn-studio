@@ -159,7 +159,7 @@
     },
     {
       "comment": "Function params new syntax",
-      "match": "\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\:?\\s+[A-Za-z0-9_\\&]+\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\s*(?:\\)|,|=)",
+      "match": "\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\:?\\s+([A-Za-z0-9_\\&]+)\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\s*(?:\\)|,|=)",
       "captures": {
         "1": {
           "name": "keyword.function_params_new.sourcepawn"
@@ -180,6 +180,9 @@
           ]
         },
         "4": {
+          "name": "support.variable.sourcepawn"
+        },
+        "5": {
           "patterns": [
             {
               "match": "(\\d+)",
@@ -195,7 +198,7 @@
     },
     {
       "comment": "Function params old syntax",
-      "match": "\\s*(?<!\\?\\s*)\\s*((?:const|static)\\s+)*\\s*(\\b\\w+\\b)(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\s*\\:\\s*\\w+\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\s*(?:\\)|,|=)",
+      "match": "\\s*(?<!\\?\\s*)\\s*((?:const|static)\\s+)*\\s*(\\b\\w+\\b)(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\s*\\:\\s*(\\w+)\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\s*(?:\\)|,|=)",
       "captures": {
         "1": {
           "name": "keyword.function_params_old.sourcepawn"
@@ -216,6 +219,9 @@
           ]
         },
         "4": {
+          "name": "support.variable.sourcepawn"
+        },
+        "5": {
           "patterns": [
             {
               "match": "(\\d+)",
@@ -250,6 +256,9 @@
               }
             }
           ]
+        },
+        "4": {
+          "name": "support.variable.sourcepawn"
         },
         "5": {
           "patterns": [
