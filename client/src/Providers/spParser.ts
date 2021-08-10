@@ -694,22 +694,22 @@ class Parser {
         if (defineFile === this.file) {
           let define = this.completions.get(matchDefine[0]);
           if (typeof define === "undefined") {
-            return;
+            continue;
           }
           define.calls.push(location);
           this.completions.add(matchDefine[0], define);
-          return;
+          continue;
         }
         defineFile = defineFile.startsWith("file://")
           ? defineFile
           : URI.file(defineFile).toString();
         let items = this.itemsRepository.completions.get(defineFile);
         if (typeof items === "undefined") {
-          return;
+          continue;
         }
         let define = items.get(matchDefine[0]);
         if (typeof define === "undefined") {
-          return;
+          continue;
         }
         define.calls.push(location);
         items.add(matchDefine[0], define);
@@ -730,6 +730,8 @@ class Parser {
     let smHome =
       Workspace.getConfiguration("sourcepawn").get<string>("SourcemodHome") ||
       "";
+    // Replace \ escaping in Windows
+    smHome = smHome.replace(/\\/g, "/");
     if (smHome === "") {
       return new Map();
     }
