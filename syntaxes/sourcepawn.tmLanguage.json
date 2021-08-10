@@ -325,6 +325,11 @@
     },
     {
       "include": "#keywords"
+    },
+    {
+      "comment": "Match the rest as variables",
+      "match": "\\w+",
+      "name": "support.variable.sourcepawn"
     }
   ],
   "repository": {
