@@ -156,7 +156,7 @@ export class MethodMapItem implements SPItem {
 
   toHover(): Hover {
     if (!this.description) {
-      return;
+      return new Hover([{ language: "sourcepawn", value: this.detail }]);
     }
     let filename: string = basename(this.file, ".inc");
     if (this.IsBuiltIn) {
@@ -232,7 +232,7 @@ export class MethodItem implements SPItem {
 
   toHover(): Hover {
     if (!this.description) {
-      return;
+      return new Hover([{ language: "sourcepawn", value: this.detail }]);
     }
     let filename: string = basename(this.file, ".inc");
     if (this.IsBuiltIn) {

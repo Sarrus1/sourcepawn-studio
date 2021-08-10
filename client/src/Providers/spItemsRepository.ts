@@ -449,7 +449,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       return blankReturn;
     }
     // Check if it's a method
-    let match = croppedLine.match(/.(\w+)$/);
+    let match = croppedLine.match(/\.(\w+)$/);
     if (match) {
       let methodName = match[1];
       let allItems = this.getAllItems(document.uri.toString());
@@ -477,6 +477,9 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     }
     match = croppedLine.match(/(\w+)$/);
     if (!match) {
+      return blankReturn;
+    }
+    if (["if", "for", "while", "case", "switch", "return"].includes(match[1])) {
       return blankReturn;
     }
     let item = this.getAllItems(document.uri.toString()).find(

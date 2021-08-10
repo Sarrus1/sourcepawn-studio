@@ -53,9 +53,11 @@ export function parseText(
 enum State {
   None,
   DocComment,
-  Enum,
+  EnumStruct,
   Methodmap,
   Property,
+  Function,
+  Loop,
 }
 
 class Parser {
@@ -115,9 +117,8 @@ class Parser {
   interpLine(line: string) {
     // EOF
     if (typeof line === "undefined") return;
-
     // Match define
-    let match = line.match(/\s*#define\s+([A-Za-z0-9_]+)\s+([^]+)/);
+    let match = line.match(/\s*#define\s+(\w+)\s+([^]+)/);
     if (match) {
       this.read_define(match, line);
       // Re-read the line now that define has been added to the array.
@@ -213,14 +214,18 @@ class Parser {
     }
 
     // Match properties
-    match = line.match(
-      /^\s*property\s+([a-zA-Z][a-zA-Z0-9_]*)\s+([a-zA-Z][a-zA-Z0-9_]*)/
-    );
+    match = line.match(/^\s*property\s+([a-zA-Z]\w*)\s+([a-zA-Z]\w*)/);
     if (match) {
       if (this.state.includes(State.Methodmap)) {
         this.state.push(State.Property);
       }
       this.read_property(match, line);
+      return;
+    }
+
+    match = line.match(/^\s*(\bwhile\b|\belse\b|\bif\b|\bswitch\b|\bcase\b)/);
+    if (match) {
+      this.state.push(State.Loop);
       return;
     }
 
@@ -230,7 +235,6 @@ class Parser {
       return;
     }
 
-    // Match functions without description
     match = line.match(
       /(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
     );
@@ -265,59 +269,20 @@ class Parser {
     let { description, params } = this.parse_doc_comment();
     if (IsStruct) {
       // Create a completion for the enum struct itself if it has a name
-      let range = this.makeDefinitionRange(match[1], line);
+      let enumStructName = match[1];
+      let range = this.makeDefinitionRange(enumStructName, line);
       var enumStructCompletion: EnumStructItem = new EnumStructItem(
-        match[1],
+        enumStructName,
         this.file,
         description,
         range
       );
-      this.completions.add(match[1], enumStructCompletion);
-
-      // Set max number of iterations for safety
-      let iter = 0;
-
-      // Match all the enum members
-      while (iter < 100 && !/\s*(\}\s*\;?)/.test(line)) {
-        iter++;
-        line = this.lines.shift();
-        this.lineNb++;
-        // Stop early if it's the end of the file
-        if (typeof line === "undefined") {
-          return;
-        }
-        this.searchForDefinesInString(line);
-        match = line.match(/^\s*(\w+)\s+(\w+)\s*.*/);
-
-        // Skip if didn't match
-        if (!match) {
-          continue;
-        }
-        let enumStructMemberName = match[2];
-        let enumStructMemberType = match[1];
-        // Try to match multiblock comments
-        let enumStructMemberDescription: string;
-        match = line.match(/\/\*\*<?\s*(.+?(?=\*\/))/);
-        if (match) {
-          enumStructMemberDescription = match[1];
-        }
-        match = line.match(/\/\/<?\s*(.*)/);
-        if (match) {
-          enumStructMemberDescription = match[1];
-        }
-        let range = this.makeDefinitionRange(enumStructMemberName, line);
-        this.completions.add(
-          enumStructMemberName + enumStructCompletion.name,
-          new EnumStructMemberItem(
-            enumStructMemberName,
-            this.file,
-            enumStructMemberDescription,
-            enumStructCompletion,
-            range,
-            enumStructMemberType
-          )
-        );
-      }
+      this.completions.add(enumStructName, enumStructCompletion);
+      this.state.push(State.EnumStruct);
+      this.state_data = {
+        name: enumStructName,
+      };
+      return;
     } else {
       let nameMatch = match[0].match(/^\s*(?:enum\s*)(\w*)/);
       if (nameMatch) {
@@ -388,7 +353,7 @@ class Parser {
   }
 
   read_loop_variables(match, line: string) {
-    if (this.IsBuiltIn) return;
+    this.state.push(State.Loop);
     this.AddVariableCompletion(match[1], line, "int");
     return;
   }
@@ -408,7 +373,12 @@ class Parser {
           /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
         )[1];
         if (!this.IsBuiltIn) {
-          this.AddVariableCompletion(variable_completion, line, variable[1]);
+          this.AddVariableCompletion(
+            variable_completion,
+            line,
+            variable[1],
+            true
+          );
         }
       }
     } else {
@@ -427,7 +397,7 @@ class Parser {
             /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
           )[1];
           if (!this.IsBuiltIn) {
-            this.AddVariableCompletion(variable_completion, line, "");
+            this.AddVariableCompletion(variable_completion, line, "", true);
           }
         }
         match[1] = this.lines.shift();
@@ -492,6 +462,7 @@ class Parser {
     if (typeof line === "undefined") {
       return;
     }
+    this.state.push(State.Function);
     // Methodmap's methods have a ";" at the end so we need to use a different regex
     let newSyntaxRe: RegExp = this.state.includes(State.Methodmap)
       ? /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))\s*/
@@ -505,14 +476,17 @@ class Parser {
     if (match) {
       let { description, params } = this.parse_doc_comment();
       let name_match = match[2];
-      if (this.state.includes(State.Methodmap)) {
+      if (
+        this.state.includes(State.Methodmap) ||
+        this.state.includes(State.EnumStruct)
+      ) {
         let range = this.makeDefinitionRange(name_match, line);
         this.completions.add(
           name_match + this.state_data.name,
           new MethodItem(
             this.state_data.name,
             name_match,
-            line.trim(),
+            line.trim().replace(/\s*\{\s*$/, ""),
             description,
             params,
             match[1],
@@ -628,7 +602,12 @@ class Parser {
     return { description, params };
   }
 
-  AddVariableCompletion(name: string, line: string, type: string): void {
+  AddVariableCompletion(
+    name: string,
+    line: string,
+    type: string,
+    shouldAddToEnumStruct = false
+  ): void {
     let range = this.makeDefinitionRange(name, line);
     let scope: string = "$GLOBAL";
     if (this.lastFuncLine !== 0) {
@@ -636,6 +615,23 @@ class Parser {
     }
     // Custom key name for the map so the definitions don't override each others
     let mapName = name + scope;
+    if (this.state.includes(State.EnumStruct)) {
+      if (shouldAddToEnumStruct) {
+        this.completions.add(
+          mapName,
+          new PropertyItem(
+            this.state_data.name,
+            name,
+            this.file,
+            "",
+            range,
+            type
+          )
+        );
+      }
+
+      return;
+    }
     this.completions.add(
       mapName,
       new VariableItem(name, this.file, scope, range, type)
