@@ -441,18 +441,52 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       activeSignature: 0,
       activeParameter: 0,
     };
-    let { functionName, parameterCount } = getSignatureAttributes(
+    let { croppedLine, parameterCount } = getSignatureAttributes(
       document,
       position
     );
-    if (typeof functionName === "undefined") {
+    if (typeof croppedLine === "undefined") {
       return blankReturn;
     }
-    let completions = this.getAllItems(document.uri.toString()).find(
-      (completion) => completion.name === functionName
+    // Check if it's a method
+    let match = croppedLine.match(/.(\w+)$/);
+    if (match) {
+      let methodName = match[1];
+      let allItems = this.getAllItems(document.uri.toString());
+      let lastFuncName = GetLastFuncName(position.line, document);
+      let newPos = new Position(1, croppedLine.length);
+      let type = this.getTypeOfVariable(
+        croppedLine,
+        newPos,
+        allItems,
+        lastFuncName
+      );
+      let variableTypes: string[] = this.getAllInheritances(type, allItems);
+      let items = this.getAllItems(document.uri.toString()).filter(
+        (item) =>
+          (item.kind === CompletionItemKind.Method ||
+            item.kind === CompletionItemKind.Property) &&
+          variableTypes.includes(item.parent) &&
+          item.name === methodName
+      );
+      return {
+        signatures: items.map((e) => e.toSignature()),
+        activeParameter: parameterCount,
+        activeSignature: 0,
+      };
+    }
+    match = croppedLine.match(/(\w+)$/);
+    if (!match) {
+      return blankReturn;
+    }
+    let item = this.getAllItems(document.uri.toString()).find(
+      (item) => item.name === match[1]
     );
+    if (typeof item === "undefined") {
+      return blankReturn;
+    }
     return {
-      signatures: [completions.toSignature()],
+      signatures: [item.toSignature()],
       activeParameter: parameterCount,
       activeSignature: 0,
     };
