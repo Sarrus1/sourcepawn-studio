@@ -153,9 +153,24 @@
       }
     },
     {
+      "comment": "Method Maps",
+      "match": "^\\s*(methodmap)\\s+(\\w+)\\s*<\\s*(\\w+)?",
+      "captures": {
+        "1": {
+          "name": "keyword.methodmap.sourcepaw"
+        },
+        "2": {
+          "name": "support.type.core.methodmap.sourcepawn"
+        },
+        "3": {
+          "name": "support.type.core.methodmap_inherit.sourcepawn"
+        }
+      }
+    },
+    {
       "comment": "keywords",
       "name": "keyword.sourcepawn",
-      "match": "\\s*\\b(?:break|continue|new|static|decl|const|delete|forward|native|property|public|stock|funcenum|functag|methodmap|typedef|typeset|this|sizeof)\\b"
+      "match": "\\s*\\b(?:break|continue|new|static|decl|const|delete|forward|native|property|public|stock|funcenum|functag|typedef|typeset|this|sizeof)\\b"
     },
     {
       "comment": "Function params new syntax",
