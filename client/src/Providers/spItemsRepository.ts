@@ -483,7 +483,8 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       return blankReturn;
     }
     let item = this.getAllItems(document.uri.toString()).find(
-      (item) => item.name === match[1]
+      (item) =>
+        item.name === match[1] && item.kind === CompletionItemKind.Function
     );
     if (typeof item === "undefined") {
       return blankReturn;

@@ -513,7 +513,7 @@ class Parser {
           new MethodItem(
             this.state_data.name,
             nameMatch,
-            paramsMatch.replace(/;\s*$/g, ""),
+            paramsMatch.replace(/;\s*$/g, "").trim(),
             description,
             params,
             type,
