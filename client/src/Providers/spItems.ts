@@ -462,7 +462,7 @@ export class EnumMemberItem implements SPItem {
       ]);
     } else {
       return new Hover([
-        { language: "sourcepawn", value: this.enum.name + " " + this.name },
+        { language: "sourcepawn", value: `${this.enum.name} ${this.name};` },
         description_to_md(this.description),
       ]);
     }
@@ -480,6 +480,7 @@ export class EnumStructItem implements SPItem {
     this.name = name;
     this.file = file;
     this.description = description;
+    this.range = range;
   }
 
   toCompletionItem(

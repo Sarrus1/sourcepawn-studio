@@ -424,12 +424,11 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     position: Position,
     token: CancellationToken
   ): Hover {
-    let range = document.getWordRangeAtPosition(position);
-    let word = document.getText(range);
-    let item = this.getAllItems(document.uri.toString()).find(
-      (item) => item.name === word
-    );
-    return item.toHover();
+    let item = this.getItemFromPosition(document, position);
+    if (typeof item !== "undefined") {
+      return item.toHover();
+    }
+    return undefined;
   }
 
   provideSignatureHelp(
@@ -464,73 +463,11 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     position: Position,
     token: CancellationToken
   ): Location | DefinitionLink[] {
-    let range = document.getWordRangeAtPosition(position);
-    let isMethod: boolean = false;
-    if (range.start.character > 0) {
-      let newPosStart = new Position(
-        range.start.line,
-        range.start.character - 1
-      );
-      let newPosEnd = new Position(range.start.line, range.start.character);
-      let newRange = new Range(newPosStart, newPosEnd);
-      let char = document.getText(newRange);
-      isMethod = char === ".";
+    let item = this.getItemFromPosition(document, position);
+    if (typeof item !== "undefined") {
+      return item.toDefinitionItem();
     }
-    let word: string = document.getText(range);
-    let allItems = this.getAllItems(document.uri.toString());
-    let lastFunc: string = GetLastFuncName(position.line, document);
-    if (isMethod) {
-      let line = document.lineAt(position.line).text;
-      let variableType = this.getTypeOfVariable(
-        line,
-        position,
-        allItems,
-        lastFunc
-      );
-      let variableTypes: string[] = this.getAllInheritances(
-        variableType,
-        allItems
-      );
-      let definition = allItems.find(
-        (item) =>
-          (item.kind === CompletionItemKind.Method ||
-            item.kind === CompletionItemKind.Property) &&
-          variableTypes.includes(item.parent) &&
-          item.name === word
-      );
-      if (typeof definition !== "undefined") {
-        return definition.toDefinitionItem();
-      }
-      return undefined;
-    }
-    let bIsFunction = isFunction(
-      range,
-      document,
-      document.lineAt(position.line).text.length
-    );
-    let definition = undefined;
-    if (bIsFunction) {
-      definition = allItems.find(
-        (item) => item.kind === CompletionItemKind.Function
-      );
-      if (typeof definition !== "undefined") {
-        return definition.toDefinitionItem();
-      }
-      return undefined;
-    }
-    definition = allItems.find(
-      (item) => item.scope === lastFunc && item.name === word
-    );
-    if (typeof definition !== "undefined") {
-      return definition.toDefinitionItem();
-    }
-    definition = allItems.find((item) => {
-      if (typeof item.scope !== "undefined") {
-        return item.scope === "$GLOBAL" && item.name === word;
-      }
-      return item.name === word;
-    });
-    return definition.toDefinitionItem();
+    return undefined;
   }
 
   public provideDocumentSemanticTokens(
@@ -551,6 +488,89 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       }
     }
     return tokensBuilder.build();
+  }
+
+  getItemFromPosition(document: TextDocument, position: Position): SPItem {
+    let range = document.getWordRangeAtPosition(position);
+    // First check if we are dealing with a method or property.
+    let isMethod: boolean = false;
+    if (range.start.character > 0) {
+      let newPosStart = new Position(
+        range.start.line,
+        range.start.character - 1
+      );
+      let newPosEnd = new Position(range.start.line, range.start.character);
+      let newRange = new Range(newPosStart, newPosEnd);
+      let char = document.getText(newRange);
+      isMethod = char === ".";
+    }
+    let word: string = document.getText(range);
+    let allItems = this.getAllItems(document.uri.toString());
+    let lastFunc: string = GetLastFuncName(position.line, document);
+
+    if (isMethod) {
+      let line = document.lineAt(position.line).text;
+      // If we are dealing with a method or property, look for the type of the variable
+      let variableType = this.getTypeOfVariable(
+        line,
+        position,
+        allItems,
+        lastFunc
+      );
+      // Get inheritances from methodmaps
+      let variableTypes: string[] = this.getAllInheritances(
+        variableType,
+        allItems
+      );
+      // Find and return the matching item
+      let item = allItems.find(
+        (item) =>
+          (item.kind === CompletionItemKind.Method ||
+            item.kind === CompletionItemKind.Property) &&
+          variableTypes.includes(item.parent) &&
+          item.name === word
+      );
+      return item;
+    }
+    // Check if we are dealing with a function
+    let bIsFunction = isFunction(
+      range,
+      document,
+      document.lineAt(position.line).text.length
+    );
+    let item = undefined;
+    if (bIsFunction) {
+      item = allItems.find(
+        (item) =>
+          item.kind === CompletionItemKind.Function && item.name === word
+      );
+      return item;
+    }
+    item = allItems.find(
+      (item) =>
+        !(
+          item.kind === CompletionItemKind.Method ||
+          item.kind === CompletionItemKind.Property
+        ) &&
+        item.scope === lastFunc &&
+        item.name === word
+    );
+    if (typeof item !== "undefined") {
+      return item;
+    }
+    item = allItems.find((item) => {
+      if (
+        item.kind === CompletionItemKind.Method ||
+        item.kind === CompletionItemKind.Property
+      ) {
+        return false;
+      }
+      if (typeof item.scope !== "undefined") {
+        return item.scope === "$GLOBAL" && item.name === word;
+      }
+      return item.name === word;
+    });
+    return item;
   }
 }
 
