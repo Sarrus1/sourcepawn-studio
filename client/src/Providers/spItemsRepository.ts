@@ -116,6 +116,26 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     const text = document
       .lineAt(position.line)
       .text.substr(0, position.character);
+    // If the trigger char is a space, check if there is a new behind, as this block deals with the new declaration.
+    if (text[text.length - 1] === " ") {
+      if (position.character > 0) {
+        const line = document
+          .lineAt(position.line)
+          .text.substr(0, position.character);
+        let match = line.match(/new\s*\w*$/);
+        if (match) {
+          let items = this.getAllItems(document.uri.toString()).filter(
+            (item) =>
+              item.kind === CompletionItemKind.Method &&
+              item.name === item.parent
+          );
+          return new CompletionList(
+            items.map((e) => e.toCompletionItem(document.uri.fsPath))
+          );
+        }
+      }
+      return undefined;
+    }
     let match = text.match(/^\s*#\s*include\s*(<[^>]*|"[^"]*)$/);
     if (match) {
       return this.getIncludeCompletions(document, match[1]);
@@ -475,6 +495,23 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
         activeSignature: 0,
       };
     }
+    // Match for new keywords
+    match = croppedLine.match(/new\s+(\w+)/);
+    if (match) {
+      let methodMapName = match[1];
+      let items = this.getAllItems(document.uri.toString()).filter(
+        (item) =>
+          item.kind === CompletionItemKind.Method &&
+          item.name === methodMapName &&
+          item.parent === methodMapName
+      );
+      return {
+        signatures: items.map((e) => e.toSignature()),
+        activeParameter: parameterCount,
+        activeSignature: 0,
+      };
+    }
+
     match = croppedLine.match(/(\w+)$/);
     if (!match) {
       return blankReturn;
@@ -532,6 +569,8 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     let range = document.getWordRangeAtPosition(position);
     // First check if we are dealing with a method or property.
     let isMethod: boolean = false;
+    let isConstructor: boolean = false;
+    let match: RegExpMatchArray;
     if (range.start.character > 0) {
       let newPosStart = new Position(
         range.start.line,
@@ -541,6 +580,16 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       let newRange = new Range(newPosStart, newPosEnd);
       let char = document.getText(newRange);
       isMethod = char === ".";
+      if (!isMethod) {
+        let newPosStart = new Position(range.start.line, 0);
+        let newPosEnd = new Position(range.start.line, range.end.character);
+        let newRange = new Range(newPosStart, newPosEnd);
+        let line = document.getText(newRange);
+        match = line.match(/new\s+(\w+)$/);
+        if (match) {
+          isConstructor = true;
+        }
+      }
     }
     let word: string = document.getText(range);
     let allItems = this.getAllItems(document.uri.toString());
@@ -567,6 +616,16 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
             item.kind === CompletionItemKind.Property) &&
           variableTypes.includes(item.parent) &&
           item.name === word
+      );
+      return item;
+    }
+
+    if (isConstructor) {
+      let item = this.getAllItems(document.uri.toString()).find(
+        (item) =>
+          item.kind === CompletionItemKind.Method &&
+          item.name === match[1] &&
+          item.parent === match[1]
       );
       return item;
     }

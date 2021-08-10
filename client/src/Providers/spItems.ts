@@ -22,7 +22,7 @@ export interface SPItem {
   calls?: Location[];
   IsBuiltIn?: boolean;
 
-  toCompletionItem(file: string, lastFuncName: string): CompletionItem;
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem;
   toDefinitionItem(): Location;
   toSignature(): SignatureInformation;
   toHover(): Hover;
