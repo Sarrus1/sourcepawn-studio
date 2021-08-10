@@ -513,7 +513,7 @@ class Parser {
           new MethodItem(
             this.state_data.name,
             nameMatch,
-            paramsMatch.replace(/;\s*$/g, "").trim(),
+            paramsMatch.replace(/;\s*$/g, "").replace(/{\s*$/g, "").trim(),
             description,
             params,
             type,
@@ -533,7 +533,7 @@ class Parser {
         nameMatch,
         new FunctionItem(
           nameMatch,
-          paramsMatch.replace(/;\s*$/g, ""),
+          paramsMatch.replace(/;\s*$/g, "").replace(/{\s*$/g, "").trim(),
           description,
           params,
           this.file,
