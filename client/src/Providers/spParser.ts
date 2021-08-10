@@ -503,11 +503,11 @@ class Parser {
         ? match[0]
         : match[0].replace(/\(.*\s*$/, "(") +
           paramsMatch.replace(/\s*\w+\s*\(\s*/g, "").replace(/\s+/gm, " ");
+      if (params.length === 0) {
+        params = getParamsFromDeclaration(paramsMatch);
+      }
       let range = this.makeDefinitionRange(nameMatch, line);
       if (isMethod) {
-        if (this.file.includes("Test.sp")) {
-          console.debug("");
-        }
         this.completions.add(
           nameMatch + this.state_data.name,
           new MethodItem(
@@ -522,6 +522,11 @@ class Parser {
             this.IsBuiltIn
           )
         );
+        return;
+      }
+      // For small files, the parsing is too fast and functions get overwritten by their own calls.
+      // If we define a function somewhere, we won't redefine it elsewhere. We can safely ignore it.
+      if (this.completions.get(nameMatch)) {
         return;
       }
       this.completions.add(
@@ -772,4 +777,20 @@ function IsIncludeSelfFile(file: string, include: string): boolean {
     return baseName == match[1];
   }
   return false;
+}
+
+function getParamsFromDeclaration(decl: string): FunctionParam[] {
+  let match = decl.match(/\((.+)\)/);
+  if (!match) {
+    return [];
+  }
+  // Remove the leading and trailing parenthesis
+  decl = match[1] + ",";
+  let params: FunctionParam[] = [];
+  let re = /\s*((?:const|static)\s+)*\s*(\w+)(?:\[([A-Za-z0-9_\*\+\s\-]*)\])?\:?\s+([A-Za-z0-9_\&]+)\s*(?:\[([A-Za-z0-9_\*\+\s\-]*)\])?\s*(?:\)|,|=)/g;
+  let matchVariable;
+  while ((matchVariable = re.exec(decl)) != null) {
+    params.push({ label: matchVariable[4], documentation: "" });
+  }
+  return params;
 }
