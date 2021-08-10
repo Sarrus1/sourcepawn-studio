@@ -2,9 +2,9 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "1.12.7",
+  "version": "2.0.0",
   "publisher": "Sarrus",
-  "main": "client/out/spIndex",
+  "main": "./dist/extension",
   "icon": "sm.png",
   "repository": {
     "type": "git",
@@ -130,7 +130,7 @@
       {
         "command": "sourcepawn-vscode.insertParameters",
         "key": "ctrl+shift+i",
-				"mac": "cmd+shift+i",
+        "mac": "cmd+shift+i",
         "when": "editorTextFocus && resourceLangId == sourcepawn && parameterHintsVisible"
       }
     ],
@@ -158,9 +158,9 @@
           "type": "string",
           "description": "The location of the main.sp file for projects with sub-scripting files, which allows the linter and the compiler to work correctly. You should use this setting per workspace."
         },
-				"sourcepawn.MainPathCompilation": {
+        "sourcepawn.MainPathCompilation": {
           "type": "boolean",
-					"default": true,
+          "default": true,
           "description": "Whether the compile button always compiles the MainPath file (true) or the currently opened file (false)."
         },
         "sourcepawn.showCompileIconInEditorTitleMenu": {
@@ -201,7 +201,7 @@
           "default": [],
           "description": "SourcePawn linter compiler options. Don't add paths here."
         },
-				"sourcepawn.outputDirectoryPath": {
+        "sourcepawn.outputDirectoryPath": {
           "type": "string",
           "default": "",
           "description": "The path to the output directory for the compiled .smx file. Ends with a `/`."
@@ -418,13 +418,17 @@
     "@types/mocha": "^8.2.2",
     "@types/node": "^8.0.14",
     "mocha": "^8.3.2",
+    "ts-loader": "^9.2.5",
     "typescript": "^4.2.2",
-    "vscode-test": "^1.5.2"
+    "vscode-test": "^1.5.2",
+    "webpack": "^5.48.0",
+    "webpack-cli": "^4.7.2"
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "webpack --mode production",
     "compile": "tsc -b tsconfig.json",
-    "watch": "tsc -b -w",
+    "watch": "webpack --mode development --watch",
+    "webpack": "webpack --mode development",
     "postinstall": "cd client && npm install && cd ..",
     "test": "node ./client/out/test/runTest.js"
   }

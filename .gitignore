@@ -4,3 +4,5 @@ out/
 .vscode-test
 .DS_Store
 package-lock.json
+dist/
+.vscode/settings.json

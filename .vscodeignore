@@ -5,3 +5,5 @@ fileicons/SM.afphoto
 fileicons/SP.afphoto
 .vscode-test
 package-lock.json
+client/**
+node_modules/**

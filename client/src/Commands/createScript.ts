@@ -1,70 +1,76 @@
-import vscode = require("vscode");
-import * as fs from "fs";
-import * as path from "path";
+import { workspace as Workspace, window, commands, extensions } from "vscode";
+import {
+  existsSync,
+  readFileSync,
+  copyFileSync,
+  writeFileSync,
+  mkdirSync,
+} from "fs";
+import { join, basename } from "path";
 
-export function run(args: any) {
-  let AuthorName: string = vscode.workspace
-    .getConfiguration("sourcepawn")
-    .get("AuthorName");
+export function run(rootpath: string = undefined) {
+  let AuthorName: string = Workspace.getConfiguration("sourcepawn").get(
+    "AuthorName"
+  );
   if (!AuthorName) {
-    vscode.window
+    window
       .showWarningMessage("You didn't specify an author name.", "Open Settings")
       .then((choice) => {
         if (choice === "Open Settings") {
-          vscode.commands.executeCommand(
-						"workbench.action.openSettings",
-						"@ext:sarrus.sourcepawn-vscode"
+          commands.executeCommand(
+            "workbench.action.openSettings",
+            "@ext:sarrus.sourcepawn-vscode"
           );
         }
       });
   }
 
-  let GithubName: string = vscode.workspace
-    .getConfiguration("sourcepawn")
-    .get("GithubName");
+  let GithubName: string = Workspace.getConfiguration("sourcepawn").get(
+    "GithubName"
+  );
 
   // get workspace folder
-  let workspaceFolders = vscode.workspace.workspaceFolders;
+  let workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
-    vscode.window.showErrorMessage("No workspace are opened.");
+    window.showErrorMessage("No workspace are opened.");
     return 1;
   }
 
   //Select the rootpath
-  let rootpath = workspaceFolders?.[0].uri;
-  let rootname = workspaceFolders?.[0].name;
+  if (typeof rootpath === "undefined") {
+    rootpath = workspaceFolders?.[0].uri.fsPath;
+  }
+
+  let rootname = basename(rootpath);
 
   // create a scripting folder if it doesn't exist
-  let scriptingFolderPath = path.join(rootpath.fsPath, "scripting");
-  if (!fs.existsSync(scriptingFolderPath)) {
-    fs.mkdirSync(scriptingFolderPath);
+  let scriptingFolderPath = join(rootpath, "scripting");
+  if (!existsSync(scriptingFolderPath)) {
+    mkdirSync(scriptingFolderPath);
   }
 
   // Check if file already exists
   let scriptFileName: string = rootname + ".sp";
-  let scriptFilePath = path.join(rootpath.fsPath, "scripting", scriptFileName);
-  if (fs.existsSync(scriptFilePath)) {
-    vscode.window.showErrorMessage(
-      scriptFileName + " already exists, aborting."
-    );
+  let scriptFilePath = join(rootpath, "scripting", scriptFileName);
+  if (existsSync(scriptFilePath)) {
+    window.showErrorMessage(scriptFileName + " already exists, aborting.");
     return 2;
   }
-  let myExtDir: string = vscode.extensions.getExtension(
-    "Sarrus.sourcepawn-vscode"
-  ).extensionPath;
-  let tasksTemplatesPath: string = path.join(
+  let myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
+    .extensionPath;
+  let tasksTemplatesPath: string = join(
     myExtDir,
     "templates/plugin_template.sp"
   );
-  fs.copyFileSync(tasksTemplatesPath, scriptFilePath);
+  copyFileSync(tasksTemplatesPath, scriptFilePath);
 
   // Replace placeholders
   try {
-    let data = fs.readFileSync(scriptFilePath, "utf8");
+    let data = readFileSync(scriptFilePath, "utf8");
     let result = data.replace(/\${AuthorName}/gm, AuthorName);
     result = result.replace(/\${plugin_name}/gm, rootname);
     result = result.replace(/\${GithubName}/gm, GithubName);
-    fs.writeFileSync(scriptFilePath, result, "utf8");
+    writeFileSync(scriptFilePath, result, "utf8");
   } catch (err) {
     console.log(err);
     return 3;

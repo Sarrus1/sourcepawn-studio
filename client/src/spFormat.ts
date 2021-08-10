@@ -11,10 +11,10 @@
   extensions,
   window,
 } from "vscode";
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
-import * as child from "child_process";
+import { openSync, writeSync, closeSync, existsSync } from "fs";
+import { platform, arch } from "os";
+import { join } from "path";
+import { execFileSync } from "child_process";
 
 export class SMDocumentFormattingEditProvider
   implements DocumentFormattingEditProvider {
@@ -47,10 +47,10 @@ export class SMDocumentFormattingEditProvider
       document.lineAt(document.lineCount - 1).text.length
     );
     const range = new Range(start, end);
-    const tempFile = path.join(__dirname, "temp_format.sp");
-    let file = fs.openSync(tempFile, "w", 0o765);
-    fs.writeSync(file, document.getText());
-    fs.closeSync(file);
+    const tempFile = join(__dirname, "temp_format.sp");
+    let file = openSync(tempFile, "w", 0o765);
+    writeSync(file, document.getText());
+    closeSync(file);
     let text: string = this.clangFormat(tempFile, "utf-8", default_style);
 
     // If process failed,
@@ -92,7 +92,7 @@ export class SMDocumentFormattingEditProvider
       return;
     }
     try {
-      let clangFormatProcess = child.execFileSync(nativeBinary, args);
+      let clangFormatProcess = execFileSync(nativeBinary, args);
       return clangFormatProcess.toString();
     } catch (e) {
       console.error("Error", e);
@@ -102,33 +102,33 @@ export class SMDocumentFormattingEditProvider
 
   getNativeBinary() {
     let nativeBinary;
-    const platform = os.platform();
-    const arch = os.arch();
+    const sysPlatform = platform();
+    const sysArch = arch();
     let myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
       .extensionPath;
-    if (platform === "win32") {
-      nativeBinary = path.join(myExtDir, "/bin/win32/clang-format.exe");
+    if (sysPlatform === "win32") {
+      nativeBinary = join(myExtDir, "/bin/win32/clang-format.exe");
     } else {
-      nativeBinary = path.join(
+      nativeBinary = join(
         myExtDir,
-        `/bin/${platform}_${arch}/clang-format`
+        `/bin/${sysPlatform}_${sysArch}/clang-format`
       );
     }
 
-    if (fs.existsSync(nativeBinary)) {
+    if (existsSync(nativeBinary)) {
       return nativeBinary;
     }
 
     // Let arm64 macOS fall back to x64
-    if (platform === "darwin" && arch === "arm64") {
-      nativeBinary = path.join(myExtDir, `/bin/darwin_x64/clang-format`);
-      if (fs.existsSync(nativeBinary)) {
+    if (sysPlatform === "darwin" && sysArch === "arm64") {
+      nativeBinary = join(myExtDir, `/bin/darwin_x64/clang-format`);
+      if (existsSync(nativeBinary)) {
         return nativeBinary;
       }
     }
     const message =
       "This module doesn't bundle the clang-format executable for your platform. " +
-      `(${platform}_${arch})\n` +
+      `(${sysPlatform}_${sysArch})\n` +
       "Please let the author know on GitHub.\n";
     throw new Error(message);
   }

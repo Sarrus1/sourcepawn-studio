@@ -1,40 +1,70 @@
 ## Release Notes
 
+## [2.0.0]
+
+### Added
+
+- Completion now only suggest methods and properties that belong to the methodmap or the enum struct of the variable.
+- MethodMap completions now suggest inherited properties and methods.
+- MethodMap and enum structs' completions are now suggested even for arrays elements and function calls.
+- Added support for autocompletion for nested enum structs' properties and methods.
+- Added support for the `new` keyword. Suggestions will only suggest constructors and the extension will provide signatures accordingly.
+- Function and method signatures now work even if there is no JSDoc comment right above.
+- Added an option to specify a path relative to the workspace when creating a new project.
+- Implemented scopped completions for variables. A variable won't be suggested if the user is typing outside of the variable's scope.
+- Extension is now bundled, this will improve performances.
+- Complete refactoring of the GoToDefinition system, which now updates the location of an item every parsing.
+- Added support for signatures help in multi-line function calls.
+- Added escaped characters highlighting.
+- Added dynamic syntax highlighting for defines and enum Members.
+
+### Fixed
+
+- Improved overall performances by over 50% in some cases (completions were sometimes iterated over twice, which caused delays in large files).
+- Made `#include`, `#pragma`, etc statements highlighting closer to C/C++ highlighting.
+- Fixed an issue for include files not inside an `include` folder.
+- Fixed an error where function signatures would get confused if a `,` was in a string or an array.
+- Fixed unprompted autocompletion when typing misc characters like `\` or `"`.
+- Fixed an issue where signatures helpers wouldn't work properly on secondary .sp files.
+- Improved syntax highlighting for function return types.
+- GoToDefinition, Hover, and Signatures are now less random.
+
 ## [1.12.7]
 
 ### Added
 
- - Added support for .ini files syntax highlighting. Thanks to [HolyHender](https://github.com/HolyHender) for suggesting this.
- - Added a setting for choosing whether to always compile the MainPath file (if it's set) or to always compile the currently opened file.
- - Added support for .kv files.
+- Added support for .ini files syntax highlighting. Thanks to [HolyHender](https://github.com/HolyHender) for suggesting this.
+- Added a setting for choosing whether to always compile the MainPath file (if it's set) or to always compile the currently opened file.
+- Added support for .kv files.
+- Added a setting to specify an output path for the compiler.
 
 ### Fixed
 
- - Fixed issue #54 where a _compiled_ folder would be generated even if the output directory was configured to something else. Thanks to [DRAN1X](https://github.com/dran1x) for reporting this.
- - Compile button is now more persistent in the menu.
- - Fixed issue #58 regarding syntax highlighting for .cfg files.
- - Fixed issue #56 regarding syntax highlighting for multiline strings and `'` inside double quoted strings and vice-versa.
+- Fixed issue #54 where a _compiled_ folder would be generated even if the output directory was configured to something else. Thanks to [DRAN1X](https://github.com/dran1x) for reporting this.
+- Compile button is now more persistent in the menu.
+- Fixed issue #58 regarding syntax highlighting for .cfg files.
+- Fixed issue #56 regarding syntax highlighting for multiline strings and `'` inside double quoted strings and vice-versa.
 
 ## [1.12.6]
 
 ### Fixed
 
- - Fixed a bug where the installer wouldn't add paths to the settings after installing sourcemod.
+- Fixed a bug where the installer wouldn't add paths to the settings after installing sourcemod.
 
 ## [1.12.5]
 
 ### Added
 
- - Added highlighting in strings for chat  color placeholders such as `{green}`.
+- Added highlighting in strings for chat color placeholders such as `{green}`.
 
 ### Fixed
 
- - Fixed `%5.2f` highlighting in strings. Thanks to [zer0.k](https://github.com/zer0k-z) for letting me know.
- - Fixed escaped characters not being highlighted in single quoted strings.
- - Fixed keys not being highlighted if the value was empty in .cfg files.
- - Fixed an error where files wouldn't get linted properly if `MainPath` wasn't defined.
- - Allow multiple instances of "${TabSize}" and "${UseTab}" in formatter settings. Thanks to [llamasking](https://github.com/llamasking) for implementing this.
- - Fixed incorrect formatting of the `myinfo` array.
+- Fixed `%5.2f` highlighting in strings. Thanks to [zer0.k](https://github.com/zer0k-z) for letting me know.
+- Fixed escaped characters not being highlighted in single quoted strings.
+- Fixed keys not being highlighted if the value was empty in .cfg files.
+- Fixed an error where files wouldn't get linted properly if `MainPath` wasn't defined.
+- Allow multiple instances of "${TabSize}" and "${UseTab}" in formatter settings. Thanks to [llamasking](https://github.com/llamasking) for implementing this.
+- Fixed incorrect formatting of the `myinfo` array.
 
 ## [1.12.4]
 

@@ -1,12 +1,18 @@
-import * as vscode from "vscode";
-const wget = require("wget-improved");
-import { window, ProgressLocation, CancellationToken, Progress } from "vscode";
+import {
+  workspace as Workspace,
+  window,
+  extensions,
+  ProgressLocation,
+  CancellationToken,
+  Progress,
+} from "vscode";
 import { join } from "path";
+import { platform } from "os";
+const wget = require("wget-improved");
 const decompress = require("decompress");
-import { platform, arch } from "os";
 
 const outputDir = join(
-  vscode.extensions.getExtension("Sarrus.sourcepawn-vscode").extensionPath,
+  extensions.getExtension("Sarrus.sourcepawn-vscode").extensionPath,
   "misc/"
 );
 const Platform = platform();
@@ -23,12 +29,9 @@ export async function run(args: any) {
     }
   );
   let spCompPath =
-    vscode.workspace.getConfiguration("sourcepawn").get<string>("SpcompPath") ||
-    "";
+    Workspace.getConfiguration("sourcepawn").get<string>("SpcompPath") || "";
   let smHome =
-    vscode.workspace
-      .getConfiguration("sourcepawn")
-      .get<string>("SourcemodHome") || "";
+    Workspace.getConfiguration("sourcepawn").get<string>("SourcemodHome") || "";
   let smDir = join(outputDir, "addons/sourcemod/scripting/include");
   let spComp: string;
   if (Platform === "win32") {
@@ -37,7 +40,7 @@ export async function run(args: any) {
     spComp = join(outputDir, "addons/sourcemod/scripting/spcomp");
   }
   if (spCompPath != "" || smHome != "") {
-    vscode.window
+    window
       .showInformationMessage(
         "The setting for SpcompPath or SourcemodHome is not empty, do you want to override them ?",
         "Yes",
@@ -45,22 +48,18 @@ export async function run(args: any) {
       )
       .then((choice) => {
         if (choice === "Yes") {
-					updatePath(smDir, spComp);
+          updatePath(smDir, spComp);
         }
       });
     return 0;
   }
-	updatePath(smDir, spComp);
+  updatePath(smDir, spComp);
   return 0;
 }
 
-function updatePath(smDir: string, spComp: string):void {
-	vscode.workspace
-	.getConfiguration("sourcepawn")
-	.update("SourcemodHome", smDir, true);
-	vscode.workspace
-	.getConfiguration("sourcepawn")
-	.update("SpcompPath", spComp, true);
+function updatePath(smDir: string, spComp: string): void {
+  Workspace.getConfiguration("sourcepawn").update("SourcemodHome", smDir, true);
+  Workspace.getConfiguration("sourcepawn").update("SpcompPath", spComp, true);
 }
 
 async function downloadSM(
