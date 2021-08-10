@@ -25,6 +25,7 @@
 - Fixed unprompted autocompletion when typing misc characters like `\` or `"`.
 - Fixed an issue where signatures helpers wouldn't work properly on secondary .sp files.
 - Improved syntax highlighting for function return types.
+- GoToDefinition is now less random, it used to be "first match is good enough".
 
 ## [1.12.7]
 

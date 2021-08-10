@@ -17,6 +17,7 @@ import {
   ProviderResult,
   SemanticTokens,
   SemanticTokensBuilder,
+  Range,
 } from "vscode";
 import { basename, join } from "path";
 import { existsSync } from "fs";
@@ -463,14 +464,45 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     position: Position,
     token: CancellationToken
   ): Location | DefinitionLink[] {
-    // TODO: Make definitions more precise, instead of picking the first match
     let range = document.getWordRangeAtPosition(position);
+    let isMethod: boolean = false;
+    if (range.start.character > 0) {
+      let newPosStart = new Position(
+        range.start.line,
+        range.start.character - 1
+      );
+      let newPosEnd = new Position(range.start.line, range.start.character);
+      let newRange = new Range(newPosStart, newPosEnd);
+      let char = document.getText(newRange);
+      isMethod = char === ".";
+    }
     let word: string = document.getText(range);
-    let definitions = this.getAllItems(document.uri.toString()).filter(
-      (completion) => {
-        return completion.name === word;
+    let allItems = this.getAllItems(document.uri.toString());
+    let lastFunc: string = GetLastFuncName(position.line, document);
+    if (isMethod) {
+      let line = document.lineAt(position.line).text;
+      let variableType = this.getTypeOfVariable(
+        line,
+        position,
+        allItems,
+        lastFunc
+      );
+      let variableTypes: string[] = this.getAllInheritances(
+        variableType,
+        allItems
+      );
+      let definition = allItems.find(
+        (item) =>
+          (item.kind === CompletionItemKind.Method ||
+            item.kind === CompletionItemKind.Property) &&
+          variableTypes.includes(item.parent) &&
+          item.name === word
+      );
+      if (typeof definition !== "undefined") {
+        return definition.toDefinitionItem();
       }
-    );
+      return undefined;
+    }
     let bIsFunction = isFunction(
       range,
       document,
@@ -478,19 +510,27 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     );
     let definition = undefined;
     if (bIsFunction) {
-      definition = definitions.find(
-        (def) => def.kind === CompletionItemKind.Function
+      definition = allItems.find(
+        (item) => item.kind === CompletionItemKind.Function
       );
       if (typeof definition !== "undefined") {
         return definition.toDefinitionItem();
       }
+      return undefined;
     }
-    let lastFuncName: string = GetLastFuncName(position.line, document);
-    definition = definitions.find((def) => def.scope === lastFuncName);
+    definition = allItems.find(
+      (item) => item.scope === lastFunc && item.name === word
+    );
     if (typeof definition !== "undefined") {
       return definition.toDefinitionItem();
     }
-    return definitions[0].toDefinitionItem();
+    definition = allItems.find((item) => {
+      if (typeof item.scope !== "undefined") {
+        return item.scope === "$GLOBAL" && item.name === word;
+      }
+      return item.name === word;
+    });
+    return definition.toDefinitionItem();
   }
 
   public provideDocumentSemanticTokens(
