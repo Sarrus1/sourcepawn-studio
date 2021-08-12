@@ -5,6 +5,7 @@
 ### Added
 
 - Added proper highlighting support for `function`, `typedef` and `typeset`.
+- Added highlighting support for FormatTime placeholders.
 
 ### Fixed
 
