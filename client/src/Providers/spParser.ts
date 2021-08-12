@@ -9,7 +9,6 @@ import {
   FunctionParam,
   PropertyItem,
   EnumStructItem,
-  EnumStructMemberItem,
   SPItem,
   MethodMapItem,
 } from "./spItems";

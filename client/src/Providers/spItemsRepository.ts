@@ -358,7 +358,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     let variableType = allItems.find(
       (e) =>
         (e.kind === CompletionItemKind.Variable &&
-          e.scope === lastFuncName &&
+          ["$GLOBAL", lastFuncName].includes(e.scope) &&
           e.name === words[words.length - 1]) ||
         (e.kind === CompletionItemKind.Function &&
           e.name === words[words.length - 1])

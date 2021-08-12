@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.0.1]
+
+### Fixed
+
+- Fixed an issue where global methodmap variables wouldn't get method/property autocompletion.
+
 ## [2.0.0]
 
 ### Added
