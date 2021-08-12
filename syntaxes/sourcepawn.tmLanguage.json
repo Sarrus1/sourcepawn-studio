@@ -80,6 +80,57 @@
       }
     },
     {
+      "comment": "Typedef",
+      "match": "(typedef)\\s+(\\w+)",
+      "captures": {
+        "1": {
+          "name": "keyword.typedef.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.typedef.sourcepawn"
+        }
+      }
+    },
+    {
+      "comment": "Typeset",
+      "match": "(typeset)\\s+(\\w+)",
+      "captures": {
+        "1": {
+          "name": "keyword.typeset.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.typeset.sourcepawn"
+        }
+      }
+    },
+    {
+      "comment": "Property",
+      "match": "(property)\\s+(\\w+)\\s+(\\w+)",
+      "captures": {
+        "1": {
+          "name": "keyword.property.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.property.sourcepawn"
+        },
+        "3": {
+          "name": "support.variable.sourcepawn"
+        }
+      }
+    },
+    {
+      "comment": "Function type definition",
+      "match": "(function)\\s+(\\w+)\\s*\\(",
+      "captures": {
+        "1": {
+          "name": "keyword.function.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.function.sourcepawn"
+        }
+      }
+    },
+    {
       "match": "(\\#define)\\s*(\\w*)",
       "name": "meta.define.sourcepawn",
       "captures": {
@@ -139,7 +190,7 @@
     },
     {
       "comment": "Function declaration new syntax",
-      "match": "^\\s*((?:(?:static|native|stock|public|forward)\\s*)*)(\\w*)\\s+(\\w+)\\s*\\(",
+      "match": "^\\s*((?:(?:static|native|stock|public|forward)\\s*)*)((?!function)\\w*)\\s+(\\w+)\\s*\\(",
       "captures": {
         "1": {
           "name": "keyword.function_new.sourcepawn"
@@ -170,7 +221,7 @@
     {
       "comment": "keywords",
       "name": "keyword.sourcepawn",
-      "match": "\\s*\\b(?:break|continue|new|static|decl|const|delete|forward|native|property|public|stock|funcenum|functag|typedef|typeset|this|sizeof)\\b"
+      "match": "\\s*\\b(?:break|continue|new|static|decl|const|delete|forward|native|public|stock|funcenum|functag|this|sizeof)\\b"
     },
     {
       "comment": "Function params new syntax",
