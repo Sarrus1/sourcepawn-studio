@@ -2,6 +2,10 @@
 
 ## [2.0.1]
 
+### Added
+
+- Added proper highlighting support for `function`, `typedef` and `typeset`.
+
 ### Fixed
 
 - Fixed an issue where global methodmap variables wouldn't get method/property autocompletion.
