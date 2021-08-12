@@ -9,6 +9,7 @@
 ### Fixed
 
 - Fixed an issue where global methodmap variables wouldn't get method/property autocompletion.
+- Method/Property completions won't suggest the constructor if the `new` keyword isn't detected.
 
 ## [2.0.0]
 
