@@ -9,7 +9,6 @@ import {
   FunctionParam,
   PropertyItem,
   EnumStructItem,
-  EnumStructMemberItem,
   SPItem,
   MethodMapItem,
 } from "./spItems";
@@ -485,7 +484,7 @@ class Parser {
       // Iteration safety in case something goes wrong
       let maxiter = 0;
       while (
-        !paramsMatch.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) &&
+        !paramsMatch.match(/(\))\s*(?:;|\{)/) &&
         typeof line != "undefined" &&
         maxiter < 20
       ) {
@@ -686,10 +685,9 @@ class Parser {
         this.definesMap.get(matchDefine[0]) ||
         this.enumMemberMap.get(matchDefine[0]);
       if (typeof defineFile !== "undefined") {
-        let range = new Range(
+        let range = PositiveRange(
           this.lineNb,
           matchDefine.index,
-          this.lineNb,
           matchDefine.index + matchDefine[0].length
         );
         let location = new Location(URI.file(this.file), range);

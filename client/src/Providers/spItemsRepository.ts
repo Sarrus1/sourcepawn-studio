@@ -263,7 +263,9 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
           if (
             (item.kind === CompletionItemKind.Method ||
               item.kind === CompletionItemKind.Property) &&
-            variableTypes.includes(item.parent)
+            variableTypes.includes(item.parent) &&
+            // Don't include the constructor of the methodmap
+            !variableTypes.includes(item.name)
           ) {
             all_completions_list.items.push(
               item.toCompletionItem(document.uri.fsPath, lastFunc)
@@ -358,7 +360,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     let variableType = allItems.find(
       (e) =>
         (e.kind === CompletionItemKind.Variable &&
-          e.scope === lastFuncName &&
+          ["$GLOBAL", lastFuncName].includes(e.scope) &&
           e.name === words[words.length - 1]) ||
         (e.kind === CompletionItemKind.Function &&
           e.name === words[words.length - 1])
@@ -383,7 +385,8 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     let includes = new Set<string>();
     let MainPath: string =
       Workspace.getConfiguration("sourcepawn").get("MainPath") || "";
-    if (MainPath != "") {
+    let allItems;
+    if (MainPath !== "") {
       if (!existsSync(MainPath)) {
         let workspace: WorkspaceFolder = Workspace.workspaceFolders[0];
         MainPath = join(workspace.uri.fsPath, MainPath);
@@ -391,23 +394,20 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
           throw "MainPath is incorrect.";
         }
       }
-      let MainCompletion = this.completions.get(URI.file(MainPath).toString());
-      if (MainCompletion) {
-        this.getIncludedFiles(MainCompletion, includes);
-      }
       let uri = URI.file(MainPath).toString();
+      allItems = this.completions.get(uri);
       if (!includes.has(uri)) {
         includes.add(uri);
       }
+    } else {
+      allItems = this.completions.get(file);
+      includes.add(file);
     }
-    let completion = this.completions.get(file);
-
-    if (typeof completion !== "undefined") {
-      this.getIncludedFiles(completion, includes);
+    if (typeof allItems !== "undefined") {
+      this.getIncludedFiles(allItems, includes);
     } else {
       return [];
     }
-    includes.add(file);
     return [...includes]
       .map((file) => {
         return this.getFileItems(file);

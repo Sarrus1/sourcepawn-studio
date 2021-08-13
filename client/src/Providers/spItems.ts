@@ -6,7 +6,7 @@
   SignatureInformation,
   Hover,
 } from "vscode";
-import { description_to_md } from "../spUtils";
+import { descriptionToMD } from "../spUtils";
 import { basename } from "path";
 import { URI } from "vscode-uri";
 
@@ -78,7 +78,7 @@ export class FunctionItem implements SPItem {
   toSignature(): SignatureInformation {
     return {
       label: this.detail,
-      documentation: description_to_md(this.description),
+      documentation: descriptionToMD(this.description),
       parameters: this.params,
     };
   }
@@ -92,12 +92,12 @@ export class FunctionItem implements SPItem {
       return new Hover([
         { language: "sourcepawn", value: this.detail },
         `[Online Documentation](https://sourcemod.dev/#/${filename}/function.${this.name})`,
-        description_to_md(this.description),
+        descriptionToMD(this.description),
       ]);
     }
     return new Hover([
       { language: "sourcepawn", value: this.detail },
-      description_to_md(this.description),
+      descriptionToMD(this.description),
     ]);
   }
 
@@ -163,12 +163,12 @@ export class MethodMapItem implements SPItem {
       return new Hover([
         { language: "sourcepawn", value: this.detail },
         `[Online Documentation](https://sourcemod.dev/#/${filename}/methodmap.${this.name})`,
-        description_to_md(this.description),
+        descriptionToMD(this.description),
       ]);
     }
     return new Hover([
       { language: "sourcepawn", value: this.detail },
-      description_to_md(this.description),
+      descriptionToMD(this.description),
     ]);
   }
 }
@@ -225,7 +225,7 @@ export class MethodItem implements SPItem {
   toSignature(): SignatureInformation {
     return {
       label: this.detail,
-      documentation: description_to_md(this.description),
+      documentation: descriptionToMD(this.description),
       parameters: this.params,
     };
   }
@@ -239,12 +239,12 @@ export class MethodItem implements SPItem {
       return new Hover([
         { language: "sourcepawn", value: this.detail },
         `[Online Documentation](https://sourcemod.dev/#/${filename}/methodmap.${this.parent}/function.${this.name})`,
-        description_to_md(this.description),
+        descriptionToMD(this.description),
       ]);
     }
     return new Hover([
       { language: "sourcepawn", value: this.detail },
-      description_to_md(this.description),
+      descriptionToMD(this.description),
     ]);
   }
 }
@@ -402,7 +402,7 @@ export class EnumItem implements SPItem {
     }
     return new Hover([
       { language: "sourcepawn", value: this.name },
-      description_to_md(this.description),
+      descriptionToMD(this.description),
     ]);
   }
 }
@@ -458,12 +458,12 @@ export class EnumMemberItem implements SPItem {
     if (enumName == "") {
       return new Hover([
         { language: "sourcepawn", value: this.name },
-        description_to_md(this.description),
+        descriptionToMD(this.description),
       ]);
     } else {
       return new Hover([
         { language: "sourcepawn", value: `${this.enum.name} ${this.name};` },
-        description_to_md(this.description),
+        descriptionToMD(this.description),
       ]);
     }
   }
@@ -508,7 +508,7 @@ export class EnumStructItem implements SPItem {
     }
     return new Hover([
       { language: "sourcepawn", value: this.name },
-      description_to_md(this.description),
+      descriptionToMD(this.description),
     ]);
   }
 }
@@ -564,7 +564,7 @@ export class EnumStructMemberItem implements SPItem {
     if (enumName == "") {
       return new Hover([
         { language: "sourcepawn", value: this.name },
-        description_to_md(this.description),
+        descriptionToMD(this.description),
       ]);
     } else {
       return new Hover([
@@ -572,7 +572,7 @@ export class EnumStructMemberItem implements SPItem {
           language: "sourcepawn",
           value: this.enumStruct.name + " " + this.name,
         },
-        description_to_md(this.description),
+        descriptionToMD(this.description),
       ]);
     }
   }
@@ -628,7 +628,7 @@ export class PropertyItem implements SPItem {
     }
     return new Hover([
       { language: "sourcepawn", value: this.name },
-      description_to_md(this.description),
+      descriptionToMD(this.description),
     ]);
   }
 }
