@@ -4,13 +4,15 @@
 
 ### Added
 
-- Added proper highlighting support for `function`, `typedef` and `typeset`.
-- Added highlighting support for FormatTime placeholders.
+- Added proper highlighting support for `undef`, `function`, `typedef` and `typeset`.
+- Added highlighting support for `FormatTime` placeholders.
 
 ### Fixed
 
 - Fixed an issue where global methodmap variables wouldn't get method/property autocompletion.
 - Method/Property completions won't suggest the constructor if the `new` keyword isn't detected.
+- Fixed incorrect parsing for function descriptions containing \< and \>.
+- Improved support for Intellisense for projects containing multiple .sp files. If MainPath is properly configured, Intellisens will work correctly.
 
 ## [2.0.0]
 
