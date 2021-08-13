@@ -484,7 +484,7 @@ class Parser {
       // Iteration safety in case something goes wrong
       let maxiter = 0;
       while (
-        !paramsMatch.match(/(\))(?:\s*)(?:;)?(?:\s*)(?:\{?)(?:\s*)$/) &&
+        !paramsMatch.match(/(\))\s*(?:;|\{)/) &&
         typeof line != "undefined" &&
         maxiter < 20
       ) {
