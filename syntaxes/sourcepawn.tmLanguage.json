@@ -138,7 +138,19 @@
           "name": "keyword.control.define.sourcepawn"
         },
         "2": {
-          "name": "entity.name.function.preprocessor.sourcepawn"
+          "name": "variable.other.constant.sourcepawn"
+        }
+      }
+    },
+    {
+      "match": "(\\#undef)\\s*(\\w*)",
+      "name": "meta.undef.sourcepawn",
+      "captures": {
+        "1": {
+          "name": "keyword.control.undef.sourcepawn"
+        },
+        "2": {
+          "name": "variable.other.constant.sourcepawn"
         }
       }
     },
