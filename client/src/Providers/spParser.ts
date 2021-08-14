@@ -238,7 +238,11 @@ class Parser {
       /(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
     );
     if (match) {
-      if (isControlStatement(line) || this.state.includes(State.Property)) {
+      if (
+        isControlStatement(line) ||
+        this.state.includes(State.Property) ||
+        /\bfunction\b/.test(match[1])
+      ) {
         return;
       }
       this.read_function(line);
@@ -305,7 +309,6 @@ class Parser {
 
       // Set max number of iterations for safety
       let iter = 0;
-
       // Match all the enum members
       while (iter < 100 && !/\s*(\}\s*\;?)/.test(line)) {
         iter++;
@@ -460,10 +463,7 @@ class Parser {
     if (typeof line === "undefined") {
       return;
     }
-    // Methodmap's methods have a ";" at the end so we need to use a different regex
-    let newSyntaxRe: RegExp = this.state.includes(State.Methodmap)
-      ? /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))\s*/
-      : /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))\s*$/;
+    let newSyntaxRe: RegExp = /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))\s*/;
     let match: RegExpMatchArray = line.match(newSyntaxRe);
     if (!match) {
       match = line.match(
@@ -483,30 +483,52 @@ class Parser {
       this.AddParamsDef(paramsMatch, nameMatch, line);
       // Iteration safety in case something goes wrong
       let maxiter = 0;
+      let matchEndRegex: RegExp = /(\{|\;)/;
+      let isNativeOrForward = /\bnative\b|\bforward\b/.test(match[0]);
+      if (this.state.includes(State.EnumStruct)) {
+        this.state.push(State.Function);
+      }
+      let matchEnd = matchEndRegex.test(line);
+      let matchLastParenthesis = /\)/.test(paramsMatch);
+      let range = this.makeDefinitionRange(nameMatch, line);
       while (
-        !paramsMatch.match(/(\))\s*(?:;|\{)/) &&
+        !(matchLastParenthesis && matchEnd) &&
         typeof line != "undefined" &&
         maxiter < 20
       ) {
         maxiter++;
         line = this.lines.shift();
         this.lineNb++;
-        this.searchForDefinesInString(line);
-        this.AddParamsDef(line, nameMatch, line);
-        paramsMatch += line;
+        if (!matchLastParenthesis) {
+          matchLastParenthesis = /\)/.test(paramsMatch);
+          this.AddParamsDef(line, nameMatch, line);
+          this.searchForDefinesInString(line);
+          paramsMatch += line;
+        }
+        if (!matchEnd) {
+          matchEnd = matchEndRegex.test(line);
+        }
+      }
+      if (!matchEnd) {
+        return;
+      }
+      let endSymbol = line.match(matchEndRegex);
+      if (endSymbol === null) {
+        return;
+      }
+      if (isNativeOrForward) {
+        if (endSymbol[0] === "{") return;
+      } else {
+        if (endSymbol[0] === ";") return;
       }
       // Treat differently if the function is declared on multiple lines
       paramsMatch = /\)\s*(?:\{|;)?\s*$/.test(match[0])
         ? match[0]
         : match[0].replace(/\(.*\s*$/, "(") +
           paramsMatch.replace(/\s*\w+\s*\(\s*/g, "").replace(/\s+/gm, " ");
-      if (!/\bnative\b|\bforward\b/.test(paramsMatch)) {
-        this.state.push(State.Function);
-      }
       if (params.length === 0) {
         params = getParamsFromDeclaration(paramsMatch);
       }
-      let range = this.makeDefinitionRange(nameMatch, line);
       if (isMethod) {
         this.completions.add(
           nameMatch + this.state_data.name,

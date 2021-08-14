@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.0.2]
+
+### Fixed
+
+- Improved functions parsing.
+
 ## [2.0.1]
 
 ### Added
