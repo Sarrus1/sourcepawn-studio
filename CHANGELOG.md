@@ -1,5 +1,13 @@
 ## Release Notes
 
+## [2.0.2]
+
+### Fixed
+
+- Improved functions parsing.
+- Fixed `//` in doc comments.
+- Fixed defines and enum members being highlighted in comments.
+
 ## [2.0.1]
 
 ### Added

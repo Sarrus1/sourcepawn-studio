@@ -22,6 +22,7 @@ import {
 import { existsSync, readFileSync } from "fs";
 import { basename } from "path";
 import { URI } from "vscode-uri";
+import { isRegExp } from "util";
 
 export function parseFile(
   file: string,
@@ -238,7 +239,11 @@ class Parser {
       /(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
     );
     if (match) {
-      if (isControlStatement(line) || this.state.includes(State.Property)) {
+      if (
+        isControlStatement(line) ||
+        this.state.includes(State.Property) ||
+        /\bfunction\b/.test(match[1])
+      ) {
         return;
       }
       this.read_function(line);
@@ -305,7 +310,6 @@ class Parser {
 
       // Set max number of iterations for safety
       let iter = 0;
-
       // Match all the enum members
       while (iter < 100 && !/\s*(\}\s*\;?)/.test(line)) {
         iter++;
@@ -418,7 +422,7 @@ class Parser {
         (!/\*\//.test(current_line) && !use_line_comment))
     ) {
       iter++;
-      this.scratch.push(current_line);
+      this.scratch.push(current_line.replace(/^\s*\/\//, ""));
       current_line = this.lines.shift();
 
       this.lineNb++;
@@ -460,10 +464,7 @@ class Parser {
     if (typeof line === "undefined") {
       return;
     }
-    // Methodmap's methods have a ";" at the end so we need to use a different regex
-    let newSyntaxRe: RegExp = this.state.includes(State.Methodmap)
-      ? /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))\s*/
-      : /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))\s*$/;
+    let newSyntaxRe: RegExp = /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))\s*/;
     let match: RegExpMatchArray = line.match(newSyntaxRe);
     if (!match) {
       match = line.match(
@@ -476,37 +477,61 @@ class Parser {
     if (match) {
       let { description, params } = this.parse_doc_comment();
       let nameMatch = match[2];
-      this.lastFuncLine = this.lineNb;
-      this.lastFuncName = nameMatch;
+      let lineMatch = this.lineNb;
       let type = match[1];
       let paramsMatch = match[3];
       this.AddParamsDef(paramsMatch, nameMatch, line);
       // Iteration safety in case something goes wrong
       let maxiter = 0;
+      let matchEndRegex: RegExp = /(\{|\;)/;
+      let isNativeOrForward = /\bnative\b|\bforward\b/.test(match[0]);
+      if (this.state.includes(State.EnumStruct)) {
+        this.state.push(State.Function);
+      }
+      let matchEnd = matchEndRegex.test(line);
+      let matchLastParenthesis = /\)/.test(paramsMatch);
+      let range = this.makeDefinitionRange(nameMatch, line);
       while (
-        !paramsMatch.match(/(\))\s*(?:;|\{)/) &&
+        !(matchLastParenthesis && matchEnd) &&
         typeof line != "undefined" &&
         maxiter < 20
       ) {
         maxiter++;
         line = this.lines.shift();
         this.lineNb++;
-        this.searchForDefinesInString(line);
-        this.AddParamsDef(line, nameMatch, line);
-        paramsMatch += line;
+        if (!matchLastParenthesis) {
+          matchLastParenthesis = /\)/.test(paramsMatch);
+          this.AddParamsDef(line, nameMatch, line);
+          this.searchForDefinesInString(line);
+          paramsMatch += line;
+        }
+        if (!matchEnd) {
+          matchEnd = matchEndRegex.test(line);
+        }
       }
+      if (!matchEnd) {
+        return;
+      }
+      let endSymbol = line.match(matchEndRegex);
+      if (endSymbol === null) {
+        return;
+      }
+      if (isNativeOrForward) {
+        if (endSymbol[0] === "{") return;
+      } else {
+        if (endSymbol[0] === ";") return;
+      }
+
+      this.lastFuncLine = lineMatch;
+      this.lastFuncName = nameMatch;
       // Treat differently if the function is declared on multiple lines
       paramsMatch = /\)\s*(?:\{|;)?\s*$/.test(match[0])
         ? match[0]
         : match[0].replace(/\(.*\s*$/, "(") +
           paramsMatch.replace(/\s*\w+\s*\(\s*/g, "").replace(/\s+/gm, " ");
-      if (!/\bnative\b|\bforward\b/.test(paramsMatch)) {
-        this.state.push(State.Function);
-      }
       if (params.length === 0) {
         params = getParamsFromDeclaration(paramsMatch);
       }
-      let range = this.makeDefinitionRange(nameMatch, line);
       if (isMethod) {
         this.completions.add(
           nameMatch + this.state_data.name,
@@ -613,12 +638,16 @@ class Parser {
     name: string,
     line: string,
     type: string,
-    shouldAddToEnumStruct = false
+    shouldAddToEnumStruct = false,
+    funcName: string = undefined
   ): void {
     let range = this.makeDefinitionRange(name, line);
     let scope: string = "$GLOBAL";
     if (this.lastFuncLine !== 0) {
       scope = this.lastFuncName;
+    }
+    if (typeof funcName !== "undefined") {
+      scope = funcName;
     }
     // Custom key name for the map so the definitions don't override each others
     let mapName = name + scope;
@@ -668,7 +697,13 @@ class Parser {
         /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
       )[1];
       if (!this.IsBuiltIn) {
-        this.AddVariableCompletion(variable_completion, line, variable[1]);
+        this.AddVariableCompletion(
+          variable_completion,
+          line,
+          variable[1],
+          undefined,
+          funcName
+        );
       }
     }
   }
@@ -677,10 +712,19 @@ class Parser {
     if (typeof line === "undefined") {
       return;
     }
+    let commentIndex = line.length;
+    let commentMatch = line.match(/\/\//);
+    if (commentMatch) {
+      commentIndex = commentMatch.index;
+    }
     let matchDefine: RegExpExecArray;
     const re: RegExp = /\w+/g;
     let defineFile: string;
     while ((matchDefine = re.exec(line))) {
+      if (matchDefine.index > commentIndex) {
+        // We are in a line comment, break.
+        break;
+      }
       defineFile =
         this.definesMap.get(matchDefine[0]) ||
         this.enumMemberMap.get(matchDefine[0]);
