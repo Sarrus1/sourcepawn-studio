@@ -22,6 +22,7 @@ import {
 import { existsSync, readFileSync } from "fs";
 import { basename } from "path";
 import { URI } from "vscode-uri";
+import { isRegExp } from "util";
 
 export function parseFile(
   file: string,
@@ -421,7 +422,7 @@ class Parser {
         (!/\*\//.test(current_line) && !use_line_comment))
     ) {
       iter++;
-      this.scratch.push(current_line);
+      this.scratch.push(current_line.replace(/^\s*\/\//, ""));
       current_line = this.lines.shift();
 
       this.lineNb++;
@@ -701,10 +702,19 @@ class Parser {
     if (typeof line === "undefined") {
       return;
     }
+    let commentIndex = line.length;
+    let commentMatch = line.match(/\/\//);
+    if (commentMatch) {
+      commentIndex = commentMatch.index;
+    }
     let matchDefine: RegExpExecArray;
     const re: RegExp = /\w+/g;
     let defineFile: string;
     while ((matchDefine = re.exec(line))) {
+      if (matchDefine.index > commentIndex) {
+        // We are in a line comment, break.
+        break;
+      }
       defineFile =
         this.definesMap.get(matchDefine[0]) ||
         this.enumMemberMap.get(matchDefine[0]);

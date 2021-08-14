@@ -5,6 +5,8 @@
 ### Fixed
 
 - Improved functions parsing.
+- Fixed `//` in doc comments.
+- Fixed defines and enum members being highlighted in comments.
 
 ## [2.0.1]
 
