@@ -638,12 +638,16 @@ class Parser {
     name: string,
     line: string,
     type: string,
-    shouldAddToEnumStruct = false
+    shouldAddToEnumStruct = false,
+    funcName: string = undefined
   ): void {
     let range = this.makeDefinitionRange(name, line);
     let scope: string = "$GLOBAL";
     if (this.lastFuncLine !== 0) {
       scope = this.lastFuncName;
+    }
+    if (typeof funcName !== "undefined") {
+      scope = funcName;
     }
     // Custom key name for the map so the definitions don't override each others
     let mapName = name + scope;
@@ -693,7 +697,13 @@ class Parser {
         /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
       )[1];
       if (!this.IsBuiltIn) {
-        this.AddVariableCompletion(variable_completion, line, variable[1]);
+        this.AddVariableCompletion(
+          variable_completion,
+          line,
+          variable[1],
+          undefined,
+          funcName
+        );
       }
     }
   }
