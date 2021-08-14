@@ -476,8 +476,7 @@ class Parser {
     if (match) {
       let { description, params } = this.parse_doc_comment();
       let nameMatch = match[2];
-      this.lastFuncLine = this.lineNb;
-      this.lastFuncName = nameMatch;
+      let lineMatch = this.lineNb;
       let type = match[1];
       let paramsMatch = match[3];
       this.AddParamsDef(paramsMatch, nameMatch, line);
@@ -521,6 +520,9 @@ class Parser {
       } else {
         if (endSymbol[0] === ";") return;
       }
+
+      this.lastFuncLine = lineMatch;
+      this.lastFuncName = nameMatch;
       // Treat differently if the function is declared on multiple lines
       paramsMatch = /\)\s*(?:\{|;)?\s*$/.test(match[0])
         ? match[0]

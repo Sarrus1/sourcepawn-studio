@@ -647,10 +647,11 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       (item) =>
         !(
           item.kind === CompletionItemKind.Method ||
-          item.kind === CompletionItemKind.Property
+          item.kind === CompletionItemKind.Property ||
+          item.kind === CompletionItemKind.Function
         ) &&
-        item.scope === lastFunc &&
-        item.name === word
+        item.name === word &&
+        item.scope === lastFunc
     );
     if (typeof item !== "undefined") {
       return item;
