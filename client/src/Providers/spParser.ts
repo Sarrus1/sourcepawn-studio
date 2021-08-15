@@ -231,6 +231,9 @@ class Parser {
 
     match = line.match(/}/);
     if (match) {
+      if (this.state[this.state.length - 1] === State.Function) {
+        this.lastFuncLine = 0;
+      }
       this.state.pop();
       return;
     }
@@ -638,11 +641,14 @@ class Parser {
     line: string,
     type: string,
     shouldAddToEnumStruct = false,
-    funcName: string = undefined,
-    enumStructName: string = undefined
+    funcName: string = undefined
   ): void {
     let range = this.makeDefinitionRange(name, line);
     let scope: string = "$GLOBAL";
+    let enumStructName: string = undefined;
+    if (this.state.includes(State.EnumStruct)) {
+      enumStructName = this.state_data.name;
+    }
     if (this.lastFuncLine !== 0) {
       scope = this.lastFuncName;
     }
@@ -650,7 +656,7 @@ class Parser {
       scope = funcName;
     }
     // Custom key name for the map so the definitions don't override each others
-    let mapName = name + scope;
+    let mapName = name + scope + enumStructName;
     if (this.state.includes(State.EnumStruct)) {
       if (this.state.includes(State.Function)) {
         this.completions.add(

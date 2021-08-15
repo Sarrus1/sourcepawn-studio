@@ -610,6 +610,17 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     let lastFunc: string = GetLastFuncName(position, document);
     let lastEnumStruct: string = getLastEnumStructName(position, document);
 
+    if (lastEnumStruct !== "$GLOBAL" && lastFunc === "$GLOBAL") {
+      let item = allItems.find(
+        (item) =>
+          (item.kind === CompletionItemKind.Method ||
+            item.kind === CompletionItemKind.Property) &&
+          item.parent === lastEnumStruct &&
+          item.name === word
+      );
+      return item;
+    }
+
     if (isMethod) {
       let line = document.lineAt(position.line).text;
       // If we are dealing with a method or property, look for the type of the variable

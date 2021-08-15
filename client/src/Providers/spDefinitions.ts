@@ -11,6 +11,7 @@ export function GetLastFuncName(
   let line: string;
   for (lineNB; lineNB > 0; lineNB--) {
     line = text[lineNB];
+    if (line.match(/^\}/)) return "$GLOBAL";
     Match = line.match(re);
     if (Match) {
       let match = line.match(

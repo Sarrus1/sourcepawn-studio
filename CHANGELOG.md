@@ -1,10 +1,11 @@
 ## Release Notes
 
-## [2.0.3]
+## [2.1.0]
 
 ### Added
 
 - Added `this` support inside enum structs.
+- Added GoToDefinition support inside enum structs' methods.
 
 ### Fixed
 
