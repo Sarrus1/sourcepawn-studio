@@ -189,6 +189,18 @@
       }
     },
     {
+      "comment": "Structs",
+      "match": "^\\s*(struct)\\s+(\\w+)",
+      "captures": {
+        "1": {
+          "name": "keyword.struct.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.struct.sourcepawn"
+        }
+      }
+    },
+    {
       "comment": "Enums",
       "match": "^\\s*(enum\\s*)(\\w*)",
       "captures": {

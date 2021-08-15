@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [2.0.3]
+
+### Fixed
+
+- Fixed parsing error for `<keyword>[] <variablename>` variable declarations.
+- Fixed parsing of enum struct methods, where the last one would be considered like a global function.
+
 ## [2.0.2]
 
 ### Fixed
