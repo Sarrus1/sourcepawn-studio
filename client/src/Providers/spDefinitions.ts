@@ -86,7 +86,8 @@ export function getLastEnumStructName(
     iter++;
   }
   if (lineNB == 0) return "$GLOBAL";
-  if (match) {
+  if (match !== null) {
     return match[1];
   }
+  return "$GLOBAL";
 }
