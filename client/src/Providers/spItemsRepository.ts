@@ -252,12 +252,14 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     let all_completions_list: CompletionList = new CompletionList();
     if (all_completions !== []) {
       let lastFunc: string = GetLastFuncName(position, document);
+      let lastEnumStruct = getLastEnumStructName(position, document);
       if (is_method) {
         let variableType = this.getTypeOfVariable(
           line,
           position,
           all_completions,
-          lastFunc
+          lastFunc,
+          lastEnumStruct
         );
         let variableTypes: string[] = this.getAllInheritances(
           variableType,
@@ -313,7 +315,8 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     line: string,
     position: Position,
     allItems: SPItem[],
-    lastFuncName: string
+    lastFuncName: string,
+    lastEnumStruct: string
   ): string {
     let i = position.character - 1;
     let bCounter = 0;
@@ -361,14 +364,19 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       }
       i--;
     }
-    let variableType = allItems.find(
-      (e) =>
-        (e.kind === CompletionItemKind.Variable &&
-          ["$GLOBAL", lastFuncName].includes(e.scope) &&
-          e.name === words[words.length - 1]) ||
-        (e.kind === CompletionItemKind.Function &&
-          e.name === words[words.length - 1])
-    ).type;
+    let variableType: string;
+    if (lastEnumStruct !== "$GLOBAL" && words[words.length - 1] === "this") {
+      variableType = lastEnumStruct;
+    } else {
+      variableType = allItems.find(
+        (e) =>
+          (e.kind === CompletionItemKind.Variable &&
+            ["$GLOBAL", lastFuncName].includes(e.scope) &&
+            e.name === words[words.length - 1]) ||
+          (e.kind === CompletionItemKind.Function &&
+            e.name === words[words.length - 1])
+      ).type;
+    }
     if (words.length > 1) {
       words = words.slice(0, words.length - 1).reverse();
       for (let word of words) {
@@ -479,11 +487,13 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       let allItems = this.getAllItems(document.uri.toString());
       let lastFuncName = GetLastFuncName(position, document);
       let newPos = new Position(1, croppedLine.length);
+      let lastEnumStruct = getLastEnumStructName(position, document);
       let type = this.getTypeOfVariable(
         croppedLine,
         newPos,
         allItems,
-        lastFuncName
+        lastFuncName,
+        lastEnumStruct
       );
       let variableTypes: string[] = this.getAllInheritances(type, allItems);
       let items = this.getAllItems(document.uri.toString()).filter(
@@ -607,7 +617,8 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
         line,
         position,
         allItems,
-        lastFunc
+        lastFunc,
+        lastEnumStruct
       );
       // Get inheritances from methodmaps
       let variableTypes: string[] = this.getAllInheritances(

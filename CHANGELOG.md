@@ -2,6 +2,10 @@
 
 ## [2.0.3]
 
+### Added
+
+- Added `this` support inside enum structs.
+
 ### Fixed
 
 - Fixed parsing error for `<keyword>[] <variablename>` variable declarations.
