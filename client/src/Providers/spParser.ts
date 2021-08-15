@@ -162,7 +162,7 @@ class Parser {
 
     // Match variables only in the current file
     match = line.match(
-      /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*\w+\s+(\w+\s*(?:\[[A-Za-z0-9 +\-\*_]*\])*\s*(?:=\s*[^;,]+)?(?:,|;))/
+      /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*\w+(?:\[\])?\s+(\w+\s*(?:\[[A-Za-z0-9 +\-\*_]*\])*\s*(?:=\s*[^;,]+)?(?:,|;))/
     );
     if (match && !this.IsBuiltIn) {
       if (
@@ -521,9 +521,10 @@ class Parser {
       } else {
         if (endSymbol[0] === ";") return;
       }
-
-      this.lastFuncLine = lineMatch;
-      this.lastFuncName = nameMatch;
+      if (!this.state.includes(State.EnumStruct)) {
+        this.lastFuncLine = lineMatch;
+        this.lastFuncName = nameMatch;
+      }
       // Treat differently if the function is declared on multiple lines
       paramsMatch = /\)\s*(?:\{|;)?\s*$/.test(match[0])
         ? match[0]
@@ -679,7 +680,8 @@ class Parser {
     line: string,
     search: boolean = true
   ): Range {
-    let start: number = search ? line.search(name) : 0;
+    let re: RegExp = new RegExp(`\\b${name}\\b`);
+    let start: number = search ? line.search(re) : 0;
     let end: number = search ? start + name.length : 0;
     var range = PositiveRange(this.lineNb, start, end);
     return range;
