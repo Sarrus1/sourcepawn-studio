@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.1.1]
+
+### Fixed
+
+- Fixed logic error in enum struct parsing.
+
 ## [2.1.0]
 
 ### Added
