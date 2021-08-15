@@ -1,9 +1,10 @@
 ﻿import { TextDocument, Range, Position } from "vscode";
 
 export function GetLastFuncName(
-  lineNB: number,
+  position: Position,
   document: TextDocument
 ): string {
+  let lineNB = position.line;
   let re = /(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/;
   let text = document.getText().split("\n");
   let Match;
@@ -56,4 +57,35 @@ export function isControlStatement(line: string): boolean {
     }
   }
   return false;
+}
+
+export function getLastEnumStructName(
+  position: Position,
+  document: TextDocument
+): string {
+  let lineNB = position.line;
+  let re = /^\s*(?:enum\s+struct\s+)(\w+)/;
+  let text = document.getText().split("\n");
+  let match;
+  let line: string;
+  const maxiter = 150;
+  let iter = 0;
+  while (lineNB > 0 && iter < maxiter) {
+    line = text[lineNB];
+    if (line.match(/^\}/)) {
+      // We are not in an enum struct.
+      // This is not ideal, but I don't see a better way to do this for now.
+      return "$GLOBAL";
+    }
+    match = line.match(re);
+    if (match) {
+      break;
+    }
+    lineNB--;
+    iter++;
+  }
+  if (lineNB == 0) return "$GLOBAL";
+  if (match) {
+    return match[1];
+  }
 }

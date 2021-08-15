@@ -24,7 +24,11 @@ import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 import { SPItem, Include } from "./spItems";
 import { events } from "../Misc/sourceEvents";
-import { GetLastFuncName, isFunction } from "./spDefinitions";
+import {
+  GetLastFuncName,
+  isFunction,
+  getLastEnumStructName,
+} from "./spDefinitions";
 import { getSignatureAttributes } from "./spSignatures";
 import { SP_LEGENDS } from "../spLegends";
 
@@ -247,7 +251,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     let all_completions: SPItem[] = this.getAllItems(document.uri.toString());
     let all_completions_list: CompletionList = new CompletionList();
     if (all_completions !== []) {
-      let lastFunc: string = GetLastFuncName(position.line, document);
+      let lastFunc: string = GetLastFuncName(position, document);
       if (is_method) {
         let variableType = this.getTypeOfVariable(
           line,
@@ -473,7 +477,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     if (match) {
       let methodName = match[1];
       let allItems = this.getAllItems(document.uri.toString());
-      let lastFuncName = GetLastFuncName(position.line, document);
+      let lastFuncName = GetLastFuncName(position, document);
       let newPos = new Position(1, croppedLine.length);
       let type = this.getTypeOfVariable(
         croppedLine,
@@ -593,7 +597,8 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     }
     let word: string = document.getText(range);
     let allItems = this.getAllItems(document.uri.toString());
-    let lastFunc: string = GetLastFuncName(position.line, document);
+    let lastFunc: string = GetLastFuncName(position, document);
+    let lastEnumStruct: string = getLastEnumStructName(position, document);
 
     if (isMethod) {
       let line = document.lineAt(position.line).text;
