@@ -680,6 +680,13 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
         return false;
       }
       if (typeof item.scope !== "undefined") {
+        if (typeof item.enumStructName !== "undefined") {
+          return (
+            item.scope === "$GLOBAL" &&
+            item.name === word &&
+            item.enumStructName === lastEnumStruct
+          );
+        }
         return item.scope === "$GLOBAL" && item.name === word;
       }
       return item.name === word;
