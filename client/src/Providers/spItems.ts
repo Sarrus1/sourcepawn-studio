@@ -21,6 +21,7 @@ export interface SPItem {
   scope?: string;
   calls?: Location[];
   IsBuiltIn?: boolean;
+  enumStructName?: string;
 
   toCompletionItem(file: string, lastFuncName?: string): CompletionItem;
   toDefinitionItem(): Location;
@@ -307,19 +308,22 @@ export class VariableItem implements SPItem {
   scope: string;
   range: Range;
   type: string;
+  enumStructName: string;
 
   constructor(
     name: string,
     file: string,
     scope: string,
     range: Range,
-    type: string
+    type: string,
+    enumStruct: string
   ) {
     this.name = name;
     this.file = file;
     this.scope = scope;
     this.range = range;
     this.type = type;
+    this.enumStructName = enumStruct;
   }
 
   toCompletionItem(

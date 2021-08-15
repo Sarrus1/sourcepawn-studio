@@ -231,6 +231,9 @@ class Parser {
 
     match = line.match(/}/);
     if (match) {
+      if (this.state[this.state.length - 1] === State.Function) {
+        this.lastFuncLine = 0;
+      }
       this.state.pop();
       return;
     }
@@ -480,14 +483,14 @@ class Parser {
       let lineMatch = this.lineNb;
       let type = match[1];
       let paramsMatch = match[3];
+      if (this.state.includes(State.EnumStruct)) {
+        this.state.push(State.Function);
+      }
       this.AddParamsDef(paramsMatch, nameMatch, line);
       // Iteration safety in case something goes wrong
       let maxiter = 0;
       let matchEndRegex: RegExp = /(\{|\;)/;
       let isNativeOrForward = /\bnative\b|\bforward\b/.test(match[0]);
-      if (this.state.includes(State.EnumStruct)) {
-        this.state.push(State.Function);
-      }
       let matchEnd = matchEndRegex.test(line);
       let matchLastParenthesis = /\)/.test(paramsMatch);
       let range = this.makeDefinitionRange(nameMatch, line);
@@ -521,10 +524,8 @@ class Parser {
       } else {
         if (endSymbol[0] === ";") return;
       }
-      if (!this.state.includes(State.EnumStruct)) {
-        this.lastFuncLine = lineMatch;
-        this.lastFuncName = nameMatch;
-      }
+      this.lastFuncLine = lineMatch;
+      this.lastFuncName = nameMatch;
       // Treat differently if the function is declared on multiple lines
       paramsMatch = /\)\s*(?:\{|;)?\s*$/.test(match[0])
         ? match[0]
@@ -644,6 +645,10 @@ class Parser {
   ): void {
     let range = this.makeDefinitionRange(name, line);
     let scope: string = "$GLOBAL";
+    let enumStructName: string = undefined;
+    if (this.state.includes(State.EnumStruct)) {
+      enumStructName = this.state_data.name;
+    }
     if (this.lastFuncLine !== 0) {
       scope = this.lastFuncName;
     }
@@ -651,9 +656,14 @@ class Parser {
       scope = funcName;
     }
     // Custom key name for the map so the definitions don't override each others
-    let mapName = name + scope;
+    let mapName = name + scope + enumStructName;
     if (this.state.includes(State.EnumStruct)) {
-      if (shouldAddToEnumStruct) {
+      if (this.state.includes(State.Function)) {
+        this.completions.add(
+          mapName + this.lastFuncName,
+          new VariableItem(name, this.file, scope, range, type, enumStructName)
+        );
+      } else {
         this.completions.add(
           mapName,
           new PropertyItem(
@@ -671,7 +681,7 @@ class Parser {
     }
     this.completions.add(
       mapName,
-      new VariableItem(name, this.file, scope, range, type)
+      new VariableItem(name, this.file, scope, range, type, "$GLOBAL")
     );
   }
 
@@ -703,7 +713,7 @@ class Parser {
           variable_completion,
           line,
           variable[1],
-          undefined,
+          true,
           funcName
         );
       }
