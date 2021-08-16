@@ -64,6 +64,7 @@ export function activate(context: ExtensionContext) {
       "/",
       "\\",
       ".",
+      ":",
       " "
     )
   );

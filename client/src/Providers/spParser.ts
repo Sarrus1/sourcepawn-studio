@@ -22,7 +22,7 @@ import {
 import { existsSync, readFileSync } from "fs";
 import { basename } from "path";
 import { URI } from "vscode-uri";
-import { isRegExp } from "util";
+import { globalIdentifier } from "./spGlobalIdentifier";
 
 export function parseFile(
   file: string,
@@ -322,7 +322,6 @@ class Parser {
         if (typeof line === "undefined") {
           return;
         }
-        this.searchForDefinesInString(line);
         match = line.match(/^\s*(\w*)\s*.*/);
 
         // Skip if didn't match
@@ -352,6 +351,7 @@ class Parser {
             this.IsBuiltIn
           )
         );
+        this.searchForDefinesInString(line);
       }
       return;
     }
@@ -644,7 +644,7 @@ class Parser {
     funcName: string = undefined
   ): void {
     let range = this.makeDefinitionRange(name, line);
-    let scope: string = "$GLOBAL";
+    let scope: string = globalIdentifier;
     let enumStructName: string = undefined;
     if (this.state.includes(State.EnumStruct)) {
       enumStructName = this.state_data.name;
@@ -681,7 +681,7 @@ class Parser {
     }
     this.completions.add(
       mapName,
-      new VariableItem(name, this.file, scope, range, type, "$GLOBAL")
+      new VariableItem(name, this.file, scope, range, type, globalIdentifier)
     );
   }
 
@@ -724,18 +724,33 @@ class Parser {
     if (typeof line === "undefined") {
       return;
     }
-    let commentIndex = line.length;
-    let commentMatch = line.match(/\/\//);
-    if (commentMatch) {
-      commentIndex = commentMatch.index;
-    }
+    let isBlockComment = false;
+    let isDoubleQuoteString = false;
+    let isSingleQuoteString = false;
     let matchDefine: RegExpExecArray;
-    const re: RegExp = /\w+/g;
+    const re: RegExp = /(?:"|'|\/\/|\/\*|\*\/|\w+)/g;
     let defineFile: string;
     while ((matchDefine = re.exec(line))) {
-      if (matchDefine.index > commentIndex) {
-        // We are in a line comment, break.
+      if (matchDefine[0] === '"' && !isSingleQuoteString) {
+        isDoubleQuoteString = !isDoubleQuoteString;
+      } else if (matchDefine[0] === "'" && !isDoubleQuoteString) {
+        isSingleQuoteString = !isSingleQuoteString;
+      } else if (
+        matchDefine[0] === "//" &&
+        !isDoubleQuoteString &&
+        !isSingleQuoteString
+      ) {
         break;
+      } else if (
+        matchDefine[0] === "/*" ||
+        (matchDefine[0] === "*/" &&
+          !isDoubleQuoteString &&
+          !isSingleQuoteString)
+      ) {
+        isBlockComment = !isBlockComment;
+      }
+      if (isBlockComment || isDoubleQuoteString || isSingleQuoteString) {
+        continue;
       }
       defineFile =
         this.definesMap.get(matchDefine[0]) ||

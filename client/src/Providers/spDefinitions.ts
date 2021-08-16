@@ -1,4 +1,5 @@
 ﻿import { TextDocument, Range, Position } from "vscode";
+import { globalIdentifier } from "./spGlobalIdentifier";
 
 export function GetLastFuncName(
   position: Position,
@@ -11,7 +12,7 @@ export function GetLastFuncName(
   let line: string;
   for (lineNB; lineNB > 0; lineNB--) {
     line = text[lineNB];
-    if (line.match(/^\}/)) return "$GLOBAL";
+    if (line.match(/^\}/)) return globalIdentifier;
     Match = line.match(re);
     if (Match) {
       let match = line.match(
@@ -25,7 +26,7 @@ export function GetLastFuncName(
       if (match && !isControlStatement(line)) break;
     }
   }
-  if (lineNB == 0) return "$GLOBAL";
+  if (lineNB == 0) return globalIdentifier;
   let match = text[lineNB].match(re);
   // Deal with old syntax here
   return match[2] == "" ? match[1] : match[2];
@@ -76,7 +77,7 @@ export function getLastEnumStructName(
     if (line.match(/^\}/)) {
       // We are not in an enum struct.
       // This is not ideal, but I don't see a better way to do this for now.
-      return "$GLOBAL";
+      return globalIdentifier;
     }
     match = line.match(re);
     if (match) {
@@ -85,9 +86,9 @@ export function getLastEnumStructName(
     lineNB--;
     iter++;
   }
-  if (lineNB == 0) return "$GLOBAL";
+  if (lineNB == 0) return globalIdentifier;
   if (match !== null) {
     return match[1];
   }
-  return "$GLOBAL";
+  return globalIdentifier;
 }

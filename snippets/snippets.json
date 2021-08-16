@@ -95,7 +95,7 @@
   },
 
   "template": {
-    "prefix": "::template",
+    "prefix": "!!template",
     "body": [
       "#include <sourcemod>",
       "#include <sdkhooks>",
@@ -124,7 +124,7 @@
   },
 
   "descriptive comment": {
-    "prefix": "::description",
+    "prefix": "!!description",
     "body": [
       "/*----------------------------------------------",
       "-------------------${1:Description}------------------",

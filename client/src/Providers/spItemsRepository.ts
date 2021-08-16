@@ -31,6 +31,7 @@ import {
 } from "./spDefinitions";
 import { getSignatureAttributes } from "./spSignatures";
 import { SP_LEGENDS } from "../spLegends";
+import { globalIdentifier } from "./spGlobalIdentifier";
 
 export class FileItems {
   completions: Map<string, SPItem>;
@@ -152,6 +153,9 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     }
     if (['"', "'", "<", "/", "\\"].includes(text[text.length - 1]))
       return undefined;
+    if (/[^:]\:$/.test(text)) {
+      return undefined;
+    }
     return this.getCompletions(document, position);
   }
 
@@ -247,25 +251,25 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
 
   getCompletions(document: TextDocument, position: Position): CompletionList {
     let line = document.lineAt(position.line).text;
-    let is_method = checkIfMethod(line, position);
-    let all_completions: SPItem[] = this.getAllItems(document.uri.toString());
-    let all_completions_list: CompletionList = new CompletionList();
-    if (all_completions !== []) {
+    let isMethod = checkIfMethod(line, position);
+    let allItems: SPItem[] = this.getAllItems(document.uri.toString());
+    let completionsList: CompletionList = new CompletionList();
+    if (allItems !== []) {
       let lastFunc: string = GetLastFuncName(position, document);
       let lastEnumStruct = getLastEnumStructName(position, document);
-      if (is_method) {
+      if (isMethod) {
         let variableType = this.getTypeOfVariable(
           line,
           position,
-          all_completions,
+          allItems,
           lastFunc,
           lastEnumStruct
         );
         let variableTypes: string[] = this.getAllInheritances(
           variableType,
-          all_completions
+          allItems
         );
-        for (let item of all_completions) {
+        for (let item of allItems) {
           if (
             (item.kind === CompletionItemKind.Method ||
               item.kind === CompletionItemKind.Property) &&
@@ -273,26 +277,26 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
             // Don't include the constructor of the methodmap
             !variableTypes.includes(item.name)
           ) {
-            all_completions_list.items.push(
+            completionsList.items.push(
               item.toCompletionItem(document.uri.fsPath, lastFunc)
             );
           }
         }
-        return all_completions_list;
+        return completionsList;
       }
-      for (let item of all_completions) {
+      for (let item of allItems) {
         if (
           !(
             item.kind === CompletionItemKind.Method ||
             item.kind === CompletionItemKind.Property
           )
         ) {
-          all_completions_list.items.push(
+          completionsList.items.push(
             item.toCompletionItem(document.uri.fsPath, lastFunc)
           );
         }
       }
-      return all_completions_list;
+      return completionsList;
     }
   }
 
@@ -321,12 +325,20 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     let i = position.character - 1;
     let bCounter = 0;
     let pCounter = 0;
+    let isNameSpace = false;
     while (i >= 0) {
       if (/\w/.test(line[i])) {
         i--;
       } else if (line[i] === ".") {
         i--;
         break;
+      } else if (line[i] === ":") {
+        i--;
+        if (line[i] === ":") {
+          i--;
+          isNameSpace = true;
+          break;
+        }
       }
     }
     let wordCounter = 0;
@@ -358,6 +370,13 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
         } else if (line[i] === ".") {
           wordCounter++;
           words[wordCounter] = "";
+        } else if (line[i] === ":") {
+          i--;
+          if (line[i] === ":") {
+            wordCounter++;
+            words[wordCounter] = "";
+            isNameSpace = true;
+          }
         } else {
           break;
         }
@@ -365,18 +384,26 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       i--;
     }
     let variableType: string;
-    if (lastEnumStruct !== "$GLOBAL" && words[words.length - 1] === "this") {
-      variableType = lastEnumStruct;
+    if (isNameSpace) {
+      variableType = words[words.length - 1];
     } else {
-      variableType = allItems.find(
-        (e) =>
-          (e.kind === CompletionItemKind.Variable &&
-            ["$GLOBAL", lastFuncName].includes(e.scope) &&
-            e.name === words[words.length - 1]) ||
-          (e.kind === CompletionItemKind.Function &&
-            e.name === words[words.length - 1])
-      ).type;
+      if (
+        lastEnumStruct !== globalIdentifier &&
+        words[words.length - 1] === "this"
+      ) {
+        variableType = lastEnumStruct;
+      } else {
+        variableType = allItems.find(
+          (e) =>
+            (e.kind === CompletionItemKind.Variable &&
+              [globalIdentifier, lastFuncName].includes(e.scope) &&
+              e.name === words[words.length - 1]) ||
+            (e.kind === CompletionItemKind.Function &&
+              e.name === words[words.length - 1])
+        ).type;
+      }
     }
+
     if (words.length > 1) {
       words = words.slice(0, words.length - 1).reverse();
       for (let word of words) {
@@ -585,15 +612,15 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     let isMethod: boolean = false;
     let isConstructor: boolean = false;
     let match: RegExpMatchArray;
-    if (range.start.character > 0) {
+    if (range.start.character > 1) {
       let newPosStart = new Position(
         range.start.line,
-        range.start.character - 1
+        range.start.character - 2
       );
       let newPosEnd = new Position(range.start.line, range.start.character);
       let newRange = new Range(newPosStart, newPosEnd);
       let char = document.getText(newRange);
-      isMethod = char === ".";
+      isMethod = /(?:\w+\.|\:\:)/.test(char);
       if (!isMethod) {
         let newPosStart = new Position(range.start.line, 0);
         let newPosEnd = new Position(range.start.line, range.end.character);
@@ -610,7 +637,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     let lastFunc: string = GetLastFuncName(position, document);
     let lastEnumStruct: string = getLastEnumStructName(position, document);
 
-    if (lastEnumStruct !== "$GLOBAL" && lastFunc === "$GLOBAL") {
+    if (lastEnumStruct !== globalIdentifier && lastFunc === globalIdentifier) {
       let item = allItems.find(
         (item) =>
           (item.kind === CompletionItemKind.Method ||
@@ -693,12 +720,12 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       if (typeof item.scope !== "undefined") {
         if (typeof item.enumStructName !== "undefined") {
           return (
-            item.scope === "$GLOBAL" &&
+            item.scope === globalIdentifier &&
             item.name === word &&
             item.enumStructName === lastEnumStruct
           );
         }
-        return item.scope === "$GLOBAL" && item.name === word;
+        return item.scope === globalIdentifier && item.name === word;
       }
       return item.name === word;
     });
@@ -707,15 +734,31 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
 }
 
 function checkIfMethod(line: string, position: Position): boolean {
+  return /\w+(?:\.|\:\:)\w*$/.test(line.slice(0, position.character));
+}
+
+function checkIfNameSpace(line: string, position: Position): boolean {
   let i = position.character - 1;
-  while (i > 0) {
+  while (i > 1) {
     if (/\w/.test(line[i])) {
       i--;
-    } else if (line[i] === ".") {
-      return true;
+    } else if (line[i] === ":") {
+      if (line[i - 1] === ":") {
+        return true;
+      } else {
+        return false;
+      }
     } else {
       return false;
     }
   }
   return false;
+}
+
+function getNameSpaceName(line: string, position: Position): string {
+  let match = line.match(/(\w+)::\w*/);
+  if (match !== null) {
+    return match[1];
+  }
+  return undefined;
 }
