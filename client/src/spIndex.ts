@@ -4,9 +4,12 @@ import {
   languages,
   window,
   WorkspaceFolder,
+  commands,
 } from "vscode";
 import { registerSMLinter } from "./spLinter";
 import * as glob from "glob";
+import { existsSync } from "fs";
+import { join } from "path";
 import { SP_MODE } from "./spMode";
 import { Providers } from "./Providers/spProviders";
 import { registerSMCommands } from "./Commands/registerCommands";
@@ -64,6 +67,35 @@ export function activate(context: ExtensionContext) {
         }
       }
     });
+  }
+
+  let MainPath: string =
+    Workspace.getConfiguration("sourcepawn").get("MainPath") || "";
+  if (MainPath != "") {
+    try {
+      if (!existsSync(MainPath)) {
+        let workspace: WorkspaceFolder = Workspace.workspaceFolders[0];
+        MainPath = join(workspace.uri.fsPath, MainPath);
+        if (!existsSync(MainPath)) {
+          throw "MainPath is incorrect.";
+        }
+      }
+      providers.handle_document_opening(MainPath);
+    } catch (error) {
+      window
+        .showErrorMessage(
+          "A setting for the main.sp file was specified, but seems invalid. Please make sure it is valid.",
+          "Open Settings"
+        )
+        .then((choice) => {
+          if (choice === "Open Settings") {
+            commands.executeCommand(
+              "workbench.action.openSettings",
+              "@ext:sarrus.sourcepawn-vscode"
+            );
+          }
+        });
+    }
   }
 
   context.subscriptions.push(

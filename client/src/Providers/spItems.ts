@@ -113,6 +113,9 @@ export class FunctionItem implements SPItem {
   }
 
   toDocumentSymbol(): DocumentSymbol {
+    if (typeof this.fullRange === "undefined") {
+      return undefined;
+    }
     return new DocumentSymbol(
       this.name,
       this.description,
@@ -191,6 +194,9 @@ export class MethodMapItem implements SPItem {
   }
 
   toDocumentSymbol(): DocumentSymbol {
+    if (typeof this.fullRange === "undefined") {
+      return undefined;
+    }
     return new DocumentSymbol(
       this.name,
       this.description,
@@ -559,6 +565,9 @@ export class EnumStructItem implements SPItem {
   }
 
   toDocumentSymbol(): DocumentSymbol {
+    if (typeof this.fullRange === "undefined") {
+      return undefined;
+    }
     return new DocumentSymbol(
       this.name,
       this.description,
