@@ -231,8 +231,23 @@ class Parser {
 
     match = line.match(/}/);
     if (match) {
-      if (this.state[this.state.length - 1] === State.Function) {
+      let state = this.state[this.state.length - 1];
+      if (state === State.Function) {
         this.lastFuncLine = 0;
+      }
+      if (![State.EnumStruct, State.Methodmap].includes(state)) {
+        let completion = this.completions.get(this.lastFuncName);
+        if (completion) {
+          let range = completion.range;
+          let fullRange = new Range(
+            range.start.line,
+            range.start.character,
+            this.lineNb,
+            1
+          );
+          completion.fullRange = fullRange;
+          this.completions.add(this.lastFuncName, completion);
+        }
       }
       this.state.pop();
       return;

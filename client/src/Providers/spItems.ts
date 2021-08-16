@@ -19,6 +19,7 @@ export interface SPItem {
   parent?: string;
   description?: string;
   range?: Range;
+  fullRange?: Range;
   scope?: string;
   calls?: Location[];
   IsBuiltIn?: boolean;
@@ -42,6 +43,7 @@ export class FunctionItem implements SPItem {
   params: FunctionParam[];
   file: string;
   range: Range;
+  fullRange: Range;
   IsBuiltIn: boolean;
   kind = CompletionItemKind.Function;
   type: string;

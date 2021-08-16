@@ -66,7 +66,9 @@ export function activate(context: ExtensionContext) {
     });
   }
 
-  //context.subscriptions.push(providers.completionsProvider);
+  context.subscriptions.push(
+    languages.registerDocumentSymbolProvider(SP_MODE, providers)
+  );
   context.subscriptions.push(
     languages.registerCompletionItemProvider(
       SP_MODE,

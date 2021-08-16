@@ -18,11 +18,13 @@
   ProviderResult,
   SemanticTokens,
   SemanticTokensBuilder,
+  DocumentSymbol,
+  SymbolKind,
 } from "vscode";
 import * as glob from "glob";
 import { basename, extname, join, relative } from "path";
 import { URI } from "vscode-uri";
-import { existsSync } from "fs";
+import { existsSync, fstat } from "fs";
 import { ItemsRepository, FileItems } from "./spItemsRepository";
 import { Include, SPItem } from "./spItems";
 import { JsDocCompletionProvider } from "./spDocCompletions";
@@ -369,5 +371,27 @@ export class Providers {
       }
     }
     return tokensBuilder.build();
+  }
+
+  public provideDocumentSymbols(
+    document: TextDocument,
+    token: CancellationToken
+  ): DocumentSymbol[] {
+    let symbols: DocumentSymbol[] = [];
+    let items = this.itemsRepository.getAllItems(document.uri.toString());
+    let file = document.uri.fsPath;
+    for (let item of items) {
+      if (item.kind === CompletionItemKind.Function && item.file === file) {
+        let symbol = new DocumentSymbol(
+          item.name,
+          item.description,
+          SymbolKind.Function,
+          item.fullRange,
+          item.range
+        );
+        symbols.push(symbol);
+      }
+    }
+    return symbols;
   }
 }
