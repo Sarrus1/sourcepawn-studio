@@ -612,15 +612,15 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     let isMethod: boolean = false;
     let isConstructor: boolean = false;
     let match: RegExpMatchArray;
-    if (range.start.character > 0) {
+    if (range.start.character > 1) {
       let newPosStart = new Position(
         range.start.line,
-        range.start.character - 1
+        range.start.character - 2
       );
       let newPosEnd = new Position(range.start.line, range.start.character);
       let newRange = new Range(newPosStart, newPosEnd);
       let char = document.getText(newRange);
-      isMethod = char === ".";
+      isMethod = /(?:\w+\.|\:\:)/.test(char);
       if (!isMethod) {
         let newPosStart = new Position(range.start.line, 0);
         let newPosEnd = new Position(range.start.line, range.end.character);
