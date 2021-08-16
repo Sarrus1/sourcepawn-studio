@@ -5,6 +5,7 @@
 ### Added
 
 - Add proper highlighting inside enums.
+- Add support for the `::` identifier.
 
 ### Fixed
 
