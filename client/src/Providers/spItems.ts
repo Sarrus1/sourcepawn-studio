@@ -7,6 +7,7 @@
   Hover,
 } from "vscode";
 import { descriptionToMD } from "../spUtils";
+import { globalIdentifier } from "./spGlobalIdentifier";
 import { basename } from "path";
 import { URI } from "vscode-uri";
 
@@ -336,7 +337,7 @@ export class VariableItem implements SPItem {
           label: this.name,
           kind: this.kind,
         };
-      } else if (this.scope === "$GLOBAL") {
+      } else if (this.scope === globalIdentifier) {
         return {
           label: this.name,
           kind: this.kind,

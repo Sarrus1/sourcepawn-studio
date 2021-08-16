@@ -31,6 +31,7 @@ import {
 } from "./spDefinitions";
 import { getSignatureAttributes } from "./spSignatures";
 import { SP_LEGENDS } from "../spLegends";
+import { globalIdentifier } from "./spGlobalIdentifier";
 
 export class FileItems {
   completions: Map<string, SPItem>;
@@ -365,13 +366,16 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       i--;
     }
     let variableType: string;
-    if (lastEnumStruct !== "$GLOBAL" && words[words.length - 1] === "this") {
+    if (
+      lastEnumStruct !== globalIdentifier &&
+      words[words.length - 1] === "this"
+    ) {
       variableType = lastEnumStruct;
     } else {
       variableType = allItems.find(
         (e) =>
           (e.kind === CompletionItemKind.Variable &&
-            ["$GLOBAL", lastFuncName].includes(e.scope) &&
+            [globalIdentifier, lastFuncName].includes(e.scope) &&
             e.name === words[words.length - 1]) ||
           (e.kind === CompletionItemKind.Function &&
             e.name === words[words.length - 1])
@@ -610,7 +614,7 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     let lastFunc: string = GetLastFuncName(position, document);
     let lastEnumStruct: string = getLastEnumStructName(position, document);
 
-    if (lastEnumStruct !== "$GLOBAL" && lastFunc === "$GLOBAL") {
+    if (lastEnumStruct !== globalIdentifier && lastFunc === globalIdentifier) {
       let item = allItems.find(
         (item) =>
           (item.kind === CompletionItemKind.Method ||
@@ -693,12 +697,12 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
       if (typeof item.scope !== "undefined") {
         if (typeof item.enumStructName !== "undefined") {
           return (
-            item.scope === "$GLOBAL" &&
+            item.scope === globalIdentifier &&
             item.name === word &&
             item.enumStructName === lastEnumStruct
           );
         }
-        return item.scope === "$GLOBAL" && item.name === word;
+        return item.scope === globalIdentifier && item.name === word;
       }
       return item.name === word;
     });

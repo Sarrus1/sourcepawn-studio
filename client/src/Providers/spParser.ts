@@ -22,7 +22,7 @@ import {
 import { existsSync, readFileSync } from "fs";
 import { basename } from "path";
 import { URI } from "vscode-uri";
-import { isRegExp } from "util";
+import { globalIdentifier } from "./spGlobalIdentifier";
 
 export function parseFile(
   file: string,
@@ -644,7 +644,7 @@ class Parser {
     funcName: string = undefined
   ): void {
     let range = this.makeDefinitionRange(name, line);
-    let scope: string = "$GLOBAL";
+    let scope: string = globalIdentifier;
     let enumStructName: string = undefined;
     if (this.state.includes(State.EnumStruct)) {
       enumStructName = this.state_data.name;
@@ -681,7 +681,7 @@ class Parser {
     }
     this.completions.add(
       mapName,
-      new VariableItem(name, this.file, scope, range, type, "$GLOBAL")
+      new VariableItem(name, this.file, scope, range, type, globalIdentifier)
     );
   }
 
