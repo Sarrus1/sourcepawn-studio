@@ -370,6 +370,13 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
         } else if (line[i] === ".") {
           wordCounter++;
           words[wordCounter] = "";
+        } else if (line[i] === ":") {
+          i--;
+          if (line[i] === ":") {
+            wordCounter++;
+            words[wordCounter] = "";
+            isNameSpace = true;
+          }
         } else {
           break;
         }
