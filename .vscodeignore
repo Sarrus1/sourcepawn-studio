@@ -7,3 +7,4 @@ fileicons/SP.afphoto
 package-lock.json
 client/**
 node_modules/**
+images/**
