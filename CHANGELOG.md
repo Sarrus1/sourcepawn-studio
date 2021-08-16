@@ -1,5 +1,15 @@
 ## Release Notes
 
+## [2.1.2]
+
+### Added
+
+- Add proper highlighting inside enums.
+
+### Fixed
+
+- Fixed defines and enum members being highlighted in strings and block comments.
+
 ## [2.1.1]
 
 ### Fixed

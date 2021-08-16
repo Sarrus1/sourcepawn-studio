@@ -322,7 +322,6 @@ class Parser {
         if (typeof line === "undefined") {
           return;
         }
-        this.searchForDefinesInString(line);
         match = line.match(/^\s*(\w*)\s*.*/);
 
         // Skip if didn't match
@@ -352,6 +351,7 @@ class Parser {
             this.IsBuiltIn
           )
         );
+        this.searchForDefinesInString(line);
       }
       return;
     }
@@ -724,18 +724,33 @@ class Parser {
     if (typeof line === "undefined") {
       return;
     }
-    let commentIndex = line.length;
-    let commentMatch = line.match(/\/\//);
-    if (commentMatch) {
-      commentIndex = commentMatch.index;
-    }
+    let isBlockComment = false;
+    let isDoubleQuoteString = false;
+    let isSingleQuoteString = false;
     let matchDefine: RegExpExecArray;
-    const re: RegExp = /\w+/g;
+    const re: RegExp = /(?:"|'|\/\/|\/\*|\*\/|\w+)/g;
     let defineFile: string;
     while ((matchDefine = re.exec(line))) {
-      if (matchDefine.index > commentIndex) {
-        // We are in a line comment, break.
+      if (matchDefine[0] === '"' && !isSingleQuoteString) {
+        isDoubleQuoteString = !isDoubleQuoteString;
+      } else if (matchDefine[0] === "'" && !isDoubleQuoteString) {
+        isSingleQuoteString = !isSingleQuoteString;
+      } else if (
+        matchDefine[0] === "//" &&
+        !isDoubleQuoteString &&
+        !isSingleQuoteString
+      ) {
         break;
+      } else if (
+        matchDefine[0] === "/*" ||
+        (matchDefine[0] === "*/" &&
+          !isDoubleQuoteString &&
+          !isSingleQuoteString)
+      ) {
+        isBlockComment = !isBlockComment;
+      }
+      if (isBlockComment || isDoubleQuoteString || isSingleQuoteString) {
+        continue;
       }
       defineFile =
         this.definesMap.get(matchDefine[0]) ||
