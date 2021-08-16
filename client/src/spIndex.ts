@@ -39,13 +39,13 @@ export function activate(context: ExtensionContext) {
     );
 
     watcher.onDidCreate((uri) => {
-      providers.completionsProvider.documents.set(
+      providers.itemsRepository.documents.set(
         basename(uri.fsPath),
         URI.file(uri.fsPath).toString()
       );
     });
     watcher.onDidDelete((uri) => {
-      providers.completionsProvider.documents.delete(basename(uri.fsPath));
+      providers.itemsRepository.documents.delete(basename(uri.fsPath));
     });
   }
   if (typeof workspace != "undefined") {
@@ -56,7 +56,7 @@ export function activate(context: ExtensionContext) {
         for (let file of res) {
           let FileExt: string = extname(file);
           if (FileExt == ".sp" || FileExt == ".inc") {
-            providers.completionsProvider.documents.set(
+            providers.itemsRepository.documents.set(
               basename(file),
               URI.file(file).toString()
             );
@@ -66,11 +66,11 @@ export function activate(context: ExtensionContext) {
     });
   }
 
-  context.subscriptions.push(providers.completionsProvider);
+  //context.subscriptions.push(providers.completionsProvider);
   context.subscriptions.push(
     languages.registerCompletionItemProvider(
       SP_MODE,
-      providers.completionsProvider,
+      providers,
       "<",
       '"',
       "'",
@@ -89,32 +89,26 @@ export function activate(context: ExtensionContext) {
     )
   );
   context.subscriptions.push(
-    languages.registerSignatureHelpProvider(
-      SP_MODE,
-      providers.completionsProvider,
-      "(",
-      ",",
-      "\n"
-    )
+    languages.registerSignatureHelpProvider(SP_MODE, providers, "(", ",", "\n")
   );
 
   context.subscriptions.push(
     languages.registerDocumentSemanticTokensProvider(
       SP_MODE,
-      providers.highlightsProvider,
+      providers,
       SP_LEGENDS
     )
   );
 
   context.subscriptions.push(
-    languages.registerDefinitionProvider(SP_MODE, providers.completionsProvider)
+    languages.registerDefinitionProvider(SP_MODE, providers)
   );
 
   context.subscriptions.push(
     languages.registerDocumentFormattingEditProvider(SP_MODE, formatter)
   );
   context.subscriptions.push(
-    languages.registerHoverProvider(SP_MODE, providers.hoverProvider)
+    languages.registerHoverProvider(SP_MODE, providers)
   );
 
   Workspace.onDidChangeTextDocument(

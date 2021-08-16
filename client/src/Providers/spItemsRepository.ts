@@ -1,22 +1,13 @@
 import {
   CompletionItem,
   workspace as Workspace,
-  CompletionItemProvider,
   Memento,
   Disposable,
   TextDocument,
   Position,
-  CancellationToken,
   CompletionList,
   CompletionItemKind,
   WorkspaceFolder,
-  Hover,
-  SignatureHelp,
-  Location,
-  DefinitionLink,
-  ProviderResult,
-  SemanticTokens,
-  SemanticTokensBuilder,
   Range,
 } from "vscode";
 import { basename, join } from "path";
@@ -29,8 +20,6 @@ import {
   isFunction,
   getLastEnumStructName,
 } from "./spDefinitions";
-import { getSignatureAttributes } from "./spSignatures";
-import { SP_LEGENDS } from "../spLegends";
 import { globalIdentifier } from "./spGlobalIdentifier";
 
 export class FileItems {
@@ -102,7 +91,7 @@ export class FileItems {
   }
 }
 
-export class ItemsRepository implements CompletionItemProvider, Disposable {
+export class ItemsRepository implements Disposable {
   public completions: Map<string, FileItems>;
   public documents: Map<string, string>;
   private globalState: Memento;
@@ -111,52 +100,6 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     this.completions = new Map();
     this.documents = new Map();
     this.globalState = globalState;
-  }
-
-  public provideCompletionItems(
-    document: TextDocument,
-    position: Position,
-    token: CancellationToken
-  ): CompletionList {
-    const text = document
-      .lineAt(position.line)
-      .text.substr(0, position.character);
-    // If the trigger char is a space, check if there is a new behind, as this block deals with the new declaration.
-    if (text[text.length - 1] === " ") {
-      if (position.character > 0) {
-        const line = document
-          .lineAt(position.line)
-          .text.substr(0, position.character);
-        let match = line.match(/new\s*\w*$/);
-        if (match) {
-          let items = this.getAllItems(document.uri.toString()).filter(
-            (item) =>
-              item.kind === CompletionItemKind.Method &&
-              item.name === item.parent
-          );
-          return new CompletionList(
-            items.map((e) => e.toCompletionItem(document.uri.fsPath))
-          );
-        }
-      }
-      return undefined;
-    }
-    let match = text.match(/^\s*#\s*include\s*(<[^>]*|"[^"]*)$/);
-    if (match) {
-      return this.getIncludeCompletions(document, match[1]);
-    }
-    match = text.match(
-      /^\s*(?:HookEvent|HookEventEx)\s*\(\s*(\"[^\"]*|\'[^\']*)$/
-    );
-    if (match) {
-      return this.getEventCompletions();
-    }
-    if (['"', "'", "<", "/", "\\"].includes(text[text.length - 1]))
-      return undefined;
-    if (/[^:]\:$/.test(text)) {
-      return undefined;
-    }
-    return this.getCompletions(document, position);
   }
 
   public dispose() {}
@@ -478,134 +421,6 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
     }
   }
 
-  provideHover(
-    document: TextDocument,
-    position: Position,
-    token: CancellationToken
-  ): Hover {
-    let item = this.getItemFromPosition(document, position);
-    if (typeof item !== "undefined") {
-      return item.toHover();
-    }
-    return undefined;
-  }
-
-  provideSignatureHelp(
-    document: TextDocument,
-    position: Position,
-    token: CancellationToken
-  ): SignatureHelp {
-    let blankReturn = {
-      signatures: [],
-      activeSignature: 0,
-      activeParameter: 0,
-    };
-    let { croppedLine, parameterCount } = getSignatureAttributes(
-      document,
-      position
-    );
-    if (typeof croppedLine === "undefined") {
-      return blankReturn;
-    }
-    // Check if it's a method
-    let match = croppedLine.match(/\.(\w+)$/);
-    if (match) {
-      let methodName = match[1];
-      let allItems = this.getAllItems(document.uri.toString());
-      let lastFuncName = GetLastFuncName(position, document);
-      let newPos = new Position(1, croppedLine.length);
-      let lastEnumStruct = getLastEnumStructName(position, document);
-      let type = this.getTypeOfVariable(
-        croppedLine,
-        newPos,
-        allItems,
-        lastFuncName,
-        lastEnumStruct
-      );
-      let variableTypes: string[] = this.getAllInheritances(type, allItems);
-      let items = this.getAllItems(document.uri.toString()).filter(
-        (item) =>
-          (item.kind === CompletionItemKind.Method ||
-            item.kind === CompletionItemKind.Property) &&
-          variableTypes.includes(item.parent) &&
-          item.name === methodName
-      );
-      return {
-        signatures: items.map((e) => e.toSignature()),
-        activeParameter: parameterCount,
-        activeSignature: 0,
-      };
-    }
-    // Match for new keywords
-    match = croppedLine.match(/new\s+(\w+)/);
-    if (match) {
-      let methodMapName = match[1];
-      let items = this.getAllItems(document.uri.toString()).filter(
-        (item) =>
-          item.kind === CompletionItemKind.Method &&
-          item.name === methodMapName &&
-          item.parent === methodMapName
-      );
-      return {
-        signatures: items.map((e) => e.toSignature()),
-        activeParameter: parameterCount,
-        activeSignature: 0,
-      };
-    }
-
-    match = croppedLine.match(/(\w+)$/);
-    if (!match) {
-      return blankReturn;
-    }
-    if (["if", "for", "while", "case", "switch", "return"].includes(match[1])) {
-      return blankReturn;
-    }
-    let item = this.getAllItems(document.uri.toString()).find(
-      (item) =>
-        item.name === match[1] && item.kind === CompletionItemKind.Function
-    );
-    if (typeof item === "undefined") {
-      return blankReturn;
-    }
-    return {
-      signatures: [item.toSignature()],
-      activeParameter: parameterCount,
-      activeSignature: 0,
-    };
-  }
-
-  public provideDefinition(
-    document: TextDocument,
-    position: Position,
-    token: CancellationToken
-  ): Location | DefinitionLink[] {
-    let item = this.getItemFromPosition(document, position);
-    if (typeof item !== "undefined") {
-      return item.toDefinitionItem();
-    }
-    return undefined;
-  }
-
-  public provideDocumentSemanticTokens(
-    document: TextDocument
-  ): ProviderResult<SemanticTokens> {
-    const tokensBuilder = new SemanticTokensBuilder(SP_LEGENDS);
-    let allItems: SPItem[] = this.getAllItems(document.uri.toString());
-    for (let item of allItems) {
-      if (
-        item.kind === CompletionItemKind.Constant ||
-        item.kind === CompletionItemKind.EnumMember
-      ) {
-        for (let call of item.calls) {
-          if (call.uri.fsPath === document.uri.fsPath) {
-            tokensBuilder.push(call.range, "variable", ["readonly"]);
-          }
-        }
-      }
-    }
-    return tokensBuilder.build();
-  }
-
   getItemFromPosition(document: TextDocument, position: Position): SPItem {
     let range = document.getWordRangeAtPosition(position);
     // First check if we are dealing with a method or property.
@@ -735,30 +550,4 @@ export class ItemsRepository implements CompletionItemProvider, Disposable {
 
 function checkIfMethod(line: string, position: Position): boolean {
   return /\w+(?:\.|\:\:)\w*$/.test(line.slice(0, position.character));
-}
-
-function checkIfNameSpace(line: string, position: Position): boolean {
-  let i = position.character - 1;
-  while (i > 1) {
-    if (/\w/.test(line[i])) {
-      i--;
-    } else if (line[i] === ":") {
-      if (line[i - 1] === ":") {
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      return false;
-    }
-  }
-  return false;
-}
-
-function getNameSpaceName(line: string, position: Position): string {
-  let match = line.match(/(\w+)::\w*/);
-  if (match !== null) {
-    return match[1];
-  }
-  return undefined;
 }
