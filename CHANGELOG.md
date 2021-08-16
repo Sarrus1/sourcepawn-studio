@@ -2,6 +2,12 @@
 
 ## [2.1.2]
 
+### Fixed
+
+- Remove images from package.
+
+## [2.1.2]
+
 ### Added
 
 - Add proper highlighting inside enums.
