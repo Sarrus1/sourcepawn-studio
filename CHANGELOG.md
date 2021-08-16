@@ -1,6 +1,16 @@
 ## Release Notes
 
-## [2.1.2]
+## [2.1.4]
+
+### Added
+
+- Added a file system watcher to react to deletion/addition of .inc or .sp files.
+
+### Removed
+
+- Removed the initial parsing of all .sp files present in the workspace. This should lower the loading time (or even the crash in some cases) of the extension for users who have all their projects in a single workspace.
+
+## [2.1.3]
 
 ### Fixed
 

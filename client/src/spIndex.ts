@@ -15,9 +15,9 @@ import { basename, extname } from "path";
 import { URI } from "vscode-uri";
 import { SP_LEGENDS } from "./spLegends";
 
-let getDirectories = function (src, ext, callback) {
+function getDirectories(src, ext, callback) {
   glob(src + "/**/*", callback);
-};
+}
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
@@ -31,6 +31,22 @@ export function activate(context: ExtensionContext) {
     );
   } else {
     workspace = workspaceFolders[0];
+    let watcher = Workspace.createFileSystemWatcher(
+      "**​/*.{inc,sp}",
+      false,
+      true,
+      false
+    );
+
+    watcher.onDidCreate((uri) => {
+      providers.completionsProvider.documents.set(
+        basename(uri.fsPath),
+        URI.file(uri.fsPath).toString()
+      );
+    });
+    watcher.onDidDelete((uri) => {
+      providers.completionsProvider.documents.delete(basename(uri.fsPath));
+    });
   }
   if (typeof workspace != "undefined") {
     getDirectories(workspace.uri.fsPath, "sp", function (err, res) {
@@ -39,9 +55,6 @@ export function activate(context: ExtensionContext) {
       } else {
         for (let file of res) {
           let FileExt: string = extname(file);
-          if (FileExt == ".sp") {
-            providers.handle_document_opening(file);
-          }
           if (FileExt == ".sp" || FileExt == ".inc") {
             providers.completionsProvider.documents.set(
               basename(file),
