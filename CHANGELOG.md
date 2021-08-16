@@ -5,7 +5,7 @@
 ### Added
 
 - Added a file system watcher to react to deletion/addition of .inc or .sp files.
-- Added basic support for code outline.
+- Added support for [code outline](https://code.visualstudio.com/docs/getstarted/userinterface#_breadcrumbs).
 
 ### Removed
 

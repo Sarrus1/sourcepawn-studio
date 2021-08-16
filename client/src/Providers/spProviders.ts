@@ -399,12 +399,17 @@ export class Providers {
               subItem.file === file &&
               subItem.parent === item.name
             ) {
-              childrens.push(subItem.toDocumentSymbol());
+              let children = subItem.toDocumentSymbol();
+              if (typeof children !== "undefined") {
+                childrens.push(children);
+              }
             }
           }
           symbol.children = childrens;
         }
-        symbols.push(symbol);
+        if (typeof symbol !== "undefined") {
+          symbols.push(symbol);
+        }
       }
     }
     return symbols;
