@@ -229,7 +229,7 @@
     },
     {
       "comment": "Method Maps",
-      "match": "^\\s*(methodmap)\\s+(\\w+)\\s*<\\s*(\\w+)?",
+      "match": "^\\s*(methodmap)\\s+(\\w+)\\s*(?:<\\s*(\\w+))?",
       "captures": {
         "1": {
           "name": "keyword.methodmap.sourcepaw"

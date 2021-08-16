@@ -5,6 +5,8 @@
   Location,
   SignatureInformation,
   Hover,
+  DocumentSymbol,
+  SymbolKind,
 } from "vscode";
 import { descriptionToMD } from "../spUtils";
 import { globalIdentifier } from "./spGlobalIdentifier";
@@ -29,6 +31,7 @@ export interface SPItem {
   toDefinitionItem(): Location;
   toSignature(): SignatureInformation;
   toHover(): Hover;
+  toDocumentSymbol?(): DocumentSymbol;
 }
 
 export type FunctionParam = {
@@ -108,6 +111,16 @@ export class FunctionItem implements SPItem {
   toDefinitionItem(): Location {
     return new Location(URI.file(this.file), this.range);
   }
+
+  toDocumentSymbol(): DocumentSymbol {
+    return new DocumentSymbol(
+      this.name,
+      this.description,
+      SymbolKind.Function,
+      this.fullRange,
+      this.range
+    );
+  }
 }
 
 export class MethodMapItem implements SPItem {
@@ -120,6 +133,7 @@ export class MethodMapItem implements SPItem {
   range: Range;
   IsBuiltIn: boolean;
   file: string;
+  fullRange: Range;
 
   constructor(
     name: string,
@@ -175,6 +189,16 @@ export class MethodMapItem implements SPItem {
       descriptionToMD(this.description),
     ]);
   }
+
+  toDocumentSymbol(): DocumentSymbol {
+    return new DocumentSymbol(
+      this.name,
+      this.description,
+      SymbolKind.Class,
+      this.fullRange,
+      this.range
+    );
+  }
 }
 
 export class MethodItem implements SPItem {
@@ -184,6 +208,7 @@ export class MethodItem implements SPItem {
   detail: string;
   params: FunctionParam[];
   kind = CompletionItemKind.Method;
+  fullRange: Range;
   type: string;
   range: Range;
   IsBuiltIn: boolean;
@@ -250,6 +275,19 @@ export class MethodItem implements SPItem {
       { language: "sourcepawn", value: this.detail },
       descriptionToMD(this.description),
     ]);
+  }
+
+  toDocumentSymbol(): DocumentSymbol {
+    if (typeof this.fullRange === "undefined") {
+      return undefined;
+    }
+    return new DocumentSymbol(
+      this.name,
+      this.description,
+      SymbolKind.Method,
+      this.fullRange,
+      this.range
+    );
   }
 }
 
@@ -482,6 +520,7 @@ export class EnumStructItem implements SPItem {
   description: string;
   kind = CompletionItemKind.Struct;
   range: Range;
+  fullRange: Range;
 
   constructor(name: string, file: string, description: string, range: Range) {
     this.name = name;
@@ -517,6 +556,16 @@ export class EnumStructItem implements SPItem {
       { language: "sourcepawn", value: this.name },
       descriptionToMD(this.description),
     ]);
+  }
+
+  toDocumentSymbol(): DocumentSymbol {
+    return new DocumentSymbol(
+      this.name,
+      this.description,
+      SymbolKind.Struct,
+      this.fullRange,
+      this.range
+    );
   }
 }
 

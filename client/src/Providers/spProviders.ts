@@ -378,17 +378,29 @@ export class Providers {
     token: CancellationToken
   ): DocumentSymbol[] {
     let symbols: DocumentSymbol[] = [];
+    const allowedKinds = [
+      CompletionItemKind.Function,
+      CompletionItemKind.Class,
+      CompletionItemKind.Struct,
+    ];
     let items = this.itemsRepository.getAllItems(document.uri.toString());
     let file = document.uri.fsPath;
     for (let item of items) {
-      if (item.kind === CompletionItemKind.Function && item.file === file) {
-        let symbol = new DocumentSymbol(
-          item.name,
-          item.description,
-          SymbolKind.Function,
-          item.fullRange,
-          item.range
-        );
+      if (allowedKinds.includes(item.kind) && item.file === file) {
+        let symbol = item.toDocumentSymbol();
+        if (item.kind === CompletionItemKind.Struct) {
+          let childrens: DocumentSymbol[] = [];
+          for (let subItem of items) {
+            if (
+              subItem.kind === CompletionItemKind.Method &&
+              subItem.file === file &&
+              subItem.parent === item.name
+            ) {
+              childrens.push(subItem.toDocumentSymbol());
+            }
+          }
+          symbol.children = childrens;
+        }
         symbols.push(symbol);
       }
     }

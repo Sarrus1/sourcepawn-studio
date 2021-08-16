@@ -233,21 +233,21 @@ class Parser {
     if (match) {
       let state = this.state[this.state.length - 1];
       if (state === State.Function) {
+        // We are in a method
         this.lastFuncLine = 0;
+        this.addFullRange(this.lastFuncName + this.state_data.name);
       }
-      if (![State.EnumStruct, State.Methodmap].includes(state)) {
-        let completion = this.completions.get(this.lastFuncName);
-        if (completion) {
-          let range = completion.range;
-          let fullRange = new Range(
-            range.start.line,
-            range.start.character,
-            this.lineNb,
-            1
-          );
-          completion.fullRange = fullRange;
-          this.completions.add(this.lastFuncName, completion);
-        }
+      if (state === State.Methodmap) {
+        // We are in a methodmap
+        this.addFullRange(this.state_data.name);
+      }
+      if (state === State.EnumStruct) {
+        // We are in an enum struct
+        this.addFullRange(this.state_data.name);
+      }
+      if (![State.Methodmap, State.EnumStruct].includes(state)) {
+        // We are in a regular function
+        this.addFullRange(this.lastFuncName);
       }
       this.state.pop();
       return;
@@ -834,6 +834,21 @@ class Parser {
       }
     }
     return defines;
+  }
+
+  addFullRange(key: string) {
+    let completion = this.completions.get(key);
+    if (completion) {
+      let range = completion.range;
+      let fullRange = new Range(
+        range.start.line,
+        range.start.character,
+        this.lineNb,
+        1
+      );
+      completion.fullRange = fullRange;
+      this.completions.add(key, completion);
+    }
   }
 }
 
