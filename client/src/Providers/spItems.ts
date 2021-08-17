@@ -231,7 +231,8 @@ export class MethodItem implements SPItem {
     type: string,
     file: string,
     range: Range,
-    IsBuiltIn: boolean = false
+    IsBuiltIn: boolean = false,
+    fullRange: Range = undefined
   ) {
     this.parent = parent;
     this.name = name;
@@ -242,6 +243,7 @@ export class MethodItem implements SPItem {
     this.IsBuiltIn = IsBuiltIn;
     this.file = file;
     this.range = range;
+    this.fullRange = fullRange;
   }
 
   toCompletionItem(

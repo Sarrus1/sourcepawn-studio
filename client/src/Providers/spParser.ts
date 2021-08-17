@@ -556,6 +556,11 @@ class Parser {
         params = getParamsFromDeclaration(paramsMatch);
       }
       if (isMethod) {
+        let fullRange: Range = undefined;
+        if (isNativeOrForward) {
+          let end = range.start.line === this.lineNb ? line.length : 0;
+          fullRange = new Range(range.start.line, 0, this.lineNb, end);
+        }
         this.completions.add(
           nameMatch + this.state_data.name,
           new MethodItem(
@@ -567,7 +572,8 @@ class Parser {
             type,
             this.file,
             range,
-            this.IsBuiltIn
+            this.IsBuiltIn,
+            fullRange
           )
         );
         return;
