@@ -52,7 +52,6 @@ export function parseText(
 
 enum State {
   None,
-  DocComment,
   EnumStruct,
   Enum,
   Methodmap,
@@ -247,7 +246,12 @@ class Parser {
         // We are in a property
         this.addFullRange(this.lastFuncName + this.state_data.name);
       } else if (
-        ![State.Methodmap, State.EnumStruct, State.Property].includes(state)
+        ![
+          State.Methodmap,
+          State.EnumStruct,
+          State.Property,
+          State.Loop,
+        ].includes(state)
       ) {
         // We are in a regular function
         this.addFullRange(this.lastFuncName);
@@ -257,7 +261,7 @@ class Parser {
     }
 
     match = line.match(
-      /(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
+      /^\s*(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
     );
     if (match) {
       if (
@@ -388,7 +392,12 @@ class Parser {
     let match_variables = [];
     let match_variable: RegExpExecArray;
     // Check if it's a multiline declaration
-    if (/(;)(?:\s*|)$/.test(line)) {
+    let commentMatch = line.match(/\/\//);
+    let croppedLine = "";
+    if (commentMatch) {
+      croppedLine = line.slice(0, commentMatch.index);
+    }
+    if (/(;)(?:\s*|)$/.test(croppedLine)) {
       // Separate potential multiple declarations
       let re = /\s*(?:(?:const|static|public|stock)\s+)*(\w*)\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])*\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])*(?:\s*=\s*(?:(?:\"[^]*\")|(?:\'[^]*\')|(?:[^,]+)))?/g;
       while ((match_variable = re.exec(line)) != null) {
@@ -496,7 +505,7 @@ class Parser {
     let match: RegExpMatchArray = line.match(newSyntaxRe);
     if (!match) {
       match = line.match(
-        /^\s*(?:(?:forward|static|native)\s+)+(\w*\s*:\s*|\w*\s+)?(\w*)\s*\(([^]*)(?:,|;)?\s*$/
+        /^\s*(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([\w]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
       );
     }
     let isMethod: boolean =
@@ -508,7 +517,7 @@ class Parser {
       let lineMatch = this.lineNb;
       let type = match[1];
       let paramsMatch = match[3];
-      if (this.state.includes(State.EnumStruct)) {
+      if (isMethod) {
         this.state.push(State.Function);
       }
       this.AddParamsDef(paramsMatch, nameMatch, line);
@@ -694,7 +703,10 @@ class Parser {
     }
     // Custom key name for the map so the definitions don't override each others
     let mapName = name + scope + enumStructName;
-    if (this.state.includes(State.EnumStruct)) {
+    if (
+      this.state.includes(State.EnumStruct) ||
+      this.state.includes(State.Methodmap)
+    ) {
       if (this.state.includes(State.Function)) {
         this.completions.add(
           mapName + this.lastFuncName,
