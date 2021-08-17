@@ -54,6 +54,7 @@ enum State {
   None,
   DocComment,
   EnumStruct,
+  Enum,
   Methodmap,
   Property,
   Function,
@@ -369,6 +370,9 @@ class Parser {
           )
         );
         this.searchForDefinesInString(line);
+      }
+      if (nameMatch) {
+        this.addFullRange(nameMatch[1]);
       }
       return;
     }

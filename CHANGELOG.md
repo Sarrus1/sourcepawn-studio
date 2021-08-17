@@ -1,11 +1,11 @@
 ## Release Notes
 
-## [2.1.4]
+## [2.2.0]
 
 ### Added
 
 - Added a file system watcher to react to deletion/addition of .inc or .sp files.
-- Added support for [code outline](https://code.visualstudio.com/docs/getstarted/userinterface#_breadcrumbs).
+- Added support for [code outline](https://code.visualstudio.com/docs/getstarted/userinterface#_breadcrumbs). This works for functions, enum structs, enums and methodmaps.
 
 ### Fixed
 

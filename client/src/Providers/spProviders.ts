@@ -382,6 +382,7 @@ export class Providers {
       CompletionItemKind.Function,
       CompletionItemKind.Class,
       CompletionItemKind.Struct,
+      CompletionItemKind.Enum,
     ];
     const allowedParentsKinds = [
       CompletionItemKind.Class,

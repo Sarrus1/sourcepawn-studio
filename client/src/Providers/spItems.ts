@@ -424,6 +424,7 @@ export class EnumItem implements SPItem {
   kind = CompletionItemKind.Enum;
   description: string;
   range: Range;
+  fullRange: Range;
 
   constructor(name: string, file: string, description: string, range: Range) {
     this.name = name;
@@ -459,6 +460,18 @@ export class EnumItem implements SPItem {
       { language: "sourcepawn", value: this.name },
       descriptionToMD(this.description),
     ]);
+  }
+  toDocumentSymbol(): DocumentSymbol {
+    if (typeof this.fullRange === "undefined") {
+      return undefined;
+    }
+    return new DocumentSymbol(
+      this.name,
+      this.description,
+      SymbolKind.Enum,
+      this.fullRange,
+      this.range
+    );
   }
 }
 
