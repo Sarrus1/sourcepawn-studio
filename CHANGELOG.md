@@ -10,6 +10,8 @@
 ### Fixed
 
 - Fixed parsing of natives declared on multiple lines.
+- Fixed variable parsing when there is a trailing comment.
+- Fixed methodmap's method parsing error.
 
 ### Removed
 
