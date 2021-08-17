@@ -7,6 +7,10 @@
 - Added a file system watcher to react to deletion/addition of .inc or .sp files.
 - Added support for [code outline](https://code.visualstudio.com/docs/getstarted/userinterface#_breadcrumbs).
 
+### Fixed
+
+- Fixed parsing of natives declared on multiple lines.
+
 ### Removed
 
 - Removed the initial parsing of all .sp files present in the workspace. This should lower the loading time (or even the crash in some cases) of the extension for users who have all their projects in a single workspace.

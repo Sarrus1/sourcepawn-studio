@@ -518,10 +518,10 @@ class Parser {
         line = this.lines.shift();
         this.lineNb++;
         if (!matchLastParenthesis) {
-          matchLastParenthesis = /\)/.test(paramsMatch);
           this.AddParamsDef(line, nameMatch, line);
           this.searchForDefinesInString(line);
           paramsMatch += line;
+          matchLastParenthesis = /\)/.test(paramsMatch);
         }
         if (!matchEnd) {
           matchEnd = matchEndRegex.test(line);
