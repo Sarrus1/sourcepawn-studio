@@ -59,7 +59,8 @@ export class FunctionItem implements SPItem {
     file: string,
     IsBuiltIn: boolean,
     range: Range,
-    type: string
+    type: string,
+    fullRange: Range
   ) {
     this.description = description;
     this.name = name;
@@ -69,6 +70,7 @@ export class FunctionItem implements SPItem {
     this.IsBuiltIn = IsBuiltIn;
     this.range = range;
     this.type = type;
+    this.fullRange = fullRange;
   }
 
   toCompletionItem(

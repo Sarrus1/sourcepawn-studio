@@ -388,6 +388,10 @@ export class Providers {
     for (let item of items) {
       if (allowedKinds.includes(item.kind) && item.file === file) {
         let symbol = item.toDocumentSymbol();
+        if (file.includes("convars.inc")) {
+          console.debug(symbol);
+        }
+
         if (
           item.kind === CompletionItemKind.Struct &&
           typeof symbol !== "undefined"

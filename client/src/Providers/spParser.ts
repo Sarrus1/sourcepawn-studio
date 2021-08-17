@@ -245,7 +245,9 @@ class Parser {
         // We are in an enum struct
         this.addFullRange(this.state_data.name);
       }
-      if (![State.Methodmap, State.EnumStruct].includes(state)) {
+      if (
+        ![State.Methodmap, State.EnumStruct, State.Property].includes(state)
+      ) {
         // We are in a regular function
         this.addFullRange(this.lastFuncName);
       }
@@ -571,6 +573,11 @@ class Parser {
       if (this.completions.get(nameMatch)) {
         return;
       }
+      let fullRange: Range = undefined;
+      if (isNativeOrForward) {
+        let end = range.start.line === this.lineNb ? line.length : 0;
+        fullRange = new Range(range.start.line, 0, this.lineNb, end);
+      }
       this.completions.add(
         nameMatch,
         new FunctionItem(
@@ -581,7 +588,8 @@ class Parser {
           this.file,
           this.IsBuiltIn,
           range,
-          type
+          type,
+          fullRange
         )
       );
     }
@@ -838,7 +846,7 @@ class Parser {
 
   addFullRange(key: string) {
     let completion = this.completions.get(key);
-    if (completion) {
+    if (completion && completion.fullRange === undefined) {
       let range = completion.range;
       let fullRange = new Range(
         range.start.line,
