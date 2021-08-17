@@ -52,8 +52,8 @@ export function parseText(
 
 enum State {
   None,
-  DocComment,
   EnumStruct,
+  Enum,
   Methodmap,
   Property,
   Function,
@@ -231,15 +231,37 @@ class Parser {
 
     match = line.match(/}/);
     if (match) {
-      if (this.state[this.state.length - 1] === State.Function) {
+      let state = this.state[this.state.length - 1];
+      if (state === State.Function) {
+        // We are in a method
         this.lastFuncLine = 0;
+        this.addFullRange(this.lastFuncName + this.state_data.name);
+      } else if (state === State.Methodmap) {
+        // We are in a methodmap
+        this.addFullRange(this.state_data.name);
+      } else if (state === State.EnumStruct) {
+        // We are in an enum struct
+        this.addFullRange(this.state_data.name);
+      } else if (state === State.Property) {
+        // We are in a property
+        this.addFullRange(this.lastFuncName + this.state_data.name);
+      } else if (
+        ![
+          State.Methodmap,
+          State.EnumStruct,
+          State.Property,
+          State.Loop,
+        ].includes(state)
+      ) {
+        // We are in a regular function
+        this.addFullRange(this.lastFuncName);
       }
       this.state.pop();
       return;
     }
 
     match = line.match(
-      /(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
+      /^\s*(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
     );
     if (match) {
       if (
@@ -353,6 +375,9 @@ class Parser {
         );
         this.searchForDefinesInString(line);
       }
+      if (nameMatch) {
+        this.addFullRange(nameMatch[1]);
+      }
       return;
     }
   }
@@ -367,7 +392,12 @@ class Parser {
     let match_variables = [];
     let match_variable: RegExpExecArray;
     // Check if it's a multiline declaration
-    if (/(;)(?:\s*|)$/.test(line)) {
+    let commentMatch = line.match(/\/\//);
+    let croppedLine = "";
+    if (commentMatch) {
+      croppedLine = line.slice(0, commentMatch.index);
+    }
+    if (/(;)(?:\s*|)$/.test(croppedLine)) {
       // Separate potential multiple declarations
       let re = /\s*(?:(?:const|static|public|stock)\s+)*(\w*)\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])*\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])*(?:\s*=\s*(?:(?:\"[^]*\")|(?:\'[^]*\')|(?:[^,]+)))?/g;
       while ((match_variable = re.exec(line)) != null) {
@@ -443,6 +473,7 @@ class Parser {
   read_property(match, line) {
     let { description, params } = this.parse_doc_comment();
     let name_match: string = match[2];
+    this.lastFuncName = name_match;
     let range = this.makeDefinitionRange(name_match, line);
     let NewPropertyCompletion = new PropertyItem(
       this.state_data.name,
@@ -452,7 +483,10 @@ class Parser {
       range,
       match[1]
     );
-    this.completions.add(name_match, NewPropertyCompletion);
+    this.completions.add(
+      name_match + this.state_data.name,
+      NewPropertyCompletion
+    );
   }
 
   clean_param(partial_params_match: string) {
@@ -471,7 +505,7 @@ class Parser {
     let match: RegExpMatchArray = line.match(newSyntaxRe);
     if (!match) {
       match = line.match(
-        /^\s*(?:(?:forward|static|native)\s+)+(\w*\s*:\s*|\w*\s+)?(\w*)\s*\(([^]*)(?:,|;)?\s*$/
+        /^\s*(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([\w]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
       );
     }
     let isMethod: boolean =
@@ -483,7 +517,7 @@ class Parser {
       let lineMatch = this.lineNb;
       let type = match[1];
       let paramsMatch = match[3];
-      if (this.state.includes(State.EnumStruct)) {
+      if (isMethod) {
         this.state.push(State.Function);
       }
       this.AddParamsDef(paramsMatch, nameMatch, line);
@@ -503,10 +537,10 @@ class Parser {
         line = this.lines.shift();
         this.lineNb++;
         if (!matchLastParenthesis) {
-          matchLastParenthesis = /\)/.test(paramsMatch);
           this.AddParamsDef(line, nameMatch, line);
           this.searchForDefinesInString(line);
           paramsMatch += line;
+          matchLastParenthesis = /\)/.test(paramsMatch);
         }
         if (!matchEnd) {
           matchEnd = matchEndRegex.test(line);
@@ -535,6 +569,11 @@ class Parser {
         params = getParamsFromDeclaration(paramsMatch);
       }
       if (isMethod) {
+        let fullRange: Range = undefined;
+        if (isNativeOrForward) {
+          let end = range.start.line === this.lineNb ? line.length : 0;
+          fullRange = new Range(range.start.line, 0, this.lineNb, end);
+        }
         this.completions.add(
           nameMatch + this.state_data.name,
           new MethodItem(
@@ -546,7 +585,8 @@ class Parser {
             type,
             this.file,
             range,
-            this.IsBuiltIn
+            this.IsBuiltIn,
+            fullRange
           )
         );
         return;
@@ -555,6 +595,11 @@ class Parser {
       // If we define a function somewhere, we won't redefine it elsewhere. We can safely ignore it.
       if (this.completions.get(nameMatch)) {
         return;
+      }
+      let fullRange: Range = undefined;
+      if (isNativeOrForward) {
+        let end = range.start.line === this.lineNb ? line.length : 0;
+        fullRange = new Range(range.start.line, 0, this.lineNb, end);
       }
       this.completions.add(
         nameMatch,
@@ -566,7 +611,8 @@ class Parser {
           this.file,
           this.IsBuiltIn,
           range,
-          type
+          type,
+          fullRange
         )
       );
     }
@@ -657,7 +703,10 @@ class Parser {
     }
     // Custom key name for the map so the definitions don't override each others
     let mapName = name + scope + enumStructName;
-    if (this.state.includes(State.EnumStruct)) {
+    if (
+      this.state.includes(State.EnumStruct) ||
+      this.state.includes(State.Methodmap)
+    ) {
       if (this.state.includes(State.Function)) {
         this.completions.add(
           mapName + this.lastFuncName,
@@ -819,6 +868,21 @@ class Parser {
       }
     }
     return defines;
+  }
+
+  addFullRange(key: string) {
+    let completion = this.completions.get(key);
+    if (completion && completion.fullRange === undefined) {
+      let range = completion.range;
+      let fullRange = new Range(
+        range.start.line,
+        range.start.character,
+        this.lineNb,
+        1
+      );
+      completion.fullRange = fullRange;
+      this.completions.add(key, completion);
+    }
   }
 }
 

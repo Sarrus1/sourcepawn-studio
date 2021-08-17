@@ -14,17 +14,17 @@ import {
   languages,
   ExtensionContext,
 } from "vscode";
-import * as path from "path";
-import * as fs from "fs";
+import { existsSync, openSync, writeSync, unlink, closeSync } from "fs";
+import { join, basename, extname, dirname } from "path";
 import { execFile } from "child_process";
 import { URI } from "vscode-uri";
 import { errorDetails } from "./Misc/errorMessages";
 
 let myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
   .extensionPath;
-let TempPath: string = path.join(myExtDir, "tmpCompiled.smx");
+let TempPath: string = join(myExtDir, "tmpCompiled.smx");
 
-const tempFile = path.join(__dirname, "temp.sp");
+const tempFile = join(__dirname, "temp.sp");
 
 export class TimeoutFunction {
   private timeout;
@@ -79,14 +79,14 @@ export function refreshDiagnostics(
       Workspace.getConfiguration("sourcepawn").get("MainPath") || "";
     if (MainPath != "") {
       try {
-        if (!fs.existsSync(MainPath)) {
+        if (!existsSync(MainPath)) {
           let workspace: WorkspaceFolder = Workspace.workspaceFolders[0];
-          MainPath = path.join(workspace.uri.fsPath, MainPath);
-          if (!fs.existsSync(MainPath)) {
+          MainPath = join(workspace.uri.fsPath, MainPath);
+          if (!existsSync(MainPath)) {
             throw "MainPath is incorrect.";
           }
         }
-        filename = path.basename(MainPath);
+        filename = basename(MainPath);
       } catch (error) {
         ReturnNone(document.uri);
         window
@@ -104,26 +104,26 @@ export function refreshDiagnostics(
           });
       }
     }
-    let extName = path.extname(filename);
+    let extName = extname(filename);
     if (extName === ".sp") {
       let scriptingFolder: string;
       let filePath: string;
       try {
         if (MainPath != "") {
-          scriptingFolder = path.dirname(MainPath);
+          scriptingFolder = dirname(MainPath);
           filePath = MainPath;
         } else {
-          scriptingFolder = path.dirname(document.uri.fsPath);
-          let file = fs.openSync(tempFile, "w", 0o765);
-          fs.writeSync(file, document.getText());
-          fs.closeSync(file);
+          scriptingFolder = dirname(document.uri.fsPath);
+          let file = openSync(tempFile, "w", 0o765);
+          writeSync(file, document.getText());
+          closeSync(file);
           filePath = tempFile;
         }
         let spcomp_opt: string[] = [
           "-i" +
             Workspace.getConfiguration("sourcepawn").get("SourcemodHome") || "",
           "-i" + scriptingFolder,
-          "-i" + path.join(scriptingFolder, "include"),
+          "-i" + join(scriptingFolder, "include"),
           "-v0",
           filePath,
           "-o" + TempPath,
@@ -148,7 +148,7 @@ export function refreshDiagnostics(
         execFile(spcomp, spcomp_opt, (error, stdout) => {
           // If it compiled successfully, unlink the temporary files.
           if (!error) {
-            fs.unlink(TempPath, (err) => {
+            unlink(TempPath, (err) => {
               if (err) {
                 console.error(err);
               }

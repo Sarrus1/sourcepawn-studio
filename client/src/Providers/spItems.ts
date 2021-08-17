@@ -5,6 +5,8 @@
   Location,
   SignatureInformation,
   Hover,
+  DocumentSymbol,
+  SymbolKind,
 } from "vscode";
 import { descriptionToMD } from "../spUtils";
 import { globalIdentifier } from "./spGlobalIdentifier";
@@ -19,6 +21,7 @@ export interface SPItem {
   parent?: string;
   description?: string;
   range?: Range;
+  fullRange?: Range;
   scope?: string;
   calls?: Location[];
   IsBuiltIn?: boolean;
@@ -28,6 +31,7 @@ export interface SPItem {
   toDefinitionItem(): Location;
   toSignature(): SignatureInformation;
   toHover(): Hover;
+  toDocumentSymbol?(): DocumentSymbol;
 }
 
 export type FunctionParam = {
@@ -42,6 +46,7 @@ export class FunctionItem implements SPItem {
   params: FunctionParam[];
   file: string;
   range: Range;
+  fullRange: Range;
   IsBuiltIn: boolean;
   kind = CompletionItemKind.Function;
   type: string;
@@ -54,7 +59,8 @@ export class FunctionItem implements SPItem {
     file: string,
     IsBuiltIn: boolean,
     range: Range,
-    type: string
+    type: string,
+    fullRange: Range
   ) {
     this.description = description;
     this.name = name;
@@ -64,6 +70,7 @@ export class FunctionItem implements SPItem {
     this.IsBuiltIn = IsBuiltIn;
     this.range = range;
     this.type = type;
+    this.fullRange = fullRange;
   }
 
   toCompletionItem(
@@ -106,6 +113,19 @@ export class FunctionItem implements SPItem {
   toDefinitionItem(): Location {
     return new Location(URI.file(this.file), this.range);
   }
+
+  toDocumentSymbol(): DocumentSymbol {
+    if (typeof this.fullRange === "undefined") {
+      return undefined;
+    }
+    return new DocumentSymbol(
+      this.name,
+      this.description,
+      SymbolKind.Function,
+      this.fullRange,
+      this.range
+    );
+  }
 }
 
 export class MethodMapItem implements SPItem {
@@ -118,6 +138,7 @@ export class MethodMapItem implements SPItem {
   range: Range;
   IsBuiltIn: boolean;
   file: string;
+  fullRange: Range;
 
   constructor(
     name: string,
@@ -173,6 +194,19 @@ export class MethodMapItem implements SPItem {
       descriptionToMD(this.description),
     ]);
   }
+
+  toDocumentSymbol(): DocumentSymbol {
+    if (typeof this.fullRange === "undefined") {
+      return undefined;
+    }
+    return new DocumentSymbol(
+      this.name,
+      this.description,
+      SymbolKind.Class,
+      this.fullRange,
+      this.range
+    );
+  }
 }
 
 export class MethodItem implements SPItem {
@@ -182,6 +216,7 @@ export class MethodItem implements SPItem {
   detail: string;
   params: FunctionParam[];
   kind = CompletionItemKind.Method;
+  fullRange: Range;
   type: string;
   range: Range;
   IsBuiltIn: boolean;
@@ -196,7 +231,8 @@ export class MethodItem implements SPItem {
     type: string,
     file: string,
     range: Range,
-    IsBuiltIn: boolean = false
+    IsBuiltIn: boolean = false,
+    fullRange: Range = undefined
   ) {
     this.parent = parent;
     this.name = name;
@@ -207,6 +243,7 @@ export class MethodItem implements SPItem {
     this.IsBuiltIn = IsBuiltIn;
     this.file = file;
     this.range = range;
+    this.fullRange = fullRange;
   }
 
   toCompletionItem(
@@ -248,6 +285,19 @@ export class MethodItem implements SPItem {
       { language: "sourcepawn", value: this.detail },
       descriptionToMD(this.description),
     ]);
+  }
+
+  toDocumentSymbol(): DocumentSymbol {
+    if (typeof this.fullRange === "undefined") {
+      return undefined;
+    }
+    return new DocumentSymbol(
+      this.name,
+      this.description,
+      SymbolKind.Method,
+      this.fullRange,
+      this.range
+    );
   }
 }
 
@@ -374,6 +424,7 @@ export class EnumItem implements SPItem {
   kind = CompletionItemKind.Enum;
   description: string;
   range: Range;
+  fullRange: Range;
 
   constructor(name: string, file: string, description: string, range: Range) {
     this.name = name;
@@ -409,6 +460,18 @@ export class EnumItem implements SPItem {
       { language: "sourcepawn", value: this.name },
       descriptionToMD(this.description),
     ]);
+  }
+  toDocumentSymbol(): DocumentSymbol {
+    if (typeof this.fullRange === "undefined") {
+      return undefined;
+    }
+    return new DocumentSymbol(
+      this.name,
+      this.description,
+      SymbolKind.Enum,
+      this.fullRange,
+      this.range
+    );
   }
 }
 
@@ -480,6 +543,7 @@ export class EnumStructItem implements SPItem {
   description: string;
   kind = CompletionItemKind.Struct;
   range: Range;
+  fullRange: Range;
 
   constructor(name: string, file: string, description: string, range: Range) {
     this.name = name;
@@ -515,6 +579,19 @@ export class EnumStructItem implements SPItem {
       { language: "sourcepawn", value: this.name },
       descriptionToMD(this.description),
     ]);
+  }
+
+  toDocumentSymbol(): DocumentSymbol {
+    if (typeof this.fullRange === "undefined") {
+      return undefined;
+    }
+    return new DocumentSymbol(
+      this.name,
+      this.description,
+      SymbolKind.Struct,
+      this.fullRange,
+      this.range
+    );
   }
 }
 
@@ -591,7 +668,7 @@ export class PropertyItem implements SPItem {
   type: string;
   kind = CompletionItemKind.Property;
   range: Range;
-
+  fullRange: Range;
   constructor(
     parent: string,
     name: string,
@@ -635,6 +712,18 @@ export class PropertyItem implements SPItem {
       { language: "sourcepawn", value: this.name },
       descriptionToMD(this.description),
     ]);
+  }
+  toDocumentSymbol(): DocumentSymbol {
+    if (typeof this.fullRange === "undefined") {
+      return undefined;
+    }
+    return new DocumentSymbol(
+      this.name,
+      this.description,
+      SymbolKind.Property,
+      this.fullRange,
+      this.range
+    );
   }
 }
 

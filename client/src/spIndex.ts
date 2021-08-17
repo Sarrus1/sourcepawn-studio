@@ -4,20 +4,23 @@ import {
   languages,
   window,
   WorkspaceFolder,
+  commands,
 } from "vscode";
-import { registerSMLinter } from "./spLinter";
-import * as glob from "glob";
+import {
+  registerSMLinter,
+  compilerDiagnostics,
+  refreshDiagnostics,
+} from "./spLinter";
+const glob = require("glob");
+import { existsSync } from "fs";
+import { join } from "path";
 import { SP_MODE } from "./spMode";
 import { Providers } from "./Providers/spProviders";
 import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./spFormat";
-import { basename, extname } from "path";
+import { basename } from "path";
 import { URI } from "vscode-uri";
 import { SP_LEGENDS } from "./spLegends";
-
-let getDirectories = function (src, ext, callback) {
-  glob(src + "/**/*", callback);
-};
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
@@ -31,33 +34,81 @@ export function activate(context: ExtensionContext) {
     );
   } else {
     workspace = workspaceFolders[0];
-  }
-  if (typeof workspace != "undefined") {
-    getDirectories(workspace.uri.fsPath, "sp", function (err, res) {
-      if (err) {
-        console.log("Couldn't read .sp file, ignoring : ", err);
-      } else {
-        for (let file of res) {
-          let FileExt: string = extname(file);
-          if (FileExt == ".sp") {
-            providers.handle_document_opening(file);
+    let watcher = Workspace.createFileSystemWatcher(
+      "**​/*.{inc,sp}",
+      false,
+      true,
+      false
+    );
+
+    watcher.onDidCreate((uri) => {
+      providers.itemsRepository.documents.set(
+        basename(uri.fsPath),
+        URI.file(uri.fsPath).toString()
+      );
+      let MainPath: string =
+        Workspace.getConfiguration("sourcepawn").get("MainPath") || "";
+      if (MainPath !== "") {
+        if (!existsSync(MainPath)) {
+          let workspace: WorkspaceFolder = Workspace.workspaceFolders[0];
+          MainPath = join(workspace.uri.fsPath, MainPath);
+          if (!existsSync(MainPath)) {
+            return;
           }
-          if (FileExt == ".sp" || FileExt == ".inc") {
-            providers.completionsProvider.documents.set(
-              basename(file),
-              URI.file(file).toString()
-            );
+        }
+        MainPath = URI.file(MainPath).toString();
+        for (let document of Workspace.textDocuments) {
+          if (document.uri.toString() === MainPath) {
+            refreshDiagnostics(document, compilerDiagnostics);
+            break;
           }
         }
       }
     });
+    watcher.onDidDelete((uri) => {
+      providers.itemsRepository.documents.delete(basename(uri.fsPath));
+    });
+  }
+  if (typeof workspace != "undefined") {
+    getDirectories(workspace.uri.fsPath, providers);
   }
 
-  context.subscriptions.push(providers.completionsProvider);
+  let MainPath: string =
+    Workspace.getConfiguration("sourcepawn").get("MainPath") || "";
+  if (MainPath != "") {
+    try {
+      if (!existsSync(MainPath)) {
+        let workspace: WorkspaceFolder = Workspace.workspaceFolders[0];
+        MainPath = join(workspace.uri.fsPath, MainPath);
+        if (!existsSync(MainPath)) {
+          throw "MainPath is incorrect.";
+        }
+      }
+      providers.handle_document_opening(MainPath);
+    } catch (error) {
+      window
+        .showErrorMessage(
+          "A setting for the main.sp file was specified, but seems invalid. Please make sure it is valid.",
+          "Open Settings"
+        )
+        .then((choice) => {
+          if (choice === "Open Settings") {
+            commands.executeCommand(
+              "workbench.action.openSettings",
+              "@ext:sarrus.sourcepawn-vscode"
+            );
+          }
+        });
+    }
+  }
+
+  context.subscriptions.push(
+    languages.registerDocumentSymbolProvider(SP_MODE, providers)
+  );
   context.subscriptions.push(
     languages.registerCompletionItemProvider(
       SP_MODE,
-      providers.completionsProvider,
+      providers,
       "<",
       '"',
       "'",
@@ -76,32 +127,26 @@ export function activate(context: ExtensionContext) {
     )
   );
   context.subscriptions.push(
-    languages.registerSignatureHelpProvider(
-      SP_MODE,
-      providers.completionsProvider,
-      "(",
-      ",",
-      "\n"
-    )
+    languages.registerSignatureHelpProvider(SP_MODE, providers, "(", ",", "\n")
   );
 
   context.subscriptions.push(
     languages.registerDocumentSemanticTokensProvider(
       SP_MODE,
-      providers.highlightsProvider,
+      providers,
       SP_LEGENDS
     )
   );
 
   context.subscriptions.push(
-    languages.registerDefinitionProvider(SP_MODE, providers.completionsProvider)
+    languages.registerDefinitionProvider(SP_MODE, providers)
   );
 
   context.subscriptions.push(
     languages.registerDocumentFormattingEditProvider(SP_MODE, formatter)
   );
   context.subscriptions.push(
-    languages.registerHoverProvider(SP_MODE, providers.hoverProvider)
+    languages.registerHoverProvider(SP_MODE, providers)
   );
 
   Workspace.onDidChangeTextDocument(
@@ -125,4 +170,14 @@ export function activate(context: ExtensionContext) {
 
   // Register SM linter
   registerSMLinter(context);
+}
+
+function getDirectories(path: string, providers: Providers) {
+  let files = glob.sync(path + "/**/*.{inc,sp}");
+  for (let file of files) {
+    providers.itemsRepository.documents.set(
+      basename(file),
+      URI.file(file).toString()
+    );
+  }
 }
