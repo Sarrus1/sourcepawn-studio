@@ -11,20 +11,16 @@ import {
   compilerDiagnostics,
   refreshDiagnostics,
 } from "./spLinter";
-import * as glob from "glob";
+const glob = require("glob");
 import { existsSync } from "fs";
 import { join } from "path";
 import { SP_MODE } from "./spMode";
 import { Providers } from "./Providers/spProviders";
 import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./spFormat";
-import { basename, extname } from "path";
+import { basename } from "path";
 import { URI } from "vscode-uri";
 import { SP_LEGENDS } from "./spLegends";
-
-function getDirectories(src, ext, callback) {
-  glob(src + "/**/*", callback);
-}
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
@@ -74,21 +70,7 @@ export function activate(context: ExtensionContext) {
     });
   }
   if (typeof workspace != "undefined") {
-    getDirectories(workspace.uri.fsPath, "sp", function (err, res) {
-      if (err) {
-        console.log("Couldn't read .sp file, ignoring : ", err);
-      } else {
-        for (let file of res) {
-          let FileExt: string = extname(file);
-          if (FileExt == ".sp" || FileExt == ".inc") {
-            providers.itemsRepository.documents.set(
-              basename(file),
-              URI.file(file).toString()
-            );
-          }
-        }
-      }
-    });
+    getDirectories(workspace.uri.fsPath, providers);
   }
 
   let MainPath: string =
@@ -188,4 +170,14 @@ export function activate(context: ExtensionContext) {
 
   // Register SM linter
   registerSMLinter(context);
+}
+
+function getDirectories(path: string, providers: Providers) {
+  let files = glob.sync(path + "/**/*.{inc,sp}");
+  for (let file of files) {
+    providers.itemsRepository.documents.set(
+      basename(file),
+      URI.file(file).toString()
+    );
+  }
 }
