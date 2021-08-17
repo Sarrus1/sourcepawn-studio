@@ -6,7 +6,11 @@ import {
   WorkspaceFolder,
   commands,
 } from "vscode";
-import { registerSMLinter } from "./spLinter";
+import {
+  registerSMLinter,
+  compilerDiagnostics,
+  refreshDiagnostics,
+} from "./spLinter";
 import * as glob from "glob";
 import { existsSync } from "fs";
 import { join } from "path";
@@ -46,6 +50,24 @@ export function activate(context: ExtensionContext) {
         basename(uri.fsPath),
         URI.file(uri.fsPath).toString()
       );
+      let MainPath: string =
+        Workspace.getConfiguration("sourcepawn").get("MainPath") || "";
+      if (MainPath !== "") {
+        if (!existsSync(MainPath)) {
+          let workspace: WorkspaceFolder = Workspace.workspaceFolders[0];
+          MainPath = join(workspace.uri.fsPath, MainPath);
+          if (!existsSync(MainPath)) {
+            return;
+          }
+        }
+        MainPath = URI.file(MainPath).toString();
+        for (let document of Workspace.textDocuments) {
+          if (document.uri.toString() === MainPath) {
+            refreshDiagnostics(document, compilerDiagnostics);
+            break;
+          }
+        }
+      }
     });
     watcher.onDidDelete((uri) => {
       providers.itemsRepository.documents.delete(basename(uri.fsPath));
