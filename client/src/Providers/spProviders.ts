@@ -383,23 +383,28 @@ export class Providers {
       CompletionItemKind.Class,
       CompletionItemKind.Struct,
     ];
+    const allowedParentsKinds = [
+      CompletionItemKind.Class,
+      CompletionItemKind.Struct,
+    ];
+    const allowedChildrendKinds = [
+      CompletionItemKind.Method,
+      CompletionItemKind.Property,
+    ];
     let items = this.itemsRepository.getAllItems(document.uri.toString());
     let file = document.uri.fsPath;
     for (let item of items) {
       if (allowedKinds.includes(item.kind) && item.file === file) {
         let symbol = item.toDocumentSymbol();
-        if (file.includes("convars.inc")) {
-          console.debug(symbol);
-        }
 
         if (
-          item.kind === CompletionItemKind.Struct &&
+          allowedParentsKinds.includes(item.kind) &&
           typeof symbol !== "undefined"
         ) {
           let childrens: DocumentSymbol[] = [];
           for (let subItem of items) {
             if (
-              subItem.kind === CompletionItemKind.Method &&
+              allowedChildrendKinds.includes(subItem.kind) &&
               subItem.file === file &&
               subItem.parent === item.name
             ) {

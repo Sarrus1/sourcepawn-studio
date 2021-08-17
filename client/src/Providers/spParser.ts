@@ -236,16 +236,16 @@ class Parser {
         // We are in a method
         this.lastFuncLine = 0;
         this.addFullRange(this.lastFuncName + this.state_data.name);
-      }
-      if (state === State.Methodmap) {
+      } else if (state === State.Methodmap) {
         // We are in a methodmap
         this.addFullRange(this.state_data.name);
-      }
-      if (state === State.EnumStruct) {
+      } else if (state === State.EnumStruct) {
         // We are in an enum struct
         this.addFullRange(this.state_data.name);
-      }
-      if (
+      } else if (state === State.Property) {
+        // We are in a property
+        this.addFullRange(this.lastFuncName + this.state_data.name);
+      } else if (
         ![State.Methodmap, State.EnumStruct, State.Property].includes(state)
       ) {
         // We are in a regular function
@@ -460,6 +460,7 @@ class Parser {
   read_property(match, line) {
     let { description, params } = this.parse_doc_comment();
     let name_match: string = match[2];
+    this.lastFuncName = name_match;
     let range = this.makeDefinitionRange(name_match, line);
     let NewPropertyCompletion = new PropertyItem(
       this.state_data.name,
@@ -469,7 +470,10 @@ class Parser {
       range,
       match[1]
     );
-    this.completions.add(name_match, NewPropertyCompletion);
+    this.completions.add(
+      name_match + this.state_data.name,
+      NewPropertyCompletion
+    );
   }
 
   clean_param(partial_params_match: string) {

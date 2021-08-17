@@ -653,7 +653,7 @@ export class PropertyItem implements SPItem {
   type: string;
   kind = CompletionItemKind.Property;
   range: Range;
-
+  fullRange: Range;
   constructor(
     parent: string,
     name: string,
@@ -697,6 +697,18 @@ export class PropertyItem implements SPItem {
       { language: "sourcepawn", value: this.name },
       descriptionToMD(this.description),
     ]);
+  }
+  toDocumentSymbol(): DocumentSymbol {
+    if (typeof this.fullRange === "undefined") {
+      return undefined;
+    }
+    return new DocumentSymbol(
+      this.name,
+      this.description,
+      SymbolKind.Property,
+      this.fullRange,
+      this.range
+    );
   }
 }
 
