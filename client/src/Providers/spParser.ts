@@ -715,34 +715,25 @@ class Parser {
     // Custom key name for the map so the definitions don't override each others
     let mapName = name + scope + enumStructName;
     if (
-      this.state.includes(State.EnumStruct) ||
-      this.state.includes(State.Methodmap)
+      (this.state.includes(State.EnumStruct) ||
+        this.state.includes(State.Methodmap)) &&
+      this.state.includes(State.Function)
     ) {
-      if (this.state.includes(State.Function)) {
-        this.completions.add(
-          mapName + this.lastFuncName,
-          new VariableItem(name, this.file, scope, range, type, enumStructName)
-        );
-      } else {
-        this.completions.add(
-          mapName,
-          new PropertyItem(
-            this.state_data.name,
-            name,
-            this.file,
-            "",
-            range,
-            type
-          )
-        );
-      }
-
-      return;
+      this.completions.add(
+        mapName + this.lastFuncName,
+        new VariableItem(name, this.file, scope, range, type, enumStructName)
+      );
+    } else if (this.state.includes(State.EnumStruct)) {
+      this.completions.add(
+        mapName,
+        new PropertyItem(this.state_data.name, name, this.file, "", range, type)
+      );
+    } else {
+      this.completions.add(
+        mapName,
+        new VariableItem(name, this.file, scope, range, type, globalIdentifier)
+      );
     }
-    this.completions.add(
-      mapName,
-      new VariableItem(name, this.file, scope, range, type, globalIdentifier)
-    );
   }
 
   makeDefinitionRange(
