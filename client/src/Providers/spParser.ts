@@ -279,9 +279,6 @@ class Parser {
         // We are in a regular function
         this.addFullRange(this.lastFuncName);
       }
-      if (this.file.includes("kento_rankme.sp") && this.lineNb > 210) {
-        console.debug("");
-      }
       this.state.pop();
       return;
     }
