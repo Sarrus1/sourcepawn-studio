@@ -49,6 +49,14 @@ export class Providers {
   }
 
   public handleDocumentChange(event: TextDocumentChangeEvent) {
+    if (event.contentChanges.length > 0) {
+      let textChange = event.contentChanges[0].text;
+      // Don't parse the document every character changes.
+      if (/\w+/.test(textChange)) {
+        return;
+      }
+    }
+
     let this_completions: FileItems = new FileItems(
       event.document.uri.toString()
     );

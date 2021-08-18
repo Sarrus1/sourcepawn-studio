@@ -243,7 +243,9 @@ class Parser {
         return;
       }
       if (this.state.includes(State.Property)) {
-        this.state.push(State.Function);
+        if (!/;\s*$/.test(line)) {
+          this.state.push(State.Function);
+        }
         return;
       }
       this.read_function(line);
