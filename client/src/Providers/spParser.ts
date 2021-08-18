@@ -890,6 +890,7 @@ class Parser {
 
 function purgeCalls(item: SPItem, file: string): void {
   let uri = URI.file(file);
+  if (item.calls === undefined) return;
   item.calls = item.calls.filter((e) => {
     uri === e.uri;
   });
