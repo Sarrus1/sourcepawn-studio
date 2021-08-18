@@ -34,9 +34,7 @@ import { SP_LEGENDS } from "../spLegends";
 import { getSignatureAttributes } from "./spSignatures";
 
 export class Providers {
-  highlightsProvider: ItemsRepository;
   documentationProvider: JsDocCompletionProvider;
-  hoverProvider: ItemsRepository;
   itemsRepository: ItemsRepository;
 
   constructor(globalState?: Memento) {
