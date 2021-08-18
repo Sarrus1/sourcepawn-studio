@@ -2,6 +2,10 @@
 
 ## [2.2.3]
 
+### Added
+
+- To improve efficiency and user experience (when working on small files), the parser will now only run when the edited character is not a word (not matching the regex `\w+`).
+
 ### Fixed
 
 - Fixed an error when parsing `get` and `set` in properties.
