@@ -727,6 +727,76 @@ export class PropertyItem implements SPItem {
   }
 }
 
+export class ConstantItem implements SPItem {
+  name: string;
+  kind = CompletionItemKind.Constant;
+  constructor(name: string) {
+    this.name = name;
+  }
+
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: "",
+    };
+  }
+
+  toDefinitionItem(): Location {
+    return undefined;
+  }
+
+  toSignature(): SignatureInformation {
+    return undefined;
+  }
+
+  toHover(): Hover {
+    return undefined;
+  }
+
+  toDocumentSymbol(): DocumentSymbol {
+    return undefined;
+  }
+}
+
+export class KeywordItem implements SPItem {
+  name: string;
+  kind = CompletionItemKind.Keyword;
+  constructor(name: string) {
+    this.name = name;
+  }
+
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: "",
+    };
+  }
+
+  toDefinitionItem(): Location {
+    return undefined;
+  }
+
+  toSignature(): SignatureInformation {
+    return undefined;
+  }
+
+  toHover(): Hover {
+    return undefined;
+  }
+
+  toDocumentSymbol(): DocumentSymbol {
+    return undefined;
+  }
+}
+
 export class Include {
   uri: string;
   IsBuiltIn: boolean;
@@ -734,9 +804,5 @@ export class Include {
   constructor(uri: string, IsBuiltIn: boolean) {
     this.uri = uri;
     this.IsBuiltIn = IsBuiltIn;
-  }
-
-  get_hover(): Hover {
-    return;
   }
 }

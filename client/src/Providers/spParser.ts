@@ -515,7 +515,7 @@ class Parser {
     let match: RegExpMatchArray = line.match(newSyntaxRe);
     if (!match) {
       match = line.match(
-        /^\s*(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([\w]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
+        /^\s*(?:(?:static|native|stock|public|forward)\s+)*(?:(\w+)\s*:)?\s*(\w*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
       );
     }
     let isMethod: boolean =
@@ -751,7 +751,7 @@ class Parser {
   AddParamsDef(params: string, funcName: string, line: string) {
     let match_variable: RegExpExecArray;
     let match_variables: RegExpExecArray[] = [];
-    let re = /\s*(?:(?:const|static)\s+)?(\w+)\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
+    let re = /\s*(?:(?:const|static)\s+)?(?:(\w+)(?:\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+|\s*\:\s*))?(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
     while ((match_variable = re.exec(params)) != null) {
       match_variables.push(match_variable);
     }
@@ -890,6 +890,7 @@ class Parser {
 
 function purgeCalls(item: SPItem, file: string): void {
   let uri = URI.file(file);
+  if (item.calls === undefined) return;
   item.calls = item.calls.filter((e) => {
     uri === e.uri;
   });
@@ -923,10 +924,10 @@ function getParamsFromDeclaration(decl: string): FunctionParam[] {
   // Remove the leading and trailing parenthesis
   decl = match[1] + ",";
   let params: FunctionParam[] = [];
-  let re = /\s*((?:const|static)\s+)*\s*(\w+)(?:\[([A-Za-z0-9_\*\+\s\-]*)\])?\:?\s+([A-Za-z0-9_\&]+)\s*(?:\[([A-Za-z0-9_\*\+\s\-]*)\])?\s*(?:\)|,|=)/g;
+  let re = /\s*(?:(?:const|static)\s+)?(?:(\w+)(?:\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+|\s*\:\s*))?(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
   let matchVariable;
   while ((matchVariable = re.exec(decl)) != null) {
-    params.push({ label: matchVariable[4], documentation: "" });
+    params.push({ label: matchVariable[2], documentation: "" });
   }
   return params;
 }

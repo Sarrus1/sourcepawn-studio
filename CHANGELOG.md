@@ -1,5 +1,15 @@
 ## Release Notes
 
+## [2.2.2]
+
+### Added
+
+- Added keywords and constants completions.
+
+### Fixed
+
+- Fixed parsing of old syntax (SM1.7) functions.
+
 ## [2.2.1]
 
 ### Fixed

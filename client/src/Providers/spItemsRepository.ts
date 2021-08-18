@@ -13,7 +13,8 @@ import {
 import { basename, join } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
-import { SPItem, Include } from "./spItems";
+import { SPItem, Include, ConstantItem, KeywordItem } from "./spItems";
+import { defaultConstantItems, defaultKeywordsItems } from "./spDefaultItems";
 import { events } from "../Misc/sourceEvents";
 import {
   GetLastFuncName,
@@ -29,6 +30,10 @@ export class FileItems {
 
   constructor(uri: string) {
     this.completions = new Map();
+    // Add constants only in one map.
+    if (uri.includes("sourcemod.inc")) {
+      makeNewItemsMap(this.completions);
+    }
     this.includes = [];
     this.uri = uri;
   }
@@ -550,4 +555,14 @@ export class ItemsRepository implements Disposable {
 
 function checkIfMethod(line: string, position: Position): boolean {
   return /\w+(?:\.|\:\:)\w*$/.test(line.slice(0, position.character));
+}
+
+function makeNewItemsMap(itemsMap): Map<string, SPItem> {
+  for (let name of defaultConstantItems) {
+    itemsMap.set(name, new ConstantItem(name));
+  }
+  for (let name of defaultKeywordsItems) {
+    itemsMap.set(name, new KeywordItem(name));
+  }
+  return itemsMap;
 }
