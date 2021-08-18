@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.2.3]
+
+### Fixed
+
+- Fixed an error when parsing `get` and `set` in properties.
+
 ## [2.2.2]
 
 ### Added
