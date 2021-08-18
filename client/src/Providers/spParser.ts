@@ -251,6 +251,9 @@ class Parser {
 
     match = line.match(/^\s*}/);
     if (match) {
+      if (/^\s*\}\s*\belse\b\s*\{/.test(line)) {
+        return;
+      }
       let state = this.state[this.state.length - 1];
       if (state === State.Function && this.state_data !== undefined) {
         // We are in a method
@@ -275,6 +278,9 @@ class Parser {
       ) {
         // We are in a regular function
         this.addFullRange(this.lastFuncName);
+      }
+      if (this.file.includes("kento_rankme.sp") && this.lineNb > 210) {
+        console.debug("");
       }
       this.state.pop();
       return;
