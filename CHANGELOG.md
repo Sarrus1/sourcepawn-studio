@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fixed a typo in the parser.
+- Made the parser more robust to different styles of writing.
 
 ## [2.2.0]
 

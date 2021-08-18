@@ -225,24 +225,44 @@ class Parser {
 
     match = line.match(/^\s*(\bwhile\b|\belse\b|\bif\b|\bswitch\b|\bcase\b)/);
     if (match) {
+      if (!/\{\s*$/.test(line)) {
+        // Test the next line if we didn't match
+        if (!/^\s*\{/.test(this.lines[0])) {
+          return;
+        }
+      }
       this.state.push(State.Loop);
       return;
     }
 
-    match = line.match(/}/);
+    match = line.match(
+      /^\s*(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
+    );
+    if (match) {
+      if (isControlStatement(line) || /\bfunction\b/.test(match[1])) {
+        return;
+      }
+      if (this.state.includes(State.Property)) {
+        this.state.push(State.Function);
+        return;
+      }
+      this.read_function(line);
+    }
+
+    match = line.match(/^\s*}/);
     if (match) {
       let state = this.state[this.state.length - 1];
-      if (state === State.Function) {
+      if (state === State.Function && this.state_data !== undefined) {
         // We are in a method
         this.lastFuncLine = 0;
         this.addFullRange(this.lastFuncName + this.state_data.name);
-      } else if (state === State.Methodmap) {
+      } else if (state === State.Methodmap && this.state_data !== undefined) {
         // We are in a methodmap
         this.addFullRange(this.state_data.name);
-      } else if (state === State.EnumStruct) {
+      } else if (state === State.EnumStruct && this.state_data !== undefined) {
         // We are in an enum struct
         this.addFullRange(this.state_data.name);
-      } else if (state === State.Property) {
+      } else if (state === State.Property && this.state_data !== undefined) {
         // We are in a property
         this.addFullRange(this.lastFuncName + this.state_data.name);
       } else if (
@@ -260,19 +280,6 @@ class Parser {
       return;
     }
 
-    match = line.match(
-      /^\s*(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
-    );
-    if (match) {
-      if (
-        isControlStatement(line) ||
-        this.state.includes(State.Property) ||
-        /\bfunction\b/.test(match[1])
-      ) {
-        return;
-      }
-      this.read_function(line);
-    }
     return;
   }
 
@@ -517,9 +524,6 @@ class Parser {
       let lineMatch = this.lineNb;
       let type = match[1];
       let paramsMatch = match[3];
-      if (isMethod) {
-        this.state.push(State.Function);
-      }
       this.AddParamsDef(paramsMatch, nameMatch, line);
       // Iteration safety in case something goes wrong
       let maxiter = 0;
@@ -556,7 +560,11 @@ class Parser {
       if (isNativeOrForward) {
         if (endSymbol[0] === "{") return;
       } else {
-        if (endSymbol[0] === ";") return;
+        if (endSymbol[0] === ";") {
+          return;
+        } else if (!isSingleLineFunction(line)) {
+          this.state.push(State.Function);
+        }
       }
       this.lastFuncLine = lineMatch;
       this.lastFuncName = nameMatch;
@@ -927,4 +935,8 @@ function getParamsFromDeclaration(decl: string): FunctionParam[] {
     params.push({ label: matchVariable[4], documentation: "" });
   }
   return params;
+}
+
+function isSingleLineFunction(line: string) {
+  return /\{.*\}\s*$/.test(line);
 }
