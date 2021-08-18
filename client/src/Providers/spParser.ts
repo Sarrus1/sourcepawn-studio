@@ -393,7 +393,7 @@ class Parser {
     let match_variable: RegExpExecArray;
     // Check if it's a multiline declaration
     let commentMatch = line.match(/\/\//);
-    let croppedLine = "";
+    let croppedLine = line;
     if (commentMatch) {
       croppedLine = line.slice(0, commentMatch.index);
     }

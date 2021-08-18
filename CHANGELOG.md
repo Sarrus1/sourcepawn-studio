@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.2.1]
+
+### Fixed
+
+- Fixed a typo in the parser.
+
 ## [2.2.0]
 
 ### Added
