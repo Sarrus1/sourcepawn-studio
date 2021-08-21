@@ -426,7 +426,7 @@ export class ItemsRepository implements Disposable {
     }
   }
 
-  getItemFromPosition(document: TextDocument, position: Position): SPItem {
+  getItemFromPosition(document: TextDocument, position: Position): SPItem[] {
     let range = document.getWordRangeAtPosition(position);
     // First check if we are dealing with a method or property.
     let isMethod: boolean = false;
@@ -458,14 +458,14 @@ export class ItemsRepository implements Disposable {
     let lastEnumStruct: string = getLastEnumStructName(position, document);
 
     if (lastEnumStruct !== globalIdentifier && lastFunc === globalIdentifier) {
-      let item = allItems.find(
+      let items = allItems.filter(
         (item) =>
           (item.kind === CompletionItemKind.Method ||
             item.kind === CompletionItemKind.Property) &&
           item.parent === lastEnumStruct &&
           item.name === word
       );
-      return item;
+      return items;
     }
 
     if (isMethod) {
@@ -484,24 +484,24 @@ export class ItemsRepository implements Disposable {
         allItems
       );
       // Find and return the matching item
-      let item = allItems.find(
+      let items = allItems.filter(
         (item) =>
           (item.kind === CompletionItemKind.Method ||
             item.kind === CompletionItemKind.Property) &&
           variableTypes.includes(item.parent) &&
           item.name === word
       );
-      return item;
+      return items;
     }
 
     if (isConstructor) {
-      let item = this.getAllItems(document.uri.toString()).find(
+      let items = this.getAllItems(document.uri.toString()).filter(
         (item) =>
           item.kind === CompletionItemKind.Method &&
           item.name === match[1] &&
           item.parent === match[1]
       );
-      return item;
+      return items;
     }
     // Check if we are dealing with a function
     let bIsFunction = isFunction(
@@ -509,15 +509,15 @@ export class ItemsRepository implements Disposable {
       document,
       document.lineAt(position.line).text.length
     );
-    let item = undefined;
+    let items = [];
     if (bIsFunction) {
-      item = allItems.find(
+      items = allItems.filter(
         (item) =>
           item.kind === CompletionItemKind.Function && item.name === word
       );
-      return item;
+      return items;
     }
-    item = allItems.find(
+    items = allItems.filter(
       (item) =>
         !(
           item.kind === CompletionItemKind.Method ||
@@ -527,10 +527,10 @@ export class ItemsRepository implements Disposable {
         item.name === word &&
         item.scope === lastFunc
     );
-    if (typeof item !== "undefined") {
-      return item;
+    if (items.length > 0) {
+      return items;
     }
-    item = allItems.find((item) => {
+    items = allItems.filter((item) => {
       if (
         item.kind === CompletionItemKind.Method ||
         item.kind === CompletionItemKind.Property
@@ -549,7 +549,7 @@ export class ItemsRepository implements Disposable {
       }
       return item.name === word;
     });
-    return item;
+    return items;
   }
 }
 

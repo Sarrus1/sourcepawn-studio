@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.2.4]
+
+### Added
+
+- Add support for multiple definitions on a single item. For example, `OnPluginStart` will now point to the forward and the function overcall.
+
 ## [2.2.3]
 
 ### Added
