@@ -6,6 +6,10 @@
 
 - Add support for multiple definitions on a single item. For example, `OnPluginStart` will now point to the forward and the function overcall.
 
+### Fixed
+
+- Completions now only appear once.
+
 ## [2.2.3]
 
 ### Added

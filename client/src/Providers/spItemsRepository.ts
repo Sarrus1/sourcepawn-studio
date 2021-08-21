@@ -217,6 +217,7 @@ export class ItemsRepository implements Disposable {
           variableType,
           allItems
         );
+        let existingNames: string[] = [];
         for (let item of allItems) {
           if (
             (item.kind === CompletionItemKind.Method ||
@@ -225,13 +226,17 @@ export class ItemsRepository implements Disposable {
             // Don't include the constructor of the methodmap
             !variableTypes.includes(item.name)
           ) {
-            completionsList.items.push(
-              item.toCompletionItem(document.uri.fsPath, lastFunc)
-            );
+            if (!existingNames.includes(item.name)) {
+              completionsList.items.push(
+                item.toCompletionItem(document.uri.fsPath, lastFunc)
+              );
+              existingNames.push(item.name);
+            }
           }
         }
         return completionsList;
       }
+      let existingNames: string[] = [];
       for (let item of allItems) {
         if (
           !(
@@ -239,9 +244,12 @@ export class ItemsRepository implements Disposable {
             item.kind === CompletionItemKind.Property
           )
         ) {
-          completionsList.items.push(
-            item.toCompletionItem(document.uri.fsPath, lastFunc)
-          );
+          if (!existingNames.includes(item.name)) {
+            completionsList.items.push(
+              item.toCompletionItem(document.uri.fsPath, lastFunc)
+            );
+            existingNames.push(item.name);
+          }
         }
       }
       return completionsList;
