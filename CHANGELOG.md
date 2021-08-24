@@ -10,6 +10,7 @@
 
 - Completions now only appear once.
 - Fixed defines and enumMember not being highlighted.
+- Fixed highlighting error when the static or const keyword is used.
 
 ## [2.2.3]
 
