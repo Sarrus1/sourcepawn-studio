@@ -243,11 +243,6 @@
       }
     },
     {
-      "comment": "keywords",
-      "name": "keyword.sourcepawn",
-      "match": "\\s*\\b(?:break|continue|new|static|decl|const|delete|forward|native|public|stock|funcenum|functag|this|sizeof)\\b"
-    },
-    {
       "comment": "Function params new syntax",
       "match": "\\s*((?:const|static)\\s+)*\\s*(\\w+)(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\:?\\s+([A-Za-z0-9_\\&]+)\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\s*(?:\\)|,|=)",
       "captures": {
@@ -365,6 +360,11 @@
       }
     },
     {
+      "comment": "keywords",
+      "name": "keyword.sourcepawn",
+      "match": "\\s*\\b(?:break|continue|new|static|decl|const|delete|forward|native|public|stock|funcenum|functag|this|sizeof)\\b"
+    },
+    {
       "comment": "Variable declaration old syntax",
       "match": "(?<!\\?\\s*)(\b\\w+\b)\\s*:\\s*\\w+",
       "captures": {
@@ -424,6 +424,11 @@
     },
     {
       "include": "#keywords"
+    },
+    {
+      "comment": "Match the rest as types",
+      "match": "^\\w+",
+      "name": "support.type.sourcepawn"
     },
     {
       "comment": "Match the rest as variables",

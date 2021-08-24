@@ -19,7 +19,7 @@
   SemanticTokens,
   SemanticTokensBuilder,
   DocumentSymbol,
-  SymbolKind,
+  Definition,
 } from "vscode";
 import * as glob from "glob";
 import { basename, extname, join, relative } from "path";
@@ -245,9 +245,9 @@ export class Providers {
     position: Position,
     token: CancellationToken
   ): Hover {
-    let item = this.itemsRepository.getItemFromPosition(document, position);
-    if (typeof item !== "undefined") {
-      return item.toHover();
+    let items = this.itemsRepository.getItemFromPosition(document, position);
+    if (items.length > 0) {
+      return items[0].toHover();
     }
     return undefined;
   }
@@ -349,12 +349,9 @@ export class Providers {
     document: TextDocument,
     position: Position,
     token: CancellationToken
-  ): Location | DefinitionLink[] {
-    let item = this.itemsRepository.getItemFromPosition(document, position);
-    if (typeof item !== "undefined") {
-      return item.toDefinitionItem();
-    }
-    return undefined;
+  ): Definition | DefinitionLink[] {
+    let items = this.itemsRepository.getItemFromPosition(document, position);
+    return items.map((e) => e.toDefinitionItem());
   }
 
   public provideDocumentSemanticTokens(
