@@ -9,6 +9,7 @@
 ### Fixed
 
 - Completions now only appear once.
+- Fixed defines and enumMember not being highlighted.
 
 ## [2.2.3]
 
