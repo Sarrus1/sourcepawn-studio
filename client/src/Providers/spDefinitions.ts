@@ -16,13 +16,8 @@ export function GetLastFuncName(
     Match = line.match(re);
     if (Match) {
       let match = line.match(
-        /^\s*(?:(?:stock|public)\s+)*(?:(\w*)\s+)?(\w*)\s*\(([^]*)(?:\)|,|{)\s*$/
+        /^\s*(?:(?:stock|public|forward|static|native)\s+)*(?:(\w*)\s+)?(\w*)\s*\(([^]*)(?:\)|,|{)\s*$/
       );
-      if (!match) {
-        match = line.match(
-          /^\s*(?:(?:forward|static|native)\s+)+(?:(\w*)\s+)?(\w*)\s*\(([^]*)(?:,|;)\s*$/
-        );
-      }
       if (match && !isControlStatement(line)) break;
     }
   }
