@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fixed a highlighting bug.
+- Fixed parser error for functions declared on line 1.
 
 ## [2.2.4]
 
