@@ -10,23 +10,18 @@ export function GetLastFuncName(
   let text = document.getText().split("\n");
   let Match;
   let line: string;
-  for (lineNB; lineNB > 0; lineNB--) {
+  for (lineNB; lineNB > -1; lineNB--) {
     line = text[lineNB];
     if (line.match(/^\}/)) return globalIdentifier;
     Match = line.match(re);
     if (Match) {
       let match = line.match(
-        /^\s*(?:(?:stock|public)\s+)*(?:(\w*)\s+)?(\w*)\s*\(([^]*)(?:\)|,|{)\s*$/
+        /^\s*(?:(?:stock|public|forward|static|native)\s+)*(?:(\w*)\s+)?(\w*)\s*\(([^]*)(?:\)|,|{)\s*$/
       );
-      if (!match) {
-        match = line.match(
-          /^\s*(?:(?:forward|static|native)\s+)+(?:(\w*)\s+)?(\w*)\s*\(([^]*)(?:,|;)\s*$/
-        );
-      }
       if (match && !isControlStatement(line)) break;
     }
   }
-  if (lineNB == 0) return globalIdentifier;
+  if (lineNB == -1) return globalIdentifier;
   let match = text[lineNB].match(re);
   // Deal with old syntax here
   return match[2] == "" ? match[1] : match[2];

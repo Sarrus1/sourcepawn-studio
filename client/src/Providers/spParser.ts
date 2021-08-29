@@ -23,6 +23,7 @@ import { existsSync, readFileSync } from "fs";
 import { basename } from "path";
 import { URI } from "vscode-uri";
 import { globalIdentifier } from "./spGlobalIdentifier";
+import { cpuUsage } from "process";
 
 export function parseFile(
   file: string,
@@ -223,7 +224,9 @@ class Parser {
       return;
     }
 
-    match = line.match(/^\s*(\bwhile\b|\belse\b|\bif\b|\bswitch\b|\bcase\b)/);
+    match = line.match(
+      /^\s*(\bwhile\b|\belse\b|\bif\b|\bswitch\b|\bcase\b|\bdo\b)/
+    );
     if (match) {
       if (!/\{\s*$/.test(line)) {
         // Test the next line if we didn't match
@@ -236,7 +239,7 @@ class Parser {
     }
 
     match = line.match(
-      /^\s*(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
+      /^\s*(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*(\w*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
     );
     if (match) {
       if (isControlStatement(line) || /\bfunction\b/.test(match[1])) {

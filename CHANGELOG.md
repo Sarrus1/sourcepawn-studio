@@ -1,5 +1,18 @@
 ## Release Notes
 
+## [2.2.5]
+
+### Added
+
+- Files will now be parsed on extension load.
+
+### Fixed
+
+- Fixed a highlighting bug.
+- Fixed parser error for functions declared on line 1.
+- Improved the algorithm which queries the scope of a variable.
+- Fixed incorrect function regex.
+
 ## [2.2.4]
 
 ### Added
