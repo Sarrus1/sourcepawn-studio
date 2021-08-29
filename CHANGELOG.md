@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.2.5]
+
+### Fixed
+
+- Fixed a highlighting bug.
+
 ## [2.2.4]
 
 ### Added
