@@ -109,6 +109,9 @@ export class Providers {
 
   public handle_document_opening(path: string) {
     let uri: string = URI.file(path).toString();
+    if (this.itemsRepository.completions.has(uri)) {
+      return;
+    }
     let this_completions: FileItems = new FileItems(uri);
     // Some file paths are appened with .git
     path = path.replace(".git", "");

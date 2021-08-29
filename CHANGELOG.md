@@ -2,6 +2,10 @@
 
 ## [2.2.5]
 
+### Added
+
+- Files will now be parsed on extension load.
+
 ### Fixed
 
 - Fixed a highlighting bug.

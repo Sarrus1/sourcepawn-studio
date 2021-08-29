@@ -102,6 +102,14 @@ export function activate(context: ExtensionContext) {
     }
   }
 
+  // Load the currently opened file
+  providers.handle_document_opening(
+    window.activeTextEditor.document.uri.fsPath
+  );
+  window.onDidChangeActiveTextEditor((e) =>
+    providers.handle_document_opening(e.document.uri.fsPath)
+  );
+
   context.subscriptions.push(
     languages.registerDocumentSymbolProvider(SP_MODE, providers)
   );
