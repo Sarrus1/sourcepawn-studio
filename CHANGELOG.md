@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Fixed `\\` not being escaped properly.
 - Fixed `#include` regex when trailing comment is present (fixes #102).
 
 ## [2.2.5]
