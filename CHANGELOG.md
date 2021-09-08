@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.2.6]
+
+### Fixed
+
+- Fixed `#include` regex when trailing comment is present (fixes #102).
+
 ## [2.2.5]
 
 ### Added

@@ -128,14 +128,14 @@ class Parser {
     }
 
     // Match global include
-    match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>\s*$/);
+    match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>/);
     if (match) {
       this.read_include(match);
       return;
     }
 
     // Match relative include
-    match = line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"\s*$/);
+    match = line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"/);
     if (match) {
       this.read_include(match);
       return;
