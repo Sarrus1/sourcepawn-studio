@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.2.7]
+
+### Fixed
+
+- Fixed incorrect setting's description.
+
 ## [2.2.6]
 
 ### Fixed
