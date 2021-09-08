@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- Fixed `\\` not being escaped properly.
+- Fixed `\\` not being escaped properly (Fixed by [Natanel-Shitrit](https://github.com/Natanel-Shitrit)).
 - Fixed `#include` regex when trailing comment is present (fixes #102).
 
 ## [2.2.5]
