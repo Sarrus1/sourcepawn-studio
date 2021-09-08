@@ -459,7 +459,7 @@
             },
             {
               "name": "constant.character.escape.sourcepawn",
-              "match": "\\\\(?:a|b|e|f|n|r|t|v|\"|'|%|x[A-Fa-f0-9]{1,2})"
+              "match": "\\\\(?:a|b|e|f|n|r|t|v|\"|'|\\\\|%|x[A-Fa-f0-9]{1,2})"
             },
             {
               "name": "constant.character.sp-translations",
@@ -483,7 +483,7 @@
             },
             {
               "name": "constant.character.escape.sourcepawn",
-              "match": "\\\\(?:a|b|e|f|n|r|t|v|\"|'|%|x[A-Fa-f0-9]{1,2})"
+              "match": "\\\\(?:a|b|e|f|n|r|t|v|\"|'|\\\\|%|x[A-Fa-f0-9]{1,2})"
             },
             {
               "name": "constant.character.sp-translations",
