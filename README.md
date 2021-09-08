@@ -21,6 +21,8 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 - Parse sourcemod files from a custom location.
 - Linting capabilities.
 
+**Details on how to use the extension available in the [Wiki](https://github.com/Sarrus1/sourcepawn-vscode/wiki)**.
+
 ## Screenshots
 
 ### .sp and .inc file highlighting
@@ -67,12 +69,26 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 
 ## Frequently Asked Questions
 
-- [How can I donate ?](#how-can-i-donate-)
-- [How to fix "Not a .sp file, aborting" ?](#how-to-fix-not-a-sp-file-aborting-")
-- [How to fix "Command not found" ?](#how-to-fix-command-not-found-)
-- [How to install the beta build ?](#how-to-install-the-beta-build-)
-- [How can I contribute ?](#how-to-contribute-)
-- [How to run the dev version ?](#how-to-run-)
+- [SourcePawn for VSCode](#sourcepawn-for-vscode)
+  - [Features](#features)
+  - [Screenshots](#screenshots)
+    - [.sp and .inc file highlighting](#sp-and-inc-file-highlighting)
+    - [.cfg file highlighting](#cfg-file-highlighting)
+    - [Code auto-completion](#code-auto-completion)
+    - [Event auto-completion](#event-auto-completion)
+    - [Include auto-completion](#include-auto-completion)
+    - [Functions signature help](#functions-signature-help)
+    - [Hover help](#hover-help)
+    - [Go To Definition](#go-to-definition)
+    - [Linter](#linter)
+  - [Credits](#credits)
+  - [Frequently Asked Questions](#frequently-asked-questions)
+    - [How can I donate ?](#how-can-i-donate-)
+    - [How to fix "Not a .sp file, aborting" ?](#how-to-fix-not-a-sp-file-aborting-)
+    - [How to fix "Command not found" ?](#how-to-fix-command-not-found-)
+    - [How to install the beta build ?](#how-to-install-the-beta-build-)
+    - [How to contribute ?](#how-to-contribute-)
+    - [How to run the extension from its source code ?](#how-to-run-the-extension-from-its-source-code-)
 
 ### How can I donate ?
 
