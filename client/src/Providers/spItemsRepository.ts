@@ -562,7 +562,7 @@ export class ItemsRepository implements Disposable {
 }
 
 function checkIfMethod(line: string, position: Position): boolean {
-  return /\w+(?:\.|\:\:)\w*$/.test(line.slice(0, position.character));
+  return /(?:\.|\:\:)\w*$/.test(line.slice(0, position.character));
 }
 
 function makeNewItemsMap(itemsMap): Map<string, SPItem> {
