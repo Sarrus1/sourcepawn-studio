@@ -9,6 +9,7 @@
 ### Fixed
 
 - Fixed incorrect setting's description.
+- Fixed incorrect or missing autocompletion for includes.
 - Fixed a regex issue which wouldn't detect an enum struct item if it was in an array.
 
 ## [2.2.6]

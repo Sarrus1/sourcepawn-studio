@@ -70,8 +70,13 @@ export function activate(context: ExtensionContext) {
     });
   }
   if (typeof workspace != "undefined") {
-    getDirectories(workspace.uri.fsPath, providers);
+    getDirectories([workspace.uri.fsPath], providers);
   }
+  // Get the names and directories of optional include directories.
+  let optionalIncludeDirs: string[] = Workspace.getConfiguration(
+    "sourcepawn"
+  ).get("optionalIncludeDirsPaths");
+  getDirectories(optionalIncludeDirs, providers);
 
   let MainPath: string =
     Workspace.getConfiguration("sourcepawn").get("MainPath") || "";
@@ -180,12 +185,14 @@ export function activate(context: ExtensionContext) {
   registerSMLinter(context);
 }
 
-function getDirectories(path: string, providers: Providers) {
-  let files = glob.sync(path + "/**/*.{inc,sp}");
-  for (let file of files) {
-    providers.itemsRepository.documents.set(
-      basename(file),
-      URI.file(file).toString()
-    );
+function getDirectories(paths: string[], providers: Providers) {
+  for (let path of paths) {
+    let files = glob.sync(path.replace(/\/\s*$/, "") + "/**/*.{inc,sp}");
+    for (let file of files) {
+      providers.itemsRepository.documents.set(
+        basename(file),
+        URI.file(file).toString()
+      );
+    }
   }
 }
