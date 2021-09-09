@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "2.2.6",
+  "version": "2.2.7",
   "publisher": "Sarrus",
   "main": "./dist/extension",
   "icon": "sm.png",
@@ -273,7 +273,7 @@
             "TabWidth: '2'",
             "UseTab: '${UseTab}'"
           ],
-          "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable."
+          "description": "Settings for the formatter. Any setting supported by Clang Format can be used here."
         },
         "sourcepawn.trace.server": {
           "type": "string",

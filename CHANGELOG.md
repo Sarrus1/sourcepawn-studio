@@ -1,5 +1,17 @@
 ## Release Notes
 
+## [2.2.7]
+
+### Added
+
+- Added a wiki for better documentation.
+
+### Fixed
+
+- Fixed incorrect setting's description.
+- Fixed incorrect or missing autocompletion for includes.
+- Fixed a regex issue which wouldn't detect an enum struct item if it was in an array.
+
 ## [2.2.6]
 
 ### Fixed

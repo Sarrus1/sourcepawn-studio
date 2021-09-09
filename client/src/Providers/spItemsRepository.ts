@@ -129,6 +129,9 @@ export class ItemsRepository implements Disposable {
     let includes_dirs: string[] = Workspace.getConfiguration("sourcepawn").get(
       "optionalIncludeDirsPaths"
     );
+    // Convert to URIs
+    includes_dirs = includes_dirs.map((e) => URI.parse(e).toString());
+
     scriptingDirnames = scriptingDirnames.concat(includes_dirs);
     let items: CompletionItem[] = [];
     let cleanedUri: string;
@@ -163,7 +166,7 @@ export class ItemsRepository implements Disposable {
       } else {
         for (scriptingDirname of scriptingDirnames) {
           if (uri.includes(scriptingDirname + tempName)) {
-            cleanedUri = uri.replace(scriptingDirname + tempName, tempName);
+            cleanedUri = uri.replace(scriptingDirname + tempName, "");
             let match = cleanedUri.match(/([^\/]+\/)?/);
             if (match[0] != "") {
               let item = {
@@ -562,7 +565,7 @@ export class ItemsRepository implements Disposable {
 }
 
 function checkIfMethod(line: string, position: Position): boolean {
-  return /\w+(?:\.|\:\:)\w*$/.test(line.slice(0, position.character));
+  return /(?:\.|\:\:)\w*$/.test(line.slice(0, position.character));
 }
 
 function makeNewItemsMap(itemsMap): Map<string, SPItem> {
