@@ -1,30 +1,21 @@
-﻿import { TextDocument, Range, Position } from "vscode";
+﻿import { TextDocument, Range, Position, CompletionItemKind } from "vscode";
 import { globalIdentifier } from "./spGlobalIdentifier";
+import { SPItem } from "./spItems";
 
 export function GetLastFuncName(
   position: Position,
-  document: TextDocument
+  document: TextDocument,
+  allItems: SPItem[]
 ): string {
-  let lineNB = position.line;
-  let re = /(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/;
-  let text = document.getText().split("\n");
-  let Match;
-  let line: string;
-  for (lineNB; lineNB > -1; lineNB--) {
-    line = text[lineNB];
-    if (line.match(/^\}/)) return globalIdentifier;
-    Match = line.match(re);
-    if (Match) {
-      let match = line.match(
-        /^\s*(?:(?:stock|public|forward|static|native)\s+)*(?:(\w*)\s+)?(\w*)\s*\(([^]*)(?:\)|,|{)\s*$/
-      );
-      if (match && !isControlStatement(line)) break;
-    }
-  }
-  if (lineNB == -1) return globalIdentifier;
-  let match = text[lineNB].match(re);
-  // Deal with old syntax here
-  return match[2] == "" ? match[1] : match[2];
+  let func = allItems.find(
+    (e) =>
+      [CompletionItemKind.Function, CompletionItemKind.Method].includes(
+        e.kind
+      ) &&
+      e.file === document.uri.fsPath &&
+      e.fullRange.contains(position)
+  );
+  return func != undefined ? func.name : globalIdentifier;
 }
 
 export function isFunction(
@@ -58,32 +49,14 @@ export function isControlStatement(line: string): boolean {
 
 export function getLastEnumStructName(
   position: Position,
-  document: TextDocument
+  document: TextDocument,
+  allItems: SPItem[]
 ): string {
-  let lineNB = position.line;
-  let re = /^\s*(?:enum\s+struct\s+)(\w+)/;
-  let text = document.getText().split("\n");
-  let match;
-  let line: string;
-  const maxiter = 150;
-  let iter = 0;
-  while (lineNB > 0 && iter < maxiter) {
-    line = text[lineNB];
-    if (line.match(/^\}/)) {
-      // We are not in an enum struct.
-      // This is not ideal, but I don't see a better way to do this for now.
-      return globalIdentifier;
-    }
-    match = line.match(re);
-    if (match) {
-      break;
-    }
-    lineNB--;
-    iter++;
-  }
-  if (lineNB == 0) return globalIdentifier;
-  if (match !== null) {
-    return match[1];
-  }
-  return globalIdentifier;
+  let enumStruct = allItems.find(
+    (e) =>
+      e.kind === CompletionItemKind.Struct &&
+      e.file === document.uri.fsPath &&
+      e.fullRange.contains(position)
+  );
+  return enumStruct != undefined ? enumStruct.name : globalIdentifier;
 }

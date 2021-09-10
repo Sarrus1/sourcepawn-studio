@@ -228,9 +228,23 @@ class Parser {
       /^\s*(\bwhile\b|\belse\b|\bif\b|\bswitch\b|\bcase\b|\bdo\b)/
     );
     if (match) {
+      // Check if we are still in the conditionnal of the control statement
+      // for example, an if statement's conditionnal can span over several lines
+      // and call functions
+      let parenthesisNB = parentCounter(line);
+      let lineCounter = 0;
+      let iter = 0;
+      while (parenthesisNB !== 0 && iter < 100) {
+        iter++;
+        line = this.lines[lineCounter];
+        lineCounter++;
+        parenthesisNB += parentCounter(line);
+      }
+      // Now we test if the statement uses brackets, as short code blocks are usually
+      // implemented without them.
       if (!/\{\s*$/.test(line)) {
         // Test the next line if we didn't match
-        if (!/^\s*\{/.test(this.lines[0])) {
+        if (!/^\s*\{/.test(this.lines[lineCounter])) {
           return;
         }
       }
@@ -423,12 +437,7 @@ class Parser {
           /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
         )[1];
         if (!this.IsBuiltIn) {
-          this.AddVariableCompletion(
-            variable_completion,
-            line,
-            variable[1],
-            true
-          );
+          this.AddVariableCompletion(variable_completion, line, variable[1]);
         }
       }
     } else {
@@ -447,7 +456,7 @@ class Parser {
             /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
           )[1];
           if (!this.IsBuiltIn) {
-            this.AddVariableCompletion(variable_completion, line, "", true);
+            this.AddVariableCompletion(variable_completion, line, "");
           }
         }
         match[1] = this.lines.shift();
@@ -702,8 +711,8 @@ class Parser {
     name: string,
     line: string,
     type: string,
-    shouldAddToEnumStruct = false,
-    funcName: string = undefined
+    funcName: string = undefined,
+    isParamDef = false
   ): void {
     let range = this.makeDefinitionRange(name, line);
     let scope: string = globalIdentifier;
@@ -722,7 +731,7 @@ class Parser {
     if (
       (this.state.includes(State.EnumStruct) ||
         this.state.includes(State.Methodmap)) &&
-      this.state.includes(State.Function)
+      (this.state.includes(State.Function) || isParamDef)
     ) {
       this.completions.add(
         mapName + this.lastFuncName,
@@ -769,8 +778,8 @@ class Parser {
           variable_completion,
           line,
           variable[1],
-          true,
-          funcName
+          funcName,
+          true
         );
       }
     }
@@ -939,4 +948,16 @@ function getParamsFromDeclaration(decl: string): FunctionParam[] {
 
 function isSingleLineFunction(line: string) {
   return /\{.*\}\s*$/.test(line);
+}
+
+function parentCounter(line: string): number {
+  let counter = 0;
+  for (let char of line) {
+    if (char === "(") {
+      counter++;
+    } else if (char === ")") {
+      counter--;
+    }
+  }
+  return counter;
 }

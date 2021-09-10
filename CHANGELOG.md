@@ -1,5 +1,13 @@
 ## Release Notes
 
+## [2.2.8]
+
+### Fixed
+
+- Fixed initial parsing of files when opening an empty project (fixes #106).
+- Fixed an issue where `this` autocompletion wouldn't work properly after a certain amount of lines of code (fixes #107).
+- Fixed an issue where GoToDefinition and Hover wouldn't work for local variables of enum structs' methods.
+
 ## [2.2.7]
 
 ### Added
