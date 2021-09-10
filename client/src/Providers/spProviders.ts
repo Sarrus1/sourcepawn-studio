@@ -279,7 +279,7 @@ export class Providers {
       let allItems = this.itemsRepository.getAllItems(document.uri.toString());
       let lastFuncName = GetLastFuncName(position, document);
       let newPos = new Position(1, croppedLine.length);
-      let lastEnumStruct = getLastEnumStructName(position, document);
+      let lastEnumStruct = getLastEnumStructName(position, document, allItems);
       let type = this.itemsRepository.getTypeOfVariable(
         croppedLine,
         newPos,

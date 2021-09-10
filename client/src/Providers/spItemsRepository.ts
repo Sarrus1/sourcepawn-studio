@@ -207,7 +207,7 @@ export class ItemsRepository implements Disposable {
     let completionsList: CompletionList = new CompletionList();
     if (allItems !== []) {
       let lastFunc: string = GetLastFuncName(position, document);
-      let lastEnumStruct = getLastEnumStructName(position, document);
+      let lastEnumStruct = getLastEnumStructName(position, document, allItems);
       if (isMethod) {
         let variableType = this.getTypeOfVariable(
           line,
@@ -466,7 +466,11 @@ export class ItemsRepository implements Disposable {
     let word: string = document.getText(range);
     let allItems = this.getAllItems(document.uri.toString());
     let lastFunc: string = GetLastFuncName(position, document);
-    let lastEnumStruct: string = getLastEnumStructName(position, document);
+    let lastEnumStruct: string = getLastEnumStructName(
+      position,
+      document,
+      allItems
+    );
 
     if (lastEnumStruct !== globalIdentifier && lastFunc === globalIdentifier) {
       let items = allItems.filter(

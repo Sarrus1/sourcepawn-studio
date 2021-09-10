@@ -228,9 +228,23 @@ class Parser {
       /^\s*(\bwhile\b|\belse\b|\bif\b|\bswitch\b|\bcase\b|\bdo\b)/
     );
     if (match) {
+      // Check if we are still in the conditionnal of the control statement
+      // for example, an if statement's conditionnal can span over several lines
+      // and call functions
+      let parenthesisNB = parentCounter(line);
+      let lineCounter = 0;
+      let iter = 0;
+      while (parenthesisNB !== 0 && iter < 100) {
+        iter++;
+        line = this.lines[lineCounter];
+        lineCounter++;
+        parenthesisNB += parentCounter(line);
+      }
+      // Now we test if the statement uses brackets, as short code blocks are usually
+      // implemented without them.
       if (!/\{\s*$/.test(line)) {
         // Test the next line if we didn't match
-        if (!/^\s*\{/.test(this.lines[0])) {
+        if (!/^\s*\{/.test(this.lines[lineCounter])) {
           return;
         }
       }
@@ -939,4 +953,16 @@ function getParamsFromDeclaration(decl: string): FunctionParam[] {
 
 function isSingleLineFunction(line: string) {
   return /\{.*\}\s*$/.test(line);
+}
+
+function parentCounter(line: string): number {
+  let counter = 0;
+  for (let char of line) {
+    if (char === "(") {
+      counter++;
+    } else if (char === ")") {
+      counter--;
+    }
+  }
+  return counter;
 }
