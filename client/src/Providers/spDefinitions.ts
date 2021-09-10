@@ -4,28 +4,18 @@ import { SPItem } from "./spItems";
 
 export function GetLastFuncName(
   position: Position,
-  document: TextDocument
+  document: TextDocument,
+  allItems: SPItem[]
 ): string {
-  let lineNB = position.line;
-  let re = /(?:static|native|stock|public|forward)?\s*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*([A-Za-z_]*)\s*\(([^\)]*)(?:\)?)(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/;
-  let text = document.getText().split("\n");
-  let Match;
-  let line: string;
-  for (lineNB; lineNB > -1; lineNB--) {
-    line = text[lineNB];
-    if (line.match(/^\}/)) return globalIdentifier;
-    Match = line.match(re);
-    if (Match) {
-      let match = line.match(
-        /^\s*(?:(?:stock|public|forward|static|native)\s+)*(?:(\w*)\s+)?(\w*)\s*\(([^]*)(?:\)|,|{)\s*$/
-      );
-      if (match && !isControlStatement(line)) break;
-    }
-  }
-  if (lineNB == -1) return globalIdentifier;
-  let match = text[lineNB].match(re);
-  // Deal with old syntax here
-  return match[2] == "" ? match[1] : match[2];
+  let func = allItems.find(
+    (e) =>
+      [CompletionItemKind.Function, CompletionItemKind.Method].includes(
+        e.kind
+      ) &&
+      e.file === document.uri.fsPath &&
+      e.fullRange.contains(position)
+  );
+  return func != undefined ? func.name : globalIdentifier;
 }
 
 export function isFunction(

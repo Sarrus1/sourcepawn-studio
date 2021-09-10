@@ -277,7 +277,7 @@ export class Providers {
     if (match) {
       let methodName = match[1];
       let allItems = this.itemsRepository.getAllItems(document.uri.toString());
-      let lastFuncName = GetLastFuncName(position, document);
+      let lastFuncName = GetLastFuncName(position, document, allItems);
       let newPos = new Position(1, croppedLine.length);
       let lastEnumStruct = getLastEnumStructName(position, document, allItems);
       let type = this.itemsRepository.getTypeOfVariable(

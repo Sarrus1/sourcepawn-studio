@@ -206,7 +206,7 @@ export class ItemsRepository implements Disposable {
     let allItems: SPItem[] = this.getAllItems(document.uri.toString());
     let completionsList: CompletionList = new CompletionList();
     if (allItems !== []) {
-      let lastFunc: string = GetLastFuncName(position, document);
+      let lastFunc: string = GetLastFuncName(position, document, allItems);
       let lastEnumStruct = getLastEnumStructName(position, document, allItems);
       if (isMethod) {
         let variableType = this.getTypeOfVariable(
@@ -465,13 +465,14 @@ export class ItemsRepository implements Disposable {
     }
     let word: string = document.getText(range);
     let allItems = this.getAllItems(document.uri.toString());
-    let lastFunc: string = GetLastFuncName(position, document);
+    let lastFunc: string = GetLastFuncName(position, document, allItems);
     let lastEnumStruct: string = getLastEnumStructName(
       position,
       document,
       allItems
     );
-
+    // If we match a property or a method of an enum struct
+    // but not a local scopped variable inside an enum struct's method.
     if (lastEnumStruct !== globalIdentifier && lastFunc === globalIdentifier) {
       let items = allItems.filter(
         (item) =>
