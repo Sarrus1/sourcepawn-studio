@@ -108,9 +108,11 @@ export function activate(context: ExtensionContext) {
   }
 
   // Load the currently opened file
-  providers.handle_document_opening(
-    window.activeTextEditor.document.uri.fsPath
-  );
+  if (window.activeTextEditor !== undefined) {
+    providers.handle_document_opening(
+      window.activeTextEditor.document.uri.fsPath
+    );
+  }
   window.onDidChangeActiveTextEditor((e) =>
     providers.handle_document_opening(e.document.uri.fsPath)
   );

@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.2.8]
+
+### Fixed
+
+- Fixed initial parsing of files when opening an empty project (fixes #106).
+
 ## [2.2.7]
 
 ### Added
