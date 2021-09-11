@@ -529,7 +529,9 @@ export class ItemsRepository implements Disposable {
     if (bIsFunction) {
       items = allItems.filter(
         (item) =>
-          item.kind === CompletionItemKind.Function && item.name === word
+          [CompletionItemKind.Function, CompletionItemKind.Interface].includes(
+            item.kind
+          ) && item.name === word
       );
       return items;
     }

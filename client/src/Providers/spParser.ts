@@ -59,6 +59,7 @@ enum State {
   Property,
   Function,
   Loop,
+  Macro,
 }
 
 class Parser {
@@ -75,6 +76,7 @@ class Parser {
   lastFuncName: string;
   definesMap: Map<string, string>;
   enumMemberMap: Map<string, string>;
+  macroArr: string[];
   itemsRepository: ItemsRepository;
 
   constructor(
@@ -93,14 +95,14 @@ class Parser {
     this.documents = itemsRepository.documents;
     this.lastFuncLine = 0;
     this.lastFuncName = "";
-    this.definesMap = this.getAllMembers(
-      itemsRepository,
-      CompletionItemKind.Constant
-    );
+    // Get all the items from the itemsRepository for this file
+    let items = itemsRepository.getAllItems(URI.file(this.file).toString());
+    this.definesMap = this.getAllMembers(items, CompletionItemKind.Constant);
     this.enumMemberMap = this.getAllMembers(
-      itemsRepository,
+      items,
       CompletionItemKind.EnumMember
     );
+    this.macroArr = this.getAllMacros(items);
     this.itemsRepository = itemsRepository;
   }
 
@@ -299,6 +301,7 @@ class Parser {
           State.EnumStruct,
           State.Property,
           State.Loop,
+          State.Macro,
         ].includes(state)
       ) {
         // We are in a regular function
@@ -324,13 +327,15 @@ class Parser {
   readMacro(match: RegExpMatchArray, line: string): void {
     let { description, params } = this.parse_doc_comment();
     let nameMatch = match[1];
-    let paramsMatch = match[2];
+    let details = `${nameMatch}(${match[2]})`;
     let range = this.makeDefinitionRange(nameMatch, line);
+    // Add the macro to the array of known macros
+    this.macroArr.push(nameMatch);
     this.completions.add(
       nameMatch,
       new MacroItem(
         nameMatch,
-        paramsMatch,
+        details,
         description,
         params,
         this.file,
@@ -565,6 +570,40 @@ class Parser {
     if (match) {
       let { description, params } = this.parse_doc_comment();
       let nameMatch = match[2];
+      // Stop if it's a macro being called
+      if (this.macroArr.length > 0) {
+        let tmpStr = "";
+        if (this.macroArr.length > 1) {
+          tmpStr = `\\b(?:${this.macroArr.join("|")})\\b`;
+        } else {
+          tmpStr = `\\b(?:${this.macroArr[0]})\\b`;
+        }
+        let macroRe = new RegExp(tmpStr);
+        if (macroRe.test(nameMatch)) {
+          // Check if we are still in the conditionnal of the control statement
+          // for example, an if statement's conditionnal can span over several lines
+          // and call functions
+          let parenthesisNB = parentCounter(line);
+          let lineCounter = 0;
+          let iter = 0;
+          while (parenthesisNB !== 0 && iter < 100) {
+            iter++;
+            line = this.lines[lineCounter];
+            lineCounter++;
+            parenthesisNB += parentCounter(line);
+          }
+          // Now we test if the statement uses brackets, as short code blocks are usually
+          // implemented without them.
+          if (!/\{\s*$/.test(line)) {
+            // Test the next line if we didn't match
+            if (!/^\s*\{/.test(this.lines[lineCounter])) {
+              return;
+            }
+          }
+          this.state.push(State.Macro);
+          return;
+        }
+      }
       let lineMatch = this.lineNb;
       let type = match[1];
       let paramsMatch = match[3];
@@ -682,8 +721,8 @@ class Parser {
     let description = (() => {
       let lines = [];
       for (let line of this.scratch) {
-        //Check if @return or @error
         if (/^\s*\/\*\*\s*/.test(line)) {
+          //Check if @return or @error
           continue;
         }
 
@@ -884,11 +923,10 @@ class Parser {
   }
 
   getAllMembers(
-    itemsRepository: ItemsRepository,
+    items: SPItem[],
     kind: CompletionItemKind
   ): Map<string, string> {
-    let items = itemsRepository.getAllItems(URI.file(this.file).toString());
-    if (typeof items === "undefined") {
+    if (items == undefined) {
       return new Map();
     }
     let defines = new Map();
@@ -911,6 +949,19 @@ class Parser {
       }
     }
     return defines;
+  }
+
+  getAllMacros(items: SPItem[]): string[] {
+    if (items == undefined) {
+      return [];
+    }
+    let arr: string[] = [];
+    for (let e of items) {
+      if (e.kind === CompletionItemKind.Interface) {
+        arr.push(e.name);
+      }
+    }
+    return arr;
   }
 
   addFullRange(key: string) {
@@ -979,6 +1030,9 @@ function isSingleLineFunction(line: string) {
 
 function parentCounter(line: string): number {
   let counter = 0;
+  if (line == null) {
+    return 0;
+  }
   for (let char of line) {
     if (char === "(") {
       counter++;

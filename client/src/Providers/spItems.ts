@@ -86,7 +86,7 @@ export class FunctionItem implements SPItem {
 
   toSignature(): SignatureInformation {
     return {
-      label: `${this.name}(${this.detail})`,
+      label: this.detail,
       documentation: descriptionToMD(this.description),
       parameters: this.params,
     };
@@ -128,7 +128,9 @@ export class FunctionItem implements SPItem {
   }
 }
 
-export class MacroItem extends FunctionItem {}
+export class MacroItem extends FunctionItem {
+  kind = CompletionItemKind.Interface;
+}
 
 export class MethodMapItem implements SPItem {
   name: string;
