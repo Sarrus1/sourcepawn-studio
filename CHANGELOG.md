@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.3.0]
+
+### Added
+
+- Added support for macros.
+
 ## [2.2.8]
 
 ### Fixed

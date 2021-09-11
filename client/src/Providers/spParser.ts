@@ -1,6 +1,7 @@
 import { ItemsRepository, FileItems } from "./spItemsRepository";
 import {
   FunctionItem,
+  MacroItem,
   DefineItem,
   EnumItem,
   EnumMemberItem,
@@ -23,7 +24,6 @@ import { existsSync, readFileSync } from "fs";
 import { basename } from "path";
 import { URI } from "vscode-uri";
 import { globalIdentifier } from "./spGlobalIdentifier";
-import { cpuUsage } from "process";
 
 export function parseFile(
   file: string,
@@ -124,6 +124,12 @@ class Parser {
       this.read_define(match, line);
       // Re-read the line now that define has been added to the array.
       this.searchForDefinesInString(line);
+      return;
+    }
+
+    match = line.match(/^\s*#define\s+(\w+)\s*\(([^\)]*)\)/);
+    if (match) {
+      this.readMacro(match, line);
       return;
     }
 
@@ -305,7 +311,7 @@ class Parser {
     return;
   }
 
-  read_define(match, line: string) {
+  read_define(match: RegExpMatchArray, line: string): void {
     this.definesMap.set(match[1], this.file);
     let range = this.makeDefinitionRange(match[1], line);
     this.completions.add(
@@ -315,7 +321,28 @@ class Parser {
     return;
   }
 
-  read_include(match) {
+  readMacro(match: RegExpMatchArray, line: string): void {
+    let { description, params } = this.parse_doc_comment();
+    let nameMatch = match[1];
+    let paramsMatch = match[2];
+    let range = this.makeDefinitionRange(nameMatch, line);
+    this.completions.add(
+      nameMatch,
+      new MacroItem(
+        nameMatch,
+        paramsMatch,
+        description,
+        params,
+        this.file,
+        this.IsBuiltIn,
+        range,
+        "",
+        undefined
+      )
+    );
+  }
+
+  read_include(match: RegExpMatchArray) {
     // Include guard to avoid extension crashs.
     if (IsIncludeSelfFile(this.file, match[1])) return;
     this.completions.resolve_import(match[1], this.documents, this.IsBuiltIn);
