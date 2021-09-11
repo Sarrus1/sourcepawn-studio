@@ -128,6 +128,10 @@ export class FunctionItem implements SPItem {
   }
 }
 
+export class MacroItem extends FunctionItem {
+  kind = CompletionItemKind.Interface;
+}
+
 export class MethodMapItem implements SPItem {
   name: string;
   parent: string;

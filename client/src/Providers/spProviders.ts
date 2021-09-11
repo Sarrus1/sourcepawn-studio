@@ -336,7 +336,10 @@ export class Providers {
       .getAllItems(document.uri.toString())
       .find(
         (item) =>
-          item.name === match[1] && item.kind === CompletionItemKind.Function
+          item.name === match[1] &&
+          [CompletionItemKind.Function, CompletionItemKind.Interface].includes(
+            item.kind
+          )
       );
     if (typeof item === "undefined") {
       return blankReturn;
