@@ -733,38 +733,39 @@ class Parser {
       return lines.join(" ");
     })();
 
-    const paramRegex = /@param\s+([A-Za-z0-9_\.]+)\s+(.*)/;
+    const paramRegex = /@param\s+([\w\.]+)\s+(.*)/;
     let params = (() => {
       let params = [];
-      let current_param;
+      let currentParam = undefined;
       for (let line of this.scratch) {
         let match = line.match(paramRegex);
         if (match) {
-          if (current_param) {
-            current_param.documentation = current_param.documentation.join(" ");
-            params.push(current_param);
+          // If the param documentation spans over multiple lines, deal with it here.
+          if (currentParam) {
+            currentParam.documentation = currentParam.documentation.join(" ");
+            params.push(currentParam);
+            currentParam = undefined;
           }
-
-          current_param = { label: match[1], documentation: [match[2]] };
+          currentParam = { label: match[1], documentation: [match[2]] };
         } else {
           if (!/@(?:return|error)/.test(line)) {
             let match = line.match(/\s*(?:\*|\/\/)\s*(.*)/);
             if (match) {
-              if (current_param) {
-                current_param.documentation.push(match[1]);
+              if (currentParam) {
+                currentParam.documentation.push(match[1]);
               }
             }
           } else {
-            if (current_param) {
-              current_param.documentation = current_param.documentation.join(
-                " "
-              );
-              params.push(current_param);
-
-              current_param = undefined;
+            if (currentParam != undefined) {
+              currentParam.documentation.push(line);
             }
           }
         }
+      }
+      // Add the last param
+      if (currentParam != undefined) {
+        currentParam.documentation = currentParam.documentation.join(" ");
+        params.push(currentParam);
       }
 
       return params;
