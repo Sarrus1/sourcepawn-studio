@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fixed a small syntax highlighting issue.
+- Fixed incorrect function call parsing.
 
 ## [2.3.1]
 
