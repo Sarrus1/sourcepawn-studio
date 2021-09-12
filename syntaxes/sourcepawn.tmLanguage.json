@@ -427,7 +427,7 @@
     },
     {
       "comment": "Match the rest as types",
-      "match": "^\\w+",
+      "match": "^\\w+\\s*(?<!,\\[;)\\s*$",
       "name": "support.type.sourcepawn"
     },
     {

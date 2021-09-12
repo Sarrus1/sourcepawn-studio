@@ -1,5 +1,13 @@
 ## Release Notes
 
+## [2.3.2]
+
+### Fixed
+
+- Fixed a small syntax highlighting issue.
+- Fixed incorrect function call parsing.
+- Fixed double function call parsing.
+
 ## [2.3.1]
 
 ### Fixed
