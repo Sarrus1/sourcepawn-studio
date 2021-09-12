@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.3.2]
+
+### Fixed
+
+- Fixed a small syntax highlighting issue.
+
 ## [2.3.1]
 
 ### Fixed
