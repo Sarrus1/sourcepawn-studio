@@ -6,6 +6,7 @@
 
 - Fixed an undefined call error.
 - Fixed an error that would compromise the parsing of functions located right under enum structs or methodmaps (see #110).
+- Fixed description parsing for some function's description.
 
 ## [2.3.0]
 

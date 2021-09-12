@@ -745,24 +745,29 @@ class Parser {
       for (let line of this.scratch) {
         let match = line.match(paramRegex);
         if (match) {
-          // If the param documentation spans over multiple lines, deal with it here.
+          // Check if we already have a param description in the buffer.
+          // If yes, save it.
           if (currentParam) {
             currentParam.documentation = currentParam.documentation.join(" ");
             params.push(currentParam);
-            currentParam = undefined;
           }
           currentParam = { label: match[1], documentation: [match[2]] };
         } else {
-          if (!/@(?:return|error)/.test(line)) {
-            let match = line.match(/\s*(?:\*|\/\/)\s*(.*)/);
-            if (match) {
-              if (currentParam) {
-                currentParam.documentation.push(match[1]);
-              }
+          // Check if it's a return or error description.
+          if (/@(?:return|error)/.test(line)) {
+            // Check if we already have a param description in the buffer.
+            // If yes, save it.
+            if (currentParam != undefined) {
+              currentParam.documentation = currentParam.documentation.join(" ");
+              params.push(currentParam);
+              currentParam = undefined;
             }
           } else {
-            if (currentParam != undefined) {
-              currentParam.documentation.push(line);
+            // Check if we already have a param description in the buffer.
+            // If yes, append the new line to it.
+            let match = line.match(/\s*(?:\*|\/\/)\s*(.*)/);
+            if (match && currentParam) {
+              currentParam.documentation.push(match[1]);
             }
           }
         }
