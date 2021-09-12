@@ -645,6 +645,13 @@ class Parser {
       if (endSymbol === null) {
         return;
       }
+
+      // We can't declare a function inside a function, this is a call.
+      // cancel the parsing
+      if (this.state[this.state.length - 1] === State.Function) {
+        return;
+      }
+
       if (isNativeOrForward) {
         if (endSymbol[1] === "{") return;
       } else {
