@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.3.1]
+
+### Fixed
+
+- Fixed an undefined call error.
+
 ## [2.3.0]
 
 ### Added

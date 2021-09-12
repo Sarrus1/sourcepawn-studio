@@ -13,6 +13,7 @@ export function GetLastFuncName(
         e.kind
       ) &&
       e.file === document.uri.fsPath &&
+      e.fullRange != undefined &&
       e.fullRange.contains(position)
   );
   return func != undefined ? func.name : globalIdentifier;
@@ -56,6 +57,7 @@ export function getLastEnumStructName(
     (e) =>
       e.kind === CompletionItemKind.Struct &&
       e.file === document.uri.fsPath &&
+      e.fullRange != undefined &&
       e.fullRange.contains(position)
   );
   return enumStruct != undefined ? enumStruct.name : globalIdentifier;
