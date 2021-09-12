@@ -1,5 +1,13 @@
 ## Release Notes
 
+## [2.3.1]
+
+### Fixed
+
+- Fixed an undefined call error.
+- Fixed an error that would compromise the parsing of functions located right under enum structs or methodmaps (see #110).
+- Fixed description parsing for some function's description.
+
 ## [2.3.0]
 
 ### Added
@@ -10,8 +18,8 @@
 
 ### Fixed
 
-- Fixed initial parsing of files when opening an empty project (fixes #106).
-- Fixed an issue where `this` autocompletion wouldn't work properly after a certain amount of lines of code (fixes #107).
+- Fixed initial parsing of files when opening an empty project (see #106).
+- Fixed an issue where `this` autocompletion wouldn't work properly after a certain amount of lines of code (see #107).
 - Fixed an issue where GoToDefinition and Hover wouldn't work for local variables of enum structs' methods.
 
 ## [2.2.7]

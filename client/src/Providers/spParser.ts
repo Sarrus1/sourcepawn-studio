@@ -164,7 +164,7 @@ class Parser {
 
     // Match for loop iteration variable only in the current file
     match = line.match(/^\s*(?:for\s*\(\s*int\s+)([A-Za-z0-9_]*)/);
-    if (match && !this.IsBuiltIn) {
+    if (match) {
       this.read_loop_variables(match, line);
       return;
     }
@@ -289,9 +289,11 @@ class Parser {
       } else if (state === State.Methodmap && this.state_data !== undefined) {
         // We are in a methodmap
         this.addFullRange(this.state_data.name);
+        this.state_data = undefined;
       } else if (state === State.EnumStruct && this.state_data !== undefined) {
         // We are in an enum struct
         this.addFullRange(this.state_data.name);
+        this.state_data = undefined;
       } else if (state === State.Property && this.state_data !== undefined) {
         // We are in a property
         this.addFullRange(this.lastFuncName + this.state_data.name);
@@ -445,6 +447,9 @@ class Parser {
 
   read_loop_variables(match, line: string) {
     this.state.push(State.Loop);
+    if (this.IsBuiltIn) {
+      return;
+    }
     this.AddVariableCompletion(match[1], line, "int");
     return;
   }
@@ -740,24 +745,29 @@ class Parser {
       for (let line of this.scratch) {
         let match = line.match(paramRegex);
         if (match) {
-          // If the param documentation spans over multiple lines, deal with it here.
+          // Check if we already have a param description in the buffer.
+          // If yes, save it.
           if (currentParam) {
             currentParam.documentation = currentParam.documentation.join(" ");
             params.push(currentParam);
-            currentParam = undefined;
           }
           currentParam = { label: match[1], documentation: [match[2]] };
         } else {
-          if (!/@(?:return|error)/.test(line)) {
-            let match = line.match(/\s*(?:\*|\/\/)\s*(.*)/);
-            if (match) {
-              if (currentParam) {
-                currentParam.documentation.push(match[1]);
-              }
+          // Check if it's a return or error description.
+          if (/@(?:return|error)/.test(line)) {
+            // Check if we already have a param description in the buffer.
+            // If yes, save it.
+            if (currentParam != undefined) {
+              currentParam.documentation = currentParam.documentation.join(" ");
+              params.push(currentParam);
+              currentParam = undefined;
             }
           } else {
-            if (currentParam != undefined) {
-              currentParam.documentation.push(line);
+            // Check if we already have a param description in the buffer.
+            // If yes, append the new line to it.
+            let match = line.match(/\s*(?:\*|\/\/)\s*(.*)/);
+            if (match && currentParam) {
+              currentParam.documentation.push(match[1]);
             }
           }
         }
