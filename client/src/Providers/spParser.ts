@@ -615,7 +615,7 @@ class Parser {
       this.AddParamsDef(paramsMatch, nameMatch, line);
       // Iteration safety in case something goes wrong
       let maxiter = 0;
-      let matchEndRegex: RegExp = /(\{|\;)/;
+      let matchEndRegex: RegExp = /(\{|\;)\s*(?:(?:\/\/|\/\*)(?:.*))?$/;
       let isNativeOrForward = /\bnative\b|\bforward\b/.test(match[0]);
       let matchEnd = matchEndRegex.test(line);
       let matchLastParenthesis = /\)/.test(paramsMatch);
@@ -646,9 +646,9 @@ class Parser {
         return;
       }
       if (isNativeOrForward) {
-        if (endSymbol[0] === "{") return;
+        if (endSymbol[1] === "{") return;
       } else {
-        if (endSymbol[0] === ";") {
+        if (endSymbol[1] === ";") {
           return;
         } else if (!isSingleLineFunction(line)) {
           this.state.push(State.Function);
