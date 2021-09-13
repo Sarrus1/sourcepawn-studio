@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fixed clang-format support (Fixed by [DarklSide](https://github.com/DarklSide)).
+- Fixed comments staying in the buffer for too long (see #117).
 
 ## [2.3.2]
 

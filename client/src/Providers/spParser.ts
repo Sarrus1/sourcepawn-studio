@@ -313,6 +313,8 @@ class Parser {
       return;
     }
 
+    // Reset the comments buffer
+    this.scratch = [];
     return;
   }
 
@@ -788,6 +790,8 @@ class Parser {
       return params;
     })();
 
+    // Reset the comments buffer
+    this.scratch = [];
     return { description, params };
   }
 
