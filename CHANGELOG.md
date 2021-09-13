@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.3.3]
+
+### Fixed
+
+- Fixed clang-format support (Fixed by [DarklSide](https://github.com/DarklSide)).
+
 ## [2.3.2]
 
 ### Fixed
