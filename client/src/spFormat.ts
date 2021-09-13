@@ -136,20 +136,13 @@ export class SMDocumentFormattingEditProvider
 
 function fixFormatting(text: string): string {
   // clang-format gets confused with 'public' so we have to replace it manually.
-  text = text.replace(/^ *public\s*\n/gm, "public ");
+  text = text.replace(/(^[ \t]*public)[\s*\n]+(\w+)[\s*\n]+(\w+)/gm, "$1 $2 $3");
 
   // clang-format also messes up the myinfo array.
   text = text.replace(
-    /^(\s*public\s+Plugin\s+myinfo\s*=)\s*(\{(?:\s*\w+\s*=\s*["'A-Za-z_0-9.\/:]+,?)+)\s*(\}\;)/m,
+    /(public\s+Plugin\s+myinfo\s*=)\s*(\{[^}{]+)(\})/m,
     "$1\n$2\n$3"
   );
-  let lines: string[] = text.split("\n");
-  let lineNb: number = lines.findIndex(
-    (value: string) => value === "public Plugin myinfo ="
-  );
-  for (let i: number = lineNb + 2; i <= lineNb + 6; i++) {
-    lines[i] = lines[i].replace(/^\s*/, "\t");
-  }
-  text = lines.join("\n");
+
   return text;
 }
