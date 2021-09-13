@@ -108,7 +108,7 @@ export function activate(context: ExtensionContext) {
   }
 
   // Load the currently opened file
-  if (window.activeTextEditor !== undefined) {
+  if (window.activeTextEditor != undefined) {
     providers.handle_document_opening(
       window.activeTextEditor.document.uri.fsPath
     );
