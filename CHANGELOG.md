@@ -6,6 +6,7 @@
 
 - Fixed clang-format support (Fixed by [DarklSide](https://github.com/DarklSide)).
 - Fixed comments staying in the buffer for too long (see #117).
+- Improved BUG issues templates (see #116).
 
 ## [2.3.2]
 

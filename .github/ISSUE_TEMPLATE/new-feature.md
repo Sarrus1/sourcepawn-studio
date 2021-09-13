@@ -1,10 +1,9 @@
 ---
 name: Suggestion
 about: Have a suggestion? Propose it here.
-title: "[Suggestion]"
-labels: 'enhancement'
-assignees: 'Sarrus1'
-
+title: ""
+labels: "enhancement"
+assignees: "Sarrus1"
 ---
 
 ## Feature description
