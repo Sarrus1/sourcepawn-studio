@@ -248,10 +248,12 @@ export class ItemsRepository implements Disposable {
           )
         ) {
           if (!existingNames.includes(item.name)) {
-            completionsList.items.push(
-              item.toCompletionItem(document.uri.fsPath, lastFunc)
-            );
-            existingNames.push(item.name);
+            // Make sure we don't add a variable to existingNames if it's not in the scope of the current function.
+            let newItem = item.toCompletionItem(document.uri.fsPath, lastFunc);
+            if (newItem !== undefined) {
+              completionsList.items.push(newItem);
+              existingNames.push(item.name);
+            }
           }
         }
       }

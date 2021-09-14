@@ -397,10 +397,7 @@ export class VariableItem implements SPItem {
           kind: this.kind,
         };
       }
-      return {
-        label: "",
-        kind: this.kind,
-      };
+      return undefined;
     } else {
       return {
         label: this.name,

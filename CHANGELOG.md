@@ -6,6 +6,7 @@
 
 - Fixed clang-format support (Fixed by [DarklSide](https://github.com/DarklSide)).
 - Fixed comments staying in the buffer for too long (see #117).
+- Fixed missing scopped variables in suggestions.
 - Improved BUG issues templates (see #116).
 - Improved JSDoc completions provider.
 
