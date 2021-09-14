@@ -78,6 +78,7 @@ class Parser {
   enumMemberMap: Map<string, string>;
   macroArr: string[];
   itemsRepository: ItemsRepository;
+  debugging: boolean;
 
   constructor(
     lines: string[],
@@ -104,6 +105,10 @@ class Parser {
     );
     this.macroArr = this.getAllMacros(items);
     this.itemsRepository = itemsRepository;
+    let debugSetting = Workspace.getConfiguration("sourcepawn").get(
+      "trace.server"
+    );
+    this.debugging = debugSetting == "messages" || debugSetting == "verbose";
   }
 
   parse() {
@@ -228,7 +233,14 @@ class Parser {
       if (this.state.includes(State.Methodmap)) {
         this.state.push(State.Property);
       }
-      this.read_property(match, line);
+      try {
+        this.read_property(match, line);
+      } catch (e) {
+        console.error(e);
+        if (this.debugging) {
+          console.error(`At line ${this.lineNb} of ${this.file}`);
+        }
+      }
       return;
     }
 
@@ -564,7 +576,7 @@ class Parser {
     if (typeof line === "undefined") {
       return;
     }
-    let newSyntaxRe: RegExp = /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))\s*/;
+    let newSyntaxRe: RegExp = /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))?\s*/;
     let match: RegExpMatchArray = line.match(newSyntaxRe);
     if (!match) {
       match = line.match(
@@ -613,7 +625,7 @@ class Parser {
       }
       let lineMatch = this.lineNb;
       let type = match[1];
-      let paramsMatch = match[3];
+      let paramsMatch = match[3] === undefined ? "" : match[3];
       this.AddParamsDef(paramsMatch, nameMatch, line);
       // Iteration safety in case something goes wrong
       let maxiter = 0;
