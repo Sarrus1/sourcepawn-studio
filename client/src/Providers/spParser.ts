@@ -1030,7 +1030,7 @@ function IsIncludeSelfFile(file: string, include: string): boolean {
   return false;
 }
 
-function getParamsFromDeclaration(decl: string): FunctionParam[] {
+export function getParamsFromDeclaration(decl: string): FunctionParam[] {
   let match = decl.match(/\((.+)\)/);
   if (!match) {
     return [];
