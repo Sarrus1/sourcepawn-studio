@@ -21,7 +21,7 @@ import {
   workspace as Workspace,
 } from "vscode";
 import { existsSync, readFileSync } from "fs";
-import { basename } from "path";
+import { basename, resolve, dirname } from "path";
 import { URI } from "vscode-uri";
 import { globalIdentifier } from "./spGlobalIdentifier";
 
@@ -31,8 +31,18 @@ export function parseFile(
   itemsRepository: ItemsRepository,
   IsBuiltIn: boolean = false
 ) {
-  if (!existsSync(file)) return;
+  if (!existsSync(file)) {
+    return;
+  }
   let data = readFileSync(file, "utf-8");
+
+  // Test for symbolic links
+  let match = data.match(/^(?:\.\.\/)+(?:[\/\w\-])+\.\w+/);
+  if (match !== null) {
+    let folderpath = dirname(file);
+    file = resolve(folderpath, match[0]);
+    data = readFileSync(file, "utf-8");
+  }
   parseText(data, file, completions, itemsRepository, IsBuiltIn);
 }
 
@@ -71,13 +81,14 @@ class Parser {
   lineNb: number;
   file: string;
   IsBuiltIn: boolean;
-  documents: Map<string, string>;
+  documents: Set<string>;
   lastFuncLine: number;
   lastFuncName: string;
   definesMap: Map<string, string>;
   enumMemberMap: Map<string, string>;
   macroArr: string[];
   itemsRepository: ItemsRepository;
+  debugging: boolean;
 
   constructor(
     lines: string[],
@@ -104,6 +115,10 @@ class Parser {
     );
     this.macroArr = this.getAllMacros(items);
     this.itemsRepository = itemsRepository;
+    let debugSetting = Workspace.getConfiguration("sourcepawn").get(
+      "trace.server"
+    );
+    this.debugging = debugSetting == "messages" || debugSetting == "verbose";
   }
 
   parse() {
@@ -228,7 +243,14 @@ class Parser {
       if (this.state.includes(State.Methodmap)) {
         this.state.push(State.Property);
       }
-      this.read_property(match, line);
+      try {
+        this.read_property(match, line);
+      } catch (e) {
+        console.error(e);
+        if (this.debugging) {
+          console.error(`At line ${this.lineNb} of ${this.file}`);
+        }
+      }
       return;
     }
 
@@ -313,6 +335,8 @@ class Parser {
       return;
     }
 
+    // Reset the comments buffer
+    this.scratch = [];
     return;
   }
 
@@ -562,7 +586,7 @@ class Parser {
     if (typeof line === "undefined") {
       return;
     }
-    let newSyntaxRe: RegExp = /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))\s*/;
+    let newSyntaxRe: RegExp = /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*(?:\s*\[[\w \+\-\*]*\]\s*)?)\s+)?(\w*)\s*\((.*(?:\)|,|{))?\s*/;
     let match: RegExpMatchArray = line.match(newSyntaxRe);
     if (!match) {
       match = line.match(
@@ -609,17 +633,20 @@ class Parser {
           return;
         }
       }
+
       let lineMatch = this.lineNb;
       let type = match[1];
-      let paramsMatch = match[3];
+      let paramsMatch = match[3] === undefined ? "" : match[3];
       this.AddParamsDef(paramsMatch, nameMatch, line);
       // Iteration safety in case something goes wrong
       let maxiter = 0;
       let matchEndRegex: RegExp = /(\{|\;)\s*(?:(?:\/\/|\/\*)(?:.*))?$/;
       let isNativeOrForward = /\bnative\b|\bforward\b/.test(match[0]);
       let matchEnd = matchEndRegex.test(line);
-      let matchLastParenthesis = /\)/.test(paramsMatch);
+      let pCount = getParenthesisCount(line);
+      let matchLastParenthesis = pCount === 0;
       let range = this.makeDefinitionRange(nameMatch, line);
+
       while (
         !(matchLastParenthesis && matchEnd) &&
         typeof line != "undefined" &&
@@ -632,9 +659,14 @@ class Parser {
           this.AddParamsDef(line, nameMatch, line);
           this.searchForDefinesInString(line);
           paramsMatch += line;
-          matchLastParenthesis = /\)/.test(paramsMatch);
+          pCount += getParenthesisCount(line);
+          matchLastParenthesis = pCount === 0;
         }
         if (!matchEnd) {
+          if (matchLastParenthesis && /\,\s*$/.test(paramsMatch)) {
+            // If the statement ends with a comma, we are in an array declaration
+            return;
+          }
           matchEnd = matchEndRegex.test(line);
         }
       }
@@ -655,7 +687,7 @@ class Parser {
       if (isNativeOrForward) {
         if (endSymbol[1] === "{") return;
       } else {
-        if (endSymbol[1] === ";") {
+        if (endSymbol[1] === ";" || endSymbol[1] === ",") {
           return;
         } else if (!isSingleLineFunction(line)) {
           this.state.push(State.Function);
@@ -788,6 +820,8 @@ class Parser {
       return params;
     })();
 
+    // Reset the comments buffer
+    this.scratch = [];
     return { description, params };
   }
 
@@ -1026,7 +1060,7 @@ function IsIncludeSelfFile(file: string, include: string): boolean {
   return false;
 }
 
-function getParamsFromDeclaration(decl: string): FunctionParam[] {
+export function getParamsFromDeclaration(decl: string): FunctionParam[] {
   let match = decl.match(/\((.+)\)/);
   if (!match) {
     return [];
@@ -1059,4 +1093,20 @@ function parentCounter(line: string): number {
     }
   }
   return counter;
+}
+
+function getParenthesisCount(line: string): number {
+  let pCount = 0;
+  let inAString = false;
+  for (let i = 0; i < line.length; i++) {
+    let char = line[i];
+    if (char === "'" || char === '"') {
+      inAString = !inAString;
+    } else if (!inAString && char === "(") {
+      pCount++;
+    } else if (!inAString && char === ")") {
+      pCount--;
+    }
+  }
+  return pCount;
 }

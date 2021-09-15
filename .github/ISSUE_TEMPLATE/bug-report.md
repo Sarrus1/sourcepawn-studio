@@ -1,19 +1,17 @@
 ---
 name: Bug Report
 about: Found a bug? Raise a report.
-title: "[BUG]"
-labels: 'bug'
-project: '1'
-assignees: 'Sarrus1'
-
+title: ""
+labels: "bug"
+project: "1"
+assignees: "Sarrus1"
 ---
-
 
 ## Basic info
 
-* **OS:** [Windows]
-* **VSCode version:** [v1.44.0]
-* **Extension version:** [v1.12.0]
+- **OS:** [Windows]
+- **VSCode version:** Latest
+- **Extension version:** Latest
 
 ## Further Information
 
@@ -22,6 +20,7 @@ A clear description of what the bug is and any ideas on how to resolve it. Plus 
 ## To Reproduce
 
 Steps to reproduce the behaviour:
+
 1. Go to '...'
 2. Click on '....'
 3. Scroll down to '....'

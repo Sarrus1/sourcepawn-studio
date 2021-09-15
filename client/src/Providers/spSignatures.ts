@@ -33,6 +33,9 @@ export function getSignatureAttributes(
       if (lineNB >= 0) {
         lineNB--;
         line = lines[lineNB];
+        if (line == undefined) {
+          return blankReturn;
+        }
         i = line.length;
         continue;
       } else {

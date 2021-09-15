@@ -1,5 +1,24 @@
 ## Release Notes
 
+## [2.4.0]
+
+### Added
+
+- Added support for symbolic links.
+- Added GoToDefinition for includes.
+
+### Fixed
+
+- Fixed clang-format support (Fixed by [DarklSide](https://github.com/DarklSide)).
+- Fixed comments staying in the buffer for too long (see #117).
+- Fixed missing scopped variables in suggestions.
+- Fixed methodmaps' property parsing bug.
+- Improved include's path resolution, there should be less collisions if you have two files with the same name in the same project workspace.
+- Improved BUG issues templates (see #116).
+- Improved JSDoc completions provider.
+- Fixed functions which return an array not being parsed.
+- Fixed statements like sizeof being parsed as functions.
+
 ## [2.3.2]
 
 ### Fixed

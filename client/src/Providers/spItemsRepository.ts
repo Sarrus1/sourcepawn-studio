@@ -13,7 +13,13 @@ import {
 import { basename, join } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
-import { SPItem, Include, ConstantItem, KeywordItem } from "./spItems";
+import {
+  SPItem,
+  Include,
+  ConstantItem,
+  KeywordItem,
+  IncludeItem,
+} from "./spItems";
 import { defaultConstantItems, defaultKeywordsItems } from "./spDefaultItems";
 import { events } from "../Misc/sourceEvents";
 import {
@@ -66,7 +72,7 @@ export class FileItems {
 
   resolve_import(
     file: string,
-    documents: Map<string, string>,
+    documents: Set<string>,
     IsBuiltIn: boolean = false
   ) {
     let inc_file: string;
@@ -74,11 +80,15 @@ export class FileItems {
     if (!/.sp\s*$/g.test(file) && !/.inc\s*$/g.test(file)) {
       file += ".inc";
     }
-
-    let match = file.match(/include\/(.*)/);
-    if (match) file = match[1];
     let uri: string;
-    if (!(uri = documents.get(basename(file)))) {
+    //let fileBaseName = basename(file);
+    for (let parsedUri of documents.values()) {
+      if (parsedUri.includes(file)) {
+        uri = parsedUri;
+        break;
+      }
+    }
+    if (uri === undefined) {
       let includes_dirs: string[] = Workspace.getConfiguration(
         "sourcepawn"
       ).get("optionalIncludeDirsPaths");
@@ -98,12 +108,12 @@ export class FileItems {
 
 export class ItemsRepository implements Disposable {
   public completions: Map<string, FileItems>;
-  public documents: Map<string, string>;
+  public documents: Set<string>;
   private globalState: Memento;
 
   constructor(globalState?: Memento) {
     this.completions = new Map();
-    this.documents = new Map();
+    this.documents = new Set<string>();
     this.globalState = globalState;
   }
 
@@ -135,7 +145,7 @@ export class ItemsRepository implements Disposable {
     scriptingDirnames = scriptingDirnames.concat(includes_dirs);
     let items: CompletionItem[] = [];
     let cleanedUri: string;
-    for (let uri of this.documents.values()) {
+    for (let uri of this.documents) {
       if (uri.includes("file://__sourcemod_builtin/" + tempName)) {
         cleanedUri = uri.replace("file://__sourcemod_builtin/" + tempName, "");
         let match = cleanedUri.match(/([^\/]+\/)?/);
@@ -248,10 +258,12 @@ export class ItemsRepository implements Disposable {
           )
         ) {
           if (!existingNames.includes(item.name)) {
-            completionsList.items.push(
-              item.toCompletionItem(document.uri.fsPath, lastFunc)
-            );
-            existingNames.push(item.name);
+            // Make sure we don't add a variable to existingNames if it's not in the scope of the current function.
+            let newItem = item.toCompletionItem(document.uri.fsPath, lastFunc);
+            if (newItem !== undefined) {
+              completionsList.items.push(newItem);
+              existingNames.push(item.name);
+            }
           }
         }
       }
@@ -443,6 +455,35 @@ export class ItemsRepository implements Disposable {
     let isMethod: boolean = false;
     let isConstructor: boolean = false;
     let match: RegExpMatchArray;
+    // Check if include file
+    let includeLine = document.lineAt(position.line).text;
+    match = includeLine.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>/);
+    if (match === null) {
+      match = includeLine.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"/);
+    }
+    if (match !== null) {
+      let file: string = match[1];
+      let fileMatchLength = file.length;
+      let fileStartPos = includeLine.search(file);
+      // If no extension is provided, it's a .inc file
+      if (!/.sp\s*$/g.test(file) && !/.inc\s*$/g.test(file)) {
+        file += ".inc";
+      }
+      let defRange = new Range(
+        position.line,
+        fileStartPos,
+        position.line,
+        fileStartPos + fileMatchLength
+      );
+      let uri: string;
+      for (let parsedUri of this.documents.values()) {
+        if (parsedUri.includes(file)) {
+          uri = parsedUri;
+          break;
+        }
+      }
+      return [new IncludeItem(uri, defRange)];
+    }
     if (range.start.character > 1) {
       let newPosStart = new Position(
         range.start.line,

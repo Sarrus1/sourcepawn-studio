@@ -7,6 +7,8 @@
   Hover,
   DocumentSymbol,
   SymbolKind,
+  LocationLink,
+  workspace as Workspace,
 } from "vscode";
 import { descriptionToMD } from "../spUtils";
 import { globalIdentifier } from "./spGlobalIdentifier";
@@ -28,7 +30,7 @@ export interface SPItem {
   enumStructName?: string;
 
   toCompletionItem(file: string, lastFuncName?: string): CompletionItem;
-  toDefinitionItem(): Location;
+  toDefinitionItem(): LocationLink;
   toSignature(): SignatureInformation;
   toHover(): Hover;
   toDocumentSymbol?(): DocumentSymbol;
@@ -110,8 +112,11 @@ export class FunctionItem implements SPItem {
     ]);
   }
 
-  toDefinitionItem(): Location {
-    return new Location(URI.file(this.file), this.range);
+  toDefinitionItem(): LocationLink {
+    return {
+      targetRange: this.range,
+      targetUri: URI.file(this.file),
+    };
   }
 
   toDocumentSymbol(): DocumentSymbol {
@@ -173,8 +178,11 @@ export class MethodMapItem implements SPItem {
     };
   }
 
-  toDefinitionItem(): Location {
-    return new Location(URI.file(this.file), this.range);
+  toDefinitionItem(): LocationLink {
+    return {
+      targetRange: this.range,
+      targetUri: URI.file(this.file),
+    };
   }
 
   toSignature(): SignatureInformation {
@@ -261,8 +269,11 @@ export class MethodItem implements SPItem {
     };
   }
 
-  toDefinitionItem(): Location {
-    return new Location(URI.file(this.file), this.range);
+  toDefinitionItem(): LocationLink {
+    return {
+      targetRange: this.range,
+      targetUri: URI.file(this.file),
+    };
   }
 
   toSignature(): SignatureInformation {
@@ -340,8 +351,11 @@ export class DefineItem implements SPItem {
     };
   }
 
-  toDefinitionItem(): Location {
-    return new Location(URI.file(this.file), this.range);
+  toDefinitionItem(): LocationLink {
+    return {
+      targetRange: this.range,
+      targetUri: URI.file(this.file),
+    };
   }
 
   toSignature(): SignatureInformation {
@@ -397,10 +411,7 @@ export class VariableItem implements SPItem {
           kind: this.kind,
         };
       }
-      return {
-        label: "",
-        kind: this.kind,
-      };
+      return undefined;
     } else {
       return {
         label: this.name,
@@ -409,8 +420,11 @@ export class VariableItem implements SPItem {
     }
   }
 
-  toDefinitionItem(): Location {
-    return new Location(URI.file(this.file), this.range);
+  toDefinitionItem(): LocationLink {
+    return {
+      targetRange: this.range,
+      targetUri: URI.file(this.file),
+    };
   }
 
   toSignature(): SignatureInformation {
@@ -448,8 +462,11 @@ export class EnumItem implements SPItem {
     };
   }
 
-  toDefinitionItem(): Location {
-    return new Location(URI.file(this.file), this.range);
+  toDefinitionItem(): LocationLink {
+    return {
+      targetRange: this.range,
+      targetUri: URI.file(this.file),
+    };
   }
 
   toSignature(): SignatureInformation {
@@ -517,8 +534,11 @@ export class EnumMemberItem implements SPItem {
     };
   }
 
-  toDefinitionItem(): Location {
-    return new Location(URI.file(this.file), this.range);
+  toDefinitionItem(): LocationLink {
+    return {
+      targetRange: this.range,
+      targetUri: URI.file(this.file),
+    };
   }
 
   toSignature(): SignatureInformation {
@@ -567,8 +587,11 @@ export class EnumStructItem implements SPItem {
     };
   }
 
-  toDefinitionItem(): Location {
-    return new Location(URI.file(this.file), this.range);
+  toDefinitionItem(): LocationLink {
+    return {
+      targetRange: this.range,
+      targetUri: URI.file(this.file),
+    };
   }
 
   toSignature(): SignatureInformation {
@@ -637,8 +660,11 @@ export class EnumStructMemberItem implements SPItem {
     };
   }
 
-  toDefinitionItem(): Location {
-    return new Location(URI.file(this.file), this.range);
+  toDefinitionItem(): LocationLink {
+    return {
+      targetRange: this.range,
+      targetUri: URI.file(this.file),
+    };
   }
 
   toSignature(): SignatureInformation {
@@ -700,8 +726,11 @@ export class PropertyItem implements SPItem {
     };
   }
 
-  toDefinitionItem(): Location {
-    return new Location(URI.file(this.file), this.range);
+  toDefinitionItem(): LocationLink {
+    return {
+      targetRange: this.range,
+      targetUri: URI.file(this.file),
+    };
   }
 
   toSignature(): SignatureInformation {
@@ -717,6 +746,7 @@ export class PropertyItem implements SPItem {
       descriptionToMD(this.description),
     ]);
   }
+
   toDocumentSymbol(): DocumentSymbol {
     if (typeof this.fullRange === "undefined") {
       return undefined;
@@ -751,7 +781,7 @@ export class ConstantItem implements SPItem {
     };
   }
 
-  toDefinitionItem(): Location {
+  toDefinitionItem(): LocationLink {
     return undefined;
   }
 
@@ -761,6 +791,55 @@ export class ConstantItem implements SPItem {
 
   toHover(): Hover {
     return undefined;
+  }
+
+  toDocumentSymbol(): DocumentSymbol {
+    return undefined;
+  }
+}
+
+export class IncludeItem implements SPItem {
+  name: string;
+  kind = CompletionItemKind.File;
+  file: string;
+  defRange: Range;
+
+  constructor(uri: string, defRange: Range) {
+    this.name = basename(URI.file(uri).fsPath);
+    let smHome: string =
+      Workspace.getConfiguration("sourcepawn").get("SourcemodHome") || "";
+    uri = this.file = uri.replace(
+      "file://__sourcemod_builtin",
+      URI.file(smHome).toString()
+    );
+    this.defRange = defRange;
+  }
+
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: "",
+    };
+  }
+
+  toDefinitionItem(): LocationLink {
+    return {
+      originSelectionRange: this.defRange,
+      targetRange: new Range(0, 0, 0, 0),
+      targetUri: URI.parse(this.file),
+    };
+  }
+
+  toSignature(): SignatureInformation {
+    return undefined;
+  }
+
+  toHover(): Hover {
+    return new Hover(URI.parse(this.file).fsPath);
   }
 
   toDocumentSymbol(): DocumentSymbol {
@@ -786,7 +865,7 @@ export class KeywordItem implements SPItem {
     };
   }
 
-  toDefinitionItem(): Location {
+  toDefinitionItem(): LocationLink {
     return undefined;
   }
 
