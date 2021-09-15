@@ -16,6 +16,7 @@
 - Improved include's path resolution, there should be less collisions if you have two files with the same name in the same project workspace.
 - Improved BUG issues templates (see #116).
 - Improved JSDoc completions provider.
+- Fixed functions which return an array not being parsed.
 
 ## [2.3.2]
 

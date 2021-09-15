@@ -586,7 +586,7 @@ class Parser {
     if (typeof line === "undefined") {
       return;
     }
-    let newSyntaxRe: RegExp = /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))?\s*/;
+    let newSyntaxRe: RegExp = /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*(?:\s*\[[\w \+\-\*]*\]\s*)?)\s+)?(\w*)\s*\((.*(?:\)|,|{))?\s*/;
     let match: RegExpMatchArray = line.match(newSyntaxRe);
     if (!match) {
       match = line.match(
