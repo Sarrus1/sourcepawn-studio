@@ -42,10 +42,8 @@ export function activate(context: ExtensionContext) {
     );
 
     watcher.onDidCreate((uri) => {
-      providers.itemsRepository.documents.set(
-        basename(uri.fsPath),
-        URI.file(uri.fsPath).toString()
-      );
+      let uriString = URI.file(uri.fsPath).toString();
+      providers.itemsRepository.documents.add(uriString);
       let MainPath: string =
         Workspace.getConfiguration("sourcepawn").get("MainPath") || "";
       if (MainPath !== "") {
@@ -66,7 +64,7 @@ export function activate(context: ExtensionContext) {
       }
     });
     watcher.onDidDelete((uri) => {
-      providers.itemsRepository.documents.delete(basename(uri.fsPath));
+      providers.itemsRepository.documents.delete(uri.fsPath);
     });
   }
   if (typeof workspace != "undefined") {
@@ -191,10 +189,7 @@ function getDirectories(paths: string[], providers: Providers) {
   for (let path of paths) {
     let files = glob.sync(path.replace(/\/\s*$/, "") + "/**/*.{inc,sp}");
     for (let file of files) {
-      providers.itemsRepository.documents.set(
-        basename(file),
-        URI.file(file).toString()
-      );
+      providers.itemsRepository.documents.add(URI.file(file).toString());
     }
   }
 }

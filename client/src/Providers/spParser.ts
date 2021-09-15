@@ -71,7 +71,7 @@ class Parser {
   lineNb: number;
   file: string;
   IsBuiltIn: boolean;
-  documents: Map<string, string>;
+  documents: Set<string>;
   lastFuncLine: number;
   lastFuncName: string;
   definesMap: Map<string, string>;

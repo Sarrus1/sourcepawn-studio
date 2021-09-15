@@ -61,10 +61,7 @@ export class Providers {
       event.document.uri.toString()
     );
     let file_path: string = event.document.uri.fsPath;
-    this.itemsRepository.documents.set(
-      basename(file_path),
-      event.document.uri.toString()
-    );
+    this.itemsRepository.documents.add(event.document.uri.toString());
     // Some file paths are appened with .git
     file_path = file_path.replace(".git", "");
     // We use parse_text here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
@@ -91,12 +88,16 @@ export class Providers {
 
   public newDocumentCallback(uri: Uri) {
     let ext: string = extname(uri.fsPath);
-    if (ext != ".inc" && ext != ".sp") return;
+    if (ext != ".inc" && ext != ".sp") {
+      return;
+    }
     let this_completions: FileItems = new FileItems(uri.toString());
     let file_path: string = uri.fsPath;
     // Some file paths are appened with .git
-    if (file_path.includes(".git")) return;
-    this.itemsRepository.documents.set(basename(file_path), uri.toString());
+    if (file_path.includes(".git")) {
+      return;
+    }
+    this.itemsRepository.documents.add(uri.toString());
     try {
       parseFile(file_path, this_completions, this.itemsRepository);
     } catch (error) {
@@ -188,7 +189,7 @@ export class Providers {
 
         let uri = "file://__sourcemod_builtin/" + relative(sm_home, file);
         this.itemsRepository.completions.set(uri, completions);
-        this.itemsRepository.documents.set(file, uri);
+        this.itemsRepository.documents.add(uri);
       } catch (e) {
         console.error(e);
       }

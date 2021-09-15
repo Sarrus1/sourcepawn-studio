@@ -66,7 +66,7 @@ export class FileItems {
 
   resolve_import(
     file: string,
-    documents: Map<string, string>,
+    documents: Set<string>,
     IsBuiltIn: boolean = false
   ) {
     let inc_file: string;
@@ -74,11 +74,15 @@ export class FileItems {
     if (!/.sp\s*$/g.test(file) && !/.inc\s*$/g.test(file)) {
       file += ".inc";
     }
-
-    let match = file.match(/include\/(.*)/);
-    if (match) file = match[1];
     let uri: string;
-    if (!(uri = documents.get(basename(file)))) {
+    //let fileBaseName = basename(file);
+    for (let parsedUri of documents.values()) {
+      if (parsedUri.includes(file)) {
+        uri = parsedUri;
+        break;
+      }
+    }
+    if (uri === undefined) {
       let includes_dirs: string[] = Workspace.getConfiguration(
         "sourcepawn"
       ).get("optionalIncludeDirsPaths");
@@ -98,12 +102,12 @@ export class FileItems {
 
 export class ItemsRepository implements Disposable {
   public completions: Map<string, FileItems>;
-  public documents: Map<string, string>;
+  public documents: Set<string>;
   private globalState: Memento;
 
   constructor(globalState?: Memento) {
     this.completions = new Map();
-    this.documents = new Map();
+    this.documents = new Set<string>();
     this.globalState = globalState;
   }
 
@@ -135,7 +139,7 @@ export class ItemsRepository implements Disposable {
     scriptingDirnames = scriptingDirnames.concat(includes_dirs);
     let items: CompletionItem[] = [];
     let cleanedUri: string;
-    for (let uri of this.documents.values()) {
+    for (let uri of this.documents) {
       if (uri.includes("file://__sourcemod_builtin/" + tempName)) {
         cleanedUri = uri.replace("file://__sourcemod_builtin/" + tempName, "");
         let match = cleanedUri.match(/([^\/]+\/)?/);
