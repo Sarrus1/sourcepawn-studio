@@ -13,18 +13,17 @@
   CompletionItemKind,
   Hover,
   SignatureHelp,
-  Location,
-  DefinitionLink,
   ProviderResult,
   SemanticTokens,
   SemanticTokensBuilder,
   DocumentSymbol,
   Definition,
+  LocationLink,
 } from "vscode";
 import * as glob from "glob";
-import { basename, extname, join, relative } from "path";
+import { extname, join, relative } from "path";
 import { URI } from "vscode-uri";
-import { existsSync, fstat } from "fs";
+import { existsSync } from "fs";
 import { ItemsRepository, FileItems } from "./spItemsRepository";
 import { Include, SPItem } from "./spItems";
 import { JsDocCompletionProvider } from "./spDocCompletions";
@@ -356,7 +355,7 @@ export class Providers {
     document: TextDocument,
     position: Position,
     token: CancellationToken
-  ): Definition | DefinitionLink[] {
+  ): Definition | LocationLink[] {
     let items = this.itemsRepository.getItemFromPosition(document, position);
     return items.map((e) => e.toDefinitionItem());
   }

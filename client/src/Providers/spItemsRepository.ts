@@ -13,7 +13,13 @@ import {
 import { basename, join } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
-import { SPItem, Include, ConstantItem, KeywordItem } from "./spItems";
+import {
+  SPItem,
+  Include,
+  ConstantItem,
+  KeywordItem,
+  IncludeItem,
+} from "./spItems";
 import { defaultConstantItems, defaultKeywordsItems } from "./spDefaultItems";
 import { events } from "../Misc/sourceEvents";
 import {
@@ -449,6 +455,35 @@ export class ItemsRepository implements Disposable {
     let isMethod: boolean = false;
     let isConstructor: boolean = false;
     let match: RegExpMatchArray;
+    // Check if include file
+    let includeLine = document.lineAt(position.line).text;
+    match = includeLine.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>/);
+    if (match === null) {
+      match = includeLine.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"/);
+    }
+    if (match !== null) {
+      let file: string = match[1];
+      let fileMatchLength = file.length;
+      let fileStartPos = includeLine.search(file);
+      // If no extension is provided, it's a .inc file
+      if (!/.sp\s*$/g.test(file) && !/.inc\s*$/g.test(file)) {
+        file += ".inc";
+      }
+      let defRange = new Range(
+        position.line,
+        fileStartPos,
+        position.line,
+        fileStartPos + fileMatchLength
+      );
+      let uri: string;
+      for (let parsedUri of this.documents.values()) {
+        if (parsedUri.includes(file)) {
+          uri = parsedUri;
+          break;
+        }
+      }
+      return [new IncludeItem(uri, defRange)];
+    }
     if (range.start.character > 1) {
       let newPosStart = new Position(
         range.start.line,

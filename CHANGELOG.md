@@ -4,7 +4,8 @@
 
 ### Added
 
-- Added support for symbolic links
+- Added support for symbolic links.
+- Added GoToDefinition for includes.
 
 ### Fixed
 
