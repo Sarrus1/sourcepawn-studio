@@ -17,6 +17,7 @@
 - Improved BUG issues templates (see #116).
 - Improved JSDoc completions provider.
 - Fixed functions which return an array not being parsed.
+- Fixed statements like sizeof being parsed as functions.
 
 ## [2.3.2]
 

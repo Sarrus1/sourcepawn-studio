@@ -633,6 +633,7 @@ class Parser {
           return;
         }
       }
+
       let lineMatch = this.lineNb;
       let type = match[1];
       let paramsMatch = match[3] === undefined ? "" : match[3];
@@ -642,8 +643,10 @@ class Parser {
       let matchEndRegex: RegExp = /(\{|\;)\s*(?:(?:\/\/|\/\*)(?:.*))?$/;
       let isNativeOrForward = /\bnative\b|\bforward\b/.test(match[0]);
       let matchEnd = matchEndRegex.test(line);
-      let matchLastParenthesis = /\)/.test(paramsMatch);
+      let pCount = getParenthesisCount(line);
+      let matchLastParenthesis = pCount === 0;
       let range = this.makeDefinitionRange(nameMatch, line);
+
       while (
         !(matchLastParenthesis && matchEnd) &&
         typeof line != "undefined" &&
@@ -656,9 +659,14 @@ class Parser {
           this.AddParamsDef(line, nameMatch, line);
           this.searchForDefinesInString(line);
           paramsMatch += line;
-          matchLastParenthesis = /\)/.test(paramsMatch);
+          pCount += getParenthesisCount(line);
+          matchLastParenthesis = pCount === 0;
         }
         if (!matchEnd) {
+          if (matchLastParenthesis && /\,\s*$/.test(paramsMatch)) {
+            // If the statement ends with a comma, we are in an array declaration
+            return;
+          }
           matchEnd = matchEndRegex.test(line);
         }
       }
@@ -679,7 +687,7 @@ class Parser {
       if (isNativeOrForward) {
         if (endSymbol[1] === "{") return;
       } else {
-        if (endSymbol[1] === ";") {
+        if (endSymbol[1] === ";" || endSymbol[1] === ",") {
           return;
         } else if (!isSingleLineFunction(line)) {
           this.state.push(State.Function);
@@ -1085,4 +1093,20 @@ function parentCounter(line: string): number {
     }
   }
   return counter;
+}
+
+function getParenthesisCount(line: string): number {
+  let pCount = 0;
+  let inAString = false;
+  for (let i = 0; i < line.length; i++) {
+    let char = line[i];
+    if (char === "'" || char === '"') {
+      inAString = !inAString;
+    } else if (!inAString && char === "(") {
+      pCount++;
+    } else if (!inAString && char === ")") {
+      pCount--;
+    }
+  }
+  return pCount;
 }
