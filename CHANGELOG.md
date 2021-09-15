@@ -2,6 +2,10 @@
 
 ## [2.3.3]
 
+### Added
+
+- Added support for symbolic links
+
 ### Fixed
 
 - Fixed clang-format support (Fixed by [DarklSide](https://github.com/DarklSide)).

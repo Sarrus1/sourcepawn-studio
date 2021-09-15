@@ -21,7 +21,7 @@ import {
   workspace as Workspace,
 } from "vscode";
 import { existsSync, readFileSync } from "fs";
-import { basename } from "path";
+import { basename, resolve, dirname } from "path";
 import { URI } from "vscode-uri";
 import { globalIdentifier } from "./spGlobalIdentifier";
 
@@ -31,8 +31,18 @@ export function parseFile(
   itemsRepository: ItemsRepository,
   IsBuiltIn: boolean = false
 ) {
-  if (!existsSync(file)) return;
+  if (!existsSync(file)) {
+    return;
+  }
   let data = readFileSync(file, "utf-8");
+
+  // Test for symbolic links
+  let match = data.match(/^(?:\.\.\/)+(?:[\/\w\-])+\.\w+/);
+  if (match !== null) {
+    let folderpath = dirname(file);
+    file = resolve(folderpath, match[0]);
+    data = readFileSync(file, "utf-8");
+  }
   parseText(data, file, completions, itemsRepository, IsBuiltIn);
 }
 
