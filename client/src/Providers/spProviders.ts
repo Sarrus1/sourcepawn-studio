@@ -363,7 +363,7 @@ export class Providers {
 
   public async provideDocumentSemanticTokens(
     document: TextDocument
-  ): Promise<ProviderResult<SemanticTokens>> {
+  ): Promise<SemanticTokens> {
     const tokensBuilder = new SemanticTokensBuilder(SP_LEGENDS);
     let allItems: SPItem[] = this.itemsRepository.getAllItems(
       document.uri.toString()
