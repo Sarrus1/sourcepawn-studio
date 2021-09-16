@@ -4,7 +4,7 @@
 
 ### Added
 
-- Added defines to the outline.
+- Added defines and variables to the outline.
 
 ## [2.4.0]
 

@@ -31,6 +31,7 @@ import { parseText, parseFile } from "./spParser";
 import { GetLastFuncName, getLastEnumStructName } from "./spDefinitions";
 import { SP_LEGENDS } from "../spLegends";
 import { getSignatureAttributes } from "./spSignatures";
+import { globalIdentifier } from "./spGlobalIdentifier";
 
 export class Providers {
   documentationProvider: JsDocCompletionProvider;
@@ -393,26 +394,35 @@ export class Providers {
       CompletionItemKind.Struct,
       CompletionItemKind.Enum,
       CompletionItemKind.Constant,
+      CompletionItemKind.Variable,
     ];
     const allowedParentsKinds = [
       CompletionItemKind.Class,
       CompletionItemKind.Struct,
+      CompletionItemKind.Function,
     ];
     const allowedChildrendKinds = [
       CompletionItemKind.Method,
       CompletionItemKind.Property,
+      CompletionItemKind.Variable,
     ];
     let items = this.itemsRepository.getAllItems(document.uri.toString());
     let file = document.uri.fsPath;
     for (let item of items) {
       if (allowedKinds.includes(item.kind) && item.file === file) {
+        // Don't add non global variables here
+        if (
+          item.kind === CompletionItemKind.Variable &&
+          item.parent !== globalIdentifier
+        ) {
+          continue;
+        }
         let symbol = item.toDocumentSymbol();
 
-        if (
-          allowedParentsKinds.includes(item.kind) &&
-          typeof symbol !== "undefined"
-        ) {
+        // Check if the item can have childrens
+        if (allowedParentsKinds.includes(item.kind) && symbol !== undefined) {
           let childrens: DocumentSymbol[] = [];
+          // Iterate over all items to get the childrens
           for (let subItem of items) {
             if (
               allowedChildrendKinds.includes(subItem.kind) &&
@@ -420,7 +430,7 @@ export class Providers {
               subItem.parent === item.name
             ) {
               let children = subItem.toDocumentSymbol();
-              if (typeof children !== "undefined") {
+              if (children !== undefined) {
                 childrens.push(children);
               }
             }

@@ -367,7 +367,7 @@ export class ItemsRepository implements Disposable {
         variableType = allItems.find(
           (e) =>
             (e.kind === CompletionItemKind.Variable &&
-              [globalIdentifier, lastFuncName].includes(e.scope) &&
+              [globalIdentifier, lastFuncName].includes(e.parent) &&
               e.name === words[words.length - 1]) ||
             (e.kind === CompletionItemKind.Function &&
               e.name === words[words.length - 1])
@@ -584,7 +584,7 @@ export class ItemsRepository implements Disposable {
           item.kind === CompletionItemKind.Function
         ) &&
         item.name === word &&
-        item.scope === lastFunc
+        item.parent === lastFunc
     );
     if (items.length > 0) {
       return items;
@@ -596,15 +596,15 @@ export class ItemsRepository implements Disposable {
       ) {
         return false;
       }
-      if (typeof item.scope !== "undefined") {
+      if (typeof item.parent !== "undefined") {
         if (typeof item.enumStructName !== "undefined") {
           return (
-            item.scope === globalIdentifier &&
+            item.parent === globalIdentifier &&
             item.name === word &&
             item.enumStructName === lastEnumStruct
           );
         }
-        return item.scope === globalIdentifier && item.name === word;
+        return item.parent === globalIdentifier && item.name === word;
       }
       return item.name === word;
     });
