@@ -343,7 +343,7 @@ class Parser {
   read_define(match: RegExpMatchArray, line: string): void {
     this.definesMap.set(match[1], this.file);
     let range = this.makeDefinitionRange(match[1], line);
-    let fullRange = new Range(this.lineNb, 0, this.lineNb, line.length);
+    let fullRange = PositiveRange(this.lineNb, 0, line.length);
     this.completions.add(
       match[1],
       new DefineItem(
