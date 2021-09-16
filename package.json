@@ -431,6 +431,6 @@
     "watch": "webpack --mode development --watch",
     "webpack": "webpack --mode development",
     "postinstall": "cd client && npm install && cd ..",
-    "test": "npm run compile && nyc node ./client/out/test/runTest.js"
+    "test": "npm run compile && node ./client/out/test/runTest.js"
   }
 }
