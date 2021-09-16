@@ -525,6 +525,7 @@ export class EnumItem implements SPItem {
 export class EnumMemberItem implements SPItem {
   name: string;
   enum: EnumItem;
+  parent: string;
   file: string;
   description: string;
   kind = CompletionItemKind.EnumMember;
@@ -547,6 +548,7 @@ export class EnumMemberItem implements SPItem {
     this.range = range;
     this.calls = [];
     this.IsBuiltIn = IsBuiltItn;
+    this.parent = this.enum.name;
   }
 
   toCompletionItem(
@@ -584,6 +586,19 @@ export class EnumMemberItem implements SPItem {
         descriptionToMD(this.description),
       ]);
     }
+  }
+
+  toDocumentSymbol(): DocumentSymbol {
+    if (this.name === "") {
+      return undefined;
+    }
+    return new DocumentSymbol(
+      this.name,
+      this.description,
+      SymbolKind.Enum,
+      this.range,
+      this.range
+    );
   }
 }
 
