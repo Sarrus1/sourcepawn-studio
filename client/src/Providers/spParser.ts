@@ -53,7 +53,7 @@ export function parseText(
   itemsRepository: ItemsRepository,
   IsBuiltIn: boolean = false
 ) {
-  if (typeof data === "undefined") {
+  if (data === undefined) {
     return; // Asked to parse empty file
   }
   let lines = data.split("\n");
@@ -124,7 +124,7 @@ class Parser {
   parse() {
     let line: string;
     line = this.lines[0];
-    while (typeof line != "undefined") {
+    while (line !== undefined) {
       this.searchForDefinesInString(line);
       this.interpLine(line);
       line = this.lines.shift();
@@ -134,7 +134,7 @@ class Parser {
 
   interpLine(line: string) {
     // EOF
-    if (typeof line === "undefined") return;
+    if (line === undefined) return;
     // Match define
     let match = line.match(/\s*#define\s+(\w+)\s+([^]+)/);
     if (match) {
@@ -436,7 +436,7 @@ class Parser {
         line = this.lines.shift();
         this.lineNb++;
         // Stop early if it's the end of the file
-        if (typeof line === "undefined") {
+        if (line === undefined) {
           return;
         }
         match = line.match(/^\s*(\w*)\s*.*/);
@@ -542,7 +542,7 @@ class Parser {
   ) {
     let iter = 0;
     while (
-      typeof current_line != "undefined" &&
+      current_line !== undefined &&
       iter < 100 &&
       ((/^\s*\/\//.test(current_line) && use_line_comment) ||
         (!/\*\//.test(current_line) && !use_line_comment))
@@ -591,7 +591,7 @@ class Parser {
   }
 
   read_function(line: string) {
-    if (typeof line === "undefined") {
+    if (line === undefined) {
       return;
     }
     let newSyntaxRe: RegExp = /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*(?:\s*\[[\w \+\-\*]*\]\s*)?)\s+)?(\w*)\s*\((.*(?:\)|,|{))?\s*/;
@@ -663,7 +663,7 @@ class Parser {
 
       while (
         !(matchLastParenthesis && matchEnd) &&
-        typeof line != "undefined" &&
+        line !== undefined &&
         maxiter < 20
       ) {
         maxiter++;
@@ -765,7 +765,7 @@ class Parser {
     description: string;
     params: FunctionParam[];
   } {
-    if (typeof this.scratch == "undefined") {
+    if (this.scratch !== undefined) {
       let description = "";
       let params = [];
       return { description, params };
@@ -849,7 +849,7 @@ class Parser {
     if (this.lastFuncLine !== 0) {
       scope = this.lastFuncName;
     }
-    if (typeof funcName !== "undefined") {
+    if (funcName !== undefined) {
       scope = funcName;
     }
     // Custom key name for the map so the definitions don't override each others
@@ -912,7 +912,7 @@ class Parser {
   }
 
   searchForDefinesInString(line: string): void {
-    if (typeof line === "undefined") {
+    if (line === undefined) {
       return;
     }
     let isBlockComment = false;
@@ -946,7 +946,7 @@ class Parser {
       defineFile =
         this.definesMap.get(matchDefine[0]) ||
         this.enumMemberMap.get(matchDefine[0]);
-      if (typeof defineFile !== "undefined") {
+      if (defineFile !== undefined) {
         let range = PositiveRange(
           this.lineNb,
           matchDefine.index,
@@ -957,7 +957,7 @@ class Parser {
         // overwritten at the end of the parsing.
         if (defineFile === this.file) {
           let define = this.completions.get(matchDefine[0]);
-          if (typeof define === "undefined") {
+          if (define === undefined) {
             continue;
           }
           define.calls.push(location);
@@ -968,11 +968,11 @@ class Parser {
           ? defineFile
           : URI.file(defineFile).toString();
         let items = this.itemsRepository.completions.get(defineFile);
-        if (typeof items === "undefined") {
+        if (items === undefined) {
           continue;
         }
         let define = items.get(matchDefine[0]);
-        if (typeof define === "undefined") {
+        if (define === undefined) {
           continue;
         }
         define.calls.push(location);

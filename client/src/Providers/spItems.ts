@@ -119,7 +119,7 @@ export class FunctionItem implements SPItem {
   }
 
   toDocumentSymbol(): DocumentSymbol {
-    if (typeof this.fullRange === "undefined") {
+    if (this.fullRange === undefined) {
       return undefined;
     }
     return new DocumentSymbol(
@@ -207,7 +207,7 @@ export class MethodMapItem implements SPItem {
   }
 
   toDocumentSymbol(): DocumentSymbol {
-    if (typeof this.fullRange === "undefined") {
+    if (this.fullRange === undefined) {
       return undefined;
     }
     return new DocumentSymbol(
@@ -302,7 +302,7 @@ export class MethodItem implements SPItem {
   }
 
   toDocumentSymbol(): DocumentSymbol {
-    if (typeof this.fullRange === "undefined") {
+    if (this.fullRange === undefined) {
       return undefined;
     }
     return new DocumentSymbol(
@@ -414,7 +414,7 @@ export class VariableItem implements SPItem {
     file: string,
     lastFuncName: string = undefined
   ): CompletionItem {
-    if (typeof lastFuncName !== "undefined") {
+    if (lastFuncName !== undefined) {
       if (this.parent === lastFuncName) {
         return {
           label: this.name,
@@ -509,7 +509,7 @@ export class EnumItem implements SPItem {
   }
 
   toDocumentSymbol(): DocumentSymbol {
-    if (typeof this.fullRange === "undefined") {
+    if (this.fullRange === undefined) {
       return undefined;
     }
     return new DocumentSymbol(
@@ -650,7 +650,7 @@ export class EnumStructItem implements SPItem {
   }
 
   toDocumentSymbol(): DocumentSymbol {
-    if (typeof this.fullRange === "undefined") {
+    if (this.fullRange === undefined) {
       return undefined;
     }
     return new DocumentSymbol(
@@ -789,7 +789,7 @@ export class PropertyItem implements SPItem {
   }
 
   toDocumentSymbol(): DocumentSymbol {
-    if (typeof this.fullRange === "undefined") {
+    if (this.fullRange === undefined) {
       return undefined;
     }
     return new DocumentSymbol(

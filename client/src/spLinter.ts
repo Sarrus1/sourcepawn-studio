@@ -197,7 +197,7 @@ export function refreshDiagnostics(
 }
 
 function GenerateDetailedError(errorCode: string, errorMsg: string): string {
-  if (typeof errorDetails[errorCode] != "undefined") {
+  if (errorDetails[errorCode] !== undefined) {
     errorMsg += "\n\n" + errorDetails[errorCode];
   }
   return errorMsg;

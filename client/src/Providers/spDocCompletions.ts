@@ -111,7 +111,7 @@ function getFullParams(document: TextDocument, position: Position) {
   let iter = 0;
   while (
     !(matchLastParenthesis && matchEnd) &&
-    typeof line != "undefined" &&
+    line !== undefined &&
     iter < 20
   ) {
     iter++;

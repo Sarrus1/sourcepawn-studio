@@ -275,10 +275,7 @@ export class ItemsRepository implements Disposable {
     let methodMapItem = allCompletions.find(
       (e) => e.kind === CompletionItemKind.Class && e.name === variableType
     );
-    if (
-      typeof methodMapItem === "undefined" ||
-      typeof methodMapItem.parent === "undefined"
-    ) {
+    if (methodMapItem === undefined || methodMapItem.parent !== undefined) {
       return [variableType];
     }
     return [variableType].concat(
@@ -413,7 +410,7 @@ export class ItemsRepository implements Disposable {
       allItems = this.completions.get(file);
       includes.add(file);
     }
-    if (typeof allItems !== "undefined") {
+    if (allItems !== undefined) {
       this.getIncludedFiles(allItems, includes);
     } else {
       return [];
@@ -596,8 +593,8 @@ export class ItemsRepository implements Disposable {
       ) {
         return false;
       }
-      if (typeof item.parent !== "undefined") {
-        if (typeof item.enumStructName !== "undefined") {
+      if (item.parent !== undefined) {
+        if (item.enumStructName !== undefined) {
           return (
             item.parent === globalIdentifier &&
             item.name === word &&

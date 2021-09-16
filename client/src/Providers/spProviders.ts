@@ -134,7 +134,7 @@ export class Providers {
     for (let include of includes) {
       if (debug) console.log(include.uri.toString());
       let completion = this.itemsRepository.completions.get(include.uri);
-      if (typeof completion === "undefined") {
+      if (completion === undefined) {
         if (debug) console.log("reading", include.uri.toString());
         let file = URI.parse(include.uri).fsPath;
         if (existsSync(file)) {
@@ -270,7 +270,7 @@ export class Providers {
       document,
       position
     );
-    if (typeof croppedLine === "undefined") {
+    if (croppedLine === undefined) {
       return blankReturn;
     }
     // Check if it's a method
@@ -342,7 +342,7 @@ export class Providers {
             item.kind
           )
       );
-    if (typeof item === "undefined") {
+    if (item === undefined) {
       return blankReturn;
     }
     return {
