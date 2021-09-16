@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.4.1]
+
+### Added
+
+- Added defines to the outline.
+
 ## [2.4.0]
 
 ### Added

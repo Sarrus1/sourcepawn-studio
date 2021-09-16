@@ -324,13 +324,15 @@ export class DefineItem implements SPItem {
   IsBuiltIn: boolean;
   range: Range;
   calls: Location[];
+  fullRange: Range;
 
   constructor(
     name: string,
     value: string,
     file: string,
     range: Range,
-    IsBuiltIn: boolean
+    IsBuiltIn: boolean,
+    fullRange: Range
   ) {
     this.name = name;
     this.value = value;
@@ -338,6 +340,7 @@ export class DefineItem implements SPItem {
     this.range = range;
     this.calls = [];
     this.IsBuiltIn = IsBuiltIn;
+    this.fullRange = fullRange;
   }
 
   toCompletionItem(
@@ -367,6 +370,19 @@ export class DefineItem implements SPItem {
       language: "sourcepawn",
       value: `#define ${this.name} ${this.value}`,
     });
+  }
+
+  toDocumentSymbol(): DocumentSymbol {
+    if (this.fullRange === undefined) {
+      return undefined;
+    }
+    return new DocumentSymbol(
+      this.name,
+      `#define ${this.name} ${this.value}`,
+      SymbolKind.Constant,
+      this.fullRange,
+      this.range
+    );
   }
 }
 

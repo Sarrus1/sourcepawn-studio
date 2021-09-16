@@ -392,6 +392,7 @@ export class Providers {
       CompletionItemKind.Class,
       CompletionItemKind.Struct,
       CompletionItemKind.Enum,
+      CompletionItemKind.Constant,
     ];
     const allowedParentsKinds = [
       CompletionItemKind.Class,
@@ -426,7 +427,7 @@ export class Providers {
           }
           symbol.children = childrens;
         }
-        if (typeof symbol !== "undefined") {
+        if (symbol !== undefined) {
           symbols.push(symbol);
         }
       }
