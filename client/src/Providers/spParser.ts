@@ -604,6 +604,12 @@ class Parser {
     let isMethod: boolean =
       this.state.includes(State.Methodmap) ||
       this.state.includes(State.EnumStruct);
+
+    // We can't declare a function inside a function, this is a call.
+    // cancel the parsing
+    if (this.state[this.state.length - 1] === State.Function) {
+      return;
+    }
     if (match) {
       let { description, params } = this.parse_doc_comment();
       let nameMatch = match[2];
@@ -683,12 +689,6 @@ class Parser {
       }
       let endSymbol = line.match(matchEndRegex);
       if (endSymbol === null) {
-        return;
-      }
-
-      // We can't declare a function inside a function, this is a call.
-      // cancel the parsing
-      if (this.state[this.state.length - 1] === State.Function) {
         return;
       }
 
