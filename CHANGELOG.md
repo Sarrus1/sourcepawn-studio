@@ -1,5 +1,15 @@
 ## Release Notes
 
+## [2.4.1]
+
+### Added
+
+- Added defines, enum, enum members and variables to the outline.
+
+### Fixed
+
+- Providers are now asynchronous
+
 ## [2.4.0]
 
 ### Added

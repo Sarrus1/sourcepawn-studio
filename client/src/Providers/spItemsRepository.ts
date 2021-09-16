@@ -275,10 +275,7 @@ export class ItemsRepository implements Disposable {
     let methodMapItem = allCompletions.find(
       (e) => e.kind === CompletionItemKind.Class && e.name === variableType
     );
-    if (
-      typeof methodMapItem === "undefined" ||
-      typeof methodMapItem.parent === "undefined"
-    ) {
+    if (methodMapItem === undefined || methodMapItem.parent !== undefined) {
       return [variableType];
     }
     return [variableType].concat(
@@ -367,7 +364,7 @@ export class ItemsRepository implements Disposable {
         variableType = allItems.find(
           (e) =>
             (e.kind === CompletionItemKind.Variable &&
-              [globalIdentifier, lastFuncName].includes(e.scope) &&
+              [globalIdentifier, lastFuncName].includes(e.parent) &&
               e.name === words[words.length - 1]) ||
             (e.kind === CompletionItemKind.Function &&
               e.name === words[words.length - 1])
@@ -413,7 +410,7 @@ export class ItemsRepository implements Disposable {
       allItems = this.completions.get(file);
       includes.add(file);
     }
-    if (typeof allItems !== "undefined") {
+    if (allItems !== undefined) {
       this.getIncludedFiles(allItems, includes);
     } else {
       return [];
@@ -584,7 +581,7 @@ export class ItemsRepository implements Disposable {
           item.kind === CompletionItemKind.Function
         ) &&
         item.name === word &&
-        item.scope === lastFunc
+        item.parent === lastFunc
     );
     if (items.length > 0) {
       return items;
@@ -596,15 +593,15 @@ export class ItemsRepository implements Disposable {
       ) {
         return false;
       }
-      if (typeof item.scope !== "undefined") {
-        if (typeof item.enumStructName !== "undefined") {
+      if (item.parent !== undefined) {
+        if (item.enumStructName !== undefined) {
           return (
-            item.scope === globalIdentifier &&
+            item.parent === globalIdentifier &&
             item.name === word &&
             item.enumStructName === lastEnumStruct
           );
         }
-        return item.scope === globalIdentifier && item.name === word;
+        return item.parent === globalIdentifier && item.name === word;
       }
       return item.name === word;
     });

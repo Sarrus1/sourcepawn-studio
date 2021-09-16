@@ -28,7 +28,7 @@ export function activate(context: ExtensionContext) {
   let workspace: WorkspaceFolder;
   providers.parseSMApi();
   let workspaceFolders = Workspace.workspaceFolders;
-  if (typeof workspaceFolders == "undefined") {
+  if (workspaceFolders === undefined) {
     window.showWarningMessage(
       "No workspace or folder found. \n Please open the folder containing your .sp file, not just the .sp file."
     );
@@ -67,7 +67,7 @@ export function activate(context: ExtensionContext) {
       providers.itemsRepository.documents.delete(uri.fsPath);
     });
   }
-  if (typeof workspace != "undefined") {
+  if (workspace !== undefined) {
     getDirectories([workspace.uri.fsPath], providers);
   }
   // Get the names and directories of optional include directories.

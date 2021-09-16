@@ -6,3 +6,4 @@ out/
 package-lock.json
 dist/
 .vscode/settings.json
+.nyc_output/

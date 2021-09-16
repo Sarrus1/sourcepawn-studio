@@ -10,7 +10,7 @@ export async function run(args: any) {
   let config: object = Workspace.getConfiguration("sourcepawn").get(
     "UploadOptions"
   );
-  if (typeof config == "undefined") {
+  if (config === undefined) {
     window
       .showErrorMessage("Upload settings are empty.", "Open Settings")
       .then((choice) => {

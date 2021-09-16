@@ -31,6 +31,7 @@ import { parseText, parseFile } from "./spParser";
 import { GetLastFuncName, getLastEnumStructName } from "./spDefinitions";
 import { SP_LEGENDS } from "../spLegends";
 import { getSignatureAttributes } from "./spSignatures";
+import { globalIdentifier } from "./spGlobalIdentifier";
 
 export class Providers {
   documentationProvider: JsDocCompletionProvider;
@@ -133,7 +134,7 @@ export class Providers {
     for (let include of includes) {
       if (debug) console.log(include.uri.toString());
       let completion = this.itemsRepository.completions.get(include.uri);
-      if (typeof completion === "undefined") {
+      if (completion === undefined) {
         if (debug) console.log("reading", include.uri.toString());
         let file = URI.parse(include.uri).fsPath;
         if (existsSync(file)) {
@@ -195,11 +196,11 @@ export class Providers {
     }
   }
 
-  public provideCompletionItems(
+  public async provideCompletionItems(
     document: TextDocument,
     position: Position,
     token: CancellationToken
-  ): CompletionList {
+  ): Promise<CompletionList> {
     const text = document
       .lineAt(position.line)
       .text.substr(0, position.character);
@@ -243,11 +244,11 @@ export class Providers {
     return this.itemsRepository.getCompletions(document, position);
   }
 
-  provideHover(
+  public async provideHover(
     document: TextDocument,
     position: Position,
     token: CancellationToken
-  ): Hover {
+  ): Promise<Hover> {
     let items = this.itemsRepository.getItemFromPosition(document, position);
     if (items.length > 0) {
       return items[0].toHover();
@@ -255,11 +256,11 @@ export class Providers {
     return undefined;
   }
 
-  provideSignatureHelp(
+  public async provideSignatureHelp(
     document: TextDocument,
     position: Position,
     token: CancellationToken
-  ): SignatureHelp {
+  ): Promise<SignatureHelp> {
     let blankReturn = {
       signatures: [],
       activeSignature: 0,
@@ -269,7 +270,7 @@ export class Providers {
       document,
       position
     );
-    if (typeof croppedLine === "undefined") {
+    if (croppedLine === undefined) {
       return blankReturn;
     }
     // Check if it's a method
@@ -341,7 +342,7 @@ export class Providers {
             item.kind
           )
       );
-    if (typeof item === "undefined") {
+    if (item === undefined) {
       return blankReturn;
     }
     return {
@@ -351,18 +352,18 @@ export class Providers {
     };
   }
 
-  public provideDefinition(
+  public async provideDefinition(
     document: TextDocument,
     position: Position,
     token: CancellationToken
-  ): Definition | LocationLink[] {
+  ): Promise<Definition | LocationLink[]> {
     let items = this.itemsRepository.getItemFromPosition(document, position);
     return items.map((e) => e.toDefinitionItem());
   }
 
-  public provideDocumentSemanticTokens(
+  public async provideDocumentSemanticTokens(
     document: TextDocument
-  ): ProviderResult<SemanticTokens> {
+  ): Promise<SemanticTokens> {
     const tokensBuilder = new SemanticTokensBuilder(SP_LEGENDS);
     let allItems: SPItem[] = this.itemsRepository.getAllItems(
       document.uri.toString()
@@ -382,36 +383,48 @@ export class Providers {
     return tokensBuilder.build();
   }
 
-  public provideDocumentSymbols(
+  public async provideDocumentSymbols(
     document: TextDocument,
     token: CancellationToken
-  ): DocumentSymbol[] {
+  ): Promise<DocumentSymbol[]> {
     let symbols: DocumentSymbol[] = [];
     const allowedKinds = [
       CompletionItemKind.Function,
       CompletionItemKind.Class,
       CompletionItemKind.Struct,
       CompletionItemKind.Enum,
+      CompletionItemKind.Constant,
+      CompletionItemKind.Variable,
     ];
     const allowedParentsKinds = [
       CompletionItemKind.Class,
       CompletionItemKind.Struct,
+      CompletionItemKind.Function,
+      CompletionItemKind.Enum,
     ];
     const allowedChildrendKinds = [
       CompletionItemKind.Method,
       CompletionItemKind.Property,
+      CompletionItemKind.Variable,
+      CompletionItemKind.EnumMember,
     ];
     let items = this.itemsRepository.getAllItems(document.uri.toString());
     let file = document.uri.fsPath;
     for (let item of items) {
       if (allowedKinds.includes(item.kind) && item.file === file) {
+        // Don't add non global variables here
+        if (
+          item.kind === CompletionItemKind.Variable &&
+          item.parent !== globalIdentifier
+        ) {
+          continue;
+        }
         let symbol = item.toDocumentSymbol();
 
-        if (
-          allowedParentsKinds.includes(item.kind) &&
-          typeof symbol !== "undefined"
-        ) {
+        // Check if the item can have childrens
+        if (allowedParentsKinds.includes(item.kind) && symbol !== undefined) {
           let childrens: DocumentSymbol[] = [];
+          // Iterate over all items to get the childrens
           for (let subItem of items) {
             if (
               allowedChildrendKinds.includes(subItem.kind) &&
@@ -419,14 +432,14 @@ export class Providers {
               subItem.parent === item.name
             ) {
               let children = subItem.toDocumentSymbol();
-              if (typeof children !== "undefined") {
+              if (children !== undefined) {
                 childrens.push(children);
               }
             }
           }
           symbol.children = childrens;
         }
-        if (typeof symbol !== "undefined") {
+        if (symbol !== undefined) {
           symbols.push(symbol);
         }
       }

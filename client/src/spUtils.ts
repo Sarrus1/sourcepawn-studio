@@ -1,7 +1,9 @@
 ﻿import { MarkdownString } from "vscode";
 
 export function descriptionToMD(description: string): MarkdownString {
-  if (typeof description === "undefined") return new MarkdownString("");
+  if (description === undefined) {
+    return new MarkdownString("");
+  }
   description = description
     .replace(/\</gm, "\\<")
     .replace(/\>/gm, "\\>")

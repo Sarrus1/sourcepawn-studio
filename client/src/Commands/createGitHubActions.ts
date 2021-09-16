@@ -19,7 +19,7 @@ export function run(rootpath: string = undefined) {
   }
 
   //Select the rootpath
-  if (typeof rootpath === "undefined") {
+  if (rootpath === undefined) {
     rootpath = workspaceFolders?.[0].uri.fsPath;
   }
 
