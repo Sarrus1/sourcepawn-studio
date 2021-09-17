@@ -64,18 +64,14 @@ suite("Test extension providers", async () => {
     );
     vscode.commands.executeCommand("vscode.open", fileUri);
     let position: vscode.Position = new vscode.Position(4, 3);
-    await sleep(5000);
-    let location = await vscode.commands.executeCommand(
+    await sleep(500);
+    let location: vscode.Location[] = await vscode.commands.executeCommand(
       "vscode.executeDefinitionProvider",
       fileUri,
       position
     );
-    assert.deepEqual(location, [
-      {
-        targetRange: new vscode.Range(0, 3, 0, 8),
-        targetUri: fileUri,
-      },
-    ]);
+    assert.deepEqual(location[0].range, new vscode.Range(0, 4, 0, 9));
+    assert.equal(location[0].uri.fsPath, fileUri.fsPath);
   });
 });
 
