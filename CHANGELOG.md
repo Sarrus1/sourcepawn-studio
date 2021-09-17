@@ -5,6 +5,8 @@
 ### Fixed
 
 - Fixed GoToDefinition for secondary files (see #125).
+- Fixed potential undefined error in JSDocProvider.
+- Fixed trailing `"` in JSDoc.
 
 ## [2.4.1]
 

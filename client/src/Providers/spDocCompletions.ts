@@ -20,7 +20,6 @@ class SpDocCompletionItem extends CompletionItem {
     let max = getMaxLength(FunctionDesc);
     snippet.appendText(`${indent}/**\n ${indent}* `);
     snippet.appendPlaceholder("Description");
-    //snippet.appendText("\n *");
     this.appendTextSnippet(snippet, "", indent);
     for (let arg of FunctionDesc) {
       this.appendTextSnippet(
@@ -36,7 +35,7 @@ class SpDocCompletionItem extends CompletionItem {
       indent
     );
     snippet.appendPlaceholder("Return description");
-    snippet.appendText(`"\n${indent} */`);
+    snippet.appendText(`\n${indent} */`);
     this.insertText = snippet;
     let start: Position = new Position(position.line, 0);
     let end: Position = new Position(position.line, 0);
@@ -102,6 +101,9 @@ function getFullParams(document: TextDocument, position: Position) {
     match = line.match(
       /^(\s)*(?:(?:static|native|stock|public|forward)\s+)*(?:(\w+)\s*:)?\s*(\w*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
     );
+    if (!match) {
+      return;
+    }
   }
   let isNativeOrForward = /\bnative\b|\bforward\b/.test(match[0]);
   let paramsMatch = match[4];
