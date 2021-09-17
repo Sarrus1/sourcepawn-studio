@@ -1,4 +1,6 @@
 import * as assert from "assert";
+import * as vscode from "vscode";
+import { URI } from "vscode-uri";
 
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
@@ -10,9 +12,10 @@ import { run as CreateREADMECommand } from "../../Commands/createREADME";
 import { run as CreateMasterCommand } from "../../Commands/createGitHubActions";
 
 const testFolderLocation = "/../../../src/test/examples/";
+const testFolderLocationBis = "/../../../src/test/testSuite/";
 
 suite("Extension Test", async () => {
-  test("Create Task Command", () => {
+  await test("Create Task Command", () => {
     let examplesVscode = join(__dirname, testFolderLocation, ".vscode");
     rmdir(examplesVscode);
     let error: number = CreateTaskCommand();
@@ -23,7 +26,7 @@ suite("Extension Test", async () => {
     rmdir(examplesVscode);
   });
 
-  test("Create Script Command", () => {
+  await test("Create Script Command", () => {
     let examplesScripting = join(__dirname, testFolderLocation, "scripting");
     rmdir(examplesScripting);
     let error: number = CreateScriptCommand();
@@ -31,7 +34,7 @@ suite("Extension Test", async () => {
     rmdir(examplesScripting);
   });
 
-  test("Create ReadMe Command", () => {
+  await test("Create ReadMe Command", () => {
     let examplesReadme = join(__dirname, testFolderLocation, "README.md");
     if (fs.existsSync(examplesReadme)) {
       fs.unlinkSync(examplesReadme);
@@ -43,12 +46,34 @@ suite("Extension Test", async () => {
     }
   });
 
-  test("Create Master Command", () => {
+  await test("Create Master Command", () => {
     let examplesGithub = join(__dirname, testFolderLocation, ".github");
     rmdir(examplesGithub);
     let error: number = CreateMasterCommand();
     assert.equal(error, 0);
     rmdir(examplesGithub);
+  });
+
+  await test("Open and parse files", async () => {
+    let uri: URI = URI.file(join(__dirname, testFolderLocationBis));
+    vscode.commands.executeCommand("vscode.openFolder", uri);
+    // Give time to parse the file
+    await sleep(2000);
+    let fileUri: URI = URI.file(
+      join(__dirname, testFolderLocationBis, "scripting/main.sp")
+    );
+    let position: vscode.Position = new vscode.Position(4, 3);
+    let location = await vscode.commands.executeCommand(
+      "vscode.executeDefinitionProvider",
+      fileUri,
+      position
+    );
+    assert.deepEqual(location, [
+      {
+        targetRange: new vscode.Range(0, 3, 0, 8),
+        targetUri: fileUri,
+      },
+    ]);
   });
 });
 
@@ -68,4 +93,8 @@ function rmdir(dir) {
     }
   });
   return fs.rmdirSync(dir);
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
