@@ -463,7 +463,7 @@
             },
             {
               "name": "constant.character.sp-translations",
-              "match": "\\{([A-Za-z]+)\\}",
+              "match": "\\{(\\w+)\\}",
               "captures": {
                 "1": {
                   "name": "constant.character.escape.sp-translations"
@@ -487,7 +487,7 @@
             },
             {
               "name": "constant.character.sp-translations",
-              "match": "\\{([A-Za-z]+)\\}",
+              "match": "\\{(\\w+)\\}",
               "captures": {
                 "1": {
                   "name": "constant.character.escape.sp-translations"
