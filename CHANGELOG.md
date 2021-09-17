@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.4.2]
+
+### Fixed
+
+- Fixed GoToDefinition for secondary files (see #125).
+
 ## [2.4.1]
 
 ### Added

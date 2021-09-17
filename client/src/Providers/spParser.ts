@@ -765,7 +765,7 @@ class Parser {
     description: string;
     params: FunctionParam[];
   } {
-    if (this.scratch !== undefined) {
+    if (this.scratch === undefined) {
       let description = "";
       let params = [];
       return { description, params };
