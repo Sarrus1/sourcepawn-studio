@@ -18,9 +18,9 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "${workspaceRoot}/client/src/test/examples",
-        //"--disable-extensions",
+        "--disable-extensions",
         "--extensionDevelopmentPath=${workspaceRoot}",
-        "--extensionTestsPath=${workspaceRoot}/client/out/test/suite/index"
+        "--extensionTestsPath=${workspaceRoot}/dist/test/suite/index"
       ],
       "outFiles": ["${workspaceRoot}/client/out/test/**/*.js"]
     }

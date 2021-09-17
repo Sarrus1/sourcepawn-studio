@@ -11,10 +11,10 @@ import { run as CreateScriptCommand } from "../../Commands/createScript";
 import { run as CreateREADMECommand } from "../../Commands/createREADME";
 import { run as CreateMasterCommand } from "../../Commands/createGitHubActions";
 
-const testFolderLocation = "/../../../src/test/examples/";
-const testFolderLocationBis = "/../../../src/test/testSuite/";
-
-suite("Extension Test", async () => {
+const testFolderLocation = "/../../../client/src/test/examples/";
+const testFolderLocationBis = "/../../../client/src/test/testSuite/";
+/*
+suite("Test commands", async () => {
   await test("Create Task Command", () => {
     let examplesVscode = join(__dirname, testFolderLocation, ".vscode");
     rmdir(examplesVscode);
@@ -53,16 +53,18 @@ suite("Extension Test", async () => {
     assert.equal(error, 0);
     rmdir(examplesGithub);
   });
-
+});
+*/
+suite("Test extension providers", async () => {
   await test("Open and parse files", async () => {
     let uri: URI = URI.file(join(__dirname, testFolderLocationBis));
     vscode.commands.executeCommand("vscode.openFolder", uri);
-    // Give time to parse the file
-    await sleep(2000);
     let fileUri: URI = URI.file(
       join(__dirname, testFolderLocationBis, "scripting/main.sp")
     );
+    vscode.commands.executeCommand("vscode.open", fileUri);
     let position: vscode.Position = new vscode.Position(4, 3);
+    await sleep(5000);
     let location = await vscode.commands.executeCommand(
       "vscode.executeDefinitionProvider",
       fileUri,

@@ -4,7 +4,7 @@
   "description": "SourcePawn highlighting, autocompletion and much more",
   "version": "2.4.2",
   "publisher": "Sarrus",
-  "main": "./dist/extension",
+  "main": "./dist/spIndex",
   "icon": "sm.png",
   "repository": {
     "type": "git",
@@ -431,6 +431,6 @@
     "watch": "webpack --mode development --watch",
     "webpack": "webpack --mode development",
     "postinstall": "cd client && npm install && cd ..",
-    "test": "npm run compile && node ./client/out/test/runTest.js"
+    "test": "npm run compile && node ./dist/test/runTest.js"
   }
 }
