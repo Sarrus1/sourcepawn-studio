@@ -1,5 +1,18 @@
 ## Release Notes
 
+## [2.4.2]
+
+### Added
+
+- Added `this` support for methodmaps.
+
+### Fixed
+
+- Fixed GoToDefinition for secondary files (see #125).
+- Fixed potential undefined error in JSDocProvider.
+- Fixed trailing `"` in JSDoc.
+- Fixed methodmap GoToDefinition not working on methodmaps.
+
 ## [2.4.1]
 
 ### Added

@@ -28,7 +28,10 @@ import { ItemsRepository, FileItems } from "./spItemsRepository";
 import { Include, SPItem } from "./spItems";
 import { JsDocCompletionProvider } from "./spDocCompletions";
 import { parseText, parseFile } from "./spParser";
-import { GetLastFuncName, getLastEnumStructName } from "./spDefinitions";
+import {
+  GetLastFuncName,
+  getLastEnumStructNameOrMethodMap as getLastEnumStructOrMethodMap,
+} from "./spDefinitions";
 import { SP_LEGENDS } from "../spLegends";
 import { getSignatureAttributes } from "./spSignatures";
 import { globalIdentifier } from "./spGlobalIdentifier";
@@ -280,13 +283,17 @@ export class Providers {
       let allItems = this.itemsRepository.getAllItems(document.uri.toString());
       let lastFuncName = GetLastFuncName(position, document, allItems);
       let newPos = new Position(1, croppedLine.length);
-      let lastEnumStruct = getLastEnumStructName(position, document, allItems);
+      let lastEnumStructOrMethodMap = getLastEnumStructOrMethodMap(
+        position,
+        document,
+        allItems
+      );
       let type = this.itemsRepository.getTypeOfVariable(
         croppedLine,
         newPos,
         allItems,
         lastFuncName,
-        lastEnumStruct
+        lastEnumStructOrMethodMap
       );
       let variableTypes: string[] = this.itemsRepository.getAllInheritances(
         type,
