@@ -25,7 +25,7 @@ import { events } from "../Misc/sourceEvents";
 import {
   GetLastFuncName,
   isFunction,
-  getLastEnumStructName,
+  getLastEnumStructNameOrMethodMap,
 } from "./spDefinitions";
 import { globalIdentifier } from "./spGlobalIdentifier";
 
@@ -217,14 +217,18 @@ export class ItemsRepository implements Disposable {
     let completionsList: CompletionList = new CompletionList();
     if (allItems !== []) {
       let lastFunc: string = GetLastFuncName(position, document, allItems);
-      let lastEnumStruct = getLastEnumStructName(position, document, allItems);
+      let lastEnumStructOrMethodMap = getLastEnumStructNameOrMethodMap(
+        position,
+        document,
+        allItems
+      );
       if (isMethod) {
         let variableType = this.getTypeOfVariable(
           line,
           position,
           allItems,
           lastFunc,
-          lastEnumStruct
+          lastEnumStructOrMethodMap
         );
         let variableTypes: string[] = this.getAllInheritances(
           variableType,
@@ -288,7 +292,7 @@ export class ItemsRepository implements Disposable {
     position: Position,
     allItems: SPItem[],
     lastFuncName: string,
-    lastEnumStruct: string
+    lastEnumStructOrMethodMap: string
   ): string {
     let i = position.character - 1;
     let bCounter = 0;
@@ -356,10 +360,10 @@ export class ItemsRepository implements Disposable {
       variableType = words[words.length - 1];
     } else {
       if (
-        lastEnumStruct !== globalIdentifier &&
+        lastEnumStructOrMethodMap !== globalIdentifier &&
         words[words.length - 1] === "this"
       ) {
-        variableType = lastEnumStruct;
+        variableType = lastEnumStructOrMethodMap;
       } else {
         variableType = allItems.find(
           (e) =>
@@ -504,19 +508,22 @@ export class ItemsRepository implements Disposable {
     let word: string = document.getText(range);
     let allItems = this.getAllItems(document.uri.toString());
     let lastFunc: string = GetLastFuncName(position, document, allItems);
-    let lastEnumStruct: string = getLastEnumStructName(
+    let lastEnumStructOrMethodMap: string = getLastEnumStructNameOrMethodMap(
       position,
       document,
       allItems
     );
     // If we match a property or a method of an enum struct
     // but not a local scopped variable inside an enum struct's method.
-    if (lastEnumStruct !== globalIdentifier && lastFunc === globalIdentifier) {
+    if (
+      lastEnumStructOrMethodMap !== globalIdentifier &&
+      lastFunc === globalIdentifier
+    ) {
       let items = allItems.filter(
         (item) =>
           (item.kind === CompletionItemKind.Method ||
             item.kind === CompletionItemKind.Property) &&
-          item.parent === lastEnumStruct &&
+          item.parent === lastEnumStructOrMethodMap &&
           item.name === word
       );
       return items;
@@ -530,7 +537,7 @@ export class ItemsRepository implements Disposable {
         position,
         allItems,
         lastFunc,
-        lastEnumStruct
+        lastEnumStructOrMethodMap
       );
       // Get inheritances from methodmaps
       let variableTypes: string[] = this.getAllInheritances(
@@ -594,11 +601,14 @@ export class ItemsRepository implements Disposable {
         return false;
       }
       if (item.parent !== undefined) {
+        if (item.kind === CompletionItemKind.Class) {
+          return item.name === word;
+        }
         if (item.enumStructName !== undefined) {
           return (
             item.parent === globalIdentifier &&
             item.name === word &&
-            item.enumStructName === lastEnumStruct
+            item.enumStructName === lastEnumStructOrMethodMap
           );
         }
         return item.parent === globalIdentifier && item.name === word;

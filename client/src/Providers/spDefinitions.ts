@@ -48,14 +48,14 @@ export function isControlStatement(line: string): boolean {
   return false;
 }
 
-export function getLastEnumStructName(
+export function getLastEnumStructNameOrMethodMap(
   position: Position,
   document: TextDocument,
   allItems: SPItem[]
 ): string {
   let enumStruct = allItems.find(
     (e) =>
-      e.kind === CompletionItemKind.Struct &&
+      [CompletionItemKind.Struct, CompletionItemKind.Class].includes(e.kind) &&
       e.file === document.uri.fsPath &&
       e.fullRange != undefined &&
       e.fullRange.contains(position)
