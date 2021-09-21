@@ -572,13 +572,36 @@ export class ItemsRepository implements Disposable {
     );
     let items = [];
     if (bIsFunction) {
-      items = allItems.filter(
-        (item) =>
-          [CompletionItemKind.Function, CompletionItemKind.Interface].includes(
-            item.kind
-          ) && item.name === word
-      );
-      return items;
+      if (lastEnumStructOrMethodMap !== globalIdentifier) {
+        items = allItems.filter((item) => {
+          if (
+            item.kind === CompletionItemKind.Method &&
+            item.name === word &&
+            item.parent === lastEnumStructOrMethodMap
+          ) {
+            return true;
+          } else if (
+            [
+              CompletionItemKind.Function,
+              CompletionItemKind.Interface,
+            ].includes(item.kind) &&
+            item.name === word
+          ) {
+            return true;
+          }
+          return false;
+        });
+        return items;
+      } else {
+        items = allItems.filter(
+          (item) =>
+            [
+              CompletionItemKind.Function,
+              CompletionItemKind.Interface,
+            ].includes(item.kind) && item.name === word
+        );
+        return items;
+      }
     }
     items = allItems.filter(
       (item) =>

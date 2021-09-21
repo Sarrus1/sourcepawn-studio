@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.4.3]
+
+### Fixed
+
+- Fixed MethodMaps and enum structs' methods not working with GoToDefinition.
+
 ## [2.4.2]
 
 ### Added
