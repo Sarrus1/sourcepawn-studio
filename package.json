@@ -2,10 +2,14 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "2.4.2",
+  "version": "2.4.3",
   "publisher": "Sarrus",
   "main": "./dist/extension",
   "icon": "sm.png",
+  "homepage": "https://github.com/Sarrus1/sourcepawn-vscode/wiki",
+  "bugs": {
+    "url": "https://github.com/Sarrus1/sourcepawn-vscode/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/Sarrus1/sourcepawn-vscode.git"
@@ -14,7 +18,17 @@
     "vscode": "^1.14.0"
   },
   "categories": [
-    "Programming Languages"
+    "Programming Languages",
+    "Snippets",
+    "Linters",
+    "Formatters"
+  ],
+  "keywords": [
+    "SourcePawn",
+    "SourceMod",
+    "AlliedMods",
+    "AlliedModders",
+    "MetaMod"
   ],
   "activationEvents": [
     "onLanguage:sourcepawn",

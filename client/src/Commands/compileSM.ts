@@ -72,14 +72,14 @@ export async function run(args: any) {
 
   // Create plugins folder if it doesn't exist.
   let pluginsFolderPath: string;
-  if (scriptingPath.endsWith("scripting")) {
+  if (scriptingPath.replace(/(?:\\\\|\\)$/, "").endsWith("scripting")) {
     pluginsFolderPath = join(scriptingPath, "../", "plugins/");
   } else {
     pluginsFolderPath = join(scriptingPath, "compiled/");
   }
   let outputDir: string =
     Workspace.getConfiguration("sourcepawn").get("outputDirectoryPath") || "";
-  if (outputDir == "") {
+  if (outputDir === "") {
     outputDir = pluginsFolderPath;
     if (!existsSync(outputDir)) {
       mkdirSync(outputDir);

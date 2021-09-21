@@ -524,7 +524,6 @@ export class EnumItem implements SPItem {
 
 export class EnumMemberItem implements SPItem {
   name: string;
-  enum: EnumItem;
   parent: string;
   file: string;
   description: string;
@@ -544,11 +543,10 @@ export class EnumMemberItem implements SPItem {
     this.name = name;
     this.file = file;
     this.description = description;
-    this.enum = Enum;
     this.range = range;
     this.calls = [];
     this.IsBuiltIn = IsBuiltItn;
-    this.parent = this.enum.name;
+    this.parent = Enum.name;
   }
 
   toCompletionItem(
@@ -558,7 +556,7 @@ export class EnumMemberItem implements SPItem {
     return {
       label: this.name,
       kind: this.kind,
-      detail: this.enum.name == "" ? basename(this.file) : this.enum.name,
+      detail: this.parent === "" ? basename(this.file) : this.parent,
     };
   }
 
@@ -574,7 +572,7 @@ export class EnumMemberItem implements SPItem {
   }
 
   toHover(): Hover {
-    let enumName = this.enum.name;
+    let enumName = this.parent;
     if (enumName == "") {
       return new Hover([
         { language: "sourcepawn", value: this.name },
@@ -582,7 +580,7 @@ export class EnumMemberItem implements SPItem {
       ]);
     } else {
       return new Hover([
-        { language: "sourcepawn", value: `${this.enum.name} ${this.name};` },
+        { language: "sourcepawn", value: `${this.parent} ${this.name};` },
         descriptionToMD(this.description),
       ]);
     }
