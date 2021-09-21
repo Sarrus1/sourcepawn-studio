@@ -7,6 +7,7 @@
 - Fixed MethodMaps and enum structs' methods not working with GoToDefinition.
 - Fixed enumMembers not working with GoToDefinition.
 - Signatures are now sorted by the size of the description.
+- Extension now outputs compiled plugin to the "plugins" folder when available.
 
 ## [2.4.2]
 
