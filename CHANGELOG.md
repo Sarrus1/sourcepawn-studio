@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.4.4]
+
+### Fixed
+
+- Fixed Methodmaps' inheritance not working for autocompletion.
+
 ## [2.4.3]
 
 ### Fixed
