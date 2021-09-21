@@ -279,7 +279,7 @@ export class ItemsRepository implements Disposable {
     let methodMapItem = allCompletions.find(
       (e) => e.kind === CompletionItemKind.Class && e.name === variableType
     );
-    if (methodMapItem === undefined || methodMapItem.parent !== undefined) {
+    if (methodMapItem === undefined || methodMapItem.parent === undefined) {
       return [variableType];
     }
     return [variableType].concat(
