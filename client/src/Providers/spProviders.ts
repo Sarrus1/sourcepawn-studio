@@ -340,20 +340,22 @@ export class Providers {
     if (["if", "for", "while", "case", "switch", "return"].includes(match[1])) {
       return blankReturn;
     }
-    let item = this.itemsRepository
+    let items = this.itemsRepository
       .getAllItems(document.uri.toString())
-      .find(
+      .filter(
         (item) =>
           item.name === match[1] &&
           [CompletionItemKind.Function, CompletionItemKind.Interface].includes(
             item.kind
           )
       );
-    if (item === undefined) {
+    if (items === undefined) {
       return blankReturn;
     }
+    // Sort by size of description
+    items = items.sort((a, b) => b.description.length - a.description.length);
     return {
-      signatures: [item.toSignature()],
+      signatures: items.map((e) => e.toSignature()),
       activeParameter: parameterCount,
       activeSignature: 0,
     };
