@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fixed MethodMaps and enum structs' methods not working with GoToDefinition.
+- Fixed enumMembers not working with GoToDefinition.
 
 ## [2.4.2]
 

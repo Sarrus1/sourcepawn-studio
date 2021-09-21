@@ -573,6 +573,7 @@ export class ItemsRepository implements Disposable {
     let items = [];
     if (bIsFunction) {
       if (lastEnumStructOrMethodMap !== globalIdentifier) {
+        // Check for functions and methods
         items = allItems.filter((item) => {
           if (
             item.kind === CompletionItemKind.Method &&
@@ -618,13 +619,18 @@ export class ItemsRepository implements Disposable {
     }
     items = allItems.filter((item) => {
       if (
-        item.kind === CompletionItemKind.Method ||
-        item.kind === CompletionItemKind.Property
+        [CompletionItemKind.Method, CompletionItemKind.Property].includes(
+          item.kind
+        )
       ) {
         return false;
       }
       if (item.parent !== undefined) {
-        if (item.kind === CompletionItemKind.Class) {
+        if (
+          [CompletionItemKind.Class, CompletionItemKind.EnumMember].includes(
+            item.kind
+          )
+        ) {
           return item.name === word;
         }
         if (item.enumStructName !== undefined) {
