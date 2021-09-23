@@ -84,7 +84,7 @@ export function activate(context: ExtensionContext) {
         let workspace: WorkspaceFolder = Workspace.workspaceFolders[0];
         MainPath = join(workspace.uri.fsPath, MainPath);
         if (!existsSync(MainPath)) {
-          throw "MainPath is incorrect.";
+          throw new Error("MainPath is incorrect.");
         }
       }
       providers.handle_document_opening(MainPath);
