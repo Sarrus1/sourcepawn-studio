@@ -712,7 +712,7 @@ class Parser {
         params = getParamsFromDeclaration(paramsMatch);
       }
       if (isMethod) {
-        let fullRange: Range = undefined;
+        let fullRange: Range;
         if (isNativeOrForward) {
           let end = range.start.line === this.lineNb ? line.length : 0;
           fullRange = new Range(range.start.line, 0, this.lineNb, end);
@@ -739,7 +739,7 @@ class Parser {
       if (this.completions.get(nameMatch)) {
         return;
       }
-      let fullRange: Range = undefined;
+      let fullRange: Range;
       if (isNativeOrForward) {
         let end = range.start.line === this.lineNb ? line.length : 0;
         fullRange = new Range(range.start.line, 0, this.lineNb, end);
@@ -788,7 +788,7 @@ class Parser {
     const paramRegex = /@param\s+([\w\.]+)\s+(.*)/;
     let params = (() => {
       let params = [];
-      let currentParam = undefined;
+      let currentParam;
       for (let line of this.scratch) {
         let match = line.match(paramRegex);
         if (match) {
@@ -842,7 +842,7 @@ class Parser {
   ): void {
     let range = this.makeDefinitionRange(name, line);
     let scope: string = globalIdentifier;
-    let enumStructName: string = undefined;
+    let enumStructName: string;
     if (this.state.includes(State.EnumStruct)) {
       enumStructName = this.state_data.name;
     }
