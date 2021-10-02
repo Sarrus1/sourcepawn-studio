@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.4.5]
+
+### Added
+
+- Added CodeFactor badge.
+
 ## [2.4.4]
 
 ### Fixed
