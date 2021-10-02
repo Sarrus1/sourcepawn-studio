@@ -11,10 +11,10 @@ import { run as CreateScriptCommand } from "../../Commands/createScript";
 import { run as CreateREADMECommand } from "../../Commands/createREADME";
 import { run as CreateMasterCommand } from "../../Commands/createGitHubActions";
 
-const testFolderLocation = "/../../../client/src/test/examples/";
-const testFolderLocationBis = "/../../../client/src/test/testSuite/";
-/*
-suite("Test commands", async () => {
+const testFolderLocation = "/../../../client/src/test/testSuite/";
+
+
+suite("Run tests", async () => {
   await test("Create Task Command", () => {
     let examplesVscode = join(__dirname, testFolderLocation, ".vscode");
     rmdir(examplesVscode);
@@ -25,7 +25,8 @@ suite("Test commands", async () => {
     assert.equal(test, true);
     rmdir(examplesVscode);
   });
-
+  
+  /*
   await test("Create Script Command", () => {
     let examplesScripting = join(__dirname, testFolderLocation, "scripting");
     rmdir(examplesScripting);
@@ -33,6 +34,7 @@ suite("Test commands", async () => {
     assert.equal(error, 0);
     rmdir(examplesScripting);
   });
+  */
 
   await test("Create ReadMe Command", () => {
     let examplesReadme = join(__dirname, testFolderLocation, "README.md");
@@ -53,25 +55,40 @@ suite("Test commands", async () => {
     assert.equal(error, 0);
     rmdir(examplesGithub);
   });
-});
-*/
-suite("Test extension providers", async () => {
+
   await test("Open and parse files", async () => {
-    let uri: URI = URI.file(join(__dirname, testFolderLocationBis));
+    let uri: URI = URI.file(join(__dirname, testFolderLocation));
     vscode.commands.executeCommand("vscode.openFolder", uri);
-    let fileUri: URI = URI.file(
-      join(__dirname, testFolderLocationBis, "scripting/main.sp")
+    let mainUri: URI = URI.file(
+      join(__dirname, testFolderLocation, "scripting/main.sp")
     );
-    vscode.commands.executeCommand("vscode.open", fileUri);
-    let position: vscode.Position = new vscode.Position(4, 3);
-    await sleep(500);
+    let secondaryUri: URI = URI.file(
+      join(__dirname, testFolderLocation, "scripting/include/secondary.sp")
+    );
+    vscode.commands.executeCommand("vscode.open", mainUri);
+    // Give some time to parse everything
+    await sleep(3000);
+    // Test ConVar g_cvWebhook;
+    let position: vscode.Position = new vscode.Position(16, 8);
     let location: vscode.Location[] = await vscode.commands.executeCommand(
       "vscode.executeDefinitionProvider",
-      fileUri,
+      mainUri,
       position
     );
-    assert.deepEqual(location[0].range, new vscode.Range(0, 4, 0, 9));
-    assert.equal(location[0].uri.fsPath, fileUri.fsPath);
+    assert.ok(location.length > 0);
+    assert.deepEqual(location[0].range, new vscode.Range(16, 7, 16, 18));
+    assert.equal(location[0].uri.fsPath, mainUri.fsPath);
+
+    // Test FooEnum test;
+    position = new vscode.Position(17, 10);
+    location = await vscode.commands.executeCommand(
+      "vscode.executeDefinitionProvider",
+      mainUri,
+      position
+    );
+    assert.ok(location.length > 0);
+    assert.deepEqual(location[0].range, new vscode.Range(17, 8, 17, 12));
+    assert.equal(location[0].uri.fsPath, mainUri.fsPath);
   });
 });
 
