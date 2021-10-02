@@ -1,75 +1,80 @@
 import * as path from "path";
 import * as Mocha from "mocha";
 import * as glob from "glob";
+const NYC = require("nyc");
+import * as baseConfig from "@istanbuljs/nyc-config-typescript";
 
-export function run(): Promise<void> {
-  const nyc = setupCoverage();
+export async function run(): Promise<void> {
+  const testsRoot = path.resolve(__dirname);
+  console.log(testsRoot);
 
-  const mochaOpts: Mocha.MochaOptions = {
-    timeout: 10 * 1000,
-    ui: "tdd",
-    color: true,
-  };
-
-  if (process.env.ONLY_MINSPEC === "true") {
-    mochaOpts.grep = "node runtime"; // may eventually want a more dynamic system
-  }
-
-  const grep = mochaOpts.grep || (mochaOpts as Record<string, unknown>).g;
-  if (grep) {
-    mochaOpts.grep = new RegExp(String(grep), "i");
-  }
-
-  // Create the mocha test
-  const mocha = new Mocha(mochaOpts);
-
-  const testsRoot = path.resolve(__dirname, "..");
-
-  return new Promise((c, e) => {
-    glob("**/**.test.js", { cwd: testsRoot }, async (err, files) => {
-      if (err) {
-        return e(err);
-      }
-
-      // Add files to the test suite
-      files.forEach((f) => mocha.addFile(path.resolve(testsRoot, f)));
-      try {
-        // Run the mocha test
-        mocha.run((failures) => {
-          if (failures > 0) {
-            e(new Error(`${failures} tests failed.`));
-          } else {
-            c();
-          }
-        });
-      } catch (err) {
-        console.error(err);
-        e(err);
-      } finally {
-        if (nyc) {
-          nyc.writeCoverageFile();
-          await nyc.report();
-        }
-      }
-    });
-  });
-}
-
-function setupCoverage() {
-  const NYC = require("nyc");
+  // Setup coverage pre-test, including post-test hook to report
   const nyc = new NYC({
-    cwd: path.join(__dirname, "..", "..", "..", ".."),
-    exclude: ["**/test/**", ".vscode-test/**"],
-    reporter: ["lcov"],
+    ...baseConfig,
+    cwd: path.join(__dirname, "..", "..", ".."),
+    reporter: ["text", "html", "lcov"],
     all: true,
+    silent: false,
     instrument: true,
     hookRequire: true,
     hookRunInContext: true,
     hookRunInThisContext: true,
+    include: ["dist/**/*.js"],
+    exclude: [
+      "dist/test/**",
+      "dist/extension.js",
+      "dist/Misc/sourceEvents.js",
+      "dist/Misc/sourceEvents/**",
+    ],
   });
 
-  nyc.reset();
-  nyc.wrap();
+  await nyc.wrap();
 
-  return nyc;
+  // Check the modules already loaded and warn in case of race condition
+  // (ideally, at this point the require cache should only contain one file - this module)
+  const myFilesRegex = /vscode-recall\/dist/;
+  const filterFn = myFilesRegex.test.bind(myFilesRegex);
+  if (Object.keys(require.cache).filter(filterFn).length > 1) {
+    console.warn(
+      "NYC initialized after modules were loaded",
+      Object.keys(require.cache).filter(filterFn)
+    );
+  }
+
+  // Debug which files will be included/excluded
+  // console.log('Glob verification', await nyc.exclude.glob(nyc.cwd));
+
+  await nyc.createTempDirectory();
+  // Create the mocha test
+  const mocha = new Mocha({
+    ui: "tdd",
+    timeout: 10 * 1000,
+    color: true
+  });
+
+  // Add all files to the test suite
+  const files = glob.sync("**/*.test.js", { cwd: testsRoot });
+  files.forEach((f) => mocha.addFile(path.resolve(testsRoot, f)));
+
+  const failures: number = await new Promise((resolve) => mocha.run(resolve));
+  await nyc.writeCoverageFile();
+
+  // Capture text-summary reporter's output and log it in console
+  console.log(await captureStdout(nyc.report.bind(nyc)));
+
+  if (failures > 0) {
+    throw new Error(`${failures} tests failed.`);
+  }
+}
+
+async function captureStdout(fn) {
+  let w = process.stdout.write,
+    buffer = "";
+  process.stdout.write = (s) => {
+    buffer = buffer + s;
+    return true;
+  };
+  await fn();
+  process.stdout.write = w;
+  return buffer;
 }
