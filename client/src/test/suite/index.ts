@@ -6,7 +6,6 @@ import * as baseConfig from "@istanbuljs/nyc-config-typescript";
 
 export async function run(): Promise<void> {
   const testsRoot = path.resolve(__dirname);
-  console.log(testsRoot);
 
   // Setup coverage pre-test, including post-test hook to report
   const nyc = new NYC({
@@ -54,7 +53,6 @@ export async function run(): Promise<void> {
 
   // Add all files to the test suite
   const files = glob.sync("**/*.test.js", { cwd: testsRoot });
-  console.log(files.length);
   files.forEach((f) => mocha.addFile(path.resolve(testsRoot, f)));
 
   const failures: number = await new Promise((resolve) => mocha.run(resolve));

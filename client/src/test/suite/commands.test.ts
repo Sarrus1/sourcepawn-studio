@@ -1,6 +1,7 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
 import { URI } from "vscode-uri";
+const { suite, test, suiteSetup, suiteTeardown } = require("mocha");
 
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
@@ -20,141 +21,171 @@ const mainUri: URI = URI.file(
 const secondaryUri: URI = URI.file(
   join(__dirname, testFolderLocation, testSecondaryLocation)
 );
+const examplesVscode = join(__dirname, testFolderLocation, ".vscode");
+const examplesReadme = join(__dirname, testFolderLocation, "README.md");
+const examplesScript = join(
+  __dirname,
+  testFolderLocation,
+  "scripting/testSuite.sp"
+);
+const examplesGithub = join(__dirname, testFolderLocation, ".github");
 
-suite("Run tests", async () => {
+suite("Run tests", () => {
   suiteSetup(async () => {
     let uri: URI = URI.file(join(__dirname, testFolderLocation));
-    await vscode.commands.executeCommand("vscode.openFolder", uri);
+    vscode.commands.executeCommand("vscode.openFolder", uri);
+    rmdir(examplesVscode);
+    if (fs.existsSync(examplesReadme)) {
+      fs.unlinkSync(examplesReadme);
+    }
+    if (fs.existsSync(examplesScript)) {
+      fs.unlinkSync(examplesScript);
+    }
+    rmdir(examplesGithub);
+    vscode.commands.executeCommand("vscode.open", mainUri);
+
+    // Give some time to parse everything
+    await sleep(3000);
   });
 
-  suite("Test commands", async () => {
-    const examplesVscode = join(__dirname, testFolderLocation, ".vscode");
-    const examplesReadme = join(__dirname, testFolderLocation, "README.md");
-    const examplesScript = join(
-      __dirname,
-      testFolderLocation,
-      "scripting/testSuite.sp"
-    );
-    const examplesGithub = join(__dirname, testFolderLocation, ".github");
+  suiteTeardown("Remove files after the tests", () => {
+    rmdir(examplesVscode);
+    if (fs.existsSync(examplesReadme)) {
+      fs.unlinkSync(examplesReadme);
+    }
+    if (fs.existsSync(examplesScript)) {
+      fs.unlinkSync(examplesScript);
+    }
+    rmdir(examplesGithub);
+  });
 
-    await suiteSetup("Remove files before", async () => {
-      rmdir(examplesVscode);
-      if (fs.existsSync(examplesReadme)) {
-        fs.unlinkSync(examplesReadme);
-      }
-      if (fs.existsSync(examplesScript)) {
-        fs.unlinkSync(examplesScript);
-      }
-      rmdir(examplesGithub);
-    });
-
-    await test("Create Task Command", () => {
+  suite("Test commands", () => {
+    test("Create Task Command", () => {
       rmdir(examplesVscode);
       let error: number = CreateTaskCommand();
       // If sm_home is not defined, this command will error out.
       // This counts this error as expected behaviour.
-      let test: boolean = error == 0 || error == 1;
-      assert.equal(test, true);
+      assert.ok(error == 0 || error == 1);
     });
 
-    await test("Create Script Command", () => {
-      let error: number = CreateScriptCommand();
-      assert.equal(error, 0);
+    test("Create Script Command", () => {
+      assert.equal(CreateScriptCommand(), 0);
     });
 
-    await test("Create ReadMe Command", () => {
-      if (fs.existsSync(examplesReadme)) {
-        fs.unlinkSync(examplesReadme);
-      }
-      let error: number = CreateREADMECommand();
-      assert.equal(error, 0);
-      if (fs.existsSync(examplesReadme)) {
-        fs.unlinkSync(examplesReadme);
-      }
+    test("Create ReadMe Command", () => {
+      assert.equal(CreateREADMECommand(), 0);
     });
 
-    await test("Create Master Command", () => {
-      rmdir(examplesGithub);
-      let error: number = CreateMasterCommand();
-      assert.equal(error, 0);
-      rmdir(examplesGithub);
-    });
-
-    await suiteTeardown("Remove files after the tests", async () => {
-      rmdir(examplesVscode);
-      if (fs.existsSync(examplesReadme)) {
-        fs.unlinkSync(examplesReadme);
-      }
-      if (fs.existsSync(examplesScript)) {
-        fs.unlinkSync(examplesScript);
-      }
-      rmdir(examplesGithub);
+    test("Create Master Command", () => {
+      assert.equal(CreateMasterCommand(), 0);
     });
   });
 
-  await suite("Test providers", async () => {
-    await test("Test Position Provider", async () => {
-      vscode.commands.executeCommand("vscode.open", mainUri);
+  suite("Test providers", () => {
+    suite("Test Position provider", () => {
+      test("Test ConVar g_cvWebhook", () => {
+        let position: vscode.Position = new vscode.Position(16, 8);
+        vscode.commands
+          .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
+          .then((location: vscode.Location[]) => {
+            assert.ok(location.length > 0);
+            assert.deepEqual(
+              location[0].range,
+              new vscode.Range(16, 7, 16, 18)
+            );
+            assert.equal(location[0].uri.fsPath, mainUri.fsPath);
+          });
+      });
 
-      // Give some time to parse everything
-      await sleep(3000);
+      test("Test OnPluginStart;", () => {
+        let position: vscode.Position = new vscode.Position(19, 19);
+        vscode.commands
+          .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
+          .then((location: vscode.Location[]) => {
+            assert.ok(location.length > 0);
+            assert.deepEqual(
+              location[0].range,
+              new vscode.Range(125, 13, 125, 26)
+            );
+            assert.ok(
+              location[0].uri.fsPath.includes(
+                "\\scripting\\include\\sourcemod.inc"
+              )
+            );
+          });
+      });
 
-      // Test ConVar g_cvWebhook;
-      let position: vscode.Position = new vscode.Position(16, 8);
-      let location: vscode.Location[] = await vscode.commands.executeCommand(
-        "vscode.executeDefinitionProvider",
-        mainUri,
-        position
-      );
-      assert.ok(location.length > 0);
-      assert.deepEqual(location[0].range, new vscode.Range(16, 7, 16, 18));
-      assert.equal(location[0].uri.fsPath, mainUri.fsPath);
+      test("Test CreateConVar", () => {
+        let position: vscode.Position = new vscode.Position(22, 22);
+        vscode.commands
+          .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
+          .then((location: vscode.Location[]) => {
+            assert.ok(location.length > 0);
+            assert.deepEqual(
+              location[0].range,
+              new vscode.Range(80, 14, 80, 26)
+            );
+            assert.ok(
+              location[0].uri.fsPath.includes(
+                "\\scripting\\include\\convars.inc"
+              )
+            );
+          });
+      });
 
-      // Test FooEnum test;
-      position = new vscode.Position(17, 10);
-      location = await vscode.commands.executeCommand(
-        "vscode.executeDefinitionProvider",
-        mainUri,
-        position
-      );
-      assert.ok(location.length > 0);
-      assert.deepEqual(location[0].range, new vscode.Range(17, 8, 17, 12));
-      assert.equal(location[0].uri.fsPath, mainUri.fsPath);
+      test("Test FooEnum test", () => {
+        let position: vscode.Position = new vscode.Position(17, 10);
+        vscode.commands
+          .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
+          .then((location: vscode.Location[]) => {
+            assert.ok(location.length > 0);
+            assert.deepEqual(
+              location[0].range,
+              new vscode.Range(17, 8, 17, 12)
+            );
+            assert.equal(location[0].uri.fsPath, mainUri.fsPath);
+          });
+      });
     });
 
-    await test("Test Doc Completion provider", async () => {
+    test("Test Doc Completion provider", () => {
       let position = new vscode.Position(31, 0);
-      let docCompletion: vscode.CompletionList = await vscode.commands.executeCommand(
-        "vscode.executeCompletionItemProvider",
-        mainUri,
-        position,
-        "/*"
-      );
-
-      assert.ok(docCompletion.items.length > 0);
+      vscode.commands
+        .executeCommand(
+          "vscode.executeCompletionItemProvider",
+          mainUri,
+          position,
+          "/*"
+        )
+        .then((docCompletion: vscode.CompletionList) => {
+          assert.ok(docCompletion.items.length > 0);
+        });
     });
 
-    await test("Test Signature Help Provider", async () => {
+    test("Test Signature Help provider", () => {
       let position = new vscode.Position(24, 16);
-      let signature: vscode.SignatureHelp = await vscode.commands.executeCommand(
-        "vscode.executeSignatureHelpProvider",
-        mainUri,
-        position,
-        "("
-      );
-
-      assert.ok(signature.signatures.length > 0);
+      vscode.commands
+        .executeCommand(
+          "vscode.executeSignatureHelpProvider",
+          mainUri,
+          position,
+          "("
+        )
+        .then((signature: vscode.SignatureHelp) => {
+          assert.deepEqual(
+            signature.signatures[0].label,
+            'native void RegConsoleCmd(const char[] cmd, ConCmd callback, const char[] description="", int flags=0)'
+          );
+          assert.equal(signature.signatures[0].parameters.length, 4);
+        });
     });
-  });
 
-  // Test the formater separatly to avoid interferences with the other tests
-  await suite("Test Formater provider", async () => {
-    await test("Test Formater Provider", async () => {
-      let edits: vscode.TextEdit[] = await vscode.commands.executeCommand(
-        "vscode.executeFormatDocumentProvider",
-        mainUri
-      );
-      assert.ok(edits !== undefined);
+    test("Test Formater provider", () => {
+      vscode.commands
+        .executeCommand("vscode.executeFormatDocumentProvider", mainUri)
+        .then((edits: vscode.TextEdit[]) => {
+          assert.ok(edits !== undefined);
+        });
     });
   });
 });
