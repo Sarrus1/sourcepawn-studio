@@ -12,7 +12,7 @@ import { run as CreateREADMECommand } from "../../Commands/createREADME";
 import { run as CreateMasterCommand } from "../../Commands/createGitHubActions";
 
 const testFolderLocation = "/../../../client/src/test/testSuite/";
-
+const testMainLocation = "scripting/main.sp";
 
 suite("Run tests", async () => {
   await test("Create Task Command", () => {
@@ -60,7 +60,7 @@ suite("Run tests", async () => {
     let uri: URI = URI.file(join(__dirname, testFolderLocation));
     vscode.commands.executeCommand("vscode.openFolder", uri);
     let mainUri: URI = URI.file(
-      join(__dirname, testFolderLocation, "scripting/main.sp")
+      join(__dirname, testFolderLocation, testMainLocation)
     );
     let secondaryUri: URI = URI.file(
       join(__dirname, testFolderLocation, "scripting/include/secondary.sp")
@@ -89,6 +89,19 @@ suite("Run tests", async () => {
     assert.ok(location.length > 0);
     assert.deepEqual(location[0].range, new vscode.Range(17, 8, 17, 12));
     assert.equal(location[0].uri.fsPath, mainUri.fsPath);
+
+
+  });
+
+  await test("Test formater", async () => {
+    let mainUri: URI = URI.file(
+      join(__dirname, testFolderLocation, testMainLocation)
+    );
+    let edits: vscode.TextEdit[] = await vscode.commands.executeCommand(
+      "vscode.executeFormatDocumentProvider",
+      mainUri
+    );
+    assert.ok(edits !== undefined);
   });
 });
 
