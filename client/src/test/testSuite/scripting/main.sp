@@ -140,3 +140,5 @@ public void OnWebHookExecuted(HTTPResponse response, DataPack pack)
 	}
 	PrintToServer("The webhook has been sent successfuly.");
 }
+
+#define FOO ;

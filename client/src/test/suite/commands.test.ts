@@ -45,7 +45,7 @@ suite("Run tests", () => {
     vscode.commands.executeCommand("vscode.open", mainUri);
 
     // Give some time to parse everything
-    await sleep(3000);
+    await sleep(500);
   });
 
   suiteTeardown("Remove files after the tests", () => {
@@ -121,11 +121,7 @@ suite("Run tests", () => {
               location[0].range,
               new vscode.Range(125, 13, 125, 26)
             );
-            assert.ok(
-              location[0].uri.fsPath.includes(
-                "\\scripting\\include\\sourcemod.inc"
-              )
-            );
+            assert.ok(location[0].uri.fsPath.endsWith("sourcemod.inc"));
           });
       });
 
@@ -139,11 +135,7 @@ suite("Run tests", () => {
               location[0].range,
               new vscode.Range(80, 14, 80, 26)
             );
-            assert.ok(
-              location[0].uri.fsPath.includes(
-                "\\scripting\\include\\convars.inc"
-              )
-            );
+            assert.ok(location[0].uri.fsPath.endsWith("convars.inc"));
           });
       });
 
@@ -198,6 +190,48 @@ suite("Run tests", () => {
       });
     });
 
+    suite("Test Hover provider", () => {
+      test("Test ConVar g_cvWebhook", () => {
+        let position: vscode.Position = new vscode.Position(16, 3);
+        return vscode.commands
+          .executeCommand("vscode.executeHoverProvider", mainUri, position)
+          .then((hover: vscode.Hover[]) => {
+            assert.ok(hover.length > 0);
+            assert.deepEqual(hover[0].range, new vscode.Range(16, 0, 16, 6));
+          });
+      });
+
+      test("Test OnPluginStart", () => {
+        let position: vscode.Position = new vscode.Position(19, 19);
+        return vscode.commands
+          .executeCommand("vscode.executeHoverProvider", mainUri, position)
+          .then((hover: vscode.Hover[]) => {
+            assert.ok(hover.length > 0);
+            assert.deepEqual(hover[0].range, new vscode.Range(19, 12, 19, 25));
+          });
+      });
+
+      test("Test CreateConVar", () => {
+        let position: vscode.Position = new vscode.Position(21, 22);
+        return vscode.commands
+          .executeCommand("vscode.executeHoverProvider", mainUri, position)
+          .then((hover: vscode.Hover[]) => {
+            assert.ok(hover.length > 0);
+            assert.deepEqual(hover[0].range, new vscode.Range(21, 15, 21, 27));
+          });
+      });
+
+      test("Test test.Init(1) line 29", () => {
+        let position: vscode.Position = new vscode.Position(29, 9);
+        return vscode.commands
+          .executeCommand("vscode.executeHoverProvider", mainUri, position)
+          .then((hover: vscode.Hover[]) => {
+            assert.ok(hover.length > 0);
+            assert.deepEqual(hover[0].range, new vscode.Range(29, 6, 29, 10));
+          });
+      });
+    });
+
     test("Test Doc Completion provider", () => {
       let position = new vscode.Position(31, 0);
       return vscode.commands
@@ -235,6 +269,15 @@ suite("Run tests", () => {
         .executeCommand("vscode.executeFormatDocumentProvider", mainUri)
         .then((edits: vscode.TextEdit[]) => {
           assert.ok(edits !== undefined);
+        });
+    });
+
+    test("Test Semantic Token Highlighting provider", () => {
+      return vscode.commands
+        .executeCommand("vscode.provideDocumentSemanticTokens", mainUri)
+        .then((tokens: vscode.SemanticTokens) => {
+          // For now we test that it's equal to zero
+          assert.equal(tokens.data.length, 5);
         });
     });
   });

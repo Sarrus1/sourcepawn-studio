@@ -13,7 +13,6 @@
   CompletionItemKind,
   Hover,
   SignatureHelp,
-  ProviderResult,
   SemanticTokens,
   SemanticTokensBuilder,
   DocumentSymbol,
