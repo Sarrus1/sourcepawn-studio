@@ -49,11 +49,12 @@ export async function run(): Promise<void> {
   const mocha = new Mocha({
     ui: "tdd",
     timeout: 10 * 1000,
-    color: true
+    color: true,
   });
 
   // Add all files to the test suite
   const files = glob.sync("**/*.test.js", { cwd: testsRoot });
+  console.log(files.length);
   files.forEach((f) => mocha.addFile(path.resolve(testsRoot, f)));
 
   const failures: number = await new Promise((resolve) => mocha.run(resolve));

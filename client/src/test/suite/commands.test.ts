@@ -13,95 +13,149 @@ import { run as CreateMasterCommand } from "../../Commands/createGitHubActions";
 
 const testFolderLocation = "/../../../client/src/test/testSuite/";
 const testMainLocation = "scripting/main.sp";
+const testSecondaryLocation = "scripting/include/secondary.sp";
+const mainUri: URI = URI.file(
+  join(__dirname, testFolderLocation, testMainLocation)
+);
+const secondaryUri: URI = URI.file(
+  join(__dirname, testFolderLocation, testSecondaryLocation)
+);
 
 suite("Run tests", async () => {
-  await test("Create Task Command", () => {
-    let examplesVscode = join(__dirname, testFolderLocation, ".vscode");
-    rmdir(examplesVscode);
-    let error: number = CreateTaskCommand();
-    // If sm_home is not defined, this command will error out.
-    // This counts this error as expected behaviour.
-    let test: boolean = error == 0 || error == 1;
-    assert.equal(test, true);
-    rmdir(examplesVscode);
-  });
-  
-  /*
-  await test("Create Script Command", () => {
-    let examplesScripting = join(__dirname, testFolderLocation, "scripting");
-    rmdir(examplesScripting);
-    let error: number = CreateScriptCommand();
-    assert.equal(error, 0);
-    rmdir(examplesScripting);
-  });
-  */
-
-  await test("Create ReadMe Command", () => {
-    let examplesReadme = join(__dirname, testFolderLocation, "README.md");
-    if (fs.existsSync(examplesReadme)) {
-      fs.unlinkSync(examplesReadme);
-    }
-    let error: number = CreateREADMECommand();
-    assert.equal(error, 0);
-    if (fs.existsSync(examplesReadme)) {
-      fs.unlinkSync(examplesReadme);
-    }
-  });
-
-  await test("Create Master Command", () => {
-    let examplesGithub = join(__dirname, testFolderLocation, ".github");
-    rmdir(examplesGithub);
-    let error: number = CreateMasterCommand();
-    assert.equal(error, 0);
-    rmdir(examplesGithub);
-  });
-
-  await test("Open and parse files", async () => {
+  suiteSetup(async () => {
     let uri: URI = URI.file(join(__dirname, testFolderLocation));
-    vscode.commands.executeCommand("vscode.openFolder", uri);
-    let mainUri: URI = URI.file(
-      join(__dirname, testFolderLocation, testMainLocation)
-    );
-    let secondaryUri: URI = URI.file(
-      join(__dirname, testFolderLocation, "scripting/include/secondary.sp")
-    );
-    vscode.commands.executeCommand("vscode.open", mainUri);
-    // Give some time to parse everything
-    await sleep(3000);
-    // Test ConVar g_cvWebhook;
-    let position: vscode.Position = new vscode.Position(16, 8);
-    let location: vscode.Location[] = await vscode.commands.executeCommand(
-      "vscode.executeDefinitionProvider",
-      mainUri,
-      position
-    );
-    assert.ok(location.length > 0);
-    assert.deepEqual(location[0].range, new vscode.Range(16, 7, 16, 18));
-    assert.equal(location[0].uri.fsPath, mainUri.fsPath);
-
-    // Test FooEnum test;
-    position = new vscode.Position(17, 10);
-    location = await vscode.commands.executeCommand(
-      "vscode.executeDefinitionProvider",
-      mainUri,
-      position
-    );
-    assert.ok(location.length > 0);
-    assert.deepEqual(location[0].range, new vscode.Range(17, 8, 17, 12));
-    assert.equal(location[0].uri.fsPath, mainUri.fsPath);
-
-
+    await vscode.commands.executeCommand("vscode.openFolder", uri);
   });
 
-  await test("Test formater", async () => {
-    let mainUri: URI = URI.file(
-      join(__dirname, testFolderLocation, testMainLocation)
+  suite("Test commands", async () => {
+    const examplesVscode = join(__dirname, testFolderLocation, ".vscode");
+    const examplesReadme = join(__dirname, testFolderLocation, "README.md");
+    const examplesScript = join(
+      __dirname,
+      testFolderLocation,
+      "scripting/testSuite.sp"
     );
-    let edits: vscode.TextEdit[] = await vscode.commands.executeCommand(
-      "vscode.executeFormatDocumentProvider",
-      mainUri
-    );
-    assert.ok(edits !== undefined);
+    const examplesGithub = join(__dirname, testFolderLocation, ".github");
+
+    await suiteSetup("Remove files before", async () => {
+      rmdir(examplesVscode);
+      if (fs.existsSync(examplesReadme)) {
+        fs.unlinkSync(examplesReadme);
+      }
+      if (fs.existsSync(examplesScript)) {
+        fs.unlinkSync(examplesScript);
+      }
+      rmdir(examplesGithub);
+    });
+
+    await test("Create Task Command", () => {
+      rmdir(examplesVscode);
+      let error: number = CreateTaskCommand();
+      // If sm_home is not defined, this command will error out.
+      // This counts this error as expected behaviour.
+      let test: boolean = error == 0 || error == 1;
+      assert.equal(test, true);
+    });
+
+    await test("Create Script Command", () => {
+      let error: number = CreateScriptCommand();
+      assert.equal(error, 0);
+    });
+
+    await test("Create ReadMe Command", () => {
+      if (fs.existsSync(examplesReadme)) {
+        fs.unlinkSync(examplesReadme);
+      }
+      let error: number = CreateREADMECommand();
+      assert.equal(error, 0);
+      if (fs.existsSync(examplesReadme)) {
+        fs.unlinkSync(examplesReadme);
+      }
+    });
+
+    await test("Create Master Command", () => {
+      rmdir(examplesGithub);
+      let error: number = CreateMasterCommand();
+      assert.equal(error, 0);
+      rmdir(examplesGithub);
+    });
+
+    await suiteTeardown("Remove files after the tests", async () => {
+      rmdir(examplesVscode);
+      if (fs.existsSync(examplesReadme)) {
+        fs.unlinkSync(examplesReadme);
+      }
+      if (fs.existsSync(examplesScript)) {
+        fs.unlinkSync(examplesScript);
+      }
+      rmdir(examplesGithub);
+    });
+  });
+
+  await suite("Test providers", async () => {
+    await test("Test Position Provider", async () => {
+      vscode.commands.executeCommand("vscode.open", mainUri);
+
+      // Give some time to parse everything
+      await sleep(3000);
+
+      // Test ConVar g_cvWebhook;
+      let position: vscode.Position = new vscode.Position(16, 8);
+      let location: vscode.Location[] = await vscode.commands.executeCommand(
+        "vscode.executeDefinitionProvider",
+        mainUri,
+        position
+      );
+      assert.ok(location.length > 0);
+      assert.deepEqual(location[0].range, new vscode.Range(16, 7, 16, 18));
+      assert.equal(location[0].uri.fsPath, mainUri.fsPath);
+
+      // Test FooEnum test;
+      position = new vscode.Position(17, 10);
+      location = await vscode.commands.executeCommand(
+        "vscode.executeDefinitionProvider",
+        mainUri,
+        position
+      );
+      assert.ok(location.length > 0);
+      assert.deepEqual(location[0].range, new vscode.Range(17, 8, 17, 12));
+      assert.equal(location[0].uri.fsPath, mainUri.fsPath);
+    });
+
+    await test("Test Doc Completion provider", async () => {
+      let position = new vscode.Position(31, 0);
+      let docCompletion: vscode.CompletionList = await vscode.commands.executeCommand(
+        "vscode.executeCompletionItemProvider",
+        mainUri,
+        position,
+        "/*"
+      );
+
+      assert.ok(docCompletion.items.length > 0);
+    });
+
+    await test("Test Signature Help Provider", async () => {
+      let position = new vscode.Position(24, 16);
+      let signature: vscode.SignatureHelp = await vscode.commands.executeCommand(
+        "vscode.executeSignatureHelpProvider",
+        mainUri,
+        position,
+        "("
+      );
+
+      assert.ok(signature.signatures.length > 0);
+    });
+  });
+
+  // Test the formater separatly to avoid interferences with the other tests
+  await suite("Test Formater provider", async () => {
+    await test("Test Formater Provider", async () => {
+      let edits: vscode.TextEdit[] = await vscode.commands.executeCommand(
+        "vscode.executeFormatDocumentProvider",
+        mainUri
+      );
+      assert.ok(edits !== undefined);
+    });
   });
 });
 
