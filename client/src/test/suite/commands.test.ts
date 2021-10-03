@@ -14,7 +14,7 @@ import { run as CreateMasterCommand } from "../../Commands/createGitHubActions";
 
 const testFolderLocation = "/../../../client/src/test/testSuite/";
 const testMainLocation = "scripting/main.sp";
-const testSecondaryLocation = "scripting/include/secondary.sp";
+const testSecondaryLocation = "scripting/include/second.sp";
 const mainUri: URI = URI.file(
   join(__dirname, testFolderLocation, testMainLocation)
 );
@@ -85,7 +85,7 @@ suite("Run tests", () => {
     suite("Test Position provider", () => {
       test("Test ConVar g_cvWebhook", () => {
         let position: vscode.Position = new vscode.Position(16, 8);
-        vscode.commands
+        return vscode.commands
           .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
           .then((location: vscode.Location[]) => {
             assert.ok(location.length > 0);
@@ -97,9 +97,23 @@ suite("Run tests", () => {
           });
       });
 
-      test("Test OnPluginStart;", () => {
+      test("Test FooEnum test", () => {
+        let position: vscode.Position = new vscode.Position(17, 10);
+        return vscode.commands
+          .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
+          .then((location: vscode.Location[]) => {
+            assert.ok(location.length > 0);
+            assert.deepEqual(
+              location[0].range,
+              new vscode.Range(17, 8, 17, 12)
+            );
+            assert.equal(location[0].uri.fsPath, mainUri.fsPath);
+          });
+      });
+
+      test("Test OnPluginStart", () => {
         let position: vscode.Position = new vscode.Position(19, 19);
-        vscode.commands
+        return vscode.commands
           .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
           .then((location: vscode.Location[]) => {
             assert.ok(location.length > 0);
@@ -116,8 +130,8 @@ suite("Run tests", () => {
       });
 
       test("Test CreateConVar", () => {
-        let position: vscode.Position = new vscode.Position(22, 22);
-        vscode.commands
+        let position: vscode.Position = new vscode.Position(21, 22);
+        return vscode.commands
           .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
           .then((location: vscode.Location[]) => {
             assert.ok(location.length > 0);
@@ -133,9 +147,9 @@ suite("Run tests", () => {
           });
       });
 
-      test("Test FooEnum test", () => {
-        let position: vscode.Position = new vscode.Position(17, 10);
-        vscode.commands
+      test("Test test line 28", () => {
+        let position: vscode.Position = new vscode.Position(28, 4);
+        return vscode.commands
           .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
           .then((location: vscode.Location[]) => {
             assert.ok(location.length > 0);
@@ -146,11 +160,47 @@ suite("Run tests", () => {
             assert.equal(location[0].uri.fsPath, mainUri.fsPath);
           });
       });
+
+      test("Test test.fullAccountID line 28", () => {
+        let position: vscode.Position = new vscode.Position(28, 13);
+        return vscode.commands
+          .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
+          .then((location: vscode.Location[]) => {
+            assert.ok(location.length > 0);
+            assert.deepEqual(location[0].range, new vscode.Range(4, 6, 4, 19));
+            assert.equal(location[0].uri.fsPath, secondaryUri.fsPath);
+          });
+      });
+
+      test("Test test line 29", () => {
+        let position: vscode.Position = new vscode.Position(29, 4);
+        return vscode.commands
+          .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
+          .then((location: vscode.Location[]) => {
+            assert.ok(location.length > 0);
+            assert.deepEqual(
+              location[0].range,
+              new vscode.Range(17, 8, 17, 12)
+            );
+            assert.equal(location[0].uri.fsPath, mainUri.fsPath);
+          });
+      });
+
+      test("Test test.Init(1) line 29", () => {
+        let position: vscode.Position = new vscode.Position(29, 9);
+        return vscode.commands
+          .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
+          .then((location: vscode.Location[]) => {
+            assert.ok(location.length > 0);
+            assert.deepEqual(location[0].range, new vscode.Range(6, 6, 6, 10));
+            assert.equal(location[0].uri.fsPath, secondaryUri.fsPath);
+          });
+      });
     });
 
     test("Test Doc Completion provider", () => {
       let position = new vscode.Position(31, 0);
-      vscode.commands
+      return vscode.commands
         .executeCommand(
           "vscode.executeCompletionItemProvider",
           mainUri,
@@ -164,7 +214,7 @@ suite("Run tests", () => {
 
     test("Test Signature Help provider", () => {
       let position = new vscode.Position(24, 16);
-      vscode.commands
+      return vscode.commands
         .executeCommand(
           "vscode.executeSignatureHelpProvider",
           mainUri,
@@ -181,7 +231,7 @@ suite("Run tests", () => {
     });
 
     test("Test Formater provider", () => {
-      vscode.commands
+      return vscode.commands
         .executeCommand("vscode.executeFormatDocumentProvider", mainUri)
         .then((edits: vscode.TextEdit[]) => {
           assert.ok(edits !== undefined);

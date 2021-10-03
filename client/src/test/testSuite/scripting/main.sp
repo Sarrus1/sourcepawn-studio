@@ -1,17 +1,17 @@
 #include <discordWebhookAPI>
-#include <sourcemod>
 #include <second.sp>
+#include <sourcemod>
 #pragma newdecls required
 #pragma semicolon 1
 
 
 public Plugin myinfo =
 {
-	name = "discordWebhookAPI",
-	author = "Sarrus",
-	description = "",
-	version = "1.0",
-	url = "https://github.com/Sarrus1/discordWebhookAPI"
+		name = "discordWebhookAPI",
+		author = "Sarrus",
+		description = "",
+		version = "1.0",
+		url = "https://github.com/Sarrus1/discordWebhookAPI"
 };
 
 ConVar g_cvWebhook;
@@ -26,7 +26,7 @@ public void OnPluginStart()
 
 	AutoExecConfig(true, "plugin.example");
 
-	test.fullAccountID="empty";
+	test.fullAccountID = "empty";
 	test.Init(1);
 }
 
