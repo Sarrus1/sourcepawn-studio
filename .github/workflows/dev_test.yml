@@ -1,4 +1,4 @@
-﻿name: Package Extension
+﻿name: Run tests
 
 on:
   push:
