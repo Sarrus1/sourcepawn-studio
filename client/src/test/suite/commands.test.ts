@@ -264,7 +264,7 @@ suite("Run tests", () => {
         });
     });
 
-    test("Test Formater provider", () => {
+    /*     test("Test Formater provider", () => {
       return vscode.commands
         .executeCommand("vscode.executeFormatDocumentProvider", mainUri)
         .then((edits: vscode.TextEdit[]) => {
@@ -279,7 +279,7 @@ suite("Run tests", () => {
           // For now we test that it's equal to zero
           assert.equal(tokens.data.length, 5);
         });
-    });
+    }); */
   });
 });
 
