@@ -605,7 +605,15 @@ class Parser {
     let fullRange = new Range(this.lineNb, 0, this.lineNb, line.length);
     this.completions.add(
       name,
-      new TypeDefItem(name, match[0], this.file, description, range, fullRange)
+      new TypeDefItem(
+        name,
+        match[0],
+        this.file,
+        description,
+        type,
+        range,
+        fullRange
+      )
     );
   }
 

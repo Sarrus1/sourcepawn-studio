@@ -924,6 +924,7 @@ export class KeywordItem implements SPItem {
 export class TypeDefItem implements SPItem {
   name: string;
   details: string;
+  type: string;
   file: string;
   description: string;
   kind = CompletionItemKind.TypeParameter;
@@ -935,12 +936,14 @@ export class TypeDefItem implements SPItem {
     details: string,
     file: string,
     description: string,
+    type: string,
     range: Range,
     fullRange: Range
   ) {
     this.name = name;
     this.details = details;
     this.file = file;
+    this.type = type;
     this.description = description;
     this.range = range;
     this.fullRange = fullRange;
