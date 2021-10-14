@@ -9,6 +9,10 @@
 - Added all string format specifiers, including the non-officialy supported ones (see #136).
 - Added support for typedefs and typesets.
 
+### Fixed
+
+- When creating a new project, the editor will now automatically focus on the newly created .sp file.
+
 ## [2.4.4]
 
 ### Fixed
