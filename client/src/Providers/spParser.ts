@@ -12,6 +12,7 @@ import {
   EnumStructItem,
   SPItem,
   MethodMapItem,
+  TypeDefItem,
 } from "./spItems";
 import { isControlStatement } from "./spDefinitions";
 import {
@@ -279,6 +280,12 @@ class Parser {
         }
       }
       this.state.push(State.Loop);
+      return;
+    }
+
+    match = line.match(/\s*typedef\s+(\w+)\s*\=\s*function\s+(\w+).*/);
+    if (match) {
+      this.readTypeDef(match, line);
       return;
     }
 
@@ -588,6 +595,18 @@ class Parser {
       partial_params_match = partial_params_match.replace(unused_comma[1], "");
     }
     return partial_params_match;
+  }
+
+  readTypeDef(match: RegExpMatchArray, line: string): void {
+    let name = match[1];
+    let type = match[2];
+    let range = this.makeDefinitionRange(name, line);
+    let { description, params } = this.parse_doc_comment();
+    let fullRange = new Range(this.lineNb, 0, this.lineNb, line.length);
+    this.completions.add(
+      name,
+      new TypeDefItem(name, match[0], this.file, description, range, fullRange)
+    );
   }
 
   read_function(line: string) {

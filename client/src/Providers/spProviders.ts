@@ -403,6 +403,7 @@ export class Providers {
       CompletionItemKind.Enum,
       CompletionItemKind.Constant,
       CompletionItemKind.Variable,
+      CompletionItemKind.TypeParameter,
     ];
     const allowedParentsKinds = [
       CompletionItemKind.Class,

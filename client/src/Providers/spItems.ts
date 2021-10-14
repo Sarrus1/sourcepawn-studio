@@ -921,6 +921,77 @@ export class KeywordItem implements SPItem {
   }
 }
 
+export class TypeDefItem implements SPItem {
+  name: string;
+  details: string;
+  file: string;
+  description: string;
+  kind = CompletionItemKind.TypeParameter;
+  range: Range;
+  fullRange: Range;
+
+  constructor(
+    name: string,
+    details: string,
+    file: string,
+    description: string,
+    range: Range,
+    fullRange: Range
+  ) {
+    this.name = name;
+    this.details = details;
+    this.file = file;
+    this.description = description;
+    this.range = range;
+    this.fullRange = fullRange;
+  }
+
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: basename(this.file),
+    };
+  }
+
+  toDefinitionItem(): LocationLink {
+    return {
+      targetRange: this.range,
+      targetUri: URI.file(this.file),
+    };
+  }
+
+  toSignature(): SignatureInformation {
+    return undefined;
+  }
+
+  toHover(): Hover {
+    if (!this.description) {
+      return;
+    }
+    return new Hover([
+      { language: "sourcepawn", value: this.details },
+      descriptionToMD(this.description),
+    ]);
+  }
+
+  toDocumentSymbol(): DocumentSymbol {
+    if (this.fullRange === undefined) {
+      return undefined;
+    }
+    return new DocumentSymbol(
+      this.name,
+      this.description,
+      SymbolKind.TypeParameter,
+      this.fullRange,
+      this.range
+    );
+  }
+}
+
 export class Include {
   uri: string;
   IsBuiltIn: boolean;
