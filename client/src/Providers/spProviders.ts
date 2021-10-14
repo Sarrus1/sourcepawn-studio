@@ -216,11 +216,7 @@ export class Providers {
         if (match) {
           let items = this.itemsRepository
             .getAllItems(document.uri.toString())
-            .filter(
-              (item) =>
-                item.kind === CompletionItemKind.Method &&
-                item.name === item.parent
-            );
+            .filter((item) => item.kind === CompletionItemKind.Constructor);
           return new CompletionList(
             items.map((e) => e.toCompletionItem(document.uri.fsPath))
           );

@@ -226,7 +226,7 @@ export class MethodItem implements SPItem {
   description: string;
   detail: string;
   params: FunctionParam[];
-  kind = CompletionItemKind.Method;
+  kind: CompletionItemKind;
   fullRange: Range;
   type: string;
   range: Range;
@@ -247,6 +247,10 @@ export class MethodItem implements SPItem {
   ) {
     this.parent = parent;
     this.name = name;
+    this.kind =
+      this.name == this.parent
+        ? CompletionItemKind.Constructor
+        : CompletionItemKind.Method;
     this.detail = detail;
     this.description = description;
     this.params = params;
