@@ -5,6 +5,7 @@
 ### Added
 
 - Added CodeFactor badge.
+- Added support for new Github action.
 
 ## [2.4.4]
 
