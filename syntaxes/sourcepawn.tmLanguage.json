@@ -155,6 +155,18 @@
       }
     },
     {
+      "comment": "Constructors",
+      "match": "(new)(?:\\s+(\\w+)\\s*\\()?",
+      "captures": {
+        "1": {
+          "name": "keyword.view.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.methodmap_constructor.sourcepawn"
+        }
+      }
+    },
+    {
       "comment": "Misc types",
       "match": "#\\b(if|else|endif|emit|deprecated|undef|endinput|endscript|assert|define|error|warning|file)\\b",
       "name": "keyword.control.misc.sourcepawn"
@@ -232,7 +244,7 @@
       "match": "^\\s*(methodmap)\\s+(\\w+)\\s*(?:<\\s*(\\w+))?",
       "captures": {
         "1": {
-          "name": "keyword.methodmap.sourcepaw"
+          "name": "keyword.methodmap.sourcepawn"
         },
         "2": {
           "name": "support.type.core.methodmap.sourcepawn"
@@ -245,7 +257,7 @@
     {
       "comment": "keywords",
       "name": "keyword.sourcepawn",
-      "match": "\\s*\\b(?:break|continue|new|static|decl|const|delete|forward|native|public|stock|funcenum|functag|this|sizeof)\\b"
+      "match": "\\s*\\b(?:break|continue|static|decl|const|delete|forward|native|public|stock|funcenum|functag|this|sizeof)\\b"
     },
     {
       "comment": "Function params new syntax",
