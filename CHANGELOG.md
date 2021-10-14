@@ -7,7 +7,7 @@
 - Added CodeFactor badge.
 - Added support for new Github action.
 - Added all string format specifiers, including the non-officialy supported ones (see #136).
-- Added support for typedefs.
+- Added support for typedefs and typesets.
 
 ## [2.4.4]
 

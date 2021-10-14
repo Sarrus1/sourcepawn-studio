@@ -13,11 +13,13 @@ import {
   SPItem,
   MethodMapItem,
   TypeDefItem,
+  TypeSetItem,
 } from "./spItems";
 import { isControlStatement } from "./spDefinitions";
 import {
   CompletionItemKind,
   Location,
+  Position,
   Range,
   workspace as Workspace,
 } from "vscode";
@@ -283,9 +285,15 @@ class Parser {
       return;
     }
 
-    match = line.match(/\s*typedef\s+(\w+)\s*\=\s*function\s+(\w+).*/);
+    match = line.match(/^\s*typedef\s+(\w+)\s*\=\s*function\s+(\w+).*/);
     if (match) {
       this.readTypeDef(match, line);
+      return;
+    }
+
+    match = line.match(/^\s*typeset\s+(\w+)/);
+    if (match) {
+      this.readTypeSet(match, line);
       return;
     }
 
@@ -614,6 +622,32 @@ class Parser {
         range,
         fullRange
       )
+    );
+  }
+
+  readTypeSet(match: RegExpMatchArray, line: string): void {
+    let startPosition = new Position(this.lineNb, 0);
+    let name = match[1];
+    let range = this.makeDefinitionRange(name, line);
+    let { description, params } = this.parse_doc_comment();
+    let iter = 0;
+    while (!/^\s*}\s*;/.test(line)) {
+      if (iter == 200) {
+        return;
+      }
+      line = this.lines.shift();
+      this.lineNb++;
+      this.searchForDefinesInString(line);
+      iter++;
+    }
+    let endMatch = line.match(/^\s*}\s*;/);
+    let fullRange = new Range(
+      startPosition,
+      new Position(this.lineNb, endMatch[0].length)
+    );
+    this.completions.add(
+      name,
+      new TypeSetItem(name, match[0], this.file, description, range, fullRange)
     );
   }
 
