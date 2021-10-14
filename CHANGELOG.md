@@ -6,6 +6,7 @@
 
 - Added CodeFactor badge.
 - Added support for new Github action.
+- Added all string format specifiers, including the non-officialy supported ones (see #136).
 
 ## [2.4.4]
 
