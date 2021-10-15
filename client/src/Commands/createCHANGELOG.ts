@@ -2,7 +2,7 @@ import { workspace as Workspace, window, extensions } from "vscode";
 import { existsSync, copyFileSync } from "fs";
 import { join } from "path";
 
-export function run(rootpath: string = undefined) {
+export function run(rootpath?: string) {
   // get workspace folder
   let workspaceFolders = Workspace.workspaceFolders;
   if (workspaceFolders === undefined) {
