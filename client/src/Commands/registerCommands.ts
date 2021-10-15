@@ -10,6 +10,7 @@ import { run as RefreshPluginsCommand } from "./refreshPlugins";
 import { run as InsertParametersCommand } from "./insertParameters";
 import { run as setFileAsMainCommand } from "./setFileAsMain";
 import { run as installSMCommand } from "./installSM";
+import { run as createChangelogCommand } from "./createCHANGELOG";
 
 export function registerSMCommands(context: ExtensionContext) {
   let createTask = commands.registerCommand(
@@ -77,4 +78,10 @@ export function registerSMCommands(context: ExtensionContext) {
     installSMCommand.bind(undefined)
   );
   context.subscriptions.push(installSM);
+
+  let createChangelog = commands.registerTextEditorCommand(
+    "sourcepawn-vscode.createChangelog",
+    createChangelogCommand.bind(undefined)
+  );
+  context.subscriptions.push(createChangelog);
 }

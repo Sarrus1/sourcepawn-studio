@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [2.4.6]
+
+### Fixed
+
+- Fixed an issue with the Github workflow template.
+- Added SM Create Changelog command.
+
 ## [2.4.5]
 
 ### Added
