@@ -99,9 +99,11 @@ export function activate(context: ExtensionContext) {
       window.activeTextEditor.document.uri.fsPath
     );
   }
-  window.onDidChangeActiveTextEditor((e) =>
-    providers.handle_document_opening(e.document.uri.fsPath)
-  );
+  window.onDidChangeActiveTextEditor((e) => {
+    if (e !== undefined) {
+      providers.handle_document_opening(e.document.uri.fsPath);
+    }
+  });
 
   context.subscriptions.push(
     languages.registerDocumentSymbolProvider(SP_MODE, providers)
