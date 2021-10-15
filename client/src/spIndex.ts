@@ -3,7 +3,6 @@ import {
   workspace as Workspace,
   languages,
   window,
-  WorkspaceFolder,
   commands,
 } from "vscode";
 import {
@@ -12,20 +11,17 @@ import {
   refreshDiagnostics,
 } from "./spLinter";
 const glob = require("glob");
-import { existsSync } from "fs";
-import { join } from "path";
 import { SP_MODE } from "./spMode";
 import { Providers } from "./Providers/spProviders";
 import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./spFormat";
-import { basename } from "path";
 import { URI } from "vscode-uri";
 import { SP_LEGENDS } from "./spLegends";
+import { findMainPath } from "./spUtils";
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
   let formatter = new SMDocumentFormattingEditProvider();
-  let workspace: WorkspaceFolder;
   providers.parseSMApi();
   let workspaceFolders = Workspace.workspaceFolders;
   if (workspaceFolders === undefined) {
@@ -33,7 +29,6 @@ export function activate(context: ExtensionContext) {
       "No workspace or folder found. \n Please open the folder containing your .sp file, not just the .sp file."
     );
   } else {
-    workspace = workspaceFolders[0];
     let watcher = Workspace.createFileSystemWatcher(
       "**​/*.{inc,sp}",
       false,
@@ -44,19 +39,11 @@ export function activate(context: ExtensionContext) {
     watcher.onDidCreate((uri) => {
       let uriString = URI.file(uri.fsPath).toString();
       providers.itemsRepository.documents.add(uriString);
-      let MainPath: string =
-        Workspace.getConfiguration("sourcepawn").get("MainPath") || "";
-      if (MainPath !== "") {
-        if (!existsSync(MainPath)) {
-          let workspace: WorkspaceFolder = Workspace.workspaceFolders[0];
-          MainPath = join(workspace.uri.fsPath, MainPath);
-          if (!existsSync(MainPath)) {
-            return;
-          }
-        }
-        MainPath = URI.file(MainPath).toString();
+      let mainPath = findMainPath();
+      if (mainPath !== undefined) {
+        mainPath = URI.file(mainPath).toString();
         for (let document of Workspace.textDocuments) {
-          if (document.uri.toString() === MainPath) {
+          if (document.uri.toString() === mainPath) {
             refreshDiagnostics(document, compilerDiagnostics);
             break;
           }
@@ -66,43 +53,44 @@ export function activate(context: ExtensionContext) {
     watcher.onDidDelete((uri) => {
       providers.itemsRepository.documents.delete(uri.fsPath);
     });
+
+    // Get all the files from the workspaces
+    getDirectories(
+      workspaceFolders.map((e) => e.uri.fsPath),
+      providers
+    );
   }
-  if (workspace !== undefined) {
-    getDirectories([workspace.uri.fsPath], providers);
-  }
+
+  Workspace.onDidChangeWorkspaceFolders((e) => {
+    getDirectories(
+      e.added.map((folder) => folder.uri.fsPath),
+      providers
+    );
+  });
+
   // Get the names and directories of optional include directories.
   let optionalIncludeDirs: string[] = Workspace.getConfiguration(
     "sourcepawn"
   ).get("optionalIncludeDirsPaths");
   getDirectories(optionalIncludeDirs, providers);
 
-  let MainPath: string =
-    Workspace.getConfiguration("sourcepawn").get("MainPath") || "";
-  if (MainPath != "") {
-    try {
-      if (!existsSync(MainPath)) {
-        let workspace: WorkspaceFolder = Workspace.workspaceFolders[0];
-        MainPath = join(workspace.uri.fsPath, MainPath);
-        if (!existsSync(MainPath)) {
-          throw new Error("MainPath is incorrect.");
+  let mainPath: string = findMainPath();
+  if (mainPath !== undefined && mainPath != "") {
+    providers.handle_document_opening(mainPath);
+  } else if (mainPath == "") {
+    window
+      .showErrorMessage(
+        "A setting for the main.sp file was specified, but seems invalid. Please make sure it is valid.",
+        "Open Settings"
+      )
+      .then((choice) => {
+        if (choice === "Open Settings") {
+          commands.executeCommand(
+            "workbench.action.openSettings",
+            "@ext:sarrus.sourcepawn-vscode"
+          );
         }
-      }
-      providers.handle_document_opening(MainPath);
-    } catch (error) {
-      window
-        .showErrorMessage(
-          "A setting for the main.sp file was specified, but seems invalid. Please make sure it is valid.",
-          "Open Settings"
-        )
-        .then((choice) => {
-          if (choice === "Open Settings") {
-            commands.executeCommand(
-              "workbench.action.openSettings",
-              "@ext:sarrus.sourcepawn-vscode"
-            );
-          }
-        });
-    }
+      });
   }
 
   // Load the currently opened file

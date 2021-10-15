@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.5.0]
+
+### Added
+
+- Added support for [multi-root workspaces](https://code.visualstudio.com/docs/editor/multi-root-workspaces).
+
 ## [2.4.6]
 
 ### Fixed
