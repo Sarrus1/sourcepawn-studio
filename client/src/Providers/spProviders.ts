@@ -164,6 +164,10 @@ export class Providers {
   public parseSMApi(): void {
     let sm_home: string =
       Workspace.getConfiguration("sourcepawn").get("SourcemodHome") || "";
+    let debugSetting = Workspace.getConfiguration("sourcepawn").get(
+      "trace.server"
+    );
+    let debug = debugSetting == "messages" || debugSetting == "verbose";
     if (sm_home == "") {
       window
         .showWarningMessage(
@@ -183,19 +187,24 @@ export class Providers {
         });
       return;
     }
+    if (debug) console.log("Parsing SM API");
     let files = glob.sync(join(sm_home, "**/*.inc"));
     for (let file of files) {
       try {
+        if (debug) console.log("SM API Reading", file);
         let completions = new FileItems(URI.file(file).toString());
         parseFile(file, completions, this.itemsRepository, true);
+        if (debug) console.log("SM API Done parsing", file);
 
         let uri = "file://__sourcemod_builtin/" + relative(sm_home, file);
         this.itemsRepository.completions.set(uri, completions);
         this.itemsRepository.documents.add(uri);
+        if (debug) console.log("SM API Done dealing with", uri);
       } catch (e) {
         console.error(e);
       }
     }
+    if (debug) console.log("Done parsing SM API");
   }
 
   public async provideCompletionItems(
