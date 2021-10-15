@@ -2,6 +2,7 @@ import { workspace as Workspace, window, commands } from "vscode";
 import { basename, extname, join } from "path";
 import { existsSync, mkdirSync } from "fs";
 import { platform } from "os";
+import { run as uploadToServerCommand } from "./uploadToServer";
 
 export async function run(args: any) {
   let activeDocumentPath: string;
@@ -152,10 +153,10 @@ export async function run(args: any) {
     terminal.sendText(command);
     if (
       Workspace.getConfiguration("sourcepawn").get(
-        "refreshAfterSuccessfulUpload"
+        "uploadAfterSuccessfulCompile"
       )
     ) {
-      await commands.executeCommand("sourcepawn-uploadToServer");
+      await uploadToServerCommand(undefined);
     }
   } catch (error) {
     console.log(error);

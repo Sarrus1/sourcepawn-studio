@@ -1,5 +1,6 @@
 ﻿import { workspace as Workspace, window, commands } from "vscode";
 import { join } from "path";
+import { run as refreshPluginsCommand } from "./refreshPlugins";
 // Keep the include like this,
 // otherwise FTPDeploy is not
 // recognised as a constructor
@@ -61,7 +62,7 @@ export async function run(args: any) {
           "uploadAfterSuccessfulCompile"
         )
       ) {
-        commands.executeCommand("sourcepawn-refreshPlugins");
+        refreshPluginsCommand(undefined);
       }
     })
     .catch((err) => console.error(err));

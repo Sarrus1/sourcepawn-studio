@@ -28,7 +28,7 @@
     "SourceMod",
     "AlliedMods",
     "AlliedModders",
-    "MetaMod"
+    "multi-root ready"
   ],
   "activationEvents": [
     "onLanguage:sourcepawn",

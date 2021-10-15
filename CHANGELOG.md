@@ -6,6 +6,10 @@
 
 - Added support for [multi-root workspaces](https://code.visualstudio.com/docs/editor/multi-root-workspaces).
 
+### Fixed
+
+- Fixed an issue were the files were not uploaded to the server once the plugin was successfuly compiled.
+
 ## [2.4.6]
 
 ### Fixed
