@@ -198,7 +198,7 @@ export class Providers {
 
         let uri =
           "file://__sourcemod_builtin/" +
-          relative(sm_home, file).replace("\\", "/");
+          relative(sm_home, file).replace(/\\/g, "/");
         this.itemsRepository.completions.set(uri, completions);
         this.itemsRepository.documents.add(uri);
         if (debug) console.log("SM API Done dealing with", uri);
