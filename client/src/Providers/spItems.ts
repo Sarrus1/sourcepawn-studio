@@ -226,7 +226,7 @@ export class MethodItem implements SPItem {
   description: string;
   detail: string;
   params: FunctionParam[];
-  kind = CompletionItemKind.Method;
+  kind: CompletionItemKind;
   fullRange: Range;
   type: string;
   range: Range;
@@ -247,6 +247,10 @@ export class MethodItem implements SPItem {
   ) {
     this.parent = parent;
     this.name = name;
+    this.kind =
+      this.name == this.parent
+        ? CompletionItemKind.Constructor
+        : CompletionItemKind.Method;
     this.detail = detail;
     this.description = description;
     this.params = params;
@@ -918,6 +922,151 @@ export class KeywordItem implements SPItem {
 
   toDocumentSymbol(): DocumentSymbol {
     return undefined;
+  }
+}
+
+export class TypeDefItem implements SPItem {
+  name: string;
+  details: string;
+  type: string;
+  file: string;
+  description: string;
+  kind = CompletionItemKind.TypeParameter;
+  range: Range;
+  fullRange: Range;
+
+  constructor(
+    name: string,
+    details: string,
+    file: string,
+    description: string,
+    type: string,
+    range: Range,
+    fullRange: Range
+  ) {
+    this.name = name;
+    this.details = details;
+    this.file = file;
+    this.type = type;
+    this.description = description;
+    this.range = range;
+    this.fullRange = fullRange;
+  }
+
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: basename(this.file),
+    };
+  }
+
+  toDefinitionItem(): LocationLink {
+    return {
+      targetRange: this.range,
+      targetUri: URI.file(this.file),
+    };
+  }
+
+  toSignature(): SignatureInformation {
+    return undefined;
+  }
+
+  toHover(): Hover {
+    if (!this.description) {
+      return;
+    }
+    return new Hover([
+      { language: "sourcepawn", value: this.details },
+      descriptionToMD(this.description),
+    ]);
+  }
+
+  toDocumentSymbol(): DocumentSymbol {
+    if (this.fullRange === undefined) {
+      return undefined;
+    }
+    return new DocumentSymbol(
+      this.name,
+      this.description,
+      SymbolKind.TypeParameter,
+      this.fullRange,
+      this.range
+    );
+  }
+}
+
+export class TypeSetItem implements SPItem {
+  name: string;
+  details: string;
+  file: string;
+  description: string;
+  kind = CompletionItemKind.TypeParameter;
+  range: Range;
+  fullRange: Range;
+
+  constructor(
+    name: string,
+    details: string,
+    file: string,
+    description: string,
+    range: Range,
+    fullRange: Range
+  ) {
+    this.name = name;
+    this.details = details;
+    this.file = file;
+    this.description = description;
+    this.range = range;
+    this.fullRange = fullRange;
+  }
+
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: basename(this.file),
+    };
+  }
+
+  toDefinitionItem(): LocationLink {
+    return {
+      targetRange: this.range,
+      targetUri: URI.file(this.file),
+    };
+  }
+
+  toSignature(): SignatureInformation {
+    return undefined;
+  }
+
+  toHover(): Hover {
+    if (!this.description) {
+      return;
+    }
+    return new Hover([
+      { language: "sourcepawn", value: `typedef ${this.name}` },
+      descriptionToMD(this.description),
+    ]);
+  }
+
+  toDocumentSymbol(): DocumentSymbol {
+    if (this.fullRange === undefined) {
+      return undefined;
+    }
+    return new DocumentSymbol(
+      this.name,
+      this.description,
+      SymbolKind.TypeParameter,
+      this.fullRange,
+      this.range
+    );
   }
 }
 

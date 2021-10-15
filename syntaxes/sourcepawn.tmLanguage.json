@@ -155,6 +155,18 @@
       }
     },
     {
+      "comment": "Constructors",
+      "match": "(new)(?:\\s+(\\w+)\\s*\\()?",
+      "captures": {
+        "1": {
+          "name": "keyword.view.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.methodmap_constructor.sourcepawn"
+        }
+      }
+    },
+    {
       "comment": "Misc types",
       "match": "#\\b(if|else|endif|emit|deprecated|undef|endinput|endscript|assert|define|error|warning|file)\\b",
       "name": "keyword.control.misc.sourcepawn"
@@ -232,7 +244,7 @@
       "match": "^\\s*(methodmap)\\s+(\\w+)\\s*(?:<\\s*(\\w+))?",
       "captures": {
         "1": {
-          "name": "keyword.methodmap.sourcepaw"
+          "name": "keyword.methodmap.sourcepawn"
         },
         "2": {
           "name": "support.type.core.methodmap.sourcepawn"
@@ -245,7 +257,7 @@
     {
       "comment": "keywords",
       "name": "keyword.sourcepawn",
-      "match": "\\s*\\b(?:break|continue|new|static|decl|const|delete|forward|native|public|stock|funcenum|functag|this|sizeof)\\b"
+      "match": "\\s*\\b(?:break|continue|static|decl|const|delete|forward|native|public|stock|funcenum|functag|this|sizeof)\\b"
     },
     {
       "comment": "Function params new syntax",
@@ -455,7 +467,7 @@
           "patterns": [
             {
               "name": "constant.character.format.sourcepawn",
-              "match": "%(?:a|A|b|B|c|d|H|I|j|m|M|i|p|S|U|u|w|W|x|X|y|Y|Z|f|L|N|s|T|t|%|(?:\\d+)?\\.\\d+(?:b|d|i|u|f|s|X|x))"
+              "match": "%(?:a|A|b|B|c|C|d|D|e|F|g|G|h|H|I|j|m|M|n|i|p|r|R|S|t|T|u|U|V|u|w|W|x|X|y|Y|z|Z|f|L|N|s|T|t|%|(?:\\d+)?\\.\\d+(?:b|d|i|u|f|s|X|x))"
             },
             {
               "name": "constant.character.escape.sourcepawn",

@@ -1,4 +1,10 @@
-import { workspace as Workspace, window, commands, extensions } from "vscode";
+import {
+  workspace as Workspace,
+  window,
+  commands,
+  extensions,
+  workspace,
+} from "vscode";
 import {
   existsSync,
   readFileSync,
@@ -6,6 +12,7 @@ import {
   writeFileSync,
   mkdirSync,
 } from "fs";
+import { URI } from "vscode-uri";
 import { join, basename } from "path";
 
 export function run(rootpath: string = undefined) {
@@ -75,5 +82,8 @@ export function run(rootpath: string = undefined) {
     console.log(err);
     return 3;
   }
+  workspace
+    .openTextDocument(URI.file(scriptFilePath))
+    .then((document) => window.showTextDocument(document));
   return 0;
 }

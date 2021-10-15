@@ -2,9 +2,9 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "2.4.4",
+  "version": "2.4.5",
   "publisher": "Sarrus",
-  "main": "./dist/extension",
+  "main": "./dist/spIndex",
   "icon": "sm.png",
   "homepage": "https://github.com/Sarrus1/sourcepawn-vscode/wiki",
   "bugs": {
@@ -437,7 +437,8 @@
     "vscode-test": "^1.5.2",
     "webpack": "^5.48.0",
     "webpack-cli": "^4.7.2",
-    "nyc": "^15.1.0"
+    "nyc": "^15.1.0",
+    "@istanbuljs/nyc-config-typescript": "^1.0.1"
   },
   "scripts": {
     "vscode:prepublish": "webpack --mode production",
@@ -445,6 +446,6 @@
     "watch": "webpack --mode development --watch",
     "webpack": "webpack --mode development",
     "postinstall": "cd client && npm install && cd ..",
-    "test": "npm run compile && node ./client/out/test/runTest.js"
+    "test": "npm run compile && node ./dist/test/runTest.js"
   }
 }

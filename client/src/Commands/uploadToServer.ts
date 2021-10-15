@@ -41,20 +41,29 @@ export async function run(args: any) {
   }
   // Override the "deleteRemote" setting for safety.
   config["deleteRemote"] = false;
+
   // Make sure the path to upload is relative to avoid uploading the whole disk.
-  let workspaceRoot: string = Workspace.workspaceFolders[0].uri.fsPath;
+  let workspaceFolders = Workspace.workspaceFolders;
+  if (workspaceFolders === undefined) {
+    window.showWarningMessage(
+      "No workspace or folder found. \n Please open the folder containing your .sp file, not just the .sp file."
+    );
+    return 1;
+  }
+  let workspaceRoot: string = workspaceFolders[0].uri.fsPath;
   config["localRoot"] = join(workspaceRoot, config["localRoot"]);
   ftpDeploy
     .deploy(config)
-    .then(async (res) => {
+    .then(() => {
       console.log("Upload is finished.");
       if (
         Workspace.getConfiguration("sourcepawn").get(
           "uploadAfterSuccessfulCompile"
         )
       ) {
-        await commands.executeCommand("sourcepawn-refreshPlugins");
+        commands.executeCommand("sourcepawn-refreshPlugins");
       }
     })
     .catch((err) => console.error(err));
+  return 0;
 }

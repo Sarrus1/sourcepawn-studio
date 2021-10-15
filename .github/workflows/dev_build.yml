@@ -1,4 +1,4 @@
-﻿name: Package Extension
+﻿name: Build extension
 
 on:
   push:

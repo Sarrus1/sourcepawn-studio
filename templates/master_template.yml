@@ -2,35 +2,61 @@ name: Compile with SourceMod
 
 on:
   pull_request:
-    branches: master
+    branches: main
   push:
-    branches: master
+    branches: main
 
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        SM_VERSION: ["1.10", "1.11"]
 
     steps:
       - uses: actions/checkout@v2
 
       - name: Set environment variables
-        run: |
-          # echo "SCRIPTS_PATH=scripting" >> $GITHUB_ENV
-          echo "SCRIPTS_PATH=scripting" >> $GITHUB_ENV
+        run: echo SCRIPTS_PATH=$(pwd) >> $GITHUB_ENV
       - name: Setup SourcePawn Compiler ${{ matrix.SM_VERSION }}
+        id: setup_sp
         uses: rumblefrog/setup-sp@master
         with:
-          version: ${{ matrix.SM_VERSION }}
+          version: "1.10.x"
+          version-file: ./${plugin_name}.sp
 
       - name: Compile plugins
         run: |
-          for file in scripting/${plugin_name}*.sp
+          for file in ${plugin_name}.sp
           do
             echo -e "\nCompiling $file..."
             spcomp -E -w234 -O2 -v2 -i include $file
           done
+          echo "===OUT FILES==="
+          ls
+          echo version = ${{ steps.setup_sp.outputs.plugin-version }}
         working-directory: ${{ env.SCRIPTS_PATH }}
+
+      - name: Changelog
+        id: changelog
+        uses: mindsers/changelog-reader-action@v2.0.0
+
+      - name: Install zip
+        uses: montudor/action-zip@v1
+
+      - name: Zip output
+        run: zip -qq -r release.zip example.smx
+        working-directory: ${{ env.SCRIPTS_PATH }}
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: v${{ steps.setup_sp.outputs.plugin-version }}
+          artifacts: "release.zip"
+          body: ${{ steps.changelog.outputs.changes }}
+          draft: false
+          allowUpdates: true
+          prerelease: false
+          replacesArtifacts: true

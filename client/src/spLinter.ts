@@ -83,7 +83,7 @@ export function refreshDiagnostics(
           let workspace: WorkspaceFolder = Workspace.workspaceFolders[0];
           MainPath = join(workspace.uri.fsPath, MainPath);
           if (!existsSync(MainPath)) {
-            throw "MainPath is incorrect.";
+            throw new Error("MainPath is incorrect.");
           }
         }
         filename = basename(MainPath);

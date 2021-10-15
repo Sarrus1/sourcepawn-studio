@@ -402,7 +402,7 @@ export class ItemsRepository implements Disposable {
         let workspace: WorkspaceFolder = Workspace.workspaceFolders[0];
         MainPath = join(workspace.uri.fsPath, MainPath);
         if (!existsSync(MainPath)) {
-          throw "MainPath is incorrect.";
+          throw new Error("MainPath is incorrect.");
         }
       }
       let uri = URI.file(MainPath).toString();
@@ -521,8 +521,11 @@ export class ItemsRepository implements Disposable {
     ) {
       let items = allItems.filter(
         (item) =>
-          (item.kind === CompletionItemKind.Method ||
-            item.kind === CompletionItemKind.Property) &&
+          [
+            CompletionItemKind.Method,
+            CompletionItemKind.Property,
+            CompletionItemKind.Constructor,
+          ].includes(item.kind) &&
           item.parent === lastEnumStructOrMethodMap &&
           item.name === word
       );
@@ -547,8 +550,11 @@ export class ItemsRepository implements Disposable {
       // Find and return the matching item
       let items = allItems.filter(
         (item) =>
-          (item.kind === CompletionItemKind.Method ||
-            item.kind === CompletionItemKind.Property) &&
+          [
+            CompletionItemKind.Method,
+            CompletionItemKind.Property,
+            CompletionItemKind.Constructor,
+          ].includes(item.kind) &&
           variableTypes.includes(item.parent) &&
           item.name === word
       );
@@ -558,9 +564,7 @@ export class ItemsRepository implements Disposable {
     if (isConstructor) {
       let items = this.getAllItems(document.uri.toString()).filter(
         (item) =>
-          item.kind === CompletionItemKind.Method &&
-          item.name === match[1] &&
-          item.parent === match[1]
+          item.kind === CompletionItemKind.Constructor && item.name === match[1]
       );
       return items;
     }
@@ -576,7 +580,10 @@ export class ItemsRepository implements Disposable {
         // Check for functions and methods
         items = allItems.filter((item) => {
           if (
-            item.kind === CompletionItemKind.Method &&
+            [
+              CompletionItemKind.Method,
+              CompletionItemKind.Constructor,
+            ].includes(item.kind) &&
             item.name === word &&
             item.parent === lastEnumStructOrMethodMap
           ) {
@@ -606,11 +613,12 @@ export class ItemsRepository implements Disposable {
     }
     items = allItems.filter(
       (item) =>
-        !(
-          item.kind === CompletionItemKind.Method ||
-          item.kind === CompletionItemKind.Property ||
-          item.kind === CompletionItemKind.Function
-        ) &&
+        ![
+          CompletionItemKind.Method,
+          CompletionItemKind.Property,
+          CompletionItemKind.Constructor,
+          CompletionItemKind.Function,
+        ].includes(item.kind) &&
         item.name === word &&
         item.parent === lastFunc
     );
@@ -619,9 +627,11 @@ export class ItemsRepository implements Disposable {
     }
     items = allItems.filter((item) => {
       if (
-        [CompletionItemKind.Method, CompletionItemKind.Property].includes(
-          item.kind
-        )
+        [
+          CompletionItemKind.Method,
+          CompletionItemKind.Property,
+          CompletionItemKind.Constructor,
+        ].includes(item.kind)
       ) {
         return false;
       }

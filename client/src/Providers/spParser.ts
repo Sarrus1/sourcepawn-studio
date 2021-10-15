@@ -12,11 +12,14 @@ import {
   EnumStructItem,
   SPItem,
   MethodMapItem,
+  TypeDefItem,
+  TypeSetItem,
 } from "./spItems";
 import { isControlStatement } from "./spDefinitions";
 import {
   CompletionItemKind,
   Location,
+  Position,
   Range,
   workspace as Workspace,
 } from "vscode";
@@ -279,6 +282,18 @@ class Parser {
         }
       }
       this.state.push(State.Loop);
+      return;
+    }
+
+    match = line.match(/^\s*typedef\s+(\w+)\s*\=\s*function\s+(\w+).*/);
+    if (match) {
+      this.readTypeDef(match, line);
+      return;
+    }
+
+    match = line.match(/^\s*typeset\s+(\w+)/);
+    if (match) {
+      this.readTypeSet(match, line);
       return;
     }
 
@@ -590,6 +605,52 @@ class Parser {
     return partial_params_match;
   }
 
+  readTypeDef(match: RegExpMatchArray, line: string): void {
+    let name = match[1];
+    let type = match[2];
+    let range = this.makeDefinitionRange(name, line);
+    let { description, params } = this.parse_doc_comment();
+    let fullRange = new Range(this.lineNb, 0, this.lineNb, line.length);
+    this.completions.add(
+      name,
+      new TypeDefItem(
+        name,
+        match[0],
+        this.file,
+        description,
+        type,
+        range,
+        fullRange
+      )
+    );
+  }
+
+  readTypeSet(match: RegExpMatchArray, line: string): void {
+    let startPosition = new Position(this.lineNb, 0);
+    let name = match[1];
+    let range = this.makeDefinitionRange(name, line);
+    let { description, params } = this.parse_doc_comment();
+    let iter = 0;
+    while (!/^\s*}\s*;/.test(line)) {
+      if (iter == 200) {
+        return;
+      }
+      line = this.lines.shift();
+      this.lineNb++;
+      this.searchForDefinesInString(line);
+      iter++;
+    }
+    let endMatch = line.match(/^\s*}\s*;/);
+    let fullRange = new Range(
+      startPosition,
+      new Position(this.lineNb, endMatch[0].length)
+    );
+    this.completions.add(
+      name,
+      new TypeSetItem(name, match[0], this.file, description, range, fullRange)
+    );
+  }
+
   read_function(line: string) {
     if (line === undefined) {
       return;
@@ -712,7 +773,7 @@ class Parser {
         params = getParamsFromDeclaration(paramsMatch);
       }
       if (isMethod) {
-        let fullRange: Range = undefined;
+        let fullRange: Range;
         if (isNativeOrForward) {
           let end = range.start.line === this.lineNb ? line.length : 0;
           fullRange = new Range(range.start.line, 0, this.lineNb, end);
@@ -739,7 +800,7 @@ class Parser {
       if (this.completions.get(nameMatch)) {
         return;
       }
-      let fullRange: Range = undefined;
+      let fullRange: Range;
       if (isNativeOrForward) {
         let end = range.start.line === this.lineNb ? line.length : 0;
         fullRange = new Range(range.start.line, 0, this.lineNb, end);
@@ -788,7 +849,7 @@ class Parser {
     const paramRegex = /@param\s+([\w\.]+)\s+(.*)/;
     let params = (() => {
       let params = [];
-      let currentParam = undefined;
+      let currentParam;
       for (let line of this.scratch) {
         let match = line.match(paramRegex);
         if (match) {
@@ -842,7 +903,7 @@ class Parser {
   ): void {
     let range = this.makeDefinitionRange(name, line);
     let scope: string = globalIdentifier;
-    let enumStructName: string = undefined;
+    let enumStructName: string;
     if (this.state.includes(State.EnumStruct)) {
       enumStructName = this.state_data.name;
     }

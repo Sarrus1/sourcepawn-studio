@@ -1,5 +1,19 @@
 ## Release Notes
 
+## [2.4.5]
+
+### Added
+
+- Added CodeFactor badge.
+- Added support for new Github action.
+- Added all string format specifiers, including the non-officialy supported ones (see #136).
+- Added support for typedefs and typesets.
+- Added a more verbose error message as to why the extension might crash when running the uploadToServer command.
+
+### Fixed
+
+- When creating a new project, the editor will now automatically focus on the newly created .sp file.
+
 ## [2.4.4]
 
 ### Fixed
