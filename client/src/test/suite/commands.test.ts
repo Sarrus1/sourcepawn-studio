@@ -11,6 +11,7 @@ import { run as CreateTaskCommand } from "../../Commands/createTask";
 import { run as CreateScriptCommand } from "../../Commands/createScript";
 import { run as CreateREADMECommand } from "../../Commands/createREADME";
 import { run as CreateMasterCommand } from "../../Commands/createGitHubActions";
+import { run as CreateChangelogCommand } from "../../Commands/createCHANGELOG";
 
 const testFolderLocation = "/../../../client/src/test/testSuite/";
 const testMainLocation = "scripting/main.sp";
@@ -72,7 +73,11 @@ suite("Run tests", () => {
       assert.equal(CreateScriptCommand(), 0);
     });
 
-    test("Create ReadMe Command", () => {
+    test("Create Changelog Command", () => {
+      assert.equal(CreateChangelogCommand(), 0);
+    });
+
+    test("Create Readme Command", () => {
       assert.equal(CreateREADMECommand(), 0);
     });
 

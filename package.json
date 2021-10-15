@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "2.4.5",
+  "version": "2.4.6",
   "publisher": "Sarrus",
   "main": "./dist/spIndex",
   "icon": "sm.png",
@@ -41,7 +41,8 @@
     "onCommand:sourcepawn-vscode.uploadToServer",
     "onCommand:sourcepawn-vscode.refreshPlugins",
     "onCommand:sourcepawn-vscode.insertParameters",
-    "onCommand:sourcepawn-vscode.setFileAsMain"
+    "onCommand:sourcepawn-vscode.setFileAsMain",
+    "onCommand:sourcepawn-vscode.createChangelog"
   ],
   "contributes": {
     "commands": [
@@ -102,6 +103,11 @@
       {
         "command": "sourcepawn-vscode.installSM",
         "title": "SM Install sourcemod",
+        "category": "Project"
+      },
+      {
+        "command": "sourcepawn-vscode.createChangelog",
+        "title": "Create Changelog",
         "category": "Project"
       }
     ],

@@ -1,10 +1,11 @@
 import { workspace as Workspace, window, InputBoxOptions } from "vscode";
 import { existsSync, mkdirSync } from "fs";
 import { join } from "path";
-import { run as CreateTaskCommand } from "./createTask";
-import { run as CreateScriptCommand } from "./createScript";
-import { run as CreateREADMECommand } from "./createREADME";
-import { run as CreateMasterCommand } from "./createGitHubActions";
+import { run as createTaskCommand } from "./createTask";
+import { run as createScriptCommand } from "./createScript";
+import { run as createREADMECommand } from "./createREADME";
+import { run as createMasterCommand } from "./createGitHubActions";
+import { run as createChangelogCommand } from "./createCHANGELOG";
 
 export async function run(args: any) {
   // get workspace folder
@@ -34,8 +35,9 @@ export async function run(args: any) {
   }
 
   // Running the other commands
-  CreateTaskCommand(rootpath);
-  CreateScriptCommand(rootpath);
-  CreateREADMECommand(rootpath);
-  CreateMasterCommand(rootpath);
+  createTaskCommand(rootpath);
+  createScriptCommand(rootpath);
+  createREADMECommand(rootpath);
+  createMasterCommand(rootpath);
+  createChangelogCommand(rootpath);
 }
