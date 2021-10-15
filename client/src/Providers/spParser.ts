@@ -1051,9 +1051,11 @@ class Parser {
       return new Map();
     }
     let defines = new Map();
+    let workspaceFolder = Workspace.getWorkspaceFolder(URI.file(this.file));
     let smHome =
-      Workspace.getConfiguration("sourcepawn").get<string>("SourcemodHome") ||
-      "";
+      Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
+        "SourcemodHome"
+      ) || "";
     // Replace \ escaping in Windows
     smHome = smHome.replace(/\\/g, "/");
     if (smHome === "") {

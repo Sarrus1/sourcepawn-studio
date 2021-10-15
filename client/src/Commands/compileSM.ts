@@ -6,10 +6,14 @@ import { run as uploadToServerCommand } from "./uploadToServer";
 
 export async function run(args: any) {
   let activeDocumentPath: string;
+  let workspaceFolder = Workspace.getWorkspaceFolder(args.document.uri);
   let mainPath: string =
-    Workspace.getConfiguration("sourcepawn").get<string>("MainPath") || "";
+    Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
+      "MainPath"
+    ) || "";
   let mainPathCompile: boolean = Workspace.getConfiguration(
-    "sourcepawn"
+    "sourcepawn",
+    workspaceFolder
   ).get<boolean>("MainPathCompilation");
   try {
     activeDocumentPath =
@@ -31,7 +35,9 @@ export async function run(args: any) {
     return;
   }
   const spcomp =
-    Workspace.getConfiguration("sourcepawn").get<string>("SpcompPath") || "";
+    Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
+      "SpcompPath"
+    ) || "";
 
   if (!spcomp) {
     window
@@ -79,7 +85,9 @@ export async function run(args: any) {
     pluginsFolderPath = join(scriptingPath, "compiled/");
   }
   let outputDir: string =
-    Workspace.getConfiguration("sourcepawn").get("outputDirectoryPath") || "";
+    Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
+      "outputDirectoryPath"
+    ) || "";
   if (outputDir === "") {
     outputDir = pluginsFolderPath;
     if (!existsSync(outputDir)) {
@@ -122,7 +130,9 @@ export async function run(args: any) {
 
     // Set the path for sm_home
     " -i=" + "'",
-    Workspace.getConfiguration("sourcepawn").get("SourcemodHome") || "",
+    Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
+      "SourcemodHome"
+    ) || "",
     "'",
     " -i=" + "'",
     join(scriptingPath, "include") || "",
@@ -131,17 +141,19 @@ export async function run(args: any) {
     scriptingPath,
     "'"
   );
-  let compilerOptions: string[] = Workspace.getConfiguration("sourcepawn").get(
-    "compilerOptions"
-  );
+  let compilerOptions: string[] = Workspace.getConfiguration(
+    "sourcepawn",
+    workspaceFolder
+  ).get("compilerOptions");
   // Add a space at the beginning of every element, for security.
   for (let i = 0; i < compilerOptions.length; i++) {
     command += " " + compilerOptions[i];
   }
 
-  let includes_dirs: string[] = Workspace.getConfiguration("sourcepawn").get(
-    "optionalIncludeDirsPaths"
-  );
+  let includes_dirs: string[] = Workspace.getConfiguration(
+    "sourcepawn",
+    workspaceFolder
+  ).get("optionalIncludeDirsPaths");
   // Add the optional includes folders.
   for (let includes_dir of includes_dirs) {
     if (includes_dir != "") {
@@ -152,7 +164,7 @@ export async function run(args: any) {
   try {
     terminal.sendText(command);
     if (
-      Workspace.getConfiguration("sourcepawn").get(
+      Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
         "uploadAfterSuccessfulCompile"
       )
     ) {

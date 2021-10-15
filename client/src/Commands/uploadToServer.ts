@@ -8,9 +8,11 @@ const FTPDeploy = require("ftp-deploy");
 
 export async function run(args: any) {
   let ftpDeploy = new FTPDeploy();
-  let config: object = Workspace.getConfiguration("sourcepawn").get(
-    "UploadOptions"
-  );
+  let workspaceFolder = Workspace.getWorkspaceFolder(args.document.uri);
+  let config: object = Workspace.getConfiguration(
+    "sourcepawn",
+    workspaceFolder
+  ).get("UploadOptions");
   if (config === undefined) {
     window
       .showErrorMessage("Upload settings are empty.", "Open Settings")
@@ -58,7 +60,7 @@ export async function run(args: any) {
     .then(() => {
       console.log("Upload is finished.");
       if (
-        Workspace.getConfiguration("sourcepawn").get(
+        Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
           "uploadAfterSuccessfulCompile"
         )
       ) {

@@ -160,7 +160,8 @@
       "properties": {
         "sourcepawn.SourcemodHome": {
           "type": "string",
-          "description": "The location of the SourceMod API include files found in addons/sourcemod/scripting/include"
+          "description": "The location of the SourceMod API include files found in addons/sourcemod/scripting/include",
+          "scope": "resource"
         },
         "sourcepawn.AuthorName": {
           "type": "string",
@@ -172,7 +173,8 @@
         },
         "sourcepawn.SpcompPath": {
           "type": "string",
-          "description": "The location of the SourceMod compiler"
+          "description": "The location of the SourceMod compiler",
+          "scope": "resource"
         },
         "sourcepawn.MainPath": {
           "type": "string",
@@ -304,7 +306,8 @@
             "TabWidth: '2'",
             "UseTab: '${UseTab}'"
           ],
-          "description": "Settings for the formatter. Any setting supported by Clang Format can be used here."
+          "description": "Settings for the formatter. Any setting supported by Clang Format can be used here.",
+          "scope": "resource"
         },
         "sourcepawn.trace.server": {
           "type": "string",

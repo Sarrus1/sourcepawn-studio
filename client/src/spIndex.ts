@@ -39,7 +39,7 @@ export function activate(context: ExtensionContext) {
     watcher.onDidCreate((uri) => {
       let uriString = URI.file(uri.fsPath).toString();
       providers.itemsRepository.documents.add(uriString);
-      let mainPath = findMainPath();
+      let mainPath = findMainPath(uri);
       if (mainPath !== undefined) {
         mainPath = URI.file(mainPath).toString();
         for (let document of Workspace.textDocuments) {

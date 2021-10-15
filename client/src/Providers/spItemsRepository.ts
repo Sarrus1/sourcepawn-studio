@@ -393,9 +393,12 @@ export class ItemsRepository implements Disposable {
   }
 
   getAllItems(file: string): SPItem[] {
+    let workspaceFolder = Workspace.getWorkspaceFolder(URI.file(file));
     let includes = new Set<string>();
     let MainPath: string =
-      Workspace.getConfiguration("sourcepawn").get("MainPath") || "";
+      Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
+        "MainPath"
+      ) || "";
     let allItems;
     if (MainPath !== "") {
       if (!existsSync(MainPath)) {

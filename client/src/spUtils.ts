@@ -1,8 +1,4 @@
-﻿import {
-  MarkdownString,
-  workspace as Workspace,
-  WorkspaceFolder,
-} from "vscode";
+﻿import { MarkdownString, Uri, workspace as Workspace } from "vscode";
 import { existsSync } from "fs";
 import { join } from "path";
 
@@ -31,10 +27,13 @@ export function descriptionToMD(description: string): MarkdownString {
   return new MarkdownString(description);
 }
 
-export function findMainPath(): string {
+export function findMainPath(uri?: Uri): string {
   let workspaceFolders = Workspace.workspaceFolders;
+  let workspaceFolder =
+    uri === undefined ? undefined : Workspace.getWorkspaceFolder(uri);
   let mainPath: string =
-    Workspace.getConfiguration("sourcepawn").get("MainPath") || "";
+    Workspace.getConfiguration("sourcepawn", workspaceFolder).get("MainPath") ||
+    "";
   if (mainPath !== "") {
     // Check if it exists, meaning it's an absolute path.
     if (!existsSync(mainPath) && workspaceFolders !== undefined) {

@@ -57,14 +57,20 @@ export function refreshDiagnostics(
   const end = new Position(1, 0);
   const range = new Range(start, end);
   const text: string = document.getText(range);
+
+  let workspaceFolder = Workspace.getWorkspaceFolder(document.uri);
   const enableLinter: boolean = Workspace.getConfiguration(
-    "sourcepawn"
+    "sourcepawn",
+    workspaceFolder
   ).get<boolean>("enableLinter");
+
   if (text == "" || /\/\/linter=false/.test(text) || !enableLinter) {
     return ReturnNone(document.uri);
   }
   const spcomp =
-    Workspace.getConfiguration("sourcepawn").get<string>("SpcompPath") || "";
+    Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
+      "SpcompPath"
+    ) || "";
 
   let throttle = throttles[document.uri.path];
   if (throttle === undefined) {
@@ -76,7 +82,9 @@ export function refreshDiagnostics(
   throttle.start(function () {
     let filename: string = document.fileName;
     let MainPath: string =
-      Workspace.getConfiguration("sourcepawn").get("MainPath") || "";
+      Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
+        "MainPath"
+      ) || "";
     if (MainPath != "") {
       try {
         if (!existsSync(MainPath)) {
@@ -121,7 +129,9 @@ export function refreshDiagnostics(
         }
         let spcomp_opt: string[] = [
           "-i" +
-            Workspace.getConfiguration("sourcepawn").get("SourcemodHome") || "",
+            Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
+              "SourcemodHome"
+            ) || "",
           "-i" + scriptingFolder,
           "-i" + join(scriptingFolder, "include"),
           "-v0",
@@ -129,14 +139,16 @@ export function refreshDiagnostics(
           "-o" + TempPath,
         ];
         let compilerOptions: string[] = Workspace.getConfiguration(
-          "sourcepawn"
+          "sourcepawn",
+          workspaceFolder
         ).get("linterCompilerOptions");
         // Add a space at the beginning of every element, for security.
         for (let i = 0; i < compilerOptions.length; i++) {
           spcomp_opt.push(" " + compilerOptions[i]);
         }
         let includes_dirs: string[] = Workspace.getConfiguration(
-          "sourcepawn"
+          "sourcepawn",
+          workspaceFolder
         ).get("optionalIncludeDirsPaths");
         // Add the optional includes folders.
         for (let includes_dir of includes_dirs) {
