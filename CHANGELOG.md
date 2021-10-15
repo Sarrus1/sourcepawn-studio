@@ -9,6 +9,7 @@
 ### Fixed
 
 - Fixed an issue were the files were not uploaded to the server once the plugin was successfuly compiled.
+- Fixed an issue where includes with submodules could not be parsed on Windows when located in the SourceMod home (thanks to [Dran1x](https://github.com/dran1x) for helping me to figure this out).
 
 ## [2.4.6]
 

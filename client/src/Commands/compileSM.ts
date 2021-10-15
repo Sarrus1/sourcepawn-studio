@@ -6,7 +6,8 @@ import { run as uploadToServerCommand } from "./uploadToServer";
 
 export async function run(args: any) {
   let activeDocumentPath: string;
-  let workspaceFolder = Workspace.getWorkspaceFolder(args);
+  let workspaceFolder =
+    args === undefined ? undefined : Workspace.getWorkspaceFolder(args);
   let mainPath: string =
     Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
       "MainPath"
