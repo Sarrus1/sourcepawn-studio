@@ -8,6 +8,7 @@
 - Added support for new Github action.
 - Added all string format specifiers, including the non-officialy supported ones (see #136).
 - Added support for typedefs and typesets.
+- Added a more verbose error message as to why the extension might crash when running the uploadToServer command.
 
 ### Fixed
 
