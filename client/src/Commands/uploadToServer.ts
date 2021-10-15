@@ -8,7 +8,8 @@ const FTPDeploy = require("ftp-deploy");
 
 export async function run(args: any) {
   let ftpDeploy = new FTPDeploy();
-  let workspaceFolder = Workspace.getWorkspaceFolder(args.document.uri);
+  let workspaceFolder =
+    args === undefined ? undefined : Workspace.getWorkspaceFolder(args);
   let config: object = Workspace.getConfiguration(
     "sourcepawn",
     workspaceFolder

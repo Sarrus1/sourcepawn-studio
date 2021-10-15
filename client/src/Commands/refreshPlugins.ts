@@ -2,7 +2,8 @@
 import Rcon from "rcon-srcds";
 
 export async function run(args: any) {
-  let workspaceFolder = Workspace.getWorkspaceFolder(args.document.uri);
+  let workspaceFolder =
+    args === undefined ? undefined : Workspace.getWorkspaceFolder(args);
   const serverOptions: Object = Workspace.getConfiguration(
     "sourcepawn",
     workspaceFolder
