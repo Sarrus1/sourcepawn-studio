@@ -177,7 +177,7 @@ export class Providers {
         )
         .then((choice) => {
           if (choice == "Yes") {
-            commands.executeCommand("sourcepawn-installSM");
+            commands.executeCommand("sourcepawn-vscode.installSM");
           } else if (choice === "No, open Settings") {
             commands.executeCommand(
               "workbench.action.openSettings",

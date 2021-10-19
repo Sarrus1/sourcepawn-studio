@@ -35,6 +35,7 @@
 ### Fixed
 
 - When creating a new project, the editor will now automatically focus on the newly created .sp file.
+- Fixed `install SM` command crash.
 
 ## [2.4.4]
 
