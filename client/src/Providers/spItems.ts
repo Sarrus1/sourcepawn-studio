@@ -1073,6 +1073,41 @@ export class TypeSetItem implements SPItem {
   }
 }
 
+export class CommentItem implements SPItem {
+  name: string;
+  file: string;
+  kind = CompletionItemKind.User;
+  range: Range;
+
+  constructor(file: string, range: Range) {
+    this.file = file;
+    this.range = range;
+  }
+
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
+    return undefined;
+  }
+
+  toDefinitionItem(): LocationLink {
+    return undefined;
+  }
+
+  toSignature(): SignatureInformation {
+    return undefined;
+  }
+
+  toHover(): Hover {
+    return undefined;
+  }
+
+  toDocumentSymbol(): DocumentSymbol {
+    return undefined;
+  }
+}
+
 export class Include {
   uri: string;
   IsBuiltIn: boolean;

@@ -1,4 +1,5 @@
 ﻿import { TextDocument, Range, Position, CompletionItemKind } from "vscode";
+import { URI } from "vscode-uri";
 import { globalIdentifier } from "./spGlobalIdentifier";
 import { SPItem } from "./spItems";
 
@@ -17,6 +18,21 @@ export function GetLastFuncName(
       e.fullRange.contains(position)
   );
   return func != undefined ? func.name : globalIdentifier;
+}
+
+export function isInAComment(
+  range: Range,
+  uri: URI,
+  allItems: SPItem[]
+): boolean {
+  let file = uri.fsPath;
+  let item = allItems.find(
+    (e) =>
+      e.kind === CompletionItemKind.User &&
+      e.file == file &&
+      e.range.contains(range)
+  );
+  return item !== undefined;
 }
 
 export function isFunction(

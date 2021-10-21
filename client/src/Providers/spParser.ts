@@ -14,6 +14,7 @@ import {
   MethodMapItem,
   TypeDefItem,
   TypeSetItem,
+  CommentItem,
 } from "./spItems";
 import { isControlStatement } from "./spDefinitions";
 import {
@@ -551,6 +552,7 @@ class Parser {
     current_line: string,
     use_line_comment: boolean = false
   ) {
+    let startPos = new Position(this.lineNb < 1 ? 0 : this.lineNb, 0);
     let iter = 0;
     while (
       current_line !== undefined &&
@@ -569,6 +571,15 @@ class Parser {
       current_line = this.lines.shift();
       this.lineNb++;
     }
+    let endPos = new Position(
+      this.lineNb < 1 ? 0 : this.lineNb,
+      current_line.length
+    );
+    let range = new Range(startPos, endPos);
+    this.completions.add(
+      `comment${this.lineNb}--${Math.random()}`,
+      new CommentItem(this.file, range)
+    );
     this.searchForDefinesInString(current_line);
     this.interpLine(current_line);
     return;
@@ -897,6 +908,9 @@ class Parser {
     funcName: string = undefined,
     isParamDef = false
   ): void {
+    if (line === undefined) {
+      return;
+    }
     let range = this.makeDefinitionRange(name, line);
     let scope: string = globalIdentifier;
     let enumStructName: string;
