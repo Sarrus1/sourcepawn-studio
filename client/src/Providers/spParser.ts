@@ -141,7 +141,7 @@ class Parser {
     // EOF
     if (line === undefined) return;
     // Match define
-    let match = line.match(/\s*#define\s+(\w+)\s+([^]+)/);
+    let match = line.match(/^\s*#define\s+(\w+)\s+([^]+)/);
     if (match) {
       this.read_define(match, line);
       // Re-read the line now that define has been added to the array.
@@ -205,7 +205,7 @@ class Parser {
       return;
     }
 
-    match = line.match(/\s*\/\*/);
+    match = line.match(/^\s*\/\*/);
     if (match) {
       this.scratch = [];
       this.consume_multiline_comment(line, false);
