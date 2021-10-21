@@ -35,6 +35,38 @@ export function isInAComment(
   return item !== undefined;
 }
 
+export function isInAString(range: Range, line: string): boolean {
+  let i = 0;
+  let isEscaped = false;
+  let end = range.end.character;
+  let isAString = false;
+  let delimiter: string;
+  for (i = 0; i < line.length && i < end; i++) {
+    if (line[i] === "'" && !isEscaped) {
+      if (delimiter === "'") {
+        isAString = false;
+        delimiter = undefined;
+      } else if (delimiter === undefined) {
+        isAString = true;
+        delimiter = "'";
+      }
+    } else if (line[i] === '"' && !isEscaped) {
+      if (delimiter === '"') {
+        isAString = false;
+        delimiter = undefined;
+      } else if (delimiter === undefined) {
+        isAString = true;
+        delimiter = '"';
+      }
+    } else if (line[i] === "\\") {
+      isEscaped = true;
+      continue;
+    }
+    isEscaped = false;
+  }
+  return isAString;
+}
+
 export function isFunction(
   range: Range,
   document: TextDocument,

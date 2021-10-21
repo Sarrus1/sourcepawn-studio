@@ -27,6 +27,7 @@ import {
   isInAComment,
   isFunction,
   getLastEnumStructNameOrMethodMap,
+  isInAString,
 } from "./spDefinitions";
 import { globalIdentifier } from "./spGlobalIdentifier";
 
@@ -463,11 +464,18 @@ export class ItemsRepository implements Disposable {
 
     let word: string = document.getText(range);
     let allItems = this.getAllItems(document.uri.toString());
+
     if (isInAComment(range, document.uri, allItems)) {
       return undefined;
     }
+
     // Check if include file
     let includeLine = document.lineAt(position.line).text;
+
+    if (isInAString(range, includeLine)) {
+      return undefined;
+    }
+
     match = includeLine.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>/);
     if (match === null) {
       match = includeLine.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"/);
