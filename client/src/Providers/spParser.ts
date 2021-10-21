@@ -141,8 +141,34 @@ class Parser {
   interpLine(line: string) {
     // EOF
     if (line === undefined) return;
+
+    // Match trailing single line comments
+    let match = line.match(/^\s*[^\/\/]+(\/\/.+)$/);
+    if (match) {
+      let lineNb = this.lineNb < 1 ? 0 : this.lineNb;
+      let start: number = line.search(/\/\//);
+      let range = new Range(lineNb, start, lineNb, line.length);
+      this.completions.add(
+        `comment${lineNb}--${Math.random()}`,
+        new CommentItem(this.file, range)
+      );
+    }
+
+    // Match trailing block comments
+    match = line.match(/^\s*[^\/\*]+(\/\*.+)\*\//);
+    if (match) {
+      let lineNb = this.lineNb < 1 ? 0 : this.lineNb;
+      let start: number = line.search(/\/\*/);
+      let end: number = line.search(/\*\//);
+      let range = new Range(lineNb, start, lineNb, end);
+      this.completions.add(
+        `comment${lineNb}--${Math.random()}`,
+        new CommentItem(this.file, range)
+      );
+    }
+
     // Match define
-    let match = line.match(/^\s*#define\s+(\w+)\s+([^]+)/);
+    match = line.match(/^\s*#define\s+(\w+)\s+([^]+)/);
     if (match) {
       this.read_define(match, line);
       // Re-read the line now that define has been added to the array.
@@ -552,7 +578,7 @@ class Parser {
     current_line: string,
     use_line_comment: boolean = false
   ) {
-    let startPos = new Position(this.lineNb < 1 ? 0 : this.lineNb, 0);
+    let startPos = new Position(this.lineNb < 1 ? 0 : this.lineNb - 1, 0);
     let iter = 0;
     while (
       current_line !== undefined &&
@@ -572,7 +598,7 @@ class Parser {
       this.lineNb++;
     }
     let endPos = new Position(
-      this.lineNb < 1 ? 0 : this.lineNb,
+      this.lineNb < 1 ? 0 : this.lineNb - 1,
       current_line.length
     );
     let range = new Range(startPos, endPos);

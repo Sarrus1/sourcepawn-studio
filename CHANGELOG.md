@@ -6,6 +6,7 @@
 
 - Added support for [multi-root workspaces](https://code.visualstudio.com/docs/editor/multi-root-workspaces).
 - Anonymous enums will now appear in the outline as `Enum #<i>`.
+- GoToDefiniton and hover will no longer be provided inside strings and comments.
 
 ### Fixed
 
