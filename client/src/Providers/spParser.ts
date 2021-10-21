@@ -92,6 +92,7 @@ class Parser {
   macroArr: string[];
   itemsRepository: ItemsRepository;
   debugging: boolean;
+  anonymousEnumCount: number;
 
   constructor(
     lines: string[],
@@ -122,6 +123,7 @@ class Parser {
       "trace.server"
     );
     this.debugging = debugSetting == "messages" || debugSetting == "verbose";
+    this.anonymousEnumCount = 0;
   }
 
   parse() {
@@ -425,24 +427,20 @@ class Parser {
     }
 
     if (match[1]) {
-      // Create a completion for the enum itself if it has a name
-      let range = this.makeDefinitionRange(match[1], line);
-      var enumCompletion: EnumItem = new EnumItem(
-        match[1],
-        this.file,
-        description,
-        range
-      );
-      this.completions.add(match[1], enumCompletion);
-    } else {
-      var enumCompletion: EnumItem = new EnumItem(
-        "",
-        this.file,
-        description,
-        undefined
-      );
-      this.completions.add("", enumCompletion);
+      this.anonymousEnumCount++;
     }
+    let nameMatch = match[1] ? match[1] : `Enum #${this.anonymousEnumCount}`;
+    let range = this.makeDefinitionRange(match[1] ? match[1] : "enum", line);
+    var enumCompletion: EnumItem = new EnumItem(
+      nameMatch,
+      this.file,
+      description,
+      range
+    );
+    let key = match[1]
+      ? match[1]
+      : `${this.anonymousEnumCount}${basename(this.file)}`;
+    this.completions.add(key, enumCompletion);
 
     // Set max number of iterations for safety
     let iter = 0;
@@ -486,9 +484,7 @@ class Parser {
       );
       this.searchForDefinesInString(line);
     }
-    if (match[1]) {
-      this.addFullRange(match[1]);
-    }
+    this.addFullRange(key);
     return;
   }
 
