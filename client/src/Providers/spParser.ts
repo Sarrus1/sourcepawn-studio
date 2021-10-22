@@ -143,7 +143,7 @@ class Parser {
     if (line === undefined) return;
 
     // Match trailing single line comments
-    let match = line.match(/^\s*[^\/\/]+(\/\/.+)$/);
+    let match = line.match(/^\s*[^\/\/\s]+(\/\/.+)$/);
     if (match) {
       let lineNb = this.lineNb < 1 ? 0 : this.lineNb;
       let start: number = line.search(/\/\//);
@@ -155,7 +155,7 @@ class Parser {
     }
 
     // Match trailing block comments
-    match = line.match(/^\s*[^\/\*]+(\/\*.+)\*\//);
+    match = line.match(/^\s*[^\/\*\s]+(\/\*.+)\*\//);
     if (match) {
       let lineNb = this.lineNb < 1 ? 0 : this.lineNb;
       let start: number = line.search(/\/\*/);
@@ -578,7 +578,7 @@ class Parser {
     current_line: string,
     use_line_comment: boolean = false
   ) {
-    let startPos = new Position(this.lineNb < 1 ? 0 : this.lineNb - 1, 0);
+    let startPos = new Position(this.lineNb < 1 ? 0 : this.lineNb, 0);
     let iter = 0;
     while (
       current_line !== undefined &&
@@ -598,7 +598,11 @@ class Parser {
       this.lineNb++;
     }
     let endPos = new Position(
-      this.lineNb < 1 ? 0 : this.lineNb - 1,
+      this.lineNb < 1
+        ? 0
+        : use_line_comment
+        ? this.lineNb - 1
+        : this.lineNb - 2,
       current_line.length
     );
     let range = new Range(startPos, endPos);
