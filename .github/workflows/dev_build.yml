@@ -24,7 +24,7 @@ jobs:
         uses: mindsers/changelog-reader-action@v2.0.0
       - name: Append date and time to the body
         id: date
-        run: NOW=$(date +"%d-%b-%Y %H:%M")"\n\n" >> $GITHUB_ENV
+        run: echo NOW=$(date +"%d-%b-%Y %H:%M")"\n\n" >> $GITHUB_ENV
       - name: Create Release
         uses: ncipollo/release-action@v1
         env:
