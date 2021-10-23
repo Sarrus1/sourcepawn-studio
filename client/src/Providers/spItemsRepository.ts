@@ -24,8 +24,10 @@ import { defaultConstantItems, defaultKeywordsItems } from "./spDefaultItems";
 import { events } from "../Misc/sourceEvents";
 import {
   GetLastFuncName,
+  isInAComment,
   isFunction,
   getLastEnumStructNameOrMethodMap,
+  isInAString,
 } from "./spDefinitions";
 import { globalIdentifier } from "./spGlobalIdentifier";
 
@@ -393,9 +395,12 @@ export class ItemsRepository implements Disposable {
   }
 
   getAllItems(file: string): SPItem[] {
+    let workspaceFolder = Workspace.getWorkspaceFolder(URI.file(file));
     let includes = new Set<string>();
     let MainPath: string =
-      Workspace.getConfiguration("sourcepawn").get("MainPath") || "";
+      Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
+        "MainPath"
+      ) || "";
     let allItems;
     if (MainPath !== "") {
       if (!existsSync(MainPath)) {
@@ -456,8 +461,21 @@ export class ItemsRepository implements Disposable {
     let isMethod: boolean = false;
     let isConstructor: boolean = false;
     let match: RegExpMatchArray;
+
+    let word: string = document.getText(range);
+    let allItems = this.getAllItems(document.uri.toString());
+
+    if (isInAComment(range, document.uri, allItems)) {
+      return undefined;
+    }
+
     // Check if include file
     let includeLine = document.lineAt(position.line).text;
+
+    if (isInAString(range, includeLine)) {
+      return undefined;
+    }
+
     match = includeLine.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>/);
     if (match === null) {
       match = includeLine.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"/);
@@ -505,8 +523,7 @@ export class ItemsRepository implements Disposable {
         }
       }
     }
-    let word: string = document.getText(range);
-    let allItems = this.getAllItems(document.uri.toString());
+
     let lastFunc: string = GetLastFuncName(position, document, allItems);
     let lastEnumStructOrMethodMap: string = getLastEnumStructNameOrMethodMap(
       position,

@@ -848,9 +848,12 @@ export class IncludeItem implements SPItem {
   defRange: Range;
 
   constructor(uri: string, defRange: Range) {
+    let workspaceFolder = Workspace.getWorkspaceFolder(URI.parse(uri));
     this.name = basename(URI.file(uri).fsPath);
     let smHome: string =
-      Workspace.getConfiguration("sourcepawn").get("SourcemodHome") || "";
+      Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
+        "SourcemodHome"
+      ) || "";
     uri = this.file = uri.replace(
       "file://__sourcemod_builtin",
       URI.file(smHome).toString()
@@ -1067,6 +1070,41 @@ export class TypeSetItem implements SPItem {
       this.fullRange,
       this.range
     );
+  }
+}
+
+export class CommentItem implements SPItem {
+  name: string;
+  file: string;
+  kind = CompletionItemKind.User;
+  range: Range;
+
+  constructor(file: string, range: Range) {
+    this.file = file;
+    this.range = range;
+  }
+
+  toCompletionItem(
+    file: string,
+    lastFuncName: string = undefined
+  ): CompletionItem {
+    return undefined;
+  }
+
+  toDefinitionItem(): LocationLink {
+    return undefined;
+  }
+
+  toSignature(): SignatureInformation {
+    return undefined;
+  }
+
+  toHover(): Hover {
+    return undefined;
+  }
+
+  toDocumentSymbol(): DocumentSymbol {
+    return undefined;
   }
 }
 

@@ -2,9 +2,12 @@
 import Rcon from "rcon-srcds";
 
 export async function run(args: any) {
-  const serverOptions: Object = Workspace.getConfiguration("sourcepawn").get(
-    "SourceServerOptions"
-  );
+  let workspaceFolder =
+    args === undefined ? undefined : Workspace.getWorkspaceFolder(args);
+  const serverOptions: Object = Workspace.getConfiguration(
+    "sourcepawn",
+    workspaceFolder
+  ).get("SourceServerOptions");
   if (serverOptions["host"] == "" || serverOptions["password"] == "") {
     window
       .showErrorMessage(

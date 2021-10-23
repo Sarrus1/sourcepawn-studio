@@ -31,9 +31,11 @@ export class SMDocumentFormattingEditProvider
     let UseTab: string = insert_spaces ? "Never" : "Always";
     let tabSize: string = Workspace.getConfiguration("editor").get("tabSize");
 
-    let default_styles: string[] = Workspace.getConfiguration("sourcepawn").get(
-      "formatterSettings"
-    );
+    let workspaceFolder = Workspace.getWorkspaceFolder(document.uri);
+    let default_styles: string[] = Workspace.getConfiguration(
+      "sourcepawn",
+      workspaceFolder
+    ).get("formatterSettings");
 
     let default_style: string = "{" + default_styles.join(", ") + "}";
 

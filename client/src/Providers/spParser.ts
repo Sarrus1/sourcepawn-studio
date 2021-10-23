@@ -14,6 +14,7 @@ import {
   MethodMapItem,
   TypeDefItem,
   TypeSetItem,
+  CommentItem,
 } from "./spItems";
 import { isControlStatement } from "./spDefinitions";
 import {
@@ -92,6 +93,7 @@ class Parser {
   macroArr: string[];
   itemsRepository: ItemsRepository;
   debugging: boolean;
+  anonymousEnumCount: number;
 
   constructor(
     lines: string[],
@@ -122,6 +124,7 @@ class Parser {
       "trace.server"
     );
     this.debugging = debugSetting == "messages" || debugSetting == "verbose";
+    this.anonymousEnumCount = 0;
   }
 
   parse() {
@@ -138,8 +141,34 @@ class Parser {
   interpLine(line: string) {
     // EOF
     if (line === undefined) return;
+
+    // Match trailing single line comments
+    let match = line.match(/^\s*[^\/\/\s]+(\/\/.+)$/);
+    if (match) {
+      let lineNb = this.lineNb < 1 ? 0 : this.lineNb;
+      let start: number = line.search(/\/\//);
+      let range = new Range(lineNb, start, lineNb, line.length);
+      this.completions.add(
+        `comment${lineNb}--${Math.random()}`,
+        new CommentItem(this.file, range)
+      );
+    }
+
+    // Match trailing block comments
+    match = line.match(/^\s*[^\/\*\s]+(\/\*.+)\*\//);
+    if (match) {
+      let lineNb = this.lineNb < 1 ? 0 : this.lineNb;
+      let start: number = line.search(/\/\*/);
+      let end: number = line.search(/\*\//);
+      let range = new Range(lineNb, start, lineNb, end);
+      this.completions.add(
+        `comment${lineNb}--${Math.random()}`,
+        new CommentItem(this.file, range)
+      );
+    }
+
     // Match define
-    let match = line.match(/\s*#define\s+(\w+)\s+([^]+)/);
+    match = line.match(/^\s*#define\s+(\w+)\s+([^]+)/);
     if (match) {
       this.read_define(match, line);
       // Re-read the line now that define has been added to the array.
@@ -174,7 +203,7 @@ class Parser {
       return;
     }
     // Match enums
-    match = line.match(/^\s*(?:enum\s+)(\w*)\s*[^\{]*/);
+    match = line.match(/^\s*enum(?:\s+(\w+))?\s*[^\{]*/);
     if (match) {
       this.read_enums(match, line, false);
       return;
@@ -184,6 +213,18 @@ class Parser {
     match = line.match(/^\s*(?:for\s*\(\s*int\s+)([A-Za-z0-9_]*)/);
     if (match) {
       this.read_loop_variables(match, line);
+      return;
+    }
+
+    match = line.match(/^\s*typedef\s+(\w+)\s*\=\s*function\s+(\w+).*/);
+    if (match) {
+      this.readTypeDef(match, line);
+      return;
+    }
+
+    match = line.match(/^\s*typeset\s+(\w+)/);
+    if (match) {
+      this.readTypeSet(match, line);
       return;
     }
 
@@ -203,7 +244,7 @@ class Parser {
       return;
     }
 
-    match = line.match(/\s*\/\*/);
+    match = line.match(/^\s*\/\*/);
     if (match) {
       this.scratch = [];
       this.consume_multiline_comment(line, false);
@@ -285,18 +326,6 @@ class Parser {
       return;
     }
 
-    match = line.match(/^\s*typedef\s+(\w+)\s*\=\s*function\s+(\w+).*/);
-    if (match) {
-      this.readTypeDef(match, line);
-      return;
-    }
-
-    match = line.match(/^\s*typeset\s+(\w+)/);
-    if (match) {
-      this.readTypeSet(match, line);
-      return;
-    }
-
     match = line.match(
       /^\s*(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*(\w*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
     );
@@ -319,7 +348,8 @@ class Parser {
         return;
       }
       let state = this.state[this.state.length - 1];
-      if (state === State.Function && this.state_data !== undefined) {
+      if (state === State.None) {
+      } else if (state === State.Function && this.state_data !== undefined) {
         // We are in a method
         this.lastFuncLine = 0;
         this.addFullRange(this.lastFuncName + this.state_data.name);
@@ -403,7 +433,7 @@ class Parser {
     return;
   }
 
-  read_enums(match, line: string, IsStruct: boolean) {
+  read_enums(match: RegExpMatchArray, line: string, IsStruct: boolean) {
     let { description, params } = this.parse_doc_comment();
     if (IsStruct) {
       // Create a completion for the enum struct itself if it has a name
@@ -421,75 +451,68 @@ class Parser {
         name: enumStructName,
       };
       return;
-    } else {
-      let nameMatch = match[0].match(/^\s*(?:enum\s*)(\w*)/);
-      if (nameMatch) {
-        // Create a completion for the enum itself if it has a name
-        let range = this.makeDefinitionRange(match[1], line);
-        var enumCompletion: EnumItem = new EnumItem(
-          nameMatch[1],
-          this.file,
-          description,
-          range
-        );
-        this.completions.add(nameMatch[1], enumCompletion);
-      } else {
-        var enumCompletion: EnumItem = new EnumItem(
-          "",
-          this.file,
-          description,
-          undefined
-        );
-        this.completions.add("", enumCompletion);
-      }
-
-      // Set max number of iterations for safety
-      let iter = 0;
-      // Match all the enum members
-      while (iter < 100 && !/\s*(\}\s*\;?)/.test(line)) {
-        iter++;
-        line = this.lines.shift();
-        this.lineNb++;
-        // Stop early if it's the end of the file
-        if (line === undefined) {
-          return;
-        }
-        match = line.match(/^\s*(\w*)\s*.*/);
-
-        // Skip if didn't match
-        if (!match) {
-          continue;
-        }
-        let enumMemberName = match[1];
-        // Try to match multiblock comments
-        let enumMemberDescription: string;
-        match = line.match(/\/\*\*<?\s*(.+?(?=\*\/))/);
-        if (match) {
-          enumMemberDescription = match[1];
-        }
-        match = line.match(/\/\/<?\s*(.*)/);
-        if (match) {
-          enumMemberDescription = match[1];
-        }
-        let range = this.makeDefinitionRange(enumMemberName, line);
-        this.completions.add(
-          enumMemberName,
-          new EnumMemberItem(
-            enumMemberName,
-            this.file,
-            enumMemberDescription,
-            enumCompletion,
-            range,
-            this.IsBuiltIn
-          )
-        );
-        this.searchForDefinesInString(line);
-      }
-      if (nameMatch) {
-        this.addFullRange(nameMatch[1]);
-      }
-      return;
     }
+
+    if (match[1]) {
+      this.anonymousEnumCount++;
+    }
+    let nameMatch = match[1] ? match[1] : `Enum #${this.anonymousEnumCount}`;
+    let range = this.makeDefinitionRange(match[1] ? match[1] : "enum", line);
+    var enumCompletion: EnumItem = new EnumItem(
+      nameMatch,
+      this.file,
+      description,
+      range
+    );
+    let key = match[1]
+      ? match[1]
+      : `${this.anonymousEnumCount}${basename(this.file)}`;
+    this.completions.add(key, enumCompletion);
+
+    // Set max number of iterations for safety
+    let iter = 0;
+    // Match all the enum members
+    while (iter < 100 && !/\s*(\}\s*\;?)/.test(line)) {
+      iter++;
+      line = this.lines.shift();
+      this.lineNb++;
+      // Stop early if it's the end of the file
+      if (line === undefined) {
+        return;
+      }
+      let iterMatch = line.match(/^\s*(\w*)\s*.*/);
+
+      // Skip if didn't match
+      if (!iterMatch) {
+        continue;
+      }
+      let enumMemberName = iterMatch[1];
+      // Try to match multiblock comments
+      let enumMemberDescription: string;
+      iterMatch = line.match(/\/\*\*<?\s*(.+?(?=\*\/))/);
+      if (iterMatch) {
+        enumMemberDescription = iterMatch[1];
+      }
+      iterMatch = line.match(/\/\/<?\s*(.*)/);
+      if (iterMatch) {
+        enumMemberDescription = iterMatch[1];
+      }
+      let range = this.makeDefinitionRange(enumMemberName, line);
+      this.completions.add(
+        enumMemberName,
+        new EnumMemberItem(
+          enumMemberName,
+          this.file,
+          enumMemberDescription,
+          enumCompletion,
+          range,
+          this.IsBuiltIn
+        )
+      );
+      this.searchForDefinesInString(line);
+    }
+    this.addFullRange(key);
+    return;
   }
 
   read_loop_variables(match, line: string) {
@@ -555,6 +578,7 @@ class Parser {
     current_line: string,
     use_line_comment: boolean = false
   ) {
+    let startPos = new Position(this.lineNb < 1 ? 0 : this.lineNb, 0);
     let iter = 0;
     while (
       current_line !== undefined &&
@@ -573,6 +597,19 @@ class Parser {
       current_line = this.lines.shift();
       this.lineNb++;
     }
+    let endPos = new Position(
+      this.lineNb < 1
+        ? 0
+        : use_line_comment
+        ? this.lineNb - 1
+        : this.lineNb - 2,
+      current_line.length
+    );
+    let range = new Range(startPos, endPos);
+    this.completions.add(
+      `comment${this.lineNb}--${Math.random()}`,
+      new CommentItem(this.file, range)
+    );
     this.searchForDefinesInString(current_line);
     this.interpLine(current_line);
     return;
@@ -901,6 +938,9 @@ class Parser {
     funcName: string = undefined,
     isParamDef = false
   ): void {
+    if (line === undefined) {
+      return;
+    }
     let range = this.makeDefinitionRange(name, line);
     let scope: string = globalIdentifier;
     let enumStructName: string;
@@ -1051,9 +1091,11 @@ class Parser {
       return new Map();
     }
     let defines = new Map();
+    let workspaceFolder = Workspace.getWorkspaceFolder(URI.file(this.file));
     let smHome =
-      Workspace.getConfiguration("sourcepawn").get<string>("SourcemodHome") ||
-      "";
+      Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
+        "SourcemodHome"
+      ) || "";
     // Replace \ escaping in Windows
     smHome = smHome.replace(/\\/g, "/");
     if (smHome === "") {

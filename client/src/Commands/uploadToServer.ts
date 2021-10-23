@@ -1,5 +1,6 @@
 ﻿import { workspace as Workspace, window, commands } from "vscode";
 import { join } from "path";
+import { run as refreshPluginsCommand } from "./refreshPlugins";
 // Keep the include like this,
 // otherwise FTPDeploy is not
 // recognised as a constructor
@@ -7,9 +8,12 @@ const FTPDeploy = require("ftp-deploy");
 
 export async function run(args: any) {
   let ftpDeploy = new FTPDeploy();
-  let config: object = Workspace.getConfiguration("sourcepawn").get(
-    "UploadOptions"
-  );
+  let workspaceFolder =
+    args === undefined ? undefined : Workspace.getWorkspaceFolder(args);
+  let config: object = Workspace.getConfiguration(
+    "sourcepawn",
+    workspaceFolder
+  ).get("UploadOptions");
   if (config === undefined) {
     window
       .showErrorMessage("Upload settings are empty.", "Open Settings")
@@ -57,11 +61,11 @@ export async function run(args: any) {
     .then(() => {
       console.log("Upload is finished.");
       if (
-        Workspace.getConfiguration("sourcepawn").get(
+        Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
           "uploadAfterSuccessfulCompile"
         )
       ) {
-        commands.executeCommand("sourcepawn-refreshPlugins");
+        refreshPluginsCommand(undefined);
       }
     })
     .catch((err) => console.error(err));

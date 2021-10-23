@@ -22,6 +22,9 @@ jobs:
       - name: Changelog
         id: changelog
         uses: mindsers/changelog-reader-action@v2.0.0
+      - name: Append date and time to the body
+        id: date
+        run: echo NOW=Built on $(date +"%d-%b-%Y %H:%M") >> $GITHUB_ENV
       - name: Create Release
         uses: ncipollo/release-action@v1
         env:
@@ -30,7 +33,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: v${{ env.PACKAGE_VERSION }}
           artifacts: "*.vsix"
-          body: ${{ steps.changelog.outputs.changes }}
+          body: ${{ env.NOW }}${{ steps.changelog.outputs.changes }}
           draft: false
           allowUpdates: true
           prerelease: true

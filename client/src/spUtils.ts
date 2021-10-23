@@ -1,4 +1,6 @@
-﻿import { MarkdownString } from "vscode";
+﻿import { MarkdownString, Uri, workspace as Workspace } from "vscode";
+import { existsSync } from "fs";
+import { join } from "path";
 
 export function descriptionToMD(description: string): MarkdownString {
   if (description === undefined) {
@@ -23,4 +25,28 @@ export function descriptionToMD(description: string): MarkdownString {
     "`$1`"
   );
   return new MarkdownString(description);
+}
+
+export function findMainPath(uri?: Uri): string {
+  let workspaceFolders = Workspace.workspaceFolders;
+  let workspaceFolder =
+    uri === undefined ? undefined : Workspace.getWorkspaceFolder(uri);
+  let mainPath: string =
+    Workspace.getConfiguration("sourcepawn", workspaceFolder).get("MainPath") ||
+    "";
+  if (mainPath !== "") {
+    // Check if it exists, meaning it's an absolute path.
+    if (!existsSync(mainPath) && workspaceFolders !== undefined) {
+      // If it doesn't, loop over the workspace folders until one matches.
+      for (let wk of workspaceFolders) {
+        mainPath = join(wk.uri.fsPath, mainPath);
+        if (existsSync(mainPath)) {
+          return mainPath;
+        }
+      }
+      return "";
+    } else {
+      return mainPath;
+    }
+  }
 }

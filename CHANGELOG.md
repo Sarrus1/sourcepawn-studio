@@ -1,5 +1,24 @@
 ## Release Notes
 
+## [2.5.0]
+
+### Added
+
+- Added support for [multi-root workspaces](https://code.visualstudio.com/docs/editor/multi-root-workspaces).
+- Anonymous enums will now appear in the outline as `Enum #<i>`.
+- GoToDefiniton and hover will no longer be provided inside strings and comments.
+
+### Fixed
+
+- Fixed an issue with the highlighting of the `new` keyword.
+- Fixed typedef and typeset blocking providers for the return type.
+
+### Fixed
+
+- Fixed an issue where the files were not uploaded to the server once the plugin was successfuly compiled.
+- Fixed an issue where an anonymous enum would be parsed like a function (see #141).
+- Fixed an issue where includes with submodules could not be parsed on Windows when located in the SourceMod home (thanks to [Dran1x](https://github.com/dran1x) for helping me to figure this out).
+
 ## [2.4.6]
 
 ### Fixed
@@ -20,6 +39,7 @@
 ### Fixed
 
 - When creating a new project, the editor will now automatically focus on the newly created .sp file.
+- Fixed `install SM` command crash.
 
 ## [2.4.4]
 

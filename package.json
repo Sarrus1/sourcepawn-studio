@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "2.4.6",
+  "version": "2.5.0",
   "publisher": "Sarrus",
   "main": "./dist/spIndex",
   "icon": "sm.png",
@@ -28,7 +28,7 @@
     "SourceMod",
     "AlliedMods",
     "AlliedModders",
-    "MetaMod"
+    "multi-root ready"
   ],
   "activationEvents": [
     "onLanguage:sourcepawn",
@@ -160,7 +160,8 @@
       "properties": {
         "sourcepawn.SourcemodHome": {
           "type": "string",
-          "description": "The location of the SourceMod API include files found in addons/sourcemod/scripting/include"
+          "description": "The location of the SourceMod API include files found in addons/sourcemod/scripting/include",
+          "scope": "resource"
         },
         "sourcepawn.AuthorName": {
           "type": "string",
@@ -172,16 +173,19 @@
         },
         "sourcepawn.SpcompPath": {
           "type": "string",
-          "description": "The location of the SourceMod compiler"
+          "description": "The location of the SourceMod compiler",
+          "scope": "resource"
         },
         "sourcepawn.MainPath": {
           "type": "string",
-          "description": "The location of the main.sp file for projects with sub-scripting files, which allows the linter and the compiler to work correctly. You should use this setting per workspace."
+          "description": "The location of the main.sp file for projects with sub-scripting files, which allows the linter and the compiler to work correctly. You should use this setting per workspace.",
+          "scope": "resource"
         },
         "sourcepawn.MainPathCompilation": {
           "type": "boolean",
           "default": true,
-          "description": "Whether the compile button always compiles the MainPath file (true) or the currently opened file (false)."
+          "description": "Whether the compile button always compiles the MainPath file (true) or the currently opened file (false).",
+          "scope": "resource"
         },
         "sourcepawn.showCompileIconInEditorTitleMenu": {
           "type": "boolean",
@@ -191,22 +195,26 @@
         "sourcepawn.refreshAfterSuccessfulUpload": {
           "type": "boolean",
           "default": false,
-          "description": "Should the plugins list on the server be refreshed with `sm plugins refresh` when the upload command executed successfully."
+          "description": "Should the plugins list on the server be refreshed with `sm plugins refresh` when the upload command executed successfully.",
+          "scope": "resource"
         },
         "sourcepawn.uploadAfterSuccessfulCompile": {
           "type": "boolean",
           "default": false,
-          "description": "Should the upload command be executed on a successful compile."
+          "description": "Should the upload command be executed on a successful compile.",
+          "scope": "resource"
         },
         "sourcepawn.enableLinter": {
           "type": "boolean",
           "default": true,
-          "description": "Toggle the linter on or off."
+          "description": "Toggle the linter on or off.",
+          "scope": "resource"
         },
         "sourcepawn.optionalIncludeDirsPaths": {
           "type": "array",
           "default": [],
-          "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable."
+          "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable.",
+          "scope": "resource"
         },
         "sourcepawn.compilerOptions": {
           "type": "array",
@@ -214,17 +222,20 @@
             "-O2",
             "-v2"
           ],
-          "description": "SourcePawn compiler options. Don't add paths here."
+          "description": "SourcePawn compiler options. Don't add paths here.",
+          "scope": "resource"
         },
         "sourcepawn.linterCompilerOptions": {
           "type": "array",
           "default": [],
-          "description": "SourcePawn linter compiler options. Don't add paths here."
+          "description": "SourcePawn linter compiler options. Don't add paths here.",
+          "scope": "resource"
         },
         "sourcepawn.outputDirectoryPath": {
           "type": "string",
           "default": "",
-          "description": "The path to the output directory for the compiled .smx file. Ends with a `/`."
+          "description": "The path to the output directory for the compiled .smx file. Ends with a `/`.",
+          "scope": "resource"
         },
         "sourcepawn.UploadOptions": {
           "type": "object",
@@ -250,7 +261,8 @@
             "forcePasv": true,
             "sftp": false
           },
-          "description": "Upload options for the FTP/SFTP client."
+          "description": "Upload options for the FTP/SFTP client.",
+          "scope": "resource"
         },
         "sourcepawn.SourceServerOptions": {
           "type": "object",
@@ -261,7 +273,8 @@
             "timeout": 1000,
             "password": ""
           },
-          "description": "Options for the Source server to refresh the plugins on."
+          "description": "Options for the Source server to refresh the plugins on.",
+          "scope": "resource"
         },
         "sourcepawn.formatterSettings": {
           "type": "array",
@@ -293,7 +306,8 @@
             "TabWidth: '2'",
             "UseTab: '${UseTab}'"
           ],
-          "description": "Settings for the formatter. Any setting supported by Clang Format can be used here."
+          "description": "Settings for the formatter. Any setting supported by Clang Format can be used here.",
+          "scope": "resource"
         },
         "sourcepawn.trace.server": {
           "type": "string",

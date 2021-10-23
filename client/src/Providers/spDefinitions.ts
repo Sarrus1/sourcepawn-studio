@@ -1,4 +1,5 @@
 ﻿import { TextDocument, Range, Position, CompletionItemKind } from "vscode";
+import { URI } from "vscode-uri";
 import { globalIdentifier } from "./spGlobalIdentifier";
 import { SPItem } from "./spItems";
 
@@ -19,6 +20,53 @@ export function GetLastFuncName(
   return func != undefined ? func.name : globalIdentifier;
 }
 
+export function isInAComment(
+  range: Range,
+  uri: URI,
+  allItems: SPItem[]
+): boolean {
+  let file = uri.fsPath;
+  let item = allItems.find(
+    (e) =>
+      e.kind === CompletionItemKind.User &&
+      e.file == file &&
+      e.range.contains(range)
+  );
+  return item !== undefined;
+}
+
+export function isInAString(range: Range, line: string): boolean {
+  let i = 0;
+  let isEscaped = false;
+  let end = range.end.character;
+  let isAString = false;
+  let delimiter: string;
+  for (i = 0; i < line.length && i < end; i++) {
+    if (line[i] === "'" && !isEscaped) {
+      if (delimiter === "'") {
+        isAString = false;
+        delimiter = undefined;
+      } else if (delimiter === undefined) {
+        isAString = true;
+        delimiter = "'";
+      }
+    } else if (line[i] === '"' && !isEscaped) {
+      if (delimiter === '"') {
+        isAString = false;
+        delimiter = undefined;
+      } else if (delimiter === undefined) {
+        isAString = true;
+        delimiter = '"';
+      }
+    } else if (line[i] === "\\") {
+      isEscaped = true;
+      continue;
+    }
+    isEscaped = false;
+  }
+  return isAString;
+}
+
 export function isFunction(
   range: Range,
   document: TextDocument,
@@ -27,8 +75,15 @@ export function isFunction(
   let start = new Position(range.start.line, range.end.character);
   let end = new Position(range.end.line, lineLength + 1);
   let rangeAfter = new Range(start, end);
+  let rangeBefore = new Range(
+    range.start.line,
+    0,
+    range.start.line,
+    range.end.character
+  );
   let wordsAfter: string = document.getText(rangeAfter);
-  return /^\s*\(/.test(wordsAfter);
+  let wordsBefore: string = document.getText(rangeBefore);
+  return /^\s*\(/.test(wordsAfter) && !/function\s+\w+$/.test(wordsBefore);
 }
 
 export function isControlStatement(line: string): boolean {
