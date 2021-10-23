@@ -216,6 +216,18 @@ class Parser {
       return;
     }
 
+    match = line.match(/^\s*typedef\s+(\w+)\s*\=\s*function\s+(\w+).*/);
+    if (match) {
+      this.readTypeDef(match, line);
+      return;
+    }
+
+    match = line.match(/^\s*typeset\s+(\w+)/);
+    if (match) {
+      this.readTypeSet(match, line);
+      return;
+    }
+
     // Match variables only in the current file
     match = line.match(
       /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*\w+(?:\[\])?\s+(\w+\s*(?:\[[A-Za-z0-9 +\-\*_]*\])*\s*(?:=\s*[^;,]+)?(?:,|;))/
@@ -311,18 +323,6 @@ class Parser {
         }
       }
       this.state.push(State.Loop);
-      return;
-    }
-
-    match = line.match(/^\s*typedef\s+(\w+)\s*\=\s*function\s+(\w+).*/);
-    if (match) {
-      this.readTypeDef(match, line);
-      return;
-    }
-
-    match = line.match(/^\s*typeset\s+(\w+)/);
-    if (match) {
-      this.readTypeSet(match, line);
       return;
     }
 
