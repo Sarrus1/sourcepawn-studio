@@ -25,7 +25,7 @@ jobs:
       - name: Append date and time to the body
         id: date
         run: |
-          NOW=$(date +"%d-%b-%Y %H:%M")"\n\n"${{ steps.changelog.outputs.changes }}
+          NOW=$(date +"%d-%b-%Y %H:%M")"\n\n"
       - name: Create Release
         uses: ncipollo/release-action@v1
         env:
@@ -34,7 +34,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: v${{ env.PACKAGE_VERSION }}
           artifacts: "*.vsix"
-          body: ${{ steps.date.NOW }}
+          body: ${{ steps.date.NOW }}${{ steps.changelog.outputs.changes }}
           draft: false
           allowUpdates: true
           prerelease: true
