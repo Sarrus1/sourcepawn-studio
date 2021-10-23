@@ -11,6 +11,7 @@
 ### Fixed
 
 - Fixed an issue with the highlighting of the `new` keyword.
+- Fixed typedef and typeset blocking providers for the return type.
 
 ### Fixed
 

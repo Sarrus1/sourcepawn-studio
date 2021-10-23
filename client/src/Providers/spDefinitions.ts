@@ -75,8 +75,15 @@ export function isFunction(
   let start = new Position(range.start.line, range.end.character);
   let end = new Position(range.end.line, lineLength + 1);
   let rangeAfter = new Range(start, end);
+  let rangeBefore = new Range(
+    range.start.line,
+    0,
+    range.start.line,
+    range.end.character
+  );
   let wordsAfter: string = document.getText(rangeAfter);
-  return /^\s*\(/.test(wordsAfter);
+  let wordsBefore: string = document.getText(rangeBefore);
+  return /^\s*\(/.test(wordsAfter) && !/function\s+\w+$/.test(wordsBefore);
 }
 
 export function isControlStatement(line: string): boolean {
