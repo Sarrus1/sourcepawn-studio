@@ -453,7 +453,7 @@ class Parser {
       return;
     }
 
-    if (match[1]) {
+    if (!match[1]) {
       this.anonymousEnumCount++;
     }
     let nameMatch = match[1] ? match[1] : `Enum #${this.anonymousEnumCount}`;
