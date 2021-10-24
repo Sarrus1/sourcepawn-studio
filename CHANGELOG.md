@@ -2,9 +2,13 @@
 
 ## [2.5.1]
 
+### Added
+
+- Added support for methodmaps static functions.
+
 ### Fixed
 
-- Fixed classic static functions not being provided.
+- Fixed `Set current file as main not working` (see #143).
 
 ## [2.5.0]
 
