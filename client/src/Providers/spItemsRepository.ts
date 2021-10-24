@@ -30,7 +30,6 @@ import {
   isInAString,
 } from "./spDefinitions";
 import { globalIdentifier } from "./spGlobalIdentifier";
-
 export class FileItems {
   completions: Map<string, SPItem>;
   includes: Include[];
@@ -225,7 +224,7 @@ export class ItemsRepository implements Disposable {
         allItems
       );
       if (isMethod) {
-        let variableType = this.getTypeOfVariable(
+        let { variableType, words } = this.getTypeOfVariable(
           line,
           position,
           allItems,
@@ -237,13 +236,25 @@ export class ItemsRepository implements Disposable {
           allItems
         );
         let existingNames: string[] = [];
+
+        // Prepare check for static methods
+        let isMethodMap: boolean;
+        if (words.length === 1) {
+          let methodmap = allItems.find(
+            (e) => e.name === words[0] && e.kind === CompletionItemKind.Class
+          );
+          isMethodMap = methodmap !== undefined;
+        }
         for (let item of allItems) {
           if (
             (item.kind === CompletionItemKind.Method ||
               item.kind === CompletionItemKind.Property) &&
             variableTypes.includes(item.parent) &&
             // Don't include the constructor of the methodmap
-            !variableTypes.includes(item.name)
+            !variableTypes.includes(item.name) &&
+            // Check for static methods
+            ((!isMethodMap && !item.detail.includes("static")) ||
+              (isMethodMap && item.detail.includes("static")))
           ) {
             if (!existingNames.includes(item.name)) {
               completionsList.items.push(
@@ -295,7 +306,7 @@ export class ItemsRepository implements Disposable {
     allItems: SPItem[],
     lastFuncName: string,
     lastEnumStructOrMethodMap: string
-  ): string {
+  ) {
     let i = position.character - 1;
     let bCounter = 0;
     let pCounter = 0;
@@ -358,6 +369,7 @@ export class ItemsRepository implements Disposable {
       i--;
     }
     let variableType: string;
+
     if (isNameSpace) {
       variableType = words[words.length - 1];
     } else {
@@ -373,6 +385,8 @@ export class ItemsRepository implements Disposable {
               [globalIdentifier, lastFuncName].includes(e.parent) &&
               e.name === words[words.length - 1]) ||
             (e.kind === CompletionItemKind.Function &&
+              e.name === words[words.length - 1]) ||
+            (e.kind === CompletionItemKind.Class &&
               e.name === words[words.length - 1])
         ).type;
       }
@@ -390,8 +404,7 @@ export class ItemsRepository implements Disposable {
         ).type;
       }
     }
-
-    return variableType;
+    return { variableType, words };
   }
 
   getAllItems(file: string): SPItem[] {
@@ -552,7 +565,7 @@ export class ItemsRepository implements Disposable {
     if (isMethod) {
       let line = document.lineAt(position.line).text;
       // If we are dealing with a method or property, look for the type of the variable
-      let variableType = this.getTypeOfVariable(
+      let { variableType, words } = this.getTypeOfVariable(
         line,
         position,
         allItems,

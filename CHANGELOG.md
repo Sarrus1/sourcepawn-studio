@@ -1,5 +1,16 @@
 ## Release Notes
 
+## [2.5.1]
+
+### Added
+
+- Added support for methodmaps static functions.
+
+### Fixed
+
+- Fixed `Set current file as main not working` (see #143).
+- Fixed anonymous enums not being separated correctly.
+
 ## [2.5.0]
 
 ### Added

@@ -453,7 +453,7 @@ class Parser {
       return;
     }
 
-    if (match[1]) {
+    if (!match[1]) {
       this.anonymousEnumCount++;
     }
     let nameMatch = match[1] ? match[1] : `Enum #${this.anonymousEnumCount}`;
@@ -624,6 +624,7 @@ class Parser {
       this.state_data.name,
       name_match,
       this.file,
+      match[0],
       description,
       range,
       match[1]
@@ -967,7 +968,15 @@ class Parser {
     } else if (this.state.includes(State.EnumStruct)) {
       this.completions.add(
         mapName,
-        new PropertyItem(this.state_data.name, name, this.file, "", range, type)
+        new PropertyItem(
+          this.state_data.name,
+          name,
+          this.file,
+          line,
+          "",
+          range,
+          type
+        )
       );
     } else {
       this.completions.add(
