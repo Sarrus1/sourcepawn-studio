@@ -373,6 +373,8 @@ export class ItemsRepository implements Disposable {
               [globalIdentifier, lastFuncName].includes(e.parent) &&
               e.name === words[words.length - 1]) ||
             (e.kind === CompletionItemKind.Function &&
+              e.name === words[words.length - 1]) ||
+            (e.kind === CompletionItemKind.Class &&
               e.name === words[words.length - 1])
         ).type;
       }
@@ -390,7 +392,6 @@ export class ItemsRepository implements Disposable {
         ).type;
       }
     }
-
     return variableType;
   }
 

@@ -164,6 +164,7 @@ export class MethodMapItem implements SPItem {
     this.IsBuiltIn = IsBuiltIn;
     this.file = file;
     this.range = range;
+    this.type = name;
   }
 
   toCompletionItem(

@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.5.1]
+
+### Fixed
+
+- Fixed classic static functions not being provided.
+
 ## [2.5.0]
 
 ### Added
