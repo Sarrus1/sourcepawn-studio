@@ -23,6 +23,7 @@ export interface SPItem {
   parent?: string;
   description?: string;
   range?: Range;
+  detail?: string;
   fullRange?: Range;
   calls?: Location[];
   IsBuiltIn?: boolean;
@@ -740,6 +741,7 @@ export class PropertyItem implements SPItem {
   file: string;
   description: string;
   type: string;
+  detail: string;
   kind = CompletionItemKind.Property;
   range: Range;
   fullRange: Range;
@@ -747,6 +749,7 @@ export class PropertyItem implements SPItem {
     parent: string,
     name: string,
     file: string,
+    detail: string,
     description: string,
     range: Range,
     type: string
@@ -757,6 +760,7 @@ export class PropertyItem implements SPItem {
     this.description = description;
     this.range = range;
     this.type = type;
+    this.detail = detail;
   }
 
   toCompletionItem(

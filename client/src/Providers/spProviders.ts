@@ -294,7 +294,7 @@ export class Providers {
         document,
         allItems
       );
-      let type = this.itemsRepository.getTypeOfVariable(
+      let { variableType, words } = this.itemsRepository.getTypeOfVariable(
         croppedLine,
         newPos,
         allItems,
@@ -302,7 +302,7 @@ export class Providers {
         lastEnumStructOrMethodMap
       );
       let variableTypes: string[] = this.itemsRepository.getAllInheritances(
-        type,
+        variableType,
         allItems
       );
       let items = this.itemsRepository
