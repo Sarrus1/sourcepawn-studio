@@ -10,7 +10,7 @@ export async function run(args: any) {
     linetext[position.character - 1] === "("
   ) {
     let signatureHelp = (await commands.executeCommand(
-      "executeSignatureHelpProvider",
+      "vscode.executeSignatureHelpProvider",
       document.uri,
       position
     )) as SignatureHelp;
