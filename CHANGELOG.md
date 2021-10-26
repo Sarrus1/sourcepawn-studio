@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fixed the insertParameters function (see #145).
+- Fixed methodmap not being found in .inc files.
 
 ## [2.5.1]
 

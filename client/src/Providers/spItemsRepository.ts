@@ -218,11 +218,10 @@ export class ItemsRepository implements Disposable {
     let completionsList: CompletionList = new CompletionList();
     if (allItems !== []) {
       let lastFunc: string = GetLastFuncName(position, document, allItems);
-      let lastEnumStructOrMethodMap = getLastEnumStructNameOrMethodMap(
-        position,
-        document,
-        allItems
-      );
+      let {
+        lastEnumStructOrMethodMap,
+        isAMethodMap,
+      } = getLastEnumStructNameOrMethodMap(position, document, allItems);
       if (isMethod) {
         let { variableType, words } = this.getTypeOfVariable(
           line,
@@ -538,16 +537,16 @@ export class ItemsRepository implements Disposable {
     }
 
     let lastFunc: string = GetLastFuncName(position, document, allItems);
-    let lastEnumStructOrMethodMap: string = getLastEnumStructNameOrMethodMap(
-      position,
-      document,
-      allItems
-    );
+    let {
+      lastEnumStructOrMethodMap,
+      isAMethodMap,
+    } = getLastEnumStructNameOrMethodMap(position, document, allItems);
     // If we match a property or a method of an enum struct
     // but not a local scopped variable inside an enum struct's method.
     if (
       lastEnumStructOrMethodMap !== globalIdentifier &&
-      lastFunc === globalIdentifier
+      lastFunc === globalIdentifier &&
+      !isAMethodMap
     ) {
       let items = allItems.filter(
         (item) =>

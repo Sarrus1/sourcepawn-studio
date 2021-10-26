@@ -107,7 +107,7 @@ export function getLastEnumStructNameOrMethodMap(
   position: Position,
   document: TextDocument,
   allItems: SPItem[]
-): string {
+) {
   let enumStruct = allItems.find(
     (e) =>
       [CompletionItemKind.Struct, CompletionItemKind.Class].includes(e.kind) &&
@@ -115,5 +115,11 @@ export function getLastEnumStructNameOrMethodMap(
       e.fullRange != undefined &&
       e.fullRange.contains(position)
   );
-  return enumStruct != undefined ? enumStruct.name : globalIdentifier;
+  if (enumStruct === undefined) {
+    return { lastEnumStructOrMethodMap: globalIdentifier, isAMethodMap: false };
+  }
+  return {
+    lastEnumStructOrMethodMap: enumStruct.name,
+    isAMethodMap: enumStruct.kind === CompletionItemKind.Class,
+  };
 }
