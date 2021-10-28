@@ -472,7 +472,7 @@ class Parser {
     // Set max number of iterations for safety
     let iter = 0;
     // Match all the enum members
-    while (iter < 100 && !/\s*(\}\s*\;?)/.test(line)) {
+    while (iter < 100 && !/^\s*\}/.test(line)) {
       iter++;
       line = this.lines.shift();
       this.lineNb++;

@@ -29,7 +29,7 @@ import { JsDocCompletionProvider } from "./spDocCompletions";
 import { parseText, parseFile } from "./spParser";
 import {
   GetLastFuncName,
-  getLastEnumStructNameOrMethodMap as getLastEnumStructOrMethodMap,
+  getLastEnumStructNameOrMethodMap,
 } from "./spDefinitions";
 import { SP_LEGENDS } from "../spLegends";
 import { getSignatureAttributes } from "./spSignatures";
@@ -289,11 +289,10 @@ export class Providers {
       let allItems = this.itemsRepository.getAllItems(document.uri.toString());
       let lastFuncName = GetLastFuncName(position, document, allItems);
       let newPos = new Position(1, croppedLine.length);
-      let lastEnumStructOrMethodMap = getLastEnumStructOrMethodMap(
-        position,
-        document,
-        allItems
-      );
+      let {
+        lastEnumStructOrMethodMap,
+        isAMethodMap,
+      } = getLastEnumStructNameOrMethodMap(position, document, allItems);
       let { variableType, words } = this.itemsRepository.getTypeOfVariable(
         croppedLine,
         newPos,
