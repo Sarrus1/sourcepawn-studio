@@ -669,7 +669,7 @@ class Parser {
     let range = this.makeDefinitionRange(name, line);
     let { description, params } = this.parse_doc_comment();
     let iter = 0;
-    while (!/^\s*}\s*;/.test(line)) {
+    while (!/^\s*}/.test(line)) {
       if (iter == 200) {
         return;
       }
@@ -678,7 +678,7 @@ class Parser {
       this.searchForDefinesInString(line);
       iter++;
     }
-    let endMatch = line.match(/^\s*}\s*;/);
+    let endMatch = line.match(/^\s*}/);
     let fullRange = new Range(
       startPosition,
       new Position(this.lineNb, endMatch[0].length)
