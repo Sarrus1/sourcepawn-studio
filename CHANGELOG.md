@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.5.3]
+
+### Fixed
+
+- Fixed `typeset` parsing error.
+
 ## [2.5.2]
 
 ### Fixed
