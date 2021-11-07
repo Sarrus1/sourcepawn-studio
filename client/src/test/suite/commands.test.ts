@@ -248,6 +248,9 @@ suite("Run tests", () => {
         )
         .then((docCompletion: vscode.CompletionList) => {
           assert.ok(docCompletion.items.length > 0);
+          const expectedKeywords = ["case", "switch", "return", "continue", "break", "sizeof", "view_as", "forward", "native", "stock", "public"];
+          const foundKeywords = docCompletion.items.filter(item => expectedKeywords.some(keyword => item.label == keyword));
+          assert.equal(foundKeywords.length, expectedKeywords.length, "expected keywords did not match");
         });
     });
 
