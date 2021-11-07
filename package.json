@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "2.5.3",
+  "version": "2.5.4",
   "publisher": "Sarrus",
   "main": "./dist/spIndex",
   "icon": "sm.png",
