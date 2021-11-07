@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.5.4]
+
+### Added
+
+- Added new keywords to autocompletion (see #148).
+
 ## [2.5.3]
 
 ### Fixed
