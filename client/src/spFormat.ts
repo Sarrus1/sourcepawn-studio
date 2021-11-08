@@ -149,5 +149,8 @@ function fixFormatting(text: string): string {
     "$1\n$2\n$3"
   );
 
+  // clang-format messes up the trailing } of the myinfo array.
+  text = text.replace(/\n{2,}\};/, "\n};");
+
   return text;
 }
