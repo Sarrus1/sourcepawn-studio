@@ -5,6 +5,7 @@
 ### Fixed
 
 - Updated Clang-Format to v13.0 using [those binaries](https://github.com/muttleyxd/clang-tools-static-binaries/releases/tag/master-f3a37dd2). Thanks to [Sples1](https://github.com/Sples1) for the default settings.
+- Fixed `public` being highlighted incorrectly (see #151).
 
 ## [2.5.4]
 

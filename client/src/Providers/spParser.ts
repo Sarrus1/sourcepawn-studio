@@ -204,7 +204,7 @@ class Parser {
     }
     // Match enums
     match = line.match(/^\s*enum(?:\s+(\w+))?\s*[^\{]*/);
-    if (match) {
+    if (match && !/;\s*$/.test(line)) {
       this.read_enums(match, line, false);
       return;
     }
@@ -598,7 +598,7 @@ class Parser {
       this.lineNb++;
     }
     let endPos = new Position(
-      this.lineNb < 1
+      this.lineNb < 2
         ? 0
         : use_line_comment
         ? this.lineNb - 1
