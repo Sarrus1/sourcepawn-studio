@@ -1,6 +1,6 @@
 ## Release Notes
 
-## [2.5.5]
+## [2.6.0]
 
 ### Fixed
 
