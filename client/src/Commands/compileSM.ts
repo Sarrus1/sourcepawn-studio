@@ -81,7 +81,7 @@ export async function run(args: any) {
 
   // Create plugins folder if it doesn't exist.
   let pluginsFolderPath: string;
-  if (scriptingPath.replace(/(?:\\\\|\\)$/, "").endsWith("scripting")) {
+  if (existsSync(join(scriptingPath, "../", "plugins/"))) {
     pluginsFolderPath = join(scriptingPath, "../", "plugins/");
   } else {
     pluginsFolderPath = join(scriptingPath, "compiled/");

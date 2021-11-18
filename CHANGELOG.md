@@ -9,6 +9,7 @@
 - Fixed old syntax highlighting for function return type declaration.
 - Fixed GoToDefinition not working for types in enum structs.
 - Fixed wrong compiler being used in workspace scopped settings.
+- Improved the reliability of the automatic output folder selection when compiling.
 
 ## [2.5.4]
 
