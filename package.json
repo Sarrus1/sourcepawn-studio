@@ -42,7 +42,8 @@
     "onCommand:sourcepawn-vscode.refreshPlugins",
     "onCommand:sourcepawn-vscode.insertParameters",
     "onCommand:sourcepawn-vscode.setFileAsMain",
-    "onCommand:sourcepawn-vscode.createChangelog"
+    "onCommand:sourcepawn-vscode.createChangelog",
+    "onCommand:sourcepawn-vscode.changeSMApi"
   ],
   "contributes": {
     "commands": [
@@ -108,6 +109,11 @@
       {
         "command": "sourcepawn-vscode.createChangelog",
         "title": "Create Changelog",
+        "category": "Project"
+      },
+      {
+        "command": "sourcepawn-vscode.changeSMApi",
+        "title": "Change SM API",
         "category": "Project"
       }
     ],
@@ -229,6 +235,17 @@
           "type": "array",
           "default": [],
           "description": "SourcePawn linter compiler options. Don't add paths here.",
+          "scope": "resource"
+        },
+        "sourcepawn.optionalSMHomes": {
+          "type": "array",
+          "default": [
+            {
+              "name": "",
+              "path": ""
+            }
+          ],
+          "description": "Optional SourceMod homes when using multiple APIs.",
           "scope": "resource"
         },
         "sourcepawn.outputDirectoryPath": {

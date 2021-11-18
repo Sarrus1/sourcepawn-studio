@@ -11,6 +11,7 @@ import { run as InsertParametersCommand } from "./insertParameters";
 import { run as setFileAsMainCommand } from "./setFileAsMain";
 import { run as installSMCommand } from "./installSM";
 import { run as createChangelogCommand } from "./createCHANGELOG";
+import { run as changeSMApiCommand } from "./changeSMApi";
 
 export function registerSMCommands(context: ExtensionContext) {
   let createTask = commands.registerCommand(
@@ -84,4 +85,10 @@ export function registerSMCommands(context: ExtensionContext) {
     createChangelogCommand.bind(undefined)
   );
   context.subscriptions.push(createChangelog);
+
+  let changeSMApi = commands.registerTextEditorCommand(
+    "sourcepawn-vscode.changeSMApi",
+    changeSMApiCommand.bind(undefined)
+  );
+  context.subscriptions.push(changeSMApi);
 }
