@@ -558,7 +558,9 @@ export class ItemsRepository implements Disposable {
           item.parent === lastEnumStructOrMethodMap &&
           item.name === word
       );
-      return items;
+      if (items.length !== 0) {
+        return items;
+      }
     }
 
     if (isMethod) {
