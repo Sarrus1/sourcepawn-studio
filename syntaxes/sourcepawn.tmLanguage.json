@@ -189,17 +189,17 @@
       }
     },
     {
-      "comment": "Function declaration new syntax",
-      "match": "^\\s*((?:(?:static|native|stock|public|forward)\\s*)*)((?!function)\\w*)\\s+(\\w+)\\s*\\(",
+      "comment": "Function declaration syntax",
+      "match": "^\\s*((?:(?:static|native|stock|public|forward)\\s*)*)(?!function)(?:(\\w*)\\s*(?:\\s+|\\:))\\s*(\\w+)\\s*\\(",
       "captures": {
         "1": {
-          "name": "keyword.function_new.sourcepawn"
+          "name": "keyword.function.sourcepawn"
         },
         "2": {
-          "name": "support.type.core.function_new.sourcepawn"
+          "name": "support.type.core.function.sourcepawn"
         },
         "3": {
-          "name": "entity.name.function.function_new.sourcepawn"
+          "name": "entity.name.function.function.sourcepawn"
         }
       }
     },
