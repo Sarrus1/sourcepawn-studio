@@ -146,7 +146,14 @@ export function activate(context: ExtensionContext) {
   );
 
   context.subscriptions.push(
-    languages.registerDocumentFormattingEditProvider(SP_MODE, formatter)
+    languages.registerDocumentFormattingEditProvider(
+      {
+        language: "sourcepawn",
+        scheme: "file",
+        pattern: "**/*.sp",
+      },
+      formatter
+    )
   );
   context.subscriptions.push(
     languages.registerHoverProvider(SP_MODE, providers)

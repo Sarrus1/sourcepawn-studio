@@ -8,31 +8,7 @@
       "include": "#comments"
     },
     {
-      "match": "(\\#include|\\#tryinclude)\\s+(.+?(?=//))",
-      "name": "meta.include.sourcepawn",
-      "captures": {
-        "1": {
-          "name": "keyword.control.sourcepawn"
-        },
-        "2": {
-          "name": "string.sourcepawn"
-        }
-      }
-    },
-    {
-      "match": "(\\#include|\\#tryinclude)\\s+(.+?(?=/\\*))",
-      "name": "meta.include.sourcepawn",
-      "captures": {
-        "1": {
-          "name": "keyword.control.sourcepawn"
-        },
-        "2": {
-          "name": "string.sourcepawn"
-        }
-      }
-    },
-    {
-      "match": "(\\#include|\\#tryinclude)\\s(.+)",
+      "match": "(\\#include|\\#tryinclude)\\s*((?:\\<|\").+(?:\\>|\"))",
       "name": "meta.include.sourcepawn",
       "captures": {
         "1": {
@@ -56,20 +32,8 @@
       }
     },
     {
-      "match": "(\\#pragma)\\s+(.+?(?=/\\*))",
+      "match": "(\\#pragma)\\s+([A-Za-z ]+)",
       "name": "meta.pragma.block-comment.sourcepawn",
-      "captures": {
-        "1": {
-          "name": "keyword.control.pragma.sourcepawn"
-        },
-        "2": {
-          "name": "entity.other.attribute-name.sourcepawn"
-        }
-      }
-    },
-    {
-      "match": "(\\#pragma)\\s+(.*)",
-      "name": "meta.pragma.sourcepawn",
       "captures": {
         "1": {
           "name": "keyword.control.pragma.sourcepawn"
@@ -225,17 +189,17 @@
       }
     },
     {
-      "comment": "Function declaration new syntax",
-      "match": "^\\s*((?:(?:static|native|stock|public|forward)\\s*)*)((?!function)\\w*)\\s+(\\w+)\\s*\\(",
+      "comment": "Function declaration syntax",
+      "match": "^\\s*((?:(?:static|native|stock|public|forward)\\s*)*)(?!function)(?:(\\w*)\\s*(?:\\s+|\\:))\\s*(\\w+)\\s*\\(",
       "captures": {
         "1": {
-          "name": "keyword.function_new.sourcepawn"
+          "name": "keyword.function.sourcepawn"
         },
         "2": {
-          "name": "support.type.core.function_new.sourcepawn"
+          "name": "support.type.core.function.sourcepawn"
         },
         "3": {
-          "name": "entity.name.function.function_new.sourcepawn"
+          "name": "entity.name.function.function.sourcepawn"
         }
       }
     },

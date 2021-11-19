@@ -151,7 +151,7 @@ export class ItemsRepository implements Disposable {
         cleanedUri = uri.replace("file://__sourcemod_builtin/" + tempName, "");
         let match = cleanedUri.match(/([^\/]+\/)?/);
         if (match[0] != "") {
-          let item = {
+          let item: CompletionItem = {
             label: match[0].replace("/", ""),
             kind: CompletionItemKind.Folder,
             detail: "Sourcemod BuiltIn",
@@ -180,7 +180,7 @@ export class ItemsRepository implements Disposable {
             cleanedUri = uri.replace(scriptingDirname + tempName, "");
             let match = cleanedUri.match(/([^\/]+\/)?/);
             if (match[0] != "") {
-              let item = {
+              let item: CompletionItem = {
                 label: match[0].replace("/", ""),
                 kind: CompletionItemKind.Folder,
                 detail: URI.parse(uri).fsPath,
@@ -558,7 +558,9 @@ export class ItemsRepository implements Disposable {
           item.parent === lastEnumStructOrMethodMap &&
           item.name === word
       );
-      return items;
+      if (items.length !== 0) {
+        return items;
+      }
     }
 
     if (isMethod) {

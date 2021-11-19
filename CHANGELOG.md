@@ -1,5 +1,23 @@
 ## Release Notes
 
+## [2.6.0]
+
+### Added
+
+- Added a way to quickly switch between Sourcemod APIs.
+- Recommend the associated constructor of a variable first when using `new`.
+
+### Fixed
+
+- Updated Clang-Format to v13.0 using [those binaries](https://github.com/muttleyxd/clang-tools-static-binaries/releases/tag/master-f3a37dd2). Thanks to [Sples1](https://github.com/Sples1) for the default settings.
+- The formatter won't format `.inc` files anymore.
+- Fixed `public` being highlighted incorrectly (see #151).
+- Fixed old syntax highlighting for function return type declaration.
+- Fixed GoToDefinition not working for types in enum structs.
+- Fixed wrong compiler being used in workspace scopped settings.
+- Improved the reliability of the automatic output folder selection when compiling.
+- Fixed constructors' signature.
+
 ## [2.5.4]
 
 ### Added

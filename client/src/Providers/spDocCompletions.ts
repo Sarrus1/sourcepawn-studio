@@ -7,9 +7,9 @@ import {
   CompletionItemProvider,
   TextDocument,
   CancellationToken,
+  commands,
+  SignatureHelp,
 } from "vscode";
-
-import { getParamsFromDeclaration } from "./spParser";
 
 const indentSize: number = 5;
 
@@ -60,12 +60,13 @@ export class JsDocCompletionProvider implements CompletionItemProvider {
     if (!document) {
       return undefined;
     }
-    let { params, indent } = getFullParams(document, position);
-
-    let functionDesc = getParamsFromDeclaration(params).map((e) => e.label);
-    if (functionDesc == []) {
+    let { signature, indent } = await getFullParams(document, position);
+    if (signature === undefined) {
       return undefined;
     }
+
+    let functionDesc = signature.parameters.map((e) => e.label.toString());
+
     let DocCompletionItem = new SpDocCompletionItem(
       position,
       functionDesc,
@@ -91,60 +92,34 @@ function getSpaceLengthReturn(max): number {
   return max + indentSize - 1;
 }
 
-function getFullParams(document: TextDocument, position: Position) {
+async function getFullParams(document: TextDocument, position: Position) {
   const lines = document.getText().split("\n");
   let lineNB = position.line + 1;
   let line = lines[lineNB];
-  let newSyntaxRe: RegExp = /^(\s)*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\((.*(?:\)|,|{))\s*/;
+  let newSyntaxRe: RegExp = /^(\s)*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\(/;
   let match: RegExpMatchArray = line.match(newSyntaxRe);
   if (!match) {
     match = line.match(
-      /^(\s)*(?:(?:static|native|stock|public|forward)\s+)*(?:(\w+)\s*:)?\s*(\w*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
+      /^(\s)*(?:(?:static|native|stock|public|forward)\s+)*(?:(\w+)\s*:)?\s*(\w*)\s*\(/
     );
     if (!match) {
       return;
     }
   }
-  let isNativeOrForward = /\bnative\b|\bforward\b/.test(match[0]);
-  let paramsMatch = match[4];
-  let matchEndRegex: RegExp = /(\{|\;)\s*(?:(?:\/\/|\/\*)(?:.*))?$/;
-  let matchEnd = matchEndRegex.test(line);
-  let matchLastParenthesis = /\)/.test(paramsMatch);
-  let iter = 0;
-  while (
-    !(matchLastParenthesis && matchEnd) &&
-    line !== undefined &&
-    iter < 20
-  ) {
-    iter++;
-    lineNB++;
-    line = lines[lineNB];
-
-    if (!matchLastParenthesis) {
-      paramsMatch += line;
-      matchLastParenthesis = /\)/.test(paramsMatch);
-    }
-    if (!matchEnd) {
-      matchEnd = matchEndRegex.test(line);
-    }
+  let newPos = new Position(lineNB, match[0].length);
+  let res: SignatureHelp = await commands.executeCommand(
+    "vscode.executeSignatureHelpProvider",
+    document.uri,
+    newPos
+  );
+  if (res.signatures.length === 0) {
+    return {
+      signature: undefined,
+      indent: undefined,
+    };
   }
-  if (!matchEnd) {
-    return;
-  }
-  let endSymbol = line.match(matchEndRegex);
-  if (endSymbol === null) {
-    return;
-  }
-
-  if (isNativeOrForward) {
-    if (endSymbol[1] === "{") return;
-  } else if (endSymbol[1] === ";") {
-    return;
-  }
-  // Treat differently if the function is declared on multiple lines
-  paramsMatch = /\)\s*(?:\{|;)?\s*$/.test(match[0])
-    ? match[0]
-    : match[0].replace(/\(.*\s*$/, "(") +
-      paramsMatch.replace(/\s*\w+\s*\(\s*/g, "").replace(/\s+/gm, " ");
-  return { params: paramsMatch, indent: match[1] == undefined ? "" : match[1] };
+  return {
+    signature: res.signatures[0],
+    indent: match[1] == undefined ? "" : match[1],
+  };
 }
