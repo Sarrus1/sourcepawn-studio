@@ -327,9 +327,8 @@ export class Providers {
         .getAllItems(document.uri.toString())
         .filter(
           (item) =>
-            item.kind === CompletionItemKind.Method &&
-            item.name === methodMapName &&
-            item.parent === methodMapName
+            item.kind === CompletionItemKind.Constructor &&
+            item.name === methodMapName
         );
       return {
         signatures: items.map((e) => e.toSignature()),
