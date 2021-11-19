@@ -288,7 +288,10 @@ export class Providers {
     }
 
     // Check if we are dealing with an include.
-    let match = text.match(/^\s*#\s*include\s*(<[^>]*|"[^"]*)$/);
+    let match = text.match(/^\s*#\s*include\s*(?:\<([^>]*)\>?)$/);
+    if (!match) {
+      match = text.match(/^\s*#\s*include\s*(?:\"([^\"]*)\"?)$/);
+    }
     if (match) {
       return this.itemsRepository.getIncludeCompletions(document, match[1]);
     }
