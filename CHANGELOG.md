@@ -5,6 +5,7 @@
 ### Added
 
 - Added a way to quickly switch between Sourcemod APIs.
+- Recommend the associated constructor of a variable first when using `new`.
 
 ### Fixed
 

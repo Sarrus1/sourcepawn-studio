@@ -217,24 +217,77 @@ export class Providers {
     const text = document
       .lineAt(position.line)
       .text.substr(0, position.character);
-    // If the trigger char is a space, check if there is a new behind, as this block deals with the new declaration.
+
+    // If the trigger char is a space, check if there is a
+    // "new" behind, and deal with the associated constructor.
     if (text[text.length - 1] === " ") {
       if (position.character > 0) {
         const line = document
           .lineAt(position.line)
           .text.substr(0, position.character);
-        let match = line.match(/new\s*\w*$/);
+
+        let match = line.match(
+          /(\w*)\s+([\w.\(\)]+)(?:\[[\w+ \d]+\])*\s*\=\s*new\s+(\w*)$/
+        );
         if (match) {
+          var type;
+
+          if (!match[1]) {
+            // If the variable is not declared here, look up its type, as it
+            // has not yet been parsed.
+            let allItems = this.itemsRepository.getAllItems(
+              document.uri.toString()
+            );
+            let lastFuncName = GetLastFuncName(position, document, allItems);
+            let newPos = new Position(1, match[2].length + 1);
+            let {
+              lastEnumStructOrMethodMap,
+              isAMethodMap,
+            } = getLastEnumStructNameOrMethodMap(position, document, allItems);
+            let {
+              variableType,
+              words,
+            } = this.itemsRepository.getTypeOfVariable(
+              // Hack to use getTypeOfVariable
+              match[2] + ".",
+              newPos,
+              allItems,
+              lastFuncName,
+              lastEnumStructOrMethodMap
+            );
+            type = variableType;
+          } else {
+            // If the variable is declared here, search its type directly.
+            type = this.itemsRepository
+              .getAllItems(document.uri.toString())
+              .find(
+                (item) =>
+                  item.kind === CompletionItemKind.Class &&
+                  item.name === match[1]
+              ).name;
+          }
+
+          // Filter the item to only keep the constructors.
           let items = this.itemsRepository
             .getAllItems(document.uri.toString())
             .filter((item) => item.kind === CompletionItemKind.Constructor);
           return new CompletionList(
-            items.map((e) => e.toCompletionItem(document.uri.fsPath))
+            items.map((e) => {
+              // Show the associated type's constructor first.
+              if (e.name === type) {
+                let tmp = e.toCompletionItem(document.uri.fsPath);
+                tmp.preselect = true;
+                return tmp;
+              }
+              return e.toCompletionItem(document.uri.fsPath);
+            })
           );
         }
       }
       return undefined;
     }
+
+    // Check if we are dealing with an include.
     let match = text.match(/^\s*#\s*include\s*(<[^>]*|"[^"]*)$/);
     if (match) {
       return this.itemsRepository.getIncludeCompletions(document, match[1]);
