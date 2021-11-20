@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.6.1]
+
+### Fixed
+
+- Removed unneeded test includes.
+
 ## [2.6.0]
 
 ### Added
