@@ -221,7 +221,7 @@
     {
       "comment": "keywords",
       "name": "keyword.sourcepawn",
-      "match": "\\s*\\b(?:break|continue|static|decl|const|delete|forward|native|public|stock|funcenum|functag|this|sizeof)\\b"
+      "match": "\\s*\\b(?:break|continue|decl|delete|forward|native|public|stock|funcenum|functag|this|sizeof)\\b"
     },
     {
       "comment": "Function params new syntax",
@@ -403,8 +403,15 @@
     },
     {
       "comment": "Match the rest as types",
-      "match": "^\\w+\\s*(?<!,\\[;)\\s*$",
-      "name": "support.type.sourcepawn"
+      "match": "^((?:(?:const|static)\\s+){0,2})(\\w+)\\s*(?<!,\\[;)\\s*$",
+      "captures": {
+        "1": {
+          "name": "keyword.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.sourcepawn"
+        }
+      }
     },
     {
       "comment": "Match the rest as variables",

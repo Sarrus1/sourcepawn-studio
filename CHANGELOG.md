@@ -10,6 +10,7 @@
 
 - Removed unneeded test includes.
 - Fixed a bug where parsing the first line would be inconsistent.
+- Fixed a highlighting bug (see #153).
 
 ## [2.6.0]
 
