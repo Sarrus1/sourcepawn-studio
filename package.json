@@ -237,15 +237,16 @@
           "description": "SourcePawn linter compiler options. Don't add paths here.",
           "scope": "resource"
         },
-        "sourcepawn.optionalSMHomes": {
+        "sourcepawn.availableAPIs": {
           "type": "array",
           "default": [
             {
               "name": "",
-              "path": ""
+              "SMHomePath": "",
+              "compilerPath": ""
             }
           ],
-          "description": "Optional SourceMod homes when using multiple APIs.",
+          "description": "Optional SourceMod homes when using multiple APIs. NOTE THAT THE NAMES SHOULD BE UNIQUE.",
           "scope": "resource"
         },
         "sourcepawn.outputDirectoryPath": {

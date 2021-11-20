@@ -2,6 +2,10 @@
 
 ## [2.6.1]
 
+### Added
+
+- Add a way to quickly switch between Sourcemod compilers.
+
 ### Fixed
 
 - Removed unneeded test includes.
