@@ -1,5 +1,17 @@
 ## Release Notes
 
+## [2.6.1]
+
+### Added
+
+- Add a way to quickly switch between Sourcemod compilers.
+
+### Fixed
+
+- Removed unneeded test includes.
+- Fixed a bug where parsing the first line would be inconsistent.
+- Fixed a highlighting bug (see #153).
+
 ## [2.6.0]
 
 ### Added

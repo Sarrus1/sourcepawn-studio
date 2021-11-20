@@ -6,22 +6,24 @@ import {
   commands,
 } from "vscode";
 
-interface OptionalSMHome {
+interface OptionalSMAPI {
   name: string;
-  path: string;
+  SMHomePath: string;
+  compilerPath: string;
 }
 
 export async function run(args: any) {
-  const optionalSMHomes: OptionalSMHome[] = Workspace.getConfiguration(
+  const optionalSMHomes: OptionalSMAPI[] = Workspace.getConfiguration(
     "sourcepawn"
-  ).get("optionalSMHomes");
-  let newSMHomeChoices: QuickPickItem[] = [];
-  for (let optionalHome of optionalSMHomes) {
-    newSMHomeChoices.push({
-      label: optionalHome.name,
-      detail: optionalHome.path,
-    });
-  }
+  ).get("availableAPIs");
+  let newSMHomeChoices: QuickPickItem[] = optionalSMHomes.map(
+    (optionalHome) => {
+      return {
+        label: optionalHome.name,
+        detail: optionalHome.SMHomePath,
+      };
+    }
+  );
 
   const QuickPickOptions: QuickPickOptions = {
     canPickMany: false,
@@ -34,6 +36,8 @@ export async function run(args: any) {
       "SourcemodHome",
       newSMHome.detail
     );
+    let spCompPath = optionalSMHomes.find((e) => e.name === newSMHome.label);
+    Workspace.getConfiguration("sourcepawn").update("SpcompPath", spCompPath);
     commands.executeCommand("workbench.action.reloadWindow");
   });
   return 0;

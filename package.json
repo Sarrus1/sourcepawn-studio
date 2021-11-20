@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "2.6.0",
+  "version": "2.6.1",
   "publisher": "Sarrus",
   "main": "./dist/spIndex",
   "icon": "sm.png",
@@ -237,15 +237,16 @@
           "description": "SourcePawn linter compiler options. Don't add paths here.",
           "scope": "resource"
         },
-        "sourcepawn.optionalSMHomes": {
+        "sourcepawn.availableAPIs": {
           "type": "array",
           "default": [
             {
               "name": "",
-              "path": ""
+              "SMHomePath": "",
+              "compilerPath": ""
             }
           ],
-          "description": "Optional SourceMod homes when using multiple APIs.",
+          "description": "Optional SourceMod homes when using multiple APIs. NOTE THAT THE NAMES SHOULD BE UNIQUE.",
           "scope": "resource"
         },
         "sourcepawn.outputDirectoryPath": {

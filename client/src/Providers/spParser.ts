@@ -104,7 +104,7 @@ class Parser {
   ) {
     this.completions = completions;
     this.state = [State.None];
-    this.lineNb = -1;
+    this.lineNb = 0;
     this.lines = lines;
     this.file = file;
     this.IsBuiltIn = IsBuiltIn;
@@ -129,7 +129,7 @@ class Parser {
 
   parse() {
     let line: string;
-    line = this.lines[0];
+    line = this.lines.shift();
     while (line !== undefined) {
       this.searchForDefinesInString(line);
       this.interpLine(line);
