@@ -9,6 +9,7 @@
 ### Fixed
 
 - Removed unneeded test includes.
+- Fixed a bug where parsing the first line would be inconsistent.
 
 ## [2.6.0]
 
