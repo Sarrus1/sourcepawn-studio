@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.6.2]
+
+### Fixed
+
+- Fixed wrong data being passed to the config.
+
 ## [2.6.1]
 
 ### Added
