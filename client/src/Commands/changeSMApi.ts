@@ -36,7 +36,8 @@ export async function run(args: any) {
       "SourcemodHome",
       newSMHome.detail
     );
-    let spCompPath = optionalSMHomes.find((e) => e.name === newSMHome.label);
+    let spCompPath = optionalSMHomes.find((e) => e.name === newSMHome.label)
+      .compilerPath;
     Workspace.getConfiguration("sourcepawn").update("SpcompPath", spCompPath);
     commands.executeCommand("workbench.action.reloadWindow");
   });
