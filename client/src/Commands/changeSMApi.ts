@@ -28,18 +28,23 @@ export async function run(args: any) {
   const QuickPickOptions: QuickPickOptions = {
     canPickMany: false,
   };
-  window.showQuickPick(newSMHomeChoices, QuickPickOptions).then((newSMHome) => {
-    if (newSMHome.detail == undefined) {
-      return;
-    }
-    Workspace.getConfiguration("sourcepawn").update(
-      "SourcemodHome",
-      newSMHome.detail
-    );
-    let spCompPath = optionalSMHomes.find((e) => e.name === newSMHome.label)
-      .compilerPath;
-    Workspace.getConfiguration("sourcepawn").update("SpcompPath", spCompPath);
-    commands.executeCommand("workbench.action.reloadWindow");
-  });
+  window
+    .showQuickPick(newSMHomeChoices, QuickPickOptions)
+    .then(async (newSMHome) => {
+      if (newSMHome.detail == undefined) {
+        return;
+      }
+      await Workspace.getConfiguration("sourcepawn").update(
+        "SourcemodHome",
+        newSMHome.detail
+      );
+      let spCompPath = optionalSMHomes.find((e) => e.name === newSMHome.label)
+        .compilerPath;
+      await Workspace.getConfiguration("sourcepawn").update(
+        "SpcompPath",
+        spCompPath
+      );
+      commands.executeCommand("workbench.action.reloadWindow");
+    });
   return 0;
 }

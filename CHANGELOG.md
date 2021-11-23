@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.6.3]
+
+### Fixed
+
+- Fixed a bug caused by asynchronous behaviour.
+
 ## [2.6.2]
 
 ### Fixed
