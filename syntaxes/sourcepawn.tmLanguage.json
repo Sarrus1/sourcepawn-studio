@@ -303,7 +303,7 @@
     },
     {
       "comment": "Variable declaration new syntax",
-      "match": "^\\s*((?:const|static)\\s+)*\\s*(\\w+)((?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])*)\\s+(\\w+)\\s*((?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])*)\\s*(?:,|;|=)",
+      "match": "^\\s*((?:(?:const|static)\\s+){0,2})(\\w+)((?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])*)\\s+(\\w+)\\s*((?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])*)\\s*(?:,|;|=)",
       "captures": {
         "1": {
           "name": "keyword.variable_new.sourcepawn"
@@ -412,6 +412,11 @@
           "name": "support.type.sourcepawn"
         }
       }
+    },
+    {
+      "comment": "Match the rest of the static and const",
+      "match": "(?:const|static)",
+      "name": "keyword.sourcepawn"
     },
     {
       "comment": "Match the rest as variables",
