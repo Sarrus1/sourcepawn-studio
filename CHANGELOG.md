@@ -1,5 +1,13 @@
 ## Release Notes
 
+## [2.6.3]
+
+### Fixed
+
+- Fixed a bug caused by asynchronous behaviour.
+- Fixed a formatting bug involving the `public` identifier (see #155).
+- Fixed a highlighting bug with `static` and `const` (thanks to [Dran1x](https://github.com/dran1x) for reporting this).
+
 ## [2.6.2]
 
 ### Fixed
