@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fixed a bug caused by asynchronous behaviour.
+- Fixed a formatting bug involving the `public` identifier (see #155).
 
 ## [2.6.2]
 
