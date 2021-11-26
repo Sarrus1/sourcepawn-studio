@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.6.5]
+
+### Fixed
+
+- Fixed `myinfo` snippet.
+
 ## [2.6.4]
 
 ### Fixed
