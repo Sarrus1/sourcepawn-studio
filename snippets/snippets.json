@@ -84,11 +84,11 @@
     "body": [
       "public Plugin myinfo =",
       "{",
-      "\tname = '${1:Name}',",
-      "\tauthor = '${2:Author}',",
-      "\tdescription = '${3:Description}',",
-      "\tversion = '${4:Version}',",
-      "\turl = '${5:URL}'",
+      "\tname = \"${1:Name}\",",
+      "\tauthor = \"${2:Author}\",",
+      "\tdescription = \"${3:Description}\",",
+      "\tversion = \"${4:Version}\",",
+      "\turl = \"${5:URL}\"",
       "};"
     ],
     "description": "myinfo part"
