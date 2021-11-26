@@ -768,6 +768,9 @@ class Parser {
         maxiter++;
         line = this.lines.shift();
         this.lineNb++;
+        if (line === undefined) {
+          return;
+        }
         if (!matchLastParenthesis) {
           this.AddParamsDef(line, nameMatch, line);
           this.searchForDefinesInString(line);
@@ -1218,6 +1221,9 @@ function parentCounter(line: string): number {
 function getParenthesisCount(line: string): number {
   let pCount = 0;
   let inAString = false;
+  if (line === undefined) {
+    return pCount;
+  }
   for (let i = 0; i < line.length; i++) {
     let char = line[i];
     if (char === "'" || char === '"') {

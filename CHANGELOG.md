@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.6.4]
+
+### Fixed
+
+- Fixed some potential undefined errors.
+
 ## [2.6.3]
 
 ### Fixed
