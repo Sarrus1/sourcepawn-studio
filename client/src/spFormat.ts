@@ -138,7 +138,7 @@ export class SMDocumentFormattingEditProvider
 
 function fixFormatting(text: string): string {
   // clang-format gets confused with 'public' so we have to replace it manually.
-  text = text.replace(/^\s*public\n/gm, "\npublic ");
+  text = text.replace(/^\s*public\r\n/gm, "\r\npublic ");
 
   // clang-format also messes up the myinfo array.
   text = text.replace(
