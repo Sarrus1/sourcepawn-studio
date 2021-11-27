@@ -6,6 +6,16 @@ export function readVariable(
   match: RegExpMatchArray,
   line: string
 ) {
+  if (
+    /^\s*(if|else|while|do|return|break|continue|delete|forward|native|property|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)/.test(
+      line
+    )
+  )
+    return;
+  if (/^\s*public\s+native/.test(line)) {
+    return;
+  }
+
   let match_variables = [];
   let match_variable: RegExpExecArray;
   // Check if it's a multiline declaration

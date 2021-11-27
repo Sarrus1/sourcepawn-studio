@@ -10,13 +10,27 @@ import {
   isSingleLineFunction,
   getParamsFromDeclaration,
 } from "./utils";
+import { isControlStatement } from "../Providers/spDefinitions";
 
-export function readFunction(parser: Parser, line: string) {
+export function readFunction(
+  parser: Parser,
+  match: RegExpMatchArray,
+  line: string
+): void {
+  if (isControlStatement(line) || /\bfunction\b/.test(match[1])) {
+    return;
+  }
+  if (parser.state.includes(State.Property)) {
+    if (!/;\s*$/.test(line)) {
+      parser.state.push(State.Function);
+    }
+    return;
+  }
   if (line === undefined) {
     return;
   }
   let newSyntaxRe: RegExp = /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*(?:\s*\[[\w \+\-\*]*\]\s*)?)\s+)?(\w*)\s*\((.*(?:\)|,|{))?\s*/;
-  let match: RegExpMatchArray = line.match(newSyntaxRe);
+  match = line.match(newSyntaxRe);
   if (!match) {
     match = line.match(
       /^\s*(?:(?:static|native|stock|public|forward)\s+)*(?:(\w+)\s*:)?\s*(\w*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/

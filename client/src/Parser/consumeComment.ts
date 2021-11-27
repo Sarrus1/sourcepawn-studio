@@ -7,7 +7,8 @@ export function consumeComment(
   parser: Parser,
   current_line: string,
   use_line_comment: boolean = false
-) {
+): void {
+  parser.scratch = [];
   let startPos = new Position(parser.lineNb < 1 ? 0 : parser.lineNb, 0);
   let iter = 0;
   while (

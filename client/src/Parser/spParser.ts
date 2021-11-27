@@ -14,9 +14,9 @@ import { readFunction } from "./readFunction";
 import { consumeComment } from "./consumeComment";
 import { addVariableItem } from "./addVariableItem";
 import { searchForDefinesInString } from "./searchForDefinesInString";
-import { parseDocComment } from "./parseDocComment";
+import { readMethodMap } from "./readMethodMap";
+import { manageState } from "./manageState";
 
-import { isControlStatement } from "../Providers/spDefinitions";
 import { CompletionItemKind, Range, workspace as Workspace } from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { resolve, dirname } from "path";
@@ -154,8 +154,6 @@ export class Parser {
     match = line.match(/^\s*#define\s+(\w+)\s+([^]+)/);
     if (match) {
       readDefine(this, match, line);
-      // Re-read the line now that define has been added to the array.
-      searchForDefinesInString(this, line);
       return;
     }
 
@@ -216,27 +214,18 @@ export class Parser {
       /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*\w+(?:\[\])?\s+(\w+\s*(?:\[[A-Za-z0-9 +\-\*_]*\])*\s*(?:=\s*[^;,]+)?(?:,|;))/
     );
     if (match && !this.IsBuiltIn) {
-      if (
-        /^\s*(if|else|while|do|return|break|continue|delete|forward|native|property|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)/.test(
-          line
-        )
-      )
-        return;
-      if (/^\s*public\s+native/.test(line)) return;
       readVariable(this, match, line);
       return;
     }
 
     match = line.match(/^\s*\/\*/);
     if (match) {
-      this.scratch = [];
       consumeComment(this, line, false);
       return;
     }
 
     match = line.match(/^\s*\/\//);
     if (match) {
-      this.scratch = [];
       consumeComment(this, line, true);
       return;
     }
@@ -245,22 +234,7 @@ export class Parser {
       /^\s*methodmap\s+([a-zA-Z][a-zA-Z0-9_]*)(?:\s*<\s*([a-zA-Z][a-zA-Z0-9_]*))?/
     );
     if (match) {
-      this.state.push(State.Methodmap);
-      this.state_data = {
-        name: match[1],
-      };
-      let { description, params } = parseDocComment(this);
-      let range = this.makeDefinitionRange(match[1], line);
-      var methodMapCompletion = new MethodMapItem(
-        match[1],
-        match[2],
-        line.trim(),
-        description,
-        this.file,
-        range,
-        this.IsBuiltIn
-      );
-      this.completions.add(match[1], methodMapCompletion);
+      readMethodMap(this, match, line);
       return;
     }
 
@@ -313,53 +287,12 @@ export class Parser {
       /^\s*(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*(\w*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
     );
     if (match) {
-      if (isControlStatement(line) || /\bfunction\b/.test(match[1])) {
-        return;
-      }
-      if (this.state.includes(State.Property)) {
-        if (!/;\s*$/.test(line)) {
-          this.state.push(State.Function);
-        }
-        return;
-      }
-      readFunction(this, line);
+      readFunction(this, match, line);
     }
 
     match = line.match(/^\s*}/);
     if (match) {
-      if (/^\s*\}\s*\belse\b\s*\{/.test(line)) {
-        return;
-      }
-      let state = this.state[this.state.length - 1];
-      if (state === State.None) {
-      } else if (state === State.Function && this.state_data !== undefined) {
-        // We are in a method
-        this.lastFuncLine = 0;
-        this.addFullRange(this.lastFuncName + this.state_data.name);
-      } else if (state === State.Methodmap && this.state_data !== undefined) {
-        // We are in a methodmap
-        this.addFullRange(this.state_data.name);
-        this.state_data = undefined;
-      } else if (state === State.EnumStruct && this.state_data !== undefined) {
-        // We are in an enum struct
-        this.addFullRange(this.state_data.name);
-        this.state_data = undefined;
-      } else if (state === State.Property && this.state_data !== undefined) {
-        // We are in a property
-        this.addFullRange(this.lastFuncName + this.state_data.name);
-      } else if (
-        ![
-          State.Methodmap,
-          State.EnumStruct,
-          State.Property,
-          State.Loop,
-          State.Macro,
-        ].includes(state)
-      ) {
-        // We are in a regular function
-        this.addFullRange(this.lastFuncName);
-      }
-      this.state.pop();
+      manageState(this, line);
       return;
     }
 

@@ -1,6 +1,7 @@
 ﻿import { positiveRange } from "./utils";
 import { Parser } from "./spParser";
 import { DefineItem } from "../Providers/spItems";
+import { searchForDefinesInString } from "./searchForDefinesInString";
 
 export function readDefine(
   parser: Parser,
@@ -21,5 +22,7 @@ export function readDefine(
       fullRange
     )
   );
+  // Re-read the line now that define has been added to the array.
+  searchForDefinesInString(parser, line);
   return;
 }
