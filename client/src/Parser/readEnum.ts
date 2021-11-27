@@ -1,6 +1,7 @@
 ﻿import { Parser } from "./spParser";
 import { EnumStructItem, EnumItem, EnumMemberItem } from "../Providers/spItems";
 import { State } from "./stateEnum";
+import { searchForDefinesInString } from "./searchForDefinesInString";
 import { basename } from "path";
 
 export function readEnum(
@@ -84,7 +85,7 @@ export function readEnum(
         parser.IsBuiltIn
       )
     );
-    parser.searchForDefinesInString(line);
+    searchForDefinesInString(this, line);
   }
   parser.addFullRange(key);
   return;

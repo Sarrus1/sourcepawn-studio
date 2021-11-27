@@ -19,15 +19,10 @@ import { readTypeDef } from "./readTypeDef";
 import { readTypeSet } from "./readTypeSet";
 import { readFunction } from "./readFunction";
 import { consumeComment } from "./consumeComment";
+import { searchForDefinesInString } from "./searchForDefinesInString";
 
 import { isControlStatement } from "../Providers/spDefinitions";
-import {
-  CompletionItemKind,
-  Location,
-  Position,
-  Range,
-  workspace as Workspace,
-} from "vscode";
+import { CompletionItemKind, Range, workspace as Workspace } from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { URI } from "vscode-uri";
@@ -125,7 +120,7 @@ export class Parser {
     let line: string;
     line = this.lines.shift();
     while (line !== undefined) {
-      this.searchForDefinesInString(line);
+      searchForDefinesInString(this, line);
       this.interpLine(line);
       line = this.lines.shift();
       this.lineNb++;
@@ -166,7 +161,7 @@ export class Parser {
     if (match) {
       readDefine(this, match, line);
       // Re-read the line now that define has been added to the array.
-      this.searchForDefinesInString(line);
+      searchForDefinesInString(this, line);
       return;
     }
 
@@ -546,77 +541,6 @@ export class Parser {
         );
       }
     }
-  }
-
-  searchForDefinesInString(line: string): void {
-    if (line === undefined) {
-      return;
-    }
-    let isBlockComment = false;
-    let isDoubleQuoteString = false;
-    let isSingleQuoteString = false;
-    let matchDefine: RegExpExecArray;
-    const re: RegExp = /(?:"|'|\/\/|\/\*|\*\/|\w+)/g;
-    let defineFile: string;
-    while ((matchDefine = re.exec(line))) {
-      if (matchDefine[0] === '"' && !isSingleQuoteString) {
-        isDoubleQuoteString = !isDoubleQuoteString;
-      } else if (matchDefine[0] === "'" && !isDoubleQuoteString) {
-        isSingleQuoteString = !isSingleQuoteString;
-      } else if (
-        matchDefine[0] === "//" &&
-        !isDoubleQuoteString &&
-        !isSingleQuoteString
-      ) {
-        break;
-      } else if (
-        matchDefine[0] === "/*" ||
-        (matchDefine[0] === "*/" &&
-          !isDoubleQuoteString &&
-          !isSingleQuoteString)
-      ) {
-        isBlockComment = !isBlockComment;
-      }
-      if (isBlockComment || isDoubleQuoteString || isSingleQuoteString) {
-        continue;
-      }
-      defineFile =
-        this.definesMap.get(matchDefine[0]) ||
-        this.enumMemberMap.get(matchDefine[0]);
-      if (defineFile !== undefined) {
-        let range = positiveRange(
-          this.lineNb,
-          matchDefine.index,
-          matchDefine.index + matchDefine[0].length
-        );
-        let location = new Location(URI.file(this.file), range);
-        // Treat defines from the current file differently or they will get
-        // overwritten at the end of the parsing.
-        if (defineFile === this.file) {
-          let define = this.completions.get(matchDefine[0]);
-          if (define === undefined) {
-            continue;
-          }
-          define.calls.push(location);
-          this.completions.add(matchDefine[0], define);
-          continue;
-        }
-        defineFile = defineFile.startsWith("file://")
-          ? defineFile
-          : URI.file(defineFile).toString();
-        let items = this.itemsRepository.completions.get(defineFile);
-        if (items === undefined) {
-          continue;
-        }
-        let define = items.get(matchDefine[0]);
-        if (define === undefined) {
-          continue;
-        }
-        define.calls.push(location);
-        items.add(matchDefine[0], define);
-      }
-    }
-    return;
   }
 
   getAllMembers(

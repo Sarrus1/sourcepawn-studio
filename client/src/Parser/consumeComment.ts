@@ -1,6 +1,7 @@
 ﻿import { Parser } from "./spParser";
 import { CommentItem } from "../Providers/spItems";
 import { Range, Position } from "vscode";
+import { searchForDefinesInString } from "./searchForDefinesInString";
 
 export function consumeComment(
   parser: Parser,
@@ -39,7 +40,7 @@ export function consumeComment(
     `comment${parser.lineNb}--${Math.random()}`,
     new CommentItem(parser.file, range)
   );
-  parser.searchForDefinesInString(current_line);
+  searchForDefinesInString(parser, current_line);
   parser.interpLine(current_line);
   return;
 }

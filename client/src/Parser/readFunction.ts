@@ -2,6 +2,7 @@
 import { MethodItem, FunctionItem } from "../Providers/spItems";
 import { State } from "./stateEnum";
 import { Range } from "vscode";
+import { searchForDefinesInString } from "./searchForDefinesInString";
 import {
   parentCounter,
   getParenthesisCount,
@@ -93,7 +94,7 @@ export function readFunction(parser: Parser, line: string) {
       }
       if (!matchLastParenthesis) {
         parser.AddParamsDef(line, nameMatch, line);
-        parser.searchForDefinesInString(line);
+        searchForDefinesInString(parser, line);
         paramsMatch += line;
         pCount += getParenthesisCount(line);
         matchLastParenthesis = pCount === 0;
