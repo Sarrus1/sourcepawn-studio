@@ -11,6 +11,7 @@ import {
   getParamsFromDeclaration,
 } from "./utils";
 import { isControlStatement } from "../Providers/spDefinitions";
+import { addVariableItem } from "./addVariableItem";
 
 export function readFunction(
   parser: Parser,
@@ -86,7 +87,7 @@ export function readFunction(
     let lineMatch = parser.lineNb;
     let type = match[1];
     let paramsMatch = match[3] === undefined ? "" : match[3];
-    parser.AddParamsDef(paramsMatch, nameMatch, line);
+    addParamsDef(parser, paramsMatch, nameMatch, line);
     // Iteration safety in case something goes wrong
     let maxiter = 0;
     let matchEndRegex: RegExp = /(\{|\;)\s*(?:(?:\/\/|\/\*)(?:.*))?$/;
@@ -108,7 +109,7 @@ export function readFunction(
         return;
       }
       if (!matchLastParenthesis) {
-        parser.AddParamsDef(line, nameMatch, line);
+        addParamsDef(parser, line, nameMatch, line);
         searchForDefinesInString(parser, line);
         paramsMatch += line;
         pCount += getParenthesisCount(line);
@@ -196,5 +197,34 @@ export function readFunction(
         fullRange
       )
     );
+  }
+}
+
+export function addParamsDef(
+  parser: Parser,
+  params: string,
+  funcName: string,
+  line: string
+) {
+  let match_variable: RegExpExecArray;
+  let match_variables: RegExpExecArray[] = [];
+  let re = /\s*(?:(?:const|static)\s+)?(?:(\w+)(?:\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+|\s*\:\s*))?(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
+  while ((match_variable = re.exec(params)) != null) {
+    match_variables.push(match_variable);
+  }
+  for (let variable of match_variables) {
+    let variable_completion = variable[2].match(
+      /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
+    )[1];
+    if (!parser.IsBuiltIn) {
+      addVariableItem(
+        this,
+        variable_completion,
+        line,
+        variable[1],
+        funcName,
+        true
+      );
+    }
   }
 }

@@ -12,7 +12,6 @@ import { readTypeDef } from "./readTypeDef";
 import { readTypeSet } from "./readTypeSet";
 import { readFunction } from "./readFunction";
 import { consumeComment } from "./consumeComment";
-import { addVariableItem } from "./addVariableItem";
 import { searchForDefinesInString } from "./searchForDefinesInString";
 import { readMethodMap } from "./readMethodMap";
 import { manageState } from "./manageState";
@@ -301,14 +300,6 @@ export class Parser {
     return;
   }
 
-  clean_param(partial_params_match: string) {
-    let unused_comma = partial_params_match.match(/(\))(?:\s*)(?:;)?(?:\s*)$/);
-    if (unused_comma) {
-      partial_params_match = partial_params_match.replace(unused_comma[1], "");
-    }
-    return partial_params_match;
-  }
-
   makeDefinitionRange(
     name: string,
     line: string,
@@ -319,30 +310,6 @@ export class Parser {
     let end: number = search ? start + name.length : 0;
     var range = positiveRange(this.lineNb, start, end);
     return range;
-  }
-
-  AddParamsDef(params: string, funcName: string, line: string) {
-    let match_variable: RegExpExecArray;
-    let match_variables: RegExpExecArray[] = [];
-    let re = /\s*(?:(?:const|static)\s+)?(?:(\w+)(?:\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+|\s*\:\s*))?(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
-    while ((match_variable = re.exec(params)) != null) {
-      match_variables.push(match_variable);
-    }
-    for (let variable of match_variables) {
-      let variable_completion = variable[2].match(
-        /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
-      )[1];
-      if (!this.IsBuiltIn) {
-        addVariableItem(
-          this,
-          variable_completion,
-          line,
-          variable[1],
-          funcName,
-          true
-        );
-      }
-    }
   }
 
   getAllMembers(
