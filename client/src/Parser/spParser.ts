@@ -16,6 +16,7 @@ import { readDefine } from "./readDefine";
 import { readMacro } from "./readMacro";
 import { readInclude } from "./readInclude";
 import { readEnum } from "./readEnum";
+import { readLoopVariable } from "./readLoopVariable";
 
 import { isControlStatement } from "../Providers/spDefinitions";
 import {
@@ -211,7 +212,7 @@ export class Parser {
     // Match for loop iteration variable only in the current file
     match = line.match(/^\s*(?:for\s*\(\s*int\s+)([A-Za-z0-9_]*)/);
     if (match) {
-      this.read_loop_variables(match, line);
+      readLoopVariable(this, match, line);
       return;
     }
 
@@ -381,15 +382,6 @@ export class Parser {
 
     // Reset the comments buffer
     this.scratch = [];
-    return;
-  }
-
-  read_loop_variables(match, line: string) {
-    this.state.push(State.Loop);
-    if (this.IsBuiltIn) {
-      return;
-    }
-    this.AddVariableCompletion(match[1], line, "int");
     return;
   }
 
