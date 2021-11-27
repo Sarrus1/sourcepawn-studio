@@ -1,13 +1,10 @@
 import { ItemsRepository, FileItems } from "../Providers/spItemsRepository";
 import {
-  FunctionItem,
   VariableItem,
-  MethodItem,
   FunctionParam,
   PropertyItem,
   SPItem,
   MethodMapItem,
-  TypeSetItem,
   CommentItem,
 } from "../Providers/spItems";
 import { State } from "./stateEnum";
@@ -20,6 +17,7 @@ import { readVariable } from "./readVariable";
 import { readProperty } from "./readProperty";
 import { readTypeDef } from "./readTypeDef";
 import { readTypeSet } from "./readTypeSet";
+import { readFunction } from "./readFunction";
 
 import { isControlStatement } from "../Providers/spDefinitions";
 import {
@@ -342,7 +340,7 @@ export class Parser {
         }
         return;
       }
-      this.read_function(line);
+      readFunction(this, line);
     }
 
     match = line.match(/^\s*}/);
@@ -435,180 +433,6 @@ export class Parser {
       partial_params_match = partial_params_match.replace(unused_comma[1], "");
     }
     return partial_params_match;
-  }
-
-  read_function(line: string) {
-    if (line === undefined) {
-      return;
-    }
-    let newSyntaxRe: RegExp = /^\s*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*(?:\s*\[[\w \+\-\*]*\]\s*)?)\s+)?(\w*)\s*\((.*(?:\)|,|{))?\s*/;
-    let match: RegExpMatchArray = line.match(newSyntaxRe);
-    if (!match) {
-      match = line.match(
-        /^\s*(?:(?:static|native|stock|public|forward)\s+)*(?:(\w+)\s*:)?\s*(\w*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
-      );
-    }
-    let isMethod: boolean =
-      this.state.includes(State.Methodmap) ||
-      this.state.includes(State.EnumStruct);
-
-    // We can't declare a function inside a function, this is a call.
-    // cancel the parsing
-    if (this.state[this.state.length - 1] === State.Function) {
-      return;
-    }
-    if (match) {
-      let { description, params } = this.parse_doc_comment();
-      let nameMatch = match[2];
-      // Stop if it's a macro being called
-      if (this.macroArr.length > 0) {
-        let tmpStr = "";
-        if (this.macroArr.length > 1) {
-          tmpStr = `\\b(?:${this.macroArr.join("|")})\\b`;
-        } else {
-          tmpStr = `\\b(?:${this.macroArr[0]})\\b`;
-        }
-        let macroRe = new RegExp(tmpStr);
-        if (macroRe.test(nameMatch)) {
-          // Check if we are still in the conditionnal of the control statement
-          // for example, an if statement's conditionnal can span over several lines
-          // and call functions
-          let parenthesisNB = parentCounter(line);
-          let lineCounter = 0;
-          let iter = 0;
-          while (parenthesisNB !== 0 && iter < 100) {
-            iter++;
-            line = this.lines[lineCounter];
-            lineCounter++;
-            parenthesisNB += parentCounter(line);
-          }
-          // Now we test if the statement uses brackets, as short code blocks are usually
-          // implemented without them.
-          if (!/\{\s*$/.test(line)) {
-            // Test the next line if we didn't match
-            if (!/^\s*\{/.test(this.lines[lineCounter])) {
-              return;
-            }
-          }
-          this.state.push(State.Macro);
-          return;
-        }
-      }
-
-      let lineMatch = this.lineNb;
-      let type = match[1];
-      let paramsMatch = match[3] === undefined ? "" : match[3];
-      this.AddParamsDef(paramsMatch, nameMatch, line);
-      // Iteration safety in case something goes wrong
-      let maxiter = 0;
-      let matchEndRegex: RegExp = /(\{|\;)\s*(?:(?:\/\/|\/\*)(?:.*))?$/;
-      let isNativeOrForward = /\bnative\b|\bforward\b/.test(match[0]);
-      let matchEnd = matchEndRegex.test(line);
-      let pCount = getParenthesisCount(line);
-      let matchLastParenthesis = pCount === 0;
-      let range = this.makeDefinitionRange(nameMatch, line);
-
-      while (
-        !(matchLastParenthesis && matchEnd) &&
-        line !== undefined &&
-        maxiter < 20
-      ) {
-        maxiter++;
-        line = this.lines.shift();
-        this.lineNb++;
-        if (line === undefined) {
-          return;
-        }
-        if (!matchLastParenthesis) {
-          this.AddParamsDef(line, nameMatch, line);
-          this.searchForDefinesInString(line);
-          paramsMatch += line;
-          pCount += getParenthesisCount(line);
-          matchLastParenthesis = pCount === 0;
-        }
-        if (!matchEnd) {
-          if (matchLastParenthesis && /\,\s*$/.test(paramsMatch)) {
-            // If the statement ends with a comma, we are in an array declaration
-            return;
-          }
-          matchEnd = matchEndRegex.test(line);
-        }
-      }
-      if (!matchEnd) {
-        return;
-      }
-      let endSymbol = line.match(matchEndRegex);
-      if (endSymbol === null) {
-        return;
-      }
-
-      if (isNativeOrForward) {
-        if (endSymbol[1] === "{") return;
-      } else {
-        if (endSymbol[1] === ";" || endSymbol[1] === ",") {
-          return;
-        } else if (!isSingleLineFunction(line)) {
-          this.state.push(State.Function);
-        }
-      }
-      this.lastFuncLine = lineMatch;
-      this.lastFuncName = nameMatch;
-      // Treat differently if the function is declared on multiple lines
-      paramsMatch = /\)\s*(?:\{|;)?\s*$/.test(match[0])
-        ? match[0]
-        : match[0].replace(/\(.*\s*$/, "(") +
-          paramsMatch.replace(/\s*\w+\s*\(\s*/g, "").replace(/\s+/gm, " ");
-      if (params.length === 0) {
-        params = getParamsFromDeclaration(paramsMatch);
-      }
-      if (isMethod) {
-        let fullRange: Range;
-        if (isNativeOrForward) {
-          let end = range.start.line === this.lineNb ? line.length : 0;
-          fullRange = new Range(range.start.line, 0, this.lineNb, end);
-        }
-        this.completions.add(
-          nameMatch + this.state_data.name,
-          new MethodItem(
-            this.state_data.name,
-            nameMatch,
-            paramsMatch.replace(/;\s*$/g, "").replace(/{\s*$/g, "").trim(),
-            description,
-            params,
-            type,
-            this.file,
-            range,
-            this.IsBuiltIn,
-            fullRange
-          )
-        );
-        return;
-      }
-      // For small files, the parsing is too fast and functions get overwritten by their own calls.
-      // If we define a function somewhere, we won't redefine it elsewhere. We can safely ignore it.
-      if (this.completions.get(nameMatch)) {
-        return;
-      }
-      let fullRange: Range;
-      if (isNativeOrForward) {
-        let end = range.start.line === this.lineNb ? line.length : 0;
-        fullRange = new Range(range.start.line, 0, this.lineNb, end);
-      }
-      this.completions.add(
-        nameMatch,
-        new FunctionItem(
-          nameMatch,
-          paramsMatch.replace(/;\s*$/g, "").replace(/{\s*$/g, "").trim(),
-          description,
-          params,
-          this.file,
-          this.IsBuiltIn,
-          range,
-          type,
-          fullRange
-        )
-      );
-    }
   }
 
   parse_doc_comment(): {
