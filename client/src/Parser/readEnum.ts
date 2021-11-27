@@ -85,7 +85,7 @@ export function readEnum(
         parser.IsBuiltIn
       )
     );
-    searchForDefinesInString(this, line);
+    searchForDefinesInString(parser, line);
   }
   parser.addFullRange(key);
   return;

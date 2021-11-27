@@ -36,6 +36,7 @@ export function searchForDefinesInString(parser: Parser, line: string): void {
     defineFile =
       parser.definesMap.get(matchDefine[0]) ||
       parser.enumMemberMap.get(matchDefine[0]);
+
     if (defineFile !== undefined) {
       let range = positiveRange(
         parser.lineNb,

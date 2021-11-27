@@ -19,7 +19,7 @@ export function readTypeSet(
     }
     line = parser.lines.shift();
     parser.lineNb++;
-    searchForDefinesInString(this, line);
+    searchForDefinesInString(parser, line);
     iter++;
   }
   let endMatch = line.match(/^\s*}/);
