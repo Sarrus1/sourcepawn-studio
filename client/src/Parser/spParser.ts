@@ -1,7 +1,6 @@
 import { ItemsRepository, FileItems } from "../Providers/spItemsRepository";
 import {
   FunctionItem,
-  MacroItem,
   EnumItem,
   EnumMemberItem,
   VariableItem,
@@ -16,6 +15,7 @@ import {
   CommentItem,
 } from "../Providers/spItems";
 import { readDefine } from "./readDefine";
+import { readMacro } from "./readMacro";
 import { isControlStatement } from "../Providers/spDefinitions";
 import {
   CompletionItemKind,
@@ -179,7 +179,7 @@ export class Parser {
     // Match define
     match = line.match(/^\s*#define\s+(\w+)\s+([^]+)/);
     if (match) {
-      readDefine(match, line, this);
+      readDefine(this, match, line);
       // Re-read the line now that define has been added to the array.
       this.searchForDefinesInString(line);
       return;
@@ -187,7 +187,7 @@ export class Parser {
 
     match = line.match(/^\s*#define\s+(\w+)\s*\(([^\)]*)\)/);
     if (match) {
-      this.readMacro(match, line);
+      readMacro(this, match, line);
       return;
     }
 
@@ -392,29 +392,6 @@ export class Parser {
     // Reset the comments buffer
     this.scratch = [];
     return;
-  }
-
-  readMacro(match: RegExpMatchArray, line: string): void {
-    let { description, params } = this.parse_doc_comment();
-    let nameMatch = match[1];
-    let details = `${nameMatch}(${match[2]})`;
-    let range = this.makeDefinitionRange(nameMatch, line);
-    // Add the macro to the array of known macros
-    this.macroArr.push(nameMatch);
-    this.completions.add(
-      nameMatch,
-      new MacroItem(
-        nameMatch,
-        details,
-        description,
-        params,
-        this.file,
-        this.IsBuiltIn,
-        range,
-        "",
-        undefined
-      )
-    );
   }
 
   read_include(match: RegExpMatchArray) {

@@ -3,9 +3,9 @@ import { Parser } from "./spParser";
 import { DefineItem } from "../Providers/spItems";
 
 export function readDefine(
+  parser: Parser,
   match: RegExpMatchArray,
-  line: string,
-  parser: Parser
+  line: string
 ): void {
   parser.definesMap.set(match[1], parser.file);
   let range = parser.makeDefinitionRange(match[1], line);
