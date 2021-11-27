@@ -18,6 +18,7 @@ import { readProperty } from "./readProperty";
 import { readTypeDef } from "./readTypeDef";
 import { readTypeSet } from "./readTypeSet";
 import { readFunction } from "./readFunction";
+import { consumeComment } from "./consumeComment";
 
 import { isControlStatement } from "../Providers/spDefinitions";
 import {
@@ -31,15 +32,7 @@ import { existsSync, readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { URI } from "vscode-uri";
 import { globalIdentifier } from "../Providers/spGlobalIdentifier";
-import {
-  purgeCalls,
-  positiveRange,
-  isIncludeSelfFile,
-  getParamsFromDeclaration,
-  isSingleLineFunction,
-  parentCounter,
-  getParenthesisCount,
-} from "./utils";
+import { purgeCalls, positiveRange, parentCounter } from "./utils";
 
 export function parseFile(
   file: string,
@@ -248,14 +241,14 @@ export class Parser {
     match = line.match(/^\s*\/\*/);
     if (match) {
       this.scratch = [];
-      this.consume_multiline_comment(line, false);
+      consumeComment(this, line, false);
       return;
     }
 
     match = line.match(/^\s*\/\//);
     if (match) {
       this.scratch = [];
-      this.consume_multiline_comment(line, true);
+      consumeComment(this, line, true);
       return;
     }
 
@@ -383,47 +376,6 @@ export class Parser {
 
     // Reset the comments buffer
     this.scratch = [];
-    return;
-  }
-
-  consume_multiline_comment(
-    current_line: string,
-    use_line_comment: boolean = false
-  ) {
-    let startPos = new Position(this.lineNb < 1 ? 0 : this.lineNb, 0);
-    let iter = 0;
-    while (
-      current_line !== undefined &&
-      iter < 100 &&
-      ((/^\s*\/\//.test(current_line) && use_line_comment) ||
-        (!/\*\//.test(current_line) && !use_line_comment))
-    ) {
-      iter++;
-      this.scratch.push(current_line.replace(/^\s*\/\//, ""));
-      current_line = this.lines.shift();
-
-      this.lineNb++;
-    }
-    // Removes the */ from the doc comment
-    if (!use_line_comment) {
-      current_line = this.lines.shift();
-      this.lineNb++;
-    }
-    let endPos = new Position(
-      this.lineNb < 2
-        ? 0
-        : use_line_comment
-        ? this.lineNb - 1
-        : this.lineNb - 2,
-      current_line.length
-    );
-    let range = new Range(startPos, endPos);
-    this.completions.add(
-      `comment${this.lineNb}--${Math.random()}`,
-      new CommentItem(this.file, range)
-    );
-    this.searchForDefinesInString(current_line);
-    this.interpLine(current_line);
     return;
   }
 
