@@ -3,6 +3,7 @@ import { MethodItem, FunctionItem } from "../Providers/spItems";
 import { State } from "./stateEnum";
 import { Range } from "vscode";
 import { searchForDefinesInString } from "./searchForDefinesInString";
+import { parseDocComment } from "./parseDocComment";
 import {
   parentCounter,
   getParenthesisCount,
@@ -31,7 +32,7 @@ export function readFunction(parser: Parser, line: string) {
     return;
   }
   if (match) {
-    let { description, params } = parser.parse_doc_comment();
+    let { description, params } = parseDocComment(parser);
     let nameMatch = match[2];
     // Stop if it's a macro being called
     if (parser.macroArr.length > 0) {

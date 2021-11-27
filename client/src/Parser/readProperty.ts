@@ -1,12 +1,13 @@
 ﻿import { Parser } from "./spParser";
 import { PropertyItem } from "../Providers/spItems";
+import { parseDocComment } from "./parseDocComment";
 
 export function readProperty(
   parser: Parser,
   match: RegExpMatchArray,
   line: string
 ) {
-  let { description, params } = parser.parse_doc_comment();
+  let { description, params } = parseDocComment(parser);
   let name_match: string = match[2];
   parser.lastFuncName = name_match;
   let range = parser.makeDefinitionRange(name_match, line);

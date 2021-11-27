@@ -2,6 +2,7 @@
 import { EnumStructItem, EnumItem, EnumMemberItem } from "../Providers/spItems";
 import { State } from "./stateEnum";
 import { searchForDefinesInString } from "./searchForDefinesInString";
+import { parseDocComment } from "./parseDocComment";
 import { basename } from "path";
 
 export function readEnum(
@@ -10,7 +11,7 @@ export function readEnum(
   line: string,
   IsStruct: boolean
 ) {
-  let { description, params } = parser.parse_doc_comment();
+  let { description, params } = parseDocComment(parser);
   if (IsStruct) {
     // Create a completion for the enum struct itself if it has a name
     let enumStructName = match[1];

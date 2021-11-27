@@ -1,10 +1,5 @@
 import { ItemsRepository, FileItems } from "../Providers/spItemsRepository";
-import {
-  FunctionParam,
-  SPItem,
-  MethodMapItem,
-  CommentItem,
-} from "../Providers/spItems";
+import { SPItem, MethodMapItem, CommentItem } from "../Providers/spItems";
 import { State } from "./stateEnum";
 import { readDefine } from "./readDefine";
 import { readMacro } from "./readMacro";
@@ -19,6 +14,7 @@ import { readFunction } from "./readFunction";
 import { consumeComment } from "./consumeComment";
 import { addVariableItem } from "./addVariableItem";
 import { searchForDefinesInString } from "./searchForDefinesInString";
+import { parseDocComment } from "./parseDocComment";
 
 import { isControlStatement } from "../Providers/spDefinitions";
 import { CompletionItemKind, Range, workspace as Workspace } from "vscode";
@@ -253,7 +249,7 @@ export class Parser {
       this.state_data = {
         name: match[1],
       };
-      let { description, params } = this.parse_doc_comment();
+      let { description, params } = parseDocComment(this);
       let range = this.makeDefinitionRange(match[1], line);
       var methodMapCompletion = new MethodMapItem(
         match[1],
@@ -378,78 +374,6 @@ export class Parser {
       partial_params_match = partial_params_match.replace(unused_comma[1], "");
     }
     return partial_params_match;
-  }
-
-  parse_doc_comment(): {
-    description: string;
-    params: FunctionParam[];
-  } {
-    if (this.scratch === undefined) {
-      let description = "";
-      let params = [];
-      return { description, params };
-    }
-    let description = (() => {
-      let lines = [];
-      for (let line of this.scratch) {
-        if (/^\s*\/\*\*\s*/.test(line)) {
-          //Check if @return or @error
-          continue;
-        }
-
-        lines.push(
-          line.replace(/^\s*\*\s+/, "\n").replace(/^\s*\/\/\s+/, "\n")
-        );
-      }
-      return lines.join(" ");
-    })();
-
-    const paramRegex = /@param\s+([\w\.]+)\s+(.*)/;
-    let params = (() => {
-      let params = [];
-      let currentParam;
-      for (let line of this.scratch) {
-        let match = line.match(paramRegex);
-        if (match) {
-          // Check if we already have a param description in the buffer.
-          // If yes, save it.
-          if (currentParam) {
-            currentParam.documentation = currentParam.documentation.join(" ");
-            params.push(currentParam);
-          }
-          currentParam = { label: match[1], documentation: [match[2]] };
-        } else {
-          // Check if it's a return or error description.
-          if (/@(?:return|error)/.test(line)) {
-            // Check if we already have a param description in the buffer.
-            // If yes, save it.
-            if (currentParam != undefined) {
-              currentParam.documentation = currentParam.documentation.join(" ");
-              params.push(currentParam);
-              currentParam = undefined;
-            }
-          } else {
-            // Check if we already have a param description in the buffer.
-            // If yes, append the new line to it.
-            let match = line.match(/\s*(?:\*|\/\/)\s*(.*)/);
-            if (match && currentParam) {
-              currentParam.documentation.push(match[1]);
-            }
-          }
-        }
-      }
-      // Add the last param
-      if (currentParam != undefined) {
-        currentParam.documentation = currentParam.documentation.join(" ");
-        params.push(currentParam);
-      }
-
-      return params;
-    })();
-
-    // Reset the comments buffer
-    this.scratch = [];
-    return { description, params };
   }
 
   makeDefinitionRange(

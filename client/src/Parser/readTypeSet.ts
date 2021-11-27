@@ -2,6 +2,7 @@
 import { TypeSetItem } from "../Providers/spItems";
 import { Range, Position } from "vscode";
 import { searchForDefinesInString } from "./searchForDefinesInString";
+import { parseDocComment } from "./parseDocComment";
 
 export function readTypeSet(
   parser: Parser,
@@ -11,7 +12,7 @@ export function readTypeSet(
   let startPosition = new Position(parser.lineNb, 0);
   let name = match[1];
   let range = parser.makeDefinitionRange(name, line);
-  let { description, params } = parser.parse_doc_comment();
+  let { description, params } = parseDocComment(parser);
   let iter = 0;
   while (!/^\s*}/.test(line)) {
     if (iter == 200) {
