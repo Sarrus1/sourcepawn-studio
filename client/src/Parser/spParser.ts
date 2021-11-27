@@ -16,6 +16,7 @@ import {
 } from "../Providers/spItems";
 import { readDefine } from "./readDefine";
 import { readMacro } from "./readMacro";
+import { readInclude } from "./readInclude";
 import { isControlStatement } from "../Providers/spDefinitions";
 import {
   CompletionItemKind,
@@ -194,14 +195,14 @@ export class Parser {
     // Match global include
     match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>/);
     if (match) {
-      this.read_include(match);
+      readInclude(this, match);
       return;
     }
 
     // Match relative include
     match = line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"/);
     if (match) {
-      this.read_include(match);
+      readInclude(this, match);
       return;
     }
 
@@ -391,13 +392,6 @@ export class Parser {
 
     // Reset the comments buffer
     this.scratch = [];
-    return;
-  }
-
-  read_include(match: RegExpMatchArray) {
-    // Include guard to avoid extension crashs.
-    if (isIncludeSelfFile(this.file, match[1])) return;
-    this.completions.resolve_import(match[1], this.documents, this.IsBuiltIn);
     return;
   }
 
