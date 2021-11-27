@@ -41,9 +41,12 @@ export function getParamsFromDeclaration(decl: string): FunctionParam[] {
   let params: FunctionParam[] = [];
   let re = /\s*(?:(?:const|static)\s+)?(?:(\w+)(?:\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+|\s*\:\s*))?(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
   let matchVariable;
-  while ((matchVariable = re.exec(decl)) != null) {
-    params.push({ label: matchVariable[2], documentation: "" });
-  }
+  do {
+    matchVariable = re.exec(decl);
+    if (matchVariable) {
+      params.push({ label: matchVariable[2], documentation: "" });
+    }
+  } while (matchVariable);
   return params;
 }
 

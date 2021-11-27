@@ -27,9 +27,12 @@ export function readVariable(
   if (/(;)(?:\s*|)$/.test(croppedLine)) {
     // Separate potential multiple declarations
     let re = /\s*(?:(?:const|static|public|stock)\s+)*(\w*)\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])*\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])*(?:\s*=\s*(?:(?:\"[^]*\")|(?:\'[^]*\')|(?:[^,]+)))?/g;
-    while ((match_variable = re.exec(line)) != null) {
-      match_variables.push(match_variable);
-    }
+    do {
+      match_variable = re.exec(line);
+      if (match_variable) {
+        match_variables.push(match_variable);
+      }
+    } while (match_variable);
     for (let variable of match_variables) {
       let variable_completion = variable[2].match(
         /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/

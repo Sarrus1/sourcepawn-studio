@@ -209,9 +209,13 @@ export function addParamsDef(
   let match_variable: RegExpExecArray;
   let match_variables: RegExpExecArray[] = [];
   let re = /\s*(?:(?:const|static)\s+)?(?:(\w+)(?:\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+|\s*\:\s*))?(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
-  while ((match_variable = re.exec(params)) != null) {
-    match_variables.push(match_variable);
-  }
+  do {
+    match_variable = re.exec(params);
+    if (match_variable) {
+      match_variables.push(match_variable);
+    }
+  } while (match_variable);
+
   for (let variable of match_variables) {
     let variable_completion = variable[2].match(
       /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/

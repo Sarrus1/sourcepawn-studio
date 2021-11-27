@@ -8,7 +8,7 @@ export function addVariableItem(
   name: string,
   line: string,
   type: string,
-  funcName: string = undefined,
+  funcName?: string,
   isParamDef = false
 ): void {
   if (line === undefined) {
