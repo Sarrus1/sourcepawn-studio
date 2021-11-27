@@ -12,7 +12,7 @@ export function readMethodMap(
   parser.state_data = {
     name: match[1],
   };
-  let { description, params } = parseDocComment(this);
+  let { description, params } = parseDocComment(parser);
   let range = parser.makeDefinitionRange(match[1], line);
   var methodMapCompletion = new MethodMapItem(
     match[1],
