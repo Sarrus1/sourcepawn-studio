@@ -26,7 +26,7 @@ import { existsSync } from "fs";
 import { ItemsRepository, FileItems } from "./spItemsRepository";
 import { Include, SPItem } from "./spItems";
 import { JsDocCompletionProvider } from "./spDocCompletions";
-import { parseText, parseFile } from "./spParser";
+import { parseText, parseFile } from "../Parser/spParser";
 import {
   GetLastFuncName,
   getLastEnumStructNameOrMethodMap,

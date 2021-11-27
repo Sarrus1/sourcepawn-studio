@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.7.0]
+
+### Fixed
+
+- Code refactoring.
+
 ## [2.6.5]
 
 ### Fixed

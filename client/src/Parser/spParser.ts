@@ -1,4 +1,4 @@
-import { ItemsRepository, FileItems } from "./spItemsRepository";
+import { ItemsRepository, FileItems } from "../Providers/spItemsRepository";
 import {
   FunctionItem,
   MacroItem,
@@ -15,8 +15,8 @@ import {
   TypeDefItem,
   TypeSetItem,
   CommentItem,
-} from "./spItems";
-import { isControlStatement } from "./spDefinitions";
+} from "../Providers/spItems";
+import { isControlStatement } from "../Providers/spDefinitions";
 import {
   CompletionItemKind,
   Location,
@@ -27,7 +27,7 @@ import {
 import { existsSync, readFileSync } from "fs";
 import { basename, resolve, dirname } from "path";
 import { URI } from "vscode-uri";
-import { globalIdentifier } from "./spGlobalIdentifier";
+import { globalIdentifier } from "../Providers/spGlobalIdentifier";
 
 export function parseFile(
   file: string,
