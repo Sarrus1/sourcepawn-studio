@@ -7,7 +7,6 @@ import {
   PropertyItem,
   SPItem,
   MethodMapItem,
-  TypeDefItem,
   TypeSetItem,
   CommentItem,
 } from "../Providers/spItems";
@@ -18,6 +17,9 @@ import { readInclude } from "./readInclude";
 import { readEnum } from "./readEnum";
 import { readLoopVariable } from "./readLoopVariable";
 import { readVariable } from "./readVariable";
+import { readProperty } from "./readProperty";
+import { readTypeDef } from "./readTypeDef";
+import { readTypeSet } from "./readTypeSet";
 
 import { isControlStatement } from "../Providers/spDefinitions";
 import {
@@ -28,7 +30,7 @@ import {
   workspace as Workspace,
 } from "vscode";
 import { existsSync, readFileSync } from "fs";
-import { basename, resolve, dirname } from "path";
+import { resolve, dirname } from "path";
 import { URI } from "vscode-uri";
 import { globalIdentifier } from "../Providers/spGlobalIdentifier";
 import {
@@ -219,13 +221,13 @@ export class Parser {
 
     match = line.match(/^\s*typedef\s+(\w+)\s*\=\s*function\s+(\w+).*/);
     if (match) {
-      this.readTypeDef(match, line);
+      readTypeDef(this, match, line);
       return;
     }
 
     match = line.match(/^\s*typeset\s+(\w+)/);
     if (match) {
-      this.readTypeSet(match, line);
+      readTypeSet(this, match, line);
       return;
     }
 
@@ -289,7 +291,7 @@ export class Parser {
         this.state.push(State.Property);
       }
       try {
-        this.read_property(match, line);
+        readProperty(this, match, line);
       } catch (e) {
         console.error(e);
         if (this.debugging) {
@@ -427,78 +429,12 @@ export class Parser {
     return;
   }
 
-  read_property(match, line) {
-    let { description, params } = this.parse_doc_comment();
-    let name_match: string = match[2];
-    this.lastFuncName = name_match;
-    let range = this.makeDefinitionRange(name_match, line);
-    let NewPropertyCompletion = new PropertyItem(
-      this.state_data.name,
-      name_match,
-      this.file,
-      match[0],
-      description,
-      range,
-      match[1]
-    );
-    this.completions.add(
-      name_match + this.state_data.name,
-      NewPropertyCompletion
-    );
-  }
-
   clean_param(partial_params_match: string) {
     let unused_comma = partial_params_match.match(/(\))(?:\s*)(?:;)?(?:\s*)$/);
     if (unused_comma) {
       partial_params_match = partial_params_match.replace(unused_comma[1], "");
     }
     return partial_params_match;
-  }
-
-  readTypeDef(match: RegExpMatchArray, line: string): void {
-    let name = match[1];
-    let type = match[2];
-    let range = this.makeDefinitionRange(name, line);
-    let { description, params } = this.parse_doc_comment();
-    let fullRange = new Range(this.lineNb, 0, this.lineNb, line.length);
-    this.completions.add(
-      name,
-      new TypeDefItem(
-        name,
-        match[0],
-        this.file,
-        description,
-        type,
-        range,
-        fullRange
-      )
-    );
-  }
-
-  readTypeSet(match: RegExpMatchArray, line: string): void {
-    let startPosition = new Position(this.lineNb, 0);
-    let name = match[1];
-    let range = this.makeDefinitionRange(name, line);
-    let { description, params } = this.parse_doc_comment();
-    let iter = 0;
-    while (!/^\s*}/.test(line)) {
-      if (iter == 200) {
-        return;
-      }
-      line = this.lines.shift();
-      this.lineNb++;
-      this.searchForDefinesInString(line);
-      iter++;
-    }
-    let endMatch = line.match(/^\s*}/);
-    let fullRange = new Range(
-      startPosition,
-      new Position(this.lineNb, endMatch[0].length)
-    );
-    this.completions.add(
-      name,
-      new TypeSetItem(name, match[0], this.file, description, range, fullRange)
-    );
   }
 
   read_function(line: string) {
