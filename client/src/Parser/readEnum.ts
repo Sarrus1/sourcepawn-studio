@@ -3,6 +3,7 @@ import { EnumStructItem, EnumItem, EnumMemberItem } from "../Providers/spItems";
 import { State } from "./stateEnum";
 import { searchForDefinesInString } from "./searchForDefinesInString";
 import { parseDocComment } from "./parseDocComment";
+import { addFullRange } from "./addFullRange";
 import { basename } from "path";
 
 export function readEnum(
@@ -88,6 +89,6 @@ export function readEnum(
     );
     searchForDefinesInString(parser, line);
   }
-  parser.addFullRange(key);
+  addFullRange(parser, key);
   return;
 }

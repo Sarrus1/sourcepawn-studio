@@ -218,7 +218,7 @@ export function addParamsDef(
     )[1];
     if (!parser.IsBuiltIn) {
       addVariableItem(
-        this,
+        parser,
         variable_completion,
         line,
         variable[1],

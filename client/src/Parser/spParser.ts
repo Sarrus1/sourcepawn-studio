@@ -355,19 +355,4 @@ export class Parser {
     }
     return arr;
   }
-
-  addFullRange(key: string) {
-    let completion = this.completions.get(key);
-    if (completion && completion.fullRange === undefined) {
-      let range = completion.range;
-      let fullRange = new Range(
-        range.start.line,
-        range.start.character,
-        this.lineNb,
-        1
-      );
-      completion.fullRange = fullRange;
-      this.completions.add(key, completion);
-    }
-  }
 }
