@@ -1,4 +1,5 @@
-﻿import { Parser } from "./spParser";
+﻿import { addVariableItem } from "./addVariableItem";
+import { Parser } from "./spParser";
 
 export function readVariable(
   parser: Parser,
@@ -24,7 +25,7 @@ export function readVariable(
         /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
       )[1];
       if (!parser.IsBuiltIn) {
-        parser.AddVariableCompletion(variable_completion, line, variable[1]);
+        addVariableItem(parser, variable_completion, line, variable[1]);
       }
     }
   } else {
@@ -43,7 +44,7 @@ export function readVariable(
           /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
         )[1];
         if (!parser.IsBuiltIn) {
-          parser.AddVariableCompletion(variable_completion, line, "");
+          addVariableItem(parser, variable_completion, line, "");
         }
       }
       match[1] = parser.lines.shift();

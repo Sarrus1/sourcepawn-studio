@@ -1,8 +1,6 @@
 import { ItemsRepository, FileItems } from "../Providers/spItemsRepository";
 import {
-  VariableItem,
   FunctionParam,
-  PropertyItem,
   SPItem,
   MethodMapItem,
   CommentItem,
@@ -19,6 +17,7 @@ import { readTypeDef } from "./readTypeDef";
 import { readTypeSet } from "./readTypeSet";
 import { readFunction } from "./readFunction";
 import { consumeComment } from "./consumeComment";
+import { addVariableItem } from "./addVariableItem";
 import { searchForDefinesInString } from "./searchForDefinesInString";
 
 import { isControlStatement } from "../Providers/spDefinitions";
@@ -26,7 +25,6 @@ import { CompletionItemKind, Range, workspace as Workspace } from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { URI } from "vscode-uri";
-import { globalIdentifier } from "../Providers/spGlobalIdentifier";
 import { purgeCalls, positiveRange, parentCounter } from "./utils";
 
 export function parseFile(
@@ -454,60 +452,6 @@ export class Parser {
     return { description, params };
   }
 
-  AddVariableCompletion(
-    name: string,
-    line: string,
-    type: string,
-    funcName: string = undefined,
-    isParamDef = false
-  ): void {
-    if (line === undefined) {
-      return;
-    }
-    let range = this.makeDefinitionRange(name, line);
-    let scope: string = globalIdentifier;
-    let enumStructName: string;
-    if (this.state.includes(State.EnumStruct)) {
-      enumStructName = this.state_data.name;
-    }
-    if (this.lastFuncLine !== 0) {
-      scope = this.lastFuncName;
-    }
-    if (funcName !== undefined) {
-      scope = funcName;
-    }
-    // Custom key name for the map so the definitions don't override each others
-    let mapName = name + scope + enumStructName;
-    if (
-      (this.state.includes(State.EnumStruct) ||
-        this.state.includes(State.Methodmap)) &&
-      (this.state.includes(State.Function) || isParamDef)
-    ) {
-      this.completions.add(
-        mapName + this.lastFuncName,
-        new VariableItem(name, this.file, scope, range, type, enumStructName)
-      );
-    } else if (this.state.includes(State.EnumStruct)) {
-      this.completions.add(
-        mapName,
-        new PropertyItem(
-          this.state_data.name,
-          name,
-          this.file,
-          line,
-          "",
-          range,
-          type
-        )
-      );
-    } else {
-      this.completions.add(
-        mapName,
-        new VariableItem(name, this.file, scope, range, type, globalIdentifier)
-      );
-    }
-  }
-
   makeDefinitionRange(
     name: string,
     line: string,
@@ -532,7 +476,8 @@ export class Parser {
         /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
       )[1];
       if (!this.IsBuiltIn) {
-        this.AddVariableCompletion(
+        addVariableItem(
+          this,
           variable_completion,
           line,
           variable[1],

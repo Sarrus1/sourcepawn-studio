@@ -1,5 +1,6 @@
 ﻿import { Parser } from "./spParser";
 import { State } from "./stateEnum";
+import { addVariableItem } from "./addVariableItem";
 
 export function readLoopVariable(
   parser: Parser,
@@ -10,6 +11,6 @@ export function readLoopVariable(
   if (parser.IsBuiltIn) {
     return;
   }
-  parser.AddVariableCompletion(match[1], line, "int");
+  addVariableItem(parser, match[1], line, "int");
   return;
 }
