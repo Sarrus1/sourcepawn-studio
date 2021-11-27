@@ -11,6 +11,7 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 - Compile from VSCode with a simple button.
 - Autocompletion.
 - Go to definition.
+- Code outline.
 - Upload to an FTP/SFTP server on successful compile.
 - Automatically run `sm plugins refresh` on a successful upload.
 - Hover for details.
@@ -45,6 +46,10 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 
 ![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/completion-example-3.png)
 
+### Code outline
+
+![Outline example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/outline-example-1.png)
+
 ### Functions signature help
 
 ![Signature example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/signature-example-1.png)
@@ -77,6 +82,7 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
     - [Code auto-completion](#code-auto-completion)
     - [Event auto-completion](#event-auto-completion)
     - [Include auto-completion](#include-auto-completion)
+    - [Code outline](#code-outline)
     - [Functions signature help](#functions-signature-help)
     - [Hover help](#hover-help)
     - [Go To Definition](#go-to-definition)
