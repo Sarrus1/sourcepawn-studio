@@ -1,22 +1,22 @@
 import { ItemsRepository, FileItems } from "../Providers/spItemsRepository";
 import {
   FunctionItem,
-  EnumItem,
-  EnumMemberItem,
   VariableItem,
   MethodItem,
   FunctionParam,
   PropertyItem,
-  EnumStructItem,
   SPItem,
   MethodMapItem,
   TypeDefItem,
   TypeSetItem,
   CommentItem,
 } from "../Providers/spItems";
+import { State } from "./stateEnum";
 import { readDefine } from "./readDefine";
 import { readMacro } from "./readMacro";
 import { readInclude } from "./readInclude";
+import { readEnum } from "./readEnum";
+
 import { isControlStatement } from "../Providers/spDefinitions";
 import {
   CompletionItemKind,
@@ -73,17 +73,6 @@ export function parseText(
   let lines = data.split("\n");
   let parser = new Parser(lines, file, IsBuiltIn, completions, itemsRepository);
   parser.parse();
-}
-
-enum State {
-  None,
-  EnumStruct,
-  Enum,
-  Methodmap,
-  Property,
-  Function,
-  Loop,
-  Macro,
 }
 
 export class Parser {
@@ -209,13 +198,13 @@ export class Parser {
     // Match enum structs
     match = line.match(/^\s*(?:enum\s+struct\s+)(\w*)\s*[^\{]*/);
     if (match) {
-      this.read_enums(match, line, true);
+      readEnum(this, match, line, true);
       return;
     }
     // Match enums
     match = line.match(/^\s*enum(?:\s+(\w+))?\s*[^\{]*/);
     if (match && !/;\s*$/.test(line)) {
-      this.read_enums(match, line, false);
+      readEnum(this, match, line, false);
       return;
     }
 
@@ -392,88 +381,6 @@ export class Parser {
 
     // Reset the comments buffer
     this.scratch = [];
-    return;
-  }
-
-  read_enums(match: RegExpMatchArray, line: string, IsStruct: boolean) {
-    let { description, params } = this.parse_doc_comment();
-    if (IsStruct) {
-      // Create a completion for the enum struct itself if it has a name
-      let enumStructName = match[1];
-      let range = this.makeDefinitionRange(enumStructName, line);
-      var enumStructCompletion: EnumStructItem = new EnumStructItem(
-        enumStructName,
-        this.file,
-        description,
-        range
-      );
-      this.completions.add(enumStructName, enumStructCompletion);
-      this.state.push(State.EnumStruct);
-      this.state_data = {
-        name: enumStructName,
-      };
-      return;
-    }
-
-    if (!match[1]) {
-      this.anonymousEnumCount++;
-    }
-    let nameMatch = match[1] ? match[1] : `Enum #${this.anonymousEnumCount}`;
-    let range = this.makeDefinitionRange(match[1] ? match[1] : "enum", line);
-    var enumCompletion: EnumItem = new EnumItem(
-      nameMatch,
-      this.file,
-      description,
-      range
-    );
-    let key = match[1]
-      ? match[1]
-      : `${this.anonymousEnumCount}${basename(this.file)}`;
-    this.completions.add(key, enumCompletion);
-
-    // Set max number of iterations for safety
-    let iter = 0;
-    // Match all the enum members
-    while (iter < 100 && !/^\s*\}/.test(line)) {
-      iter++;
-      line = this.lines.shift();
-      this.lineNb++;
-      // Stop early if it's the end of the file
-      if (line === undefined) {
-        return;
-      }
-      let iterMatch = line.match(/^\s*(\w*)\s*.*/);
-
-      // Skip if didn't match
-      if (!iterMatch) {
-        continue;
-      }
-      let enumMemberName = iterMatch[1];
-      // Try to match multiblock comments
-      let enumMemberDescription: string;
-      iterMatch = line.match(/\/\*\*<?\s*(.+?(?=\*\/))/);
-      if (iterMatch) {
-        enumMemberDescription = iterMatch[1];
-      }
-      iterMatch = line.match(/\/\/<?\s*(.*)/);
-      if (iterMatch) {
-        enumMemberDescription = iterMatch[1];
-      }
-      let range = this.makeDefinitionRange(enumMemberName, line);
-      this.completions.add(
-        enumMemberName,
-        new EnumMemberItem(
-          enumMemberName,
-          this.file,
-          enumMemberDescription,
-          enumCompletion,
-          range,
-          this.IsBuiltIn
-        )
-      );
-      this.searchForDefinesInString(line);
-    }
-    this.addFullRange(key);
     return;
   }
 
