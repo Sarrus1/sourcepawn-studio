@@ -2,7 +2,6 @@ import { ItemsRepository, FileItems } from "../Providers/spItemsRepository";
 import {
   FunctionItem,
   MacroItem,
-  DefineItem,
   EnumItem,
   EnumMemberItem,
   VariableItem,
@@ -16,6 +15,7 @@ import {
   TypeSetItem,
   CommentItem,
 } from "../Providers/spItems";
+import { readDefine } from "./readDefine";
 import { isControlStatement } from "../Providers/spDefinitions";
 import {
   CompletionItemKind,
@@ -28,6 +28,15 @@ import { existsSync, readFileSync } from "fs";
 import { basename, resolve, dirname } from "path";
 import { URI } from "vscode-uri";
 import { globalIdentifier } from "../Providers/spGlobalIdentifier";
+import {
+  purgeCalls,
+  positiveRange,
+  isIncludeSelfFile,
+  getParamsFromDeclaration,
+  isSingleLineFunction,
+  parentCounter,
+  getParenthesisCount,
+} from "./utils";
 
 export function parseFile(
   file: string,
@@ -76,7 +85,7 @@ enum State {
   Macro,
 }
 
-class Parser {
+export class Parser {
   completions: FileItems;
   state: State[];
   scratch: any;
@@ -170,7 +179,7 @@ class Parser {
     // Match define
     match = line.match(/^\s*#define\s+(\w+)\s+([^]+)/);
     if (match) {
-      this.read_define(match, line);
+      readDefine(match, line, this);
       // Re-read the line now that define has been added to the array.
       this.searchForDefinesInString(line);
       return;
@@ -385,24 +394,6 @@ class Parser {
     return;
   }
 
-  read_define(match: RegExpMatchArray, line: string): void {
-    this.definesMap.set(match[1], this.file);
-    let range = this.makeDefinitionRange(match[1], line);
-    let fullRange = PositiveRange(this.lineNb, 0, line.length);
-    this.completions.add(
-      match[1],
-      new DefineItem(
-        match[1],
-        match[2],
-        this.file,
-        range,
-        this.IsBuiltIn,
-        fullRange
-      )
-    );
-    return;
-  }
-
   readMacro(match: RegExpMatchArray, line: string): void {
     let { description, params } = this.parse_doc_comment();
     let nameMatch = match[1];
@@ -428,7 +419,7 @@ class Parser {
 
   read_include(match: RegExpMatchArray) {
     // Include guard to avoid extension crashs.
-    if (IsIncludeSelfFile(this.file, match[1])) return;
+    if (isIncludeSelfFile(this.file, match[1])) return;
     this.completions.resolve_import(match[1], this.documents, this.IsBuiltIn);
     return;
   }
@@ -997,7 +988,7 @@ class Parser {
     let re: RegExp = new RegExp(`\\b${name}\\b`);
     let start: number = search ? line.search(re) : 0;
     let end: number = search ? start + name.length : 0;
-    var range = PositiveRange(this.lineNb, start, end);
+    var range = positiveRange(this.lineNb, start, end);
     return range;
   }
 
@@ -1060,7 +1051,7 @@ class Parser {
         this.definesMap.get(matchDefine[0]) ||
         this.enumMemberMap.get(matchDefine[0]);
       if (defineFile !== undefined) {
-        let range = PositiveRange(
+        let range = positiveRange(
           this.lineNb,
           matchDefine.index,
           matchDefine.index + matchDefine[0].length
@@ -1153,86 +1144,4 @@ class Parser {
       this.completions.add(key, completion);
     }
   }
-}
-
-function purgeCalls(item: SPItem, file: string): void {
-  let uri = URI.file(file);
-  if (item.calls === undefined) return;
-  item.calls = item.calls.filter((e) => {
-    uri === e.uri;
-  });
-}
-
-function PositiveRange(
-  lineNb: number,
-  start: number = 0,
-  end: number = 0
-): Range {
-  lineNb = lineNb > 0 ? lineNb : 0;
-  start = start > 0 ? start : 0;
-  end = end > 0 ? end : 0;
-  return new Range(lineNb, start, lineNb, end);
-}
-
-function IsIncludeSelfFile(file: string, include: string): boolean {
-  let baseName: string = basename(file);
-  let match = include.match(/(\w*)(?:.sp|.inc)?$/);
-  if (match) {
-    return baseName == match[1];
-  }
-  return false;
-}
-
-export function getParamsFromDeclaration(decl: string): FunctionParam[] {
-  let match = decl.match(/\((.+)\)/);
-  if (!match) {
-    return [];
-  }
-  // Remove the leading and trailing parenthesis
-  decl = match[1] + ",";
-  let params: FunctionParam[] = [];
-  let re = /\s*(?:(?:const|static)\s+)?(?:(\w+)(?:\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+|\s*\:\s*))?(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
-  let matchVariable;
-  while ((matchVariable = re.exec(decl)) != null) {
-    params.push({ label: matchVariable[2], documentation: "" });
-  }
-  return params;
-}
-
-function isSingleLineFunction(line: string) {
-  return /\{.*\}\s*$/.test(line);
-}
-
-function parentCounter(line: string): number {
-  let counter = 0;
-  if (line == null) {
-    return 0;
-  }
-  for (let char of line) {
-    if (char === "(") {
-      counter++;
-    } else if (char === ")") {
-      counter--;
-    }
-  }
-  return counter;
-}
-
-function getParenthesisCount(line: string): number {
-  let pCount = 0;
-  let inAString = false;
-  if (line === undefined) {
-    return pCount;
-  }
-  for (let i = 0; i < line.length; i++) {
-    let char = line[i];
-    if (char === "'" || char === '"') {
-      inAString = !inAString;
-    } else if (!inAString && char === "(") {
-      pCount++;
-    } else if (!inAString && char === ")") {
-      pCount--;
-    }
-  }
-  return pCount;
 }
