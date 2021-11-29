@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.7.1]
+
+### Fixed
+
+- Fixed potential incorrect function parsing.
+
 ## [2.7.0]
 
 ### Fixed
