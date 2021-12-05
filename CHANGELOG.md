@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fixed potential incorrect function parsing.
+- Tweaked clang-format's config.
 
 ## [2.7.0]
 

@@ -379,7 +379,7 @@
             "Language: Cpp",
             "SpacesBeforeTrailingComments: ${TabSize}",
             "TabWidth: ${TabSize}",
-            "UseTab: Always"
+            "UseTab: AlignWithSpaces"
           ],
           "description": "Settings for the formatter. Any setting supported by Clang Format can be used here.",
           "scope": "resource"
