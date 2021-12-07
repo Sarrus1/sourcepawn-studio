@@ -94,7 +94,7 @@ export class Parser {
     this.lastFuncLine = 0;
     this.lastFuncName = "";
     // Get all the items from the itemsRepository for this file
-    let items = itemsRepository.getAllItems(URI.file(this.file).toString());
+    let items = itemsRepository.getAllItems(URI.file(this.file));
     this.definesMap = this.getAllMembers(items, CompletionItemKind.Constant);
     this.enumMemberMap = this.getAllMembers(
       items,

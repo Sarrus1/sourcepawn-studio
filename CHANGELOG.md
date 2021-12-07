@@ -6,6 +6,7 @@
 
 - Fixed potential incorrect function parsing.
 - Tweaked clang-format's config.
+- Fixed a bug when using MainPath in a Workspace.
 
 ## [2.7.0]
 

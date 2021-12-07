@@ -235,9 +235,7 @@ export class Providers {
           if (!match[1]) {
             // If the variable is not declared here, look up its type, as it
             // has not yet been parsed.
-            let allItems = this.itemsRepository.getAllItems(
-              document.uri.toString()
-            );
+            let allItems = this.itemsRepository.getAllItems(document.uri);
             let lastFuncName = GetLastFuncName(position, document, allItems);
             let newPos = new Position(1, match[2].length + 1);
             let {
@@ -259,7 +257,7 @@ export class Providers {
           } else {
             // If the variable is declared here, search its type directly.
             type = this.itemsRepository
-              .getAllItems(document.uri.toString())
+              .getAllItems(document.uri)
               .find(
                 (item) =>
                   item.kind === CompletionItemKind.Class &&
@@ -269,7 +267,7 @@ export class Providers {
 
           // Filter the item to only keep the constructors.
           let items = this.itemsRepository
-            .getAllItems(document.uri.toString())
+            .getAllItems(document.uri)
             .filter((item) => item.kind === CompletionItemKind.Constructor);
           return new CompletionList(
             items.map((e) => {
@@ -342,7 +340,7 @@ export class Providers {
     let match = croppedLine.match(/\.(\w+)$/);
     if (match) {
       let methodName = match[1];
-      let allItems = this.itemsRepository.getAllItems(document.uri.toString());
+      let allItems = this.itemsRepository.getAllItems(document.uri);
       let lastFuncName = GetLastFuncName(position, document, allItems);
       let newPos = new Position(1, croppedLine.length);
       let {
@@ -361,7 +359,7 @@ export class Providers {
         allItems
       );
       let items = this.itemsRepository
-        .getAllItems(document.uri.toString())
+        .getAllItems(document.uri)
         .filter(
           (item) =>
             (item.kind === CompletionItemKind.Method ||
@@ -380,7 +378,7 @@ export class Providers {
     if (match) {
       let methodMapName = match[1];
       let items = this.itemsRepository
-        .getAllItems(document.uri.toString())
+        .getAllItems(document.uri)
         .filter(
           (item) =>
             item.kind === CompletionItemKind.Constructor &&
@@ -401,7 +399,7 @@ export class Providers {
       return blankReturn;
     }
     let items = this.itemsRepository
-      .getAllItems(document.uri.toString())
+      .getAllItems(document.uri)
       .filter(
         (item) =>
           item.name === match[1] &&
@@ -434,9 +432,7 @@ export class Providers {
     document: TextDocument
   ): Promise<SemanticTokens> {
     const tokensBuilder = new SemanticTokensBuilder(SP_LEGENDS);
-    let allItems: SPItem[] = this.itemsRepository.getAllItems(
-      document.uri.toString()
-    );
+    let allItems: SPItem[] = this.itemsRepository.getAllItems(document.uri);
     for (let item of allItems) {
       if (
         item.kind === CompletionItemKind.Constant ||
@@ -478,7 +474,7 @@ export class Providers {
       CompletionItemKind.Variable,
       CompletionItemKind.EnumMember,
     ];
-    let items = this.itemsRepository.getAllItems(document.uri.toString());
+    let items = this.itemsRepository.getAllItems(document.uri);
     let file = document.uri.fsPath;
     for (let item of items) {
       if (allowedKinds.includes(item.kind) && item.file === file) {
