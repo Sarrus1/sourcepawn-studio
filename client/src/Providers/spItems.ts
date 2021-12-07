@@ -75,10 +75,7 @@ export class FunctionItem implements SPItem {
     this.fullRange = fullRange;
   }
 
-  toCompletionItem(
-    file: string,
-    lastFuncName: string = undefined
-  ): CompletionItem {
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -168,10 +165,7 @@ export class MethodMapItem implements SPItem {
     this.type = name;
   }
 
-  toCompletionItem(
-    file: string,
-    lastFuncName: string = undefined
-  ): CompletionItem {
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -245,7 +239,7 @@ export class MethodItem implements SPItem {
     file: string,
     range: Range,
     IsBuiltIn: boolean = false,
-    fullRange: Range = undefined
+    fullRange?: Range
   ) {
     this.parent = parent;
     this.name = name;
@@ -263,10 +257,7 @@ export class MethodItem implements SPItem {
     this.fullRange = fullRange;
   }
 
-  toCompletionItem(
-    file: string,
-    lastFuncName: string = undefined
-  ): CompletionItem {
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -348,10 +339,7 @@ export class DefineItem implements SPItem {
     this.fullRange = fullRange;
   }
 
-  toCompletionItem(
-    file: string,
-    lastFuncName: string = undefined
-  ): CompletionItem {
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -416,10 +404,7 @@ export class VariableItem implements SPItem {
     this.enumStructName = enumStruct;
   }
 
-  toCompletionItem(
-    file: string,
-    lastFuncName: string = undefined
-  ): CompletionItem {
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
     if (lastFuncName !== undefined) {
       if (this.parent === lastFuncName) {
         return {
@@ -482,10 +467,7 @@ export class EnumItem implements SPItem {
     this.range = range;
   }
 
-  toCompletionItem(
-    file: string,
-    lastFuncName: string = undefined
-  ): CompletionItem {
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -555,10 +537,7 @@ export class EnumMemberItem implements SPItem {
     this.parent = Enum.name;
   }
 
-  toCompletionItem(
-    file: string,
-    lastFuncName: string = undefined
-  ): CompletionItem {
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -621,10 +600,7 @@ export class EnumStructItem implements SPItem {
     this.range = range;
   }
 
-  toCompletionItem(
-    file: string,
-    lastFuncName: string = undefined
-  ): CompletionItem {
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -694,10 +670,7 @@ export class EnumStructMemberItem implements SPItem {
     this.type = type;
   }
 
-  toCompletionItem(
-    file: string,
-    lastFuncName: string = undefined
-  ): CompletionItem {
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -763,10 +736,7 @@ export class PropertyItem implements SPItem {
     this.detail = detail;
   }
 
-  toCompletionItem(
-    file: string,
-    lastFuncName: string = undefined
-  ): CompletionItem {
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -818,10 +788,7 @@ export class ConstantItem implements SPItem {
     this.calls = [];
   }
 
-  toCompletionItem(
-    file: string,
-    lastFuncName: string = undefined
-  ): CompletionItem {
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -866,10 +833,7 @@ export class IncludeItem implements SPItem {
     this.defRange = defRange;
   }
 
-  toCompletionItem(
-    file: string,
-    lastFuncName: string = undefined
-  ): CompletionItem {
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -905,10 +869,7 @@ export class KeywordItem implements SPItem {
     this.name = name;
   }
 
-  toCompletionItem(
-    file: string,
-    lastFuncName: string = undefined
-  ): CompletionItem {
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -961,10 +922,7 @@ export class TypeDefItem implements SPItem {
     this.fullRange = fullRange;
   }
 
-  toCompletionItem(
-    file: string,
-    lastFuncName: string = undefined
-  ): CompletionItem {
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -1032,10 +990,7 @@ export class TypeSetItem implements SPItem {
     this.fullRange = fullRange;
   }
 
-  toCompletionItem(
-    file: string,
-    lastFuncName: string = undefined
-  ): CompletionItem {
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -1089,10 +1044,7 @@ export class CommentItem implements SPItem {
     this.range = range;
   }
 
-  toCompletionItem(
-    file: string,
-    lastFuncName: string = undefined
-  ): CompletionItem {
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
     return undefined;
   }
 

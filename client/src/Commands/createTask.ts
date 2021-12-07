@@ -8,7 +8,7 @@ import {
 } from "fs";
 import { join } from "path";
 
-export function run(rootpath: string = undefined) {
+export function run(rootpath?: string) {
   // Get configuration
   let sm_home: string = Workspace.getConfiguration("sourcepawn").get(
     "SourcemodHome"

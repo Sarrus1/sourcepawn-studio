@@ -15,7 +15,7 @@ import {
 import { URI } from "vscode-uri";
 import { join, basename } from "path";
 
-export function run(rootpath: string = undefined) {
+export function run(rootpath?: string) {
   let AuthorName: string = Workspace.getConfiguration("sourcepawn").get(
     "AuthorName"
   );

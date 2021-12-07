@@ -2,7 +2,7 @@ import { workspace as Workspace, window, commands, extensions } from "vscode";
 import { existsSync, readFileSync, copyFileSync, writeFileSync } from "fs";
 import { join, basename } from "path";
 
-export function run(rootpath: string = undefined) {
+export function run(rootpath?: string) {
   let GithubName: string = Workspace.getConfiguration("sourcepawn").get(
     "GithubName"
   );
