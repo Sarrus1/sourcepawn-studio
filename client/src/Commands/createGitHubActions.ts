@@ -36,10 +36,10 @@ export function run(rootpath?: string) {
     mkdirSync(masterFolderPath);
   }
 
-  // Check if master.yml already exists
-  let masterFilePath = join(rootpath, ".github/workflows/master.yml");
+  // Check if main.yml already exists
+  let masterFilePath = join(rootpath, ".github/workflows/main.yml");
   if (existsSync(masterFilePath)) {
-    let err: string = "master.yml already exists, aborting.";
+    let err: string = "main.yml already exists, aborting.";
     window.showErrorMessage(err);
     console.log(err);
     return 2;
@@ -48,18 +48,37 @@ export function run(rootpath?: string) {
     .extensionPath;
   let tasksTemplatesPath: string = join(
     myExtDir,
-    "templates/master_template.yml"
+    "templates/main_template.yml"
   );
-  copyFileSync(tasksTemplatesPath, masterFilePath);
+  let result = readFileSync(tasksTemplatesPath, "utf-8");
 
   // Replace placeholders
   try {
-    let result = readFileSync(masterFilePath, "utf8");
     result = result.replace(/\${plugin_name}/gm, rootname);
     writeFileSync(masterFilePath, result, "utf8");
   } catch (err) {
     console.log(err);
     return 3;
+  }
+
+  // Check if test.yml already exists
+  masterFilePath = join(rootpath, ".github/workflows/test.yml");
+  if (existsSync(masterFilePath)) {
+    let err: string = "test.yml already exists, aborting.";
+    window.showErrorMessage(err);
+    console.log(err);
+    return 2;
+  }
+  tasksTemplatesPath = join(myExtDir, "templates/test_template.yml");
+  result = readFileSync(tasksTemplatesPath, "utf-8");
+
+  // Replace placeholders
+  try {
+    result = result.replace(/\${plugin_name}/gm, rootname);
+    writeFileSync(masterFilePath, result, "utf8");
+  } catch (err) {
+    console.log(err);
+    return 4;
   }
   return 0;
 }

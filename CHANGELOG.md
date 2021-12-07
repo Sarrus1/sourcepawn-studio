@@ -2,6 +2,10 @@
 
 ## [2.7.1]
 
+### Added
+
+- Added an extra template for a test workflow.
+
 ### Fixed
 
 - Fixed potential incorrect function parsing.
