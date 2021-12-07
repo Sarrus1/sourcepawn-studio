@@ -8,7 +8,7 @@ import {
 } from "fs";
 import { basename, join } from "path";
 
-export function run(rootpath: string = undefined) {
+export function run(rootpath?: string) {
   // get workspace folder
   let workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {

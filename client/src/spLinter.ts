@@ -166,36 +166,42 @@ export function refreshDiagnostics(
               }
             });
           }
-          let regex = /([:\/\\A-Za-z\-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning) ([0-9]*)):\s+(.*)/gm;
+          const re = /([:\/\\A-Za-z\-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning) ([0-9]*)):\s+(.*)/gm;
           let matches: RegExpExecArray | null;
           let path: string;
           let diagnostics: Diagnostic[];
           let range: Range;
           let severity: DiagnosticSeverity;
-          while ((matches = regex.exec(stdout.toString() || ""))) {
-            range = new Range(
-              new Position(Number(matches[2]) - 1, 0),
-              new Position(Number(matches[2]) - 1, 256)
-            );
-            severity =
-              matches[4] === "warning"
-                ? DiagnosticSeverity.Warning
-                : DiagnosticSeverity.Error;
-            path = MainPath != "" ? matches[1] : document.uri.fsPath;
-            if (DocumentDiagnostics.has(path)) {
-              diagnostics = DocumentDiagnostics.get(path);
-            } else {
-              diagnostics = [];
+          do {
+            matches = re.exec(stdout.toString() || "");
+            if (matches) {
+              range = new Range(
+                new Position(Number(matches[2]) - 1, 0),
+                new Position(Number(matches[2]) - 1, 256)
+              );
+              severity =
+                matches[4] === "warning"
+                  ? DiagnosticSeverity.Warning
+                  : DiagnosticSeverity.Error;
+              path = MainPath != "" ? matches[1] : document.uri.fsPath;
+              if (DocumentDiagnostics.has(path)) {
+                diagnostics = DocumentDiagnostics.get(path);
+              } else {
+                diagnostics = [];
+              }
+              let message: string = GenerateDetailedError(
+                matches[5],
+                matches[6]
+              );
+              let diagnostic: Diagnostic = new Diagnostic(
+                range,
+                message,
+                severity
+              );
+              diagnostics.push(diagnostic);
+              DocumentDiagnostics.set(path, diagnostics);
             }
-            let message: string = GenerateDetailedError(matches[5], matches[6]);
-            let diagnostic: Diagnostic = new Diagnostic(
-              range,
-              message,
-              severity
-            );
-            diagnostics.push(diagnostic);
-            DocumentDiagnostics.set(path, diagnostics);
-          }
+          } while (matches);
           compilerDiagnostics.clear();
           for (let [path, diagnostics] of DocumentDiagnostics) {
             compilerDiagnostics.set(URI.file(path), diagnostics);
