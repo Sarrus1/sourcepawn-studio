@@ -18,7 +18,11 @@ export function readFunction(
   match: RegExpMatchArray,
   line: string
 ): void {
-  if (isControlStatement(line) || /\bfunction\b/.test(match[1])) {
+  if (
+    isControlStatement(line) ||
+    /\bfunction\b/.test(match[1]) ||
+    parser.state.includes[State.Function]
+  ) {
     return;
   }
   if (parser.state.includes(State.Property)) {

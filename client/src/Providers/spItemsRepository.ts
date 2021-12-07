@@ -214,7 +214,7 @@ export class ItemsRepository implements Disposable {
   getCompletions(document: TextDocument, position: Position): CompletionList {
     let line = document.lineAt(position.line).text;
     let isMethod = checkIfMethod(line, position);
-    let allItems: SPItem[] = this.getAllItems(document.uri.toString());
+    let allItems: SPItem[] = this.getAllItems(document.uri);
     let completionsList: CompletionList = new CompletionList();
     if (allItems !== []) {
       let lastFunc: string = GetLastFuncName(position, document, allItems);
@@ -406,8 +406,8 @@ export class ItemsRepository implements Disposable {
     return { variableType, words };
   }
 
-  getAllItems(file: string): SPItem[] {
-    let workspaceFolder = Workspace.getWorkspaceFolder(URI.file(file));
+  getAllItems(uri: URI): SPItem[] {
+    let workspaceFolder = Workspace.getWorkspaceFolder(uri);
     let includes = new Set<string>();
     let MainPath: string =
       Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
@@ -428,8 +428,8 @@ export class ItemsRepository implements Disposable {
         includes.add(uri);
       }
     } else {
-      allItems = this.completions.get(file);
-      includes.add(file);
+      allItems = this.completions.get(uri.toString());
+      includes.add(uri.toString());
     }
     if (allItems !== undefined) {
       this.getIncludedFiles(allItems, includes);
@@ -475,7 +475,7 @@ export class ItemsRepository implements Disposable {
     let match: RegExpMatchArray;
 
     let word: string = document.getText(range);
-    let allItems = this.getAllItems(document.uri.toString());
+    let allItems = this.getAllItems(document.uri);
 
     if (isInAComment(range, document.uri, allItems)) {
       return undefined;
@@ -593,7 +593,7 @@ export class ItemsRepository implements Disposable {
     }
 
     if (isConstructor) {
-      let items = this.getAllItems(document.uri.toString()).filter(
+      let items = this.getAllItems(document.uri).filter(
         (item) =>
           item.kind === CompletionItemKind.Constructor && item.name === match[1]
       );
