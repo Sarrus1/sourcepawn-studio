@@ -20,10 +20,11 @@ jobs:
         uses: rumblefrog/setup-sp@master
         with:
           version: "1.10.x"
-          version-file: ./${plugin_name}.sp
+          version-file: .scripting/${plugin_name}.sp
 
       - name: Compile plugins
         run: |
+          cd scripting
           for file in ${plugin_name}.sp
           do
             echo -e "\nCompiling $file..."

@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [2.7.3]
+
+### Fixed
+
+- Fixed Github workflow.
+
 ## [2.7.2]
 
 ### Added
