@@ -6,6 +6,7 @@
 
 - Added an option for relative upload paths.
 - Added a formatter for KeyValues style files (.cfg, .phrases.txt, etc).
+- Added support for relative optional include directories.
 
 ### Fixed
 

@@ -1,6 +1,6 @@
 import { workspace as Workspace, window, commands } from "vscode";
 import { URI } from "vscode-uri";
-import { basename, extname, join } from "path";
+import { basename, extname, join, resolve } from "path";
 import { existsSync, mkdirSync } from "fs";
 import { platform } from "os";
 import { run as uploadToServerCommand } from "./uploadToServer";
@@ -82,11 +82,10 @@ export async function run(args: any) {
 
   // Create plugins folder if it doesn't exist.
   let pluginsFolderPath: string;
-  if (existsSync(join(scriptingPath, "../", "plugins/"))) {
-    pluginsFolderPath = join(scriptingPath, "../", "plugins/");
-  } else {
-    pluginsFolderPath = join(scriptingPath, "compiled/");
+  if (!existsSync(join(scriptingPath, "../", "plugins/"))) {
+    mkdirSync(join(scriptingPath, "../", "plugins/"));
   }
+  pluginsFolderPath = join(scriptingPath, "../", "plugins/");
   let outputDir: string =
     Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
       "outputDirectoryPath"
@@ -160,7 +159,14 @@ export async function run(args: any) {
   // Add the optional includes folders.
   for (let includes_dir of includes_dirs) {
     if (includes_dir != "") {
-      command += " -i=" + "'" + includes_dir + "'";
+      command +=
+        " -i=" +
+        "'" +
+        resolve(
+          Workspace.workspaceFolders.map((folder) => folder.uri.fsPath) +
+            includes_dir
+        ) +
+        "'";
     }
   }
 

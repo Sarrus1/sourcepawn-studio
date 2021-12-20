@@ -10,7 +10,7 @@ import {
   WorkspaceFolder,
   Range,
 } from "vscode";
-import { basename, join } from "path";
+import { basename, join, resolve } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 import {
@@ -96,7 +96,15 @@ export class FileItems {
       for (let includes_dir of includes_dirs) {
         inc_file = join(includes_dir, file);
         if (existsSync(inc_file)) {
-          this.addInclude(URI.file(inc_file).toString(), IsBuiltIn);
+          this.addInclude(
+            URI.file(
+              resolve(
+                Workspace.workspaceFolders.map((folder) => folder.uri.fsPath) +
+                  inc_file
+              )
+            ).toString(),
+            IsBuiltIn
+          );
           return;
         }
       }
@@ -141,7 +149,13 @@ export class ItemsRepository implements Disposable {
       "optionalIncludeDirsPaths"
     );
     // Convert to URIs
-    includes_dirs = includes_dirs.map((e) => URI.parse(e).toString());
+    includes_dirs = includes_dirs.map((e) =>
+      URI.parse(
+        resolve(
+          Workspace.workspaceFolders.map((folder) => folder.uri.fsPath) + e
+        )
+      ).toString()
+    );
 
     scriptingDirnames = scriptingDirnames.concat(includes_dirs);
     let items: CompletionItem[] = [];

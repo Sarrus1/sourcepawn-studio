@@ -15,7 +15,7 @@ import {
   ExtensionContext,
 } from "vscode";
 import { existsSync, openSync, writeSync, unlink, closeSync } from "fs";
-import { join, basename, extname, dirname } from "path";
+import { join, basename, extname, dirname, resolve } from "path";
 import { execFile } from "child_process";
 import { URI } from "vscode-uri";
 import { errorDetails } from "./Misc/errorMessages";
@@ -153,7 +153,14 @@ export function refreshDiagnostics(
         // Add the optional includes folders.
         for (let includes_dir of includes_dirs) {
           if (includes_dir != "") {
-            spcomp_opt.push("-i" + includes_dir);
+            spcomp_opt.push(
+              "-i" +
+                resolve(
+                  Workspace.workspaceFolders.map(
+                    (folder) => folder.uri.fsPath
+                  ) + includes_dir
+                )
+            );
           }
         }
         // Run the blank compile.

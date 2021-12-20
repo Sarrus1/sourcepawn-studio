@@ -19,6 +19,7 @@ import { CFGDocumentFormattingEditProvider } from "./cfgFormat";
 import { URI } from "vscode-uri";
 import { SP_LEGENDS } from "./spLegends";
 import { findMainPath } from "./spUtils";
+import { resolve } from "path";
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
@@ -72,6 +73,9 @@ export function activate(context: ExtensionContext) {
   let optionalIncludeDirs: string[] = Workspace.getConfiguration(
     "sourcepawn"
   ).get("optionalIncludeDirsPaths");
+  optionalIncludeDirs = optionalIncludeDirs.map((e) =>
+    resolve(workspaceFolders.map((folder) => folder.uri.fsPath) + e)
+  );
   getDirectories(optionalIncludeDirs, providers);
 
   let mainPath: string = findMainPath();
