@@ -47,8 +47,14 @@ export async function run(args: any) {
   config["deleteRemote"] = false;
 
   // Concat the workspace with it's root if the path is relative.
-  let workspaceRoot = workspaceFolder.uri.fsPath;
   if (config["isRootRelative"]) {
+    if (workspaceFolder === undefined) {
+      window.showWarningMessage(
+        "No workspace or folder found, with isRootRelative is set to true.\nSet it to false, or open the file from a workspace."
+      );
+      return 1;
+    }
+    let workspaceRoot = workspaceFolder.uri.fsPath;
     config["localRoot"] = join(workspaceRoot, config["localRoot"]);
   }
 

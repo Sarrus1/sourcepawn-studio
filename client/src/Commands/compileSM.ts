@@ -1,4 +1,5 @@
 import { workspace as Workspace, window, commands } from "vscode";
+import { URI } from "vscode-uri";
 import { basename, extname, join } from "path";
 import { existsSync, mkdirSync } from "fs";
 import { platform } from "os";
@@ -170,7 +171,7 @@ export async function run(args: any) {
         "uploadAfterSuccessfulCompile"
       )
     ) {
-      await uploadToServerCommand(undefined);
+      await uploadToServerCommand(URI.file(activeDocumentPath));
     }
   } catch (error) {
     console.log(error);
