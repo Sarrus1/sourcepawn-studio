@@ -2,9 +2,15 @@
 
 ## [2.7.3]
 
+### Added
+
+- Added an option for relative upload paths.
+
 ### Fixed
 
 - Fixed Github workflow.
+- Bumped some dependencies.
+- Added a debug message for the upload command.
 
 ## [2.7.2]
 
