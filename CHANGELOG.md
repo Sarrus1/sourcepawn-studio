@@ -1,10 +1,11 @@
 ## Release Notes
 
-## [2.7.3]
+## [2.8.0]
 
 ### Added
 
 - Added an option for relative upload paths.
+- Added a formatter for KeyValues style files (.cfg, .phrases.txt, etc).
 
 ### Fixed
 

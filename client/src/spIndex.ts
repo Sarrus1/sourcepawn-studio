@@ -15,13 +15,13 @@ import { SP_MODE } from "./spMode";
 import { Providers } from "./Providers/spProviders";
 import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./spFormat";
+import { CFGDocumentFormattingEditProvider } from "./cfgFormat";
 import { URI } from "vscode-uri";
 import { SP_LEGENDS } from "./spLegends";
 import { findMainPath } from "./spUtils";
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
-  let formatter = new SMDocumentFormattingEditProvider();
   providers.parseSMApi();
   let workspaceFolders = Workspace.workspaceFolders;
   if (workspaceFolders === undefined) {
@@ -152,9 +152,33 @@ export function activate(context: ExtensionContext) {
         scheme: "file",
         pattern: "**/*.sp",
       },
-      formatter
+      new SMDocumentFormattingEditProvider()
     )
   );
+
+  context.subscriptions.push(
+    languages.registerDocumentFormattingEditProvider(
+      [
+        {
+          language: "sp-translations",
+        },
+        {
+          language: "sp-gamedata",
+        },
+        {
+          language: "valve-cfg",
+        },
+        {
+          language: "valve-ini",
+        },
+        {
+          language: "sourcemod-kv",
+        },
+      ],
+      new CFGDocumentFormattingEditProvider()
+    )
+  );
+
   context.subscriptions.push(
     languages.registerHoverProvider(SP_MODE, providers)
   );
