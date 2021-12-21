@@ -10,7 +10,7 @@ import {
   WorkspaceFolder,
   Range,
 } from "vscode";
-import { basename, join, resolve } from "path";
+import { basename, dirname, join, resolve } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 import {
@@ -74,41 +74,44 @@ export class FileItems {
   resolve_import(
     file: string,
     documents: Set<string>,
+    filePath: string,
     IsBuiltIn: boolean = false
   ) {
+    let directoryPath = dirname(filePath);
     let inc_file: string;
     // If no extension is provided, it's a .inc file
     if (!/.sp\s*$/g.test(file) && !/.inc\s*$/g.test(file)) {
       file += ".inc";
     }
     let uri: string;
-    //let fileBaseName = basename(file);
+    let incFilePath = resolve(directoryPath, file);
+    if (!existsSync(incFilePath)) {
+      incFilePath = resolve(directoryPath, "include", file);
+    }
     for (let parsedUri of documents.values()) {
-      if (parsedUri.includes(file)) {
+      if (parsedUri == URI.file(incFilePath).toString()) {
         uri = parsedUri;
         break;
       }
     }
+
     if (uri === undefined) {
       let includes_dirs: string[] = Workspace.getConfiguration(
         "sourcepawn"
       ).get("optionalIncludeDirsPaths");
       for (let includes_dir of includes_dirs) {
-        inc_file = join(includes_dir, file);
+        //inc_file = resolve(includes_dir, file);
+        inc_file = resolve(
+          Workspace.workspaceFolders.map((folder) => folder.uri.fsPath) +
+            includes_dir +
+            file
+        );
         if (existsSync(inc_file)) {
-          this.addInclude(
-            URI.file(
-              resolve(
-                Workspace.workspaceFolders.map((folder) => folder.uri.fsPath) +
-                  inc_file
-              )
-            ).toString(),
-            IsBuiltIn
-          );
+          this.addInclude(URI.file(inc_file).toString(), IsBuiltIn);
           return;
         }
       }
-      this.addInclude("file://__sourcemod_builtin/" + file, IsBuiltIn);
+      //this.addInclude("file://__sourcemod_builtin/" + file, IsBuiltIn);
     } else {
       this.addInclude(uri, IsBuiltIn);
     }
@@ -143,7 +146,7 @@ export class ItemsRepository implements Disposable {
     let scriptingDirname: string = document.uri.toString();
     let itemsNames: string[] = [];
     scriptingDirname =
-      scriptingDirname.replace(basename(document.uri.fsPath), "") + "include/";
+      scriptingDirname.replace(basename(document.uri.fsPath), "") + "include";
     let scriptingDirnames: string[] = [scriptingDirname];
     let includes_dirs: string[] = Workspace.getConfiguration("sourcepawn").get(
       "optionalIncludeDirsPaths"
@@ -156,66 +159,43 @@ export class ItemsRepository implements Disposable {
         )
       ).toString()
     );
+    let smHome: string =
+      Workspace.getConfiguration(
+        "sourcepawn",
+        Workspace.getWorkspaceFolder(document.uri)
+      ).get("SourcemodHome") || "";
 
     scriptingDirnames = scriptingDirnames.concat(includes_dirs);
+    scriptingDirnames.push(URI.file(smHome).toString());
     let items: CompletionItem[] = [];
     let cleanedUri: string;
     for (let uri of this.documents) {
-      if (uri.includes("file://__sourcemod_builtin/" + tempName)) {
-        cleanedUri = uri.replace("file://__sourcemod_builtin/" + tempName, "");
-        let match = cleanedUri.match(/([^\/]+\/)?/);
-        if (match[0] != "") {
-          let item: CompletionItem = {
-            label: match[0].replace("/", ""),
-            kind: CompletionItemKind.Folder,
-            detail: "Sourcemod BuiltIn",
-          };
-          if (itemsNames.indexOf(match[0]) == -1) {
-            items.push(item);
-            itemsNames.push(match[0]);
-          }
-        } else {
-          let insertText = cleanedUri.replace(".inc", "");
-          insertText += isQuoteInclude ? "" : ">";
-          let item = {
-            label: cleanedUri,
-            kind: CompletionItemKind.File,
-            detail: "Sourcemod BuiltIn",
-            insertText: insertText,
-          };
-          if (itemsNames.indexOf(cleanedUri) == -1) {
-            items.push(item);
-            itemsNames.push(cleanedUri);
-          }
-        }
-      } else {
-        for (scriptingDirname of scriptingDirnames) {
-          if (uri.includes(scriptingDirname + tempName)) {
-            cleanedUri = uri.replace(scriptingDirname + tempName, "");
-            let match = cleanedUri.match(/([^\/]+\/)?/);
-            if (match[0] != "") {
-              let item: CompletionItem = {
-                label: match[0].replace("/", ""),
-                kind: CompletionItemKind.Folder,
-                detail: URI.parse(uri).fsPath,
-              };
-              if (itemsNames.indexOf(match[0]) == -1) {
-                items.push(item);
-                itemsNames.push(match[0]);
-              }
-            } else {
-              let insertText = cleanedUri.replace(".inc", "");
-              insertText += isQuoteInclude ? "" : ">";
-              let item = {
-                label: cleanedUri,
-                kind: CompletionItemKind.File,
-                detail: URI.parse(uri).fsPath,
-                insertText: insertText,
-              };
-              if (itemsNames.indexOf(cleanedUri) == -1) {
-                items.push(item);
-                itemsNames.push(cleanedUri);
-              }
+      for (scriptingDirname of scriptingDirnames) {
+        if (uri.includes(scriptingDirname + "/" + tempName)) {
+          cleanedUri = uri.replace(scriptingDirname + "/" + tempName, "");
+          let match = cleanedUri.match(/([^\/]+\/)?/);
+          if (match[0] != "") {
+            let item: CompletionItem = {
+              label: match[0].replace("/", ""),
+              kind: CompletionItemKind.Folder,
+              detail: URI.parse(uri).fsPath,
+            };
+            if (itemsNames.indexOf(match[0]) == -1) {
+              items.push(item);
+              itemsNames.push(match[0]);
+            }
+          } else {
+            let insertText = cleanedUri.replace(".inc", "");
+            insertText += isQuoteInclude ? "" : ">";
+            let item = {
+              label: cleanedUri,
+              kind: CompletionItemKind.File,
+              detail: URI.parse(uri).fsPath,
+              insertText: insertText,
+            };
+            if (itemsNames.indexOf(cleanedUri) == -1) {
+              items.push(item);
+              itemsNames.push(cleanedUri);
             }
           }
         }
@@ -487,6 +467,7 @@ export class ItemsRepository implements Disposable {
     let isMethod: boolean = false;
     let isConstructor: boolean = false;
     let match: RegExpMatchArray;
+    let directoryPath = dirname(document.uri.fsPath);
 
     let word: string = document.getText(range);
     let allItems = this.getAllItems(document.uri);
@@ -521,8 +502,25 @@ export class ItemsRepository implements Disposable {
         fileStartPos + fileMatchLength
       );
       let uri: string;
+      let incFilePath;
+      let smHome: string =
+        Workspace.getConfiguration(
+          "sourcepawn",
+          Workspace.getWorkspaceFolder(document.uri)
+        ).get("SourcemodHome") || "";
+      let potentialIncludePaths = [
+        directoryPath,
+        join(directoryPath, "include/"),
+        smHome,
+      ];
+      for (let includePath of potentialIncludePaths) {
+        incFilePath = resolve(includePath, file);
+        if (existsSync(resolve(includePath, file))) {
+          break;
+        }
+      }
       for (let parsedUri of this.documents.values()) {
-        if (parsedUri.includes(file)) {
+        if (parsedUri == URI.file(incFilePath).toString()) {
           uri = parsedUri;
           break;
         }

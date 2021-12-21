@@ -7,6 +7,7 @@ export function readInclude(parser: Parser, match: RegExpMatchArray) {
   parser.completions.resolve_import(
     match[1],
     parser.documents,
+    parser.file,
     parser.IsBuiltIn
   );
   return;

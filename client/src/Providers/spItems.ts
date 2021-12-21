@@ -820,16 +820,8 @@ export class IncludeItem implements SPItem {
   defRange: Range;
 
   constructor(uri: string, defRange: Range) {
-    let workspaceFolder = Workspace.getWorkspaceFolder(URI.parse(uri));
     this.name = basename(URI.file(uri).fsPath);
-    let smHome: string =
-      Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
-        "SourcemodHome"
-      ) || "";
-    uri = this.file = uri.replace(
-      "file://__sourcemod_builtin",
-      URI.file(smHome).toString()
-    );
+    this.file = uri;
     this.defRange = defRange;
   }
 

@@ -333,11 +333,7 @@ export class Parser {
     for (let item of items) {
       if (item.kind === kind) {
         purgeCalls(item, this.file);
-        let file = item.file;
-        if (item.IsBuiltIn) {
-          file = file.replace(smHome, "file://__sourcemod_builtin");
-        }
-        defines.set(item.name, file);
+        defines.set(item.name, item.file);
       }
     }
     return defines;

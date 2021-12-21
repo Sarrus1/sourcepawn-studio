@@ -196,9 +196,7 @@ export class Providers {
         parseFile(file, completions, this.itemsRepository, true);
         if (debug) console.log("SM API Done parsing", file);
 
-        let uri =
-          "file://__sourcemod_builtin/" +
-          relative(sm_home, file).replace(/\\/g, "/");
+        let uri = URI.file(file).toString();
         this.itemsRepository.completions.set(uri, completions);
         this.itemsRepository.documents.add(uri);
         if (debug) console.log("SM API Done dealing with", uri);
