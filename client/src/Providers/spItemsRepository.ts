@@ -29,7 +29,7 @@ import {
   getLastEnumStructNameOrMethodMap,
   isInAString,
 } from "./spDefinitions";
-import { globalIdentifier } from "./spGlobalIdentifier";
+import { globalIdentifier } from "../Misc/spConstants";
 export class FileItems {
   completions: Map<string, SPItem>;
   includes: Include[];

@@ -1,1 +1,1 @@
-export const globalIdentifier = "$GLOBAL";
+

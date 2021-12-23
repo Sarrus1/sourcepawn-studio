@@ -1,6 +1,6 @@
 ﻿import { TextDocument, Range, Position, CompletionItemKind } from "vscode";
 import { URI } from "vscode-uri";
-import { globalIdentifier } from "./spGlobalIdentifier";
+import { globalIdentifier } from "../Misc/spConstants";
 import { SPItem } from "./spItems";
 
 export function GetLastFuncName(

@@ -1,7 +1,7 @@
 ﻿import { Parser } from "./spParser";
 import { VariableItem, PropertyItem } from "../Providers/spItems";
 import { State } from "./stateEnum";
-import { globalIdentifier } from "../Providers/spGlobalIdentifier";
+import { globalIdentifier } from "../Misc/spConstants";
 
 export function addVariableItem(
   parser: Parser,

@@ -11,13 +11,12 @@ import {
   refreshDiagnostics,
 } from "./spLinter";
 const glob = require("glob");
-import { SP_MODE } from "./spMode";
+import { SP_MODE, SP_LEGENDS } from "./Misc/spConstants";
 import { Providers } from "./Providers/spProviders";
 import { registerSMCommands } from "./Commands/registerCommands";
-import { SMDocumentFormattingEditProvider } from "./spFormat";
-import { CFGDocumentFormattingEditProvider } from "./cfgFormat";
+import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
+import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
 import { URI } from "vscode-uri";
-import { SP_LEGENDS } from "./spLegends";
 import { findMainPath } from "./spUtils";
 import { resolve } from "path";
 

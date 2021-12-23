@@ -8,10 +8,9 @@
   DocumentSymbol,
   SymbolKind,
   LocationLink,
-  workspace as Workspace,
 } from "vscode";
 import { descriptionToMD } from "../spUtils";
-import { globalIdentifier } from "./spGlobalIdentifier";
+import { globalIdentifier } from "../Misc/spConstants";
 import { basename } from "path";
 import { URI } from "vscode-uri";
 

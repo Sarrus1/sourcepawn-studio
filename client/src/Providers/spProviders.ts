@@ -20,7 +20,7 @@
   LocationLink,
 } from "vscode";
 import * as glob from "glob";
-import { extname, join, relative } from "path";
+import { extname, join } from "path";
 import { URI } from "vscode-uri";
 import { existsSync } from "fs";
 import { ItemsRepository, FileItems } from "./spItemsRepository";
@@ -31,9 +31,8 @@ import {
   GetLastFuncName,
   getLastEnumStructNameOrMethodMap,
 } from "./spDefinitions";
-import { SP_LEGENDS } from "../spLegends";
 import { getSignatureAttributes } from "./spSignatures";
-import { globalIdentifier } from "./spGlobalIdentifier";
+import { globalIdentifier, SP_LEGENDS } from "../Misc/spConstants";
 
 export class Providers {
   documentationProvider: JsDocCompletionProvider;
