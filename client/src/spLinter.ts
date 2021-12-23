@@ -146,6 +146,7 @@ export function refreshDiagnostics(
         for (let i = 0; i < compilerOptions.length; i++) {
           spcomp_opt.push(" " + compilerOptions[i]);
         }
+        /*
         let includes_dirs: string[] = Workspace.getConfiguration(
           "sourcepawn",
           workspaceFolder
@@ -161,6 +162,20 @@ export function refreshDiagnostics(
                   ) + includes_dir
                 )
             );
+          }
+        }*/
+
+        // Add the optional includes folders.
+        let optionalIncludeDirs: string[] = Workspace.getConfiguration(
+          "sourcepawn",
+          workspaceFolder
+        ).get("optionalIncludeDirsPaths");
+        optionalIncludeDirs = optionalIncludeDirs.map((e) =>
+          resolve(workspaceFolder.uri.fsPath, e)
+        );
+        for (let includeDir of optionalIncludeDirs) {
+          if (includeDir !== "") {
+            spcomp_opt.push("-i" + includeDir);
           }
         }
         // Run the blank compile.

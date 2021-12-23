@@ -152,21 +152,17 @@ export async function run(args: any) {
     command += " " + compilerOptions[i];
   }
 
-  let includes_dirs: string[] = Workspace.getConfiguration(
+  // Add the optional includes folders.
+  let optionalIncludeDirs: string[] = Workspace.getConfiguration(
     "sourcepawn",
     workspaceFolder
   ).get("optionalIncludeDirsPaths");
-  // Add the optional includes folders.
-  for (let includes_dir of includes_dirs) {
-    if (includes_dir != "") {
-      command +=
-        " -i=" +
-        "'" +
-        resolve(
-          Workspace.workspaceFolders.map((folder) => folder.uri.fsPath) +
-            includes_dir
-        ) +
-        "'";
+  optionalIncludeDirs = optionalIncludeDirs.map((e) =>
+    resolve(workspaceFolder.uri.fsPath, e)
+  );
+  for (let includeDir of optionalIncludeDirs) {
+    if (includeDir !== "") {
+      command += " -i=" + "'" + includeDir + "'";
     }
   }
 

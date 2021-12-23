@@ -74,7 +74,7 @@ export function activate(context: ExtensionContext) {
     "sourcepawn"
   ).get("optionalIncludeDirsPaths");
   optionalIncludeDirs = optionalIncludeDirs.map((e) =>
-    resolve(workspaceFolders.map((folder) => folder.uri.fsPath) + e)
+    resolve(...workspaceFolders.map((folder) => folder.uri.fsPath), e)
   );
   getDirectories(optionalIncludeDirs, providers);
 
