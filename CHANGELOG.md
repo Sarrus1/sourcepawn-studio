@@ -13,6 +13,7 @@
 - Fixed Github workflow.
 - Bumped some dependencies.
 - Added a debug message for the upload command.
+- Fixed the compiler compiling the active document instead of the one selected when compiling from the tree view.
 
 ## [2.7.2]
 
