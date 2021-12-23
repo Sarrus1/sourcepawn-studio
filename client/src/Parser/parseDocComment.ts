@@ -1,5 +1,5 @@
 ﻿import { Parser } from "./spParser";
-import { FunctionParam } from "../Providers/spItems";
+import { FunctionParam } from "../Backend/spItems";
 
 export function parseDocComment(
   parser: Parser

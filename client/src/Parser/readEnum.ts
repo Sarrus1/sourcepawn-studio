@@ -1,5 +1,5 @@
 ﻿import { Parser } from "./spParser";
-import { EnumStructItem, EnumItem, EnumMemberItem } from "../Providers/spItems";
+import { EnumStructItem, EnumItem, EnumMemberItem } from "../Backend/spItems";
 import { State } from "./stateEnum";
 import { searchForDefinesInString } from "./searchForDefinesInString";
 import { parseDocComment } from "./parseDocComment";

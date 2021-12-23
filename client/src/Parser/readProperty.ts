@@ -1,5 +1,5 @@
 ﻿import { Parser } from "./spParser";
-import { PropertyItem } from "../Providers/spItems";
+import { PropertyItem } from "../Backend/spItems";
 import { parseDocComment } from "./parseDocComment";
 
 export function readProperty(

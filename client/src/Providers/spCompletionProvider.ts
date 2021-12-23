@@ -5,7 +5,7 @@ import {
   CompletionList,
   CompletionItemKind,
 } from "vscode";
-import { ItemsRepository } from "./spItemsRepository";
+import { ItemsRepository } from "../Backend/spItemsRepository";
 import {
   GetLastFuncName,
   getLastEnumStructNameOrMethodMap,

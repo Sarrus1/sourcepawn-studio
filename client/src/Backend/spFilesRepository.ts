@@ -3,7 +3,10 @@ import { dirname, resolve } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 import { SPItem, Include, ConstantItem, KeywordItem } from "./spItems";
-import { defaultConstantItems, defaultKeywordsItems } from "./spDefaultItems";
+import {
+  defaultConstantItems,
+  defaultKeywordsItems,
+} from "../Providers/spDefaultItems";
 import { ItemsRepository } from "./spItemsRepository";
 
 export class FileItems {

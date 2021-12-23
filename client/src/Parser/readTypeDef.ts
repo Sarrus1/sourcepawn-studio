@@ -1,5 +1,5 @@
 ﻿import { Parser } from "./spParser";
-import { TypeDefItem } from "../Providers/spItems";
+import { TypeDefItem } from "../Backend/spItems";
 import { Range } from "vscode";
 import { parseDocComment } from "./parseDocComment";
 

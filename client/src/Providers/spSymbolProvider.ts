@@ -4,7 +4,7 @@ import {
   DocumentSymbol,
   CompletionItemKind,
 } from "vscode";
-import { ItemsRepository } from "./spItemsRepository";
+import { ItemsRepository } from "../Backend/spItemsRepository";
 import { globalIdentifier } from "../Misc/spConstants";
 
 const allowedKinds = [

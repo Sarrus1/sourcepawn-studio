@@ -4,9 +4,9 @@ import {
   SemanticTokens,
   SemanticTokensBuilder,
 } from "vscode";
-import { ItemsRepository } from "./spItemsRepository";
+import { ItemsRepository } from "../Backend/spItemsRepository";
 import { SP_LEGENDS } from "../Misc/spConstants";
-import { SPItem } from "./spItems";
+import { SPItem } from "../Backend/spItems";
 
 export function semanticTokenProvider(
   itemsRepo: ItemsRepository,

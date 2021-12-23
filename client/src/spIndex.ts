@@ -11,8 +11,9 @@ import {
   refreshDiagnostics,
 } from "./spLinter";
 const glob = require("glob");
+import { parseSMApi } from "./Misc/parseSMAPI";
 import { SP_MODE, SP_LEGENDS } from "./Misc/spConstants";
-import { Providers } from "./Providers/spProviders";
+import { Providers } from "./Backend/spProviders";
 import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
@@ -22,7 +23,7 @@ import { resolve } from "path";
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
-  providers.parseSMApi();
+  parseSMApi(providers.itemsRepository);
   let workspaceFolders = Workspace.workspaceFolders;
   if (workspaceFolders === undefined) {
     window.showWarningMessage(

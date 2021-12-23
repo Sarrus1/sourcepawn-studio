@@ -1,5 +1,5 @@
 ﻿import { Parser } from "./spParser";
-import { CommentItem } from "../Providers/spItems";
+import { CommentItem } from "../Backend/spItems";
 import { Range, Position } from "vscode";
 import { searchForDefinesInString } from "./searchForDefinesInString";
 

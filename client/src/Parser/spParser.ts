@@ -1,6 +1,6 @@
-import { ItemsRepository } from "../Providers/spItemsRepository";
-import { FileItems } from "../Providers/spFilesRepository";
-import { SPItem, CommentItem } from "../Providers/spItems";
+import { ItemsRepository } from "../Backend/spItemsRepository";
+import { FileItems } from "../Backend/spFilesRepository";
+import { SPItem, CommentItem } from "../Backend/spItems";
 import { State } from "./stateEnum";
 import { readDefine } from "./readDefine";
 import { readMacro } from "./readMacro";

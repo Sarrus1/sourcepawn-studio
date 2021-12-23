@@ -21,17 +21,17 @@ import {
   isFunction,
   getLastEnumStructNameOrMethodMap,
   isInAString,
-} from "./spDefinitionProvider";
+} from "../Providers/spDefinitionProvider";
 import { globalIdentifier } from "../Misc/spConstants";
 import { FileItems } from "./spFilesRepository";
 
 export class ItemsRepository implements Disposable {
-  public completions: Map<string, FileItems>;
+  public items: Map<string, FileItems>;
   public documents: Set<string>;
   private globalState: Memento;
 
   constructor(globalState?: Memento) {
-    this.completions = new Map();
+    this.items = new Map();
     this.documents = new Set<string>();
     this.globalState = globalState;
   }
@@ -324,12 +324,12 @@ export class ItemsRepository implements Disposable {
         }
       }
       let uri = URI.file(MainPath).toString();
-      allItems = this.completions.get(uri);
+      allItems = this.items.get(uri);
       if (!includes.has(uri)) {
         includes.add(uri);
       }
     } else {
-      allItems = this.completions.get(uri.toString());
+      allItems = this.items.get(uri.toString());
       includes.add(uri.toString());
     }
     if (allItems !== undefined) {
@@ -348,7 +348,7 @@ export class ItemsRepository implements Disposable {
   }
 
   getFileItems(file: string): SPItem[] {
-    let file_completions: FileItems = this.completions.get(file);
+    let file_completions: FileItems = this.items.get(file);
     let completion_list: SPItem[] = [];
     if (file_completions) {
       return file_completions.getCompletions(this);
@@ -360,7 +360,7 @@ export class ItemsRepository implements Disposable {
     for (let include of completions.includes) {
       if (!files.has(include.uri)) {
         files.add(include.uri);
-        let include_completions = this.completions.get(include.uri);
+        let include_completions = this.items.get(include.uri);
         if (include_completions) {
           this.getIncludedFiles(include_completions, files);
         }

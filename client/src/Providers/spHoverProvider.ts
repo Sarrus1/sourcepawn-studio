@@ -1,5 +1,5 @@
 import { TextDocument, Position, CancellationToken, Hover } from "vscode";
-import { ItemsRepository } from "./spItemsRepository";
+import { ItemsRepository } from "../Backend/spItemsRepository";
 
 export function hoverProvider(
   itemsRepo: ItemsRepository,

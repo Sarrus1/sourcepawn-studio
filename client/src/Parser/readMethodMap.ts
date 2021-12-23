@@ -1,7 +1,7 @@
 ﻿import { Parser } from "./spParser";
 import { State } from "./stateEnum";
 import { parseDocComment } from "./parseDocComment";
-import { MethodMapItem } from "../Providers/spItems";
+import { MethodMapItem } from "../Backend/spItems";
 
 export function readMethodMap(
   parser: Parser,

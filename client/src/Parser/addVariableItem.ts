@@ -1,5 +1,5 @@
 ﻿import { Parser } from "./spParser";
-import { VariableItem, PropertyItem } from "../Providers/spItems";
+import { VariableItem, PropertyItem } from "../Backend/spItems";
 import { State } from "./stateEnum";
 import { globalIdentifier } from "../Misc/spConstants";
 

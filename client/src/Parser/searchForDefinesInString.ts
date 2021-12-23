@@ -62,7 +62,7 @@ export function searchForDefinesInString(parser: Parser, line: string): void {
         defineFile = defineFile.startsWith("file://")
           ? defineFile
           : URI.file(defineFile).toString();
-        let items = parser.itemsRepository.completions.get(defineFile);
+        let items = parser.itemsRepository.items.get(defineFile);
         if (items === undefined) {
           continue;
         }
