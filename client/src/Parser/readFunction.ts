@@ -10,7 +10,7 @@ import {
   isSingleLineFunction,
   getParamsFromDeclaration,
 } from "./utils";
-import { isControlStatement } from "../Providers/spDefinitions";
+import { isControlStatement } from "../Providers/spDefinitionProvider";
 import { addVariableItem } from "./addVariableItem";
 
 export function readFunction(

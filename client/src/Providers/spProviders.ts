@@ -10,11 +10,9 @@
   Position,
   CancellationToken,
   CompletionList,
-  CompletionItemKind,
   Hover,
   SignatureHelp,
   SemanticTokens,
-  SemanticTokensBuilder,
   DocumentSymbol,
   Definition,
   LocationLink,
@@ -23,16 +21,17 @@ import * as glob from "glob";
 import { extname, join } from "path";
 import { URI } from "vscode-uri";
 import { existsSync } from "fs";
-import { ItemsRepository, FileItems } from "./spItemsRepository";
-import { Include, SPItem } from "./spItems";
+import { ItemsRepository } from "./spItemsRepository";
+import { FileItems } from "./spFilesRepository";
+import { Include } from "./spItems";
 import { JsDocCompletionProvider } from "./spDocCompletions";
 import { parseText, parseFile } from "../Parser/spParser";
-import {
-  GetLastFuncName,
-  getLastEnumStructNameOrMethodMap,
-} from "./spDefinitions";
-import { getSignatureAttributes } from "./spSignatures";
-import { globalIdentifier, SP_LEGENDS } from "../Misc/spConstants";
+import { definitionsProvider } from "./spDefinitionProvider";
+import { signatureProvider } from "./spSignatureProvider";
+import { hoverProvider } from "./spHoverProvider";
+import { symbolProvider } from "./spSymbolProvider";
+import { completionProvider } from "./spCompletionProvider";
+import { semanticTokenProvider } from "./spSemanticTokenProvider";
 
 export class Providers {
   documentationProvider: JsDocCompletionProvider;
@@ -211,97 +210,7 @@ export class Providers {
     position: Position,
     token: CancellationToken
   ): Promise<CompletionList> {
-    const text = document
-      .lineAt(position.line)
-      .text.substr(0, position.character);
-
-    // If the trigger char is a space, check if there is a
-    // "new" behind, and deal with the associated constructor.
-    if (text[text.length - 1] === " ") {
-      if (position.character > 0) {
-        const line = document
-          .lineAt(position.line)
-          .text.substr(0, position.character);
-
-        let match = line.match(
-          /(\w*)\s+([\w.\(\)]+)(?:\[[\w+ \d]+\])*\s*\=\s*new\s+(\w*)$/
-        );
-        if (match) {
-          var type;
-
-          if (!match[1]) {
-            // If the variable is not declared here, look up its type, as it
-            // has not yet been parsed.
-            let allItems = this.itemsRepository.getAllItems(document.uri);
-            let lastFuncName = GetLastFuncName(position, document, allItems);
-            let newPos = new Position(1, match[2].length + 1);
-            let {
-              lastEnumStructOrMethodMap,
-              isAMethodMap,
-            } = getLastEnumStructNameOrMethodMap(position, document, allItems);
-            let {
-              variableType,
-              words,
-            } = this.itemsRepository.getTypeOfVariable(
-              // Hack to use getTypeOfVariable
-              match[2] + ".",
-              newPos,
-              allItems,
-              lastFuncName,
-              lastEnumStructOrMethodMap
-            );
-            type = variableType;
-          } else {
-            // If the variable is declared here, search its type directly.
-            type = this.itemsRepository
-              .getAllItems(document.uri)
-              .find(
-                (item) =>
-                  item.kind === CompletionItemKind.Class &&
-                  item.name === match[1]
-              ).name;
-          }
-
-          // Filter the item to only keep the constructors.
-          let items = this.itemsRepository
-            .getAllItems(document.uri)
-            .filter((item) => item.kind === CompletionItemKind.Constructor);
-          return new CompletionList(
-            items.map((e) => {
-              // Show the associated type's constructor first.
-              if (e.name === type) {
-                let tmp = e.toCompletionItem(document.uri.fsPath);
-                tmp.preselect = true;
-                return tmp;
-              }
-              return e.toCompletionItem(document.uri.fsPath);
-            })
-          );
-        }
-      }
-      return undefined;
-    }
-
-    // Check if we are dealing with an include.
-    let match = text.match(/^\s*#\s*include\s*(?:\<([^>]*)\>?)$/);
-    if (!match) {
-      match = text.match(/^\s*#\s*include\s*(?:\"([^\"]*)\"?)$/);
-    }
-    if (match) {
-      return this.itemsRepository.getIncludeCompletions(document, match[1]);
-    }
-    match = text.match(
-      /^\s*(?:HookEvent|HookEventEx)\s*\(\s*(\"[^\"]*|\'[^\']*)$/
-    );
-    if (match) {
-      return this.itemsRepository.getEventCompletions();
-    }
-    if (['"', "'", "<", "/", "\\"].includes(text[text.length - 1]))
-      return undefined;
-    if (/[^:]\:$/.test(text)) {
-      return undefined;
-    }
-    return this.itemsRepository.getCompletions(document, position);
+    return completionProvider(this.itemsRepository, document, position, token);
   }
 
   public async provideHover(
@@ -309,11 +218,7 @@ export class Providers {
     position: Position,
     token: CancellationToken
   ): Promise<Hover> {
-    let items = this.itemsRepository.getItemFromPosition(document, position);
-    if (items.length > 0) {
-      return items[0].toHover();
-    }
-    return undefined;
+    return hoverProvider(this.itemsRepository, document, position, token);
   }
 
   public async provideSignatureHelp(
@@ -321,99 +226,7 @@ export class Providers {
     position: Position,
     token: CancellationToken
   ): Promise<SignatureHelp> {
-    let blankReturn = {
-      signatures: [],
-      activeSignature: 0,
-      activeParameter: 0,
-    };
-    let { croppedLine, parameterCount } = getSignatureAttributes(
-      document,
-      position
-    );
-    if (croppedLine === undefined) {
-      return blankReturn;
-    }
-    // Check if it's a method
-    let match = croppedLine.match(/\.(\w+)$/);
-    if (match) {
-      let methodName = match[1];
-      let allItems = this.itemsRepository.getAllItems(document.uri);
-      let lastFuncName = GetLastFuncName(position, document, allItems);
-      let newPos = new Position(1, croppedLine.length);
-      let {
-        lastEnumStructOrMethodMap,
-        isAMethodMap,
-      } = getLastEnumStructNameOrMethodMap(position, document, allItems);
-      let { variableType, words } = this.itemsRepository.getTypeOfVariable(
-        croppedLine,
-        newPos,
-        allItems,
-        lastFuncName,
-        lastEnumStructOrMethodMap
-      );
-      let variableTypes: string[] = this.itemsRepository.getAllInheritances(
-        variableType,
-        allItems
-      );
-      let items = this.itemsRepository
-        .getAllItems(document.uri)
-        .filter(
-          (item) =>
-            (item.kind === CompletionItemKind.Method ||
-              item.kind === CompletionItemKind.Property) &&
-            variableTypes.includes(item.parent) &&
-            item.name === methodName
-        );
-      return {
-        signatures: items.map((e) => e.toSignature()),
-        activeParameter: parameterCount,
-        activeSignature: 0,
-      };
-    }
-    // Match for new keywords
-    match = croppedLine.match(/new\s+(\w+)/);
-    if (match) {
-      let methodMapName = match[1];
-      let items = this.itemsRepository
-        .getAllItems(document.uri)
-        .filter(
-          (item) =>
-            item.kind === CompletionItemKind.Constructor &&
-            item.name === methodMapName
-        );
-      return {
-        signatures: items.map((e) => e.toSignature()),
-        activeParameter: parameterCount,
-        activeSignature: 0,
-      };
-    }
-
-    match = croppedLine.match(/(\w+)$/);
-    if (!match) {
-      return blankReturn;
-    }
-    if (["if", "for", "while", "case", "switch", "return"].includes(match[1])) {
-      return blankReturn;
-    }
-    let items = this.itemsRepository
-      .getAllItems(document.uri)
-      .filter(
-        (item) =>
-          item.name === match[1] &&
-          [CompletionItemKind.Function, CompletionItemKind.Interface].includes(
-            item.kind
-          )
-      );
-    if (items === undefined) {
-      return blankReturn;
-    }
-    // Sort by size of description
-    items = items.sort((a, b) => b.description.length - a.description.length);
-    return {
-      signatures: items.map((e) => e.toSignature()),
-      activeParameter: parameterCount,
-      activeSignature: 0,
-    };
+    return signatureProvider(this.itemsRepository, document, position, token);
   }
 
   public async provideDefinition(
@@ -421,92 +234,19 @@ export class Providers {
     position: Position,
     token: CancellationToken
   ): Promise<Definition | LocationLink[]> {
-    let items = this.itemsRepository.getItemFromPosition(document, position);
-    return items.map((e) => e.toDefinitionItem());
+    return definitionsProvider(this.itemsRepository, document, position, token);
   }
 
   public async provideDocumentSemanticTokens(
     document: TextDocument
   ): Promise<SemanticTokens> {
-    const tokensBuilder = new SemanticTokensBuilder(SP_LEGENDS);
-    let allItems: SPItem[] = this.itemsRepository.getAllItems(document.uri);
-    for (let item of allItems) {
-      if (
-        item.kind === CompletionItemKind.Constant ||
-        item.kind === CompletionItemKind.EnumMember
-      ) {
-        for (let call of item.calls) {
-          if (call.uri.fsPath === document.uri.fsPath) {
-            tokensBuilder.push(call.range, "variable", ["readonly"]);
-          }
-        }
-      }
-    }
-    return tokensBuilder.build();
+    return semanticTokenProvider(this.itemsRepository, document);
   }
 
   public async provideDocumentSymbols(
     document: TextDocument,
     token: CancellationToken
   ): Promise<DocumentSymbol[]> {
-    let symbols: DocumentSymbol[] = [];
-    const allowedKinds = [
-      CompletionItemKind.Function,
-      CompletionItemKind.Class,
-      CompletionItemKind.Struct,
-      CompletionItemKind.Enum,
-      CompletionItemKind.Constant,
-      CompletionItemKind.Variable,
-      CompletionItemKind.TypeParameter,
-    ];
-    const allowedParentsKinds = [
-      CompletionItemKind.Class,
-      CompletionItemKind.Struct,
-      CompletionItemKind.Function,
-      CompletionItemKind.Enum,
-    ];
-    const allowedChildrendKinds = [
-      CompletionItemKind.Method,
-      CompletionItemKind.Property,
-      CompletionItemKind.Variable,
-      CompletionItemKind.EnumMember,
-    ];
-    let items = this.itemsRepository.getAllItems(document.uri);
-    let file = document.uri.fsPath;
-    for (let item of items) {
-      if (allowedKinds.includes(item.kind) && item.file === file) {
-        // Don't add non global variables here
-        if (
-          item.kind === CompletionItemKind.Variable &&
-          item.parent !== globalIdentifier
-        ) {
-          continue;
-        }
-        let symbol = item.toDocumentSymbol();
-
-        // Check if the item can have childrens
-        if (allowedParentsKinds.includes(item.kind) && symbol !== undefined) {
-          let childrens: DocumentSymbol[] = [];
-          // Iterate over all items to get the childrens
-          for (let subItem of items) {
-            if (
-              allowedChildrendKinds.includes(subItem.kind) &&
-              subItem.file === file &&
-              subItem.parent === item.name
-            ) {
-              let children = subItem.toDocumentSymbol();
-              if (children !== undefined) {
-                childrens.push(children);
-              }
-            }
-          }
-          symbol.children = childrens;
-        }
-        if (symbol !== undefined) {
-          symbols.push(symbol);
-        }
-      }
-    }
-    return symbols;
+    return symbolProvider(this.itemsRepository, document, token);
   }
 }

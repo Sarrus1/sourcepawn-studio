@@ -1,7 +1,14 @@
-﻿import { TextDocument, Range, Position, CompletionItemKind } from "vscode";
+﻿import {
+  TextDocument,
+  Range,
+  Position,
+  CompletionItemKind,
+  CancellationToken,
+} from "vscode";
 import { URI } from "vscode-uri";
 import { globalIdentifier } from "../Misc/spConstants";
 import { SPItem } from "./spItems";
+import { ItemsRepository } from "./spItemsRepository";
 
 export function GetLastFuncName(
   position: Position,
@@ -122,4 +129,14 @@ export function getLastEnumStructNameOrMethodMap(
     lastEnumStructOrMethodMap: enumStruct.name,
     isAMethodMap: enumStruct.kind === CompletionItemKind.Class,
   };
+}
+
+export function definitionsProvider(
+  itemsRepo: ItemsRepository,
+  document: TextDocument,
+  position: Position,
+  token: CancellationToken
+) {
+  let items = itemsRepo.getItemFromPosition(document, position);
+  return items.map((e) => e.toDefinitionItem());
 }
