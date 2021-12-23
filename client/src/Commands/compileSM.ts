@@ -6,8 +6,9 @@ import { platform } from "os";
 import { run as uploadToServerCommand } from "./uploadToServer";
 
 /**
- * Callback for the SM Compile file command.
+ * Callback for the Compile file command.
  * @param  {URI} args URI of the document to be compiled. This will be overrided if MainPathCompilation is set to true.
+ * @returns Promise
  */
 export async function run(args: URI): Promise<void> {
   const workspaceFolder = Workspace.getWorkspaceFolder(
