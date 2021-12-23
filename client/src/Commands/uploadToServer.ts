@@ -58,12 +58,14 @@ export async function run(args: any) {
     config["localRoot"] = join(workspaceRoot, config["localRoot"]);
   }
 
+  // Copy the config object to avoid https://github.com/microsoft/vscode/issues/80976
+  let ftpConfig = { ...config };
   // Delete that setting to avoid problems with the ftp/sftp library
-  delete config["isRootRelative"];
+  delete ftpConfig["isRootRelative"];
 
   console.log("Starting the upload");
   ftpDeploy
-    .deploy(config)
+    .deploy(ftpConfig)
     .then(() => {
       console.log("Upload is finished.");
       if (
