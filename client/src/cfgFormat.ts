@@ -52,7 +52,13 @@ export class CFGDocumentFormattingEditProvider
     return result;
   }
 }
-
+/**
+ * Formats a string parsed from a Sourcemod .kv file
+ * @param  {string} text              The string to format
+ * @param  {boolean} insertSpaces     Use tabs or spaces for indentation
+ * @param  {number} tabSize           Tabsize of each indent
+ * @returns string                    The formatted string
+ */
 function formatCFGText(
   text: string,
   insertSpaces: boolean,
@@ -67,7 +73,7 @@ function formatCFGText(
   let firstStringOfLineReached = false;
 
   for (let char of text) {
-    if (char === "'" && !isDoubleQuoteOpen) {
+    if (char === "'" && !isDoubleQuoteOpen && slashCounter < 2) {
       if (isSingleQuoteOpen && !firstStringOfLineReached) {
         newText += "'" + indentChar;
         firstStringOfLineReached = true;
@@ -75,7 +81,7 @@ function formatCFGText(
         newText += char;
       }
       isSingleQuoteOpen = !isSingleQuoteOpen;
-    } else if (char === '"' && !isSingleQuoteOpen) {
+    } else if (char === '"' && !isSingleQuoteOpen && slashCounter < 2) {
       if (isDoubleQuoteOpen && !firstStringOfLineReached) {
         newText += '"' + indentChar;
         firstStringOfLineReached = true;
@@ -83,7 +89,11 @@ function formatCFGText(
         newText += char;
       }
       isDoubleQuoteOpen = !isDoubleQuoteOpen;
-    } else if (char === "{" && !(isSingleQuoteOpen || isDoubleQuoteOpen)) {
+    } else if (
+      char === "{" &&
+      !(isSingleQuoteOpen || isDoubleQuoteOpen) &&
+      slashCounter < 2
+    ) {
       // Make sure to trim all previous spaces
       newText = newText.replace(/\s*$/, "");
       firstStringOfLineReached = false;
@@ -91,7 +101,11 @@ function formatCFGText(
       bracketCounter++;
       newText += char;
       newText += "\n" + indentChar.repeat(bracketCounter);
-    } else if (char === "}" && !(isSingleQuoteOpen || isDoubleQuoteOpen)) {
+    } else if (
+      char === "}" &&
+      !(isSingleQuoteOpen || isDoubleQuoteOpen) &&
+      slashCounter < 2
+    ) {
       firstStringOfLineReached = false;
       bracketCounter--;
       newText += "\n" + indentChar.repeat(bracketCounter);
@@ -119,7 +133,11 @@ function formatCFGText(
       if (!firstStringOfLineReached) {
         newText += "\n" + indentChar.repeat(bracketCounter);
       }
-    } else if (!/\s|\n/.test(char) || isSingleQuoteOpen || isDoubleQuoteOpen) {
+    } else if (
+      !/\s|\n/.test(char) ||
+      isSingleQuoteOpen ||
+      (isDoubleQuoteOpen && slashCounter < 2)
+    ) {
       // Don't append existing spaces.
       newText += char;
     }
