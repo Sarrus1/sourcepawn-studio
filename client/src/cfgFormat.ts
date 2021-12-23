@@ -61,6 +61,7 @@ function formatCFGText(
   let newText = "";
   let isSingleQuoteOpen = false;
   let isDoubleQuoteOpen = false;
+  let slashCounter = 0;
   let bracketCounter = 0;
   let indentChar = insertSpaces ? " ".repeat(tabSize) : "\t".repeat(tabSize);
   let firstStringOfLineReached = false;
@@ -91,22 +92,39 @@ function formatCFGText(
       newText += char;
       newText += "\n" + indentChar.repeat(bracketCounter);
     } else if (char === "}" && !(isSingleQuoteOpen || isDoubleQuoteOpen)) {
+      firstStringOfLineReached = false;
       bracketCounter--;
-
-      // End of the file
-      if (/\s/.test(newText.charAt(newText.length - 1))) {
-        newText += char;
-        // Remove previously added indent
-        newText = newText.replace(/\s*}$/, "\n}");
-        break;
-      }
       newText += "\n" + indentChar.repeat(bracketCounter);
       newText += char;
       newText += "\n" + indentChar.repeat(bracketCounter);
+    } else if (
+      char === "/" &&
+      slashCounter < 2 &&
+      !(isSingleQuoteOpen || isDoubleQuoteOpen)
+    ) {
+      // Deal with comments
+      slashCounter++;
+      newText += char;
+      if (slashCounter === 2) {
+        newText += " ";
+      } else if (slashCounter === 1 && firstStringOfLineReached) {
+        let t = newText.slice(0, newText.length - 1);
+        newText =
+          newText.slice(0, newText.length - 1) +
+          " " +
+          newText.slice(newText.length - 1, newText.length);
+      }
+    } else if (char === "\n" && slashCounter == 2) {
+      slashCounter = 0;
+      if (!firstStringOfLineReached) {
+        newText += "\n" + indentChar.repeat(bracketCounter);
+      }
     } else if (!/\s|\n/.test(char) || isSingleQuoteOpen || isDoubleQuoteOpen) {
       // Don't append existing spaces.
       newText += char;
     }
   }
+  // Remove trailing withspaces.
+  newText = newText.replace(/\s*$/, "").replace(/\s*}$/, "\n}");
   return newText;
 }
