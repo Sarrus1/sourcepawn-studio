@@ -160,7 +160,7 @@ export function readFunction(
       let end = range.start.line === parser.lineNb ? line.length : 0;
       fullRange = new Range(range.start.line, 0, parser.lineNb, end);
     }
-    parser.completions.add(
+    parser.completions.set(
       nameMatch + parser.state_data.name,
       new MethodItem(
         parser.state_data.name,
@@ -187,7 +187,7 @@ export function readFunction(
     let end = range.start.line === parser.lineNb ? line.length : 0;
     fullRange = new Range(range.start.line, 0, parser.lineNb, end);
   }
-  parser.completions.add(
+  parser.completions.set(
     nameMatch,
     new FunctionItem(
       nameMatch,

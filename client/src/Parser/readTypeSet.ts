@@ -28,7 +28,7 @@ export function readTypeSet(
     startPosition,
     new Position(parser.lineNb, endMatch[0].length)
   );
-  parser.completions.add(
+  parser.completions.set(
     name,
     new TypeSetItem(name, match[0], parser.file, description, range, fullRange)
   );

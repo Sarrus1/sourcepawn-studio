@@ -37,7 +37,7 @@ export function consumeComment(
     current_line.length
   );
   let range = new Range(startPos, endPos);
-  parser.completions.add(
+  parser.completions.set(
     `comment${parser.lineNb}--${Math.random()}`,
     new CommentItem(parser.file, range)
   );

@@ -131,7 +131,7 @@ export class Parser {
       let lineNb = this.lineNb < 1 ? 0 : this.lineNb;
       let start: number = line.search(/\/\//);
       let range = new Range(lineNb, start, lineNb, line.length);
-      this.completions.add(
+      this.completions.set(
         `comment${lineNb}--${Math.random()}`,
         new CommentItem(this.file, range)
       );
@@ -144,7 +144,7 @@ export class Parser {
       let start: number = line.search(/\/\*/);
       let end: number = line.search(/\*\//);
       let range = new Range(lineNb, start, lineNb, end);
-      this.completions.add(
+      this.completions.set(
         `comment${lineNb}--${Math.random()}`,
         new CommentItem(this.file, range)
       );

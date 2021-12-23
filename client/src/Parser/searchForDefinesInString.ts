@@ -56,7 +56,7 @@ export function searchForDefinesInString(parser: Parser, line: string): void {
             continue;
           }
           define.calls.push(location);
-          parser.completions.add(matchDefine[0], define);
+          parser.completions.set(matchDefine[0], define);
           continue;
         }
         defineFile = defineFile.startsWith("file://")
@@ -71,7 +71,7 @@ export function searchForDefinesInString(parser: Parser, line: string): void {
           continue;
         }
         define.calls.push(location);
-        items.add(matchDefine[0], define);
+        items.set(matchDefine[0], define);
       }
     }
   } while (matchDefine);

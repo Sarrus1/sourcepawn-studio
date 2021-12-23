@@ -23,7 +23,7 @@ export function readEnum(
       description,
       range
     );
-    parser.completions.add(enumStructName, enumStructCompletion);
+    parser.completions.set(enumStructName, enumStructCompletion);
     parser.state.push(State.EnumStruct);
     parser.state_data = {
       name: enumStructName,
@@ -45,7 +45,7 @@ export function readEnum(
   let key = match[1]
     ? match[1]
     : `${parser.anonymousEnumCount}${basename(parser.file)}`;
-  parser.completions.add(key, enumCompletion);
+  parser.completions.set(key, enumCompletion);
 
   // Set max number of iterations for safety
   let iter = 0;
@@ -76,7 +76,7 @@ export function readEnum(
       enumMemberDescription = iterMatch[1];
     }
     let range = parser.makeDefinitionRange(enumMemberName, line);
-    parser.completions.add(
+    parser.completions.set(
       enumMemberName,
       new EnumMemberItem(
         enumMemberName,

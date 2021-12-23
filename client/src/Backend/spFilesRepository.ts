@@ -1,4 +1,4 @@
-import { CompletionItem, workspace as Workspace } from "vscode";
+import { workspace as Workspace } from "vscode";
 import { dirname, resolve } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
@@ -7,57 +7,34 @@ import {
   defaultConstantItems,
   defaultKeywordsItems,
 } from "../Providers/spDefaultItems";
-import { ItemsRepository } from "./spItemsRepository";
 
-export class FileItems {
-  completions: Map<string, SPItem>;
+export class FileItems extends Map {
   includes: Include[];
   uri: string;
 
   constructor(uri: string) {
-    this.completions = new Map();
+    super();
     // Add constants only in one map.
     if (uri.includes("sourcemod.inc")) {
-      makeNewItemsMap(this.completions);
+      defaultConstantItems.forEach((e) => this.set(e, new ConstantItem(e)));
+      defaultKeywordsItems.forEach((e) => this.set(e, new KeywordItem(e)));
     }
     this.includes = [];
     this.uri = uri;
-  }
-
-  add(id: string, completion: SPItem) {
-    this.completions.set(id, completion);
-  }
-
-  get(id: string): SPItem {
-    return this.completions.get(id);
-  }
-
-  getCompletions(repo: ItemsRepository): SPItem[] {
-    let completions = [];
-    for (let completion of this.completions.values()) {
-      completions.push(completion);
-    }
-    return completions;
-  }
-
-  toCompletionResolve(item: CompletionItem): CompletionItem {
-    item.label = item.label;
-    item.documentation = item.documentation;
-    return item;
   }
 
   addInclude(include: string, IsBuiltIn: boolean) {
     this.includes.push(new Include(include, IsBuiltIn));
   }
 
-  resolve_import(
+  resolveImport(
     file: string,
     documents: Set<string>,
     filePath: string,
     IsBuiltIn: boolean = false
   ) {
     let directoryPath = dirname(filePath);
-    let inc_file: string;
+    let includeFile: string;
     // If no extension is provided, it's a .inc file
     if (!/.sp\s*$/g.test(file) && !/.inc\s*$/g.test(file)) {
       file += ".inc";
@@ -75,18 +52,17 @@ export class FileItems {
     }
 
     if (uri === undefined) {
-      let includes_dirs: string[] = Workspace.getConfiguration(
-        "sourcepawn"
-      ).get("optionalIncludeDirsPaths");
-      for (let includes_dir of includes_dirs) {
-        //inc_file = resolve(includes_dir, file);
-        inc_file = resolve(
+      let includeDirs: string[] = Workspace.getConfiguration("sourcepawn").get(
+        "optionalIncludeDirsPaths"
+      );
+      for (let includeDir of includeDirs) {
+        includeFile = resolve(
           Workspace.workspaceFolders.map((folder) => folder.uri.fsPath) +
-            includes_dir +
+            includeDir +
             file
         );
-        if (existsSync(inc_file)) {
-          this.addInclude(URI.file(inc_file).toString(), IsBuiltIn);
+        if (existsSync(includeFile)) {
+          this.addInclude(URI.file(includeFile).toString(), IsBuiltIn);
           return;
         }
       }
@@ -94,14 +70,4 @@ export class FileItems {
       this.addInclude(uri, IsBuiltIn);
     }
   }
-}
-
-function makeNewItemsMap(itemsMap): Map<string, SPItem> {
-  for (let name of defaultConstantItems) {
-    itemsMap.set(name, new ConstantItem(name));
-  }
-  for (let name of defaultKeywordsItems) {
-    itemsMap.set(name, new KeywordItem(name));
-  }
-  return itemsMap;
 }

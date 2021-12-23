@@ -351,7 +351,7 @@ export class ItemsRepository implements Disposable {
     let file_completions: FileItems = this.items.get(file);
     let completion_list: SPItem[] = [];
     if (file_completions) {
-      return file_completions.getCompletions(this);
+      return Array.from(file_completions.values());
     }
     return completion_list;
   }
