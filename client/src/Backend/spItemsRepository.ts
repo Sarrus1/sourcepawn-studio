@@ -153,6 +153,7 @@ export class ItemsRepository implements Disposable {
     document: TextDocument,
     tempName: string
   ): CompletionList {
+    const isQuoteInclude: boolean = tempName.includes('"');
     tempName = tempName.replace("<", "").replace('"', "");
     let match = tempName.match(/([^\/]+\/)+/);
     tempName = match ? match[0] : "";
@@ -192,7 +193,6 @@ export class ItemsRepository implements Disposable {
               label: match[0].replace("/", ""),
               kind: CompletionItemKind.Folder,
               detail: URI.parse(uri).fsPath,
-              commitCharacters: ['>', '"', '/']
             };
             if (itemsNames.indexOf(match[0]) == -1) {
               items.push(item);
@@ -200,12 +200,12 @@ export class ItemsRepository implements Disposable {
             }
           } else {
             let insertText = cleanedUri.replace(".inc", "");
+            insertText += isQuoteInclude ? "'" : ">";
             let item = {
               label: cleanedUri,
               kind: CompletionItemKind.File,
               detail: URI.parse(uri).fsPath,
               insertText: insertText,
-              commitCharacters: ['>', '"'],
             };
             if (itemsNames.indexOf(cleanedUri) == -1) {
               items.push(item);
