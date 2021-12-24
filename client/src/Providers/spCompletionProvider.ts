@@ -19,7 +19,7 @@ export function completionProvider(
 ): CompletionList {
   const text = document
     .lineAt(position.line)
-    .text.substr(0, position.character);
+    .text.substring(0, position.character);
 
   // If the trigger char is a space, check if there is a
   // "new" behind, and deal with the associated constructor.
