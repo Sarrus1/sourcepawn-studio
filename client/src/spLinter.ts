@@ -171,7 +171,10 @@ export function refreshDiagnostics(
           workspaceFolder
         ).get("optionalIncludeDirsPaths");
         optionalIncludeDirs = optionalIncludeDirs.map((e) =>
-          resolve(workspaceFolder.uri.fsPath, e)
+          resolve(
+            workspaceFolder === undefined ? "" : workspaceFolder.uri.fsPath,
+            e
+          )
         );
         for (let includeDir of optionalIncludeDirs) {
           if (includeDir !== "") {
