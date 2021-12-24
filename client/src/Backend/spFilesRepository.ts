@@ -48,41 +48,43 @@ export class FileItems extends Map {
     filePath: string,
     IsBuiltIn: boolean = false
   ): void {
+    const SMHome: string = Workspace.getConfiguration(
+      "sourcepawn",
+      Workspace.getWorkspaceFolder(URI.file(filePath))
+    ).get("SourcemodHome");
     let directoryPath = dirname(filePath);
     let includeFile: string;
     // If no extension is provided, it's a .inc file
     if (!/.sp\s*$/g.test(includeText) && !/.inc\s*$/g.test(includeText)) {
       includeText += ".inc";
     }
-    let uri: string;
     let incFilePath = resolve(directoryPath, includeText);
     if (!existsSync(incFilePath)) {
       incFilePath = resolve(directoryPath, "include", includeText);
+      if (!existsSync(incFilePath)) {
+        incFilePath = resolve(SMHome, includeText);
+      }
     }
     for (let parsedUri of documents.values()) {
       if (parsedUri == URI.file(incFilePath).toString()) {
-        uri = parsedUri;
-        break;
+        this.addInclude(parsedUri, IsBuiltIn);
+        return;
       }
     }
 
-    if (uri === undefined) {
-      let includeDirs: string[] = Workspace.getConfiguration("sourcepawn").get(
-        "optionalIncludeDirsPaths"
+    let includeDirs: string[] = Workspace.getConfiguration("sourcepawn").get(
+      "optionalIncludeDirsPaths"
+    );
+    for (let includeDir of includeDirs) {
+      includeFile = resolve(
+        Workspace.workspaceFolders.map((folder) => folder.uri.fsPath) +
+          includeDir +
+          includeText
       );
-      for (let includeDir of includeDirs) {
-        includeFile = resolve(
-          Workspace.workspaceFolders.map((folder) => folder.uri.fsPath) +
-            includeDir +
-            includeText
-        );
-        if (existsSync(includeFile)) {
-          this.addInclude(URI.file(includeFile).toString(), IsBuiltIn);
-          return;
-        }
+      if (existsSync(includeFile)) {
+        this.addInclude(URI.file(includeFile).toString(), IsBuiltIn);
+        return;
       }
-    } else {
-      this.addInclude(uri, IsBuiltIn);
     }
   }
 }
