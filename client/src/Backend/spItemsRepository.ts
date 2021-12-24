@@ -12,11 +12,10 @@ import {
   FileCreateEvent,
   TextDocumentChangeEvent,
 } from "vscode";
-import { parseFile } from "../Parser/spParser";
 import { basename, dirname, join, resolve } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
-import { SPItem, IncludeItem, Include } from "./spItems";
+import { SPItem, IncludeItem } from "./spItems";
 import { events } from "../Misc/sourceEvents";
 import {
   GetLastFuncName,
@@ -62,35 +61,7 @@ export class ItemsRepository implements Disposable {
     newDocumentCallback(this, URI.file(filePath));
   }
 
-  public readUnscannedImports(includes: Include[]) {
-    let debugSetting = Workspace.getConfiguration("sourcepawn").get(
-      "trace.server"
-    );
-    let debug = debugSetting == "messages" || debugSetting == "verbose";
-    for (let include of includes) {
-      if (debug) console.log(include.uri.toString());
-      let completion = this.fileItems.get(include.uri);
-      if (completion === undefined) {
-        if (debug) console.log("reading", include.uri.toString());
-        let file = URI.parse(include.uri).fsPath;
-        if (existsSync(file)) {
-          if (debug) console.log("found", include.uri.toString());
-          let new_completions: FileItems = new FileItems(include.uri);
-          try {
-            parseFile(file, new_completions, this, include.IsBuiltIn);
-          } catch (err) {
-            console.error(err, include.uri.toString());
-          }
-          if (debug) console.log("parsed", include.uri.toString());
-          this.fileItems.set(include.uri, new_completions);
-          if (debug) console.log("added", include.uri.toString());
-          this.readUnscannedImports(new_completions.includes);
-        }
-      }
-    }
-  }
-
-  getEventCompletions(): CompletionList {
+  public getEventCompletions(): CompletionList {
     return new CompletionList(events);
   }
 

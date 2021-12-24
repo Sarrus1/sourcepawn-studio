@@ -1,7 +1,14 @@
-import { TextDocumentChangeEvent, FileCreateEvent } from "vscode";
+import {
+  TextDocumentChangeEvent,
+  FileCreateEvent,
+  workspace as Workspace,
+} from "vscode";
 import { URI } from "vscode-uri";
 import { extname } from "path";
+import { existsSync } from "fs";
+
 import { ItemsRepository } from "./spItemsRepository";
+import { Include } from "./spItems";
 import { FileItems } from "./spFilesRepository";
 import { parseText, parseFile } from "../Parser/spParser";
 
@@ -46,7 +53,7 @@ export function handleDocumentChange(
   } catch (error) {
     console.log(error);
   }
-  itemsRepo.readUnscannedImports(fileItems.includes);
+  readUnscannedImports(itemsRepo, fileItems.includes);
   itemsRepo.fileItems.set(fileUri, fileItems);
 }
 
@@ -76,6 +83,45 @@ export function newDocumentCallback(
   } catch (error) {
     console.error(error);
   }
-  itemsRepo.readUnscannedImports(fileItems.includes);
+  readUnscannedImports(itemsRepo, fileItems.includes);
   itemsRepo.fileItems.set(uri.toString(), fileItems);
+}
+
+/**
+ * Recursively read the unparsed includes from a array of Include objects.
+ * @param  {ItemsRepository} itemsRepo    The itemsRepository object constructed in the activation event.
+ * @param  {Include[]} includes           The array of Include objects to parse.
+ * @returns void
+ */
+function readUnscannedImports(
+  itemsRepo: ItemsRepository,
+  includes: Include[]
+): void {
+  const debug = ["messages", "verbose"].includes(
+    Workspace.getConfiguration("sourcepawn").get("trace.server")
+  );
+  includes.forEach((include) => {
+    if (debug) console.log("reading", include.uri.toString());
+
+    const filePath = URI.parse(include.uri).fsPath;
+
+    if (itemsRepo.fileItems.has(include.uri) || !existsSync(filePath)) {
+      return;
+    }
+
+    if (debug) console.log("found", include.uri.toString());
+
+    let fileItems: FileItems = new FileItems(include.uri);
+    try {
+      parseFile(filePath, fileItems, itemsRepo, include.IsBuiltIn);
+    } catch (err) {
+      console.error(err, include.uri.toString());
+    }
+    if (debug) console.log("parsed", include.uri.toString());
+
+    itemsRepo.fileItems.set(include.uri, fileItems);
+    if (debug) console.log("added", include.uri.toString());
+
+    readUnscannedImports(itemsRepo, fileItems.includes);
+  });
 }
