@@ -9,11 +9,14 @@ import {
   CompletionItemKind,
   WorkspaceFolder,
   Range,
+  FileCreateEvent,
+  TextDocumentChangeEvent,
 } from "vscode";
-import { basename, dirname, join, resolve } from "path";
+import { parseText, parseFile } from "../Parser/spParser";
+import { basename, dirname, join, resolve, extname } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
-import { SPItem, IncludeItem } from "./spItems";
+import { SPItem, IncludeItem, Include } from "./spItems";
 import { events } from "../Misc/sourceEvents";
 import {
   GetLastFuncName,
@@ -37,6 +40,110 @@ export class ItemsRepository implements Disposable {
   }
 
   public dispose() {}
+
+  public handleAddedDocument(event: FileCreateEvent) {
+    for (let file of event.files) {
+      this.newDocumentCallback(URI.file(file.fsPath));
+    }
+  }
+
+  public handleDocumentChange(event: TextDocumentChangeEvent) {
+    if (event.contentChanges.length > 0) {
+      let textChange = event.contentChanges[0].text;
+      // Don't parse the document every character changes.
+      if (/\w+/.test(textChange)) {
+        return;
+      }
+    }
+
+    let this_completions: FileItems = new FileItems(
+      event.document.uri.toString()
+    );
+    let file_path: string = event.document.uri.fsPath;
+    this.documents.add(event.document.uri.toString());
+    // Some file paths are appened with .git
+    file_path = file_path.replace(".git", "");
+    // We use parse_text here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
+    try {
+      parseText(event.document.getText(), file_path, this_completions, this);
+    } catch (error) {
+      console.log(error);
+    }
+    this.readUnscannedImports(this_completions.includes);
+    this.items.set(event.document.uri.toString(), this_completions);
+  }
+
+  public handleNewDocument(document: TextDocument) {
+    this.newDocumentCallback(document.uri);
+  }
+
+  public newDocumentCallback(uri: URI) {
+    let ext: string = extname(uri.fsPath);
+    if (ext != ".inc" && ext != ".sp") {
+      return;
+    }
+    let this_completions: FileItems = new FileItems(uri.toString());
+    let file_path: string = uri.fsPath;
+    // Some file paths are appened with .git
+    if (file_path.includes(".git")) {
+      return;
+    }
+    this.documents.add(uri.toString());
+    try {
+      parseFile(file_path, this_completions, this);
+    } catch (error) {
+      console.log(error);
+    }
+
+    this.readUnscannedImports(this_completions.includes);
+    this.items.set(uri.toString(), this_completions);
+  }
+
+  public handle_document_opening(path: string) {
+    let uri: string = URI.file(path).toString();
+    if (this.items.has(uri)) {
+      return;
+    }
+    let this_completions: FileItems = new FileItems(uri);
+    // Some file paths are appened with .git
+    path = path.replace(".git", "");
+    try {
+      parseFile(path, this_completions, this);
+    } catch (error) {
+      console.log(error);
+    }
+
+    this.readUnscannedImports(this_completions.includes);
+    this.items.set(uri, this_completions);
+  }
+
+  public readUnscannedImports(includes: Include[]) {
+    let debugSetting = Workspace.getConfiguration("sourcepawn").get(
+      "trace.server"
+    );
+    let debug = debugSetting == "messages" || debugSetting == "verbose";
+    for (let include of includes) {
+      if (debug) console.log(include.uri.toString());
+      let completion = this.items.get(include.uri);
+      if (completion === undefined) {
+        if (debug) console.log("reading", include.uri.toString());
+        let file = URI.parse(include.uri).fsPath;
+        if (existsSync(file)) {
+          if (debug) console.log("found", include.uri.toString());
+          let new_completions: FileItems = new FileItems(include.uri);
+          try {
+            parseFile(file, new_completions, this, include.IsBuiltIn);
+          } catch (err) {
+            console.error(err, include.uri.toString());
+          }
+          if (debug) console.log("parsed", include.uri.toString());
+          this.items.set(include.uri, new_completions);
+          if (debug) console.log("added", include.uri.toString());
+          this.readUnscannedImports(new_completions.includes);
+        }
+      }
+    }
+  }
 
   getEventCompletions(): CompletionList {
     return new CompletionList(events);

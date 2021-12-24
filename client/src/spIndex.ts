@@ -80,7 +80,7 @@ export function activate(context: ExtensionContext) {
 
   let mainPath: string = findMainPath();
   if (mainPath !== undefined && mainPath != "") {
-    providers.handle_document_opening(mainPath);
+    providers.itemsRepository.handle_document_opening(mainPath);
   } else if (mainPath == "") {
     window
       .showErrorMessage(
@@ -99,13 +99,13 @@ export function activate(context: ExtensionContext) {
 
   // Load the currently opened file
   if (window.activeTextEditor != undefined) {
-    providers.handle_document_opening(
+    providers.itemsRepository.handle_document_opening(
       window.activeTextEditor.document.uri.fsPath
     );
   }
   window.onDidChangeActiveTextEditor((e) => {
     if (e !== undefined) {
-      providers.handle_document_opening(e.document.uri.fsPath);
+      providers.itemsRepository.handle_document_opening(e.document.uri.fsPath);
     }
   });
 
@@ -188,17 +188,17 @@ export function activate(context: ExtensionContext) {
   );
 
   Workspace.onDidChangeTextDocument(
-    providers.handleDocumentChange,
+    providers.itemsRepository.handleDocumentChange,
     providers,
     context.subscriptions
   );
   Workspace.onDidOpenTextDocument(
-    providers.handleNewDocument,
+    providers.itemsRepository.handleNewDocument,
     providers,
     context.subscriptions
   );
   Workspace.onDidCreateFiles(
-    providers.handleAddedDocument,
+    providers.itemsRepository.handleAddedDocument,
     providers,
     context.subscriptions
   );
