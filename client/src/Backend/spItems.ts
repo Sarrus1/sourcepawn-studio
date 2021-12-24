@@ -27,6 +27,7 @@ export interface SPItem {
   calls?: Location[];
   IsBuiltIn?: boolean;
   enumStructName?: string;
+  commitCharacters?: string[];
 
   toCompletionItem(file: string, lastFuncName?: string): CompletionItem;
   toDefinitionItem(): LocationLink;
@@ -51,6 +52,7 @@ export class FunctionItem implements SPItem {
   IsBuiltIn: boolean;
   kind = CompletionItemKind.Function;
   type: string;
+  commitCharacters = [';', '(', ','];
 
   constructor(
     name: string,
@@ -79,6 +81,7 @@ export class FunctionItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: basename(this.file),
+      commitCharacters: this.commitCharacters
     };
   }
 
@@ -144,6 +147,7 @@ export class MethodMapItem implements SPItem {
   IsBuiltIn: boolean;
   file: string;
   fullRange: Range;
+  commitCharacters = [';', '.', '('];
 
   constructor(
     name: string,
@@ -169,6 +173,7 @@ export class MethodMapItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: basename(this.file, ".inc"),
+      commitCharacters: this.commitCharacters
     };
   }
 
@@ -227,6 +232,7 @@ export class MethodItem implements SPItem {
   range: Range;
   IsBuiltIn: boolean;
   file: string;
+  commitCharacters = [';', '('];
 
   constructor(
     parent: string,
@@ -261,6 +267,7 @@ export class MethodItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: this.parent,
+      commitCharacters: this.commitCharacters
     };
   }
 
@@ -320,6 +327,7 @@ export class DefineItem implements SPItem {
   range: Range;
   calls: Location[];
   fullRange: Range;
+  commitCharacters = [';', ','];
 
   constructor(
     name: string,
@@ -343,6 +351,7 @@ export class DefineItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: this.file,
+      commitCharacters: this.commitCharacters
     };
   }
 
@@ -386,6 +395,7 @@ export class VariableItem implements SPItem {
   range: Range;
   type: string;
   enumStructName: string;
+  commitCharacters = [';', '.'];
 
   constructor(
     name: string,
@@ -409,11 +419,13 @@ export class VariableItem implements SPItem {
         return {
           label: this.name,
           kind: this.kind,
+          commitCharacters: this.commitCharacters
         };
       } else if (this.parent === globalIdentifier) {
         return {
           label: this.name,
           kind: this.kind,
+          commitCharacters: this.commitCharacters
         };
       }
       return undefined;
@@ -421,6 +433,7 @@ export class VariableItem implements SPItem {
       return {
         label: this.name,
         kind: this.kind,
+        commitCharacters: this.commitCharacters
       };
     }
   }
@@ -458,6 +471,7 @@ export class EnumItem implements SPItem {
   description: string;
   range: Range;
   fullRange: Range;
+  commitCharacters = [';'];
 
   constructor(name: string, file: string, description: string, range: Range) {
     this.name = name;
@@ -471,6 +485,7 @@ export class EnumItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: basename(this.file),
+      commitCharacters: this.commitCharacters
     };
   }
 
@@ -518,6 +533,7 @@ export class EnumMemberItem implements SPItem {
   range: Range;
   calls: Location[];
   IsBuiltIn: boolean;
+  commitCharacters = [';'];
 
   constructor(
     name: string,
@@ -541,6 +557,7 @@ export class EnumMemberItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: this.parent === "" ? basename(this.file) : this.parent,
+      commitCharacters: this.commitCharacters
     };
   }
 
@@ -591,6 +608,7 @@ export class EnumStructItem implements SPItem {
   kind = CompletionItemKind.Struct;
   range: Range;
   fullRange: Range;
+  commitCharacters = [';'];
 
   constructor(name: string, file: string, description: string, range: Range) {
     this.name = name;
@@ -604,6 +622,7 @@ export class EnumStructItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: basename(this.file),
+      commitCharacters: this.commitCharacters
     };
   }
 
@@ -651,6 +670,7 @@ export class EnumStructMemberItem implements SPItem {
   kind = CompletionItemKind.Property;
   parent: string;
   range: Range;
+  commitCharacters = [';'];
 
   constructor(
     name: string,
@@ -674,6 +694,7 @@ export class EnumStructMemberItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: this.enumStruct.name,
+      commitCharacters: this.commitCharacters
     };
   }
 
@@ -717,6 +738,8 @@ export class PropertyItem implements SPItem {
   kind = CompletionItemKind.Property;
   range: Range;
   fullRange: Range;
+  commitCharacters = [';', '.'];
+
   constructor(
     parent: string,
     name: string,
@@ -740,6 +763,7 @@ export class PropertyItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: this.parent,
+      commitCharacters: this.commitCharacters
     };
   }
 
@@ -782,6 +806,8 @@ export class ConstantItem implements SPItem {
   name: string;
   kind = CompletionItemKind.Constant;
   calls: Location[];
+  commitCharacters = [';', ','];
+
   constructor(name: string) {
     this.name = name;
     this.calls = [];
@@ -792,6 +818,7 @@ export class ConstantItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: "",
+      commitCharacters: this.commitCharacters
     };
   }
 
@@ -856,6 +883,8 @@ export class IncludeItem implements SPItem {
 export class KeywordItem implements SPItem {
   name: string;
   kind = CompletionItemKind.Keyword;
+  commitCharacters = [';', ':', '<', '('];
+
   constructor(name: string) {
     this.name = name;
   }
@@ -865,6 +894,7 @@ export class KeywordItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: "",
+      commitCharacters: this.commitCharacters
     };
   }
 
@@ -964,6 +994,7 @@ export class TypeSetItem implements SPItem {
   kind = CompletionItemKind.TypeParameter;
   range: Range;
   fullRange: Range;
+  commitCharacters = [';', ','];
 
   constructor(
     name: string,
@@ -986,6 +1017,7 @@ export class TypeSetItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: basename(this.file),
+      commitCharacters: this.commitCharacters
     };
   }
 
