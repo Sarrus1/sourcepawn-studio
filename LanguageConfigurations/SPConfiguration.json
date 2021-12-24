@@ -9,20 +9,14 @@
     ["(", ")"]
   ],
   "autoClosingPairs": [
-    ["{", "}"],
-    ["[", "]"],
-    ["(", ")"],
-    {
-      "open": "\"",
-      "close": "\"",
-      "notIn": ["string"]
-    },
-    {
-      "open": "'",
-      "close": "'",
-      "notIn": ["string"]
-    }
+    { "open": "{", "close": "}" },
+    { "open": "[", "close": "]" },
+    { "open": "(", "close": ")" },
+    { "open": "'", "close": "'", "notIn": ["string", "comment"] },
+    { "open": "\"", "close": "\"", "notIn": ["string"] },
+    { "open": "/*", "close": " */", "notIn": ["string"] }
   ],
+  "autoCloseBefore": ";:.,=}])>` \n\t",
   "surroundingPairs": [
     ["{", "}"],
     ["[", "]"],
@@ -30,67 +24,14 @@
     ["\"", "\""],
     ["'", "'"]
   ],
-  "simpleTerms": {
-    "\"struct\"": "control",
-    "\"enum\"": "control",
-    "\"union\"": "control",
-    "\"typedef\"": "control",
-    "\"class\"": "control",
-    "\"using\"": "control",
-    "\"namespace\"": "control",
-    "\"template\"": "control",
-    "\"typename\"": "control",
-    "\"try\"": "control",
-    "\"catch\"": "control",
-    "\"throw\"": "control",
-
-    "\"sizeof\"": "operator",
-    "\"new\"": "operator",
-    "\".\"": "operator",
-    "\"->\"": "operator",
-    "\"*\"": "operator",
-    "\"-\"": "operator",
-    "\"+\"": "operator",
-    "\"/\"": "operator",
-    "\"%\"": "operator",
-    "\"++\"": "operator",
-    "\"--\"": "operator",
-    "\"==\"": "operator",
-    "\"!\"": "operator",
-    "\"!=\"": "operator",
-    "\"<\"": "operator",
-    "\">\"": "operator",
-    "\">=\"": "operator",
-    "\"<=\"": "operator",
-    "\"&&\"": "operator",
-    "\"||\"": "operator",
-    "\"&\"": "operator",
-    "\"|\"": "operator",
-    "\"^\"": "operator",
-    "\"~\"": "operator",
-    "\"<<\"": "operator",
-    "\">>\"": "operator",
-    "\"=\"": "operator",
-    "\"+=\"": "operator",
-    "\"-=\"": "operator",
-    "\"*=\"": "operator",
-    "\"/=\"": "operator",
-    "\"%=\"": "operator",
-    "\"<<=\"": "operator",
-    "\">>=\"": "operator",
-    "\"&=\"": "operator",
-    "\"^=\"": "operator",
-    "\"|=\"": "operator",
-    "\"?\"": "operator",
-    "\"::\"": "operator",
-
-    "\"#if\"": "directive",
-    "\"#ifdef\"": "directive",
-    "\"#ifndef\"": "directive",
-    "\"#elif\"": "directive",
-    "\"#else\"": "directive",
-    "\"#endif\"": "directive",
-    "\"#define\"": "directive",
-    "\"#include\"": "directive"
+  "folding": {
+    "markers": {
+      "start": "^(?!\\R)(\\s*(?:\\/[\\/\\*]\\s*#(?:pragma )?region|section)|if|public |static(?!int|bool|char|float)|stock |#if(?:n|def)?|for)",
+      "end": "^(?!\\R)(\\s*(?:\\/[\\/\\*]\\s*#(?:pragma )?endregion|endsection)|})"
+    }
+  },
+  "indentationRules": {
+    "increaseIndentPattern": "^((?!\\/\\/).)*(\\{[^}\"'`]*|\\([^)\"'`]*|\\[[^\\]\"'`]*)$",
+    "decreaseIndentPattern": "^((?!.*?\\/\\*).*\\*/)?\\s*[\\)\\}\\]].*$"
   }
 }
