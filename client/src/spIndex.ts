@@ -80,7 +80,7 @@ export function activate(context: ExtensionContext) {
 
   let mainPath: string = findMainPath();
   if (mainPath !== undefined && mainPath != "") {
-    providers.itemsRepository.handle_document_opening(mainPath);
+    providers.itemsRepository.handleDocumentOpening(mainPath);
   } else if (mainPath == "") {
     window
       .showErrorMessage(
@@ -99,13 +99,13 @@ export function activate(context: ExtensionContext) {
 
   // Load the currently opened file
   if (window.activeTextEditor != undefined) {
-    providers.itemsRepository.handle_document_opening(
+    providers.itemsRepository.handleDocumentOpening(
       window.activeTextEditor.document.uri.fsPath
     );
   }
   window.onDidChangeActiveTextEditor((e) => {
     if (e !== undefined) {
-      providers.itemsRepository.handle_document_opening(e.document.uri.fsPath);
+      providers.itemsRepository.handleDocumentOpening(e.document.uri.fsPath);
     }
   });
 

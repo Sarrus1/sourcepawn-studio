@@ -52,7 +52,7 @@ export function parseSMApi(itemsRepo: ItemsRepository): void {
       if (debug) console.log("SM API Done parsing", file);
 
       let uri = URI.file(file).toString();
-      itemsRepo.items.set(uri, items);
+      itemsRepo.fileItems.set(uri, items);
       itemsRepo.documents.add(uri);
 
       if (debug) console.log("SM API Done dealing with", uri);

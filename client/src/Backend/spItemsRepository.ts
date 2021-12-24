@@ -12,8 +12,8 @@ import {
   FileCreateEvent,
   TextDocumentChangeEvent,
 } from "vscode";
-import { parseText, parseFile } from "../Parser/spParser";
-import { basename, dirname, join, resolve, extname } from "path";
+import { parseFile } from "../Parser/spParser";
+import { basename, dirname, join, resolve } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 import { SPItem, IncludeItem, Include } from "./spItems";
@@ -27,14 +27,19 @@ import {
 } from "../Providers/spDefinitionProvider";
 import { globalIdentifier } from "../Misc/spConstants";
 import { FileItems } from "./spFilesRepository";
+import {
+  handleAddedDocument,
+  handleDocumentChange,
+  newDocumentCallback,
+} from "./spFileHandlers";
 
 export class ItemsRepository implements Disposable {
-  public items: Map<string, FileItems>;
+  public fileItems: Map<string, FileItems>;
   public documents: Set<string>;
   private globalState: Memento;
 
   constructor(globalState?: Memento) {
-    this.items = new Map();
+    this.fileItems = new Map();
     this.documents = new Set<string>();
     this.globalState = globalState;
   }
@@ -42,79 +47,19 @@ export class ItemsRepository implements Disposable {
   public dispose() {}
 
   public handleAddedDocument(event: FileCreateEvent) {
-    for (let file of event.files) {
-      this.newDocumentCallback(URI.file(file.fsPath));
-    }
+    handleAddedDocument(this, event);
   }
 
   public handleDocumentChange(event: TextDocumentChangeEvent) {
-    if (event.contentChanges.length > 0) {
-      let textChange = event.contentChanges[0].text;
-      // Don't parse the document every character changes.
-      if (/\w+/.test(textChange)) {
-        return;
-      }
-    }
-
-    let this_completions: FileItems = new FileItems(
-      event.document.uri.toString()
-    );
-    let file_path: string = event.document.uri.fsPath;
-    this.documents.add(event.document.uri.toString());
-    // Some file paths are appened with .git
-    file_path = file_path.replace(".git", "");
-    // We use parse_text here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
-    try {
-      parseText(event.document.getText(), file_path, this_completions, this);
-    } catch (error) {
-      console.log(error);
-    }
-    this.readUnscannedImports(this_completions.includes);
-    this.items.set(event.document.uri.toString(), this_completions);
+    handleDocumentChange(this, event);
   }
 
   public handleNewDocument(document: TextDocument) {
-    this.newDocumentCallback(document.uri);
+    newDocumentCallback(this, document.uri);
   }
 
-  public newDocumentCallback(uri: URI) {
-    let ext: string = extname(uri.fsPath);
-    if (ext != ".inc" && ext != ".sp") {
-      return;
-    }
-    let this_completions: FileItems = new FileItems(uri.toString());
-    let file_path: string = uri.fsPath;
-    // Some file paths are appened with .git
-    if (file_path.includes(".git")) {
-      return;
-    }
-    this.documents.add(uri.toString());
-    try {
-      parseFile(file_path, this_completions, this);
-    } catch (error) {
-      console.log(error);
-    }
-
-    this.readUnscannedImports(this_completions.includes);
-    this.items.set(uri.toString(), this_completions);
-  }
-
-  public handle_document_opening(path: string) {
-    let uri: string = URI.file(path).toString();
-    if (this.items.has(uri)) {
-      return;
-    }
-    let this_completions: FileItems = new FileItems(uri);
-    // Some file paths are appened with .git
-    path = path.replace(".git", "");
-    try {
-      parseFile(path, this_completions, this);
-    } catch (error) {
-      console.log(error);
-    }
-
-    this.readUnscannedImports(this_completions.includes);
-    this.items.set(uri, this_completions);
+  public handleDocumentOpening(filePath: string) {
+    newDocumentCallback(this, URI.file(filePath));
   }
 
   public readUnscannedImports(includes: Include[]) {
@@ -124,7 +69,7 @@ export class ItemsRepository implements Disposable {
     let debug = debugSetting == "messages" || debugSetting == "verbose";
     for (let include of includes) {
       if (debug) console.log(include.uri.toString());
-      let completion = this.items.get(include.uri);
+      let completion = this.fileItems.get(include.uri);
       if (completion === undefined) {
         if (debug) console.log("reading", include.uri.toString());
         let file = URI.parse(include.uri).fsPath;
@@ -137,7 +82,7 @@ export class ItemsRepository implements Disposable {
             console.error(err, include.uri.toString());
           }
           if (debug) console.log("parsed", include.uri.toString());
-          this.items.set(include.uri, new_completions);
+          this.fileItems.set(include.uri, new_completions);
           if (debug) console.log("added", include.uri.toString());
           this.readUnscannedImports(new_completions.includes);
         }
@@ -431,12 +376,12 @@ export class ItemsRepository implements Disposable {
         }
       }
       let uri = URI.file(MainPath).toString();
-      allItems = this.items.get(uri);
+      allItems = this.fileItems.get(uri);
       if (!includes.has(uri)) {
         includes.add(uri);
       }
     } else {
-      allItems = this.items.get(uri.toString());
+      allItems = this.fileItems.get(uri.toString());
       includes.add(uri.toString());
     }
     if (allItems !== undefined) {
@@ -455,7 +400,7 @@ export class ItemsRepository implements Disposable {
   }
 
   getFileItems(file: string): SPItem[] {
-    let file_completions: FileItems = this.items.get(file);
+    let file_completions: FileItems = this.fileItems.get(file);
     let completion_list: SPItem[] = [];
     if (file_completions) {
       return Array.from(file_completions.values());
@@ -467,7 +412,7 @@ export class ItemsRepository implements Disposable {
     for (let include of completions.includes) {
       if (!files.has(include.uri)) {
         files.add(include.uri);
-        let include_completions = this.items.get(include.uri);
+        let include_completions = this.fileItems.get(include.uri);
         if (include_completions) {
           this.getIncludedFiles(include_completions, files);
         }
