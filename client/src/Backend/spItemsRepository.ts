@@ -1,5 +1,4 @@
 import {
-  CompletionItem,
   workspace as Workspace,
   Memento,
   Disposable,
@@ -12,7 +11,7 @@ import {
   FileCreateEvent,
   TextDocumentChangeEvent,
 } from "vscode";
-import { basename, dirname, join, resolve } from "path";
+import { dirname, join, resolve } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 import { SPItem, IncludeItem } from "./spItems";
@@ -63,82 +62,6 @@ export class ItemsRepository implements Disposable {
 
   public getEventCompletions(): CompletionList {
     return new CompletionList(events);
-  }
-
-  getCompletions(document: TextDocument, position: Position): CompletionList {
-    let line = document.lineAt(position.line).text;
-    let isMethod = checkIfMethod(line, position);
-    let allItems: SPItem[] = this.getAllItems(document.uri);
-    let completionsList: CompletionList = new CompletionList();
-    if (allItems !== []) {
-      let lastFunc: string = GetLastFuncName(position, document, allItems);
-      let {
-        lastEnumStructOrMethodMap,
-        isAMethodMap,
-      } = getLastEnumStructNameOrMethodMap(position, document, allItems);
-      if (isMethod) {
-        let { variableType, words } = this.getTypeOfVariable(
-          line,
-          position,
-          allItems,
-          lastFunc,
-          lastEnumStructOrMethodMap
-        );
-        let variableTypes: string[] = this.getAllInheritances(
-          variableType,
-          allItems
-        );
-        let existingNames: string[] = [];
-
-        // Prepare check for static methods
-        let isMethodMap: boolean;
-        if (words.length === 1) {
-          let methodmap = allItems.find(
-            (e) => e.name === words[0] && e.kind === CompletionItemKind.Class
-          );
-          isMethodMap = methodmap !== undefined;
-        }
-        for (let item of allItems) {
-          if (
-            (item.kind === CompletionItemKind.Method ||
-              item.kind === CompletionItemKind.Property) &&
-            variableTypes.includes(item.parent) &&
-            // Don't include the constructor of the methodmap
-            !variableTypes.includes(item.name) &&
-            // Check for static methods
-            ((!isMethodMap && !item.detail.includes("static")) ||
-              (isMethodMap && item.detail.includes("static")))
-          ) {
-            if (!existingNames.includes(item.name)) {
-              completionsList.items.push(
-                item.toCompletionItem(document.uri.fsPath, lastFunc)
-              );
-              existingNames.push(item.name);
-            }
-          }
-        }
-        return completionsList;
-      }
-      let existingNames: string[] = [];
-      for (let item of allItems) {
-        if (
-          !(
-            item.kind === CompletionItemKind.Method ||
-            item.kind === CompletionItemKind.Property
-          )
-        ) {
-          if (!existingNames.includes(item.name)) {
-            // Make sure we don't add a variable to existingNames if it's not in the scope of the current function.
-            let newItem = item.toCompletionItem(document.uri.fsPath, lastFunc);
-            if (newItem !== undefined) {
-              completionsList.items.push(newItem);
-              existingNames.push(item.name);
-            }
-          }
-        }
-      }
-      return completionsList;
-    }
   }
 
   getAllInheritances(variableType: string, allCompletions: SPItem[]): string[] {
@@ -559,8 +482,4 @@ export class ItemsRepository implements Disposable {
     });
     return items;
   }
-}
-
-function checkIfMethod(line: string, position: Position): boolean {
-  return /(?:\.|\:\:)\w*$/.test(line.slice(0, position.character));
 }

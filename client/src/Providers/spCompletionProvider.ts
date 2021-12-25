@@ -10,7 +10,10 @@ import {
   GetLastFuncName,
   getLastEnumStructNameOrMethodMap,
 } from "./spDefinitionProvider";
-import { getIncludeFileCompletionList } from "../Backend/spItemsGetters";
+import {
+  getCompletionListFromPosition,
+  getIncludeFileCompletionList,
+} from "../Backend/spItemsGetters";
 
 export function completionProvider(
   itemsRepo: ItemsRepository,
@@ -108,5 +111,5 @@ export function completionProvider(
   if (/[^:]\:$/.test(text)) {
     return undefined;
   }
-  return itemsRepo.getCompletions(document, position);
+  return getCompletionListFromPosition(itemsRepo, document, position);
 }
