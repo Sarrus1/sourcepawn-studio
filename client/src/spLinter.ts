@@ -19,6 +19,7 @@ import { join, basename, extname, dirname, resolve } from "path";
 import { execFile } from "child_process";
 import { URI } from "vscode-uri";
 import { errorDetails } from "./Misc/errorMessages";
+import { getAllPossibleIncludeFolderPaths } from "./Backend/spFileHandlers";
 
 let myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
   .extensionPath;
@@ -146,41 +147,12 @@ export function refreshDiagnostics(
         for (let i = 0; i < compilerOptions.length; i++) {
           spcomp_opt.push(" " + compilerOptions[i]);
         }
-        /*
-        let includes_dirs: string[] = Workspace.getConfiguration(
-          "sourcepawn",
-          workspaceFolder
-        ).get("optionalIncludeDirsPaths");
-        // Add the optional includes folders.
-        for (let includes_dir of includes_dirs) {
-          if (includes_dir != "") {
-            spcomp_opt.push(
-              "-i" +
-                resolve(
-                  Workspace.workspaceFolders.map(
-                    (folder) => folder.uri.fsPath
-                  ) + includes_dir
-                )
-            );
-          }
-        }*/
 
         // Add the optional includes folders.
-        let optionalIncludeDirs: string[] = Workspace.getConfiguration(
-          "sourcepawn",
-          workspaceFolder
-        ).get("optionalIncludeDirsPaths");
-        optionalIncludeDirs = optionalIncludeDirs.map((e) =>
-          resolve(
-            workspaceFolder === undefined ? "" : workspaceFolder.uri.fsPath,
-            e
-          )
+        getAllPossibleIncludeFolderPaths(document.uri, true).forEach((e) =>
+          spcomp_opt.push(`-i${e}`)
         );
-        for (let includeDir of optionalIncludeDirs) {
-          if (includeDir !== "") {
-            spcomp_opt.push("-i" + includeDir);
-          }
-        }
+
         // Run the blank compile.
         execFile(spcomp, spcomp_opt, (error, stdout) => {
           // If it compiled successfully, unlink the temporary files.

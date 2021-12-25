@@ -4,6 +4,7 @@ import { basename, extname, join, resolve, dirname } from "path";
 import { existsSync, mkdirSync } from "fs";
 import { platform } from "os";
 import { run as uploadToServerCommand } from "./uploadToServer";
+import { getAllPossibleIncludeFolderPaths } from "../Backend/spFileHandlers";
 
 /**
  * Callback for the Compile file command.
@@ -143,18 +144,9 @@ export async function run(args: URI): Promise<void> {
   command += " " + compilerOptions.join(" ");
 
   // Add the optional includes folders.
-  let optionalIncludeDirs: string[] = Workspace.getConfiguration(
-    "sourcepawn",
-    workspaceFolder
-  ).get("optionalIncludeDirsPaths");
-  optionalIncludeDirs = optionalIncludeDirs.map((e) =>
-    resolve(workspaceFolder === undefined ? "" : workspaceFolder.uri.fsPath, e)
+  getAllPossibleIncludeFolderPaths(URI.file(fileToCompilePath), true).forEach(
+    (e) => (command += ` -i='${e}'`)
   );
-  for (let includeDir of optionalIncludeDirs) {
-    if (includeDir !== "") {
-      command += " -i=" + "'" + includeDir + "'";
-    }
-  }
 
   try {
     terminal.sendText(command);

@@ -10,6 +10,7 @@ import {
   GetLastFuncName,
   getLastEnumStructNameOrMethodMap,
 } from "./spDefinitionProvider";
+import { getIncludeFileCompletionList } from "../Backend/spItemsGetters";
 
 export function completionProvider(
   itemsRepo: ItemsRepository,
@@ -27,7 +28,7 @@ export function completionProvider(
     if (position.character > 0) {
       const line = document
         .lineAt(position.line)
-        .text.substr(0, position.character);
+        .text.substring(0, position.character);
 
       let match = line.match(
         /(\w*)\s+([\w.\(\)]+)(?:\[[\w+ \d]+\])*\s*\=\s*new\s+(\w*)$/
@@ -90,7 +91,11 @@ export function completionProvider(
     match = text.match(/^\s*#\s*include\s*(?:\"([^\"]*)\"?)$/);
   }
   if (match) {
-    return itemsRepo.getIncludeCompletions(document, match[1]);
+    return getIncludeFileCompletionList(
+      itemsRepo.documents,
+      document,
+      match[1]
+    );
   }
   match = text.match(
     /^\s*(?:HookEvent|HookEventEx)\s*\(\s*(\"[^\"]*|\'[^\']*)$/
