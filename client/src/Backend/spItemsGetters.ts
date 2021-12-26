@@ -109,8 +109,6 @@ export function getItemFromPosition(
   const word = document.getText(range);
   const line = document.lineAt(position.line).text;
 
-  let match: RegExpMatchArray;
-
   if (isInAComment(range, document.uri, allItems) || isInAString(range, line)) {
     return undefined;
   }
@@ -143,22 +141,21 @@ export function getItemFromPosition(
         item.parent === lastEnumStructOrMethodMap &&
         item.name === word
     );
-    if (items.length !== 0) {
+    if (items !== undefined && items.length > 0) {
       return items;
     }
   }
 
   if (type === ObjectType.method) {
-    let line = document.lineAt(position.line).text;
     // If we are dealing with a method or property, look for the type of the variable
-    let { variableType, words } = getTypeOfVariable(
+    const { variableType, words } = getTypeOfVariable(
       line,
       position,
       allItems,
       lastFunc,
       lastEnumStructOrMethodMap
     );
-    let variableTypes = getAllInheritances(variableType, allItems);
+    const variableTypes = getAllInheritances(variableType, allItems);
     return allItems.filter(
       (item) =>
         MPC.includes(item.kind) &&
@@ -168,6 +165,7 @@ export function getItemFromPosition(
   }
 
   if (type === ObjectType.constructor) {
+    const match = line.match(/new\s+(\w+)/);
     return allItems.filter(
       (item) =>
         item.kind === CompletionItemKind.Constructor && item.name === match[1]
@@ -322,7 +320,7 @@ export function isMethodOrConstructor(
   );
   char = document.getText(newRange);
   if (/new\s+(\w+)$/.test(char)) {
-    ObjectType.constructor;
+    return ObjectType.constructor;
   }
   return ObjectType.variable;
 }
