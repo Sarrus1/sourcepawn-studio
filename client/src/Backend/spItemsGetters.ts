@@ -31,9 +31,10 @@ const MPC = [
 const MPCF = MPC.concat([CompletionItemKind.Function]);
 
 enum ObjectType {
-  variable,
-  method,
-  constructor,
+  Variable,
+  Method,
+  Constructor,
+  Function,
 }
 
 /**
@@ -119,7 +120,7 @@ export function getItemFromPosition(
     return includeItem;
   }
 
-  let type = isMethodOrConstructor(range, document);
+  let type = getType(range, document, position);
 
   const lastFunc: string = getLastFuncName(position, document, allItems);
 
@@ -130,23 +131,18 @@ export function getItemFromPosition(
 
   // If we match a property or a method of an enum struct
   // but not a local scopped variable inside an enum struct's method.
-  if (
-    lastEnumStructOrMethodMap !== globalIdentifier &&
-    lastFunc === globalIdentifier &&
-    !isAMethodMap
-  ) {
-    let items = allItems.filter(
-      (item) =>
-        MPC.includes(item.kind) &&
-        item.parent === lastEnumStructOrMethodMap &&
-        item.name === word
-    );
-    if (items !== undefined && items.length > 0) {
-      return items;
-    }
+  let items = makeEnumStructMethodItem(
+    lastEnumStructOrMethodMap,
+    lastFunc,
+    isAMethodMap,
+    allItems,
+    word
+  );
+  if (items !== undefined) {
+    return items;
   }
 
-  if (type === ObjectType.method) {
+  if (type === ObjectType.Method) {
     // If we are dealing with a method or property, look for the type of the variable
     const { variableType, words } = getTypeOfVariable(
       line,
@@ -164,7 +160,7 @@ export function getItemFromPosition(
     );
   }
 
-  if (type === ObjectType.constructor) {
+  if (type === ObjectType.Constructor) {
     const match = line.match(/new\s+(\w+)/);
     return allItems.filter(
       (item) =>
@@ -172,14 +168,8 @@ export function getItemFromPosition(
     );
   }
 
-  // Check if we are dealing with a function
-  let bIsFunction = isFunction(
-    range,
-    document,
-    document.lineAt(position.line).text.length
-  );
-  let items = [];
-  if (bIsFunction) {
+  items = [];
+  if (type === ObjectType.Function) {
     if (lastEnumStructOrMethodMap !== globalIdentifier) {
       // Check for functions and methods
       items = allItems.filter((item) => {
@@ -290,17 +280,57 @@ function makeIncludeItem(
 }
 
 /**
- * Checks if we are dealing with a method or a constructor, or a regular variable/function.
+ * Try to find a corresponding EnumStructMember item from a name, and the file scope.
+ * @param  {string} lastEnumStructOrMethodMap
+ * @param  {string} lastFunc
+ * @param  {boolean} isAMethodMap
+ * @param  {SPItem[]} allItems
+ * @param  {string} name
+ * @returns SPItem
+ */
+function makeEnumStructMethodItem(
+  lastEnumStructOrMethodMap: string,
+  lastFunc: string,
+  isAMethodMap: boolean,
+  allItems: SPItem[],
+  name: string
+): SPItem[] {
+  if (
+    lastEnumStructOrMethodMap !== globalIdentifier &&
+    lastFunc === globalIdentifier &&
+    !isAMethodMap
+  ) {
+    let items = allItems.filter(
+      (item) =>
+        MPC.includes(item.kind) &&
+        item.parent === lastEnumStructOrMethodMap &&
+        item.name === name
+    );
+    if (items !== undefined && items.length > 0) {
+      return items;
+    }
+  }
+}
+
+/**
+ * Checks if we are dealing with a method, a constructor, a function, or a regular variable.
  * @param  {Range} range            The range to check.
  * @param  {TextDocument} document  The document corresponding to the range.
+ * @param  {Position} position      The position of the line to check.
  * @returns ObjectType
  */
-export function isMethodOrConstructor(
+function getType(
   range: Range,
-  document: TextDocument
+  document: TextDocument,
+  position: Position
 ): ObjectType {
   if (range.start.character <= 1) {
-    ObjectType.variable;
+    if (
+      isFunction(range, document, document.lineAt(position.line).text.length)
+    ) {
+      return ObjectType.Function;
+    }
+    return ObjectType.Variable;
   }
   let newRange = new Range(
     range.start.line,
@@ -310,7 +340,7 @@ export function isMethodOrConstructor(
   );
   let char = document.getText(newRange);
   if (/(?:\w+\.|\:\:)/.test(char)) {
-    return ObjectType.method;
+    return ObjectType.Method;
   }
   newRange = new Range(
     range.start.line,
@@ -320,7 +350,10 @@ export function isMethodOrConstructor(
   );
   char = document.getText(newRange);
   if (/new\s+(\w+)$/.test(char)) {
-    return ObjectType.constructor;
+    return ObjectType.Constructor;
   }
-  return ObjectType.variable;
+  if (isFunction(range, document, document.lineAt(position.line).text.length)) {
+    return ObjectType.Function;
+  }
+  return ObjectType.Variable;
 }
