@@ -111,7 +111,7 @@ export function getItemFromPosition(
   }
 
   // Generate an include item if the line is an #include statement and return it.
-  let includeItem = makeIncludeItem(itemsRepo, document, line, position);
+  let includeItem = makeIncludeItem(document, line, position);
   if (includeItem !== undefined) {
     return includeItem;
   }
