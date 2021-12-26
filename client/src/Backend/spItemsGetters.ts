@@ -30,6 +30,8 @@ const MPC = MC.concat([CompletionItemKind.Property]);
 
 const MPCF = MPC.concat([CompletionItemKind.Function]);
 
+const CE = [CompletionItemKind.Class, CompletionItemKind.EnumMember];
+
 enum ObjectType {
   Variable,
   Method,
@@ -183,30 +185,11 @@ export function getItemFromPosition(
   if (items !== undefined && items.length > 0) {
     return items;
   }
-  items = allItems.filter((item) => {
-    if (MPC.includes(item.kind)) {
-      return false;
-    }
-    if (item.parent !== undefined) {
-      if (
-        [CompletionItemKind.Class, CompletionItemKind.EnumMember].includes(
-          item.kind
-        )
-      ) {
-        return item.name === word;
-      }
-      if (item.enumStructName !== undefined) {
-        return (
-          item.parent === globalIdentifier &&
-          item.name === word &&
-          item.enumStructName === lastEnumStructOrMethodMap
-        );
-      }
-      return item.parent === globalIdentifier && item.name === word;
-    }
-    return item.name === word;
+
+  return allItems.filter(lastResortItemFilterCallback, {
+    lastEnumStructOrMethodMap,
+    word,
   });
-  return items;
 }
 
 /**
@@ -356,4 +339,29 @@ function getType(
     return ObjectType.Function;
   }
   return ObjectType.Variable;
+}
+
+/**
+ * Callback of a filter function to try and find a corresponding object.
+ * @param  {SPItem} item
+ * @returns boolean
+ */
+function lastResortItemFilterCallback(item: SPItem): boolean {
+  if (MPC.includes(item.kind)) {
+    return false;
+  }
+  if (item.parent !== undefined) {
+    if (CE.includes(item.kind)) {
+      return item.name === this.word;
+    }
+    if (item.enumStructName !== undefined) {
+      return (
+        item.parent === globalIdentifier &&
+        item.name === this.word &&
+        item.enumStructName === this.lastEnumStructOrMethodMap
+      );
+    }
+    return item.parent === globalIdentifier && item.name === this.word;
+  }
+  return item.name === this.word;
 }
