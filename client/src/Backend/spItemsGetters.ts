@@ -22,6 +22,14 @@ import { ItemsRepository } from "./spItemsRepository";
 import { findMainPath } from "../spUtils";
 import { getIncludeExtension } from "./spUtils";
 
+const MPC = [
+  CompletionItemKind.Method,
+  CompletionItemKind.Property,
+  CompletionItemKind.Constructor,
+];
+
+const MPCF = MPC.concat([CompletionItemKind.Function]);
+
 enum ObjectType {
   variable,
   method,
@@ -115,11 +123,13 @@ export function getItemFromPosition(
 
   let type = isMethodOrConstructor(range, document);
 
-  let lastFunc: string = getLastFuncName(position, document, allItems);
-  let {
+  const lastFunc: string = getLastFuncName(position, document, allItems);
+
+  const {
     lastEnumStructOrMethodMap,
     isAMethodMap,
   } = getLastEnumStructNameOrMethodMap(position, document, allItems);
+
   // If we match a property or a method of an enum struct
   // but not a local scopped variable inside an enum struct's method.
   if (
@@ -129,11 +139,7 @@ export function getItemFromPosition(
   ) {
     let items = allItems.filter(
       (item) =>
-        [
-          CompletionItemKind.Method,
-          CompletionItemKind.Property,
-          CompletionItemKind.Constructor,
-        ].includes(item.kind) &&
+        MPC.includes(item.kind) &&
         item.parent === lastEnumStructOrMethodMap &&
         item.name === word
     );
@@ -155,11 +161,7 @@ export function getItemFromPosition(
     let variableTypes = getAllInheritances(variableType, allItems);
     return allItems.filter(
       (item) =>
-        [
-          CompletionItemKind.Method,
-          CompletionItemKind.Property,
-          CompletionItemKind.Constructor,
-        ].includes(item.kind) &&
+        MPC.includes(item.kind) &&
         variableTypes.includes(item.parent) &&
         item.name === word
     );
@@ -214,12 +216,7 @@ export function getItemFromPosition(
   }
   items = allItems.filter(
     (item) =>
-      ![
-        CompletionItemKind.Method,
-        CompletionItemKind.Property,
-        CompletionItemKind.Constructor,
-        CompletionItemKind.Function,
-      ].includes(item.kind) &&
+      !MPCF.includes(item.kind) &&
       item.name === word &&
       item.parent === lastFunc
   );
@@ -227,13 +224,7 @@ export function getItemFromPosition(
     return items;
   }
   items = allItems.filter((item) => {
-    if (
-      [
-        CompletionItemKind.Method,
-        CompletionItemKind.Property,
-        CompletionItemKind.Constructor,
-      ].includes(item.kind)
-    ) {
+    if (MPC.includes(item.kind)) {
       return false;
     }
     if (item.parent !== undefined) {
