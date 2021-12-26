@@ -7,13 +7,13 @@ import {
 } from "vscode";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import {
-  GetLastFuncName,
+  getLastFuncName,
   getLastEnumStructNameOrMethodMap,
 } from "./spDefinitionProvider";
 import {
   getCompletionListFromPosition,
   getIncludeFileCompletionList,
-} from "../Backend/spItemsGetters";
+} from "./Completions/spCompletionsGetters";
 
 export function completionProvider(
   itemsRepo: ItemsRepository,
@@ -43,7 +43,7 @@ export function completionProvider(
           // If the variable is not declared here, look up its type, as it
           // has not yet been parsed.
           let allItems = itemsRepo.getAllItems(document.uri);
-          let lastFuncName = GetLastFuncName(position, document, allItems);
+          let lastFuncName = getLastFuncName(position, document, allItems);
           let newPos = new Position(1, match[2].length + 1);
           let {
             lastEnumStructOrMethodMap,

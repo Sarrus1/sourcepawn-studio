@@ -9,13 +9,13 @@ import { basename } from "path";
 import { URI } from "vscode-uri";
 
 import {
-  GetLastFuncName,
+  getLastFuncName,
   getLastEnumStructNameOrMethodMap,
-} from "../Providers/spDefinitionProvider";
-import { SPItem } from "./spItems";
-import { getAllPossibleIncludeFolderPaths } from "./spFileHandlers";
-import { ItemsRepository } from "./spItemsRepository";
-import { isMethodCall } from "./spUtils";
+} from "../../Providers/spDefinitionProvider";
+import { SPItem } from "../../Backend/spItems";
+import { getAllPossibleIncludeFolderPaths } from "../../Backend/spFileHandlers";
+import { ItemsRepository } from "../../Backend/spItemsRepository";
+import { isMethodCall } from "../../Backend/spUtils";
 
 /**
  * Generate a CompletionList object of the possible includes file that can fit the already typed #include statement.
@@ -91,60 +91,18 @@ export function getCompletionListFromPosition(
   document: TextDocument,
   position: Position
 ): CompletionList {
-  let line = document.lineAt(position.line).text;
-  let isMethod = isMethodCall(line, position);
-  let allItems: SPItem[] = itemsRepo.getAllItems(document.uri);
-  let completionsList: CompletionList = new CompletionList();
-  if (allItems !== []) {
-    let lastFunc: string = GetLastFuncName(position, document, allItems);
-    let {
-      lastEnumStructOrMethodMap,
-      isAMethodMap,
-    } = getLastEnumStructNameOrMethodMap(position, document, allItems);
-    if (isMethod) {
-      let { variableType, words } = itemsRepo.getTypeOfVariable(
-        line,
-        position,
-        allItems,
-        lastFunc,
-        lastEnumStructOrMethodMap
-      );
-      let variableTypes: string[] = itemsRepo.getAllInheritances(
-        variableType,
-        allItems
-      );
-      let existingNames: string[] = [];
+  const allItems: SPItem[] = itemsRepo.getAllItems(document.uri);
+  if (allItems === []) {
+    return;
+  }
 
-      // Prepare check for static methods
-      let isMethodMap: boolean;
-      if (words.length === 1) {
-        let methodmap = allItems.find(
-          (e) => e.name === words[0] && e.kind === CompletionItemKind.Class
-        );
-        isMethodMap = methodmap !== undefined;
-      }
-      for (let item of allItems) {
-        if (
-          (item.kind === CompletionItemKind.Method ||
-            item.kind === CompletionItemKind.Property) &&
-          variableTypes.includes(item.parent) &&
-          // Don't include the constructor of the methodmap
-          !variableTypes.includes(item.name) &&
-          // Check for static methods
-          ((!isMethodMap && !item.detail.includes("static")) ||
-            (isMethodMap && item.detail.includes("static")))
-        ) {
-          if (!existingNames.includes(item.name)) {
-            completionsList.items.push(
-              item.toCompletionItem(document.uri.fsPath, lastFunc)
-            );
-            existingNames.push(item.name);
-          }
-        }
-      }
-      return completionsList;
-    }
-    let existingNames: string[] = [];
+  const line = document.lineAt(position.line).text;
+  const isMethod = isMethodCall(line, position);
+  const lastFunc: string = getLastFuncName(position, document, allItems);
+
+  let items = new Set<CompletionItem>();
+
+  if (!isMethod) {
     for (let item of allItems) {
       if (
         !(
@@ -152,16 +110,53 @@ export function getCompletionListFromPosition(
           item.kind === CompletionItemKind.Property
         )
       ) {
-        if (!existingNames.includes(item.name)) {
-          // Make sure we don't add a variable to existingNames if it's not in the scope of the current function.
-          let newItem = item.toCompletionItem(document.uri.fsPath, lastFunc);
-          if (newItem !== undefined) {
-            completionsList.items.push(newItem);
-            existingNames.push(item.name);
-          }
-        }
+        items.add(item.toCompletionItem(document.uri.fsPath, lastFunc));
       }
     }
-    return completionsList;
+    // Make sure no undefined objects are present.
+    items.delete(undefined);
+    return new CompletionList(Array.from(items).filter((e) => e !== undefined));
   }
+
+  const {
+    lastEnumStructOrMethodMap,
+    isAMethodMap,
+  } = getLastEnumStructNameOrMethodMap(position, document, allItems);
+  let { variableType, words } = itemsRepo.getTypeOfVariable(
+    line,
+    position,
+    allItems,
+    lastFunc,
+    lastEnumStructOrMethodMap
+  );
+  let variableTypes: string[] = itemsRepo.getAllInheritances(
+    variableType,
+    allItems
+  );
+
+  // Prepare check for static methods
+  let isMethodMap: boolean;
+  if (words.length === 1) {
+    let methodmap = allItems.find(
+      (e) => e.name === words[0] && e.kind === CompletionItemKind.Class
+    );
+    isMethodMap = methodmap !== undefined;
+  }
+  for (let item of allItems) {
+    if (
+      (item.kind === CompletionItemKind.Method ||
+        item.kind === CompletionItemKind.Property) &&
+      variableTypes.includes(item.parent) &&
+      // Don't include the constructor of the methodmap
+      !variableTypes.includes(item.name) &&
+      // Check for static methods
+      ((!isMethodMap && !item.detail.includes("static")) ||
+        (isMethodMap && item.detail.includes("static")))
+    ) {
+      items.add(item.toCompletionItem(document.uri.fsPath, lastFunc));
+    }
+  }
+  // Make sure no undefined objects are present.
+  items.delete(undefined);
+  return new CompletionList(Array.from(items).filter((e) => e !== undefined));
 }

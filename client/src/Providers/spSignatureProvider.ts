@@ -6,7 +6,7 @@ import {
 } from "vscode";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import {
-  GetLastFuncName,
+  getLastFuncName,
   getLastEnumStructNameOrMethodMap,
 } from "./spDefinitionProvider";
 
@@ -126,7 +126,7 @@ export function signatureProvider(
   if (match) {
     let methodName = match[1];
     let allItems = itemsRepo.getAllItems(document.uri);
-    let lastFuncName = GetLastFuncName(position, document, allItems);
+    let lastFuncName = getLastFuncName(position, document, allItems);
     let newPos = new Position(1, croppedLine.length);
     let {
       lastEnumStructOrMethodMap,

@@ -17,7 +17,7 @@ import { URI } from "vscode-uri";
 import { SPItem, IncludeItem } from "./spItems";
 import { events } from "../Misc/sourceEvents";
 import {
-  GetLastFuncName,
+  getLastFuncName,
   isInAComment,
   isFunction,
   getLastEnumStructNameOrMethodMap,
@@ -331,7 +331,7 @@ export class ItemsRepository implements Disposable {
       }
     }
 
-    let lastFunc: string = GetLastFuncName(position, document, allItems);
+    let lastFunc: string = getLastFuncName(position, document, allItems);
     let {
       lastEnumStructOrMethodMap,
       isAMethodMap,

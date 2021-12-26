@@ -10,7 +10,7 @@ import { globalIdentifier } from "../Misc/spConstants";
 import { SPItem } from "../Backend/spItems";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 
-export function GetLastFuncName(
+export function getLastFuncName(
   position: Position,
   document: TextDocument,
   allItems: SPItem[]
