@@ -11,6 +11,7 @@ import {
   getLastFuncName,
   getLastEnumStructNameOrMethodMap,
 } from "./spDefinitionProvider";
+import { getAllInheritances } from "../Backend/spItemsGetters";
 
 interface SignatureAttributes {
   croppedLine: string;
@@ -141,10 +142,7 @@ export function signatureProvider(
       lastFuncName,
       lastEnumStructOrMethodMap
     );
-    let variableTypes: string[] = itemsRepo.getAllInheritances(
-      variableType,
-      allItems
-    );
+    let variableTypes: string[] = getAllInheritances(variableType, allItems);
     let items = itemsRepo
       .getAllItems(document.uri)
       .filter(

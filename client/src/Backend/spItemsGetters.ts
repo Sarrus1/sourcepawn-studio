@@ -82,8 +82,8 @@ export function getTypeOfVariable(
  *   words: ["foo", "bar"],
  *   isNameSpace: false
  * }
- * @param  {string} line
- * @param  {Position} position
+ * @param  {string} line        The line being parsed.
+ * @param  {Position} position  The position at which the parsing should begin.
  * @returns ParsedLine
  */
 function parseMethodsFromLine(line: string, position: Position): ParsedLine {
@@ -149,4 +149,23 @@ function parseMethodsFromLine(line: string, position: Position): ParsedLine {
     i--;
   }
   return { words, isNameSpace };
+}
+
+/**
+ * Return all the methodmap which a given methodmap inherits from.
+ * @param  {string} methodmap   The name of the methodmap to search inheritances for.
+ * @param  {SPItem[]} allItems  All the items known to the document.
+ * @returns string
+ */
+export function getAllInheritances(
+  methodmap: string,
+  allItems: SPItem[]
+): string[] {
+  const methodMapItem = allItems.find(
+    (e) => e.kind === CompletionItemKind.Class && e.name === methodmap
+  );
+  if (methodMapItem === undefined || methodMapItem.parent === undefined) {
+    return [methodmap];
+  }
+  return [methodmap].concat(getAllInheritances(methodMapItem.parent, allItems));
 }

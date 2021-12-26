@@ -14,6 +14,7 @@ import {
 import { dirname, join, resolve } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
+
 import { SPItem, IncludeItem } from "./spItems";
 import { events } from "../Misc/sourceEvents";
 import {
@@ -30,7 +31,7 @@ import {
   handleDocumentChange,
   newDocumentCallback,
 } from "./spFileHandlers";
-import { getTypeOfVariable } from "./spItemsGetters";
+import { getTypeOfVariable, getAllInheritances } from "./spItemsGetters";
 
 export class ItemsRepository implements Disposable {
   public fileItems: Map<string, FileItems>;
@@ -63,18 +64,6 @@ export class ItemsRepository implements Disposable {
 
   public getEventCompletions(): CompletionList {
     return new CompletionList(events);
-  }
-
-  getAllInheritances(variableType: string, allCompletions: SPItem[]): string[] {
-    let methodMapItem = allCompletions.find(
-      (e) => e.kind === CompletionItemKind.Class && e.name === variableType
-    );
-    if (methodMapItem === undefined || methodMapItem.parent === undefined) {
-      return [variableType];
-    }
-    return [variableType].concat(
-      this.getAllInheritances(methodMapItem.parent, allCompletions)
-    );
   }
 
   getAllItems(uri: URI): SPItem[] {
@@ -263,10 +252,7 @@ export class ItemsRepository implements Disposable {
         lastEnumStructOrMethodMap
       );
       // Get inheritances from methodmaps
-      let variableTypes: string[] = this.getAllInheritances(
-        variableType,
-        allItems
-      );
+      let variableTypes: string[] = getAllInheritances(variableType, allItems);
       // Find and return the matching item
       let items = allItems.filter(
         (item) =>

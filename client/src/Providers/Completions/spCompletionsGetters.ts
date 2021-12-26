@@ -17,6 +17,7 @@ import { SPItem } from "../../Backend/spItems";
 import { getAllPossibleIncludeFolderPaths } from "../../Backend/spFileHandlers";
 import { ItemsRepository } from "../../Backend/spItemsRepository";
 import { isMethodCall } from "../../Backend/spUtils";
+import { getAllInheritances } from "../../Backend/spItemsGetters";
 
 /**
  * Generate a CompletionList object of the possible includes file that can fit the already typed #include statement.
@@ -130,10 +131,7 @@ export function getCompletionListFromPosition(
     lastFunc,
     lastEnumStructOrMethodMap
   );
-  let variableTypes: string[] = itemsRepo.getAllInheritances(
-    variableType,
-    allItems
-  );
+  let variableTypes: string[] = getAllInheritances(variableType, allItems);
 
   // Prepare check for static methods
   let isMethodMap: boolean;
