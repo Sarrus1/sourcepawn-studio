@@ -7,6 +7,7 @@ import {
   defaultConstantItems,
   defaultKeywordsItems,
 } from "../Providers/spDefaultItems";
+import { getIncludeExtension } from "./spUtils";
 
 export class FileItems extends Map {
   includes: Include[];
@@ -54,10 +55,7 @@ export class FileItems extends Map {
     ).get("SourcemodHome");
     let directoryPath = dirname(filePath);
     let includeFile: string;
-    // If no extension is provided, it's a .inc file
-    if (!/.sp\s*$/g.test(includeText) && !/.inc\s*$/g.test(includeText)) {
-      includeText += ".inc";
-    }
+    includeText = getIncludeExtension(includeText);
     let incFilePath = resolve(directoryPath, includeText);
     if (!existsSync(incFilePath)) {
       incFilePath = resolve(directoryPath, "include", includeText);

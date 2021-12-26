@@ -23,9 +23,10 @@ import {
   getTypeOfVariable,
   getAllInheritances,
 } from "./spItemsPropertyGetters";
-
+import { getAllPossibleIncludeFolderPaths } from "./spFileHandlers";
 import { ItemsRepository } from "./spItemsRepository";
 import { findMainPath } from "../spUtils";
+import { getIncludeExtension } from "./spUtils";
 
 /**
  * Returns an array of all the items parsed from a file and its known includes.
@@ -97,7 +98,6 @@ export function getItemFromPosition(
   const range = document.getWordRangeAtPosition(position);
   const allItems = itemsRepo.getAllItems(document.uri);
 
-  const directoryPath = dirname(document.uri.fsPath);
   const word = document.getText(range);
   const line = document.lineAt(position.line).text;
 
@@ -110,49 +110,12 @@ export function getItemFromPosition(
     return undefined;
   }
 
-  match =
-    line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>/) ||
-    line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"/);
-  if (match !== null) {
-    let file = match[1];
-    let fileMatchLength = file.length;
-    let fileStartPos = line.search(file);
-    // If no extension is provided, it's a .inc file
-    if (!/.sp\s*$/g.test(file) && !/.inc\s*$/g.test(file)) {
-      file += ".inc";
-    }
-    let defRange = new Range(
-      position.line,
-      fileStartPos,
-      position.line,
-      fileStartPos + fileMatchLength
-    );
-    let uri: string;
-    let incFilePath;
-    let smHome: string =
-      Workspace.getConfiguration(
-        "sourcepawn",
-        Workspace.getWorkspaceFolder(document.uri)
-      ).get("SourcemodHome") || "";
-    let potentialIncludePaths = [
-      directoryPath,
-      join(directoryPath, "include/"),
-      smHome,
-    ];
-    for (let includePath of potentialIncludePaths) {
-      incFilePath = resolve(includePath, file);
-      if (existsSync(resolve(includePath, file))) {
-        break;
-      }
-    }
-    for (let parsedUri of itemsRepo.documents.values()) {
-      if (parsedUri == URI.file(incFilePath).toString()) {
-        uri = parsedUri;
-        break;
-      }
-    }
-    return [new IncludeItem(uri, defRange)];
+  // Generate an include item if the line is an #include statement and return it.
+  let includeItem = makeIncludeItem(itemsRepo, document, line, position);
+  if (includeItem !== undefined) {
+    return includeItem;
   }
+
   if (range.start.character > 1) {
     let newPosStart = new Position(range.start.line, range.start.character - 2);
     let newPosEnd = new Position(range.start.line, range.start.character);
@@ -317,4 +280,46 @@ export function getItemFromPosition(
     return item.name === word;
   });
   return items;
+}
+
+/**
+ * Try to generate an IncludeItem from an #include statement line and return it.
+ * @param  {TextDocument} document          The document the item is generated for.
+ * @param  {string} line                    The line to parse.
+ * @param  {Position} position              The position to parse.
+ * @returns SPItem
+ */
+function makeIncludeItem(
+  document: TextDocument,
+  line: string,
+  position: Position
+): SPItem[] {
+  const match =
+    line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>/) ||
+    line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"/);
+  if (!match) {
+    return undefined;
+  }
+  let file = match[1];
+  const fileStartPos = line.search(file);
+  file = getIncludeExtension(file);
+  const defRange = new Range(
+    position.line,
+    fileStartPos,
+    position.line,
+    fileStartPos + file.length
+  );
+  const potentialIncludePaths = getAllPossibleIncludeFolderPaths(document.uri);
+
+  const incFolderPath = potentialIncludePaths.find((e) =>
+    existsSync(resolve(e, file))
+  );
+  if (incFolderPath) {
+    return [
+      new IncludeItem(
+        URI.file(resolve(incFolderPath, file)).toString(),
+        defRange
+      ),
+    ];
+  }
 }
