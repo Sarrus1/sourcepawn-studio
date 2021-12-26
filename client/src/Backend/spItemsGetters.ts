@@ -22,11 +22,11 @@ import { ItemsRepository } from "./spItemsRepository";
 import { findMainPath } from "../spUtils";
 import { getIncludeExtension } from "./spUtils";
 
-const MPC = [
-  CompletionItemKind.Method,
-  CompletionItemKind.Property,
-  CompletionItemKind.Constructor,
-];
+const FI = [CompletionItemKind.Function, CompletionItemKind.Interface];
+
+const MC = [CompletionItemKind.Method, CompletionItemKind.Constructor];
+
+const MPC = MC.concat([CompletionItemKind.Property]);
 
 const MPCF = MPC.concat([CompletionItemKind.Function]);
 
@@ -169,46 +169,18 @@ export function getItemFromPosition(
   }
 
   items = [];
+
   if (type === ObjectType.Function) {
-    if (lastEnumStructOrMethodMap !== globalIdentifier) {
-      // Check for functions and methods
-      items = allItems.filter((item) => {
-        if (
-          [CompletionItemKind.Method, CompletionItemKind.Constructor].includes(
-            item.kind
-          ) &&
-          item.name === word &&
-          item.parent === lastEnumStructOrMethodMap
-        ) {
-          return true;
-        } else if (
-          [CompletionItemKind.Function, CompletionItemKind.Interface].includes(
-            item.kind
-          ) &&
-          item.name === word
-        ) {
-          return true;
-        }
-        return false;
-      });
-      return items;
-    } else {
-      items = allItems.filter(
-        (item) =>
-          [CompletionItemKind.Function, CompletionItemKind.Interface].includes(
-            item.kind
-          ) && item.name === word
-      );
-      return items;
-    }
+    return makeFunctionOrMethodItem(word, lastEnumStructOrMethodMap, allItems);
   }
+
   items = allItems.filter(
     (item) =>
       !MPCF.includes(item.kind) &&
       item.name === word &&
       item.parent === lastFunc
   );
-  if (items.length > 0) {
+  if (items !== undefined && items.length > 0) {
     return items;
   }
   items = allItems.filter((item) => {
@@ -310,6 +282,34 @@ function makeEnumStructMethodItem(
       return items;
     }
   }
+}
+
+/**
+ * Try to find a corresponding function or method to a word and a scope.
+ * @param  {string} name
+ * @param  {string} lastEnumStructOrMethodMap
+ * @param  {SPItem[]} allItems
+ * @returns SPItem
+ */
+function makeFunctionOrMethodItem(
+  name: string,
+  lastEnumStructOrMethodMap: string,
+  allItems: SPItem[]
+): SPItem[] {
+  const items = allItems.filter(
+    (item) => FI.includes(item.kind) && item.name === name
+  );
+  if (lastEnumStructOrMethodMap === globalIdentifier) {
+    return items;
+  }
+  return allItems
+    .filter(
+      (item) =>
+        MC.includes(item.kind) &&
+        item.name === name &&
+        item.parent === lastEnumStructOrMethodMap
+    )
+    .concat(items);
 }
 
 /**
