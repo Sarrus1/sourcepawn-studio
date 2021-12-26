@@ -1,11 +1,5 @@
-import {
-  workspace as Workspace,
-  TextDocument,
-  Position,
-  CompletionItemKind,
-  Range,
-} from "vscode";
-import { dirname, join, resolve } from "path";
+import { TextDocument, Position, CompletionItemKind, Range } from "vscode";
+import { resolve } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 
@@ -27,6 +21,12 @@ import { getAllPossibleIncludeFolderPaths } from "./spFileHandlers";
 import { ItemsRepository } from "./spItemsRepository";
 import { findMainPath } from "../spUtils";
 import { getIncludeExtension } from "./spUtils";
+
+enum ObjectType {
+  variable,
+  method,
+  constructor,
+}
 
 /**
  * Returns an array of all the items parsed from a file and its known includes.
@@ -101,9 +101,6 @@ export function getItemFromPosition(
   const word = document.getText(range);
   const line = document.lineAt(position.line).text;
 
-  // First check if we are dealing with a method or property.
-  let isMethod = false;
-  let isConstructor = false;
   let match: RegExpMatchArray;
 
   if (isInAComment(range, document.uri, allItems) || isInAString(range, line)) {
@@ -116,23 +113,7 @@ export function getItemFromPosition(
     return includeItem;
   }
 
-  if (range.start.character > 1) {
-    let newPosStart = new Position(range.start.line, range.start.character - 2);
-    let newPosEnd = new Position(range.start.line, range.start.character);
-    let newRange = new Range(newPosStart, newPosEnd);
-    let char = document.getText(newRange);
-    isMethod = /(?:\w+\.|\:\:)/.test(char);
-    if (!isMethod) {
-      let newPosStart = new Position(range.start.line, 0);
-      let newPosEnd = new Position(range.start.line, range.end.character);
-      let newRange = new Range(newPosStart, newPosEnd);
-      let line = document.getText(newRange);
-      match = line.match(/new\s+(\w+)$/);
-      if (match) {
-        isConstructor = true;
-      }
-    }
-  }
+  let type = isMethodOrConstructor(range, document);
 
   let lastFunc: string = getLastFuncName(position, document, allItems);
   let {
@@ -161,7 +142,7 @@ export function getItemFromPosition(
     }
   }
 
-  if (isMethod) {
+  if (type === ObjectType.method) {
     let line = document.lineAt(position.line).text;
     // If we are dealing with a method or property, look for the type of the variable
     let { variableType, words } = getTypeOfVariable(
@@ -171,10 +152,8 @@ export function getItemFromPosition(
       lastFunc,
       lastEnumStructOrMethodMap
     );
-    // Get inheritances from methodmaps
-    let variableTypes: string[] = getAllInheritances(variableType, allItems);
-    // Find and return the matching item
-    let items = allItems.filter(
+    let variableTypes = getAllInheritances(variableType, allItems);
+    return allItems.filter(
       (item) =>
         [
           CompletionItemKind.Method,
@@ -184,18 +163,15 @@ export function getItemFromPosition(
         variableTypes.includes(item.parent) &&
         item.name === word
     );
-    return items;
   }
 
-  if (isConstructor) {
-    let items = itemsRepo
-      .getAllItems(document.uri)
-      .filter(
-        (item) =>
-          item.kind === CompletionItemKind.Constructor && item.name === match[1]
-      );
-    return items;
+  if (type === ObjectType.constructor) {
+    return allItems.filter(
+      (item) =>
+        item.kind === CompletionItemKind.Constructor && item.name === match[1]
+    );
   }
+
   // Check if we are dealing with a function
   let bIsFunction = isFunction(
     range,
@@ -322,4 +298,40 @@ function makeIncludeItem(
       ),
     ];
   }
+}
+
+/**
+ * Checks if we are dealing with a method or a constructor, or a regular variable/function.
+ * @param  {Range} range            The range to check.
+ * @param  {TextDocument} document  The document corresponding to the range.
+ * @returns ObjectType
+ */
+export function isMethodOrConstructor(
+  range: Range,
+  document: TextDocument
+): ObjectType {
+  if (range.start.character <= 1) {
+    ObjectType.variable;
+  }
+  let newRange = new Range(
+    range.start.line,
+    range.start.character - 2,
+    range.start.line,
+    range.start.character
+  );
+  let char = document.getText(newRange);
+  if (/(?:\w+\.|\:\:)/.test(char)) {
+    return ObjectType.method;
+  }
+  newRange = new Range(
+    range.start.line,
+    0,
+    range.start.line,
+    range.end.character
+  );
+  char = document.getText(newRange);
+  if (/new\s+(\w+)$/.test(char)) {
+    ObjectType.constructor;
+  }
+  return ObjectType.variable;
 }
