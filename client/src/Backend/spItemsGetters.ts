@@ -7,6 +7,11 @@ export interface VariableType {
   words: string[];
 }
 
+export interface ParsedLine {
+  words: string[];
+  isNameSpace: boolean;
+}
+
 /**
  * Parses the type of a variable from a line an a position in a document.
  * Returns a VariableType object with the type of the variable as a string, and an array of strings,
@@ -30,6 +35,58 @@ export function getTypeOfVariable(
   lastFuncName: string,
   lastEnumStructOrMethodMap: string
 ): VariableType {
+  let { words, isNameSpace } = parseMethodsFromLine(line, position);
+  let variableType: string;
+
+  if (isNameSpace) {
+    variableType = words[words.length - 1];
+  } else {
+    if (
+      lastEnumStructOrMethodMap !== globalIdentifier &&
+      words[words.length - 1] === "this"
+    ) {
+      variableType = lastEnumStructOrMethodMap;
+    } else {
+      variableType = allItems.find(
+        (e) =>
+          (e.kind === CompletionItemKind.Variable &&
+            [globalIdentifier, lastFuncName].includes(e.parent) &&
+            e.name === words[words.length - 1]) ||
+          (e.kind === CompletionItemKind.Function &&
+            e.name === words[words.length - 1]) ||
+          (e.kind === CompletionItemKind.Class &&
+            e.name === words[words.length - 1])
+      ).type;
+    }
+  }
+
+  if (words.length > 1) {
+    words = words.slice(0, words.length - 1).reverse();
+    for (let word of words) {
+      variableType = allItems.find(
+        (e) =>
+          (e.kind === CompletionItemKind.Method ||
+            e.kind === CompletionItemKind.Property) &&
+          e.parent === variableType &&
+          e.name === word
+      ).type;
+    }
+  }
+  return { variableType, words };
+}
+
+/**
+ * Parses a line and separates the variable and its methods.
+ * For example, "foo.bar.baz;" will yield :
+ * {
+ *   words: ["foo", "bar"],
+ *   isNameSpace: false
+ * }
+ * @param  {string} line
+ * @param  {Position} position
+ * @returns ParsedLine
+ */
+function parseMethodsFromLine(line: string, position: Position): ParsedLine {
   let i = position.character - 1;
   let bCounter = 0;
   let pCounter = 0;
@@ -91,41 +148,5 @@ export function getTypeOfVariable(
     }
     i--;
   }
-  let variableType: string;
-
-  if (isNameSpace) {
-    variableType = words[words.length - 1];
-  } else {
-    if (
-      lastEnumStructOrMethodMap !== globalIdentifier &&
-      words[words.length - 1] === "this"
-    ) {
-      variableType = lastEnumStructOrMethodMap;
-    } else {
-      variableType = allItems.find(
-        (e) =>
-          (e.kind === CompletionItemKind.Variable &&
-            [globalIdentifier, lastFuncName].includes(e.parent) &&
-            e.name === words[words.length - 1]) ||
-          (e.kind === CompletionItemKind.Function &&
-            e.name === words[words.length - 1]) ||
-          (e.kind === CompletionItemKind.Class &&
-            e.name === words[words.length - 1])
-      ).type;
-    }
-  }
-
-  if (words.length > 1) {
-    words = words.slice(0, words.length - 1).reverse();
-    for (let word of words) {
-      variableType = allItems.find(
-        (e) =>
-          (e.kind === CompletionItemKind.Method ||
-            e.kind === CompletionItemKind.Property) &&
-          e.parent === variableType &&
-          e.name === word
-      ).type;
-    }
-  }
-  return { variableType, words };
+  return { words, isNameSpace };
 }
