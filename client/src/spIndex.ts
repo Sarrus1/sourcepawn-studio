@@ -189,17 +189,17 @@ export function activate(context: ExtensionContext) {
 
   Workspace.onDidChangeTextDocument(
     providers.itemsRepository.handleDocumentChange,
-    providers,
+    providers.itemsRepository,
     context.subscriptions
   );
   Workspace.onDidOpenTextDocument(
     providers.itemsRepository.handleNewDocument,
-    providers,
+    providers.itemsRepository,
     context.subscriptions
   );
   Workspace.onDidCreateFiles(
     providers.itemsRepository.handleAddedDocument,
-    providers,
+    providers.itemsRepository,
     context.subscriptions
   );
 
