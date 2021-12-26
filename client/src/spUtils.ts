@@ -31,6 +31,7 @@ export function descriptionToMD(description: string): MarkdownString {
   );
   return new MarkdownString(description);
 }
+
 /**
  * Find the MainPath setting for a given URI.
  * @param  {Uri} uri?   The URI we are looking up the MainPath for.

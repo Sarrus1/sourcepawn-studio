@@ -35,6 +35,7 @@ import {
   getTypeOfVariable,
   getAllInheritances,
 } from "./spItemsPropertyGetters";
+import { getAllItems } from "./spItemsGetters";
 
 export class ItemsRepository implements Disposable {
   public fileItems: Map<string, FileItems>;
@@ -69,53 +70,8 @@ export class ItemsRepository implements Disposable {
     return new CompletionList(events);
   }
 
-  getAllItems(uri: URI): SPItem[] {
-    let workspaceFolder = Workspace.getWorkspaceFolder(uri);
-    let includes = new Set<string>();
-    let MainPath: string =
-      Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
-        "MainPath"
-      ) || "";
-    let allItems;
-    if (MainPath !== "") {
-      if (!existsSync(MainPath)) {
-        let workspace: WorkspaceFolder = Workspace.workspaceFolders[0];
-        MainPath = join(workspace.uri.fsPath, MainPath);
-        if (!existsSync(MainPath)) {
-          throw new Error("MainPath is incorrect.");
-        }
-      }
-      let uri = URI.file(MainPath).toString();
-      allItems = this.fileItems.get(uri);
-      if (!includes.has(uri)) {
-        includes.add(uri);
-      }
-    } else {
-      allItems = this.fileItems.get(uri.toString());
-      includes.add(uri.toString());
-    }
-    if (allItems !== undefined) {
-      this.getIncludedFiles(allItems, includes);
-    } else {
-      return [];
-    }
-    return [...includes]
-      .map((file) => {
-        return this.getFileItems(file);
-      })
-      .reduce(
-        (completion, file_completions) => completion.concat(file_completions),
-        []
-      );
-  }
-
-  getFileItems(file: string): SPItem[] {
-    let file_completions: FileItems = this.fileItems.get(file);
-    let completion_list: SPItem[] = [];
-    if (file_completions) {
-      return Array.from(file_completions.values());
-    }
-    return completion_list;
+  public getAllItems(uri: URI): SPItem[] {
+    return getAllItems(this, uri);
   }
 
   getIncludedFiles(completions: FileItems, files: Set<string>) {
