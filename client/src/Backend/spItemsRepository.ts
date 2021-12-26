@@ -31,7 +31,10 @@ import {
   handleDocumentChange,
   newDocumentCallback,
 } from "./spFileHandlers";
-import { getTypeOfVariable, getAllInheritances } from "./spItemsGetters";
+import {
+  getTypeOfVariable,
+  getAllInheritances,
+} from "./spItemsPropertyGetters";
 
 export class ItemsRepository implements Disposable {
   public fileItems: Map<string, FileItems>;

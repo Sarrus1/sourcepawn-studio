@@ -5,13 +5,13 @@ import {
   CompletionItemKind,
 } from "vscode";
 
-import { getTypeOfVariable } from "../Backend/spItemsGetters";
+import { getTypeOfVariable } from "../Backend/spItemsPropertyGetters";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import {
   getLastFuncName,
   getLastEnumStructNameOrMethodMap,
 } from "./spDefinitionProvider";
-import { getAllInheritances } from "../Backend/spItemsGetters";
+import { getAllInheritances } from "../Backend/spItemsPropertyGetters";
 
 interface SignatureAttributes {
   croppedLine: string;

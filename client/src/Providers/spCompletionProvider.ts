@@ -6,7 +6,7 @@ import {
   CompletionItemKind,
 } from "vscode";
 
-import { getTypeOfVariable } from "../Backend/spItemsGetters";
+import { getTypeOfVariable } from "../Backend/spItemsPropertyGetters";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import {
   getLastFuncName,

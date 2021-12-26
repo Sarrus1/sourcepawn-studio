@@ -8,7 +8,7 @@ import {
 import { basename } from "path";
 import { URI } from "vscode-uri";
 
-import { getTypeOfVariable } from "../../Backend/spItemsGetters";
+import { getTypeOfVariable } from "../../Backend/spItemsPropertyGetters";
 import {
   getLastFuncName,
   getLastEnumStructNameOrMethodMap,
@@ -17,7 +17,7 @@ import { SPItem } from "../../Backend/spItems";
 import { getAllPossibleIncludeFolderPaths } from "../../Backend/spFileHandlers";
 import { ItemsRepository } from "../../Backend/spItemsRepository";
 import { isMethodCall } from "../../Backend/spUtils";
-import { getAllInheritances } from "../../Backend/spItemsGetters";
+import { getAllInheritances } from "../../Backend/spItemsPropertyGetters";
 
 /**
  * Generate a CompletionList object of the possible includes file that can fit the already typed #include statement.
