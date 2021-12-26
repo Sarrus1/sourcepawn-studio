@@ -138,5 +138,7 @@ export function definitionsProvider(
   token: CancellationToken
 ) {
   let items = itemsRepo.getItemFromPosition(document, position);
-  return items.map((e) => e.toDefinitionItem());
+  if (items !== undefined) {
+    return items.map((e) => e.toDefinitionItem());
+  }
 }

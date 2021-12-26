@@ -8,8 +8,7 @@ export function hoverProvider(
   token: CancellationToken
 ): Hover {
   let items = itemsRepo.getItemFromPosition(document, position);
-  if (items.length > 0) {
+  if (items !== undefined && items.length > 0) {
     return items[0].toHover();
   }
-  return undefined;
 }

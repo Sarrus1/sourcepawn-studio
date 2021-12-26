@@ -23,7 +23,7 @@ export function getAllItems(itemsRepo: ItemsRepository, uri: URI): SPItem[] {
     return [];
   }
 
-  itemsRepo.getIncludedFiles(fileItems, includes);
+  getIncludedFiles(itemsRepo, fileItems, includes);
   return [].concat.apply([], Array.from(includes).map(getFileItems, itemsRepo));
 }
 
@@ -35,4 +35,27 @@ export function getAllItems(itemsRepo: ItemsRepository, uri: URI): SPItem[] {
 function getFileItems(uri: string): SPItem[] {
   let items: FileItems = this.fileItems.get(uri);
   return items === undefined ? Array.from(items.values()) : [];
+}
+
+/**
+ * Recursively get all the includes from a FileItems object.
+ * @param  {FileItems} fileItems    The object to get the includes from.
+ * @param  {Set<string>} includes   The Set to add the include to.
+ * @returns void
+ */
+function getIncludedFiles(
+  itemsRepo: ItemsRepository,
+  fileItems: FileItems,
+  includes: Set<string>
+): void {
+  for (let include of fileItems.includes) {
+    if (includes.has(include.uri)) {
+      continue;
+    }
+    includes.add(include.uri);
+    let includeFileItems = itemsRepo.fileItems.get(include.uri);
+    if (includeFileItems) {
+      getIncludedFiles(itemsRepo, includeFileItems, includes);
+    }
+  }
 }

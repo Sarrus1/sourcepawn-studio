@@ -6,7 +6,6 @@ import {
   Position,
   CompletionList,
   CompletionItemKind,
-  WorkspaceFolder,
   Range,
   FileCreateEvent,
   TextDocumentChangeEvent,
@@ -72,18 +71,6 @@ export class ItemsRepository implements Disposable {
 
   public getAllItems(uri: URI): SPItem[] {
     return getAllItems(this, uri);
-  }
-
-  getIncludedFiles(completions: FileItems, files: Set<string>) {
-    for (let include of completions.includes) {
-      if (!files.has(include.uri)) {
-        files.add(include.uri);
-        let include_completions = this.fileItems.get(include.uri);
-        if (include_completions) {
-          this.getIncludedFiles(include_completions, files);
-        }
-      }
-    }
   }
 
   getItemFromPosition(document: TextDocument, position: Position): SPItem[] {
