@@ -8,6 +8,7 @@ import {
 import { basename } from "path";
 import { URI } from "vscode-uri";
 
+import { getTypeOfVariable } from "../../Backend/spItemsGetters";
 import {
   getLastFuncName,
   getLastEnumStructNameOrMethodMap,
@@ -122,7 +123,7 @@ export function getCompletionListFromPosition(
     lastEnumStructOrMethodMap,
     isAMethodMap,
   } = getLastEnumStructNameOrMethodMap(position, document, allItems);
-  let { variableType, words } = itemsRepo.getTypeOfVariable(
+  let { variableType, words } = getTypeOfVariable(
     line,
     position,
     allItems,

@@ -5,6 +5,8 @@ import {
   CompletionList,
   CompletionItemKind,
 } from "vscode";
+
+import { getTypeOfVariable } from "../Backend/spItemsGetters";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import {
   getLastFuncName,
@@ -49,7 +51,7 @@ export function completionProvider(
             lastEnumStructOrMethodMap,
             isAMethodMap,
           } = getLastEnumStructNameOrMethodMap(position, document, allItems);
-          let { variableType, words } = itemsRepo.getTypeOfVariable(
+          let { variableType, words } = getTypeOfVariable(
             // Hack to use getTypeOfVariable
             match[2] + ".",
             newPos,

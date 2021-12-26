@@ -30,6 +30,7 @@ import {
   handleDocumentChange,
   newDocumentCallback,
 } from "./spFileHandlers";
+import { getTypeOfVariable } from "./spItemsGetters";
 
 export class ItemsRepository implements Disposable {
   public fileItems: Map<string, FileItems>;
@@ -74,113 +75,6 @@ export class ItemsRepository implements Disposable {
     return [variableType].concat(
       this.getAllInheritances(methodMapItem.parent, allCompletions)
     );
-  }
-
-  getTypeOfVariable(
-    line: string,
-    position: Position,
-    allItems: SPItem[],
-    lastFuncName: string,
-    lastEnumStructOrMethodMap: string
-  ) {
-    let i = position.character - 1;
-    let bCounter = 0;
-    let pCounter = 0;
-    let isNameSpace = false;
-    while (i >= 0) {
-      if (/\w/.test(line[i])) {
-        i--;
-      } else if (line[i] === ".") {
-        i--;
-        break;
-      } else if (line[i] === ":") {
-        i--;
-        if (line[i] === ":") {
-          i--;
-          isNameSpace = true;
-          break;
-        }
-      }
-    }
-    let wordCounter = 0;
-    let words: string[] = [""];
-    while (i >= 0) {
-      if (line[i] === "]") {
-        bCounter++;
-        i--;
-        continue;
-      }
-      if (line[i] === "[") {
-        bCounter--;
-        i--;
-        continue;
-      }
-      if (line[i] === ")") {
-        pCounter++;
-        i--;
-        continue;
-      }
-      if (line[i] === "(") {
-        pCounter--;
-        i--;
-        continue;
-      }
-      if (bCounter === 0 && pCounter === 0) {
-        if (/\w/.test(line[i])) {
-          words[wordCounter] = line[i] + words[wordCounter];
-        } else if (line[i] === ".") {
-          wordCounter++;
-          words[wordCounter] = "";
-        } else if (line[i] === ":") {
-          i--;
-          if (line[i] === ":") {
-            wordCounter++;
-            words[wordCounter] = "";
-            isNameSpace = true;
-          }
-        } else {
-          break;
-        }
-      }
-      i--;
-    }
-    let variableType: string;
-
-    if (isNameSpace) {
-      variableType = words[words.length - 1];
-    } else {
-      if (
-        lastEnumStructOrMethodMap !== globalIdentifier &&
-        words[words.length - 1] === "this"
-      ) {
-        variableType = lastEnumStructOrMethodMap;
-      } else {
-        variableType = allItems.find(
-          (e) =>
-            (e.kind === CompletionItemKind.Variable &&
-              [globalIdentifier, lastFuncName].includes(e.parent) &&
-              e.name === words[words.length - 1]) ||
-            (e.kind === CompletionItemKind.Function &&
-              e.name === words[words.length - 1]) ||
-            (e.kind === CompletionItemKind.Class &&
-              e.name === words[words.length - 1])
-        ).type;
-      }
-    }
-
-    if (words.length > 1) {
-      words = words.slice(0, words.length - 1).reverse();
-      for (let word of words) {
-        variableType = allItems.find(
-          (e) =>
-            (e.kind === CompletionItemKind.Method ||
-              e.kind === CompletionItemKind.Property) &&
-            e.parent === variableType &&
-            e.name === word
-        ).type;
-      }
-    }
-    return { variableType, words };
   }
 
   getAllItems(uri: URI): SPItem[] {
@@ -361,7 +255,7 @@ export class ItemsRepository implements Disposable {
     if (isMethod) {
       let line = document.lineAt(position.line).text;
       // If we are dealing with a method or property, look for the type of the variable
-      let { variableType, words } = this.getTypeOfVariable(
+      let { variableType, words } = getTypeOfVariable(
         line,
         position,
         allItems,

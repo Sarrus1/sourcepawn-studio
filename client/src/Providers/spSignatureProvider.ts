@@ -4,6 +4,8 @@ import {
   CancellationToken,
   CompletionItemKind,
 } from "vscode";
+
+import { getTypeOfVariable } from "../Backend/spItemsGetters";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import {
   getLastFuncName,
@@ -132,7 +134,7 @@ export function signatureProvider(
       lastEnumStructOrMethodMap,
       isAMethodMap,
     } = getLastEnumStructNameOrMethodMap(position, document, allItems);
-    let { variableType, words } = itemsRepo.getTypeOfVariable(
+    let { variableType, words } = getTypeOfVariable(
       croppedLine,
       newPos,
       allItems,
