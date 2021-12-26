@@ -1,9 +1,31 @@
+import {
+  workspace as Workspace,
+  TextDocument,
+  Position,
+  CompletionItemKind,
+  Range,
+} from "vscode";
+import { dirname, join, resolve } from "path";
+import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 
-import { SPItem } from "./spItems";
+import { SPItem, IncludeItem } from "./spItems";
+import {
+  getLastFuncName,
+  isInAComment,
+  isFunction,
+  getLastEnumStructNameOrMethodMap,
+  isInAString,
+} from "../Providers/spDefinitionProvider";
+import { globalIdentifier } from "../Misc/spConstants";
+import { FileItems } from "./spFilesRepository";
+import {
+  getTypeOfVariable,
+  getAllInheritances,
+} from "./spItemsPropertyGetters";
+
 import { ItemsRepository } from "./spItemsRepository";
 import { findMainPath } from "../spUtils";
-import { FileItems } from "./spFilesRepository";
 
 /**
  * Returns an array of all the items parsed from a file and its known includes.
@@ -24,7 +46,7 @@ export function getAllItems(itemsRepo: ItemsRepository, uri: URI): SPItem[] {
   }
 
   getIncludedFiles(itemsRepo, fileItems, includes);
-  return [].concat.apply([], Array.from(includes).map(getFileItems, itemsRepo));
+  return Array.from(includes).map(getFileItems, itemsRepo).flat();
 }
 
 /**
@@ -34,7 +56,7 @@ export function getAllItems(itemsRepo: ItemsRepository, uri: URI): SPItem[] {
  */
 function getFileItems(uri: string): SPItem[] {
   let items: FileItems = this.fileItems.get(uri);
-  return items === undefined ? Array.from(items.values()) : [];
+  return items !== undefined ? Array.from(items.values()) : [];
 }
 
 /**
@@ -58,4 +80,241 @@ function getIncludedFiles(
       getIncludedFiles(itemsRepo, includeFileItems, includes);
     }
   }
+}
+
+/**
+ * Get corresponding items from a position in a document.
+ * @param  {ItemsRepository} itemsRepo      The itemsRepository object constructed in the activation event.
+ * @param  {TextDocument} document          The document to get the item from.
+ * @param  {Position} position              The position at which to get the item.
+ * @returns SPItem
+ */
+export function getItemFromPosition(
+  itemsRepo: ItemsRepository,
+  document: TextDocument,
+  position: Position
+): SPItem[] {
+  const range = document.getWordRangeAtPosition(position);
+  const allItems = itemsRepo.getAllItems(document.uri);
+
+  const directoryPath = dirname(document.uri.fsPath);
+  const word = document.getText(range);
+  const line = document.lineAt(position.line).text;
+
+  // First check if we are dealing with a method or property.
+  let isMethod = false;
+  let isConstructor = false;
+  let match: RegExpMatchArray;
+
+  if (isInAComment(range, document.uri, allItems) || isInAString(range, line)) {
+    return undefined;
+  }
+
+  match =
+    line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>/) ||
+    line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"/);
+  if (match !== null) {
+    let file = match[1];
+    let fileMatchLength = file.length;
+    let fileStartPos = line.search(file);
+    // If no extension is provided, it's a .inc file
+    if (!/.sp\s*$/g.test(file) && !/.inc\s*$/g.test(file)) {
+      file += ".inc";
+    }
+    let defRange = new Range(
+      position.line,
+      fileStartPos,
+      position.line,
+      fileStartPos + fileMatchLength
+    );
+    let uri: string;
+    let incFilePath;
+    let smHome: string =
+      Workspace.getConfiguration(
+        "sourcepawn",
+        Workspace.getWorkspaceFolder(document.uri)
+      ).get("SourcemodHome") || "";
+    let potentialIncludePaths = [
+      directoryPath,
+      join(directoryPath, "include/"),
+      smHome,
+    ];
+    for (let includePath of potentialIncludePaths) {
+      incFilePath = resolve(includePath, file);
+      if (existsSync(resolve(includePath, file))) {
+        break;
+      }
+    }
+    for (let parsedUri of itemsRepo.documents.values()) {
+      if (parsedUri == URI.file(incFilePath).toString()) {
+        uri = parsedUri;
+        break;
+      }
+    }
+    return [new IncludeItem(uri, defRange)];
+  }
+  if (range.start.character > 1) {
+    let newPosStart = new Position(range.start.line, range.start.character - 2);
+    let newPosEnd = new Position(range.start.line, range.start.character);
+    let newRange = new Range(newPosStart, newPosEnd);
+    let char = document.getText(newRange);
+    isMethod = /(?:\w+\.|\:\:)/.test(char);
+    if (!isMethod) {
+      let newPosStart = new Position(range.start.line, 0);
+      let newPosEnd = new Position(range.start.line, range.end.character);
+      let newRange = new Range(newPosStart, newPosEnd);
+      let line = document.getText(newRange);
+      match = line.match(/new\s+(\w+)$/);
+      if (match) {
+        isConstructor = true;
+      }
+    }
+  }
+
+  let lastFunc: string = getLastFuncName(position, document, allItems);
+  let {
+    lastEnumStructOrMethodMap,
+    isAMethodMap,
+  } = getLastEnumStructNameOrMethodMap(position, document, allItems);
+  // If we match a property or a method of an enum struct
+  // but not a local scopped variable inside an enum struct's method.
+  if (
+    lastEnumStructOrMethodMap !== globalIdentifier &&
+    lastFunc === globalIdentifier &&
+    !isAMethodMap
+  ) {
+    let items = allItems.filter(
+      (item) =>
+        [
+          CompletionItemKind.Method,
+          CompletionItemKind.Property,
+          CompletionItemKind.Constructor,
+        ].includes(item.kind) &&
+        item.parent === lastEnumStructOrMethodMap &&
+        item.name === word
+    );
+    if (items.length !== 0) {
+      return items;
+    }
+  }
+
+  if (isMethod) {
+    let line = document.lineAt(position.line).text;
+    // If we are dealing with a method or property, look for the type of the variable
+    let { variableType, words } = getTypeOfVariable(
+      line,
+      position,
+      allItems,
+      lastFunc,
+      lastEnumStructOrMethodMap
+    );
+    // Get inheritances from methodmaps
+    let variableTypes: string[] = getAllInheritances(variableType, allItems);
+    // Find and return the matching item
+    let items = allItems.filter(
+      (item) =>
+        [
+          CompletionItemKind.Method,
+          CompletionItemKind.Property,
+          CompletionItemKind.Constructor,
+        ].includes(item.kind) &&
+        variableTypes.includes(item.parent) &&
+        item.name === word
+    );
+    return items;
+  }
+
+  if (isConstructor) {
+    let items = itemsRepo
+      .getAllItems(document.uri)
+      .filter(
+        (item) =>
+          item.kind === CompletionItemKind.Constructor && item.name === match[1]
+      );
+    return items;
+  }
+  // Check if we are dealing with a function
+  let bIsFunction = isFunction(
+    range,
+    document,
+    document.lineAt(position.line).text.length
+  );
+  let items = [];
+  if (bIsFunction) {
+    if (lastEnumStructOrMethodMap !== globalIdentifier) {
+      // Check for functions and methods
+      items = allItems.filter((item) => {
+        if (
+          [CompletionItemKind.Method, CompletionItemKind.Constructor].includes(
+            item.kind
+          ) &&
+          item.name === word &&
+          item.parent === lastEnumStructOrMethodMap
+        ) {
+          return true;
+        } else if (
+          [CompletionItemKind.Function, CompletionItemKind.Interface].includes(
+            item.kind
+          ) &&
+          item.name === word
+        ) {
+          return true;
+        }
+        return false;
+      });
+      return items;
+    } else {
+      items = allItems.filter(
+        (item) =>
+          [CompletionItemKind.Function, CompletionItemKind.Interface].includes(
+            item.kind
+          ) && item.name === word
+      );
+      return items;
+    }
+  }
+  items = allItems.filter(
+    (item) =>
+      ![
+        CompletionItemKind.Method,
+        CompletionItemKind.Property,
+        CompletionItemKind.Constructor,
+        CompletionItemKind.Function,
+      ].includes(item.kind) &&
+      item.name === word &&
+      item.parent === lastFunc
+  );
+  if (items.length > 0) {
+    return items;
+  }
+  items = allItems.filter((item) => {
+    if (
+      [
+        CompletionItemKind.Method,
+        CompletionItemKind.Property,
+        CompletionItemKind.Constructor,
+      ].includes(item.kind)
+    ) {
+      return false;
+    }
+    if (item.parent !== undefined) {
+      if (
+        [CompletionItemKind.Class, CompletionItemKind.EnumMember].includes(
+          item.kind
+        )
+      ) {
+        return item.name === word;
+      }
+      if (item.enumStructName !== undefined) {
+        return (
+          item.parent === globalIdentifier &&
+          item.name === word &&
+          item.enumStructName === lastEnumStructOrMethodMap
+        );
+      }
+      return item.parent === globalIdentifier && item.name === word;
+    }
+    return item.name === word;
+  });
+  return items;
 }
