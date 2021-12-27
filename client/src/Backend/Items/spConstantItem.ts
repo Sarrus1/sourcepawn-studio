@@ -22,7 +22,7 @@ export class ConstantItem implements SPItem {
     this.calls = [];
   }
 
-  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
+  toCompletionItem(): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -32,18 +32,18 @@ export class ConstantItem implements SPItem {
   }
 
   toDefinitionItem(): LocationLink {
-    return undefined;
+    return;
   }
 
   toSignature(): SignatureInformation {
-    return undefined;
+    return;
   }
 
   toHover(): Hover {
-    return undefined;
+    return;
   }
 
   toDocumentSymbol(): DocumentSymbol {
-    return undefined;
+    return;
   }
 }

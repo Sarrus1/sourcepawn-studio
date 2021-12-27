@@ -24,7 +24,7 @@ export class IncludeItem implements SPItem {
     this.defRange = defRange;
   }
 
-  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
+  toCompletionItem(): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -41,7 +41,7 @@ export class IncludeItem implements SPItem {
   }
 
   toSignature(): SignatureInformation {
-    return undefined;
+    return;
   }
 
   toHover(): Hover {
@@ -49,6 +49,6 @@ export class IncludeItem implements SPItem {
   }
 
   toDocumentSymbol(): DocumentSymbol {
-    return undefined;
+    return;
   }
 }

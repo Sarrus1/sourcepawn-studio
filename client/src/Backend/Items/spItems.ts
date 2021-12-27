@@ -24,7 +24,7 @@ export interface SPItem {
   enumStructName?: string;
   commitCharacters?: string[];
 
-  toCompletionItem(file: string, lastFuncName?: string): CompletionItem;
+  toCompletionItem(lastFuncName?: string): CompletionItem;
   toDefinitionItem(): LocationLink;
   toSignature(): SignatureInformation;
   toHover(): Hover;

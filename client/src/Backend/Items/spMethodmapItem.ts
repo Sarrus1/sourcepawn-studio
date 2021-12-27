@@ -46,7 +46,7 @@ export class MethodMapItem implements SPItem {
     this.type = name;
   }
 
-  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
+  toCompletionItem(): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -63,7 +63,7 @@ export class MethodMapItem implements SPItem {
   }
 
   toSignature(): SignatureInformation {
-    return undefined;
+    return;
   }
 
   toHover(): Hover {
@@ -86,7 +86,7 @@ export class MethodMapItem implements SPItem {
 
   toDocumentSymbol(): DocumentSymbol {
     if (this.fullRange === undefined) {
-      return undefined;
+      return;
     }
     return new DocumentSymbol(
       this.name,

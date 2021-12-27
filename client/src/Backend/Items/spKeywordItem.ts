@@ -18,7 +18,7 @@ export class KeywordItem implements SPItem {
     this.name = name;
   }
 
-  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
+  toCompletionItem(): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -28,18 +28,18 @@ export class KeywordItem implements SPItem {
   }
 
   toDefinitionItem(): LocationLink {
-    return undefined;
+    return;
   }
 
   toSignature(): SignatureInformation {
-    return undefined;
+    return;
   }
 
   toHover(): Hover {
-    return undefined;
+    return;
   }
 
   toDocumentSymbol(): DocumentSymbol {
-    return undefined;
+    return;
   }
 }

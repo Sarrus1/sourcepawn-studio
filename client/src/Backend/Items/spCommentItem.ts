@@ -21,23 +21,23 @@ export class CommentItem implements SPItem {
     this.range = range;
   }
 
-  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
-    return undefined;
+  toCompletionItem(): CompletionItem {
+    return;
   }
 
   toDefinitionItem(): LocationLink {
-    return undefined;
+    return;
   }
 
   toSignature(): SignatureInformation {
-    return undefined;
+    return;
   }
 
   toHover(): Hover {
-    return undefined;
+    return;
   }
 
   toDocumentSymbol(): DocumentSymbol {
-    return undefined;
+    return;
   }
 }

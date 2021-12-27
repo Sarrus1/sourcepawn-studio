@@ -42,7 +42,7 @@ export class TypeDefItem implements SPItem {
     this.fullRange = fullRange;
   }
 
-  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
+  toCompletionItem(): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -58,7 +58,7 @@ export class TypeDefItem implements SPItem {
   }
 
   toSignature(): SignatureInformation {
-    return undefined;
+    return;
   }
 
   toHover(): Hover {
@@ -73,7 +73,7 @@ export class TypeDefItem implements SPItem {
 
   toDocumentSymbol(): DocumentSymbol {
     if (this.fullRange === undefined) {
-      return undefined;
+      return;
     }
     return new DocumentSymbol(
       this.name,

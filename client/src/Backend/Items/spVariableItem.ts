@@ -39,29 +39,18 @@ export class VariableItem implements SPItem {
     this.enumStructName = enumStruct;
   }
 
-  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
-    if (lastFuncName !== undefined) {
-      if (this.parent === lastFuncName) {
-        return {
-          label: this.name,
-          kind: this.kind,
-          commitCharacters: this.commitCharacters,
-        };
-      } else if (this.parent === globalIdentifier) {
-        return {
-          label: this.name,
-          kind: this.kind,
-          commitCharacters: this.commitCharacters,
-        };
-      }
-      return undefined;
-    } else {
+  toCompletionItem(lastFuncName?: string): CompletionItem {
+    if (
+      lastFuncName === undefined ||
+      [lastFuncName, globalIdentifier].includes(this.parent)
+    ) {
       return {
         label: this.name,
         kind: this.kind,
         commitCharacters: this.commitCharacters,
       };
     }
+    return;
   }
 
   toDefinitionItem(): LocationLink {
@@ -72,7 +61,7 @@ export class VariableItem implements SPItem {
   }
 
   toSignature(): SignatureInformation {
-    return undefined;
+    return;
   }
 
   toHover(): Hover {

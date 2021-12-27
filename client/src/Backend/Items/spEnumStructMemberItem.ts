@@ -40,7 +40,7 @@ export class EnumStructMemberItem implements SPItem {
     this.type = type;
   }
 
-  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
+  toCompletionItem(): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -57,7 +57,7 @@ export class EnumStructMemberItem implements SPItem {
   }
 
   toSignature(): SignatureInformation {
-    return undefined;
+    return;
   }
 
   toHover(): Hover {

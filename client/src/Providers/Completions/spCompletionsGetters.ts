@@ -112,7 +112,7 @@ export function getCompletionListFromPosition(
           item.kind === CompletionItemKind.Property
         )
       ) {
-        items.add(item.toCompletionItem(document.uri.fsPath, lastFunc));
+        items.add(item.toCompletionItem(lastFunc));
       }
     }
     // Make sure no undefined objects are present.
@@ -152,7 +152,7 @@ export function getCompletionListFromPosition(
       ((!isMethodMap && !item.detail.includes("static")) ||
         (isMethodMap && item.detail.includes("static")))
     ) {
-      items.add(item.toCompletionItem(document.uri.fsPath, lastFunc));
+      items.add(item.toCompletionItem(lastFunc));
     }
   }
   // Make sure no undefined objects are present.

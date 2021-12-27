@@ -44,7 +44,7 @@ export class EnumMemberItem implements SPItem {
     this.parent = Enum.name;
   }
 
-  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
+  toCompletionItem(): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
@@ -81,7 +81,7 @@ export class EnumMemberItem implements SPItem {
 
   toDocumentSymbol(): DocumentSymbol {
     if (this.name === "") {
-      return undefined;
+      return;
     }
     return new DocumentSymbol(
       this.name,
