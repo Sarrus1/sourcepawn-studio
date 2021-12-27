@@ -25,7 +25,6 @@ export class FunctionItem implements SPItem {
   IsBuiltIn: boolean;
   kind = CompletionItemKind.Function;
   type: string;
-  commitCharacters = [";", "(", ","];
 
   constructor(
     name: string,
@@ -54,7 +53,6 @@ export class FunctionItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: basename(this.filePath),
-      commitCharacters: this.commitCharacters,
     };
   }
 

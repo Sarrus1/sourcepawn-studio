@@ -25,7 +25,6 @@ export class MethodMapItem implements SPItem {
   IsBuiltIn: boolean;
   filePath: string;
   fullRange: Range;
-  commitCharacters = [";", ".", "("];
 
   constructor(
     name: string,
@@ -51,7 +50,6 @@ export class MethodMapItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: basename(this.filePath, ".inc"),
-      commitCharacters: this.commitCharacters,
     };
   }
 

@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [3.0.1]
+
+### Fixed
+
+- Fixed setMainPath command not working from the Command Palette.
+- Fixed inconsistent `public` fix (see #165).
+
 ## [3.0.0]
 
 ### Added

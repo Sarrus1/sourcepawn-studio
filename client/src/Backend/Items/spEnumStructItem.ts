@@ -21,7 +21,6 @@ export class EnumStructItem implements SPItem {
   kind = CompletionItemKind.Struct;
   range: Range;
   fullRange: Range;
-  commitCharacters = [";"];
 
   constructor(name: string, file: string, description: string, range: Range) {
     this.name = name;
@@ -35,7 +34,6 @@ export class EnumStructItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: basename(this.filePath),
-      commitCharacters: this.commitCharacters,
     };
   }
 

@@ -23,7 +23,6 @@ export class PropertyItem implements SPItem {
   kind = CompletionItemKind.Property;
   range: Range;
   fullRange: Range;
-  commitCharacters = [";", "."];
 
   constructor(
     parent: string,
@@ -48,7 +47,6 @@ export class PropertyItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: this.parent,
-      commitCharacters: this.commitCharacters,
     };
   }
 

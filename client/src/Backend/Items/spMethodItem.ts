@@ -26,7 +26,6 @@ export class MethodItem implements SPItem {
   range: Range;
   IsBuiltIn: boolean;
   filePath: string;
-  commitCharacters = [";", "("];
 
   constructor(
     parent: string,
@@ -61,7 +60,6 @@ export class MethodItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: this.parent,
-      commitCharacters: this.commitCharacters,
     };
   }
 

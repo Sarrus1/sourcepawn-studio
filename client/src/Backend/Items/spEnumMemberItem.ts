@@ -25,7 +25,6 @@ export class EnumMemberItem implements SPItem {
   range: Range;
   calls: Location[];
   IsBuiltIn: boolean;
-  commitCharacters = [";"];
 
   constructor(
     name: string,
@@ -49,7 +48,6 @@ export class EnumMemberItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: this.parent === "" ? basename(this.filePath) : this.parent,
-      commitCharacters: this.commitCharacters,
     };
   }
 

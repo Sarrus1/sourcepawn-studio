@@ -21,7 +21,6 @@ export class VariableItem implements SPItem {
   range: Range;
   type: string;
   enumStructName: string;
-  commitCharacters = [";", "."];
 
   constructor(
     name: string,
@@ -47,7 +46,6 @@ export class VariableItem implements SPItem {
       return {
         label: this.name,
         kind: this.kind,
-        commitCharacters: this.commitCharacters,
       };
     }
     return;

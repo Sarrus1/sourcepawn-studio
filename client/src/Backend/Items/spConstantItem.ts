@@ -15,7 +15,6 @@ export class ConstantItem implements SPItem {
   name: string;
   kind = CompletionItemKind.Constant;
   calls: Location[];
-  commitCharacters = [";", ","];
 
   constructor(name: string) {
     this.name = name;
@@ -27,7 +26,6 @@ export class ConstantItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: "",
-      commitCharacters: this.commitCharacters,
     };
   }
 

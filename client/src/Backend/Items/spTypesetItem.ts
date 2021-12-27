@@ -22,7 +22,6 @@ export class TypeSetItem implements SPItem {
   kind = CompletionItemKind.TypeParameter;
   range: Range;
   fullRange: Range;
-  commitCharacters = [";", ","];
 
   constructor(
     name: string,
@@ -45,7 +44,6 @@ export class TypeSetItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: basename(this.filePath),
-      commitCharacters: this.commitCharacters,
     };
   }
 

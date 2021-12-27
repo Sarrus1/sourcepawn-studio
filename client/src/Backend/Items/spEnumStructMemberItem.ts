@@ -21,7 +21,6 @@ export class EnumStructMemberItem implements SPItem {
   kind = CompletionItemKind.Property;
   parent: string;
   range: Range;
-  commitCharacters = [";"];
 
   constructor(
     name: string,
@@ -45,7 +44,6 @@ export class EnumStructMemberItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: this.enumStruct.name,
-      commitCharacters: this.commitCharacters,
     };
   }
 
