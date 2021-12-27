@@ -40,7 +40,8 @@ export function parseSMApi(itemsRepo: ItemsRepository): void {
 
   if (debug) console.log("Parsing SM API");
 
-  const files = glob.sync(join(SMHome, "**/*.inc"));
+  const files: string[] = glob.sync(join(SMHome, "**/*.inc"));
+  files.forEach((e) => itemsRepo.documents.add(URI.file(e).toString()));
 
   for (let file of files) {
     try {

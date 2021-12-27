@@ -56,8 +56,7 @@ export class FileItems extends Map {
       "sourcepawn",
       Workspace.getWorkspaceFolder(URI.file(filePath))
     ).get("SourcemodHome");
-    let directoryPath = dirname(filePath);
-    let includeFile: string;
+    const directoryPath = dirname(filePath);
     includeText = getIncludeExtension(includeText);
     let incFilePath = resolve(directoryPath, includeText);
     if (!existsSync(incFilePath)) {
@@ -77,7 +76,7 @@ export class FileItems extends Map {
       "optionalIncludeDirsPaths"
     );
     for (let includeDir of includeDirs) {
-      includeFile = resolve(
+      let includeFile = resolve(
         Workspace.workspaceFolders.map((folder) => folder.uri.fsPath) +
           includeDir +
           includeText
