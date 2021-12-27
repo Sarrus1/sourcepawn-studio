@@ -12,12 +12,12 @@ import { SPItem } from "./spItems";
 
 export class CommentItem implements SPItem {
   name: string;
-  file: string;
+  filePath: string;
   kind = CompletionItemKind.User;
   range: Range;
 
   constructor(file: string, range: Range) {
-    this.file = file;
+    this.filePath = file;
     this.range = range;
   }
 

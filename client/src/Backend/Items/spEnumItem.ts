@@ -16,7 +16,7 @@ import { SPItem } from "./spItems";
 
 export class EnumItem implements SPItem {
   name: string;
-  file: string;
+  filePath: string;
   kind = CompletionItemKind.Enum;
   description: string;
   range: Range;
@@ -25,7 +25,7 @@ export class EnumItem implements SPItem {
 
   constructor(name: string, file: string, description: string, range: Range) {
     this.name = name;
-    this.file = file;
+    this.filePath = file;
     this.description = description;
     this.range = range;
   }
@@ -34,7 +34,7 @@ export class EnumItem implements SPItem {
     return {
       label: this.name,
       kind: this.kind,
-      detail: basename(this.file),
+      detail: basename(this.filePath),
       commitCharacters: this.commitCharacters,
     };
   }
@@ -42,7 +42,7 @@ export class EnumItem implements SPItem {
   toDefinitionItem(): LocationLink {
     return {
       targetRange: this.range,
-      targetUri: URI.file(this.file),
+      targetUri: URI.file(this.filePath),
     };
   }
 

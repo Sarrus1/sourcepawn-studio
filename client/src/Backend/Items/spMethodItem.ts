@@ -25,7 +25,7 @@ export class MethodItem implements SPItem {
   type: string;
   range: Range;
   IsBuiltIn: boolean;
-  file: string;
+  filePath: string;
   commitCharacters = [";", "("];
 
   constructor(
@@ -51,7 +51,7 @@ export class MethodItem implements SPItem {
     this.params = params;
     this.type = type;
     this.IsBuiltIn = IsBuiltIn;
-    this.file = file;
+    this.filePath = file;
     this.range = range;
     this.fullRange = fullRange;
   }
@@ -68,7 +68,7 @@ export class MethodItem implements SPItem {
   toDefinitionItem(): LocationLink {
     return {
       targetRange: this.range,
-      targetUri: URI.file(this.file),
+      targetUri: URI.file(this.filePath),
     };
   }
 
@@ -84,7 +84,7 @@ export class MethodItem implements SPItem {
     if (!this.description) {
       return new Hover([{ language: "sourcepawn", value: this.detail }]);
     }
-    let filename: string = basename(this.file, ".inc");
+    let filename: string = basename(this.filePath, ".inc");
     if (this.IsBuiltIn) {
       return new Hover([
         { language: "sourcepawn", value: this.detail },

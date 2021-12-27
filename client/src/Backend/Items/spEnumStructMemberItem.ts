@@ -15,7 +15,7 @@ import { SPItem } from "./spItems";
 export class EnumStructMemberItem implements SPItem {
   name: string;
   enumStruct: EnumStructItem;
-  file: string;
+  filePath: string;
   description: string;
   type: string;
   kind = CompletionItemKind.Property;
@@ -32,7 +32,7 @@ export class EnumStructMemberItem implements SPItem {
     type: string
   ) {
     this.name = name;
-    this.file = file;
+    this.filePath = file;
     this.description = description;
     this.enumStruct = EnumStruct;
     this.range = range;
@@ -52,7 +52,7 @@ export class EnumStructMemberItem implements SPItem {
   toDefinitionItem(): LocationLink {
     return {
       targetRange: this.range,
-      targetUri: URI.file(this.file),
+      targetUri: URI.file(this.filePath),
     };
   }
 

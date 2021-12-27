@@ -19,7 +19,7 @@ export class FunctionItem implements SPItem {
   description: string;
   detail: string;
   params: FunctionParam[];
-  file: string;
+  filePath: string;
   range: Range;
   fullRange: Range;
   IsBuiltIn: boolean;
@@ -42,7 +42,7 @@ export class FunctionItem implements SPItem {
     this.name = name;
     this.params = params;
     this.detail = detail;
-    this.file = file;
+    this.filePath = file;
     this.IsBuiltIn = IsBuiltIn;
     this.range = range;
     this.type = type;
@@ -53,7 +53,7 @@ export class FunctionItem implements SPItem {
     return {
       label: this.name,
       kind: this.kind,
-      detail: basename(this.file),
+      detail: basename(this.filePath),
       commitCharacters: this.commitCharacters,
     };
   }
@@ -67,7 +67,7 @@ export class FunctionItem implements SPItem {
   }
 
   toHover(): Hover {
-    let filename: string = basename(this.file, ".inc");
+    let filename: string = basename(this.filePath, ".inc");
     if (this.description == "") {
       return new Hover({ language: "sourcepawn", value: this.detail });
     }
@@ -87,7 +87,7 @@ export class FunctionItem implements SPItem {
   toDefinitionItem(): LocationLink {
     return {
       targetRange: this.range,
-      targetUri: URI.file(this.file),
+      targetUri: URI.file(this.filePath),
     };
   }
 

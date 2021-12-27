@@ -38,7 +38,7 @@ export function symbolProvider(
   let items = itemsRepo.getAllItems(document.uri);
   let file = document.uri.fsPath;
   for (let item of items) {
-    if (allowedKinds.includes(item.kind) && item.file === file) {
+    if (allowedKinds.includes(item.kind) && item.filePath === file) {
       // Don't add non global variables here
       if (
         item.kind === CompletionItemKind.Variable &&
@@ -54,7 +54,7 @@ export function symbolProvider(
           .filter(
             (e) =>
               allowedChildrendKinds.includes(e.kind) &&
-              e.file === file &&
+              e.filePath === file &&
               e.parent === item.name
           )
           .map((e) => e.toDocumentSymbol())

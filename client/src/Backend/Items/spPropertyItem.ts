@@ -16,7 +16,7 @@ import { SPItem } from "./spItems";
 export class PropertyItem implements SPItem {
   parent: string;
   name: string;
-  file: string;
+  filePath: string;
   description: string;
   type: string;
   detail: string;
@@ -36,7 +36,7 @@ export class PropertyItem implements SPItem {
   ) {
     this.parent = parent;
     this.name = name;
-    this.file = file;
+    this.filePath = file;
     this.description = description;
     this.range = range;
     this.type = type;
@@ -55,7 +55,7 @@ export class PropertyItem implements SPItem {
   toDefinitionItem(): LocationLink {
     return {
       targetRange: this.range,
-      targetUri: URI.file(this.file),
+      targetUri: URI.file(this.filePath),
     };
   }
 

@@ -19,7 +19,7 @@ import { SPItem } from "./spItems";
 export class EnumMemberItem implements SPItem {
   name: string;
   parent: string;
-  file: string;
+  filePath: string;
   description: string;
   kind = CompletionItemKind.EnumMember;
   range: Range;
@@ -36,7 +36,7 @@ export class EnumMemberItem implements SPItem {
     IsBuiltItn: boolean
   ) {
     this.name = name;
-    this.file = file;
+    this.filePath = file;
     this.description = description;
     this.range = range;
     this.calls = [];
@@ -48,7 +48,7 @@ export class EnumMemberItem implements SPItem {
     return {
       label: this.name,
       kind: this.kind,
-      detail: this.parent === "" ? basename(this.file) : this.parent,
+      detail: this.parent === "" ? basename(this.filePath) : this.parent,
       commitCharacters: this.commitCharacters,
     };
   }
@@ -56,7 +56,7 @@ export class EnumMemberItem implements SPItem {
   toDefinitionItem(): LocationLink {
     return {
       targetRange: this.range,
-      targetUri: URI.file(this.file),
+      targetUri: URI.file(this.filePath),
     };
   }
 

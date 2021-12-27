@@ -15,12 +15,12 @@ import { SPItem } from "./spItems";
 export class IncludeItem implements SPItem {
   name: string;
   kind = CompletionItemKind.File;
-  file: string;
+  filePath: string;
   defRange: Range;
 
   constructor(uri: string, defRange: Range) {
     this.name = basename(URI.file(uri).fsPath);
-    this.file = uri;
+    this.filePath = uri;
     this.defRange = defRange;
   }
 
@@ -36,7 +36,7 @@ export class IncludeItem implements SPItem {
     return {
       originSelectionRange: this.defRange,
       targetRange: new Range(0, 0, 0, 0),
-      targetUri: URI.parse(this.file),
+      targetUri: URI.parse(this.filePath),
     };
   }
 
@@ -45,7 +45,7 @@ export class IncludeItem implements SPItem {
   }
 
   toHover(): Hover {
-    return new Hover(URI.parse(this.file).fsPath);
+    return new Hover(URI.parse(this.filePath).fsPath);
   }
 
   toDocumentSymbol(): DocumentSymbol {

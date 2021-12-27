@@ -15,7 +15,7 @@ import { globalIdentifier } from "../../Misc/spConstants";
 
 export class VariableItem implements SPItem {
   name: string;
-  file: string;
+  filePath: string;
   kind = CompletionItemKind.Variable;
   parent: string;
   range: Range;
@@ -32,7 +32,7 @@ export class VariableItem implements SPItem {
     enumStruct: string
   ) {
     this.name = name;
-    this.file = file;
+    this.filePath = file;
     this.parent = parent;
     this.range = range;
     this.type = type;
@@ -56,7 +56,7 @@ export class VariableItem implements SPItem {
   toDefinitionItem(): LocationLink {
     return {
       targetRange: this.range,
-      targetUri: URI.file(this.file),
+      targetUri: URI.file(this.filePath),
     };
   }
 

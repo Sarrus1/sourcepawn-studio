@@ -16,7 +16,7 @@ import { SPItem } from "./spItems";
 export class DefineItem implements SPItem {
   name: string;
   value: string;
-  file: string;
+  filePath: string;
   kind = CompletionItemKind.Constant;
   IsBuiltIn: boolean;
   range: Range;
@@ -34,7 +34,7 @@ export class DefineItem implements SPItem {
   ) {
     this.name = name;
     this.value = value;
-    this.file = file;
+    this.filePath = file;
     this.range = range;
     this.calls = [];
     this.IsBuiltIn = IsBuiltIn;
@@ -45,7 +45,7 @@ export class DefineItem implements SPItem {
     return {
       label: this.name,
       kind: this.kind,
-      detail: this.file,
+      detail: this.filePath,
       commitCharacters: this.commitCharacters,
     };
   }
@@ -53,7 +53,7 @@ export class DefineItem implements SPItem {
   toDefinitionItem(): LocationLink {
     return {
       targetRange: this.range,
-      targetUri: URI.file(this.file),
+      targetUri: URI.file(this.filePath),
     };
   }
 

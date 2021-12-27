@@ -12,7 +12,7 @@
 export interface SPItem {
   name: string;
   kind: CompletionItemKind;
-  file?: string;
+  filePath?: string;
   type?: string;
   parent?: string;
   description?: string;

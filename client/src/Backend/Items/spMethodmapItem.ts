@@ -23,7 +23,7 @@ export class MethodMapItem implements SPItem {
   type: string;
   range: Range;
   IsBuiltIn: boolean;
-  file: string;
+  filePath: string;
   fullRange: Range;
   commitCharacters = [";", ".", "("];
 
@@ -41,7 +41,7 @@ export class MethodMapItem implements SPItem {
     this.detail = detail;
     this.description = description;
     this.IsBuiltIn = IsBuiltIn;
-    this.file = file;
+    this.filePath = file;
     this.range = range;
     this.type = name;
   }
@@ -50,7 +50,7 @@ export class MethodMapItem implements SPItem {
     return {
       label: this.name,
       kind: this.kind,
-      detail: basename(this.file, ".inc"),
+      detail: basename(this.filePath, ".inc"),
       commitCharacters: this.commitCharacters,
     };
   }
@@ -58,7 +58,7 @@ export class MethodMapItem implements SPItem {
   toDefinitionItem(): LocationLink {
     return {
       targetRange: this.range,
-      targetUri: URI.file(this.file),
+      targetUri: URI.file(this.filePath),
     };
   }
 
@@ -70,7 +70,7 @@ export class MethodMapItem implements SPItem {
     if (!this.description) {
       return new Hover([{ language: "sourcepawn", value: this.detail }]);
     }
-    let filename: string = basename(this.file, ".inc");
+    let filename: string = basename(this.filePath, ".inc");
     if (this.IsBuiltIn) {
       return new Hover([
         { language: "sourcepawn", value: this.detail },

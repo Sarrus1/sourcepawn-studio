@@ -335,7 +335,7 @@ export class Parser {
     for (let item of items) {
       if (item.kind === kind) {
         purgeCalls(item, this.file);
-        defines.set(item.name, item.file);
+        defines.set(item.name, item.filePath);
       }
     }
     return defines;

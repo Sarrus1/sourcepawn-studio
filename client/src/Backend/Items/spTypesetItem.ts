@@ -17,7 +17,7 @@ import { SPItem } from "./spItems";
 export class TypeSetItem implements SPItem {
   name: string;
   details: string;
-  file: string;
+  filePath: string;
   description: string;
   kind = CompletionItemKind.TypeParameter;
   range: Range;
@@ -34,7 +34,7 @@ export class TypeSetItem implements SPItem {
   ) {
     this.name = name;
     this.details = details;
-    this.file = file;
+    this.filePath = file;
     this.description = description;
     this.range = range;
     this.fullRange = fullRange;
@@ -44,7 +44,7 @@ export class TypeSetItem implements SPItem {
     return {
       label: this.name,
       kind: this.kind,
-      detail: basename(this.file),
+      detail: basename(this.filePath),
       commitCharacters: this.commitCharacters,
     };
   }
@@ -52,7 +52,7 @@ export class TypeSetItem implements SPItem {
   toDefinitionItem(): LocationLink {
     return {
       targetRange: this.range,
-      targetUri: URI.file(this.file),
+      targetUri: URI.file(this.filePath),
     };
   }
 

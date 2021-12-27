@@ -20,7 +20,7 @@ export function getLastFuncName(
       [CompletionItemKind.Function, CompletionItemKind.Method].includes(
         e.kind
       ) &&
-      e.file === document.uri.fsPath &&
+      e.filePath === document.uri.fsPath &&
       e.fullRange != undefined &&
       e.fullRange.contains(position)
   );
@@ -36,7 +36,7 @@ export function isInAComment(
   let item = allItems.find(
     (e) =>
       e.kind === CompletionItemKind.User &&
-      e.file == file &&
+      e.filePath == file &&
       e.range.contains(range)
   );
   return item !== undefined;
@@ -118,7 +118,7 @@ export function getLastEnumStructNameOrMethodMap(
   let enumStruct = allItems.find(
     (e) =>
       [CompletionItemKind.Struct, CompletionItemKind.Class].includes(e.kind) &&
-      e.file === document.uri.fsPath &&
+      e.filePath === document.uri.fsPath &&
       e.fullRange != undefined &&
       e.fullRange.contains(position)
   );
