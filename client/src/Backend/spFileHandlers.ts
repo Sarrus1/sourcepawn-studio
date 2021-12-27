@@ -8,7 +8,7 @@ import { resolve, dirname, join, extname } from "path";
 import { existsSync } from "fs";
 
 import { ItemsRepository } from "./spItemsRepository";
-import { Include } from "./spItems";
+import { Include } from "./Items/spItems";
 import { FileItems } from "./spFilesRepository";
 import { parseText, parseFile } from "../Parser/spParser";
 

@@ -1,0 +1,94 @@
+import {
+  CompletionItemKind,
+  Range,
+  CompletionItem,
+  SignatureInformation,
+  Hover,
+  Location,
+  DocumentSymbol,
+  SymbolKind,
+  LocationLink,
+} from "vscode";
+import { URI } from "vscode-uri";
+import { basename } from "path";
+
+import { descriptionToMD } from "../../spUtils";
+import { EnumItem } from "./spEnumItem";
+import { SPItem } from "./spItems";
+
+export class EnumMemberItem implements SPItem {
+  name: string;
+  parent: string;
+  file: string;
+  description: string;
+  kind = CompletionItemKind.EnumMember;
+  range: Range;
+  calls: Location[];
+  IsBuiltIn: boolean;
+  commitCharacters = [";"];
+
+  constructor(
+    name: string,
+    file: string,
+    description: string,
+    Enum: EnumItem,
+    range: Range,
+    IsBuiltItn: boolean
+  ) {
+    this.name = name;
+    this.file = file;
+    this.description = description;
+    this.range = range;
+    this.calls = [];
+    this.IsBuiltIn = IsBuiltItn;
+    this.parent = Enum.name;
+  }
+
+  toCompletionItem(file: string, lastFuncName?: string): CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: this.parent === "" ? basename(this.file) : this.parent,
+      commitCharacters: this.commitCharacters,
+    };
+  }
+
+  toDefinitionItem(): LocationLink {
+    return {
+      targetRange: this.range,
+      targetUri: URI.file(this.file),
+    };
+  }
+
+  toSignature(): SignatureInformation {
+    return undefined;
+  }
+
+  toHover(): Hover {
+    let enumName = this.parent;
+    if (enumName == "") {
+      return new Hover([
+        { language: "sourcepawn", value: this.name },
+        descriptionToMD(this.description),
+      ]);
+    } else {
+      return new Hover([
+        { language: "sourcepawn", value: `${this.parent} ${this.name};` },
+        descriptionToMD(this.description),
+      ]);
+    }
+  }
+
+  toDocumentSymbol(): DocumentSymbol {
+    if (this.name === "") {
+      return undefined;
+    }
+    return new DocumentSymbol(
+      this.name,
+      this.description,
+      SymbolKind.Enum,
+      this.range,
+      this.range
+    );
+  }
+}

@@ -9,7 +9,7 @@ import {
 } from "vscode";
 import { URI } from "vscode-uri";
 
-import { SPItem } from "./spItems";
+import { SPItem } from "./Items/spItems";
 import { events } from "../Misc/sourceEvents";
 import { FileItems } from "./spFilesRepository";
 import {

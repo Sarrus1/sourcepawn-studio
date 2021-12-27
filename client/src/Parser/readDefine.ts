@@ -1,6 +1,6 @@
 ﻿import { positiveRange } from "./utils";
 import { Parser } from "./spParser";
-import { DefineItem } from "../Backend/spItems";
+import { DefineItem } from "../Backend/Items/spDefineItem";
 import { searchForDefinesInString } from "./searchForDefinesInString";
 
 export function readDefine(

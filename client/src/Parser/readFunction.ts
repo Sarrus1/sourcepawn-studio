@@ -1,5 +1,6 @@
 ﻿import { Parser } from "./spParser";
-import { MethodItem, FunctionItem } from "../Backend/spItems";
+import { MethodItem } from "../Backend/Items/spMethodItem";
+import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { State } from "./stateEnum";
 import { Range } from "vscode";
 import { searchForDefinesInString } from "./searchForDefinesInString";

@@ -13,7 +13,7 @@ import {
   getLastFuncName,
   getLastEnumStructNameOrMethodMap,
 } from "../../Providers/spDefinitionProvider";
-import { SPItem } from "../../Backend/spItems";
+import { SPItem } from "../../Backend/Items/spItems";
 import { getAllPossibleIncludeFolderPaths } from "../../Backend/spFileHandlers";
 import { ItemsRepository } from "../../Backend/spItemsRepository";
 import { isMethodCall } from "../../Backend/spUtils";

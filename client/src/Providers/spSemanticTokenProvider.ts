@@ -6,7 +6,7 @@ import {
 } from "vscode";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import { SP_LEGENDS } from "../Misc/spConstants";
-import { SPItem } from "../Backend/spItems";
+import { SPItem } from "../Backend/Items/spItems";
 
 export function semanticTokenProvider(
   itemsRepo: ItemsRepository,

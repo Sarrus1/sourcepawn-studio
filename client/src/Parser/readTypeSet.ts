@@ -1,5 +1,5 @@
 ﻿import { Parser } from "./spParser";
-import { TypeSetItem } from "../Backend/spItems";
+import { TypeSetItem } from "../Backend/Items/spTypesetItem";
 import { Range, Position } from "vscode";
 import { searchForDefinesInString } from "./searchForDefinesInString";
 import { parseDocComment } from "./parseDocComment";

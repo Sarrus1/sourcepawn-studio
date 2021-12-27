@@ -3,7 +3,8 @@ import { resolve } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 
-import { SPItem, IncludeItem } from "./spItems";
+import { SPItem } from "./Items/spItems";
+import { IncludeItem } from "./Items/spIncludeItem";
 import {
   getLastFuncName,
   isInAComment,

@@ -1,5 +1,5 @@
 ﻿import { Parser } from "./spParser";
-import { MacroItem } from "../Backend/spItems";
+import { MacroItem } from "../Backend/Items/spMacroItem";
 import { parseDocComment } from "./parseDocComment";
 
 export function readMacro(

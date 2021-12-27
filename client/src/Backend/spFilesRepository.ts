@@ -2,7 +2,10 @@ import { workspace as Workspace } from "vscode";
 import { dirname, resolve } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
-import { Include, ConstantItem, KeywordItem } from "./spItems";
+
+import { Include } from "./Items/spItems";
+import { KeywordItem } from "./Items/spKeywordItem";
+import { ConstantItem } from "./Items/spConstantItem";
 import {
   defaultConstantItems,
   defaultKeywordsItems,

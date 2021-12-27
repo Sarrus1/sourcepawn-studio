@@ -1,5 +1,5 @@
 import { Position, CompletionItemKind } from "vscode";
-import { SPItem } from "./spItems";
+import { SPItem } from "./Items/spItems";
 import { globalIdentifier } from "../Misc/spConstants";
 
 export interface VariableType {

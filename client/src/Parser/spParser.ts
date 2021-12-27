@@ -1,6 +1,12 @@
+import { CompletionItemKind, Range, workspace as Workspace } from "vscode";
+import { existsSync, readFileSync } from "fs";
+import { resolve, dirname } from "path";
+import { URI } from "vscode-uri";
+
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import { FileItems } from "../Backend/spFilesRepository";
-import { SPItem, CommentItem } from "../Backend/spItems";
+import { SPItem } from "../Backend/Items/spItems";
+import { CommentItem } from "../Backend/Items/spCommentItem";
 import { State } from "./stateEnum";
 import { readDefine } from "./readDefine";
 import { readMacro } from "./readMacro";
@@ -16,11 +22,6 @@ import { consumeComment } from "./consumeComment";
 import { searchForDefinesInString } from "./searchForDefinesInString";
 import { readMethodMap } from "./readMethodMap";
 import { manageState } from "./manageState";
-
-import { CompletionItemKind, Range, workspace as Workspace } from "vscode";
-import { existsSync, readFileSync } from "fs";
-import { resolve, dirname } from "path";
-import { URI } from "vscode-uri";
 import { purgeCalls, positiveRange, parentCounter } from "./utils";
 
 export function parseFile(

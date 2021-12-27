@@ -7,7 +7,7 @@
 } from "vscode";
 import { URI } from "vscode-uri";
 import { globalIdentifier } from "../Misc/spConstants";
-import { SPItem } from "../Backend/spItems";
+import { SPItem } from "../Backend/Items/spItems";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 
 export function getLastFuncName(

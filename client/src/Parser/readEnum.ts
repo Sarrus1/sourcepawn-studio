@@ -1,10 +1,13 @@
-﻿import { Parser } from "./spParser";
-import { EnumStructItem, EnumItem, EnumMemberItem } from "../Backend/spItems";
+﻿import { basename } from "path";
+
+import { Parser } from "./spParser";
+import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
+import { EnumItem } from "../Backend/Items/spEnumItem";
+import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
 import { State } from "./stateEnum";
 import { searchForDefinesInString } from "./searchForDefinesInString";
 import { parseDocComment } from "./parseDocComment";
 import { addFullRange } from "./addFullRange";
-import { basename } from "path";
 
 export function readEnum(
   parser: Parser,
