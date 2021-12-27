@@ -12,6 +12,11 @@ export interface ParsedLine {
   isNameSpace: boolean;
 }
 
+export interface MethodIndex {
+  i: number;
+  isNameSpace: boolean;
+}
+
 /**
  * Parses the type of a variable from a line an a position in a document.
  * Returns a VariableType object with the type of the variable as a string, and an array of strings,
@@ -87,49 +92,21 @@ export function getTypeOfVariable(
  * @returns ParsedLine
  */
 function parseMethodsFromLine(line: string, position: Position): ParsedLine {
-  let i = position.character - 1;
+  let { i, isNameSpace } = getMethodIndex(position.character - 1, line);
   let bCounter = 0;
   let pCounter = 0;
-  let isNameSpace = false;
-  while (i >= 0) {
-    if (/\w/.test(line[i])) {
-      i--;
-    } else if (line[i] === ".") {
-      i--;
-      break;
-    } else if (line[i] === ":") {
-      i--;
-      if (line[i] === ":") {
-        i--;
-        isNameSpace = true;
-        break;
-      }
-    }
-  }
   let wordCounter = 0;
-  let words: string[] = [""];
+  let words = [""];
   while (i >= 0) {
     if (line[i] === "]") {
       bCounter++;
-      i--;
-      continue;
-    }
-    if (line[i] === "[") {
+    } else if (line[i] === "[") {
       bCounter--;
-      i--;
-      continue;
-    }
-    if (line[i] === ")") {
+    } else if (line[i] === ")") {
       pCounter++;
-      i--;
-      continue;
-    }
-    if (line[i] === "(") {
+    } else if (line[i] === "(") {
       pCounter--;
-      i--;
-      continue;
-    }
-    if (bCounter === 0 && pCounter === 0) {
+    } else if (bCounter === 0 && pCounter === 0) {
       if (/\w/.test(line[i])) {
         words[wordCounter] = line[i] + words[wordCounter];
       } else if (line[i] === ".") {
@@ -149,6 +126,26 @@ function parseMethodsFromLine(line: string, position: Position): ParsedLine {
     i--;
   }
   return { words, isNameSpace };
+}
+
+function getMethodIndex(i: number, line: string): MethodIndex {
+  let isNameSpace = false;
+  while (i >= 0) {
+    if (/\w/.test(line[i])) {
+      i--;
+    } else if (line[i] === ".") {
+      i--;
+      break;
+    } else if (line[i] === ":") {
+      i--;
+      if (line[i] === ":") {
+        i--;
+        isNameSpace = true;
+        break;
+      }
+    }
+  }
+  return { i, isNameSpace };
 }
 
 /**
