@@ -1,6 +1,6 @@
 ## Release Notes
 
-## [2.8.0]
+## [3.0.0]
 
 ### Added
 
@@ -10,6 +10,7 @@
 - Added support for commit characters (see #162). Thanks to [BoomShotKapow](https://github.com/BoomShotKapow) for implementing this.
 - Added `@param` keyword highlighting in JSDoc comments.
 - Added a `Loading SM API`, status icon.
+- Added a sorting feature for Hovers. Sourcemod builtin hovers will now be more relevant.
 
 ### Fixed
 
