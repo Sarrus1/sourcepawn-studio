@@ -19,6 +19,8 @@ import { ItemsRepository } from "../../Backend/spItemsRepository";
 import { isMethodCall } from "../../Backend/spUtils";
 import { getAllInheritances } from "../../Backend/spItemsPropertyGetters";
 
+const MP = [CompletionItemKind.Method, CompletionItemKind.Property];
+
 /**
  * Generate a CompletionList object of the possible includes file that can fit the already typed #include statement.
  * @param  {Set<string>} knownIncs    Set of parsed include files (.sp and .inc).
@@ -102,22 +104,8 @@ export function getCompletionListFromPosition(
   const isMethod = isMethodCall(line, position);
   const lastFunc: string = getLastFuncName(position, document, allItems);
 
-  let items = new Set<CompletionItem>();
-
   if (!isMethod) {
-    for (let item of allItems) {
-      if (
-        !(
-          item.kind === CompletionItemKind.Method ||
-          item.kind === CompletionItemKind.Property
-        )
-      ) {
-        items.add(item.toCompletionItem(lastFunc));
-      }
-    }
-    // Make sure no undefined objects are present.
-    items.delete(undefined);
-    return new CompletionList(Array.from(items).filter((e) => e !== undefined));
+    return getNonMethodItems(allItems, lastFunc);
   }
 
   const {
@@ -131,31 +119,53 @@ export function getCompletionListFromPosition(
     lastFunc,
     lastEnumStructOrMethodMap
   );
-  let variableTypes: string[] = getAllInheritances(variableType, allItems);
+  const variableTypes = getAllInheritances(variableType, allItems);
 
-  // Prepare check for static methods
-  let isMethodMap: boolean;
-  if (words.length === 1) {
-    let methodmap = allItems.find(
-      (e) => e.name === words[0] && e.kind === CompletionItemKind.Class
-    );
-    isMethodMap = methodmap !== undefined;
-  }
+  const isMethodMap =
+    words.length === 1 &&
+    undefined !==
+      allItems.find(
+        (e) => e.name === words[0] && e.kind === CompletionItemKind.Class
+      );
+
+  return getMethodItems(allItems, variableTypes, isMethodMap, lastFunc);
+}
+
+function getMethodItems(
+  allItems: SPItem[],
+  variableTypes: string[],
+  isMethodMap: boolean,
+  lastFunc: string
+): CompletionList {
+  let items = new Set<CompletionItem>();
+
   for (let item of allItems) {
     if (
-      (item.kind === CompletionItemKind.Method ||
-        item.kind === CompletionItemKind.Property) &&
+      MP.includes(item.kind) &&
       variableTypes.includes(item.parent) &&
       // Don't include the constructor of the methodmap
       !variableTypes.includes(item.name) &&
-      // Check for static methods
-      ((!isMethodMap && !item.detail.includes("static")) ||
-        (isMethodMap && item.detail.includes("static")))
+      // Don't include static methods if we are not calling a method from its type.
+      // This handles suggestions for 'Database.Connect()' for example.
+      isMethodMap === item.detail.includes("static")
     ) {
       items.add(item.toCompletionItem(lastFunc));
     }
   }
-  // Make sure no undefined objects are present.
+
+  items.delete(undefined);
+  return new CompletionList(Array.from(items).filter((e) => e !== undefined));
+}
+
+function getNonMethodItems(allItems: SPItem[], lastFunc): CompletionList {
+  let items = new Set<CompletionItem>();
+
+  for (let item of allItems) {
+    if (!MP.includes(item.kind)) {
+      items.add(item.toCompletionItem(lastFunc));
+    }
+  }
+
   items.delete(undefined);
   return new CompletionList(Array.from(items).filter((e) => e !== undefined));
 }
