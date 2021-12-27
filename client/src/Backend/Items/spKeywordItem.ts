@@ -12,7 +12,6 @@ import { SPItem } from "./spItems";
 export class KeywordItem implements SPItem {
   name: string;
   kind = CompletionItemKind.Keyword;
-  commitCharacters = [";", ":", "<", "("];
 
   constructor(name: string) {
     this.name = name;
@@ -23,7 +22,6 @@ export class KeywordItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: "",
-      commitCharacters: this.commitCharacters,
     };
   }
 

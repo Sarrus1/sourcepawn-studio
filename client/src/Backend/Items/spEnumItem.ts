@@ -21,7 +21,6 @@ export class EnumItem implements SPItem {
   description: string;
   range: Range;
   fullRange: Range;
-  commitCharacters = [";"];
 
   constructor(name: string, file: string, description: string, range: Range) {
     this.name = name;
@@ -35,7 +34,6 @@ export class EnumItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: basename(this.filePath),
-      commitCharacters: this.commitCharacters,
     };
   }
 

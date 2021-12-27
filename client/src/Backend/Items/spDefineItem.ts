@@ -22,7 +22,6 @@ export class DefineItem implements SPItem {
   range: Range;
   calls: Location[];
   fullRange: Range;
-  commitCharacters = [";", ","];
 
   constructor(
     name: string,
@@ -46,7 +45,6 @@ export class DefineItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: this.filePath,
-      commitCharacters: this.commitCharacters,
     };
   }
 

@@ -22,7 +22,6 @@ export interface SPItem {
   calls?: Location[];
   IsBuiltIn?: boolean;
   enumStructName?: string;
-  commitCharacters?: string[];
 
   toCompletionItem(lastFuncName?: string): CompletionItem;
   toDefinitionItem(): LocationLink;
