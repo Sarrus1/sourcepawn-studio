@@ -4,26 +4,36 @@ import {
   languages,
   window,
   commands,
+  StatusBarItem,
+  StatusBarAlignment,
 } from "vscode";
+import { URI } from "vscode-uri";
+import { resolve } from "path";
+const glob = require("glob");
+
 import {
   registerSMLinter,
   compilerDiagnostics,
   refreshDiagnostics,
 } from "./spLinter";
-const glob = require("glob");
 import { parseSMApi } from "./Misc/parseSMAPI";
 import { SP_MODE, SP_LEGENDS } from "./Misc/spConstants";
 import { Providers } from "./Backend/spProviders";
 import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
-import { URI } from "vscode-uri";
 import { findMainPath } from "./spUtils";
-import { resolve } from "path";
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
+  let SBItem = window.createStatusBarItem(StatusBarAlignment.Left, 0);
+  SBItem.command = "status.parsingSMAPI";
+  SBItem.text = "Loading SM API...";
+
+  SBItem.show();
   parseSMApi(providers.itemsRepository);
+  SBItem.hide();
+
   let workspaceFolders = Workspace.workspaceFolders;
   if (workspaceFolders === undefined) {
     window.showWarningMessage(

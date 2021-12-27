@@ -9,6 +9,7 @@
 - Added support for relative optional include directories (see #161).
 - Added support for commit characters (see #162). Thanks to [BoomShotKapow](https://github.com/BoomShotKapow) for implementing this.
 - Added `@param` keyword highlighting in JSDoc comments.
+- Added a `Loading SM API`, status icon.
 
 ### Fixed
 
