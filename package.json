@@ -485,6 +485,13 @@
         "path": "./syntaxes/sourcepawn.tmLanguage.json"
       },
       {
+        "scopeName": "sp-jsdoc.injection",
+        "injectTo": [
+          "source.sourcepawn"
+        ],
+        "path": "./syntaxes/sourcepawn-jsdoc.json"
+      },
+      {
         "language": "sp-translations",
         "scopeName": "text.sourcepawn-misc",
         "path": "./syntaxes/sp-translations.tmLanguage.json"

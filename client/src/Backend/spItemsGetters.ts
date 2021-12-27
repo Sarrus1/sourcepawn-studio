@@ -111,8 +111,11 @@ export function getItemFromPosition(
 
   const word = document.getText(range);
   const line = document.lineAt(position.line).text;
-
-  if (isInAComment(range, document.uri, allItems) || isInAString(range, line)) {
+  if (
+    range === undefined ||
+    isInAComment(range, document.uri, allItems) ||
+    isInAString(range, line)
+  ) {
     return undefined;
   }
 

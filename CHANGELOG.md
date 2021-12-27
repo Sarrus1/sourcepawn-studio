@@ -8,6 +8,7 @@
 - Added a formatter for KeyValues style files (.cfg, .phrases.txt, etc).
 - Added support for relative optional include directories (see #161).
 - Added support for commit characters (see #162). Thanks to [BoomShotKapow](https://github.com/BoomShotKapow) for implementing this.
+- Added `@param` keyword highlighting in JSDoc comments.
 
 ### Fixed
 
