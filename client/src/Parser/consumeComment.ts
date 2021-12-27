@@ -18,7 +18,7 @@ export function consumeComment(
       (!/\*\//.test(current_line) && !use_line_comment))
   ) {
     iter++;
-    parser.scratch.push(current_line.replace(/^\s*\/\//, ""));
+    parser.scratch.push(current_line.replace(/^\s*\/\//, "") + "\n");
     current_line = parser.lines.shift();
 
     parser.lineNb++;

@@ -16,6 +16,7 @@
 - Added a debug message for the upload command.
 - Fixed the compiler compiling the active document instead of the one selected when compiling from the tree view.
 - Improved the basic language support by VSCode.
+- Improved the JSDoc parsing to be nicer.
 
 ## [2.7.2]
 
