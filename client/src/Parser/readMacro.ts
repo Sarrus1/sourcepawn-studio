@@ -1,5 +1,5 @@
 ﻿import { Parser } from "./spParser";
-import { MacroItem } from "../Providers/spItems";
+import { MacroItem } from "../Backend/Items/spMacroItem";
 import { parseDocComment } from "./parseDocComment";
 
 export function readMacro(
@@ -13,7 +13,7 @@ export function readMacro(
   let range = parser.makeDefinitionRange(nameMatch, line);
   // Add the macro to the array of known macros
   parser.macroArr.push(nameMatch);
-  parser.completions.add(
+  parser.completions.set(
     nameMatch,
     new MacroItem(
       nameMatch,

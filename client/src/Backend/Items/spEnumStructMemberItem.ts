@@ -1,0 +1,80 @@
+import {
+  CompletionItemKind,
+  Range,
+  CompletionItem,
+  SignatureInformation,
+  Hover,
+  LocationLink,
+} from "vscode";
+import { URI } from "vscode-uri";
+
+import { descriptionToMD } from "../../spUtils";
+import { EnumStructItem } from "./spEnumStructItem";
+import { SPItem } from "./spItems";
+
+export class EnumStructMemberItem implements SPItem {
+  name: string;
+  enumStruct: EnumStructItem;
+  filePath: string;
+  description: string;
+  type: string;
+  kind = CompletionItemKind.Property;
+  parent: string;
+  range: Range;
+  commitCharacters = [";"];
+
+  constructor(
+    name: string,
+    file: string,
+    description: string,
+    EnumStruct: EnumStructItem,
+    range: Range,
+    type: string
+  ) {
+    this.name = name;
+    this.filePath = file;
+    this.description = description;
+    this.enumStruct = EnumStruct;
+    this.range = range;
+    this.parent = EnumStruct.name;
+    this.type = type;
+  }
+
+  toCompletionItem(): CompletionItem {
+    return {
+      label: this.name,
+      kind: this.kind,
+      detail: this.enumStruct.name,
+      commitCharacters: this.commitCharacters,
+    };
+  }
+
+  toDefinitionItem(): LocationLink {
+    return {
+      targetRange: this.range,
+      targetUri: URI.file(this.filePath),
+    };
+  }
+
+  toSignature(): SignatureInformation {
+    return;
+  }
+
+  toHover(): Hover {
+    let enumName = this.enumStruct.name;
+    if (enumName == "") {
+      return new Hover([
+        { language: "sourcepawn", value: this.name },
+        descriptionToMD(this.description),
+      ]);
+    } else {
+      return new Hover([
+        {
+          language: "sourcepawn",
+          value: this.enumStruct.name + " " + this.name,
+        },
+        descriptionToMD(this.description),
+      ]);
+    }
+  }
+}

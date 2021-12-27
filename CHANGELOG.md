@@ -1,5 +1,26 @@
 ## Release Notes
 
+## [3.0.0]
+
+### Added
+
+- Added an option for relative upload paths.
+- Added a formatter for KeyValues style files (.cfg, .phrases.txt, etc).
+- Added support for relative optional include directories (see #161).
+- Added support for commit characters (see #162). Thanks to [BoomShotKapow](https://github.com/BoomShotKapow) for implementing this.
+- Added `@param` keyword highlighting in JSDoc comments.
+- Added a `Loading SM API`, status icon.
+- Added a sorting feature for Hovers. Sourcemod builtin hovers will now be more relevant.
+
+### Fixed
+
+- Fixed Github workflow.
+- Bumped some dependencies.
+- Added a debug message for the upload command.
+- Fixed the compiler compiling the active document instead of the one selected when compiling from the tree view.
+- Improved the basic language support by VSCode.
+- Improved the JSDoc parsing to be nicer.
+
 ## [2.7.2]
 
 ### Added

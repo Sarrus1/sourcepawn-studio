@@ -4,25 +4,36 @@ import {
   languages,
   window,
   commands,
+  StatusBarItem,
+  StatusBarAlignment,
 } from "vscode";
+import { URI } from "vscode-uri";
+import { resolve } from "path";
+const glob = require("glob");
+
 import {
   registerSMLinter,
   compilerDiagnostics,
   refreshDiagnostics,
 } from "./spLinter";
-const glob = require("glob");
-import { SP_MODE } from "./spMode";
-import { Providers } from "./Providers/spProviders";
+import { parseSMApi } from "./Misc/parseSMAPI";
+import { SP_MODE, SP_LEGENDS } from "./Misc/spConstants";
+import { Providers } from "./Backend/spProviders";
 import { registerSMCommands } from "./Commands/registerCommands";
-import { SMDocumentFormattingEditProvider } from "./spFormat";
-import { URI } from "vscode-uri";
-import { SP_LEGENDS } from "./spLegends";
+import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
+import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
 import { findMainPath } from "./spUtils";
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
-  let formatter = new SMDocumentFormattingEditProvider();
-  providers.parseSMApi();
+  let SBItem = window.createStatusBarItem(StatusBarAlignment.Left, 0);
+  SBItem.command = "status.parsingSMAPI";
+  SBItem.text = "Loading SM API...";
+
+  SBItem.show();
+  parseSMApi(providers.itemsRepository);
+  SBItem.hide();
+
   let workspaceFolders = Workspace.workspaceFolders;
   if (workspaceFolders === undefined) {
     window.showWarningMessage(
@@ -72,11 +83,14 @@ export function activate(context: ExtensionContext) {
   let optionalIncludeDirs: string[] = Workspace.getConfiguration(
     "sourcepawn"
   ).get("optionalIncludeDirsPaths");
+  optionalIncludeDirs = optionalIncludeDirs.map((e) =>
+    resolve(...workspaceFolders.map((folder) => folder.uri.fsPath), e)
+  );
   getDirectories(optionalIncludeDirs, providers);
 
   let mainPath: string = findMainPath();
   if (mainPath !== undefined && mainPath != "") {
-    providers.handle_document_opening(mainPath);
+    providers.itemsRepository.handleDocumentOpening(mainPath);
   } else if (mainPath == "") {
     window
       .showErrorMessage(
@@ -95,13 +109,13 @@ export function activate(context: ExtensionContext) {
 
   // Load the currently opened file
   if (window.activeTextEditor != undefined) {
-    providers.handle_document_opening(
+    providers.itemsRepository.handleDocumentOpening(
       window.activeTextEditor.document.uri.fsPath
     );
   }
   window.onDidChangeActiveTextEditor((e) => {
     if (e !== undefined) {
-      providers.handle_document_opening(e.document.uri.fsPath);
+      providers.itemsRepository.handleDocumentOpening(e.document.uri.fsPath);
     }
   });
 
@@ -152,26 +166,50 @@ export function activate(context: ExtensionContext) {
         scheme: "file",
         pattern: "**/*.sp",
       },
-      formatter
+      new SMDocumentFormattingEditProvider()
     )
   );
+
+  context.subscriptions.push(
+    languages.registerDocumentFormattingEditProvider(
+      [
+        {
+          language: "sp-translations",
+        },
+        {
+          language: "sp-gamedata",
+        },
+        {
+          language: "valve-cfg",
+        },
+        {
+          language: "valve-ini",
+        },
+        {
+          language: "sourcemod-kv",
+        },
+      ],
+      new CFGDocumentFormattingEditProvider()
+    )
+  );
+
   context.subscriptions.push(
     languages.registerHoverProvider(SP_MODE, providers)
   );
 
   Workspace.onDidChangeTextDocument(
-    providers.handleDocumentChange,
-    providers,
+    providers.itemsRepository.handleDocumentChange,
+    providers.itemsRepository,
     context.subscriptions
   );
   Workspace.onDidOpenTextDocument(
-    providers.handleNewDocument,
-    providers,
+    providers.itemsRepository.handleNewDocument,
+    providers.itemsRepository,
     context.subscriptions
   );
   Workspace.onDidCreateFiles(
-    providers.handleAddedDocument,
-    providers,
+    providers.itemsRepository.handleAddedDocument,
+    providers.itemsRepository,
     context.subscriptions
   );
 

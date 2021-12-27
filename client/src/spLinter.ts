@@ -15,10 +15,11 @@ import {
   ExtensionContext,
 } from "vscode";
 import { existsSync, openSync, writeSync, unlink, closeSync } from "fs";
-import { join, basename, extname, dirname } from "path";
+import { join, basename, extname, dirname, resolve } from "path";
 import { execFile } from "child_process";
 import { URI } from "vscode-uri";
 import { errorDetails } from "./Misc/errorMessages";
+import { getAllPossibleIncludeFolderPaths } from "./Backend/spFileHandlers";
 
 let myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
   .extensionPath;
@@ -146,16 +147,12 @@ export function refreshDiagnostics(
         for (let i = 0; i < compilerOptions.length; i++) {
           spcomp_opt.push(" " + compilerOptions[i]);
         }
-        let includes_dirs: string[] = Workspace.getConfiguration(
-          "sourcepawn",
-          workspaceFolder
-        ).get("optionalIncludeDirsPaths");
+
         // Add the optional includes folders.
-        for (let includes_dir of includes_dirs) {
-          if (includes_dir != "") {
-            spcomp_opt.push("-i" + includes_dir);
-          }
-        }
+        getAllPossibleIncludeFolderPaths(document.uri, true).forEach((e) =>
+          spcomp_opt.push(`-i${e}`)
+        );
+
         // Run the blank compile.
         execFile(spcomp, spcomp_opt, (error, stdout) => {
           // If it compiled successfully, unlink the temporary files.

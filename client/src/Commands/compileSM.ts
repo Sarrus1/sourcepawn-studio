@@ -1,41 +1,48 @@
-import { workspace as Workspace, window, commands } from "vscode";
-import { basename, extname, join } from "path";
+import { workspace as Workspace, window, commands, Terminal } from "vscode";
+import { URI } from "vscode-uri";
+import { basename, extname, join, resolve, dirname } from "path";
 import { existsSync, mkdirSync } from "fs";
 import { platform } from "os";
 import { run as uploadToServerCommand } from "./uploadToServer";
+import { getAllPossibleIncludeFolderPaths } from "../Backend/spFileHandlers";
 
-export async function run(args: any) {
-  let activeDocumentPath: string;
-  let workspaceFolder = Workspace.getWorkspaceFolder(
+/**
+ * Callback for the Compile file command.
+ * @param  {URI} args URI of the document to be compiled. This will be overrided if MainPathCompilation is set to true.
+ * @returns Promise
+ */
+export async function run(args: URI): Promise<void> {
+  const workspaceFolder = Workspace.getWorkspaceFolder(
     args === undefined ? window.activeTextEditor.document.uri : args
   );
-  let mainPath: string =
+  const mainPath: string =
     Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
       "MainPath"
     ) || "";
-  let mainPathCompile: boolean = Workspace.getConfiguration(
+  const alwaysCompileMainPath: boolean = Workspace.getConfiguration(
     "sourcepawn",
     workspaceFolder
   ).get<boolean>("MainPathCompilation");
-  try {
-    activeDocumentPath =
-      mainPathCompile && mainPath != "" ? mainPath : args.document.uri.fsPath;
-  } catch {
-    activeDocumentPath =
-      mainPathCompile && mainPath != ""
-        ? mainPath
-        : window.activeTextEditor.document.uri.fsPath;
+
+  // Decide which file to compile here.
+  let fileToCompilePath: string;
+  if (alwaysCompileMainPath && mainPath !== "") {
+    fileToCompilePath = mainPath;
+  } else if (args !== undefined) {
+    fileToCompilePath = args.fsPath;
+  } else {
+    fileToCompilePath = window.activeTextEditor.document.uri.fsPath;
   }
-  let scriptingPath = activeDocumentPath.replace(/[\w\-. ]+$/, "");
-  let activeDocumentName = basename(activeDocumentPath);
-  activeDocumentName = activeDocumentName.replace(".sp", ".smx");
-  let activeDocumentExt = extname(activeDocumentPath);
+
+  const scriptingFolderPath = dirname(fileToCompilePath);
 
   // Don't compile if it's not a .sp file.
-  if (activeDocumentExt != ".sp") {
+  if (extname(fileToCompilePath) !== ".sp") {
     window.showErrorMessage("Not a .sp file, aborting");
     return;
   }
+
+  // Invoke the compiler.
   const spcomp =
     Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
       "SpcompPath"
@@ -58,44 +65,31 @@ export async function run(args: any) {
     return;
   }
 
-  // Open a terminal window
-  let terminals = window.terminals;
-  let terminal;
-  // Try to open current terminal window instead of opening a new one.
-  if (!terminals) {
+  // Try to reuse the previous terminal window instead of opening a new one.
+  const terminals = window.terminals;
+  let terminal: Terminal;
+  if (terminals.length === 0) {
     terminal = window.createTerminal("SourcePawn compile");
   } else {
-    let found: boolean = false;
-    for (let terminal_elt of terminals) {
-      if (terminal_elt.name.includes("SourcePawn compile")) {
-        terminal = terminal_elt;
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
+    terminal = terminals.find((e) => e.name === "SourcePawn compile");
+    if (terminal === undefined) {
       terminal = window.createTerminal("SourcePawn compile");
     }
   }
   terminal.show();
 
-  // Create plugins folder if it doesn't exist.
-  let pluginsFolderPath: string;
-  if (existsSync(join(scriptingPath, "../", "plugins/"))) {
-    pluginsFolderPath = join(scriptingPath, "../", "plugins/");
-  } else {
-    pluginsFolderPath = join(scriptingPath, "compiled/");
-  }
+  // Decide where to output the compiled file.
+  const pluginsFolderPath = join(scriptingFolderPath, "../", "plugins/");
   let outputDir: string =
     Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
       "outputDirectoryPath"
-    ) || "";
-  if (outputDir === "") {
-    outputDir = pluginsFolderPath;
+    ) || pluginsFolderPath;
+  if (outputDir === pluginsFolderPath) {
     if (!existsSync(outputDir)) {
       mkdirSync(outputDir);
     }
   } else {
+    // If the outputDirectoryPath setting is not empty, make sure it exists before trying to write to it.
     if (!existsSync(outputDir)) {
       let workspaceFolder = Workspace.workspaceFolders[0];
       outputDir = join(workspaceFolder.uri.fsPath, outputDir);
@@ -117,19 +111,15 @@ export async function run(args: any) {
       }
     }
   }
-  outputDir += activeDocumentName;
+  outputDir += basename(fileToCompilePath, ".sp");
+
   let command = (platform() == "win32" ? "." : "").concat(
     // Compiler path
     "'" + spcomp + "'",
-
-    // Seperate compiler and script path
-    " ",
-
     // Script path (script to compile)
-    "'" + activeDocumentPath + "'",
+    " '" + fileToCompilePath + "'",
     // Output path for the smx file
     " -o=" + "'" + outputDir + "'",
-
     // Set the path for sm_home
     " -i=" + "'",
     Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
@@ -137,31 +127,26 @@ export async function run(args: any) {
     ) || "",
     "'",
     " -i=" + "'",
-    join(scriptingPath, "include") || "",
+    join(scriptingFolderPath, "include") || "",
     "'",
     " -i=" + "'",
-    scriptingPath,
+    scriptingFolderPath,
     "'"
   );
-  let compilerOptions: string[] = Workspace.getConfiguration(
+
+  // Add the compiler options from the settings.
+  const compilerOptions: string[] = Workspace.getConfiguration(
     "sourcepawn",
     workspaceFolder
   ).get("compilerOptions");
-  // Add a space at the beginning of every element, for security.
-  for (let i = 0; i < compilerOptions.length; i++) {
-    command += " " + compilerOptions[i];
-  }
 
-  let includes_dirs: string[] = Workspace.getConfiguration(
-    "sourcepawn",
-    workspaceFolder
-  ).get("optionalIncludeDirsPaths");
+  // Add a space at the beginning of every element, for security.
+  command += " " + compilerOptions.join(" ");
+
   // Add the optional includes folders.
-  for (let includes_dir of includes_dirs) {
-    if (includes_dir != "") {
-      command += " -i=" + "'" + includes_dir + "'";
-    }
-  }
+  getAllPossibleIncludeFolderPaths(URI.file(fileToCompilePath), true).forEach(
+    (e) => (command += ` -i='${e}'`)
+  );
 
   try {
     terminal.sendText(command);
@@ -170,7 +155,7 @@ export async function run(args: any) {
         "uploadAfterSuccessfulCompile"
       )
     ) {
-      await uploadToServerCommand(undefined);
+      await uploadToServerCommand(URI.file(fileToCompilePath));
     }
   } catch (error) {
     console.log(error);

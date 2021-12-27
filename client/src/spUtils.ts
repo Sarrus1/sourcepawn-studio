@@ -2,6 +2,11 @@
 import { existsSync } from "fs";
 import { join } from "path";
 
+/**
+ * Parse a Sourcemod JSDoc documentation string and convert it to a MarkdownString.
+ * @param  {string} description   The Sourcemod JSDoc string.
+ * @returns MarkdownString
+ */
 export function descriptionToMD(description: string): MarkdownString {
   if (description === undefined) {
     return new MarkdownString("");
@@ -9,11 +14,12 @@ export function descriptionToMD(description: string): MarkdownString {
   description = description
     .replace(/\</gm, "\\<")
     .replace(/\>/gm, "\\>")
-    .replace(/([^.])(\.) *[\n]+(?:\s*([^@\s.]))/gm, "$1. $3")
+    .replace(/([\w\,]{1})\n/gm, "$1")
+    //.replace(/([^.])(\.) *[\n]+(?:\s*([^@\s.]))/gm, "$1. $3")
     .replace(/\s+\*\s*/gm, "\n\n");
   // Make all @ nicer
   description = description.replace(/\s*(@[A-Za-z]+)\s+/gm, "\n\n_$1_ ");
-  // Make the @params nicer
+  // Make the @param nicer
   description = description.replace(
     /(\_@param\_) ([A-Za-z0-9_.]+)\s*/gm,
     "$1 `$2` — "
@@ -27,6 +33,11 @@ export function descriptionToMD(description: string): MarkdownString {
   return new MarkdownString(description);
 }
 
+/**
+ * Find the MainPath setting for a given URI.
+ * @param  {Uri} uri?   The URI we are looking up the MainPath for.
+ * @returns string
+ */
 export function findMainPath(uri?: Uri): string {
   let workspaceFolders = Workspace.workspaceFolders;
   let workspaceFolder =

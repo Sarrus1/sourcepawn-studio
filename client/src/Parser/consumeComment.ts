@@ -1,5 +1,5 @@
 ﻿import { Parser } from "./spParser";
-import { CommentItem } from "../Providers/spItems";
+import { CommentItem } from "../Backend/Items/spCommentItem";
 import { Range, Position } from "vscode";
 import { searchForDefinesInString } from "./searchForDefinesInString";
 
@@ -18,7 +18,7 @@ export function consumeComment(
       (!/\*\//.test(current_line) && !use_line_comment))
   ) {
     iter++;
-    parser.scratch.push(current_line.replace(/^\s*\/\//, ""));
+    parser.scratch.push(current_line.replace(/^\s*\/\//, "") + "\n");
     current_line = parser.lines.shift();
 
     parser.lineNb++;
@@ -37,7 +37,7 @@ export function consumeComment(
     current_line.length
   );
   let range = new Range(startPos, endPos);
-  parser.completions.add(
+  parser.completions.set(
     `comment${parser.lineNb}--${Math.random()}`,
     new CommentItem(parser.file, range)
   );

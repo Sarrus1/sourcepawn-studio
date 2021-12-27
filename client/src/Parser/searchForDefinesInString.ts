@@ -56,13 +56,13 @@ export function searchForDefinesInString(parser: Parser, line: string): void {
             continue;
           }
           define.calls.push(location);
-          parser.completions.add(matchDefine[0], define);
+          parser.completions.set(matchDefine[0], define);
           continue;
         }
         defineFile = defineFile.startsWith("file://")
           ? defineFile
           : URI.file(defineFile).toString();
-        let items = parser.itemsRepository.completions.get(defineFile);
+        let items = parser.itemsRepository.fileItems.get(defineFile);
         if (items === undefined) {
           continue;
         }
@@ -71,7 +71,7 @@ export function searchForDefinesInString(parser: Parser, line: string): void {
           continue;
         }
         define.calls.push(location);
-        items.add(matchDefine[0], define);
+        items.set(matchDefine[0], define);
       }
     }
   } while (matchDefine);

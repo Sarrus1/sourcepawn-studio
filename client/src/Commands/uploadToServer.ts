@@ -46,18 +46,26 @@ export async function run(args: any) {
   // Override the "deleteRemote" setting for safety.
   config["deleteRemote"] = false;
 
-  // Make sure the path to upload is relative to avoid uploading the whole disk.
-  let workspaceFolders = Workspace.workspaceFolders;
-  if (workspaceFolders === undefined) {
-    window.showWarningMessage(
-      "No workspace or folder found. \n Please open the folder containing your .sp file, not just the .sp file."
-    );
-    return 1;
+  // Concat the workspace with it's root if the path is relative.
+  if (config["isRootRelative"]) {
+    if (workspaceFolder === undefined) {
+      window.showWarningMessage(
+        "No workspace or folder found, with isRootRelative is set to true.\nSet it to false, or open the file from a workspace."
+      );
+      return 1;
+    }
+    let workspaceRoot = workspaceFolder.uri.fsPath;
+    config["localRoot"] = join(workspaceRoot, config["localRoot"]);
   }
-  let workspaceRoot: string = workspaceFolders[0].uri.fsPath;
-  config["localRoot"] = join(workspaceRoot, config["localRoot"]);
+
+  // Copy the config object to avoid https://github.com/microsoft/vscode/issues/80976
+  let ftpConfig = { ...config };
+  // Delete that setting to avoid problems with the ftp/sftp library
+  delete ftpConfig["isRootRelative"];
+
+  console.log("Starting the upload");
   ftpDeploy
-    .deploy(config)
+    .deploy(ftpConfig)
     .then(() => {
       console.log("Upload is finished.");
       if (

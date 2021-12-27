@@ -1,0 +1,34 @@
+{
+  "scopeName": "sp-jsdoc.injection",
+  "injectionSelector": "L:comment",
+  "patterns": [
+    {
+      "include": "#jsdoc-keyword"
+    }
+  ],
+  "repository": {
+    "jsdoc-keyword": {
+      "patterns": [
+        {
+          "match": "(@param)\\s+(\\w+)",
+          "captures": {
+            "1": {
+              "name": "storage.type.class.jsdoc"
+            },
+            "2": {
+              "name": "support.variable.sourcepawn"
+            }
+          }
+        },
+        {
+          "match": "@return",
+          "name": "keyword.control.jsdoc"
+        },
+        {
+          "match": "@error",
+          "name": "string.regexp.jsdoc"
+        }
+      ]
+    }
+  }
+}

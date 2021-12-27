@@ -1,5 +1,6 @@
 ﻿import { Parser } from "./spParser";
-import { MethodItem, FunctionItem } from "../Providers/spItems";
+import { MethodItem } from "../Backend/Items/spMethodItem";
+import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { State } from "./stateEnum";
 import { Range } from "vscode";
 import { searchForDefinesInString } from "./searchForDefinesInString";
@@ -10,7 +11,7 @@ import {
   isSingleLineFunction,
   getParamsFromDeclaration,
 } from "./utils";
-import { isControlStatement } from "../Providers/spDefinitions";
+import { isControlStatement } from "../Providers/spDefinitionProvider";
 import { addVariableItem } from "./addVariableItem";
 
 export function readFunction(
@@ -160,7 +161,7 @@ export function readFunction(
       let end = range.start.line === parser.lineNb ? line.length : 0;
       fullRange = new Range(range.start.line, 0, parser.lineNb, end);
     }
-    parser.completions.add(
+    parser.completions.set(
       nameMatch + parser.state_data.name,
       new MethodItem(
         parser.state_data.name,
@@ -187,7 +188,7 @@ export function readFunction(
     let end = range.start.line === parser.lineNb ? line.length : 0;
     fullRange = new Range(range.start.line, 0, parser.lineNb, end);
   }
-  parser.completions.add(
+  parser.completions.set(
     nameMatch,
     new FunctionItem(
       nameMatch,

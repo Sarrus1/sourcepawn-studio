@@ -1,9 +1,16 @@
-﻿import { TextDocument, Range, Position, CompletionItemKind } from "vscode";
+﻿import {
+  TextDocument,
+  Range,
+  Position,
+  CompletionItemKind,
+  CancellationToken,
+} from "vscode";
 import { URI } from "vscode-uri";
-import { globalIdentifier } from "./spGlobalIdentifier";
-import { SPItem } from "./spItems";
+import { globalIdentifier } from "../Misc/spConstants";
+import { SPItem } from "../Backend/Items/spItems";
+import { ItemsRepository } from "../Backend/spItemsRepository";
 
-export function GetLastFuncName(
+export function getLastFuncName(
   position: Position,
   document: TextDocument,
   allItems: SPItem[]
@@ -13,7 +20,7 @@ export function GetLastFuncName(
       [CompletionItemKind.Function, CompletionItemKind.Method].includes(
         e.kind
       ) &&
-      e.file === document.uri.fsPath &&
+      e.filePath === document.uri.fsPath &&
       e.fullRange != undefined &&
       e.fullRange.contains(position)
   );
@@ -29,7 +36,7 @@ export function isInAComment(
   let item = allItems.find(
     (e) =>
       e.kind === CompletionItemKind.User &&
-      e.file == file &&
+      e.filePath == file &&
       e.range.contains(range)
   );
   return item !== undefined;
@@ -111,7 +118,7 @@ export function getLastEnumStructNameOrMethodMap(
   let enumStruct = allItems.find(
     (e) =>
       [CompletionItemKind.Struct, CompletionItemKind.Class].includes(e.kind) &&
-      e.file === document.uri.fsPath &&
+      e.filePath === document.uri.fsPath &&
       e.fullRange != undefined &&
       e.fullRange.contains(position)
   );
@@ -122,4 +129,16 @@ export function getLastEnumStructNameOrMethodMap(
     lastEnumStructOrMethodMap: enumStruct.name,
     isAMethodMap: enumStruct.kind === CompletionItemKind.Class,
   };
+}
+
+export function definitionsProvider(
+  itemsRepo: ItemsRepository,
+  document: TextDocument,
+  position: Position,
+  token: CancellationToken
+) {
+  let items = itemsRepo.getItemFromPosition(document, position);
+  if (items !== undefined) {
+    return items.map((e) => e.toDefinitionItem());
+  }
 }

@@ -13,7 +13,12 @@ import { run as installSMCommand } from "./installSM";
 import { run as createChangelogCommand } from "./createCHANGELOG";
 import { run as changeSMApiCommand } from "./changeSMApi";
 
-export function registerSMCommands(context: ExtensionContext) {
+/**
+ * Register all the commands of the extension.
+ * @param  {ExtensionContext} context The extension's context.
+ * @returns void
+ */
+export function registerSMCommands(context: ExtensionContext): void {
   let createTask = commands.registerCommand(
     "sourcepawn-vscode.createTask",
     CreateTaskCommand.bind(undefined)
@@ -50,43 +55,43 @@ export function registerSMCommands(context: ExtensionContext) {
   );
   context.subscriptions.push(compileSM);
 
-  let UploadToServer = commands.registerCommand(
+  let uploadToServer = commands.registerCommand(
     "sourcepawn-vscode.uploadToServer",
     UploadToServerCommand.bind(undefined)
   );
-  context.subscriptions.push(UploadToServer);
+  context.subscriptions.push(uploadToServer);
 
-  let RefreshPlugins = commands.registerCommand(
+  let refreshPlugins = commands.registerCommand(
     "sourcepawn-vscode.refreshPlugins",
     RefreshPluginsCommand.bind(undefined)
   );
-  context.subscriptions.push(RefreshPlugins);
+  context.subscriptions.push(refreshPlugins);
 
-  let InsertParameters = commands.registerTextEditorCommand(
+  let insertParameters = commands.registerCommand(
     "sourcepawn-vscode.insertParameters",
     InsertParametersCommand.bind(undefined)
   );
-  context.subscriptions.push(InsertParameters);
+  context.subscriptions.push(insertParameters);
 
-  let setFileAsMain = commands.registerTextEditorCommand(
+  let setFileAsMain = commands.registerCommand(
     "sourcepawn-vscode.setFileAsMain",
     setFileAsMainCommand.bind(undefined)
   );
   context.subscriptions.push(setFileAsMain);
 
-  let installSM = commands.registerTextEditorCommand(
+  let installSM = commands.registerCommand(
     "sourcepawn-vscode.installSM",
     installSMCommand.bind(undefined)
   );
   context.subscriptions.push(installSM);
 
-  let createChangelog = commands.registerTextEditorCommand(
+  let createChangelog = commands.registerCommand(
     "sourcepawn-vscode.createChangelog",
     createChangelogCommand.bind(undefined)
   );
   context.subscriptions.push(createChangelog);
 
-  let changeSMApi = commands.registerTextEditorCommand(
+  let changeSMApi = commands.registerCommand(
     "sourcepawn-vscode.changeSMApi",
     changeSMApiCommand.bind(undefined)
   );

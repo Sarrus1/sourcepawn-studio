@@ -1,5 +1,12 @@
-import { ItemsRepository, FileItems } from "../Providers/spItemsRepository";
-import { SPItem, MethodMapItem, CommentItem } from "../Providers/spItems";
+import { CompletionItemKind, Range, workspace as Workspace } from "vscode";
+import { existsSync, readFileSync } from "fs";
+import { resolve, dirname } from "path";
+import { URI } from "vscode-uri";
+
+import { ItemsRepository } from "../Backend/spItemsRepository";
+import { FileItems } from "../Backend/spFilesRepository";
+import { SPItem } from "../Backend/Items/spItems";
+import { CommentItem } from "../Backend/Items/spCommentItem";
 import { State } from "./stateEnum";
 import { readDefine } from "./readDefine";
 import { readMacro } from "./readMacro";
@@ -15,11 +22,6 @@ import { consumeComment } from "./consumeComment";
 import { searchForDefinesInString } from "./searchForDefinesInString";
 import { readMethodMap } from "./readMethodMap";
 import { manageState } from "./manageState";
-
-import { CompletionItemKind, Range, workspace as Workspace } from "vscode";
-import { existsSync, readFileSync } from "fs";
-import { resolve, dirname } from "path";
-import { URI } from "vscode-uri";
 import { purgeCalls, positiveRange, parentCounter } from "./utils";
 
 export function parseFile(
@@ -130,7 +132,7 @@ export class Parser {
       let lineNb = this.lineNb < 1 ? 0 : this.lineNb;
       let start: number = line.search(/\/\//);
       let range = new Range(lineNb, start, lineNb, line.length);
-      this.completions.add(
+      this.completions.set(
         `comment${lineNb}--${Math.random()}`,
         new CommentItem(this.file, range)
       );
@@ -143,7 +145,7 @@ export class Parser {
       let start: number = line.search(/\/\*/);
       let end: number = line.search(/\*\//);
       let range = new Range(lineNb, start, lineNb, end);
-      this.completions.add(
+      this.completions.set(
         `comment${lineNb}--${Math.random()}`,
         new CommentItem(this.file, range)
       );
@@ -333,11 +335,7 @@ export class Parser {
     for (let item of items) {
       if (item.kind === kind) {
         purgeCalls(item, this.file);
-        let file = item.file;
-        if (item.IsBuiltIn) {
-          file = file.replace(smHome, "file://__sourcemod_builtin");
-        }
-        defines.set(item.name, file);
+        defines.set(item.name, item.filePath);
       }
     }
     return defines;

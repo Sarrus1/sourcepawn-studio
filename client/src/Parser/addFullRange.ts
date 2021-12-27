@@ -12,6 +12,6 @@ export function addFullRange(parser: Parser, key: string) {
       1
     );
     completion.fullRange = fullRange;
-    parser.completions.add(key, completion);
+    parser.completions.set(key, completion);
   }
 }

@@ -1,5 +1,5 @@
 ﻿import { Parser } from "./spParser";
-import { TypeDefItem } from "../Providers/spItems";
+import { TypeDefItem } from "../Backend/Items/spTypedefItem";
 import { Range } from "vscode";
 import { parseDocComment } from "./parseDocComment";
 
@@ -13,7 +13,7 @@ export function readTypeDef(
   let range = parser.makeDefinitionRange(name, line);
   let { description, params } = parseDocComment(parser);
   let fullRange = new Range(parser.lineNb, 0, parser.lineNb, line.length);
-  parser.completions.add(
+  parser.completions.set(
     name,
     new TypeDefItem(
       name,

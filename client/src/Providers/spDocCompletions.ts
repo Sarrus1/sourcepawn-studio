@@ -35,7 +35,7 @@ class SpDocCompletionItem extends CompletionItem {
       indent
     );
     snippet.appendPlaceholder("Return description");
-    snippet.appendText(`\n${indent} */`);
+    snippet.appendText(`\n${indent}`);
     this.insertText = snippet;
     let start: Position = new Position(position.line, 0);
     let end: Position = new Position(position.line, 0);

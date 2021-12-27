@@ -1,7 +1,7 @@
 ﻿import { Parser } from "./spParser";
 import { State } from "./stateEnum";
 import { parseDocComment } from "./parseDocComment";
-import { MethodMapItem } from "../Providers/spItems";
+import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 
 export function readMethodMap(
   parser: Parser,
@@ -23,5 +23,5 @@ export function readMethodMap(
     range,
     parser.IsBuiltIn
   );
-  parser.completions.add(match[1], methodMapCompletion);
+  parser.completions.set(match[1], methodMapCompletion);
 }

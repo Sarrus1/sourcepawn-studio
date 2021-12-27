@@ -1,7 +1,8 @@
 ﻿import { Parser } from "./spParser";
-import { VariableItem, PropertyItem } from "../Providers/spItems";
+import { VariableItem } from "../Backend/Items/spVariableItem";
+import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { State } from "./stateEnum";
-import { globalIdentifier } from "../Providers/spGlobalIdentifier";
+import { globalIdentifier } from "../Misc/spConstants";
 
 export function addVariableItem(
   parser: Parser,
@@ -33,12 +34,12 @@ export function addVariableItem(
       parser.state.includes(State.Methodmap)) &&
     (parser.state.includes(State.Function) || isParamDef)
   ) {
-    parser.completions.add(
+    parser.completions.set(
       mapName + parser.lastFuncName,
       new VariableItem(name, parser.file, scope, range, type, enumStructName)
     );
   } else if (parser.state.includes(State.EnumStruct)) {
-    parser.completions.add(
+    parser.completions.set(
       mapName,
       new PropertyItem(
         parser.state_data.name,
@@ -51,7 +52,7 @@ export function addVariableItem(
       )
     );
   } else {
-    parser.completions.add(
+    parser.completions.set(
       mapName,
       new VariableItem(name, parser.file, scope, range, type, globalIdentifier)
     );

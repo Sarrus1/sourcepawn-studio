@@ -1,4 +1,4 @@
-﻿import { FunctionParam, SPItem } from "../Providers/spItems";
+﻿import { FunctionParam, SPItem } from "../Backend/Items/spItems";
 import { Range } from "vscode";
 import { basename } from "path";
 import { URI } from "vscode-uri";

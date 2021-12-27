@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "2.7.2",
+  "version": "3.0.0",
   "publisher": "Sarrus",
   "main": "./dist/spIndex",
   "icon": "sm.png",
@@ -32,6 +32,11 @@
   ],
   "activationEvents": [
     "onLanguage:sourcepawn",
+    "onLanguage:sp-translations",
+    "onLanguage:sp-gamedata",
+    "onLanguage:valve-cfg",
+    "onLanguage:valve-ini",
+    "onLanguage:sourcemod-kv",
     "onCommand:sourcepawn-vscode.createTask",
     "onCommand:sourcepawn-vscode.createScript",
     "onCommand:sourcepawn-vscode.createREADME",
@@ -49,43 +54,43 @@
     "commands": [
       {
         "command": "sourcepawn-vscode.createTask",
-        "title": "SM Create Task File",
-        "category": "Project"
+        "title": "Create Task File",
+        "category": "SM"
       },
       {
         "command": "sourcepawn-vscode.createScript",
-        "title": "SM Create Script File",
-        "category": "Project"
+        "title": "Create Script File",
+        "category": "SM"
       },
       {
         "command": "sourcepawn-vscode.createREADME",
-        "title": "SM Create README File",
-        "category": "Project"
+        "title": "Create README File",
+        "category": "SM"
       },
       {
         "command": "sourcepawn-vscode.createMaster",
-        "title": "SM Create GitHub Actions",
-        "category": "Project"
+        "title": "Create GitHub Actions",
+        "category": "SM"
       },
       {
         "command": "sourcepawn-vscode.createProject",
-        "title": "SM Create Project",
-        "category": "Project"
+        "title": "Create project",
+        "category": "SM"
       },
       {
         "command": "sourcepawn-vscode.uploadToServer",
-        "title": "SM Upload to Server",
-        "category": "Project"
+        "title": "Upload to Server",
+        "category": "SM"
       },
       {
         "command": "sourcepawn-vscode.refreshPlugins",
-        "title": "SM Refresh Server Plugins",
-        "category": "Project"
+        "title": "Refresh Server Plugins",
+        "category": "SM"
       },
       {
         "command": "sourcepawn-vscode.compileSM",
-        "title": "SM Compile file",
-        "category": "ShortcutMenuBar",
+        "title": "Compile file",
+        "category": "SM",
         "icon": {
           "light": "fileicons/images/compile.svg",
           "dark": "fileicons/images/compile.svg"
@@ -93,28 +98,28 @@
       },
       {
         "command": "sourcepawn-vscode.insertParameters",
-        "title": "SM Insert Function Parameters",
-        "category": "Project"
+        "title": "Insert Function Parameters",
+        "category": "SM"
       },
       {
         "command": "sourcepawn-vscode.setFileAsMain",
-        "title": "SM Set current file as main",
-        "category": "Project"
+        "title": "Set current file as main",
+        "category": "SM"
       },
       {
         "command": "sourcepawn-vscode.installSM",
-        "title": "SM Install sourcemod",
-        "category": "Project"
+        "title": "Install sourcemod",
+        "category": "SM"
       },
       {
         "command": "sourcepawn-vscode.createChangelog",
         "title": "Create Changelog",
-        "category": "Project"
+        "category": "SM"
       },
       {
         "command": "sourcepawn-vscode.changeSMApi",
         "title": "Change SM API",
-        "category": "Project"
+        "category": "SM"
       }
     ],
     "menus": {
@@ -277,7 +282,8 @@
             ],
             "deleteRemote": false,
             "forcePasv": true,
-            "sftp": false
+            "sftp": false,
+            "isRootRelative": true
           },
           "description": "Upload options for the FTP/SFTP client.",
           "scope": "resource"
@@ -479,6 +485,13 @@
         "path": "./syntaxes/sourcepawn.tmLanguage.json"
       },
       {
+        "scopeName": "sp-jsdoc.injection",
+        "injectTo": [
+          "source.sourcepawn"
+        ],
+        "path": "./syntaxes/sourcepawn-jsdoc.json"
+      },
+      {
         "language": "sp-translations",
         "scopeName": "text.sourcepawn-misc",
         "path": "./syntaxes/sp-translations.tmLanguage.json"
@@ -515,7 +528,7 @@
     "@types/vscode": "^1.53.0",
     "clang-format": "^1.5.0",
     "decompress": "^4.2.1",
-    "ftp-deploy": "^2.4.1",
+    "ftp-deploy": "^2.3.8",
     "glob": "^7.1.2",
     "n-readlines": "^1.0.1",
     "prettier": "2.2.1",
@@ -524,16 +537,16 @@
     "wget-improved": "^3.2.1"
   },
   "devDependencies": {
+    "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@types/mocha": "^8.2.2",
     "@types/node": "^8.0.14",
     "mocha": "^8.3.2",
+    "nyc": "^15.1.0",
     "ts-loader": "^9.2.5",
     "typescript": "^4.2.2",
     "vscode-test": "^1.5.2",
     "webpack": "^5.48.0",
-    "webpack-cli": "^4.7.2",
-    "nyc": "^15.1.0",
-    "@istanbuljs/nyc-config-typescript": "^1.0.1"
+    "webpack-cli": "^4.7.2"
   },
   "scripts": {
     "vscode:prepublish": "webpack --mode production",

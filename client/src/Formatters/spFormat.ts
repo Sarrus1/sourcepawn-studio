@@ -25,10 +25,10 @@ export class SMDocumentFormattingEditProvider
   ): ProviderResult<TextEdit[]> {
     const result = [];
     // Get the user's settings.
-    let insert_spaces: boolean = Workspace.getConfiguration("editor").get(
+    let insertSpaces: boolean = Workspace.getConfiguration("editor").get(
       "insertSpaces"
     );
-    let UseTab: string = insert_spaces ? "Never" : "Always";
+    let UseTab: string = insertSpaces ? "Never" : "Always";
     let tabSize: string = Workspace.getConfiguration("editor").get("tabSize");
 
     let workspaceFolder = Workspace.getWorkspaceFolder(document.uri);
