@@ -1,6 +1,7 @@
-﻿import { MarkdownString, Uri, workspace as Workspace } from "vscode";
+﻿import { MarkdownString, workspace as Workspace } from "vscode";
+import { URI } from "vscode-uri";
 import { existsSync } from "fs";
-import { join } from "path";
+import { resolve } from "path";
 
 /**
  * Parse a Sourcemod JSDoc documentation string and convert it to a MarkdownString.
@@ -38,7 +39,7 @@ export function descriptionToMD(description: string): MarkdownString {
  * @param  {Uri} uri?   The URI we are looking up the MainPath for.
  * @returns string
  */
-export function findMainPath(uri?: Uri): string {
+export function findMainPath(uri?: URI): string {
   let workspaceFolders = Workspace.workspaceFolders;
   let workspaceFolder =
     uri === undefined ? undefined : Workspace.getWorkspaceFolder(uri);
@@ -50,7 +51,7 @@ export function findMainPath(uri?: Uri): string {
     if (!existsSync(mainPath) && workspaceFolders !== undefined) {
       // If it doesn't, loop over the workspace folders until one matches.
       for (let wk of workspaceFolders) {
-        mainPath = join(wk.uri.fsPath, mainPath);
+        mainPath = resolve(wk.uri.fsPath, mainPath);
         if (existsSync(mainPath)) {
           return mainPath;
         }
