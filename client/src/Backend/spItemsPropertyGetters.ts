@@ -52,6 +52,9 @@ export function getTypeOfVariable(
     ) {
       variableType = lastEnumStructOrMethodMap;
     } else {
+      const enumMemberItem = allItems.find(
+        (e) => e.kind === CompletionItemKind.EnumMember && e.name === words[0]
+      );
       variableType = allItems.find(
         (e) =>
           (e.kind === CompletionItemKind.Variable &&
@@ -60,7 +63,8 @@ export function getTypeOfVariable(
           (e.kind === CompletionItemKind.Function &&
             e.name === words[words.length - 1]) ||
           (e.kind === CompletionItemKind.Class &&
-            e.name === words[words.length - 1])
+            (e.name === words[words.length - 1] ||
+              e.name === enumMemberItem.parent))
       ).type;
     }
   }

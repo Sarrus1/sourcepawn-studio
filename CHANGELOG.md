@@ -2,6 +2,10 @@
 
 ## [3.0.2]
 
+### Added
+
+- Added support for methodmap defined in enums (see #170).
+
 ### Fixed
 
 - Fixed incorrect relative MainPath in the compile command.
