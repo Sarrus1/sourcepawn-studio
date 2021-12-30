@@ -1,11 +1,13 @@
 import { workspace as Workspace, window, commands, Terminal } from "vscode";
 import { URI } from "vscode-uri";
-import { basename, extname, join, resolve, dirname } from "path";
+import { basename, extname, join, dirname } from "path";
 import { existsSync, mkdirSync } from "fs";
 import { platform } from "os";
+
 import { run as uploadToServerCommand } from "./uploadToServer";
 import { getAllPossibleIncludeFolderPaths } from "../Backend/spFileHandlers";
 import { findMainPath } from "../spUtils";
+import { run as refreshPluginsCommand } from "./refreshPlugins";
 
 /**
  * Callback for the Compile file command.
@@ -154,6 +156,13 @@ export async function run(args: URI): Promise<void> {
       )
     ) {
       await uploadToServerCommand(URI.file(fileToCompilePath));
+      if (
+        Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
+          "refreshServerPlugins"
+        ) === "afterCompile"
+      ) {
+        refreshPluginsCommand(undefined);
+      }
     }
   } catch (error) {
     console.log(error);

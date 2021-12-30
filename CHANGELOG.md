@@ -5,6 +5,7 @@
 ### Added
 
 - Added support for methodmap defined in enums (see #170).
+- Added a way to refresh plugins after compiling (see #167).
 
 ### Fixed
 

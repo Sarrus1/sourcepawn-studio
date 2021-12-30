@@ -69,9 +69,9 @@ export async function run(args: any) {
     .then(() => {
       console.log("Upload is finished.");
       if (
-        Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
-          "uploadAfterSuccessfulCompile"
-        )
+        Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
+          "refreshServerPlugins"
+        ) === "afterUpload"
       ) {
         refreshPluginsCommand(undefined);
       }
