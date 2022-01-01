@@ -6,6 +6,7 @@
 
 - Added support for methodmap defined in enums (see #170).
 - Added a way to refresh plugins after compiling (see #167).
+- Added automatic `sourcemod.inc` include, as it is included by the Sourcepawn compiler by default.
 
 ### Fixed
 
