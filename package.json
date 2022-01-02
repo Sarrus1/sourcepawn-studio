@@ -4,7 +4,7 @@
   "description": "SourcePawn highlighting, autocompletion and much more",
   "version": "3.0.2",
   "publisher": "Sarrus",
-  "main": "./dist/spIndex",
+  "main": "./dist/spIndex.js",
   "icon": "sm.png",
   "homepage": "https://github.com/Sarrus1/sourcepawn-vscode/wiki",
   "bugs": {
