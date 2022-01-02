@@ -78,7 +78,7 @@
           "name": "support.type.core.property.sourcepawn"
         },
         "3": {
-          "name": "support.variable.sourcepawn"
+          "name": "meta.definition.variable.name.sourcepawn"
         }
       }
     },
@@ -261,7 +261,7 @@
           ]
         },
         "4": {
-          "name": "support.variable.sourcepawn"
+          "name": "meta.definition.variable.name.sourcepawn"
         },
         "5": {
           "patterns": [
@@ -300,7 +300,7 @@
           ]
         },
         "4": {
-          "name": "support.variable.sourcepawn"
+          "name": "meta.definition.variable.name.sourcepawn"
         },
         "5": {
           "patterns": [
@@ -339,7 +339,7 @@
           ]
         },
         "4": {
-          "name": "support.variable.sourcepawn"
+          "name": "meta.definition.variable.name.sourcepawn"
         },
         "5": {
           "patterns": [
@@ -436,7 +436,7 @@
     {
       "comment": "Match the rest as variables",
       "match": "\\w+",
-      "name": "support.variable.sourcepawn"
+      "name": "meta.definition.variable.name.sourcepawn"
     }
   ],
   "repository": {

@@ -12,6 +12,7 @@
 ### Fixed
 
 - Fixed incorrect relative MainPath in the compile command.
+- Made color highlighting more general for themes other than the default one (see #169).
 
 ## [3.0.1]
 
