@@ -1,5 +1,19 @@
 ## Release Notes
 
+## [3.0.2]
+
+### Added
+
+- Added support for methodmap defined in enums (see #170).
+- Added a way to refresh plugins after compiling (see #167).
+- Added automatic `sourcemod.inc` include, as it is included by the Sourcepawn compiler by default.
+- Added better syntax highlighting for `#if defined` preprocessor statements (see #168).
+
+### Fixed
+
+- Fixed incorrect relative MainPath in the compile command.
+- Made color highlighting more general for themes other than the default one (see #169).
+
 ## [3.0.1]
 
 ### Fixed

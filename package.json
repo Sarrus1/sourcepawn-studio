@@ -2,9 +2,9 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "publisher": "Sarrus",
-  "main": "./dist/spIndex",
+  "main": "./dist/spIndex.js",
   "icon": "sm.png",
   "homepage": "https://github.com/Sarrus1/sourcepawn-vscode/wiki",
   "bugs": {
@@ -203,10 +203,14 @@
           "default": true,
           "description": "Whether to show the 'Compile Code' icon in editor title menu."
         },
-        "sourcepawn.refreshAfterSuccessfulUpload": {
-          "type": "boolean",
-          "default": false,
-          "description": "Should the plugins list on the server be refreshed with `sm plugins refresh` when the upload command executed successfully.",
+        "sourcepawn.refreshServerPlugins": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "afterCompile",
+            "afterUpload"
+          ],
+          "description": "Should the plugins list on the server be refreshed with `sm plugins refresh` after a successful action in VSCode.",
           "scope": "resource"
         },
         "sourcepawn.uploadAfterSuccessfulCompile": {

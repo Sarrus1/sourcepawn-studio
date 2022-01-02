@@ -78,7 +78,7 @@
           "name": "support.type.core.property.sourcepawn"
         },
         "3": {
-          "name": "support.variable.sourcepawn"
+          "name": "meta.definition.variable.name.sourcepawn"
         }
       }
     },
@@ -131,7 +131,22 @@
       }
     },
     {
-      "comment": "Misc types",
+      "comment": "Preprocessor #if defined",
+      "match": "(#if)\\s+(defined)\\s+(\\w+)",
+      "captures": {
+        "1": {
+          "name": "keyword.control.misc.sourcepawn"
+        },
+        "2": {
+          "name": "meta.preprocessor.conditional.sourcepawn"
+        },
+        "3": {
+          "name": "variable.other.constant.sourcepawn"
+        }
+      }
+    },
+    {
+      "comment": "Preprocessor keywords",
       "match": "#\\b(if|else|endif|emit|deprecated|undef|endinput|endscript|assert|define|error|warning|file)\\b",
       "name": "keyword.control.misc.sourcepawn"
     },
@@ -246,7 +261,7 @@
           ]
         },
         "4": {
-          "name": "support.variable.sourcepawn"
+          "name": "meta.definition.variable.name.sourcepawn"
         },
         "5": {
           "patterns": [
@@ -285,7 +300,7 @@
           ]
         },
         "4": {
-          "name": "support.variable.sourcepawn"
+          "name": "meta.definition.variable.name.sourcepawn"
         },
         "5": {
           "patterns": [
@@ -324,7 +339,7 @@
           ]
         },
         "4": {
-          "name": "support.variable.sourcepawn"
+          "name": "meta.definition.variable.name.sourcepawn"
         },
         "5": {
           "patterns": [
@@ -421,7 +436,7 @@
     {
       "comment": "Match the rest as variables",
       "match": "\\w+",
-      "name": "support.variable.sourcepawn"
+      "name": "meta.definition.variable.name.sourcepawn"
     }
   ],
   "repository": {

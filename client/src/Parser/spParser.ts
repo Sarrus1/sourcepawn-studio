@@ -112,6 +112,8 @@ export class Parser {
   }
 
   parse() {
+    // Always add "sourcemod.inc" as an include.
+    readInclude(this, "sourcemod".match(/(.*)/));
     let line: string;
     line = this.lines.shift();
     while (line !== undefined) {
