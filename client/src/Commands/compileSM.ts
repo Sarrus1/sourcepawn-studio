@@ -156,13 +156,13 @@ export async function run(args: URI): Promise<void> {
       )
     ) {
       await uploadToServerCommand(URI.file(fileToCompilePath));
-      if (
-        Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
-          "refreshServerPlugins"
-        ) === "afterCompile"
-      ) {
-        refreshPluginsCommand(undefined);
-      }
+    }
+    if (
+      Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
+        "refreshServerPlugins"
+      ) === "afterCompile"
+    ) {
+      refreshPluginsCommand(undefined);
     }
   } catch (error) {
     console.log(error);
