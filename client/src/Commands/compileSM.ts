@@ -26,7 +26,7 @@ export async function run(args: URI): Promise<void> {
 
   // Decide which file to compile here.
   let fileToCompilePath: string;
-  if (alwaysCompileMainPath && mainPath !== "") {
+  if (alwaysCompileMainPath && mainPath !== undefined) {
     fileToCompilePath = mainPath;
   } else if (args !== undefined) {
     fileToCompilePath = args.fsPath;

@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [3.0.3]
+
+### Fixed
+
+- Fixed a compilation bug when MainPath wasn't set.
+
 ## [3.0.2]
 
 ### Added
