@@ -8,6 +8,7 @@ import { run as uploadToServerCommand } from "./uploadToServer";
 import { getAllPossibleIncludeFolderPaths } from "../Backend/spFileHandlers";
 import { findMainPath } from "../spUtils";
 import { run as refreshPluginsCommand } from "./refreshPlugins";
+import { refreshDiagnostics, compilerDiagnostics } from "../spLinter";
 
 /**
  * Callback for the Compile file command.
@@ -150,6 +151,11 @@ export async function run(args: URI): Promise<void> {
 
   try {
     terminal.sendText(command);
+    let document = await Workspace.openTextDocument(
+      URI.file(fileToCompilePath)
+    );
+    refreshDiagnostics(document, compilerDiagnostics, true);
+
     if (
       Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
         "uploadAfterSuccessfulCompile"

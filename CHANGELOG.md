@@ -2,6 +2,10 @@
 
 ## [3.0.3]
 
+### Added
+
+- Added lint errors and warnings on compile when the linter is disabled.
+
 ### Fixed
 
 - Fixed a compilation bug when MainPath wasn't set.
