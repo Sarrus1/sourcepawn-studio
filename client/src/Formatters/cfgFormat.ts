@@ -122,7 +122,6 @@ function formatCFGText(
       if (slashCounter === 2) {
         newText += " ";
       } else if (slashCounter === 1 && firstStringOfLineReached) {
-        let t = newText.slice(0, newText.length - 1);
         newText =
           newText.slice(0, newText.length - 1) +
           " " +
