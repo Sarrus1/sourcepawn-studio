@@ -8,6 +8,7 @@ import { run as uploadToServerCommand } from "./uploadToServer";
 import { getAllPossibleIncludeFolderPaths } from "../Backend/spFileHandlers";
 import { findMainPath } from "../spUtils";
 import { run as refreshPluginsCommand } from "./refreshPlugins";
+import { refreshDiagnostics, compilerDiagnostics } from "../spLinter";
 
 /**
  * Callback for the Compile file command.
@@ -26,7 +27,7 @@ export async function run(args: URI): Promise<void> {
 
   // Decide which file to compile here.
   let fileToCompilePath: string;
-  if (alwaysCompileMainPath && mainPath !== "") {
+  if (alwaysCompileMainPath && mainPath !== undefined) {
     fileToCompilePath = mainPath;
   } else if (args !== undefined) {
     fileToCompilePath = args.fsPath;
@@ -150,19 +151,24 @@ export async function run(args: URI): Promise<void> {
 
   try {
     terminal.sendText(command);
+    let document = await Workspace.openTextDocument(
+      URI.file(fileToCompilePath)
+    );
+    refreshDiagnostics(document, compilerDiagnostics, true);
+
     if (
       Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
         "uploadAfterSuccessfulCompile"
       )
     ) {
       await uploadToServerCommand(URI.file(fileToCompilePath));
-      if (
-        Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
-          "refreshServerPlugins"
-        ) === "afterCompile"
-      ) {
-        refreshPluginsCommand(undefined);
-      }
+    }
+    if (
+      Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
+        "refreshServerPlugins"
+      ) === "afterCompile"
+    ) {
+      refreshPluginsCommand(undefined);
     }
   } catch (error) {
     console.log(error);

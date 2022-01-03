@@ -50,7 +50,8 @@ export let throttles: { [key: string]: TimeoutFunction } = {};
 
 export function refreshDiagnostics(
   document: TextDocument,
-  compilerDiagnostics: DiagnosticCollection
+  compilerDiagnostics: DiagnosticCollection,
+  ignoreSetting = false
 ) {
   const DocumentDiagnostics: Map<string, Diagnostic[]> = new Map();
   // Check if the user specified not to enable the linter for this file
@@ -65,7 +66,10 @@ export function refreshDiagnostics(
     workspaceFolder
   ).get<boolean>("enableLinter");
 
-  if (text == "" || /\/\/linter=false/.test(text) || !enableLinter) {
+  if (
+    !ignoreSetting &&
+    (text == "" || /\/\/linter=false/.test(text) || !enableLinter)
+  ) {
     return ReturnNone(document.uri);
   }
   const spcomp =
