@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fixed a compilation bug when MainPath wasn't set.
+- Made color highlighting more general for themes other than the default one (see #169).
 
 ## [3.0.2]
 
