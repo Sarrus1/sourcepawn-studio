@@ -6,6 +6,9 @@ export function readVariable(
   match: RegExpMatchArray,
   line: string
 ) {
+  if (parser.file.includes("SurfTimer-discord.sp") && parser.lineNb > 492) {
+    console.log("t");
+  }
   if (
     /^\s*(if|else|while|do|return|break|continue|delete|forward|native|property|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)/.test(
       line
@@ -25,6 +28,12 @@ export function readVariable(
     croppedLine = line.slice(0, commentMatch.index);
   }
   if (/(;)(?:\s*|)$/.test(croppedLine)) {
+    // Deal with "new" declarations here
+    let match = croppedLine.match(/^\s*(\w+)\s+(\w+)\s*=\s*new/);
+    if (match) {
+      addVariableItem(parser, match[1], line, croppedLine);
+      return;
+    }
     // Separate potential multiple declarations
     let re = /\s*(?:(?:const|static|public|stock)\s+)*(\w*)\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])*\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])*(?:\s*=\s*(?:(?:\"[^]*\")|(?:\'[^]*\')|(?:[^,]+)))?/g;
     do {
@@ -41,29 +50,28 @@ export function readVariable(
         addVariableItem(parser, variable_completion, line, variable[1]);
       }
     }
-  } else {
-    let parseLine: boolean = true;
-    while (parseLine) {
-      parseLine = !match[1].match(/(;)\s*$/);
-      // Separate potential multiple declarations
-      match_variables = match[1].match(
-        /(?:\s*)?([A-Za-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-Za-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g
-      );
-      if (!match_variables) {
-        break;
-      }
-      for (let variable of match_variables) {
-        let variable_completion = variable.match(
-          /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
-        )[1];
-        if (!parser.IsBuiltIn) {
-          addVariableItem(parser, variable_completion, line, "");
-        }
-      }
-      match[1] = parser.lines.shift();
-      line = match[1];
-      parser.lineNb++;
-    }
+    return;
   }
-  return;
+  let parseLine: boolean = true;
+  while (parseLine) {
+    parseLine = !match[1].match(/(;)\s*$/);
+    // Separate potential multiple declarations
+    match_variables = match[1].match(
+      /(?:\s*)?([A-Za-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-Za-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g
+    );
+    if (!match_variables) {
+      break;
+    }
+    for (let variable of match_variables) {
+      let variable_completion = variable.match(
+        /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
+      )[1];
+      if (!parser.IsBuiltIn) {
+        addVariableItem(parser, variable_completion, line, "");
+      }
+    }
+    match[1] = parser.lines.shift();
+    line = match[1];
+    parser.lineNb++;
+  }
 }

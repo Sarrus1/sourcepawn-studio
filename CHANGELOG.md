@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fixed the compiler refreshing plugins too early when `onCompile` was set (see #174).
+- Fixed a parsing issue with the `new` keyword.
 
 ## [3.0.3]
 
