@@ -3,11 +3,10 @@
     "module": "commonjs",
     "target": "es2019",
     "lib": ["ES2019"],
-    "outDir": "../dist",
+    "outDir": "dist",
     "rootDir": "src",
     "sourceMap": true
   },
   "include": ["src", "src/**/*.ts"],
-  "exclude": ["node_modules", ".vscode-test"],
-  "references": [{ "path": "./client" }]
+  "exclude": ["node_modules", ".vscode-test"]
 }
