@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [3.0.4]
+
+### Fixed
+
+- Fixed the compiler refreshing plugins too early when `onCompile` was set (see #174).
+
 ## [3.0.3]
 
 ### Added
