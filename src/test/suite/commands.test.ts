@@ -13,7 +13,7 @@ import { run as CreateREADMECommand } from "../../Commands/createREADME";
 import { run as CreateMasterCommand } from "../../Commands/createGitHubActions";
 import { run as CreateChangelogCommand } from "../../Commands/createCHANGELOG";
 
-const testFolderLocation = "/../../../client/src/test/testSuite/";
+const testFolderLocation = "/../../../src/test/testSuite/";
 const testMainLocation = "scripting/main.sp";
 const testSecondaryLocation = "scripting/include/second.sp";
 const mainUri: URI = URI.file(
@@ -248,9 +248,27 @@ suite("Run tests", () => {
         )
         .then((docCompletion: vscode.CompletionList) => {
           assert.ok(docCompletion.items.length > 0);
-          const expectedKeywords = ["case", "switch", "return", "continue", "break", "sizeof", "view_as", "forward", "native", "stock", "public"];
-          const foundKeywords = docCompletion.items.filter(item => expectedKeywords.some(keyword => item.label == keyword));
-          assert.equal(foundKeywords.length, expectedKeywords.length, "expected keywords did not match");
+          const expectedKeywords = [
+            "case",
+            "switch",
+            "return",
+            "continue",
+            "break",
+            "sizeof",
+            "view_as",
+            "forward",
+            "native",
+            "stock",
+            "public",
+          ];
+          const foundKeywords = docCompletion.items.filter((item) =>
+            expectedKeywords.some((keyword) => item.label == keyword)
+          );
+          assert.equal(
+            foundKeywords.length,
+            expectedKeywords.length,
+            "expected keywords did not match"
+          );
         });
     });
 
