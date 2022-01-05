@@ -1,10 +1,4 @@
-import {
-  workspace as Workspace,
-  window,
-  commands,
-  Terminal,
-  workspace,
-} from "vscode";
+import { workspace as Workspace, window, commands, Terminal } from "vscode";
 import { URI } from "vscode-uri";
 import { basename, extname, join, dirname } from "path";
 import { existsSync, mkdirSync } from "fs";

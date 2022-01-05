@@ -6,9 +6,6 @@ export function readVariable(
   match: RegExpMatchArray,
   line: string
 ) {
-  if (parser.file.includes("SurfTimer-discord.sp") && parser.lineNb > 492) {
-    console.log("t");
-  }
   if (
     /^\s*(if|else|while|do|return|break|continue|delete|forward|native|property|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)/.test(
       line
