@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [3.0.5]
+
+### Fixed
+
+- Fixed incorrect MainPath when using a keybind to compile.
+
 ## [3.0.4]
 
 ### Fixed
