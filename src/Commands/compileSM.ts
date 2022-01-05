@@ -1,10 +1,4 @@
-import {
-  workspace as Workspace,
-  window,
-  commands,
-  Terminal,
-  workspace,
-} from "vscode";
+import { workspace as Workspace, window, commands, Terminal } from "vscode";
 import { URI } from "vscode-uri";
 import { basename, extname, join, dirname } from "path";
 import { existsSync, mkdirSync } from "fs";
@@ -22,10 +16,10 @@ import { refreshDiagnostics, compilerDiagnostics } from "../spLinter";
  * @returns Promise
  */
 export async function run(args: URI): Promise<void> {
-  const workspaceFolder = Workspace.getWorkspaceFolder(
-    args === undefined ? window.activeTextEditor.document.uri : args
-  );
-  const mainPath = findMainPath(args);
+  const uri = args === undefined ? window.activeTextEditor.document.uri : args;
+  const workspaceFolder = Workspace.getWorkspaceFolder(uri);
+
+  const mainPath = findMainPath(uri);
   const alwaysCompileMainPath: boolean = Workspace.getConfiguration(
     "sourcepawn",
     workspaceFolder
@@ -35,10 +29,8 @@ export async function run(args: URI): Promise<void> {
   let fileToCompilePath: string;
   if (alwaysCompileMainPath && mainPath !== undefined) {
     fileToCompilePath = mainPath;
-  } else if (args !== undefined) {
-    fileToCompilePath = args.fsPath;
   } else {
-    fileToCompilePath = window.activeTextEditor.document.uri.fsPath;
+    fileToCompilePath = uri.fsPath;
   }
 
   const scriptingFolderPath = dirname(fileToCompilePath);
