@@ -165,11 +165,6 @@ export async function run(args: URI): Promise<void> {
           "refreshServerPlugins"
         ) === "afterCompile"
       ) {
-        const timeout = Workspace.getConfiguration(
-          "sourcepawn",
-          workspaceFolder
-        ).get<number>("refreshTimeout");
-        await new Promise((r) => setTimeout(r, timeout));
         refreshPluginsCommand(undefined);
       }
     })
