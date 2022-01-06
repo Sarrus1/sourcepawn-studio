@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [3.0.6]
+
+### Fixed
+
+- Fixed a typo in the parser.
+
 ## [3.0.5]
 
 ### Fixed

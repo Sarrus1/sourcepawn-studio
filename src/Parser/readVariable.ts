@@ -28,7 +28,7 @@ export function readVariable(
     // Deal with "new" declarations here
     let match = croppedLine.match(/^\s*(\w+)\s+(\w+)\s*=\s*new/);
     if (match) {
-      addVariableItem(parser, match[1], line, croppedLine);
+      addVariableItem(parser, match[2], line, match[1]);
       return;
     }
     // Separate potential multiple declarations
