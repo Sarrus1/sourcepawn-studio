@@ -264,12 +264,6 @@
           "description": "The path to the output directory for the compiled .smx file. Ends with a `/`.",
           "scope": "resource"
         },
-        "sourcepawn.refreshTimeout": {
-          "type": "integer",
-          "default": "1000",
-          "description": "When 'refreshServerPlugins' is set to 'afterCompile', the amount of time in ms the extension should wait before refreshing the plugins on the server.",
-          "scope": "resource"
-        },
         "sourcepawn.UploadOptions": {
           "type": "object",
           "default": {
