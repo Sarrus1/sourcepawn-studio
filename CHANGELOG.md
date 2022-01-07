@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fixed a typo in the parser.
+- Switched to output window instead of terminal for the Compile SM command.
 
 ## [3.0.5]
 
