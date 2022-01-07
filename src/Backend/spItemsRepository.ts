@@ -18,6 +18,8 @@ import {
   newDocumentCallback,
 } from "./spFileHandlers";
 import { getAllItems, getItemFromPosition } from "./spItemsGetters";
+import { refreshDiagnostics } from "../spLinter";
+import { compilerDiagnostics } from "../spLinter";
 
 export class ItemsRepository implements Disposable {
   public fileItems: Map<string, FileItems>;
@@ -37,10 +39,12 @@ export class ItemsRepository implements Disposable {
   }
 
   public handleDocumentChange(event: TextDocumentChangeEvent) {
+    refreshDiagnostics(event.document, compilerDiagnostics);
     handleDocumentChange(this, event);
   }
 
   public handleNewDocument(document: TextDocument) {
+    refreshDiagnostics(document, compilerDiagnostics);
     newDocumentCallback(this, document.uri);
   }
 

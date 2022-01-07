@@ -1,4 +1,9 @@
-import { workspace as Workspace, window, commands, OutputChannel } from "vscode";
+import {
+  workspace as Workspace,
+  window,
+  commands,
+  OutputChannel,
+} from "vscode";
 import { URI } from "vscode-uri";
 import { basename, extname, join, dirname } from "path";
 import { existsSync, mkdirSync } from "fs";
@@ -8,9 +13,10 @@ import { run as uploadToServerCommand } from "./uploadToServer";
 import { getAllPossibleIncludeFolderPaths } from "../Backend/spFileHandlers";
 import { findMainPath } from "../spUtils";
 import { run as refreshPluginsCommand } from "./refreshPlugins";
-import { refreshDiagnostics, compilerDiagnostics } from "../spLinter";
+import { compilerDiagnostics } from "../spLinter";
+import { parseSPCompErrors } from "../Misc/parseSPCompErrors";
 
-// Create Output Channel variable here but do not initialize yet.
+// Create an OutputChannel variable here but do not initialize yet.
 let output: OutputChannel;
 
 /**
@@ -113,25 +119,25 @@ export async function run(args: URI): Promise<void> {
       "SourcemodHome"
     ),
     join(scriptingFolderPath, "include"),
-    scriptingFolderPath
+    scriptingFolderPath,
   ];
 
   // Add the optional includes folders.
-  getAllPossibleIncludeFolderPaths(URI.file(fileToCompilePath), true).forEach(
-    (e) => includePaths.push(e)
-  );
+  getAllPossibleIncludeFolderPaths(
+    URI.file(fileToCompilePath),
+    true
+  ).forEach((e) => includePaths.push(e));
 
-  let compilerArgs: string[] = [
-    fileToCompilePath,
-    '-o', outputDir
-  ];
+  let compilerArgs = [fileToCompilePath, "-o", outputDir];
 
   // Add include paths and compiler options to compiler args.
-  includePaths.forEach(path => compilerArgs.push('-i', path));
-  compilerArgs.push(...compilerOptions);
+  includePaths.forEach((path) => compilerArgs.push("-i", path));
+  compilerArgs = compilerArgs.concat(compilerOptions);
 
   // Create Output Channel if it does not exist.
-  if(!output) output = window.createOutputChannel("SourcePawn Compiler");
+  if (!output) {
+    output = window.createOutputChannel("SourcePawn Compiler");
+  }
 
   // Clear previous data in Output Channel and show it.
   output.clear();
@@ -139,20 +145,13 @@ export async function run(args: URI): Promise<void> {
 
   try {
     // Compile in child process.
-    const child = execFile(spcomp, compilerArgs);
-
-    // Redirect stdout to Output Channel.
-    child.stdout.on('data', data => output.append(data.toString().trim()));
-    
-    child.on('error', e => { throw e });
-
-    // Do stuff after compilation completed.
-    child.on('close', async () => {
-      let document = await Workspace.openTextDocument(
-        URI.file(fileToCompilePath)
+    execFile(spcomp, compilerArgs, async (error, stdout) => {
+      output.append(stdout.toString().trim());
+      parseSPCompErrors(
+        stdout.toString().trim(),
+        compilerDiagnostics,
+        fileToCompilePath
       );
-      refreshDiagnostics(document, compilerDiagnostics, true);
-  
       if (
         Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
           "uploadAfterSuccessfulCompile"
@@ -167,7 +166,7 @@ export async function run(args: URI): Promise<void> {
       ) {
         refreshPluginsCommand(undefined);
       }
-    })
+    });
   } catch (error) {
     console.log(error);
   }

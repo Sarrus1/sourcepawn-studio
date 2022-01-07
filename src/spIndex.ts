@@ -4,7 +4,6 @@ import {
   languages,
   window,
   commands,
-  StatusBarItem,
   StatusBarAlignment,
 } from "vscode";
 import { URI } from "vscode-uri";
@@ -88,7 +87,7 @@ export function activate(context: ExtensionContext) {
   );
   getDirectories(optionalIncludeDirs, providers);
 
-  let mainPath: string = findMainPath();
+  const mainPath: string = findMainPath();
   if (mainPath !== undefined && mainPath != "") {
     providers.itemsRepository.handleDocumentOpening(mainPath);
   } else if (mainPath == "") {
