@@ -7,7 +7,7 @@
 } from "vscode";
 import { URI } from "vscode-uri";
 
-import { errorDetails } from "../Misc/errorMessages";
+import { errorDetails } from "../../Misc/errorMessages";
 
 function generateDetailedError(errorCode: string, errorMsg: string): string {
   if (errorDetails[errorCode] !== undefined) {

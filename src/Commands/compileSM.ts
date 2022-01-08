@@ -13,8 +13,8 @@ import { run as uploadToServerCommand } from "./uploadToServer";
 import { getAllPossibleIncludeFolderPaths } from "../Backend/spFileHandlers";
 import { findMainPath } from "../spUtils";
 import { run as refreshPluginsCommand } from "./refreshPlugins";
-import { compilerDiagnostics } from "../spLinter";
-import { parseSPCompErrors } from "../Misc/parseSPCompErrors";
+import { compilerDiagnostics } from "../Providers/Linter/compilerDiagnostics";
+import { parseSPCompErrors } from "../Providers/Linter/parseSPCompErrors";
 
 // Create an OutputChannel variable here but do not initialize yet.
 let output: OutputChannel;
