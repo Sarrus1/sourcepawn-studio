@@ -4,18 +4,14 @@ import {
   languages,
   window,
   commands,
-  StatusBarItem,
   StatusBarAlignment,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { resolve } from "path";
 const glob = require("glob");
 
-import {
-  registerSMLinter,
-  compilerDiagnostics,
-  refreshDiagnostics,
-} from "./spLinter";
+import { refreshDiagnostics } from "./Providers/spLinter";
+import { registerSPLinter } from "./Providers/Linter/registerSPLinter";
 import { parseSMApi } from "./Misc/parseSMAPI";
 import { SP_MODE, SP_LEGENDS } from "./Misc/spConstants";
 import { Providers } from "./Backend/spProviders";
@@ -55,7 +51,7 @@ export function activate(context: ExtensionContext) {
         mainPath = URI.file(mainPath).toString();
         for (let document of Workspace.textDocuments) {
           if (document.uri.toString() === mainPath) {
-            refreshDiagnostics(document, compilerDiagnostics);
+            refreshDiagnostics(document);
             break;
           }
         }
@@ -88,7 +84,7 @@ export function activate(context: ExtensionContext) {
   );
   getDirectories(optionalIncludeDirs, providers);
 
-  let mainPath: string = findMainPath();
+  const mainPath: string = findMainPath();
   if (mainPath !== undefined && mainPath != "") {
     providers.itemsRepository.handleDocumentOpening(mainPath);
   } else if (mainPath == "") {
@@ -217,7 +213,7 @@ export function activate(context: ExtensionContext) {
   registerSMCommands(context);
 
   // Register SM linter
-  registerSMLinter(context);
+  registerSPLinter(context);
 }
 
 function getDirectories(paths: string[], providers: Providers) {

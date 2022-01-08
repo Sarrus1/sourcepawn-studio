@@ -1,14 +1,23 @@
-import { workspace as Workspace, window, commands, Terminal } from "vscode";
+import {
+  workspace as Workspace,
+  window,
+  commands,
+  OutputChannel,
+} from "vscode";
 import { URI } from "vscode-uri";
 import { basename, extname, join, dirname } from "path";
 import { existsSync, mkdirSync } from "fs";
-import { platform } from "os";
+import { execFile } from "child_process";
 
 import { run as uploadToServerCommand } from "./uploadToServer";
 import { getAllPossibleIncludeFolderPaths } from "../Backend/spFileHandlers";
 import { findMainPath } from "../spUtils";
 import { run as refreshPluginsCommand } from "./refreshPlugins";
-import { refreshDiagnostics, compilerDiagnostics } from "../spLinter";
+import { compilerDiagnostics } from "../Providers/Linter/compilerDiagnostics";
+import { parseSPCompErrors } from "../Providers/Linter/parseSPCompErrors";
+
+// Create an OutputChannel variable here but do not initialize yet.
+let output: OutputChannel;
 
 /**
  * Callback for the Compile file command.
@@ -64,19 +73,6 @@ export async function run(args: URI): Promise<void> {
     return;
   }
 
-  // Try to reuse the previous terminal window instead of opening a new one.
-  const terminals = window.terminals;
-  let terminal: Terminal;
-  if (terminals.length === 0) {
-    terminal = window.createTerminal("SourcePawn compile");
-  } else {
-    terminal = terminals.find((e) => e.name === "SourcePawn compile");
-    if (terminal === undefined) {
-      terminal = window.createTerminal("SourcePawn compile");
-    }
-  }
-  terminal.show();
-
   // Decide where to output the compiled file.
   const pluginsFolderPath = join(scriptingFolderPath, "../", "plugins/");
   let outputDir: string =
@@ -112,67 +108,65 @@ export async function run(args: URI): Promise<void> {
   }
   outputDir += basename(fileToCompilePath, ".sp");
 
-  let command = (platform() == "win32" ? "." : "").concat(
-    // Compiler path
-    "'" + spcomp + "'",
-    // Script path (script to compile)
-    " '" + fileToCompilePath + "'",
-    // Output path for the smx file
-    " -o=" + "'" + outputDir + "'",
-    // Set the path for sm_home
-    " -i=" + "'",
-    Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
-      "SourcemodHome"
-    ) || "",
-    "'",
-    " -i=" + "'",
-    join(scriptingFolderPath, "include") || "",
-    "'",
-    " -i=" + "'",
-    scriptingFolderPath,
-    "'"
-  );
-
   // Add the compiler options from the settings.
   const compilerOptions: string[] = Workspace.getConfiguration(
     "sourcepawn",
     workspaceFolder
   ).get("compilerOptions");
 
-  // Add a space at the beginning of every element, for security.
-  command += " " + compilerOptions.join(" ");
+  let includePaths: string[] = [
+    Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
+      "SourcemodHome"
+    ),
+    join(scriptingFolderPath, "include"),
+    scriptingFolderPath,
+  ];
 
   // Add the optional includes folders.
-  getAllPossibleIncludeFolderPaths(URI.file(fileToCompilePath), true).forEach(
-    (e) => (command += ` -i='${e}'`)
-  );
+  getAllPossibleIncludeFolderPaths(
+    URI.file(fileToCompilePath),
+    true
+  ).forEach((e) => includePaths.push(e));
+
+  let compilerArgs = [fileToCompilePath, "-o", outputDir];
+
+  // Add include paths and compiler options to compiler args.
+  includePaths.forEach((path) => compilerArgs.push("-i", path));
+  compilerArgs = compilerArgs.concat(compilerOptions);
+
+  // Create Output Channel if it does not exist.
+  if (!output) {
+    output = window.createOutputChannel("SourcePawn Compiler");
+  }
+
+  // Clear previous data in Output Channel and show it.
+  output.clear();
+  output.show();
 
   try {
-    terminal.sendText(command);
-    let document = await Workspace.openTextDocument(
-      URI.file(fileToCompilePath)
-    );
-    refreshDiagnostics(document, compilerDiagnostics, true);
-
-    if (
-      Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
-        "uploadAfterSuccessfulCompile"
-      )
-    ) {
-      await uploadToServerCommand(URI.file(fileToCompilePath));
-    }
-    if (
-      Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
-        "refreshServerPlugins"
-      ) === "afterCompile"
-    ) {
-      const timeout = Workspace.getConfiguration(
-        "sourcepawn",
-        workspaceFolder
-      ).get<number>("refreshTimeout");
-      await new Promise((r) => setTimeout(r, timeout));
-      refreshPluginsCommand(undefined);
-    }
+    // Compile in child process.
+    execFile(spcomp, compilerArgs, async (error, stdout) => {
+      output.append(stdout.toString().trim());
+      parseSPCompErrors(
+        stdout.toString().trim(),
+        compilerDiagnostics,
+        fileToCompilePath
+      );
+      if (
+        Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
+          "uploadAfterSuccessfulCompile"
+        )
+      ) {
+        await uploadToServerCommand(URI.file(fileToCompilePath));
+      }
+      if (
+        Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
+          "refreshServerPlugins"
+        ) === "afterCompile"
+      ) {
+        refreshPluginsCommand(undefined);
+      }
+    });
   } catch (error) {
     console.log(error);
   }
