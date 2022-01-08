@@ -48,7 +48,7 @@ export function readFunction(
 
   // We can't declare a function inside a function, this is a call.
   // cancel the parsing
-  if (!match || parser.state[parser.state.length - 1] === State.Function) {
+  if (!match || parser.state.includes(State.Function)) {
     return;
   }
 
