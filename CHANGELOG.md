@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fixed autocompletion error (see #181).
+- Fixed syntax highlighting.
 
 ## [3.0.6]
 
