@@ -62,7 +62,8 @@ export function getTypeOfVariable(
             e.name === words[words.length - 1]) ||
           (e.kind === CompletionItemKind.Function &&
             e.name === words[words.length - 1]) ||
-          (e.kind === CompletionItemKind.Class &&
+          (enumMemberItem !== undefined &&
+            e.kind === CompletionItemKind.Class &&
             (e.name === words[words.length - 1] ||
               e.name === enumMemberItem.parent))
       ).type;

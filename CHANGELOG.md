@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [3.0.7]
+
+### Fixed
+
+- Fixed autocompletion error (see #181).
+
 ## [3.0.6]
 
 ### Fixed
