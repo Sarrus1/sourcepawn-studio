@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [3.0.8]
+
+### Fixed
+
+- Made output channel more compact.
+
 ## [3.0.7]
 
 ### Fixed
