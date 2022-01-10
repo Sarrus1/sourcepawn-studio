@@ -103,7 +103,10 @@ async function getFullParams(document: TextDocument, position: Position) {
       /^(\s)*(?:(?:static|native|stock|public|forward)\s+)*(?:(\w+)\s*:)?\s*(\w*)\s*\(/
     );
     if (!match) {
-      return;
+      return {
+        signature: undefined,
+        indent: undefined,
+      };
     }
   }
   let newPos = new Position(lineNB, match[0].length);
@@ -112,7 +115,7 @@ async function getFullParams(document: TextDocument, position: Position) {
     document.uri,
     newPos
   );
-  if (res.signatures.length === 0) {
+  if (res === undefined || res.signatures.length === 0) {
     return {
       signature: undefined,
       indent: undefined,
