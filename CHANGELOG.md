@@ -7,6 +7,7 @@
 - Fixed autocompletion error (see #181).
 - Fixed syntax highlighting.
 - Readd compiler command when calling `compileSM`.
+- Enable semantic highlighting by default (see #169).
 
 ## [3.0.6]
 

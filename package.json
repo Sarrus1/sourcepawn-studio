@@ -406,6 +406,9 @@
         }
       }
     },
+    "configurationDefaults": {
+      "editor.semanticHighlighting.enabled": true
+    },
     "iconThemes": [
       {
         "id": "sourcepawn",
