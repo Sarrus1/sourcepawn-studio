@@ -6,6 +6,7 @@
 
 - Fixed autocompletion error (see #181).
 - Fixed syntax highlighting.
+- Readd compiler command when calling `compileSM`.
 
 ## [3.0.6]
 

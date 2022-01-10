@@ -145,6 +145,7 @@ export async function run(args: URI): Promise<void> {
 
   try {
     // Compile in child process.
+    output.append(`${spcomp}\n${compilerArgs.join("\n")}\n\n`);
     execFile(spcomp, compilerArgs, async (error, stdout) => {
       output.append(stdout.toString().trim());
       parseSPCompErrors(
