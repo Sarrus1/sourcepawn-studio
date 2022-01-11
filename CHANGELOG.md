@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [3.0.9]
+
+### Fixed
+
+- Tweaked some spdoc highlighting.
+
 ## [3.0.8]
 
 ### Fixed

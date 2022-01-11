@@ -3,30 +3,34 @@
   "injectionSelector": "L:comment",
   "patterns": [
     {
-      "include": "#jsdoc-keyword"
+      "include": "#spdoc-keyword"
     }
   ],
   "repository": {
-    "jsdoc-keyword": {
+    "spdoc-keyword": {
       "patterns": [
         {
-          "match": "(@param)\\s+(\\w+)",
+          "match": "(@param)\\s+([\\w\\.]+)",
           "captures": {
             "1": {
-              "name": "storage.type.class.jsdoc"
+              "name": "storage.type.class.spdoc"
             },
             "2": {
-              "name": "support.variable.sourcepawn"
+              "name": "support.variable.spdoc"
             }
           }
         },
         {
           "match": "@return",
-          "name": "keyword.control.jsdoc"
+          "name": "keyword.control.spdoc"
         },
         {
           "match": "@error",
-          "name": "string.regexp.jsdoc"
+          "name": "string.regexp.spdoc"
+        },
+        {
+          "match": "@(note|deprecated)",
+          "name": "support.function.spdoc"
         }
       ]
     }
