@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [3.0.9]
+
+### Fixed
+
+- Fixed a file extension issue when compiling (see #184).
+- Tweaked some spdoc highlighting.
+
 ## [3.0.8]
 
 ### Fixed
