@@ -106,7 +106,7 @@ export async function run(args: URI): Promise<void> {
       }
     }
   }
-  outputDir += basename(fileToCompilePath, ".sp");
+  outputDir += basename(fileToCompilePath, ".sp") + ".smx";
 
   // Add the compiler options from the settings.
   const compilerOptions: string[] = Workspace.getConfiguration(

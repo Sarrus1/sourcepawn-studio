@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Fixed a file extension issue when compiling (see #184).
 - Tweaked some spdoc highlighting.
 
 ## [3.0.8]
