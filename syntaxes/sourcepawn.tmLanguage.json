@@ -508,6 +508,43 @@
     "comments": {
       "patterns": [
         {
+          "comment": "param spdocs single line",
+          "match": "(\\/\\/)\\s*(@param)\\s+([\\w\\.]+)\\s+(.*)",
+          "captures": {
+            "1": { "name": "comment.sourcepawn" },
+            "2": { "name": "storage.type.class.single-line.spdoc" },
+            "3": { "name": "support.variable.single-line.spdoc" },
+            "4": { "name": "comment.sourcepawn" }
+          }
+        },
+        {
+          "comment": "return spdocs single line",
+          "match": "(\\/\\/)\\s*(@return)\\s+(.*)",
+          "captures": {
+            "1": { "name": "comment.sourcepawn" },
+            "2": { "name": "keyword.control.single-line.spdoc" },
+            "3": { "name": "comment.sourcepawn" }
+          }
+        },
+        {
+          "comment": "error spdocs single line",
+          "match": "(\\/\\/)\\s*(@error)\\s+(.*)",
+          "captures": {
+            "1": { "name": "comment.sourcepawn" },
+            "2": { "name": "string.regexp.single-line.spdoc" },
+            "3": { "name": "comment.sourcepawn" }
+          }
+        },
+        {
+          "comment": "note spdocs single line",
+          "match": "(\\/\\/)\\s*(@(?:note|deprecated))\\s+(.*)",
+          "captures": {
+            "1": { "name": "comment.sourcepawn" },
+            "2": { "name": "support.function.single-line.spdoc" },
+            "3": { "name": "comment.sourcepawn" }
+          }
+        },
+        {
           "match": "\\/\\/.*",
           "name": "comment.sourcepawn"
         },
