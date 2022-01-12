@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [3.0.10]
+
+### Fixed
+
+- Fixed "static" keyword being highlighted in variable names (see #186).
+
 ## [3.0.9]
 
 ### Fixed
