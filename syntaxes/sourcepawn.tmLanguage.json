@@ -430,7 +430,7 @@
     },
     {
       "comment": "Match the rest of the static and const",
-      "match": "(?:const|static)",
+      "match": "\\b(?:const|static)\\b",
       "name": "keyword.sourcepawn"
     },
     {
