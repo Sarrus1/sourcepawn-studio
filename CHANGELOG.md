@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [3.0.11]
+
+### Fixed
+
+- Fixed enum with comments parsing (see #188).
+
 ## [3.0.10]
 
 ### Fixed
