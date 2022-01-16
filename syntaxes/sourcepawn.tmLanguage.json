@@ -519,7 +519,7 @@
         },
         {
           "comment": "return spdocs single line",
-          "match": "(\\/\\/)\\s*(@return)\\s+(.*)",
+          "match": "(\\/\\/)\\s*(@return|@noreturn)\\s+(.*)",
           "captures": {
             "1": { "name": "comment.sourcepawn" },
             "2": { "name": "keyword.control.single-line.spdoc" },
