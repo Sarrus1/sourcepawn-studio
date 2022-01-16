@@ -135,6 +135,7 @@ export function readEnum(
         parser.IsBuiltIn
       )
     );
+    searchForDefinesInString(parser, line);
     i = iterMatch[0].length;
   }
 
