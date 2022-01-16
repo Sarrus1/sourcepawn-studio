@@ -10,6 +10,7 @@
 
 - Fixed enum with comments parsing (see #188).
 - Fixed a bug which would cause pressing enter after the end of a block comment to add an unwanted space to the indentation.
+- Fixed linter errors going to which ever file they please when MainPath is set.
 
 ## [3.0.10]
 
