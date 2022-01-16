@@ -13,6 +13,8 @@ export function descriptionToMD(description: string): MarkdownString {
     return new MarkdownString("");
   }
   description = description
+    // Remove leading *< from documentation (usually present in enum member's description)
+    .replace(/^\*\</, "")
     .replace(/\</gm, "\\<")
     .replace(/\>/gm, "\\>")
     .replace(/([\w\,]{1})\n/gm, "$1")

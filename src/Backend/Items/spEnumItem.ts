@@ -63,7 +63,7 @@ export class EnumItem implements SPItem {
       return;
     }
     return new DocumentSymbol(
-      this.name,
+      this.name.replace(/Enum#(\d+)/, "Anonymous$1"),
       this.description,
       SymbolKind.Enum,
       this.fullRange,

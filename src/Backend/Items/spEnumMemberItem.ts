@@ -63,18 +63,11 @@ export class EnumMemberItem implements SPItem {
   }
 
   toHover(): Hover {
-    let enumName = this.parent;
-    if (enumName == "") {
-      return new Hover([
-        { language: "sourcepawn", value: this.name },
-        descriptionToMD(this.description),
-      ]);
-    } else {
-      return new Hover([
-        { language: "sourcepawn", value: `${this.parent} ${this.name};` },
-        descriptionToMD(this.description),
-      ]);
-    }
+    let enumName = this.parent.replace(/Enum#(\d+)/, "Anonymous$1");
+    return new Hover([
+      { language: "sourcepawn", value: `${enumName} ${this.name};` },
+      descriptionToMD(this.description),
+    ]);
   }
 
   toDocumentSymbol(): DocumentSymbol {

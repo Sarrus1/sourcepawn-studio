@@ -25,7 +25,7 @@ export function readEnum(
   if (!match[1]) {
     parser.anonymousEnumCount++;
   }
-  let nameMatch = match[1] ? match[1] : `Enum #${parser.anonymousEnumCount}`;
+  let nameMatch = match[1] ? match[1] : `Enum#${parser.anonymousEnumCount}`;
   let range = parser.makeDefinitionRange(match[1] ? match[1] : "enum", line);
   var enumCompletion: EnumItem = new EnumItem(
     nameMatch,
@@ -44,9 +44,9 @@ export function readEnum(
   let foundEndToken = false;
   let i = match[0].length;
   let isBlockComment = false;
-  if (nameMatch == "MenuAction") {
-    console.debug(parser);
-  }
+  let enumMemberName = "";
+  description = "";
+
   while (!foundEndToken && iter < 10000) {
     iter++;
     if (line.length <= i) {
@@ -59,22 +59,30 @@ export function readEnum(
       i = 0;
       continue;
     }
+
     if (isBlockComment) {
-      if (line.length <= i - 1) {
-        line = parser.lines.shift();
-        parser.lineNb++;
-        if (line === undefined) {
-          return;
-        }
-        searchForDefinesInString(parser, line);
-        i = 0;
-        continue;
-      }
-      if (line[i] == "*" && line[i + 1] == "/") {
+      let endComMatch = line.slice(i).match(/(.*)\*\//);
+      if (endComMatch) {
+        description += line.slice(i, i + endComMatch[1].length).trimEnd();
         isBlockComment = false;
-        i += 2;
+        i += endComMatch[0].length;
+        let prevEnumMember: EnumMemberItem = parser.completions.get(
+          enumMemberName
+        );
+        if (prevEnumMember !== undefined) {
+          prevEnumMember.description = description;
+        }
         continue;
       }
+      description += line.slice(i).trimEnd();
+      line = parser.lines.shift();
+      parser.lineNb++;
+      if (line === undefined) {
+        return;
+      }
+      searchForDefinesInString(parser, line);
+      i = 0;
+      continue;
     }
 
     if (!isBlockComment) {
@@ -82,9 +90,16 @@ export function readEnum(
         if (line[i] == "/" && line[i + 1] == "*") {
           isBlockComment = true;
           i += 2;
+          description = "";
           continue;
         }
         if (line[i] == "/" && line[i + 1] == "/") {
+          let prevEnumMember: EnumMemberItem = parser.completions.get(
+            enumMemberName
+          );
+          if (prevEnumMember !== undefined) {
+            prevEnumMember.description = line.slice(i + 2).trim();
+          }
           line = parser.lines.shift();
           parser.lineNb++;
           if (line === undefined) {
@@ -108,14 +123,14 @@ export function readEnum(
       i++;
       continue;
     }
-    let enumMemberName = iterMatch[1];
+    enumMemberName = iterMatch[1];
     let range = parser.makeDefinitionRange(enumMemberName, line);
     parser.completions.set(
       enumMemberName,
       new EnumMemberItem(
         enumMemberName,
         parser.file,
-        "enumMemberDescription",
+        "",
         enumCompletion,
         range,
         parser.IsBuiltIn
