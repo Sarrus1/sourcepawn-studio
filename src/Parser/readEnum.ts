@@ -65,6 +65,11 @@ export function readEnum(
         description += line.slice(i, i + endComMatch[1].length).trimEnd();
         isBlockComment = false;
         i += endComMatch[0].length;
+        searchForDefinesInString(
+          parser,
+          line.slice(i + endComMatch[1].length + 1),
+          endComMatch[1].length
+        );
         let prevEnumMember: EnumMemberItem = parser.completions.get(
           enumMemberName
         );
@@ -79,7 +84,6 @@ export function readEnum(
       if (line === undefined) {
         return;
       }
-      searchForDefinesInString(parser, line);
       i = 0;
       continue;
     }
