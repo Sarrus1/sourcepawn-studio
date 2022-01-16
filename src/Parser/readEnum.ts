@@ -76,6 +76,7 @@ export function readEnum(
         if (prevEnumMember !== undefined) {
           prevEnumMember.description = description;
         }
+        enumMemberName = "";
         continue;
       }
       description += line.slice(i).trimEnd();
