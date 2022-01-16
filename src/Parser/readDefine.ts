@@ -8,6 +8,10 @@ export function readDefine(
   match: RegExpMatchArray,
   line: string
 ): void {
+  let croppedLine = line.slice(match[0].length);
+  let commentMatch =
+    croppedLine.match(/\/\*(.+(?=\*\/))/) || croppedLine.match(/\/\/(.*)/);
+
   parser.definesMap.set(match[1], parser.file);
   let range = parser.makeDefinitionRange(match[1], line);
   let fullRange = positiveRange(parser.lineNb, 0, line.length);
@@ -16,6 +20,7 @@ export function readDefine(
     new DefineItem(
       match[1],
       match[2],
+      commentMatch ? commentMatch[1].trimEnd() : "",
       parser.file,
       range,
       parser.IsBuiltIn,
