@@ -311,6 +311,14 @@ function getType(
   document: TextDocument,
   position: Position
 ): ObjectType {
+  // Check if we are dealing with a define declaration with opening (.
+  if (
+    /^\s*#define\s+(\w+)\s+(?:(.+)?(?=(?:\/\*|$|\/\/)))?/.test(
+      document.lineAt(position.line).text
+    )
+  ) {
+    return ObjectType.Variable;
+  }
   if (range.start.character <= 1) {
     if (
       isFunction(range, document, document.lineAt(position.line).text.length)

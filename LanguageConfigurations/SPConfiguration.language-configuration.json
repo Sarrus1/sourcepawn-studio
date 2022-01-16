@@ -24,14 +24,10 @@
     ["\"", "\""],
     ["'", "'"]
   ],
-  "folding": {
-    "markers": {
-      "start": "^(?!\\R)(\\s*(?:\\/[\\/\\*]\\s*#(?:pragma )?region|section)|if|public |static(?!int|bool|char|float)|stock |#if(?:n|def)?|for)",
-      "end": "^(?!\\R)(\\s*(?:\\/[\\/\\*]\\s*#(?:pragma )?endregion|endsection)|})"
+  "onEnterRules": [
+    {
+      "beforeText": "\\*\\/\\s*",
+      "action": { "indent": "none", "removeText": 1 }
     }
-  },
-  "indentationRules": {
-    "increaseIndentPattern": "^((?!\\/\\/).)*(\\{[^}\"'`]*|\\([^)\"'`]*|\\[[^\\]\"'`]*)$",
-    "decreaseIndentPattern": "^((?!.*?\\/\\*).*\\*/)?\\s*[\\)\\}\\]].*$"
-  }
+  ]
 }

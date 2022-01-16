@@ -39,13 +39,12 @@ export function parseSPCompErrors(
           ? DiagnosticSeverity.Warning
           : DiagnosticSeverity.Error;
       path = matches[1];
-      // path = MainPath != "" ? matches[1] : filePath;
-      diagnostics = DocumentDiagnostics.get(filePath) || [];
+      diagnostics = DocumentDiagnostics.get(path) || [];
 
       let message: string = generateDetailedError(matches[5], matches[6]);
       let diagnostic: Diagnostic = new Diagnostic(range, message, severity);
       diagnostics.push(diagnostic);
-      DocumentDiagnostics.set(filePath, diagnostics);
+      DocumentDiagnostics.set(path, diagnostics);
     }
   } while (matches);
   compilerDiagnostics.clear();

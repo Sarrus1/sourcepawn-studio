@@ -63,7 +63,12 @@ export class VariableItem implements SPItem {
   }
 
   toHover(): Hover {
-    return;
+    if (this.type === "") {
+      return;
+    }
+    return new Hover([
+      { language: "sourcepawn", value: `${this.type} ${this.name};` },
+    ]);
   }
 
   toDocumentSymbol(): DocumentSymbol {

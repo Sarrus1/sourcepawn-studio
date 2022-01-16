@@ -1,5 +1,18 @@
 ## Release Notes
 
+## [3.0.11]
+
+### Added
+
+- Added support for block comments in .cfg files (see #189).
+
+### Fixed
+
+- Fixed enum with comments parsing (see #188).
+- Fixed a bug which would cause pressing enter after the end of a block comment to add an unwanted space to the indentation.
+- Fixed linter errors going to which ever file they please when MainPath is set.
+- Improved `#define` parsing (see #191).
+
 ## [3.0.10]
 
 ### Fixed

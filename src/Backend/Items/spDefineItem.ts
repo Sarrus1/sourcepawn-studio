@@ -12,10 +12,12 @@ import {
 import { URI } from "vscode-uri";
 
 import { SPItem } from "./spItems";
+import { descriptionToMD } from "../../spUtils";
 
 export class DefineItem implements SPItem {
   name: string;
   value: string;
+  description?: string;
   filePath: string;
   kind = CompletionItemKind.Constant;
   IsBuiltIn: boolean;
@@ -26,6 +28,7 @@ export class DefineItem implements SPItem {
   constructor(
     name: string,
     value: string,
+    description: string,
     file: string,
     range: Range,
     IsBuiltIn: boolean,
@@ -33,6 +36,7 @@ export class DefineItem implements SPItem {
   ) {
     this.name = name;
     this.value = value;
+    this.description = description;
     this.filePath = file;
     this.range = range;
     this.calls = [];
@@ -60,10 +64,10 @@ export class DefineItem implements SPItem {
   }
 
   toHover(): Hover {
-    return new Hover({
-      language: "sourcepawn",
-      value: `#define ${this.name} ${this.value}`,
-    });
+    return new Hover([
+      { language: "sourcepawn", value: `#define ${this.name} ${this.value}` },
+      descriptionToMD(this.description),
+    ]);
   }
 
   toDocumentSymbol(): DocumentSymbol {
@@ -72,7 +76,7 @@ export class DefineItem implements SPItem {
     }
     return new DocumentSymbol(
       this.name,
-      `#define ${this.name} ${this.value}`,
+      this.description.replace(/^\*\</, ""),
       SymbolKind.Constant,
       this.fullRange,
       this.range

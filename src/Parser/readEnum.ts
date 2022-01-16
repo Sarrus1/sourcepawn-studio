@@ -17,27 +17,14 @@ export function readEnum(
 ) {
   let { description, params } = parseDocComment(parser);
   if (IsStruct) {
-    // Create a completion for the enum struct itself if it has a name
-    let enumStructName = match[1];
-    let range = parser.makeDefinitionRange(enumStructName, line);
-    var enumStructCompletion: EnumStructItem = new EnumStructItem(
-      enumStructName,
-      parser.file,
-      description,
-      range
-    );
-    parser.completions.set(enumStructName, enumStructCompletion);
-    parser.state.push(State.EnumStruct);
-    parser.state_data = {
-      name: enumStructName,
-    };
+    parseEnumStruct(parser, match[1], description, line);
     return;
   }
 
   if (!match[1]) {
     parser.anonymousEnumCount++;
   }
-  let nameMatch = match[1] ? match[1] : `Enum #${parser.anonymousEnumCount}`;
+  let nameMatch = match[1] ? match[1] : `Enum#${parser.anonymousEnumCount}`;
   let range = parser.makeDefinitionRange(match[1] ? match[1] : "enum", line);
   var enumCompletion: EnumItem = new EnumItem(
     nameMatch,
@@ -45,7 +32,7 @@ export function readEnum(
     description,
     range
   );
-  let key = match[1]
+  const key = match[1]
     ? match[1]
     : `${parser.anonymousEnumCount}${basename(parser.file)}`;
   parser.completions.set(key, enumCompletion);
@@ -53,45 +40,130 @@ export function readEnum(
   // Set max number of iterations for safety
   let iter = 0;
   // Match all the enum members
-  while (iter < 100 && !/^\s*\}/.test(line)) {
-    iter++;
-    line = parser.lines.shift();
-    parser.lineNb++;
-    // Stop early if it's the end of the file
-    if (line === undefined) {
-      return;
-    }
-    let iterMatch = line.match(/^\s*(\w*)\s*.*/);
+  let foundEndToken = false;
+  let i = match[0].length;
+  let isBlockComment = false;
+  let enumMemberName = "";
+  description = "";
 
-    // Skip if didn't match
-    if (!iterMatch) {
+  while (!foundEndToken && iter < 10000) {
+    iter++;
+    if (line.length <= i) {
+      line = parser.lines.shift();
+      parser.lineNb++;
+      if (line === undefined) {
+        return;
+      }
+      searchForDefinesInString(parser, line);
+      i = 0;
       continue;
     }
-    let enumMemberName = iterMatch[1];
-    // Try to match multiblock comments
-    let enumMemberDescription: string;
-    iterMatch = line.match(/\/\*\*<?\s*(.+?(?=\*\/))/);
-    if (iterMatch) {
-      enumMemberDescription = iterMatch[1];
+
+    if (isBlockComment) {
+      let endComMatch = line.slice(i).match(/(.*)\*\//);
+      if (endComMatch) {
+        description += line.slice(i, i + endComMatch[1].length).trimEnd();
+        isBlockComment = false;
+        i += endComMatch[0].length;
+        searchForDefinesInString(
+          parser,
+          line.slice(i + endComMatch[1].length + 1),
+          endComMatch[1].length
+        );
+        let prevEnumMember: EnumMemberItem = parser.completions.get(
+          enumMemberName
+        );
+        if (prevEnumMember !== undefined) {
+          prevEnumMember.description = description;
+        }
+        enumMemberName = "";
+        continue;
+      }
+      description += line.slice(i).trimEnd();
+      line = parser.lines.shift();
+      parser.lineNb++;
+      if (line === undefined) {
+        return;
+      }
+      i = 0;
+      continue;
     }
-    iterMatch = line.match(/\/\/<?\s*(.*)/);
-    if (iterMatch) {
-      enumMemberDescription = iterMatch[1];
+
+    if (!isBlockComment) {
+      if (line.length > i + 1) {
+        if (line[i] == "/" && line[i + 1] == "*") {
+          isBlockComment = true;
+          i += 2;
+          description = "";
+          continue;
+        }
+        if (line[i] == "/" && line[i + 1] == "/") {
+          let prevEnumMember: EnumMemberItem = parser.completions.get(
+            enumMemberName
+          );
+          if (prevEnumMember !== undefined) {
+            prevEnumMember.description = line.slice(i + 2).trim();
+          }
+          line = parser.lines.shift();
+          parser.lineNb++;
+          if (line === undefined) {
+            return;
+          }
+          searchForDefinesInString(parser, line);
+          i = 0;
+          continue;
+        }
+      }
+      if (line[i] == "}") {
+        foundEndToken = true;
+        continue;
+      }
     }
+    const croppedLine = line.slice(i);
+    let iterMatch = croppedLine.match(
+      /^\s*(?:\w+\s*:\s*)?([A-Za-z_]+\w*)(?:\s*\=.+?(?=(?:\,|\/\*|\/\/)))?/
+    );
+    if (!iterMatch || isBlockComment) {
+      i++;
+      continue;
+    }
+    enumMemberName = iterMatch[1];
     let range = parser.makeDefinitionRange(enumMemberName, line);
     parser.completions.set(
       enumMemberName,
       new EnumMemberItem(
         enumMemberName,
         parser.file,
-        enumMemberDescription,
+        "",
         enumCompletion,
         range,
         parser.IsBuiltIn
       )
     );
     searchForDefinesInString(parser, line);
+    i = iterMatch[0].length;
   }
+
   addFullRange(parser, key);
   return;
+}
+
+function parseEnumStruct(
+  parser: Parser,
+  enumStructName: string,
+  desc: string,
+  line: string
+): void {
+  let range = parser.makeDefinitionRange(enumStructName, line);
+  var enumStructCompletion: EnumStructItem = new EnumStructItem(
+    enumStructName,
+    parser.file,
+    desc,
+    range
+  );
+  parser.completions.set(enumStructName, enumStructCompletion);
+  parser.state.push(State.EnumStruct);
+  parser.state_data = {
+    name: enumStructName,
+  };
 }

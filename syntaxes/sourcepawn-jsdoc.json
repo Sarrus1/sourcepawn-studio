@@ -21,7 +21,7 @@
           }
         },
         {
-          "match": "@return",
+          "match": "@return|@noreturn",
           "name": "keyword.control.spdoc"
         },
         {

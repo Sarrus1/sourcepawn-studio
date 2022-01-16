@@ -3,7 +3,11 @@ import { positiveRange } from "./utils";
 import { URI } from "vscode-uri";
 import { Location } from "vscode";
 
-export function searchForDefinesInString(parser: Parser, line: string): void {
+export function searchForDefinesInString(
+  parser: Parser,
+  line: string,
+  offset = 0
+): void {
   if (line === undefined) {
     return;
   }
@@ -44,8 +48,8 @@ export function searchForDefinesInString(parser: Parser, line: string): void {
       if (defineFile !== undefined) {
         let range = positiveRange(
           parser.lineNb,
-          matchDefine.index,
-          matchDefine.index + matchDefine[0].length
+          matchDefine.index + offset,
+          matchDefine.index + matchDefine[0].length + offset
         );
         let location = new Location(URI.file(parser.file), range);
         // Treat defines from the current file differently or they will get
