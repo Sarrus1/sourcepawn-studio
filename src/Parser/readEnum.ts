@@ -8,7 +8,6 @@ import { State } from "./stateEnum";
 import { searchForDefinesInString } from "./searchForDefinesInString";
 import { parseDocComment } from "./parseDocComment";
 import { addFullRange } from "./addFullRange";
-import { parse } from "querystring";
 
 export function readEnum(
   parser: Parser,
