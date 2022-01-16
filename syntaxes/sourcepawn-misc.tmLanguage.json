@@ -146,6 +146,16 @@
         {
           "name": "comment.line.number-sign",
           "match": "#(.*)$"
+        },
+        {
+          "begin": "/\\*",
+          "captures": {
+            "0": {
+              "name": "comment.block.cfg"
+            }
+          },
+          "end": "\\*/",
+          "name": "comment.block.cfg"
         }
       ]
     }

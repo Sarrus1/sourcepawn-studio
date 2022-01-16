@@ -2,6 +2,10 @@
 
 ## [3.0.11]
 
+### Added
+
+- Added support for block comments in .cfg files (see #189).
+
 ### Fixed
 
 - Fixed enum with comments parsing (see #188).
