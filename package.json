@@ -427,7 +427,7 @@
           ".sp",
           ".inc"
         ],
-        "configuration": "./LanguageConfigurations/SPConfiguration.json"
+        "configuration": "./LanguageConfigurations/SPConfiguration.language-configuration.json"
       },
       {
         "id": "sp-translations",
@@ -438,7 +438,7 @@
         "extensions": [
           ".phrases.txt"
         ],
-        "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
+        "configuration": "./LanguageConfigurations/SPMiscConfiguration.language-configuration.json"
       },
       {
         "id": "sp-gamedata",
@@ -449,7 +449,7 @@
         "extensions": [
           ".games.txt"
         ],
-        "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
+        "configuration": "./LanguageConfigurations/SPMiscConfiguration.language-configuration.json"
       },
       {
         "id": "valve-cfg",
@@ -460,7 +460,7 @@
         "extensions": [
           ".cfg"
         ],
-        "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
+        "configuration": "./LanguageConfigurations/SPMiscConfiguration.language-configuration.json"
       },
       {
         "id": "valve-ini",
@@ -471,7 +471,7 @@
         "extensions": [
           ".ini"
         ],
-        "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
+        "configuration": "./LanguageConfigurations/SPMiscConfiguration.language-configuration.json"
       },
       {
         "id": "sourcemod-kv",
@@ -482,7 +482,7 @@
         "extensions": [
           ".kv"
         ],
-        "configuration": "./LanguageConfigurations/SPMiscConfiguration.json"
+        "configuration": "./LanguageConfigurations/SPMiscConfiguration.language-configuration.json"
       }
     ],
     "grammars": [
