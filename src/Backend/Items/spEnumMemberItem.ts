@@ -76,7 +76,7 @@ export class EnumMemberItem implements SPItem {
     }
     return new DocumentSymbol(
       this.name,
-      this.description,
+      this.description.replace(/^\*\</, ""),
       SymbolKind.Enum,
       this.range,
       this.range
