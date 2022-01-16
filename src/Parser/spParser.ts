@@ -154,7 +154,7 @@ export class Parser {
     }
 
     // Match define
-    match = line.match(/^\s*#define\s+(\w+)\s+(?:(.+)?(?=(?:\/\*|$|\/\/)))?/);
+    match = line.match(/^\s*#define\s+(\w+)\s+/);
     if (match) {
       readDefine(this, match, line);
       return;
