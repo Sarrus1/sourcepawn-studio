@@ -538,6 +538,7 @@
     "ftp-deploy": "^2.4.1",
     "glob": "^7.2.0",
     "n-readlines": "^1.0.1",
+    "peggy": "^1.2.0",
     "prettier": "2.2.1",
     "rcon-srcds": "^2.0.1",
     "vscode-uri": "^3.0.3",
