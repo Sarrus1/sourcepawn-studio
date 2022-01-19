@@ -115,7 +115,7 @@ export function refreshDiagnostics(document: TextDocument): void {
       parseSPCompErrors(
         stdout,
         compilerDiagnostics,
-        mainPath === undefined ? document.uri.fsPath : undefined
+        mainPath === "" ? document.uri.fsPath : undefined
       );
     });
   }, 300);
