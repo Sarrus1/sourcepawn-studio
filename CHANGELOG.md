@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [3.0.12]
+
+### Fixed
+
+- Fixed a parsing error causing lint messages to display in the wrong file.
+
 ## [3.0.11]
 
 ### Added

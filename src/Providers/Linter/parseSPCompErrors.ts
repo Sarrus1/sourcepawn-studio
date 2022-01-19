@@ -18,37 +18,34 @@ function generateDetailedError(errorCode: string, errorMsg: string): string {
 export function parseSPCompErrors(
   stdout: string,
   compilerDiagnostics: DiagnosticCollection,
-  filePath: string
+  filePath?: string
 ): void {
   const DocumentDiagnostics: Map<string, Diagnostic[]> = new Map();
   const re = /([:\/\\A-Za-z\-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning) ([0-9]*)):\s+(.*)/gm;
   let matches: RegExpExecArray | null;
-  let path: string;
   let diagnostics: Diagnostic[];
-  let range: Range;
-  let severity: DiagnosticSeverity;
   do {
     matches = re.exec(stdout.toString() || "");
     if (matches) {
-      range = new Range(
+      let range = new Range(
         new Position(Number(matches[2]) - 1, 0),
         new Position(Number(matches[2]) - 1, 256)
       );
-      severity =
+      let severity =
         matches[4] === "warning"
           ? DiagnosticSeverity.Warning
           : DiagnosticSeverity.Error;
-      path = matches[1];
-      diagnostics = DocumentDiagnostics.get(path) || [];
+      let uri = URI.file(filePath === "" ? matches[1] : filePath).toString();
+      diagnostics = DocumentDiagnostics.get(uri) || [];
 
       let message: string = generateDetailedError(matches[5], matches[6]);
       let diagnostic: Diagnostic = new Diagnostic(range, message, severity);
       diagnostics.push(diagnostic);
-      DocumentDiagnostics.set(path, diagnostics);
+      DocumentDiagnostics.set(uri, diagnostics);
     }
   } while (matches);
   compilerDiagnostics.clear();
-  for (let [path, diagnostics] of DocumentDiagnostics) {
-    compilerDiagnostics.set(URI.file(path), diagnostics);
+  for (let [uri, diagnostics] of DocumentDiagnostics) {
+    compilerDiagnostics.set(URI.parse(uri), diagnostics);
   }
 }

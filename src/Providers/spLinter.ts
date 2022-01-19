@@ -5,7 +5,6 @@ import {
   Range,
 } from "vscode";
 import { openSync, writeSync, unlink, closeSync } from "fs";
-import { URI } from "vscode-uri";
 import { join, extname, dirname } from "path";
 import { execFile } from "child_process";
 
@@ -113,7 +112,11 @@ export function refreshDiagnostics(document: TextDocument): void {
           }
         });
       }
-      parseSPCompErrors(stdout, compilerDiagnostics, document.uri.fsPath);
+      parseSPCompErrors(
+        stdout,
+        compilerDiagnostics,
+        mainPath === undefined ? document.uri.fsPath : undefined
+      );
     });
   }, 300);
 }
