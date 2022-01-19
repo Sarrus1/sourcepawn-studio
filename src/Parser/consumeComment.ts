@@ -28,6 +28,9 @@ export function consumeComment(
     current_line = parser.lines.shift();
     parser.lineNb++;
   }
+  if (current_line === undefined) {
+    return;
+  }
   let endPos = new Position(
     parser.lineNb < 2
       ? 0

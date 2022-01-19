@@ -85,7 +85,7 @@ export function activate(context: ExtensionContext) {
   getDirectories(optionalIncludeDirs, providers);
 
   const mainPath: string = findMainPath();
-  if (mainPath !== undefined && mainPath != "") {
+  if (mainPath !== undefined) {
     providers.itemsRepository.handleDocumentOpening(mainPath);
   } else if (mainPath == "") {
     window

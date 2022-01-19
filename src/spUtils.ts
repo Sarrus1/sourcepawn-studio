@@ -58,7 +58,7 @@ export function findMainPath(uri?: URI): string {
           return mainPath;
         }
       }
-      return "";
+      return undefined;
     } else {
       return mainPath;
     }
