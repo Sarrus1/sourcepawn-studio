@@ -35,7 +35,9 @@ export function parseSPCompErrors(
         matches[4] === "warning"
           ? DiagnosticSeverity.Warning
           : DiagnosticSeverity.Error;
-      let uri = URI.file(filePath === "" ? matches[1] : filePath).toString();
+      let uri = URI.file(
+        filePath === undefined ? matches[1] : filePath
+      ).toString();
       diagnostics = DocumentDiagnostics.get(uri) || [];
 
       let message: string = generateDetailedError(matches[5], matches[6]);
