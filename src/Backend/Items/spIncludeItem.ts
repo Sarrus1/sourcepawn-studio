@@ -40,15 +40,15 @@ export class IncludeItem implements SPItem {
     };
   }
 
-  toSignature(): SignatureInformation {
-    return;
+  toSignature(): SignatureInformation | undefined {
+    return undefined;
   }
 
   toHover(): Hover {
     return new Hover(URI.parse(this.filePath).fsPath);
   }
 
-  toDocumentSymbol(): DocumentSymbol {
-    return;
+  toDocumentSymbol(): DocumentSymbol | undefined {
+    return undefined;
   }
 }

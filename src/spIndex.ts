@@ -12,6 +12,7 @@ const glob = require("glob");
 
 import { refreshDiagnostics } from "./Providers/spLinter";
 import { registerSPLinter } from "./Providers/Linter/registerSPLinter";
+import { registerCFGLinter } from "./Providers/Linter/registerCFGLinter";
 import { parseSMApi } from "./Misc/parseSMAPI";
 import { SP_MODE, SP_LEGENDS } from "./Misc/spConstants";
 import { Providers } from "./Backend/spProviders";
@@ -30,14 +31,14 @@ export function activate(context: ExtensionContext) {
   parseSMApi(providers.itemsRepository);
   SBItem.hide();
 
-  let workspaceFolders = Workspace.workspaceFolders;
-  if (workspaceFolders === undefined) {
+  let workspaceFolders = Workspace.workspaceFolders || [];
+  if (workspaceFolders.length === 0) {
     window.showWarningMessage(
       "No workspace or folder found. \n Please open the folder containing your .sp file, not just the .sp file."
     );
   } else {
     let watcher = Workspace.createFileSystemWatcher(
-      "**​/*.{inc,sp}",
+      "**/*.{inc,sp}",
       false,
       true,
       false
@@ -76,16 +77,16 @@ export function activate(context: ExtensionContext) {
   });
 
   // Get the names and directories of optional include directories.
-  let optionalIncludeDirs: string[] = Workspace.getConfiguration(
-    "sourcepawn"
-  ).get("optionalIncludeDirsPaths");
+  let optionalIncludeDirs: string[] =
+    Workspace.getConfiguration("sourcepawn").get("optionalIncludeDirsPaths") ||
+    [];
   optionalIncludeDirs = optionalIncludeDirs.map((e) =>
     resolve(...workspaceFolders.map((folder) => folder.uri.fsPath), e)
   );
   getDirectories(optionalIncludeDirs, providers);
 
-  const mainPath: string = findMainPath();
-  if (mainPath !== undefined && mainPath != "") {
+  const mainPath = findMainPath();
+  if (mainPath !== undefined) {
     providers.itemsRepository.handleDocumentOpening(mainPath);
   } else if (mainPath == "") {
     window
@@ -214,6 +215,9 @@ export function activate(context: ExtensionContext) {
 
   // Register SM linter
   registerSPLinter(context);
+
+  // Register CFG linter
+  registerCFGLinter(context);
 }
 
 function getDirectories(paths: string[], providers: Providers) {

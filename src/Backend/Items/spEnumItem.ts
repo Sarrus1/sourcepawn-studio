@@ -2,7 +2,6 @@ import {
   CompletionItemKind,
   Range,
   CompletionItem,
-  SignatureInformation,
   Hover,
   DocumentSymbol,
   SymbolKind,
@@ -44,13 +43,13 @@ export class EnumItem implements SPItem {
     };
   }
 
-  toSignature(): SignatureInformation {
-    return;
+  toSignature() {
+    return undefined;
   }
 
-  toHover(): Hover {
+  toHover(): Hover | undefined {
     if (!this.description) {
-      return;
+      return undefined;
     }
     return new Hover([
       { language: "sourcepawn", value: this.name },
@@ -58,9 +57,9 @@ export class EnumItem implements SPItem {
     ]);
   }
 
-  toDocumentSymbol(): DocumentSymbol {
+  toDocumentSymbol(): DocumentSymbol | undefined {
     if (this.fullRange === undefined) {
-      return;
+      return undefined;
     }
     return new DocumentSymbol(
       this.name.replace(/Enum#(\d+)/, "Anonymous$1"),

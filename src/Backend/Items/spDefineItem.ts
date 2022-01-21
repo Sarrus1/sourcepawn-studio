@@ -3,7 +3,6 @@ import {
   Range,
   Location,
   CompletionItem,
-  SignatureInformation,
   Hover,
   DocumentSymbol,
   SymbolKind,
@@ -59,8 +58,8 @@ export class DefineItem implements SPItem {
     };
   }
 
-  toSignature(): SignatureInformation {
-    return;
+  toSignature() {
+    return undefined;
   }
 
   toHover(): Hover {
@@ -70,13 +69,13 @@ export class DefineItem implements SPItem {
     ]);
   }
 
-  toDocumentSymbol(): DocumentSymbol {
+  toDocumentSymbol(): DocumentSymbol | undefined {
     if (this.fullRange === undefined) {
-      return;
+      return undefined;
     }
     return new DocumentSymbol(
       this.name,
-      this.description.replace(/^\*\</, ""),
+      this.description ? this.description.replace(/^\*\</, "") : "",
       SymbolKind.Constant,
       this.fullRange,
       this.range

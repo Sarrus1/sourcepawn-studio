@@ -19,17 +19,14 @@ export class CFGDocumentFormattingEditProvider
     token: CancellationToken
   ): ProviderResult<TextEdit[]> {
     let workspaceFolder = Workspace.getWorkspaceFolder(document.uri);
-    const result = [];
 
     // Get the user's settings.
-    let insertSpaces: boolean = Workspace.getConfiguration(
-      "editor",
-      workspaceFolder
-    ).get("insertSpaces");
-    let tabSize: number = Workspace.getConfiguration(
-      "editor",
-      workspaceFolder
-    ).get("tabSize");
+    let insertSpaces: boolean =
+      Workspace.getConfiguration("editor", workspaceFolder).get(
+        "insertSpaces"
+      ) || false;
+    let tabSize: number =
+      Workspace.getConfiguration("editor", workspaceFolder).get("tabSize") || 2;
 
     // Apply user settings
     const start = new Position(0, 0);
@@ -46,10 +43,9 @@ export class CFGDocumentFormattingEditProvider
       window.showErrorMessage(
         "The formatter failed to run, check the console for more details."
       );
-      return;
+      return undefined;
     }
-    result.push(new TextEdit(range, text));
-    return result;
+    return [new TextEdit(range, text)];
   }
 }
 /**

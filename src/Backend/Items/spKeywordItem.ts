@@ -25,19 +25,19 @@ export class KeywordItem implements SPItem {
     };
   }
 
-  toDefinitionItem(): LocationLink {
-    return;
+  toDefinitionItem() {
+    return undefined;
   }
 
-  toSignature(): SignatureInformation {
-    return;
+  toSignature() {
+    return undefined;
   }
 
-  toHover(): Hover {
-    return;
+  toHover() {
+    return undefined;
   }
 
-  toDocumentSymbol(): DocumentSymbol {
-    return;
+  toDocumentSymbol() {
+    return undefined;
   }
 }

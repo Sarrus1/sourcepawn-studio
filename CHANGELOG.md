@@ -1,5 +1,16 @@
 ## Release Notes
 
+## [3.0.12]
+
+### Added
+
+- Added a linter for .cfg files.
+
+### Fixed
+
+- Fixed a parsing error causing lint messages to display in the wrong file.
+- Started to enforce better TypeScript rules.
+
 ## [3.0.11]
 
 ### Added

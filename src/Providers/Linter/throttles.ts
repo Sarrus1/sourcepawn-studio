@@ -1,9 +1,9 @@
 ﻿// A class to define functions that can detect and deal with timeout, if spcomp crashes.
 export class TimeoutFunction {
-  private timeout;
+  private timeout: NodeJS.Timer;
 
   constructor() {
-    this.timeout = undefined;
+    this.timeout = null;
   }
 
   public start(callback: (...args: any[]) => void, delay: number) {

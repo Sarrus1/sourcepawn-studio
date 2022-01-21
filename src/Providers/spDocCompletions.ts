@@ -96,8 +96,8 @@ async function getFullParams(document: TextDocument, position: Position) {
   const lines = document.getText().split("\n");
   let lineNB = position.line + 1;
   let line = lines[lineNB];
-  let newSyntaxRe: RegExp = /^(\s)*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\(/;
-  let match: RegExpMatchArray = line.match(newSyntaxRe);
+  let newSyntaxRe = /^(\s)*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\(/;
+  let match = line.match(newSyntaxRe);
   if (!match) {
     match = line.match(
       /^(\s)*(?:(?:static|native|stock|public|forward)\s+)*(?:(\w+)\s*:)?\s*(\w*)\s*\(/

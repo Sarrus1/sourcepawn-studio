@@ -8,6 +8,9 @@ import { URI } from "vscode-uri";
  */
 export async function run(args: URI): Promise<number> {
   if (args === undefined) {
+    if (window.activeTextEditor === undefined) {
+      return 1;
+    }
     args = window.activeTextEditor.document.uri;
   }
   let workspaceFolder = Workspace.getWorkspaceFolder(args);

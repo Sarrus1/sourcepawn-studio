@@ -8,7 +8,7 @@ import { resolve } from "path";
  * @param  {string} description   The Sourcemod JSDoc string.
  * @returns MarkdownString
  */
-export function descriptionToMD(description: string): MarkdownString {
+export function descriptionToMD(description?: string): MarkdownString {
   if (description === undefined) {
     return new MarkdownString("");
   }
@@ -41,26 +41,27 @@ export function descriptionToMD(description: string): MarkdownString {
  * @param  {Uri} uri?   The URI we are looking up the MainPath for.
  * @returns string
  */
-export function findMainPath(uri?: URI): string {
+export function findMainPath(uri?: URI): string | undefined {
   let workspaceFolders = Workspace.workspaceFolders;
   let workspaceFolder =
     uri === undefined ? undefined : Workspace.getWorkspaceFolder(uri);
   let mainPath: string =
     Workspace.getConfiguration("sourcepawn", workspaceFolder).get("MainPath") ||
     "";
-  if (mainPath !== "") {
-    // Check if it exists, meaning it's an absolute path.
-    if (!existsSync(mainPath) && workspaceFolders !== undefined) {
-      // If it doesn't, loop over the workspace folders until one matches.
-      for (let wk of workspaceFolders) {
-        mainPath = resolve(wk.uri.fsPath, mainPath);
-        if (existsSync(mainPath)) {
-          return mainPath;
-        }
+  if (mainPath === "") {
+    return undefined;
+  }
+  // Check if it exists, meaning it's an absolute path.
+  if (!existsSync(mainPath) && workspaceFolders !== undefined) {
+    // If it doesn't, loop over the workspace folders until one matches.
+    for (let wk of workspaceFolders) {
+      mainPath = resolve(wk.uri.fsPath, mainPath);
+      if (existsSync(mainPath)) {
+        return mainPath;
       }
-      return "";
-    } else {
-      return mainPath;
     }
+    return undefined;
+  } else {
+    return mainPath;
   }
 }

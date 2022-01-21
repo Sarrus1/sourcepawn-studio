@@ -1,13 +1,4 @@
-import {
-  CompletionItemKind,
-  Range,
-  CompletionItem,
-  SignatureInformation,
-  Hover,
-  DocumentSymbol,
-  Location,
-  LocationLink,
-} from "vscode";
+import { CompletionItemKind, CompletionItem, Location } from "vscode";
 
 import { SPItem } from "./spItems";
 
@@ -29,19 +20,19 @@ export class ConstantItem implements SPItem {
     };
   }
 
-  toDefinitionItem(): LocationLink {
-    return;
+  toDefinitionItem() {
+    return undefined;
   }
 
-  toSignature(): SignatureInformation {
-    return;
+  toSignature() {
+    return undefined;
   }
 
-  toHover(): Hover {
-    return;
+  toHover() {
+    return undefined;
   }
 
-  toDocumentSymbol(): DocumentSymbol {
-    return;
+  toDocumentSymbol() {
+    return undefined;
   }
 }

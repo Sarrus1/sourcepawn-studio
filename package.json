@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "3.0.11",
+  "version": "3.0.12",
   "publisher": "Sarrus",
   "main": "./dist/spIndex.js",
   "icon": "sm.png",
@@ -538,8 +538,10 @@
     "ftp-deploy": "^2.4.1",
     "glob": "^7.2.0",
     "n-readlines": "^1.0.1",
+    "peggy": "^1.2.0",
     "prettier": "2.2.1",
     "rcon-srcds": "^2.0.1",
+    "ts-pegjs": "^1.2.1",
     "vscode-uri": "^3.0.3",
     "wget-improved": "^3.2.1"
   },
@@ -556,10 +558,11 @@
     "webpack-cli": "^4.9.1"
   },
   "scripts": {
-    "vscode:prepublish": "webpack --mode production",
-    "compile": "tsc -b tsconfig.json",
-    "watch": "webpack --mode development --watch",
-    "webpack": "webpack --mode development",
+    "vscode:prepublish": "npm run generate-parser && webpack --mode production",
+    "generate-parser": "peggy --plugin ./node_modules/ts-pegjs -o src/Parser/cfgParser/cfgParser.ts --cache src/Parser/cfgParser/cfg.pegjs",
+    "compile": "npm run generate-parser && tsc -b tsconfig.json",
+    "watch": "npm run generate-parser && webpack --mode development --watch",
+    "webpack": "npm run generate-parser && webpack --mode development",
     "test": "npm run compile && node ./dist/test/runTest.js"
   }
 }

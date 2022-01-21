@@ -1,12 +1,4 @@
-import {
-  CompletionItemKind,
-  Range,
-  CompletionItem,
-  SignatureInformation,
-  Hover,
-  DocumentSymbol,
-  LocationLink,
-} from "vscode";
+import { CompletionItemKind, Range } from "vscode";
 
 import { SPItem } from "./spItems";
 
@@ -21,23 +13,23 @@ export class CommentItem implements SPItem {
     this.range = range;
   }
 
-  toCompletionItem(): CompletionItem {
-    return;
+  toCompletionItem() {
+    return undefined;
   }
 
-  toDefinitionItem(): LocationLink {
-    return;
+  toDefinitionItem() {
+    return undefined;
   }
 
-  toSignature(): SignatureInformation {
-    return;
+  toSignature() {
+    return undefined;
   }
 
-  toHover(): Hover {
-    return;
+  toHover() {
+    return undefined;
   }
 
-  toDocumentSymbol(): DocumentSymbol {
-    return;
+  toDocumentSymbol() {
+    return undefined;
   }
 }

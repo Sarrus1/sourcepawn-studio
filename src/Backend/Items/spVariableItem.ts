@@ -38,7 +38,7 @@ export class VariableItem implements SPItem {
     this.enumStructName = enumStruct;
   }
 
-  toCompletionItem(lastFuncName?: string): CompletionItem {
+  toCompletionItem(lastFuncName?: string): CompletionItem | undefined {
     if (
       lastFuncName === undefined ||
       [lastFuncName, globalIdentifier].includes(this.parent)
@@ -48,7 +48,7 @@ export class VariableItem implements SPItem {
         kind: this.kind,
       };
     }
-    return;
+    return undefined;
   }
 
   toDefinitionItem(): LocationLink {
@@ -58,13 +58,13 @@ export class VariableItem implements SPItem {
     };
   }
 
-  toSignature(): SignatureInformation {
-    return;
+  toSignature() {
+    return undefined;
   }
 
-  toHover(): Hover {
+  toHover(): Hover | undefined {
     if (this.type === "") {
-      return;
+      return undefined;
     }
     return new Hover([
       { language: "sourcepawn", value: `${this.type} ${this.name};` },

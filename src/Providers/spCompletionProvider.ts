@@ -39,7 +39,7 @@ export function completionProvider(
         /(\w*)\s+([\w.\(\)]+)(?:\[[\w+ \d]+\])*\s*\=\s*new\s+(\w*)$/
       );
       if (match) {
-        var type;
+        let type: string | undefined;
 
         if (!match[1]) {
           // If the variable is not declared here, look up its type, as it
@@ -87,7 +87,7 @@ export function completionProvider(
         );
       }
     }
-    return undefined;
+    return new CompletionList();
   }
 
   // Check if we are dealing with an include.

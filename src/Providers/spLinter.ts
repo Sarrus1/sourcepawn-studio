@@ -5,7 +5,6 @@ import {
   Range,
 } from "vscode";
 import { openSync, writeSync, unlink, closeSync } from "fs";
-import { URI } from "vscode-uri";
 import { join, extname, dirname } from "path";
 import { execFile } from "child_process";
 
@@ -53,6 +52,10 @@ export function refreshDiagnostics(document: TextDocument): void {
     Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
       "SpcompPath"
     ) || "";
+
+  if (!spcomp) {
+    return;
+  }
 
   // Get the previous instance of spcomp if it exists
   let throttle = throttles[document.uri.path];
@@ -113,7 +116,11 @@ export function refreshDiagnostics(document: TextDocument): void {
           }
         });
       }
-      parseSPCompErrors(stdout, compilerDiagnostics, document.uri.fsPath);
+      parseSPCompErrors(
+        stdout,
+        compilerDiagnostics,
+        mainPath === undefined ? document.uri.fsPath : undefined
+      );
     });
   }, 300);
 }

@@ -117,12 +117,12 @@ export function getItemFromPosition(
     isInAComment(range, document.uri, allItems) ||
     isInAString(range, line)
   ) {
-    return undefined;
+    return [];
   }
 
   // Generate an include item if the line is an #include statement and return it.
   let includeItem = makeIncludeItem(document, line, position);
-  if (includeItem !== undefined) {
+  if (includeItem.length > 0) {
     return includeItem;
   }
 
@@ -144,7 +144,7 @@ export function getItemFromPosition(
     allItems,
     word
   );
-  if (items !== undefined) {
+  if (items.length > 0) {
     return items;
   }
 
@@ -168,10 +168,12 @@ export function getItemFromPosition(
 
   if (type === ObjectType.Constructor) {
     const match = line.match(/new\s+(\w+)/);
-    return allItems.filter(
-      (item) =>
-        item.kind === CompletionItemKind.Constructor && item.name === match[1]
-    );
+    if (match) {
+      return allItems.filter(
+        (item) =>
+          item.kind === CompletionItemKind.Constructor && item.name === match[1]
+      );
+    }
   }
 
   items = [];
@@ -212,7 +214,7 @@ function makeIncludeItem(
     line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>/) ||
     line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"/);
   if (!match) {
-    return undefined;
+    return [];
   }
   let file = match[1];
   const fileStartPos = line.search(file);
@@ -236,6 +238,7 @@ function makeIncludeItem(
       ),
     ];
   }
+  return [];
 }
 
 /**
@@ -269,6 +272,7 @@ function makeEnumStructMethodItem(
       return items;
     }
   }
+  return [];
 }
 
 /**

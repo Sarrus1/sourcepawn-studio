@@ -155,11 +155,7 @@ export async function run(args: URI): Promise<void> {
     output.appendLine(`${command}\n`);
     execFile(spcomp, compilerArgs, async (error, stdout) => {
       output.append(stdout.toString().trim());
-      parseSPCompErrors(
-        stdout.toString().trim(),
-        compilerDiagnostics,
-        fileToCompilePath
-      );
+      parseSPCompErrors(stdout.toString().trim(), compilerDiagnostics);
       if (
         Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
           "uploadAfterSuccessfulCompile"

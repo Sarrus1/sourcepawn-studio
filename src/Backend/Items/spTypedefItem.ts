@@ -2,7 +2,6 @@ import {
   CompletionItemKind,
   Range,
   CompletionItem,
-  SignatureInformation,
   Hover,
   DocumentSymbol,
   SymbolKind,
@@ -57,13 +56,13 @@ export class TypeDefItem implements SPItem {
     };
   }
 
-  toSignature(): SignatureInformation {
-    return;
+  toSignature() {
+    return undefined;
   }
 
-  toHover(): Hover {
+  toHover(): Hover | undefined {
     if (!this.description) {
-      return;
+      return undefined;
     }
     return new Hover([
       { language: "sourcepawn", value: this.details },
@@ -71,9 +70,9 @@ export class TypeDefItem implements SPItem {
     ]);
   }
 
-  toDocumentSymbol(): DocumentSymbol {
+  toDocumentSymbol(): DocumentSymbol | undefined {
     if (this.fullRange === undefined) {
-      return;
+      return undefined;
     }
     return new DocumentSymbol(
       this.name,
