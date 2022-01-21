@@ -12,6 +12,7 @@ const glob = require("glob");
 
 import { refreshDiagnostics } from "./Providers/spLinter";
 import { registerSPLinter } from "./Providers/Linter/registerSPLinter";
+import { registerCFGLinter } from "./Providers/Linter/registerCFGLinter";
 import { parseSMApi } from "./Misc/parseSMAPI";
 import { SP_MODE, SP_LEGENDS } from "./Misc/spConstants";
 import { Providers } from "./Backend/spProviders";
@@ -37,7 +38,7 @@ export function activate(context: ExtensionContext) {
     );
   } else {
     let watcher = Workspace.createFileSystemWatcher(
-      "**​/*.{inc,sp}",
+      "**/*.{inc,sp}",
       false,
       true,
       false
@@ -214,6 +215,9 @@ export function activate(context: ExtensionContext) {
 
   // Register SM linter
   registerSPLinter(context);
+
+  // Register CFG linter
+  registerCFGLinter(context);
 }
 
 function getDirectories(paths: string[], providers: Providers) {

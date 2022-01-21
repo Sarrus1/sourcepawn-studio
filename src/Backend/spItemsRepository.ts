@@ -19,6 +19,7 @@ import {
 } from "./spFileHandlers";
 import { getAllItems, getItemFromPosition } from "./spItemsGetters";
 import { refreshDiagnostics } from "../Providers/spLinter";
+import { refreshCfgDiagnostics } from "../Providers/cfgLinter";
 
 export class ItemsRepository implements Disposable {
   public fileItems: Map<string, FileItems>;
@@ -39,11 +40,13 @@ export class ItemsRepository implements Disposable {
 
   public handleDocumentChange(event: TextDocumentChangeEvent) {
     refreshDiagnostics(event.document);
+    refreshCfgDiagnostics(event.document);
     handleDocumentChange(this, event);
   }
 
   public handleNewDocument(document: TextDocument) {
     refreshDiagnostics(document);
+    refreshCfgDiagnostics(document);
     newDocumentCallback(this, document.uri);
   }
 
