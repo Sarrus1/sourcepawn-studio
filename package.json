@@ -555,10 +555,12 @@
     "typescript": "^4.5.4",
     "vscode-test": "^1.6.1",
     "webpack": "^5.65.0",
-    "webpack-cli": "^4.9.1"
+    "webpack-cli": "^4.9.1",
+    "ovsx": "^0.3.0"
   },
   "scripts": {
     "vscode:prepublish": "npm run generate-parser && webpack --mode production",
+    "publish-ovsx": "ovsx publish",
     "generate-parser": "peggy --plugin ./node_modules/ts-pegjs -o src/Parser/cfgParser/cfgParser.ts --cache src/Parser/cfgParser/cfg.pegjs",
     "compile": "npm run generate-parser && tsc -b tsconfig.json",
     "watch": "npm run generate-parser && webpack --mode development --watch",
