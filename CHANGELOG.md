@@ -9,6 +9,7 @@
 ### Fixed
 
 - Fixed a parsing error causing lint messages to display in the wrong file.
+- Started to enforce better TypeScript rules.
 
 ## [3.0.11]
 
