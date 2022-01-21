@@ -8,7 +8,7 @@
 
 begin_object    = ws "{" ws
 end_object      = ws "}" ws
-name_separator  = ws
+name_separator  = ws Comment? ws
 value_separator = ws
 
 ws "whitespace" = [ \t\n\r]*
@@ -27,7 +27,7 @@ value
 // ----- 4. Objects -----
 
 member
-  = name:key Comment? name_separator Comment? value:value Comment?{
+  = name:key name_separator value:value Comment?{
       return { name: name, value: value, loc: location() };
     }
 

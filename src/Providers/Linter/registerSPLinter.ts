@@ -4,6 +4,7 @@
   languages,
   ExtensionContext,
 } from "vscode";
+import { refreshCfgDiagnostics } from "../cfgLinter";
 
 import { refreshDiagnostics } from "../spLinter";
 import { compilerDiagnostics } from "./compilerDiagnostics";
@@ -15,6 +16,7 @@ export function registerSPLinter(context: ExtensionContext) {
     window.onDidChangeActiveTextEditor((editor) => {
       if (editor) {
         refreshDiagnostics(editor.document);
+        refreshCfgDiagnostics(editor.document);
       }
     })
   );
