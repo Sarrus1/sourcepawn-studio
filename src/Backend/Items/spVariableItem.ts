@@ -38,7 +38,7 @@ export class VariableItem implements SPItem {
     this.enumStructName = enumStruct;
   }
 
-  toCompletionItem(lastFuncName?: string): CompletionItem {
+  toCompletionItem(lastFuncName?: string): CompletionItem | undefined {
     if (
       lastFuncName === undefined ||
       [lastFuncName, globalIdentifier].includes(this.parent)
@@ -58,11 +58,11 @@ export class VariableItem implements SPItem {
     };
   }
 
-  toSignature(): SignatureInformation {
+  toSignature() {
     return undefined;
   }
 
-  toHover(): Hover {
+  toHover(): Hover | undefined {
     if (this.type === "") {
       return undefined;
     }

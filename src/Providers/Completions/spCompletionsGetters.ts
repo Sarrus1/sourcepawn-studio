@@ -33,7 +33,6 @@ export function getIncludeFileCompletionList(
   document: TextDocument,
   tempName: string
 ): CompletionList {
-  const isQuoteInclude: boolean = tempName.includes('"');
   const incURIs = getAllPossibleIncludeFolderPaths(document.uri).map((e) =>
     URI.file(e)
   );
@@ -98,7 +97,7 @@ export function getCompletionListFromPosition(
 ): CompletionList {
   const allItems: SPItem[] = itemsRepo.getAllItems(document.uri);
   if (allItems === []) {
-    return undefined;
+    return new CompletionList();
   }
 
   const line = document.lineAt(position.line).text;
@@ -138,35 +137,39 @@ function getMethodItems(
   isMethodMap: boolean,
   lastFunc: string
 ): CompletionList {
-  let items = new Set<CompletionItem>();
+  let items = new Set<CompletionItem | undefined>();
 
   for (let item of allItems) {
     if (
       MP.includes(item.kind) &&
-      variableTypes.includes(item.parent) &&
+      variableTypes.includes(item.parent as string) &&
       // Don't include the constructor of the methodmap
       !variableTypes.includes(item.name) &&
       // Don't include static methods if we are not calling a method from its type.
       // This handles suggestions for 'Database.Connect()' for example.
-      isMethodMap === item.detail.includes("static")
+      isMethodMap === (item.detail as string).includes("static")
     ) {
       items.add(item.toCompletionItem(lastFunc));
     }
   }
 
   items.delete(undefined);
-  return new CompletionList(Array.from(items).filter((e) => e !== undefined));
+  return new CompletionList(
+    Array.from(items).filter((e) => e !== undefined) as CompletionItem[]
+  );
 }
 
 function getNonMethodItems(allItems: SPItem[], lastFunc): CompletionList {
-  let items = new Set<CompletionItem>();
+  let items = new Set<CompletionItem | undefined>();
 
   for (let item of allItems) {
     if (!MP.includes(item.kind)) {
-      items.add(item.toCompletionItem(lastFunc));
+      items.add(item.toCompletionItem(lastFunc) as CompletionItem);
     }
   }
 
   items.delete(undefined);
-  return new CompletionList(Array.from(items).filter((e) => e !== undefined));
+  return new CompletionList(
+    Array.from(items).filter((e) => e !== undefined) as CompletionItem[]
+  );
 }

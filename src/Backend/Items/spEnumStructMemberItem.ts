@@ -54,7 +54,7 @@ export class EnumStructMemberItem implements SPItem {
     };
   }
 
-  toSignature(): SignatureInformation {
+  toSignature(): SignatureInformation | undefined {
     return undefined;
   }
 

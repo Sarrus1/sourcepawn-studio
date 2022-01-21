@@ -31,8 +31,8 @@ export function activate(context: ExtensionContext) {
   parseSMApi(providers.itemsRepository);
   SBItem.hide();
 
-  let workspaceFolders = Workspace.workspaceFolders;
-  if (workspaceFolders === undefined) {
+  let workspaceFolders = Workspace.workspaceFolders || [];
+  if (workspaceFolders.length === 0) {
     window.showWarningMessage(
       "No workspace or folder found. \n Please open the folder containing your .sp file, not just the .sp file."
     );
@@ -77,15 +77,15 @@ export function activate(context: ExtensionContext) {
   });
 
   // Get the names and directories of optional include directories.
-  let optionalIncludeDirs: string[] = Workspace.getConfiguration(
-    "sourcepawn"
-  ).get("optionalIncludeDirsPaths");
+  let optionalIncludeDirs: string[] =
+    Workspace.getConfiguration("sourcepawn").get("optionalIncludeDirsPaths") ||
+    [];
   optionalIncludeDirs = optionalIncludeDirs.map((e) =>
     resolve(...workspaceFolders.map((folder) => folder.uri.fsPath), e)
   );
   getDirectories(optionalIncludeDirs, providers);
 
-  const mainPath: string = findMainPath();
+  const mainPath = findMainPath();
   if (mainPath !== undefined) {
     providers.itemsRepository.handleDocumentOpening(mainPath);
   } else if (mainPath == "") {

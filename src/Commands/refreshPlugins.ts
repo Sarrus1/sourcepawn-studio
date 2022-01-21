@@ -1,13 +1,25 @@
 ﻿import { workspace as Workspace, window, commands } from "vscode";
 import Rcon from "rcon-srcds";
+import { EncodingOptions } from "rcon-srcds/dist/packet";
+
+export interface ServerOptions {
+  host: string;
+  password: string;
+  port: number;
+  encoding: EncodingOptions;
+  timeout: number;
+}
 
 export async function run(args: any) {
   let workspaceFolder =
     args === undefined ? undefined : Workspace.getWorkspaceFolder(args);
-  const serverOptions: Object = Workspace.getConfiguration(
+  const serverOptions: ServerOptions | undefined = Workspace.getConfiguration(
     "sourcepawn",
     workspaceFolder
   ).get("SourceServerOptions");
+  if (serverOptions === undefined) {
+    return 0;
+  }
   if (serverOptions["host"] == "" || serverOptions["password"] == "") {
     window
       .showErrorMessage(

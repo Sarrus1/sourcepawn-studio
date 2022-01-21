@@ -37,7 +37,7 @@ export class MethodItem implements SPItem {
     file: string,
     range: Range,
     IsBuiltIn: boolean = false,
-    fullRange?: Range
+    fullRange: Range
   ) {
     this.parent = parent;
     this.name = name;
@@ -96,7 +96,7 @@ export class MethodItem implements SPItem {
     ]);
   }
 
-  toDocumentSymbol(): DocumentSymbol {
+  toDocumentSymbol(): DocumentSymbol | undefined {
     if (this.fullRange === undefined) {
       return undefined;
     }

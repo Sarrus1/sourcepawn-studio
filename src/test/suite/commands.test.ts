@@ -309,9 +309,9 @@ suite("Run tests", () => {
   });
 });
 
-function rmdir(dir) {
+function rmdir(dir: string): void {
   if (!fs.existsSync(dir)) {
-    return null;
+    return;
   }
   fs.readdirSync(dir).forEach((f) => {
     let pathname = join(dir, f);
@@ -327,6 +327,6 @@ function rmdir(dir) {
   return fs.rmdirSync(dir);
 }
 
-function sleep(ms: number) {
+function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

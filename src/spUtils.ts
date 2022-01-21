@@ -8,7 +8,7 @@ import { resolve } from "path";
  * @param  {string} description   The Sourcemod JSDoc string.
  * @returns MarkdownString
  */
-export function descriptionToMD(description: string): MarkdownString {
+export function descriptionToMD(description?: string): MarkdownString {
   if (description === undefined) {
     return new MarkdownString("");
   }
@@ -41,7 +41,7 @@ export function descriptionToMD(description: string): MarkdownString {
  * @param  {Uri} uri?   The URI we are looking up the MainPath for.
  * @returns string
  */
-export function findMainPath(uri?: URI): string {
+export function findMainPath(uri?: URI): string | undefined {
   let workspaceFolders = Workspace.workspaceFolders;
   let workspaceFolder =
     uri === undefined ? undefined : Workspace.getWorkspaceFolder(uri);

@@ -44,11 +44,11 @@ export class EnumStructItem implements SPItem {
     };
   }
 
-  toSignature(): SignatureInformation {
+  toSignature() {
     return undefined;
   }
 
-  toHover(): Hover {
+  toHover(): Hover | undefined {
     if (!this.description) {
       return undefined;
     }
@@ -58,7 +58,7 @@ export class EnumStructItem implements SPItem {
     ]);
   }
 
-  toDocumentSymbol(): DocumentSymbol {
+  toDocumentSymbol(): DocumentSymbol | undefined {
     if (this.fullRange === undefined) {
       return undefined;
     }

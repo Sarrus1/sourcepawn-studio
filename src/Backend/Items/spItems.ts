@@ -23,11 +23,11 @@ export interface SPItem {
   IsBuiltIn?: boolean;
   enumStructName?: string;
 
-  toCompletionItem(lastFuncName?: string): CompletionItem;
-  toDefinitionItem(): LocationLink;
-  toSignature(): SignatureInformation;
-  toHover(): Hover;
-  toDocumentSymbol?(): DocumentSymbol;
+  toCompletionItem(lastFuncName?: string): CompletionItem | undefined;
+  toDefinitionItem(): LocationLink | undefined;
+  toSignature(): SignatureInformation | undefined;
+  toHover(): Hover | undefined;
+  toDocumentSymbol?(): DocumentSymbol | undefined;
 }
 
 export type FunctionParam = {

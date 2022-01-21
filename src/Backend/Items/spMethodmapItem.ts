@@ -2,7 +2,6 @@ import {
   CompletionItemKind,
   Range,
   CompletionItem,
-  SignatureInformation,
   Hover,
   DocumentSymbol,
   SymbolKind,
@@ -60,7 +59,7 @@ export class MethodMapItem implements SPItem {
     };
   }
 
-  toSignature(): SignatureInformation {
+  toSignature() {
     return undefined;
   }
 
@@ -82,7 +81,7 @@ export class MethodMapItem implements SPItem {
     ]);
   }
 
-  toDocumentSymbol(): DocumentSymbol {
+  toDocumentSymbol(): DocumentSymbol | undefined {
     if (this.fullRange === undefined) {
       return undefined;
     }

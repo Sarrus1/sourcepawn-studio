@@ -1,11 +1,5 @@
 import { workspace as Workspace, window, extensions } from "vscode";
-import {
-  existsSync,
-  mkdirSync,
-  copyFileSync,
-  readFileSync,
-  writeFileSync,
-} from "fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { basename, join } from "path";
 
 export function run(rootpath?: string) {

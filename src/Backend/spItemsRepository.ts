@@ -26,7 +26,7 @@ export class ItemsRepository implements Disposable {
   public documents: Set<string>;
   private globalState: Memento;
 
-  constructor(globalState?: Memento) {
+  constructor(globalState: Memento) {
     this.fileItems = new Map<string, FileItems>();
     this.documents = new Set<string>();
     this.globalState = globalState;

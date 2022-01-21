@@ -40,7 +40,7 @@ export class IncludeItem implements SPItem {
     };
   }
 
-  toSignature(): SignatureInformation {
+  toSignature(): SignatureInformation | undefined {
     return undefined;
   }
 
@@ -48,7 +48,7 @@ export class IncludeItem implements SPItem {
     return new Hover(URI.parse(this.filePath).fsPath);
   }
 
-  toDocumentSymbol(): DocumentSymbol {
+  toDocumentSymbol(): DocumentSymbol | undefined {
     return undefined;
   }
 }

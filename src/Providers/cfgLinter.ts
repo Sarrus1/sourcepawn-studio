@@ -24,7 +24,7 @@ const cfgLangID = [
 export function refreshCfgDiagnostics(document: TextDocument): void {
   // Check if the setting to activate the linter is set to true.
   const workspaceFolder = Workspace.getWorkspaceFolder(document.uri);
-  const enableLinter: boolean = Workspace.getConfiguration(
+  const enableLinter = Workspace.getConfiguration(
     "sourcepawn",
     workspaceFolder
   ).get<boolean>("enableLinter");

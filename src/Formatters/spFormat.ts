@@ -23,25 +23,24 @@ export class SMDocumentFormattingEditProvider
     options: FormattingOptions,
     token: CancellationToken
   ): ProviderResult<TextEdit[]> {
-    const result = [];
     // Get the user's settings.
-    let insertSpaces: boolean = Workspace.getConfiguration("editor").get(
-      "insertSpaces"
-    );
+    let insertSpaces: boolean =
+      Workspace.getConfiguration("editor").get("insertSpaces") || false;
     let UseTab: string = insertSpaces ? "Never" : "Always";
-    let tabSize: string = Workspace.getConfiguration("editor").get("tabSize");
+    let tabSize: number =
+      Workspace.getConfiguration("editor").get("tabSize") || 2;
 
     let workspaceFolder = Workspace.getWorkspaceFolder(document.uri);
-    let default_styles: string[] = Workspace.getConfiguration(
-      "sourcepawn",
-      workspaceFolder
-    ).get("formatterSettings");
+    let defaultStyles: string[] =
+      Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
+        "formatterSettings"
+      ) || [];
 
-    let default_style: string = "{" + default_styles.join(", ") + "}";
+    let default_style: string = "{" + defaultStyles.join(", ") + "}";
 
     // Apply user settings
     default_style = default_style
-      .replace(/\${TabSize}/g, tabSize)
+      .replace(/\${TabSize}/g, tabSize.toString())
       .replace(/\${UseTab}/g, UseTab);
     const start = new Position(0, 0);
     const end = new Position(
@@ -53,25 +52,24 @@ export class SMDocumentFormattingEditProvider
     let file = openSync(tempFile, "w", 0o765);
     writeSync(file, document.getText());
     closeSync(file);
-    let text: string = this.clangFormat(tempFile, "utf-8", default_style);
+    let text = this.clangFormat(tempFile, "utf-8", default_style);
 
     // If process failed,
-    if (text === "") {
+    if (text === undefined) {
       window.showErrorMessage(
         "The formatter failed to run, check the console for more details."
       );
       return undefined;
     }
     text = fixFormatting(text);
-    result.push(new TextEdit(range, text));
-    return result;
+    return [new TextEdit(range, text)];
   }
 
   Callback(e) {
     console.error(e);
   }
 
-  clangFormat(path: string, enc: string, style): string {
+  clangFormat(path: string, enc: string, style): string | undefined {
     let args = [`-style=${style}`, path];
     let result = this.spawnClangFormat(args, [
       "ignore",
@@ -107,8 +105,11 @@ export class SMDocumentFormattingEditProvider
     let nativeBinary;
     const sysPlatform = platform();
     const sysArch = arch();
-    let myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
-      .extensionPath;
+    const ext = extensions.getExtension("Sarrus.sourcepawn-vscode");
+    if (ext === undefined) {
+      throw Error("Extension not found.");
+    }
+    const myExtDir = ext.extensionPath;
     if (sysPlatform === "win32") {
       nativeBinary = join(myExtDir, "/bin/win32/clang-format.exe");
     } else {

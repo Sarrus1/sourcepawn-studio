@@ -89,7 +89,7 @@ export class FunctionItem implements SPItem {
     };
   }
 
-  toDocumentSymbol(): DocumentSymbol {
+  toDocumentSymbol(): DocumentSymbol | undefined {
     if (this.fullRange === undefined) {
       return undefined;
     }

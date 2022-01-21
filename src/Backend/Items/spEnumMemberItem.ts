@@ -2,7 +2,6 @@ import {
   CompletionItemKind,
   Range,
   CompletionItem,
-  SignatureInformation,
   Hover,
   Location,
   DocumentSymbol,
@@ -58,7 +57,7 @@ export class EnumMemberItem implements SPItem {
     };
   }
 
-  toSignature(): SignatureInformation {
+  toSignature() {
     return undefined;
   }
 
@@ -70,7 +69,7 @@ export class EnumMemberItem implements SPItem {
     ]);
   }
 
-  toDocumentSymbol(): DocumentSymbol {
+  toDocumentSymbol(): DocumentSymbol | undefined {
     if (this.name === "") {
       return undefined;
     }

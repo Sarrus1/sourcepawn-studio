@@ -48,7 +48,7 @@ export function isInAString(range: Range, line: string): boolean {
   let isEscaped = false;
   let end = range.end.character;
   let isAString = false;
-  let delimiter: string;
+  let delimiter: string | undefined;
   for (i = 0; i < line.length && i < end; i++) {
     if (line[i] === "'" && !isEscaped) {
       if (delimiter === "'") {
@@ -138,9 +138,11 @@ export function definitionsProvider(
   position: Position,
   token: CancellationToken
 ): LocationLink[] {
-  let items = itemsRepo.getItemFromPosition(document, position);
-  if (items !== undefined) {
-    return items.map((e) => e.toDefinitionItem());
+  const items = itemsRepo.getItemFromPosition(document, position);
+  if (items.length > 0) {
+    return items
+      .map((e) => e.toDefinitionItem())
+      .filter((e) => e !== undefined) as LocationLink[];
   }
-  return undefined;
+  return [];
 }
