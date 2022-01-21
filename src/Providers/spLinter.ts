@@ -53,6 +53,10 @@ export function refreshDiagnostics(document: TextDocument): void {
       "SpcompPath"
     ) || "";
 
+  if (!spcomp) {
+    return;
+  }
+
   // Get the previous instance of spcomp if it exists
   let throttle = throttles[document.uri.path];
   if (throttle === undefined) {
