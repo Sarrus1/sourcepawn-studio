@@ -48,7 +48,7 @@ export class VariableItem implements SPItem {
         kind: this.kind,
       };
     }
-    return;
+    return undefined;
   }
 
   toDefinitionItem(): LocationLink {
@@ -59,12 +59,12 @@ export class VariableItem implements SPItem {
   }
 
   toSignature(): SignatureInformation {
-    return;
+    return undefined;
   }
 
   toHover(): Hover {
     if (this.type === "") {
-      return;
+      return undefined;
     }
     return new Hover([
       { language: "sourcepawn", value: `${this.type} ${this.name};` },

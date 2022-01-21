@@ -72,7 +72,7 @@ export class EnumMemberItem implements SPItem {
 
   toDocumentSymbol(): DocumentSymbol {
     if (this.name === "") {
-      return;
+      return undefined;
     }
     return new DocumentSymbol(
       this.name,

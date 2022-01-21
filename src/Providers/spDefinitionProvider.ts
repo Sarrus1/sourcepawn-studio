@@ -4,6 +4,7 @@
   Position,
   CompletionItemKind,
   CancellationToken,
+  LocationLink,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { globalIdentifier } from "../Misc/spConstants";
@@ -136,9 +137,10 @@ export function definitionsProvider(
   document: TextDocument,
   position: Position,
   token: CancellationToken
-) {
+): LocationLink[] {
   let items = itemsRepo.getItemFromPosition(document, position);
   if (items !== undefined) {
     return items.map((e) => e.toDefinitionItem());
   }
+  return undefined;
 }

@@ -41,7 +41,7 @@ export class IncludeItem implements SPItem {
   }
 
   toSignature(): SignatureInformation {
-    return;
+    return undefined;
   }
 
   toHover(): Hover {
@@ -49,6 +49,6 @@ export class IncludeItem implements SPItem {
   }
 
   toDocumentSymbol(): DocumentSymbol {
-    return;
+    return undefined;
   }
 }

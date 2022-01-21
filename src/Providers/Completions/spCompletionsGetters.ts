@@ -55,6 +55,7 @@ export function getIncludeFileCompletionList(
         });
         return true;
       }
+      return false;
     })
   );
 
@@ -97,7 +98,7 @@ export function getCompletionListFromPosition(
 ): CompletionList {
   const allItems: SPItem[] = itemsRepo.getAllItems(document.uri);
   if (allItems === []) {
-    return;
+    return undefined;
   }
 
   const line = document.lineAt(position.line).text;

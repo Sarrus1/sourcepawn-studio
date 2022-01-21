@@ -61,7 +61,7 @@ export class MethodMapItem implements SPItem {
   }
 
   toSignature(): SignatureInformation {
-    return;
+    return undefined;
   }
 
   toHover(): Hover {
@@ -84,7 +84,7 @@ export class MethodMapItem implements SPItem {
 
   toDocumentSymbol(): DocumentSymbol {
     if (this.fullRange === undefined) {
-      return;
+      return undefined;
     }
     return new DocumentSymbol(
       this.name,

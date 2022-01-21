@@ -30,18 +30,18 @@ export class ConstantItem implements SPItem {
   }
 
   toDefinitionItem(): LocationLink {
-    return;
+    return undefined;
   }
 
   toSignature(): SignatureInformation {
-    return;
+    return undefined;
   }
 
   toHover(): Hover {
-    return;
+    return undefined;
   }
 
   toDocumentSymbol(): DocumentSymbol {
-    return;
+    return undefined;
   }
 }

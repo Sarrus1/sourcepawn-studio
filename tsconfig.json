@@ -4,8 +4,7 @@
     "target": "es2019",
     "lib": ["ES2019"],
     "outDir": "dist",
-    "rootDir": "src"
-    /*
+    "rootDir": "src",
     "sourceMap": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
@@ -15,12 +14,11 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    //"noUnusedLocals": true,
+    //"noUnusedParameters": true,
     "noImplicitAny": false,
     "noImplicitThis": false,
     "strictNullChecks": false
-    */
   },
   "include": ["src", "src/**/*.ts"],
   "exclude": ["node_modules", ".vscode-test"]

@@ -46,7 +46,7 @@ export class CFGDocumentFormattingEditProvider
       window.showErrorMessage(
         "The formatter failed to run, check the console for more details."
       );
-      return;
+      return undefined;
     }
     result.push(new TextEdit(range, text));
     return result;

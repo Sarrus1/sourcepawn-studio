@@ -2,6 +2,10 @@
 
 ## [3.0.12]
 
+### Added
+
+- Added a linter for .cfg files.
+
 ### Fixed
 
 - Fixed a parsing error causing lint messages to display in the wrong file.

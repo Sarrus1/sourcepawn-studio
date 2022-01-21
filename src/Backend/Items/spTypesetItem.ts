@@ -55,12 +55,12 @@ export class TypeSetItem implements SPItem {
   }
 
   toSignature(): SignatureInformation {
-    return;
+    return undefined;
   }
 
   toHover(): Hover {
     if (!this.description) {
-      return;
+      return undefined;
     }
     return new Hover([
       { language: "sourcepawn", value: `typedef ${this.name}` },
@@ -70,7 +70,7 @@ export class TypeSetItem implements SPItem {
 
   toDocumentSymbol(): DocumentSymbol {
     if (this.fullRange === undefined) {
-      return;
+      return undefined;
     }
     return new DocumentSymbol(
       this.name,

@@ -60,7 +60,7 @@ export class SMDocumentFormattingEditProvider
       window.showErrorMessage(
         "The formatter failed to run, check the console for more details."
       );
-      return;
+      return undefined;
     }
     text = fixFormatting(text);
     result.push(new TextEdit(range, text));
@@ -71,7 +71,7 @@ export class SMDocumentFormattingEditProvider
     console.error(e);
   }
 
-  clangFormat(path: string, enc: string, style) {
+  clangFormat(path: string, enc: string, style): string {
     let args = [`-style=${style}`, path];
     let result = this.spawnClangFormat(args, [
       "ignore",
@@ -82,6 +82,7 @@ export class SMDocumentFormattingEditProvider
       return result;
     } else {
       console.error("Formatting failed.");
+      return undefined;
     }
   }
 
@@ -91,14 +92,14 @@ export class SMDocumentFormattingEditProvider
     try {
       nativeBinary = this.getNativeBinary();
     } catch (e) {
-      return;
+      return undefined;
     }
     try {
       let clangFormatProcess = execFileSync(nativeBinary, args);
       return clangFormatProcess.toString();
     } catch (e) {
       console.error("Error", e);
-      return;
+      return undefined;
     }
   }
 

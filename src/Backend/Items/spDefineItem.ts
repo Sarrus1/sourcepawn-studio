@@ -60,7 +60,7 @@ export class DefineItem implements SPItem {
   }
 
   toSignature(): SignatureInformation {
-    return;
+    return undefined;
   }
 
   toHover(): Hover {
@@ -72,7 +72,7 @@ export class DefineItem implements SPItem {
 
   toDocumentSymbol(): DocumentSymbol {
     if (this.fullRange === undefined) {
-      return;
+      return undefined;
     }
     return new DocumentSymbol(
       this.name,

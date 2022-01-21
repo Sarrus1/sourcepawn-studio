@@ -22,22 +22,22 @@ export class CommentItem implements SPItem {
   }
 
   toCompletionItem(): CompletionItem {
-    return;
+    return undefined;
   }
 
   toDefinitionItem(): LocationLink {
-    return;
+    return undefined;
   }
 
   toSignature(): SignatureInformation {
-    return;
+    return undefined;
   }
 
   toHover(): Hover {
-    return;
+    return undefined;
   }
 
   toDocumentSymbol(): DocumentSymbol {
-    return;
+    return undefined;
   }
 }

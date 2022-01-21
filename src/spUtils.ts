@@ -48,19 +48,20 @@ export function findMainPath(uri?: URI): string {
   let mainPath: string =
     Workspace.getConfiguration("sourcepawn", workspaceFolder).get("MainPath") ||
     "";
-  if (mainPath !== "") {
-    // Check if it exists, meaning it's an absolute path.
-    if (!existsSync(mainPath) && workspaceFolders !== undefined) {
-      // If it doesn't, loop over the workspace folders until one matches.
-      for (let wk of workspaceFolders) {
-        mainPath = resolve(wk.uri.fsPath, mainPath);
-        if (existsSync(mainPath)) {
-          return mainPath;
-        }
+  if (mainPath === "") {
+    return undefined;
+  }
+  // Check if it exists, meaning it's an absolute path.
+  if (!existsSync(mainPath) && workspaceFolders !== undefined) {
+    // If it doesn't, loop over the workspace folders until one matches.
+    for (let wk of workspaceFolders) {
+      mainPath = resolve(wk.uri.fsPath, mainPath);
+      if (existsSync(mainPath)) {
+        return mainPath;
       }
-      return undefined;
-    } else {
-      return mainPath;
     }
+    return undefined;
+  } else {
+    return mainPath;
   }
 }

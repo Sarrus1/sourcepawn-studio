@@ -236,6 +236,7 @@ function makeIncludeItem(
       ),
     ];
   }
+  return undefined;
 }
 
 /**
@@ -269,6 +270,7 @@ function makeEnumStructMethodItem(
       return items;
     }
   }
+  return undefined;
 }
 
 /**

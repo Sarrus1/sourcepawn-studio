@@ -13,4 +13,5 @@ export function hoverProvider(
   if (items !== undefined && items.length > 0) {
     return items[0].toHover();
   }
+  return undefined;
 }
