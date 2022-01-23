@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [3.0.13]
+
+### Fixed
+
+- Fixed an error making optional include dirs unusable.
+
 ## [3.0.12]
 
 ### Added

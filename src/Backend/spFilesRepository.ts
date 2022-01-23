@@ -77,9 +77,9 @@ export class FileItems extends Map {
     );
     for (let includeDir of includeDirs) {
       let includeFile = resolve(
-        Workspace.workspaceFolders.map((folder) => folder.uri.fsPath) +
-          includeDir +
-          includeText
+        ...Workspace.workspaceFolders
+          .map((folder) => folder.uri.fsPath)
+          .concat(includeDir, includeText)
       );
       if (existsSync(includeFile)) {
         this.addInclude(URI.file(includeFile).toString(), IsBuiltIn);
