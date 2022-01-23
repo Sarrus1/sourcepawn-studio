@@ -147,7 +147,7 @@ function getMethodItems(
       !variableTypes.includes(item.name) &&
       // Don't include static methods if we are not calling a method from its type.
       // This handles suggestions for 'Database.Connect()' for example.
-      isMethodMap === (item.detail as string).includes("static")
+      isMethodMap === /\bstatic\b[^\(]*\(/.test(item.detail as string)
     ) {
       items.add(item.toCompletionItem(lastFunc));
     }

@@ -60,7 +60,11 @@ export function getTypeOfVariable(
           (e.kind === CompletionItemKind.Variable &&
             [globalIdentifier, lastFuncName].includes(e.parent) &&
             e.name === words[words.length - 1]) ||
-          (e.kind === CompletionItemKind.Function &&
+          ([CompletionItemKind.Function, CompletionItemKind.Class].includes(
+            e.kind
+          ) &&
+            e.name === words[words.length - 1]) ||
+          (e.kind === CompletionItemKind.Class &&
             e.name === words[words.length - 1]) ||
           (enumMemberItem !== undefined &&
             e.kind === CompletionItemKind.Class &&

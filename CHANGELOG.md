@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [3.0.14]
+
+### Fixed
+
+- Fixed an error making static methods not appear in suggestions.
+
 ## [3.0.13]
 
 ### Fixed
