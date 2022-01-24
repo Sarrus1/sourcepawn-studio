@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fixed an error making static methods not appear in suggestions.
+- Fixed a formatter issue with doc comments.
 
 ## [3.0.13]
 
