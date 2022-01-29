@@ -2,6 +2,10 @@
 
 ## [3.0.14]
 
+### Added
+
+- Added `//#region` - `//#endregion` folding (see #198).
+
 ### Fixed
 
 - Fixed an error making static methods not appear in suggestions.

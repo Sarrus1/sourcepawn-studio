@@ -29,5 +29,11 @@
       "beforeText": "\\*\\/\\s*",
       "action": { "indent": "none", "removeText": 1 }
     }
-  ]
+  ],
+  "folding": {
+    "markers": {
+      "start": "^\\s*//\\s*#?region\\b",
+      "end": "^\\s*//\\s*#?endregion\\b"
+    }
+  }
 }
