@@ -128,10 +128,10 @@ export async function run(args: URI): Promise<void> {
     true
   ).forEach((e) => includePaths.push(e));
 
-  let compilerArgs = [fileToCompilePath, "-o", outputDir];
+  let compilerArgs = [fileToCompilePath, `-o${outputDir}`];
 
   // Add include paths and compiler options to compiler args.
-  includePaths.forEach((path) => compilerArgs.push("-i", path));
+  includePaths.forEach((path) => compilerArgs.push(`-i${path}`));
   compilerArgs = compilerArgs.concat(compilerOptions);
 
   // Create Output Channel if it does not exist.

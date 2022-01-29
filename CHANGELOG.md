@@ -1,5 +1,19 @@
 ## Release Notes
 
+## [3.0.14]
+
+### Added
+
+- Added `//#region` - `//#endregion` folding (see #198).
+
+### Fixed
+
+- Fixed an error making static methods not appear in suggestions.
+- Fixed a formatter issue with doc comments.
+- Fixed an error when parsing arguments to the Sourcepawn compiler prior to v~1.6.
+- Fixed `.inc` being inserted at the end of `#include` autocompletions (see #200).
+- Fixed right side of enum asignment being parsed as enum member (see #199).
+
 ## [3.0.13]
 
 ### Fixed
