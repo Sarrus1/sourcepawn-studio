@@ -91,15 +91,18 @@ export function completionProvider(
   }
 
   // Check if we are dealing with an include.
-  let match = text.match(/^\s*#\s*include\s*(?:\<([^>]*)\>?)$/);
+  let match = text.match(/^\s*#\s*include\s*(?:\<([^>]*)\>?)/);
+  let useAp = false;
   if (!match) {
-    match = text.match(/^\s*#\s*include\s*(?:\"([^\"]*)\"?)$/);
+    match = text.match(/^\s*#\s*include\s*(?:\"([^\"]*)\"?)/);
+    useAp = true;
   }
   if (match) {
     return getIncludeFileCompletionList(
       itemsRepo.documents,
       document,
-      match[1]
+      match[1],
+      useAp
     );
   }
   match = text.match(

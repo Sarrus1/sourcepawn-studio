@@ -31,7 +31,8 @@ const MP = [CompletionItemKind.Method, CompletionItemKind.Property];
 export function getIncludeFileCompletionList(
   knownIncs: Set<string>,
   document: TextDocument,
-  tempName: string
+  tempName: string,
+  useAp: boolean
 ): CompletionList {
   const incURIs = getAllPossibleIncludeFolderPaths(document.uri).map((e) =>
     URI.file(e)
@@ -48,7 +49,8 @@ export function getIncludeFileCompletionList(
       if (fileMatchRe.test(e)) {
         const path = URI.parse(e).fsPath;
         items.push({
-          label: basename(path),
+          label: basename(path, ".inc"),
+          insertText: `${basename(path, ".inc")}${useAp ? '"' : ">"}`,
           kind: CompletionItemKind.File,
           detail: path,
         });

@@ -11,6 +11,7 @@
 - Fixed an error making static methods not appear in suggestions.
 - Fixed a formatter issue with doc comments.
 - Fixed an error when parsing arguments to the Sourcepawn compiler prior to v~1.6.
+- Fixed `.inc` being inserted at the end of `#include` autocompletions (see #200).
 
 ## [3.0.13]
 
