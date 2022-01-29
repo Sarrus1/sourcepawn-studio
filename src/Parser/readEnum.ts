@@ -121,7 +121,7 @@ export function readEnum(
     }
     const croppedLine = line.slice(i);
     let iterMatch = croppedLine.match(
-      /^\s*(?:\w+\s*:\s*)?([A-Za-z_]+\w*)(?:\s*\=.+?(?=(?:\,|\/\*|\/\/)))?/
+      /^\s*(?:\w+\s*:\s*)?([A-Za-z_]+\w*)(?:\s*\=.+?(?=(?:\r|\n|\,|\/\*|\/\/)))?/
     );
     if (!iterMatch || isBlockComment) {
       i++;
