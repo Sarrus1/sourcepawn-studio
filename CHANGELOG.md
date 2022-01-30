@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [3.0.15]
+
+### Added
+
+- Added a better error message for incorrect MainPaths.
+
 ## [3.0.14]
 
 ### Added
