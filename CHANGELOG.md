@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fixed workflow file templates.
+- Fixed a bug that would cause for loops to not be matched correctly.
 
 ## [3.0.15]
 

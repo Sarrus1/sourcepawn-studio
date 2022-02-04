@@ -7,7 +7,13 @@ export function readLoopVariable(
   match: RegExpMatchArray,
   line: string
 ) {
-  parser.state.push(State.Loop);
+  if (/\{\s*$/.test(line)) {
+    parser.state.push(State.Loop);
+  }
+  // Test the next line if we didn't match
+  else if (/^\s*\{/.test(parser.lines[0])) {
+    parser.state.push(State.Loop);
+  }
   if (parser.IsBuiltIn) {
     return;
   }
