@@ -20,17 +20,16 @@ jobs:
         uses: rumblefrog/setup-sp@master
         with:
           version: "1.10.x"
-          version-file: .scripting/${plugin_name}.sp
+          version-file: ./scripting/${plugin_name}.sp
 
       - name: Compile plugins
         run: |
+          mkdir plugins
           cd scripting
-          for file in ${plugin_name}.sp
-          do
-            echo -e "\nCompiling $file..."
-            spcomp -E -w234 -O2 -v2 -i include $file
-          done
+          spcomp -E -w234 -O2 -v2 -i"include" -o"../plugins/${plugin_name}.smx" ${plugin_name}.sp
           echo "===OUT FILES==="
+          cd ../plugins
           ls
-          echo version = ${{ steps.setup_sp.outputs.plugin-version }}
+          echo "===VERSION==="
+          echo ${{ steps.setup_sp.outputs.plugin-version }}
         working-directory: ${{ env.SCRIPTS_PATH }}

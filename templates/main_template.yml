@@ -20,17 +20,13 @@ jobs:
         uses: rumblefrog/setup-sp@master
         with:
           version: "1.10.x"
-          version-file: .scripting/${plugin_name}.sp
+          version-file: ./scripting/${plugin_name}.sp
 
       - name: Compile plugins
         run: |
           mkdir plugins
           cd scripting
-          for file in ${plugin_name}.sp
-          do
-            echo -e "\nCompiling $file..."
-            spcomp -E -w234 -O2 -v2 -i -o '../plugins/${plugin_name}.smx' include $file
-          done
+          spcomp -E -w234 -O2 -v2 -i"include" -o"../plugins/${plugin_name}.smx" ${plugin_name}.sp
           echo "===OUT FILES==="
           cd ../plugins
           ls
@@ -46,7 +42,9 @@ jobs:
         uses: montudor/action-zip@v1
 
       - name: Zip output
-        run: zip -qq -r ${plugin_name}-${{ steps.setup_sp.outputs.plugin-version }}.zip ${plugin_name}.smx
+        run: |
+          cd plugins
+          zip -qq -r ${plugin_name}-${{ steps.setup_sp.outputs.plugin-version }}.zip ${plugin_name}.smx
         working-directory: ${{ env.SCRIPTS_PATH }}
 
       - name: Create Release

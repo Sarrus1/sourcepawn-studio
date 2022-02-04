@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [3.0.16]
+
+### Fixed
+
+- Fixed workflow file templates.
+
 ## [3.0.15]
 
 ### Added
