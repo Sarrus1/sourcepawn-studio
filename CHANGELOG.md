@@ -6,6 +6,10 @@
 
 - Added a better error message for incorrect MainPaths.
 
+### Fixed
+
+- Fixed an indentention issue (see #204).
+
 ## [3.0.14]
 
 ### Added
