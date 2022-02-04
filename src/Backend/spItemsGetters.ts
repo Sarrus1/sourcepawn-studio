@@ -48,7 +48,7 @@ enum ObjectType {
  */
 export function getAllItems(itemsRepo: ItemsRepository, uri: URI): SPItem[] {
   const mainPath = findMainPath(uri);
-  if (mainPath !== undefined) {
+  if (mainPath !== undefined && mainPath !== "") {
     uri = URI.file(mainPath);
   }
 

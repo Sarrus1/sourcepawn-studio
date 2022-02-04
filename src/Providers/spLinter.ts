@@ -72,7 +72,7 @@ export function refreshDiagnostics(document: TextDocument): void {
     // Separate the cases if we are using mainPath or not.
     let scriptingFolder: string;
     let filePath: string;
-    if (mainPath !== undefined) {
+    if (mainPath !== undefined && mainPath !== "") {
       scriptingFolder = dirname(mainPath);
       filePath = mainPath;
     } else {

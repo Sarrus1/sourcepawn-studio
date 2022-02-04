@@ -1,5 +1,19 @@
 ## Release Notes
 
+## [3.0.15]
+
+### Added
+
+- Added a better error message for incorrect MainPaths.
+
+### Fixed
+
+- Fixed an indentention issue (see #204).
+
+### Improved
+
+- Changed the location of the SM install command (see #202).
+
 ## [3.0.14]
 
 ### Added

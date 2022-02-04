@@ -1,7 +1,7 @@
 ﻿import { MarkdownString, workspace as Workspace } from "vscode";
 import { URI } from "vscode-uri";
-import { existsSync } from "fs";
-import { resolve } from "path";
+import { existsSync, lstatSync } from "fs";
+import { resolve, extname } from "path";
 
 /**
  * Parse a Sourcemod JSDoc documentation string and convert it to a MarkdownString.
@@ -38,12 +38,14 @@ export function descriptionToMD(description?: string): MarkdownString {
 
 /**
  * Find the MainPath setting for a given URI.
+ * Will return an empty string if the mainpath setting doesn't point to an
+ * existing location, and will return undefined if nothing is found.
  * @param  {Uri} uri?   The URI we are looking up the MainPath for.
- * @returns string
+ * @returns string | undefined
  */
 export function findMainPath(uri?: URI): string | undefined {
-  let workspaceFolders = Workspace.workspaceFolders;
-  let workspaceFolder =
+  const workspaceFolders = Workspace.workspaceFolders;
+  const workspaceFolder =
     uri === undefined ? undefined : Workspace.getWorkspaceFolder(uri);
   let mainPath: string =
     Workspace.getConfiguration("sourcepawn", workspaceFolder).get("MainPath") ||
@@ -60,8 +62,18 @@ export function findMainPath(uri?: URI): string | undefined {
         return mainPath;
       }
     }
-    return undefined;
+    return "";
   } else {
     return mainPath;
   }
+}
+
+export function checkMainPath(mainPath: string): boolean {
+  if (!existsSync(mainPath)) {
+    return false;
+  }
+  if (!lstatSync(mainPath).isFile()) {
+    return false;
+  }
+  return extname(mainPath) === ".sp";
 }

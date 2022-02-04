@@ -19,7 +19,7 @@ import { Providers } from "./Backend/spProviders";
 import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
-import { findMainPath } from "./spUtils";
+import { findMainPath, checkMainPath } from "./spUtils";
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
@@ -48,7 +48,7 @@ export function activate(context: ExtensionContext) {
       let uriString = URI.file(uri.fsPath).toString();
       providers.itemsRepository.documents.add(uriString);
       let mainPath = findMainPath(uri);
-      if (mainPath !== undefined) {
+      if (mainPath !== undefined && mainPath !== "") {
         mainPath = URI.file(mainPath).toString();
         for (let document of Workspace.textDocuments) {
           if (document.uri.toString() === mainPath) {
@@ -87,22 +87,25 @@ export function activate(context: ExtensionContext) {
 
   const mainPath = findMainPath();
   if (mainPath !== undefined) {
-    providers.itemsRepository.handleDocumentOpening(mainPath);
-  } else if (mainPath == "") {
-    window
-      .showErrorMessage(
-        "A setting for the main.sp file was specified, but seems invalid. Please make sure it is valid.",
-        "Open Settings"
-      )
-      .then((choice) => {
-        if (choice === "Open Settings") {
-          commands.executeCommand(
-            "workbench.action.openSettings",
-            "@ext:sarrus.sourcepawn-vscode"
-          );
-        }
-      });
+    if (!checkMainPath(mainPath)) {
+      window.showErrorMessage(
+        "A setting for the main.sp file was specified, but seems invalid. Right click on a file and use the command at the bottom of the menu to set it as main."
+      );
+    } else {
+      providers.itemsRepository.handleDocumentOpening(mainPath);
+    }
   }
+
+  Workspace.onDidChangeConfiguration((e) => {
+    if (e.affectsConfiguration("sourcepawn.MainPath")) {
+      let newMainPath = findMainPath();
+      if (newMainPath !== undefined && !checkMainPath(newMainPath)) {
+        window.showErrorMessage(
+          "A setting for the main.sp file was specified, but seems invalid. Right click on a file and use the command at the bottom of the menu to set it as main."
+        );
+      }
+    }
+  });
 
   // Load the currently opened file
   if (window.activeTextEditor != undefined) {
