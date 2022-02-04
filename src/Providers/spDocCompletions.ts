@@ -9,9 +9,10 @@ import {
   CancellationToken,
   commands,
   SignatureHelp,
+  window,
 } from "vscode";
 
-const indentSize: number = 5;
+const indentSize: number = <number>window.activeTextEditor.options.tabSize;
 
 class SpDocCompletionItem extends CompletionItem {
   constructor(position: Position, FunctionDesc: string[], indent: string) {

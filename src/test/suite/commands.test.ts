@@ -272,6 +272,38 @@ suite("Run tests", () => {
         });
     });
 
+    test("Test SpDoc Completion provider", () => {
+      let position = new vscode.Position(31, 0);
+      return vscode.commands
+        .executeCommand(
+          "vscode.executeCompletionItemProvider",
+          mainUri,
+          position,
+          "/*"
+        )
+        .then((docCompletion: vscode.CompletionList) => {
+          assert.ok(docCompletion.items.length > 0);
+          
+          const insertTextSnippet = docCompletion.items.filter(item => item.label == "/** */")[0].insertText;
+          const insertText = insertTextSnippet instanceof vscode.SnippetString ? insertTextSnippet.value : insertTextSnippet;
+          const expectedInsertText = `/**
+ * \${1:Description}
+ * 
+ * @param client    \${2:Param description}
+ * @param args      \${3:Param description}
+ * @return          \${4:Return description}
+`;
+          console.log(insertText);
+          console.log(expectedInsertText);
+
+          assert.equal(
+            insertText,
+            expectedInsertText,
+            "expected insertText did not match"
+          );
+        });
+    });
+
     test("Test Signature Help provider", () => {
       let position = new vscode.Position(24, 16);
       return vscode.commands
