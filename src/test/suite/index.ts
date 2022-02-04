@@ -67,13 +67,14 @@ export async function run(): Promise<void> {
 }
 
 async function captureStdout(fn: Function) {
-  let w = process.stdout.write,
+  let didRun = false,
     buffer = "";
-  process.stdout.write = (s) => {
-    buffer = buffer + s;
-    return true;
-  };
+  process.stdout.on("data", (chunk) => {
+    if (!didRun) {
+      buffer += chunk.toString();
+    }
+  });
   await fn();
-  process.stdout.write = w;
+  didRun = true;
   return buffer;
 }
