@@ -1,23 +1,24 @@
 import {
   workspace as Workspace,
   window,
-  extensions,
   ProgressLocation,
   CancellationToken,
   Progress,
 } from "vscode";
 import { join } from "path";
-import { platform } from "os";
+import { platform, homedir } from "os";
+import { existsSync, mkdirSync } from "fs";
 const wget = require("wget-improved");
 const decompress = require("decompress");
 
-const outputDir = join(
-  extensions.getExtension("Sarrus.sourcepawn-vscode").extensionPath,
-  "misc/"
-);
+const outputDir = join(homedir(), "sourcemodAPI/");
+
 const Platform = platform();
 
 export async function run(args: any) {
+  if (!existsSync(outputDir)) {
+    mkdirSync(outputDir);
+  }
   await window.withProgress(
     {
       location: ProgressLocation.Notification,
