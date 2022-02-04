@@ -293,8 +293,6 @@ suite("Run tests", () => {
  * @param args      \${3:Param description}
  * @return          \${4:Return description}
 `;
-          console.log(insertText);
-          console.log(expectedInsertText);
 
           assert.equal(
             insertText,
