@@ -173,9 +173,11 @@ export function readFunction(
         parser.file,
         range,
         parser.IsBuiltIn,
-        fullRange
+        fullRange,
+        parser.deprecated
       )
     );
+    parser.deprecated = undefined;
     return;
   }
   // For small files, the parsing is too fast and functions get overwritten by their own calls.
@@ -199,9 +201,11 @@ export function readFunction(
       parser.IsBuiltIn,
       range,
       type,
-      fullRange
+      fullRange,
+      parser.deprecated
     )
   );
+  parser.deprecated = undefined;
 }
 
 export function addParamsDef(

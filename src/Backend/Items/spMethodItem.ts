@@ -7,6 +7,7 @@ import {
   DocumentSymbol,
   SymbolKind,
   LocationLink,
+  CompletionItemTag,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { basename } from "path";
@@ -26,6 +27,7 @@ export class MethodItem implements SPItem {
   range: Range;
   IsBuiltIn: boolean;
   filePath: string;
+  deprecated: string | undefined;
 
   constructor(
     parent: string,
@@ -37,7 +39,8 @@ export class MethodItem implements SPItem {
     file: string,
     range: Range,
     IsBuiltIn: boolean = false,
-    fullRange: Range
+    fullRange: Range,
+    deprecated: string | undefined
   ) {
     this.parent = parent;
     this.name = name;
@@ -53,6 +56,7 @@ export class MethodItem implements SPItem {
     this.filePath = file;
     this.range = range;
     this.fullRange = fullRange;
+    this.deprecated = deprecated;
   }
 
   toCompletionItem(): CompletionItem {
@@ -60,6 +64,7 @@ export class MethodItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: this.parent,
+      tags: this.deprecated ? [CompletionItemTag.Deprecated] : [],
     };
   }
 
@@ -87,12 +92,12 @@ export class MethodItem implements SPItem {
       return new Hover([
         { language: "sourcepawn", value: this.detail },
         `[Online Documentation](https://sourcemod.dev/#/${filename}/methodmap.${this.parent}/function.${this.name})`,
-        descriptionToMD(this.description),
+        descriptionToMD(`${this.description}\nDEPRECATED ${this.deprecated}`),
       ]);
     }
     return new Hover([
       { language: "sourcepawn", value: this.detail },
-      descriptionToMD(this.description),
+      descriptionToMD(`${this.description}\nDEPRECATED ${this.deprecated}`),
     ]);
   }
 

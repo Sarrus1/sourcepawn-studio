@@ -2,6 +2,10 @@
 
 ## [3.0.16]
 
+### Added
+
+- Added deprecated functions and methods support.
+
 ### Fixed
 
 - Fixed workflow file templates.

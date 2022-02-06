@@ -78,6 +78,7 @@ export class Parser {
   itemsRepository: ItemsRepository;
   debugging: boolean;
   anonymousEnumCount: number;
+  deprecated: string | undefined;
 
   constructor(
     lines: string[],
@@ -170,6 +171,13 @@ export class Parser {
     match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>/);
     if (match) {
       readInclude(this, match);
+      return;
+    }
+
+    // Match #pragma deprecated
+    match = line.match(/#pragma\s+deprecated\s+(.+?(?=(?:\/\*|\/\/|$)))/);
+    if (match) {
+      this.deprecated = match[1];
       return;
     }
 
@@ -301,6 +309,7 @@ export class Parser {
 
     // Reset the comments buffer
     this.scratch = [];
+    this.deprecated = undefined;
     return;
   }
 
