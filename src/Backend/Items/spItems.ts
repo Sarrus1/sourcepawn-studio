@@ -22,9 +22,12 @@ export interface SPItem {
   calls?: Location[];
   IsBuiltIn?: boolean;
   enumStructName?: string;
+  params?: FunctionParam[];
+  deprecated?: string;
 
   toCompletionItem(lastFuncName?: string): CompletionItem | undefined;
   toDefinitionItem(): LocationLink | undefined;
+  toReferenceItem?(): Location[];
   toSignature(): SignatureInformation | undefined;
   toHover(): Hover | undefined;
   toDocumentSymbol?(): DocumentSymbol | undefined;

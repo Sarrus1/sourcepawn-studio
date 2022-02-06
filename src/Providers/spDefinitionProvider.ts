@@ -142,7 +142,7 @@ export function definitionsProvider(
   if (items.length > 0) {
     return items
       .map((e) => e.toDefinitionItem())
-      .filter((e) => e !== undefined) as LocationLink[];
+      .filter((e) => e !== undefined);
   }
   return [];
 }

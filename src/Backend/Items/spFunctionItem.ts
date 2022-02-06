@@ -97,6 +97,10 @@ export class FunctionItem implements SPItem {
     };
   }
 
+  toReferenceItem(): Location[] {
+    return this.calls.map((e) => new Location(e.uri, e.range));
+  }
+
   toDocumentSymbol(): DocumentSymbol | undefined {
     if (this.fullRange === undefined) {
       return undefined;

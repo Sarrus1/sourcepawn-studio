@@ -143,6 +143,7 @@ export function activate(context: ExtensionContext) {
       "*"
     )
   );
+
   context.subscriptions.push(
     languages.registerSignatureHelpProvider(SP_MODE, providers, "(", ",", "\n")
   );
@@ -157,6 +158,10 @@ export function activate(context: ExtensionContext) {
 
   context.subscriptions.push(
     languages.registerDefinitionProvider(SP_MODE, providers)
+  );
+
+  context.subscriptions.push(
+    languages.registerReferenceProvider(SP_MODE, providers)
   );
 
   context.subscriptions.push(
