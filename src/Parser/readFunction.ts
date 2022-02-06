@@ -3,7 +3,7 @@ import { MethodItem } from "../Backend/Items/spMethodItem";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { State } from "./stateEnum";
 import { Range } from "vscode";
-import { searchForDefinesInString } from "./searchForDefinesInString";
+import { searchForTokensInString } from "./searchForTokensInString";
 import { parseDocComment } from "./parseDocComment";
 import {
   parentCounter,
@@ -115,7 +115,7 @@ export function readFunction(
     }
     if (!matchLastParenthesis) {
       addParamsDef(parser, line, nameMatch, line);
-      searchForDefinesInString(parser, line);
+      searchForTokensInString(parser, line);
       paramsMatch += line;
       pCount += getParenthesisCount(line);
       matchLastParenthesis = pCount === 0;

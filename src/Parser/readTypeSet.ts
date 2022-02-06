@@ -1,7 +1,7 @@
 ﻿import { Parser } from "./spParser";
 import { TypeSetItem } from "../Backend/Items/spTypesetItem";
 import { Range, Position } from "vscode";
-import { searchForDefinesInString } from "./searchForDefinesInString";
+import { searchForTokensInString } from "./searchForTokensInString";
 import { parseDocComment } from "./parseDocComment";
 
 export function readTypeSet(
@@ -20,7 +20,7 @@ export function readTypeSet(
     }
     line = parser.lines.shift();
     parser.lineNb++;
-    searchForDefinesInString(parser, line);
+    searchForTokensInString(parser, line);
     iter++;
   }
   let endMatch = line.match(/^\s*}/);

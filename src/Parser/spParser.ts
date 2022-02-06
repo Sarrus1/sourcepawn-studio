@@ -19,10 +19,14 @@ import { readTypeDef } from "./readTypeDef";
 import { readTypeSet } from "./readTypeSet";
 import { readFunction } from "./readFunction";
 import { consumeComment } from "./consumeComment";
-import { searchForDefinesInString } from "./searchForDefinesInString";
+import { searchForTokensInString } from "./searchForTokensInString";
 import { readMethodMap } from "./readMethodMap";
 import { manageState } from "./manageState";
 import { purgeCalls, positiveRange, parentCounter } from "./utils";
+import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
+import { DefineItem } from "../Backend/Items/spDefineItem";
+import { FunctionItem } from "../Backend/Items/spFunctionItem";
+import { MethodItem } from "../Backend/Items/spMethodItem";
 
 export function parseFile(
   file: string,
@@ -60,6 +64,13 @@ export function parseText(
   parser.parse();
 }
 
+interface TokensMaps {
+  enumMembersMap: Map<string, EnumMemberItem>;
+  definesMap: Map<string, DefineItem>;
+  functionsMap: Map<string, FunctionItem>;
+  methodsMap: Map<string, MethodItem>;
+}
+
 export class Parser {
   completions: FileItems;
   state: State[];
@@ -72,8 +83,7 @@ export class Parser {
   documents: Set<string>;
   lastFuncLine: number;
   lastFuncName: string;
-  definesMap: Map<string, string>;
-  enumMemberMap: Map<string, string>;
+  tokensMap: TokensMaps;
   macroArr: string[];
   itemsRepository: ItemsRepository;
   debugging: boolean;
@@ -98,11 +108,7 @@ export class Parser {
     this.lastFuncName = "";
     // Get all the items from the itemsRepository for this file
     let items = itemsRepository.getAllItems(URI.file(this.file));
-    this.definesMap = this.getAllMembers(items, CompletionItemKind.Constant);
-    this.enumMemberMap = this.getAllMembers(
-      items,
-      CompletionItemKind.EnumMember
-    );
+    this.tokensMap = this.getAllMembers(items);
     this.macroArr = this.getAllMacros(items);
     this.itemsRepository = itemsRepository;
     let debugSetting = Workspace.getConfiguration("sourcepawn").get(
@@ -118,7 +124,7 @@ export class Parser {
     let line: string;
     line = this.lines.shift();
     while (line !== undefined) {
-      searchForDefinesInString(this, line);
+      searchForTokensInString(this, line);
       this.interpLine(line);
       line = this.lines.shift();
       this.lineNb++;
@@ -325,31 +331,45 @@ export class Parser {
     return range;
   }
 
-  getAllMembers(
-    items: SPItem[],
-    kind: CompletionItemKind
-  ): Map<string, string> {
+  getAllMembers(items: SPItem[]): TokensMaps {
+    let tokensMaps: TokensMaps = {
+      enumMembersMap: new Map(),
+      definesMap: new Map(),
+      functionsMap: new Map(),
+      methodsMap: new Map(),
+    };
     if (items == undefined) {
-      return new Map();
+      return tokensMaps;
     }
-    let defines = new Map();
-    let workspaceFolder = Workspace.getWorkspaceFolder(URI.file(this.file));
-    let smHome =
-      Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
-        "SourcemodHome"
-      ) || "";
-    // Replace \ escaping in Windows
-    smHome = smHome.replace(/\\/g, "/");
-    if (smHome === "") {
-      return new Map();
-    }
-    for (let item of items) {
-      if (item.kind === kind) {
+    // const workspaceFolder = Workspace.getWorkspaceFolder(URI.file(this.file));
+    // let smHome =
+    //   Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
+    //     "SourcemodHome"
+    //   ) || "";
+    // // Replace \ escaping in Windows
+    // smHome = smHome.replace(/\\/g, "/");
+    // if (smHome === "") {
+    //   return tokensMaps;
+    // }
+    items.forEach((item) => {
+      if (
+        item.kind === CompletionItemKind.Constant &&
+        item.filePath !== undefined
+      ) {
         purgeCalls(item, this.file);
-        defines.set(item.name, item.filePath);
+        tokensMaps.definesMap.set(item.name, item as DefineItem);
+      } else if (item.kind === CompletionItemKind.EnumMember) {
+        purgeCalls(item, this.file);
+        tokensMaps.enumMembersMap.set(item.name, item as EnumMemberItem);
+      } else if (item.kind === CompletionItemKind.Function) {
+        purgeCalls(item, this.file);
+        tokensMaps.functionsMap.set(item.name, item as FunctionItem);
+      } else if (item.kind === CompletionItemKind.Method) {
+        purgeCalls(item, this.file);
+        tokensMaps.methodsMap.set(item.name, item as MethodItem);
       }
-    }
-    return defines;
+    });
+    return tokensMaps;
   }
 
   getAllMacros(items: SPItem[]): string[] {

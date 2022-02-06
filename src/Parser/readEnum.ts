@@ -5,7 +5,7 @@ import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { EnumItem } from "../Backend/Items/spEnumItem";
 import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
 import { State } from "./stateEnum";
-import { searchForDefinesInString } from "./searchForDefinesInString";
+import { searchForTokensInString } from "./searchForTokensInString";
 import { parseDocComment } from "./parseDocComment";
 import { addFullRange } from "./addFullRange";
 
@@ -54,7 +54,7 @@ export function readEnum(
       if (line === undefined) {
         return;
       }
-      searchForDefinesInString(parser, line);
+      searchForTokensInString(parser, line);
       i = 0;
       continue;
     }
@@ -65,7 +65,7 @@ export function readEnum(
         description += line.slice(i, i + endComMatch[1].length).trimEnd();
         isBlockComment = false;
         i += endComMatch[0].length;
-        searchForDefinesInString(
+        searchForTokensInString(
           parser,
           line.slice(i + endComMatch[1].length + 1),
           endComMatch[1].length
@@ -109,7 +109,7 @@ export function readEnum(
           if (line === undefined) {
             return;
           }
-          searchForDefinesInString(parser, line);
+          searchForTokensInString(parser, line);
           i = 0;
           continue;
         }
@@ -140,7 +140,7 @@ export function readEnum(
         parser.IsBuiltIn
       )
     );
-    searchForDefinesInString(parser, line);
+    searchForTokensInString(parser, line);
     i = iterMatch[0].length;
   }
 

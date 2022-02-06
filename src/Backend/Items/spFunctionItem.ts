@@ -8,6 +8,7 @@ import {
   SymbolKind,
   LocationLink,
   CompletionItemTag,
+  Location,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { basename } from "path";
@@ -24,6 +25,7 @@ export class FunctionItem implements SPItem {
   range: Range;
   fullRange: Range;
   IsBuiltIn: boolean;
+  calls: Location[];
   kind = CompletionItemKind.Function;
   type: string;
   deprecated: string | undefined;
@@ -50,6 +52,7 @@ export class FunctionItem implements SPItem {
     this.type = type;
     this.fullRange = fullRange;
     this.deprecated = deprecated;
+    this.calls = [];
   }
 
   toCompletionItem(): CompletionItem {

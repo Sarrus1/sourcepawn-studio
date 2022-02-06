@@ -35,6 +35,16 @@ export function semanticTokenProvider(
           }
         }
       }
+    } else if (item.kind === CompletionItemKind.Function) {
+      for (let call of item.calls) {
+        if (call.uri.fsPath === document.uri.fsPath) {
+          if (item.range.contains(call.range)) {
+            tokensBuilder.push(call.range, "function", ["declaration"]);
+          } else {
+            tokensBuilder.push(call.range, "function");
+          }
+        }
+      }
     }
   }
   return tokensBuilder.build();
