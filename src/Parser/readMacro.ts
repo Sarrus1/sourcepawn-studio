@@ -24,6 +24,7 @@ export function readMacro(
       parser.IsBuiltIn,
       range,
       "",
+      undefined,
       undefined
     )
   );
