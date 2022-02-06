@@ -11,6 +11,10 @@
 - Fixed workflow file templates.
 - Fixed a bug that would cause for loops to not be matched correctly.
 
+### Improved
+
+- Improved semantic highlighting.
+
 ## [3.0.15]
 
 ### Added

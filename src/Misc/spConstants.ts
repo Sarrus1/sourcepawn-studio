@@ -5,8 +5,8 @@ export const SP_MODE: DocumentFilter = {
   scheme: "file",
 };
 
-const tokenTypes = ["variable"];
-const tokenModifiers = ["readonly"];
+const tokenTypes = ["variable", "enumMember"];
+const tokenModifiers = ["readonly", "declaration"];
 export const SP_LEGENDS = new SemanticTokensLegend(tokenTypes, tokenModifiers);
 
 export const globalIdentifier = "$GLOBAL";

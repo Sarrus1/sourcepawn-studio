@@ -15,13 +15,24 @@ export function semanticTokenProvider(
   const tokensBuilder = new SemanticTokensBuilder(SP_LEGENDS);
   let allItems: SPItem[] = itemsRepo.getAllItems(document.uri);
   for (let item of allItems) {
-    if (
-      item.kind === CompletionItemKind.Constant ||
-      item.kind === CompletionItemKind.EnumMember
-    ) {
+    if (item.kind === CompletionItemKind.Constant) {
       for (let call of item.calls) {
         if (call.uri.fsPath === document.uri.fsPath) {
-          tokensBuilder.push(call.range, "variable", ["readonly"]);
+          if (item.range.contains(call.range)) {
+            tokensBuilder.push(call.range, "variable", ["declaration"]);
+          } else {
+            tokensBuilder.push(call.range, "variable", ["readonly"]);
+          }
+        }
+      }
+    } else if (item.kind === CompletionItemKind.EnumMember) {
+      for (let call of item.calls) {
+        if (call.uri.fsPath === document.uri.fsPath) {
+          if (item.range.contains(call.range)) {
+            tokensBuilder.push(call.range, "enumMember", ["declaration"]);
+          } else {
+            tokensBuilder.push(call.range, "enumMember", ["readonly"]);
+          }
         }
       }
     }
