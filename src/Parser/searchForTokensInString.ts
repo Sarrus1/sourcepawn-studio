@@ -4,7 +4,6 @@ import { URI } from "vscode-uri";
 import { Location } from "vscode";
 import { DefineItem } from "../Backend/Items/spDefineItem";
 import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
-import { constants } from "os";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
 
 export function searchForTokensInString(
@@ -65,12 +64,12 @@ export function searchForTokensInString(
         // Treat tokens from the current file differently or they will get
         // overwritten at the end of the parsing.
         if (defineFile === parser.file) {
-          let localItem = parser.completions.get(matchDefine[0]);
+          let localItem = parser.fileItems.get(matchDefine[0]);
           if (localItem === undefined) {
             continue;
           }
           localItem.calls.push(location);
-          parser.completions.set(matchDefine[0], localItem);
+          parser.fileItems.set(matchDefine[0], localItem);
           continue;
         }
         defineFile = defineFile.startsWith("file://")

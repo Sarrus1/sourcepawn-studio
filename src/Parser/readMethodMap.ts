@@ -23,5 +23,5 @@ export function readMethodMap(
     range,
     parser.IsBuiltIn
   );
-  parser.completions.set(match[1], methodMapCompletion);
+  parser.fileItems.set(match[1], methodMapCompletion);
 }

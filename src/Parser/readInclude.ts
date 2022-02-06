@@ -4,7 +4,7 @@ import { Parser } from "./spParser";
 export function readInclude(parser: Parser, match: RegExpMatchArray) {
   // Include guard to avoid extension crashs.
   if (isIncludeSelfFile(parser.file, match[1])) return;
-  parser.completions.resolveImport(
+  parser.fileItems.resolveImport(
     match[1],
     parser.documents,
     parser.file,

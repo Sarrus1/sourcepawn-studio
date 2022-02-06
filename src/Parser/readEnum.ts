@@ -5,7 +5,6 @@ import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { EnumItem } from "../Backend/Items/spEnumItem";
 import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
 import { State } from "./stateEnum";
-import { searchForTokensInString } from "./searchForTokensInString";
 import { parseDocComment } from "./parseDocComment";
 import { addFullRange } from "./addFullRange";
 
@@ -35,7 +34,7 @@ export function readEnum(
   const key = match[1]
     ? match[1]
     : `${parser.anonymousEnumCount}${basename(parser.file)}`;
-  parser.completions.set(key, enumCompletion);
+  parser.fileItems.set(key, enumCompletion);
 
   // Set max number of iterations for safety
   let iter = 0;
@@ -54,7 +53,6 @@ export function readEnum(
       if (line === undefined) {
         return;
       }
-      searchForTokensInString(parser, line);
       i = 0;
       continue;
     }
@@ -65,12 +63,7 @@ export function readEnum(
         description += line.slice(i, i + endComMatch[1].length).trimEnd();
         isBlockComment = false;
         i += endComMatch[0].length;
-        searchForTokensInString(
-          parser,
-          line.slice(i + endComMatch[1].length + 1),
-          endComMatch[1].length
-        );
-        let prevEnumMember: EnumMemberItem = parser.completions.get(
+        let prevEnumMember: EnumMemberItem = parser.fileItems.get(
           enumMemberName
         );
         if (prevEnumMember !== undefined) {
@@ -98,7 +91,7 @@ export function readEnum(
           continue;
         }
         if (line[i] == "/" && line[i + 1] == "/") {
-          let prevEnumMember: EnumMemberItem = parser.completions.get(
+          let prevEnumMember: EnumMemberItem = parser.fileItems.get(
             enumMemberName
           );
           if (prevEnumMember !== undefined) {
@@ -109,7 +102,6 @@ export function readEnum(
           if (line === undefined) {
             return;
           }
-          searchForTokensInString(parser, line);
           i = 0;
           continue;
         }
@@ -129,7 +121,7 @@ export function readEnum(
     }
     enumMemberName = iterMatch[1];
     let range = parser.makeDefinitionRange(enumMemberName, line);
-    parser.completions.set(
+    parser.fileItems.set(
       enumMemberName,
       new EnumMemberItem(
         enumMemberName,
@@ -140,7 +132,6 @@ export function readEnum(
         parser.IsBuiltIn
       )
     );
-    searchForTokensInString(parser, line);
     i = iterMatch[0].length;
   }
 
@@ -161,7 +152,7 @@ function parseEnumStruct(
     desc,
     range
   );
-  parser.completions.set(enumStructName, enumStructCompletion);
+  parser.fileItems.set(enumStructName, enumStructCompletion);
   parser.state.push(State.EnumStruct);
   parser.state_data = {
     name: enumStructName,

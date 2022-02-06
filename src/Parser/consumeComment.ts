@@ -1,7 +1,6 @@
 ﻿import { Parser } from "./spParser";
 import { CommentItem } from "../Backend/Items/spCommentItem";
 import { Range, Position } from "vscode";
-import { searchForTokensInString } from "./searchForTokensInString";
 
 export function consumeComment(
   parser: Parser,
@@ -40,11 +39,10 @@ export function consumeComment(
     current_line.length
   );
   let range = new Range(startPos, endPos);
-  parser.completions.set(
+  parser.fileItems.set(
     `comment${parser.lineNb}--${Math.random()}`,
     new CommentItem(parser.file, range)
   );
-  searchForTokensInString(parser, current_line);
   parser.interpLine(current_line);
   return;
 }

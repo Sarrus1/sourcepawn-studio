@@ -13,7 +13,7 @@ export function readTypeDef(
   let range = parser.makeDefinitionRange(name, line);
   let { description, params } = parseDocComment(parser);
   let fullRange = new Range(parser.lineNb, 0, parser.lineNb, line.length);
-  parser.completions.set(
+  parser.fileItems.set(
     name,
     new TypeDefItem(
       name,

@@ -20,7 +20,7 @@ export function readProperty(
     range,
     match[1]
   );
-  parser.completions.set(
+  parser.fileItems.set(
     name_match + parser.state_data.name,
     NewPropertyCompletion
   );

@@ -2,7 +2,7 @@
 import { Range } from "vscode";
 
 export function addFullRange(parser: Parser, key: string) {
-  let completion = parser.completions.get(key);
+  let completion = parser.fileItems.get(key);
   if (completion && completion.fullRange === undefined) {
     let range = completion.range;
     let fullRange = new Range(
@@ -12,6 +12,6 @@ export function addFullRange(parser: Parser, key: string) {
       1
     );
     completion.fullRange = fullRange;
-    parser.completions.set(key, completion);
+    parser.fileItems.set(key, completion);
   }
 }

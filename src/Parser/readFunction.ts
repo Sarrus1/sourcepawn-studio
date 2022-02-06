@@ -3,7 +3,6 @@ import { MethodItem } from "../Backend/Items/spMethodItem";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { State } from "./stateEnum";
 import { Range } from "vscode";
-import { searchForTokensInString } from "./searchForTokensInString";
 import { parseDocComment } from "./parseDocComment";
 import {
   parentCounter,
@@ -115,7 +114,6 @@ export function readFunction(
     }
     if (!matchLastParenthesis) {
       addParamsDef(parser, line, nameMatch, line);
-      searchForTokensInString(parser, line);
       paramsMatch += line;
       pCount += getParenthesisCount(line);
       matchLastParenthesis = pCount === 0;
@@ -161,7 +159,7 @@ export function readFunction(
       let end = range.start.line === parser.lineNb ? line.length : 0;
       fullRange = new Range(range.start.line, 0, parser.lineNb, end);
     }
-    parser.completions.set(
+    parser.fileItems.set(
       nameMatch + parser.state_data.name,
       new MethodItem(
         parser.state_data.name,
@@ -182,7 +180,7 @@ export function readFunction(
   }
   // For small files, the parsing is too fast and functions get overwritten by their own calls.
   // If we define a function somewhere, we won't redefine it elsewhere. We can safely ignore it.
-  if (parser.completions.get(nameMatch)) {
+  if (parser.fileItems.get(nameMatch)) {
     return;
   }
   let fullRange: Range;
@@ -190,7 +188,7 @@ export function readFunction(
     let end = range.start.line === parser.lineNb ? line.length : 0;
     fullRange = new Range(range.start.line, 0, parser.lineNb, end);
   }
-  parser.completions.set(
+  parser.fileItems.set(
     nameMatch,
     new FunctionItem(
       nameMatch,

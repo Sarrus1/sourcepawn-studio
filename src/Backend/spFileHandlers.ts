@@ -49,12 +49,20 @@ export function handleDocumentChange(
   itemsRepo.documents.add(fileUri);
   // We use parseText here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
   try {
-    parseText(event.document.getText(), filePath, fileItems, itemsRepo);
+    parseText(
+      event.document.getText(),
+      filePath,
+      fileItems,
+      itemsRepo,
+      false,
+      false
+    );
   } catch (error) {
     console.log(error);
   }
   readUnscannedImports(itemsRepo, fileItems.includes);
   itemsRepo.fileItems.set(fileUri, fileItems);
+  parseFile(event.document.uri.fsPath, fileItems, itemsRepo, true, false);
 }
 
 /**
@@ -79,12 +87,13 @@ export function newDocumentCallback(
   let fileItems: FileItems = new FileItems(uri.toString());
   itemsRepo.documents.add(uri.toString());
   try {
-    parseFile(filePath, fileItems, itemsRepo);
+    parseFile(filePath, fileItems, itemsRepo, false, false);
   } catch (error) {
     console.error(error);
   }
   readUnscannedImports(itemsRepo, fileItems.includes);
   itemsRepo.fileItems.set(uri.toString(), fileItems);
+  parseFile(uri.fsPath, fileItems, itemsRepo, true, false);
 }
 
 /**
@@ -113,7 +122,7 @@ function readUnscannedImports(
 
     let fileItems: FileItems = new FileItems(include.uri);
     try {
-      parseFile(filePath, fileItems, itemsRepo, include.IsBuiltIn);
+      parseFile(filePath, fileItems, itemsRepo, false, include.IsBuiltIn);
     } catch (err) {
       console.error(err, include.uri.toString());
     }
@@ -123,6 +132,7 @@ function readUnscannedImports(
     if (debug) console.log("added", include.uri.toString());
 
     readUnscannedImports(itemsRepo, fileItems.includes);
+    parseFile(filePath, fileItems, itemsRepo, true, false);
   });
 }
 

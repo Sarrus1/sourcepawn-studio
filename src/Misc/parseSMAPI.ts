@@ -48,7 +48,7 @@ export function parseSMApi(itemsRepo: ItemsRepository): void {
       if (debug) console.log("SM API Reading", file);
 
       let items = new FileItems(URI.file(file).toString());
-      parseFile(file, items, itemsRepo, true);
+      parseFile(file, items, itemsRepo, false, true);
 
       if (debug) console.log("SM API Done parsing", file);
 
@@ -57,6 +57,7 @@ export function parseSMApi(itemsRepo: ItemsRepository): void {
       itemsRepo.documents.add(uri);
 
       if (debug) console.log("SM API Done dealing with", uri);
+      parseFile(file, items, itemsRepo, true, true);
     } catch (e) {
       console.error(e);
     }

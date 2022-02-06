@@ -1,7 +1,6 @@
 ﻿import { Parser } from "./spParser";
 import { TypeSetItem } from "../Backend/Items/spTypesetItem";
 import { Range, Position } from "vscode";
-import { searchForTokensInString } from "./searchForTokensInString";
 import { parseDocComment } from "./parseDocComment";
 
 export function readTypeSet(
@@ -20,7 +19,6 @@ export function readTypeSet(
     }
     line = parser.lines.shift();
     parser.lineNb++;
-    searchForTokensInString(parser, line);
     iter++;
   }
   let endMatch = line.match(/^\s*}/);
@@ -28,7 +26,7 @@ export function readTypeSet(
     startPosition,
     new Position(parser.lineNb, endMatch[0].length)
   );
-  parser.completions.set(
+  parser.fileItems.set(
     name,
     new TypeSetItem(name, match[0], parser.file, description, range, fullRange)
   );

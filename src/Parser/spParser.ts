@@ -30,9 +30,10 @@ import { MethodItem } from "../Backend/Items/spMethodItem";
 
 export function parseFile(
   file: string,
-  completions: FileItems,
+  items: FileItems,
   itemsRepository: ItemsRepository,
-  IsBuiltIn: boolean = false
+  searchTokens: boolean,
+  IsBuiltIn: boolean
 ) {
   if (!existsSync(file)) {
     return;
@@ -46,22 +47,23 @@ export function parseFile(
     file = resolve(folderpath, match[0]);
     data = readFileSync(file, "utf-8");
   }
-  parseText(data, file, completions, itemsRepository, IsBuiltIn);
+  parseText(data, file, items, itemsRepository, searchTokens, IsBuiltIn);
 }
 
 export function parseText(
   data: string,
   file: string,
-  completions: FileItems,
+  items: FileItems,
   itemsRepository: ItemsRepository,
-  IsBuiltIn: boolean = false
+  searchTokens,
+  IsBuiltIn: boolean
 ) {
   if (data === undefined) {
     return; // Asked to parse empty file
   }
   let lines = data.split("\n");
-  let parser = new Parser(lines, file, IsBuiltIn, completions, itemsRepository);
-  parser.parse();
+  let parser = new Parser(lines, file, IsBuiltIn, items, itemsRepository);
+  parser.parse(searchTokens);
 }
 
 interface TokensMaps {
@@ -72,7 +74,8 @@ interface TokensMaps {
 }
 
 export class Parser {
-  completions: FileItems;
+  fileItems: FileItems;
+  items: SPItem[];
   state: State[];
   scratch: any;
   state_data: any;
@@ -97,7 +100,7 @@ export class Parser {
     completions: FileItems,
     itemsRepository: ItemsRepository
   ) {
-    this.completions = completions;
+    this.fileItems = completions;
     this.state = [State.None];
     this.lineNb = 0;
     this.lines = lines;
@@ -107,9 +110,8 @@ export class Parser {
     this.lastFuncLine = 0;
     this.lastFuncName = "";
     // Get all the items from the itemsRepository for this file
-    let items = itemsRepository.getAllItems(URI.file(this.file));
-    this.tokensMap = this.getAllMembers(items);
-    this.macroArr = this.getAllMacros(items);
+    this.items = itemsRepository.getAllItems(URI.file(this.file));
+    this.macroArr = this.getAllMacros(this.items);
     this.itemsRepository = itemsRepository;
     let debugSetting = Workspace.getConfiguration("sourcepawn").get(
       "trace.server"
@@ -118,14 +120,21 @@ export class Parser {
     this.anonymousEnumCount = 0;
   }
 
-  parse() {
-    // Always add "sourcemod.inc" as an include.
-    readInclude(this, "sourcemod".match(/(.*)/));
-    let line: string;
-    line = this.lines.shift();
+  parse(searchTokens: boolean): void {
+    let line = this.lines.shift();
+    if (!searchTokens) {
+      // Always add "sourcemod.inc" as an include.
+      readInclude(this, "sourcemod".match(/(.*)/));
+      while (line !== undefined) {
+        this.interpLine(line);
+        line = this.lines.shift();
+        this.lineNb++;
+      }
+      return;
+    }
+    this.tokensMap = this.getAllMembers(this.items);
     while (line !== undefined) {
       searchForTokensInString(this, line);
-      this.interpLine(line);
       line = this.lines.shift();
       this.lineNb++;
     }
@@ -141,7 +150,7 @@ export class Parser {
       let lineNb = this.lineNb < 1 ? 0 : this.lineNb;
       let start: number = line.search(/\/\//);
       let range = new Range(lineNb, start, lineNb, line.length);
-      this.completions.set(
+      this.fileItems.set(
         `comment${lineNb}--${Math.random()}`,
         new CommentItem(this.file, range)
       );
@@ -154,7 +163,7 @@ export class Parser {
       let start: number = line.search(/\/\*/);
       let end: number = line.search(/\*\//);
       let range = new Range(lineNb, start, lineNb, end);
-      this.completions.set(
+      this.fileItems.set(
         `comment${lineNb}--${Math.random()}`,
         new CommentItem(this.file, range)
       );

@@ -34,12 +34,12 @@ export function addVariableItem(
       parser.state.includes(State.Methodmap)) &&
     (parser.state.includes(State.Function) || isParamDef)
   ) {
-    parser.completions.set(
+    parser.fileItems.set(
       mapName + parser.lastFuncName,
       new VariableItem(name, parser.file, scope, range, type, enumStructName)
     );
   } else if (parser.state.includes(State.EnumStruct)) {
-    parser.completions.set(
+    parser.fileItems.set(
       mapName,
       new PropertyItem(
         parser.state_data.name,
@@ -52,7 +52,7 @@ export function addVariableItem(
       )
     );
   } else {
-    parser.completions.set(
+    parser.fileItems.set(
       mapName,
       new VariableItem(name, parser.file, scope, range, type, globalIdentifier)
     );
