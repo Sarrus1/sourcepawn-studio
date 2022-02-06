@@ -319,14 +319,12 @@ export class Parser {
     return;
   }
 
-  makeDefinitionRange(
-    name: string,
-    line: string,
-    search: boolean = true
-  ): Range {
-    let re: RegExp = new RegExp(`\\b${name}\\b`);
-    let start: number = search ? line.search(re) : 0;
-    let end: number = search ? start + name.length : 0;
+  makeDefinitionRange(name: string, line: string, func = false): Range {
+    let re: RegExp = new RegExp(
+      func ? `\\b${name}\\b\\s*\\(` : `\\b${name}\\b`
+    );
+    let start: number = line.search(re);
+    let end: number = start + name.length;
     var range = positiveRange(this.lineNb, start, end);
     return range;
   }

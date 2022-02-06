@@ -100,7 +100,7 @@ export function readFunction(
   let matchEnd = matchEndRegex.test(line);
   let pCount = getParenthesisCount(line);
   let matchLastParenthesis = pCount === 0;
-  let range = parser.makeDefinitionRange(nameMatch, line);
+  let range = parser.makeDefinitionRange(nameMatch, line, true);
 
   while (
     !(matchLastParenthesis && matchEnd) &&

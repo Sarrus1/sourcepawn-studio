@@ -46,6 +46,9 @@ export function searchForTokensInString(
       if (isBlockComment || isDoubleQuoteString || isSingleQuoteString) {
         continue;
       }
+      if (["float", "bool", "char", "int"].includes(matchDefine[0])) {
+        continue;
+      }
       item =
         parser.tokensMap.definesMap.get(matchDefine[0]) ||
         parser.tokensMap.enumMembersMap.get(matchDefine[0]) ||
@@ -73,16 +76,7 @@ export function searchForTokensInString(
         defineFile = defineFile.startsWith("file://")
           ? defineFile
           : URI.file(defineFile).toString();
-        // let items = parser.itemsRepository.fileItems.get(defineFile);
-        // if (items === undefined) {
-        //   continue;
-        // }
-        // let define = items.get(matchDefine[0]);
-        // if (define === undefined) {
-        //   continue;
-        // }
         item.calls.push(location);
-        //items.set(matchDefine[0], define);
       }
     }
   } while (matchDefine);
