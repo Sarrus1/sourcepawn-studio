@@ -100,7 +100,9 @@ export function newDocumentCallback(
   }
   readUnscannedImports(itemsRepo, fileItems.includes);
   itemsRepo.fileItems.set(uri.toString(), fileItems);
-  parseFile(uri.fsPath, fileItems, itemsRepo, true, false);
+  fileItems.includes.forEach((e) => {
+    parseFile(URI.parse(e.uri).fsPath, fileItems, itemsRepo, true, false);
+  });
 }
 
 /**
@@ -139,7 +141,6 @@ function readUnscannedImports(
     if (debug) console.log("added", include.uri.toString());
 
     readUnscannedImports(itemsRepo, fileItems.includes);
-    parseFile(filePath, fileItems, itemsRepo, true, false);
   });
 }
 
