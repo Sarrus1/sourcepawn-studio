@@ -6,21 +6,17 @@ import { DefineItem } from "../Backend/Items/spDefineItem";
 import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
 
-export function searchForTokensInString(
+export function searchForReferencesInString(
   parser: Parser,
   line: string,
   offset = 0
 ): void {
-  if (line === undefined) {
-    return;
-  }
   let isBlockComment = false;
   let isDoubleQuoteString = false;
   let isSingleQuoteString = false;
   let matchDefine: RegExpExecArray;
-  const re: RegExp = /(?:"|'|\/\/|\/\*|\*\/|\w+)/g;
+  const re = /(?:"|'|\/\/|\/\*|\*\/|\w+)/g;
   let item: DefineItem | EnumMemberItem | FunctionItem;
-  let defineFile: string;
   do {
     matchDefine = re.exec(line);
     if (matchDefine) {
@@ -49,33 +45,18 @@ export function searchForTokensInString(
         continue;
       }
       item =
-        parser.tokensMap.definesMap.get(matchDefine[0]) ||
-        parser.tokensMap.enumMembersMap.get(matchDefine[0]) ||
-        parser.tokensMap.functionsMap.get(matchDefine[0]);
+        parser.referencesMap.definesMap.get(matchDefine[0]) ||
+        parser.referencesMap.enumMembersMap.get(matchDefine[0]) ||
+        parser.referencesMap.functionsMap.get(matchDefine[0]);
 
       if (item !== undefined) {
-        defineFile = item.filePath;
-        let range = positiveRange(
+        const range = positiveRange(
           parser.lineNb,
           matchDefine.index + offset,
           matchDefine.index + matchDefine[0].length + offset
         );
-        let location = new Location(URI.file(parser.file), range);
-        // Treat tokens from the current file differently or they will get
-        // overwritten at the end of the parsing.
-        if (defineFile === parser.file) {
-          let localItem = parser.fileItems.get(matchDefine[0]);
-          if (localItem === undefined) {
-            continue;
-          }
-          localItem.calls.push(location);
-          parser.fileItems.set(matchDefine[0], localItem);
-          continue;
-        }
-        defineFile = defineFile.startsWith("file://")
-          ? defineFile
-          : URI.file(defineFile).toString();
-        item.calls.push(location);
+        const location = new Location(URI.file(parser.file), range);
+        item.references.push(location);
       }
     }
   } while (matchDefine);

@@ -4,9 +4,7 @@
   Location,
   ReferenceContext,
   Position,
-  CompletionItemKind,
 } from "vscode";
-import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 
 export function referencesProvider(
@@ -19,8 +17,8 @@ export function referencesProvider(
   const items = itemsRepo.getItemFromPosition(document, position);
   if (items.length > 0) {
     return items
-      .filter((e) => e.kind === CompletionItemKind.Function)
-      .map((e: FunctionItem) => e.toReferenceItem())
+      .filter((e) => e.references !== undefined)
+      .map((e) => e.references)
       .filter((e) => e !== undefined)
       .flat() as Location[];
   }

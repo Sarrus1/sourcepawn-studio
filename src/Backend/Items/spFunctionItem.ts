@@ -25,7 +25,7 @@ export class FunctionItem implements SPItem {
   range: Range;
   fullRange: Range;
   IsBuiltIn: boolean;
-  calls: Location[];
+  references: Location[];
   kind = CompletionItemKind.Function;
   type: string;
   deprecated: string | undefined;
@@ -52,7 +52,7 @@ export class FunctionItem implements SPItem {
     this.type = type;
     this.fullRange = fullRange;
     this.deprecated = deprecated;
-    this.calls = [];
+    this.references = [];
   }
 
   toCompletionItem(): CompletionItem {
@@ -98,7 +98,7 @@ export class FunctionItem implements SPItem {
   }
 
   toReferenceItem(): Location[] {
-    return this.calls.map((e) => new Location(e.uri, e.range));
+    return this.references;
   }
 
   toDocumentSymbol(): DocumentSymbol | undefined {

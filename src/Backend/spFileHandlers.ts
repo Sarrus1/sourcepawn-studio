@@ -62,7 +62,14 @@ export function handleDocumentChange(
   }
   readUnscannedImports(itemsRepo, fileItems.includes);
   itemsRepo.fileItems.set(fileUri, fileItems);
-  parseFile(event.document.uri.fsPath, fileItems, itemsRepo, true, false);
+  parseText(
+    event.document.getText(),
+    filePath,
+    fileItems,
+    itemsRepo,
+    true,
+    false
+  );
 }
 
 /**
@@ -144,7 +151,7 @@ function readUnscannedImports(
  */
 export function getAllPossibleIncludeFolderPaths(
   uri: URI,
-  onlyOptionalPaths: boolean = false
+  onlyOptionalPaths = false
 ): string[] {
   let possibleIncludePaths: string[] = [];
   const workspaceFolder = Workspace.getWorkspaceFolder(uri);

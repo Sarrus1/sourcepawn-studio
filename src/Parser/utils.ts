@@ -4,11 +4,10 @@ import { basename } from "path";
 import { URI } from "vscode-uri";
 
 export function purgeCalls(item: SPItem, file: string): void {
-  let uri = URI.file(file);
-  if (item.calls === undefined) return;
-  item.calls = item.calls.filter((e) => {
-    uri === e.uri;
-  });
+  if (item.references === undefined) {
+    return;
+  }
+  item.references = item.references.filter((e) => file !== e.uri.fsPath);
 }
 
 export function positiveRange(

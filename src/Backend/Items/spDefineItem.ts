@@ -21,7 +21,7 @@ export class DefineItem implements SPItem {
   kind = CompletionItemKind.Constant;
   IsBuiltIn: boolean;
   range: Range;
-  calls: Location[];
+  references: Location[];
   fullRange: Range;
 
   constructor(
@@ -38,7 +38,7 @@ export class DefineItem implements SPItem {
     this.description = description;
     this.filePath = file;
     this.range = range;
-    this.calls = [];
+    this.references = [];
     this.IsBuiltIn = IsBuiltIn;
     this.fullRange = fullRange;
   }

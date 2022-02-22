@@ -3,7 +3,7 @@ import { dirname, resolve } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
 
-import { Include } from "./Items/spItems";
+import { Include, SPItem } from "./Items/spItems";
 import { KeywordItem } from "./Items/spKeywordItem";
 import { ConstantItem } from "./Items/spConstantItem";
 import {
@@ -12,7 +12,7 @@ import {
 } from "../Providers/spDefaultItems";
 import { getIncludeExtension } from "./spUtils";
 
-export class FileItems extends Map {
+export class FileItems extends Map<string, SPItem> {
   includes: Include[];
   uri: string;
 

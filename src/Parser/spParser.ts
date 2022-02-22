@@ -1,4 +1,9 @@
-import { CompletionItemKind, Range, workspace as Workspace } from "vscode";
+import {
+  CompletionItemKind,
+  Range,
+  workspace as Workspace,
+  Location,
+} from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { URI } from "vscode-uri";
@@ -19,7 +24,7 @@ import { readTypeDef } from "./readTypeDef";
 import { readTypeSet } from "./readTypeSet";
 import { readFunction } from "./readFunction";
 import { consumeComment } from "./consumeComment";
-import { searchForTokensInString } from "./searchForTokensInString";
+import { searchForReferencesInString } from "./searchForReferencesInString";
 import { readMethodMap } from "./readMethodMap";
 import { manageState } from "./manageState";
 import { purgeCalls, positiveRange, parentCounter } from "./utils";
@@ -86,7 +91,7 @@ export class Parser {
   documents: Set<string>;
   lastFuncLine: number;
   lastFuncName: string;
-  tokensMap: TokensMaps;
+  referencesMap: TokensMaps;
   macroArr: string[];
   itemsRepository: ItemsRepository;
   debugging: boolean;
@@ -120,9 +125,25 @@ export class Parser {
     this.anonymousEnumCount = 0;
   }
 
-  parse(searchTokens: boolean): void {
+  parse(searchReferences: boolean): void {
     let line = this.lines.shift();
-    if (!searchTokens) {
+    if (!searchReferences) {
+      let uri = URI.file(this.file);
+      let oldFileItems = this.itemsRepository.fileItems.get(uri.toString());
+      let oldRefs = new Map<string, Location[]>();
+      if (oldFileItems !== undefined) {
+        oldFileItems.forEach((v: SPItem, k) => {
+          if (v.references !== undefined && v.references.length > 0) {
+            let oldItemRefs = v.references.filter(
+              (e) => e.uri.fsPath !== this.file
+            );
+            if (oldItemRefs.length > 0) {
+              oldRefs.set(k, oldItemRefs);
+            }
+          }
+        });
+      }
+
       // Always add "sourcemod.inc" as an include.
       readInclude(this, "sourcemod".match(/(.*)/));
       while (line !== undefined) {
@@ -130,11 +151,17 @@ export class Parser {
         line = this.lines.shift();
         this.lineNb++;
       }
+      oldRefs.forEach((v, k) => {
+        let item = this.fileItems.get(k);
+        if (item !== undefined) {
+          item.references.push(...v);
+        }
+      });
       return;
     }
-    this.tokensMap = this.getAllMembers(this.items);
+    this.referencesMap = this.getAllMembers(this.items);
     while (line !== undefined) {
-      searchForTokensInString(this, line);
+      searchForReferencesInString(this, line);
       line = this.lines.shift();
       this.lineNb++;
     }

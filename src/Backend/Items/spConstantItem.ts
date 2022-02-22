@@ -5,11 +5,11 @@ import { SPItem } from "./spItems";
 export class ConstantItem implements SPItem {
   name: string;
   kind = CompletionItemKind.Constant;
-  calls: Location[];
+  references: Location[];
 
   constructor(name: string) {
     this.name = name;
-    this.calls = [];
+    this.references = [];
   }
 
   toCompletionItem(): CompletionItem {
