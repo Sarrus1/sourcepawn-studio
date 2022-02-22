@@ -31,7 +31,8 @@ import { purgeCalls, positiveRange, parentCounter } from "./utils";
 import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
 import { DefineItem } from "../Backend/Items/spDefineItem";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
-import { MethodItem } from "../Backend/Items/spMethodItem";
+import { VariableItem } from "../Backend/Items/spVariableItem";
+import { globalIdentifier } from "../Misc/spConstants";
 
 export function parseFile(
   file: string,
@@ -71,13 +72,6 @@ export function parseText(
   parser.parse(searchTokens);
 }
 
-interface TokensMaps {
-  enumMembersMap: Map<string, EnumMemberItem>;
-  definesMap: Map<string, DefineItem>;
-  functionsMap: Map<string, FunctionItem>;
-  methodsMap: Map<string, MethodItem>;
-}
-
 export class Parser {
   fileItems: FileItems;
   items: SPItem[];
@@ -91,7 +85,7 @@ export class Parser {
   documents: Set<string>;
   lastFuncLine: number;
   lastFuncName: string;
-  referencesMap: TokensMaps;
+  referencesMap: Map<string, SPItem>;
   macroArr: string[];
   itemsRepository: ItemsRepository;
   debugging: boolean;
@@ -365,42 +359,26 @@ export class Parser {
     return range;
   }
 
-  getAllMembers(items: SPItem[]): TokensMaps {
-    let tokensMaps: TokensMaps = {
-      enumMembersMap: new Map(),
-      definesMap: new Map(),
-      functionsMap: new Map(),
-      methodsMap: new Map(),
-    };
+  getAllMembers(items: SPItem[]): Map<string, SPItem> {
+    let tokensMaps = new Map<string, SPItem>();
     if (items == undefined) {
       return tokensMaps;
     }
-    // const workspaceFolder = Workspace.getWorkspaceFolder(URI.file(this.file));
-    // let smHome =
-    //   Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
-    //     "SourcemodHome"
-    //   ) || "";
-    // // Replace \ escaping in Windows
-    // smHome = smHome.replace(/\\/g, "/");
-    // if (smHome === "") {
-    //   return tokensMaps;
-    // }
+    const CEF = [
+      CompletionItemKind.Constant,
+      CompletionItemKind.EnumMember,
+      CompletionItemKind.Function,
+    ];
     items.forEach((item) => {
-      if (
-        item.kind === CompletionItemKind.Constant &&
-        item.filePath !== undefined
+      if (CEF.includes(item.kind)) {
+        purgeCalls(item, this.file);
+        tokensMaps.set(item.name, item);
+      } else if (
+        item.kind === CompletionItemKind.Variable &&
+        item.parent === globalIdentifier
       ) {
         purgeCalls(item, this.file);
-        tokensMaps.definesMap.set(item.name, item as DefineItem);
-      } else if (item.kind === CompletionItemKind.EnumMember) {
-        purgeCalls(item, this.file);
-        tokensMaps.enumMembersMap.set(item.name, item as EnumMemberItem);
-      } else if (item.kind === CompletionItemKind.Function) {
-        purgeCalls(item, this.file);
-        tokensMaps.functionsMap.set(item.name, item as FunctionItem);
-      } else if (item.kind === CompletionItemKind.Method) {
-        purgeCalls(item, this.file);
-        tokensMaps.methodsMap.set(item.name, item as MethodItem);
+        tokensMaps.set(item.name, item);
       }
     });
     return tokensMaps;

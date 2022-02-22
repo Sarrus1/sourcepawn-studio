@@ -16,7 +16,7 @@ export function addVariableItem(
     return;
   }
   let range = parser.makeDefinitionRange(name, line);
-  let scope: string = globalIdentifier;
+  let scope = globalIdentifier;
   let enumStructName: string;
   if (parser.state.includes(State.EnumStruct)) {
     enumStructName = parser.state_data.name;

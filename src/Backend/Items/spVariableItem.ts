@@ -2,11 +2,11 @@ import {
   CompletionItemKind,
   Range,
   CompletionItem,
-  SignatureInformation,
   Hover,
   DocumentSymbol,
   SymbolKind,
   LocationLink,
+  Location,
 } from "vscode";
 import { URI } from "vscode-uri";
 
@@ -20,6 +20,7 @@ export class VariableItem implements SPItem {
   parent: string;
   range: Range;
   type: string;
+  references?: Location[];
   enumStructName: string;
 
   constructor(
@@ -36,6 +37,7 @@ export class VariableItem implements SPItem {
     this.range = range;
     this.type = type;
     this.enumStructName = enumStruct;
+    this.references = [];
   }
 
   toCompletionItem(lastFuncName?: string): CompletionItem | undefined {

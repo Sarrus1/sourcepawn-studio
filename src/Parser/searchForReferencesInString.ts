@@ -2,9 +2,6 @@
 import { positiveRange } from "./utils";
 import { URI } from "vscode-uri";
 import { Location } from "vscode";
-import { DefineItem } from "../Backend/Items/spDefineItem";
-import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
-import { FunctionItem } from "../Backend/Items/spFunctionItem";
 
 export function searchForReferencesInString(
   parser: Parser,
@@ -16,7 +13,6 @@ export function searchForReferencesInString(
   let isSingleQuoteString = false;
   let matchDefine: RegExpExecArray;
   const re = /(?:"|'|\/\/|\/\*|\*\/|\w+)/g;
-  let item: DefineItem | EnumMemberItem | FunctionItem;
   do {
     matchDefine = re.exec(line);
     if (matchDefine) {
@@ -44,10 +40,7 @@ export function searchForReferencesInString(
       if (["float", "bool", "char", "int"].includes(matchDefine[0])) {
         continue;
       }
-      item =
-        parser.referencesMap.definesMap.get(matchDefine[0]) ||
-        parser.referencesMap.enumMembersMap.get(matchDefine[0]) ||
-        parser.referencesMap.functionsMap.get(matchDefine[0]);
+      let item = parser.referencesMap.get(matchDefine[0]);
 
       if (item !== undefined) {
         const range = positiveRange(
