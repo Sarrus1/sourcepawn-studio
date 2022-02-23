@@ -95,12 +95,20 @@ export class MethodItem implements SPItem {
       return new Hover([
         { language: "sourcepawn", value: this.detail },
         `[Online Documentation](https://sourcemod.dev/#/${filename}/methodmap.${this.parent}/function.${this.name})`,
-        descriptionToMD(`${this.description}\nDEPRECATED ${this.deprecated}`),
+        descriptionToMD(
+          `${this.description}${
+            this.deprecated ? `\nDEPRECATED ${this.deprecated}` : ""
+          }`
+        ),
       ]);
     }
     return new Hover([
       { language: "sourcepawn", value: this.detail },
-      descriptionToMD(`${this.description}\nDEPRECATED ${this.deprecated}`),
+      descriptionToMD(
+        `${this.description}${
+          this.deprecated ? `\nDEPRECATED ${this.deprecated}` : ""
+        }`
+      ),
     ]);
   }
 
