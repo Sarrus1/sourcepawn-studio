@@ -21,6 +21,11 @@ export function handleReferenceInParser(
       match.index + this.offset,
       match.index + match[0].length + this.offset
     );
+
+    // Prevent double references.
+    if (item.range.isEqual(range)) {
+      return;
+    }
     const location = new Location(URI.file(this.parser.file), range);
     item.references.push(location);
     this.previousItems.push(item);

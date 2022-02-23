@@ -12,6 +12,7 @@
   LocationLink,
   Location,
   ReferenceContext,
+  WorkspaceEdit,
 } from "vscode";
 import { ItemsRepository } from "./spItemsRepository";
 import { JsDocCompletionProvider } from "../Providers/spDocCompletions";
@@ -22,6 +23,7 @@ import { symbolProvider } from "../Providers/spSymbolProvider";
 import { completionProvider } from "../Providers/spCompletionProvider";
 import { semanticTokenProvider } from "../Providers/spSemanticTokenProvider";
 import { referencesProvider } from "../Providers/spReferencesProvider";
+import { renameProvider } from "../Providers/spRenameProvider";
 
 export class Providers {
   documentationProvider: JsDocCompletionProvider;
@@ -88,6 +90,27 @@ export class Providers {
       position,
       document,
       context,
+      token
+    );
+  }
+
+  /*public async prepareRename(
+    document: TextDocument,
+    position: Position,
+    token: CancellationToken
+  ): Promise<Range | { placeholder: string; range: Range }> {}*/
+
+  public async provideRenameEdits(
+    document: TextDocument,
+    position: Position,
+    newName: string,
+    token: CancellationToken
+  ): Promise<WorkspaceEdit> {
+    return renameProvider(
+      this.itemsRepository,
+      position,
+      document,
+      newName,
       token
     );
   }

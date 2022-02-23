@@ -57,6 +57,7 @@ export function referencesProvider(
     .filter((e) => e !== undefined)
     .flat();
 }
+
 /**
  * Callback function for the `searchForReferencesInString` function when searching for local variable references.
  * @param  {{references:Location[];name:string;lineNb:number;uri:URI}} this

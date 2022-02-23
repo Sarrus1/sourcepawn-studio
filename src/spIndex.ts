@@ -165,6 +165,10 @@ export function activate(context: ExtensionContext) {
   );
 
   context.subscriptions.push(
+    languages.registerRenameProvider(SP_MODE, providers)
+  );
+
+  context.subscriptions.push(
     languages.registerDocumentFormattingEditProvider(
       {
         language: "sourcepawn",
