@@ -11,6 +11,7 @@ import { getAllPossibleIncludeFolderPaths } from "./spFileHandlers";
 import { ItemsRepository } from "./spItemsRepository";
 import { findMainPath } from "../spUtils";
 import { getIncludeExtension } from "./spUtils";
+import { globalIdentifier } from "../Misc/spConstants";
 
 /**
  * Returns an array of all the items parsed from a file and its known includes.
@@ -97,17 +98,32 @@ export function getItemFromPosition(
   if (includeItem.length > 0) {
     return includeItem;
   }
-  return allItems.filter((e) => {
-    if (e.name === word) {
-      if (e.range !== undefined && range.isEqual(e.range)) {
-        return true;
-      }
-      if (e.references !== undefined) {
-        return e.references.find((e) => range.isEqual(e.range)) !== undefined;
-      }
+  let items = allItems.filter((e) => {
+    if (e.name !== word) {
+      return false;
+    }
+    if (
+      e.kind === CompletionItemKind.Variable &&
+      e.parent !== globalIdentifier &&
+      allItems.find(
+        (e1) =>
+          e1.kind === CompletionItemKind.Function &&
+          e1.name === e.parent &&
+          e1.fullRange.contains(position) &&
+          e1.filePath === document.uri.fsPath
+      )
+    ) {
+      return true;
+    }
+    if (e.range !== undefined && range.isEqual(e.range)) {
+      return true;
+    }
+    if (e.references !== undefined) {
+      return e.references.find((e) => range.isEqual(e.range)) !== undefined;
     }
     return false;
   });
+  return items;
 }
 
 /**
