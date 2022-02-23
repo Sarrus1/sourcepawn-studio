@@ -5,11 +5,13 @@
 ### Added
 
 - Added deprecated functions and methods support.
+- Added support for references provider.
 
 ### Fixed
 
 - Fixed workflow file templates.
 - Fixed a bug that would cause for loops to not be matched correctly.
+- Fixed a bug involving signatures when using references in variables (see #206).
 
 ### Improved
 

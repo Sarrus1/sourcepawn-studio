@@ -38,7 +38,7 @@ export function getParamsFromDeclaration(decl: string): FunctionParam[] {
   // Remove the leading and trailing parenthesis
   decl = match[1] + ",";
   let params: FunctionParam[] = [];
-  let re = /\s*(?:(?:const|static)\s+)?(?:(\w+)(?:\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+|\s*\:\s*))?(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
+  let re = /\s*(?:(?:const|static)\s+)?(?:(\w+)(?:\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+|\s*\:\s*|\s*&?\s*))?(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
   let matchVariable;
   do {
     matchVariable = re.exec(decl);
