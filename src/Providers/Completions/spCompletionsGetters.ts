@@ -122,6 +122,7 @@ export function getCompletionListFromPosition(
     lastFunc,
     lastEnumStructOrMethodMap
   );
+
   const variableTypes = getAllInheritances(variableType, allItems);
 
   const isMethodMap =

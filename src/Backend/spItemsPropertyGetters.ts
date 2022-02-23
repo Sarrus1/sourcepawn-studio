@@ -47,6 +47,7 @@ export function getTypeOfVariable(
     variableType = words[words.length - 1];
   } else {
     if (
+      lastEnumStructOrMethodMap !== undefined &&
       lastEnumStructOrMethodMap.parent !== globalIdentifier &&
       words[words.length - 1] === "this"
     ) {
