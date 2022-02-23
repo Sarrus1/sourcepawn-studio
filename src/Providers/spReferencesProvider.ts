@@ -40,16 +40,12 @@ export function referencesProvider(
     const text = document.getText(func.fullRange).split("\n");
     let lineNb = func.fullRange.start.line;
     for (let line of text) {
-      searchForReferencesInString.call(
-        {
-          references: references,
-          name: items[0].name,
-          lineNb: lineNb,
-          uri: document.uri,
-        },
-        line,
-        handleReferencesInProvider
-      );
+      searchForReferencesInString(line, handleReferencesInProvider, {
+        references: references,
+        name: items[0].name,
+        lineNb: lineNb,
+        uri: document.uri,
+      });
       lineNb++;
     }
     return references;

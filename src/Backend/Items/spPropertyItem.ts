@@ -2,11 +2,11 @@ import {
   CompletionItemKind,
   Range,
   CompletionItem,
-  SignatureInformation,
   Hover,
   DocumentSymbol,
   SymbolKind,
   LocationLink,
+  Location,
 } from "vscode";
 import { URI } from "vscode-uri";
 
@@ -22,6 +22,7 @@ export class PropertyItem implements SPItem {
   detail: string;
   kind = CompletionItemKind.Property;
   range: Range;
+  references: Location[];
   fullRange: Range;
 
   constructor(
@@ -40,6 +41,7 @@ export class PropertyItem implements SPItem {
     this.range = range;
     this.type = type;
     this.detail = detail;
+    this.references = [];
   }
 
   toCompletionItem(): CompletionItem {

@@ -7,46 +7,48 @@
  * The callbackfn handles what to do if a word if found. It handles the search for the corresponding variable.
  * @param  {string} line  The line to analyse.
  * @param  {referencesSearchCallback} callbackfn  The callback function which handles the search.
+ * @param  {any} thisArgs The this context that will be passed to the callback function.
  * @returns void
  */
 export function searchForReferencesInString(
   line: string,
-  callbackfn: referencesSearchCallback
+  callbackfn: referencesSearchCallback,
+  thisArgs: any
 ): void {
   let isBlockComment = false;
   let isDoubleQuoteString = false;
   let isSingleQuoteString = false;
-  let matchDefine: RegExpExecArray;
+  let match: RegExpExecArray;
   const re = /(?:"|'|\/\/|\/\*|\*\/|\w+)/g;
+  thisArgs.previousItems = [];
+  thisArgs.line = line;
   do {
-    matchDefine = re.exec(line);
-    if (matchDefine) {
-      if (matchDefine[0] === '"' && !isSingleQuoteString) {
+    match = re.exec(line);
+    if (match) {
+      if (match[0] === '"' && !isSingleQuoteString) {
         isDoubleQuoteString = !isDoubleQuoteString;
-      } else if (matchDefine[0] === "'" && !isDoubleQuoteString) {
+      } else if (match[0] === "'" && !isDoubleQuoteString) {
         isSingleQuoteString = !isSingleQuoteString;
       } else if (
-        matchDefine[0] === "//" &&
+        match[0] === "//" &&
         !isDoubleQuoteString &&
         !isSingleQuoteString
       ) {
         break;
       } else if (
-        matchDefine[0] === "/*" ||
-        (matchDefine[0] === "*/" &&
-          !isDoubleQuoteString &&
-          !isSingleQuoteString)
+        match[0] === "/*" ||
+        (match[0] === "*/" && !isDoubleQuoteString && !isSingleQuoteString)
       ) {
         isBlockComment = !isBlockComment;
       }
       if (isBlockComment || isDoubleQuoteString || isSingleQuoteString) {
         continue;
       }
-      if (["float", "bool", "char", "int"].includes(matchDefine[0])) {
+      if (["float", "bool", "char", "int"].includes(match[0])) {
         continue;
       }
-      callbackfn.call(this, matchDefine);
+      callbackfn.call(thisArgs, match);
     }
-  } while (matchDefine);
+  } while (match);
   return;
 }

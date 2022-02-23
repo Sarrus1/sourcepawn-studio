@@ -5,6 +5,7 @@ import {
   SignatureInformation,
   Hover,
   LocationLink,
+  Location,
 } from "vscode";
 import { URI } from "vscode-uri";
 
@@ -20,6 +21,7 @@ export class EnumStructMemberItem implements SPItem {
   type: string;
   kind = CompletionItemKind.Property;
   parent: string;
+  references: Location[];
   range: Range;
 
   constructor(
@@ -37,6 +39,7 @@ export class EnumStructMemberItem implements SPItem {
     this.range = range;
     this.parent = EnumStruct.name;
     this.type = type;
+    this.references = [];
   }
 
   toCompletionItem(): CompletionItem {

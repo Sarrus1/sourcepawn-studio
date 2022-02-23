@@ -8,6 +8,7 @@ import {
   SymbolKind,
   LocationLink,
   CompletionItemTag,
+  Location,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { basename } from "path";
@@ -27,6 +28,7 @@ export class MethodItem implements SPItem {
   range: Range;
   IsBuiltIn: boolean;
   filePath: string;
+  references: Location[];
   deprecated: string | undefined;
 
   constructor(
@@ -57,6 +59,7 @@ export class MethodItem implements SPItem {
     this.range = range;
     this.fullRange = fullRange;
     this.deprecated = deprecated;
+    this.references = [];
   }
 
   toCompletionItem(): CompletionItem {

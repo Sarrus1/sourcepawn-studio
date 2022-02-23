@@ -150,13 +150,12 @@ export class Parser {
       });
       return;
     }
-    this.referencesMap = this.getTokensMap(this.items);
+    this.referencesMap = this.getReferencesMap(this.items);
     while (line !== undefined) {
-      searchForReferencesInString.call(
-        { parser: this, offset: 0 },
-        line,
-        handleReferenceInParser
-      );
+      searchForReferencesInString(line, handleReferenceInParser, {
+        parser: this,
+        offset: 0,
+      });
       line = this.lines.shift();
       this.lineNb++;
     }
@@ -360,18 +359,27 @@ export class Parser {
     return range;
   }
 
-  getTokensMap(items: SPItem[]): Map<string, SPItem> {
+  getReferencesMap(items: SPItem[]): Map<string, SPItem> {
     let tokensMaps = new Map<string, SPItem>();
     if (items == undefined) {
       return tokensMaps;
     }
+
+    const disallowedKinds = [
+      CompletionItemKind.Method,
+      CompletionItemKind.Property,
+    ];
+
     items.forEach((item) => {
       if (item.kind === CompletionItemKind.Variable) {
         if (item.parent === globalIdentifier) {
           purgeCalls(item, this.file);
           tokensMaps.set(item.name, item);
         }
-      } else if (item.references !== undefined) {
+      } else if (
+        !disallowedKinds.includes(item.kind) &&
+        item.references !== undefined
+      ) {
         purgeCalls(item, this.file);
         tokensMaps.set(item.name, item);
       }
