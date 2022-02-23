@@ -13,6 +13,7 @@
   Location,
   ReferenceContext,
   WorkspaceEdit,
+  Range,
 } from "vscode";
 import { ItemsRepository } from "./spItemsRepository";
 import { JsDocCompletionProvider } from "../Providers/spDocCompletions";
@@ -24,6 +25,7 @@ import { completionProvider } from "../Providers/spCompletionProvider";
 import { semanticTokenProvider } from "../Providers/spSemanticTokenProvider";
 import { referencesProvider } from "../Providers/spReferencesProvider";
 import { renameProvider } from "../Providers/spRenameProvider";
+import { getItemFromPosition } from "./spItemsGetters";
 
 export class Providers {
   documentationProvider: JsDocCompletionProvider;
@@ -94,11 +96,17 @@ export class Providers {
     );
   }
 
-  /*public async prepareRename(
+  public async prepareRename(
     document: TextDocument,
     position: Position,
     token: CancellationToken
-  ): Promise<Range | { placeholder: string; range: Range }> {}*/
+  ): Promise<Range> {
+    let items = getItemFromPosition(this.itemsRepository, document, position);
+    if (items.length > 0) {
+      return items[0].range;
+    }
+    throw "This symbol cannot be renamed.";
+  }
 
   public async provideRenameEdits(
     document: TextDocument,
