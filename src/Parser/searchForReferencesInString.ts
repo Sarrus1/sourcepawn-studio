@@ -1,12 +1,17 @@
-﻿import { Parser } from "./spParser";
-import { positiveRange } from "./utils";
-import { URI } from "vscode-uri";
-import { Location } from "vscode";
+﻿export type referencesSearchCallback = (match: RegExpExecArray) => void;
 
+/**
+ * Given a line of text, find references to items and save those references,
+ * and ignore words in strings, and comments.
+ *
+ * The callbackfn handles what to do if a word if found. It handles the search for the corresponding variable.
+ * @param  {string} line  The line to analyse.
+ * @param  {referencesSearchCallback} callbackfn  The callback function which handles the search.
+ * @returns void
+ */
 export function searchForReferencesInString(
-  parser: Parser,
   line: string,
-  offset = 0
+  callbackfn: referencesSearchCallback
 ): void {
   let isBlockComment = false;
   let isDoubleQuoteString = false;
@@ -40,17 +45,7 @@ export function searchForReferencesInString(
       if (["float", "bool", "char", "int"].includes(matchDefine[0])) {
         continue;
       }
-      let item = parser.referencesMap.get(matchDefine[0]);
-
-      if (item !== undefined) {
-        const range = positiveRange(
-          parser.lineNb,
-          matchDefine.index + offset,
-          matchDefine.index + matchDefine[0].length + offset
-        );
-        const location = new Location(URI.file(parser.file), range);
-        item.references.push(location);
-      }
+      callbackfn.call(this, matchDefine);
     }
   } while (matchDefine);
   return;

@@ -25,6 +25,7 @@ import { readTypeSet } from "./readTypeSet";
 import { readFunction } from "./readFunction";
 import { consumeComment } from "./consumeComment";
 import { searchForReferencesInString } from "./searchForReferencesInString";
+import { handleReferenceInParser } from "./handleReferencesInParser";
 import { readMethodMap } from "./readMethodMap";
 import { manageState } from "./manageState";
 import { purgeCalls, positiveRange, parentCounter } from "./utils";
@@ -151,7 +152,11 @@ export class Parser {
     }
     this.referencesMap = this.getTokensMap(this.items);
     while (line !== undefined) {
-      searchForReferencesInString(this, line);
+      searchForReferencesInString.call(
+        { parser: this, offset: 0 },
+        line,
+        handleReferenceInParser
+      );
       line = this.lines.shift();
       this.lineNb++;
     }

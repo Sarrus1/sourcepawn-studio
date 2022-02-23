@@ -14,8 +14,12 @@ export function semanticTokenProvider(
 ): SemanticTokens {
   const tokensBuilder = new SemanticTokensBuilder(SP_LEGENDS);
   let allItems: SPItem[] = itemsRepo.getAllItems(document.uri);
+
   for (let item of allItems) {
-    if (item.kind === CompletionItemKind.Constant) {
+    if (
+      item.kind === CompletionItemKind.Constant &&
+      item.references !== undefined
+    ) {
       for (let call of item.references) {
         if (call.uri.fsPath === document.uri.fsPath) {
           tokensBuilder.push(call.range, "variable", ["readonly"]);
