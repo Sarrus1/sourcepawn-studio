@@ -157,7 +157,7 @@ export function readFunction(
     let fullRange: Range;
     if (isNativeOrForward) {
       let end = range.start.line === parser.lineNb ? line.length : 0;
-      fullRange = new Range(range.start.line, 0, parser.lineNb, end);
+      fullRange = new Range(range.start.line, match.index, parser.lineNb, end);
     }
     parser.fileItems.set(
       nameMatch + parser.state_data.name,
@@ -186,7 +186,14 @@ export function readFunction(
   let fullRange: Range;
   if (isNativeOrForward) {
     let end = range.start.line === parser.lineNb ? line.length : 0;
-    fullRange = new Range(range.start.line, 0, parser.lineNb, end);
+    fullRange = new Range(range.start.line, match.index, parser.lineNb, end);
+  } else {
+    fullRange = new Range(
+      range.start.line,
+      match.index,
+      parser.lineNb,
+      match.index + match[0].length
+    );
   }
   parser.fileItems.set(
     nameMatch,
