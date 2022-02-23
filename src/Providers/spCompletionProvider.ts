@@ -10,7 +10,7 @@ import { getTypeOfVariable } from "../Backend/spItemsPropertyGetters";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import {
   getLastFuncName,
-  getLastEnumStructNameOrMethodMap,
+  getLastEnumStructNameOrMethodMapOld,
 } from "./spDefinitionProvider";
 import {
   getCompletionListFromPosition,
@@ -50,7 +50,7 @@ export function completionProvider(
           let {
             lastEnumStructOrMethodMap,
             isAMethodMap,
-          } = getLastEnumStructNameOrMethodMap(position, document, allItems);
+          } = getLastEnumStructNameOrMethodMapOld(position, document, allItems);
           let { variableType, words } = getTypeOfVariable(
             // Hack to use getTypeOfVariable
             match[2] + ".",

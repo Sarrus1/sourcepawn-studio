@@ -111,7 +111,7 @@ export function isControlStatement(line: string): boolean {
   return false;
 }
 
-export function getLastEnumStructNameOrMethodMap(
+export function getLastEnumStructNameOrMethodMapOld(
   position: Position,
   document: TextDocument,
   allItems: SPItem[]
@@ -130,6 +130,20 @@ export function getLastEnumStructNameOrMethodMap(
     lastEnumStructOrMethodMap: enumStruct.name,
     isAMethodMap: enumStruct.kind === CompletionItemKind.Class,
   };
+}
+
+export function getLastEnumStructNameOrMethodMap(
+  position: Position,
+  filePath: string,
+  allItems: SPItem[]
+): SPItem | undefined {
+  return allItems.find(
+    (e) =>
+      [CompletionItemKind.Struct, CompletionItemKind.Class].includes(e.kind) &&
+      e.filePath === filePath &&
+      e.fullRange != undefined &&
+      e.fullRange.contains(position)
+  );
 }
 
 export function definitionsProvider(

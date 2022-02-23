@@ -5,7 +5,11 @@ import { URI } from "vscode-uri";
 
 import { SPItem } from "./Items/spItems";
 import { IncludeItem } from "./Items/spIncludeItem";
-import { isInAComment, isInAString } from "../Providers/spDefinitionProvider";
+import {
+  getLastEnumStructNameOrMethodMap,
+  isInAComment,
+  isInAString,
+} from "../Providers/spDefinitionProvider";
 import { FileItems } from "./spFilesRepository";
 import { getAllPossibleIncludeFolderPaths } from "./spFileHandlers";
 import { ItemsRepository } from "./spItemsRepository";
@@ -98,20 +102,40 @@ export function getItemFromPosition(
   if (includeItem.length > 0) {
     return includeItem;
   }
+
+  let lastEnumStructOrMethodMap = getLastEnumStructNameOrMethodMap(
+    position,
+    document.uri.fsPath,
+    allItems
+  );
+
   let items = allItems.filter((e) => {
     if (e.name !== word) {
       return false;
     }
+
     if (
       e.kind === CompletionItemKind.Variable &&
       e.parent !== globalIdentifier &&
-      allItems.find(
-        (e1) =>
-          e1.kind === CompletionItemKind.Function &&
+      allItems.find((e1) => {
+        let check =
+          [CompletionItemKind.Function, CompletionItemKind.Method].includes(
+            e1.kind
+          ) &&
           e1.name === e.parent &&
           e1.fullRange.contains(position) &&
-          e1.filePath === document.uri.fsPath
-      )
+          e1.filePath === document.uri.fsPath;
+
+        // Handle variables inside of methods.
+        if (lastEnumStructOrMethodMap !== undefined && check) {
+          return (
+            e.enumStructName === lastEnumStructOrMethodMap.name &&
+            lastEnumStructOrMethodMap.fullRange.contains(e1.fullRange) &&
+            lastEnumStructOrMethodMap.fullRange.contains(e.range)
+          );
+        }
+        return check;
+      })
     ) {
       return true;
     }
