@@ -20,7 +20,7 @@ export class VariableItem implements SPItem {
   parent: string;
   range: Range;
   type: string;
-  references?: Location[];
+  references: Location[];
   enumStructName: string;
 
   constructor(

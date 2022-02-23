@@ -6,6 +6,7 @@ import {
   DocumentSymbol,
   SymbolKind,
   LocationLink,
+  Location,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { basename } from "path";
@@ -20,12 +21,14 @@ export class EnumItem implements SPItem {
   description: string;
   range: Range;
   fullRange: Range;
+  references: Location[];
 
   constructor(name: string, file: string, description: string, range: Range) {
     this.name = name;
     this.filePath = file;
     this.description = description;
     this.range = range;
+    this.references = [];
   }
 
   toCompletionItem(): CompletionItem {

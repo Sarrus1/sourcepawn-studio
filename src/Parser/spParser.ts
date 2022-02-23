@@ -28,10 +28,6 @@ import { searchForReferencesInString } from "./searchForReferencesInString";
 import { readMethodMap } from "./readMethodMap";
 import { manageState } from "./manageState";
 import { purgeCalls, positiveRange, parentCounter } from "./utils";
-import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
-import { DefineItem } from "../Backend/Items/spDefineItem";
-import { FunctionItem } from "../Backend/Items/spFunctionItem";
-import { VariableItem } from "../Backend/Items/spVariableItem";
 import { globalIdentifier } from "../Misc/spConstants";
 
 export function parseFile(
@@ -153,7 +149,7 @@ export class Parser {
       });
       return;
     }
-    this.referencesMap = this.getAllMembers(this.items);
+    this.referencesMap = this.getTokensMap(this.items);
     while (line !== undefined) {
       searchForReferencesInString(this, line);
       line = this.lines.shift();
@@ -359,24 +355,18 @@ export class Parser {
     return range;
   }
 
-  getAllMembers(items: SPItem[]): Map<string, SPItem> {
+  getTokensMap(items: SPItem[]): Map<string, SPItem> {
     let tokensMaps = new Map<string, SPItem>();
     if (items == undefined) {
       return tokensMaps;
     }
-    const CEF = [
-      CompletionItemKind.Constant,
-      CompletionItemKind.EnumMember,
-      CompletionItemKind.Function,
-    ];
     items.forEach((item) => {
-      if (CEF.includes(item.kind)) {
-        purgeCalls(item, this.file);
-        tokensMaps.set(item.name, item);
-      } else if (
-        item.kind === CompletionItemKind.Variable &&
-        item.parent === globalIdentifier
-      ) {
+      if (item.kind === CompletionItemKind.Variable) {
+        if (item.parent === globalIdentifier) {
+          purgeCalls(item, this.file);
+          tokensMaps.set(item.name, item);
+        }
+      } else if (item.references !== undefined) {
         purgeCalls(item, this.file);
         tokensMaps.set(item.name, item);
       }

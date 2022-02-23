@@ -6,6 +6,7 @@ import {
   DocumentSymbol,
   SymbolKind,
   LocationLink,
+  Location,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { basename } from "path";
@@ -24,6 +25,7 @@ export class MethodMapItem implements SPItem {
   IsBuiltIn: boolean;
   filePath: string;
   fullRange: Range;
+  references: Location[];
 
   constructor(
     name: string,
@@ -42,6 +44,7 @@ export class MethodMapItem implements SPItem {
     this.filePath = file;
     this.range = range;
     this.type = name;
+    this.references = [];
   }
 
   toCompletionItem(): CompletionItem {

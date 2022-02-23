@@ -15,12 +15,9 @@ export function referencesProvider(
   token: CancellationToken
 ): Location[] {
   const items = itemsRepo.getItemFromPosition(document, position);
-  if (items.length > 0) {
-    return items
-      .filter((e) => e.references !== undefined)
-      .map((e) => e.references)
-      .filter((e) => e !== undefined)
-      .flat() as Location[];
-  }
-  return [];
+  return items
+    .filter((e) => e.references !== undefined)
+    .map((e) => e.references)
+    .filter((e) => e !== undefined)
+    .flat();
 }
