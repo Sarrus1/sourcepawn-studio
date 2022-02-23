@@ -128,7 +128,7 @@ export function getItemFromPosition(
 
   let type = getType(range, document, position);
 
-  const lastFunc: string = getLastFuncName(position, document, allItems);
+  const lastFunc = getLastFuncName(position, document, allItems);
 
   const {
     lastEnumStructOrMethodMap,
@@ -186,7 +186,8 @@ export function getItemFromPosition(
     (item) =>
       !MPCF.includes(item.kind) &&
       item.name === word &&
-      item.parent === lastFunc
+      item.parent === lastFunc &&
+      item.filePath === document.uri.fsPath
   );
   if (items !== undefined && items.length > 0) {
     return items;
