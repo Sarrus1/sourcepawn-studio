@@ -82,6 +82,7 @@ export class Parser {
   documents: Set<string>;
   lastFuncLine: number;
   lastFuncName: string;
+  methodsAndProperties: SPItem[];
   referencesMap: Map<string, SPItem>;
   macroArr: string[];
   itemsRepository: ItemsRepository;
@@ -114,6 +115,8 @@ export class Parser {
     );
     this.debugging = debugSetting == "messages" || debugSetting == "verbose";
     this.anonymousEnumCount = 0;
+    this.methodsAndProperties = [];
+    this.referencesMap = new Map<string, SPItem>();
   }
 
   parse(searchReferences: boolean): void {
@@ -150,7 +153,11 @@ export class Parser {
       });
       return;
     }
-    this.referencesMap = this.getReferencesMap(this.items);
+    this.getReferencesMap(
+      this.items,
+      this.referencesMap,
+      this.methodsAndProperties
+    );
     while (line !== undefined) {
       searchForReferencesInString(line, handleReferenceInParser, {
         parser: this,
@@ -359,32 +366,26 @@ export class Parser {
     return range;
   }
 
-  getReferencesMap(items: SPItem[]): Map<string, SPItem> {
-    let tokensMaps = new Map<string, SPItem>();
-    if (items == undefined) {
-      return tokensMaps;
-    }
-
-    const disallowedKinds = [
-      CompletionItemKind.Method,
-      CompletionItemKind.Property,
-    ];
+  getReferencesMap(
+    items: SPItem[],
+    referencesMap: Map<string, SPItem>,
+    methodsAndProperties: SPItem[]
+  ): void {
+    const MP = [CompletionItemKind.Method, CompletionItemKind.Property];
 
     items.forEach((item) => {
       if (item.kind === CompletionItemKind.Variable) {
         if (item.parent === globalIdentifier) {
           purgeCalls(item, this.file);
-          tokensMaps.set(item.name, item);
+          referencesMap.set(item.name, item);
         }
-      } else if (
-        !disallowedKinds.includes(item.kind) &&
-        item.references !== undefined
-      ) {
+      } else if (!MP.includes(item.kind) && item.references !== undefined) {
         purgeCalls(item, this.file);
-        tokensMaps.set(item.name, item);
+        referencesMap.set(item.name, item);
+      } else if (MP.includes(item.kind) && item.references !== undefined) {
+        methodsAndProperties.push(item);
       }
     });
-    return tokensMaps;
   }
 
   getAllMacros(items: SPItem[]): string[] {

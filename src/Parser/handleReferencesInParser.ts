@@ -24,32 +24,30 @@ export function handleReferenceInParser(
     const location = new Location(URI.file(this.parser.file), range);
     item.references.push(location);
     this.previousItems.push(item);
-  } else {
-    if (
-      match.index > 0 &&
-      this.previousItems.length > 0 &&
-      [".", ":"].includes(this.line[match.index - 1])
-    ) {
-      let parent = this.previousItems[this.previousItems.length - 1];
-      let item = this.parser.items.find(
-        (e) =>
-          [CompletionItemKind.Property, CompletionItemKind.Method].includes(
-            e.kind
-          ) &&
-          e.name === match[0] &&
-          e.parent === parent.type
-      );
+  } else if (
+    match.index > 0 &&
+    this.previousItems.length > 0 &&
+    [".", ":"].includes(this.line[match.index - 1])
+  ) {
+    let parent = this.previousItems[this.previousItems.length - 1];
+    let item = this.parser.methodsAndProperties.find(
+      (e) =>
+        [CompletionItemKind.Property, CompletionItemKind.Method].includes(
+          e.kind
+        ) &&
+        e.name === match[0] &&
+        e.parent === parent.type
+    );
 
-      if (item !== undefined) {
-        const range = positiveRange(
-          this.parser.lineNb,
-          match.index + this.offset,
-          match.index + match[0].length + this.offset
-        );
-        const location = new Location(URI.file(this.parser.file), range);
-        item.references.push(location);
-        this.previousItems.push(item);
-      }
+    if (item !== undefined) {
+      const range = positiveRange(
+        this.parser.lineNb,
+        match.index + this.offset,
+        match.index + match[0].length + this.offset
+      );
+      const location = new Location(URI.file(this.parser.file), range);
+      item.references.push(location);
+      this.previousItems.push(item);
     }
   }
 }
