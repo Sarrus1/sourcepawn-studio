@@ -63,9 +63,9 @@ export function readEnum(
         description += line.slice(i, i + endComMatch[1].length).trimEnd();
         isBlockComment = false;
         i += endComMatch[0].length;
-        let prevEnumMember: EnumMemberItem = parser.fileItems.get(
+        let prevEnumMember = parser.fileItems.get(
           enumMemberName
-        );
+        ) as EnumMemberItem;
         if (prevEnumMember !== undefined) {
           prevEnumMember.description = description;
         }
@@ -91,9 +91,9 @@ export function readEnum(
           continue;
         }
         if (line[i] == "/" && line[i + 1] == "/") {
-          let prevEnumMember: EnumMemberItem = parser.fileItems.get(
+          let prevEnumMember = parser.fileItems.get(
             enumMemberName
-          );
+          ) as EnumMemberItem;
           if (prevEnumMember !== undefined) {
             prevEnumMember.description = line.slice(i + 2).trim();
           }
