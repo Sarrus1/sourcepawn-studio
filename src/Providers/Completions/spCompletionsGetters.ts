@@ -11,7 +11,7 @@ import { URI } from "vscode-uri";
 import { getTypeOfVariable } from "../../Backend/spItemsPropertyGetters";
 import {
   getLastFuncName,
-  getLastEnumStructNameOrMethodMapOld,
+  getLastEnumStructNameOrMethodMap,
 } from "../../Providers/spDefinitionProvider";
 import { SPItem } from "../../Backend/Items/spItems";
 import { getAllPossibleIncludeFolderPaths } from "../../Backend/spFileHandlers";
@@ -110,10 +110,11 @@ export function getCompletionListFromPosition(
     return getNonMethodItems(allItems, lastFunc);
   }
 
-  const {
-    lastEnumStructOrMethodMap,
-    isAMethodMap,
-  } = getLastEnumStructNameOrMethodMapOld(position, document, allItems);
+  const lastEnumStructOrMethodMap = getLastEnumStructNameOrMethodMap(
+    position,
+    document.uri.fsPath,
+    allItems
+  );
   let { variableType, words } = getTypeOfVariable(
     line,
     position,

@@ -9,7 +9,7 @@ import { getTypeOfVariable } from "../Backend/spItemsPropertyGetters";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import {
   getLastFuncName,
-  getLastEnumStructNameOrMethodMapOld,
+  getLastEnumStructNameOrMethodMap,
 } from "./spDefinitionProvider";
 import { getAllInheritances } from "../Backend/spItemsPropertyGetters";
 
@@ -131,10 +131,11 @@ export function signatureProvider(
     let allItems = itemsRepo.getAllItems(document.uri);
     let lastFuncName = getLastFuncName(position, document, allItems);
     let newPos = new Position(1, croppedLine.length);
-    let {
-      lastEnumStructOrMethodMap,
-      isAMethodMap,
-    } = getLastEnumStructNameOrMethodMapOld(position, document, allItems);
+    const lastEnumStructOrMethodMap = getLastEnumStructNameOrMethodMap(
+      position,
+      document.uri.fsPath,
+      allItems
+    );
     let { variableType, words } = getTypeOfVariable(
       croppedLine,
       newPos,

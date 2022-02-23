@@ -38,7 +38,7 @@ export function getTypeOfVariable(
   position: Position,
   allItems: SPItem[],
   lastFuncName: string,
-  lastEnumStructOrMethodMap: string
+  lastEnumStructOrMethodMap: SPItem | undefined
 ): VariableType {
   let { words, isNameSpace } = parseMethodsFromLine(line, position.character);
   let variableType: string;
@@ -47,10 +47,10 @@ export function getTypeOfVariable(
     variableType = words[words.length - 1];
   } else {
     if (
-      lastEnumStructOrMethodMap !== globalIdentifier &&
+      lastEnumStructOrMethodMap.parent !== globalIdentifier &&
       words[words.length - 1] === "this"
     ) {
-      variableType = lastEnumStructOrMethodMap;
+      variableType = lastEnumStructOrMethodMap.name;
     } else {
       const enumMemberItem = allItems.find(
         (e) => e.kind === CompletionItemKind.EnumMember && e.name === words[0]
