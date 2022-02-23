@@ -40,7 +40,7 @@ export function getTypeOfVariable(
   lastFuncName: string,
   lastEnumStructOrMethodMap: string
 ): VariableType {
-  let { words, isNameSpace } = parseMethodsFromLine(line, position);
+  let { words, isNameSpace } = parseMethodsFromLine(line, position.character);
   let variableType: string;
 
   if (isNameSpace) {
@@ -97,11 +97,11 @@ export function getTypeOfVariable(
  *   isNameSpace: false
  * }
  * @param  {string} line        The line being parsed.
- * @param  {Position} position  The position at which the parsing should begin.
+ * @param  {number} index       The index at which the parsing should begin.
  * @returns ParsedLine
  */
-function parseMethodsFromLine(line: string, position: Position): ParsedLine {
-  let { i, isNameSpace } = getMethodIndex(position.character - 1, line);
+export function parseMethodsFromLine(line: string, index: number): ParsedLine {
+  let { i, isNameSpace } = getMethodIndex(index - 1, line);
   let bCounter = 0;
   let pCounter = 0;
   let wordCounter = 0;
