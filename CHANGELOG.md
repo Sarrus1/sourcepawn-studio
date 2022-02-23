@@ -1,11 +1,11 @@
 ## Release Notes
 
-## [3.0.16]
+## [3.1.0]
 
 ### Added
 
 - Added deprecated functions and methods support.
-- Added support for references provider.
+- Added support for references provider. The extension now knows where every reference to a symbol is (see [the documentation](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#find-all-references-to-a-symbol) for more details.)
 
 ### Fixed
 
