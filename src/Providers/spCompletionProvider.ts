@@ -9,7 +9,7 @@ import {
 import { getTypeOfVariable } from "../Backend/spItemsPropertyGetters";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import {
-  getLastFuncName,
+  getLastFunc,
   getLastEnumStructNameOrMethodMap,
 } from "./spDefinitionProvider";
 import {
@@ -45,7 +45,7 @@ export function completionProvider(
           // If the variable is not declared here, look up its type, as it
           // has not yet been parsed.
           let allItems = itemsRepo.getAllItems(document.uri);
-          let lastFuncName = getLastFuncName(position, document, allItems);
+          const lastFunc = getLastFunc(position, document, allItems);
           let newPos = new Position(1, match[2].length + 1);
           const lastEnumStructOrMethodMap = getLastEnumStructNameOrMethodMap(
             position,
@@ -57,7 +57,7 @@ export function completionProvider(
             match[2] + ".",
             newPos,
             allItems,
-            lastFuncName,
+            lastFunc,
             lastEnumStructOrMethodMap
           );
           type = variableType;

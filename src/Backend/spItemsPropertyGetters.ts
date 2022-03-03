@@ -1,6 +1,8 @@
 import { Position, CompletionItemKind } from "vscode";
 import { SPItem } from "./Items/spItems";
 import { globalIdentifier } from "../Misc/spConstants";
+import { FunctionItem } from "./Items/spFunctionItem";
+import { MethodItem } from "./Items/spMethodItem";
 
 export interface VariableType {
   variableType: string;
@@ -29,7 +31,7 @@ export interface MethodIndex {
  * @param  {string} line
  * @param  {Position} position
  * @param  {SPItem[]} allItems
- * @param  {string} lastFuncName
+ * @param  {string} lastFunc
  * @param  {string} lastEnumStructOrMethodMap
  * @returns VariableType
  */
@@ -37,11 +39,16 @@ export function getTypeOfVariable(
   line: string,
   position: Position,
   allItems: SPItem[],
-  lastFuncName: string,
+  lastFunc: FunctionItem | MethodItem | undefined,
   lastEnumStructOrMethodMap: SPItem | undefined
 ): VariableType {
   let { words, isNameSpace } = parseMethodsFromLine(line, position.character);
   let variableType: string;
+
+  const lastFuncName =
+    lastFunc === undefined
+      ? [globalIdentifier]
+      : [globalIdentifier, lastFunc.name];
 
   if (isNameSpace) {
     variableType = words[words.length - 1];
@@ -59,7 +66,7 @@ export function getTypeOfVariable(
       variableType = allItems.find(
         (e) =>
           (e.kind === CompletionItemKind.Variable &&
-            [globalIdentifier, lastFuncName].includes(e.parent) &&
+            lastFuncName.includes(e.parent) &&
             e.name === words[words.length - 1]) ||
           ([CompletionItemKind.Function, CompletionItemKind.Class].includes(
             e.kind

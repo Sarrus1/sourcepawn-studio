@@ -8,7 +8,7 @@ import {
 import { getTypeOfVariable } from "../Backend/spItemsPropertyGetters";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import {
-  getLastFuncName,
+  getLastFunc,
   getLastEnumStructNameOrMethodMap,
 } from "./spDefinitionProvider";
 import { getAllInheritances } from "../Backend/spItemsPropertyGetters";
@@ -129,7 +129,7 @@ export function signatureProvider(
   if (match) {
     let methodName = match[1];
     let allItems = itemsRepo.getAllItems(document.uri);
-    let lastFuncName = getLastFuncName(position, document, allItems);
+    let lastFunc = getLastFunc(position, document, allItems);
     let newPos = new Position(1, croppedLine.length);
     const lastEnumStructOrMethodMap = getLastEnumStructNameOrMethodMap(
       position,
@@ -140,7 +140,7 @@ export function signatureProvider(
       croppedLine,
       newPos,
       allItems,
-      lastFuncName,
+      lastFunc,
       lastEnumStructOrMethodMap
     );
     let variableTypes: string[] = getAllInheritances(variableType, allItems);

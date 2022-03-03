@@ -5,11 +5,7 @@ import { URI } from "vscode-uri";
 
 import { SPItem } from "./Items/spItems";
 import { IncludeItem } from "./Items/spIncludeItem";
-import {
-  getLastEnumStructNameOrMethodMap,
-  isInAComment,
-  isInAString,
-} from "../Providers/spDefinitionProvider";
+import { getLastEnumStructNameOrMethodMap } from "../Providers/spDefinitionProvider";
 import { FileItems } from "./spFilesRepository";
 import { getAllPossibleIncludeFolderPaths } from "./spFileHandlers";
 import { ItemsRepository } from "./spItemsRepository";
@@ -85,17 +81,14 @@ export function getItemFromPosition(
   position: Position
 ): SPItem[] {
   const range = document.getWordRangeAtPosition(position);
+  if (range === undefined) {
+    return [];
+  }
+
   const allItems = itemsRepo.getAllItems(document.uri);
 
   const word = document.getText(range);
   const line = document.lineAt(position.line).text;
-  if (
-    range === undefined ||
-    isInAComment(range, document.uri, allItems) ||
-    isInAString(range, line)
-  ) {
-    return [];
-  }
 
   // Generate an include item if the line is an #include statement and return it.
   let includeItem = makeIncludeItem(document, line, position);

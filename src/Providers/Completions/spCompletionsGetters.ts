@@ -10,7 +10,7 @@ import { URI } from "vscode-uri";
 
 import { getTypeOfVariable } from "../../Backend/spItemsPropertyGetters";
 import {
-  getLastFuncName,
+  getLastFunc,
   getLastEnumStructNameOrMethodMap,
 } from "../../Providers/spDefinitionProvider";
 import { SPItem } from "../../Backend/Items/spItems";
@@ -18,6 +18,7 @@ import { getAllPossibleIncludeFolderPaths } from "../../Backend/spFileHandlers";
 import { ItemsRepository } from "../../Backend/spItemsRepository";
 import { isMethodCall } from "../../Backend/spUtils";
 import { getAllInheritances } from "../../Backend/spItemsPropertyGetters";
+import { globalIdentifier } from "../../Misc/spConstants";
 
 const MP = [CompletionItemKind.Method, CompletionItemKind.Property];
 
@@ -104,7 +105,7 @@ export function getCompletionListFromPosition(
 
   const line = document.lineAt(position.line).text;
   const isMethod = isMethodCall(line, position);
-  const lastFunc: string = getLastFuncName(position, document, allItems);
+  const lastFunc = getLastFunc(position, document, allItems);
 
   if (!isMethod) {
     return getNonMethodItems(allItems, lastFunc);
@@ -132,7 +133,12 @@ export function getCompletionListFromPosition(
         (e) => e.name === words[0] && e.kind === CompletionItemKind.Class
       );
 
-  return getMethodItems(allItems, variableTypes, isMethodMap, lastFunc);
+  return getMethodItems(
+    allItems,
+    variableTypes,
+    isMethodMap,
+    lastFunc ? lastFunc.name : globalIdentifier
+  );
 }
 
 function getMethodItems(
