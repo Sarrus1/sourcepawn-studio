@@ -89,6 +89,7 @@ export class Parser {
   debugging: boolean;
   anonymousEnumCount: number;
   deprecated: string | undefined;
+  commentsRanges: Range[];
 
   constructor(
     lines: string[],
@@ -153,11 +154,15 @@ export class Parser {
       });
       return;
     }
+
     this.getReferencesMap(
       this.items,
       this.referencesMap,
       this.methodsAndProperties
     );
+
+    this.getCommentsRanges(this.items);
+
     while (line !== undefined) {
       searchForReferencesInString(line, handleReferenceInParser, {
         parser: this,
@@ -386,6 +391,14 @@ export class Parser {
         methodsAndProperties.push(item);
       }
     });
+  }
+
+  getCommentsRanges(items: SPItem[]): void {
+    this.commentsRanges = items
+      .filter(
+        (e) => e.kind === CompletionItemKind.User && e.filePath === this.file
+      )
+      .map((e) => e.range);
   }
 
   getAllMacros(items: SPItem[]): string[] {

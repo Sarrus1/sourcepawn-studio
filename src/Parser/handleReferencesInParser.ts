@@ -13,6 +13,14 @@ export function handleReferenceInParser(
   },
   match: RegExpExecArray
 ) {
+  let matchPosition = new Position(this.parser.lineNb, match.index + 1);
+  // Return early if we match in a comment.
+  if (
+    this.parser.commentsRanges.find((e) => e.contains(matchPosition)) !==
+    undefined
+  ) {
+    return;
+  }
   if (match[0] === "this") {
     let item = this.parser.items.find(
       (e) =>
@@ -20,7 +28,7 @@ export function handleReferenceInParser(
           e.kind
         ) &&
         this.parser.file == e.filePath &&
-        e.fullRange.contains(new Position(this.parser.lineNb, match.index + 1))
+        e.fullRange.contains(matchPosition)
     );
     if (item !== undefined) {
       this.previousItems.push(item);
