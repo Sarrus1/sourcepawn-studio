@@ -1,5 +1,4 @@
 ﻿import { Parser } from "./spParser";
-import { CommentItem } from "../Backend/Items/spCommentItem";
 import { Range, Position } from "vscode";
 
 export function consumeComment(
@@ -8,7 +7,6 @@ export function consumeComment(
   use_line_comment: boolean = false
 ): void {
   parser.scratch = [];
-  let startPos = new Position(parser.lineNb < 1 ? 0 : parser.lineNb, 0);
   let iter = 0;
   while (
     current_line !== undefined &&
@@ -30,16 +28,6 @@ export function consumeComment(
   if (current_line === undefined) {
     return;
   }
-  let endPos = new Position(
-    parser.lineNb < 2
-      ? 0
-      : use_line_comment
-      ? parser.lineNb - 1
-      : parser.lineNb - 2,
-    current_line.length
-  );
-  let range = new Range(startPos, endPos);
-  parser.fileItems.comments.push(new CommentItem(parser.file, range));
   parser.interpLine(current_line);
   return;
 }

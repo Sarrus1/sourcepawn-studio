@@ -11,11 +11,9 @@ import {
   defaultKeywordsItems,
 } from "../Providers/spDefaultItems";
 import { getIncludeExtension } from "./spUtils";
-import { CommentItem } from "./Items/spCommentItem";
 
 export class FileItems extends Map<string, SPItem> {
   includes: Include[];
-  comments: CommentItem[];
   uri: string;
 
   constructor(uri: string) {
@@ -26,7 +24,6 @@ export class FileItems extends Map<string, SPItem> {
       defaultKeywordsItems.forEach((e) => this.set(e, new KeywordItem(e)));
     }
     this.includes = [];
-    this.comments = [];
     this.uri = uri;
   }
 

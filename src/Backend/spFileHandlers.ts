@@ -85,7 +85,6 @@ export function newDocumentCallback(
   const filePath: string = uri.fsPath;
 
   // Don't parse the document again if it was already.
-  // TODO: Make this faster
   if (itemsRepo.fileItems.has(uri.toString())) {
     return;
   }

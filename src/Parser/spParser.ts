@@ -11,7 +11,6 @@ import { URI } from "vscode-uri";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import { FileItems } from "../Backend/spFilesRepository";
 import { SPItem } from "../Backend/Items/spItems";
-import { CommentItem } from "../Backend/Items/spCommentItem";
 import { State } from "./stateEnum";
 import { readDefine } from "./readDefine";
 import { readMacro } from "./readMacro";
@@ -90,7 +89,6 @@ export class Parser {
   debugging: boolean;
   anonymousEnumCount: number;
   deprecated: string | undefined;
-  commentsRanges: Range[];
 
   constructor(
     lines: string[],
@@ -125,7 +123,6 @@ export class Parser {
     let line = this.lines.shift();
     if (!searchReferences) {
       // Purge all comments from the file.
-      this.fileItems.comments = [];
       let uri = URI.file(this.file);
       let oldFileItems = this.itemsRepository.fileItems.get(uri.toString());
       let oldRefs = new Map<string, Location[]>();
@@ -164,8 +161,6 @@ export class Parser {
       this.methodsAndProperties
     );
 
-    this.getCommentsRanges();
-
     while (line !== undefined) {
       const parseState: ParseState = {
         bComment: false,
@@ -190,20 +185,13 @@ export class Parser {
     // Match trailing single line comments
     let match = line.match(/^\s*[^\/\/\s]+(\/\/.+)$/);
     if (match) {
-      let lineNb = this.lineNb < 1 ? 0 : this.lineNb;
-      let start: number = line.search(/\/\//);
-      let range = new Range(lineNb, start, lineNb, line.length);
-      this.fileItems.comments.push(new CommentItem(this.file, range));
+      return;
     }
 
     // Match trailing block comments
     match = line.match(/^\s*[^\/\*\s]+(\/\*.+)\*\//);
     if (match) {
-      let lineNb = this.lineNb < 1 ? 0 : this.lineNb;
-      let start: number = line.search(/\/\*/);
-      let end: number = line.search(/\*\//);
-      let range = new Range(lineNb, start, lineNb, end);
-      this.fileItems.comments.push(new CommentItem(this.file, range));
+      return;
     }
 
     // Match define
@@ -395,10 +383,6 @@ export class Parser {
         methodsAndProperties.push(item);
       }
     });
-  }
-
-  getCommentsRanges(): void {
-    this.commentsRanges = this.fileItems.comments.map((e) => e.range);
   }
 
   getAllMacros(items: SPItem[]): string[] {
