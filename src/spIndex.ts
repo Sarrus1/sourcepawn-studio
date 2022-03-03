@@ -20,15 +20,14 @@ import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
 import { findMainPath, checkMainPath } from "./spUtils";
 
-export function activate(context: ExtensionContext) {
+export async function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
-  let SBItem = window.createStatusBarItem(StatusBarAlignment.Left, 0);
-  SBItem.command = "status.parsingSMAPI";
-  SBItem.text = "Loading SM API...";
+  const SBItem = window.createStatusBarItem(StatusBarAlignment.Left, 0);
+  SBItem.command = "status.enablingSPFeatures";
+  SBItem.text = "Enabling SourcePawn features...";
 
   SBItem.show();
   parseSMApi(providers.itemsRepository);
-  SBItem.hide();
 
   let workspaceFolders = Workspace.workspaceFolders || [];
   if (workspaceFolders.length === 0) {
@@ -229,6 +228,8 @@ export function activate(context: ExtensionContext) {
 
   // Register CFG linter
   registerCFGLinter(context);
+
+  SBItem.hide();
 }
 
 function getDirectories(paths: string[], providers: Providers) {

@@ -17,11 +17,8 @@ export function handleReferenceInParser(
   },
   match: RegExpExecArray
 ) {
-  let matchPosition = new Position(this.parser.lineNb, match.index + 1);
-  // Return early if we match in a comment.
-  if (isInComment(this.parser.commentsRanges, matchPosition)) {
-    return;
-  }
+  const matchPosition = new Position(this.parser.lineNb, match.index + 1);
+
   if (match[0] === "this") {
     let item = this.parser.items.find(
       (e) =>
@@ -36,7 +33,8 @@ export function handleReferenceInParser(
     }
     return;
   }
-  let item = this.parser.referencesMap.get(match[0]);
+
+  const item = this.parser.referencesMap.get(match[0]);
 
   if (item !== undefined) {
     const range = positiveRange(

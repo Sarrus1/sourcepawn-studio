@@ -15,9 +15,6 @@ export function searchForReferencesInString(
   callbackfn: referencesSearchCallback,
   thisArgs: any
 ): void {
-  let isBlockComment = false;
-  let isDoubleQuoteString = false;
-  let isSingleQuoteString = false;
   let match: RegExpExecArray;
   const re = /(?:"|'|\/\/|\/\*|\*\/|\w+)/g;
   thisArgs.previousItems = [];
@@ -25,23 +22,29 @@ export function searchForReferencesInString(
   do {
     match = re.exec(line);
     if (match) {
-      if (match[0] === '"' && !isSingleQuoteString) {
-        isDoubleQuoteString = !isDoubleQuoteString;
-      } else if (match[0] === "'" && !isDoubleQuoteString) {
-        isSingleQuoteString = !isSingleQuoteString;
+      if (match[0] === '"' && !thisArgs.parseState.sString) {
+        thisArgs.parseState.dString = !thisArgs.parseState.dString;
+      } else if (match[0] === "'" && !thisArgs.parseState.dString) {
+        thisArgs.parseState.sString = !thisArgs.parseState.sString;
       } else if (
         match[0] === "//" &&
-        !isDoubleQuoteString &&
-        !isSingleQuoteString
+        !thisArgs.parseState.dString &&
+        !thisArgs.parseState.sString
       ) {
         break;
       } else if (
         match[0] === "/*" ||
-        (match[0] === "*/" && !isDoubleQuoteString && !isSingleQuoteString)
+        (match[0] === "*/" &&
+          !thisArgs.parseState.dString &&
+          !thisArgs.parseState.sString)
       ) {
-        isBlockComment = !isBlockComment;
+        thisArgs.parseState.bComment = !thisArgs.parseState.bComment;
       }
-      if (isBlockComment || isDoubleQuoteString || isSingleQuoteString) {
+      if (
+        thisArgs.parseState.bComment ||
+        thisArgs.parseState.dString ||
+        thisArgs.parseState.sString
+      ) {
         continue;
       }
       if (["float", "bool", "char", "int"].includes(match[0])) {

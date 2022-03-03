@@ -12,6 +12,7 @@ import { globalIdentifier } from "../Misc/spConstants";
 import { positiveRange } from "../Parser/utils";
 import { searchForReferencesInString } from "../Parser/searchForReferencesInString";
 import { URI } from "vscode-uri";
+import { ParseState } from "../Parser/interfaces";
 
 export function referencesProvider(
   itemsRepo: ItemsRepository,
@@ -39,12 +40,19 @@ export function referencesProvider(
     ) as FunctionItem;
     const text = document.getText(func.fullRange).split("\n");
     let lineNb = func.fullRange.start.line;
+    const parseState: ParseState = {
+      bComment: false,
+      lComment: false,
+      sString: false,
+      dString: false,
+    };
     for (let line of text) {
       searchForReferencesInString(line, handleReferencesInProvider, {
         references: references,
         name: items[0].name,
         lineNb: lineNb,
         uri: document.uri,
+        parseState: parseState,
       });
       lineNb++;
     }

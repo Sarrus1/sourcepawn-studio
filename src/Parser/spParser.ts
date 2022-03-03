@@ -30,6 +30,7 @@ import { readMethodMap } from "./readMethodMap";
 import { manageState } from "./manageState";
 import { purgeCalls, positiveRange, parentCounter } from "./utils";
 import { globalIdentifier } from "../Misc/spConstants";
+import { ParseState } from "./interfaces";
 
 export function parseFile(
   file: string,
@@ -166,8 +167,15 @@ export class Parser {
     this.getCommentsRanges();
 
     while (line !== undefined) {
+      const parseState: ParseState = {
+        bComment: false,
+        lComment: false,
+        sString: false,
+        dString: false,
+      };
       searchForReferencesInString(line, handleReferenceInParser, {
         parser: this,
+        parseState: parseState,
         offset: 0,
       });
       line = this.lines.shift();
