@@ -123,6 +123,8 @@ export class Parser {
   parse(searchReferences: boolean): void {
     let line = this.lines.shift();
     if (!searchReferences) {
+      // Purge all comments from the file.
+      this.fileItems.comments = [];
       let uri = URI.file(this.file);
       let oldFileItems = this.itemsRepository.fileItems.get(uri.toString());
       let oldRefs = new Map<string, Location[]>();
@@ -161,7 +163,7 @@ export class Parser {
       this.methodsAndProperties
     );
 
-    this.getCommentsRanges(this.items);
+    this.getCommentsRanges();
 
     while (line !== undefined) {
       searchForReferencesInString(line, handleReferenceInParser, {
@@ -183,10 +185,7 @@ export class Parser {
       let lineNb = this.lineNb < 1 ? 0 : this.lineNb;
       let start: number = line.search(/\/\//);
       let range = new Range(lineNb, start, lineNb, line.length);
-      this.fileItems.set(
-        `comment${lineNb}--${Math.random()}`,
-        new CommentItem(this.file, range)
-      );
+      this.fileItems.comments.push(new CommentItem(this.file, range));
     }
 
     // Match trailing block comments
@@ -196,10 +195,7 @@ export class Parser {
       let start: number = line.search(/\/\*/);
       let end: number = line.search(/\*\//);
       let range = new Range(lineNb, start, lineNb, end);
-      this.fileItems.set(
-        `comment${lineNb}--${Math.random()}`,
-        new CommentItem(this.file, range)
-      );
+      this.fileItems.comments.push(new CommentItem(this.file, range));
     }
 
     // Match define
@@ -393,12 +389,8 @@ export class Parser {
     });
   }
 
-  getCommentsRanges(items: SPItem[]): void {
-    this.commentsRanges = items
-      .filter(
-        (e) => e.kind === CompletionItemKind.User && e.filePath === this.file
-      )
-      .map((e) => e.range);
+  getCommentsRanges(): void {
+    this.commentsRanges = this.fileItems.comments.map((e) => e.range);
   }
 
   getAllMacros(items: SPItem[]): string[] {

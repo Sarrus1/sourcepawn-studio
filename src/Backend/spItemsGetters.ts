@@ -18,7 +18,7 @@ import { getIncludeExtension } from "./spUtils";
 import { globalIdentifier } from "../Misc/spConstants";
 
 /**
- * Returns an array of all the items parsed from a file and its known includes.
+ * Returns an array of all the items parsed from a file and its known includes
  * @param  {ItemsRepository} itemsRepo      The itemsRepository object constructed in the activation event.
  * @param  {URI} uri                        The URI of the file we are getting the items for.
  * @returns SPItem
@@ -44,8 +44,8 @@ export function getAllItems(itemsRepo: ItemsRepository, uri: URI): SPItem[] {
  * @param  {string} uri    The URI of the file we should get the items for.
  * @returns SPItem
  */
-function getFileItems(uri: string): SPItem[] {
-  let items: FileItems = this.fileItems.get(uri);
+function getFileItems(this: ItemsRepository, uri: string): SPItem[] {
+  let items = this.fileItems.get(uri);
   return items !== undefined ? Array.from(items.values()) : [];
 }
 

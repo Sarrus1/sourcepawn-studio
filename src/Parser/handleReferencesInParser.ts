@@ -4,6 +4,10 @@ import { URI } from "vscode-uri";
 import { CompletionItemKind, Location, Position, Range } from "vscode";
 import { SPItem } from "../Backend/Items/spItems";
 
+function isInComment(commentsRanges: Range[], matchPosition: Position) {
+  return commentsRanges.find((e) => e.contains(matchPosition)) !== undefined;
+}
+
 export function handleReferenceInParser(
   this: {
     parser: Parser;
@@ -15,10 +19,7 @@ export function handleReferenceInParser(
 ) {
   let matchPosition = new Position(this.parser.lineNb, match.index + 1);
   // Return early if we match in a comment.
-  if (
-    this.parser.commentsRanges.find((e) => e.contains(matchPosition)) !==
-    undefined
-  ) {
+  if (isInComment(this.parser.commentsRanges, matchPosition)) {
     return;
   }
   if (match[0] === "this") {

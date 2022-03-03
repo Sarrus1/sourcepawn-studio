@@ -3,7 +3,6 @@ import {
   workspace as Workspace,
   languages,
   window,
-  commands,
   StatusBarAlignment,
 } from "vscode";
 import { URI } from "vscode-uri";

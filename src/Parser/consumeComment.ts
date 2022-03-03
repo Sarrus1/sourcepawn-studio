@@ -39,10 +39,7 @@ export function consumeComment(
     current_line.length
   );
   let range = new Range(startPos, endPos);
-  parser.fileItems.set(
-    `comment${parser.lineNb}--${Math.random()}`,
-    new CommentItem(parser.file, range)
-  );
+  parser.fileItems.comments.push(new CommentItem(parser.file, range));
   parser.interpLine(current_line);
   return;
 }

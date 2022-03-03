@@ -84,6 +84,12 @@ export function newDocumentCallback(
 ): void {
   const filePath: string = uri.fsPath;
 
+  // Don't parse the document again if it was already.
+  // TODO: Make this faster
+  if (itemsRepo.fileItems.has(uri.toString())) {
+    return;
+  }
+
   if (
     ![".inc", ".sp"].includes(extname(uri.fsPath)) ||
     filePath.includes(".git")
