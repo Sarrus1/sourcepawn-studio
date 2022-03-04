@@ -1,12 +1,10 @@
+import { URI } from "vscode-uri";
+import { CompletionItemKind, Location, Position } from "vscode";
+
 import { Parser } from "./spParser";
 import { positiveRange } from "./utils";
-import { URI } from "vscode-uri";
-import { CompletionItemKind, Location, Position, Range } from "vscode";
 import { SPItem } from "../Backend/Items/spItems";
-
-function isInComment(commentsRanges: Range[], matchPosition: Position) {
-  return commentsRanges.find((e) => e.contains(matchPosition)) !== undefined;
-}
+import { globalIdentifier } from "../Misc/spConstants";
 
 export function handleReferenceInParser(
   this: {
@@ -14,6 +12,7 @@ export function handleReferenceInParser(
     offset: number;
     previousItems: SPItem[];
     line: string;
+    scope: string;
   },
   match: RegExpExecArray
 ) {
@@ -25,7 +24,7 @@ export function handleReferenceInParser(
         [CompletionItemKind.Struct, CompletionItemKind.Class].includes(
           e.kind
         ) &&
-        this.parser.file == e.filePath &&
+        this.parser.filePath == e.filePath &&
         e.fullRange.contains(matchPosition)
     );
     if (item !== undefined) {
@@ -33,8 +32,12 @@ export function handleReferenceInParser(
     }
     return;
   }
+  const globalScope = `-${globalIdentifier}-${globalIdentifier}`;
 
-  const item = this.parser.referencesMap.get(match[0]);
+  const item =
+    this.parser.referencesMap.get(match[0] + this.scope) ||
+    this.parser.referencesMap.get(match[0] + globalScope) ||
+    this.parser.referencesMap.get(match[0]);
 
   if (item !== undefined) {
     const range = positiveRange(
@@ -47,7 +50,7 @@ export function handleReferenceInParser(
     if (item.range.isEqual(range)) {
       return;
     }
-    const location = new Location(URI.file(this.parser.file), range);
+    const location = new Location(URI.file(this.parser.filePath), range);
     item.references.push(location);
     this.previousItems.push(item);
   } else if (
@@ -75,7 +78,7 @@ export function handleReferenceInParser(
       if (item.range.isEqual(range)) {
         return;
       }
-      const location = new Location(URI.file(this.parser.file), range);
+      const location = new Location(URI.file(this.parser.filePath), range);
       item.references.push(location);
       this.previousItems.push(item);
     }

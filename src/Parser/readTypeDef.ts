@@ -18,7 +18,7 @@ export function readTypeDef(
     new TypeDefItem(
       name,
       match[0],
-      parser.file,
+      parser.filePath,
       description,
       type,
       range,

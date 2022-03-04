@@ -75,7 +75,7 @@ export function readDefine(
     match[1],
     value,
     description,
-    parser.file,
+    parser.filePath,
     range,
     parser.IsBuiltIn,
     fullRange

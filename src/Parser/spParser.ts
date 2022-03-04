@@ -3,6 +3,7 @@ import {
   Range,
   workspace as Workspace,
   Location,
+  Position,
 } from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { resolve, dirname } from "path";
@@ -30,6 +31,11 @@ import { manageState } from "./manageState";
 import { purgeCalls, positiveRange, parentCounter } from "./utils";
 import { globalIdentifier } from "../Misc/spConstants";
 import { ParseState } from "./interfaces";
+import { FunctionItem } from "../Backend/Items/spFunctionItem";
+import { MethodItem } from "../Backend/Items/spMethodItem";
+import { PropertyItem } from "../Backend/Items/spPropertyItem";
+import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
+import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 
 export function parseFile(
   file: string,
@@ -77,12 +83,14 @@ export class Parser {
   state_data: any;
   lines: string[];
   lineNb: number;
-  file: string;
+  filePath: string;
   IsBuiltIn: boolean;
   documents: Set<string>;
   lastFuncLine: number;
   lastFuncName: string;
-  methodsAndProperties: SPItem[];
+  methodsAndProperties: (MethodItem | PropertyItem)[];
+  functionsInFile: FunctionItem[];
+  MmEsInFile: (MethodMapItem | EnumStructItem)[];
   referencesMap: Map<string, SPItem>;
   macroArr: string[];
   itemsRepository: ItemsRepository;
@@ -92,7 +100,7 @@ export class Parser {
 
   constructor(
     lines: string[],
-    file: string,
+    filePath: string,
     IsBuiltIn: boolean,
     completions: FileItems,
     itemsRepository: ItemsRepository
@@ -101,13 +109,13 @@ export class Parser {
     this.state = [State.None];
     this.lineNb = 0;
     this.lines = lines;
-    this.file = file;
+    this.filePath = filePath;
     this.IsBuiltIn = IsBuiltIn;
     this.documents = itemsRepository.documents;
     this.lastFuncLine = 0;
     this.lastFuncName = "";
     // Get all the items from the itemsRepository for this file
-    this.items = itemsRepository.getAllItems(URI.file(this.file));
+    this.items = itemsRepository.getAllItems(URI.file(this.filePath));
     this.macroArr = this.getAllMacros(this.items);
     this.itemsRepository = itemsRepository;
     let debugSetting = Workspace.getConfiguration("sourcepawn").get(
@@ -116,6 +124,8 @@ export class Parser {
     this.debugging = debugSetting == "messages" || debugSetting == "verbose";
     this.anonymousEnumCount = 0;
     this.methodsAndProperties = [];
+    this.functionsInFile = [];
+    this.MmEsInFile = [];
     this.referencesMap = new Map<string, SPItem>();
   }
 
@@ -123,14 +133,14 @@ export class Parser {
     let line = this.lines.shift();
     if (!searchReferences) {
       // Purge all comments from the file.
-      let uri = URI.file(this.file);
+      let uri = URI.file(this.filePath);
       let oldFileItems = this.itemsRepository.fileItems.get(uri.toString());
       let oldRefs = new Map<string, Location[]>();
       if (oldFileItems !== undefined) {
         oldFileItems.forEach((v: SPItem, k) => {
           if (v.references !== undefined && v.references.length > 0) {
             let oldItemRefs = v.references.filter(
-              (e) => e.uri.fsPath !== this.file
+              (e) => e.uri.fsPath !== this.filePath
             );
             if (oldItemRefs.length > 0) {
               oldRefs.set(k, oldItemRefs);
@@ -155,22 +165,49 @@ export class Parser {
       return;
     }
 
-    this.getReferencesMap(
-      this.items,
-      this.referencesMap,
-      this.methodsAndProperties
-    );
+    this.getReferencesMap();
+
+    let lastFunc: FunctionItem | MethodItem | undefined;
+    let lastMMorES: MethodMapItem | EnumStructItem | undefined;
 
     while (line !== undefined) {
+      const pos = new Position(this.lineNb, 0);
+
+      if (!lastFunc || !lastFunc.fullRange.contains(pos)) {
+        if (
+          this.functionsInFile.length > 0 &&
+          this.functionsInFile[0].fullRange.contains(pos)
+        ) {
+          lastFunc = this.functionsInFile.shift();
+        } else {
+          lastFunc = undefined;
+        }
+      }
+
+      if (!lastMMorES || !lastMMorES.fullRange.contains(pos)) {
+        if (
+          this.MmEsInFile.length > 0 &&
+          this.MmEsInFile[0].fullRange.contains(pos)
+        ) {
+          lastMMorES = this.MmEsInFile.shift();
+        } else {
+          lastMMorES = undefined;
+        }
+      }
+
       const parseState: ParseState = {
         bComment: false,
         lComment: false,
         sString: false,
         dString: false,
       };
+
       searchForReferencesInString(line, handleReferenceInParser, {
         parser: this,
         parseState: parseState,
+        scope: `-${lastFunc ? lastFunc.name : globalIdentifier}-${
+          lastMMorES ? lastMMorES.name : globalIdentifier
+        }`,
         offset: 0,
       });
       line = this.lines.shift();
@@ -300,7 +337,7 @@ export class Parser {
       } catch (e) {
         console.error(e);
         if (this.debugging) {
-          console.error(`At line ${this.lineNb} of ${this.file}`);
+          console.error(`At line ${this.lineNb} of ${this.filePath}`);
         }
       }
       return;
@@ -363,26 +400,44 @@ export class Parser {
     return range;
   }
 
-  getReferencesMap(
-    items: SPItem[],
-    referencesMap: Map<string, SPItem>,
-    methodsAndProperties: SPItem[]
-  ): void {
+  getReferencesMap(): void {
     const MP = [CompletionItemKind.Method, CompletionItemKind.Property];
+    const MmEs = [CompletionItemKind.Class, CompletionItemKind.Struct];
 
-    items.forEach((item) => {
+    this.items.forEach((item) => {
       if (item.kind === CompletionItemKind.Variable) {
-        if (item.parent === globalIdentifier) {
-          purgeCalls(item, this.file);
-          referencesMap.set(item.name, item);
+        purgeCalls(item, this.filePath);
+        this.referencesMap.set(
+          `${item.name}-${item.parent}-${globalIdentifier}`,
+          item
+        );
+      } else if (item.kind === CompletionItemKind.Function) {
+        if (item.filePath === this.filePath) {
+          this.functionsInFile.push(item as FunctionItem);
         }
+        purgeCalls(item, this.filePath);
+        this.referencesMap.set(item.name, item);
+      } else if (MmEs.includes(item.kind)) {
+        if (item.filePath === this.filePath) {
+          this.MmEsInFile.push(item as MethodMapItem | EnumStructItem);
+        }
+        purgeCalls(item, this.filePath);
+        this.referencesMap.set(item.name, item);
       } else if (!MP.includes(item.kind) && item.references !== undefined) {
-        purgeCalls(item, this.file);
-        referencesMap.set(item.name, item);
+        purgeCalls(item, this.filePath);
+        this.referencesMap.set(item.name, item);
       } else if (MP.includes(item.kind) && item.references !== undefined) {
-        methodsAndProperties.push(item);
+        this.methodsAndProperties.push(item as MethodItem | PropertyItem);
       }
     });
+
+    this.MmEsInFile = this.MmEsInFile.sort(
+      (a, b) => a.fullRange.start.line - b.fullRange.start.line
+    );
+
+    this.functionsInFile = this.functionsInFile.sort(
+      (a, b) => a.fullRange.start.line - b.fullRange.start.line
+    );
   }
 
   getAllMacros(items: SPItem[]): string[] {

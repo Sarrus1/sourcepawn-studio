@@ -19,7 +19,7 @@ export function readMethodMap(
     match[2],
     line.trim(),
     description,
-    parser.file,
+    parser.filePath,
     range,
     parser.IsBuiltIn
   );

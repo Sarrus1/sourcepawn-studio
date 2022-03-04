@@ -27,13 +27,13 @@ export function readEnum(
   let range = parser.makeDefinitionRange(match[1] ? match[1] : "enum", line);
   var enumCompletion: EnumItem = new EnumItem(
     nameMatch,
-    parser.file,
+    parser.filePath,
     description,
     range
   );
   const key = match[1]
     ? match[1]
-    : `${parser.anonymousEnumCount}${basename(parser.file)}`;
+    : `${parser.anonymousEnumCount}${basename(parser.filePath)}`;
   parser.fileItems.set(key, enumCompletion);
 
   // Set max number of iterations for safety
@@ -125,7 +125,7 @@ export function readEnum(
       enumMemberName,
       new EnumMemberItem(
         enumMemberName,
-        parser.file,
+        parser.filePath,
         "",
         enumCompletion,
         range,
@@ -148,7 +148,7 @@ function parseEnumStruct(
   let range = parser.makeDefinitionRange(enumStructName, line);
   var enumStructCompletion: EnumStructItem = new EnumStructItem(
     enumStructName,
-    parser.file,
+    parser.filePath,
     desc,
     range
   );

@@ -51,7 +51,14 @@ export function addVariableItem(
   ) {
     parser.fileItems.set(
       mapName + parser.lastFuncName,
-      new VariableItem(name, parser.file, scope, range, type, enumStructName)
+      new VariableItem(
+        name,
+        parser.filePath,
+        scope,
+        range,
+        type,
+        enumStructName
+      )
     );
   } else if (parser.state.includes(State.EnumStruct)) {
     parser.fileItems.set(
@@ -59,7 +66,7 @@ export function addVariableItem(
       new PropertyItem(
         parser.state_data.name,
         name,
-        parser.file,
+        parser.filePath,
         line,
         "",
         range,
@@ -69,7 +76,14 @@ export function addVariableItem(
   } else {
     parser.fileItems.set(
       mapName,
-      new VariableItem(name, parser.file, scope, range, type, globalIdentifier)
+      new VariableItem(
+        name,
+        parser.filePath,
+        scope,
+        range,
+        type,
+        globalIdentifier
+      )
     );
   }
 }

@@ -14,7 +14,7 @@ export function readProperty(
   let NewPropertyCompletion = new PropertyItem(
     parser.state_data.name,
     name_match,
-    parser.file,
+    parser.filePath,
     match[0],
     description,
     range,

@@ -20,7 +20,7 @@ export function readMacro(
       details,
       description,
       params,
-      parser.file,
+      parser.filePath,
       parser.IsBuiltIn,
       range,
       "",

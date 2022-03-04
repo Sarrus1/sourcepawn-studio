@@ -28,6 +28,13 @@ export function readTypeSet(
   );
   parser.fileItems.set(
     name,
-    new TypeSetItem(name, match[0], parser.file, description, range, fullRange)
+    new TypeSetItem(
+      name,
+      match[0],
+      parser.filePath,
+      description,
+      range,
+      fullRange
+    )
   );
 }
