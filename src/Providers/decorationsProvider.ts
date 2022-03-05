@@ -2,6 +2,9 @@ import { window, DecorationRenderOptions } from "vscode";
 
 import { ItemsRepository } from "../Backend/spItemsRepository";
 
+const options: DecorationRenderOptions = { textDecoration: "line-through" };
+const decorationsType = window.createTextEditorDecorationType(options);
+
 /**
  * Update the deprecated decorations of the currently active textEditor.
  * @param  {ItemsRepository} itemsRepo  The itemsRepository object constructed in the activation event.
@@ -9,7 +12,6 @@ import { ItemsRepository } from "../Backend/spItemsRepository";
 export async function updateDecorations(itemsRepo: ItemsRepository) {
   const editor = window.activeTextEditor;
   const allItems = itemsRepo.getAllItems(editor.document.uri);
-  const options: DecorationRenderOptions = { textDecoration: "line-through" };
 
   const decorations = allItems
     .filter((e) => e.deprecated)
@@ -21,8 +23,5 @@ export async function updateDecorations(itemsRepo: ItemsRepository) {
     )
     .flat();
 
-  editor.setDecorations(
-    window.createTextEditorDecorationType(options),
-    decorations
-  );
+  editor.setDecorations(decorationsType, decorations);
 }
