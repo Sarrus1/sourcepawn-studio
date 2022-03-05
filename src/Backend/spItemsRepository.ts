@@ -20,6 +20,7 @@ import {
 import { getAllItems, getItemFromPosition } from "./spItemsGetters";
 import { refreshDiagnostics } from "../Providers/spLinter";
 import { refreshCfgDiagnostics } from "../Providers/cfgLinter";
+import { updateDecorations } from "../Providers/decorationsProvider";
 
 export class ItemsRepository implements Disposable {
   public fileItems: Map<string, FileItems>;
@@ -42,6 +43,7 @@ export class ItemsRepository implements Disposable {
     refreshDiagnostics(event.document);
     refreshCfgDiagnostics(event.document);
     handleDocumentChange(this, event);
+    updateDecorations(this);
   }
 
   public handleNewDocument(document: TextDocument) {

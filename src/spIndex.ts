@@ -20,6 +20,7 @@ import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
 import { findMainPath, checkMainPath } from "./spUtils";
+import { updateDecorations } from "./Providers/decorationsProvider";
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
@@ -35,7 +36,7 @@ export function activate(context: ExtensionContext) {
       "No workspace or folder found. \n Please open the folder containing your .sp file, not just the .sp file."
     );
   } else {
-    let watcher = Workspace.createFileSystemWatcher(
+    const watcher = Workspace.createFileSystemWatcher(
       "**/*.{inc,sp}",
       false,
       true,
@@ -73,7 +74,6 @@ export function activate(context: ExtensionContext) {
       providers
     );
   });
-
   // Get the names and directories of optional include directories.
   let optionalIncludeDirs: string[] =
     Workspace.getConfiguration("sourcepawn").get("optionalIncludeDirsPaths") ||
@@ -98,6 +98,7 @@ export function activate(context: ExtensionContext) {
 
   window.onDidChangeActiveTextEditor((e) => {
     if (e !== undefined) {
+      updateDecorations(providers.itemsRepository);
       providers.itemsRepository.handleDocumentOpening(e.document.uri.fsPath);
     }
   });
@@ -244,5 +245,7 @@ async function loadFiles(providers: Providers, SBItem: StatusBarItem) {
       window.activeTextEditor.document.uri.fsPath
     );
   }
+  updateDecorations(providers.itemsRepository);
+
   SBItem.hide();
 }

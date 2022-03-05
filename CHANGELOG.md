@@ -7,6 +7,7 @@
 - Added deprecated functions and methods support.
 - Added support for references provider. The extension now know where every reference to a symbol is (see [the documentation](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#find-all-references-to-a-symbol) for more details).
 - Added support for rename provider (see [the documentation](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#rename-symbols) for more details).
+- Added a ~~strikethrough~~ on deprecated symbols. This can be disabled with (`"editor.showDeprecated": false`)
 
 ### Fixed
 

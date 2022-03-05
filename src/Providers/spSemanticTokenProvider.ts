@@ -20,24 +20,52 @@ export function semanticTokenProvider(
       item.kind === CompletionItemKind.Constant &&
       item.references !== undefined
     ) {
-      for (let call of item.references) {
-        if (call.uri.fsPath === document.uri.fsPath) {
-          tokensBuilder.push(call.range, "variable", ["readonly"]);
+      for (let ref of item.references) {
+        if (ref.uri.fsPath === document.uri.fsPath) {
+          tokensBuilder.push(ref.range, "variable", ["readonly"]);
         }
       }
     } else if (item.kind === CompletionItemKind.EnumMember) {
-      for (let call of item.references) {
-        if (call.uri.fsPath === document.uri.fsPath) {
-          tokensBuilder.push(call.range, "enumMember", ["readonly"]);
+      for (let ref of item.references) {
+        if (ref.uri.fsPath === document.uri.fsPath) {
+          tokensBuilder.push(ref.range, "enumMember", ["readonly"]);
         }
       }
     } else if (item.kind === CompletionItemKind.Function) {
-      for (let call of item.references) {
-        if (call.uri.fsPath === document.uri.fsPath) {
-          if (item.range.contains(call.range)) {
-            tokensBuilder.push(call.range, "function", ["declaration"]);
+      for (let ref of item.references) {
+        if (ref.uri.fsPath === document.uri.fsPath) {
+          if (item.range.contains(ref.range)) {
+            tokensBuilder.push(ref.range, "function", ["declaration"]);
           } else {
-            tokensBuilder.push(call.range, "function");
+            tokensBuilder.push(
+              ref.range,
+              "function",
+              item.deprecated ? ["deprecated"] : []
+            );
+          }
+        }
+      }
+    } else if (item.kind === CompletionItemKind.Method) {
+      for (let ref of item.references) {
+        if (ref.uri.fsPath === document.uri.fsPath) {
+          if (item.range.contains(ref.range)) {
+            tokensBuilder.push(ref.range, "method", ["declaration"]);
+          } else {
+            tokensBuilder.push(
+              ref.range,
+              "method",
+              item.deprecated ? ["deprecated"] : []
+            );
+          }
+        }
+      }
+    } else if (item.kind === CompletionItemKind.Class) {
+      for (let ref of item.references) {
+        if (ref.uri.fsPath === document.uri.fsPath) {
+          if (item.range.contains(ref.range)) {
+            tokensBuilder.push(ref.range, "class", ["declaration"]);
+          } else {
+            tokensBuilder.push(ref.range, "class");
           }
         }
       }
