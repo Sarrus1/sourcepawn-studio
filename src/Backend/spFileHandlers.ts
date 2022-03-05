@@ -34,14 +34,7 @@ export function handleAddedDocument(
 export function handleDocumentChange(
   itemsRepo: ItemsRepository,
   event: TextDocumentChangeEvent
-): void {
-  // if (event.contentChanges.length > 0) {
-  //   let textChange = event.contentChanges[0].text;
-  //   // Don't parse the document every character change.
-  //   if (/\w+/.test(textChange)) {
-  //     return;
-  //   }
-  // }
+) {
   const fileUri = event.document.uri.toString();
   const filePath: string = event.document.uri.fsPath.replace(".git", "");
 

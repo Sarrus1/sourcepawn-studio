@@ -11,59 +11,67 @@ import { ItemsRepository } from "../Backend/spItemsRepository";
  * @param  {ItemsRepository} itemsRepo    The itemsRepository object constructed in the activation event.
  * @returns void
  */
-export function parseSMApi(itemsRepo: ItemsRepository): void {
-  const SMHome: string =
-    Workspace.getConfiguration("sourcepawn").get("SourcemodHome") || "";
-  const debug = ["messages", "verbose"].includes(
-    Workspace.getConfiguration("sourcepawn").get("trace.server")
-  );
+export function parseSMApi(itemsRepo: ItemsRepository): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const SMHome: string =
+      Workspace.getConfiguration("sourcepawn").get("SourcemodHome") || "";
+    const debug = ["messages", "verbose"].includes(
+      Workspace.getConfiguration("sourcepawn").get("trace.server")
+    );
 
-  if (SMHome === "") {
-    window
-      .showWarningMessage(
-        "SourceMod API not found in the project. You should set SourceMod Home for tasks generation to work. Do you want to install it automatically?",
-        "Yes",
-        "No, open Settings"
-      )
-      .then((choice) => {
-        if (choice == "Yes") {
-          commands.executeCommand("sourcepawn-vscode.installSM");
-        } else if (choice === "No, open Settings") {
-          commands.executeCommand(
-            "workbench.action.openSettings",
-            "@ext:sarrus.sourcepawn-vscode"
-          );
+    if (SMHome === "") {
+      window
+        .showWarningMessage(
+          "SourceMod API not found in the project. You should set SourceMod Home for tasks generation to work. Do you want to install it automatically?",
+          "Yes",
+          "No, open Settings"
+        )
+        .then((choice) => {
+          if (choice == "Yes") {
+            commands.executeCommand("sourcepawn-vscode.installSM");
+          } else if (choice === "No, open Settings") {
+            commands.executeCommand(
+              "workbench.action.openSettings",
+              "@ext:sarrus.sourcepawn-vscode"
+            );
+          }
+        });
+      reject();
+      return;
+    }
+
+    if (debug) console.log("Parsing SM API");
+
+    glob(join(SMHome, "**/*.inc"), async (err, files: string[]) => {
+      files.forEach((e) => itemsRepo.documents.add(URI.file(e).toString()));
+
+      for (let file of files) {
+        if (debug) console.log("SM API Reading", file);
+
+        const items = new FileItems(URI.file(file).toString());
+        try {
+          parseFile(file, items, itemsRepo, false, true);
+        } catch (e) {
+          console.debug(e);
         }
-      });
-    return;
-  }
 
-  if (debug) console.log("Parsing SM API");
+        if (debug) console.log("SM API Done parsing", file);
 
-  const files: string[] = glob.sync(join(SMHome, "**/*.inc"));
-  files.forEach((e) => itemsRepo.documents.add(URI.file(e).toString()));
+        const uri = URI.file(file).toString();
+        itemsRepo.fileItems.set(uri, items);
+        itemsRepo.documents.add(uri);
 
-  for (let file of files) {
-    if (debug) console.log("SM API Reading", file);
+        if (debug) console.log("SM API Done dealing with", uri);
+      }
 
-    const items = new FileItems(URI.file(file).toString());
-    parseFile(file, items, itemsRepo, false, true);
-
-    if (debug) console.log("SM API Done parsing", file);
-
-    const uri = URI.file(file).toString();
-    itemsRepo.fileItems.set(uri, items);
-    itemsRepo.documents.add(uri);
-
-    if (debug) console.log("SM API Done dealing with", uri);
-    parseFile(file, items, itemsRepo, true, true);
-  }
-
-  // Parse token references.
-  for (let file of files) {
-    const items = new FileItems(URI.file(file).toString());
-    if (debug) console.log("SM API Done parsing", file);
-    parseFile(file, items, itemsRepo, true, true);
-  }
-  if (debug) console.log("Done parsing SM API");
+      // Parse token references.
+      for (let file of files) {
+        const items = new FileItems(URI.file(file).toString());
+        if (debug) console.log("SM API Done parsing", file);
+        parseFile(file, items, itemsRepo, true, true);
+      }
+      if (debug) console.log("Done parsing SM API");
+      resolve();
+    });
+  });
 }

@@ -4,6 +4,7 @@ import {
   languages,
   window,
   StatusBarAlignment,
+  StatusBarItem,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { resolve } from "path";
@@ -20,14 +21,13 @@ import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
 import { findMainPath, checkMainPath } from "./spUtils";
 
-export async function activate(context: ExtensionContext) {
+export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
+
   const SBItem = window.createStatusBarItem(StatusBarAlignment.Left, 0);
   SBItem.command = "status.enablingSPFeatures";
   SBItem.text = "Enabling SourcePawn features...";
-
   SBItem.show();
-  parseSMApi(providers.itemsRepository);
 
   let workspaceFolders = Workspace.workspaceFolders || [];
   if (workspaceFolders.length === 0) {
@@ -83,16 +83,7 @@ export async function activate(context: ExtensionContext) {
   );
   getDirectories(optionalIncludeDirs, providers);
 
-  const mainPath = findMainPath();
-  if (mainPath !== undefined) {
-    if (!checkMainPath(mainPath)) {
-      window.showErrorMessage(
-        "A setting for the main.sp file was specified, but seems invalid. Right click on a file and use the command at the bottom of the menu to set it as main."
-      );
-    } else {
-      providers.itemsRepository.handleDocumentOpening(mainPath);
-    }
-  }
+  loadFiles(providers, SBItem);
 
   Workspace.onDidChangeConfiguration((e) => {
     if (e.affectsConfiguration("sourcepawn.MainPath")) {
@@ -105,12 +96,6 @@ export async function activate(context: ExtensionContext) {
     }
   });
 
-  // Load the currently opened file
-  if (window.activeTextEditor != undefined) {
-    providers.itemsRepository.handleDocumentOpening(
-      window.activeTextEditor.document.uri.fsPath
-    );
-  }
   window.onDidChangeActiveTextEditor((e) => {
     if (e !== undefined) {
       providers.itemsRepository.handleDocumentOpening(e.document.uri.fsPath);
@@ -228,8 +213,6 @@ export async function activate(context: ExtensionContext) {
 
   // Register CFG linter
   registerCFGLinter(context);
-
-  SBItem.hide();
 }
 
 function getDirectories(paths: string[], providers: Providers) {
@@ -239,4 +222,27 @@ function getDirectories(paths: string[], providers: Providers) {
       providers.itemsRepository.documents.add(URI.file(file).toString());
     }
   }
+}
+
+async function loadFiles(providers: Providers, SBItem: StatusBarItem) {
+  await parseSMApi(providers.itemsRepository);
+
+  const mainPath = findMainPath();
+  if (mainPath !== undefined) {
+    if (!checkMainPath(mainPath)) {
+      window.showErrorMessage(
+        "A setting for the main.sp file was specified, but seems invalid. Right click on a file and use the command at the bottom of the menu to set it as main."
+      );
+    } else {
+      providers.itemsRepository.handleDocumentOpening(mainPath);
+    }
+  }
+
+  // Load the currently opened file
+  if (window.activeTextEditor != undefined) {
+    providers.itemsRepository.handleDocumentOpening(
+      window.activeTextEditor.document.uri.fsPath
+    );
+  }
+  SBItem.hide();
 }
