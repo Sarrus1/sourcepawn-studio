@@ -59,11 +59,10 @@ export function handleReferenceInParser(
     [".", ":"].includes(this.line[match.index - 1])
   ) {
     let parent = this.previousItems[this.previousItems.length - 1];
-
     let item = this.parser.methodsAndProperties.find(
       (e) =>
-        e.name === match[0] &&
-        /*e.parent === parent.type || */ e.parent === parent
+        (e.name === match[0] && e.parent.name === parent.type) ||
+        e.parent === parent
     );
 
     if (item !== undefined) {
