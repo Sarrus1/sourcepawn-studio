@@ -6,16 +6,18 @@ import {
   DocumentSymbol,
   SymbolKind,
   LocationLink,
+  Location,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { basename } from "path";
 
 import { descriptionToMD } from "../../spUtils";
 import { SPItem } from "./spItems";
+import { ConstantItem } from "./spConstantItem";
 
 export class MethodMapItem implements SPItem {
   name: string;
-  parent: string;
+  parent: MethodMapItem | ConstantItem;
   description: string;
   detail: string;
   kind = CompletionItemKind.Class;
@@ -24,10 +26,11 @@ export class MethodMapItem implements SPItem {
   IsBuiltIn: boolean;
   filePath: string;
   fullRange: Range;
+  references: Location[];
 
   constructor(
     name: string,
-    parent: string,
+    parent: MethodMapItem | ConstantItem,
     detail: string,
     description: string,
     file: string,
@@ -42,6 +45,7 @@ export class MethodMapItem implements SPItem {
     this.filePath = file;
     this.range = range;
     this.type = name;
+    this.references = [];
   }
 
   toCompletionItem(): CompletionItem {

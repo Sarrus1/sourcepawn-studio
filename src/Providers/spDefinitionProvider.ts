@@ -7,25 +7,27 @@
   LocationLink,
 } from "vscode";
 import { URI } from "vscode-uri";
-import { globalIdentifier } from "../Misc/spConstants";
+
 import { SPItem } from "../Backend/Items/spItems";
 import { ItemsRepository } from "../Backend/spItemsRepository";
+import { MethodItem } from "../Backend/Items/spMethodItem";
+import { FunctionItem } from "../Backend/Items/spFunctionItem";
+import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
+import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 
-export function getLastFuncName(
+export function getLastFunc(
   position: Position,
   document: TextDocument,
   allItems: SPItem[]
-): string {
-  let func = allItems.find(
+): FunctionItem | MethodItem | undefined {
+  return allItems.find(
     (e) =>
       [CompletionItemKind.Function, CompletionItemKind.Method].includes(
         e.kind
       ) &&
       e.filePath === document.uri.fsPath &&
-      e.fullRange != undefined &&
       e.fullRange.contains(position)
-  );
-  return func != undefined ? func.name : globalIdentifier;
+  ) as FunctionItem | MethodItem;
 }
 
 export function isInAComment(
@@ -113,23 +115,16 @@ export function isControlStatement(line: string): boolean {
 
 export function getLastEnumStructNameOrMethodMap(
   position: Position,
-  document: TextDocument,
+  filePath: string,
   allItems: SPItem[]
-) {
-  let enumStruct = allItems.find(
+): EnumStructItem | MethodMapItem | undefined {
+  return allItems.find(
     (e) =>
       [CompletionItemKind.Struct, CompletionItemKind.Class].includes(e.kind) &&
-      e.filePath === document.uri.fsPath &&
+      e.filePath === filePath &&
       e.fullRange != undefined &&
       e.fullRange.contains(position)
-  );
-  if (enumStruct === undefined) {
-    return { lastEnumStructOrMethodMap: globalIdentifier, isAMethodMap: false };
-  }
-  return {
-    lastEnumStructOrMethodMap: enumStruct.name,
-    isAMethodMap: enumStruct.kind === CompletionItemKind.Class,
-  };
+  ) as EnumStructItem | MethodMapItem | undefined;
 }
 
 export function definitionsProvider(
@@ -142,7 +137,7 @@ export function definitionsProvider(
   if (items.length > 0) {
     return items
       .map((e) => e.toDefinitionItem())
-      .filter((e) => e !== undefined) as LocationLink[];
+      .filter((e) => e !== undefined);
   }
   return [];
 }

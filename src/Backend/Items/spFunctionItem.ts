@@ -7,6 +7,8 @@ import {
   DocumentSymbol,
   SymbolKind,
   LocationLink,
+  CompletionItemTag,
+  Location,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { basename } from "path";
@@ -23,8 +25,10 @@ export class FunctionItem implements SPItem {
   range: Range;
   fullRange: Range;
   IsBuiltIn: boolean;
+  references: Location[];
   kind = CompletionItemKind.Function;
   type: string;
+  deprecated: string | undefined;
 
   constructor(
     name: string,
@@ -35,7 +39,8 @@ export class FunctionItem implements SPItem {
     IsBuiltIn: boolean,
     range: Range,
     type: string,
-    fullRange: Range
+    fullRange: Range,
+    deprecated: string | undefined
   ) {
     this.description = description;
     this.name = name;
@@ -46,6 +51,8 @@ export class FunctionItem implements SPItem {
     this.range = range;
     this.type = type;
     this.fullRange = fullRange;
+    this.deprecated = deprecated;
+    this.references = [];
   }
 
   toCompletionItem(): CompletionItem {
@@ -53,6 +60,7 @@ export class FunctionItem implements SPItem {
       label: this.name,
       kind: this.kind,
       detail: basename(this.filePath),
+      tags: this.deprecated ? [CompletionItemTag.Deprecated] : [],
     };
   }
 
@@ -73,12 +81,20 @@ export class FunctionItem implements SPItem {
       return new Hover([
         { language: "sourcepawn", value: this.detail },
         `[Online Documentation](https://sourcemod.dev/#/${filename}/function.${this.name})`,
-        descriptionToMD(this.description),
+        descriptionToMD(
+          `${this.description}${
+            this.deprecated ? `\nDEPRECATED ${this.deprecated}` : ""
+          }`
+        ),
       ]);
     }
     return new Hover([
       { language: "sourcepawn", value: this.detail },
-      descriptionToMD(this.description),
+      descriptionToMD(
+        `${this.description}${
+          this.deprecated ? `\nDEPRECATED ${this.deprecated}` : ""
+        }`
+      ),
     ]);
   }
 
@@ -87,6 +103,10 @@ export class FunctionItem implements SPItem {
       targetRange: this.range,
       targetUri: URI.file(this.filePath),
     };
+  }
+
+  toReferenceItem(): Location[] {
+    return this.references;
   }
 
   toDocumentSymbol(): DocumentSymbol | undefined {

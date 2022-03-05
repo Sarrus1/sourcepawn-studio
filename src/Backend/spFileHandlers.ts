@@ -34,14 +34,7 @@ export function handleAddedDocument(
 export function handleDocumentChange(
   itemsRepo: ItemsRepository,
   event: TextDocumentChangeEvent
-): void {
-  // if (event.contentChanges.length > 0) {
-  //   let textChange = event.contentChanges[0].text;
-  //   // Don't parse the document every character change.
-  //   if (/\w+/.test(textChange)) {
-  //     return;
-  //   }
-  // }
+) {
   const fileUri = event.document.uri.toString();
   const filePath: string = event.document.uri.fsPath.replace(".git", "");
 
@@ -49,12 +42,27 @@ export function handleDocumentChange(
   itemsRepo.documents.add(fileUri);
   // We use parseText here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
   try {
-    parseText(event.document.getText(), filePath, fileItems, itemsRepo);
+    parseText(
+      event.document.getText(),
+      filePath,
+      fileItems,
+      itemsRepo,
+      false,
+      false
+    );
   } catch (error) {
     console.log(error);
   }
   readUnscannedImports(itemsRepo, fileItems.includes);
   itemsRepo.fileItems.set(fileUri, fileItems);
+  parseText(
+    event.document.getText(),
+    filePath,
+    fileItems,
+    itemsRepo,
+    true,
+    false
+  );
 }
 
 /**
@@ -69,6 +77,11 @@ export function newDocumentCallback(
 ): void {
   const filePath: string = uri.fsPath;
 
+  // Don't parse the document again if it was already.
+  if (itemsRepo.fileItems.has(uri.toString())) {
+    return;
+  }
+
   if (
     ![".inc", ".sp"].includes(extname(uri.fsPath)) ||
     filePath.includes(".git")
@@ -79,12 +92,18 @@ export function newDocumentCallback(
   let fileItems: FileItems = new FileItems(uri.toString());
   itemsRepo.documents.add(uri.toString());
   try {
-    parseFile(filePath, fileItems, itemsRepo);
+    parseFile(filePath, fileItems, itemsRepo, false, false);
   } catch (error) {
     console.error(error);
   }
   readUnscannedImports(itemsRepo, fileItems.includes);
   itemsRepo.fileItems.set(uri.toString(), fileItems);
+
+  // Parse token references.
+  parseFile(filePath, fileItems, itemsRepo, true, false);
+  fileItems.includes.forEach((e) => {
+    parseFile(URI.parse(e.uri).fsPath, fileItems, itemsRepo, true, false);
+  });
 }
 
 /**
@@ -113,7 +132,7 @@ function readUnscannedImports(
 
     let fileItems: FileItems = new FileItems(include.uri);
     try {
-      parseFile(filePath, fileItems, itemsRepo, include.IsBuiltIn);
+      parseFile(filePath, fileItems, itemsRepo, false, include.IsBuiltIn);
     } catch (err) {
       console.error(err, include.uri.toString());
     }
@@ -134,7 +153,7 @@ function readUnscannedImports(
  */
 export function getAllPossibleIncludeFolderPaths(
   uri: URI,
-  onlyOptionalPaths: boolean = false
+  onlyOptionalPaths = false
 ): string[] {
   let possibleIncludePaths: string[] = [];
   const workspaceFolder = Workspace.getWorkspaceFolder(uri);

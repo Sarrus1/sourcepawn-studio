@@ -13,17 +13,18 @@ export function readMacro(
   let range = parser.makeDefinitionRange(nameMatch, line);
   // Add the macro to the array of known macros
   parser.macroArr.push(nameMatch);
-  parser.completions.set(
+  parser.fileItems.set(
     nameMatch,
     new MacroItem(
       nameMatch,
       details,
       description,
       params,
-      parser.file,
+      parser.filePath,
       parser.IsBuiltIn,
       range,
       "",
+      undefined,
       undefined
     )
   );

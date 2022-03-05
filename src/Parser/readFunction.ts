@@ -1,9 +1,9 @@
-﻿import { Parser } from "./spParser";
+﻿import { Range } from "vscode";
+
+import { Parser } from "./spParser";
 import { MethodItem } from "../Backend/Items/spMethodItem";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { State } from "./stateEnum";
-import { Range } from "vscode";
-import { searchForDefinesInString } from "./searchForDefinesInString";
 import { parseDocComment } from "./parseDocComment";
 import {
   parentCounter,
@@ -13,6 +13,8 @@ import {
 } from "./utils";
 import { isControlStatement } from "../Providers/spDefinitionProvider";
 import { addVariableItem } from "./addVariableItem";
+import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
+import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 
 export function readFunction(
   parser: Parser,
@@ -89,10 +91,44 @@ export function readFunction(
     }
   }
 
-  let lineMatch = parser.lineNb;
+  let item: MethodItem | FunctionItem;
+  if (isMethod) {
+    item = new MethodItem(
+      parser.fileItems.get(parser.state_data.name) as
+        | MethodMapItem
+        | EnumStructItem,
+      nameMatch,
+      "",
+      description,
+      params,
+      "",
+      parser.filePath,
+      undefined,
+      parser.IsBuiltIn,
+      undefined,
+      parser.deprecated
+    );
+  } else {
+    item = new FunctionItem(
+      nameMatch,
+      "",
+      description,
+      params,
+      parser.filePath,
+      parser.IsBuiltIn,
+      undefined,
+      undefined,
+      undefined,
+      parser.deprecated
+    );
+  }
+  const oldLastFunc = parser.lastFunc;
+  parser.lastFunc = item;
+  parser.lastFuncLine = parser.lineNb;
+
   let type = match[1];
   let paramsMatch = match[3] === undefined ? "" : match[3];
-  addParamsDef(parser, paramsMatch, nameMatch, line);
+  addParamsDef(parser, paramsMatch, line);
   // Iteration safety in case something goes wrong
   let maxiter = 0;
   let matchEndRegex: RegExp = /(\{|\;)\s*(?:(?:\/\/|\/\*)(?:.*))?$/;
@@ -100,7 +136,7 @@ export function readFunction(
   let matchEnd = matchEndRegex.test(line);
   let pCount = getParenthesisCount(line);
   let matchLastParenthesis = pCount === 0;
-  let range = parser.makeDefinitionRange(nameMatch, line);
+  let range = parser.makeDefinitionRange(nameMatch, line, true);
 
   while (
     !(matchLastParenthesis && matchEnd) &&
@@ -114,8 +150,7 @@ export function readFunction(
       return;
     }
     if (!matchLastParenthesis) {
-      addParamsDef(parser, line, nameMatch, line);
-      searchForDefinesInString(parser, line);
+      addParamsDef(parser, line, line);
       paramsMatch += line;
       pCount += getParenthesisCount(line);
       matchLastParenthesis = pCount === 0;
@@ -123,30 +158,40 @@ export function readFunction(
     if (!matchEnd) {
       if (matchLastParenthesis && /\,\s*$/.test(paramsMatch)) {
         // If the statement ends with a comma, we are in an array declaration
+        parser.lastFuncLine = -1;
+        parser.lastFunc = oldLastFunc;
         return;
       }
       matchEnd = matchEndRegex.test(line);
     }
   }
   if (!matchEnd) {
+    parser.lastFuncLine = -1;
+    parser.lastFunc = oldLastFunc;
     return;
   }
   let endSymbol = line.match(matchEndRegex);
   if (endSymbol === null) {
+    parser.lastFuncLine = -1;
+    parser.lastFunc = oldLastFunc;
     return;
   }
 
   if (isNativeOrForward) {
-    if (endSymbol[1] === "{") return;
+    if (endSymbol[1] === "{") {
+      parser.lastFuncLine = -1;
+      parser.lastFunc = oldLastFunc;
+      return;
+    }
   } else {
     if (endSymbol[1] === ";" || endSymbol[1] === ",") {
+      parser.lastFuncLine = -1;
+      parser.lastFunc = oldLastFunc;
       return;
     } else if (!isSingleLineFunction(line)) {
       parser.state.push(State.Function);
     }
   }
-  parser.lastFuncLine = lineMatch;
-  parser.lastFuncName = nameMatch;
   // Treat differently if the function is declared on multiple lines
   paramsMatch = /\)\s*(?:\{|;)?\s*$/.test(match[0])
     ? match[0]
@@ -155,61 +200,52 @@ export function readFunction(
   if (params.length === 0) {
     params = getParamsFromDeclaration(paramsMatch);
   }
+
   if (isMethod) {
-    let fullRange: Range;
-    if (isNativeOrForward) {
-      let end = range.start.line === parser.lineNb ? line.length : 0;
-      fullRange = new Range(range.start.line, 0, parser.lineNb, end);
-    }
-    parser.completions.set(
-      nameMatch + parser.state_data.name,
-      new MethodItem(
-        parser.state_data.name,
-        nameMatch,
-        paramsMatch.replace(/;\s*$/g, "").replace(/{\s*$/g, "").trim(),
-        description,
-        params,
-        type,
-        parser.file,
-        range,
-        parser.IsBuiltIn,
-        fullRange
-      )
+    let fullRange = new Range(
+      range.start.line,
+      match.index,
+      parser.lineNb,
+      match.index + match[0].length
     );
+    item.detail = paramsMatch
+      .replace(/;\s*$/g, "")
+      .replace(/{\s*$/g, "")
+      .trim();
+    item.params = params;
+    item.type = type;
+    item.range = range;
+    item.fullRange = fullRange;
+    parser.fileItems.set(nameMatch + parser.state_data.name, item);
+    parser.deprecated = undefined;
     return;
   }
-  // For small files, the parsing is too fast and functions get overwritten by their own calls.
-  // If we define a function somewhere, we won't redefine it elsewhere. We can safely ignore it.
-  if (parser.completions.get(nameMatch)) {
-    return;
-  }
+
   let fullRange: Range;
   if (isNativeOrForward) {
     let end = range.start.line === parser.lineNb ? line.length : 0;
-    fullRange = new Range(range.start.line, 0, parser.lineNb, end);
+    fullRange = new Range(range.start.line, match.index, parser.lineNb, end);
+  } else {
+    fullRange = new Range(
+      range.start.line,
+      match.index,
+      parser.lineNb,
+      match.index + match[0].length
+    );
   }
-  parser.completions.set(
-    nameMatch,
-    new FunctionItem(
-      nameMatch,
-      paramsMatch.replace(/;\s*$/g, "").replace(/{\s*$/g, "").trim(),
-      description,
-      params,
-      parser.file,
-      parser.IsBuiltIn,
-      range,
-      type,
-      fullRange
-    )
-  );
+
+  item.detail = paramsMatch.replace(/;\s*$/g, "").replace(/{\s*$/g, "").trim();
+  item.params = params;
+  item.range = range;
+  item.type = type;
+  item.fullRange = fullRange;
+  parser.fileItems.set(nameMatch, item);
+  parser.lastFunc = item;
+
+  parser.deprecated = undefined;
 }
 
-export function addParamsDef(
-  parser: Parser,
-  params: string,
-  funcName: string,
-  line: string
-) {
+export function addParamsDef(parser: Parser, params: string, line: string) {
   let match_variable: RegExpExecArray;
   let match_variables: RegExpExecArray[] = [];
   let re = /\s*(?:(?:const|static)\s+)?(?:(\w+)(?:\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+|\s*\:\s*))?(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
@@ -225,14 +261,7 @@ export function addParamsDef(
       /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
     )[1];
     if (!parser.IsBuiltIn) {
-      addVariableItem(
-        parser,
-        variable_completion,
-        line,
-        variable[1],
-        funcName,
-        true
-      );
+      addVariableItem(parser, variable_completion, line, variable[1], true);
     }
   }
 }

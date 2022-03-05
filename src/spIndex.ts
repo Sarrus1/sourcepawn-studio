@@ -3,8 +3,8 @@ import {
   workspace as Workspace,
   languages,
   window,
-  commands,
   StatusBarAlignment,
+  StatusBarItem,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { resolve } from "path";
@@ -20,16 +20,15 @@ import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
 import { findMainPath, checkMainPath } from "./spUtils";
+import { updateDecorations } from "./Providers/decorationsProvider";
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
-  let SBItem = window.createStatusBarItem(StatusBarAlignment.Left, 0);
-  SBItem.command = "status.parsingSMAPI";
-  SBItem.text = "Loading SM API...";
 
+  const SBItem = window.createStatusBarItem(StatusBarAlignment.Left, 0);
+  SBItem.command = "status.enablingSPFeatures";
+  SBItem.text = "Enabling SourcePawn features...";
   SBItem.show();
-  parseSMApi(providers.itemsRepository);
-  SBItem.hide();
 
   let workspaceFolders = Workspace.workspaceFolders || [];
   if (workspaceFolders.length === 0) {
@@ -37,7 +36,7 @@ export function activate(context: ExtensionContext) {
       "No workspace or folder found. \n Please open the folder containing your .sp file, not just the .sp file."
     );
   } else {
-    let watcher = Workspace.createFileSystemWatcher(
+    const watcher = Workspace.createFileSystemWatcher(
       "**/*.{inc,sp}",
       false,
       true,
@@ -75,7 +74,6 @@ export function activate(context: ExtensionContext) {
       providers
     );
   });
-
   // Get the names and directories of optional include directories.
   let optionalIncludeDirs: string[] =
     Workspace.getConfiguration("sourcepawn").get("optionalIncludeDirsPaths") ||
@@ -85,16 +83,7 @@ export function activate(context: ExtensionContext) {
   );
   getDirectories(optionalIncludeDirs, providers);
 
-  const mainPath = findMainPath();
-  if (mainPath !== undefined) {
-    if (!checkMainPath(mainPath)) {
-      window.showErrorMessage(
-        "A setting for the main.sp file was specified, but seems invalid. Right click on a file and use the command at the bottom of the menu to set it as main."
-      );
-    } else {
-      providers.itemsRepository.handleDocumentOpening(mainPath);
-    }
-  }
+  loadFiles(providers, SBItem);
 
   Workspace.onDidChangeConfiguration((e) => {
     if (e.affectsConfiguration("sourcepawn.MainPath")) {
@@ -107,14 +96,9 @@ export function activate(context: ExtensionContext) {
     }
   });
 
-  // Load the currently opened file
-  if (window.activeTextEditor != undefined) {
-    providers.itemsRepository.handleDocumentOpening(
-      window.activeTextEditor.document.uri.fsPath
-    );
-  }
   window.onDidChangeActiveTextEditor((e) => {
     if (e !== undefined) {
+      updateDecorations(providers.itemsRepository);
       providers.itemsRepository.handleDocumentOpening(e.document.uri.fsPath);
     }
   });
@@ -143,6 +127,7 @@ export function activate(context: ExtensionContext) {
       "*"
     )
   );
+
   context.subscriptions.push(
     languages.registerSignatureHelpProvider(SP_MODE, providers, "(", ",", "\n")
   );
@@ -157,6 +142,14 @@ export function activate(context: ExtensionContext) {
 
   context.subscriptions.push(
     languages.registerDefinitionProvider(SP_MODE, providers)
+  );
+
+  context.subscriptions.push(
+    languages.registerReferenceProvider(SP_MODE, providers)
+  );
+
+  context.subscriptions.push(
+    languages.registerRenameProvider(SP_MODE, providers)
   );
 
   context.subscriptions.push(
@@ -230,4 +223,29 @@ function getDirectories(paths: string[], providers: Providers) {
       providers.itemsRepository.documents.add(URI.file(file).toString());
     }
   }
+}
+
+async function loadFiles(providers: Providers, SBItem: StatusBarItem) {
+  await parseSMApi(providers.itemsRepository);
+
+  const mainPath = findMainPath();
+  if (mainPath !== undefined) {
+    if (!checkMainPath(mainPath)) {
+      window.showErrorMessage(
+        "A setting for the main.sp file was specified, but seems invalid. Right click on a file and use the command at the bottom of the menu to set it as main."
+      );
+    } else {
+      providers.itemsRepository.handleDocumentOpening(mainPath);
+    }
+  }
+
+  // Load the currently opened file
+  if (window.activeTextEditor != undefined) {
+    providers.itemsRepository.handleDocumentOpening(
+      window.activeTextEditor.document.uri.fsPath
+    );
+  }
+  updateDecorations(providers.itemsRepository);
+
+  SBItem.hide();
 }

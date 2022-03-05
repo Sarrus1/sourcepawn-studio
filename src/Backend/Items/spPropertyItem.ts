@@ -2,19 +2,21 @@ import {
   CompletionItemKind,
   Range,
   CompletionItem,
-  SignatureInformation,
   Hover,
   DocumentSymbol,
   SymbolKind,
   LocationLink,
+  Location,
 } from "vscode";
 import { URI } from "vscode-uri";
 
 import { descriptionToMD } from "../../spUtils";
+import { EnumStructItem } from "./spEnumStructItem";
 import { SPItem } from "./spItems";
+import { MethodMapItem } from "./spMethodmapItem";
 
 export class PropertyItem implements SPItem {
-  parent: string;
+  parent: MethodMapItem | EnumStructItem;
   name: string;
   filePath: string;
   description: string;
@@ -22,10 +24,11 @@ export class PropertyItem implements SPItem {
   detail: string;
   kind = CompletionItemKind.Property;
   range: Range;
+  references: Location[];
   fullRange: Range;
 
   constructor(
-    parent: string,
+    parent: MethodMapItem | EnumStructItem,
     name: string,
     file: string,
     detail: string,
@@ -40,13 +43,14 @@ export class PropertyItem implements SPItem {
     this.range = range;
     this.type = type;
     this.detail = detail;
+    this.references = [];
   }
 
   toCompletionItem(): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
-      detail: this.parent,
+      detail: this.parent.name,
     };
   }
 

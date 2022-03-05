@@ -2,11 +2,11 @@ import {
   CompletionItemKind,
   Range,
   CompletionItem,
-  SignatureInformation,
   Hover,
   DocumentSymbol,
   SymbolKind,
   LocationLink,
+  Location,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { basename } from "path";
@@ -19,6 +19,7 @@ export class EnumStructItem implements SPItem {
   filePath: string;
   description: string;
   kind = CompletionItemKind.Struct;
+  references: Location[];
   range: Range;
   fullRange: Range;
 
@@ -27,6 +28,7 @@ export class EnumStructItem implements SPItem {
     this.filePath = file;
     this.description = description;
     this.range = range;
+    this.references = [];
   }
 
   toCompletionItem(): CompletionItem {

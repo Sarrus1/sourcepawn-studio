@@ -1,4 +1,10 @@
-import { CompletionItemKind, Range, workspace as Workspace } from "vscode";
+import {
+  CompletionItemKind,
+  Range,
+  workspace as Workspace,
+  Location,
+  Position,
+} from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { URI } from "vscode-uri";
@@ -6,7 +12,6 @@ import { URI } from "vscode-uri";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import { FileItems } from "../Backend/spFilesRepository";
 import { SPItem } from "../Backend/Items/spItems";
-import { CommentItem } from "../Backend/Items/spCommentItem";
 import { State } from "./stateEnum";
 import { readDefine } from "./readDefine";
 import { readMacro } from "./readMacro";
@@ -19,16 +24,26 @@ import { readTypeDef } from "./readTypeDef";
 import { readTypeSet } from "./readTypeSet";
 import { readFunction } from "./readFunction";
 import { consumeComment } from "./consumeComment";
-import { searchForDefinesInString } from "./searchForDefinesInString";
+import { searchForReferencesInString } from "./searchForReferencesInString";
+import { handleReferenceInParser } from "./handleReferencesInParser";
 import { readMethodMap } from "./readMethodMap";
 import { manageState } from "./manageState";
 import { purgeCalls, positiveRange, parentCounter } from "./utils";
+import { globalIdentifier, globalItem } from "../Misc/spConstants";
+import { ParseState } from "./interfaces";
+import { FunctionItem } from "../Backend/Items/spFunctionItem";
+import { MethodItem } from "../Backend/Items/spMethodItem";
+import { PropertyItem } from "../Backend/Items/spPropertyItem";
+import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
+import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
+import { ConstantItem } from "../Backend/Items/spConstantItem";
 
 export function parseFile(
   file: string,
-  completions: FileItems,
+  items: FileItems,
   itemsRepository: ItemsRepository,
-  IsBuiltIn: boolean = false
+  searchTokens: boolean,
+  IsBuiltIn: boolean
 ) {
   if (!existsSync(file)) {
     return;
@@ -42,83 +57,160 @@ export function parseFile(
     file = resolve(folderpath, match[0]);
     data = readFileSync(file, "utf-8");
   }
-  parseText(data, file, completions, itemsRepository, IsBuiltIn);
+  parseText(data, file, items, itemsRepository, searchTokens, IsBuiltIn);
 }
 
 export function parseText(
   data: string,
   file: string,
-  completions: FileItems,
+  items: FileItems,
   itemsRepository: ItemsRepository,
-  IsBuiltIn: boolean = false
+  searchTokens,
+  IsBuiltIn: boolean
 ) {
   if (data === undefined) {
     return; // Asked to parse empty file
   }
   let lines = data.split("\n");
-  let parser = new Parser(lines, file, IsBuiltIn, completions, itemsRepository);
-  parser.parse();
+  let parser = new Parser(lines, file, IsBuiltIn, items, itemsRepository);
+  parser.parse(searchTokens);
 }
 
 export class Parser {
-  completions: FileItems;
+  fileItems: FileItems;
+  items: SPItem[];
   state: State[];
   scratch: any;
   state_data: any;
   lines: string[];
   lineNb: number;
-  file: string;
+  filePath: string;
   IsBuiltIn: boolean;
   documents: Set<string>;
   lastFuncLine: number;
-  lastFuncName: string;
-  definesMap: Map<string, string>;
-  enumMemberMap: Map<string, string>;
+  lastFunc: FunctionItem | ConstantItem;
+  methodsAndProperties: (MethodItem | PropertyItem)[];
+  funcsAndMethodsInFile: (FunctionItem | MethodItem)[];
+  MmEsInFile: (MethodMapItem | EnumStructItem)[];
+  referencesMap: Map<string, SPItem>;
   macroArr: string[];
   itemsRepository: ItemsRepository;
   debugging: boolean;
   anonymousEnumCount: number;
+  deprecated: string | undefined;
 
   constructor(
     lines: string[],
-    file: string,
+    filePath: string,
     IsBuiltIn: boolean,
     completions: FileItems,
     itemsRepository: ItemsRepository
   ) {
-    this.completions = completions;
+    this.fileItems = completions;
     this.state = [State.None];
     this.lineNb = 0;
     this.lines = lines;
-    this.file = file;
+    this.filePath = filePath;
     this.IsBuiltIn = IsBuiltIn;
     this.documents = itemsRepository.documents;
-    this.lastFuncLine = 0;
-    this.lastFuncName = "";
+    this.lastFuncLine = -1;
+    this.lastFunc = globalItem;
     // Get all the items from the itemsRepository for this file
-    let items = itemsRepository.getAllItems(URI.file(this.file));
-    this.definesMap = this.getAllMembers(items, CompletionItemKind.Constant);
-    this.enumMemberMap = this.getAllMembers(
-      items,
-      CompletionItemKind.EnumMember
-    );
-    this.macroArr = this.getAllMacros(items);
+    this.items = itemsRepository.getAllItems(URI.file(this.filePath));
+    this.macroArr = this.getAllMacros(this.items);
     this.itemsRepository = itemsRepository;
     let debugSetting = Workspace.getConfiguration("sourcepawn").get(
       "trace.server"
     );
     this.debugging = debugSetting == "messages" || debugSetting == "verbose";
     this.anonymousEnumCount = 0;
+    this.methodsAndProperties = [];
+    this.funcsAndMethodsInFile = [];
+    this.MmEsInFile = [];
+    this.referencesMap = new Map<string, SPItem>();
   }
 
-  parse() {
-    // Always add "sourcemod.inc" as an include.
-    readInclude(this, "sourcemod".match(/(.*)/));
-    let line: string;
-    line = this.lines.shift();
+  parse(searchReferences: boolean): void {
+    let line = this.lines.shift();
+    if (!searchReferences) {
+      // Purge all comments from the file.
+      let uri = URI.file(this.filePath);
+      let oldFileItems = this.itemsRepository.fileItems.get(uri.toString());
+      let oldRefs = new Map<string, Location[]>();
+      if (oldFileItems !== undefined) {
+        oldFileItems.forEach((v: SPItem, k) => {
+          if (v.references !== undefined && v.references.length > 0) {
+            let oldItemRefs = v.references.filter(
+              (e) => e.uri.fsPath !== this.filePath
+            );
+            if (oldItemRefs.length > 0) {
+              oldRefs.set(k, oldItemRefs);
+            }
+          }
+        });
+      }
+
+      // Always add "sourcemod.inc" as an include.
+      readInclude(this, "sourcemod".match(/(.*)/));
+      while (line !== undefined) {
+        this.interpLine(line);
+        line = this.lines.shift();
+        this.lineNb++;
+      }
+      oldRefs.forEach((v, k) => {
+        let item = this.fileItems.get(k);
+        if (item !== undefined) {
+          item.references.push(...v);
+        }
+      });
+      return;
+    }
+
+    this.getReferencesMap();
+
+    let lastFunc: FunctionItem | MethodItem | undefined;
+    let lastMMorES: MethodMapItem | EnumStructItem | undefined;
+
     while (line !== undefined) {
-      searchForDefinesInString(this, line);
-      this.interpLine(line);
+      const pos = new Position(this.lineNb, 0);
+
+      if (!lastFunc || !lastFunc.fullRange.contains(pos)) {
+        if (
+          this.funcsAndMethodsInFile.length > 0 &&
+          this.funcsAndMethodsInFile[0].fullRange.contains(pos)
+        ) {
+          lastFunc = this.funcsAndMethodsInFile.shift();
+        } else {
+          lastFunc = undefined;
+        }
+      }
+
+      if (!lastMMorES || !lastMMorES.fullRange.contains(pos)) {
+        if (
+          this.MmEsInFile.length > 0 &&
+          this.MmEsInFile[0].fullRange.contains(pos)
+        ) {
+          lastMMorES = this.MmEsInFile.shift();
+        } else {
+          lastMMorES = undefined;
+        }
+      }
+
+      const parseState: ParseState = {
+        bComment: false,
+        lComment: false,
+        sString: false,
+        dString: false,
+      };
+
+      searchForReferencesInString(line, handleReferenceInParser, {
+        parser: this,
+        parseState: parseState,
+        scope: `-${lastFunc ? lastFunc.name : globalIdentifier}-${
+          lastMMorES ? lastMMorES.name : globalIdentifier
+        }`,
+        offset: 0,
+      });
       line = this.lines.shift();
       this.lineNb++;
     }
@@ -131,26 +223,13 @@ export class Parser {
     // Match trailing single line comments
     let match = line.match(/^\s*[^\/\/\s]+(\/\/.+)$/);
     if (match) {
-      let lineNb = this.lineNb < 1 ? 0 : this.lineNb;
-      let start: number = line.search(/\/\//);
-      let range = new Range(lineNb, start, lineNb, line.length);
-      this.completions.set(
-        `comment${lineNb}--${Math.random()}`,
-        new CommentItem(this.file, range)
-      );
+      return;
     }
 
     // Match trailing block comments
     match = line.match(/^\s*[^\/\*\s]+(\/\*.+)\*\//);
     if (match) {
-      let lineNb = this.lineNb < 1 ? 0 : this.lineNb;
-      let start: number = line.search(/\/\*/);
-      let end: number = line.search(/\*\//);
-      let range = new Range(lineNb, start, lineNb, end);
-      this.completions.set(
-        `comment${lineNb}--${Math.random()}`,
-        new CommentItem(this.file, range)
-      );
+      return;
     }
 
     // Match define
@@ -170,6 +249,13 @@ export class Parser {
     match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>/);
     if (match) {
       readInclude(this, match);
+      return;
+    }
+
+    // Match #pragma deprecated
+    match = line.match(/#pragma\s+deprecated\s+(.+?(?=(?:\/\*|\/\/|$)))/);
+    if (match) {
+      this.deprecated = match[1];
       return;
     }
 
@@ -252,7 +338,7 @@ export class Parser {
       } catch (e) {
         console.error(e);
         if (this.debugging) {
-          console.error(`At line ${this.lineNb} of ${this.file}`);
+          console.error(`At line ${this.lineNb} of ${this.filePath}`);
         }
       }
       return;
@@ -301,46 +387,64 @@ export class Parser {
 
     // Reset the comments buffer
     this.scratch = [];
+    this.deprecated = undefined;
     return;
   }
 
-  makeDefinitionRange(
-    name: string,
-    line: string,
-    search: boolean = true
-  ): Range {
-    let re: RegExp = new RegExp(`\\b${name}\\b`);
-    let start: number = search ? line.search(re) : 0;
-    let end: number = search ? start + name.length : 0;
+  makeDefinitionRange(name: string, line: string, func = false): Range {
+    let re: RegExp = new RegExp(
+      func ? `\\b${name}\\b\\s*\\(` : `\\b${name}\\b`
+    );
+    let start: number = line.search(re);
+    let end: number = start + name.length;
     var range = positiveRange(this.lineNb, start, end);
     return range;
   }
 
-  getAllMembers(
-    items: SPItem[],
-    kind: CompletionItemKind
-  ): Map<string, string> {
-    if (items == undefined) {
-      return new Map();
-    }
-    let defines = new Map();
-    let workspaceFolder = Workspace.getWorkspaceFolder(URI.file(this.file));
-    let smHome =
-      Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
-        "SourcemodHome"
-      ) || "";
-    // Replace \ escaping in Windows
-    smHome = smHome.replace(/\\/g, "/");
-    if (smHome === "") {
-      return new Map();
-    }
-    for (let item of items) {
-      if (item.kind === kind) {
-        purgeCalls(item, this.file);
-        defines.set(item.name, item.filePath);
+  getReferencesMap(): void {
+    const MP = [CompletionItemKind.Method, CompletionItemKind.Property];
+    const MmEs = [CompletionItemKind.Class, CompletionItemKind.Struct];
+
+    this.items.forEach((item) => {
+      if (item.kind === CompletionItemKind.Variable) {
+        purgeCalls(item, this.filePath);
+        this.referencesMap.set(
+          `${item.name}-${item.parent.name}-${
+            item.parent.parent ? item.parent.parent.name : globalIdentifier
+          }`,
+          item
+        );
+      } else if (
+        [CompletionItemKind.Function, CompletionItemKind.Method].includes(
+          item.kind
+        )
+      ) {
+        if (item.filePath === this.filePath) {
+          this.funcsAndMethodsInFile.push(item as FunctionItem | MethodItem);
+        }
+        purgeCalls(item, this.filePath);
+        this.referencesMap.set(item.name, item);
+      } else if (MmEs.includes(item.kind)) {
+        if (item.filePath === this.filePath) {
+          this.MmEsInFile.push(item as MethodMapItem | EnumStructItem);
+        }
+        purgeCalls(item, this.filePath);
+        this.referencesMap.set(item.name, item);
+      } else if (!MP.includes(item.kind) && item.references !== undefined) {
+        purgeCalls(item, this.filePath);
+        this.referencesMap.set(item.name, item);
+      } else if (MP.includes(item.kind) && item.references !== undefined) {
+        this.methodsAndProperties.push(item as MethodItem | PropertyItem);
       }
-    }
-    return defines;
+    });
+
+    this.MmEsInFile = this.MmEsInFile.sort(
+      (a, b) => a.fullRange.start.line - b.fullRange.start.line
+    );
+
+    this.funcsAndMethodsInFile = this.funcsAndMethodsInFile.sort(
+      (a, b) => a.fullRange.start.line - b.fullRange.start.line
+    );
   }
 
   getAllMacros(items: SPItem[]): string[] {

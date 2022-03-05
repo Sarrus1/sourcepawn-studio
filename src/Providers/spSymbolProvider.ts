@@ -5,7 +5,7 @@ import {
   CompletionItemKind,
 } from "vscode";
 import { ItemsRepository } from "../Backend/spItemsRepository";
-import { globalIdentifier } from "../Misc/spConstants";
+import { globalIdentifier, globalItem } from "../Misc/spConstants";
 
 const allowedKinds = [
   CompletionItemKind.Function,
@@ -42,7 +42,7 @@ export function symbolProvider(
       // Don't add non global variables here
       if (
         item.kind === CompletionItemKind.Variable &&
-        item.parent !== globalIdentifier
+        item.parent !== globalItem
       ) {
         continue;
       }
@@ -55,7 +55,7 @@ export function symbolProvider(
             (e) =>
               allowedChildrendKinds.includes(e.kind) &&
               e.filePath === file &&
-              e.parent === item.name
+              e.parent === item
           )
           .map((e) => e.toDocumentSymbol())
           .filter((e) => e !== undefined);

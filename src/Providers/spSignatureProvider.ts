@@ -8,10 +8,12 @@ import {
 import { getTypeOfVariable } from "../Backend/spItemsPropertyGetters";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import {
-  getLastFuncName,
+  getLastFunc,
   getLastEnumStructNameOrMethodMap,
 } from "./spDefinitionProvider";
 import { getAllInheritances } from "../Backend/spItemsPropertyGetters";
+import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
+import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 
 interface SignatureAttributes {
   croppedLine: string;
@@ -124,32 +126,50 @@ export function signatureProvider(
   if (croppedLine === undefined) {
     return blankReturn;
   }
+
   // Check if it's a method
   let match = croppedLine.match(/\.(\w+)$/);
   if (match) {
     let methodName = match[1];
     let allItems = itemsRepo.getAllItems(document.uri);
-    let lastFuncName = getLastFuncName(position, document, allItems);
+    let lastFunc = getLastFunc(position, document, allItems);
     let newPos = new Position(1, croppedLine.length);
-    let {
-      lastEnumStructOrMethodMap,
-      isAMethodMap,
-    } = getLastEnumStructNameOrMethodMap(position, document, allItems);
+    const lastEnumStructOrMethodMap = getLastEnumStructNameOrMethodMap(
+      position,
+      document.uri.fsPath,
+      allItems
+    );
     let { variableType, words } = getTypeOfVariable(
       croppedLine,
       newPos,
       allItems,
-      lastFuncName,
+      lastFunc,
       lastEnumStructOrMethodMap
     );
-    let variableTypes: string[] = getAllInheritances(variableType, allItems);
+    let variableTypeItem = allItems.find(
+      (e) =>
+        [CompletionItemKind.Class, CompletionItemKind.Struct].includes(
+          e.kind
+        ) && e.name === variableType
+    ) as MethodMapItem | EnumStructItem;
+
+    let variableTypes: (MethodMapItem | EnumStructItem)[];
+    if (variableTypeItem.kind === CompletionItemKind.Class) {
+      variableTypes = getAllInheritances(
+        variableTypeItem as MethodMapItem,
+        allItems
+      );
+    } else {
+      variableTypes = [variableTypeItem as EnumStructItem];
+    }
+
     let items = itemsRepo
       .getAllItems(document.uri)
       .filter(
         (item) =>
           (item.kind === CompletionItemKind.Method ||
             item.kind === CompletionItemKind.Property) &&
-          variableTypes.includes(item.parent) &&
+          variableTypes.includes(item.parent as MethodMapItem) &&
           item.name === methodName
       );
     return {

@@ -1,7 +1,6 @@
 ﻿import { positiveRange } from "./utils";
 import { Parser } from "./spParser";
 import { DefineItem } from "../Backend/Items/spDefineItem";
-import { searchForDefinesInString } from "./searchForDefinesInString";
 
 export function readDefine(
   parser: Parser,
@@ -57,11 +56,6 @@ export function readDefine(
         description += line.slice(i, i + endComMatch[1].length).trimEnd();
         blockComment = false;
         i += endComMatch[0].length;
-        searchForDefinesInString(
-          parser,
-          line.slice(i + endComMatch[1].length + 1),
-          endComMatch[1].length
-        );
         continue;
       }
       description += line.slice(i).trimEnd();
@@ -75,22 +69,17 @@ export function readDefine(
     }
   }
 
-  parser.definesMap.set(match[1], parser.file);
   let range = parser.makeDefinitionRange(match[1], line);
   let fullRange = positiveRange(parser.lineNb, 0, line.length);
-  parser.completions.set(
+  let item = new DefineItem(
     match[1],
-    new DefineItem(
-      match[1],
-      value,
-      description,
-      parser.file,
-      range,
-      parser.IsBuiltIn,
-      fullRange
-    )
+    value,
+    description,
+    parser.filePath,
+    range,
+    parser.IsBuiltIn,
+    fullRange
   );
-  // Re-read the line now that define has been added to the array.
-  searchForDefinesInString(parser, line);
+  parser.fileItems.set(match[1], item);
   return;
 }

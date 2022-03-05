@@ -142,3 +142,5 @@ public void OnWebHookExecuted(HTTPResponse response, DataPack pack)
 }
 
 #define FOO ;
+
+int names[MAXPLAYERS];

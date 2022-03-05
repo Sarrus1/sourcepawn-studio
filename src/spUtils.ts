@@ -1,4 +1,9 @@
-﻿import { MarkdownString, workspace as Workspace } from "vscode";
+﻿import {
+  Location,
+  MarkdownString,
+  Range,
+  workspace as Workspace,
+} from "vscode";
 import { URI } from "vscode-uri";
 import { existsSync, lstatSync } from "fs";
 import { resolve, extname } from "path";
@@ -29,10 +34,8 @@ export function descriptionToMD(description?: string): MarkdownString {
   );
 
   // Format other functions which are referenced in the description
-  description = description.replace(
-    /([A-Za-z0-9_]+\([A-Za-z0-9_ \:]*\))/gm,
-    "`$1`"
-  );
+  description = description.replace(/(\w*.\w+\([A-Za-z0-9_ \:]*\))/gm, "`$1`");
+  description = description.replace("DEPRECATED", "**DEPRECATED**");
   return new MarkdownString(description);
 }
 
@@ -76,4 +79,14 @@ export function checkMainPath(mainPath: string): boolean {
     return false;
   }
   return extname(mainPath) === ".sp";
+}
+
+/**
+ * Returns a new location based on a filePath and a range.
+ * @param  {string} filePath  The file's path of the new location.
+ * @param  {Range} range      The range of the new location.
+ * @returns Location
+ */
+export function locationFromRange(filePath: string, range: Range): Location {
+  return new Location(URI.file(filePath), range);
 }

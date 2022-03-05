@@ -8,23 +8,30 @@
   DocumentSymbol,
   LocationLink,
 } from "vscode";
+import { FunctionItem } from "./spFunctionItem";
+import { MethodItem } from "./spMethodItem";
 
 export interface SPItem {
   name: string;
   kind: CompletionItemKind;
   filePath?: string;
   type?: string;
-  parent?: string;
+  parent?: SPItem;
   description?: string;
   range?: Range;
   detail?: string;
   fullRange?: Range;
-  calls?: Location[];
+  references?: Location[];
   IsBuiltIn?: boolean;
   enumStructName?: string;
+  params?: FunctionParam[];
+  deprecated?: string;
 
-  toCompletionItem(lastFuncName?: string): CompletionItem | undefined;
+  toCompletionItem(
+    lastFunc?: MethodItem | FunctionItem
+  ): CompletionItem | undefined;
   toDefinitionItem(): LocationLink | undefined;
+  toReferenceItem?(): Location[];
   toSignature(): SignatureInformation | undefined;
   toHover(): Hover | undefined;
   toDocumentSymbol?(): DocumentSymbol | undefined;

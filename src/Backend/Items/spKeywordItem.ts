@@ -1,11 +1,4 @@
-import {
-  CompletionItemKind,
-  CompletionItem,
-  SignatureInformation,
-  Hover,
-  DocumentSymbol,
-  LocationLink,
-} from "vscode";
+import { CompletionItemKind, CompletionItem } from "vscode";
 
 import { SPItem } from "./spItems";
 

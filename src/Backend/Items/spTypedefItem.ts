@@ -6,6 +6,7 @@ import {
   DocumentSymbol,
   SymbolKind,
   LocationLink,
+  Location,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { basename } from "path";
@@ -22,6 +23,7 @@ export class TypeDefItem implements SPItem {
   kind = CompletionItemKind.TypeParameter;
   range: Range;
   fullRange: Range;
+  references: Location[];
 
   constructor(
     name: string,
@@ -39,6 +41,7 @@ export class TypeDefItem implements SPItem {
     this.description = description;
     this.range = range;
     this.fullRange = fullRange;
+    this.references = [];
   }
 
   toCompletionItem(): CompletionItem {

@@ -1,6 +1,10 @@
 import { Position, CompletionItemKind } from "vscode";
+
 import { SPItem } from "./Items/spItems";
-import { globalIdentifier } from "../Misc/spConstants";
+import { globalIdentifier, globalItem } from "../Misc/spConstants";
+import { FunctionItem } from "./Items/spFunctionItem";
+import { MethodItem } from "./Items/spMethodItem";
+import { MethodMapItem } from "./Items/spMethodmapItem";
 
 export interface VariableType {
   variableType: string;
@@ -29,7 +33,7 @@ export interface MethodIndex {
  * @param  {string} line
  * @param  {Position} position
  * @param  {SPItem[]} allItems
- * @param  {string} lastFuncName
+ * @param  {string} lastFunc
  * @param  {string} lastEnumStructOrMethodMap
  * @returns VariableType
  */
@@ -37,20 +41,26 @@ export function getTypeOfVariable(
   line: string,
   position: Position,
   allItems: SPItem[],
-  lastFuncName: string,
-  lastEnumStructOrMethodMap: string
+  lastFunc: FunctionItem | MethodItem | undefined,
+  lastEnumStructOrMethodMap: SPItem | undefined
 ): VariableType {
-  let { words, isNameSpace } = parseMethodsFromLine(line, position);
+  let { words, isNameSpace } = parseMethodsFromLine(line, position.character);
   let variableType: string;
+
+  const lastFuncName =
+    lastFunc === undefined
+      ? [globalIdentifier]
+      : [globalIdentifier, lastFunc.name];
 
   if (isNameSpace) {
     variableType = words[words.length - 1];
   } else {
     if (
-      lastEnumStructOrMethodMap !== globalIdentifier &&
+      lastEnumStructOrMethodMap !== undefined &&
+      lastEnumStructOrMethodMap.parent !== globalItem &&
       words[words.length - 1] === "this"
     ) {
-      variableType = lastEnumStructOrMethodMap;
+      variableType = lastEnumStructOrMethodMap.name;
     } else {
       const enumMemberItem = allItems.find(
         (e) => e.kind === CompletionItemKind.EnumMember && e.name === words[0]
@@ -58,7 +68,7 @@ export function getTypeOfVariable(
       variableType = allItems.find(
         (e) =>
           (e.kind === CompletionItemKind.Variable &&
-            [globalIdentifier, lastFuncName].includes(e.parent) &&
+            lastFuncName.includes(e.parent.name) &&
             e.name === words[words.length - 1]) ||
           ([CompletionItemKind.Function, CompletionItemKind.Class].includes(
             e.kind
@@ -68,8 +78,7 @@ export function getTypeOfVariable(
             e.name === words[words.length - 1]) ||
           (enumMemberItem !== undefined &&
             e.kind === CompletionItemKind.Class &&
-            (e.name === words[words.length - 1] ||
-              e.name === enumMemberItem.parent))
+            (e.name === words[words.length - 1] || e === enumMemberItem.parent))
       ).type;
     }
   }
@@ -81,7 +90,7 @@ export function getTypeOfVariable(
         (e) =>
           (e.kind === CompletionItemKind.Method ||
             e.kind === CompletionItemKind.Property) &&
-          e.parent === variableType &&
+          e.parent.name === variableType &&
           e.name === word
       ).type;
     }
@@ -97,11 +106,11 @@ export function getTypeOfVariable(
  *   isNameSpace: false
  * }
  * @param  {string} line        The line being parsed.
- * @param  {Position} position  The position at which the parsing should begin.
+ * @param  {number} index       The index at which the parsing should begin.
  * @returns ParsedLine
  */
-function parseMethodsFromLine(line: string, position: Position): ParsedLine {
-  let { i, isNameSpace } = getMethodIndex(position.character - 1, line);
+export function parseMethodsFromLine(line: string, index: number): ParsedLine {
+  let { i, isNameSpace } = getMethodIndex(index - 1, line);
   let bCounter = 0;
   let pCounter = 0;
   let wordCounter = 0;
@@ -158,20 +167,19 @@ function getMethodIndex(i: number, line: string): MethodIndex {
 }
 
 /**
- * Return all the methodmap which a given methodmap inherits from.
+ * Return all the methodmaps which a given methodmap inherits from.
  * @param  {string} methodmap   The name of the methodmap to search inheritances for.
  * @param  {SPItem[]} allItems  All the items known to the document.
  * @returns string
  */
 export function getAllInheritances(
-  methodmap: string,
+  methodmap: MethodMapItem,
   allItems: SPItem[]
-): string[] {
-  const methodMapItem = allItems.find(
-    (e) => e.kind === CompletionItemKind.Class && e.name === methodmap
-  );
-  if (methodMapItem === undefined || methodMapItem.parent === undefined) {
+): MethodMapItem[] {
+  if (methodmap === globalItem || methodmap.parent === globalItem) {
     return [methodmap];
   }
-  return [methodmap].concat(getAllInheritances(methodMapItem.parent, allItems));
+  return [methodmap].concat(
+    getAllInheritances(methodmap.parent as MethodMapItem, allItems)
+  );
 }

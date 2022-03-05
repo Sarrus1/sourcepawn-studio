@@ -5,7 +5,6 @@ import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { EnumItem } from "../Backend/Items/spEnumItem";
 import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
 import { State } from "./stateEnum";
-import { searchForDefinesInString } from "./searchForDefinesInString";
 import { parseDocComment } from "./parseDocComment";
 import { addFullRange } from "./addFullRange";
 
@@ -28,14 +27,14 @@ export function readEnum(
   let range = parser.makeDefinitionRange(match[1] ? match[1] : "enum", line);
   var enumCompletion: EnumItem = new EnumItem(
     nameMatch,
-    parser.file,
+    parser.filePath,
     description,
     range
   );
   const key = match[1]
     ? match[1]
-    : `${parser.anonymousEnumCount}${basename(parser.file)}`;
-  parser.completions.set(key, enumCompletion);
+    : `${parser.anonymousEnumCount}${basename(parser.filePath)}`;
+  parser.fileItems.set(key, enumCompletion);
 
   // Set max number of iterations for safety
   let iter = 0;
@@ -54,7 +53,6 @@ export function readEnum(
       if (line === undefined) {
         return;
       }
-      searchForDefinesInString(parser, line);
       i = 0;
       continue;
     }
@@ -65,14 +63,9 @@ export function readEnum(
         description += line.slice(i, i + endComMatch[1].length).trimEnd();
         isBlockComment = false;
         i += endComMatch[0].length;
-        searchForDefinesInString(
-          parser,
-          line.slice(i + endComMatch[1].length + 1),
-          endComMatch[1].length
-        );
-        let prevEnumMember: EnumMemberItem = parser.completions.get(
+        let prevEnumMember = parser.fileItems.get(
           enumMemberName
-        );
+        ) as EnumMemberItem;
         if (prevEnumMember !== undefined) {
           prevEnumMember.description = description;
         }
@@ -98,9 +91,9 @@ export function readEnum(
           continue;
         }
         if (line[i] == "/" && line[i + 1] == "/") {
-          let prevEnumMember: EnumMemberItem = parser.completions.get(
+          let prevEnumMember = parser.fileItems.get(
             enumMemberName
-          );
+          ) as EnumMemberItem;
           if (prevEnumMember !== undefined) {
             prevEnumMember.description = line.slice(i + 2).trim();
           }
@@ -109,7 +102,6 @@ export function readEnum(
           if (line === undefined) {
             return;
           }
-          searchForDefinesInString(parser, line);
           i = 0;
           continue;
         }
@@ -129,18 +121,17 @@ export function readEnum(
     }
     enumMemberName = iterMatch[1];
     let range = parser.makeDefinitionRange(enumMemberName, line);
-    parser.completions.set(
+    parser.fileItems.set(
       enumMemberName,
       new EnumMemberItem(
         enumMemberName,
-        parser.file,
+        parser.filePath,
         "",
         enumCompletion,
         range,
         parser.IsBuiltIn
       )
     );
-    searchForDefinesInString(parser, line);
     i = iterMatch[0].length;
   }
 
@@ -157,11 +148,11 @@ function parseEnumStruct(
   let range = parser.makeDefinitionRange(enumStructName, line);
   var enumStructCompletion: EnumStructItem = new EnumStructItem(
     enumStructName,
-    parser.file,
+    parser.filePath,
     desc,
     range
   );
-  parser.completions.set(enumStructName, enumStructCompletion);
+  parser.fileItems.set(enumStructName, enumStructCompletion);
   parser.state.push(State.EnumStruct);
   parser.state_data = {
     name: enumStructName,

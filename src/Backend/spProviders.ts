@@ -10,6 +10,10 @@
   DocumentSymbol,
   Definition,
   LocationLink,
+  Location,
+  ReferenceContext,
+  WorkspaceEdit,
+  Range,
 } from "vscode";
 import { ItemsRepository } from "./spItemsRepository";
 import { JsDocCompletionProvider } from "../Providers/spDocCompletions";
@@ -19,6 +23,9 @@ import { hoverProvider } from "../Providers/spHoverProvider";
 import { symbolProvider } from "../Providers/spSymbolProvider";
 import { completionProvider } from "../Providers/spCompletionProvider";
 import { semanticTokenProvider } from "../Providers/spSemanticTokenProvider";
+import { referencesProvider } from "../Providers/spReferencesProvider";
+import { renameProvider } from "../Providers/spRenameProvider";
+import { getItemFromPosition } from "./spItemsGetters";
 
 export class Providers {
   documentationProvider: JsDocCompletionProvider;
@@ -72,5 +79,47 @@ export class Providers {
     token: CancellationToken
   ): Promise<DocumentSymbol[]> {
     return symbolProvider(this.itemsRepository, document, token);
+  }
+
+  public async provideReferences(
+    document: TextDocument,
+    position: Position,
+    context: ReferenceContext,
+    token: CancellationToken
+  ): Promise<Location[]> {
+    return referencesProvider(
+      this.itemsRepository,
+      position,
+      document,
+      context,
+      token
+    );
+  }
+
+  public async prepareRename(
+    document: TextDocument,
+    position: Position,
+    token: CancellationToken
+  ): Promise<Range> {
+    let items = getItemFromPosition(this.itemsRepository, document, position);
+    if (items.length > 0) {
+      return items[0].range;
+    }
+    throw "This symbol cannot be renamed.";
+  }
+
+  public async provideRenameEdits(
+    document: TextDocument,
+    position: Position,
+    newName: string,
+    token: CancellationToken
+  ): Promise<WorkspaceEdit> {
+    return renameProvider(
+      this.itemsRepository,
+      position,
+      document,
+      newName,
+      token
+    );
   }
 }

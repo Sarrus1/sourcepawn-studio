@@ -5,43 +5,16 @@ import { URI } from "vscode-uri";
 
 import { SPItem } from "./Items/spItems";
 import { IncludeItem } from "./Items/spIncludeItem";
-import {
-  getLastFuncName,
-  isInAComment,
-  isFunction,
-  getLastEnumStructNameOrMethodMap,
-  isInAString,
-} from "../Providers/spDefinitionProvider";
-import { globalIdentifier } from "../Misc/spConstants";
+import { getLastEnumStructNameOrMethodMap } from "../Providers/spDefinitionProvider";
 import { FileItems } from "./spFilesRepository";
-import {
-  getTypeOfVariable,
-  getAllInheritances,
-} from "./spItemsPropertyGetters";
 import { getAllPossibleIncludeFolderPaths } from "./spFileHandlers";
 import { ItemsRepository } from "./spItemsRepository";
 import { findMainPath } from "../spUtils";
 import { getIncludeExtension } from "./spUtils";
-
-const FI = [CompletionItemKind.Function, CompletionItemKind.Interface];
-
-const MC = [CompletionItemKind.Method, CompletionItemKind.Constructor];
-
-const MPC = MC.concat([CompletionItemKind.Property]);
-
-const MPCF = MPC.concat([CompletionItemKind.Function]);
-
-const CE = [CompletionItemKind.Class, CompletionItemKind.EnumMember];
-
-enum ObjectType {
-  Variable,
-  Method,
-  Constructor,
-  Function,
-}
+import { globalItem } from "../Misc/spConstants";
 
 /**
- * Returns an array of all the items parsed from a file and its known includes.
+ * Returns an array of all the items parsed from a file and its known includes
  * @param  {ItemsRepository} itemsRepo      The itemsRepository object constructed in the activation event.
  * @param  {URI} uri                        The URI of the file we are getting the items for.
  * @returns SPItem
@@ -67,8 +40,8 @@ export function getAllItems(itemsRepo: ItemsRepository, uri: URI): SPItem[] {
  * @param  {string} uri    The URI of the file we should get the items for.
  * @returns SPItem
  */
-function getFileItems(uri: string): SPItem[] {
-  let items: FileItems = this.fileItems.get(uri);
+function getFileItems(this: ItemsRepository, uri: string): SPItem[] {
+  let items = this.fileItems.get(uri);
   return items !== undefined ? Array.from(items.values()) : [];
 }
 
@@ -108,17 +81,14 @@ export function getItemFromPosition(
   position: Position
 ): SPItem[] {
   const range = document.getWordRangeAtPosition(position);
+  if (range === undefined) {
+    return [];
+  }
+
   const allItems = itemsRepo.getAllItems(document.uri);
 
   const word = document.getText(range);
   const line = document.lineAt(position.line).text;
-  if (
-    range === undefined ||
-    isInAComment(range, document.uri, allItems) ||
-    isInAString(range, line)
-  ) {
-    return [];
-  }
 
   // Generate an include item if the line is an #include statement and return it.
   let includeItem = makeIncludeItem(document, line, position);
@@ -126,76 +96,51 @@ export function getItemFromPosition(
     return includeItem;
   }
 
-  let type = getType(range, document, position);
-
-  const lastFunc: string = getLastFuncName(position, document, allItems);
-
-  const {
-    lastEnumStructOrMethodMap,
-    isAMethodMap,
-  } = getLastEnumStructNameOrMethodMap(position, document, allItems);
-
-  // If we match a property or a method of an enum struct
-  // but not a local scopped variable inside an enum struct's method.
-  let items = makeEnumStructMethodItem(
-    lastEnumStructOrMethodMap,
-    lastFunc,
-    isAMethodMap,
-    allItems,
-    word
+  let lastEnumStructOrMethodMap = getLastEnumStructNameOrMethodMap(
+    position,
+    document.uri.fsPath,
+    allItems
   );
-  if (items.length > 0) {
-    return items;
-  }
 
-  if (type === ObjectType.Method) {
-    // If we are dealing with a method or property, look for the type of the variable
-    const { variableType, words } = getTypeOfVariable(
-      line,
-      position,
-      allItems,
-      lastFunc,
-      lastEnumStructOrMethodMap
-    );
-    const variableTypes = getAllInheritances(variableType, allItems);
-    return allItems.filter(
-      (item) =>
-        MPC.includes(item.kind) &&
-        variableTypes.includes(item.parent) &&
-        item.name === word
-    );
-  }
-
-  if (type === ObjectType.Constructor) {
-    const match = line.match(/new\s+(\w+)/);
-    if (match) {
-      return allItems.filter(
-        (item) =>
-          item.kind === CompletionItemKind.Constructor && item.name === match[1]
-      );
+  let items = allItems.filter((e) => {
+    if (e.name !== word) {
+      return false;
     }
-  }
 
-  items = [];
+    if (
+      e.kind === CompletionItemKind.Variable &&
+      e.parent !== globalItem &&
+      allItems.find((e1) => {
+        let check =
+          [CompletionItemKind.Function, CompletionItemKind.Method].includes(
+            e1.kind
+          ) &&
+          e1 === e.parent &&
+          e1.fullRange.contains(position) &&
+          e1.filePath === document.uri.fsPath;
 
-  if (type === ObjectType.Function) {
-    return makeFunctionOrMethodItem(word, lastEnumStructOrMethodMap, allItems);
-  }
-
-  items = allItems.filter(
-    (item) =>
-      !MPCF.includes(item.kind) &&
-      item.name === word &&
-      item.parent === lastFunc
-  );
-  if (items !== undefined && items.length > 0) {
-    return items;
-  }
-
-  return allItems.filter(lastResortItemFilterCallback, {
-    lastEnumStructOrMethodMap,
-    word,
+        // Handle variables inside of methods.
+        if (lastEnumStructOrMethodMap !== undefined && check) {
+          return (
+            e.enumStructName === lastEnumStructOrMethodMap.name &&
+            lastEnumStructOrMethodMap.fullRange.contains(e1.fullRange) &&
+            lastEnumStructOrMethodMap.fullRange.contains(e.range)
+          );
+        }
+        return check;
+      })
+    ) {
+      return true;
+    }
+    if (e.range !== undefined && range.isEqual(e.range)) {
+      return true;
+    }
+    if (e.references !== undefined) {
+      return e.references.find((e) => range.isEqual(e.range)) !== undefined;
+    }
+    return false;
   });
+  return items;
 }
 
 /**
@@ -221,7 +166,7 @@ function makeIncludeItem(
   file = getIncludeExtension(file);
   const defRange = new Range(
     position.line,
-    fileStartPos,
+    fileStartPos - 1,
     position.line,
     fileStartPos + file.length
   );
@@ -239,145 +184,4 @@ function makeIncludeItem(
     ];
   }
   return [];
-}
-
-/**
- * Try to find a corresponding EnumStructMember item from a name, and the file scope.
- * @param  {string} lastEnumStructOrMethodMap
- * @param  {string} lastFunc
- * @param  {boolean} isAMethodMap
- * @param  {SPItem[]} allItems
- * @param  {string} name
- * @returns SPItem
- */
-function makeEnumStructMethodItem(
-  lastEnumStructOrMethodMap: string,
-  lastFunc: string,
-  isAMethodMap: boolean,
-  allItems: SPItem[],
-  name: string
-): SPItem[] {
-  if (
-    lastEnumStructOrMethodMap !== globalIdentifier &&
-    lastFunc === globalIdentifier &&
-    !isAMethodMap
-  ) {
-    let items = allItems.filter(
-      (item) =>
-        MPC.includes(item.kind) &&
-        item.parent === lastEnumStructOrMethodMap &&
-        item.name === name
-    );
-    if (items !== undefined && items.length > 0) {
-      return items;
-    }
-  }
-  return [];
-}
-
-/**
- * Try to find a corresponding function or method to a word and a scope.
- * @param  {string} name
- * @param  {string} lastEnumStructOrMethodMap
- * @param  {SPItem[]} allItems
- * @returns SPItem
- */
-function makeFunctionOrMethodItem(
-  name: string,
-  lastEnumStructOrMethodMap: string,
-  allItems: SPItem[]
-): SPItem[] {
-  const items = allItems.filter(
-    (item) => FI.includes(item.kind) && item.name === name
-  );
-  if (lastEnumStructOrMethodMap === globalIdentifier) {
-    return items;
-  }
-  return allItems
-    .filter(
-      (item) =>
-        MC.includes(item.kind) &&
-        item.name === name &&
-        item.parent === lastEnumStructOrMethodMap
-    )
-    .concat(items);
-}
-
-/**
- * Checks if we are dealing with a method, a constructor, a function, or a regular variable.
- * @param  {Range} range            The range to check.
- * @param  {TextDocument} document  The document corresponding to the range.
- * @param  {Position} position      The position of the line to check.
- * @returns ObjectType
- */
-function getType(
-  range: Range,
-  document: TextDocument,
-  position: Position
-): ObjectType {
-  // Check if we are dealing with a define declaration with opening (.
-  if (
-    /^\s*#define\s+(\w+)\s+(?:(.+)?(?=(?:\/\*|$|\/\/)))?/.test(
-      document.lineAt(position.line).text
-    )
-  ) {
-    return ObjectType.Variable;
-  }
-  if (range.start.character <= 1) {
-    if (
-      isFunction(range, document, document.lineAt(position.line).text.length)
-    ) {
-      return ObjectType.Function;
-    }
-    return ObjectType.Variable;
-  }
-  let newRange = new Range(
-    range.start.line,
-    range.start.character - 2,
-    range.start.line,
-    range.start.character
-  );
-  let char = document.getText(newRange);
-  if (/(?:\w+\.|\:\:)/.test(char)) {
-    return ObjectType.Method;
-  }
-  newRange = new Range(
-    range.start.line,
-    0,
-    range.start.line,
-    range.end.character
-  );
-  char = document.getText(newRange);
-  if (/new\s+(\w+)$/.test(char)) {
-    return ObjectType.Constructor;
-  }
-  if (isFunction(range, document, document.lineAt(position.line).text.length)) {
-    return ObjectType.Function;
-  }
-  return ObjectType.Variable;
-}
-
-/**
- * Callback of a filter function to try and find a corresponding object.
- * @param  {SPItem} item
- * @returns boolean
- */
-function lastResortItemFilterCallback(item: SPItem): boolean {
-  if (MPC.includes(item.kind)) {
-    return false;
-  }
-  if (item.parent !== undefined) {
-    if (CE.includes(item.kind)) {
-      return item.name === this.word;
-    }
-    if (item.enumStructName !== undefined) {
-      return (
-        item.parent === globalIdentifier &&
-        item.name === this.word &&
-        item.enumStructName === this.lastEnumStructOrMethodMap
-      );
-    }
-    return item.parent === globalIdentifier && item.name === this.word;
-  }
-  return item.name === this.word;
 }

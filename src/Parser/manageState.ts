@@ -10,8 +10,8 @@ export function manageState(parser: Parser, line: string): void {
   if (state === State.None) {
   } else if (state === State.Function && parser.state_data !== undefined) {
     // We are in a method
-    parser.lastFuncLine = 0;
-    addFullRange(parser, parser.lastFuncName + parser.state_data.name);
+    parser.lastFuncLine = -1;
+    addFullRange(parser, parser.lastFunc.name + parser.state_data.name);
   } else if (state === State.Methodmap && parser.state_data !== undefined) {
     // We are in a methodmap
     addFullRange(parser, parser.state_data.name);
@@ -22,7 +22,7 @@ export function manageState(parser: Parser, line: string): void {
     parser.state_data = undefined;
   } else if (state === State.Property && parser.state_data !== undefined) {
     // We are in a property
-    addFullRange(parser, parser.lastFuncName + parser.state_data.name);
+    addFullRange(parser, parser.lastFunc.name + parser.state_data.name);
   } else if (
     ![
       State.Methodmap,
@@ -33,7 +33,7 @@ export function manageState(parser: Parser, line: string): void {
     ].includes(state)
   ) {
     // We are in a regular function
-    addFullRange(parser, parser.lastFuncName);
+    addFullRange(parser, parser.lastFunc.name);
   }
   parser.state.pop();
 }

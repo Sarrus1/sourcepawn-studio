@@ -7,16 +7,20 @@ import {
   DocumentSymbol,
   SymbolKind,
   LocationLink,
+  CompletionItemTag,
+  Location,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { basename } from "path";
 
 import { descriptionToMD } from "../../spUtils";
 import { SPItem, FunctionParam } from "./spItems";
+import { EnumStructItem } from "./spEnumStructItem";
+import { MethodMapItem } from "./spMethodmapItem";
 
 export class MethodItem implements SPItem {
   name: string;
-  parent: string;
+  parent: EnumStructItem | MethodMapItem;
   description: string;
   detail: string;
   params: FunctionParam[];
@@ -26,9 +30,11 @@ export class MethodItem implements SPItem {
   range: Range;
   IsBuiltIn: boolean;
   filePath: string;
+  references: Location[];
+  deprecated: string | undefined;
 
   constructor(
-    parent: string,
+    parent: MethodMapItem | EnumStructItem,
     name: string,
     detail: string,
     description: string,
@@ -37,12 +43,13 @@ export class MethodItem implements SPItem {
     file: string,
     range: Range,
     IsBuiltIn: boolean = false,
-    fullRange: Range
+    fullRange: Range,
+    deprecated: string | undefined
   ) {
     this.parent = parent;
     this.name = name;
     this.kind =
-      this.name == this.parent
+      this.name === this.parent.name
         ? CompletionItemKind.Constructor
         : CompletionItemKind.Method;
     this.detail = detail;
@@ -53,13 +60,16 @@ export class MethodItem implements SPItem {
     this.filePath = file;
     this.range = range;
     this.fullRange = fullRange;
+    this.deprecated = deprecated;
+    this.references = [];
   }
 
   toCompletionItem(): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
-      detail: this.parent,
+      detail: this.parent.name,
+      tags: this.deprecated ? [CompletionItemTag.Deprecated] : [],
     };
   }
 
@@ -87,12 +97,20 @@ export class MethodItem implements SPItem {
       return new Hover([
         { language: "sourcepawn", value: this.detail },
         `[Online Documentation](https://sourcemod.dev/#/${filename}/methodmap.${this.parent}/function.${this.name})`,
-        descriptionToMD(this.description),
+        descriptionToMD(
+          `${this.description}${
+            this.deprecated ? `\nDEPRECATED ${this.deprecated}` : ""
+          }`
+        ),
       ]);
     }
     return new Hover([
       { language: "sourcepawn", value: this.detail },
-      descriptionToMD(this.description),
+      descriptionToMD(
+        `${this.description}${
+          this.deprecated ? `\nDEPRECATED ${this.deprecated}` : ""
+        }`
+      ),
     ]);
   }
 

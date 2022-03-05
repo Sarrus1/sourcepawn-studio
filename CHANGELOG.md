@@ -1,5 +1,25 @@
 ## Release Notes
 
+## [3.1.0]
+
+### Added
+
+- Added deprecated functions and methods support.
+- Added support for references provider. The extension now know where every reference to a symbol is (see [the documentation](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#find-all-references-to-a-symbol) for more details).
+- Added support for rename provider (see [the documentation](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#rename-symbols) for more details).
+- Added a ~~strikethrough~~ on deprecated symbols. This can be disabled with (`"editor.showDeprecated": false`)
+
+### Fixed
+
+- Fixed workflow file templates.
+- Fixed a bug that would cause for loops to not be matched correctly.
+- Fixed a bug involving signatures when using references in variables (see #206).
+- Fixed include's location range size.
+
+### Improved
+
+- Improved semantic highlighting.
+
 ## [3.0.15]
 
 ### Added
