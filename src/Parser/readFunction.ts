@@ -1,8 +1,9 @@
-﻿import { Parser } from "./spParser";
+﻿import { Range } from "vscode";
+
+import { Parser } from "./spParser";
 import { MethodItem } from "../Backend/Items/spMethodItem";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { State } from "./stateEnum";
-import { Range } from "vscode";
 import { parseDocComment } from "./parseDocComment";
 import {
   parentCounter,
@@ -201,11 +202,12 @@ export function readFunction(
   }
 
   if (isMethod) {
-    let fullRange: Range;
-    if (isNativeOrForward) {
-      let end = range.start.line === parser.lineNb ? line.length : 0;
-      fullRange = new Range(range.start.line, match.index, parser.lineNb, end);
-    }
+    let fullRange = new Range(
+      range.start.line,
+      match.index,
+      parser.lineNb,
+      match.index + match[0].length
+    );
     item.detail = paramsMatch
       .replace(/;\s*$/g, "")
       .replace(/{\s*$/g, "")

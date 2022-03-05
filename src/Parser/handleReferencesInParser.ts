@@ -5,6 +5,10 @@ import { Parser } from "./spParser";
 import { positiveRange } from "./utils";
 import { SPItem } from "../Backend/Items/spItems";
 import { globalIdentifier } from "../Misc/spConstants";
+import { MethodItem } from "../Backend/Items/spMethodItem";
+import { PropertyItem } from "../Backend/Items/spPropertyItem";
+
+const globalScope = `-${globalIdentifier}-${globalIdentifier}`;
 
 export function handleReferenceInParser(
   this: {
@@ -32,7 +36,6 @@ export function handleReferenceInParser(
     }
     return;
   }
-  const globalScope = `-${globalIdentifier}-${globalIdentifier}`;
 
   const item =
     this.parser.referencesMap.get(match[0] + this.scope) ||
@@ -58,12 +61,17 @@ export function handleReferenceInParser(
     this.previousItems.length > 0 &&
     [".", ":"].includes(this.line[match.index - 1])
   ) {
-    let parent = this.previousItems[this.previousItems.length - 1];
-    let item = this.parser.methodsAndProperties.find(
-      (e) =>
-        (e.name === match[0] && e.parent.name === parent.type) ||
-        e.parent === parent
-    );
+    let offset = 1;
+    let item: MethodItem | PropertyItem;
+    while (item === undefined && this.previousItems.length >= offset) {
+      let parent = this.previousItems[this.previousItems.length - offset];
+      item = this.parser.methodsAndProperties.find(
+        (e) =>
+          e.name === match[0] &&
+          (e.parent.name === parent.type || e.parent === parent)
+      );
+      offset++;
+    }
 
     if (item !== undefined) {
       const range = positiveRange(

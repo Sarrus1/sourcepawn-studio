@@ -11,7 +11,7 @@ export function manageState(parser: Parser, line: string): void {
   } else if (state === State.Function && parser.state_data !== undefined) {
     // We are in a method
     parser.lastFuncLine = -1;
-    addFullRange(parser, parser.lastFunc + parser.state_data.name);
+    addFullRange(parser, parser.lastFunc.name + parser.state_data.name);
   } else if (state === State.Methodmap && parser.state_data !== undefined) {
     // We are in a methodmap
     addFullRange(parser, parser.state_data.name);
@@ -22,7 +22,7 @@ export function manageState(parser: Parser, line: string): void {
     parser.state_data = undefined;
   } else if (state === State.Property && parser.state_data !== undefined) {
     // We are in a property
-    addFullRange(parser, parser.lastFunc + parser.state_data.name);
+    addFullRange(parser, parser.lastFunc.name + parser.state_data.name);
   } else if (
     ![
       State.Methodmap,

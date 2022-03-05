@@ -79,11 +79,11 @@ export function completionProvider(
           items.map((e) => {
             // Show the associated type's constructor first.
             if (e.name === type) {
-              let tmp = e.toCompletionItem(document.uri.fsPath);
+              let tmp = e.toCompletionItem();
               tmp.preselect = true;
               return tmp;
             }
-            return e.toCompletionItem(document.uri.fsPath);
+            return e.toCompletionItem();
           })
         );
       }

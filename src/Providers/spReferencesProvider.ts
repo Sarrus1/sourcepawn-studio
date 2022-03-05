@@ -4,15 +4,11 @@
   Location,
   ReferenceContext,
   Position,
-  CompletionItemKind,
 } from "vscode";
-import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { ItemsRepository } from "../Backend/spItemsRepository";
-import { globalIdentifier, globalItem } from "../Misc/spConstants";
 import { positiveRange } from "../Parser/utils";
-import { searchForReferencesInString } from "../Parser/searchForReferencesInString";
 import { URI } from "vscode-uri";
-import { ParseState } from "../Parser/interfaces";
+import { locationFromRange } from "../spUtils";
 
 export function referencesProvider(
   itemsRepo: ItemsRepository,
@@ -26,43 +22,19 @@ export function referencesProvider(
     return [];
   }
 
-  // Deal with local variables
-  if (
-    items.length === 1 &&
-    items[0].kind === CompletionItemKind.Variable &&
-    items[0].parent !== globalItem
-  ) {
-    let references: Location[] = [];
-    const allItems = itemsRepo.getAllItems(document.uri);
-    const func = allItems.find(
-      (e) => e.kind === CompletionItemKind.Function && e === items[0].parent
-    ) as FunctionItem;
-    const text = document.getText(func.fullRange).split("\n");
-    let lineNb = func.fullRange.start.line;
-    const parseState: ParseState = {
-      bComment: false,
-      lComment: false,
-      sString: false,
-      dString: false,
-    };
-    for (let line of text) {
-      searchForReferencesInString(line, handleReferencesInProvider, {
-        references: references,
-        name: items[0].name,
-        lineNb: lineNb,
-        uri: document.uri,
-        parseState: parseState,
-      });
-      lineNb++;
-    }
-    return references;
-  }
-
-  return items
+  const references = items
     .filter((e) => e.references !== undefined)
     .map((e) => e.references)
     .filter((e) => e !== undefined)
     .flat();
+
+  if (context.includeDeclaration) {
+    references.push(
+      ...items.map((e) => locationFromRange(e.filePath, e.range))
+    );
+  }
+
+  return references;
 }
 
 /**

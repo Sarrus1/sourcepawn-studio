@@ -90,7 +90,7 @@ export class Parser {
   lastFuncLine: number;
   lastFunc: FunctionItem | ConstantItem;
   methodsAndProperties: (MethodItem | PropertyItem)[];
-  functionsInFile: FunctionItem[];
+  funcsAndMethodsInFile: (FunctionItem | MethodItem)[];
   MmEsInFile: (MethodMapItem | EnumStructItem)[];
   referencesMap: Map<string, SPItem>;
   macroArr: string[];
@@ -125,7 +125,7 @@ export class Parser {
     this.debugging = debugSetting == "messages" || debugSetting == "verbose";
     this.anonymousEnumCount = 0;
     this.methodsAndProperties = [];
-    this.functionsInFile = [];
+    this.funcsAndMethodsInFile = [];
     this.MmEsInFile = [];
     this.referencesMap = new Map<string, SPItem>();
   }
@@ -176,10 +176,10 @@ export class Parser {
 
       if (!lastFunc || !lastFunc.fullRange.contains(pos)) {
         if (
-          this.functionsInFile.length > 0 &&
-          this.functionsInFile[0].fullRange.contains(pos)
+          this.funcsAndMethodsInFile.length > 0 &&
+          this.funcsAndMethodsInFile[0].fullRange.contains(pos)
         ) {
-          lastFunc = this.functionsInFile.shift();
+          lastFunc = this.funcsAndMethodsInFile.shift();
         } else {
           lastFunc = undefined;
         }
@@ -409,12 +409,18 @@ export class Parser {
       if (item.kind === CompletionItemKind.Variable) {
         purgeCalls(item, this.filePath);
         this.referencesMap.set(
-          `${item.name}-${item.parent.name}-${globalIdentifier}`,
+          `${item.name}-${item.parent.name}-${
+            item.parent.parent ? item.parent.parent.name : globalIdentifier
+          }`,
           item
         );
-      } else if (item.kind === CompletionItemKind.Function) {
+      } else if (
+        [CompletionItemKind.Function, CompletionItemKind.Method].includes(
+          item.kind
+        )
+      ) {
         if (item.filePath === this.filePath) {
-          this.functionsInFile.push(item as FunctionItem);
+          this.funcsAndMethodsInFile.push(item as FunctionItem | MethodItem);
         }
         purgeCalls(item, this.filePath);
         this.referencesMap.set(item.name, item);
@@ -436,7 +442,7 @@ export class Parser {
       (a, b) => a.fullRange.start.line - b.fullRange.start.line
     );
 
-    this.functionsInFile = this.functionsInFile.sort(
+    this.funcsAndMethodsInFile = this.funcsAndMethodsInFile.sort(
       (a, b) => a.fullRange.start.line - b.fullRange.start.line
     );
   }

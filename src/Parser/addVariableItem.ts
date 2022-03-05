@@ -49,7 +49,7 @@ export function addVariableItem(
     (parser.state.includes(State.Function) || isParamDef)
   ) {
     parser.fileItems.set(
-      mapName + parser.lastFunc,
+      mapName + parser.lastFunc.name,
       new VariableItem(
         name,
         parser.filePath,
