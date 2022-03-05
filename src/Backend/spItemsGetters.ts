@@ -166,7 +166,7 @@ function makeIncludeItem(
   file = getIncludeExtension(file);
   const defRange = new Range(
     position.line,
-    fileStartPos,
+    fileStartPos - 1,
     position.line,
     fileStartPos + file.length
   );
