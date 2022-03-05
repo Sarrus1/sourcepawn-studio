@@ -105,6 +105,9 @@ export function newDocumentCallback(
   }
   readUnscannedImports(itemsRepo, fileItems.includes);
   itemsRepo.fileItems.set(uri.toString(), fileItems);
+
+  // Parse token references.
+  parseFile(filePath, fileItems, itemsRepo, true, false);
   fileItems.includes.forEach((e) => {
     parseFile(URI.parse(e.uri).fsPath, fileItems, itemsRepo, true, false);
   });
