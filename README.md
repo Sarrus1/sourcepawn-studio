@@ -11,16 +11,19 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 - Compile from VSCode with a simple button.
 - Autocompletion.
 - Go to definition.
+- Symbol references.
+- Symbol renaming.
+- Function signature help.
 - Code outline.
 - Upload to an FTP/SFTP server on successful compile.
 - Automatically run `sm plugins refresh` on a successful upload.
 - Hover for details.
-- Add icons for `.smx`, `.sp` and `.inc` files
+- Icons for `.smx`, `.sp` and `.inc` files
 - Automatically scan include files for natives, defines, methodmaps and more.
 - Useful snippets.
-- Detailed highlighting for `.sp`, `.inc`, `.cfg`, `.games.txt` and `.phrases.txt`.
+- Detailed semantic highlighting for `.sp`, `.inc`, `.cfg`, `.games.txt` and `.phrases.txt`.
 - Parse sourcemod files from a custom location.
-- Linting capabilities.
+- Linter (error detection) for `.sp` and `.cfg` files.
 
 **Details on how to use the extension available in the [Wiki](https://github.com/Sarrus1/sourcepawn-vscode/wiki)**.
 
@@ -49,6 +52,14 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 ### Code outline
 
 ![Outline example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/outline-example-1.png)
+
+### Symbol references
+
+![References example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/references-example-1.png)
+
+### Symbol renaming
+
+![Renaming example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/rename-example-1.png)
 
 ### Functions signature help
 
