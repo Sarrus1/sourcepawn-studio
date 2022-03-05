@@ -44,23 +44,26 @@ export function parseSMApi(itemsRepo: ItemsRepository): void {
   files.forEach((e) => itemsRepo.documents.add(URI.file(e).toString()));
 
   for (let file of files) {
-    try {
-      if (debug) console.log("SM API Reading", file);
+    if (debug) console.log("SM API Reading", file);
 
-      let items = new FileItems(URI.file(file).toString());
-      parseFile(file, items, itemsRepo, false, true);
+    const items = new FileItems(URI.file(file).toString());
+    parseFile(file, items, itemsRepo, false, true);
 
-      if (debug) console.log("SM API Done parsing", file);
+    if (debug) console.log("SM API Done parsing", file);
 
-      let uri = URI.file(file).toString();
-      itemsRepo.fileItems.set(uri, items);
-      itemsRepo.documents.add(uri);
+    const uri = URI.file(file).toString();
+    itemsRepo.fileItems.set(uri, items);
+    itemsRepo.documents.add(uri);
 
-      if (debug) console.log("SM API Done dealing with", uri);
-      parseFile(file, items, itemsRepo, true, true);
-    } catch (e) {
-      console.error(e);
-    }
+    if (debug) console.log("SM API Done dealing with", uri);
+    parseFile(file, items, itemsRepo, true, true);
+  }
+
+  // Parse token references.
+  for (let file of files) {
+    const items = new FileItems(URI.file(file).toString());
+    if (debug) console.log("SM API Done parsing", file);
+    parseFile(file, items, itemsRepo, true, true);
   }
   if (debug) console.log("Done parsing SM API");
 }
