@@ -14,10 +14,12 @@ import { basename } from "path";
 import { descriptionToMD } from "../../spUtils";
 import { EnumItem } from "./spEnumItem";
 import { SPItem } from "./spItems";
+import { ConstantItem } from "./spConstantItem";
+import { globalItem } from "../../Misc/spConstants";
 
 export class EnumMemberItem implements SPItem {
   name: string;
-  parent: string;
+  parent: EnumItem | ConstantItem;
   filePath: string;
   description: string;
   kind = CompletionItemKind.EnumMember;
@@ -29,7 +31,7 @@ export class EnumMemberItem implements SPItem {
     name: string,
     file: string,
     description: string,
-    Enum: EnumItem,
+    enumItem: EnumItem | ConstantItem,
     range: Range,
     IsBuiltItn: boolean
   ) {
@@ -39,14 +41,15 @@ export class EnumMemberItem implements SPItem {
     this.range = range;
     this.references = [];
     this.IsBuiltIn = IsBuiltItn;
-    this.parent = Enum.name;
+    this.parent = enumItem;
   }
 
   toCompletionItem(): CompletionItem {
     return {
       label: this.name,
       kind: this.kind,
-      detail: this.parent === "" ? basename(this.filePath) : this.parent,
+      detail:
+        this.parent === globalItem ? basename(this.filePath) : this.parent.name,
     };
   }
 
@@ -62,7 +65,7 @@ export class EnumMemberItem implements SPItem {
   }
 
   toHover(): Hover {
-    let enumName = this.parent.replace(/Enum#(\d+)/, "Anonymous$1");
+    let enumName = this.parent !== globalItem ? this.parent.name : "";
     return new Hover([
       { language: "sourcepawn", value: `${enumName} ${this.name};` },
       descriptionToMD(this.description),

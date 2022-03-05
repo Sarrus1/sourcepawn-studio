@@ -7,10 +7,13 @@
   LocationLink,
 } from "vscode";
 import { URI } from "vscode-uri";
+
 import { SPItem } from "../Backend/Items/spItems";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import { MethodItem } from "../Backend/Items/spMethodItem";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
+import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
+import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 
 export function getLastFunc(
   position: Position,
@@ -114,14 +117,14 @@ export function getLastEnumStructNameOrMethodMap(
   position: Position,
   filePath: string,
   allItems: SPItem[]
-): SPItem | undefined {
+): EnumStructItem | MethodMapItem | undefined {
   return allItems.find(
     (e) =>
       [CompletionItemKind.Struct, CompletionItemKind.Class].includes(e.kind) &&
       e.filePath === filePath &&
       e.fullRange != undefined &&
       e.fullRange.contains(position)
-  );
+  ) as EnumStructItem | MethodMapItem | undefined;
 }
 
 export function definitionsProvider(

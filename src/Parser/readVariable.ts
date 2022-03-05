@@ -15,7 +15,6 @@ export function readVariable(
   if (/^\s*public\s+native/.test(line)) {
     return;
   }
-
   let match_variables = [];
   let match_variable: RegExpExecArray;
   // Check if it's a multiline declaration

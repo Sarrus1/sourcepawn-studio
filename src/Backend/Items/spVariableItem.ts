@@ -12,12 +12,15 @@ import { URI } from "vscode-uri";
 
 import { SPItem } from "./spItems";
 import { globalIdentifier } from "../../Misc/spConstants";
+import { ConstantItem } from "./spConstantItem";
+import { MethodItem } from "./spMethodItem";
+import { FunctionItem } from "./spFunctionItem";
 
 export class VariableItem implements SPItem {
   name: string;
   filePath: string;
   kind = CompletionItemKind.Variable;
-  parent: string;
+  parent: SPItem | ConstantItem;
   range: Range;
   type: string;
   references: Location[];
@@ -26,7 +29,7 @@ export class VariableItem implements SPItem {
   constructor(
     name: string,
     file: string,
-    parent: string,
+    parent: SPItem | ConstantItem,
     range: Range,
     type: string,
     enumStruct: string
@@ -40,10 +43,12 @@ export class VariableItem implements SPItem {
     this.references = [];
   }
 
-  toCompletionItem(lastFuncName?: string): CompletionItem | undefined {
+  toCompletionItem(
+    lastFunc: MethodItem | FunctionItem
+  ): CompletionItem | undefined {
     if (
-      lastFuncName === undefined ||
-      [lastFuncName, globalIdentifier].includes(this.parent)
+      lastFunc === undefined ||
+      [lastFunc.name, globalIdentifier].includes(this.parent.name)
     ) {
       return {
         label: this.name,

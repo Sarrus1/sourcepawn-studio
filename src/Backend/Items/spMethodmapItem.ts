@@ -13,10 +13,11 @@ import { basename } from "path";
 
 import { descriptionToMD } from "../../spUtils";
 import { SPItem } from "./spItems";
+import { ConstantItem } from "./spConstantItem";
 
 export class MethodMapItem implements SPItem {
   name: string;
-  parent: string;
+  parent: MethodMapItem | ConstantItem;
   description: string;
   detail: string;
   kind = CompletionItemKind.Class;
@@ -29,7 +30,7 @@ export class MethodMapItem implements SPItem {
 
   constructor(
     name: string,
-    parent: string,
+    parent: MethodMapItem | ConstantItem,
     detail: string,
     description: string,
     file: string,

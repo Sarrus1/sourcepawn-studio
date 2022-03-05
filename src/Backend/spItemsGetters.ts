@@ -11,7 +11,7 @@ import { getAllPossibleIncludeFolderPaths } from "./spFileHandlers";
 import { ItemsRepository } from "./spItemsRepository";
 import { findMainPath } from "../spUtils";
 import { getIncludeExtension } from "./spUtils";
-import { globalIdentifier } from "../Misc/spConstants";
+import { globalItem } from "../Misc/spConstants";
 
 /**
  * Returns an array of all the items parsed from a file and its known includes
@@ -109,13 +109,13 @@ export function getItemFromPosition(
 
     if (
       e.kind === CompletionItemKind.Variable &&
-      e.parent !== globalIdentifier &&
+      e.parent !== globalItem &&
       allItems.find((e1) => {
         let check =
           [CompletionItemKind.Function, CompletionItemKind.Method].includes(
             e1.kind
           ) &&
-          e1.name === e.parent &&
+          e1 === e.parent &&
           e1.fullRange.contains(position) &&
           e1.filePath === document.uri.fsPath;
 

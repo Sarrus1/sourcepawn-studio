@@ -1,8 +1,10 @@
 import { Position, CompletionItemKind } from "vscode";
+
 import { SPItem } from "./Items/spItems";
-import { globalIdentifier } from "../Misc/spConstants";
+import { globalIdentifier, globalItem } from "../Misc/spConstants";
 import { FunctionItem } from "./Items/spFunctionItem";
 import { MethodItem } from "./Items/spMethodItem";
+import { MethodMapItem } from "./Items/spMethodmapItem";
 
 export interface VariableType {
   variableType: string;
@@ -55,7 +57,7 @@ export function getTypeOfVariable(
   } else {
     if (
       lastEnumStructOrMethodMap !== undefined &&
-      lastEnumStructOrMethodMap.parent !== globalIdentifier &&
+      lastEnumStructOrMethodMap.parent !== globalItem &&
       words[words.length - 1] === "this"
     ) {
       variableType = lastEnumStructOrMethodMap.name;
@@ -66,7 +68,7 @@ export function getTypeOfVariable(
       variableType = allItems.find(
         (e) =>
           (e.kind === CompletionItemKind.Variable &&
-            lastFuncName.includes(e.parent) &&
+            lastFuncName.includes(e.parent.name) &&
             e.name === words[words.length - 1]) ||
           ([CompletionItemKind.Function, CompletionItemKind.Class].includes(
             e.kind
@@ -76,8 +78,7 @@ export function getTypeOfVariable(
             e.name === words[words.length - 1]) ||
           (enumMemberItem !== undefined &&
             e.kind === CompletionItemKind.Class &&
-            (e.name === words[words.length - 1] ||
-              e.name === enumMemberItem.parent))
+            (e.name === words[words.length - 1] || e === enumMemberItem.parent))
       ).type;
     }
   }
@@ -89,7 +90,7 @@ export function getTypeOfVariable(
         (e) =>
           (e.kind === CompletionItemKind.Method ||
             e.kind === CompletionItemKind.Property) &&
-          e.parent === variableType &&
+          e.parent.name === variableType &&
           e.name === word
       ).type;
     }
@@ -166,20 +167,19 @@ function getMethodIndex(i: number, line: string): MethodIndex {
 }
 
 /**
- * Return all the methodmap which a given methodmap inherits from.
+ * Return all the methodmaps which a given methodmap inherits from.
  * @param  {string} methodmap   The name of the methodmap to search inheritances for.
  * @param  {SPItem[]} allItems  All the items known to the document.
  * @returns string
  */
 export function getAllInheritances(
-  methodmap: string,
+  methodmap: MethodMapItem,
   allItems: SPItem[]
-): string[] {
-  const methodMapItem = allItems.find(
-    (e) => e.kind === CompletionItemKind.Class && e.name === methodmap
-  );
-  if (methodMapItem === undefined || methodMapItem.parent === undefined) {
+): MethodMapItem[] {
+  if (methodmap === globalItem || methodmap.parent === globalItem) {
     return [methodmap];
   }
-  return [methodmap].concat(getAllInheritances(methodMapItem.parent, allItems));
+  return [methodmap].concat(
+    getAllInheritances(methodmap.parent as MethodMapItem, allItems)
+  );
 }

@@ -15,10 +15,12 @@ import { basename } from "path";
 
 import { descriptionToMD } from "../../spUtils";
 import { SPItem, FunctionParam } from "./spItems";
+import { EnumStructItem } from "./spEnumStructItem";
+import { MethodMapItem } from "./spMethodmapItem";
 
 export class MethodItem implements SPItem {
   name: string;
-  parent: string;
+  parent: EnumStructItem | MethodMapItem;
   description: string;
   detail: string;
   params: FunctionParam[];
@@ -32,7 +34,7 @@ export class MethodItem implements SPItem {
   deprecated: string | undefined;
 
   constructor(
-    parent: string,
+    parent: MethodMapItem | EnumStructItem,
     name: string,
     detail: string,
     description: string,
@@ -47,7 +49,7 @@ export class MethodItem implements SPItem {
     this.parent = parent;
     this.name = name;
     this.kind =
-      this.name == this.parent
+      this.name === this.parent.name
         ? CompletionItemKind.Constructor
         : CompletionItemKind.Method;
     this.detail = detail;
@@ -66,7 +68,7 @@ export class MethodItem implements SPItem {
     return {
       label: this.name,
       kind: this.kind,
-      detail: this.parent,
+      detail: this.parent.name,
       tags: this.deprecated ? [CompletionItemTag.Deprecated] : [],
     };
   }

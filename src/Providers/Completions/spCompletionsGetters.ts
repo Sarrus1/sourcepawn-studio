@@ -19,6 +19,10 @@ import { ItemsRepository } from "../../Backend/spItemsRepository";
 import { isMethodCall } from "../../Backend/spUtils";
 import { getAllInheritances } from "../../Backend/spItemsPropertyGetters";
 import { globalIdentifier } from "../../Misc/spConstants";
+import { MethodMapItem } from "../../Backend/Items/spMethodmapItem";
+import { EnumStructItem } from "../../Backend/Items/spEnumStructItem";
+import { FunctionItem } from "../../Backend/Items/spFunctionItem";
+import { MethodItem } from "../../Backend/Items/spMethodItem";
 
 const MP = [CompletionItemKind.Method, CompletionItemKind.Property];
 
@@ -124,7 +128,21 @@ export function getCompletionListFromPosition(
     lastEnumStructOrMethodMap
   );
 
-  const variableTypes = getAllInheritances(variableType, allItems);
+  let variableTypeItem = allItems.find(
+    (e) =>
+      [CompletionItemKind.Class, CompletionItemKind.Struct].includes(e.kind) &&
+      e.name === variableType
+  ) as MethodMapItem | EnumStructItem;
+
+  let variableTypes: (MethodMapItem | EnumStructItem)[];
+  if (variableTypeItem.kind === CompletionItemKind.Class) {
+    variableTypes = getAllInheritances(
+      variableTypeItem as MethodMapItem,
+      allItems
+    );
+  } else {
+    variableTypes = [variableTypeItem as EnumStructItem];
+  }
 
   const isMethodMap =
     words.length === 1 &&
@@ -133,34 +151,32 @@ export function getCompletionListFromPosition(
         (e) => e.name === words[0] && e.kind === CompletionItemKind.Class
       );
 
-  return getMethodItems(
-    allItems,
-    variableTypes,
-    isMethodMap,
-    lastFunc ? lastFunc.name : globalIdentifier
-  );
+  return getMethodItems(allItems, variableTypes, isMethodMap, lastFunc);
 }
 
 function getMethodItems(
   allItems: SPItem[],
-  variableTypes: string[],
+  variableTypes: (MethodMapItem | EnumStructItem)[],
   isMethodMap: boolean,
-  lastFunc: string
+  lastFunc: MethodItem | FunctionItem
 ): CompletionList {
   let items = new Set<CompletionItem | undefined>();
-
-  for (let item of allItems) {
-    if (
-      MP.includes(item.kind) &&
-      variableTypes.includes(item.parent as string) &&
-      // Don't include the constructor of the methodmap
-      !variableTypes.includes(item.name) &&
-      // Don't include static methods if we are not calling a method from its type.
-      // This handles suggestions for 'Database.Connect()' for example.
-      isMethodMap === /\bstatic\b[^\(]*\(/.test(item.detail as string)
-    ) {
-      items.add(item.toCompletionItem(lastFunc));
+  try {
+    for (let item of allItems) {
+      if (
+        MP.includes(item.kind) &&
+        variableTypes.includes(item.parent as EnumStructItem | MethodMapItem) &&
+        // Don't include the constructor of the methodmap
+        !variableTypes.includes(item as EnumStructItem | MethodMapItem) &&
+        // Don't include static methods if we are not calling a method from its type.
+        // This handles suggestions for 'Database.Connect()' for example.
+        isMethodMap === /\bstatic\b[^\(]*\(/.test(item.detail as string)
+      ) {
+        items.add(item.toCompletionItem(lastFunc));
+      }
     }
+  } catch (e) {
+    console.debug(e);
   }
 
   items.delete(undefined);
@@ -169,7 +185,10 @@ function getMethodItems(
   );
 }
 
-function getNonMethodItems(allItems: SPItem[], lastFunc): CompletionList {
+function getNonMethodItems(
+  allItems: SPItem[],
+  lastFunc: FunctionItem | MethodItem
+): CompletionList {
   let items = new Set<CompletionItem | undefined>();
 
   for (let item of allItems) {

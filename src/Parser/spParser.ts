@@ -29,13 +29,14 @@ import { handleReferenceInParser } from "./handleReferencesInParser";
 import { readMethodMap } from "./readMethodMap";
 import { manageState } from "./manageState";
 import { purgeCalls, positiveRange, parentCounter } from "./utils";
-import { globalIdentifier } from "../Misc/spConstants";
+import { globalIdentifier, globalItem } from "../Misc/spConstants";
 import { ParseState } from "./interfaces";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { MethodItem } from "../Backend/Items/spMethodItem";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
+import { ConstantItem } from "../Backend/Items/spConstantItem";
 
 export function parseFile(
   file: string,
@@ -87,7 +88,7 @@ export class Parser {
   IsBuiltIn: boolean;
   documents: Set<string>;
   lastFuncLine: number;
-  lastFuncName: string;
+  lastFunc: FunctionItem | ConstantItem;
   methodsAndProperties: (MethodItem | PropertyItem)[];
   functionsInFile: FunctionItem[];
   MmEsInFile: (MethodMapItem | EnumStructItem)[];
@@ -112,8 +113,8 @@ export class Parser {
     this.filePath = filePath;
     this.IsBuiltIn = IsBuiltIn;
     this.documents = itemsRepository.documents;
-    this.lastFuncLine = 0;
-    this.lastFuncName = "";
+    this.lastFuncLine = -1;
+    this.lastFunc = globalItem;
     // Get all the items from the itemsRepository for this file
     this.items = itemsRepository.getAllItems(URI.file(this.filePath));
     this.macroArr = this.getAllMacros(this.items);
@@ -408,7 +409,7 @@ export class Parser {
       if (item.kind === CompletionItemKind.Variable) {
         purgeCalls(item, this.filePath);
         this.referencesMap.set(
-          `${item.name}-${item.parent}-${globalIdentifier}`,
+          `${item.name}-${item.parent.name}-${globalIdentifier}`,
           item
         );
       } else if (item.kind === CompletionItemKind.Function) {

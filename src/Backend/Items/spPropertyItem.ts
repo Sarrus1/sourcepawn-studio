@@ -11,10 +11,12 @@ import {
 import { URI } from "vscode-uri";
 
 import { descriptionToMD } from "../../spUtils";
+import { EnumStructItem } from "./spEnumStructItem";
 import { SPItem } from "./spItems";
+import { MethodMapItem } from "./spMethodmapItem";
 
 export class PropertyItem implements SPItem {
-  parent: string;
+  parent: MethodMapItem | EnumStructItem;
   name: string;
   filePath: string;
   description: string;
@@ -26,7 +28,7 @@ export class PropertyItem implements SPItem {
   fullRange: Range;
 
   constructor(
-    parent: string,
+    parent: MethodMapItem | EnumStructItem,
     name: string,
     file: string,
     detail: string,
@@ -48,7 +50,7 @@ export class PropertyItem implements SPItem {
     return {
       label: this.name,
       kind: this.kind,
-      detail: this.parent,
+      detail: this.parent.name,
     };
   }
 

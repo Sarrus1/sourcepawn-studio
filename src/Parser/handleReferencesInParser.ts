@@ -62,11 +62,8 @@ export function handleReferenceInParser(
 
     let item = this.parser.methodsAndProperties.find(
       (e) =>
-        [CompletionItemKind.Property, CompletionItemKind.Method].includes(
-          e.kind
-        ) &&
         e.name === match[0] &&
-        (e.parent === parent.type || e.parent === parent.name)
+        /*e.parent === parent.type || */ e.parent === parent
     );
 
     if (item !== undefined) {

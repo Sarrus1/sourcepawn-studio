@@ -8,7 +8,7 @@
 } from "vscode";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { ItemsRepository } from "../Backend/spItemsRepository";
-import { globalIdentifier } from "../Misc/spConstants";
+import { globalIdentifier, globalItem } from "../Misc/spConstants";
 import { positiveRange } from "../Parser/utils";
 import { searchForReferencesInString } from "../Parser/searchForReferencesInString";
 import { URI } from "vscode-uri";
@@ -30,13 +30,12 @@ export function referencesProvider(
   if (
     items.length === 1 &&
     items[0].kind === CompletionItemKind.Variable &&
-    items[0].parent !== globalIdentifier
+    items[0].parent !== globalItem
   ) {
     let references: Location[] = [];
     const allItems = itemsRepo.getAllItems(document.uri);
     const func = allItems.find(
-      (e) =>
-        e.kind === CompletionItemKind.Function && e.name === items[0].parent
+      (e) => e.kind === CompletionItemKind.Function && e === items[0].parent
     ) as FunctionItem;
     const text = document.getText(func.fullRange).split("\n");
     let lineNb = func.fullRange.start.line;

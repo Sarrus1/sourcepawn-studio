@@ -2,7 +2,9 @@
 import { VariableItem } from "../Backend/Items/spVariableItem";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { State } from "./stateEnum";
-import { globalIdentifier } from "../Misc/spConstants";
+import { globalIdentifier, globalItem } from "../Misc/spConstants";
+import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
+import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 
 /**
  * Save a variable and generate the appropriate key for the Map it is stored in.
@@ -24,37 +26,34 @@ export function addVariableItem(
   name: string,
   line: string,
   type: string,
-  funcName?: string,
   isParamDef = false
 ): void {
   if (line === undefined) {
     return;
   }
   let range = parser.makeDefinitionRange(name, line);
-  let scope = globalIdentifier;
+  let scope = globalItem;
   let enumStructName: string;
   if (parser.state.includes(State.EnumStruct)) {
     enumStructName = parser.state_data.name;
   }
-  if (parser.lastFuncLine !== 0) {
-    scope = parser.lastFuncName;
+  if (parser.lastFuncLine !== -1) {
+    scope = parser.lastFunc;
   }
-  if (funcName !== undefined) {
-    scope = funcName;
-  }
+
   // Custom key name for the map so the definitions don't override each others
-  let mapName = name + scope + enumStructName;
+  let mapName = name + scope.name + enumStructName;
   if (
     (parser.state.includes(State.EnumStruct) ||
       parser.state.includes(State.Methodmap)) &&
     (parser.state.includes(State.Function) || isParamDef)
   ) {
     parser.fileItems.set(
-      mapName + parser.lastFuncName,
+      mapName + parser.lastFunc,
       new VariableItem(
         name,
         parser.filePath,
-        scope,
+        parser.lastFunc,
         range,
         type,
         enumStructName
@@ -64,7 +63,9 @@ export function addVariableItem(
     parser.fileItems.set(
       mapName,
       new PropertyItem(
-        parser.state_data.name,
+        parser.fileItems.get(parser.state_data.name) as
+          | MethodMapItem
+          | EnumStructItem,
         name,
         parser.filePath,
         line,
@@ -79,7 +80,7 @@ export function addVariableItem(
       new VariableItem(
         name,
         parser.filePath,
-        scope,
+        parser.lastFunc,
         range,
         type,
         globalIdentifier
