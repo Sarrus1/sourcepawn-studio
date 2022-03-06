@@ -335,6 +335,7 @@ ConstToken      = "const"
 ContinueToken   = "continue"
 DeleteToken     = "delete"
 DoToken         = "do"
+DeclToken		= "decl"
 ElseToken       = "else"
 EnumToken       = "enum"
 EnumStructToken = "enum struct"
@@ -864,7 +865,7 @@ ArrayInitialer
   = "[" Expression? "]"
 
 VariableDeclaration
-  = variableDeclarationType:VariableDeclarationType? variableType:VariableTypeDeclaration id:Identifier arrayInitialer:ArrayInitialer? init:(__ Initialiser)? {
+  = ((DeclToken / NewToken) __p)? variableDeclarationType:VariableDeclarationType? variableType:VariableTypeDeclaration id:Identifier arrayInitialer:ArrayInitialer? init:(__ Initialiser)? {
       return {
         type: "VariableDeclarator",
         variableDeclarationType,
