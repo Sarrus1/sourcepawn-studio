@@ -351,30 +351,30 @@ Zs = [\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]
 
 // Tokens
 
-BreakToken      = "break"       !IdentifierPart
-CaseToken       = "case"        !IdentifierPart
-CatchToken      = "catch"       !IdentifierPart
-ConstToken      = "const"       !IdentifierPart
-ContinueToken   = "continue"    !IdentifierPart
-DeleteToken     = "delete"      !IdentifierPart
-DoToken         = "do"          !IdentifierPart
-ElseToken       = "else"        !IdentifierPart
-EnumToken       = "enum"        !IdentifierPart
-EnumStructToken = "enum struct" !IdentifierPart
-FalseToken      = "false"       !IdentifierPart
-FinallyToken    = "finally"     !IdentifierPart
-ForToken        = "for"         !IdentifierPart
-IfToken         = "if"          !IdentifierPart
-MethodmapToken  = "methodmap"   !IdentifierPart
-NewToken        = "new"         !IdentifierPart
-NullToken       = "null"        !IdentifierPart
-ReturnToken     = "return"      !IdentifierPart
-SwitchToken     = "switch"      !IdentifierPart
-ThisToken       = "this"        !IdentifierPart
-TrueToken       = "true"        !IdentifierPart
-VoidToken       = "void"        !IdentifierPart
-WhileToken      = "while"       !IdentifierPart
-PublicToken     = "public"
+BreakToken      = "break"
+CaseToken       = "case"
+CatchToken      = "catch"
+ConstToken      = "const"
+ContinueToken   = "continue"
+DeleteToken     = "delete"
+DoToken         = "do"
+ElseToken       = "else"
+EnumToken       = "enum"
+EnumStructToken = "enum struct"
+FalseToken      = "false"
+FinallyToken    = "finally"
+ForToken        = "for"
+IfToken         = "if"
+MethodmapToken  = "methodmap"
+NewToken        = "new"
+NullToken       = "null"
+ReturnToken     = "return"
+SwitchToken     = "switch"
+ThisToken       = "this"
+TrueToken       = "true"
+VoidToken       = "void"
+WhileToken      = "while"
+PublicToken     = "public"		
 StockToken      = "stock"
 
 // Skipped
@@ -407,7 +407,7 @@ FunctionAccessModifiers
   {return name;}
   
 FunctionReturnType
-  = name:TypeIdentifier ":"? __p
+  = name:TypeIdentifier ((":"__)/__p)
   {return name;}
 
 FunctionDeclaration
@@ -438,8 +438,22 @@ FunctionExpression
       };
     }
 
+ParameterDeclarationType
+  = declarationType:ConstToken __p { return declarationType}
+
+ParameterDeclaration
+ = declarationType:ParameterDeclarationType? parameterType:FunctionReturnType? name:Identifier
+	{
+      return {
+      	type: "ParameterDeclaration",
+        declarationType,
+        parameterType,
+        name
+     };
+    }
+
 FormalParameterList
-  = head:Identifier tail:(__ "," __ Identifier)* {
+  = head:ParameterDeclaration tail:(__ "," __ ParameterDeclaration)* {
       return buildList(head, tail, 3);
     }
 
