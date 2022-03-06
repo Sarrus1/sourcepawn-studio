@@ -839,15 +839,19 @@ VariableDeclarationType
   = declarationType:((PublicToken / StockToken / ConstToken / StaticToken) __p)+ { return declarationType.map(e=>e[0])}
 
 VariableTypeDeclaration
-  = name:TypeIdentifier ((":"__)/(( __ "[]")? __ ))
+  = name:TypeIdentifier ((":"__)/(( __ "[]")? __p ))
   {return name;}
 
 VariableStatement
-  = __ declarations:VariableDeclarationList EOS {
+  = ((DeclToken / NewToken) __p)? 
+  	variableDeclarationType:VariableDeclarationType? 
+    variableType:VariableTypeDeclaration
+    declarations:VariableDeclarationList EOS {
       return {
         type: "VariableDeclaration",
+       	variableDeclarationType,
+       	variableType,
         declarations: declarations,
-        kind: "var"
       };
     }
 
@@ -865,11 +869,9 @@ ArrayInitialer
   = "[" Expression? "]"
 
 VariableDeclaration
-  = ((DeclToken / NewToken) __p)? variableDeclarationType:VariableDeclarationType? variableType:VariableTypeDeclaration id:Identifier arrayInitialer:ArrayInitialer* init:(__ Initialiser)? {
+  = id:Identifier arrayInitialer:ArrayInitialer* init:(__ Initialiser)? {
       return {
         type: "VariableDeclarator",
-        variableDeclarationType,
-        variableType,
         id,
         init: extractOptional(init, 1)
       };
