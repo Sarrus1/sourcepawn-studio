@@ -389,19 +389,19 @@ PrimaryExpression
   / "(" __ expression:Expression __ ")" { return expression; }
 
 ArrayLiteral
-  = "[" __ elision:(Elision __)? "]" {
+  = "{" __ elision:(Elision __)? "}" {
       return {
         type: "ArrayExpression",
         elements: optionalList(extractOptional(elision, 0))
       };
     }
-  / "[" __ elements:ElementList __ "]" {
+  / "{" __ elements:ElementList __ "}" {
       return {
         type: "ArrayExpression",
         elements: elements
       };
     }
-  / "[" __ elements:ElementList __ "," __ elision:(Elision __)? "]" {
+  / "{" __ elements:ElementList __ "," __ elision:(Elision __)? "}" {
       return {
         type: "ArrayExpression",
         elements: elements.concat(optionalList(extractOptional(elision, 0)))
@@ -836,7 +836,7 @@ StatementList
   = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); }
 
 VariableDeclarationType
-  = declarationType:((ConstToken / StaticToken) __p)+ { return declarationType.map(e=>e[0])}
+  = declarationType:((PublicToken / StockToken / ConstToken / StaticToken) __p)+ { return declarationType.map(e=>e[0])}
 
 VariableTypeDeclaration
   = name:TypeIdentifier ((":"__)/(( __ "[]")? __ ))
@@ -865,7 +865,7 @@ ArrayInitialer
   = "[" Expression? "]"
 
 VariableDeclaration
-  = ((DeclToken / NewToken) __p)? variableDeclarationType:VariableDeclarationType? variableType:VariableTypeDeclaration id:Identifier arrayInitialer:ArrayInitialer? init:(__ Initialiser)? {
+  = ((DeclToken / NewToken) __p)? variableDeclarationType:VariableDeclarationType? variableType:VariableTypeDeclaration id:Identifier arrayInitialer:ArrayInitialer* init:(__ Initialiser)? {
       return {
         type: "VariableDeclarator",
         variableDeclarationType,
