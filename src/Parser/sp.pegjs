@@ -459,7 +459,7 @@ MemberExpression
         }
     )
     tail:(
-        __ "[" __ property:Expression __ "]" {
+        __ "[" __ property:Expression? __ "]" {
           return { property: property, computed: true };
         }
       / __ "." __ property:IdentifierName {
@@ -1132,12 +1132,17 @@ ParameterDeclarationType
   = declarationType:ConstToken __p { return declarationType}
 
 ParameterDeclaration
- = declarationType:ParameterDeclarationType? parameterType:ParameterTypeDeclaration? name:Identifier ("[" [A-Za-z0-9 +*-/]* "]")?
+ = declarationType:ParameterDeclarationType? 
+   parameterType:ParameterTypeDeclaration? 
+   name:Identifier
+   MemberExpression?
+   init:(__ Initialiser)?
 	{
       return {
       	type: "ParameterDeclaration",
         declarationType,
         parameterType,
+        init,
         name
      };
     }

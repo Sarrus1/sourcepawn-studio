@@ -25,10 +25,16 @@ import { parse } from "./Parser/spParser2";
 import { readFileSync } from "fs";
 
 export function activate(context: ExtensionContext) {
-  // const out = parse(
-  //   readFileSync(window.activeTextEditor.document.uri.fsPath, "utf-8")
-  // );
-  // console.debug(out);
+  console.time("parse");
+  try {
+    const out = parse(
+      readFileSync(window.activeTextEditor.document.uri.fsPath, "utf-8")
+    );
+    console.debug(out);
+  } catch (e) {
+    console.error(e.location.start);
+  }
+  console.timeEnd("parse");
 
   const providers = new Providers(context.globalState);
 
