@@ -21,8 +21,15 @@ import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
 import { findMainPath, checkMainPath } from "./spUtils";
 import { updateDecorations } from "./Providers/decorationsProvider";
+import { parse } from "./Parser/spParser2";
+import { readFileSync } from "fs";
 
 export function activate(context: ExtensionContext) {
+  // const out = parse(
+  //   readFileSync(window.activeTextEditor.document.uri.fsPath, "utf-8")
+  // );
+  // console.debug(out);
+
   const providers = new Providers(context.globalState);
 
   const SBItem = window.createStatusBarItem(StatusBarAlignment.Left, 0);

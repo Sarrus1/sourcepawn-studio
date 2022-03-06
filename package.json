@@ -562,8 +562,9 @@
     "vscode:prepublish": "npm run generate-parser && webpack --mode production",
     "publish-ovsx": "ovsx publish",
     "generate-parser": "peggy --plugin ./node_modules/ts-pegjs -o src/Parser/cfgParser/cfgParser.ts --cache src/Parser/cfgParser/cfg.pegjs",
+    "generate-spParser": "peggy --plugin ./node_modules/ts-pegjs -o src/Parser/spParser2.ts --cache src/Parser/sp.pegjs",
     "compile": "npm run generate-parser && tsc -b tsconfig.json",
-    "watch": "npm run generate-parser && webpack --mode development --watch",
+    "watch": "npm run generate-parser && npm run generate-spParser && webpack --mode development --watch",
     "webpack": "npm run generate-parser && webpack --mode development",
     "test": "npm run compile && node ./dist/test/runTest.js"
   }

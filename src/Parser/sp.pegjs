@@ -91,6 +91,9 @@ SingleLineComment
 Identifier
   = !ReservedWord name:IdentifierName { return name; }
 
+TypeIdentifier
+  = !TypeReservedWord name:IdentifierName { return name; }
+
 IdentifierName "identifier"
   = head:IdentifierStart tail:IdentifierPart* 
   	{
@@ -131,7 +134,6 @@ UnicodeConnectorPunctuation
 
 ReservedWord
   = Keyword
-  / FutureReservedWord
   / NullLiteral
   / BooleanLiteral
 
@@ -155,10 +157,27 @@ Keyword
   / PublicToken
   / StockToken
 
-FutureReservedWord
-  = MethodmapToken
+TypeReservedWord
+  = EnumToken
+  / BreakToken
+  / CaseToken
+  / CatchToken
+  / ContinueToken
   / ConstToken
-  / EnumToken
+  / DeleteToken
+  / DoToken
+  / ElseToken
+  / FinallyToken
+  / ForToken
+  / IfToken
+  / MethodmapToken
+  / NewToken
+  / ReturnToken
+  / SwitchToken
+  / ThisToken
+  / WhileToken
+  / PublicToken
+  / StockToken
 
 Literal
   = NullLiteral
@@ -440,7 +459,7 @@ FunctionAccessModifiers
   {return name;}
   
 FunctionReturnType
-  = name:Identifier __p
+  = name:TypeIdentifier ":"? __p
   {return name;}
 
 FunctionDeclaration
