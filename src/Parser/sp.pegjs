@@ -92,11 +92,9 @@ Identifier
   = !ReservedWord name:IdentifierName { return name; }
 
 IdentifierName "identifier"
-  = head:IdentifierStart tail:IdentifierPart* {
-      return {
-        type: "Identifier",
-        name: head + tail.join("")
-      };
+  = head:IdentifierStart tail:IdentifierPart* 
+  	{
+      return head + tail.join("");
     }
 
 IdentifierStart
@@ -408,8 +406,8 @@ ThisToken       = "this"        !IdentifierPart
 TrueToken       = "true"        !IdentifierPart
 VoidToken       = "void"        !IdentifierPart
 WhileToken      = "while"       !IdentifierPart
-PublicToken     = "public"      !IdentifierPart
-StockToken      = "stock"       !IdentifierPart
+PublicToken     = "public"
+StockToken      = "stock"
 
 // Skipped
 
@@ -438,15 +436,15 @@ EOF
 
 FunctionAccessModifiers
   = name:(PublicToken 
-  / StockToken)
+  / StockToken) __p
   {return name;}
   
 FunctionReturnType
-  = name:Identifier
+  = name:Identifier __p
   {return name;}
 
 FunctionDeclaration
-  = accessModifier:(FunctionAccessModifiers __p)? returnType:(FunctionReturnType __p)? id:Identifier __
+  = accessModifier:FunctionAccessModifiers? returnType:FunctionReturnType? id:Identifier __
     "(" __ params:(FormalParameterList __)? ")" __
     "{" __ body:FunctionBody __ "}"
     {
