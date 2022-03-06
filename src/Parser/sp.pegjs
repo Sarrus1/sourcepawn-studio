@@ -1087,13 +1087,14 @@ LabelledStatement
 FunctionAccessModifiers
   = name:(PublicToken / StockToken) __p
   {return name;}
-  
-ParameterTypeDeclaration
-  = name:TypeIdentifier ((":"__)/(( __ ("[]"/"&"))? __ ))
+
+FunctionReturnTypeDeclaration
+  = name:TypeIdentifier ((":"__)/(__("[]")__)/__p)
   {return name;}
 
+
 FunctionDeclaration
-  = accessModifier:FunctionAccessModifiers? returnType:ParameterTypeDeclaration? id:Identifier __
+  = accessModifier:FunctionAccessModifiers? returnType:FunctionReturnTypeDeclaration? id:Identifier __
     "(" __ params:(FormalParameterList __)? ")" __
     "{" __ body:FunctionBody __ "}"
     {
@@ -1119,6 +1120,10 @@ FunctionExpression
         body: body
       };
     }
+
+ParameterTypeDeclaration
+  = name:TypeIdentifier ((":"__)/(__("[]"/"&")__)/__p)
+  {return name;}
 
 ParameterDeclarationType
   = declarationType:ConstToken __p { return declarationType}
