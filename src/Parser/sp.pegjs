@@ -823,7 +823,22 @@ Statement
   / WithStatement
   / LabelledStatement
   / SwitchStatement
+  / DefineStatement
+  / IncludeStatement
+  / PragmaStatement
 
+DefineStatement
+  = "#define" __p Identifier __p value:AssignmentExpression {return {type: "DefineValue", value}}
+
+IncludeStatement
+  = "#include" __ path:IncludePath {return {type: "IncludePath", path};}
+
+IncludePath = "<" path:([A-Za-z0-9\-_\/.])+ ">"{ return path.join("") }
+  /"\"" path:([A-Za-z0-9\-_\/.])+ "\""{ return path.join("") }
+
+PragmaStatement
+  = "#pragma" __ value:[A-Za-z0-9 ]+ __ { return {type:"PragmaValue",value: value.join("")}}
+    
 Block
   = "{" __ body:(StatementList __)? "}" {
       return {

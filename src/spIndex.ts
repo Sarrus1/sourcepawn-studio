@@ -30,9 +30,9 @@ export function activate(context: ExtensionContext) {
     const out = parse(
       readFileSync(window.activeTextEditor.document.uri.fsPath, "utf-8")
     );
-    console.debug(out);
+    //console.debug(out);
   } catch (e) {
-    console.error(e.location.start);
+    console.error(e, e.location.start);
   }
   console.timeEnd("parse");
 
