@@ -89,10 +89,10 @@ SingleLineComment
   = "//" (!LineTerminator SourceCharacter)*
 
 Identifier
-  = !ReservedWord name:IdentifierName { return name; }
+  = !(ReservedWord __p) name:IdentifierName { return name; }
 
 TypeIdentifier
-  = !TypeReservedWord name:IdentifierName { return name; }
+  = !(TypeReservedWord __p) name:IdentifierName { return name; }
 
 IdentifierName "identifier"
   = head:IdentifierStart tail:IdentifierPart* 
@@ -101,18 +101,10 @@ IdentifierName "identifier"
     }
 
 IdentifierStart
-  = UnicodeLetter
-  / "$"
-  / "_"
-  / "\\" sequence:UnicodeEscapeSequence { return sequence; }
+  = [_A-Za-z]
 
 IdentifierPart
-  = IdentifierStart
-  / UnicodeCombiningMark
-  / UnicodeDigit
-  / UnicodeConnectorPunctuation
-  / "\u200C"
-  / "\u200D"
+  = [_A-Za-z0-9]
 
 UnicodeLetter
   = Lu
@@ -433,7 +425,7 @@ StockToken      = "stock"
 __
   = (WhiteSpace / LineTerminatorSequence / Comment)*
 
-__p
+__p "separator"
   = (WhiteSpace / LineTerminatorSequence / Comment)+
 
 _
@@ -454,8 +446,7 @@ EOF
 // ----- A.5 Functions and Programs -----
 
 FunctionAccessModifiers
-  = name:(PublicToken 
-  / StockToken) __p
+  = name:(PublicToken / StockToken) __p
   {return name;}
   
 FunctionReturnType
