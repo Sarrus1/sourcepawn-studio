@@ -399,19 +399,18 @@ EOS
 EOF
   = !.
 
-
 // ----- A.5 Functions and Programs -----
 
 FunctionAccessModifiers
   = name:(PublicToken / StockToken) __p
   {return name;}
   
-FunctionReturnType
-  = name:TypeIdentifier ((":"__)/__p)
+TypeDeclaration
+  = name:TypeIdentifier ((":"__)/(( __ ("[]"/"&"))? __ ))
   {return name;}
 
 FunctionDeclaration
-  = accessModifier:FunctionAccessModifiers? returnType:FunctionReturnType? id:Identifier __
+  = accessModifier:FunctionAccessModifiers? returnType:TypeDeclaration? id:Identifier __
     "(" __ params:(FormalParameterList __)? ")" __
     "{" __ body:FunctionBody __ "}"
     {
@@ -442,7 +441,7 @@ ParameterDeclarationType
   = declarationType:ConstToken __p { return declarationType}
 
 ParameterDeclaration
- = declarationType:ParameterDeclarationType? parameterType:FunctionReturnType? name:Identifier
+ = declarationType:ParameterDeclarationType? parameterType:TypeDeclaration? name:Identifier ("[" [A-Za-z0-9 +*-/]* "]")?
 	{
       return {
       	type: "ParameterDeclaration",
