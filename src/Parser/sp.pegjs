@@ -89,10 +89,10 @@ SingleLineComment
   = "//" (!LineTerminator SourceCharacter)*
 
 Identifier
-  = !(ReservedWord __p) name:IdentifierName { return name; }
+  = !(ReservedWord !IdentifierPart) name:IdentifierName { return name; }
 
 TypeIdentifier
-  = !(TypeReservedWord __p) name:IdentifierName { return name; }
+  = !(TypeReservedWord !IdentifierPart) name:IdentifierName { return name; }
 
 IdentifierName "identifier"
   = head:IdentifierStart tail:IdentifierPart* 
