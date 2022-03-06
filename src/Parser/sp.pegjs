@@ -353,6 +353,7 @@ VoidToken       = "void"
 WhileToken      = "while"
 PublicToken     = "public"		
 StockToken      = "stock"
+StaticToken     = "static"
 
 // Skipped
 
@@ -833,6 +834,9 @@ Block
 StatementList
   = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); }
 
+VariableDeclarationType
+  = declarationType:((ConstToken / StaticToken) __p)+ { return declarationType.map(e=>e[0])}
+
 VariableTypeDeclaration
   = name:TypeIdentifier ((":"__)/(( __ "[]")? __ ))
   {return name;}
@@ -860,10 +864,12 @@ ArrayInitialer
   = "[" Expression? "]"
 
 VariableDeclaration
-  = type:VariableTypeDeclaration id:Identifier arrayInitialer:ArrayInitialer? init:(__ Initialiser)? {
+  = variableDeclarationType:VariableDeclarationType? variableType:VariableTypeDeclaration id:Identifier arrayInitialer:ArrayInitialer? init:(__ Initialiser)? {
       return {
         type: "VariableDeclarator",
-        id: id,
+        variableDeclarationType,
+        variableType,
+        id,
         init: extractOptional(init, 1)
       };
     }
