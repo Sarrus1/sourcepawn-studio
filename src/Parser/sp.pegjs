@@ -834,11 +834,11 @@ StatementList
   = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); }
 
 VariableTypeDeclaration
-  = name:TypeIdentifier ((":"__)/(( __ ("[]"/"&"))? __ ))
+  = name:TypeIdentifier ((":"__)/(( __ "[]")? __ ))
   {return name;}
 
 VariableStatement
-  = VariableTypeDeclaration __ declarations:VariableDeclarationList EOS {
+  = __ declarations:VariableDeclarationList EOS {
       return {
         type: "VariableDeclaration",
         declarations: declarations,
@@ -856,8 +856,11 @@ VariableDeclarationListNoIn
       return buildList(head, tail, 3);
     }
 
+ArrayInitialer
+  = "[" Expression? "]"
+
 VariableDeclaration
-  = id:Identifier init:(__ Initialiser)? {
+  = type:VariableTypeDeclaration id:Identifier arrayInitialer:ArrayInitialer? init:(__ Initialiser)? {
       return {
         type: "VariableDeclarator",
         id: id,
