@@ -119,11 +119,14 @@ Keyword
   / EnumToken
   / FinallyToken
   / ForToken
+  / FunctionToken
   / IfToken
   / NewToken
   / ReturnToken
   / SwitchToken
   / ThisToken
+  / TypeDefToken
+  / TypeSetToken
   / VoidToken
   / WhileToken
   / PublicToken
@@ -142,6 +145,7 @@ TypeReservedWord
   / ElseToken
   / FinallyToken
   / ForToken
+  / FunctionToken
   / IfToken
   / MethodmapToken
   / NewToken
@@ -149,6 +153,8 @@ TypeReservedWord
   / SwitchToken
   / StructToken
   / ThisToken
+  / TypeDefToken
+  / TypeSetToken
   / WhileToken
   / PublicToken
   / StockToken
@@ -291,6 +297,7 @@ EnumStructToken = EnumToken __p StructToken
 FalseToken      = "false"
 FinallyToken    = "finally"
 ForToken        = "for"
+FunctionToken   = "function"
 IfToken         = "if"
 MethodmapToken  = "methodmap"
 NewToken        = "new"
@@ -300,6 +307,8 @@ SwitchToken     = "switch"
 StructToken     = "struct"
 ThisToken       = "this"
 TrueToken       = "true"
+TypeDefToken    = "typedef"
+TypeSetToken    = "typeset"
 VoidToken       = "void"
 WhileToken      = "while"
 PublicToken     = "public"		
@@ -778,6 +787,8 @@ Statement
   / DefineStatement
   / IncludeStatement
   / PragmaStatement
+  / TypeDefStatement
+  / TypeSetStatement
 
 DefineStatement
   = "#define" __p Identifier __p value:AssignmentExpression {return {type: "DefineValue", value}}
@@ -1084,9 +1095,35 @@ EnumMemberDeclaration
   = VariableDeclaration
 
 EnumBody
-  = head:EnumMemberDeclaration tail:(__ "," __ EnumMemberDeclaration)* ","?{
-      return buildList(head, tail, 3);
+  = head:EnumMemberDeclaration tail:(__ "," __ EnumMemberDeclaration)* ","?
+  	{
+    	return buildList(head, tail, 3);
     }
+
+TypeDefStatement
+  = TypeDefToken __p id:TypeIdentifier __ "=" __ TypeDefBody
+	{ 
+    	return {
+    		type: "TypeDefStatement",
+            id
+         };
+    }
+
+TypeDefBody
+  = FunctionToken __ TypeIdentifier 
+  __ "(" __ params:(FormalParameterList __)? ")" __ ";"?
+  {
+  	return params;
+  }
+
+TypeSetStatement
+  = TypeSetToken __p id:TypeIdentifier
+  __ "{" __ params:(TypeDefBody __)*"}"
+  {
+  	return id;
+  }
+  
+
 
 // ----- A.5 Functions and Programs -----
 
