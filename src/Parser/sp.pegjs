@@ -116,6 +116,7 @@ Keyword
   / DeleteToken
   / DoToken
   / ElseToken
+  / EnumToken
   / FinallyToken
   / ForToken
   / IfToken
@@ -127,16 +128,17 @@ Keyword
   / WhileToken
   / PublicToken
   / StockToken
+  / StructToken
 
 TypeReservedWord
-  = EnumToken
-  / BreakToken
+  = BreakToken
   / CaseToken
   / CatchToken
   / ContinueToken
   / ConstToken
   / DeleteToken
   / DoToken
+  / EnumToken
   / ElseToken
   / FinallyToken
   / ForToken
@@ -145,6 +147,7 @@ TypeReservedWord
   / NewToken
   / ReturnToken
   / SwitchToken
+  / StructToken
   / ThisToken
   / WhileToken
   / PublicToken
@@ -284,7 +287,7 @@ DoToken         = "do"
 DeclToken		= "decl"
 ElseToken       = "else"
 EnumToken       = "enum"
-EnumStructToken = "enum struct"
+EnumStructToken = EnumToken __p StructToken
 FalseToken      = "false"
 FinallyToken    = "finally"
 ForToken        = "for"
@@ -294,6 +297,7 @@ NewToken        = "new"
 NullToken       = "null"
 ReturnToken     = "return"
 SwitchToken     = "switch"
+StructToken     = "struct"
 ThisToken       = "this"
 TrueToken       = "true"
 VoidToken       = "void"
@@ -760,6 +764,7 @@ Statement
   = Block
   / VariableStatement
   / EmptyStatement
+  / EnumStructStatement
   / ExpressionStatement
   / IfStatement
   / IterationStatement
@@ -1045,6 +1050,25 @@ LabelledStatement
   = label:Identifier __ ":" __ body:Statement {
       return { type: "LabeledStatement", label: label, body: body };
     }
+
+EnumStructStatement
+  = EnumStructToken __p id:Identifier __
+  "{" __ body:EnumStructBody __ "}" { 
+      return {
+        type:"EnumStruct",
+        id,
+        body
+     };
+    }
+
+EnumStructBody
+  = body:SourceElements? {
+      return {
+        type: "BlockStatement",
+        body: optionalList(body)
+      };
+    }
+
 
 // ----- A.5 Functions and Programs -----
 
