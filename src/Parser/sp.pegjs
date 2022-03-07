@@ -764,6 +764,7 @@ Statement
   = Block
   / VariableStatement
   / EmptyStatement
+  / EnumStatement
   / EnumStructStatement
   / ExpressionStatement
   / IfStatement
@@ -1068,7 +1069,24 @@ EnumStructBody
         body: optionalList(body)
       };
     }
+ 
+ EnumStatement
+  = EnumToken id:(__p Identifier)? __
+  "{" __ body:EnumBody __ "}" { 
+      return {
+        type:"Enum",
+        id: id[1],
+        body
+     };
+    }
+ 
+EnumMemberDeclaration
+  = VariableDeclaration
 
+EnumBody
+  = head:EnumMemberDeclaration tail:(__ "," __ EnumMemberDeclaration)* ","?{
+      return buildList(head, tail, 3);
+    }
 
 // ----- A.5 Functions and Programs -----
 
