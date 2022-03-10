@@ -797,6 +797,7 @@ Statement
   / DefineStatement
   / IncludeStatement
   / PragmaStatement
+  / PreprocessorStatement
   / PropertyToken
   / TypeDefStatement
   / TypeSetStatement
@@ -812,6 +813,9 @@ IncludePath = "<" path:([A-Za-z0-9\-_\/.])+ ">"{ return path.join("") }
 
 PragmaStatement
   = "#pragma" __ value:[A-Za-z0-9 ]+ __ { return {type:"PragmaValue",value: value.join("")}}
+
+PreprocessorStatement
+  = "#" [A-Za-z0-9_]+ __ ([A-Za-z0-9_]* __)?
     
 Block
   = "{" __ body:(StatementList __)? "}" {
