@@ -802,10 +802,7 @@ Statement
   / SwitchStatement
   / DefineStatement
   / IncludeStatement
-  / PragmaStatement
-  / OtherPreprocessorStatement
   / StructStatement
-  / PreprocessorStatement
   / PropertyToken
   / TypeDefStatement
   / TypeSetStatement
@@ -823,7 +820,10 @@ AliasStatement
     "(" __ params:(FormalParameterList __)? ")" __p "=" __p Identifier __ EOS
 
 DefineStatement
-  = "#define" _p Identifier value:(_p AssignmentExpression)? _ {return {type: "DefineValue", value: value?value.join(""):null}}
+  = "#define" _p id:Identifier value:(_p AssignmentExpression)? _ {return {type: "DefineValue", id, value: value?value.join(""):null}}
+
+MacroStatement
+  = "#define" _p id:Identifier "(" ( _ "%"[0-9]+ _ "," )* ( _ "%"[0-9]+ _ )? _ ")" [^\n]+ _ {return {type: "Macro", id}}
 
 IncludeStatement
   = "#include" __ path:IncludePath {return {type: "IncludePath", path};}
@@ -847,6 +847,7 @@ PreprocessorStatement
   = pre:(
     PragmaStatement
     / IncludeStatement
+    / MacroStatement
     / DefineStatement
     / OtherPreprocessorStatement
     )
