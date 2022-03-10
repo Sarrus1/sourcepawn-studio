@@ -1120,9 +1120,9 @@ EnumStructBody
       };
     }
  
- EnumStatement
-  = EnumToken id:(__p Identifier)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
-  "{" __ body:EnumBody __ "}" { 
+EnumStatement
+  = EnumToken id:(__p Identifier)? (":"__)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
+  "{" __ body:EnumBody? __ "}" { 
       return {
         type:"Enum",
         id: id?id[1]:null,
@@ -1239,8 +1239,8 @@ ParameterDeclarationType
 ParameterDeclaration
  = declarationType:ParameterDeclarationType? 
    parameterType:ParameterTypeDeclaration? 
-   id:Identifier
-   (__"[" __ property:Expression? __ "]"__)?
+   id:(Identifier/DotDotDotToken)
+   (__"[" __ property:Expression? __ "]"__ / DotDotDotToken)?
    init:(__ Initialiser)?
 	{
       return {
