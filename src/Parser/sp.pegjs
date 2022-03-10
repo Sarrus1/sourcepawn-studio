@@ -383,12 +383,12 @@ ArrayLiteral
 
 ElementList
   = head:(
-      elision:(Elision __)? element:LeftHandSideExpression {
+      elision:(Elision __)? element:Expression {
         return optionalList(extractOptional(elision, 0)).concat(element);
       }
     )
     tail:(
-      __ "," __ elision:(Elision __)? element:LeftHandSideExpression {
+      __ "," __ elision:(Elision __)? element:Expression {
         return optionalList(extractOptional(elision, 0)).concat(element);
       }
     )*
@@ -801,6 +801,7 @@ Statement
   / MethodmapStatement
   / SwitchStatement
   / MacroCallStatement
+  / UsingStatement
   / IncludeStatement
   / StructStatement
   / PropertyToken
@@ -818,6 +819,9 @@ AliasStatement
   = accessModifier:FunctionAccessModifiers* (NativeToken / ForwardToken) __p
     returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperators? __
     "(" __ params:(FormalParameterList __)? ")" __p "=" __p Identifier __ EOS
+
+UsingStatement
+ = "using" [^\n;]+ ";"
 
 DefineStatement
   = "#define" _p id:Identifier value:(_p AssignmentExpression)? _ {return {type: "DefineValue", id, value: value?value.join(""):null}}
