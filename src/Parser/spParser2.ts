@@ -6,6 +6,8 @@
 "use strict";
 
 
+  import { readInclude } from "./readInclude";
+
   var TYPES_TO_PROPERTY_NAMES = {
     CallExpression:   "callee",
     MemberExpression: "object",
@@ -705,7 +707,7 @@ function peg$parse(input: string, options?: IParseOptions) {
   const peg$c316 = function(id: any): any {return {type: "Macro", id}};
   const peg$c317 = "#include";
   const peg$c318 = peg$literalExpectation("#include", false);
-  const peg$c319 = function(path: any): any {return {type: "IncludePath", path};};
+  const peg$c319 = function(path: any): any {readInclude(args, path);};
   const peg$c320 = /^[A-Za-z0-9\-_\/.]/;
   const peg$c321 = peg$classExpectation([["A", "Z"], ["a", "z"], ["0", "9"], "-", "_", "/", "."], false, false);
   const peg$c322 = function(path: any): any { return path.join("") };
@@ -16608,6 +16610,10 @@ function peg$parse(input: string, options?: IParseOptions) {
 
     return s0;
   }
+
+
+    const args = this.args;
+
 
   peg$result = peg$startRuleFunction();
 

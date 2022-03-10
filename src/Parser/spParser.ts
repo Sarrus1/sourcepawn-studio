@@ -15,7 +15,6 @@ import { SPItem } from "../Backend/Items/spItems";
 import { State } from "./stateEnum";
 import { readDefine } from "./readDefine";
 import { readMacro } from "./readMacro";
-import { readInclude } from "./readInclude";
 import { readEnum } from "./readEnum";
 import { readLoopVariable } from "./readLoopVariable";
 import { readVariable } from "./readVariable";
@@ -37,7 +36,7 @@ import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { ConstantItem } from "../Backend/Items/spConstantItem";
-import { parse, SyntaxError } from "./spParser2";
+const spParser = require("./spParser2");
 
 export function parseFile(
   file: string,
@@ -58,18 +57,14 @@ export function parseFile(
     file = resolve(folderpath, match[0]);
     data = readFileSync(file, "utf-8");
   }
-  // Remove BOM if present
-  if (data.charCodeAt(0) === 0xfeff) {
-    data = data.substring(1);
-  }
-  if (!searchTokens)
-    try {
-      const out = parse(data);
-      //console.debug(out);
-    } catch (e) {
-      console.error(basename(file), e.location.start, e.message);
-    }
   parseText(data, file, items, itemsRepository, searchTokens, IsBuiltIn);
+}
+
+export interface spParserArgs {
+  fileItems: FileItems;
+  documents: Set<string>;
+  filePath: string;
+  IsBuiltIn: boolean;
 }
 
 export function parseText(
@@ -78,14 +73,33 @@ export function parseText(
   items: FileItems,
   itemsRepository: ItemsRepository,
   searchTokens,
-  IsBuiltIn: boolean
+  isBuiltIn: boolean
 ) {
   if (data === undefined) {
     return; // Asked to parse empty file
   }
   let lines = data.split("\n");
-  let parser = new Parser(lines, file, IsBuiltIn, items, itemsRepository);
-  parser.parse(searchTokens);
+  // Remove BOM if present
+  if (data.charCodeAt(0) === 0xfeff) {
+    data = data.substring(1);
+  }
+  if (!searchTokens)
+    try {
+      const args: spParserArgs = {
+        fileItems: items,
+        documents: itemsRepository.documents,
+        filePath: file,
+        IsBuiltIn: isBuiltIn,
+      };
+      spParser.args = args;
+      const out: string = spParser.parse(data);
+      //console.debug(out);
+    } catch (e) {
+      console.error(e);
+    }
+
+  // const parser = new Parser(lines, file, IsBuiltIn, items, itemsRepository);
+  // parser.parse(searchTokens);
 }
 
 export class Parser {
@@ -163,7 +177,7 @@ export class Parser {
       }
 
       // Always add "sourcemod.inc" as an include.
-      readInclude(this, "sourcemod".match(/(.*)/));
+      //readInclude(this, "sourcemod".match(/(.*)/));
       while (line !== undefined) {
         this.interpLine(line);
         line = this.lines.shift();
@@ -257,24 +271,10 @@ export class Parser {
       return;
     }
 
-    // Match global include
-    match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>/);
-    if (match) {
-      readInclude(this, match);
-      return;
-    }
-
     // Match #pragma deprecated
     match = line.match(/#pragma\s+deprecated\s+(.+?(?=(?:\/\*|\/\/|$)))/);
     if (match) {
       this.deprecated = match[1];
-      return;
-    }
-
-    // Match relative include
-    match = line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"/);
-    if (match) {
-      readInclude(this, match);
       return;
     }
 

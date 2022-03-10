@@ -1,4 +1,6 @@
 {{
+  import { readInclude } from "./readInclude";
+
   var TYPES_TO_PROPERTY_NAMES = {
     CallExpression:   "callee",
     MemberExpression: "object",
@@ -47,6 +49,9 @@
     return value !== null ? value : [];
   }
 }}
+{
+  const args = this.args;
+}
 
 Start
   = __ program:Program __ { return program; }
@@ -854,7 +859,10 @@ MacroStatement
   = "#define" _p id:Identifier "(" ( _ "%"[0-9]+ _ "," )* ( _ "%"[0-9]+ _ )? _ ")" [^\n]+ _ {return {type: "Macro", id}}
 
 IncludeStatement
-  = "#include" __ path:IncludePath {return {type: "IncludePath", path};}
+  = "#include" __ path:IncludePath 
+  {
+    readInclude(args, path);
+  }
 
 IncludePath = "<" path:([A-Za-z0-9\-_\/.])+ ">"{ return path.join("") }
   /"\"" path:([A-Za-z0-9\-_\/.])+ "\""{ return path.join("") }
