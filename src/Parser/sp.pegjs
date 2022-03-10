@@ -784,7 +784,8 @@ ExpressionNoIn
 // ----- A.4 Statements -----
 
 Statement
-  = Block
+  = AliasStatement
+  / Block
   / VariableStatement
   / EmptyStatement
   / EnumStatement
@@ -808,6 +809,16 @@ Statement
   / PropertyToken
   / TypeDefStatement
   / TypeSetStatement
+
+AliasStatement
+  = accessModifier:FunctionAccessModifiers* (NativeToken / ForwardToken) __p
+    returnType:FunctionReturnTypeDeclaration? id:Identifier(
+      MultiplicativeOperator 
+      / AdditiveOperator 
+      / RelationalOperator
+      / EqualityOperator
+      / UnaryOperator)? __
+    "(" __ params:(FormalParameterList __)? ")" __p "=" __p Identifier __ EOS
 
 DefineStatement
   = "#define" _p Identifier value:(_p AssignmentExpression)? _ {return {type: "DefineValue", value: value?value.join(""):null}}
