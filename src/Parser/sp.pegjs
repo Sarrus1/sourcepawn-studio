@@ -1186,8 +1186,16 @@ PropertyStatement
   "{" __ ((FunctionDeclaration / NativeForwardDeclaration) __)* "}" __
 
 StructStatement
-  = accessModifier:FunctionAccessModifiers* TypeIdentifier __p id:Identifier __ "=" __
+  = (
+    accessModifier:FunctionAccessModifiers* TypeIdentifier __p id:Identifier __ "=" __
   ObjectLiteral
+  )
+  /
+  (
+    StructToken __p id:Identifier __
+    "{" __ (VariableStatement __)* "}" __ EOS
+  )
+
 
 
 // ----- A.5 Functions and Programs -----
