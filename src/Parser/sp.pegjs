@@ -810,14 +810,16 @@ Statement
   / TypeDefStatement
   / TypeSetStatement
 
+AliasOperators
+  = MultiplicativeOperator 
+    / AdditiveOperator 
+    / RelationalOperator
+    / EqualityOperator
+    / UnaryOperator
+
 AliasStatement
   = accessModifier:FunctionAccessModifiers* (NativeToken / ForwardToken) __p
-    returnType:FunctionReturnTypeDeclaration? id:Identifier(
-      MultiplicativeOperator 
-      / AdditiveOperator 
-      / RelationalOperator
-      / EqualityOperator
-      / UnaryOperator)? __
+    returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperators? __
     "(" __ params:(FormalParameterList __)? ")" __p "=" __p Identifier __ EOS
 
 DefineStatement
@@ -833,7 +835,7 @@ PragmaStatement
   = "#pragma" __ value:[^\n]+ __ { return {type:"PragmaValue",value: value?value.join(""):null}}
 
 OtherPreprocessorStatement
-  = "#" name:(!( _p ("define" / "pragma" / "include") _p )[A-Za-z0-9_]+) _ [^\n]* __p
+  = "#" name:(!( _p ("define" / "pragma" / "include") _p )[A-Za-z0-9_]+) _ [^\n]*
   {
     return {
       type:"PreprocessorStatement", 
@@ -1221,7 +1223,7 @@ FunctionReturnTypeDeclaration
 
 
 FunctionDeclaration
-  = accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier __
+  = accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperators? __
     "(" __ params:(FormalParameterList __)? ")" __
     "{" __ body:FunctionBody __ "}"
     {
@@ -1286,7 +1288,7 @@ FunctionBody
 
 NativeForwardDeclaration
   = accessModifier:FunctionAccessModifiers* (NativeToken / ForwardToken) __p
-    returnType:FunctionReturnTypeDeclaration? id:Identifier __
+    returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperators? __
     "(" __ params:(FormalParameterList __)? ")" EOS
 
 Program
