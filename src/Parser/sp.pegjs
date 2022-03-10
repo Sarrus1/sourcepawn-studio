@@ -1251,7 +1251,7 @@ FunctionExpression
     }
 
 ParameterTypeDeclaration
-  = name:TypeIdentifier ((":"__)/(__("[]"/"&")__)/__p)
+  = name:TypeIdentifier ((":"__)/(__(("[]")+/"&")__)/__p)
   {return name;}
 
 ParameterDeclarationType
@@ -1261,7 +1261,7 @@ ParameterDeclaration
  = declarationType:ParameterDeclarationType? 
    parameterType:ParameterTypeDeclaration? 
    id:(Identifier/DotDotDotToken)
-   (__"[" __ property:Expression? __ "]"__ / DotDotDotToken)?
+   (__"[" __ property:Expression? __ "]"__ / DotDotDotToken)*
    init:(__ Initialiser)?
 	{
       return {
