@@ -21,21 +21,8 @@ import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
 import { findMainPath, checkMainPath } from "./spUtils";
 import { updateDecorations } from "./Providers/decorationsProvider";
-import { parse } from "./Parser/spParser2";
-import { readFileSync } from "fs";
 
 export function activate(context: ExtensionContext) {
-  console.time("parse");
-  try {
-    const out = parse(
-      readFileSync(window.activeTextEditor.document.uri.fsPath, "utf-8")
-    );
-    //console.debug(out);
-  } catch (e) {
-    console.error(e, e.location.start);
-  }
-  console.timeEnd("parse");
-
   const providers = new Providers(context.globalState);
 
   const SBItem = window.createStatusBarItem(StatusBarAlignment.Left, 0);
@@ -239,6 +226,7 @@ function getDirectories(paths: string[], providers: Providers) {
 }
 
 async function loadFiles(providers: Providers, SBItem: StatusBarItem) {
+  console.time("parse");
   await parseSMApi(providers.itemsRepository);
 
   const mainPath = findMainPath();
@@ -261,4 +249,5 @@ async function loadFiles(providers: Providers, SBItem: StatusBarItem) {
   updateDecorations(providers.itemsRepository);
 
   SBItem.hide();
+  console.timeEnd("parse");
 }

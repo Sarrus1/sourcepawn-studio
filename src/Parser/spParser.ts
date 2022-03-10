@@ -6,7 +6,7 @@ import {
   Position,
 } from "vscode";
 import { existsSync, readFileSync } from "fs";
-import { resolve, dirname } from "path";
+import { resolve, dirname, basename } from "path";
 import { URI } from "vscode-uri";
 
 import { ItemsRepository } from "../Backend/spItemsRepository";
@@ -37,6 +37,7 @@ import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { ConstantItem } from "../Backend/Items/spConstantItem";
+import { parse } from "./spParser2";
 
 export function parseFile(
   file: string,
@@ -57,6 +58,14 @@ export function parseFile(
     file = resolve(folderpath, match[0]);
     data = readFileSync(file, "utf-8");
   }
+  console.time(basename(file));
+  try {
+    const out = parse(data);
+    //console.debug(out);
+  } catch (e) {
+    console.error(basename(file), e.location.start);
+  }
+  console.timeEnd(basename(file));
   parseText(data, file, items, itemsRepository, searchTokens, IsBuiltIn);
 }
 

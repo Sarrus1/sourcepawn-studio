@@ -327,10 +327,13 @@ StaticToken     = "static"
 // Skipped
 
 __
-  = (WhiteSpace / LineTerminatorSequence / Comment)*
+  = (WhiteSpace / LineTerminatorSequence / Comment / PreprocessorStatement)*
 
 __p "separator"
-  = (WhiteSpace / LineTerminatorSequence / Comment)+
+  = (WhiteSpace / LineTerminatorSequence / Comment / PreprocessorStatement)+
+
+_p
+  = (WhiteSpace / MultiLineCommentNoLineTerminator)+
 
 _
   = (WhiteSpace / MultiLineCommentNoLineTerminator)*
@@ -378,12 +381,12 @@ ArrayLiteral
 
 ElementList
   = head:(
-      elision:(Elision __)? element:AssignmentExpression {
+      elision:(Elision __)? element:LeftHandSideExpression {
         return optionalList(extractOptional(elision, 0)).concat(element);
       }
     )
     tail:(
-      __ "," __ elision:(Elision __)? element:AssignmentExpression {
+      __ "," __ elision:(Elision __)? element:LeftHandSideExpression {
         return optionalList(extractOptional(elision, 0)).concat(element);
       }
     )*
@@ -401,12 +404,12 @@ ObjectLiteral
        return { type: "ObjectExpression", properties: properties };
      }
 PropertyNameAndValueList
-  = head:PropertyAssignment tail:(__ "," __ PropertyAssignment)* {
+  = head:PropertyAssignment tail:(__ (","/__p)? __ PropertyAssignment)* {
       return buildList(head, tail, 3);
     }
 
 PropertyAssignment
-  = key:PropertyName __ ":" __ value:AssignmentExpression {
+  = key:PropertyName __ "=" __ value:AssignmentExpression {
       return { type: "Property", key: key, value: value, kind: "init" };
     }
 
@@ -797,13 +800,15 @@ Statement
   / DefineStatement
   / IncludeStatement
   / PragmaStatement
+  / OtherPreprocessorStatement
+  / StructStatement
   / PreprocessorStatement
   / PropertyToken
   / TypeDefStatement
   / TypeSetStatement
 
 DefineStatement
-  = "#define" __p Identifier __p value:AssignmentExpression {return {type: "DefineValue", value}}
+  = "#define" __p Identifier value:(__p AssignmentExpression)? _ {return {type: "DefineValue", value: value?value.join(""):null}}
 
 IncludeStatement
   = "#include" __ path:IncludePath {return {type: "IncludePath", path};}
@@ -812,10 +817,27 @@ IncludePath = "<" path:([A-Za-z0-9\-_\/.])+ ">"{ return path.join("") }
   /"\"" path:([A-Za-z0-9\-_\/.])+ "\""{ return path.join("") }
 
 PragmaStatement
-  = "#pragma" __ value:[A-Za-z0-9 ]+ __ { return {type:"PragmaValue",value: value.join("")}}
+  = "#pragma" __ value:[A-Za-z0-9 ]+ __ { return {type:"PragmaValue",value: value?value.join(""):null}}
+
+OtherPreprocessorStatement
+  = "#" name:(!( _p ("define" / "pragma" / "include") _p )[A-Za-z0-9_]+) _ [^\n]* __p
+  {
+    return {
+      type:"PreprocessorStatement", 
+      name
+      };
+  }
 
 PreprocessorStatement
-  = "#" [A-Za-z0-9_]+ __ ([A-Za-z0-9_]* __)?
+  = pre:(
+    PragmaStatement
+    / IncludeStatement
+    / DefineStatement
+    / OtherPreprocessorStatement
+    )
+    {
+      return pre;
+    }
     
 Block
   = "{" __ body:(StatementList __)? "}" {
@@ -1160,7 +1182,10 @@ MethodmapBody
 PropertyStatement
   = PropertyToken __p propertyType:TypeIdentifier __p id:Identifier __
   "{" __ ((FunctionDeclaration / NativeForwardDeclaration) __)* "}" __
-  
+
+StructStatement
+  = accessModifier:FunctionAccessModifiers? TypeIdentifier __p id:Identifier __ "=" __
+  ObjectLiteral
 
 
 // ----- A.5 Functions and Programs -----
@@ -1212,8 +1237,8 @@ ParameterDeclarationType
 ParameterDeclaration
  = declarationType:ParameterDeclarationType? 
    parameterType:ParameterTypeDeclaration? 
-   name:Identifier
-   MemberExpression?
+   id:Identifier
+   (__"[" __ property:Expression? __ "]"__)?
    init:(__ Initialiser)?
 	{
       return {
@@ -1221,7 +1246,7 @@ ParameterDeclaration
         declarationType,
         parameterType,
         init,
-        name
+        id
      };
     }
 
