@@ -130,6 +130,7 @@ Keyword
   / ThisToken
   / TypeDefToken
   / TypeSetToken
+  / ViewAsToken
   / VoidToken
   / WhileToken
   / PublicToken
@@ -162,6 +163,7 @@ TypeReservedWord
   / ThisToken
   / TypeDefToken
   / TypeSetToken
+  / ViewAsToken
   / WhileToken
   / PublicToken
   / PropertyToken
@@ -326,6 +328,7 @@ ThisToken       = "this"
 TrueToken       = "true"
 TypeDefToken    = "typedef"
 TypeSetToken    = "typeset"
+ViewAsToken     = "view_as"
 VoidToken       = "void"
 WhileToken      = "while"
 PublicToken     = "public"
@@ -519,6 +522,10 @@ ArgumentList
 LeftHandSideExpression
   = CallExpression
   / NewExpression
+  / ViewAsExpression
+
+ViewAsExpression
+  = ViewAsToken "<" Identifier ">" "(" __ Expression __")"
 
 PostfixExpression
   = argument:LeftHandSideExpression _ operator:PostfixOperator {
