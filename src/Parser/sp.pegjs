@@ -800,7 +800,7 @@ Statement
   / LabelledStatement
   / MethodmapStatement
   / SwitchStatement
-  / DefineStatement
+  / MacroCallStatement
   / IncludeStatement
   / StructStatement
   / PropertyToken
@@ -957,6 +957,12 @@ IfStatement
       };
     }
 
+MacroCallStatement
+  = id:Identifier __ 
+    Arguments __
+    body:Statement
+    { return { type: "MacroCall", id: id, body: body }; }
+
 IterationStatement
   = DoToken __
     body:Statement __
@@ -1018,8 +1024,8 @@ IterationStatement
     }
   / ForToken __
     "(" __
-    /*VarToken*/ __ declarations:VariableDeclarationListNoIn __
-    /*InToken*/ __
+     __ declarations:VariableDeclarationListNoIn __
+     __
     right:Expression __
     ")" __
     body:Statement
