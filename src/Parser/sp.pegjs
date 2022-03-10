@@ -1082,11 +1082,11 @@ EnumStructBody
     }
  
  EnumStatement
-  = EnumToken id:(__p Identifier)? __
+  = EnumToken id:(__p Identifier)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
   "{" __ body:EnumBody __ "}" { 
       return {
         type:"Enum",
-        id: id[1],
+        id: id?id[1]:null,
         body
      };
     }
