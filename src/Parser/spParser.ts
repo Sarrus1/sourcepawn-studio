@@ -58,12 +58,17 @@ export function parseFile(
     file = resolve(folderpath, match[0]);
     data = readFileSync(file, "utf-8");
   }
-  try {
-    const out = parse(data);
-    //console.debug(out);
-  } catch (e) {
-    console.error(basename(file), e.location.start, e.message);
+  // Remove BOM if present
+  if (data.charCodeAt(0) === 0xfeff) {
+    data = data.substring(1);
   }
+  if (!searchTokens)
+    try {
+      const out = parse(data);
+      //console.debug(out);
+    } catch (e) {
+      console.error(basename(file), e.location.start, e.message);
+    }
   parseText(data, file, items, itemsRepository, searchTokens, IsBuiltIn);
 }
 
