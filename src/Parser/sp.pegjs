@@ -107,6 +107,7 @@ ReservedWord
   = Keyword
   / NullLiteral
   / BooleanLiteral
+  / SizeofLiteral
 
 Keyword
   = BreakToken
@@ -155,6 +156,7 @@ TypeReservedWord
   / NativeToken
   / NewToken
   / ReturnToken
+  / SizeofToken
   / SwitchToken
   / StructToken
   / ThisToken
@@ -171,6 +173,10 @@ Literal
   / NumericLiteral
   / StringLiteral
   / DotDotDotToken
+  / SizeofLiteral
+
+SizeofLiteral
+  = SizeofToken __p id:Identifier __ { return { type: "sizeof", value: id }; }
 
 NullLiteral
   = NullToken { return { type: "Literal", value: null }; }
@@ -315,6 +321,7 @@ NativeToken     = "native"
 ReturnToken     = "return"
 SwitchToken     = "switch"
 StructToken     = "struct"
+SizeofToken     = "sizeof"
 ThisToken       = "this"
 TrueToken       = "true"
 TypeDefToken    = "typedef"
