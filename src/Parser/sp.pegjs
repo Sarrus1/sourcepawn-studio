@@ -118,10 +118,12 @@ Keyword
   / ElseToken
   / EnumToken
   / FinallyToken
+  / ForwardToken
   / ForToken
   / FunctionToken
   / IfToken
   / NewToken
+  / NativeToken
   / ReturnToken
   / SwitchToken
   / ThisToken
@@ -130,6 +132,7 @@ Keyword
   / VoidToken
   / WhileToken
   / PublicToken
+  / PropertyToken
   / StockToken
   / StructToken
 
@@ -145,9 +148,11 @@ TypeReservedWord
   / ElseToken
   / FinallyToken
   / ForToken
+  / ForwardToken
   / FunctionToken
   / IfToken
   / MethodmapToken
+  / NativeToken
   / NewToken
   / ReturnToken
   / SwitchToken
@@ -157,6 +162,7 @@ TypeReservedWord
   / TypeSetToken
   / WhileToken
   / PublicToken
+  / PropertyToken
   / StockToken
 
 Literal
@@ -290,18 +296,20 @@ ConstToken      = "const"
 ContinueToken   = "continue"
 DeleteToken     = "delete"
 DoToken         = "do"
-DeclToken		= "decl"
+DeclToken		    = "decl"
 ElseToken       = "else"
 EnumToken       = "enum"
 EnumStructToken = EnumToken __p StructToken
 FalseToken      = "false"
 FinallyToken    = "finally"
 ForToken        = "for"
+ForwardToken    = "forward"
 FunctionToken   = "function"
 IfToken         = "if"
 MethodmapToken  = "methodmap"
 NewToken        = "new"
 NullToken       = "null"
+NativeToken     = "native"
 ReturnToken     = "return"
 SwitchToken     = "switch"
 StructToken     = "struct"
@@ -311,7 +319,8 @@ TypeDefToken    = "typedef"
 TypeSetToken    = "typeset"
 VoidToken       = "void"
 WhileToken      = "while"
-PublicToken     = "public"		
+PublicToken     = "public"
+PropertyToken   = "property"
 StockToken      = "stock"
 StaticToken     = "static"
 
@@ -783,10 +792,12 @@ Statement
   / ReturnStatement
   / WithStatement
   / LabelledStatement
+  / MethodmapStatement
   / SwitchStatement
   / DefineStatement
   / IncludeStatement
   / PragmaStatement
+  / PropertyToken
   / TypeDefStatement
   / TypeSetStatement
 
@@ -1122,6 +1133,29 @@ TypeSetStatement
   {
   	return id;
   }
+
+
+MethodmapStatement
+  = MethodmapToken __p id:Identifier __ inherit:MethodmapInherit?
+    "{" __ body:MethodmapBody __ "}" { 
+      return {
+        type:"methodmap",
+        id: id,
+        inherit: inherit,
+        body
+     };
+    }
+
+MethodmapInherit
+  =  __ "<" __ id:Identifier __
+  {return id}
+
+MethodmapBody
+  = ((PropertyStatement / FunctionDeclaration / NativeForwardDeclaration) __)*
+
+PropertyStatement
+  = PropertyToken __p propertyType:TypeIdentifier __p id:Identifier __
+  "{" __ ((FunctionDeclaration / NativeForwardDeclaration) __)* "}" __
   
 
 
@@ -1200,6 +1234,11 @@ FunctionBody
       };
     }
 
+NativeForwardDeclaration
+  = accessModifier:FunctionAccessModifiers? (NativeToken / ForwardToken) __p
+    returnType:FunctionReturnTypeDeclaration? id:Identifier __
+    "(" __ params:(FormalParameterList __)? ")" EOS
+
 Program
   = body:SourceElements? {
       return {
@@ -1213,5 +1252,5 @@ SourceElements
       return buildList(head, tail, 1);
     }
 
-SourceElement = FunctionDeclaration / Statement
+SourceElement = FunctionDeclaration / NativeForwardDeclaration / Statement
 
