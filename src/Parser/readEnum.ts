@@ -17,46 +17,51 @@ export function readEnum(
   parserArgs: spParserArgs,
   id: ParsedEnumMember | undefined,
   loc: ParserLocation,
-  body: ParsedEnumMember[]
+  body: ParsedEnumMember[],
+  lastDoc: string
 ) {
-  try {
-    let name: string;
-    let nameRange: Range;
-    if (!id) {
-      parserArgs.anonEnumCount++;
-      name = `Enum#${parserArgs.anonEnumCount}`;
-      const newLoc = { ...loc };
-      newLoc.start.column = 1;
-      newLoc.end.column = 6;
-      newLoc.end.line = newLoc.start.line;
-      nameRange = parsedLocToRange(newLoc);
-    } else {
-      name = id.id;
-      nameRange = parsedLocToRange(id.loc);
-    }
-    const key = name
-      ? name
-      : `${parserArgs.anonEnumCount}${basename(parserArgs.filePath)}`;
-    const enumItem = new EnumItem(
-      name,
-      parserArgs.filePath,
-      "",
-      nameRange,
-      parsedLocToRange(loc)
+  let name: string;
+  let nameRange: Range;
+  if (!id) {
+    parserArgs.anonEnumCount++;
+    name = `Enum#${parserArgs.anonEnumCount}`;
+    const newLoc = { ...loc };
+    newLoc.start.column = 1;
+    newLoc.end.column = 6;
+    newLoc.end.line = newLoc.start.line;
+    nameRange = parsedLocToRange(newLoc);
+  } else {
+    name = id.id;
+    nameRange = parsedLocToRange(id.loc);
+  }
+  const key = name
+    ? name
+    : `${parserArgs.anonEnumCount}${basename(parserArgs.filePath)}`;
+  const enumItem = new EnumItem(
+    name,
+    parserArgs.filePath,
+    "",
+    nameRange,
+    parsedLocToRange(loc)
+  );
+  parserArgs.fileItems.set(key, enumItem);
+  if (body) {
+    body.forEach((e, i) =>
+      readEnumMember(
+        parserArgs,
+        e,
+        enumItem,
+        i === body.length - 1 ? lastDoc : undefined
+      )
     );
-    parserArgs.fileItems.set(key, enumItem);
-    if (body) {
-      body.forEach((e) => readEnumMember(parserArgs, e, enumItem));
-    }
-  } catch (e) {
-    console.debug(e);
   }
 }
 
 function readEnumMember(
   parserArgs: spParserArgs,
   member: ParsedEnumMember,
-  enumItem: EnumItem
+  enumItem: EnumItem,
+  doc: string
 ) {
   const range = parsedLocToRange(member.loc);
   parserArgs.fileItems.set(
@@ -64,7 +69,7 @@ function readEnumMember(
     new EnumMemberItem(
       member.id,
       parserArgs.filePath,
-      member.doc,
+      doc ? doc : member.doc,
       range,
       parserArgs.IsBuiltIn,
       enumItem

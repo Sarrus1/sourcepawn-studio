@@ -24,6 +24,21 @@
   function buildList(head, tail, index) {
     return [head].concat(extractList(tail, index));
   }
+  
+  function buildListWithDoc(head, tail, index) {
+    let docs = extractList(tail, index - 1);
+    return [head].concat(extractList(tail, index)).map((e, i) => {
+      if (docs[i]) e.doc = docs[i].join("").trim();
+      return e;
+    });
+  }
+
+  function buildComment(content) {
+    return content
+      .flat()
+      .filter((e) => e !== undefined)
+      .join("");
+  }
 
   function buildBinaryExpression(head, tail) {
     return tail.reduce(function(result, element) {
@@ -84,13 +99,22 @@ Comment "comment"
   / SingleLineComment
 
 MultiLineComment
-  = "/*" (!"*/" SourceCharacter)* "*/"
+  = "/*" txt:(!"*/" SourceCharacter)* "*/"
+    {
+  	  return buildComment(txt);
+    }
 
 MultiLineCommentNoLineTerminator
-  = "/*" (!("*/" / LineTerminator) SourceCharacter)* "*/"
+  = "/*" txt:(!("*/" / LineTerminator) SourceCharacter)* "*/"
+    {
+  	  return buildComment(txt);
+    }
 
 SingleLineComment
-  = "//" (!LineTerminator SourceCharacter)*
+  = "//" txt:(!LineTerminator SourceCharacter)*
+    {
+  	  return buildComment(txt);
+    }
 
 Identifier
   = !(ReservedWord !IdentifierPart) name:IdentifierName
@@ -1057,7 +1081,6 @@ IterationStatement
   / ForToken __
     "(" __
     left:LeftHandSideExpression __
-    /*InToken*/ __
     right:Expression __
     ")" __
     body:Statement
@@ -1072,7 +1095,6 @@ IterationStatement
   / ForToken __
     "(" __
      __ declarations:VariableDeclarationListNoIn __
-     __
     right:Expression __
     ")" __
     body:Statement
@@ -1189,15 +1211,10 @@ EnumStructBody
  
 EnumStatement
   = EnumToken id:(__p Identifier)? (":"__)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
-    "{" __ body:EnumBody? __ "}" 
+    "{" __ body:EnumBody? lastDoc:__ "}" 
     { 
-      readEnum(args, id ? id[1] : null, location(), body);
-      // return {
-      //     type:"Enum",
-      //     id: id ? id[1] : null,
-      //     loc: location(),
-      //     body
-      // };
+      readEnum(args, id ? id[1] : null, location(), body, lastDoc.join("").trim());
+      //return {type:"Enum",id: id ? id[1] : null,loc: location(), body, lastDoc:lastDoc.join("").trim()};
     }
  
 EnumMemberDeclaration
@@ -1209,7 +1226,7 @@ EnumMemberDeclaration
 EnumBody
   = head:EnumMemberDeclaration tail:(__ "," __ EnumMemberDeclaration)* ","?
   	{
-    	return buildList(head, tail, 3);
+    	return buildListWithDoc(head, tail, 3);
     }
 
 TypeDefStatement
