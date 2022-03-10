@@ -1,4 +1,4 @@
-import { CompletionItemKind, CompletionItem, Location } from "vscode";
+import { CompletionItemKind, CompletionItem } from "vscode";
 
 import { SPItem } from "./spItems";
 

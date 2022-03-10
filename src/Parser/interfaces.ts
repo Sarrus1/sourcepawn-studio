@@ -23,3 +23,30 @@ export interface ParseState {
    */
   dString: boolean;
 }
+
+/**
+ * The location object returned by the Peggy.js generated parser.
+ */
+export interface ParserLocation {
+  source: any;
+  start: Start;
+  end: End;
+}
+
+/**
+ * The start location object returned by the Peggy.js generated parser.
+ */
+export interface Start {
+  offset: number;
+  line: number;
+  column: number;
+}
+
+/**
+ * The end location object returned by the Peggy.js generated parser.
+ */
+export interface End {
+  offset: number;
+  line: number;
+  column: number;
+}

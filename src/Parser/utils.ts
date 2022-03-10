@@ -1,7 +1,7 @@
 ﻿import { FunctionParam, SPItem } from "../Backend/Items/spItems";
 import { Range } from "vscode";
 import { basename } from "path";
-import { URI } from "vscode-uri";
+import { ParserLocation } from "./interfaces";
 
 export function purgeCalls(item: SPItem, file: string): void {
   if (item.references === undefined) {
@@ -85,4 +85,13 @@ export function getParenthesisCount(line: string): number {
     }
   }
   return pCount;
+}
+
+export function parsedLocToRange(loc: ParserLocation): Range {
+  return new Range(
+    loc.start.line - 1,
+    loc.start.column - 1,
+    loc.end.line - 1,
+    loc.end.column - 1
+  );
 }

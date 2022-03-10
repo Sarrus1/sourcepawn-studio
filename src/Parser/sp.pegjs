@@ -1,5 +1,7 @@
 {{
   import { readInclude } from "./readInclude";
+  import { readEnum } from "./readEnum";
+
 
   var TYPES_TO_PROPERTY_NAMES = {
     CallExpression:   "callee",
@@ -91,7 +93,10 @@ SingleLineComment
   = "//" (!LineTerminator SourceCharacter)*
 
 Identifier
-  = !(ReservedWord !IdentifierPart) name:IdentifierName { return name; }
+  = !(ReservedWord !IdentifierPart) name:IdentifierName
+  { 
+    return name;
+  }
 
 TypeIdentifier
   = !(TypeReservedWord !IdentifierPart) name:IdentifierName { return name; }
@@ -99,7 +104,10 @@ TypeIdentifier
 IdentifierName "identifier"
   = head:IdentifierStart tail:IdentifierPart* 
   	{
-      return head + tail.join("");
+      return {
+        id: head + tail.join(""),
+        loc: location()
+        };
     }
 
 IdentifierStart
@@ -344,7 +352,10 @@ StaticToken     = "static"
 // Skipped
 
 __
-  = (WhiteSpace / LineTerminatorSequence / Comment / PreprocessorStatement)*
+  = content:(WhiteSpace / LineTerminatorSequence / Comment / PreprocessorStatement)*
+    {
+      return content;
+    }
 
 __p "separator"
   = (WhiteSpace / LineTerminatorSequence / Comment / PreprocessorStatement)+
@@ -1178,16 +1189,22 @@ EnumStructBody
  
 EnumStatement
   = EnumToken id:(__p Identifier)? (":"__)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
-  "{" __ body:EnumBody? __ "}" { 
-      return {
-        type:"Enum",
-        id: id?id[1]:null,
-        body
-     };
+    "{" __ body:EnumBody? __ "}" 
+    { 
+      readEnum(args, id ? id[1] : null, location(), body);
+      // return {
+      //     type:"Enum",
+      //     id: id ? id[1] : null,
+      //     loc: location(),
+      //     body
+      // };
     }
  
 EnumMemberDeclaration
-  = VariableDeclaration
+  = name:VariableDeclaration
+    {
+      return name.id;
+    }
 
 EnumBody
   = head:EnumMemberDeclaration tail:(__ "," __ EnumMemberDeclaration)* ","?

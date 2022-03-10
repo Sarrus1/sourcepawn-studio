@@ -6,7 +6,7 @@ import {
   Position,
 } from "vscode";
 import { existsSync, readFileSync } from "fs";
-import { resolve, dirname, basename } from "path";
+import { resolve, dirname } from "path";
 import { URI } from "vscode-uri";
 
 import { ItemsRepository } from "../Backend/spItemsRepository";
@@ -15,7 +15,6 @@ import { SPItem } from "../Backend/Items/spItems";
 import { State } from "./stateEnum";
 import { readDefine } from "./readDefine";
 import { readMacro } from "./readMacro";
-import { readEnum } from "./readEnum";
 import { readLoopVariable } from "./readLoopVariable";
 import { readVariable } from "./readVariable";
 import { readProperty } from "./readProperty";
@@ -65,6 +64,7 @@ export interface spParserArgs {
   documents: Set<string>;
   filePath: string;
   IsBuiltIn: boolean;
+  anonEnumCount: number;
 }
 
 export function parseText(
@@ -90,6 +90,7 @@ export function parseText(
         documents: itemsRepository.documents,
         filePath: file,
         IsBuiltIn: isBuiltIn,
+        anonEnumCount: 0,
       };
       spParser.args = args;
       const out: string = spParser.parse(data);
@@ -275,19 +276,6 @@ export class Parser {
     match = line.match(/#pragma\s+deprecated\s+(.+?(?=(?:\/\*|\/\/|$)))/);
     if (match) {
       this.deprecated = match[1];
-      return;
-    }
-
-    // Match enum structs
-    match = line.match(/^\s*(?:enum\s+struct\s+)(\w*)\s*[^\{]*/);
-    if (match) {
-      readEnum(this, match, line, true);
-      return;
-    }
-    // Match enums
-    match = line.match(/^\s*enum(?:\s+(\w+))?\s*[^\{]*/);
-    if (match && !/;\s*$/.test(line)) {
-      readEnum(this, match, line, false);
       return;
     }
 
