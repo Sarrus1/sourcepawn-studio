@@ -810,7 +810,7 @@ Statement
   / TypeSetStatement
 
 DefineStatement
-  = "#define" __p Identifier value:(__p AssignmentExpression)? _ LineTerminator {return {type: "DefineValue", value: value?value.join(""):null}}
+  = "#define" _p Identifier value:(_p AssignmentExpression)? _ {return {type: "DefineValue", value: value?value.join(""):null}}
 
 IncludeStatement
   = "#include" __ path:IncludePath {return {type: "IncludePath", path};}
