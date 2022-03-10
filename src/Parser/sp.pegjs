@@ -438,6 +438,9 @@ MemberExpression
       / __ "." __ property:IdentifierName {
           return { property: property, computed: false };
         }
+      / __ "::" __ property:IdentifierName {
+          return { property: property, computed: false };
+        }
     )*
     {
       return tail.reduce(function(result, element) {
@@ -474,6 +477,13 @@ CallExpression
           };
         }
       / __ "." __ property:IdentifierName {
+          return {
+            type: "MemberExpression",
+            property: property,
+            computed: false
+          };
+        }
+      / __ "::" __ property:IdentifierName {
           return {
             type: "MemberExpression",
             property: property,
@@ -874,7 +884,7 @@ VariableDeclarationType
   = declarationType:((PublicToken / StockToken / ConstToken / StaticToken) __p)+ { return declarationType.map(e=>e[0])}
 
 VariableTypeDeclaration
-  = name:TypeIdentifier ((":"__)/(( __ "[]")? __p ))
+  = name:TypeIdentifier ((":"__)/(( __ ("[]")+)? __p ))
   {return name;}
 
 VariableStatement
