@@ -170,6 +170,7 @@ Literal
   / BooleanLiteral
   / NumericLiteral
   / StringLiteral
+  / DotDotDotToken
 
 NullLiteral
   = NullToken { return { type: "Literal", value: null }; }
@@ -301,6 +302,7 @@ ElseToken       = "else"
 EnumToken       = "enum"
 EnumStructToken = EnumToken __p StructToken
 FalseToken      = "false"
+DotDotDotToken  = "..."
 FinallyToken    = "finally"
 ForToken        = "for"
 ForwardToken    = "forward"
@@ -808,7 +810,7 @@ Statement
   / TypeSetStatement
 
 DefineStatement
-  = "#define" __p Identifier value:(__p AssignmentExpression)? _ {return {type: "DefineValue", value: value?value.join(""):null}}
+  = "#define" __p Identifier value:(__p AssignmentExpression)? _ LineTerminator {return {type: "DefineValue", value: value?value.join(""):null}}
 
 IncludeStatement
   = "#include" __ path:IncludePath {return {type: "IncludePath", path};}
@@ -817,7 +819,7 @@ IncludePath = "<" path:([A-Za-z0-9\-_\/.])+ ">"{ return path.join("") }
   /"\"" path:([A-Za-z0-9\-_\/.])+ "\""{ return path.join("") }
 
 PragmaStatement
-  = "#pragma" __ value:[A-Za-z0-9 ]+ __ { return {type:"PragmaValue",value: value?value.join(""):null}}
+  = "#pragma" __ value:[^\n]+ __ { return {type:"PragmaValue",value: value?value.join(""):null}}
 
 OtherPreprocessorStatement
   = "#" name:(!( _p ("define" / "pragma" / "include") _p )[A-Za-z0-9_]+) _ [^\n]* __p
@@ -1184,14 +1186,14 @@ PropertyStatement
   "{" __ ((FunctionDeclaration / NativeForwardDeclaration) __)* "}" __
 
 StructStatement
-  = accessModifier:FunctionAccessModifiers? TypeIdentifier __p id:Identifier __ "=" __
+  = accessModifier:FunctionAccessModifiers* TypeIdentifier __p id:Identifier __ "=" __
   ObjectLiteral
 
 
 // ----- A.5 Functions and Programs -----
 
 FunctionAccessModifiers
-  = name:(PublicToken / StockToken) __p
+  = name:(PublicToken / StockToken / StaticToken) __p
   {return name;}
 
 FunctionReturnTypeDeclaration
@@ -1200,7 +1202,7 @@ FunctionReturnTypeDeclaration
 
 
 FunctionDeclaration
-  = accessModifier:FunctionAccessModifiers? returnType:FunctionReturnTypeDeclaration? id:Identifier __
+  = accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier __
     "(" __ params:(FormalParameterList __)? ")" __
     "{" __ body:FunctionBody __ "}"
     {
@@ -1264,7 +1266,7 @@ FunctionBody
     }
 
 NativeForwardDeclaration
-  = accessModifier:FunctionAccessModifiers? (NativeToken / ForwardToken) __p
+  = accessModifier:FunctionAccessModifiers* (NativeToken / ForwardToken) __p
     returnType:FunctionReturnTypeDeclaration? id:Identifier __
     "(" __ params:(FormalParameterList __)? ")" EOS
 
