@@ -1,46 +1,38 @@
 ﻿import { basename } from "path";
+import { Range } from "vscode";
 
 import { spParserArgs } from "./spParser";
 import { EnumItem } from "../Backend/Items/spEnumItem";
 import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
-import { ParserLocation } from "./interfaces";
+import { ParserLocation, ParsedEnumMember } from "./interfaces";
 import { parsedLocToRange } from "./utils";
-import { Range } from "vscode";
 
-interface ParsedEnumMember {
-  id: string;
-  loc: ParserLocation;
-  doc: string | undefined;
-}
-
+/**
+ * Callback for a parsed enum.
+ * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
+ * @param  {ParsedEnumMember|undefined} id  The id of the enum.
+ * @param  {ParserLocation} loc The location of the enum.
+ * @param  {ParsedEnumMember[]} body  The members of the enum.
+ * @param  {string} doc The doc comment above the enum.
+ * @param  {string} lastDoc The doc comment of the last member of the enum.
+ * @returns void
+ */
 export function readEnum(
   parserArgs: spParserArgs,
   id: ParsedEnumMember | undefined,
   loc: ParserLocation,
   body: ParsedEnumMember[],
+  doc: string,
   lastDoc: string
-) {
-  let name: string;
-  let nameRange: Range;
-  if (!id) {
-    parserArgs.anonEnumCount++;
-    name = `Enum#${parserArgs.anonEnumCount}`;
-    const newLoc = { ...loc };
-    newLoc.start.column = 1;
-    newLoc.end.column = 6;
-    newLoc.end.line = newLoc.start.line;
-    nameRange = parsedLocToRange(newLoc);
-  } else {
-    name = id.id;
-    nameRange = parsedLocToRange(id.loc);
-  }
+): void {
+  const { name, nameRange } = getEnumNameAndRange(parserArgs, id, loc);
   const key = name
     ? name
     : `${parserArgs.anonEnumCount}${basename(parserArgs.filePath)}`;
   const enumItem = new EnumItem(
     name,
     parserArgs.filePath,
-    "",
+    doc.length === 0 ? undefined : doc,
     nameRange,
     parsedLocToRange(loc)
   );
@@ -57,22 +49,57 @@ export function readEnum(
   }
 }
 
+/**
+ * Generate the name and the range of a potential anonymous enum.
+ * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
+ * @param  {ParsedEnumMember|undefined} id  The id of the enum.
+ * @param  {ParserLocation} loc The location of the enum.
+ * @returns Range
+ */
+function getEnumNameAndRange(
+  parserArgs: spParserArgs,
+  id: ParsedEnumMember | undefined,
+  loc: ParserLocation
+): { name: string; nameRange: Range } {
+  let name: string;
+  let nameRange: Range;
+  if (!id) {
+    parserArgs.anonEnumCount++;
+    name = `Enum#${parserArgs.anonEnumCount}`;
+    const newLoc = { ...loc };
+    newLoc.start.column = 1;
+    newLoc.end.column = 6;
+    newLoc.end.line = newLoc.start.line;
+    nameRange = parsedLocToRange(newLoc);
+  } else {
+    name = id.id;
+    nameRange = parsedLocToRange(id.loc);
+  }
+  return { name, nameRange };
+}
+
+/**
+ * Callback for a parsed enum member.
+ * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
+ * @param  {ParsedEnumMember} member  The member to be parsed.
+ * @param  {EnumItem} enumItem  The parent of the enum member.
+ * @param  {string} doc The doc associated to the enum member.
+ * @returns void
+ */
 function readEnumMember(
   parserArgs: spParserArgs,
   member: ParsedEnumMember,
   enumItem: EnumItem,
   doc: string
-) {
+): void {
   const range = parsedLocToRange(member.loc);
-  parserArgs.fileItems.set(
+  const memberItem = new EnumMemberItem(
     member.id,
-    new EnumMemberItem(
-      member.id,
-      parserArgs.filePath,
-      doc ? doc : member.doc,
-      range,
-      parserArgs.IsBuiltIn,
-      enumItem
-    )
+    parserArgs.filePath,
+    doc ? doc : member.doc,
+    range,
+    parserArgs.IsBuiltIn,
+    enumItem
   );
+  parserArgs.fileItems.set(member.id, memberItem);
 }

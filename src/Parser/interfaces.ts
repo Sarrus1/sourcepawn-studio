@@ -50,3 +50,12 @@ export interface End {
   line: number;
   column: number;
 }
+
+/**
+ * A parsed enum member.
+ */
+export interface ParsedEnumMember {
+  id: string;
+  loc: ParserLocation;
+  doc: string | undefined;
+}

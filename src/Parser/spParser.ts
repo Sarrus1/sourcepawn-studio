@@ -6,7 +6,7 @@ import {
   Position,
 } from "vscode";
 import { existsSync, readFileSync } from "fs";
-import { resolve, dirname } from "path";
+import { resolve, dirname, basename } from "path";
 import { URI } from "vscode-uri";
 
 import { ItemsRepository } from "../Backend/spItemsRepository";
@@ -96,7 +96,7 @@ export function parseText(
       const out: string = spParser.parse(data);
       //console.debug(out);
     } catch (e) {
-      console.error(e);
+      console.error(basename(file), e.message, e.location.start);
     }
 
   // const parser = new Parser(lines, file, IsBuiltIn, items, itemsRepository);

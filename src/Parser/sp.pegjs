@@ -71,7 +71,7 @@
 }
 
 Start
-  = __ program:Program __ { return program; }
+  = program:Program __ { return program; }
 
 // ----- A.1 Lexical Grammar -----
 
@@ -880,7 +880,7 @@ AliasOperators
     / UnaryOperator
 
 AliasStatement
-  = accessModifier:FunctionAccessModifiers* (NativeToken / ForwardToken) __p
+  = doc:__ accessModifier:FunctionAccessModifiers* (NativeToken / ForwardToken) __p
     returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperators? __
     "(" __ params:(FormalParameterList __)? ")" __p "=" __p Identifier __ EOS
 
@@ -945,7 +945,7 @@ VariableTypeDeclaration
   {return name;}
 
 VariableStatement
-  = ((DeclToken / NewToken) __p)? 
+  = doc:__ ((DeclToken / NewToken) __p)? 
   	variableDeclarationType:VariableDeclarationType? 
     variableType:VariableTypeDeclaration
     declarations:VariableDeclarationList EOS {
@@ -971,7 +971,7 @@ ArrayInitialer
   = "[" Expression? "]"
 
 VariableDeclaration
-  = id:Identifier arrayInitialer:ArrayInitialer* init:(__ Initialiser)? {
+  = doc:__ id:Identifier arrayInitialer:ArrayInitialer* init:(__ Initialiser)? {
       return {
         type: "VariableDeclarator",
         id,
@@ -1187,12 +1187,12 @@ DefaultClause
     }
 
 LabelledStatement
-  = label:Identifier __ ":" __ body:Statement {
+  = doc:__ label:Identifier __ ":" __ body:Statement {
       return { type: "LabeledStatement", label: label, body: body };
     }
 
 EnumStructStatement
-  = EnumStructToken __p id:Identifier __
+  = doc:__ EnumStructToken __p id:Identifier __
   "{" __ body:EnumStructBody __ "}" { 
       return {
         type:"EnumStruct",
@@ -1210,11 +1210,11 @@ EnumStructBody
     }
  
 EnumStatement
-  = EnumToken id:(__p Identifier)? (":"__)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
+  = doc:__ EnumToken id:(__p Identifier)? (":"__)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
     "{" __ body:EnumBody? lastDoc:__ "}" 
     { 
-      readEnum(args, id ? id[1] : null, location(), body, lastDoc.join("").trim());
-      //return {type:"Enum",id: id ? id[1] : null,loc: location(), body, lastDoc:lastDoc.join("").trim()};
+      readEnum(args, id ? id[1] : null, location(), body, doc.join("").trim(), lastDoc.join("").trim());
+      //return {doc: doc.join("").trim(),type:"Enum",id: id ? id[1] : null,loc: location(), body, lastDoc:lastDoc.join("").trim()};
     }
  
 EnumMemberDeclaration
@@ -1230,7 +1230,7 @@ EnumBody
     }
 
 TypeDefStatement
-  = TypeDefToken __p id:TypeIdentifier __ "=" __ TypeDefBody
+  = doc:__ TypeDefToken __p id:TypeIdentifier __ "=" __ TypeDefBody
 	{ 
     	return {
     		type: "TypeDefStatement",
@@ -1246,7 +1246,7 @@ TypeDefBody
   }
 
 TypeSetStatement
-  = TypeSetToken __p id:TypeIdentifier
+  = doc:__ TypeSetToken __p id:TypeIdentifier
   __ "{" __ params:(TypeDefBody __)*"}"
   {
   	return id;
@@ -1254,7 +1254,7 @@ TypeSetStatement
 
 
 MethodmapStatement
-  = MethodmapToken __p id:Identifier __ inherit:MethodmapInherit?
+  = doc:__ MethodmapToken __p id:Identifier __ inherit:MethodmapInherit?
     "{" __ body:MethodmapBody __ "}" { 
       return {
         type:"methodmap",
@@ -1272,17 +1272,17 @@ MethodmapBody
   = ((PropertyStatement / FunctionDeclaration / NativeForwardDeclaration) __)*
 
 PropertyStatement
-  = PropertyToken __p propertyType:TypeIdentifier __p id:Identifier __
+  = doc:__ PropertyToken __p propertyType:TypeIdentifier __p id:Identifier __
   "{" __ ((FunctionDeclaration / NativeForwardDeclaration) __)* "}" __
 
 StructStatement
   = (
-    accessModifier:FunctionAccessModifiers* TypeIdentifier __p id:Identifier __ "=" __
+    doc:__ accessModifier:FunctionAccessModifiers* TypeIdentifier __p id:Identifier __ "=" __
   ObjectLiteral
   )
   /
   (
-    StructToken __p id:Identifier __
+    doc:__ StructToken __p id:Identifier __
     "{" __ (VariableStatement __)* "}" __ EOS
   )
 
@@ -1300,7 +1300,7 @@ FunctionReturnTypeDeclaration
 
 
 FunctionDeclaration
-  = accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperators? __
+  = doc:__ accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperators? __
     "(" __ params:(FormalParameterList __)? ")" __
     "{" __ body:FunctionBody __ "}"
     {
@@ -1364,7 +1364,7 @@ FunctionBody
     }
 
 NativeForwardDeclaration
-  = accessModifier:FunctionAccessModifiers* (NativeToken / ForwardToken) __p
+  = doc:__ accessModifier:FunctionAccessModifiers* (NativeToken / ForwardToken) __p
     returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperators? __
     "(" __ params:(FormalParameterList __)? ")" EOS
 
@@ -1377,9 +1377,8 @@ Program
     }
 
 SourceElements
-  = head:SourceElement tail:(__ SourceElement)* {
-      return buildList(head, tail, 1);
+  = head:SourceElement tail:(SourceElement)* {
+      return [head].concat(tail);
     }
 
 SourceElement = FunctionDeclaration / NativeForwardDeclaration / Statement
-
