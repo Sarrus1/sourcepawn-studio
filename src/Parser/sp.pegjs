@@ -860,7 +860,6 @@ Statement
   / ContinueStatement
   / BreakStatement
   / ReturnStatement
-  / WithStatement
   / LabelledStatement
   / MethodmapStatement
   / SwitchStatement
@@ -927,7 +926,7 @@ PreprocessorStatement
     }
     
 Block
-  = "{" __ body:(StatementList __)? "}" {
+  = __ "{" __ body:(StatementList __)? "}" {
       return {
         type: "BlockStatement",
         body: optionalList(extractOptional(body, 0))
@@ -935,7 +934,7 @@ Block
     }
 
 StatementList
-  = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); }
+  = head:Statement tail:(Statement)* { return buildList(head, tail, 1); }
 
 VariableDeclarationType
   = declarationType:((PublicToken / StockToken / ConstToken / StaticToken) __p)+ { return declarationType.map(e=>e[0])}
@@ -998,7 +997,7 @@ EmptyStatement
   = ";" { return { type: "EmptyStatement" }; }
 
 ExpressionStatement
-  = !("{") expression:Expression EOS {
+  = doc:__ !("{") expression:Expression EOS {
       return {
         type: "ExpressionStatement",
         expression: expression
@@ -1006,7 +1005,7 @@ ExpressionStatement
     }
 
 IfStatement
-  = IfToken __ "(" __ test:Expression __ ")" __
+  = doc:__ IfToken __ "(" __ test:Expression __ ")" __
     consequent:Statement __
     ElseToken __
     alternate:Statement
@@ -1029,20 +1028,20 @@ IfStatement
     }
 
 MacroCallStatement
-  = id:Identifier __ 
+  = doc:__ id:Identifier __ 
     Arguments __
     body:Statement
     { return { type: "MacroCall", id: id, body: body }; }
 
 IterationStatement
-  = DoToken __
+  = doc:__ DoToken __
     body:Statement __
     WhileToken __ "(" __ test:Expression __ ")" EOS
     { return { type: "DoWhileStatement", body: body, test: test }; }
-  / WhileToken __ "(" __ test:Expression __ ")" __
+  / doc:__ WhileToken __ "(" __ test:Expression __ ")" __
     body:Statement
     { return { type: "WhileStatement", test: test, body: body }; }
-  / ForToken __
+  / doc:__ ForToken __
     "(" __
     init:(ExpressionNoIn __)? ";" __
     test:(Expression __)? ";" __
@@ -1058,7 +1057,7 @@ IterationStatement
         body: body
       };
     }
-  / ForToken __
+  / doc:__ ForToken __
     "(" __
     "int" __ declarations:VariableDeclarationListNoIn __ ";" __
     test:(Expression __)? ";" __
@@ -1078,7 +1077,7 @@ IterationStatement
         body: body
       };
     }
-  / ForToken __
+  / doc:__ ForToken __
     "(" __
     left:LeftHandSideExpression __
     right:Expression __
@@ -1092,7 +1091,7 @@ IterationStatement
         body: body
       };
     }
-  / ForToken __
+  / doc:__ ForToken __
     "(" __
      __ declarations:VariableDeclarationListNoIn __
     right:Expression __
@@ -1112,33 +1111,28 @@ IterationStatement
     }
 
 ContinueStatement
-  = ContinueToken EOS {
+  = doc:__ ContinueToken EOS {
       return { type: "ContinueStatement", label: null };
     }
-  / ContinueToken _ label:Identifier EOS {
+  / doc:__ ContinueToken _ label:Identifier EOS {
       return { type: "ContinueStatement", label: label };
     }
 
 BreakStatement
-  = BreakToken EOS {
+  = doc:__ BreakToken EOS {
       return { type: "BreakStatement", label: null };
     }
-  / BreakToken _ label:Identifier EOS {
+  / doc:__ BreakToken _ label:Identifier EOS {
       return { type: "BreakStatement", label: label };
     }
 
 ReturnStatement
-  = ReturnToken EOS {
+  = doc:__ ReturnToken EOS {
       return { type: "ReturnStatement", argument: null };
     }
-  / ReturnToken _ argument:Expression EOS {
+  / doc:__ ReturnToken _ argument:Expression EOS {
       return { type: "ReturnStatement", argument: argument };
     }
-
-WithStatement
-  = /*WithToken*/ __ "(" __ object:Expression __ ")" __
-    body:Statement
-    { return { type: "WithStatement", object: object, body: body }; }
 
 SwitchStatement
   = SwitchToken __ "(" __ discriminant:Expression __ ")" __
@@ -1302,7 +1296,7 @@ FunctionReturnTypeDeclaration
 FunctionDeclaration
   = doc:__ accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperators? __
     "(" __ params:(FormalParameterList __)? ")" __
-    "{" __ body:FunctionBody __ "}"
+    "{" __ body:FunctionBody "}"
     {
       return {
         type: "FunctionDeclaration",
@@ -1356,7 +1350,7 @@ FormalParameterList
     }
 
 FunctionBody
-  = body:SourceElements? {
+  = body:(StatementList __)? {
       return {
         type: "BlockStatement",
         body: optionalList(body)
