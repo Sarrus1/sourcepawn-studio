@@ -926,7 +926,7 @@ PreprocessorStatement
     }
     
 Block
-  = __ "{" __ body:(StatementList __)? "}" {
+  = __ "{" body:(StatementList)? "}" {
       return {
         type: "BlockStatement",
         body: optionalList(extractOptional(body, 0))
@@ -947,7 +947,7 @@ VariableStatement
   = doc:__ ((DeclToken / NewToken) __p)? 
   	variableDeclarationType:VariableDeclarationType? 
     variableType:VariableTypeDeclaration
-    declarations:VariableDeclarationList EOS {
+    declarations:VariableDeclarationList EOS __{
       return {
         type: "VariableDeclaration",
        	variableDeclarationType,
@@ -1005,9 +1005,9 @@ ExpressionStatement
     }
 
 IfStatement
-  = doc:__ IfToken __ "(" __ test:Expression __ ")" __
+  = doc:__ IfToken __ "(" __ test:Expression __ ")"
     consequent:Statement __
-    ElseToken __
+    ElseToken
     alternate:Statement
     {
       return {
@@ -1017,7 +1017,7 @@ IfStatement
         alternate: alternate
       };
     }
-  / IfToken __ "(" __ test:Expression __ ")" __
+  / IfToken __ "(" __ test:Expression __ ")"
     consequent:Statement {
       return {
         type: "IfStatement",
@@ -1127,10 +1127,10 @@ BreakStatement
     }
 
 ReturnStatement
-  = doc:__ ReturnToken EOS {
+  = doc:__ ReturnToken EOS __{
       return { type: "ReturnStatement", argument: null };
     }
-  / doc:__ ReturnToken _ argument:Expression EOS {
+  / doc:__ ReturnToken _ argument:Expression EOS __{
       return { type: "ReturnStatement", argument: argument };
     }
 
