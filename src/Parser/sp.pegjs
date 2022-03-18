@@ -123,7 +123,10 @@ Identifier
   }
 
 TypeIdentifier
-  = !(TypeReservedWord !IdentifierPart) name:IdentifierName { return name; }
+  = !(TypeReservedWord !IdentifierPart) name:IdentifierName 
+  { 
+    return name; 
+  }
 
 IdentifierName "identifier"
   = head:IdentifierStart tail:IdentifierPart* 
@@ -852,7 +855,6 @@ Statement
   / Block
   / VariableStatement
   / EmptyStatement
-  / EnumStatement
   / EnumStructStatement
   / ExpressionStatement
   / IfStatement
@@ -861,14 +863,11 @@ Statement
   / BreakStatement
   / ReturnStatement
   / LabelledStatement
-  / MethodmapStatement
   / SwitchStatement
   / MacroCallStatement
   / UsingStatement
   / IncludeStatement
-  / StructStatement
   / PropertyToken
-  / TypeDefStatement
   / TypeSetStatement
 
 AliasOperators
@@ -1202,10 +1201,23 @@ EnumStructBody
         body: optionalList(body)
       };
     }
- 
-EnumStatement
+
+TypeSetStatement
+  = doc:__ TypeSetToken __p id:TypeIdentifier
+  __ "{" __ params:(TypeDefBody __)*"}"
+  {
+  	return id;
+  }
+
+PropertyStatement
+  = doc:__ PropertyToken __p propertyType:TypeIdentifier __p id:Identifier __
+  "{" __ ((FunctionDeclaration / NativeForwardDeclaration) __)* "}" __
+
+// ----- A.5 Functions and Programs -----
+
+EnumDeclaration
   = doc:__ EnumToken id:(__p Identifier)? (":"__)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
-    "{" __ body:EnumBody? lastDoc:__ "}" 
+    "{" __ body:EnumBody? lastDoc:__ "}" EOS
     { 
       readEnum(args, id ? id[1] : null, location(), body, doc.join("").trim(), lastDoc.join("").trim());
       //return {doc: doc.join("").trim(),type:"Enum",id: id ? id[1] : null,loc: location(), body, lastDoc:lastDoc.join("").trim()};
@@ -1223,7 +1235,7 @@ EnumBody
     	return buildListWithDoc(head, tail, 3);
     }
 
-TypeDefStatement
+TypeDefDeclaration
   = doc:__ TypeDefToken __p id:TypeIdentifier __ "=" __ TypeDefBody
 	{ 
     	return {
@@ -1239,17 +1251,22 @@ TypeDefBody
   	return params;
   }
 
-TypeSetStatement
-  = doc:__ TypeSetToken __p id:TypeIdentifier
-  __ "{" __ params:(TypeDefBody __)*"}"
-  {
-  	return id;
-  }
+StructDeclaration
+  = 
+  (
+    doc:__ accessModifier:FunctionAccessModifiers* 
+    TypeIdentifier __p id:Identifier __ "=" __
+    ObjectLiteral EOS
+  )
+  /
+  (
+    doc:__ StructToken __p id:Identifier __
+    "{" __ (VariableStatement __)* "}" __ EOS
+  )
 
-
-MethodmapStatement
+MethodmapDeclaration
   = doc:__ MethodmapToken __p id:Identifier __ inherit:MethodmapInherit?
-    "{" __ body:MethodmapBody __ "}" { 
+    "{" __ body:MethodmapBody __ "}" EOS { 
       return {
         type:"methodmap",
         id: id,
@@ -1264,25 +1281,6 @@ MethodmapInherit
 
 MethodmapBody
   = ((PropertyStatement / FunctionDeclaration / NativeForwardDeclaration) __)*
-
-PropertyStatement
-  = doc:__ PropertyToken __p propertyType:TypeIdentifier __p id:Identifier __
-  "{" __ ((FunctionDeclaration / NativeForwardDeclaration) __)* "}" __
-
-StructStatement
-  = (
-    doc:__ accessModifier:FunctionAccessModifiers* TypeIdentifier __p id:Identifier __ "=" __
-  ObjectLiteral
-  )
-  /
-  (
-    doc:__ StructToken __p id:Identifier __
-    "{" __ (VariableStatement __)* "}" __ EOS
-  )
-
-
-
-// ----- A.5 Functions and Programs -----
 
 FunctionAccessModifiers
   = name:(PublicToken / StockToken / StaticToken) __p
@@ -1375,4 +1373,11 @@ SourceElements
       return [head].concat(tail);
     }
 
-SourceElement = FunctionDeclaration / NativeForwardDeclaration / Statement
+SourceElement 
+  = 
+  FunctionDeclaration 
+  / EnumDeclaration 
+  / NativeForwardDeclaration
+  / MethodmapDeclaration
+  / TypeDefDeclaration
+  / StructDeclaration
