@@ -853,8 +853,8 @@ ExpressionNoIn
 Statement
   = AliasStatement
   / Block
-  / VariableStatement
   / EmptyStatement
+  / VariableDeclaration
   / EnumStructStatement
   / ExpressionStatement
   / IfStatement
@@ -868,7 +868,6 @@ Statement
   / UsingStatement
   / IncludeStatement
   / PropertyToken
-  / TypeSetStatement
 
 AliasOperators
   = MultiplicativeOperator 
@@ -934,57 +933,6 @@ Block
 
 StatementList
   = head:Statement tail:(Statement)* { return buildList(head, tail, 1); }
-
-VariableDeclarationType
-  = declarationType:((PublicToken / StockToken / ConstToken / StaticToken) __p)+ { return declarationType.map(e=>e[0])}
-
-VariableTypeDeclaration
-  = name:TypeIdentifier ((":"__)/(( __ ("[]")+)? __p ))
-  {return name;}
-
-VariableStatement
-  = doc:__ ((DeclToken / NewToken) __p)? 
-  	variableDeclarationType:VariableDeclarationType? 
-    variableType:VariableTypeDeclaration
-    declarations:VariableDeclarationList EOS __{
-      return {
-        type: "VariableDeclaration",
-       	variableDeclarationType,
-       	variableType,
-        declarations: declarations,
-      };
-    }
-
-VariableDeclarationList
-  = head:VariableDeclaration tail:(__ "," __ VariableDeclaration)* {
-      return buildList(head, tail, 3);
-    }
-
-VariableDeclarationListNoIn
-  = head:VariableDeclarationNoIn tail:(__ "," __ VariableDeclarationNoIn)* {
-      return buildList(head, tail, 3);
-    }
-
-ArrayInitialer
-  = "[" Expression? "]"
-
-VariableDeclaration
-  = doc:__ id:Identifier arrayInitialer:ArrayInitialer* init:(__ Initialiser)? {
-      return {
-        type: "VariableDeclarator",
-        id,
-        init: extractOptional(init, 1)
-      };
-    }
-
-VariableDeclarationNoIn
-  = id:Identifier init:(__ InitialiserNoIn)? {
-      return {
-        type: "VariableDeclarator",
-        id: id,
-        init: extractOptional(init, 1)
-      };
-    }
 
 Initialiser
   = "=" !"=" __ expression:AssignmentExpression { return expression; }
@@ -1058,7 +1006,7 @@ IterationStatement
     }
   / doc:__ ForToken __
     "(" __
-    "int" __ declarations:VariableDeclarationListNoIn __ ";" __
+    "int" __ declarations:VariableDeclarationList __ ";" __
     test:(Expression __)? ";" __
     update:(Expression __)?
     ")" __
@@ -1092,7 +1040,7 @@ IterationStatement
     }
   / doc:__ ForToken __
     "(" __
-     __ declarations:VariableDeclarationListNoIn __
+     __ declarations:VariableDeclarationList __
     right:Expression __
     ")" __
     body:Statement
@@ -1202,18 +1150,48 @@ EnumStructBody
       };
     }
 
-TypeSetStatement
-  = doc:__ TypeSetToken __p id:TypeIdentifier
-  __ "{" __ params:(TypeDefBody __)*"}"
-  {
-  	return id;
-  }
-
 PropertyStatement
   = doc:__ PropertyToken __p propertyType:TypeIdentifier __p id:Identifier __
   "{" __ ((FunctionDeclaration / NativeForwardDeclaration) __)* "}" __
 
 // ----- A.5 Functions and Programs -----
+
+VariableAccessModifier
+  = declarationType:((PublicToken / StockToken / ConstToken / StaticToken) __p)+ { return declarationType.map(e=>e[0])}
+
+VariableType
+  = name:TypeIdentifier ((":"__)/(( __ ("[]")+)? __p ))
+  {return name;}
+
+VariableDeclaration
+  = doc:__ ((DeclToken / NewToken) __p)? 
+  	variableDeclarationType:VariableAccessModifier? 
+    variableType:VariableType
+    declarations:VariableDeclarationList EOS __{
+      return {
+        type: "VariableDeclaration",
+       	variableDeclarationType,
+       	variableType,
+        declarations: declarations,
+      };
+    }
+
+VariableDeclarationList
+  = head:VariableInitialisation tail:(__ "," __ VariableInitialisation)* {
+      return buildList(head, tail, 3);
+    }
+
+ArrayInitialer
+  = "[" Expression? "]"
+
+VariableInitialisation
+  = doc:__ id:Identifier arrayInitialer:ArrayInitialer* init:(__ Initialiser)? {
+      return {
+        type: "VariableDeclarator",
+        id,
+        init: extractOptional(init, 1)
+      };
+    }
 
 EnumDeclaration
   = doc:__ EnumToken id:(__p Identifier)? (":"__)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
@@ -1224,7 +1202,7 @@ EnumDeclaration
     }
  
 EnumMemberDeclaration
-  = name:VariableDeclaration
+  = name:VariableInitialisation
     {
       return name.id;
     }
@@ -1242,13 +1220,20 @@ TypeDefDeclaration
     		type: "TypeDefStatement",
             id
          };
-    }
+  }
 
 TypeDefBody
   = FunctionToken __ TypeIdentifier 
   __ "(" __ params:(FormalParameterList __)? ")" __ ";"?
   {
   	return params;
+  }
+
+TypeSetDeclaration
+  = doc:__ TypeSetToken __p id:TypeIdentifier
+  __ "{" __ params:( TypeDefBody __ )* "}" EOS
+  {
+  	return id;
   }
 
 StructDeclaration
@@ -1261,7 +1246,7 @@ StructDeclaration
   /
   (
     doc:__ StructToken __p id:Identifier __
-    "{" __ (VariableStatement __)* "}" __ EOS
+    "{" __ (VariableDeclaration __)* "}" __ EOS
   )
 
 MethodmapDeclaration
@@ -1380,4 +1365,6 @@ SourceElement
   / NativeForwardDeclaration
   / MethodmapDeclaration
   / TypeDefDeclaration
+  / TypeSetDeclaration
   / StructDeclaration
+  / VariableDeclaration
