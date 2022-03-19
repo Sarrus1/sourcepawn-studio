@@ -1318,7 +1318,7 @@ FunctionExpression
     }
 
 ParameterTypeDeclaration
-  = name:TypeIdentifier ((":"__)/(__(("[]")+/"&")__)/__p)
+  = name:TypeIdentifier? ((":"__)/(__(("[]")+/"&")__)/__p)
   {return name;}
 
 ParameterDeclarationType
