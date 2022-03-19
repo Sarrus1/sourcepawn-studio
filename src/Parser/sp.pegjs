@@ -386,13 +386,22 @@ __
     }
 
 __p "separator"
-  = (WhiteSpace / LineTerminatorSequence / Comment / PreprocessorStatement)+
+  = content:(WhiteSpace / LineTerminatorSequence / Comment / PreprocessorStatement)+
+    {
+      return content;
+    }
 
 _p
-  = (WhiteSpace / MultiLineCommentNoLineTerminator)+
+  = content:(WhiteSpace / MultiLineCommentNoLineTerminator)+
+    {
+      return content;
+    }
 
 _
-  = (WhiteSpace / MultiLineCommentNoLineTerminator)*
+  = content:(WhiteSpace / MultiLineCommentNoLineTerminator)*
+    {
+      return content;
+    }
 
 // Automatic Semicolon Insertion
 
