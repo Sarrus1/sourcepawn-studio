@@ -68,7 +68,10 @@ export class TypeDefItem implements SPItem {
       return undefined;
     }
     return new Hover([
-      { language: "sourcepawn", value: this.details },
+      {
+        language: "sourcepawn",
+        value: this.details,
+      },
       descriptionToMD(this.description),
     ]);
   }

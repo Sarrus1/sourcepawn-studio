@@ -9,7 +9,7 @@ import { parsedLocToRange } from "./utils";
  * @param  {ParsedID} id  The id of the define.
  * @param  {ParserLocation} loc  The location of the define.
  * @param  {string|null} value  The value of the define, if it exists.
- * @param  {string} doc  The documentation of the define.
+ * @param  {string} docstring  The documentation of the define.
  * @returns void
  */
 export function readDefine(
@@ -17,19 +17,18 @@ export function readDefine(
   id: ParsedID,
   loc: ParserLocation,
   value: string | null,
-  doc: string
+  docstring: string
 ): void {
   const range = parsedLocToRange(id.loc);
   const fullRange = parsedLocToRange(loc);
   const defineItem = new DefineItem(
     id.id,
     value,
-    doc,
+    docstring,
     parserArgs.filePath,
     range,
     parserArgs.IsBuiltIn,
     fullRange
   );
   parserArgs.fileItems.set(id.id, defineItem);
-  return;
 }

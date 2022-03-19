@@ -271,12 +271,6 @@ export class Parser {
       return;
     }
 
-    match = line.match(/^\s*typedef\s+(\w+)\s*\=\s*function\s+(\w+).*/);
-    if (match) {
-      readTypeDef(this, match, line);
-      return;
-    }
-
     match = line.match(/^\s*typeset\s+(\w+)/);
     if (match) {
       readTypeSet(this, match, line);

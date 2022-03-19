@@ -3,7 +3,7 @@
   import { readEnum } from "./readEnum";
   import { readDefine } from "./readDefine";
   import { readMacro } from "./readMacro";
-
+  import { readTypeDef } from "./readTypeDef";
 
   var TYPES_TO_PROPERTY_NAMES = {
     CallExpression:   "callee",
@@ -1249,19 +1249,17 @@ EnumBody
     }
 
 TypeDefDeclaration
-  = doc:__ TypeDefToken __p id:TypeIdentifier __ "=" __ TypeDefBody
-	{ 
-    	return {
-    		type: "TypeDefStatement",
-            id
-         };
+  = doc:__ TypeDefToken __p id:TypeIdentifier __ "=" __ body:TypeDefBody
+  {
+    readTypeDef(args, id, location(), body, doc);
+    //return {type: "TypeDefStatement",id,};
   }
 
 TypeDefBody
-  = FunctionToken __ TypeIdentifier 
+  = FunctionToken __ returnType:TypeIdentifier 
   __ "(" __ params:(FormalParameterList __)? ")" __ ";"?
   {
-  	return params;
+  	return {returnType, params};
   }
 
 TypeSetDeclaration

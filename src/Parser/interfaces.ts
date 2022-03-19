@@ -75,3 +75,22 @@ export interface DocString {
   doc: string | undefined;
   dep: string | undefined;
 }
+
+/**
+ * Body of a parsed TypeDef.
+ */
+export interface TypeDefBody {
+  returnType: ParsedID;
+  params?: (ParamsEntity[] | null)[] | null;
+}
+
+/**
+ * Params of a TypeDef.
+ */
+export interface ParamsEntity {
+  type: string;
+  declarationType?: null;
+  parameterType: ParsedID;
+  init?: null;
+  id: ParsedID;
+}
