@@ -343,6 +343,7 @@ CaseToken       = "case"
 CatchToken      = "catch"
 ConstToken      = "const"
 ContinueToken   = "continue"
+DefaultToken    = "default"
 DeleteToken     = "delete"
 DoToken         = "do"
 DeclToken		    = "decl"
@@ -568,7 +569,8 @@ LeftHandSideExpression
   / ViewAsExpression
 
 ViewAsExpression
-  = ViewAsToken "<" Identifier ">" "(" __ Expression __")"
+  = (ViewAsToken "<" TypeIdentifier ">" "(" __ Expression __")")
+  / (TypeIdentifier ":" Expression)
 
 PostfixExpression
   = argument:LeftHandSideExpression _ operator:PostfixOperator {
@@ -871,12 +873,8 @@ Statement
   / LabelledStatement
   / SwitchStatement
   / MacroCallStatement
-  / UsingStatement
   / IncludeStatement
   / PropertyToken
-
-UsingStatement
- = "using" [^\n;]+ ";"
 
 DefineStatement
   = "#define" _p id:Identifier value:(_p AssignmentExpression)? _ {return {type: "DefineValue", id, value: value?value.join(""):null}}
@@ -1114,7 +1112,7 @@ CaseClause
     }
 
 DefaultClause
-  = /*DefaultToken*/ __ ":" consequent:(__ StatementList)? {
+  = DefaultToken __ ":" consequent:(__ StatementList)? {
       return {
         type: "SwitchCase",
         test: null,
@@ -1345,6 +1343,10 @@ NativeForwardDeclaration
     returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
     "(" __ params:(FormalParameterList __)? ")" EOS
 
+// Take care of weird declaration in handles.inc
+UsingDeclaration
+ = doc:__ "using" [^\n;]+ ";"
+
 Program
   = body:SourceElements? {
       return {
@@ -1363,6 +1365,7 @@ SourceElement
   FunctionDeclaration
   / AliasDeclaration
   / EnumDeclaration 
+  / UsingDeclaration
   / NativeForwardDeclaration
   / MethodmapDeclaration
   / TypeDefDeclaration
