@@ -1164,7 +1164,7 @@ VariableType
 VariableDeclaration
   = doc:__ ((DeclToken / NewToken) __p)? 
   	variableDeclarationType:VariableAccessModifier? 
-    variableType:VariableType
+    variableType:VariableType?
     declarations:VariableDeclarationList EOS __{
       return {
         type: "VariableDeclaration",
