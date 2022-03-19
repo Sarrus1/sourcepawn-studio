@@ -752,8 +752,8 @@ LogicalOROperator
 
 ConditionalExpression
   = test:LogicalORExpression __
-    "?" __ consequent:AssignmentExpression __
-    ":" __ alternate:AssignmentExpression
+    "?" __ consequent:AssignmentExpressionNoIn __
+    ":" __ alternate:AssignmentExpressionNoIn
     {
       return {
         type: "ConditionalExpression",
@@ -766,7 +766,7 @@ ConditionalExpression
 
 ConditionalExpressionNoIn
   = test:LogicalORExpressionNoIn __
-    "?" __ consequent:AssignmentExpression __
+    "?" __ consequent:AssignmentExpressionNoIn __
     ":" __ alternate:AssignmentExpressionNoIn
     {
       return {
@@ -864,7 +864,6 @@ Statement
   = Block
   / EmptyStatement
   / VariableDeclaration
-  / EnumStructStatement
   / ExpressionStatement
   / IfStatement
   / IterationStatement
@@ -1126,7 +1125,18 @@ LabelledStatement
       return { type: "LabeledStatement", label: label, body: body };
     }
 
-EnumStructStatement
+PropertyStatement
+  = doc:__ PropertyToken __p propertyType:TypeIdentifier __p id:Identifier __
+  "{" __ ((FunctionDeclaration / NativeForwardDeclaration) __)* "}" __
+
+// ----- A.5 Functions and Programs -----
+
+AliasDeclaration
+  = doc:__ accessModifier:FunctionAccessModifiers* (NativeToken / ForwardToken) __p
+    returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
+    "(" __ params:(FormalParameterList __)? ")" __p "=" __p Identifier __ EOS
+
+EnumStructDeclaration
   = doc:__ EnumStructToken __p id:Identifier __
   "{" __ body:EnumStructBody __ "}" { 
       return {
@@ -1143,17 +1153,6 @@ EnumStructBody
         body: optionalList(body)
       };
     }
-
-PropertyStatement
-  = doc:__ PropertyToken __p propertyType:TypeIdentifier __p id:Identifier __
-  "{" __ ((FunctionDeclaration / NativeForwardDeclaration) __)* "}" __
-
-// ----- A.5 Functions and Programs -----
-
-AliasDeclaration
-  = doc:__ accessModifier:FunctionAccessModifiers* (NativeToken / ForwardToken) __p
-    returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
-    "(" __ params:(FormalParameterList __)? ")" __p "=" __p Identifier __ EOS
 
 VariableAccessModifier
   = declarationType:((PublicToken / StockToken / ConstToken / StaticToken) __p)+ { return declarationType.map(e=>e[0])}
@@ -1326,10 +1325,29 @@ ParameterDeclarationType
   = declarationType:ConstToken __p { return declarationType}
 
 ParameterDeclaration
- = declarationType:ParameterDeclarationType? 
+ = 
+  (
+   declarationType:ParameterDeclarationType?
+   "&"parameterType:ParameterTypeDeclaration? 
+   id:(Identifier/DotDotDotToken)
+   (__"[" property:Expression? "]"__ / DotDotDotToken)*
+   init:(__ Initialiser)?
+	{
+      return {
+      	type: "ParameterDeclaration",
+        declarationType,
+        parameterType: null,
+        init,
+        id
+     };
+    }
+  )
+  /
+  (
+   declarationType:ParameterDeclarationType? 
    parameterType:ParameterTypeDeclaration? 
    id:(Identifier/DotDotDotToken)
-   (__"[" __ property:Expression? __ "]"__ / DotDotDotToken)*
+   (__"[" property:Expression? "]"__ / DotDotDotToken)*
    init:(__ Initialiser)?
 	{
       return {
@@ -1340,6 +1358,23 @@ ParameterDeclaration
         id
      };
     }
+  )
+  /
+  (
+   declarationType:ParameterDeclarationType? 
+   id:(Identifier/DotDotDotToken)
+   (__"[" property:Expression? "]"__ / DotDotDotToken)*
+   init:(__ Initialiser)?
+	{
+      return {
+      	type: "ParameterDeclaration",
+        declarationType,
+        parameterType: null,
+        init,
+        id
+     };
+    }
+  )
 
 FormalParameterList
   = head:ParameterDeclaration tail:(__ "," __ ParameterDeclaration)* {
@@ -1380,7 +1415,8 @@ SourceElement
   = 
   FunctionDeclaration
   / AliasDeclaration
-  / EnumDeclaration 
+  / EnumDeclaration
+  / EnumStructDeclaration
   / UsingDeclaration
   / NativeForwardDeclaration
   / MethodmapDeclaration
