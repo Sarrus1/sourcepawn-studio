@@ -924,7 +924,7 @@ PreprocessorStatement
     }
     
 Block
-  = __ "{" body:(StatementList)? "}" {
+  = __ "{" body:(StatementList)? __ "}" {
       return {
         type: "BlockStatement",
         body: optionalList(extractOptional(body, 0))
@@ -964,7 +964,7 @@ IfStatement
         alternate: alternate
       };
     }
-  / IfToken __ "(" __ test:Expression __ ")"
+  / doc:__ IfToken __ "(" __ test:Expression __ ")"
     consequent:Statement {
       return {
         type: "IfStatement",
@@ -1009,10 +1009,11 @@ IterationStatement
     "int" __ declarations:VariableDeclarationList __ ";" __
     test:(Expression __)? ";" __
     update:(Expression __)?
-    ")" __
+    ")"
     body:Statement
     {
       return {
+      	1: "ForStatement",
         type: "ForStatement",
         init: {
           type: "VariableDeclaration",
@@ -1082,7 +1083,7 @@ ReturnStatement
     }
 
 SwitchStatement
-  = SwitchToken __ "(" __ discriminant:Expression __ ")" __
+  = doc:__ SwitchToken __ "(" __ discriminant:Expression __ ")" __
     cases:CaseBlock
     {
       return {
@@ -1279,7 +1280,7 @@ FunctionReturnTypeDeclaration
 FunctionDeclaration
   = doc:__ accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperators? __
     "(" __ params:(FormalParameterList __)? ")" __
-    "{" __ body:FunctionBody "}"
+    body:Block
     {
       return {
         type: "FunctionDeclaration",
@@ -1293,7 +1294,7 @@ FunctionDeclaration
 
 FunctionExpression
   = __ id:(Identifier __)?
-    "(" __ params:(FormalParameterList __)? ")" __
+    "(" __ params:(FormalParameterList __)? ")"
     "{" __ body:FunctionBody __ "}"
     {
       return {
@@ -1333,7 +1334,7 @@ FormalParameterList
     }
 
 FunctionBody
-  = body:(StatementList __)? {
+  = body:(StatementList)? {
       return {
         type: "BlockStatement",
         body: optionalList(body)
