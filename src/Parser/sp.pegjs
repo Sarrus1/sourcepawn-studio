@@ -559,7 +559,7 @@ Arguments
     }
 
 ArgumentList
-  = head:AssignmentExpression tail:(__ "," __ AssignmentExpression)* {
+  = (TypeIdentifier ":")? head:AssignmentExpression tail:(__ "," __ (TypeIdentifier ":")? AssignmentExpression)* {
       return buildList(head, tail, 3);
     }
 
@@ -570,7 +570,6 @@ LeftHandSideExpression
 
 ViewAsExpression
   = (ViewAsToken "<" TypeIdentifier ">" "(" __ Expression __")")
-  / (TypeIdentifier ":" Expression)
 
 PostfixExpression
   = argument:LeftHandSideExpression _ operator:PostfixOperator {
@@ -671,8 +670,8 @@ RelationalOperatorNoIn
   / $(">" !">")
 
 EqualityExpression
-  = head:RelationalExpression
-    tail:(__ EqualityOperator __ RelationalExpression)*
+  = (TypeIdentifier ":")? head:RelationalExpression
+    tail:(__ EqualityOperator __ (TypeIdentifier ":")? RelationalExpression)*
     { return buildBinaryExpression(head, tail); }
 
 EqualityExpressionNoIn
@@ -782,6 +781,7 @@ ConditionalExpressionNoIn
 AssignmentExpression
   = left:LeftHandSideExpression __
     "=" !"=" __
+    (TypeIdentifier ":")?
     right:AssignmentExpression
     {
       return {
@@ -793,6 +793,7 @@ AssignmentExpression
     }
   / left:LeftHandSideExpression __
     operator:AssignmentOperator __
+    (TypeIdentifier ":")?
     right:AssignmentExpression
     {
       return {
@@ -843,7 +844,7 @@ AssignmentOperator
   / "|="
 
 Expression
-  = head:AssignmentExpression tail:(__ "," __ AssignmentExpression)* {
+  = (TypeIdentifier ":")? head:AssignmentExpression tail:(__ "," __ (TypeIdentifier ":")? AssignmentExpression)* {
       return tail.length > 0
         ? { type: "SequenceExpression", expressions: buildList(head, tail, 3) }
         : head;
@@ -1070,7 +1071,7 @@ ReturnStatement
   = doc:__ ReturnToken EOS __{
       return { type: "ReturnStatement", argument: null };
     }
-  / doc:__ ReturnToken _ argument:Expression EOS __{
+  / doc:__ ReturnToken _ (TypeIdentifier ":")? argument:Expression EOS __{
       return { type: "ReturnStatement", argument: argument };
     }
 
@@ -1103,7 +1104,7 @@ CaseClauses
   = head:CaseClause tail:(__ CaseClause)* { return buildList(head, tail, 1); }
 
 CaseClause
-  = CaseToken __ test:Expression __ ":" consequent:(__ StatementList)? {
+  = CaseToken __ test:ExpressionNoIn __ ":" consequent:(__ StatementList)? {
       return {
         type: "SwitchCase",
         test: test,
@@ -1179,7 +1180,7 @@ VariableDeclaration
     )
     /
     (
-    doc:__ StaticToken __p
+    doc:__ ((StaticToken / ConstToken)__p)+
     declarations:VariableDeclarationList EOS __
     {
     	return {
@@ -1210,8 +1211,8 @@ EnumDeclaration
   = doc:__ EnumToken id:(__p Identifier)? (":"__)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
     "{" __ body:EnumBody? lastDoc:__ "}" EOS
     { 
-      readEnum(args, id ? id[1] : null, location(), body, doc.join("").trim(), lastDoc.join("").trim());
-      //return {doc: doc.join("").trim(),type:"Enum",id: id ? id[1] : null,loc: location(), body, lastDoc:lastDoc.join("").trim()};
+      //readEnum(args, id ? id[1] : null, location(), body, doc.join("").trim(), lastDoc.join("").trim());
+      return {doc: doc.join("").trim(),type:"Enum",id: id ? id[1] : null,loc: location(), body, lastDoc:lastDoc.join("").trim()};
     }
  
 EnumMemberDeclaration
