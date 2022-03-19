@@ -1,40 +1,33 @@
-﻿import { Parser } from "./spParser";
+﻿import { spParserArgs } from "./spParser";
 import { TypeSetItem } from "../Backend/Items/spTypesetItem";
-import { Range, Position } from "vscode";
-import { parseDocComment } from "./parseDocComment";
+import { ParsedID, ParserLocation } from "./interfaces";
+import { parsedLocToRange } from "./utils";
+import { processDocStringComment } from "./processComment";
 
+/**
+ * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
+ * @param  {ParsedID} id  The id of the TypeSet.
+ * @param  {ParserLocation} loc  The location of the TypeSet.
+ * @param  {string[]|undefined} docstring  The documentation of the TypeSet.
+ * @returns void
+ */
 export function readTypeSet(
-  parser: Parser,
-  match: RegExpMatchArray,
-  line: string
+  parserArgs: spParserArgs,
+  id: ParsedID,
+  loc: ParserLocation,
+  docstring: string[] | undefined
 ): void {
-  let startPosition = new Position(parser.lineNb, 0);
-  let name = match[1];
-  let range = parser.makeDefinitionRange(name, line);
-  let { description, params } = parseDocComment(parser);
-  let iter = 0;
-  while (!/^\s*}/.test(line)) {
-    if (iter == 200) {
-      return;
-    }
-    line = parser.lines.shift();
-    parser.lineNb++;
-    iter++;
-  }
-  let endMatch = line.match(/^\s*}/);
-  let fullRange = new Range(
-    startPosition,
-    new Position(parser.lineNb, endMatch[0].length)
+  const range = parsedLocToRange(id.loc);
+  const fullRange = parsedLocToRange(loc);
+  const { doc, dep } = processDocStringComment(docstring);
+  const typeDefItem = new TypeSetItem(
+    id.id,
+    "",
+    parserArgs.filePath,
+    doc,
+    range,
+    fullRange
   );
-  parser.fileItems.set(
-    name,
-    new TypeSetItem(
-      name,
-      match[0],
-      parser.filePath,
-      description,
-      range,
-      fullRange
-    )
-  );
+  parserArgs.fileItems.set(id.id, typeDefItem);
+  return;
 }

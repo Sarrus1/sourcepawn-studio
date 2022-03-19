@@ -16,8 +16,6 @@ import { State } from "./stateEnum";
 import { readLoopVariable } from "./readLoopVariable";
 import { readVariable } from "./readVariable";
 import { readProperty } from "./readProperty";
-import { readTypeDef } from "./readTypeDef";
-import { readTypeSet } from "./readTypeSet";
 import { readFunction } from "./readFunction";
 import { consumeComment } from "./consumeComment";
 import { searchForReferencesInString } from "./searchForReferencesInString";
@@ -268,12 +266,6 @@ export class Parser {
     match = line.match(/^\s*(?:for\s*\(\s*int\s+)([A-Za-z0-9_]*)/);
     if (match) {
       readLoopVariable(this, match, line);
-      return;
-    }
-
-    match = line.match(/^\s*typeset\s+(\w+)/);
-    if (match) {
-      readTypeSet(this, match, line);
       return;
     }
 

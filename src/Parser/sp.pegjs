@@ -4,6 +4,8 @@
   import { readDefine } from "./readDefine";
   import { readMacro } from "./readMacro";
   import { readTypeDef } from "./readTypeDef";
+  import { readTypeSet } from "./readTypeSet";
+
 
   var TYPES_TO_PROPERTY_NAMES = {
     CallExpression:   "callee",
@@ -1257,7 +1259,7 @@ TypeDefDeclaration
 
 TypeDefBody
   = FunctionToken __ returnType:TypeIdentifier 
-  __ "(" __ params:(FormalParameterList __)? ")" __ ";"?
+  __ "(" __ params:(FormalParameterList __)? ")" __ EOS
   {
   	return {returnType, params};
   }
@@ -1266,7 +1268,8 @@ TypeSetDeclaration
   = doc:__ TypeSetToken __p id:TypeIdentifier
   __ "{" __ params:( TypeDefBody __ )* "}" EOS
   {
-  	return id;
+    readTypeSet(args, id, location(), doc);
+  	//return id;
   }
 
 StructDeclaration

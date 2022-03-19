@@ -39,6 +39,7 @@ export function readTypeDef(
     fullRange
   );
   parserArgs.fileItems.set(id.id, typeDefItem);
+  return;
 }
 
 /**
