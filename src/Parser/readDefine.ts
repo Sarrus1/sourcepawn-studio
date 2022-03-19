@@ -1,12 +1,12 @@
 ﻿import { spParserArgs } from "./spParser";
 import { DefineItem } from "../Backend/Items/spDefineItem";
-import { ParsedDefine, ParserLocation } from "./interfaces";
+import { ParsedID, ParserLocation } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 
 /**
  * Callback for a parsed define.
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {ParsedDefine} id  The id of the define.
+ * @param  {ParsedID} id  The id of the define.
  * @param  {ParserLocation} loc  The location of the define.
  * @param  {string|null} value  The value of the define, if it exists.
  * @param  {string} doc  The documentation of the define.
@@ -14,7 +14,7 @@ import { parsedLocToRange } from "./utils";
  */
 export function readDefine(
   parserArgs: spParserArgs,
-  id: ParsedDefine,
+  id: ParsedID,
   loc: ParserLocation,
   value: string | null,
   doc: string

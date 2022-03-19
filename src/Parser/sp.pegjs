@@ -1,7 +1,9 @@
 {{
   import { readInclude } from "./readInclude";
   import { readEnum } from "./readEnum";
-  import { readDefine } from "./readDefine"; 
+  import { readDefine } from "./readDefine";
+  import { readMacro } from "./readMacro";
+
 
   var TYPES_TO_PROPERTY_NAMES = {
     CallExpression:   "callee",
@@ -38,6 +40,10 @@
       .flat()
       .filter((e) => e !== undefined)
       .join("");
+  }
+
+  function buildNestedArray(content) {
+    return content.flat(Infinity).join("")
   }
 
   function buildBinaryExpression(head, tail) {
@@ -880,14 +886,17 @@ Statement
   / PropertyToken
 
 DefineStatement
-  = "#define" _p id:Identifier value:(_p AssignmentExpression)? doc:_
+  = "#define" _p id:Identifier value:(_p AssignmentExpression) doc:_
   {
     readDefine(args, id, location(), value?value[1]["value"]:null, doc.join("").trim());
     //return {type: "Define", id, value: value?value[0]:null}
   }
-
-MacroStatement
-  = "#define" _p id:Identifier "(" ( _ "%"[0-9]+ _ "," )* ( _ "%"[0-9]+ _ )? _ ")" [^\n]+ _ {return {type: "Macro", id}}
+  /
+  "#define" _p id:Identifier !"(" doc:_
+  {
+    readDefine(args, id, location(), null, doc.join("").trim());
+    //return {type: "Define", id, value:null}
+  }
 
 IncludeStatement
   = "#include" __ path:IncludePath 
@@ -902,7 +911,7 @@ PragmaStatement
   = "#pragma" __ value:[^\n]+ __ { return {type:"PragmaValue",value: value?value.join(""):null}}
 
 OtherPreprocessorStatement
-  = "#" name:(!( _p ("define" / "pragma" / "include") _p )[A-Za-z0-9_]+) _ [^\n]*
+  = "#" name:(!("define" / "pragma" / "include")[A-Za-z0-9_]+) _ [^\n]*
   {
     return {
       type:"PreprocessorStatement", 
@@ -914,7 +923,6 @@ PreprocessorStatement
   = pre:(
     PragmaStatement
     / IncludeStatement
-    / MacroStatement
     / DefineStatement
     / OtherPreprocessorStatement
     )
@@ -1161,6 +1169,13 @@ EnumStructBody
       };
     }
 
+MacroDeclaration
+  = doc:__ "#define" _p id:Identifier value:("(" ( _ "%"[0-9]+ _ "," )* ( _ "%"[0-9]+ _ )? _ ")" [^\n]+) _
+  {
+    readMacro(args, id, location(), buildNestedArray(value), doc);
+    //return {type: "MacroDeclaration", id, value: value?value[0]:null}
+  }
+
 VariableAccessModifier
   = declarationType:((PublicToken / StockToken / ConstToken / StaticToken) __p)+ { return declarationType.map(e=>e[0])}
 
@@ -1217,7 +1232,7 @@ EnumDeclaration
   = doc:__ EnumToken id:(__p Identifier)? (":"__)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
     "{" __ body:EnumBody? lastDoc:__ "}" EOS
     { 
-      readEnum(args, id ? id[1] : null, location(), body, doc.join("").trim(), lastDoc.join("").trim());
+      readEnum(args, id ? id[1] : null, location(), body, doc, lastDoc.join("").trim());
       //return {doc: doc.join("").trim(),type:"Enum",id: id ? id[1] : null,loc: location(), body, lastDoc:lastDoc.join("").trim()};
     }
  
@@ -1424,6 +1439,7 @@ SourceElement
   / AliasDeclaration
   / EnumDeclaration
   / EnumStructDeclaration
+  / MacroDeclaration
   / UsingDeclaration
   / NativeForwardDeclaration
   / MethodmapDeclaration

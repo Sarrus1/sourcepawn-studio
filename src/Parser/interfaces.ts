@@ -63,7 +63,15 @@ export interface ParsedEnumMember {
 /**
  * Parsed define ID.
  */
-export interface ParsedDefine {
+export interface ParsedID {
   id: string;
   loc: ParserLocation;
+}
+
+/**
+ * An object which contains a parsed doc comment and a deprecation notice.
+ */
+export interface DocString {
+  doc: string | undefined;
+  dep: string | undefined;
 }
