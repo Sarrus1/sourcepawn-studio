@@ -1162,17 +1162,32 @@ VariableType
   {return name;}
 
 VariableDeclaration
-  = doc:__ ((DeclToken / NewToken) __p)? 
+  = (
+    doc:__ 
+    ((DeclToken / NewToken) __p)? 
   	variableDeclarationType:VariableAccessModifier? 
     variableType:VariableType?
-    declarations:VariableDeclarationList EOS __{
+    declarations:VariableDeclarationList EOS __
+    {
       return {
         type: "VariableDeclaration",
        	variableDeclarationType,
-       	variableType,
+        variableType,
         declarations: declarations,
       };
     }
+    )
+    /
+    (
+    doc:__ StaticToken __p
+    declarations:VariableDeclarationList EOS __
+    {
+    	return {
+        type: "VariableDeclaration",
+        declarations: declarations,
+      };
+    }    
+    )
 
 VariableDeclarationList
   = head:VariableInitialisation tail:(__ "," __ VariableInitialisation)* {
@@ -1183,7 +1198,7 @@ ArrayInitialer
   = "[" Expression? "]"
 
 VariableInitialisation
-  = doc:__ id:Identifier arrayInitialer:ArrayInitialer* init:(__ Initialiser)? {
+  = doc:__ (TypeIdentifier":")? id:Identifier arrayInitialer:ArrayInitialer* init:(__ Initialiser)? {
       return {
         type: "VariableDeclarator",
         id,
