@@ -387,18 +387,12 @@ __
 
 __p "separator"
   = content:(WhiteSpace / LineTerminatorSequence / Comment / PreprocessorStatement)+
-    {
-      return content;
-    }
 
 _p
-  = content:(WhiteSpace / MultiLineCommentNoLineTerminator)+
-    {
-      return content;
-    }
+  = content:(WhiteSpace / MultiLineCommentNoLineTerminator / SingleLineComment)+
 
 _
-  = content:(WhiteSpace / MultiLineCommentNoLineTerminator)*
+  = content:(WhiteSpace / MultiLineCommentNoLineTerminator / SingleLineComment)*
     {
       return content;
     }
@@ -888,8 +882,8 @@ Statement
 DefineStatement
   = "#define" _p id:Identifier value:(_p AssignmentExpression)? doc:_
   {
-    readDefine(args, id, location(), value, doc.join("").trim());
-    //return {type: "Define", id, value: value?value.join(""):null}
+    readDefine(args, id, location(), value?value[1]["value"]:null, doc.join("").trim());
+    //return {type: "Define", id, value: value?value[0]:null}
   }
 
 MacroStatement
