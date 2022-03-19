@@ -59,3 +59,11 @@ export interface ParsedEnumMember {
   loc: ParserLocation;
   doc: string | undefined;
 }
+
+/**
+ * Parsed define ID.
+ */
+export interface ParsedDefine {
+  id: string;
+  loc: ParserLocation;
+}

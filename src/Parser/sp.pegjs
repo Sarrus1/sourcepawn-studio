@@ -1,7 +1,7 @@
 {{
   import { readInclude } from "./readInclude";
   import { readEnum } from "./readEnum";
-
+  import { readDefine } from "./readDefine"; 
 
   var TYPES_TO_PROPERTY_NAMES = {
     CallExpression:   "callee",
@@ -877,7 +877,11 @@ Statement
   / PropertyToken
 
 DefineStatement
-  = "#define" _p id:Identifier value:(_p AssignmentExpression)? _ {return {type: "DefineValue", id, value: value?value.join(""):null}}
+  = "#define" _p id:Identifier value:(_p AssignmentExpression)? doc:_
+  {
+    readDefine(args, id, location(), value, doc.join("").trim());
+    //return {type: "Define", id, value: value?value.join(""):null}
+  }
 
 MacroStatement
   = "#define" _p id:Identifier "(" ( _ "%"[0-9]+ _ "," )* ( _ "%"[0-9]+ _ )? _ ")" [^\n]+ _ {return {type: "Macro", id}}

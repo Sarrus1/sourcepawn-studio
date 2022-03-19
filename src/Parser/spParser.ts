@@ -13,7 +13,6 @@ import { ItemsRepository } from "../Backend/spItemsRepository";
 import { FileItems } from "../Backend/spFilesRepository";
 import { SPItem } from "../Backend/Items/spItems";
 import { State } from "./stateEnum";
-import { readDefine } from "./readDefine";
 import { readMacro } from "./readMacro";
 import { readLoopVariable } from "./readLoopVariable";
 import { readVariable } from "./readVariable";
@@ -256,13 +255,6 @@ export class Parser {
     // Match trailing block comments
     match = line.match(/^\s*[^\/\*\s]+(\/\*.+)\*\//);
     if (match) {
-      return;
-    }
-
-    // Match define
-    match = line.match(/^\s*#define\s+(\w+)\s+/);
-    if (match) {
-      readDefine(this, match, line);
       return;
     }
 
