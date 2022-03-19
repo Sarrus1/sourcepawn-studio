@@ -1200,7 +1200,7 @@ EnumDeclaration
     }
  
 EnumMemberDeclaration
-  = name:VariableInitialisation
+  = (TypeIdentifier (":"__))? name:VariableInitialisation
     {
       return name.id;
     }
