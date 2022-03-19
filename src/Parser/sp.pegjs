@@ -1210,8 +1210,8 @@ EnumDeclaration
   = doc:__ EnumToken id:(__p Identifier)? (":"__)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
     "{" __ body:EnumBody? lastDoc:__ "}" EOS
     { 
-      //readEnum(args, id ? id[1] : null, location(), body, doc.join("").trim(), lastDoc.join("").trim());
-      return {doc: doc.join("").trim(),type:"Enum",id: id ? id[1] : null,loc: location(), body, lastDoc:lastDoc.join("").trim()};
+      readEnum(args, id ? id[1] : null, location(), body, doc.join("").trim(), lastDoc.join("").trim());
+      //return {doc: doc.join("").trim(),type:"Enum",id: id ? id[1] : null,loc: location(), body, lastDoc:lastDoc.join("").trim()};
     }
  
 EnumMemberDeclaration
