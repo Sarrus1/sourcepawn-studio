@@ -581,6 +581,13 @@ PostfixExpression
     }
   / LeftHandSideExpression
 
+AliasOperator
+  = MultiplicativeOperator 
+  / AdditiveOperator 
+  / RelationalOperator
+  / EqualityOperator
+  / UnaryOperator
+
 PostfixOperator
   = "++"
   / "--"
@@ -851,8 +858,7 @@ ExpressionNoIn
 // ----- A.4 Statements -----
 
 Statement
-  = AliasStatement
-  / Block
+  = Block
   / EmptyStatement
   / VariableDeclaration
   / EnumStructStatement
@@ -868,18 +874,6 @@ Statement
   / UsingStatement
   / IncludeStatement
   / PropertyToken
-
-AliasOperators
-  = MultiplicativeOperator 
-    / AdditiveOperator 
-    / RelationalOperator
-    / EqualityOperator
-    / UnaryOperator
-
-AliasStatement
-  = doc:__ accessModifier:FunctionAccessModifiers* (NativeToken / ForwardToken) __p
-    returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperators? __
-    "(" __ params:(FormalParameterList __)? ")" __p "=" __p Identifier __ EOS
 
 UsingStatement
  = "using" [^\n;]+ ";"
@@ -1157,6 +1151,11 @@ PropertyStatement
 
 // ----- A.5 Functions and Programs -----
 
+AliasDeclaration
+  = doc:__ accessModifier:FunctionAccessModifiers* (NativeToken / ForwardToken) __p
+    returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
+    "(" __ params:(FormalParameterList __)? ")" __p "=" __p Identifier __ EOS
+
 VariableAccessModifier
   = declarationType:((PublicToken / StockToken / ConstToken / StaticToken) __p)+ { return declarationType.map(e=>e[0])}
 
@@ -1278,7 +1277,7 @@ FunctionReturnTypeDeclaration
 
 
 FunctionDeclaration
-  = doc:__ accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperators? __
+  = doc:__ accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
     "(" __ params:(FormalParameterList __)? ")" __
     body:Block
     {
@@ -1343,7 +1342,7 @@ FunctionBody
 
 NativeForwardDeclaration
   = doc:__ accessModifier:FunctionAccessModifiers* (NativeToken / ForwardToken) __p
-    returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperators? __
+    returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
     "(" __ params:(FormalParameterList __)? ")" EOS
 
 Program
@@ -1361,7 +1360,8 @@ SourceElements
 
 SourceElement 
   = 
-  FunctionDeclaration 
+  FunctionDeclaration
+  / AliasDeclaration
   / EnumDeclaration 
   / NativeForwardDeclaration
   / MethodmapDeclaration
