@@ -306,13 +306,6 @@ export class Parser {
       return;
     }
 
-    match = line.match(
-      /^\s*(?:(?:static|native|stock|public|forward)\s+)*(?:[a-zA-Z\-_0-9]:)?([^\s]+)\s*(\w*)\s*\(([^\)]*(?:\)?))(?:\s*)(?:\{?)(?:\s*)(?:[^\;\s]*);?\s*$/
-    );
-    if (match) {
-      readFunction(this, match, line);
-    }
-
     // Reset the comments buffer
     this.scratch = [];
     this.deprecated = undefined;

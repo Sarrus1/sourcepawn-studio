@@ -6,7 +6,7 @@
   import { readTypeDef } from "./readTypeDef";
   import { readTypeSet } from "./readTypeSet";
   import { readVariable } from "./readVariable";
-
+  import { readFunction } from "./readFunction";
 
   var TYPES_TO_PROPERTY_NAMES = {
     CallExpression:   "callee",
@@ -1341,14 +1341,8 @@ FunctionDeclaration
     "(" __ params:(FormalParameterList __)? ")" __
     body:Block
     {
-      return {
-        type: "FunctionDeclaration",
-       	accessModifier: accessModifier,
-        returnType: returnType,
-        id: id,
-        params: optionalList(extractOptional(params, 0)),
-        body: body
-      };
+      readFunction(args, accessModifier, returnType, id, location(), doc.join("").trim(), optionalList(extractOptional(params, 0)), body);
+      //return {type: "FunctionDeclaration",accessModifier: accessModifier,returnType: returnType,id: id,params: optionalList(extractOptional(params, 0)),body: body};
     }
 
 FunctionExpression

@@ -100,3 +100,11 @@ export interface VariableDeclarations {
   id: ParsedID;
   init?: null;
 }
+
+export interface ParsedFunctionParam {
+  type: string;
+  declarationType?: string[] | string | null;
+  parameterType?: ParsedID;
+  init?: string[] | null;
+  id: ParsedID;
+}
