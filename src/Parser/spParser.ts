@@ -17,11 +17,9 @@ import { readLoopVariable } from "./readLoopVariable";
 import { readVariable } from "./readVariable";
 import { readProperty } from "./readProperty";
 import { readFunction } from "./readFunction";
-import { consumeComment } from "./consumeComment";
 import { searchForReferencesInString } from "./searchForReferencesInString";
 import { handleReferenceInParser } from "./handleReferencesInParser";
 import { readMethodMap } from "./readMethodMap";
-import { manageState } from "./manageState";
 import { purgeCalls, positiveRange, parentCounter } from "./utils";
 import { globalIdentifier, globalItem } from "../Misc/spConstants";
 import { ParseState } from "./interfaces";
@@ -92,7 +90,10 @@ export function parseText(
       const out: string = spParser.parse(data);
       //console.debug(out);
     } catch (e) {
-      console.error(basename(file), e.message, e.location.start);
+      if (e.location !== undefined) {
+        console.error(basename(file), e.message, e.location.start);
+      }
+      console.error(e);
     }
 
   // const parser = new Parser(lines, file, IsBuiltIn, items, itemsRepository);
@@ -243,50 +244,12 @@ export class Parser {
     // EOF
     if (line === undefined) return;
 
-    // Match trailing single line comments
     let match = line.match(/^\s*[^\/\/\s]+(\/\/.+)$/);
-    if (match) {
-      return;
-    }
-
-    // Match trailing block comments
-    match = line.match(/^\s*[^\/\*\s]+(\/\*.+)\*\//);
-    if (match) {
-      return;
-    }
-
-    // Match #pragma deprecated
-    match = line.match(/#pragma\s+deprecated\s+(.+?(?=(?:\/\*|\/\/|$)))/);
-    if (match) {
-      this.deprecated = match[1];
-      return;
-    }
 
     // Match for loop iteration variable only in the current file
     match = line.match(/^\s*(?:for\s*\(\s*int\s+)([A-Za-z0-9_]*)/);
     if (match) {
       readLoopVariable(this, match, line);
-      return;
-    }
-
-    // Match variables only in the current file
-    match = line.match(
-      /^\s*(?:(?:new|static|const|decl|public|stock)\s+)*\w+(?:\[\])?\s+(\w+\s*(?:\[[A-Za-z0-9 +\-\*_]*\])*\s*(?:=\s*[^;,]+)?(?:,|;))/
-    );
-    if (match && !this.IsBuiltIn) {
-      readVariable(this, match, line);
-      return;
-    }
-
-    match = line.match(/^\s*\/\*/);
-    if (match) {
-      consumeComment(this, line, false);
-      return;
-    }
-
-    match = line.match(/^\s*\/\//);
-    if (match) {
-      consumeComment(this, line, true);
       return;
     }
 
@@ -348,12 +311,6 @@ export class Parser {
     );
     if (match) {
       readFunction(this, match, line);
-    }
-
-    match = line.match(/^\s*}/);
-    if (match) {
-      manageState(this, line);
-      return;
     }
 
     // Reset the comments buffer

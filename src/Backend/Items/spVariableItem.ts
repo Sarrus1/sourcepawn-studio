@@ -15,11 +15,13 @@ import { globalIdentifier } from "../../Misc/spConstants";
 import { ConstantItem } from "./spConstantItem";
 import { MethodItem } from "./spMethodItem";
 import { FunctionItem } from "./spFunctionItem";
+import { descriptionToMD } from "../../spUtils";
 
 export class VariableItem implements SPItem {
   name: string;
   filePath: string;
   kind = CompletionItemKind.Variable;
+  description?: string;
   parent: SPItem | ConstantItem;
   range: Range;
   type: string;
@@ -32,7 +34,8 @@ export class VariableItem implements SPItem {
     parent: SPItem | ConstantItem,
     range: Range,
     type: string,
-    enumStruct: string
+    enumStruct: string,
+    description = ""
   ) {
     this.name = name;
     this.filePath = file;
@@ -41,6 +44,7 @@ export class VariableItem implements SPItem {
     this.type = type;
     this.enumStructName = enumStruct;
     this.references = [];
+    this.description = description;
   }
 
   toCompletionItem(
@@ -75,6 +79,7 @@ export class VariableItem implements SPItem {
     }
     return new Hover([
       { language: "sourcepawn", value: `${this.type} ${this.name};` },
+      descriptionToMD(this.description),
     ]);
   }
 

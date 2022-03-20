@@ -94,3 +94,9 @@ export interface ParamsEntity {
   init?: null;
   id: ParsedID;
 }
+
+export interface VariableDeclarations {
+  type: string;
+  id: ParsedID;
+  init?: null;
+}

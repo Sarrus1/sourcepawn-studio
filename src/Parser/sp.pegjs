@@ -5,6 +5,7 @@
   import { readMacro } from "./readMacro";
   import { readTypeDef } from "./readTypeDef";
   import { readTypeSet } from "./readTypeSet";
+  import { readVariable } from "./readVariable";
 
 
   var TYPES_TO_PROPERTY_NAMES = {
@@ -401,6 +402,12 @@ _p
 
 _
   = content:(WhiteSpace / MultiLineCommentNoLineTerminator / SingleLineComment)*
+    {
+      return content;
+    }
+
+__doc "trailing doc"
+  = WhiteSpace* content:Comment?
     {
       return content;
     }
@@ -874,7 +881,7 @@ ExpressionNoIn
 Statement
   = Block
   / EmptyStatement
-  / VariableDeclaration
+  / LocalVariableDeclaration
   / ExpressionStatement
   / IfStatement
   / IterationStatement
@@ -919,6 +926,12 @@ OtherPreprocessorStatement
       type:"PreprocessorStatement", 
       name
       };
+  }
+
+LocalVariableDeclaration
+  = content:VariableDeclaration
+  {
+    return {type: "LocalVariableDeclaration", content};
   }
 
 PreprocessorStatement
@@ -1187,31 +1200,42 @@ VariableType
 
 VariableDeclaration
   = (
-    doc:__ 
+    __ 
     ((DeclToken / NewToken) __p)? 
   	variableDeclarationType:VariableAccessModifier? 
     variableType:VariableType?
-    declarations:VariableDeclarationList EOS __
+    declarations:VariableDeclarationList EOS doc:__doc
     {
       return {
         type: "VariableDeclaration",
        	variableDeclarationType,
         variableType,
         declarations: declarations,
+        doc
       };
     }
     )
     /
     (
-    doc:__ ((StaticToken / ConstToken)__p)+
-    declarations:VariableDeclarationList EOS __
+    __ ((StaticToken / ConstToken)__p)+
+    declarations:VariableDeclarationList EOS doc:__doc
     {
     	return {
         type: "VariableDeclaration",
+        variableDeclarationType: null,
+        variableType: null,
         declarations: declarations,
+        doc
       };
     }    
     )
+
+GlobalVariableDeclaration
+  = content:VariableDeclaration
+  {
+    readVariable(args, content.variableDeclarationType, content.variableType, content.declarations, content.doc);
+    //return {type: "GlobalVariableDeclaration", content};
+  }
 
 VariableDeclarationList
   = head:VariableInitialisation tail:(__ "," __ VariableInitialisation)* {
@@ -1447,4 +1471,4 @@ SourceElement
   / TypeDefDeclaration
   / TypeSetDeclaration
   / StructDeclaration
-  / VariableDeclaration
+  / GlobalVariableDeclaration
