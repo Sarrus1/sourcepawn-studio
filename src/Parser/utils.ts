@@ -1,6 +1,8 @@
-﻿import { FunctionParam, SPItem } from "../Backend/Items/spItems";
-import { Range } from "vscode";
+﻿import { Range } from "vscode";
 import { basename } from "path";
+
+import { FunctionParam } from "./interfaces";
+import { SPItem } from "../Backend/Items/spItems";
 import { ParserLocation } from "./interfaces";
 
 export function purgeCalls(item: SPItem, file: string): void {

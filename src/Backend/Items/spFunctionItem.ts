@@ -14,7 +14,8 @@ import { URI } from "vscode-uri";
 import { basename } from "path";
 
 import { descriptionToMD } from "../../spUtils";
-import { SPItem, FunctionParam } from "./spItems";
+import { SPItem } from "./spItems";
+import { FunctionParam } from "../../Parser/interfaces";
 
 export class FunctionItem implements SPItem {
   name: string;

@@ -1,8 +1,13 @@
 ﻿import { spParserArgs } from "./spParser";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
-import { ParsedParam, ParsedID, ParserLocation } from "./interfaces";
+import {
+  ParsedParam,
+  ParsedID,
+  ParserLocation,
+  ProcessedParams,
+  FunctionParam,
+} from "./interfaces";
 import { parsedLocToRange } from "./utils";
-import { FunctionParam } from "../Backend/Items/spItems";
 import { processDocStringComment } from "./processComment";
 
 export function readFunction(
@@ -35,11 +40,6 @@ export function readFunction(
   );
   parserArgs.fileItems.set(id.id, functionItem);
   return;
-}
-
-interface ProcessedParams {
-  processedParams: FunctionParam[];
-  details: string;
 }
 
 function processFunctionParams(params: ParsedParam[] | null): ProcessedParams {

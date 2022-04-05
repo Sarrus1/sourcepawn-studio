@@ -172,3 +172,13 @@ export interface ParsedParam {
    */
   init?: string[] | null;
 }
+
+export interface ProcessedParams {
+  processedParams: FunctionParam[];
+  details: string;
+}
+
+export interface FunctionParam {
+  label: string;
+  documentation: string;
+}
