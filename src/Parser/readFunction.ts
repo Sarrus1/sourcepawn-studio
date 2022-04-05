@@ -9,6 +9,7 @@ import {
 } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
+import { addVariableItem } from "./addVariableItem2";
 
 export function readFunction(
   parserArgs: spParserArgs,
@@ -39,6 +40,7 @@ export function readFunction(
     accessModifiers
   );
   parserArgs.fileItems.set(id.id, functionItem);
+  addParamsAsVariables(parserArgs, params, functionItem);
   return;
 }
 
@@ -50,9 +52,8 @@ function processFunctionParams(params: ParsedParam[] | null): ProcessedParams {
   let details = "";
   params.forEach((e) => {
     // Handle "..." tokens.
-    const id = e.id === "..." ? "..." : e.id.id;
     const param: FunctionParam = {
-      label: id,
+      label: e.id.id,
       documentation: "",
     };
     processedParams.push(param);
@@ -66,7 +67,35 @@ function processFunctionParams(params: ParsedParam[] | null): ProcessedParams {
       e.parameterType && e.parameterType.name
         ? e.parameterType.name.id + e.parameterType.modifier
         : "";
-    details += processedDeclType + processedType + id + ", ";
+    details += processedDeclType + processedType + e.id.id + ", ";
   });
   return { processedParams, details };
+}
+
+function addParamsAsVariables(
+  parserArgs: spParserArgs,
+  params: ParsedParam[] | null,
+  parent: FunctionItem
+): void {
+  if (!params) {
+    return;
+  }
+
+  params.forEach((e) => {
+    let processedDeclType = "";
+    if (typeof e.declarationType === "string") {
+      processedDeclType = e.declarationType + " ";
+    } else if (Array.isArray(e.declarationType)) {
+      processedDeclType = e.declarationType.join(" ") + " ";
+    }
+    addVariableItem(
+      parserArgs,
+      e.id.id,
+      processedDeclType,
+      parsedLocToRange(e.id.loc),
+      parent,
+      "",
+      e.id.id + parent.name
+    );
+  });
 }

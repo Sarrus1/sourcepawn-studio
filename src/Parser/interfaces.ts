@@ -165,7 +165,7 @@ export interface ParsedParam {
   /**
    * Id of the parsed parameter.
    */
-  id: ParsedID | "...";
+  id: ParsedID;
 
   /**
    * Default value of the parameter if it exists.

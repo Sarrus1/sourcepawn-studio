@@ -58,7 +58,7 @@ function readTypeDefBody(
   }
   return body[0].map((e) => {
     // Handle "..." tokens.
-    const id = e.id === "..." ? "..." : e.id.id;
+    const id = e.id.id;
     return e.parameterType ? e.parameterType.name.id + " " + id : "";
   });
 }
