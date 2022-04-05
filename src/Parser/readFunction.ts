@@ -7,7 +7,7 @@ import { processDocStringComment } from "./processComment";
 
 export function readFunction(
   parserArgs: spParserArgs,
-  accessModifier: string[] | null,
+  accessModifiers: string[] | null,
   returnType: ParsedID | null,
   id: ParsedID,
   loc: ParserLocation,
@@ -30,7 +30,8 @@ export function readFunction(
     range,
     returnType ? returnType.id : "",
     fullRange,
-    dep
+    dep,
+    accessModifiers
   );
   parserArgs.fileItems.set(id.id, functionItem);
   return;

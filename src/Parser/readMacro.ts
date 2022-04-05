@@ -33,7 +33,8 @@ export function readMacro(
     range,
     undefined,
     fullRange,
-    dep
+    dep,
+    undefined
   );
   parserArgs.fileItems.set(id.id, macroItem);
   return;
