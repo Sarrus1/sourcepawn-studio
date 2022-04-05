@@ -74,7 +74,7 @@ export class FunctionItem implements SPItem {
 
   toHover(): Hover {
     let filename: string = basename(this.filePath, ".inc");
-    if (this.description == "") {
+    if (!this.description) {
       return new Hover({ language: "sourcepawn", value: this.detail });
     }
     if (this.IsBuiltIn) {

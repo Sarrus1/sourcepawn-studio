@@ -23,7 +23,7 @@
   }
 
   function extractList(list, index) {
-    return list.map(function(element) { return element[index]; });
+    return list.map((e) => e[index]);
   }
 
   function buildList(head, tail, index) {
@@ -1359,8 +1359,13 @@ FunctionExpression
     }
 
 ParameterTypeDeclaration
-  = name:TypeIdentifier? ((":"__)/(__(("[]")+/"&")__)/__p)
-  {return name;}
+  = name:TypeIdentifier? modifier:((":"__)/(__(("[]")+/"&")__)/__p)
+    { 
+      return {
+        name, 
+        modifier: buildNestedArray(modifier)
+      };
+    }
 
 ParameterDeclarationType
   = declarationType:ConstToken __p { return declarationType}

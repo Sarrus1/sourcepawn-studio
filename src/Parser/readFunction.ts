@@ -1,6 +1,6 @@
 ﻿import { spParserArgs } from "./spParser";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
-import { ParsedFunctionParam, ParsedID, ParserLocation } from "./interfaces";
+import { ParsedParam, ParsedID, ParserLocation } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { FunctionParam } from "../Backend/Items/spItems";
 import { processDocStringComment } from "./processComment";
@@ -12,7 +12,7 @@ export function readFunction(
   id: ParsedID,
   loc: ParserLocation,
   docstring: string[] | undefined,
-  params: ParsedFunctionParam[] | null,
+  params: ParsedParam[] | null,
   body: any
 ): void {
   const range = parsedLocToRange(id.loc);
@@ -41,9 +41,7 @@ interface ProcessedParams {
   details: string;
 }
 
-function processFunctionParams(
-  params: ParsedFunctionParam[] | null
-): ProcessedParams {
+function processFunctionParams(params: ParsedParam[] | null): ProcessedParams {
   if (params === undefined || params === null) {
     return { processedParams: [], details: "" };
   }
@@ -61,7 +59,10 @@ function processFunctionParams(
     } else if (Array.isArray(e.declarationType)) {
       processedDeclType = e.declarationType.join(" ") + " ";
     }
-    let processedType = e.parameterType ? e.parameterType.id + " " : "";
+    const processedType =
+      e.parameterType && e.parameterType.name
+        ? e.parameterType.name.id + e.parameterType.modifier
+        : "";
     details += processedDeclType + processedType + e.id.id + ", ";
   });
   return { processedParams, details };

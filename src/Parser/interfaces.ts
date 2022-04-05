@@ -29,25 +29,35 @@ export interface ParseState {
  */
 export interface ParserLocation {
   source: any;
-  start: Start;
-  end: End;
+
+  /**
+   * The start location object returned by the Peggy.js generated parser.
+   */
+  start: ParserLocationDetails;
+
+  /**
+   * The end location object returned by the Peggy.js generated parser.
+   */
+  end: ParserLocationDetails;
 }
 
 /**
- * The start location object returned by the Peggy.js generated parser.
+ * The details of the parsed location.
  */
-export interface Start {
+export interface ParserLocationDetails {
+  /**
+   * The global offset of the location.
+   */
   offset: number;
-  line: number;
-  column: number;
-}
 
-/**
- * The end location object returned by the Peggy.js generated parser.
- */
-export interface End {
-  offset: number;
+  /**
+   * The line of the location.
+   */
   line: number;
+
+  /**
+   * The column of the location.
+   */
   column: number;
 }
 
@@ -55,8 +65,19 @@ export interface End {
  * A parsed enum member.
  */
 export interface ParsedEnumMember {
+  /**
+   * The id of the parsed enum member.
+   */
   id: string;
+
+  /**
+   * The location of the parsed enum member.
+   */
   loc: ParserLocation;
+
+  /**
+   * The trailing comment (if it exists) of the parsed enum member.
+   */
   doc: string | undefined;
 }
 
@@ -80,31 +101,67 @@ export interface DocString {
  * Body of a parsed TypeDef.
  */
 export interface TypeDefBody {
+  /**
+   * The return type of the parsed typedef.
+   */
   returnType: ParsedID;
-  params?: (ParamsEntity[] | null)[] | null;
+
+  /**
+   * The params of the typedef declaration.
+   */
+  params?: (ParsedParam[] | null)[] | null;
 }
 
 /**
- * Params of a TypeDef.
+ * Parsed variable declaration.
  */
-export interface ParamsEntity {
-  type: string;
-  declarationType?: null;
-  parameterType: ParsedID;
-  init?: null;
-  id: ParsedID;
-}
-
-export interface VariableDeclarations {
+export interface VariableDeclaration {
   type: string;
   id: ParsedID;
   init?: null;
 }
 
-export interface ParsedFunctionParam {
+/**
+ * Parsed type of a parsed parameter.
+ */
+export interface ParameterType {
+  /**
+   * Modifier of the parsed parameter (such as & or []).
+   */
+  modifier: string | null;
+
+  /**
+   * Name of the type.
+   */
+  name: ParsedID;
+}
+
+/**
+ * Parsed parameter in a formal parameter declaration.
+ */
+export interface ParsedParam {
+  /**
+   * Type of the parsed statement.
+   */
   type: string;
+
+  /**
+   * Type of the parameter declaration (const, static, etc).
+   */
   declarationType?: string[] | string | null;
-  parameterType?: ParsedID;
-  init?: string[] | null;
+
+  /**
+   * Type of the parameter if it exists (int, char, etc).
+   */
+  parameterType?: ParameterType;
+
+  /**
+   * Id of the parsed parameter.
+   */
   id: ParsedID;
+
+  /**
+   * Default value of the parameter if it exists.
+   */
+  init?: string[] | null;
 }

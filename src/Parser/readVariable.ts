@@ -1,6 +1,6 @@
 ﻿import { spParserArgs } from "./spParser";
 import { VariableItem } from "../Backend/Items/spVariableItem";
-import { ParsedID, VariableDeclarations } from "./interfaces";
+import { ParsedID, VariableDeclaration } from "./interfaces";
 import { globalIdentifier, globalItem } from "../Misc/spConstants";
 import { parsedLocToRange } from "./utils";
 import { SPItem } from "../Backend/Items/spItems";
@@ -9,7 +9,7 @@ export function readVariable(
   parserArgs: spParserArgs,
   declarationType: string[] | null,
   type: ParsedID | null,
-  declarations: VariableDeclarations[] | null,
+  declarations: VariableDeclaration[] | null,
   docstring: string | null,
   parent: SPItem = globalItem
 ): void {

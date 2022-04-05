@@ -1,7 +1,7 @@
 ﻿import { spParserArgs } from "./spParser";
 import { TypeDefItem } from "../Backend/Items/spTypedefItem";
 import {
-  ParamsEntity,
+  ParsedParam,
   ParsedID,
   ParserLocation,
   TypeDefBody,
@@ -44,11 +44,11 @@ export function readTypeDef(
 
 /**
  * Extract variables from a TypeDef's body.
- * @param  {(ParamsEntity[]|null)[]|null} body
+ * @param  {(ParsedParam[]|null)[]|null} body
  * @returns string
  */
 function readTypeDefBody(
-  body: (ParamsEntity[] | null)[] | null
+  body: (ParsedParam[] | null)[] | null
 ): string[] | undefined {
   if (!body) {
     return undefined;
@@ -56,5 +56,7 @@ function readTypeDefBody(
   if (body.length === 0) {
     return undefined;
   }
-  return body[0].map((e) => e.parameterType.id + " " + e.id.id);
+  return body[0].map((e) =>
+    e.parameterType ? e.parameterType.name.id + " " + e.id.id : ""
+  );
 }
