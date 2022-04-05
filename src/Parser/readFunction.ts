@@ -22,7 +22,7 @@ export function readFunction(
   const processedReturnType = returnType && returnType.id ? returnType.id : "";
   const functionItem = new FunctionItem(
     id.id,
-    `${processedReturnType} ${id.id}(${details.replace(/, $/, "")})`,
+    `${processedReturnType} ${id.id}(${details.replace(/, $/, "")})`.trim(),
     doc,
     processedParams,
     parserArgs.filePath,
@@ -49,8 +49,10 @@ function processFunctionParams(params: ParsedParam[] | null): ProcessedParams {
   const processedParams = [];
   let details = "";
   params.forEach((e) => {
+    // Handle "..." tokens.
+    const id = e.id === "..." ? "..." : e.id.id;
     const param: FunctionParam = {
-      label: e.id.id,
+      label: id,
       documentation: "",
     };
     processedParams.push(param);
@@ -64,7 +66,7 @@ function processFunctionParams(params: ParsedParam[] | null): ProcessedParams {
       e.parameterType && e.parameterType.name
         ? e.parameterType.name.id + e.parameterType.modifier
         : "";
-    details += processedDeclType + processedType + e.id.id + ", ";
+    details += processedDeclType + processedType + id + ", ";
   });
   return { processedParams, details };
 }

@@ -76,24 +76,24 @@ export class FunctionItem implements SPItem {
   }
 
   toHover(): Hover {
-    let filename: string = basename(this.filePath, ".inc");
+    let filename = basename(this.filePath, ".inc");
+    const value =
+      (this.accessModifiers && this.accessModifiers.length > 0
+        ? this.accessModifiers.join(" ")
+        : "") +
+      " " +
+      this.detail;
     if (!this.description) {
       return new Hover({
         language: "sourcepawn",
-        value:
-          (this.accessModifiers && this.accessModifiers.length > 0
-            ? this.accessModifiers.join(" ") + " "
-            : "") + this.detail,
+        value,
       });
     }
     if (this.IsBuiltIn) {
       return new Hover([
         {
           language: "sourcepawn",
-          value:
-            (this.accessModifiers && this.accessModifiers.length > 0
-              ? this.accessModifiers.join(" ") + " "
-              : "") + this.detail,
+          value,
         },
         `[Online Documentation](https://sourcemod.dev/#/${filename}/function.${this.name})`,
         descriptionToMD(
@@ -106,10 +106,7 @@ export class FunctionItem implements SPItem {
     return new Hover([
       {
         language: "sourcepawn",
-        value:
-          (this.accessModifiers && this.accessModifiers.length > 0
-            ? this.accessModifiers.join(" ") + " "
-            : "") + this.detail,
+        value,
       },
       descriptionToMD(
         `${this.description}${

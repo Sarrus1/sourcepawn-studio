@@ -85,7 +85,14 @@ export interface ParsedEnumMember {
  * Parsed define ID.
  */
 export interface ParsedID {
+  /**
+   * Name of the Identifier.
+   */
   id: string;
+
+  /**
+   * Location of the Identifier.
+   */
   loc: ParserLocation;
 }
 
@@ -158,7 +165,7 @@ export interface ParsedParam {
   /**
    * Id of the parsed parameter.
    */
-  id: ParsedID;
+  id: ParsedID | "...";
 
   /**
    * Default value of the parameter if it exists.
