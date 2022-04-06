@@ -949,12 +949,12 @@ Block
   = __ "{" body:(StatementList)? __ "}" {
       return {
         type: "BlockStatement",
-        body: optionalList(extractOptional(body, 0))
+        body: body
       };
     }
 
 StatementList
-  = head:Statement tail:(Statement)* { return buildList(head, tail, 1); }
+  = head:Statement tail:(Statement)* { return [head].concat(tail); }
 
 Initialiser
   = "=" !"=" __ expression:AssignmentExpression { return expression; }
@@ -1233,7 +1233,7 @@ VariableDeclaration
 GlobalVariableDeclaration
   = content:VariableDeclaration
   {
-    readVariable(args, content.variableDeclarationType, content.variableType, content.declarations, content.doc);
+    readVariable(args, content);
     //return {type: "GlobalVariableDeclaration", content};
   }
 

@@ -14,9 +14,7 @@ import { FileItems } from "../Backend/spFilesRepository";
 import { SPItem } from "../Backend/Items/spItems";
 import { State } from "./stateEnum";
 import { readLoopVariable } from "./readLoopVariable";
-import { readVariable } from "./readVariable";
 import { readProperty } from "./readProperty";
-import { readFunction } from "./readFunction";
 import { searchForReferencesInString } from "./searchForReferencesInString";
 import { handleReferenceInParser } from "./handleReferencesInParser";
 import { readMethodMap } from "./readMethodMap";
@@ -72,7 +70,6 @@ export function parseText(
   if (data === undefined) {
     return; // Asked to parse empty file
   }
-  let lines = data.split("\n");
   // Remove BOM if present
   if (data.charCodeAt(0) === 0xfeff) {
     data = data.substring(1);

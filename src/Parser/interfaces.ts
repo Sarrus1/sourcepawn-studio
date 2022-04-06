@@ -120,15 +120,6 @@ export interface TypeDefBody {
 }
 
 /**
- * Parsed variable declaration.
- */
-export interface VariableDeclaration {
-  type: string;
-  id: ParsedID;
-  init?: null;
-}
-
-/**
  * Parsed type of a parsed parameter.
  */
 export interface ParameterType {
@@ -181,4 +172,29 @@ export interface ProcessedParams {
 export interface FunctionParam {
   label: string;
   documentation: string;
+}
+
+/**
+ * Parsed variable declaration (list or single variable).
+ */
+export interface VariableDeclaration {
+  type: "VariableDeclaration";
+  variableDeclarationType: string[] | null;
+  variableType: ParsedID;
+  declarations: VariableDeclarator[];
+  doc: string | null;
+}
+
+/**
+ * Single variable of a list of variable.
+ */
+export interface VariableDeclarator {
+  type: "VariableDeclarator";
+  id: ParsedID;
+  init: any;
+}
+
+export interface FunctionBody {
+  type: "BlockStatement";
+  body: any[] | null;
 }

@@ -1,8 +1,8 @@
-﻿import { spParserArgs } from "./spParser";
+﻿import { Range } from "vscode";
+
+import { spParserArgs } from "./spParser";
 import { VariableItem } from "../Backend/Items/spVariableItem";
 import { SPItem } from "../Backend/Items/spItems";
-import { Range } from "vscode";
-import { parse } from "querystring";
 
 /**
  * Save a variable and generate the appropriate key for the Map it is stored in.

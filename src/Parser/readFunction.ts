@@ -6,6 +6,8 @@ import {
   ParserLocation,
   ProcessedParams,
   FunctionParam,
+  VariableDeclaration,
+  FunctionBody,
 } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
@@ -19,7 +21,7 @@ export function readFunction(
   loc: ParserLocation,
   docstring: string[] | undefined,
   params: ParsedParam[] | null,
-  body: any
+  body: FunctionBody
 ): void {
   const range = parsedLocToRange(id.loc);
   const fullRange = parsedLocToRange(loc);
@@ -41,7 +43,36 @@ export function readFunction(
   );
   parserArgs.fileItems.set(id.id, functionItem);
   addParamsAsVariables(parserArgs, params, functionItem);
+  eachRecursive(parserArgs, functionItem, body["body"]);
   return;
+}
+
+// This function handles arrays and objects
+function eachRecursive(
+  parserArgs: spParserArgs,
+  parent: FunctionItem,
+  arr: any[] | null
+) {
+  if (!arr) {
+    return;
+  }
+  for (let obj of arr) {
+    if (obj["type"] === "LocalVariableDeclaration") {
+      const decl = obj["content"] as VariableDeclaration;
+      decl.declarations.forEach((e) => {
+        const range = parsedLocToRange(e.id.loc);
+        addVariableItem(
+          parserArgs,
+          e.id.id,
+          decl.variableType ? decl.variableType.id : "",
+          range,
+          parent,
+          decl.doc,
+          e.id.id + parent.name
+        );
+      });
+    }
+  }
 }
 
 function processFunctionParams(params: ParsedParam[] | null): ProcessedParams {
