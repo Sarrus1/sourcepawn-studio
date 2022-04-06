@@ -43,34 +43,54 @@ export function readFunction(
   );
   parserArgs.fileItems.set(id.id, functionItem);
   addParamsAsVariables(parserArgs, params, functionItem);
-  eachRecursive(parserArgs, functionItem, body["body"]);
+  searchVariablesInBody(parserArgs, functionItem, body["body"]);
   return;
 }
 
-// This function handles arrays and objects
-function eachRecursive(
+function searchVariablesInBody(
   parserArgs: spParserArgs,
   parent: FunctionItem,
-  arr: any[] | null
+  arr
 ) {
   if (!arr) {
     return;
   }
-  for (let obj of arr) {
-    if (obj["type"] === "LocalVariableDeclaration") {
-      const decl = obj["content"] as VariableDeclaration;
-      decl.declarations.forEach((e) => {
-        const range = parsedLocToRange(e.id.loc);
-        addVariableItem(
-          parserArgs,
-          e.id.id,
-          decl.variableType ? decl.variableType.id : "",
-          range,
-          parent,
-          decl.doc,
-          e.id.id + parent.name
-        );
-      });
+  if (Array.isArray(arr)) {
+    for (let obj of arr) {
+      recursiveVariableSearch(parserArgs, parent, obj);
+    }
+  } else {
+    recursiveVariableSearch(parserArgs, parent, arr);
+  }
+}
+
+function recursiveVariableSearch(
+  parserArgs: spParserArgs,
+  parent: FunctionItem,
+  obj
+) {
+  if (!obj) {
+    return;
+  }
+  if (obj["type"] === "LocalVariableDeclaration") {
+    const decl = obj["content"] as VariableDeclaration;
+    decl.declarations.forEach((e) => {
+      const range = parsedLocToRange(e.id.loc);
+      addVariableItem(
+        parserArgs,
+        e.id.id,
+        decl.variableType ? decl.variableType.id : "",
+        range,
+        parent,
+        decl.doc,
+        e.id.id + parent.name
+      );
+    });
+    return;
+  }
+  for (let k in obj) {
+    if (typeof obj[k] == "object" && obj[k] !== null) {
+      searchVariablesInBody(parserArgs, parent, obj[k]);
     }
   }
 }
