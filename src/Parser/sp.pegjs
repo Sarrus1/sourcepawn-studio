@@ -1035,12 +1035,10 @@ IterationStatement
     body:Statement
     {
       return {
-      	1: "ForStatement",
         type: "ForStatement",
         init: {
-          type: "VariableDeclaration",
+          type: "ForLoopVariableDeclaration",
           declarations: declarations,
-          kind: "var"
         },
         test: extractOptional(test, 0),
         update: extractOptional(update, 0),
@@ -1071,9 +1069,8 @@ IterationStatement
       return {
         type: "ForInStatement",
         left: {
-          type: "VariableDeclaration",
-          declarations: declarations,
-          kind: "var"
+          type: "ForLoopVariableDeclaration",
+          declarations: declarations
         },
         right: right,
         body: body

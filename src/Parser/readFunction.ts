@@ -6,8 +6,8 @@ import {
   ParserLocation,
   ProcessedParams,
   FunctionParam,
-  VariableDeclaration,
   FunctionBody,
+  VariableDeclarator,
 } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
@@ -72,17 +72,31 @@ function recursiveVariableSearch(
   if (!obj) {
     return;
   }
+  let declarators: VariableDeclarator[],
+    variableType: string,
+    doc = "",
+    found = false;
+  if (obj["type"] === "ForLoopVariableDeclaration") {
+    declarators = obj["declarations"];
+    variableType = "int";
+    found = true;
+  }
   if (obj["type"] === "LocalVariableDeclaration") {
-    const decl = obj["content"] as VariableDeclaration;
-    decl.declarations.forEach((e) => {
+    declarators = obj.content.declarations;
+    variableType = obj.content.variableType ? obj.content.variableType.id : "";
+    doc = obj.content.doc;
+    found = true;
+  }
+  if (found) {
+    declarators.forEach((e) => {
       const range = parsedLocToRange(e.id.loc);
       addVariableItem(
         parserArgs,
         e.id.id,
-        decl.variableType ? decl.variableType.id : "",
+        variableType,
         range,
         parent,
-        decl.doc,
+        doc,
         e.id.id + parent.name
       );
     });
