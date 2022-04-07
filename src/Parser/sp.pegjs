@@ -898,26 +898,36 @@ DefineStatement
   = "#define" _p id:Identifier value:(_p AssignmentExpression) doc:_
   {
     readDefine(args, id, location(), value?value[1]["value"]:null, doc.join("").trim());
-    //return {type: "Define", id, value: value?value[0]:null}
+    return {type: "DefineStatement", id, value: value?value[0]:null}
   }
   /
   "#define" _p id:Identifier !"(" doc:_
   {
     readDefine(args, id, location(), null, doc.join("").trim());
-    //return {type: "Define", id, value:null}
+    return {type: "DefineStatement", id, value:null}
   }
 
 IncludeStatement
   = "#include" __ path:IncludePath 
   {
     readInclude(args, path);
+    return {
+      type: "IncludeStatement",
+      path
+    };
   }
 
 IncludePath = "<" path:([A-Za-z0-9\-_\/.])+ ">"{ return path.join("") }
   /"\"" path:([A-Za-z0-9\-_\/.])+ "\""{ return path.join("") }
 
 PragmaStatement
-  = "#pragma" __ value:[^\n]+ __ { return {type:"PragmaValue",value: value?value.join(""):null}}
+  = "#pragma" __ value:[^\n]+ __ 
+  { 
+    return {
+      type:"PragmaValue",
+      value: value?value.join(""):null
+    }
+  }
 
 OtherPreprocessorStatement
   = "#" name:(!("define" / "pragma" / "include")[A-Za-z0-9_]+) _ [^\n]*
@@ -1185,7 +1195,11 @@ MacroDeclaration
   = doc:__ "#define" _p id:Identifier value:("(" ( _ "%"[0-9]+ _ "," )* ( _ "%"[0-9]+ _ )? _ ")" [^\n]+) _
   {
     readMacro(args, id, location(), buildNestedArray(value), doc);
-    //return {type: "MacroDeclaration", id, value: value?value[0]:null}
+    return {
+      type: "MacroDeclaration",
+      id,
+      value: value?value[0]:null
+    }
   }
 
 VariableAccessModifier
@@ -1433,9 +1447,13 @@ FunctionBody
     }
 
 NativeForwardDeclaration
-  = doc:__ accessModifier:FunctionAccessModifiers* (NativeToken / ForwardToken) __p
+  = doc:__ accessModifier:FunctionAccessModifiers* token:(NativeToken / ForwardToken) __p
     returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
     "(" __ params:(FormalParameterList __)? ")" EOS
+    {
+      accessModifier.push(token)
+      readFunction(args, accessModifier, returnType, id, location(), doc, optionalList(extractOptional(params, 0)), null);
+    }
 
 // Take care of weird declaration in handles.inc
 UsingDeclaration

@@ -8,6 +8,7 @@ import {
   FunctionParam,
   FunctionBody,
   VariableDeclarator,
+  PreprocessorStatement,
 } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
@@ -19,9 +20,9 @@ export function readFunction(
   returnType: ParsedID | null,
   id: ParsedID,
   loc: ParserLocation,
-  docstring: string[] | undefined,
+  docstring: (string | PreprocessorStatement)[] | undefined,
   params: ParsedParam[] | null,
-  body: FunctionBody
+  body: FunctionBody | null
 ): void {
   const range = parsedLocToRange(id.loc);
   const fullRange = parsedLocToRange(loc);
@@ -43,6 +44,11 @@ export function readFunction(
   );
   parserArgs.fileItems.set(id.id, functionItem);
   addParamsAsVariables(parserArgs, params, functionItem);
+
+  if (body === null) {
+    // We are in a native or forward.
+    return;
+  }
   searchVariablesInBody(parserArgs, functionItem, body["body"]);
   return;
 }

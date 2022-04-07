@@ -198,3 +198,28 @@ export interface FunctionBody {
   type: "BlockStatement";
   body: any[] | null;
 }
+
+/**
+ * Parsed #pragma statement
+ */
+export interface PreprocessorStatement {
+  /**
+   * The type of the preprocessor statement ("PragmaValue" for exemple).
+   */
+  type: string;
+
+  /**
+   * The ID of the preprocessor statement. Only for "DefineStatement" and "MacroStatement".
+   */
+  id?: ParsedID;
+
+  /**
+   * The path of the preprocessor statement. Only for "IncludeStatement".
+   */
+  path?: string;
+
+  /**
+   * The value of the preprocessor statement.
+   */
+  value?: string;
+}
