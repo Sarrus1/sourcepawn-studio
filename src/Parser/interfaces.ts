@@ -187,7 +187,37 @@ export interface VariableDeclaration {
   variableDeclarationType: string[] | null;
   variableType: ParsedID;
   declarations: VariableDeclarator[];
-  doc: string | null;
+  doc: ParsedComment;
+}
+
+export interface PropertyDeclaration {
+  type: "PropertyDeclaration";
+  propertyType: ParsedID;
+  id: ParsedID;
+  doc: ParsedComment;
+  loc: ParserLocation;
+  body;
+}
+
+export interface MethodmapMethodDeclaration {
+  type: "MethodmapMethodDeclaration";
+  accessModifier: string[];
+  returnType: ParsedID;
+  loc: ParserLocation;
+  id: ParsedID;
+  params: ParsedParam[];
+  doc: ParsedComment;
+  body;
+}
+
+export interface MethodmapNativeForwardDeclaration {
+  type: "MethodmapNativeForwardDeclaration";
+  accessModifier: string[];
+  returnType: ParsedID;
+  loc: ParserLocation;
+  id: ParsedID;
+  params: ParsedParam[];
+  doc: ParsedComment;
 }
 
 /**
@@ -215,7 +245,7 @@ export interface FunctionBody {
 }
 
 /**
- * Parsed #pragma statement
+ * Parsed preprocessor statement
  */
 export interface PreprocessorStatement {
   /**
@@ -238,3 +268,5 @@ export interface PreprocessorStatement {
    */
   value?: string;
 }
+
+export type ParsedComment = (string | PreprocessorStatement)[] | undefined;

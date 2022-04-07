@@ -35,6 +35,7 @@ export function readEnumStruct(
     parsedLocToRange(id.loc),
     parsedLocToRange(loc)
   );
+  // TODO: Define separated enum members in the parser.
   parserArgs.fileItems.set(id.id, enumStructItem);
   body["body"].forEach((e: ParsedEnumStructMember) => {
     if (e["type"] === "FunctionDeclaration") {

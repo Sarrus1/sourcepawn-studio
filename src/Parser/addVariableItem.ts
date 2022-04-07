@@ -18,7 +18,7 @@ export function addVariableItem(
   type: string,
   range: Range,
   parent: SPItem,
-  desc: string,
+  docstring: string,
   key: string
 ): void {
   const variableItem = new VariableItem(
@@ -28,7 +28,7 @@ export function addVariableItem(
     range,
     type,
     undefined,
-    desc
+    docstring
   );
 
   parserArgs.fileItems.set(key, variableItem);

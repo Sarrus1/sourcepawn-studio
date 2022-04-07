@@ -9,7 +9,7 @@
 export function processDocStringComment(
   docstring: (string | PreprocessorStatement)[] | string | undefined
 ): DocString {
-  if (docstring === undefined || docstring.length === 0) {
+  if (!docstring) {
     return { doc: undefined, dep: undefined };
   }
   if (Array.isArray(docstring)) {

@@ -16,7 +16,6 @@ import { State } from "./stateEnum";
 import { readProperty } from "./readProperty";
 import { searchForReferencesInString } from "./searchForReferencesInString";
 import { handleReferenceInParser } from "./handleReferencesInParser";
-import { readMethodMap } from "./readMethodMap";
 import { purgeCalls, positiveRange, parentCounter } from "./utils";
 import { globalIdentifier, globalItem } from "../Misc/spConstants";
 import { ParseState } from "./interfaces";
@@ -241,14 +240,6 @@ export class Parser {
     if (line === undefined) return;
 
     let match = line.match(/^\s*[^\/\/\s]+(\/\/.+)$/);
-
-    match = line.match(
-      /^\s*methodmap\s+([a-zA-Z][a-zA-Z0-9_]*)(?:\s*<\s*([a-zA-Z][a-zA-Z0-9_]*))?/
-    );
-    if (match) {
-      readMethodMap(this, match, line);
-      return;
-    }
 
     // Match properties
     match = line.match(/^\s*property\s+([a-zA-Z]\w*)\s+([a-zA-Z]\w*)/);

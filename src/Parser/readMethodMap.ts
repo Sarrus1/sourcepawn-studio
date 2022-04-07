@@ -1,36 +1,77 @@
-﻿import { Parser } from "./spParser";
-import { State } from "./stateEnum";
-import { parseDocComment } from "./parseDocComment";
+﻿import { spParserArgs } from "./spParser";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
-import { CompletionItemKind } from "vscode";
 import { globalItem } from "../Misc/spConstants";
 import { ConstantItem } from "../Backend/Items/spConstantItem";
+import {
+  MethodmapMethodDeclaration,
+  MethodmapNativeForwardDeclaration,
+  ParsedID,
+  ParserLocation,
+  PreprocessorStatement,
+  PropertyDeclaration,
+} from "./interfaces";
+import { parsedLocToRange } from "./utils";
+import { processDocStringComment } from "./processComment";
+import { readFunctionAndMethod } from "./readFunctionAndMethod";
 
-export function readMethodMap(
-  parser: Parser,
-  match: RegExpMatchArray,
-  line: string
+export function readMethodmap(
+  parserArgs: spParserArgs,
+  id: ParsedID | undefined,
+  loc: ParserLocation,
+  inherit: string | undefined,
+  docstring: (string | PreprocessorStatement)[] | undefined,
+  body: {
+    type: "MethodmapBody";
+    body: (
+      | PropertyDeclaration
+      | MethodmapMethodDeclaration
+      | MethodmapNativeForwardDeclaration
+    )[];
+  }
 ): void {
-  parser.state.push(State.Methodmap);
-  parser.state_data = {
-    name: match[1],
-  };
-  let { description, params } = parseDocComment(parser);
-  let range = parser.makeDefinitionRange(match[1], line);
-  let parent =
-    parser.items.find(
-      (e) => e.kind === CompletionItemKind.Class && e.name === match[2]
-    ) ||
-    parser.fileItems.get(match[2]) ||
-    globalItem;
-  var methodMapCompletion = new MethodMapItem(
-    match[1],
-    parent as MethodMapItem | ConstantItem,
-    line.trim(),
-    description,
-    parser.filePath,
+  const range = parsedLocToRange(id.loc);
+  const fullRange = parsedLocToRange(loc);
+  const { doc, dep } = processDocStringComment(docstring);
+  let parent: MethodMapItem | ConstantItem = globalItem;
+  if (inherit !== undefined) {
+    // TODO: Add inherit parsing
+    parent = globalItem;
+  }
+  const methodmapItem = new MethodMapItem(
+    id.id,
+    parent,
+    `methodmap ${id.id}${inherit ? " < " + inherit : ""}`,
+    doc,
+    parserArgs.filePath,
     range,
-    parser.IsBuiltIn
+    parserArgs.IsBuiltIn
   );
-  parser.fileItems.set(match[1], methodMapCompletion);
+  parserArgs.fileItems.set(id.id, methodmapItem);
+  body["body"].forEach((e) => {
+    if (e.type === "MethodmapMethodDeclaration") {
+      readFunctionAndMethod(
+        parserArgs,
+        e.accessModifier,
+        e.returnType,
+        e.id,
+        e.loc,
+        e.doc,
+        e.params,
+        e.body,
+        methodmapItem
+      );
+    } else if (e.type === "MethodmapNativeForwardDeclaration") {
+      readFunctionAndMethod(
+        parserArgs,
+        e.accessModifier,
+        e.returnType,
+        e.id,
+        e.loc,
+        e.doc,
+        e.params,
+        null,
+        methodmapItem
+      );
+    }
+  });
 }

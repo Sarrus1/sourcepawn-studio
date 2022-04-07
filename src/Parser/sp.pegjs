@@ -8,6 +8,7 @@
   import { readVariable } from "./readVariable";
   import { readFunctionAndMethod } from "./readFunctionAndMethod";
   import { readEnumStruct } from "./readEnumStruct";
+  import { readMethodmap } from "./readMethodmap";
 
   var TYPES_TO_PROPERTY_NAMES = {
     CallExpression:   "callee",
@@ -1163,10 +1164,6 @@ LabelledStatement
       return { type: "LabeledStatement", label: label, body: body };
     }
 
-PropertyStatement
-  = doc:__ PropertyToken __p propertyType:TypeIdentifier __p id:Identifier __
-  "{" __ ((FunctionDeclaration / NativeForwardDeclaration) __)* "}" __
-
 // ----- A.5 Functions and Programs -----
 
 AliasDeclaration
@@ -1330,21 +1327,79 @@ StructDeclaration
 
 MethodmapDeclaration
   = doc:__ MethodmapToken __p id:Identifier __ inherit:MethodmapInherit?
-    "{" __ body:MethodmapBody __ "}" EOS { 
-      return {
-        type:"methodmap",
-        id: id,
-        inherit: inherit,
-        body
-     };
-    }
+  "{" body:MethodmapBody __ "}" EOS 
+  {
+    readMethodmap(args, id, location(), inherit, doc, body)
+    return {
+      type:"MethodmapDeclaration",
+      id: id,
+      inherit: inherit,
+      body
+    };
+  }
 
 MethodmapInherit
   =  __ "<" __ id:Identifier __
-  {return id}
+  {
+    return id;
+  }
 
 MethodmapBody
-  = ((PropertyStatement / FunctionDeclaration / NativeForwardDeclaration) __)*
+  = body:(PropertyDeclaration / MethodmapMethodDeclaration / MethodmapNativeForwardDeclaration)*
+  {
+    return {
+      type: "MethodmapBody",
+      body
+    }
+  }
+
+PropertyDeclaration
+  = doc:__ PropertyToken __p propertyType:TypeIdentifier __p id:Identifier __
+  "{" __ body:(MethodmapMethodDeclaration / MethodmapNativeForwardDeclaration)* __ "}" __
+  {
+    return {
+      type: "PropertyDeclaration",
+      propertyType,
+      id,
+      doc,
+      loc: location(),
+      body
+    }
+  }
+
+MethodmapMethodDeclaration
+  = doc:__ accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
+    "(" __ params:(FormalParameterList __)? ")" __
+    body:Block
+    {
+      return {
+        type: "MethodmapMethodDeclaration",
+        accessModifier,
+        returnType,
+        loc: location(),
+        id,
+        params: optionalList(extractOptional(params, 0)),
+        body,
+        doc
+      };
+    }
+
+MethodmapNativeForwardDeclaration
+  = doc:__ accessModifier:FunctionAccessModifiers* token:(NativeToken / ForwardToken) __p
+    returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
+    "(" __ params:(FormalParameterList __)? ")" EOS
+    {
+      accessModifier.push(token)
+      return {
+        type: "MethodmapNativeForwardDeclaration",
+        accessModifier,
+        returnType,
+        loc: location(),
+        id,
+        params: optionalList(extractOptional(params, 0)),
+        doc
+      }
+    }
 
 FunctionAccessModifiers
   = name:(PublicToken / StockToken / StaticToken) __p

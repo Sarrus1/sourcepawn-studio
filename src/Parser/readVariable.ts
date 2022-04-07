@@ -5,6 +5,7 @@ import { parsedLocToRange } from "./utils";
 import { addVariableItem } from "./addVariableItem";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { ConstantItem } from "../Backend/Items/spConstantItem";
+import { processDocStringComment } from "./processComment";
 
 export function readVariable(
   parserArgs: spParserArgs,
@@ -13,13 +14,15 @@ export function readVariable(
 ): void {
   content.declarations.forEach((e) => {
     const range = parsedLocToRange(e.id.loc);
+    const { doc, dep } = processDocStringComment(content.doc);
+
     addVariableItem(
       parserArgs,
       e.id.id,
       content.variableType ? content.variableType.id : "",
       range,
       globalItem,
-      content.doc,
+      doc,
       e.id.id + parent.name
     );
   });
