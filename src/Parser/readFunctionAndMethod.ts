@@ -13,8 +13,12 @@ import {
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
 import { addVariableItem } from "./addVariableItem";
+import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
+import { globalIdentifier, globalItem } from "../Misc/spConstants";
+import { ConstantItem } from "../Backend/Items/spConstantItem";
+import { MethodItem } from "../Backend/Items/spMethodItem";
 
-export function readFunction(
+export function readFunctionAndMethod(
   parserArgs: spParserArgs,
   accessModifiers: string[] | null,
   returnType: ParsedID | null,
@@ -22,40 +26,60 @@ export function readFunction(
   loc: ParserLocation,
   docstring: (string | PreprocessorStatement)[] | undefined,
   params: ParsedParam[] | null,
-  body: FunctionBody | null
+  body: FunctionBody | null,
+  parent: EnumStructItem | ConstantItem = globalItem
 ): void {
   const range = parsedLocToRange(id.loc);
   const fullRange = parsedLocToRange(loc);
   const { doc, dep } = processDocStringComment(docstring);
   const { processedParams, details } = processFunctionParams(params);
   const processedReturnType = returnType && returnType.id ? returnType.id : "";
-  const functionItem = new FunctionItem(
-    id.id,
-    `${processedReturnType} ${id.id}(${details.replace(/, $/, "")})`.trim(),
-    doc,
-    processedParams,
-    parserArgs.filePath,
-    parserArgs.IsBuiltIn,
-    range,
-    returnType ? returnType.id : "",
-    fullRange,
-    dep,
-    accessModifiers
-  );
-  parserArgs.fileItems.set(id.id, functionItem);
-  addParamsAsVariables(parserArgs, params, functionItem);
+  let item: FunctionItem | MethodItem;
+  let key: string = id.id;
+  if (parent.name !== globalIdentifier) {
+    item = new MethodItem(
+      parent as EnumStructItem,
+      id.id,
+      `${processedReturnType} ${id.id}(${details.replace(/, $/, "")})`.trim(),
+      doc,
+      processedParams,
+      returnType ? returnType.id : "",
+      parserArgs.filePath,
+      range,
+      parserArgs.IsBuiltIn,
+      fullRange,
+      dep
+    );
+    key += parent.name;
+  } else {
+    item = new FunctionItem(
+      id.id,
+      `${processedReturnType} ${id.id}(${details.replace(/, $/, "")})`.trim(),
+      doc,
+      processedParams,
+      parserArgs.filePath,
+      parserArgs.IsBuiltIn,
+      range,
+      returnType ? returnType.id : "",
+      fullRange,
+      dep,
+      accessModifiers
+    );
+  }
+  parserArgs.fileItems.set(key, item);
+  addParamsAsVariables(parserArgs, params, item);
 
   if (body === null) {
     // We are in a native or forward.
     return;
   }
-  searchVariablesInBody(parserArgs, functionItem, body["body"]);
+  searchVariablesInBody(parserArgs, item, body["body"]);
   return;
 }
 
 function searchVariablesInBody(
   parserArgs: spParserArgs,
-  parent: FunctionItem,
+  parent: FunctionItem | MethodItem,
   arr
 ) {
   if (!arr) {
@@ -72,7 +96,7 @@ function searchVariablesInBody(
 
 function recursiveVariableSearch(
   parserArgs: spParserArgs,
-  parent: FunctionItem,
+  parent: FunctionItem | MethodItem,
   obj
 ) {
   if (!obj) {
@@ -146,7 +170,7 @@ function processFunctionParams(params: ParsedParam[] | null): ProcessedParams {
 function addParamsAsVariables(
   parserArgs: spParserArgs,
   params: ParsedParam[] | null,
-  parent: FunctionItem
+  parent: FunctionItem | MethodItem
 ): void {
   if (!params) {
     return;

@@ -82,6 +82,11 @@ export interface ParsedEnumMember {
 }
 
 /**
+ * A parsed enum struct member.
+ */
+export type ParsedEnumStructMember = FunctionDeclaration | VariableDeclaration;
+
+/**
  * Parsed define ID.
  */
 export interface ParsedID {
@@ -192,6 +197,16 @@ export interface VariableDeclarator {
   type: "VariableDeclarator";
   id: ParsedID;
   init: any;
+}
+
+export interface FunctionDeclaration {
+  type: "FunctionDeclaration";
+  accessModifier: string[];
+  returnType: ParsedID | undefined;
+  id: ParsedID;
+  loc: ParserLocation;
+  params: ParsedParam[];
+  body: FunctionBody;
 }
 
 export interface FunctionBody {

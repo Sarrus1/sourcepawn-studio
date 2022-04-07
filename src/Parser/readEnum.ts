@@ -4,13 +4,13 @@ import { Range } from "vscode";
 import { spParserArgs } from "./spParser";
 import { EnumItem } from "../Backend/Items/spEnumItem";
 import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
-import { ParserLocation, ParsedEnumMember } from "./interfaces";
+import { ParserLocation, ParsedEnumMember, ParsedID } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 
 /**
  * Callback for a parsed enum.
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {ParsedEnumMember|undefined} id  The id of the enum.
+ * @param  {ParsedID|undefined} id  The id of the enum.
  * @param  {ParserLocation} loc The location of the enum.
  * @param  {ParsedEnumMember[]} body  The members of the enum.
  * @param  {string} doc The doc comment above the enum.
@@ -19,7 +19,7 @@ import { parsedLocToRange } from "./utils";
  */
 export function readEnum(
   parserArgs: spParserArgs,
-  id: ParsedEnumMember | undefined,
+  id: ParsedID | undefined,
   loc: ParserLocation,
   body: ParsedEnumMember[],
   doc: string,
@@ -52,13 +52,13 @@ export function readEnum(
 /**
  * Generate the name and the range of a potential anonymous enum.
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {ParsedEnumMember|undefined} id  The id of the enum.
+ * @param  {ParsedID|undefined} id  The id of the enum.
  * @param  {ParserLocation} loc The location of the enum.
  * @returns Range
  */
 function getEnumNameAndRange(
   parserArgs: spParserArgs,
-  id: ParsedEnumMember | undefined,
+  id: ParsedID | undefined,
   loc: ParserLocation
 ): { name: string; nameRange: Range } {
   let name: string;

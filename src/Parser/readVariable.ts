@@ -1,13 +1,15 @@
 ﻿import { spParserArgs } from "./spParser";
-import { VariableItem } from "../Backend/Items/spVariableItem";
 import { VariableDeclaration } from "./interfaces";
-import { globalIdentifier, globalItem } from "../Misc/spConstants";
+import { globalItem } from "../Misc/spConstants";
 import { parsedLocToRange } from "./utils";
 import { addVariableItem } from "./addVariableItem";
+import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
+import { ConstantItem } from "../Backend/Items/spConstantItem";
 
 export function readVariable(
   parserArgs: spParserArgs,
-  content: VariableDeclaration
+  content: VariableDeclaration,
+  parent: EnumStructItem | ConstantItem = globalItem
 ): void {
   content.declarations.forEach((e) => {
     const range = parsedLocToRange(e.id.loc);
@@ -18,7 +20,7 @@ export function readVariable(
       range,
       globalItem,
       content.doc,
-      e.id.id + globalIdentifier
+      e.id.id + parent.name
     );
   });
   return;

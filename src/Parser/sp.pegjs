@@ -6,7 +6,8 @@
   import { readTypeDef } from "./readTypeDef";
   import { readTypeSet } from "./readTypeSet";
   import { readVariable } from "./readVariable";
-  import { readFunction } from "./readFunction";
+  import { readFunctionAndMethod } from "./readFunctionAndMethod";
+  import { readEnumStruct } from "./readEnumStruct";
 
   var TYPES_TO_PROPERTY_NAMES = {
     CallExpression:   "callee",
@@ -1175,20 +1176,27 @@ AliasDeclaration
 
 EnumStructDeclaration
   = doc:__ EnumStructToken __p id:Identifier __
-  "{" __ body:EnumStructBody __ "}" { 
-      return {
-        type:"EnumStruct",
-        id,
-        body
-     };
-    }
+  "{" __ body:EnumStructBody __ "}" 
+  {
+    readEnumStruct(args, id, location(), doc, body);
+    return {
+      type:"EnumStruct",
+      id,
+      body
+    };
+  }
 
 EnumStructBody
-  = body:SourceElements? {
+  = body:EnumStructMembers? {
       return {
-        type: "BlockStatement",
-        body: optionalList(body)
+        type: "EnumStructBody",
+        body
       };
+    }
+
+EnumStructMembers
+  = head:(VariableDeclaration / FunctionDeclaration) tail:(VariableDeclaration / FunctionDeclaration)* {
+      return [head].concat(tail);
     }
 
 MacroDeclaration
@@ -1352,8 +1360,16 @@ FunctionDeclaration
     "(" __ params:(FormalParameterList __)? ")" __
     body:Block
     {
-      readFunction(args, accessModifier, returnType, id, location(), doc.join("").trim(), optionalList(extractOptional(params, 0)), body);
-      //return {type: "FunctionDeclaration",accessModifier: accessModifier,returnType: returnType,id: id,params: optionalList(extractOptional(params, 0)),body: body};
+      readFunctionAndMethod(args, accessModifier, returnType, id, location(), doc.join("").trim(), optionalList(extractOptional(params, 0)), body);
+      return {
+        type: "FunctionDeclaration",
+        accessModifier,
+        returnType,
+        loc: location(),
+        id,
+        params: optionalList(extractOptional(params, 0)),
+        body
+      };
     }
 
 FunctionExpression
@@ -1452,7 +1468,7 @@ NativeForwardDeclaration
     "(" __ params:(FormalParameterList __)? ")" EOS
     {
       accessModifier.push(token)
-      readFunction(args, accessModifier, returnType, id, location(), doc, optionalList(extractOptional(params, 0)), null);
+      readFunctionAndMethod(args, accessModifier, returnType, id, location(), doc, optionalList(extractOptional(params, 0)), null);
     }
 
 // Take care of weird declaration in handles.inc
