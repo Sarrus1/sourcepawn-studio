@@ -12,7 +12,7 @@ import {
 } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
-import { addVariableItem } from "./addVariableItem2";
+import { addVariableItem } from "./addVariableItem";
 
 export function readFunction(
   parserArgs: spParserArgs,

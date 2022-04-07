@@ -3,7 +3,7 @@ import { VariableItem } from "../Backend/Items/spVariableItem";
 import { VariableDeclaration } from "./interfaces";
 import { globalIdentifier, globalItem } from "../Misc/spConstants";
 import { parsedLocToRange } from "./utils";
-import { addVariableItem } from "./addVariableItem2";
+import { addVariableItem } from "./addVariableItem";
 
 export function readVariable(
   parserArgs: spParserArgs,
