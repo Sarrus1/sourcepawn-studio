@@ -13,7 +13,6 @@ import { ItemsRepository } from "../Backend/spItemsRepository";
 import { FileItems } from "../Backend/spFilesRepository";
 import { SPItem } from "../Backend/Items/spItems";
 import { State } from "./stateEnum";
-import { readLoopVariable } from "./readLoopVariable";
 import { readProperty } from "./readProperty";
 import { searchForReferencesInString } from "./searchForReferencesInString";
 import { handleReferenceInParser } from "./handleReferencesInParser";
@@ -242,13 +241,6 @@ export class Parser {
     if (line === undefined) return;
 
     let match = line.match(/^\s*[^\/\/\s]+(\/\/.+)$/);
-
-    // Match for loop iteration variable only in the current file
-    match = line.match(/^\s*(?:for\s*\(\s*int\s+)([A-Za-z0-9_]*)/);
-    if (match) {
-      readLoopVariable(this, match, line);
-      return;
-    }
 
     match = line.match(
       /^\s*methodmap\s+([a-zA-Z][a-zA-Z0-9_]*)(?:\s*<\s*([a-zA-Z][a-zA-Z0-9_]*))?/
