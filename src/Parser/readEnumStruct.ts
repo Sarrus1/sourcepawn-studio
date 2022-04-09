@@ -9,7 +9,7 @@ import { parsedLocToRange } from "./utils";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { processDocStringComment } from "./processComment";
 import { readFunctionAndMethod } from "./readFunctionAndMethod";
-import { readVariable } from "./readVariable";
+import { readProperty } from "./readProperty";
 
 /**
  * Callback for a parsed enum struct.
@@ -50,7 +50,14 @@ export function readEnumStruct(
         enumStructItem
       );
     } else if (e["type"] === "VariableDeclaration") {
-      readVariable(parserArgs, e, enumStructItem);
+      readProperty(
+        parserArgs,
+        e.declarations[0].id,
+        undefined,
+        enumStructItem,
+        e.doc,
+        e.variableType
+      );
     }
   });
 }
