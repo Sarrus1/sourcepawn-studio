@@ -36,9 +36,9 @@ export async function run(args: any) {
   let smDir = join(outputDir, "addons/sourcemod/scripting/include");
   let spComp: string;
   if (Platform === "win32") {
-    spComp = join(outputDir, "addons/sourcemod/scripting/spcomp.exe");
+    spComp = join(outputDir, "addons/sourcemod/scripting/spcomp64.exe");
   } else {
-    spComp = join(outputDir, "addons/sourcemod/scripting/spcomp");
+    spComp = join(outputDir, "addons/sourcemod/scripting/spcomp64");
   }
   if (spCompPath != "" || smHome != "") {
     window
