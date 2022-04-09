@@ -1459,17 +1459,22 @@ VariableInitialisationOld
   }
 
 EnumDeclaration
-  = doc:__ EnumToken id:(__p Identifier)? (":"__)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
+  = doc:__ content:EnumDeclarationNoDoc
+  {
+    readEnum(args, content.id, content.loc, content.body, doc.join("").trim(), content.lastDoc);
+    return content;
+  }
+
+EnumDeclarationNoDoc
+  = EnumToken id:(__p Identifier)? (":"__)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
   "{" __ body:EnumBody? lastDoc:__ "}" EOS
   { 
-    readEnum(args, id ? id[1] : null, location(), body, doc, lastDoc.join("").trim());
     return {
-      doc: doc.join("").trim(),
-      type:"Enum",
+      type: "EnumDeclaration",
       id: id ? id[1] : null,
       loc: location(),
       body,
-      lastDoc:lastDoc.join("").trim()
+      lastDoc: lastDoc.join("").trim()
     };
   }
  
