@@ -1338,13 +1338,20 @@ EnumStructMembers
   }
 
 MacroDeclaration
-  = doc:__ "#define" _p id:Identifier value:("(" ( _ "%"[0-9]+ _ "," )* ( _ "%"[0-9]+ _ )? _ ")" [^\n]+) _
+  = doc:__ content:MacroDeclarationNoDoc
   {
-    readMacro(args, id, location(), buildNestedArray(value), doc);
+    readMacro(args, content.id, content.loc, content.value, doc);
+    return content;
+  }
+
+MacroDeclarationNoDoc
+  = "#define" _p id:Identifier value:("(" ( _ "%"[0-9]+ _ "," )* ( _ "%"[0-9]+ _ )? _ ")" [^\n]+) _
+  {
     return {
       type: "MacroDeclaration",
       id,
-      value: value?value[0]:null
+      loc: location(),
+      value: buildNestedArray(value)
     };
   }
 
