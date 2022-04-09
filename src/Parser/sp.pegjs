@@ -1505,12 +1505,20 @@ EnumBody
   }
 
 TypeDefDeclaration
-  = doc:__ TypeDefToken __p id:TypeIdentifier __ "=" __ body:TypeDefBody
+  = doc:__ content:TypeDefDeclarationNoDoc
   {
-    readTypeDef(args, id, location(), body, doc);
+    readTypeDef(args, content.id, content.loc, content.body, doc);
+    return content;
+  }
+
+TypeDefDeclarationNoDoc
+  = TypeDefToken __p id:TypeIdentifier __ "=" __ body:TypeDefBody
+  {
     return {
       type: "TypeDefStatement",
-      id
+      loc: location(),
+      id,
+      body
     };
   }
 
@@ -1525,13 +1533,20 @@ TypeDefBody
   }
 
 TypeSetDeclaration
-  = doc:__ TypeSetToken __p id:TypeIdentifier
+  = doc:__ content:TypeSetDeclarationNoDoc
+  {
+    readTypeSet(args, content.id, content.loc, doc);
+    return content;
+  }
+
+TypeSetDeclarationNoDoc
+  = TypeSetToken __p id:TypeIdentifier
   __ "{" __ params:( TypeDefBody __ )* "}" EOS
   {
-    readTypeSet(args, id, location(), doc);
   	return {
       type: "TypesetDeclaration",
       id,
+      loc: location(),
       params
     };
   }
