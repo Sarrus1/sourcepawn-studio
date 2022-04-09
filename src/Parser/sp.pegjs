@@ -1550,14 +1550,21 @@ StructDeclaration
   )
 
 MethodmapDeclaration
-  = doc:__ MethodmapToken __p id:Identifier __ inherit:MethodmapInherit?
+  = doc:__ content:MethodmapDeclarationNoDoc
+  {
+    readMethodmap(args, content.id, content.loc, content.inherit, doc, content.body);
+    return content;
+  }
+
+MethodmapDeclarationNoDoc
+  = MethodmapToken __p id:Identifier __ inherit:MethodmapInherit?
   "{" body:MethodmapBody __ "}" EOS 
   {
-    readMethodmap(args, id, location(), inherit, doc, body)
     return {
       type:"MethodmapDeclaration",
-      id: id,
-      inherit: inherit,
+      id,
+      loc: location(),
+      inherit,
       body
     };
   }
