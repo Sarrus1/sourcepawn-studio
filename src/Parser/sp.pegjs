@@ -1585,14 +1585,25 @@ MethodmapBody
   }
 
 PropertyDeclaration
-  = doc:__ PropertyToken __p propertyType:TypeIdentifier __p id:Identifier __
-  "{" __ body:(MethodDeclaration / MethodmapNativeForwardDeclaration)* __ "}" __
+  = doc:__ content:PropertyDeclarationNoDoc
   {
     return {
       type: "PropertyDeclaration",
+      propertyType: content.propertyType,
+      id: content.id,
+      doc,
+      loc: content.loc,
+      body: content.body
+    };;
+  }
+
+PropertyDeclarationNoDoc
+  = PropertyToken __p propertyType:TypeIdentifier __p id:Identifier __
+  "{" __ body:(MethodDeclaration / MethodmapNativeForwardDeclaration)* __ "}" __
+  {
+    return {
       propertyType,
       id,
-      doc,
       loc: location(),
       body
     };
