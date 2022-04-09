@@ -55,21 +55,6 @@ export function isSingleLineFunction(line: string) {
   return /\{.*\}\s*$/.test(line);
 }
 
-export function parentCounter(line: string): number {
-  let counter = 0;
-  if (line == null) {
-    return 0;
-  }
-  for (let char of line) {
-    if (char === "(") {
-      counter++;
-    } else if (char === ")") {
-      counter--;
-    }
-  }
-  return counter;
-}
-
 export function getParenthesisCount(line: string): number {
   let pCount = 0;
   let inAString = false;

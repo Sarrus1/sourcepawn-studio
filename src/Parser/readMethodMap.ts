@@ -13,6 +13,7 @@ import {
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
 import { readFunctionAndMethod } from "./readFunctionAndMethod";
+import { readProperty } from "./readProperty";
 
 export function readMethodmap(
   parserArgs: spParserArgs,
@@ -71,6 +72,15 @@ export function readMethodmap(
         e.params,
         null,
         methodmapItem
+      );
+    } else {
+      readProperty(
+        parserArgs,
+        e.id,
+        e.loc,
+        methodmapItem,
+        e.doc,
+        e.propertyType
       );
     }
   });

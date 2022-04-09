@@ -1,28 +1,29 @@
-﻿import { Parser } from "./spParser";
+﻿import { spParserArgs } from "./spParser";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
-import { parseDocComment } from "./parseDocComment";
+import { ParsedID, ParserLocation, PreprocessorStatement } from "./interfaces";
+import { parsedLocToRange } from "./utils";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
+import { processDocStringComment } from "./processComment";
 
 export function readProperty(
-  parser: Parser,
-  match: RegExpMatchArray,
-  line: string
-) {
-  let { description, params } = parseDocComment(parser);
-  let name_match: string = match[2];
-  let range = parser.makeDefinitionRange(name_match, line);
-  let propertyItem = new PropertyItem(
-    parser.fileItems.get(parser.state_data.name) as
-      | MethodMapItem
-      | EnumStructItem,
-    name_match,
-    parser.filePath,
-    match[0],
-    description,
+  parserArgs: spParserArgs,
+  id: ParsedID,
+  loc: ParserLocation,
+  parent: MethodMapItem | EnumStructItem,
+  docstring: (string | PreprocessorStatement)[] | undefined,
+  returnType: ParsedID
+): void {
+  const range = parsedLocToRange(id.loc);
+  const { doc, dep } = processDocStringComment(docstring);
+  const propertyItem = new PropertyItem(
+    parent,
+    id.id,
+    parserArgs.filePath,
+    id.id,
+    doc,
     range,
-    match[1]
+    returnType.id
   );
-  parser.lastFunc = propertyItem;
-  parser.fileItems.set(name_match + parser.state_data.name, propertyItem);
+  parserArgs.fileItems.set(id.id + parent.name, propertyItem);
 }

@@ -1,10 +1,4 @@
-import {
-  CompletionItemKind,
-  Range,
-  workspace as Workspace,
-  Location,
-  Position,
-} from "vscode";
+import { CompletionItemKind, workspace as Workspace, Position } from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { resolve, dirname, basename } from "path";
 import { URI } from "vscode-uri";
@@ -12,11 +6,9 @@ import { URI } from "vscode-uri";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import { FileItems } from "../Backend/spFilesRepository";
 import { SPItem } from "../Backend/Items/spItems";
-import { State } from "./stateEnum";
-import { readProperty } from "./readProperty";
 import { searchForReferencesInString } from "./searchForReferencesInString";
 import { handleReferenceInParser } from "./handleReferencesInParser";
-import { purgeCalls, positiveRange, parentCounter } from "./utils";
+import { purgeCalls } from "./utils";
 import { globalIdentifier, globalItem } from "../Misc/spConstants";
 import { ParseState } from "./interfaces";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
@@ -93,16 +85,13 @@ export function parseText(
   else {
     const lines = data.split("\n");
     const parser = new Parser(lines, file, isBuiltIn, items, itemsRepository);
-    parser.parse(searchTokens);
+    parser.parse();
   }
 }
 
 export class Parser {
   fileItems: FileItems;
   items: SPItem[];
-  state: State[];
-  scratch: any;
-  state_data: any;
   lines: string[];
   lineNb: number;
   filePath: string;
@@ -114,7 +103,6 @@ export class Parser {
   funcsAndMethodsInFile: (FunctionItem | MethodItem)[];
   MmEsInFile: (MethodMapItem | EnumStructItem)[];
   referencesMap: Map<string, SPItem>;
-  macroArr: string[];
   itemsRepository: ItemsRepository;
   debugging: boolean;
   anonymousEnumCount: number;
@@ -128,7 +116,6 @@ export class Parser {
     itemsRepository: ItemsRepository
   ) {
     this.fileItems = completions;
-    this.state = [State.None];
     this.lineNb = 0;
     this.lines = lines;
     this.filePath = filePath;
@@ -138,7 +125,6 @@ export class Parser {
     this.lastFunc = globalItem;
     // Get all the items from the itemsRepository for this file
     this.items = itemsRepository.getAllItems(URI.file(this.filePath));
-    this.macroArr = this.getAllMacros(this.items);
     this.itemsRepository = itemsRepository;
     let debugSetting = Workspace.getConfiguration("sourcepawn").get(
       "trace.server"
@@ -151,41 +137,8 @@ export class Parser {
     this.referencesMap = new Map<string, SPItem>();
   }
 
-  parse(searchReferences: boolean): void {
+  parse(): void {
     let line = this.lines.shift();
-    if (!searchReferences) {
-      // Purge all comments from the file.
-      let uri = URI.file(this.filePath);
-      let oldFileItems = this.itemsRepository.fileItems.get(uri.toString());
-      let oldRefs = new Map<string, Location[]>();
-      if (oldFileItems !== undefined) {
-        oldFileItems.forEach((v: SPItem, k) => {
-          if (v.references !== undefined && v.references.length > 0) {
-            let oldItemRefs = v.references.filter(
-              (e) => e.uri.fsPath !== this.filePath
-            );
-            if (oldItemRefs.length > 0) {
-              oldRefs.set(k, oldItemRefs);
-            }
-          }
-        });
-      }
-
-      // Always add "sourcemod.inc" as an include.
-      //readInclude(this, "sourcemod".match(/(.*)/));
-      while (line !== undefined) {
-        this.interpLine(line);
-        line = this.lines.shift();
-        this.lineNb++;
-      }
-      oldRefs.forEach((v, k) => {
-        let item = this.fileItems.get(k);
-        if (item !== undefined) {
-          item.references.push(...v);
-        }
-      });
-      return;
-    }
 
     this.getReferencesMap();
 
@@ -235,73 +188,6 @@ export class Parser {
       line = this.lines.shift();
       this.lineNb++;
     }
-  }
-
-  interpLine(line: string) {
-    // EOF
-    if (line === undefined) return;
-
-    let match = line.match(/^\s*[^\/\/\s]+(\/\/.+)$/);
-
-    // Match properties
-    match = line.match(/^\s*property\s+([a-zA-Z]\w*)\s+([a-zA-Z]\w*)/);
-    if (match) {
-      if (this.state.includes(State.Methodmap)) {
-        this.state.push(State.Property);
-      }
-      try {
-        readProperty(this, match, line);
-      } catch (e) {
-        console.error(e);
-        if (this.debugging) {
-          console.error(`At line ${this.lineNb} of ${this.filePath}`);
-        }
-      }
-      return;
-    }
-
-    match = line.match(
-      /^\s*(\bwhile\b|\belse\b|\bif\b|\bswitch\b|\bcase\b|\bdo\b)/
-    );
-    if (match) {
-      // Check if we are still in the conditionnal of the control statement
-      // for example, an if statement's conditionnal can span over several lines
-      // and call functions
-      let parenthesisNB = parentCounter(line);
-      let lineCounter = 0;
-      let iter = 0;
-      while (parenthesisNB !== 0 && iter < 100) {
-        iter++;
-        line = this.lines[lineCounter];
-        lineCounter++;
-        parenthesisNB += parentCounter(line);
-      }
-      // Now we test if the statement uses brackets, as short code blocks are usually
-      // implemented without them.
-      if (!/\{\s*$/.test(line)) {
-        // Test the next line if we didn't match
-        if (!/^\s*\{/.test(this.lines[lineCounter])) {
-          return;
-        }
-      }
-      this.state.push(State.Loop);
-      return;
-    }
-
-    // Reset the comments buffer
-    this.scratch = [];
-    this.deprecated = undefined;
-    return;
-  }
-
-  makeDefinitionRange(name: string, line: string, func = false): Range {
-    let re: RegExp = new RegExp(
-      func ? `\\b${name}\\b\\s*\\(` : `\\b${name}\\b`
-    );
-    let start: number = line.search(re);
-    let end: number = start + name.length;
-    var range = positiveRange(this.lineNb, start, end);
-    return range;
   }
 
   getReferencesMap(): void {
