@@ -936,23 +936,30 @@ Statement
   / PropertyToken
 
 DefineStatement
-  = "#define" _p id:Identifier value:(_p AssignmentExpression) doc:_
+  = content:DefineStatementNoDoc doc:_
   {
-    readDefine(args, id, location(), value ? value[1]["value"] : null, doc.join("").trim());
+    readDefine(args, content.id, content.loc, content.value, doc.join("").trim());
+    return content;
+  }
+
+DefineStatementNoDoc
+  = "#define" _p id:Identifier value:(_p AssignmentExpression)
+  {
     return {
       type: "DefineStatement",
       id,
-      value: value?value[0]:null
+      loc: location(),
+      value: value ? value[1]["value"] : null
     };
   }
   /
-  "#define" _p id:Identifier !"(" doc:_
+  "#define" _p id:Identifier !"("
   {
-    readDefine(args, id, location(), null, doc.join("").trim());
     return {
       type: "DefineStatement",
       id,
-      value:null
+      loc: location(),
+      value: null
     };
   }
 
@@ -1615,6 +1622,7 @@ FunctionDeclaration
   = doc:__ content:FunctionDeclarationNoDoc
   {
     readFunctionAndMethod(args, content.accessModifier, content.returnType, content.id, content.loc, doc.join("").trim(), content.params, content.body);
+    return content;
   }
 
 FunctionDeclarationNoDoc
