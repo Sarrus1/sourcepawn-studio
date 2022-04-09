@@ -90,9 +90,11 @@ export function parseText(
       }
       console.error(e);
     }
-
-  // const parser = new Parser(lines, file, IsBuiltIn, items, itemsRepository);
-  // parser.parse(searchTokens);
+  else {
+    const lines = data.split("\n");
+    const parser = new Parser(lines, file, isBuiltIn, items, itemsRepository);
+    parser.parse(searchTokens);
+  }
 }
 
 export class Parser {

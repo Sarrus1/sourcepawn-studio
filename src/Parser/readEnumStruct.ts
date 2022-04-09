@@ -46,7 +46,8 @@ export function readEnumStruct(
         e.loc,
         [""],
         e.params,
-        e.body
+        e.body,
+        enumStructItem
       );
     } else if (e["type"] === "VariableDeclaration") {
       readVariable(parserArgs, e, enumStructItem);

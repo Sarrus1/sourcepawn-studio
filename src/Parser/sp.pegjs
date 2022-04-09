@@ -210,6 +210,7 @@ TypeReservedWord
   / ReturnToken
   / SizeofToken
   / SwitchToken
+  / StaticToken
   / StructToken
   / ThisToken
   / TypeDefToken
@@ -1220,12 +1221,21 @@ VariableType
     return name;
   }
 
+GlobalVariableDeclaration
+  = content:VariableDeclaration
+  {
+    readVariable(args, content);
+    return {
+      type: "GlobalVariableDeclaration",
+      content
+    };
+  }
+
 VariableDeclaration
   = (
-  __ 
-  ((DeclToken / NewToken) __p)? 
+  __ ((DeclToken / NewToken) __p)? 
   variableDeclarationType:VariableAccessModifier? 
-  variableType:VariableType?
+  variableType:VariableType
   declarations:VariableDeclarationList EOS doc:__doc
   {
     return {
@@ -1239,8 +1249,22 @@ VariableDeclaration
   )
   /
   (
-  __ ((StaticToken / ConstToken)__p)+
-  declarations:VariableDeclarationList EOS doc:__doc
+  __ variableDeclarationType:VariableAccessModifier
+  declarations:VariableDeclarationListOld EOS doc:__doc
+  {
+    return {
+      type: "VariableDeclaration",
+      variableDeclarationType,
+      variableType: null,
+      declarations: declarations,
+      doc
+    };
+  }    
+  )  
+  /
+  (
+  __ ((DeclToken / NewToken) __p)
+  declarations:VariableDeclarationListOld EOS doc:__doc
   {
     return {
       type: "VariableDeclaration",
@@ -1251,19 +1275,30 @@ VariableDeclaration
     };
   }    
   )
-
-GlobalVariableDeclaration
-  = content:VariableDeclaration
+  /
+  (
+  __ ((DeclToken / NewToken) __p)
+  variableDeclarationType:VariableAccessModifier
+  declarations:VariableDeclarationListOld EOS doc:__doc
   {
-    readVariable(args, content);
     return {
-      type: "GlobalVariableDeclaration",
-      content
+      type: "VariableDeclaration",
+      variableDeclarationType,
+      variableType: null,
+      declarations: declarations,
+      doc
     };
-  }
+  }    
+  )
 
 VariableDeclarationList
   = head:VariableInitialisation tail:(__ "," __ VariableInitialisation)* 
+  {
+    return buildList(head, tail, 3);
+  }
+
+VariableDeclarationListOld
+  = head:VariableInitialisationOld tail:(__ "," __ VariableInitialisationOld)* 
   {
     return buildList(head, tail, 3);
   }
@@ -1276,6 +1311,16 @@ VariableInitialisation
   {
     return {
       type: "VariableDeclarator",
+      id,
+      init: extractOptional(init, 1)
+    };
+  }
+
+VariableInitialisationOld
+  = doc:__ (TypeIdentifier":")? id:Identifier arrayInitialer:ArrayInitialer* init:(__ Initialiser)? 
+  {
+    return {
+      type: "VariableDeclaratorS",
       id,
       init: extractOptional(init, 1)
     };
