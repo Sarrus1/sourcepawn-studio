@@ -1304,13 +1304,20 @@ AliasDeclaration
     "(" __ params:(FormalParameterList __)? ")" __p "=" __p Identifier __ EOS
 
 EnumStructDeclaration
+  = doc:__ content:EnumStructDeclarationNoDoc
+  {
+    readEnumStruct(args, content.id, content.loc, doc, content.body);
+    return content;
+  }
+
+EnumStructDeclarationNoDoc
   = doc:__ EnumStructToken __p id:Identifier __
   "{" __ body:EnumStructBody __ "}" 
   {
-    readEnumStruct(args, id, location(), doc, body);
     return {
-      type:"EnumStructDeclaration ",
+      type:"EnumstructDeclaration ",
       id,
+      loc: location(),
       body
     };
   }
