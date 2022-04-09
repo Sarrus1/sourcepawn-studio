@@ -1177,22 +1177,23 @@ EnumStructDeclaration
   {
     readEnumStruct(args, id, location(), doc, body);
     return {
-      type:"EnumStruct",
+      type:"EnumStructDeclaration ",
       id,
       body
     };
   }
 
 EnumStructBody
-  = body:EnumStructMembers? {
-      return {
-        type: "EnumStructBody",
-        body
-      };
-    }
+  = body:EnumStructMembers? 
+  {
+    return {
+      type: "EnumStructBody",
+      body
+    };
+  }
 
 EnumStructMembers
-  = head:(VariableDeclaration / FunctionDeclaration) tail:(VariableDeclaration / FunctionDeclaration)* {
+  = head:(VariableDeclaration / MethodDeclaration) tail:(VariableDeclaration / MethodDeclaration)* {
       return [head].concat(tail);
     }
 
@@ -1208,100 +1209,116 @@ MacroDeclaration
   }
 
 VariableAccessModifier
-  = declarationType:((PublicToken / StockToken / ConstToken / StaticToken) __p)+ { return declarationType.map(e=>e[0])}
+  = declarationType:((PublicToken / StockToken / ConstToken / StaticToken) __p)+ 
+  { 
+    return declarationType.map(e=>e[0]);
+  }
 
 VariableType
   = name:TypeIdentifier ((":"__)/(( __ ("[]")+)? __p ))
-  {return name;}
+  {
+    return name;
+  }
 
 VariableDeclaration
   = (
-    __ 
-    ((DeclToken / NewToken) __p)? 
-  	variableDeclarationType:VariableAccessModifier? 
-    variableType:VariableType?
-    declarations:VariableDeclarationList EOS doc:__doc
-    {
-      return {
-        type: "VariableDeclaration",
-       	variableDeclarationType,
-        variableType,
-        declarations: declarations,
-        doc
-      };
-    }
-    )
-    /
-    (
-    __ ((StaticToken / ConstToken)__p)+
-    declarations:VariableDeclarationList EOS doc:__doc
-    {
-    	return {
-        type: "VariableDeclaration",
-        variableDeclarationType: null,
-        variableType: null,
-        declarations: declarations,
-        doc
-      };
-    }    
-    )
+  __ 
+  ((DeclToken / NewToken) __p)? 
+  variableDeclarationType:VariableAccessModifier? 
+  variableType:VariableType?
+  declarations:VariableDeclarationList EOS doc:__doc
+  {
+    return {
+      type: "VariableDeclaration",
+      variableDeclarationType,
+      variableType,
+      declarations: declarations,
+      doc
+    };
+  }
+  )
+  /
+  (
+  __ ((StaticToken / ConstToken)__p)+
+  declarations:VariableDeclarationList EOS doc:__doc
+  {
+    return {
+      type: "VariableDeclaration",
+      variableDeclarationType: null,
+      variableType: null,
+      declarations: declarations,
+      doc
+    };
+  }    
+  )
 
 GlobalVariableDeclaration
   = content:VariableDeclaration
   {
     readVariable(args, content);
-    //return {type: "GlobalVariableDeclaration", content};
+    return {
+      type: "GlobalVariableDeclaration",
+      content
+    };
   }
 
 VariableDeclarationList
-  = head:VariableInitialisation tail:(__ "," __ VariableInitialisation)* {
-      return buildList(head, tail, 3);
-    }
+  = head:VariableInitialisation tail:(__ "," __ VariableInitialisation)* 
+  {
+    return buildList(head, tail, 3);
+  }
 
 ArrayInitialer
   = "[" Expression? "]"
 
 VariableInitialisation
-  = doc:__ (TypeIdentifier":")? id:Identifier arrayInitialer:ArrayInitialer* init:(__ Initialiser)? {
-      return {
-        type: "VariableDeclarator",
-        id,
-        init: extractOptional(init, 1)
-      };
-    }
+  = doc:__ (TypeIdentifier":")? id:Identifier arrayInitialer:ArrayInitialer* init:(__ Initialiser)? 
+  {
+    return {
+      type: "VariableDeclarator",
+      id,
+      init: extractOptional(init, 1)
+    };
+  }
 
 EnumDeclaration
   = doc:__ EnumToken id:(__p Identifier)? (":"__)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
-    "{" __ body:EnumBody? lastDoc:__ "}" EOS
-    { 
-      readEnum(args, id ? id[1] : null, location(), body, doc, lastDoc.join("").trim());
-      //return {doc: doc.join("").trim(),type:"Enum",id: id ? id[1] : null,loc: location(), body, lastDoc:lastDoc.join("").trim()};
-    }
+  "{" __ body:EnumBody? lastDoc:__ "}" EOS
+  { 
+    readEnum(args, id ? id[1] : null, location(), body, doc, lastDoc.join("").trim());
+    return {doc: doc.join("").trim(),type:"Enum",id: id ? id[1] : null,loc: location(), body, lastDoc:lastDoc.join("").trim()};
+  }
  
 EnumMemberDeclaration
   = (TypeIdentifier (":"__))? name:VariableInitialisation
-    {
-      return name.id;
-    }
+  {
+    return name.id;
+  }
 
 EnumBody
   = head:EnumMemberDeclaration tail:(__ "," __ EnumMemberDeclaration)* ","?
-  	{
-    	return buildListWithDoc(head, tail, 3);
-    }
+  {
+    return buildListWithDoc(head, tail, 3);
+  }
 
 TypeDefDeclaration
   = doc:__ TypeDefToken __p id:TypeIdentifier __ "=" __ body:TypeDefBody
   {
     readTypeDef(args, id, location(), body, doc);
-    //return {type: "TypeDefStatement",id,};
+    return {
+      type: "TypeDefStatement",
+      id
+    };
   }
 
 TypeDefBody
   = FunctionToken __ returnType:TypeIdentifier 
   __ "(" __ params:(FormalParameterList __)? ")" __ EOS
   {
-  	return {returnType, params};
+  	return {
+      returnType,
+      params
+    };
   }
 
 TypeSetDeclaration
@@ -1309,7 +1326,11 @@ TypeSetDeclaration
   __ "{" __ params:( TypeDefBody __ )* "}" EOS
   {
     readTypeSet(args, id, location(), doc);
-  	//return id;
+  	return {
+      type: "TypesetDeclaration",
+      id,
+      params
+    };
   }
 
 StructDeclaration
@@ -1345,7 +1366,7 @@ MethodmapInherit
   }
 
 MethodmapBody
-  = body:(PropertyDeclaration / MethodmapMethodDeclaration / MethodmapNativeForwardDeclaration)*
+  = body:(PropertyDeclaration / MethodDeclaration / MethodmapNativeForwardDeclaration)*
   {
     return {
       type: "MethodmapBody",
@@ -1355,7 +1376,7 @@ MethodmapBody
 
 PropertyDeclaration
   = doc:__ PropertyToken __p propertyType:TypeIdentifier __p id:Identifier __
-  "{" __ body:(MethodmapMethodDeclaration / MethodmapNativeForwardDeclaration)* __ "}" __
+  "{" __ body:(MethodDeclaration / MethodmapNativeForwardDeclaration)* __ "}" __
   {
     return {
       type: "PropertyDeclaration",
@@ -1367,181 +1388,191 @@ PropertyDeclaration
     }
   }
 
-MethodmapMethodDeclaration
+MethodDeclaration
   = doc:__ accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
-    "(" __ params:(FormalParameterList __)? ")" __
-    body:Block
-    {
-      return {
-        type: "MethodmapMethodDeclaration",
-        accessModifier,
-        returnType,
-        loc: location(),
-        id,
-        params: optionalList(extractOptional(params, 0)),
-        body,
-        doc
-      };
-    }
+  "(" __ params:(FormalParameterList __)? ")" __
+  body:Block
+  {
+    return {
+      type: "MethodDeclaration",
+      accessModifier,
+      returnType,
+      loc: location(),
+      id,
+      params: optionalList(extractOptional(params, 0)),
+      body,
+      doc
+    };
+  }
 
 MethodmapNativeForwardDeclaration
   = doc:__ accessModifier:FunctionAccessModifiers* token:(NativeToken / ForwardToken) __p
-    returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
-    "(" __ params:(FormalParameterList __)? ")" EOS
-    {
-      accessModifier.push(token)
-      return {
-        type: "MethodmapNativeForwardDeclaration",
-        accessModifier,
-        returnType,
-        loc: location(),
-        id,
-        params: optionalList(extractOptional(params, 0)),
-        doc
-      }
+  returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
+  "(" __ params:(FormalParameterList __)? ")" EOS
+  {
+    accessModifier.push(token)
+    return {
+      type: "MethodmapNativeForwardDeclaration",
+      accessModifier,
+      returnType,
+      loc: location(),
+      id,
+      params: optionalList(extractOptional(params, 0)),
+      doc
     }
+  }
 
 FunctionAccessModifiers
   = name:(PublicToken / StockToken / StaticToken) __p
-  {return name;}
+  {
+    return name;
+  }
 
 FunctionReturnTypeDeclaration
   = name:TypeIdentifier ((":"__)/(__("[]")__)/__p)
-  {return name;}
+  {
+    return name;
+  }
 
 
 FunctionDeclaration
   = doc:__ accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
-    "(" __ params:(FormalParameterList __)? ")" __
-    body:Block
-    {
-      readFunctionAndMethod(args, accessModifier, returnType, id, location(), doc.join("").trim(), optionalList(extractOptional(params, 0)), body);
-      return {
-        type: "FunctionDeclaration",
-        accessModifier,
-        returnType,
-        loc: location(),
-        id,
-        params: optionalList(extractOptional(params, 0)),
-        body
-      };
-    }
+  "(" __ params:(FormalParameterList __)? ")" __
+  body:Block
+  {
+    readFunctionAndMethod(args, accessModifier, returnType, id, location(), doc.join("").trim(), optionalList(extractOptional(params, 0)), body);
+    return {
+      type: "FunctionDeclaration",
+      accessModifier,
+      returnType,
+      loc: location(),
+      id,
+      params: optionalList(extractOptional(params, 0)),
+      body
+    };
+  }
 
 FunctionExpression
   = __ id:(Identifier __)?
-    "(" __ params:(FormalParameterList __)? ")"
-    "{" __ body:FunctionBody __ "}"
-    {
-      return {
-        type: "FunctionExpression",
-        id: extractOptional(id, 0),
-        params: optionalList(extractOptional(params, 0)),
-        body: body
-      };
-    }
+  "(" __ params:(FormalParameterList __)? ")"
+  "{" __ body:FunctionBody __ "}"
+  {
+    return {
+      type: "FunctionExpression",
+      id: extractOptional(id, 0),
+      params: optionalList(extractOptional(params, 0)),
+      body: body
+    };
+  }
 
 ParameterTypeDeclaration
   = name:TypeIdentifier? modifier:((":"__)/(__(("[]")+/"&")__)/__p)
-    { 
-      return {
-        name, 
-        modifier: buildNestedArray(modifier)
-      };
-    }
+  { 
+    return {
+      name, 
+      modifier: buildNestedArray(modifier)
+    };
+  }
 
 ParameterDeclarationType
-  = declarationType:ConstToken __p { return declarationType}
+  = declarationType:ConstToken __p 
+  { 
+    return declarationType;
+  }
 
 ParameterDeclaration
- = 
-  (
-   declarationType:ParameterDeclarationType?
-   "&"parameterType:ParameterTypeDeclaration? 
-   id:(Identifier/DotDotDotToken)
-   (__"[" property:Expression? "]"__ / DotDotDotToken)*
-   init:(__ Initialiser)?
-	{
-      return {
-      	type: "ParameterDeclaration",
-        declarationType,
-        parameterType: null,
-        init,
-        id
-     };
-    }
+ = (
+  declarationType:ParameterDeclarationType?
+  "&"parameterType:ParameterTypeDeclaration? 
+  id:(Identifier/DotDotDotToken)
+  (__"[" property:Expression? "]"__ / DotDotDotToken)*
+  init:(__ Initialiser)?
+  {
+    return {
+      type: "ParameterDeclaration",
+      declarationType,
+      parameterType: null,
+      init,
+      id
+    };
+  }
   )
   /
   (
-   declarationType:ParameterDeclarationType? 
-   parameterType:ParameterTypeDeclaration? 
-   id:(Identifier/DotDotDotToken)
-   (__"[" property:Expression? "]"__ / DotDotDotToken)*
-   init:(__ Initialiser)?
-	{
-      return {
-      	type: "ParameterDeclaration",
-        declarationType,
-        parameterType,
-        init,
-        id
-     };
-    }
+  declarationType:ParameterDeclarationType? 
+  parameterType:ParameterTypeDeclaration? 
+  id:(Identifier/DotDotDotToken)
+  (__"[" property:Expression? "]"__ / DotDotDotToken)*
+  init:(__ Initialiser)?
+  {
+    return {
+      type: "ParameterDeclaration",
+      declarationType,
+      parameterType,
+      init,
+      id
+    };
+  }
   )
   /
   (
-   declarationType:ParameterDeclarationType? 
-   id:(Identifier/DotDotDotToken)
-   (__"[" property:Expression? "]"__ / DotDotDotToken)*
-   init:(__ Initialiser)?
-	{
-      return {
-      	type: "ParameterDeclaration",
-        declarationType,
-        parameterType: null,
-        init,
-        id
-     };
-    }
+  declarationType:ParameterDeclarationType? 
+  id:(Identifier/DotDotDotToken)
+  (__"[" property:Expression? "]"__ / DotDotDotToken)*
+  init:(__ Initialiser)?
+  {
+    return {
+      type: "ParameterDeclaration",
+      declarationType,
+      parameterType: null,
+      init,
+      id
+    };
+  }
   )
 
 FormalParameterList
-  = head:ParameterDeclaration tail:(__ "," __ ParameterDeclaration)* {
-      return buildList(head, tail, 3);
-    }
+  = head:ParameterDeclaration tail:(__ "," __ ParameterDeclaration)* 
+  {
+    return buildList(head, tail, 3);
+  }
 
 FunctionBody
-  = body:(StatementList)? {
-      return {
-        type: "BlockStatement",
-        body: optionalList(body)
-      };
-    }
+  = body:(StatementList)? 
+  {
+    return {
+      type: "BlockStatement",
+      body: optionalList(body)
+    };
+  }
 
 NativeForwardDeclaration
   = doc:__ accessModifier:FunctionAccessModifiers* token:(NativeToken / ForwardToken) __p
-    returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
-    "(" __ params:(FormalParameterList __)? ")" EOS
-    {
-      accessModifier.push(token)
-      readFunctionAndMethod(args, accessModifier, returnType, id, location(), doc, optionalList(extractOptional(params, 0)), null);
-    }
+  returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
+  "(" __ params:(FormalParameterList __)? ")" EOS
+  {
+    accessModifier.push(token);
+    readFunctionAndMethod(args, accessModifier, returnType, id, location(), doc, optionalList(extractOptional(params, 0)), null);
+  }
 
 // Take care of weird declaration in handles.inc
 UsingDeclaration
  = doc:__ "using" [^\n;]+ ";"
 
 Program
-  = body:SourceElements? {
-      return {
-        type: "Program",
-        body: optionalList(body)
-      };
-    }
+  = body:SourceElements? 
+  {
+    return {
+      type: "Program",
+      body: optionalList(body)
+    };
+  }
 
 SourceElements
-  = head:SourceElement tail:(SourceElement)* {
-      return [head].concat(tail);
-    }
+  = head:SourceElement tail:(SourceElement)* 
+  {
+    return [head].concat(tail);
+  }
 
 SourceElement 
   = 

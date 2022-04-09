@@ -1,9 +1,9 @@
 ﻿import { spParserArgs } from "./spParser";
 import {
   ParserLocation,
-  ParsedEnumMember,
   PreprocessorStatement,
   ParsedEnumStructMember,
+  ParsedID,
 } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
@@ -14,18 +14,18 @@ import { readVariable } from "./readVariable";
 /**
  * Callback for a parsed enum struct.
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {ParsedEnumMember|undefined} id  The id of the enum.
- * @param  {ParserLocation} loc The location of the enum.
- * @param  {(string | PreprocessorStatement)[] | undefined} docstring The doc comment above the enum.
- * @param  {ParsedEnumMember[]} body  The members of the enum.
+ * @param  {ParsedID} id  The id of the enum struct.
+ * @param  {ParserLocation} loc  The location of the enum struct.
+ * @param  {(string | PreprocessorStatement)[] | undefined} docstring  The doc comment above the enum.
+ * @param  {any} body  The body of the enum struct.
  * @returns void
  */
 export function readEnumStruct(
   parserArgs: spParserArgs,
-  id: ParsedEnumMember | undefined,
+  id: ParsedID,
   loc: ParserLocation,
   docstring: (string | PreprocessorStatement)[] | undefined,
-  body: ParsedEnumStructMember[]
+  body: any
 ): void {
   const { doc, dep } = processDocStringComment(docstring);
   const enumStructItem = new EnumStructItem(
@@ -35,10 +35,9 @@ export function readEnumStruct(
     parsedLocToRange(id.loc),
     parsedLocToRange(loc)
   );
-  // TODO: Define separated enum members in the parser.
   parserArgs.fileItems.set(id.id, enumStructItem);
   body["body"].forEach((e: ParsedEnumStructMember) => {
-    if (e["type"] === "FunctionDeclaration") {
+    if (e["type"] === "MethodDeclaration") {
       readFunctionAndMethod(
         parserArgs,
         e.accessModifier,

@@ -3,7 +3,7 @@ import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { globalItem } from "../Misc/spConstants";
 import { ConstantItem } from "../Backend/Items/spConstantItem";
 import {
-  MethodmapMethodDeclaration,
+  MethodDeclaration,
   MethodmapNativeForwardDeclaration,
   ParsedID,
   ParserLocation,
@@ -24,7 +24,7 @@ export function readMethodmap(
     type: "MethodmapBody";
     body: (
       | PropertyDeclaration
-      | MethodmapMethodDeclaration
+      | MethodDeclaration
       | MethodmapNativeForwardDeclaration
     )[];
   }
@@ -48,7 +48,7 @@ export function readMethodmap(
   );
   parserArgs.fileItems.set(id.id, methodmapItem);
   body["body"].forEach((e) => {
-    if (e.type === "MethodmapMethodDeclaration") {
+    if (e.type === "MethodDeclaration") {
       readFunctionAndMethod(
         parserArgs,
         e.accessModifier,

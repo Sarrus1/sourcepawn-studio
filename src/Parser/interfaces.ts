@@ -84,7 +84,7 @@ export interface ParsedEnumMember {
 /**
  * A parsed enum struct member.
  */
-export type ParsedEnumStructMember = FunctionDeclaration | VariableDeclaration;
+export type ParsedEnumStructMember = MethodDeclaration | VariableDeclaration;
 
 /**
  * Parsed define ID.
@@ -199,8 +199,8 @@ export interface PropertyDeclaration {
   body;
 }
 
-export interface MethodmapMethodDeclaration {
-  type: "MethodmapMethodDeclaration";
+export interface MethodDeclaration {
+  type: "MethodDeclaration";
   accessModifier: string[];
   returnType: ParsedID;
   loc: ParserLocation;
