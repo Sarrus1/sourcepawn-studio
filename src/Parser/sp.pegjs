@@ -1611,13 +1611,17 @@ FunctionReturnTypeDeclaration
     return name;
   }
 
-
 FunctionDeclaration
-  = doc:__ accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
+  = doc:__ content:FunctionDeclarationNoDoc
+  {
+    readFunctionAndMethod(args, content.accessModifier, content.returnType, content.id, content.loc, doc.join("").trim(), content.params, content.body);
+  }
+
+FunctionDeclarationNoDoc
+  = accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
   "(" __ params:(FormalParameterList __)? ")" __
   body:Block
   {
-    readFunctionAndMethod(args, accessModifier, returnType, id, location(), doc.join("").trim(), optionalList(extractOptional(params, 0)), body);
     return {
       type: "FunctionDeclaration",
       accessModifier,
