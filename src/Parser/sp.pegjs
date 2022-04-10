@@ -35,7 +35,9 @@
   function buildListWithDoc(head, tail, index) {
     let docs = extractList(tail, index - 1);
     return [head].concat(extractList(tail, index)).map((e, i) => {
-      if (docs[i]) e.doc = docs[i].join("").trim();
+      if (docs[i]) {
+        e.doc = docs[i];
+      }
       return e;
     });
   }
@@ -944,7 +946,7 @@ Statement
 DefineStatement
   = content:DefineStatementNoDoc doc:_
   {
-    readDefine(args, content.id, content.loc, content.value, doc.join("").trim());
+    readDefine(args, content.id, content.loc, content.value, doc);
     return content;
   }
 
@@ -995,7 +997,7 @@ PragmaStatement
   { 
     return {
       type:"PragmaValue",
-      value: value?value.join(""):null
+      value: value ? value.join("") : null
     };
   }
 
@@ -1481,7 +1483,7 @@ VariableInitialisationOld
 EnumDeclaration
   = doc:__ content:EnumDeclarationNoDoc
   {
-    readEnum(args, content.id, content.loc, content.body, doc.join("").trim(), content.lastDoc);
+    readEnum(args, content.id, content.loc, content.body, doc, content.lastDoc);
     return content;
   }
 
@@ -1494,7 +1496,7 @@ EnumDeclarationNoDoc
       id: id ? id[1] : null,
       loc: location(),
       body,
-      lastDoc: lastDoc.join("").trim()
+      lastDoc: lastDoc
     };
   }
  
@@ -1679,7 +1681,7 @@ FunctionReturnTypeDeclaration
 FunctionDeclaration
   = doc:__ content:FunctionDeclarationNoDoc
   {
-    readFunctionAndMethod(args, content.accessModifier, content.returnType, content.id, content.loc, doc.join("").trim(), content.params, content.body);
+    readFunctionAndMethod(args, content.accessModifier, content.returnType, content.id, content.loc, doc, content.params, content.body);
     return content;
   }
 

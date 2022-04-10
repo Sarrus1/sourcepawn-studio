@@ -78,12 +78,13 @@ export class FunctionItem implements SPItem {
 
   toHover(): Hover {
     let filename = basename(this.filePath, ".inc");
-    const value =
+    const value = (
       (this.accessModifiers && this.accessModifiers.length > 0
         ? this.accessModifiers.join(" ")
         : "") +
       " " +
-      this.detail;
+      this.detail
+    ).trim();
     if (!this.description) {
       return new Hover({
         language: "sourcepawn",
