@@ -17,6 +17,7 @@ import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { globalIdentifier, globalItem } from "../Misc/spConstants";
 import { ConstantItem } from "../Backend/Items/spConstantItem";
 import { MethodItem } from "../Backend/Items/spMethodItem";
+import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 
 export function readFunctionAndMethod(
   parserArgs: spParserArgs,
@@ -67,37 +68,39 @@ export function readFunctionAndMethod(
     );
   }
   parserArgs.fileItems.set(key, item);
-  addParamsAsVariables(parserArgs, params, item);
+  addParamsAsVariables(parserArgs, params, item, parent);
 
   if (body === null) {
     // We are in a native or forward.
     return;
   }
-  searchVariablesInBody(parserArgs, item, body["body"]);
+  searchVariablesInBody(parserArgs, body["body"], item, parent);
   return;
 }
 
 function searchVariablesInBody(
   parserArgs: spParserArgs,
+  arr,
   parent: FunctionItem | MethodItem,
-  arr
+  grandParent: EnumStructItem | MethodMapItem | ConstantItem
 ) {
   if (!arr) {
     return;
   }
   if (Array.isArray(arr)) {
     for (let obj of arr) {
-      recursiveVariableSearch(parserArgs, parent, obj);
+      recursiveVariableSearch(parserArgs, obj, parent, grandParent);
     }
   } else {
-    recursiveVariableSearch(parserArgs, parent, arr);
+    recursiveVariableSearch(parserArgs, arr, parent, grandParent);
   }
 }
 
 function recursiveVariableSearch(
   parserArgs: spParserArgs,
+  obj,
   parent: FunctionItem | MethodItem,
-  obj
+  grandParent: EnumStructItem | MethodMapItem | ConstantItem
 ) {
   if (!obj) {
     return;
@@ -127,14 +130,14 @@ function recursiveVariableSearch(
         range,
         parent,
         doc,
-        e.id.id + parent.name
+        e.id.id + parent.name + grandParent.name
       );
     });
     return;
   }
   for (let k in obj) {
     if (typeof obj[k] == "object" && obj[k] !== null) {
-      searchVariablesInBody(parserArgs, parent, obj[k]);
+      searchVariablesInBody(parserArgs, parent, obj[k], parent);
     }
   }
 }
@@ -170,7 +173,8 @@ function processFunctionParams(params: ParsedParam[] | null): ProcessedParams {
 function addParamsAsVariables(
   parserArgs: spParserArgs,
   params: ParsedParam[] | null,
-  parent: FunctionItem | MethodItem
+  parent: FunctionItem | MethodItem,
+  grandParent: EnumStructItem | MethodMapItem | ConstantItem
 ): void {
   if (!params) {
     return;
@@ -190,7 +194,7 @@ function addParamsAsVariables(
       parsedLocToRange(e.id.loc),
       parent,
       "",
-      e.id.id + parent.name
+      e.id.id + parent.name + grandParent.name
     );
   });
 }

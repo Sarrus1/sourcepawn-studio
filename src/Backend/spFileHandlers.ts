@@ -102,7 +102,14 @@ export function newDocumentCallback(
   // Parse token references.
   parseFile(filePath, fileItems, itemsRepo, true, false);
   fileItems.includes.forEach((e) => {
-    parseFile(URI.parse(e.uri).fsPath, fileItems, itemsRepo, true, false);
+    const uri = URI.parse(e.uri);
+    parseFile(
+      uri.fsPath,
+      itemsRepo.fileItems.get(uri.toString()),
+      itemsRepo,
+      true,
+      false
+    );
   });
 }
 

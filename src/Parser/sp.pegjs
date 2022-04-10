@@ -111,42 +111,44 @@ Comment "comment"
 
 MultiLineComment
   = "/*" txt:(!"*/" SourceCharacter)* "*/"
-    {
-  	  return buildComment(txt);
-    }
+  {
+    return buildComment(txt);
+  }
 
 MultiLineCommentNoLineTerminator
   = "/*" txt:(!("*/" / LineTerminator) SourceCharacter)* "*/"
-    {
-  	  return buildComment(txt);
-    }
+  {
+    return buildComment(txt);
+  }
 
 SingleLineComment
   = "//" txt:(!LineTerminator SourceCharacter)*
-    {
-  	  return buildComment(txt);
-    }
+  {
+    return buildComment(txt);
+  }
 
 Identifier
   = !(ReservedWord !IdentifierPart) name:IdentifierName
-  { 
+  {
+    args.fileItems.tokens.push(name);
     return name;
   }
 
 TypeIdentifier
   = !(TypeReservedWord !IdentifierPart) name:IdentifierName 
-  { 
+  {
+    args.fileItems.tokens.push(name);
     return name; 
   }
 
 IdentifierName "identifier"
   = head:IdentifierStart tail:IdentifierPart* 
-  	{
-      return {
-        id: head + tail.join(""),
-        loc: location()
-        };
-    }
+  {
+    return {
+      id: head + tail.join(""),
+      loc: location()
+    };
+  }
 
 IdentifierStart
   = [_A-Za-z]
@@ -375,7 +377,7 @@ ReturnToken     = "return"
 SwitchToken     = "switch"
 StructToken     = "struct"
 SizeofToken     = "sizeof"
-ThisToken       = "this"
+ThisToken       = "this"  { args.fileItems.tokens.push({id: "this", loc: location()}); }
 TrueToken       = "true"
 TypeDefToken    = "typedef"
 TypeSetToken    = "typeset"
@@ -508,12 +510,16 @@ MemberExpression
         __ "[" __ property:Expression? __ "]" {
           return { property: property, computed: true };
         }
-      / __ "." __ property:IdentifierName {
-          return { property: property, computed: false };
-        }
-      / __ "::" __ property:IdentifierName {
-          return { property: property, computed: false };
-        }
+      / __ "." __ property:IdentifierName
+      {
+        args.fileItems.tokens.push(property);
+        return { property: property, computed: false };
+      }
+      / __ "::" __ property:IdentifierName
+      {
+        args.fileItems.tokens.push(property);
+        return { property: property, computed: false };
+      }
     )*
     {
       return tail.reduce(function(result, element) {

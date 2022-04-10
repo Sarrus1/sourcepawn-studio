@@ -6,11 +6,9 @@ import { URI } from "vscode-uri";
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import { FileItems } from "../Backend/spFilesRepository";
 import { SPItem } from "../Backend/Items/spItems";
-import { searchForReferencesInString } from "./searchForReferencesInString";
 import { handleReferenceInParser } from "./handleReferencesInParser";
-import { purgeCalls } from "./utils";
+import { parsedLocToRange, purgeCalls } from "./utils";
 import { globalIdentifier, globalItem } from "../Misc/spConstants";
-import { ParseState } from "./interfaces";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { MethodItem } from "../Backend/Items/spMethodItem";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
@@ -138,20 +136,37 @@ export class Parser {
   }
 
   parse(): void {
-    let line = this.lines.shift();
+    let line = this.lines[0];
 
     this.getReferencesMap();
 
     let lastFunc: FunctionItem | MethodItem | undefined;
     let lastMMorES: MethodMapItem | EnumStructItem | undefined;
 
-    while (line !== undefined) {
-      const pos = new Position(this.lineNb, 0);
+    this.fileItems.tokens.sort((a, b) => {
+      if (a.loc.start.line === b.loc.start.line) {
+        return a.loc.start.column - b.loc.start.column;
+      }
+      return a.loc.start.line - b.loc.start.line;
+    });
 
-      if (!lastFunc || !lastFunc.fullRange.contains(pos)) {
+    const thisArgs = {
+      parser: this,
+      offset: 0,
+      previousItems: [],
+      line,
+      lineNb: 0,
+      scope: "",
+      outsideScope: "",
+    };
+
+    this.fileItems.tokens.forEach((e, i) => {
+      const range = parsedLocToRange(e.loc);
+
+      if (!lastFunc || !lastFunc.fullRange.contains(range)) {
         if (
           this.funcsAndMethodsInFile.length > 0 &&
-          this.funcsAndMethodsInFile[0].fullRange.contains(pos)
+          this.funcsAndMethodsInFile[0].fullRange.contains(range)
         ) {
           lastFunc = this.funcsAndMethodsInFile.shift();
         } else {
@@ -159,42 +174,43 @@ export class Parser {
         }
       }
 
-      if (!lastMMorES || !lastMMorES.fullRange.contains(pos)) {
+      if (!lastMMorES || !lastMMorES.fullRange.contains(range)) {
         if (
           this.MmEsInFile.length > 0 &&
-          this.MmEsInFile[0].fullRange.contains(pos)
+          this.MmEsInFile[0].fullRange.contains(range)
         ) {
           lastMMorES = this.MmEsInFile.shift();
         } else {
           lastMMorES = undefined;
         }
       }
+      const lineNb = range.start.line;
 
-      const parseState: ParseState = {
-        bComment: false,
-        lComment: false,
-        sString: false,
-        dString: false,
-      };
-
-      searchForReferencesInString(line, handleReferenceInParser, {
-        parser: this,
-        parseState: parseState,
-        scope: `-${lastFunc ? lastFunc.name : globalIdentifier}-${
+      if (lineNb !== thisArgs.lineNb || i === 0) {
+        thisArgs.lineNb = range.start.line;
+        thisArgs.line = this.lines[thisArgs.lineNb];
+        thisArgs.offset = 0;
+        thisArgs.previousItems = [];
+        thisArgs.scope = `-${lastFunc ? lastFunc.name : globalIdentifier}-${
           lastMMorES ? lastMMorES.name : globalIdentifier
-        }`,
-        offset: 0,
-      });
-      line = this.lines.shift();
-      this.lineNb++;
-    }
+        }`;
+        thisArgs.outsideScope = `-${globalIdentifier}-${
+          lastMMorES ? lastMMorES.name : globalIdentifier
+        }`;
+      }
+      try {
+        handleReferenceInParser.call(thisArgs, e.id, range);
+      } catch (err) {
+        console.debug(err);
+      }
+    });
   }
 
   getReferencesMap(): void {
     const MP = [CompletionItemKind.Method, CompletionItemKind.Property];
     const MmEs = [CompletionItemKind.Class, CompletionItemKind.Struct];
 
-    this.items.forEach((item) => {
+    this.items.forEach((item, i) => {
       if (item.kind === CompletionItemKind.Variable) {
         purgeCalls(item, this.filePath);
         this.referencesMap.set(
