@@ -19,7 +19,6 @@ export async function updateDecorations(itemsRepo: ItemsRepository) {
       e1.references
         .filter((e2) => e2.uri.fsPath === editor.document.uri.fsPath)
         .map((e3) => e3.range)
-        .concat(e1.range)
     )
     .flat();
 
