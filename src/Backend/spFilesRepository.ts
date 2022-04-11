@@ -11,10 +11,14 @@ import {
   defaultKeywordsItems,
 } from "../Providers/spDefaultItems";
 import { getIncludeExtension } from "./spUtils";
+import { ParsedID } from "../Parser/interfaces";
+import { MethodMapItem } from "./Items/spMethodmapItem";
 
 export class FileItems extends Map<string, SPItem> {
   includes: Include[];
   uri: string;
+  tokens: ParsedID[];
+  methodmaps: Map<string, MethodMapItem>;
 
   constructor(uri: string) {
     super();
@@ -25,6 +29,8 @@ export class FileItems extends Map<string, SPItem> {
     }
     this.includes = [];
     this.uri = uri;
+    this.tokens = [];
+    this.methodmaps = new Map<string, MethodMapItem>();
   }
 
   /**

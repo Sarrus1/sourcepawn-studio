@@ -1,31 +1,41 @@
-﻿import { Parser } from "./spParser";
-import { MacroItem } from "../Backend/Items/spMacroItem";
-import { parseDocComment } from "./parseDocComment";
+﻿import { MacroItem } from "../Backend/Items/spMacroItem";
+import { spParserArgs } from "./spParser";
+import { ParsedID, ParserLocation } from "./interfaces";
+import { parsedLocToRange } from "./utils";
+import { processDocStringComment } from "./processComment";
 
+/**
+ * Callback for a parsed macro.
+ * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
+ * @param  {ParsedID} id  The id of the macro.
+ * @param  {ParserLocation} loc  The location of the macro.
+ * @param  {string|null} value  The value of the macro, if it exists.
+ * @param  {string[] | undefined} docstring  The documentation of the macro.
+ * @returns void
+ */
 export function readMacro(
-  parser: Parser,
-  match: RegExpMatchArray,
-  line: string
+  parserArgs: spParserArgs,
+  id: ParsedID,
+  loc: ParserLocation,
+  value: string | null,
+  docstring: string[] | undefined
 ): void {
-  let { description, params } = parseDocComment(parser);
-  let nameMatch = match[1];
-  let details = `${nameMatch}(${match[2]})`;
-  let range = parser.makeDefinitionRange(nameMatch, line);
-  // Add the macro to the array of known macros
-  parser.macroArr.push(nameMatch);
-  parser.fileItems.set(
-    nameMatch,
-    new MacroItem(
-      nameMatch,
-      details,
-      description,
-      params,
-      parser.filePath,
-      parser.IsBuiltIn,
-      range,
-      "",
-      undefined,
-      undefined
-    )
+  const range = parsedLocToRange(id.loc);
+  const fullRange = parsedLocToRange(loc);
+  const { doc, dep } = processDocStringComment(docstring);
+  const macroItem = new MacroItem(
+    id.id,
+    value,
+    doc,
+    [],
+    parserArgs.filePath,
+    parserArgs.IsBuiltIn,
+    range,
+    undefined,
+    fullRange,
+    dep,
+    undefined
   );
+  parserArgs.fileItems.set(id.id, macroItem);
+  return;
 }

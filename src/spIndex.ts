@@ -5,6 +5,7 @@ import {
   window,
   StatusBarAlignment,
   StatusBarItem,
+  TextDocumentChangeEvent,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { resolve } from "path";
@@ -191,15 +192,17 @@ export function activate(context: ExtensionContext) {
   );
 
   Workspace.onDidChangeTextDocument(
-    providers.itemsRepository.handleDocumentChange,
+    throttle(providers.itemsRepository.handleDocumentChange, 50),
     providers.itemsRepository,
     context.subscriptions
   );
+
   Workspace.onDidOpenTextDocument(
     providers.itemsRepository.handleNewDocument,
     providers.itemsRepository,
     context.subscriptions
   );
+
   Workspace.onDidCreateFiles(
     providers.itemsRepository.handleAddedDocument,
     providers.itemsRepository,
@@ -226,6 +229,7 @@ function getDirectories(paths: string[], providers: Providers) {
 }
 
 async function loadFiles(providers: Providers, SBItem: StatusBarItem) {
+  console.time("parse");
   await parseSMApi(providers.itemsRepository);
 
   const mainPath = findMainPath();
@@ -248,4 +252,21 @@ async function loadFiles(providers: Providers, SBItem: StatusBarItem) {
   updateDecorations(providers.itemsRepository);
 
   SBItem.hide();
+  console.timeEnd("parse");
+}
+
+function throttle(
+  callback: (event: TextDocumentChangeEvent) => void,
+  limit: number
+) {
+  let waiting = false;
+  return function () {
+    if (!waiting) {
+      callback.apply(this, arguments);
+      waiting = true;
+      setTimeout(function () {
+        waiting = false;
+      }, limit);
+    }
+  };
 }

@@ -21,7 +21,9 @@ const cfgLangID = [
  * @param  {TextDocument} document    The document to lint.
  * @returns void
  */
-export function refreshCfgDiagnostics(document: TextDocument): void {
+export async function refreshCfgDiagnostics(document: TextDocument) {
+  await null;
+
   // Check if the setting to activate the linter is set to true.
   const workspaceFolder = Workspace.getWorkspaceFolder(document.uri);
   const enableLinter = Workspace.getConfiguration(

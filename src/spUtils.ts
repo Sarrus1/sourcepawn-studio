@@ -14,7 +14,7 @@ import { resolve, extname } from "path";
  * @returns MarkdownString
  */
 export function descriptionToMD(description?: string): MarkdownString {
-  if (description === undefined) {
+  if (description === undefined || description === null) {
     return new MarkdownString("");
   }
   description = description

@@ -14,7 +14,8 @@ import { URI } from "vscode-uri";
 import { basename } from "path";
 
 import { descriptionToMD } from "../../spUtils";
-import { SPItem, FunctionParam } from "./spItems";
+import { SPItem } from "./spItems";
+import { FunctionParam } from "../../Parser/interfaces";
 
 export class FunctionItem implements SPItem {
   name: string;
@@ -29,6 +30,7 @@ export class FunctionItem implements SPItem {
   kind = CompletionItemKind.Function;
   type: string;
   deprecated: string | undefined;
+  accessModifiers: string[] | undefined;
 
   constructor(
     name: string,
@@ -40,7 +42,8 @@ export class FunctionItem implements SPItem {
     range: Range,
     type: string,
     fullRange: Range,
-    deprecated: string | undefined
+    deprecated: string | undefined,
+    accessModifiers: string[] | undefined
   ) {
     this.description = description;
     this.name = name;
@@ -53,6 +56,7 @@ export class FunctionItem implements SPItem {
     this.fullRange = fullRange;
     this.deprecated = deprecated;
     this.references = [];
+    this.accessModifiers = accessModifiers;
   }
 
   toCompletionItem(): CompletionItem {
@@ -73,13 +77,26 @@ export class FunctionItem implements SPItem {
   }
 
   toHover(): Hover {
-    let filename: string = basename(this.filePath, ".inc");
-    if (this.description == "") {
-      return new Hover({ language: "sourcepawn", value: this.detail });
+    let filename = basename(this.filePath, ".inc");
+    const value = (
+      (this.accessModifiers && this.accessModifiers.length > 0
+        ? this.accessModifiers.join(" ")
+        : "") +
+      " " +
+      this.detail
+    ).trim();
+    if (!this.description) {
+      return new Hover({
+        language: "sourcepawn",
+        value,
+      });
     }
     if (this.IsBuiltIn) {
       return new Hover([
-        { language: "sourcepawn", value: this.detail },
+        {
+          language: "sourcepawn",
+          value,
+        },
         `[Online Documentation](https://sourcemod.dev/#/${filename}/function.${this.name})`,
         descriptionToMD(
           `${this.description}${
@@ -89,7 +106,10 @@ export class FunctionItem implements SPItem {
       ]);
     }
     return new Hover([
-      { language: "sourcepawn", value: this.detail },
+      {
+        language: "sourcepawn",
+        value,
+      },
       descriptionToMD(
         `${this.description}${
           this.deprecated ? `\nDEPRECATED ${this.deprecated}` : ""

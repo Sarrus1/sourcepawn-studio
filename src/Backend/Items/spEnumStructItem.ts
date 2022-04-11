@@ -23,11 +23,18 @@ export class EnumStructItem implements SPItem {
   range: Range;
   fullRange: Range;
 
-  constructor(name: string, file: string, description: string, range: Range) {
+  constructor(
+    name: string,
+    file: string,
+    description: string,
+    range: Range,
+    fullRange: Range
+  ) {
     this.name = name;
     this.filePath = file;
     this.description = description;
     this.range = range;
+    this.fullRange = fullRange;
     this.references = [];
   }
 

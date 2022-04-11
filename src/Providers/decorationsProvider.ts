@@ -1,4 +1,5 @@
 import { window, DecorationRenderOptions } from "vscode";
+import { URI } from "vscode-uri";
 
 import { ItemsRepository } from "../Backend/spItemsRepository";
 
@@ -11,6 +12,9 @@ const decorationsType = window.createTextEditorDecorationType(options);
  */
 export async function updateDecorations(itemsRepo: ItemsRepository) {
   const editor = window.activeTextEditor;
+  if (editor === undefined) {
+    return;
+  }
   const allItems = itemsRepo.getAllItems(editor.document.uri);
 
   const decorations = allItems
@@ -19,7 +23,11 @@ export async function updateDecorations(itemsRepo: ItemsRepository) {
       e1.references
         .filter((e2) => e2.uri.fsPath === editor.document.uri.fsPath)
         .map((e3) => e3.range)
-        .concat(e1.range)
+        .concat(
+          URI.file(e1.filePath).fsPath === editor.document.uri.fsPath
+            ? e1.range
+            : []
+        )
     )
     .flat();
 

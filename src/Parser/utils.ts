@@ -1,7 +1,9 @@
-﻿import { FunctionParam, SPItem } from "../Backend/Items/spItems";
-import { Range } from "vscode";
+﻿import { Range } from "vscode";
 import { basename } from "path";
-import { URI } from "vscode-uri";
+
+import { FunctionParam } from "./interfaces";
+import { SPItem } from "../Backend/Items/spItems";
+import { ParserLocation } from "./interfaces";
 
 export function purgeCalls(item: SPItem, file: string): void {
   if (item.references === undefined) {
@@ -53,21 +55,6 @@ export function isSingleLineFunction(line: string) {
   return /\{.*\}\s*$/.test(line);
 }
 
-export function parentCounter(line: string): number {
-  let counter = 0;
-  if (line == null) {
-    return 0;
-  }
-  for (let char of line) {
-    if (char === "(") {
-      counter++;
-    } else if (char === ")") {
-      counter--;
-    }
-  }
-  return counter;
-}
-
 export function getParenthesisCount(line: string): number {
   let pCount = 0;
   let inAString = false;
@@ -85,4 +72,13 @@ export function getParenthesisCount(line: string): number {
     }
   }
   return pCount;
+}
+
+export function parsedLocToRange(loc: ParserLocation): Range {
+  return new Range(
+    loc.start.line - 1,
+    loc.start.column - 1,
+    loc.end.line - 1,
+    loc.end.column - 1
+  );
 }

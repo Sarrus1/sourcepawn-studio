@@ -14,10 +14,12 @@ import { basename } from "path";
 import { descriptionToMD } from "../../spUtils";
 import { SPItem } from "./spItems";
 import { ConstantItem } from "./spConstantItem";
+import { globalIdentifier, globalItem } from "../../Misc/spConstants";
 
 export class MethodMapItem implements SPItem {
   name: string;
   parent: MethodMapItem | ConstantItem;
+  tmpParent: string;
   description: string;
   detail: string;
   kind = CompletionItemKind.Class;
@@ -30,20 +32,26 @@ export class MethodMapItem implements SPItem {
 
   constructor(
     name: string,
-    parent: MethodMapItem | ConstantItem,
+    parent: string,
     detail: string,
     description: string,
     file: string,
     range: Range,
+    fullRange: Range,
     IsBuiltIn: boolean = false
   ) {
     this.name = name;
-    this.parent = parent;
+    this.tmpParent = parent;
+    if (parent !== globalIdentifier) {
+      this.tmpParent = parent;
+    }
+    this.parent = globalItem;
     this.detail = detail;
     this.description = description;
     this.IsBuiltIn = IsBuiltIn;
     this.filePath = file;
     this.range = range;
+    this.fullRange = fullRange;
     this.type = name;
     this.references = [];
   }

@@ -1,160 +1,105 @@
 ﻿import { basename } from "path";
+import { Range } from "vscode";
 
-import { Parser } from "./spParser";
-import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
+import { spParserArgs } from "./spParser";
 import { EnumItem } from "../Backend/Items/spEnumItem";
 import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
-import { State } from "./stateEnum";
-import { parseDocComment } from "./parseDocComment";
-import { addFullRange } from "./addFullRange";
+import { ParserLocation, ParsedEnumMember, ParsedID } from "./interfaces";
+import { parsedLocToRange } from "./utils";
 
+/**
+ * Callback for a parsed enum.
+ * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
+ * @param  {ParsedID|undefined} id  The id of the enum.
+ * @param  {ParserLocation} loc The location of the enum.
+ * @param  {ParsedEnumMember[]} body  The members of the enum.
+ * @param  {string} doc The doc comment above the enum.
+ * @param  {string} lastDoc The doc comment of the last member of the enum.
+ * @returns void
+ */
 export function readEnum(
-  parser: Parser,
-  match: RegExpMatchArray,
-  line: string,
-  IsStruct: boolean
-) {
-  let { description, params } = parseDocComment(parser);
-  if (IsStruct) {
-    parseEnumStruct(parser, match[1], description, line);
-    return;
-  }
-
-  if (!match[1]) {
-    parser.anonymousEnumCount++;
-  }
-  let nameMatch = match[1] ? match[1] : `Enum#${parser.anonymousEnumCount}`;
-  let range = parser.makeDefinitionRange(match[1] ? match[1] : "enum", line);
-  var enumCompletion: EnumItem = new EnumItem(
-    nameMatch,
-    parser.filePath,
-    description,
-    range
+  parserArgs: spParserArgs,
+  id: ParsedID | undefined,
+  loc: ParserLocation,
+  body: ParsedEnumMember[],
+  doc: string,
+  lastDoc: string
+): void {
+  const { name, nameRange } = getEnumNameAndRange(parserArgs, id, loc);
+  const key = name
+    ? name
+    : `${parserArgs.anonEnumCount}${basename(parserArgs.filePath)}`;
+  const enumItem = new EnumItem(
+    name,
+    parserArgs.filePath,
+    doc.length === 0 ? undefined : doc,
+    nameRange,
+    parsedLocToRange(loc)
   );
-  const key = match[1]
-    ? match[1]
-    : `${parser.anonymousEnumCount}${basename(parser.filePath)}`;
-  parser.fileItems.set(key, enumCompletion);
-
-  // Set max number of iterations for safety
-  let iter = 0;
-  // Match all the enum members
-  let foundEndToken = false;
-  let i = match[0].length;
-  let isBlockComment = false;
-  let enumMemberName = "";
-  description = "";
-
-  while (!foundEndToken && iter < 10000) {
-    iter++;
-    if (line.length <= i) {
-      line = parser.lines.shift();
-      parser.lineNb++;
-      if (line === undefined) {
-        return;
-      }
-      i = 0;
-      continue;
-    }
-
-    if (isBlockComment) {
-      let endComMatch = line.slice(i).match(/(.*)\*\//);
-      if (endComMatch) {
-        description += line.slice(i, i + endComMatch[1].length).trimEnd();
-        isBlockComment = false;
-        i += endComMatch[0].length;
-        let prevEnumMember = parser.fileItems.get(
-          enumMemberName
-        ) as EnumMemberItem;
-        if (prevEnumMember !== undefined) {
-          prevEnumMember.description = description;
-        }
-        enumMemberName = "";
-        continue;
-      }
-      description += line.slice(i).trimEnd();
-      line = parser.lines.shift();
-      parser.lineNb++;
-      if (line === undefined) {
-        return;
-      }
-      i = 0;
-      continue;
-    }
-
-    if (!isBlockComment) {
-      if (line.length > i + 1) {
-        if (line[i] == "/" && line[i + 1] == "*") {
-          isBlockComment = true;
-          i += 2;
-          description = "";
-          continue;
-        }
-        if (line[i] == "/" && line[i + 1] == "/") {
-          let prevEnumMember = parser.fileItems.get(
-            enumMemberName
-          ) as EnumMemberItem;
-          if (prevEnumMember !== undefined) {
-            prevEnumMember.description = line.slice(i + 2).trim();
-          }
-          line = parser.lines.shift();
-          parser.lineNb++;
-          if (line === undefined) {
-            return;
-          }
-          i = 0;
-          continue;
-        }
-      }
-      if (line[i] == "}") {
-        foundEndToken = true;
-        continue;
-      }
-    }
-    const croppedLine = line.slice(i);
-    let iterMatch = croppedLine.match(
-      /^\s*(?:\w+\s*:\s*)?([A-Za-z_]+\w*)(?:\s*\=.+?(?=(?:\r|\n|\,|\/\*|\/\/)))?/
-    );
-    if (!iterMatch || isBlockComment) {
-      i++;
-      continue;
-    }
-    enumMemberName = iterMatch[1];
-    let range = parser.makeDefinitionRange(enumMemberName, line);
-    parser.fileItems.set(
-      enumMemberName,
-      new EnumMemberItem(
-        enumMemberName,
-        parser.filePath,
-        "",
-        enumCompletion,
-        range,
-        parser.IsBuiltIn
+  parserArgs.fileItems.set(key, enumItem);
+  if (body) {
+    body.forEach((e, i) =>
+      readEnumMember(
+        parserArgs,
+        e,
+        enumItem,
+        i === body.length - 1 ? lastDoc : undefined
       )
     );
-    i = iterMatch[0].length;
   }
-
-  addFullRange(parser, key);
-  return;
 }
 
-function parseEnumStruct(
-  parser: Parser,
-  enumStructName: string,
-  desc: string,
-  line: string
+/**
+ * Generate the name and the range of a potential anonymous enum.
+ * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
+ * @param  {ParsedID|undefined} id  The id of the enum.
+ * @param  {ParserLocation} loc The location of the enum.
+ * @returns Range
+ */
+function getEnumNameAndRange(
+  parserArgs: spParserArgs,
+  id: ParsedID | undefined,
+  loc: ParserLocation
+): { name: string; nameRange: Range } {
+  let name: string;
+  let nameRange: Range;
+  if (!id) {
+    parserArgs.anonEnumCount++;
+    name = `Enum#${parserArgs.anonEnumCount}`;
+    const newLoc = { ...loc };
+    newLoc.start.column = 1;
+    newLoc.end.column = 6;
+    newLoc.end.line = newLoc.start.line;
+    nameRange = parsedLocToRange(newLoc);
+  } else {
+    name = id.id;
+    nameRange = parsedLocToRange(id.loc);
+  }
+  return { name, nameRange };
+}
+
+/**
+ * Callback for a parsed enum member.
+ * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
+ * @param  {ParsedEnumMember} member  The member to be parsed.
+ * @param  {EnumItem} enumItem  The parent of the enum member.
+ * @param  {string} doc The doc associated to the enum member.
+ * @returns void
+ */
+function readEnumMember(
+  parserArgs: spParserArgs,
+  member: ParsedEnumMember,
+  enumItem: EnumItem,
+  doc: string
 ): void {
-  let range = parser.makeDefinitionRange(enumStructName, line);
-  var enumStructCompletion: EnumStructItem = new EnumStructItem(
-    enumStructName,
-    parser.filePath,
-    desc,
-    range
+  const range = parsedLocToRange(member.loc);
+  const memberItem = new EnumMemberItem(
+    member.id,
+    parserArgs.filePath,
+    doc ? doc : member.doc,
+    range,
+    parserArgs.IsBuiltIn,
+    enumItem
   );
-  parser.fileItems.set(enumStructName, enumStructCompletion);
-  parser.state.push(State.EnumStruct);
-  parser.state_data = {
-    name: enumStructName,
-  };
+  parserArgs.fileItems.set(member.id, memberItem);
 }

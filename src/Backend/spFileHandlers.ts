@@ -11,6 +11,7 @@ import { ItemsRepository } from "./spItemsRepository";
 import { Include } from "./Items/spItems";
 import { FileItems } from "./spFilesRepository";
 import { parseText, parseFile } from "../Parser/spParser";
+import { getAllMethodmaps } from "./spItemsGetters";
 
 /**
  * Handle the addition of a document by forwarding it to the newDocumentCallback function.
@@ -31,38 +32,49 @@ export function handleAddedDocument(
  * @param  {TextDocumentChangeEvent} event  The document change event triggered by the file change.
  * @returns void
  */
-export function handleDocumentChange(
+export async function handleDocumentChange(
   itemsRepo: ItemsRepository,
   event: TextDocumentChangeEvent
-) {
+): Promise<void> {
+  // Hack to make the function non blocking, and not prevent the completionProvider from running.
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
   const fileUri = event.document.uri.toString();
   const filePath: string = event.document.uri.fsPath.replace(".git", "");
 
   let fileItems = new FileItems(fileUri);
   itemsRepo.documents.add(fileUri);
-  // We use parseText here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
-  try {
-    parseText(
-      event.document.getText(),
-      filePath,
-      fileItems,
-      itemsRepo,
-      false,
-      false
-    );
-  } catch (error) {
-    console.log(error);
-  }
-  readUnscannedImports(itemsRepo, fileItems.includes);
-  itemsRepo.fileItems.set(fileUri, fileItems);
-  parseText(
-    event.document.getText(),
-    filePath,
-    fileItems,
-    itemsRepo,
-    true,
-    false
-  );
+  return new Promise((resolve, reject) => {
+    try {
+      // We use parseText here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
+      parseText(
+        event.document.getText(),
+        filePath,
+        fileItems,
+        itemsRepo,
+        false,
+        false
+      );
+
+      readUnscannedImports(itemsRepo, fileItems.includes);
+      itemsRepo.fileItems.set(fileUri, fileItems);
+
+      resolveMethodmapInherits(itemsRepo, event.document.uri);
+
+      parseText(
+        event.document.getText(),
+        filePath,
+        fileItems,
+        itemsRepo,
+        true,
+        false
+      );
+      resolve();
+    } catch (err) {
+      console.log(err);
+      reject(err);
+    }
+  });
 }
 
 /**
@@ -99,10 +111,19 @@ export function newDocumentCallback(
   readUnscannedImports(itemsRepo, fileItems.includes);
   itemsRepo.fileItems.set(uri.toString(), fileItems);
 
+  resolveMethodmapInherits(itemsRepo, uri);
+
   // Parse token references.
   parseFile(filePath, fileItems, itemsRepo, true, false);
   fileItems.includes.forEach((e) => {
-    parseFile(URI.parse(e.uri).fsPath, fileItems, itemsRepo, true, false);
+    const uri = URI.parse(e.uri);
+    parseFile(
+      uri.fsPath,
+      itemsRepo.fileItems.get(uri.toString()),
+      itemsRepo,
+      true,
+      false
+    );
   });
 }
 
@@ -184,4 +205,25 @@ export function getAllPossibleIncludeFolderPaths(
   possibleIncludePaths.push(join(scriptingFolder, "include"));
 
   return possibleIncludePaths.filter((e) => e !== "" && existsSync(e));
+}
+
+/**
+ * Deal with all the tmpParents properties of methodmaps items post parsing.
+ * @param  {ItemsRepository} itemsRepo The itemsRepository object constructed in the activation event.
+ * @param  {URI} uri  The uri of the document to check the methodmaps for (will check the includes as well).
+ * @returns void
+ */
+function resolveMethodmapInherits(itemsRepo: ItemsRepository, uri: URI): void {
+  const methodmaps = getAllMethodmaps(itemsRepo, uri);
+  methodmaps.forEach((v, k) => {
+    if (v.tmpParent === undefined) {
+      return;
+    }
+    const parent = methodmaps.get(v.tmpParent);
+    if (parent === undefined) {
+      return;
+    }
+    v.parent = parent;
+    v.tmpParent = undefined;
+  });
 }

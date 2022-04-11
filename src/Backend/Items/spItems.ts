@@ -8,8 +8,10 @@
   DocumentSymbol,
   LocationLink,
 } from "vscode";
+
 import { FunctionItem } from "./spFunctionItem";
 import { MethodItem } from "./spMethodItem";
+import { FunctionParam } from "../../Parser/interfaces";
 
 export interface SPItem {
   name: string;
@@ -36,11 +38,6 @@ export interface SPItem {
   toHover(): Hover | undefined;
   toDocumentSymbol?(): DocumentSymbol | undefined;
 }
-
-export type FunctionParam = {
-  label: string;
-  documentation: string;
-};
 
 export class Include {
   uri: string;
