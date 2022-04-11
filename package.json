@@ -559,7 +559,7 @@
     "ovsx": "^0.3.0"
   },
   "scripts": {
-    "vscode:prepublish": "npm run generate-parser && webpack --mode production",
+    "vscode:prepublish": "npm run generate-parser && npm run generate-spParser && webpack --mode production",
     "publish-ovsx": "ovsx publish",
     "generate-parser": "peggy --plugin ./node_modules/ts-pegjs -o src/Parser/cfgParser/cfgParser.ts --cache src/Parser/cfgParser/cfg.pegjs",
     "generate-spParser": "peggy --plugin ./node_modules/ts-pegjs -o src/Parser/spParser2.ts --cache src/Parser/sp.pegjs",
