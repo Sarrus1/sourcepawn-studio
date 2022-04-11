@@ -31,38 +31,46 @@ export function handleAddedDocument(
  * @param  {TextDocumentChangeEvent} event  The document change event triggered by the file change.
  * @returns void
  */
-export function handleDocumentChange(
+export async function handleDocumentChange(
   itemsRepo: ItemsRepository,
   event: TextDocumentChangeEvent
-) {
+): Promise<void> {
+  // Hack to make the function non blocking, and not prevent the completionProvider from running.
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
   const fileUri = event.document.uri.toString();
   const filePath: string = event.document.uri.fsPath.replace(".git", "");
 
   let fileItems = new FileItems(fileUri);
   itemsRepo.documents.add(fileUri);
-  // We use parseText here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
-  try {
-    parseText(
-      event.document.getText(),
-      filePath,
-      fileItems,
-      itemsRepo,
-      false,
-      false
-    );
-  } catch (error) {
-    console.log(error);
-  }
-  readUnscannedImports(itemsRepo, fileItems.includes);
-  itemsRepo.fileItems.set(fileUri, fileItems);
-  parseText(
-    event.document.getText(),
-    filePath,
-    fileItems,
-    itemsRepo,
-    true,
-    false
-  );
+  return new Promise((resolve, reject) => {
+    try {
+      // We use parseText here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
+      parseText(
+        event.document.getText(),
+        filePath,
+        fileItems,
+        itemsRepo,
+        false,
+        false
+      );
+
+      readUnscannedImports(itemsRepo, fileItems.includes);
+      itemsRepo.fileItems.set(fileUri, fileItems);
+      parseText(
+        event.document.getText(),
+        filePath,
+        fileItems,
+        itemsRepo,
+        true,
+        false
+      );
+      resolve();
+    } catch (err) {
+      console.log(err);
+      reject(err);
+    }
+  });
 }
 
 /**

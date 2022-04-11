@@ -74,11 +74,10 @@ export function parseText(
       spParser.args = args;
       const out: string = spParser.parse(data);
       //console.debug(out);
-    } catch (e) {
-      if (e.location !== undefined) {
-        console.error(basename(file), e.message, e.location.start);
+    } catch (err) {
+      if (err.location !== undefined) {
+        console.error(basename(file), err.message, err.location.start);
       }
-      console.error(e);
     }
   else {
     const lines = data.split("\n");

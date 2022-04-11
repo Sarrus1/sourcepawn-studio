@@ -20,7 +20,9 @@ import { throttles } from "./Linter/throttles";
  * @param  {TextDocument} document    The document to lint.
  * @returns void
  */
-export function refreshDiagnostics(document: TextDocument): void {
+export async function refreshDiagnostics(document: TextDocument) {
+  await null;
+
   // Check if the user specified not to enable the linter for this file.
   const range = new Range(0, 0, 1, 0);
   const text = document.getText(range);
