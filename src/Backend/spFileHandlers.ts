@@ -11,6 +11,7 @@ import { ItemsRepository } from "./spItemsRepository";
 import { Include } from "./Items/spItems";
 import { FileItems } from "./spFilesRepository";
 import { parseText, parseFile } from "../Parser/spParser";
+import { getAllMethodmaps } from "./spItemsGetters";
 
 /**
  * Handle the addition of a document by forwarding it to the newDocumentCallback function.
@@ -57,6 +58,9 @@ export async function handleDocumentChange(
 
       readUnscannedImports(itemsRepo, fileItems.includes);
       itemsRepo.fileItems.set(fileUri, fileItems);
+
+      resolveMethodmapInherits(itemsRepo, event.document.uri);
+
       parseText(
         event.document.getText(),
         filePath,
@@ -106,6 +110,8 @@ export function newDocumentCallback(
   }
   readUnscannedImports(itemsRepo, fileItems.includes);
   itemsRepo.fileItems.set(uri.toString(), fileItems);
+
+  resolveMethodmapInherits(itemsRepo, uri);
 
   // Parse token references.
   parseFile(filePath, fileItems, itemsRepo, true, false);
@@ -199,4 +205,25 @@ export function getAllPossibleIncludeFolderPaths(
   possibleIncludePaths.push(join(scriptingFolder, "include"));
 
   return possibleIncludePaths.filter((e) => e !== "" && existsSync(e));
+}
+
+/**
+ * Deal with all the tmpParents properties of methodmaps items post parsing.
+ * @param  {ItemsRepository} itemsRepo The itemsRepository object constructed in the activation event.
+ * @param  {URI} uri  The uri of the document to check the methodmaps for (will check the includes as well).
+ * @returns void
+ */
+function resolveMethodmapInherits(itemsRepo: ItemsRepository, uri: URI): void {
+  const methodmaps = getAllMethodmaps(itemsRepo, uri);
+  methodmaps.forEach((v, k) => {
+    if (v.tmpParent === undefined) {
+      return;
+    }
+    const parent = methodmaps.get(v.tmpParent);
+    if (parent === undefined) {
+      return;
+    }
+    v.parent = parent;
+    v.tmpParent = undefined;
+  });
 }

@@ -1,7 +1,6 @@
 ﻿import { spParserArgs } from "./spParser";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
-import { globalItem } from "../Misc/spConstants";
-import { ConstantItem } from "../Backend/Items/spConstantItem";
+import { globalIdentifier } from "../Misc/spConstants";
 import {
   MethodDeclaration,
   MethodmapNativeForwardDeclaration,
@@ -19,7 +18,7 @@ export function readMethodmap(
   parserArgs: spParserArgs,
   id: ParsedID | undefined,
   loc: ParserLocation,
-  inherit: string | undefined,
+  inherit: ParsedID | undefined,
   docstring: (string | PreprocessorStatement)[] | undefined,
   body: {
     type: "MethodmapBody";
@@ -33,18 +32,14 @@ export function readMethodmap(
   const range = parsedLocToRange(id.loc);
   const fullRange = parsedLocToRange(loc);
   const { doc, dep } = processDocStringComment(docstring);
-  let parent: MethodMapItem | ConstantItem = globalItem;
-  if (inherit !== undefined) {
-    // TODO: Add inherit parsing
-    parent = globalItem;
-  }
   const methodmapItem = new MethodMapItem(
     id.id,
-    parent,
+    inherit ? inherit.id : globalIdentifier,
     `methodmap ${id.id}${inherit ? " < " + inherit : ""}`,
     doc,
     parserArgs.filePath,
     range,
+    fullRange,
     parserArgs.IsBuiltIn
   );
   parserArgs.fileItems.set(id.id, methodmapItem);

@@ -12,6 +12,7 @@ import { ItemsRepository } from "./spItemsRepository";
 import { findMainPath } from "../spUtils";
 import { getIncludeExtension } from "./spUtils";
 import { globalItem } from "../Misc/spConstants";
+import { MethodMapItem } from "./Items/spMethodmapItem";
 
 /**
  * Returns an array of all the items parsed from a file and its known includes
@@ -33,6 +34,55 @@ export function getAllItems(itemsRepo: ItemsRepository, uri: URI): SPItem[] {
 
   getIncludedFiles(itemsRepo, fileItems, includes);
   return Array.from(includes).map(getFileItems, itemsRepo).flat();
+}
+
+/**
+ * Returns a map of all the methodmaps parsed from a file and its known includes
+ * @param  {ItemsRepository} itemsRepo      The itemsRepository object constructed in the activation event.
+ * @param  {URI} uri                        The URI of the file we are getting the methodmaps for.
+ * @returns Map<string, MethodMapItem>
+ */
+export function getAllMethodmaps(
+  itemsRepo: ItemsRepository,
+  uri: URI
+): Map<string, MethodMapItem> {
+  const mainPath = findMainPath(uri);
+  if (mainPath !== undefined && mainPath !== "") {
+    uri = URI.file(mainPath);
+  }
+
+  let includes = new Set<string>([uri.toString()]);
+  let methodmapItems = itemsRepo.fileItems.get(uri.toString());
+  if (methodmapItems === undefined) {
+    return new Map<string, MethodMapItem>();
+  }
+
+  getIncludedFiles(itemsRepo, methodmapItems, includes);
+  const methodmaps = new Map<string, MethodMapItem>();
+  includes.forEach((v) => {
+    getMethodmapItems.call(itemsRepo, methodmaps, v);
+  });
+  return methodmaps;
+}
+
+/**
+ * Callback used by the map function in getAllMethodmaps. Gets all the methodmaps from a parsed file, without its includes.
+ * @param  {ItemsRepository} this
+ * @param  {Map<string, MethodMapItem>} methodmapItems
+ * @param  {string} uri
+ * @returns void
+ */
+function getMethodmapItems(
+  this: ItemsRepository,
+  methodmapItems: Map<string, MethodMapItem>,
+  uri: string
+): void {
+  let items = this.fileItems.get(uri);
+  items.forEach((v, k) => {
+    if (v.kind === CompletionItemKind.Class) {
+      methodmapItems.set(k, v as MethodMapItem);
+    }
+  });
 }
 
 /**

@@ -12,6 +12,9 @@ const decorationsType = window.createTextEditorDecorationType(options);
  */
 export async function updateDecorations(itemsRepo: ItemsRepository) {
   const editor = window.activeTextEditor;
+  if (editor === undefined) {
+    return;
+  }
   const allItems = itemsRepo.getAllItems(editor.document.uri);
 
   const decorations = allItems
