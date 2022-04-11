@@ -9,6 +9,7 @@
 ### Fixed
 
 - Fixed random strikethrough appearing throughout the code (see #216).
+- Fix a zip deploy issue for the release workflow template (thanks to [domikuss](https://github.com/domikuss) for implementing this, see #220).
 
 ## [3.1.0]
 
