@@ -1,5 +1,15 @@
 ## Release Notes
 
+## [4.0.0]
+
+### Added
+
+- Added a brand new parser.
+
+### Fixed
+
+- Fixed random strikethrough appearing throughout the code (see #216).
+
 ## [3.1.0]
 
 ### Added
