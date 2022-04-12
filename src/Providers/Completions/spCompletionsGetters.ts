@@ -11,7 +11,7 @@ import { URI } from "vscode-uri";
 import { getTypeOfVariable } from "../../Backend/spItemsPropertyGetters";
 import {
   getLastFunc,
-  getLastEnumStructNameOrMethodMap,
+  getLastESOrMM,
 } from "../../Providers/spDefinitionProvider";
 import { SPItem } from "../../Backend/Items/spItems";
 import { getAllPossibleIncludeFolderPaths } from "../../Backend/spFileHandlers";
@@ -110,25 +110,21 @@ export function getCompletionListFromPosition(
   const line = document.lineAt(position.line).text;
   const isMethod = isMethodCall(line, position);
   const lastFunc = getLastFunc(position, document, allItems);
+  const lastESOrMM = getLastESOrMM(position, document.uri.fsPath, allItems);
 
   if (!isMethod) {
-    return getNonMethodItems(allItems, lastFunc);
+    return getNonMethodItems(allItems, lastFunc, lastESOrMM);
   }
 
-  const lastEnumStructOrMethodMap = getLastEnumStructNameOrMethodMap(
-    position,
-    document.uri.fsPath,
-    allItems
-  );
   let { variableType, words } = getTypeOfVariable(
     line,
     position,
     allItems,
     lastFunc,
-    lastEnumStructOrMethodMap
+    lastESOrMM
   );
 
-  let variableTypeItem = allItems.find(
+  const variableTypeItem = allItems.find(
     (e) =>
       [CompletionItemKind.Class, CompletionItemKind.Struct].includes(e.kind) &&
       e.name === variableType
@@ -160,24 +156,21 @@ function getMethodItems(
   isMethodMap: boolean,
   lastFunc: MethodItem | FunctionItem
 ): CompletionList {
-  let items = new Set<CompletionItem | undefined>();
-  try {
-    for (let item of allItems) {
-      if (
-        MP.includes(item.kind) &&
-        variableTypes.includes(item.parent as EnumStructItem | MethodMapItem) &&
-        // Don't include the constructor of the methodmap
-        !variableTypes.includes(item as EnumStructItem | MethodMapItem) &&
-        // Don't include static methods if we are not calling a method from its type.
-        // This handles suggestions for 'Database.Connect()' for example.
-        isMethodMap === /\bstatic\b[^\(]*\(/.test(item.detail as string)
-      ) {
-        items.add(item.toCompletionItem(lastFunc));
-      }
+  const items = new Set<CompletionItem | undefined>();
+
+  allItems.forEach((item) => {
+    if (
+      MP.includes(item.kind) &&
+      variableTypes.includes(item.parent as EnumStructItem | MethodMapItem) &&
+      // Don't include the constructor of the methodmap
+      !variableTypes.includes(item as EnumStructItem | MethodMapItem) &&
+      // Don't include static methods if we are not calling a method from its type.
+      // This handles suggestions for 'Database.Connect()' for example.
+      isMethodMap === /\bstatic\b[^\(]*\(/.test(item.detail as string)
+    ) {
+      items.add(item.toCompletionItem(lastFunc));
     }
-  } catch (e) {
-    console.debug(e);
-  }
+  });
 
   items.delete(undefined);
   return new CompletionList(
@@ -187,15 +180,16 @@ function getMethodItems(
 
 function getNonMethodItems(
   allItems: SPItem[],
-  lastFunc: FunctionItem | MethodItem
+  lastFunc: FunctionItem | MethodItem,
+  lastMMorES: MethodMapItem | EnumStructItem | undefined
 ): CompletionList {
-  let items = new Set<CompletionItem | undefined>();
+  const items = new Set<CompletionItem | undefined>();
 
-  for (let item of allItems) {
+  allItems.forEach((item) => {
     if (!MP.includes(item.kind)) {
       items.add(item.toCompletionItem(lastFunc) as CompletionItem);
     }
-  }
+  });
 
   items.delete(undefined);
   return new CompletionList(

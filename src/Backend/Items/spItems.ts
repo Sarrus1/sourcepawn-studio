@@ -12,6 +12,8 @@
 import { FunctionItem } from "./spFunctionItem";
 import { MethodItem } from "./spMethodItem";
 import { FunctionParam } from "../../Parser/interfaces";
+import { MethodMapItem } from "./spMethodmapItem";
+import { EnumStructItem } from "./spEnumStructItem";
 
 export interface SPItem {
   name: string;
@@ -30,7 +32,8 @@ export interface SPItem {
   deprecated?: string;
 
   toCompletionItem(
-    lastFunc?: MethodItem | FunctionItem
+    lastFunc?: MethodItem | FunctionItem | undefined,
+    lastESOrMM?: MethodMapItem | EnumStructItem | undefined
   ): CompletionItem | undefined;
   toDefinitionItem(): LocationLink | undefined;
   toReferenceItem?(): Location[];

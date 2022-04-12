@@ -141,7 +141,7 @@ function recursiveVariableSearch(
   }
   for (let k in obj) {
     if (typeof obj[k] == "object" && obj[k] !== null) {
-      searchVariablesInBody(parserArgs, parent, obj[k], parent);
+      searchVariablesInBody(parserArgs, obj[k], parent, grandParent);
     }
   }
 }

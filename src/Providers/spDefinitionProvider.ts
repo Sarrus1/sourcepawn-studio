@@ -113,7 +113,7 @@ export function isControlStatement(line: string): boolean {
   return false;
 }
 
-export function getLastEnumStructNameOrMethodMap(
+export function getLastESOrMM(
   position: Position,
   filePath: string,
   allItems: SPItem[]

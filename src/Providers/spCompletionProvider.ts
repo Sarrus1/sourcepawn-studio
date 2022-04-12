@@ -8,10 +8,7 @@ import {
 
 import { getTypeOfVariable } from "../Backend/spItemsPropertyGetters";
 import { ItemsRepository } from "../Backend/spItemsRepository";
-import {
-  getLastFunc,
-  getLastEnumStructNameOrMethodMap,
-} from "./spDefinitionProvider";
+import { getLastFunc, getLastESOrMM } from "./spDefinitionProvider";
 import {
   getCompletionListFromPosition,
   getIncludeFileCompletionList,
@@ -44,10 +41,10 @@ export function completionProvider(
         if (!match[1]) {
           // If the variable is not declared here, look up its type, as it
           // has not yet been parsed.
-          let allItems = itemsRepo.getAllItems(document.uri);
+          const allItems = itemsRepo.getAllItems(document.uri);
           const lastFunc = getLastFunc(position, document, allItems);
-          let newPos = new Position(1, match[2].length + 1);
-          const lastEnumStructOrMethodMap = getLastEnumStructNameOrMethodMap(
+          const newPos = new Position(1, match[2].length + 1);
+          const lastEnumStructOrMethodMap = getLastESOrMM(
             position,
             document.uri.fsPath,
             allItems

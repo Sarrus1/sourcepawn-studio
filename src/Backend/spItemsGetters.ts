@@ -5,7 +5,7 @@ import { URI } from "vscode-uri";
 
 import { SPItem } from "./Items/spItems";
 import { IncludeItem } from "./Items/spIncludeItem";
-import { getLastEnumStructNameOrMethodMap } from "../Providers/spDefinitionProvider";
+import { getLastESOrMM } from "../Providers/spDefinitionProvider";
 import { FileItems } from "./spFilesRepository";
 import { getAllPossibleIncludeFolderPaths } from "./spFileHandlers";
 import { ItemsRepository } from "./spItemsRepository";
@@ -141,16 +141,12 @@ export function getItemFromPosition(
   const line = document.lineAt(position.line).text;
 
   // Generate an include item if the line is an #include statement and return it.
-  let includeItem = makeIncludeItem(document, line, position);
+  const includeItem = makeIncludeItem(document, line, position);
   if (includeItem.length > 0) {
     return includeItem;
   }
 
-  let lastEnumStructOrMethodMap = getLastEnumStructNameOrMethodMap(
-    position,
-    document.uri.fsPath,
-    allItems
-  );
+  const lastESOrMM = getLastESOrMM(position, document.uri.fsPath, allItems);
 
   let items = allItems.filter((e) => {
     if (e.name !== word) {
@@ -170,11 +166,11 @@ export function getItemFromPosition(
           e1.filePath === document.uri.fsPath;
 
         // Handle variables inside of methods.
-        if (lastEnumStructOrMethodMap !== undefined && check) {
+        if (lastESOrMM !== undefined && check) {
           return (
-            e.enumStructName === lastEnumStructOrMethodMap.name &&
-            lastEnumStructOrMethodMap.fullRange.contains(e1.fullRange) &&
-            lastEnumStructOrMethodMap.fullRange.contains(e.range)
+            e.enumStructName === lastESOrMM.name &&
+            lastESOrMM.fullRange.contains(e1.fullRange) &&
+            lastESOrMM.fullRange.contains(e.range)
           );
         }
         return check;

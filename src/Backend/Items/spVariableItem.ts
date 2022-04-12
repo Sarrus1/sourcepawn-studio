@@ -16,6 +16,8 @@ import { ConstantItem } from "./spConstantItem";
 import { MethodItem } from "./spMethodItem";
 import { FunctionItem } from "./spFunctionItem";
 import { descriptionToMD } from "../../spUtils";
+import { EnumStructItem } from "./spEnumStructItem";
+import { MethodMapItem } from "./spMethodmapItem";
 
 export class VariableItem implements SPItem {
   name: string;
@@ -48,17 +50,38 @@ export class VariableItem implements SPItem {
   }
 
   toCompletionItem(
-    lastFunc: MethodItem | FunctionItem
+    lastFunc: MethodItem | FunctionItem | undefined,
+    lastMMorES: MethodMapItem | EnumStructItem | undefined
   ): CompletionItem | undefined {
+    if (lastFunc === undefined) {
+      if (this.parent.name === globalIdentifier) {
+        return {
+          label: this.name,
+          kind: this.kind,
+        };
+      }
+      return undefined;
+    }
+
+    if (lastMMorES === undefined) {
+      if (this.parent.name === lastFunc.name) {
+        return {
+          label: this.name,
+          kind: this.kind,
+        };
+      }
+    }
+    lastFunc = lastFunc as MethodItem;
     if (
-      lastFunc === undefined ||
-      [lastFunc.name, globalIdentifier].includes(this.parent.name)
+      this.parent.name === lastFunc.name &&
+      lastFunc.parent.name === lastMMorES.name
     ) {
       return {
         label: this.name,
         kind: this.kind,
       };
     }
+
     return undefined;
   }
 
