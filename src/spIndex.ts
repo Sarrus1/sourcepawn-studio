@@ -3,9 +3,8 @@ import {
   workspace as Workspace,
   languages,
   window,
-  StatusBarAlignment,
-  StatusBarItem,
   TextDocumentChangeEvent,
+  ProgressLocation,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { resolve } from "path";
@@ -25,11 +24,6 @@ import { updateDecorations } from "./Providers/decorationsProvider";
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
-
-  const SBItem = window.createStatusBarItem(StatusBarAlignment.Left, 0);
-  SBItem.command = "status.enablingSPFeatures";
-  SBItem.text = "Enabling SourcePawn features...";
-  SBItem.show();
 
   let workspaceFolders = Workspace.workspaceFolders || [];
   if (workspaceFolders.length === 0) {
@@ -84,7 +78,20 @@ export function activate(context: ExtensionContext) {
   );
   getDirectories(optionalIncludeDirs, providers);
 
-  loadFiles(providers, SBItem);
+  window.withProgress(
+    {
+      location: ProgressLocation.Window,
+      cancellable: false,
+      title: "Enabling SourcePawn features",
+    },
+    async (progress) => {
+      progress.report({ increment: 0 });
+
+      await loadFiles(providers);
+
+      progress.report({ increment: 100 });
+    }
+  );
 
   Workspace.onDidChangeConfiguration((e) => {
     if (e.affectsConfiguration("sourcepawn.MainPath")) {
@@ -228,7 +235,7 @@ function getDirectories(paths: string[], providers: Providers) {
   }
 }
 
-async function loadFiles(providers: Providers, SBItem: StatusBarItem) {
+async function loadFiles(providers: Providers) {
   console.time("parse");
   await parseSMApi(providers.itemsRepository);
 
@@ -251,7 +258,6 @@ async function loadFiles(providers: Providers, SBItem: StatusBarItem) {
   }
   updateDecorations(providers.itemsRepository);
 
-  SBItem.hide();
   console.timeEnd("parse");
 }
 

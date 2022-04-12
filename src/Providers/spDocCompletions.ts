@@ -15,7 +15,7 @@ const indentSize: number = 5;
 
 class SpDocCompletionItem extends CompletionItem {
   constructor(position: Position, FunctionDesc: string[], indent: string) {
-    super("/** */", CompletionItemKind.Text);
+    super("Generate docstring", CompletionItemKind.Text);
     let snippet = new SnippetString();
     let max = getMaxLength(FunctionDesc);
     snippet.appendText(`${indent}/**\n ${indent}* `);
@@ -35,8 +35,9 @@ class SpDocCompletionItem extends CompletionItem {
       indent
     );
     snippet.appendPlaceholder("Return description");
-    snippet.appendText(`\n${indent}`);
+    snippet.appendText(`\n${indent} */`);
     this.insertText = snippet;
+    this.filterText = "/*";
     let start: Position = new Position(position.line, 0);
     let end: Position = new Position(position.line, 0);
     this.range = new Range(start, end);

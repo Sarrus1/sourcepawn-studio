@@ -193,22 +193,22 @@ export function signatureProvider(
     };
   }
 
-  match = croppedLine.match(/(\w+)$/);
+  match = croppedLine.match(/\w+$/);
   if (!match) {
     return blankReturn;
   }
-  if (["if", "for", "while", "case", "switch", "return"].includes(match[1])) {
+  if (["if", "for", "while", "case", "switch", "return"].includes(match[0])) {
     return blankReturn;
   }
   let items = itemsRepo
     .getAllItems(document.uri)
-    .filter(
-      (item) =>
-        item.name === match[1] &&
-        [CompletionItemKind.Function, CompletionItemKind.Interface].includes(
-          item.kind
-        )
-    );
+    .filter((e) => e.filePath === document.uri.fsPath);
+  items = items.filter(
+    (item) =>
+      [CompletionItemKind.Function, CompletionItemKind.Interface].includes(
+        item.kind
+      ) && item.name === match[0]
+  );
   if (items === undefined) {
     return blankReturn;
   }

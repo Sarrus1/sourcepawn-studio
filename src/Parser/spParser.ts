@@ -78,6 +78,7 @@ export function parseText(
       if (err.location !== undefined) {
         console.debug(`An error occured while trying to parse ${file}`);
         console.debug(err.message, err.location.start);
+        throw new Error("Parser error");
       }
     }
   else {
