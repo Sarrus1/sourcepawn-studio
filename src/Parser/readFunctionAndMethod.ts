@@ -115,7 +115,7 @@ function recursiveVariableSearch(
     found = false;
   if (obj["type"] === "ForLoopVariableDeclaration") {
     declarators = obj["declarations"];
-    variableType = "int";
+    variableType = (obj["variableType"] as ParsedID).id;
     found = true;
   }
   if (obj["type"] === "LocalVariableDeclaration") {

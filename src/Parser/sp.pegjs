@@ -1145,7 +1145,7 @@ IterationStatement
   }
   / doc:__ ForToken __
   "(" __
-  "int" __ declarations:VariableDeclarationList __ ";" __
+  variableType:TypeIdentifier __ declarations:VariableDeclarationList __ ";" __
   test:(Expression __)? ";" __
   update:(Expression __)?
   ")"
@@ -1155,7 +1155,8 @@ IterationStatement
       type: "ForStatement",
       init: {
         type: "ForLoopVariableDeclaration",
-        declarations: declarations,
+        declarations,
+        variableType
       },
       test: extractOptional(test, 0),
       update: extractOptional(update, 0),
