@@ -431,8 +431,7 @@ EOF
 // ----- A.3 Expressions -----
 
 PrimaryExpression
-  = ThisToken { return { type: "ThisExpression" }; }
-  / Identifier
+  = Identifier
   / Literal
   / ArrayLiteral
   / ObjectLiteral
