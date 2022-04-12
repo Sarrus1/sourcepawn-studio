@@ -30,6 +30,10 @@ export function readFunctionAndMethod(
   body: FunctionBody | null,
   parent: EnumStructItem | ConstantItem = globalItem
 ): void {
+  // Don't add the float native.
+  if (id.id === "float") {
+    return;
+  }
   const range = parsedLocToRange(id.loc);
   const fullRange = parsedLocToRange(loc);
   const { doc, dep } = processDocStringComment(docstring);
