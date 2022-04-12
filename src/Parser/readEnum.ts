@@ -4,8 +4,14 @@ import { Range } from "vscode";
 import { spParserArgs } from "./spParser";
 import { EnumItem } from "../Backend/Items/spEnumItem";
 import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
-import { ParserLocation, ParsedEnumMember, ParsedID } from "./interfaces";
+import {
+  ParserLocation,
+  ParsedEnumMember,
+  ParsedID,
+  PreprocessorStatement,
+} from "./interfaces";
 import { parsedLocToRange } from "./utils";
+import { processDocStringComment } from "./processComment";
 
 /**
  * Callback for a parsed enum.
@@ -22,13 +28,14 @@ export function readEnum(
   id: ParsedID | undefined,
   loc: ParserLocation,
   body: ParsedEnumMember[],
-  doc: string,
-  lastDoc: string
+  docstring: (string | PreprocessorStatement)[] | undefined,
+  lastDocstring: (string | PreprocessorStatement)[] | undefined
 ): void {
   const { name, nameRange } = getEnumNameAndRange(parserArgs, id, loc);
   const key = name
     ? name
     : `${parserArgs.anonEnumCount}${basename(parserArgs.filePath)}`;
+  const { doc, dep } = processDocStringComment(docstring);
   const enumItem = new EnumItem(
     name,
     parserArgs.filePath,
@@ -43,7 +50,7 @@ export function readEnum(
         parserArgs,
         e,
         enumItem,
-        i === body.length - 1 ? lastDoc : undefined
+        i === body.length - 1 ? lastDocstring : undefined
       )
     );
   }
@@ -90,13 +97,18 @@ function readEnumMember(
   parserArgs: spParserArgs,
   member: ParsedEnumMember,
   enumItem: EnumItem,
-  doc: string
+  docstring: (string | PreprocessorStatement)[] | undefined
 ): void {
   const range = parsedLocToRange(member.loc);
+  if (docstring !== undefined) {
+    var { doc, dep } = processDocStringComment(docstring);
+  } else {
+    var { doc, dep } = processDocStringComment(member.doc);
+  }
   const memberItem = new EnumMemberItem(
     member.id,
     parserArgs.filePath,
-    doc ? doc : member.doc,
+    doc,
     range,
     parserArgs.IsBuiltIn,
     enumItem

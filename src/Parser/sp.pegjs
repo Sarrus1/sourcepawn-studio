@@ -435,6 +435,7 @@ PrimaryExpression
   / Literal
   / ArrayLiteral
   / ObjectLiteral
+  / ThisToken { return { type: "ThisExpression" }; }
   / "(" __ expression:Expression __ ")" { return expression; }
 
 ArrayLiteral
@@ -670,6 +671,7 @@ AdditiveExpression
 AdditiveOperator
   = $("+" ![+=])
   / $("-" ![-=])
+  / DotDotDotToken
 
 ShiftExpression
   = head:AdditiveExpression
@@ -724,9 +726,7 @@ EqualityExpressionNoIn
   }
 
 EqualityOperator
-  = "==="
-  / "!=="
-  / "=="
+  = "=="
   / "!="
 
 BitwiseANDExpression
@@ -943,7 +943,7 @@ Statement
   / PropertyToken
 
 DefineStatement
-  = content:DefineStatementNoDoc doc:_
+  = content:DefineStatementNoDoc doc:__
   {
     readDefine(args, content.id, content.loc, content.value, doc);
     return content;
@@ -1617,7 +1617,7 @@ PropertyDeclaration
       doc,
       loc: content.loc,
       body: content.body
-    };;
+    };
   }
 
 PropertyDeclarationNoDoc
@@ -1633,7 +1633,22 @@ PropertyDeclarationNoDoc
   }
 
 MethodDeclaration
-  = doc:__ accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
+  = doc:__ content:MethodDeclarationNoDoc
+  {
+    return {
+      type: "MethodDeclaration",
+      accessModifier: content.accessModifier,
+      returnType: content.returnType,
+      id: content.id,
+      doc,
+      loc: content.loc,
+      params: content.params,
+      body: content.body
+    };
+  }
+
+MethodDeclarationNoDoc
+  = accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
   "(" __ params:(FormalParameterList __)? ")" __
   body:Block
   {
@@ -1644,13 +1659,26 @@ MethodDeclaration
       loc: location(),
       id,
       params: optionalList(extractOptional(params, 0)),
-      body,
-      doc
+      body
     };
   }
 
 MethodmapNativeForwardDeclaration
-  = doc:__ accessModifier:FunctionAccessModifiers* token:(NativeToken / ForwardToken) __p
+  = doc:__ content:MethodmapNativeForwardDeclarationNoDoc
+  {
+    return {
+      type: "MethodmapNativeForwardDeclaration",
+      accessModifier: content.accessModifier,
+      returnType: content.returnType,
+      loc: content.loc,
+      id: content.id,
+      params: content.params,
+      doc
+    }
+  }
+
+MethodmapNativeForwardDeclarationNoDoc
+  = accessModifier:FunctionAccessModifiers* token:(NativeToken / ForwardToken) __p
   returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
   "(" __ params:(FormalParameterList __)? ")" EOS
   {
@@ -1661,8 +1689,7 @@ MethodmapNativeForwardDeclaration
       returnType,
       loc: location(),
       id,
-      params: optionalList(extractOptional(params, 0)),
-      doc
+      params: optionalList(extractOptional(params, 0))
     }
   }
 
