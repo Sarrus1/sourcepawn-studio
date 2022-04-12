@@ -1580,7 +1580,7 @@ MethodmapDeclaration
   }
 
 MethodmapDeclarationNoDoc
-  = MethodmapToken __p id:Identifier __ inherit:MethodmapInherit?
+  = MethodmapToken __p id:Identifier __ inherit:(MethodmapInherit / "__nullable__")?
   "{" body:MethodmapBody __ "}" EOS 
   {
     return {

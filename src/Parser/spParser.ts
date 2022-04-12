@@ -76,7 +76,8 @@ export function parseText(
       //console.debug(out);
     } catch (err) {
       if (err.location !== undefined) {
-        console.error(basename(file), err.message, err.location.start);
+        console.debug(`An error occured while trying to parse ${file}`);
+        console.debug(err.message, err.location.start);
       }
     }
   else {

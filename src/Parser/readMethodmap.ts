@@ -18,7 +18,7 @@ export function readMethodmap(
   parserArgs: spParserArgs,
   id: ParsedID | undefined,
   loc: ParserLocation,
-  inherit: ParsedID | undefined,
+  inherit: ParsedID | "__nullable__" | undefined,
   docstring: (string | PreprocessorStatement)[] | undefined,
   body: {
     type: "MethodmapBody";
@@ -34,7 +34,9 @@ export function readMethodmap(
   const { doc, dep } = processDocStringComment(docstring);
   const methodmapItem = new MethodMapItem(
     id.id,
-    inherit ? inherit.id : globalIdentifier,
+    !(inherit && inherit === "__nullable__")
+      ? (inherit as ParsedID).id
+      : globalIdentifier,
     `methodmap ${id.id}${inherit ? " < " + inherit : ""}`,
     doc,
     parserArgs.filePath,
