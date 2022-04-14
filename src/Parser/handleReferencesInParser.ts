@@ -42,13 +42,17 @@ export function handleReferenceInParser(
     this.parser.referencesMap.get(name + this.scope) ||
     this.parser.referencesMap.get(name + this.outsideScope) ||
     this.parser.referencesMap.get(name + globalScope) ||
-    this.parser.referencesMap.get(name)
+    this.parser.referencesMap.get(name);
 
   // Handle positional arguments.
   if (item === undefined) {
-    const lastFuncCall = this.previousItems.find((e) => e.kind === CompletionItemKind.Function);
+    const lastFuncCall = this.previousItems
+      .reverse()
+      .find((e) => e.kind === CompletionItemKind.Function);
     if (lastFuncCall !== undefined) {
-      item = this.parser.referencesMap.get(`${name}-${lastFuncCall.name}-${globalIdentifier}`);
+      item = this.parser.referencesMap.get(
+        `${name}-${lastFuncCall.name}-${globalIdentifier}`
+      );
     }
   }
 

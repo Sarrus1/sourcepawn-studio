@@ -14,12 +14,12 @@ import {
   getIncludeFileCompletionList,
 } from "./Completions/spCompletionsGetters";
 
-export function completionProvider(
+export async function completionProvider(
   itemsRepo: ItemsRepository,
   document: TextDocument,
   position: Position,
   token: CancellationToken
-): CompletionList {
+): Promise<CompletionList> {
   const text = document
     .lineAt(position.line)
     .text.substring(0, position.character);

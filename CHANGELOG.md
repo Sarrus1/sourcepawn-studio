@@ -7,6 +7,7 @@
 - Added a brand new parser.
 - Nicer loader.
 - Better docstring generation.
+- Added positional arguments support.
 
 ### Fixed
 

@@ -51,8 +51,16 @@ export class VariableItem implements SPItem {
 
   toCompletionItem(
     lastFunc: MethodItem | FunctionItem | undefined,
-    lastMMorES: MethodMapItem | EnumStructItem | undefined
+    lastMMorES: MethodMapItem | EnumStructItem | undefined,
+    override?: boolean
   ): CompletionItem | undefined {
+    if (override) {
+      return {
+        label: this.name,
+        kind: this.kind,
+      };
+    }
+
     if (lastFunc === undefined) {
       if (this.parent.name === globalIdentifier) {
         return {

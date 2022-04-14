@@ -4,6 +4,8 @@ import {
   Position,
   CompletionList,
   CompletionItemKind,
+  commands,
+  SignatureHelp,
 } from "vscode";
 import { basename } from "path";
 import { URI } from "vscode-uri";
@@ -18,7 +20,6 @@ import { getAllPossibleIncludeFolderPaths } from "../../Backend/spFileHandlers";
 import { ItemsRepository } from "../../Backend/spItemsRepository";
 import { isMethodCall } from "../../Backend/spUtils";
 import { getAllInheritances } from "../../Backend/spItemsPropertyGetters";
-import { globalIdentifier } from "../../Misc/spConstants";
 import { MethodMapItem } from "../../Backend/Items/spMethodmapItem";
 import { EnumStructItem } from "../../Backend/Items/spEnumStructItem";
 import { FunctionItem } from "../../Backend/Items/spFunctionItem";
@@ -97,11 +98,11 @@ export function getIncludeFileCompletionList(
  * @param  {Position} position            The position at which the completions are requested.
  * @returns CompletionList
  */
-export function getCompletionListFromPosition(
+export async function getCompletionListFromPosition(
   itemsRepo: ItemsRepository,
   document: TextDocument,
   position: Position
-): CompletionList {
+): Promise<CompletionList> {
   const allItems: SPItem[] = itemsRepo.getAllItems(document.uri);
   if (allItems === []) {
     return new CompletionList();
@@ -111,6 +112,17 @@ export function getCompletionListFromPosition(
   const isMethod = isMethodCall(line, position);
   const lastFunc = getLastFunc(position, document, allItems);
   const lastESOrMM = getLastESOrMM(position, document.uri.fsPath, allItems);
+
+  const positionalArguments = getPositionalArguments(
+    document,
+    position,
+    allItems,
+    line
+  );
+
+  if (positionalArguments) {
+    return positionalArguments;
+  }
 
   if (!isMethod) {
     return getNonMethodItems(allItems, lastFunc, lastESOrMM);
@@ -195,4 +207,44 @@ function getNonMethodItems(
   return new CompletionList(
     Array.from(items).filter((e) => e !== undefined) as CompletionItem[]
   );
+}
+
+/**
+ * Return a CompletionList object of all the positional arguments of a function, if appropriate.
+ * Return undefined otherwise.
+ * @param  {TextDocument} document  The document the completions are requested for.
+ * @param  {Position} position  The position at which the completions are requested.
+ * @param  {SPItem[]} allItems  All the SPItems of the document, including the includes.
+ * @param  {string} line  The line at which the completions are requested at.
+ * @returns CompletionList|undefined
+ */
+async function getPositionalArguments(
+  document: TextDocument,
+  position: Position,
+  allItems: SPItem[],
+  line: string
+): Promise<CompletionList | undefined> {
+  const signatureHelp = (await commands.executeCommand(
+    "vscode.executeSignatureHelpProvider",
+    document.uri,
+    position
+  )) as SignatureHelp;
+  if (signatureHelp === undefined) {
+    return undefined;
+  }
+  if (line[position.character - 1] !== ".") {
+    return undefined;
+  }
+  const match = signatureHelp.signatures[0].label.match(/(\w+)\(/);
+  if (!match) {
+    return undefined;
+  }
+  const params = allItems.filter(
+    (e) => e.kind === CompletionItemKind.Variable && e.parent.name === match[1]
+  );
+  const completions = new CompletionList();
+  completions.items = params.map((e) =>
+    e.toCompletionItem(undefined, undefined, true)
+  );
+  return completions;
 }
