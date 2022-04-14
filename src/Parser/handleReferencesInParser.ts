@@ -38,12 +38,19 @@ export function handleReferenceInParser(
     }
     return;
   }
-
-  const item =
+  let item =
     this.parser.referencesMap.get(name + this.scope) ||
     this.parser.referencesMap.get(name + this.outsideScope) ||
     this.parser.referencesMap.get(name + globalScope) ||
-    this.parser.referencesMap.get(name);
+    this.parser.referencesMap.get(name)
+
+  // Handle positional arguments.
+  if (item === undefined) {
+    const lastFuncCall = this.previousItems.find((e) => e.kind === CompletionItemKind.Function);
+    if (lastFuncCall !== undefined) {
+      item = this.parser.referencesMap.get(`${name}-${lastFuncCall.name}-${globalIdentifier}`);
+    }
+  }
 
   if (item !== undefined) {
     // Prevent double references.

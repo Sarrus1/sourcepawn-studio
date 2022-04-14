@@ -587,7 +587,7 @@ Arguments
   }
 
 ArgumentList
-  = (TypeIdentifier ":")? head:AssignmentExpression tail:(__ "," __ (TypeIdentifier ":")? AssignmentExpression)* 
+  = (TypeIdentifier ":")? "."? head:AssignmentExpression tail:(__ "," __ (TypeIdentifier ":")? "."? AssignmentExpression)* 
   {
     return buildList(head, tail, 3);
   }
