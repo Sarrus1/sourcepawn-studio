@@ -82,7 +82,7 @@ export function activate(context: ExtensionContext) {
     {
       location: ProgressLocation.Window,
       cancellable: false,
-      title: "Enabling SourcePawn features",
+      title: "Initializing SourcePawn features",
     },
     async (progress) => {
       progress.report({ increment: 0 });
