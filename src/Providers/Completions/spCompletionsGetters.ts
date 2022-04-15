@@ -113,14 +113,14 @@ export async function getCompletionListFromPosition(
   const lastFunc = getLastFunc(position, document, allItems);
   const lastESOrMM = getLastESOrMM(position, document.uri.fsPath, allItems);
 
-  const positionalArguments = getPositionalArguments(
+  const positionalArguments = await getPositionalArguments(
     document,
     position,
     allItems,
     line
   );
 
-  if (positionalArguments) {
+  if (positionalArguments !== undefined) {
     return positionalArguments;
   }
 
