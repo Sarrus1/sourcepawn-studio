@@ -365,6 +365,8 @@ ElseToken       = "else"
 EnumToken       = "enum"
 EnumStructToken = EnumToken __p StructToken
 FalseToken      = "false"
+FuncenumToken   = "funcenum"
+FunctagToken    = "functag"
 DotDotDotToken  = "..." {return {id: "...", loc: location()};}
 FinallyToken    = "finally"
 ForToken        = "for"
@@ -1513,6 +1515,28 @@ EnumBody
     return buildListWithDoc(head, tail, 3);
   }
 
+FunctagDeclaration
+  = doc:__ content:FunctagDeclarationNoDoc
+  {
+    readTypeDef(args, content.id, content.loc, content.body, doc);
+    return content;
+  }
+
+FunctagDeclarationNoDoc
+  = FunctagToken __p accessModifier:FunctionAccessModifiers* returnType:TypeIdentifier ":" id:Identifier __ "(" __ params:(FormalParameterList __)? ")" __ EOS
+  {
+    return {
+      type: "FunctagDeclaration",
+      loc: location(),
+      accessModifier,
+      body:{
+        returnType,
+        params
+      },
+      id,
+    };
+  }
+
 TypeDefDeclaration
   = doc:__ content:TypeDefDeclarationNoDoc
   {
@@ -1559,6 +1583,29 @@ TypeSetDeclarationNoDoc
       params
     };
   }
+
+FuncenumDeclaration
+  = doc:__ content:FuncenumDeclarationNoDoc
+  {
+    readTypeSet(args, content.id, content.loc, doc);
+    return content;
+  }
+
+FuncenumDeclarationNoDoc
+  = FuncenumToken __p id:TypeIdentifier
+  __ "{" __ params:( FuncenumBody __ )* "}" EOS
+  {
+  	return {
+      type: "FuncenumDeclaration",
+      id,
+      loc: location(),
+      params
+    };
+  }
+
+FuncenumBody
+  = id:TypeIdentifier ":" accessModifier:"public"
+  "(" __ params:(FormalParameterList __)? ")" (__p ",")? __
 
 StructDeclaration
   = 
@@ -1857,6 +1904,8 @@ SourceElement
   / AliasDeclaration
   / EnumDeclaration
   / EnumStructDeclaration
+  / FuncenumDeclaration
+  / FunctagDeclaration
   / MacroDeclaration
   / UsingDeclaration
   / NativeForwardDeclaration

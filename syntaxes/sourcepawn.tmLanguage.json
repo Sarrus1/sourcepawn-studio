@@ -56,6 +56,36 @@
       }
     },
     {
+      "comment": "Functag",
+      "match": "(functag)\\s+((?:public|stock)\\s+)*(\\w+)\\:(\\w+)",
+      "captures": {
+        "1": {
+          "name": "keyword.functag.sourcepawn"
+        },
+        "2": {
+          "name": "keyword.functag.sourcepawn"
+        },
+        "3": {
+          "name": "support.type.core.functag.sourcepawn"
+        },
+        "4": {
+          "name": "support.type.core.functag.sourcepawn"
+        }
+      }
+    },
+    {
+      "comment": "Funcenum",
+      "match": "(funcenum)\\s+(\\w+)",
+      "captures": {
+        "1": {
+          "name": "keyword.funcenum.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.funcenum.sourcepawn"
+        }
+      }
+    },
+    {
       "comment": "Typeset",
       "match": "(typeset)\\s+(\\w+)",
       "captures": {
@@ -216,6 +246,18 @@
       }
     },
     {
+      "comment": "Funcenum body",
+      "match": "^\\s*(\\w+)\\:(public)",
+      "captures": {
+        "1": {
+          "name": "support.type.core.body.funcenum.sourcepawn"
+        },
+        "2": {
+          "name": "keyword.public.funcenum.sourcepawn"
+        }
+      }
+    },
+    {
       "comment": "Function declaration syntax",
       "match": "^\\s*((?:(?:static|native|stock|public|forward)\\s*)*)(?!function)(?:(\\w*)\\s*(?:\\s+|\\:))\\s*(\\w+)\\s*\\(",
       "captures": {
@@ -248,7 +290,7 @@
     {
       "comment": "keywords",
       "name": "keyword.sourcepawn",
-      "match": "\\s*\\b(?:break|continue|decl|delete|forward|native|public|stock|funcenum|functag|this|sizeof)\\b"
+      "match": "\\s*\\b(?:break|continue|decl|delete|forward|native|public|const|stock|this|sizeof)\\b"
     },
     {
       "comment": "Function params new syntax",

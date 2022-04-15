@@ -64,9 +64,6 @@ export class TypeDefItem implements SPItem {
   }
 
   toHover(): Hover | undefined {
-    if (!this.description) {
-      return undefined;
-    }
     return new Hover([
       {
         language: "sourcepawn",

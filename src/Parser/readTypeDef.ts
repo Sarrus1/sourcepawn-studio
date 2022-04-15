@@ -29,7 +29,7 @@ export function readTypeDef(
   const { doc, dep } = processDocStringComment(docstring);
   const typeDefItem = new TypeDefItem(
     id.id,
-    `typedef ${id.id} = function ${body.returnType} (${readTypeDefBody(
+    `typedef ${id.id} = function ${body.returnType.id} (${readTypeDefParams(
       body.params
     ).join(", ")});`,
     parserArgs.filePath,
@@ -44,21 +44,33 @@ export function readTypeDef(
 
 /**
  * Extract variables from a TypeDef's body.
- * @param  {(ParsedParam[]|null)[]|null} body
+ * @param  {(ParsedParam[]|null)[]|null} params
  * @returns string
  */
-function readTypeDefBody(
-  body: (ParsedParam[] | null)[] | null
+function readTypeDefParams(
+  params: (ParsedParam[] | null)[] | null
 ): string[] | undefined {
-  if (!body) {
+  if (!params) {
     return undefined;
   }
-  if (body.length === 0) {
+  if (params.length === 0) {
     return undefined;
   }
-  return body[0].map((e) => {
+  return params[0].map((e) => {
     // Handle "..." tokens.
     const id = e.id.id;
-    return e.parameterType ? e.parameterType.name.id + " " + id : "";
+    let declType = "";
+    if (e.declarationType) {
+      if (Array.isArray(e.declarationType)) {
+        declType = e.declarationType.join(" ");
+      } else {
+        declType = e.declarationType;
+      }
+      declType += " ";
+    }
+
+    return `${declType}${
+      e.parameterType ? e.parameterType.name.id + " " : ""
+    }${id}`;
   });
 }
