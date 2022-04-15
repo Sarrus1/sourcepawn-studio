@@ -163,6 +163,18 @@
       }
     },
     {
+      "comment": "Enum struct accessor",
+      "match": "([A-Za-z0-9_]+)\\:\\:([A-Za-z0-9_]*)",
+      "captures": {
+        "1": {
+          "name": "support.type.core.enum_struct.accessor.sourcepawn"
+        },
+        "2": {
+          "name": "variable.enum_struct.accessor.sourcepawn"
+        }
+      }
+    },
+    {
       "comment": "Control statements",
       "name": "keyword.control.statement.sourcepawn",
       "match": "\\s*\\b(?:if|else|for|while|do|switch|case|default|return)\\b"

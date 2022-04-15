@@ -542,7 +542,7 @@ NewExpression
 
 CallExpression
   = head:(
-      callee:MemberExpression __ args:Arguments {
+      callee:MemberExpression {
         return { type: "CallExpression", callee: callee, arguments: args };
       }
     )
@@ -587,7 +587,7 @@ Arguments
   }
 
 ArgumentList
-  = (TypeIdentifier ":")? "."? head:AssignmentExpression tail:(__ "," __ (TypeIdentifier ":")? "."? AssignmentExpression)* 
+  = (TypeIdentifier ":" !":")? "."? head:AssignmentExpression tail:(__ "," __ (TypeIdentifier ":" !":")? "."? AssignmentExpression)* 
   {
     return buildList(head, tail, 3);
   }
@@ -596,6 +596,7 @@ LeftHandSideExpression
   = CallExpression
   / NewExpression
   / ViewAsExpression
+
 
 ViewAsExpression
   = (ViewAsToken "<" TypeIdentifier ">" "(" __ Expression __")")
@@ -712,8 +713,8 @@ RelationalOperatorNoIn
   / $(">" !">")
 
 EqualityExpression
-  = (TypeIdentifier ":")? head:RelationalExpression
-  tail:(__ EqualityOperator __ (TypeIdentifier ":")? RelationalExpression)*
+  = (TypeIdentifier ":" !":")? head:RelationalExpression
+  tail:(__ EqualityOperator __ (TypeIdentifier ":" !":")? RelationalExpression)*
   { 
     return buildBinaryExpression(head, tail);
   }
@@ -817,7 +818,7 @@ LogicalOROperator
 ConditionalExpression
   = test:LogicalORExpression __
   "?" __ consequent:AssignmentExpressionNoIn __
-  ":" __ alternate:AssignmentExpressionNoIn
+  ":" !":" __ alternate:AssignmentExpressionNoIn
   {
     return {
       type: "ConditionalExpression",
@@ -831,7 +832,7 @@ ConditionalExpression
 ConditionalExpressionNoIn
   = test:LogicalORExpressionNoIn __
   "?" __ consequent:AssignmentExpressionNoIn __
-  ":" __ alternate:AssignmentExpressionNoIn
+  ":" !":" __ alternate:AssignmentExpressionNoIn
   {
     return {
       type: "ConditionalExpression",
@@ -845,7 +846,7 @@ ConditionalExpressionNoIn
 AssignmentExpression
   = left:LeftHandSideExpression __
   "=" !"=" __
-  (TypeIdentifier ":")?
+  (TypeIdentifier ":" !":")?
   right:AssignmentExpression
   {
     return {
@@ -857,7 +858,7 @@ AssignmentExpression
   }
   / left:LeftHandSideExpression __
   operator:AssignmentOperator __
-  (TypeIdentifier ":")?
+  (TypeIdentifier ":" !":")?
   right:AssignmentExpression
   {
     return {
@@ -908,7 +909,7 @@ AssignmentOperator
   / "|="
 
 Expression
-  = (TypeIdentifier ":")? head:AssignmentExpression tail:(__ "," __ (TypeIdentifier ":")? AssignmentExpression)*
+  = (TypeIdentifier ":" !":")? head:AssignmentExpression tail:(__ "," __ (TypeIdentifier ":" !":")? AssignmentExpression)*
   {
     return tail.length > 0
       ? { type: "SequenceExpression", expressions: buildList(head, tail, 3) }
@@ -1234,7 +1235,7 @@ ReturnStatement
       argument: null
     };
   }
-  / doc:__ ReturnToken _ (TypeIdentifier ":")? argument:Expression EOS __
+  / doc:__ ReturnToken _ (TypeIdentifier ":" !":")? argument:Expression EOS __
   {
     return {
       type: "ReturnStatement",
@@ -1275,7 +1276,7 @@ CaseClauses
   }
 
 CaseClause
-  = CaseToken __ test:ExpressionNoIn __ ":" consequent:(__ StatementList)?
+  = CaseToken __ test:ExpressionNoIn __ ":" !":" consequent:(__ StatementList)?
   {
     return {
       type: "SwitchCase",
@@ -1285,7 +1286,7 @@ CaseClause
   }
 
 DefaultClause
-  = DefaultToken __ ":" consequent:(__ StatementList)?
+  = DefaultToken __ ":" !":" consequent:(__ StatementList)?
   {
     return {
       type: "SwitchCase",
@@ -1295,7 +1296,7 @@ DefaultClause
   }
 
 LabelledStatement
-  = doc:__ label:Identifier __ ":" __ body:Statement
+  = doc:__ label:Identifier __ ":" !":" __ body:Statement
   {
     return {
       type: "LabeledStatement",
@@ -1370,7 +1371,7 @@ VariableAccessModifier
   }
 
 VariableType
-  = name:TypeIdentifier ((":"__)/(( __ ("[]")+)? __p ))
+  = name:TypeIdentifier ((":" !":"__)/(( __ ("[]")+)? __p ))
   {
     return name;
   }
@@ -1461,7 +1462,7 @@ ArrayInitialer
   = "[" Expression? "]"
 
 VariableInitialisation
-  = doc:__ (TypeIdentifier":")? id:Identifier arrayInitialer:ArrayInitialer* init:(__ Initialiser)? 
+  = doc:__ (TypeIdentifier":" !":")? id:Identifier arrayInitialer:ArrayInitialer* init:(__ Initialiser)? 
   {
     return {
       type: "VariableDeclarator",
@@ -1471,7 +1472,7 @@ VariableInitialisation
   }
 
 VariableInitialisationOld
-  = doc:__ (TypeIdentifier":")? id:Identifier arrayInitialer:ArrayInitialer* init:(__ Initialiser)? 
+  = doc:__ (TypeIdentifier":" !":")? id:Identifier arrayInitialer:ArrayInitialer* init:(__ Initialiser)? 
   {
     return {
       type: "VariableDeclaratorS",
@@ -1488,7 +1489,7 @@ EnumDeclaration
   }
 
 EnumDeclarationNoDoc
-  = EnumToken id:(__p Identifier)? (":"__)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
+  = EnumToken id:(__p Identifier)? (":" !":"__)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
   "{" __ body:EnumBody? lastDoc:__ "}" EOS
   { 
     return {
@@ -1501,7 +1502,7 @@ EnumDeclarationNoDoc
   }
  
 EnumMemberDeclaration
-  = (TypeIdentifier (":"__))? name:VariableInitialisation
+  = (TypeIdentifier (":" !":"__))? name:VariableInitialisation
   {
     return name.id;
   }
@@ -1700,7 +1701,7 @@ FunctionAccessModifiers
   }
 
 FunctionReturnTypeDeclaration
-  = name:TypeIdentifier ((":"__)/(__("[]")__)/__p)
+  = name:TypeIdentifier ((":" !":"__)/(__("[]")__)/__p)
   {
     return name;
   }
@@ -1742,7 +1743,7 @@ FunctionExpression
   }
 
 ParameterTypeDeclaration
-  = name:TypeIdentifier? modifier:((":"__)/(__(("[]")+/"&")__)/__p)
+  = name:TypeIdentifier? modifier:((":" !":"__)/(__(("[]")+/"&")__)/__p)
   { 
     return {
       name, 
