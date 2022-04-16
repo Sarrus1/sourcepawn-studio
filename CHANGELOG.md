@@ -18,6 +18,7 @@
 - Fixed auto closing `*/` insertion for non docstring comments.
 - Fixed an issue where items would show a definition in string and comments (see #214).
 - Fixed an issue where methods definition would not point to the correct method.
+- Fixed deprecated color highlighting.
 
 ### Removed
 

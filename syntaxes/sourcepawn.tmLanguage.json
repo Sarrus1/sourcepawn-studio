@@ -32,6 +32,21 @@
       }
     },
     {
+      "match": "(\\#pragma)\\s+(deprecated)(.*)",
+      "name": "meta.pragma.deprecated.sourcepawn",
+      "captures": {
+        "1": {
+          "name": "keyword.control.pragma.sourcepawn"
+        },
+        "2": {
+          "name": "entity.other.attribute-name.sourcepawn"
+        },
+        "3": {
+          "name": "string.deprecated.sourcepawn"
+        }
+      }
+    },
+    {
       "match": "(\\#pragma)\\s+([A-Za-z ]+)",
       "name": "meta.pragma.block-comment.sourcepawn",
       "captures": {
