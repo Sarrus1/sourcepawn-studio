@@ -20,11 +20,12 @@ export function descriptionToMD(description?: string): MarkdownString {
   description = description
     // Remove leading *< from documentation (usually present in enum member's description)
     .replace(/^\*\</, "")
+    // Remove leading * for block comments.
+    .replace(/^\s*\*(?:\*|\s*)/gm, "")
+    .replace(/^\*/, "")
     .replace(/\</gm, "\\<")
     .replace(/\>/gm, "\\>")
-    .replace(/([\w\,]{1})\n/gm, "$1")
-    //.replace(/([^.])(\.) *[\n]+(?:\s*([^@\s.]))/gm, "$1. $3")
-    .replace(/\s+\*\s*/gm, "\n\n");
+    .replace(/([\w\,]{1})\n/gm, "$1");
   // Make all @ nicer
   description = description.replace(/\s*(@[A-Za-z]+)\s+/gm, "\n\n_$1_ ");
   // Make the @param nicer
