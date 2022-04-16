@@ -36,5 +36,5 @@ export function processDocStringComment(docstring: ParsedComment): DocString {
     }
     return { doc: txt.reverse().join("").trim(), dep };
   }
-  return { doc: docstring, dep: undefined };
+  return { doc: docstring.text, dep: undefined };
 }

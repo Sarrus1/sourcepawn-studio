@@ -284,4 +284,7 @@ export interface RawComment {
   text: string;
 }
 
-export type ParsedComment = (RawComment | PreprocessorStatement)[] | undefined;
+export type ParsedComment =
+  | (RawComment | PreprocessorStatement)[]
+  | RawComment
+  | undefined;
