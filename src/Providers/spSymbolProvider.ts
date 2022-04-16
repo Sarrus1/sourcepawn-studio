@@ -5,7 +5,7 @@ import {
   CompletionItemKind,
 } from "vscode";
 import { ItemsRepository } from "../Backend/spItemsRepository";
-import { globalIdentifier, globalItem } from "../Misc/spConstants";
+import { globalItem } from "../Misc/spConstants";
 
 const allowedKinds = [
   CompletionItemKind.Function,

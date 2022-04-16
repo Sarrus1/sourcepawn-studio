@@ -40,8 +40,8 @@ export function parseSPCompErrors(
       ).toString();
       diagnostics = DocumentDiagnostics.get(uri) || [];
 
-      let message: string = generateDetailedError(matches[5], matches[6]);
-      let diagnostic: Diagnostic = new Diagnostic(range, message, severity);
+      let message = generateDetailedError(matches[5], matches[6]);
+      let diagnostic = new Diagnostic(range, message, severity);
       diagnostics.push(diagnostic);
       DocumentDiagnostics.set(uri, diagnostics);
     }

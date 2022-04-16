@@ -1,4 +1,9 @@
-import { CompletionItemKind, workspace as Workspace, Position } from "vscode";
+import {
+  CompletionItemKind,
+  workspace as Workspace,
+  Diagnostic,
+  DiagnosticSeverity,
+} from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { resolve, dirname, basename } from "path";
 import { URI } from "vscode-uri";
@@ -15,6 +20,7 @@ import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { ConstantItem } from "../Backend/Items/spConstantItem";
+import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
 const spParser = require("./spParser2");
 
 export function parseFile(
@@ -74,10 +80,16 @@ export function parseText(
       spParser.args = args;
       const out: string = spParser.parse(data);
       //console.debug(out);
+      parserDiagnostics.delete(URI.file(file));
     } catch (err) {
       if (err.location !== undefined) {
-        console.debug(`An error occured while trying to parse ${file}`);
-        console.debug(err.message, err.location.start);
+        const range = parsedLocToRange(err.location);
+        const diagnostic = new Diagnostic(
+          range,
+          err.message,
+          DiagnosticSeverity.Error
+        );
+        parserDiagnostics.set(URI.file(file), [diagnostic]);
         throw new Error("Parser error");
       }
     }

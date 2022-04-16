@@ -11,7 +11,7 @@ import { compilerDiagnostics } from "./compilerDiagnostics";
 import { throttles } from "./throttles";
 
 export function registerSPLinter(context: ExtensionContext) {
-  context.subscriptions.push(languages.createDiagnosticCollection("compiler"));
+  context.subscriptions.push(compilerDiagnostics);
   context.subscriptions.push(
     window.onDidChangeActiveTextEditor((editor) => {
       if (editor) {
