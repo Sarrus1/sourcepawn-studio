@@ -1,6 +1,7 @@
 ﻿import { workspace as Workspace, window, commands } from "vscode";
 import { join } from "path";
 import { run as refreshPluginsCommand } from "./refreshPlugins";
+import { findMainPath } from "../spUtils";
 // Keep the include like this,
 // otherwise FTPDeploy is not
 // recognised as a constructor
@@ -46,8 +47,12 @@ export async function run(args: any) {
   // Override the "deleteRemote" setting for safety.
   config["deleteRemote"] = false;
 
-  // Concat the workspace with it's root if the path is relative.
+  if (config["localRoot"] === "${mainPath}") {
+    config["localRoot"] = findMainPath();
+  }
+
   if (config["isRootRelative"]) {
+    // Concat the workspace with it's root if the path is relative.
     if (workspaceFolder === undefined) {
       window.showWarningMessage(
         "No workspace or folder found, with isRootRelative is set to true.\nSet it to false, or open the file from a workspace."
