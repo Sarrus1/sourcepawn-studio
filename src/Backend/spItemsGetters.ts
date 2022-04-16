@@ -146,47 +146,22 @@ export function getItemFromPosition(
     return includeItem;
   }
 
-  const lastESOrMM = getLastESOrMM(position, document.uri.fsPath, allItems);
-
-  let items = allItems.filter((e) => {
-    if (e.name !== word) {
+  return allItems.filter((e1) => {
+    if (e1.name !== word) {
       return false;
     }
-
-    if (
-      e.kind === CompletionItemKind.Variable &&
-      e.parent !== globalItem &&
-      allItems.find((e1) => {
-        let check =
-          [CompletionItemKind.Function, CompletionItemKind.Method].includes(
-            e1.kind
-          ) &&
-          e1 === e.parent &&
-          e1.fullRange.contains(position) &&
-          e1.filePath === document.uri.fsPath;
-
-        // Handle variables inside of methods.
-        if (lastESOrMM !== undefined && check) {
-          return (
-            e.enumStructName === lastESOrMM.name &&
-            lastESOrMM.fullRange.contains(e1.fullRange) &&
-            lastESOrMM.fullRange.contains(e.range)
-          );
+    if (range.isEqual(e1.range)) {
+      return true;
+    }
+    if (e1.references) {
+      for (let e2 of e1.references) {
+        if (range.isEqual(e2.range)) {
+          return true;
         }
-        return check;
-      })
-    ) {
-      return true;
-    }
-    if (e.range !== undefined && range.isEqual(e.range)) {
-      return true;
-    }
-    if (e.references !== undefined) {
-      return e.references.find((e) => range.isEqual(e.range)) !== undefined;
+      }
     }
     return false;
   });
-  return items;
 }
 
 /**
