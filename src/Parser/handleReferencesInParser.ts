@@ -6,6 +6,7 @@ import { SPItem } from "../Backend/Items/spItems";
 import { globalIdentifier } from "../Misc/spConstants";
 import { MethodItem } from "../Backend/Items/spMethodItem";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
+import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 
 const globalScope = `-${globalIdentifier}-${globalIdentifier}`;
 
@@ -18,6 +19,7 @@ export function handleReferenceInParser(
     lineNb: number;
     scope: string;
     outsideScope: string;
+    allItems: SPItem[];
   },
   name: string,
   range: Range
@@ -72,12 +74,33 @@ export function handleReferenceInParser(
     let offset = 1;
     let item: MethodItem | PropertyItem;
     while (item === undefined && this.previousItems.length >= offset) {
-      let parent = this.previousItems[this.previousItems.length - offset];
-      item = this.parser.methodsAndProperties.find(
-        (e) =>
-          e.name === name &&
-          (e.parent.name === parent.type || e.parent === parent)
-      );
+      const parent = this.previousItems[this.previousItems.length - offset];
+      item = this.parser.methodAndProperties.find((e) => {
+        if (e.name !== name) {
+          return false;
+        }
+        if (e.parent.name === parent.type) {
+          return true;
+        }
+        // Look for inherits.
+        let inherit = this.allItems.find(
+          (e) => e.kind === CompletionItemKind.Class && e.name === parent.type
+        );
+        if (inherit === undefined) {
+          return false;
+        }
+        inherit = inherit.parent;
+        while (
+          inherit !== undefined &&
+          inherit.kind !== CompletionItemKind.Constant
+        ) {
+          if (inherit.name === e.parent.name) {
+            return true;
+          }
+          inherit = (inherit as MethodMapItem).parent;
+        }
+        return false;
+      });
       offset++;
     }
 

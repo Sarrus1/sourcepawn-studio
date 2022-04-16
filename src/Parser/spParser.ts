@@ -19,7 +19,6 @@ import { MethodItem } from "../Backend/Items/spMethodItem";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
-import { ConstantItem } from "../Backend/Items/spConstantItem";
 import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
 const spParser = require("./spParser2");
 
@@ -111,7 +110,7 @@ export function parseText(
     }
   } else {
     const lines = data.split("\n");
-    const parser = new Parser(lines, file, isBuiltIn, items, itemsRepository);
+    const parser = new Parser(lines, file, items, itemsRepository);
     parser.parse();
   }
 }
@@ -122,23 +121,14 @@ export class Parser {
   lines: string[];
   lineNb: number;
   filePath: string;
-  IsBuiltIn: boolean;
-  documents: Set<string>;
-  lastFuncLine: number;
-  lastFunc: FunctionItem | ConstantItem;
-  methodsAndProperties: (MethodItem | PropertyItem)[];
+  methodAndProperties: (MethodItem | PropertyItem)[];
   funcsAndMethodsInFile: (FunctionItem | MethodItem)[];
   MmEsInFile: (MethodMapItem | EnumStructItem)[];
   referencesMap: Map<string, SPItem>;
-  itemsRepository: ItemsRepository;
-  debugging: boolean;
-  anonymousEnumCount: number;
-  deprecated: string | undefined;
 
   constructor(
     lines: string[],
     filePath: string,
-    IsBuiltIn: boolean,
     completions: FileItems,
     itemsRepository: ItemsRepository
   ) {
@@ -146,19 +136,8 @@ export class Parser {
     this.lineNb = 0;
     this.lines = lines;
     this.filePath = filePath;
-    this.IsBuiltIn = IsBuiltIn;
-    this.documents = itemsRepository.documents;
-    this.lastFuncLine = -1;
-    this.lastFunc = globalItem;
-    // Get all the items from the itemsRepository for this file
     this.items = itemsRepository.getAllItems(URI.file(this.filePath));
-    this.itemsRepository = itemsRepository;
-    let debugSetting = Workspace.getConfiguration("sourcepawn").get(
-      "trace.server"
-    );
-    this.debugging = debugSetting == "messages" || debugSetting == "verbose";
-    this.anonymousEnumCount = 0;
-    this.methodsAndProperties = [];
+    this.methodAndProperties = [];
     this.funcsAndMethodsInFile = [];
     this.MmEsInFile = [];
     this.referencesMap = new Map<string, SPItem>();
@@ -187,6 +166,7 @@ export class Parser {
       lineNb: 0,
       scope: "",
       outsideScope: "",
+      allItems: this.items,
     };
 
     this.fileItems.tokens.forEach((e, i) => {
@@ -248,13 +228,9 @@ export class Parser {
           }`,
           item
         );
-      } else if (
-        [CompletionItemKind.Function, CompletionItemKind.Method].includes(
-          item.kind
-        )
-      ) {
+      } else if (item.kind === CompletionItemKind.Function) {
         if (item.filePath === this.filePath) {
-          this.funcsAndMethodsInFile.push(item as FunctionItem | MethodItem);
+          this.funcsAndMethodsInFile.push(item as FunctionItem);
         }
         purgeCalls(item, this.filePath);
         this.referencesMap.set(item.name, item);
@@ -267,8 +243,15 @@ export class Parser {
       } else if (!MP.includes(item.kind) && item.references !== undefined) {
         purgeCalls(item, this.filePath);
         this.referencesMap.set(item.name, item);
-      } else if (MP.includes(item.kind) && item.references !== undefined) {
-        this.methodsAndProperties.push(item as MethodItem | PropertyItem);
+      } else if (item.kind === CompletionItemKind.Property) {
+        purgeCalls(item, this.filePath);
+        this.methodAndProperties.push(item as PropertyItem);
+      } else if (item.kind === CompletionItemKind.Method) {
+        if (item.filePath === this.filePath) {
+          this.funcsAndMethodsInFile.push(item as MethodItem);
+        }
+        purgeCalls(item, this.filePath);
+        this.methodAndProperties.push(item as MethodItem);
       }
     });
 
@@ -279,18 +262,5 @@ export class Parser {
     this.funcsAndMethodsInFile = this.funcsAndMethodsInFile.sort(
       (a, b) => a.fullRange.start.line - b.fullRange.start.line
     );
-  }
-
-  getAllMacros(items: SPItem[]): string[] {
-    if (items == undefined) {
-      return [];
-    }
-    let arr: string[] = [];
-    for (let e of items) {
-      if (e.kind === CompletionItemKind.Interface) {
-        arr.push(e.name);
-      }
-    }
-    return arr;
   }
 }
