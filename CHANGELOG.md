@@ -8,6 +8,7 @@
 - Nicer loader.
 - Better docstring generation.
 - Added positional arguments support.
+- Added code folding for `#if` and `#endif` (see #210).
 
 ### Fixed
 
@@ -19,7 +20,7 @@
 
 ### Removed
 
-- Removed `/* Content */` in code snippets.
+- Removed `/* Content */` in code snippets (see #211).
 
 ## [3.1.0]
 
