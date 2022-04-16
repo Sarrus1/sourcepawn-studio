@@ -8,7 +8,7 @@ import {
   FunctionParam,
   FunctionBody,
   VariableDeclarator,
-  PreprocessorStatement,
+  ParsedComment,
 } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
@@ -25,7 +25,7 @@ export function readFunctionAndMethod(
   returnType: ParsedID | null,
   id: ParsedID,
   loc: ParserLocation,
-  docstring: (string | PreprocessorStatement)[] | undefined,
+  docstring: ParsedComment,
   params: ParsedParam[] | null,
   body: FunctionBody | null,
   parent: EnumStructItem | ConstantItem = globalItem

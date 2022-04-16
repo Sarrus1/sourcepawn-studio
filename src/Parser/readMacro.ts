@@ -1,6 +1,6 @@
 ﻿import { MacroItem } from "../Backend/Items/spMacroItem";
 import { spParserArgs } from "./spParser";
-import { ParsedID, ParserLocation } from "./interfaces";
+import { ParsedComment, ParsedID, ParserLocation } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
 
@@ -10,7 +10,7 @@ import { processDocStringComment } from "./processComment";
  * @param  {ParsedID} id  The id of the macro.
  * @param  {ParserLocation} loc  The location of the macro.
  * @param  {string|null} value  The value of the macro, if it exists.
- * @param  {string[] | undefined} docstring  The documentation of the macro.
+ * @param  {ParsedComment} docstring  The documentation of the macro.
  * @returns void
  */
 export function readMacro(
@@ -18,7 +18,7 @@ export function readMacro(
   id: ParsedID,
   loc: ParserLocation,
   value: string | null,
-  docstring: string[] | undefined
+  docstring: ParsedComment
 ): void {
   const range = parsedLocToRange(id.loc, parserArgs);
   const fullRange = parsedLocToRange(loc, parserArgs);

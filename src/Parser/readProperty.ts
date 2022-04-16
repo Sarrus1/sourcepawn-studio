@@ -1,6 +1,6 @@
 ﻿import { spParserArgs } from "./spParser";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
-import { ParsedID, ParserLocation, PreprocessorStatement } from "./interfaces";
+import { ParsedComment, ParsedID, ParserLocation } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
@@ -11,7 +11,7 @@ export function readProperty(
   id: ParsedID,
   loc: ParserLocation,
   parent: MethodMapItem | EnumStructItem,
-  docstring: (string | PreprocessorStatement)[] | undefined,
+  docstring: ParsedComment,
   returnType: ParsedID
 ): void {
   const range = parsedLocToRange(id.loc, parserArgs);

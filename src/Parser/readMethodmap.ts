@@ -4,9 +4,9 @@ import { globalIdentifier } from "../Misc/spConstants";
 import {
   MethodDeclaration,
   MethodmapNativeForwardDeclaration,
+  ParsedComment,
   ParsedID,
   ParserLocation,
-  PreprocessorStatement,
   PropertyDeclaration,
 } from "./interfaces";
 import { parsedLocToRange } from "./utils";
@@ -19,7 +19,7 @@ export function readMethodmap(
   id: ParsedID | undefined,
   loc: ParserLocation,
   inherit: ParsedID | "__nullable__" | undefined,
-  docstring: (string | PreprocessorStatement)[] | undefined,
+  docstring: ParsedComment,
   body: {
     type: "MethodmapBody";
     body: (

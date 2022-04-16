@@ -5,6 +5,7 @@ import {
   ParsedID,
   ParserLocation,
   TypeDefBody,
+  ParsedComment,
 } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
@@ -14,7 +15,7 @@ import { processDocStringComment } from "./processComment";
  * @param  {ParsedID} id  The id of the TypeDef.
  * @param  {ParserLocation} loc  The location of the TypeDef.
  * @param  {TypeDefBody} body  The body of the TypeDef.
- * @param  {string[]|undefined} docstring  The documentation of the TypeDef.
+ * @param  {ParsedComment} docstring  The documentation of the TypeDef.
  * @returns void
  */
 export function readTypeDef(
@@ -22,7 +23,7 @@ export function readTypeDef(
   id: ParsedID,
   loc: ParserLocation,
   body: TypeDefBody,
-  docstring: string[] | undefined
+  docstring: ParsedComment
 ): void {
   const range = parsedLocToRange(id.loc, parserArgs);
   const fullRange = parsedLocToRange(loc, parserArgs);

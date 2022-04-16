@@ -78,7 +78,7 @@ export interface ParsedEnumMember {
   /**
    * The trailing comment (if it exists) of the parsed enum member.
    */
-  doc: string | undefined;
+  doc: ParsedComment;
 }
 
 /**
@@ -269,4 +269,19 @@ export interface PreprocessorStatement {
   value?: string;
 }
 
-export type ParsedComment = (string | PreprocessorStatement)[] | undefined;
+export interface RawComment {
+  /**
+   * The type of the comment.
+   */
+  type:
+    | "MultiLineComment"
+    | "MultiLineCommentNoLineTerminator"
+    | "SingleLineComment";
+
+  /**
+   * The content of the comment.
+   */
+  text: string;
+}
+
+export type ParsedComment = (RawComment | PreprocessorStatement)[] | undefined;

@@ -114,19 +114,28 @@ Comment "comment"
 MultiLineComment
   = "/*" txt:(!"*/" SourceCharacter)* "*/"
   {
-    return buildComment(txt);
+    return {
+      type: "MultiLineComment",
+      text: buildComment(txt)
+    };
   }
 
 MultiLineCommentNoLineTerminator
   = "/*" txt:(!("*/" / LineTerminator) SourceCharacter)* "*/"
   {
-    return buildComment(txt);
+    return {
+      type: "MultiLineCommentNoLineTerminator",
+      text: buildComment(txt)
+    };
   }
 
 SingleLineComment
-  = "//" txt:(!LineTerminator SourceCharacter)*
+  = "//" txt:(!LineTerminator SourceCharacter)* LineTerminatorSequence?
   {
-    return buildComment(txt);
+    return {
+      type: "SingleLineComment",
+      text: buildComment(txt)
+    };
   }
 
 Identifier
@@ -946,7 +955,7 @@ Statement
   / PropertyToken
 
 DefineStatement
-  = content:DefineStatementNoDoc doc:__
+  = content:DefineStatementNoDoc doc:__doc
   {
     readDefine(args, content.id, content.loc, content.value, doc);
     return content;

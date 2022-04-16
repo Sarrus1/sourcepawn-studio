@@ -1,6 +1,6 @@
 ﻿import { spParserArgs } from "./spParser";
 import { DefineItem } from "../Backend/Items/spDefineItem";
-import { ParsedID, ParserLocation, PreprocessorStatement } from "./interfaces";
+import { ParsedComment, ParsedID, ParserLocation } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
 
@@ -18,7 +18,7 @@ export function readDefine(
   id: ParsedID,
   loc: ParserLocation,
   value: string | null,
-  docstring: (string | PreprocessorStatement)[] | undefined
+  docstring: ParsedComment
 ): void {
   const range = parsedLocToRange(id.loc, parserArgs);
   const fullRange = parsedLocToRange(loc, parserArgs);

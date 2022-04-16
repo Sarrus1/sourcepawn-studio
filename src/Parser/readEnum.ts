@@ -8,7 +8,7 @@ import {
   ParserLocation,
   ParsedEnumMember,
   ParsedID,
-  PreprocessorStatement,
+  ParsedComment,
 } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
@@ -19,8 +19,8 @@ import { processDocStringComment } from "./processComment";
  * @param  {ParsedID|undefined} id  The id of the enum.
  * @param  {ParserLocation} loc The location of the enum.
  * @param  {ParsedEnumMember[]} body  The members of the enum.
- * @param  {string} doc The doc comment above the enum.
- * @param  {string} lastDoc The doc comment of the last member of the enum.
+ * @param  {ParsedComment} doc The doc comment above the enum.
+ * @param  {ParsedComment} lastDoc The doc comment of the last member of the enum.
  * @returns void
  */
 export function readEnum(
@@ -28,8 +28,8 @@ export function readEnum(
   id: ParsedID | undefined,
   loc: ParserLocation,
   body: ParsedEnumMember[],
-  docstring: (string | PreprocessorStatement)[] | undefined,
-  lastDocstring: (string | PreprocessorStatement)[] | undefined
+  docstring: ParsedComment,
+  lastDocstring: ParsedComment
 ): void {
   const { name, nameRange } = getEnumNameAndRange(parserArgs, id, loc);
   const key = name
@@ -97,7 +97,7 @@ function readEnumMember(
   parserArgs: spParserArgs,
   member: ParsedEnumMember,
   enumItem: EnumItem,
-  docstring: (string | PreprocessorStatement)[] | undefined
+  docstring: ParsedComment
 ): void {
   const range = parsedLocToRange(member.loc, parserArgs);
   if (docstring !== undefined) {
