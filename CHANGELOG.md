@@ -17,6 +17,10 @@
 - Fixed an issue where items would show a definition in string and comments (see #214).
 - Fixed an issue where methods definition would not point to the correct method.
 
+### Removed
+
+- Removed `/* Content */` in code snippets.
+
 ## [3.1.0]
 
 ### Added
