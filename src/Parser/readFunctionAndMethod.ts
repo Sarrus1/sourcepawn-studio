@@ -34,8 +34,8 @@ export function readFunctionAndMethod(
   if (id.id === "float") {
     return;
   }
-  const range = parsedLocToRange(id.loc);
-  const fullRange = parsedLocToRange(loc);
+  const range = parsedLocToRange(id.loc, parserArgs);
+  const fullRange = parsedLocToRange(loc, parserArgs);
   const { doc, dep } = processDocStringComment(docstring);
   const { processedParams, details } = processFunctionParams(params);
   const processedReturnType = returnType && returnType.id ? returnType.id : "";
@@ -126,7 +126,7 @@ function recursiveVariableSearch(
   }
   if (found) {
     declarators.forEach((e) => {
-      const range = parsedLocToRange(e.id.loc);
+      const range = parsedLocToRange(e.id.loc, parserArgs);
       addVariableItem(
         parserArgs,
         e.id.id,
@@ -195,7 +195,7 @@ function addParamsAsVariables(
       parserArgs,
       e.id.id,
       processedDeclType,
-      parsedLocToRange(e.id.loc),
+      parsedLocToRange(e.id.loc, parserArgs),
       parent,
       "",
       e.id.id + parent.name + grandParent.name

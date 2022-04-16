@@ -41,7 +41,7 @@ export function readEnum(
     parserArgs.filePath,
     doc.length === 0 ? undefined : doc,
     nameRange,
-    parsedLocToRange(loc)
+    parsedLocToRange(loc, parserArgs)
   );
   parserArgs.fileItems.set(key, enumItem);
   if (body) {
@@ -77,10 +77,10 @@ function getEnumNameAndRange(
     newLoc.start.column = 1;
     newLoc.end.column = 6;
     newLoc.end.line = newLoc.start.line;
-    nameRange = parsedLocToRange(newLoc);
+    nameRange = parsedLocToRange(newLoc, parserArgs);
   } else {
     name = id.id;
-    nameRange = parsedLocToRange(id.loc);
+    nameRange = parsedLocToRange(id.loc, parserArgs);
   }
   return { name, nameRange };
 }
@@ -99,7 +99,7 @@ function readEnumMember(
   enumItem: EnumItem,
   docstring: (string | PreprocessorStatement)[] | undefined
 ): void {
-  const range = parsedLocToRange(member.loc);
+  const range = parsedLocToRange(member.loc, parserArgs);
   if (docstring !== undefined) {
     var { doc, dep } = processDocStringComment(docstring);
   } else {

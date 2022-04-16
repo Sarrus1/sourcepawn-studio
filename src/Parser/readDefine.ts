@@ -20,8 +20,8 @@ export function readDefine(
   value: string | null,
   docstring: (string | PreprocessorStatement)[] | undefined
 ): void {
-  const range = parsedLocToRange(id.loc);
-  const fullRange = parsedLocToRange(loc);
+  const range = parsedLocToRange(id.loc, parserArgs);
+  const fullRange = parsedLocToRange(loc, parserArgs);
   const { doc, dep } = processDocStringComment(docstring);
   const defineItem = new DefineItem(
     id.id,

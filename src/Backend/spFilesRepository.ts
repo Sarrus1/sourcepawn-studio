@@ -1,4 +1,4 @@
-import { workspace as Workspace } from "vscode";
+import { Range, workspace as Workspace } from "vscode";
 import { dirname, resolve } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
@@ -13,11 +13,18 @@ import {
 import { getIncludeExtension } from "./spUtils";
 import { ParsedID } from "../Parser/interfaces";
 import { MethodMapItem } from "./Items/spMethodmapItem";
+import { spParserArgs } from "../Parser/spParser";
+import { parsedLocToRange } from "../Parser/utils";
+
+export interface parsedToken {
+  id: string;
+  range: Range;
+}
 
 export class FileItems extends Map<string, SPItem> {
   includes: Include[];
   uri: string;
-  tokens: ParsedID[];
+  tokens: parsedToken[];
   methodmaps: Map<string, MethodMapItem>;
 
   constructor(uri: string) {
@@ -92,5 +99,17 @@ export class FileItems extends Map<string, SPItem> {
         return;
       }
     }
+  }
+
+  /**
+   * Add a parsed token to the array of parsed token by taking into account the offset of the error
+   * recovery.
+   * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
+   * @param  {ParsedID} id  The parsed ID of the token.
+   * @returns void
+   */
+  pushToken(parserArgs: spParserArgs, id: ParsedID): void {
+    const range = parsedLocToRange(id.loc, parserArgs);
+    this.tokens.push({ id: id.id, range });
   }
 }

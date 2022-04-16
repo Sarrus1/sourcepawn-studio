@@ -4,6 +4,7 @@ import { basename } from "path";
 import { FunctionParam } from "./interfaces";
 import { SPItem } from "../Backend/Items/spItems";
 import { ParserLocation } from "./interfaces";
+import { spParserArgs } from "./spParser";
 
 export function purgeCalls(item: SPItem, file: string): void {
   if (item.references === undefined) {
@@ -74,11 +75,48 @@ export function getParenthesisCount(line: string): number {
   return pCount;
 }
 
-export function parsedLocToRange(loc: ParserLocation): Range {
+/**
+ * Convert a parsed location of the parser to a range.
+ * @param  {ParserLocation} loc
+ * @param  {spParserArgs} args?
+ * @returns Range
+ */
+export function parsedLocToRange(
+  loc: ParserLocation,
+  args?: spParserArgs
+): Range {
+  let offset = 0;
+  if (args !== undefined) {
+    offset = args.offset;
+  }
   return new Range(
-    loc.start.line - 1,
+    loc.start.line - 1 + offset,
     loc.start.column - 1,
-    loc.end.line - 1,
+    loc.end.line - 1 + offset,
     loc.end.column - 1
   );
+}
+
+/**
+ * Get a guess of the next scope in a file by finding the next non indented "}".
+ * @param  {string} txt  The text of the file as a string.
+ * @param  {number} lineNb  The current line number.
+ * @returns { txt: string; offset: number } | undefined
+ */
+export function getNextScope(
+  txt: string,
+  lineNb: number
+): { txt: string; offset: number } | undefined {
+  lineNb++;
+  const lines = txt.split("\n");
+  if (lineNb >= lines.length) {
+    return undefined;
+  }
+  while (lineNb < lines.length) {
+    if (/^}/.test(lines[lineNb]) && lineNb + 1 < lines.length) {
+      return { txt: lines.slice(lineNb + 1).join("\n"), offset: lineNb + 1 };
+    }
+    lineNb++;
+  }
+  return undefined;
 }

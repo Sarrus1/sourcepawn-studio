@@ -132,14 +132,14 @@ SingleLineComment
 Identifier
   = !(ReservedWord !IdentifierPart) name:IdentifierName
   {
-    args.fileItems.tokens.push(name);
+    args.fileItems.pushToken(args, name);
     return name;
   }
 
 TypeIdentifier
   = !(TypeReservedWord !IdentifierPart) name:IdentifierName 
   {
-    args.fileItems.tokens.push(name);
+    args.fileItems.pushToken(args, name);
     return name; 
   }
 
@@ -381,7 +381,7 @@ ReturnToken     = "return"
 SwitchToken     = "switch"
 StructToken     = "struct"
 SizeofToken     = "sizeof"
-ThisToken       = "this"  { args.fileItems.tokens.push({id: "this", loc: location()}); }
+ThisToken       = "this"  { args.fileItems.pushToken(args, {id: "this", loc: location()}); }
 TrueToken       = "true"
 TypeDefToken    = "typedef"
 TypeSetToken    = "typeset"
@@ -516,12 +516,12 @@ MemberExpression
         }
       / __ "." __ property:IdentifierName
       {
-        args.fileItems.tokens.push(property);
+        args.fileItems.pushToken(args, property);
         return { property: property, computed: false };
       }
       / __ "::" __ property:IdentifierName
       {
-        args.fileItems.tokens.push(property);
+        args.fileItems.pushToken(args, property);
         return { property: property, computed: false };
       }
     )*

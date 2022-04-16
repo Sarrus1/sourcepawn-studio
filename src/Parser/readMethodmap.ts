@@ -29,8 +29,8 @@ export function readMethodmap(
     )[];
   }
 ): void {
-  const range = parsedLocToRange(id.loc);
-  const fullRange = parsedLocToRange(loc);
+  const range = parsedLocToRange(id.loc, parserArgs);
+  const fullRange = parsedLocToRange(loc, parserArgs);
   const { doc, dep } = processDocStringComment(docstring);
   const methodmapItem = new MethodMapItem(
     id.id,

@@ -32,8 +32,8 @@ export function readEnumStruct(
     id.id,
     parserArgs.filePath,
     doc,
-    parsedLocToRange(id.loc),
-    parsedLocToRange(loc)
+    parsedLocToRange(id.loc, parserArgs),
+    parsedLocToRange(loc, parserArgs)
   );
   parserArgs.fileItems.set(id.id, enumStructItem);
   body["body"].forEach((e: ParsedEnumStructMember) => {

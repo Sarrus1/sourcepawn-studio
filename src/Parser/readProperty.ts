@@ -14,7 +14,7 @@ export function readProperty(
   docstring: (string | PreprocessorStatement)[] | undefined,
   returnType: ParsedID
 ): void {
-  const range = parsedLocToRange(id.loc);
+  const range = parsedLocToRange(id.loc, parserArgs);
   const { doc, dep } = processDocStringComment(docstring);
   const propertyItem = new PropertyItem(
     parent,

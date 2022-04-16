@@ -36,6 +36,10 @@ export async function handleDocumentChange(
   itemsRepo: ItemsRepository,
   event: TextDocumentChangeEvent
 ): Promise<void> {
+  if (!/\.(?:sp|inc)$/.test(event.document.uri.fsPath)) {
+    return;
+  }
+
   // Hack to make the function non blocking, and not prevent the completionProvider from running.
   await new Promise((resolve) => setTimeout(resolve, 50));
 

@@ -12,7 +12,7 @@ import { ItemsRepository } from "../Backend/spItemsRepository";
 import { FileItems } from "../Backend/spFilesRepository";
 import { SPItem } from "../Backend/Items/spItems";
 import { handleReferenceInParser } from "./handleReferencesInParser";
-import { parsedLocToRange, purgeCalls } from "./utils";
+import { getNextScope, parsedLocToRange, purgeCalls } from "./utils";
 import { globalIdentifier, globalItem } from "../Misc/spConstants";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { MethodItem } from "../Backend/Items/spMethodItem";
@@ -51,6 +51,7 @@ export interface spParserArgs {
   filePath: string;
   IsBuiltIn: boolean;
   anonEnumCount: number;
+  offset: number;
 }
 
 export function parseText(
@@ -58,8 +59,9 @@ export function parseText(
   file: string,
   items: FileItems,
   itemsRepository: ItemsRepository,
-  searchTokens,
-  isBuiltIn: boolean
+  searchTokens: boolean,
+  isBuiltIn: boolean,
+  offset: number = 0
 ) {
   if (data === undefined) {
     return; // Asked to parse empty file
@@ -68,32 +70,46 @@ export function parseText(
   if (data.charCodeAt(0) === 0xfeff) {
     data = data.substring(1);
   }
-  if (!searchTokens)
+  if (!searchTokens) {
+    const args: spParserArgs = {
+      fileItems: items,
+      documents: itemsRepository.documents,
+      filePath: file,
+      IsBuiltIn: isBuiltIn,
+      anonEnumCount: 0,
+      offset,
+    };
     try {
-      const args: spParserArgs = {
-        fileItems: items,
-        documents: itemsRepository.documents,
-        filePath: file,
-        IsBuiltIn: isBuiltIn,
-        anonEnumCount: 0,
-      };
       spParser.args = args;
       const out: string = spParser.parse(data);
       //console.debug(out);
-      parserDiagnostics.delete(URI.file(file));
+
+      // Only clear the diagnostics if there is no error.
+      if (offset === 0) {
+        parserDiagnostics.delete(URI.file(file));
+      }
     } catch (err) {
       if (err.location !== undefined) {
-        const range = parsedLocToRange(err.location);
+        const range = parsedLocToRange(err.location, args);
         const diagnostic = new Diagnostic(
           range,
           err.message,
           DiagnosticSeverity.Error
         );
         parserDiagnostics.set(URI.file(file), [diagnostic]);
-        throw new Error("Parser error");
+        let { txt, offset } = getNextScope(data, err.location.start.line - 1);
+        parseText(
+          txt,
+          file,
+          items,
+          itemsRepository,
+          searchTokens,
+          isBuiltIn,
+          offset
+        );
       }
     }
-  else {
+  } else {
     const lines = data.split("\n");
     const parser = new Parser(lines, file, isBuiltIn, items, itemsRepository);
     parser.parse();
@@ -157,10 +173,10 @@ export class Parser {
     let lastMMorES: MethodMapItem | EnumStructItem | undefined;
 
     this.fileItems.tokens.sort((a, b) => {
-      if (a.loc.start.line === b.loc.start.line) {
-        return a.loc.start.column - b.loc.start.column;
+      if (a.range.start.line === b.range.start.line) {
+        return a.range.start.character - b.range.start.character;
       }
-      return a.loc.start.line - b.loc.start.line;
+      return a.range.start.line - b.range.start.line;
     });
 
     const thisArgs = {
@@ -174,7 +190,7 @@ export class Parser {
     };
 
     this.fileItems.tokens.forEach((e, i) => {
-      const range = parsedLocToRange(e.loc);
+      const range = e.range;
 
       if (!lastFunc || !lastFunc.fullRange.contains(range)) {
         if (

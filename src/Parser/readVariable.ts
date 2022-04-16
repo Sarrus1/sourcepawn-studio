@@ -13,7 +13,7 @@ export function readVariable(
   parent: EnumStructItem | ConstantItem = globalItem
 ): void {
   content.declarations.forEach((e) => {
-    const range = parsedLocToRange(e.id.loc);
+    const range = parsedLocToRange(e.id.loc, parserArgs);
     const { doc, dep } = processDocStringComment(content.doc);
 
     addVariableItem(

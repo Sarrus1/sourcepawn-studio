@@ -24,8 +24,8 @@ export function readTypeDef(
   body: TypeDefBody,
   docstring: string[] | undefined
 ): void {
-  const range = parsedLocToRange(id.loc);
-  const fullRange = parsedLocToRange(loc);
+  const range = parsedLocToRange(id.loc, parserArgs);
+  const fullRange = parsedLocToRange(loc, parserArgs);
   const { doc, dep } = processDocStringComment(docstring);
   const typeDefItem = new TypeDefItem(
     id.id,
