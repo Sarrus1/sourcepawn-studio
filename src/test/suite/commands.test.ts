@@ -46,7 +46,7 @@ suite("Run tests", () => {
     vscode.commands.executeCommand("vscode.open", mainUri);
 
     // Give some time to parse everything
-    await sleep(500);
+    await sleep(3000);
   });
 
   suiteTeardown("Remove files after the tests", () => {
