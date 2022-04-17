@@ -1,5 +1,11 @@
 import { URI } from "vscode-uri";
-import { CompletionItemKind, Location, Range } from "vscode";
+import {
+  CompletionItemKind,
+  Diagnostic,
+  DiagnosticSeverity,
+  Location,
+  Range,
+} from "vscode";
 
 import { Parser } from "./spParser";
 import { SPItem } from "../Backend/Items/spItems";
@@ -20,6 +26,8 @@ export function handleReferenceInParser(
     scope: string;
     outsideScope: string;
     allItems: SPItem[];
+    filePath: string;
+    diagnostics: Diagnostic[];
   },
   name: string,
   range: Range
@@ -111,6 +119,17 @@ export function handleReferenceInParser(
       const location = new Location(URI.file(this.parser.filePath), range);
       item.references.push(location);
       this.previousItems.push(item);
+      return;
     }
+  }
+
+  if (item === undefined && this.filePath.includes("src")) {
+    this.diagnostics.push(
+      new Diagnostic(
+        range,
+        `${name} is not defined`,
+        DiagnosticSeverity.Warning
+      )
+    );
   }
 }

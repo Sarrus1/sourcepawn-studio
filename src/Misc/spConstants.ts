@@ -13,3 +13,11 @@ export const SP_LEGENDS = new SemanticTokensLegend(tokenTypes, tokenModifiers);
 
 export const globalIdentifier = "$GLOBAL";
 export const globalItem = new ConstantItem(globalIdentifier);
+
+export const reservedTokens = new Set<string>([
+  "float",
+  "int",
+  "char",
+  "bool",
+  "void",
+]);

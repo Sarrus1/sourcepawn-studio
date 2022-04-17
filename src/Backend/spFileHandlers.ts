@@ -91,10 +91,10 @@ export function newDocumentCallback(
   itemsRepo: ItemsRepository,
   uri: URI
 ): void {
-  const filePath: string = uri.fsPath;
+  const filePath = uri.fsPath;
 
-  // Don't parse the document again if it was already.
   if (itemsRepo.fileItems.has(uri.toString())) {
+    // Don't parse the document again if it was already.
     return;
   }
 

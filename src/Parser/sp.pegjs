@@ -146,7 +146,7 @@ Identifier
   }
 
 TypeIdentifier
-  = !(TypeReservedWord !IdentifierPart) name:IdentifierName 
+  = !(TypeReservedKeyword !IdentifierPart) name:IdentifierName 
   {
     args.fileItems.pushToken(args, name);
     return name; 
@@ -167,72 +167,109 @@ IdentifierStart
 IdentifierPart
   = [_A-Za-z0-9]
 
-ReservedWord
+TypeReservedKeyword
   = Keyword
   / NullLiteral
   / BooleanLiteral
   / SizeofLiteral
 
-Keyword
-  = BreakToken
-  / CaseToken
-  / CatchToken
-  / ContinueToken
-  / DeleteToken
-  / DoToken
-  / ElseToken
-  / EnumToken
-  / FinallyToken
-  / ForwardToken
-  / ForToken
-  / FunctionToken
-  / IfToken
-  / NewToken
-  / NativeToken
-  / ReturnToken
-  / SwitchToken
-  / ThisToken
-  / TypeDefToken
-  / TypeSetToken
-  / ViewAsToken
-  / VoidToken
-  / WhileToken
-  / PublicToken
-  / PropertyToken
-  / StockToken
-  / StructToken
+ReservedWord
+  = Keyword
+  / TypeKeyword
+  / NullLiteral
+  / BooleanLiteral
+  / SizeofLiteral
 
-TypeReservedWord
-  = BreakToken
+Keyword
+  = AcquireToken
+  / AsToken
+  / AssertToken
+  / BuiltinToken
+  / BreakToken
   / CaseToken
+  / CastToToken
   / CatchToken
   / ContinueToken
   / ConstToken
   / DeleteToken
+  / DeclToken
+  / DefaultToken
+  / DefinedToken
+  / DoubleToken
   / DoToken
-  / EnumToken
+  / DotDotDotToken
   / ElseToken
+  / EnumToken
+  / EnumStructToken
+  / ExitToken
+  / ExplicitToken
   / FinallyToken
-  / ForToken
+  / ForeachToken
   / ForwardToken
+  / ForToken
+  / FuncenumToken
+  / FunctagToken
   / FunctionToken
+  / GotoToken
   / IfToken
+  / ImportToken
+  / ImplicitToken
+  / InterfaceToken
+  / InToken
+  / LetToken
   / MethodmapToken
+  / NamespaceToken
   / NativeToken
   / NewToken
+  / NullableToken
+  / ObjectToken
+  / OperatorToken
+  / ReadonlyToken
   / ReturnToken
-  / SizeofToken
-  / SwitchToken
+  / SealedToken
   / StaticToken
+  / StaticAssertToken
+  / StockToken
   / StructToken
+  / SwitchToken
+  / SizeofToken
   / ThisToken
+  / ThrowToken
+  / TryToken
   / TypeDefToken
   / TypeSetToken
+  / TypeofToken     
+  / UnionToken        
+  / UsingToken        
+  / VarToken
+  / VariantToken
   / ViewAsToken
+  / VirtualToken
+  / VolatileToken
+  / WithToken
   / WhileToken
+  / PackageToken
   / PublicToken
+  / PrivateToken
   / PropertyToken
-  / StockToken
+  / ProtectedToken
+
+TypeKeyword
+  = CharToken
+  / FloatToken
+  / IntToken 
+  / Int8Token
+  / Int16Token
+  / Int32Token
+  / Int64Token
+  / IntnToken
+  / UintToken
+  / Uint8Token   
+  / Uint16Token
+  / Uint32Token
+  / Uint64Token
+  / UintnToken
+  / VoidToken
 
 Literal
   = NullLiteral
@@ -243,7 +280,21 @@ Literal
   / SizeofLiteral
 
 SizeofLiteral
-  = SizeofToken __p id:Identifier __ { return { type: "sizeof", value: id }; }
+  = SizeofToken __p id:Expression __
+  { 
+    return { 
+      type: "sizeof",
+      value: id 
+    }; 
+  }
+  /
+  SizeofToken __ "(" id:Expression ")" __
+  { 
+    return { 
+      type: "sizeof",
+      value: id 
+    }; 
+  }
 
 NullLiteral
   = NullToken { return { type: "Literal", value: null }; }
@@ -361,46 +412,113 @@ UnicodeEscapeSequence
 
 // Tokens
 
-BreakToken      = "break"
-CaseToken       = "case"
-CatchToken      = "catch"
-ConstToken      = "const"
-ContinueToken   = "continue"
-DefaultToken    = "default"
-DeleteToken     = "delete"
-DoToken         = "do"
-DeclToken		    = "decl"
-ElseToken       = "else"
-EnumToken       = "enum"
-EnumStructToken = EnumToken __p StructToken
-FalseToken      = "false"
-FuncenumToken   = "funcenum"
-FunctagToken    = "functag"
-DotDotDotToken  = "..." {return {id: "...", loc: location()};}
-FinallyToken    = "finally"
-ForToken        = "for"
-ForwardToken    = "forward"
-FunctionToken   = "function"
-IfToken         = "if"
-MethodmapToken  = "methodmap"
-NewToken        = "new"
-NullToken       = "null"
-NativeToken     = "native"
-ReturnToken     = "return"
-SwitchToken     = "switch"
-StructToken     = "struct"
-SizeofToken     = "sizeof"
-ThisToken       = "this"  { args.fileItems.pushToken(args, {id: "this", loc: location()}); }
-TrueToken       = "true"
-TypeDefToken    = "typedef"
-TypeSetToken    = "typeset"
-ViewAsToken     = "view_as"
-VoidToken       = "void"
-WhileToken      = "while"
-PublicToken     = "public"
-PropertyToken   = "property"
-StockToken      = "stock"
-StaticToken     = "static"
+AcquireToken      = "acquire"
+AsToken           = "as"
+AssertToken       = "assert"
+BuiltinToken      = "builtin"
+BreakToken        = "break"
+CaseToken         = "case"
+CatchToken        = "catch"
+CastToToken       = "cast_to"
+CharToken         = "char"
+ConstToken        = "const"
+ContinueToken     = "continue"
+DefaultToken      = "default"
+DefinedToken      = "defined"
+DeleteToken       = "delete"
+DoToken           = "do"
+DoubleToken       = "double"
+DeclToken		      = "decl"
+ElseToken         = "else"
+EnumToken         = "enum"
+EnumStructToken   = EnumToken __p StructToken
+ExitToken         = "exit"
+ExplicitToken     = "explicit"
+FalseToken        = "false"
+FuncenumToken     = "funcenum"
+FunctagToken      = "functag"
+FloatToken        = "float"
+ForeachToken      = "foreach"
+DotDotDotToken    = "..." {return {id: "...", loc: location()};}
+FinallyToken      = "finally"
+ForToken          = "for"
+ForwardToken      = "forward"
+FunctionToken     = "function"
+GotoToken         = "goto"
+IfToken           = "if"
+ImplicitToken     = "implicit"
+ImportToken       = "import"
+InToken           = "in"
+InterfaceToken    = "interface"
+IntToken          = "int"
+Int8Token         = "int8"
+Int16Token        = "int16"
+Int32Token        = "int32"
+Int64Token        = "int64"
+IntnToken         = "intn"
+LetToken          = "let"
+MethodmapToken    = "methodmap"
+NamespaceToken    = "namespace"
+NativeToken       = "native"
+NewToken          = "new"
+NullableToken     = "__nullable__"
+NullToken         = "null"
+ObjectToken       = "object"
+OperatorToken     = "operator"
+ReturnToken       = "return"
+ReadonlyToken     = "readonly"
+SealedToken       = "sealed"
+StockToken        = "stock"
+StaticToken       = "static"
+StaticAssertToken = "static_assert"
+SwitchToken       = "switch"
+StructToken       = "struct"
+SizeofToken       = "sizeof"
+ThisToken         = "this"  { args.fileItems.pushToken(args, {id: "this", loc: location()}); }
+ThrowToken        = "throw"
+TrueToken         = "true"
+TryToken          = "try"
+TypeDefToken      = "typedef"
+TypeSetToken      = "typeset"
+TypeofToken       = "typeof"
+UintToken         = "uint"
+Uint8Token        = "uint8"
+Uint16Token       = "uint16"
+Uint32Token       = "uint32"
+Uint64Token       = "uint64"
+UintnToken        = "uintn"
+UnionToken        = "union"
+UsingToken        = "using"
+VarToken          = "var"
+VariantToken      = "variant"
+ViewAsToken       = "view_as"
+VirtualToken      = "virtual"
+VoidToken         = "void"
+VolatileToken     = "volatile"
+WithToken         = "with"
+WhileToken        = "while"
+PAssertToken      = "#assert"
+PDefineToken      = "#define"
+PElseToken        = "#else"
+PElseIfToken      = "#elseif"
+PEndIfToken       = "#endif"
+PEndInputToken    = "#endinput"
+PEndScriptToken   = "#endscript"
+PErrorToken       = "#error"
+PWarningToken     = "#warning"
+PIfToken          = "#if"
+PIncludeToken     = "#include"
+PLineToken        = "#line"
+PPragmaToken      = "#pragma"
+PTryIncludeToken  = "#tryinclude"
+PUndefToken       = "#undef"
+PackageToken      = "package"
+PublicToken       = "public"
+PrivateToken      = "private"
+PropertyToken     = "property"
+ProtectedToken    = "protected"
+
+
 
 // Skipped
 

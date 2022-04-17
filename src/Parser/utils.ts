@@ -110,7 +110,7 @@ export function getNextScope(
   lineNb++;
   const lines = txt.split("\n");
   if (lineNb >= lines.length) {
-    return undefined;
+    return { txt: undefined, offset: undefined };
   }
   while (lineNb < lines.length) {
     if (/^}/.test(lines[lineNb]) && lineNb + 1 < lines.length) {
@@ -118,5 +118,5 @@ export function getNextScope(
     }
     lineNb++;
   }
-  return undefined;
+  return { txt: undefined, offset: undefined };
 }

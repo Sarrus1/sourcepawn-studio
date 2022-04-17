@@ -1,11 +1,6 @@
-import {
-  CompletionItemKind,
-  workspace as Workspace,
-  Diagnostic,
-  DiagnosticSeverity,
-} from "vscode";
+import { CompletionItemKind, Diagnostic, DiagnosticSeverity } from "vscode";
 import { existsSync, readFileSync } from "fs";
-import { resolve, dirname, basename } from "path";
+import { resolve, dirname } from "path";
 import { URI } from "vscode-uri";
 
 import { ItemsRepository } from "../Backend/spItemsRepository";
@@ -13,7 +8,7 @@ import { FileItems } from "../Backend/spFilesRepository";
 import { SPItem } from "../Backend/Items/spItems";
 import { handleReferenceInParser } from "./handleReferencesInParser";
 import { getNextScope, parsedLocToRange, purgeCalls } from "./utils";
-import { globalIdentifier, globalItem } from "../Misc/spConstants";
+import { globalIdentifier } from "../Misc/spConstants";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { MethodItem } from "../Backend/Items/spMethodItem";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
@@ -82,10 +77,9 @@ export function parseText(
       spParser.args = args;
       const out: string = spParser.parse(data);
       //console.debug(out);
-
-      // Only clear the diagnostics if there is no error.
       if (offset === 0) {
-        parserDiagnostics.delete(URI.file(file));
+        // Only clear the diagnostics if there is no error.
+        parserDiagnostics.set(URI.file(file), []);
       }
     } catch (err) {
       if (err.location !== undefined) {
@@ -157,7 +151,9 @@ export class Parser {
       }
       return a.range.start.line - b.range.start.line;
     });
-
+    const newDiagnostics = Array.from(
+      parserDiagnostics.get(URI.file(this.filePath))
+    );
     const thisArgs = {
       parser: this,
       offset: 0,
@@ -167,6 +163,8 @@ export class Parser {
       scope: "",
       outsideScope: "",
       allItems: this.items,
+      filePath: this.filePath,
+      diagnostics: newDiagnostics,
     };
 
     this.fileItems.tokens.forEach((e, i) => {
@@ -212,6 +210,7 @@ export class Parser {
       } catch (err) {
         console.debug(err);
       }
+      parserDiagnostics.set(URI.file(this.filePath), newDiagnostics);
     });
   }
 

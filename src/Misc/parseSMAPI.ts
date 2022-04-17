@@ -42,6 +42,9 @@ export function parseSMApi(itemsRepo: ItemsRepository): Promise<void> {
     if (debug) console.log("Parsing SM API");
 
     glob(join(SMHome, "**/*.inc"), async (err, files: string[]) => {
+      files.forEach((e) =>
+        itemsRepo.documents.set(URI.file(e).toString(), false)
+      );
       files.forEach((e) => newDocumentCallback(itemsRepo, URI.file(e)));
       resolve();
     });

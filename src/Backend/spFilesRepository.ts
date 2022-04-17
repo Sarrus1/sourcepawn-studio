@@ -15,6 +15,7 @@ import { ParsedID } from "../Parser/interfaces";
 import { MethodMapItem } from "./Items/spMethodmapItem";
 import { spParserArgs } from "../Parser/spParser";
 import { parsedLocToRange } from "../Parser/utils";
+import { reservedTokens } from "../Misc/spConstants";
 
 export interface parsedToken {
   id: string;
@@ -109,6 +110,9 @@ export class FileItems extends Map<string, SPItem> {
    * @returns void
    */
   pushToken(parserArgs: spParserArgs, id: ParsedID): void {
+    if (reservedTokens.has(id.id)) {
+      return;
+    }
     const range = parsedLocToRange(id.loc, parserArgs);
     this.tokens.push({ id: id.id, range });
   }
