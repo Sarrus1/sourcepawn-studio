@@ -10,6 +10,7 @@
 - Added positional arguments support.
 - Added code folding for `#if` and `#endif` (see #210).
 - Added the possibility to use `${mainPath}` as the localRoot setting for the FTP/SFTP upload setting (see #209).
+- Separated primitive types from other types, like in the C/C++ extension.
 
 ### Fixed
 
