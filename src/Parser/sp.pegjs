@@ -223,7 +223,7 @@ Keyword
   / NewToken
   / NullableToken
   / ObjectToken
-  / OperatorToken
+  // / OperatorToken
   / ReadonlyToken
   / ReturnToken
   / SealedToken
@@ -256,7 +256,7 @@ Keyword
 
 TypeKeyword
   = CharToken
-  / FloatToken
+  // / FloatToken
   / IntToken 
   / Int8Token
   / Int16Token
@@ -1080,7 +1080,7 @@ DefineStatement
   }
 
 DefineStatementNoDoc
-  = "#define" _p id:Identifier value:(_p AssignmentExpression)
+  = PDefineToken _p id:IdentifierName value:(_p AssignmentExpression)
   {
     return {
       type: "DefineStatement",
@@ -1090,7 +1090,7 @@ DefineStatementNoDoc
     };
   }
   /
-  "#define" _p id:Identifier !"("
+  PDefineToken _p id:IdentifierName !"("
   {
     return {
       type: "DefineStatement",
@@ -1101,7 +1101,7 @@ DefineStatementNoDoc
   }
 
 IncludeStatement
-  = "#include" __ path:IncludePath 
+  = PIncludeToken _ path:IncludePath
   {
     readInclude(args, path);
     return {
@@ -1111,18 +1111,18 @@ IncludeStatement
   }
 
 IncludePath 
-  = "<" path:([A-Za-z0-9\-_\/.])+ ">"
+  = "<" path:([A-Za-z0-9\-_\/.]+) ">"
   { 
     return path.join("");
   }
   /
-  "\"" path:([A-Za-z0-9\-_\/.])+ "\""
+  "\"" path:([A-Za-z0-9\-_\/.]+) "\""
   { 
     return path.join("");
   }
 
 PragmaStatement
-  = "#pragma" __ value:[^\n]+ __ 
+  = PPragmaToken _ value:[^\n]+ __
   { 
     return {
       type:"PragmaValue",
@@ -1131,7 +1131,20 @@ PragmaStatement
   }
 
 OtherPreprocessorStatement
-  = "#" name:(!("define" / "pragma" / "include")[A-Za-z0-9_]+) _ [^\n]*
+  = name:(
+  PAssertToken
+  / PElseToken
+  / PElseIfToken
+  / PEndIfToken
+  / PEndInputToken
+  / PEndScriptToken
+  / PErrorToken
+  / PWarningToken
+  / PIfToken          
+  / PLineToken
+  / PTryIncludeToken
+  / PUndefToken
+  ) (!LineTerminator SourceCharacter)* LineTerminatorSequence?
   {
     return {
       type:"PreprocessorStatement", 
@@ -1483,7 +1496,7 @@ MacroDeclaration
   }
 
 MacroDeclarationNoDoc
-  = "#define" _p id:Identifier value:("(" ( _ "%"[0-9]+ _ "," )* ( _ "%"[0-9]+ _ )? _ ")" [^\n]+) _
+  = PDefineToken _p id:IdentifierName value:("(" ( _ "%"[0-9]+ _ "," )* ( _ "%"[0-9]+ _ )? _ ")" [^\n]+) _
   {
     return {
       type: "MacroDeclaration",
@@ -1755,7 +1768,7 @@ MethodmapDeclaration
   }
 
 MethodmapDeclarationNoDoc
-  = MethodmapToken __p id:Identifier __ inherit:(( MethodmapInherit /  "__nullable__" ) __ )?
+  = MethodmapToken __p id:Identifier __ inherit:(( MethodmapInherit /  NullableToken ) __ )?
   "{" body:MethodmapBody __ "}" EOS 
   {
     return {

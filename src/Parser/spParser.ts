@@ -89,8 +89,15 @@ export function parseText(
           err.message,
           DiagnosticSeverity.Error
         );
-        parserDiagnostics.set(URI.file(file), [diagnostic]);
+        const newDiagnostics = Array.from(
+          parserDiagnostics.get(URI.file(file))
+        );
+        newDiagnostics.push(diagnostic);
+        parserDiagnostics.set(URI.file(file), newDiagnostics);
         let { txt, offset } = getNextScope(data, err.location.start.line - 1);
+        if (txt === undefined || offset === undefined) {
+          return;
+        }
         parseText(
           txt,
           file,
