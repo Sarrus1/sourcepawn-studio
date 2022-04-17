@@ -24,12 +24,12 @@ import { updateDecorations } from "../Providers/decorationsProvider";
 
 export class ItemsRepository implements Disposable {
   public fileItems: Map<string, FileItems>;
-  public documents: Set<string>;
+  public documents: Map<string, boolean>;
   private globalState: Memento;
 
   constructor(globalState: Memento) {
     this.fileItems = new Map<string, FileItems>();
-    this.documents = new Set<string>();
+    this.documents = new Map<string, boolean>();
     this.globalState = globalState;
   }
 

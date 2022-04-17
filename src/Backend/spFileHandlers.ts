@@ -47,7 +47,7 @@ export async function handleDocumentChange(
   const filePath: string = event.document.uri.fsPath.replace(".git", "");
 
   let fileItems = new FileItems(fileUri);
-  itemsRepo.documents.add(fileUri);
+  itemsRepo.documents.set(fileUri, false);
   return new Promise((resolve, reject) => {
     try {
       // We use parseText here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
@@ -106,7 +106,7 @@ export function newDocumentCallback(
   }
 
   let fileItems: FileItems = new FileItems(uri.toString());
-  itemsRepo.documents.add(uri.toString());
+  itemsRepo.documents.set(uri.toString(), false);
   try {
     parseFile(filePath, fileItems, itemsRepo, false, false);
   } catch (error) {
@@ -119,15 +119,21 @@ export function newDocumentCallback(
 
   // Parse token references.
   parseFile(filePath, fileItems, itemsRepo, true, false);
-  fileItems.includes.forEach((e) => {
-    const uri = URI.parse(e.uri);
-    parseFile(
-      uri.fsPath,
-      itemsRepo.fileItems.get(uri.toString()),
-      itemsRepo,
-      true,
-      false
-    );
+  itemsRepo.fileItems.forEach((fileItems, k) => {
+    fileItems.includes.forEach((e) => {
+      const uri = URI.parse(e.uri);
+      if (itemsRepo.documents.get(uri.toString())) {
+        return;
+      }
+      parseFile(
+        uri.fsPath,
+        itemsRepo.fileItems.get(uri.toString()),
+        itemsRepo,
+        true,
+        false
+      );
+      itemsRepo.documents.set(uri.toString(), true);
+    });
   });
 }
 

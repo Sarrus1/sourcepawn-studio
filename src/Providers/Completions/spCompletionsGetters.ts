@@ -35,7 +35,7 @@ const MP = [CompletionItemKind.Method, CompletionItemKind.Property];
  * @returns CompletionList
  */
 export function getIncludeFileCompletionList(
-  knownIncs: Set<string>,
+  knownIncs: Map<string, boolean>,
   document: TextDocument,
   tempName: string,
   useAp: boolean
@@ -47,7 +47,7 @@ export function getIncludeFileCompletionList(
 
   let items: CompletionItem[] = [];
 
-  Array.from(knownIncs).forEach((e) =>
+  Array.from(knownIncs.keys()).forEach((e) =>
     incURIs.find((incURI) => {
       const fileMatchRe = RegExp(
         `${incURI.toString()}\\/${prevPath}[^<>:;,?"*|/]+\\.(?:inc|sp)$`
@@ -67,12 +67,12 @@ export function getIncludeFileCompletionList(
   );
 
   const availableIncFolderPaths = new Set<string>();
-  knownIncs.forEach((e) => {
+  knownIncs.forEach((v, k) => {
     incURIs.forEach((incURI) => {
       const folderMatchRe = RegExp(
         `${incURI.toString()}\\/${prevPath}(\\w[^*/><?\\|:]+)\\/`
       );
-      const match = e.match(folderMatchRe);
+      const match = k.match(folderMatchRe);
       if (match) {
         availableIncFolderPaths.add(`${incURI.toString()}/${match[1]}`);
       }

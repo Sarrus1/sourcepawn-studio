@@ -40,7 +40,7 @@ export function activate(context: ExtensionContext) {
 
     watcher.onDidCreate((uri) => {
       let uriString = URI.file(uri.fsPath).toString();
-      providers.itemsRepository.documents.add(uriString);
+      providers.itemsRepository.documents.set(uriString, false);
       let mainPath = findMainPath(uri);
       if (mainPath !== undefined && mainPath !== "") {
         mainPath = URI.file(mainPath).toString();
@@ -230,7 +230,7 @@ function getDirectories(paths: string[], providers: Providers) {
   for (let path of paths) {
     let files = glob.sync(path.replace(/\/\s*$/, "") + "/**/*.{inc,sp}");
     for (let file of files) {
-      providers.itemsRepository.documents.add(URI.file(file).toString());
+      providers.itemsRepository.documents.set(URI.file(file).toString(), false);
     }
   }
 }

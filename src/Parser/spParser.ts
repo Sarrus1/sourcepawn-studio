@@ -46,7 +46,7 @@ export function parseFile(
 
 export interface spParserArgs {
   fileItems: FileItems;
-  documents: Set<string>;
+  documents: Map<string, boolean>;
   filePath: string;
   IsBuiltIn: boolean;
   anonEnumCount: number;

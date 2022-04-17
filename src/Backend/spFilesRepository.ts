@@ -61,7 +61,7 @@ export class FileItems extends Map<string, SPItem> {
    */
   resolveImport(
     includeText: string,
-    documents: Set<string>,
+    documents: Map<string, boolean>,
     filePath: string,
     IsBuiltIn: boolean = false
   ): void {
@@ -78,11 +78,11 @@ export class FileItems extends Map<string, SPItem> {
         incFilePath = resolve(SMHome, includeText);
       }
     }
-    for (let parsedUri of documents.values()) {
-      if (parsedUri == URI.file(incFilePath).toString()) {
-        this.addInclude(parsedUri, IsBuiltIn);
-        return;
-      }
+
+    const uri = URI.file(incFilePath);
+    if (documents.has(uri.toString())) {
+      this.addInclude(uri.toString(), IsBuiltIn);
+      return;
     }
 
     let includeDirs: string[] = Workspace.getConfiguration("sourcepawn").get(
