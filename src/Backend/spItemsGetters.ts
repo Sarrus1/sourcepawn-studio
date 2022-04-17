@@ -150,6 +150,9 @@ export function getItemFromPosition(
     if (e1.name !== word) {
       return false;
     }
+    if (!e1.range) {
+      return false;
+    }
     if (range.isEqual(e1.range)) {
       return true;
     }
