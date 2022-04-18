@@ -222,7 +222,8 @@ export class Parser {
   }
 
   getReferencesMap(): void {
-    const MP = [CompletionItemKind.Method, CompletionItemKind.Property];
+    const MC = [CompletionItemKind.Method, CompletionItemKind.Constructor];
+    const MPC = [CompletionItemKind.Property].concat(MC);
     const MmEs = [CompletionItemKind.Class, CompletionItemKind.Struct];
 
     this.items.forEach((item, i) => {
@@ -246,13 +247,13 @@ export class Parser {
         }
         purgeCalls(item, this.filePath);
         this.referencesMap.set(item.name, item);
-      } else if (!MP.includes(item.kind) && item.references !== undefined) {
+      } else if (!MPC.includes(item.kind) && item.references !== undefined) {
         purgeCalls(item, this.filePath);
         this.referencesMap.set(item.name, item);
       } else if (item.kind === CompletionItemKind.Property) {
         purgeCalls(item, this.filePath);
         this.methodAndProperties.push(item as PropertyItem);
-      } else if (item.kind === CompletionItemKind.Method) {
+      } else if (MC.includes(item.kind)) {
         if (item.filePath === this.filePath) {
           this.funcsAndMethodsInFile.push(item as MethodItem);
         }
