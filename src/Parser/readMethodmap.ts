@@ -34,7 +34,7 @@ export function readMethodmap(
   const { doc, dep } = processDocStringComment(docstring);
   const methodmapItem = new MethodMapItem(
     id.id,
-    !(inherit && inherit === "__nullable__")
+    inherit && inherit !== "__nullable__"
       ? (inherit as ParsedID).id
       : globalIdentifier,
     doc,
