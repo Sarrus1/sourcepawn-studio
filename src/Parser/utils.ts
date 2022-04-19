@@ -120,3 +120,21 @@ export function getNextScope(
   }
   return { txt: undefined, offset: undefined };
 }
+
+/**
+ * Check if the token is the declaration of the plugin infos.
+ * @param  {string} name  The id of the token.
+ * @param  {SPItem|undefined} lastFunc  The current function scope.
+ * @param  {SPItem|undefined} lastMMorES  The current Methodmap or Enum struct scope.
+ * @returns boolean
+ */
+export function checkIfPluginInfo(
+  name: string,
+  lastFunc: SPItem | undefined,
+  lastMMorES: SPItem | undefined
+): boolean {
+  if (lastFunc !== undefined || lastMMorES !== undefined) {
+    return false;
+  }
+  return name === "Plugin" || name === "myinfo";
+}

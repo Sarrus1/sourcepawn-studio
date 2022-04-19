@@ -7,7 +7,12 @@ import { ItemsRepository } from "../Backend/spItemsRepository";
 import { FileItems } from "../Backend/spFilesRepository";
 import { SPItem } from "../Backend/Items/spItems";
 import { handleReferenceInParser } from "./handleReferencesInParser";
-import { getNextScope, parsedLocToRange, purgeCalls } from "./utils";
+import {
+  checkIfPluginInfo,
+  getNextScope,
+  parsedLocToRange,
+  purgeCalls,
+} from "./utils";
 import { globalIdentifier } from "../Misc/spConstants";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { MethodItem } from "../Backend/Items/spMethodItem";
@@ -198,6 +203,11 @@ export class Parser {
           lastMMorES = undefined;
         }
       }
+
+      if (checkIfPluginInfo(e.id, lastFunc, lastMMorES)) {
+        return;
+      }
+
       const lineNb = range.start.line;
 
       if (lineNb !== thisArgs.lineNb || i === 0) {
