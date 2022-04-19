@@ -1880,7 +1880,8 @@ MethodmapNativeForwardDeclaration
       loc: content.loc,
       id: content.id,
       params: content.params,
-      doc
+      doc,
+      body: undefined
     }
   }
 

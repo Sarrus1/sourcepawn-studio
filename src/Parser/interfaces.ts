@@ -218,6 +218,7 @@ export interface MethodmapNativeForwardDeclaration {
   id: ParsedID;
   params: ParsedParam[];
   doc: ParsedComment;
+  body: undefined;
 }
 
 /**

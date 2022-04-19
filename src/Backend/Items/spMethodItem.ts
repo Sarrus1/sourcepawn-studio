@@ -18,6 +18,7 @@ import { SPItem } from "./spItems";
 import { FunctionParam } from "../../Parser/interfaces";
 import { EnumStructItem } from "./spEnumStructItem";
 import { MethodMapItem } from "./spMethodmapItem";
+import { PropertyItem } from "./spPropertyItem";
 
 export class MethodItem implements SPItem {
   name: string;
@@ -35,7 +36,7 @@ export class MethodItem implements SPItem {
   deprecated: string | undefined;
 
   constructor(
-    parent: MethodMapItem | EnumStructItem,
+    parent: MethodMapItem | EnumStructItem | PropertyItem,
     name: string,
     detail: string,
     description: string,

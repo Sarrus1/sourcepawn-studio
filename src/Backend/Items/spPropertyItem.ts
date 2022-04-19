@@ -28,12 +28,13 @@ export class PropertyItem implements SPItem {
   fullRange: Range;
 
   constructor(
-    parent: MethodMapItem | EnumStructItem,
+    parent: MethodMapItem,
     name: string,
     file: string,
     detail: string,
     description: string,
     range: Range,
+    fullRange: Range,
     type: string
   ) {
     this.parent = parent;
@@ -41,6 +42,7 @@ export class PropertyItem implements SPItem {
     this.filePath = file;
     this.description = description;
     this.range = range;
+    this.fullRange = fullRange;
     this.type = type;
     this.detail = detail;
     this.references = [];

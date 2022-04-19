@@ -19,6 +19,8 @@ import { globalIdentifier, globalItem } from "../Misc/spConstants";
 import { ConstantItem } from "../Backend/Items/spConstantItem";
 import { MethodItem } from "../Backend/Items/spMethodItem";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
+import { PropertyItem } from "../Backend/Items/spPropertyItem";
+import { CompletionItemKind } from "vscode";
 
 export function readFunctionAndMethod(
   parserArgs: spParserArgs,
@@ -29,12 +31,13 @@ export function readFunctionAndMethod(
   docstring: ParsedComment,
   params: ParsedParam[] | null,
   body: FunctionBody | null,
-  parent: EnumStructItem | ConstantItem = globalItem
+  parent: EnumStructItem | PropertyItem | ConstantItem = globalItem
 ): void {
   // Don't add the float native or operators.
   if (id.id === "float" || /^\boperator\b/.test(id.id)) {
     return;
   }
+  const MmEs = [CompletionItemKind.Struct, CompletionItemKind.Class];
 
   const range = parsedLocToRange(id.loc, parserArgs);
   const fullRange = parsedLocToRange(loc, parserArgs);
@@ -43,7 +46,23 @@ export function readFunctionAndMethod(
   const processedReturnType = returnType && returnType.id ? returnType.id : "";
   let item: FunctionItem | MethodItem;
   let key: string = id.id;
-  if (parent.name !== globalIdentifier) {
+
+  if (parent.kind === CompletionItemKind.Property) {
+    item = new MethodItem(
+      parent as PropertyItem,
+      id.id,
+      `${processedReturnType} ${id.id}(${details.replace(/, $/, "")})`.trim(),
+      doc,
+      processedParams,
+      returnType ? returnType.id : "",
+      parserArgs.filePath,
+      range,
+      parserArgs.IsBuiltIn,
+      fullRange,
+      dep
+    );
+    key += `-${parent.name}-${(parent as PropertyItem).parent.name}`;
+  } else if (MmEs.includes(parent.kind)) {
     item = new MethodItem(
       parent as EnumStructItem,
       id.id,
@@ -76,7 +95,7 @@ export function readFunctionAndMethod(
   parserArgs.fileItems.set(key, item);
   addParamsAsVariables(parserArgs, params, item, parent);
 
-  if (body === null) {
+  if (!body) {
     // We are in a native or forward.
     return;
   }
@@ -206,7 +225,9 @@ function addParamsAsVariables(
     } else if (Array.isArray(e.declarationType)) {
       processedDeclType = e.declarationType.join(" ");
     }
-    const type = e.parameterType.name.id;
+    const type =
+      e.parameterType && e.parameterType.name ? e.parameterType.name.id : "";
+    const modifiers = e.parameterType ? e.parameterType.modifier : "";
     addVariableItem(
       parserArgs,
       e.id.id,
@@ -214,7 +235,7 @@ function addParamsAsVariables(
       parsedLocToRange(e.id.loc, parserArgs),
       parent,
       "",
-      `${processedDeclType} ${type}${e.parameterType.modifier}${e.id.id};`,
+      `${processedDeclType} ${type}${modifiers}${e.id.id};`,
       `${e.id.id}-${parent.name}-${grandParent.name}`
     );
   });

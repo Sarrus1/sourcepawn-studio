@@ -57,7 +57,21 @@ export function symbolProvider(
               e.filePath === file &&
               e.parent === item
           )
-          .map((e) => e.toDocumentSymbol())
+          .map((e) => {
+            const subsymbol = e.toDocumentSymbol();
+            if (e.kind === CompletionItemKind.Property) {
+              subsymbol.children = items
+                .filter(
+                  (e1) =>
+                    e1.kind === CompletionItemKind.Method &&
+                    e1.parent.name === e.name &&
+                    e1.parent.parent.name === e.parent.name
+                )
+                .map((e1) => e1.toDocumentSymbol())
+                .filter((e1) => e1 !== undefined);
+            }
+            return subsymbol;
+          })
           .filter((e) => e !== undefined);
       }
       if (symbol !== undefined) {

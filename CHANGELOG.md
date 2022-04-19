@@ -12,6 +12,7 @@
 - Added the possibility to use `${mainPath}` as the localRoot setting for the FTP/SFTP upload setting (see #209).
 - Separated primitive types from other types, like in the C/C++ extension.
 - Added better methodmap constructor support.
+- Added better methodmap property support.
 
 ### Fixed
 

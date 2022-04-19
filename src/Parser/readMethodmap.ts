@@ -76,7 +76,8 @@ export function readMethodmap(
         e.loc,
         methodmapItem,
         e.doc,
-        e.propertyType
+        e.propertyType,
+        e.body
       );
     }
   });
