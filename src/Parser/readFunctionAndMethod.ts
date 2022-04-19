@@ -188,17 +188,19 @@ function addParamsAsVariables(
   params.forEach((e) => {
     let processedDeclType = "";
     if (typeof e.declarationType === "string") {
-      processedDeclType = e.declarationType + " ";
+      processedDeclType = e.declarationType;
     } else if (Array.isArray(e.declarationType)) {
-      processedDeclType = e.declarationType.join(" ") + " ";
+      processedDeclType = e.declarationType.join(" ");
     }
+    const type = e.parameterType.name.id;
     addVariableItem(
       parserArgs,
       e.id.id,
-      processedDeclType,
+      type,
       parsedLocToRange(e.id.loc, parserArgs),
       parent,
       "",
+      // `${processedDeclType} ${type}${e.parameterType.modifier}${e.id.id}`,
       `${e.id.id}-${parent.name}-${grandParent.name}`
     );
   });

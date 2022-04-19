@@ -136,6 +136,9 @@ export async function getCompletionListFromPosition(
     lastESOrMM
   );
 
+  if (!variableType) {
+    return new CompletionList();
+  }
   const variableTypeItem = allItems.find(
     (e) =>
       [CompletionItemKind.Class, CompletionItemKind.Struct].includes(e.kind) &&
@@ -229,7 +232,7 @@ async function getPositionalArguments(
     document.uri,
     position
   )) as SignatureHelp;
-  if (signatureHelp === undefined) {
+  if (signatureHelp === undefined || signatureHelp.signatures.length === 0) {
     return undefined;
   }
   if (line[position.character - 1] !== ".") {

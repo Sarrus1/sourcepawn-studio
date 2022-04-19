@@ -1781,7 +1781,7 @@ MethodmapDeclaration
   }
 
 MethodmapDeclarationNoDoc
-  = MethodmapToken __p id:Identifier __ inherit:(( MethodmapInherit /  NullableToken ) __ )?
+  = MethodmapToken __p id:Identifier inherit:MethodmapInherit? __
   "{" body:MethodmapBody __ "}"  (__ ";")?
   {
     return {
@@ -1794,10 +1794,11 @@ MethodmapDeclarationNoDoc
   }
 
 MethodmapInherit
-  =  __ "<" __ id:Identifier
+  = __ "<" __ id:Identifier
   {
     return id;
   }
+  / __p NullableToken
 
 MethodmapBody
   = body:(PropertyDeclaration / MethodDeclaration / MethodmapNativeForwardDeclaration)*

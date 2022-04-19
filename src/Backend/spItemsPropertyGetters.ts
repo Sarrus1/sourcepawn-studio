@@ -65,21 +65,31 @@ export function getTypeOfVariable(
       const enumMemberItem = allItems.find(
         (e) => e.kind === CompletionItemKind.EnumMember && e.name === words[0]
       );
-      variableType = allItems.find(
-        (e) =>
-          (e.kind === CompletionItemKind.Variable &&
-            lastFuncName.includes(e.parent.name) &&
-            e.name === words[words.length - 1]) ||
-          ([CompletionItemKind.Function, CompletionItemKind.Class].includes(
-            e.kind
-          ) &&
-            e.name === words[words.length - 1]) ||
-          (e.kind === CompletionItemKind.Class &&
-            e.name === words[words.length - 1]) ||
-          (enumMemberItem !== undefined &&
+      const variable = allItems.find((e) => {
+        if (enumMemberItem !== undefined) {
+          return (
             e.kind === CompletionItemKind.Class &&
-            (e.name === words[words.length - 1] || e === enumMemberItem.parent))
-      ).type;
+            (e.name === words[words.length - 1] || e === enumMemberItem.parent)
+          );
+        }
+
+        if (e.name !== words[words.length - 1]) {
+          return false;
+        }
+        return (
+          (e.kind === CompletionItemKind.Variable &&
+            lastFuncName.includes(e.parent.name)) ||
+          [CompletionItemKind.Function, CompletionItemKind.Class].includes(
+            e.kind
+          ) ||
+          e.kind === CompletionItemKind.Class
+        );
+      });
+      if (variable !== undefined) {
+        variableType = variable.type;
+      } else {
+        return { variableType, words };
+      }
     }
   }
 
