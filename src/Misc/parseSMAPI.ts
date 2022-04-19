@@ -45,7 +45,7 @@ export function parseSMApi(itemsRepo: ItemsRepository): Promise<void> {
       files.forEach((e) =>
         itemsRepo.documents.set(URI.file(e).toString(), false)
       );
-      files.forEach((e) => newDocumentCallback(itemsRepo, URI.file(e)));
+      // files.forEach((e) => newDocumentCallback(itemsRepo, URI.file(e)));
       resolve();
     });
   });
