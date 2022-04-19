@@ -83,14 +83,17 @@ export function handleReferenceInParser(
     let item: MethodItem | PropertyItem;
     while (item === undefined && this.previousItems.length >= offset) {
       const parent = this.previousItems[this.previousItems.length - offset];
-      item = this.parser.methodAndProperties.get(`${name}-${parent.name}`);
+      offset++;
+      if (parent.type === undefined) {
+        continue;
+      }
+      item = this.parser.methodAndProperties.get(`${name}-${parent.type}`);
       if (item !== undefined) {
         break;
       }
       let inherit = this.allItems.find(
         (e) => e.kind === CompletionItemKind.Class && e.name === parent.type
       );
-      offset++;
       if (inherit === undefined) {
         continue;
       }
