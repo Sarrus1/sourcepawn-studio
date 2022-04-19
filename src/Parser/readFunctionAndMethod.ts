@@ -56,7 +56,7 @@ export function readFunctionAndMethod(
       fullRange,
       dep
     );
-    key += parent.name;
+    key += `-${parent.name}`;
   } else {
     item = new FunctionItem(
       id.id,
@@ -135,7 +135,7 @@ function recursiveVariableSearch(
         range,
         parent,
         doc,
-        e.id.id + parent.name + grandParent.name
+        `${e.id}-${parent.name}-${grandParent.name}`
       );
     });
     return;
@@ -199,7 +199,7 @@ function addParamsAsVariables(
       parsedLocToRange(e.id.loc, parserArgs),
       parent,
       "",
-      e.id.id + parent.name + grandParent.name
+      `${e.id}-${parent.name}-${grandParent.name}`
     );
   });
 }

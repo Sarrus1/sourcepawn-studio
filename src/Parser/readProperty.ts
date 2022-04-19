@@ -25,5 +25,5 @@ export function readProperty(
     range,
     returnType.id
   );
-  parserArgs.fileItems.set(id.id + parent.name, propertyItem);
+  parserArgs.fileItems.set(`${id.id}-${parent.name}`, propertyItem);
 }

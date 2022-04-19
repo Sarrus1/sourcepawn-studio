@@ -34,7 +34,7 @@ export function readEnum(
   const { name, nameRange } = getEnumNameAndRange(parserArgs, id, loc);
   const key = name
     ? name
-    : `${parserArgs.anonEnumCount}${basename(parserArgs.filePath)}`;
+    : `${parserArgs.anonEnumCount}-${basename(parserArgs.filePath)}`;
   const { doc, dep } = processDocStringComment(docstring);
   const enumItem = new EnumItem(
     name,
