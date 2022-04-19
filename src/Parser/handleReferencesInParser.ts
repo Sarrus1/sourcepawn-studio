@@ -14,6 +14,7 @@ import { MethodItem } from "../Backend/Items/spMethodItem";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { checkIfConstructor } from "../spUtils";
+import { VariableItem } from "../Backend/Items/spVariableItem";
 
 const globalScope = `-${globalIdentifier}-${globalIdentifier}`;
 
@@ -87,7 +88,7 @@ export function handleReferenceInParser(
     [".", ":"].includes(this.line[start - 1])
   ) {
     let offset = 1;
-    let item: MethodItem | PropertyItem;
+    let item: MethodItem | PropertyItem | VariableItem;
     while (item === undefined && this.previousItems.length >= offset) {
       const parent = this.previousItems[this.previousItems.length - offset];
       offset++;

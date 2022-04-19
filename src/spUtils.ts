@@ -11,6 +11,7 @@ import { resolve, extname } from "path";
 import { SPItem } from "./Backend/Items/spItems";
 import { MethodItem } from "./Backend/Items/spMethodItem";
 import { PropertyItem } from "./Backend/Items/spPropertyItem";
+import { VariableItem } from "./Backend/Items/spVariableItem";
 
 /**
  * Parse a Sourcemod JSDoc documentation string and convert it to a MarkdownString.
@@ -108,7 +109,7 @@ export function locationFromRange(filePath: string, range: Range): Location {
 export function checkIfConstructor(
   item: SPItem,
   range: Range,
-  methodsAndProperties: Map<string, MethodItem | PropertyItem>,
+  methodsAndProperties: Map<string, MethodItem | PropertyItem | VariableItem>,
   line: string
 ): SPItem {
   if (item.kind !== CompletionItemKind.Class) {

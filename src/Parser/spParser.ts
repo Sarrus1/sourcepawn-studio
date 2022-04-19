@@ -20,6 +20,7 @@ import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
+import { VariableItem } from "../Backend/Items/spVariableItem";
 const spParser = require("./spParser2");
 
 export function parseFile(
@@ -127,7 +128,7 @@ export class Parser {
   lines: string[];
   lineNb: number;
   filePath: string;
-  methodAndProperties: Map<string, MethodItem | PropertyItem>;
+  methodAndProperties: Map<string, MethodItem | PropertyItem | VariableItem>;
   funcsAndMethodsInFile: (FunctionItem | MethodItem)[];
   MmEsInFile: (MethodMapItem | EnumStructItem)[];
   referencesMap: Map<string, SPItem>;
@@ -236,6 +237,18 @@ export class Parser {
     this.items.forEach((item, i) => {
       if (item.kind === CompletionItemKind.Variable) {
         purgeCalls(item, this.filePath);
+        // Handle enum structs properties.
+        if (item.parent.kind === CompletionItemKind.Struct) {
+          this.referencesMap.set(
+            `${item.name}-${globalIdentifier}-${item.parent.name}`,
+            item
+          );
+          this.methodAndProperties.set(
+            `${item.name}-${item.parent.name}`,
+            item as VariableItem
+          );
+          return;
+        }
         this.referencesMap.set(
           `${item.name}-${item.parent.name}-${
             item.parent.parent ? item.parent.parent.name : globalIdentifier

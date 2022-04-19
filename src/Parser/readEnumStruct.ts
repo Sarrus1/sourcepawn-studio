@@ -9,7 +9,8 @@ import { parsedLocToRange } from "./utils";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { processDocStringComment } from "./processComment";
 import { readFunctionAndMethod } from "./readFunctionAndMethod";
-import { readProperty } from "./readProperty";
+import { addVariableItem } from "./addVariableItem";
+import { globalIdentifier } from "../Misc/spConstants";
 
 /**
  * Callback for a parsed enum struct.
@@ -50,13 +51,29 @@ export function readEnumStruct(
         enumStructItem
       );
     } else if (e["type"] === "VariableDeclaration") {
-      readProperty(
+      let variableType = "",
+        modifier = "",
+        processedDeclType = "";
+      if (e.variableType) {
+        variableType = e.variableType.name.id;
+        modifier = e.variableType.modifier;
+      }
+      if (typeof e.variableDeclarationType === "string") {
+        processedDeclType = e.variableDeclarationType;
+      } else if (Array.isArray(e.variableDeclarationType)) {
+        processedDeclType = e.variableDeclarationType.join(" ");
+      }
+      const range = parsedLocToRange(e.declarations[0].id.loc);
+      const name = e.declarations[0].id.id;
+      addVariableItem(
         parserArgs,
-        e.declarations[0].id,
-        undefined,
+        name,
+        variableType,
+        range,
         enumStructItem,
-        e.doc,
-        e.variableType.name
+        "",
+        `${processedDeclType} ${variableType}${modifier}${name};`.trim(),
+        `${name}-${globalIdentifier}-${enumStructItem.name}`
       );
     }
   });
