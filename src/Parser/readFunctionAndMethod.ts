@@ -135,7 +135,7 @@ function recursiveVariableSearch(
         range,
         parent,
         doc,
-        `${e.id}-${parent.name}-${grandParent.name}`
+        `${e.id.id}-${parent.name}-${grandParent.name}`
       );
     });
     return;
@@ -199,7 +199,7 @@ function addParamsAsVariables(
       parsedLocToRange(e.id.loc, parserArgs),
       parent,
       "",
-      `${e.id}-${parent.name}-${grandParent.name}`
+      `${e.id.id}-${parent.name}-${grandParent.name}`
     );
   });
 }

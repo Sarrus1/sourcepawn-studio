@@ -23,7 +23,7 @@ export function readVariable(
       range,
       globalItem,
       doc,
-      e.id.id + parent.name
+      `${e.id.id}-${parent.name}`
     );
   });
   return;
