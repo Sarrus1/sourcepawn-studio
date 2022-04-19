@@ -20,6 +20,7 @@
 - Fixed an issue where items would show a definition in string and comments (see #214).
 - Fixed an issue where methods definition would not point to the correct method.
 - Fixed deprecated color highlighting.
+- Fixed a highlighting bugs with methods/properties definitions.
 
 ### Removed
 

@@ -288,7 +288,19 @@
       }
     },
     {
-      "comment": "Function declaration syntax",
+      "comment": "Function declaration no type",
+      "match": "^\\s*((?:(?:static|native|stock|public|forward)\\s+)*)(?!function)(\\w+)\\s*\\(",
+      "captures": {
+        "1": {
+          "name": "keyword.function.sourcepawn"
+        },
+        "2": {
+          "name": "entity.name.function.function_notype.sourcepawn"
+        }
+      }
+    },
+    {
+      "comment": "Function declaration",
       "match": "^\\s*((?:(?:static|native|stock|public|forward)\\s+)*)(?!function)(?:(?:(bool|int|void|char|any|float)|(\\w+))\\s*(?:\\s+|\\:))\\s*(\\w+)\\s*\\(",
       "captures": {
         "1": {
