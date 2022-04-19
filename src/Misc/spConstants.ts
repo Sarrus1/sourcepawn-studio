@@ -20,4 +20,5 @@ export const reservedTokens = new Set<string>([
   "char",
   "bool",
   "void",
+  "any",
 ]);
