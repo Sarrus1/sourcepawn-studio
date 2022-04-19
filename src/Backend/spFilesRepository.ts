@@ -114,6 +114,12 @@ export class FileItems extends Map<string, SPItem> {
       return;
     }
     const range = parsedLocToRange(id.loc, parserArgs);
+
+    // Prevent duplicates in the tokens array.
+    const length = this.tokens.length;
+    if (length > 0 && this.tokens[length - 1].range.isEqual(range)) {
+      return;
+    }
     this.tokens.push({ id: id.id, range });
   }
 }
