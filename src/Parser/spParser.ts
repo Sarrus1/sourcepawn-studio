@@ -127,7 +127,7 @@ export class Parser {
   lines: string[];
   lineNb: number;
   filePath: string;
-  methodAndProperties: (MethodItem | PropertyItem)[];
+  methodAndProperties: Map<string, MethodItem | PropertyItem>;
   funcsAndMethodsInFile: (FunctionItem | MethodItem)[];
   MmEsInFile: (MethodMapItem | EnumStructItem)[];
   referencesMap: Map<string, SPItem>;
@@ -143,10 +143,10 @@ export class Parser {
     this.lines = lines;
     this.filePath = filePath;
     this.items = itemsRepository.getAllItems(URI.file(this.filePath));
-    this.methodAndProperties = [];
+    this.methodAndProperties = new Map();
     this.funcsAndMethodsInFile = [];
     this.MmEsInFile = [];
-    this.referencesMap = new Map<string, SPItem>();
+    this.referencesMap = new Map();
   }
 
   parse(): void {
@@ -222,6 +222,7 @@ export class Parser {
           lastMMorES ? lastMMorES.name : globalIdentifier
         }`;
       }
+
       handleReferenceInParser.call(thisArgs, e.id, range);
     });
     parserDiagnostics.set(URI.file(this.filePath), newDiagnostics);
@@ -258,13 +259,19 @@ export class Parser {
         this.referencesMap.set(item.name, item);
       } else if (item.kind === CompletionItemKind.Property) {
         purgeCalls(item, this.filePath);
-        this.methodAndProperties.push(item as PropertyItem);
+        this.methodAndProperties.set(
+          `${item.name}-${item.parent.name}`,
+          item as PropertyItem
+        );
       } else if (MC.includes(item.kind)) {
         if (item.filePath === this.filePath) {
           this.funcsAndMethodsInFile.push(item as MethodItem);
         }
         purgeCalls(item, this.filePath);
-        this.methodAndProperties.push(item as MethodItem);
+        this.methodAndProperties.set(
+          `${item.name}-${item.parent.name}`,
+          item as PropertyItem
+        );
       }
     });
 

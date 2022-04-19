@@ -83,33 +83,28 @@ export function handleReferenceInParser(
     let item: MethodItem | PropertyItem;
     while (item === undefined && this.previousItems.length >= offset) {
       const parent = this.previousItems[this.previousItems.length - offset];
-      item = this.parser.methodAndProperties.find((e) => {
-        if (e.name !== name) {
-          return false;
-        }
-        if (e.parent.name === parent.type) {
-          return true;
-        }
-        // Look for inherits.
-        let inherit = this.allItems.find(
-          (e) => e.kind === CompletionItemKind.Class && e.name === parent.type
-        );
-        if (inherit === undefined) {
-          return false;
-        }
-        inherit = inherit.parent;
-        while (
-          inherit !== undefined &&
-          inherit.kind !== CompletionItemKind.Constant
-        ) {
-          if (inherit.name === e.parent.name) {
-            return true;
-          }
-          inherit = (inherit as MethodMapItem).parent;
-        }
-        return false;
-      });
+      item = this.parser.methodAndProperties.get(`${name}-${parent.name}`);
+      if (item !== undefined) {
+        break;
+      }
+      let inherit = this.allItems.find(
+        (e) => e.kind === CompletionItemKind.Class && e.name === parent.type
+      );
       offset++;
+      if (inherit === undefined) {
+        continue;
+      }
+      inherit = inherit.parent;
+      while (
+        inherit !== undefined &&
+        inherit.kind !== CompletionItemKind.Constant
+      ) {
+        item = this.parser.methodAndProperties.get(`${name}-${inherit.name}`);
+        if (item !== undefined) {
+          break;
+        }
+        inherit = (inherit as MethodMapItem).parent;
+      }
     }
 
     if (item !== undefined) {
