@@ -37,7 +37,6 @@ export function readMethodmap(
     !(inherit && inherit === "__nullable__")
       ? (inherit as ParsedID).id
       : globalIdentifier,
-    `methodmap ${id.id}${inherit ? " < " + inherit : ""}`,
     doc,
     parserArgs.filePath,
     range,

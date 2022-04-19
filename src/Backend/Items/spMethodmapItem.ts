@@ -33,7 +33,6 @@ export class MethodMapItem implements SPItem {
   constructor(
     name: string,
     parent: string,
-    detail: string,
     description: string,
     file: string,
     range: Range,
@@ -46,7 +45,6 @@ export class MethodMapItem implements SPItem {
       this.tmpParent = parent;
     }
     this.parent = globalItem;
-    this.detail = detail;
     this.description = description;
     this.IsBuiltIn = IsBuiltIn;
     this.filePath = file;
@@ -76,6 +74,11 @@ export class MethodMapItem implements SPItem {
   }
 
   toHover(): Hover {
+    this.detail = `methodmap ${this.name}${
+      this.parent.name !== globalIdentifier
+        ? this.name + " < " + this.parent.name
+        : ""
+    }`;
     if (!this.description) {
       return new Hover([{ language: "sourcepawn", value: this.detail }]);
     }
