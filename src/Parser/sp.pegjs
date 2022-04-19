@@ -255,7 +255,8 @@ Keyword
   / ProtectedToken
 
 TypeKeyword
-  = CharToken
+  = AnyToken
+  / CharToken
   // / FloatToken
   / IntToken 
   / Int8Token
@@ -413,6 +414,7 @@ UnicodeEscapeSequence
 // Tokens
 
 AcquireToken      = "acquire"
+AnyToken          = "any"
 AsToken           = "as"
 AssertToken       = "assert"
 BuiltinToken      = "builtin"
