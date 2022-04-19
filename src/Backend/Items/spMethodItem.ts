@@ -49,14 +49,16 @@ export class MethodItem implements SPItem {
   ) {
     this.parent = parent;
     this.name = name;
-    this.kind =
-      this.name === this.parent.name
-        ? CompletionItemKind.Constructor
-        : CompletionItemKind.Method;
+    if (this.name === this.parent.name) {
+      this.kind = CompletionItemKind.Constructor;
+      this.type = this.parent.name;
+    } else {
+      this.kind = CompletionItemKind.Method;
+      this.type = type;
+    }
     this.detail = detail;
     this.description = description;
     this.params = params;
-    this.type = type;
     this.IsBuiltIn = IsBuiltIn;
     this.filePath = file;
     this.range = range;
