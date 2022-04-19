@@ -13,6 +13,7 @@ import { globalIdentifier } from "../Misc/spConstants";
 import { MethodItem } from "../Backend/Items/spMethodItem";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
+import { checkIfConstructor } from "../spUtils";
 
 const globalScope = `-${globalIdentifier}-${globalIdentifier}`;
 
@@ -71,6 +72,12 @@ export function handleReferenceInParser(
     if (item.range.isEqual(range)) {
       return;
     }
+    item = checkIfConstructor(
+      item,
+      range,
+      this.parser.methodAndProperties,
+      this.line
+    );
     const location = new Location(URI.file(this.parser.filePath), range);
     item.references.push(location);
     this.previousItems.push(item);

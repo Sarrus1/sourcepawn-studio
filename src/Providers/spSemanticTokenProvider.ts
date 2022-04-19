@@ -69,6 +69,20 @@ export function semanticTokenProvider(
           }
         }
       }
+    } else if (item.kind === CompletionItemKind.Constructor) {
+      for (let ref of item.references) {
+        if (ref.uri.fsPath === document.uri.fsPath) {
+          if (item.range.contains(ref.range)) {
+            tokensBuilder.push(ref.range, "class", ["declaration"]);
+          } else {
+            tokensBuilder.push(
+              ref.range,
+              "class",
+              item.deprecated ? ["deprecated"] : []
+            );
+          }
+        }
+      }
     }
   }
   return tokensBuilder.build();
