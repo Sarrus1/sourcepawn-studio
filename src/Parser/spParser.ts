@@ -178,6 +178,7 @@ export class Parser {
       allItems: this.items,
       filePath: this.filePath,
       diagnostics: newDiagnostics,
+      lastMMorES: undefined,
     };
 
     this.fileItems.tokens.forEach((e, i) => {
@@ -222,6 +223,7 @@ export class Parser {
         thisArgs.outsideScope = `-${globalIdentifier}-${
           lastMMorES ? lastMMorES.name : globalIdentifier
         }`;
+        thisArgs.lastMMorES = lastMMorES;
       }
 
       handleReferenceInParser.call(thisArgs, e.id, range);

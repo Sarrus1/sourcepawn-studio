@@ -15,6 +15,7 @@ import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { checkIfConstructor } from "../spUtils";
 import { VariableItem } from "../Backend/Items/spVariableItem";
+import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 
 const globalScope = `-${globalIdentifier}-${globalIdentifier}`;
 
@@ -27,6 +28,7 @@ export function handleReferenceInParser(
     lineNb: number;
     scope: string;
     outsideScope: string;
+    lastMMorES: MethodMapItem | EnumStructItem | undefined;
     allItems: SPItem[];
     filePath: string;
     diagnostics: Diagnostic[];
@@ -55,6 +57,12 @@ export function handleReferenceInParser(
     this.parser.referencesMap.get(name + this.outsideScope) ||
     this.parser.referencesMap.get(name + globalScope) ||
     this.parser.referencesMap.get(name);
+
+  if (item === undefined && this.lastMMorES) {
+    item = this.parser.methodAndProperties.get(
+      name + "-" + this.lastMMorES.name
+    );
+  }
 
   // Handle positional arguments.
   if (item === undefined) {
