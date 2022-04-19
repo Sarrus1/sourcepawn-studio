@@ -1782,7 +1782,7 @@ MethodmapDeclaration
 
 MethodmapDeclarationNoDoc
   = MethodmapToken __p id:Identifier __ inherit:(( MethodmapInherit /  NullableToken ) __ )?
-  "{" body:MethodmapBody __ "}" EOS 
+  "{" body:MethodmapBody __ "}"  (__ ";")?
   {
     return {
       type:"MethodmapDeclaration",
