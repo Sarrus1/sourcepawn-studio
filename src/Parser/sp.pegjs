@@ -1733,7 +1733,7 @@ FuncenumDeclaration
 
 FuncenumDeclarationNoDoc
   = FuncenumToken __p id:TypeIdentifier
-  __ "{" __ params:( FuncenumBody __ )* "}" EOS
+  __ "{" __ params:( FuncenumBody __ )? "}" EOS
   {
   	return {
       type: "FuncenumDeclaration",
@@ -1744,8 +1744,21 @@ FuncenumDeclarationNoDoc
   }
 
 FuncenumBody
+  = head:FuncenumMemberDeclaration tail:(__ "," __ FuncenumMemberDeclaration)* ","?
+  {
+    return buildList(head, tail, 3);
+  }
+
+FuncenumMemberDeclaration
   = id:TypeIdentifier ":" accessModifier:"public"
-  "(" __ params:(FormalParameterList __)? ")" (__p ",")? __
+  "(" __ params:(FormalParameterList __)? ")" __
+  {
+    return {
+      id,
+      accessModifier,
+      params
+    }
+  }
 
 StructDeclaration
   = 
