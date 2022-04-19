@@ -222,13 +222,9 @@ export class Parser {
           lastMMorES ? lastMMorES.name : globalIdentifier
         }`;
       }
-      try {
-        handleReferenceInParser.call(thisArgs, e.id, range);
-      } catch (err) {
-        console.debug(err);
-      }
-      parserDiagnostics.set(URI.file(this.filePath), newDiagnostics);
+      handleReferenceInParser.call(thisArgs, e.id, range);
     });
+    parserDiagnostics.set(URI.file(this.filePath), newDiagnostics);
   }
 
   getReferencesMap(): void {
