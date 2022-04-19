@@ -1513,9 +1513,12 @@ VariableAccessModifier
   }
 
 VariableType
-  = name:TypeIdentifier ((":" !":"__)/(( __ ("[]")+)? __p ))
+  = name:TypeIdentifier modifier:((":" !":"__)/(( __ ("[]")+)? __p ))
   {
-    return name;
+    return {
+      name,
+      modifier: buildNestedArray(modifier)
+    };
   }
 
 GlobalVariableDeclaration

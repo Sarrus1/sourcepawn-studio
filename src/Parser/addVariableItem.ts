@@ -19,6 +19,7 @@ export function addVariableItem(
   range: Range,
   parent: SPItem,
   docstring: string,
+  details: string,
   key: string
 ): void {
   const variableItem = new VariableItem(
@@ -28,6 +29,7 @@ export function addVariableItem(
     range,
     type,
     undefined,
+    details,
     docstring
   );
 

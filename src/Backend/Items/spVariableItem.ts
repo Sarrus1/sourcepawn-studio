@@ -22,6 +22,7 @@ import { MethodMapItem } from "./spMethodmapItem";
 export class VariableItem implements SPItem {
   name: string;
   filePath: string;
+  detail: string;
   kind = CompletionItemKind.Variable;
   description?: string;
   parent: SPItem | ConstantItem;
@@ -37,6 +38,7 @@ export class VariableItem implements SPItem {
     range: Range,
     type: string,
     enumStruct: string,
+    detail: string,
     description = ""
   ) {
     this.name = name;
@@ -46,6 +48,7 @@ export class VariableItem implements SPItem {
     this.type = type;
     this.enumStructName = enumStruct;
     this.references = [];
+    this.detail = detail;
     this.description = description;
   }
 
@@ -105,11 +108,11 @@ export class VariableItem implements SPItem {
   }
 
   toHover(): Hover | undefined {
-    if (this.type === "") {
+    if (this.detail === "") {
       return undefined;
     }
     return new Hover([
-      { language: "sourcepawn", value: `${this.type} ${this.name};` },
+      { language: "sourcepawn", value: this.detail },
       descriptionToMD(this.description),
     ]);
   }

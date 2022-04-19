@@ -127,7 +127,7 @@ export interface TypeDefBody {
 /**
  * Parsed type of a parsed parameter.
  */
-export interface ParameterType {
+export interface VariableType {
   /**
    * Modifier of the parsed parameter (such as & or []).
    */
@@ -156,7 +156,7 @@ export interface ParsedParam {
   /**
    * Type of the parameter if it exists (int, char, etc).
    */
-  parameterType?: ParameterType;
+  parameterType?: VariableType | null;
 
   /**
    * Id of the parsed parameter.
@@ -184,8 +184,8 @@ export interface FunctionParam {
  */
 export interface VariableDeclaration {
   type: "VariableDeclaration";
-  variableDeclarationType: string[] | null;
-  variableType: ParsedID;
+  variableDeclarationType: string[] | string | null;
+  variableType: VariableType | null;
   declarations: VariableDeclarator[];
   doc: ParsedComment;
 }

@@ -56,7 +56,7 @@ export function readEnumStruct(
         undefined,
         enumStructItem,
         e.doc,
-        e.variableType
+        e.variableType.name
       );
     }
   });

@@ -12,17 +12,29 @@ export function readVariable(
   content: VariableDeclaration,
   parent: EnumStructItem | ConstantItem = globalItem
 ): void {
+  let variableType = "",
+    modifier = "",
+    processedDeclType = "";
+  if (content.variableType) {
+    variableType = content.variableType.name.id;
+    modifier = content.variableType.modifier;
+  }
+  if (typeof content.variableDeclarationType === "string") {
+    processedDeclType = content.variableDeclarationType;
+  } else if (Array.isArray(content.variableDeclarationType)) {
+    processedDeclType = content.variableDeclarationType.join(" ");
+  }
   content.declarations.forEach((e) => {
     const range = parsedLocToRange(e.id.loc, parserArgs);
     const { doc, dep } = processDocStringComment(content.doc);
-
     addVariableItem(
       parserArgs,
       e.id.id,
-      content.variableType ? content.variableType.id : "",
+      variableType,
       range,
       globalItem,
       doc,
+      `${processedDeclType} ${variableType}${modifier}${e.id.id};`.trim(),
       `${e.id.id}-${parent.name}`
     );
   });

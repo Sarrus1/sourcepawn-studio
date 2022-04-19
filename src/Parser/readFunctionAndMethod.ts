@@ -9,6 +9,7 @@ import {
   FunctionBody,
   VariableDeclarator,
   ParsedComment,
+  VariableDeclaration,
 } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
@@ -113,18 +114,30 @@ function recursiveVariableSearch(
   let declarators: VariableDeclarator[],
     variableType: string,
     doc = "",
-    found = false;
-  if (obj["type"] === "ForLoopVariableDeclaration") {
+    found = false,
+    processedDeclType = "",
+    modifier = "";
+
+  if (obj.type === "ForLoopVariableDeclaration") {
     declarators = obj["declarations"];
     variableType = (obj["variableType"] as ParsedID).id;
     found = true;
-  }
-  if (obj["type"] === "LocalVariableDeclaration") {
-    declarators = obj.content.declarations;
-    variableType = obj.content.variableType ? obj.content.variableType.id : "";
-    doc = obj.content.doc;
+  } else if (obj["type"] === "LocalVariableDeclaration") {
+    const content: VariableDeclaration = obj.content;
+    declarators = content.declarations;
+    if (content.variableType) {
+      variableType = content.variableType.name.id;
+      modifier = content.variableType.modifier;
+    }
+    //doc = content.doc;
+    if (typeof content.variableDeclarationType === "string") {
+      processedDeclType = content.variableDeclarationType;
+    } else if (Array.isArray(content.variableDeclarationType)) {
+      processedDeclType = content.variableDeclarationType.join(" ");
+    }
     found = true;
   }
+
   if (found) {
     declarators.forEach((e) => {
       const range = parsedLocToRange(e.id.loc, parserArgs);
@@ -135,6 +148,7 @@ function recursiveVariableSearch(
         range,
         parent,
         doc,
+        `${processedDeclType} ${variableType}${modifier}${e.id.id};`.trim(),
         `${e.id.id}-${parent.name}-${grandParent.name}`
       );
     });
@@ -200,7 +214,7 @@ function addParamsAsVariables(
       parsedLocToRange(e.id.loc, parserArgs),
       parent,
       "",
-      // `${processedDeclType} ${type}${e.parameterType.modifier}${e.id.id}`,
+      `${processedDeclType} ${type}${e.parameterType.modifier}${e.id.id};`,
       `${e.id.id}-${parent.name}-${grandParent.name}`
     );
   });
