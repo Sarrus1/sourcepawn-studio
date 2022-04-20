@@ -60,6 +60,9 @@ export class FunctionItem implements SPItem {
   }
 
   toCompletionItem(): CompletionItem {
+    if (/\boperator\b/.test(this.name)) {
+      return undefined;
+    }
     return {
       label: this.name,
       kind: this.kind,
@@ -69,6 +72,9 @@ export class FunctionItem implements SPItem {
   }
 
   toSignature(): SignatureInformation {
+    if (/\boperator\b/.test(this.name)) {
+      return undefined;
+    }
     return {
       label: this.detail,
       documentation: descriptionToMD(this.description),
@@ -133,8 +139,13 @@ export class FunctionItem implements SPItem {
     if (this.fullRange === undefined) {
       return undefined;
     }
+    let name = this.name;
+    const match = name.match(/\boperator\b[^\w]{1,2}/);
+    if (match) {
+      name = match[0];
+    }
     return new DocumentSymbol(
-      this.name,
+      name,
       this.description,
       SymbolKind.Function,
       this.fullRange,

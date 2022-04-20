@@ -15,7 +15,7 @@ import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
 import { addVariableItem } from "./addVariableItem";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
-import { globalIdentifier, globalItem } from "../Misc/spConstants";
+import { globalItem } from "../Misc/spConstants";
 import { ConstantItem } from "../Backend/Items/spConstantItem";
 import { MethodItem } from "../Backend/Items/spMethodItem";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
@@ -34,7 +34,7 @@ export function readFunctionAndMethod(
   parent: EnumStructItem | PropertyItem | ConstantItem = globalItem
 ): void {
   // Don't add the float native or operators.
-  if (id.id === "float" || /^\boperator\b/.test(id.id)) {
+  if (id.id === "float") {
     return;
   }
   const MmEs = [CompletionItemKind.Struct, CompletionItemKind.Class];
@@ -125,7 +125,7 @@ function recursiveVariableSearch(
   parserArgs: spParserArgs,
   obj,
   parent: FunctionItem | MethodItem,
-  grandParent: EnumStructItem | MethodMapItem | ConstantItem
+  grandParent: EnumStructItem | MethodMapItem | PropertyItem | ConstantItem
 ) {
   if (!obj) {
     return;
@@ -168,7 +168,11 @@ function recursiveVariableSearch(
         parent,
         doc,
         `${processedDeclType} ${variableType}${modifier}${e.id.id};`.trim(),
-        `${e.id.id}-${parent.name}-${grandParent.name}`
+        `${e.id.id}-${parent.name}-${grandParent.name}-${
+          grandParent.kind === CompletionItemKind.Property
+            ? (grandParent as PropertyItem).parent.name
+            : ""
+        }`
       );
     });
     return;
@@ -212,7 +216,7 @@ function addParamsAsVariables(
   parserArgs: spParserArgs,
   params: ParsedParam[] | null,
   parent: FunctionItem | MethodItem,
-  grandParent: EnumStructItem | MethodMapItem | ConstantItem
+  grandParent: EnumStructItem | MethodMapItem | PropertyItem | ConstantItem
 ): void {
   if (!params) {
     return;
@@ -236,7 +240,11 @@ function addParamsAsVariables(
       parent,
       "",
       `${processedDeclType} ${type}${modifiers}${e.id.id};`,
-      `${e.id.id}-${parent.name}-${grandParent.name}`
+      `${e.id.id}-${parent.name}-${grandParent.name}-${
+        grandParent.kind === CompletionItemKind.Property
+          ? (grandParent as PropertyItem).parent.name
+          : ""
+      }`
     );
   });
 }

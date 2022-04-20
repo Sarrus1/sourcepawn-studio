@@ -230,7 +230,7 @@ Keyword
   / NewToken
   / NullableToken
   / ObjectToken
-  // / OperatorToken
+  / OperatorToken
   / ReadonlyToken
   / ReturnToken
   / SealedToken
@@ -474,7 +474,7 @@ NewToken          = "new"
 NullableToken     = "__nullable__"
 NullToken         = "null"
 ObjectToken       = "object"
-OperatorToken     = "operator"
+OperatorToken     = "operator" {return {id: "operator", loc: location()};}
 PluginToken       = "Plugin"
 PlversToken       = "PlVers"
 ReturnToken       = "return"
@@ -1462,10 +1462,41 @@ LabelledStatement
 
 // ----- A.5 Functions and Programs -----
 
-AliasDeclaration
-  = doc:__ accessModifier:FunctionAccessModifiers* (NativeToken / ForwardToken) __p
-    returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
-    "(" __ params:(FormalParameterList __)? ")" __p "=" __p Identifier __ EOS
+OperatorDeclaration
+  = doc:__ content:OperatorDeclarationNoDoc
+  {
+    readFunctionAndMethod(args, content.accessModifier, content.returnType, content.id, content.loc, doc, content.params, content.body);
+    return content;
+  }
+
+OperatorDeclarationNoDoc
+  = accessModifier:FunctionAccessModifiers* (( NativeToken/ForwardToken ) __p )?
+  returnType:FunctionReturnTypeDeclaration? id:OperatorToken operator:AliasOperator __
+  "(" __ params:(FormalParameterList __)? ")" __ body:OperatorDeclarationBody
+  {
+    const returnTypeId = returnType ? returnType.id : "";
+    id.id = id.id + operator+returnTypeId + params[0].reduce((prev, curr)=>prev+curr.parameterType.name.id, "");
+    return {
+      type: "OperatorDeclaration",
+      accessModifier,
+      returnType,
+      loc: location(),
+      id,
+      operator,
+      params: optionalList(extractOptional(params, 0)),
+      body
+    }
+  }
+
+OperatorDeclarationBody
+  = body:Block
+  {
+    return body;
+  }
+  / ("=" __ Identifier)? ";"
+  {
+    return undefined;
+  }
 
 EnumStructDeclaration
   = doc:__ content:EnumStructDeclarationNoDoc
@@ -1873,7 +1904,7 @@ MethodDeclaration
   }
 
 MethodDeclarationNoDoc
-  = accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
+  = accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier __
   "(" __ params:(FormalParameterList __)? ")" __
   body:Block
   {
@@ -1905,7 +1936,7 @@ MethodmapNativeForwardDeclaration
 
 MethodmapNativeForwardDeclarationNoDoc
   = accessModifier:FunctionAccessModifiers* token:(NativeToken / ForwardToken) __p
-  returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
+  returnType:FunctionReturnTypeDeclaration? id:Identifier __
   "(" __ params:(FormalParameterList __)? ")" EOS
   {
     accessModifier.push(token)
@@ -1939,7 +1970,7 @@ FunctionDeclaration
   }
 
 FunctionDeclarationNoDoc
-  = accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
+  = accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier __
   "(" __ params:(FormalParameterList __)? ")" __
   body:Block
   {
@@ -2050,8 +2081,8 @@ FunctionBody
 
 NativeForwardDeclaration
   = doc:__ accessModifier:FunctionAccessModifiers* token:(NativeToken / ForwardToken) __p
-  returnType:FunctionReturnTypeDeclaration? id:Identifier AliasOperator? __
-  "(" __ params:(FormalParameterList __)? ")" EOS
+  returnType:FunctionReturnTypeDeclaration? id:Identifier __
+  "(" __ params:(FormalParameterList __)? ")" ( __ "=" __ Identifier)? EOS
   {
     accessModifier.push(token);
     readFunctionAndMethod(args, accessModifier, returnType, id, location(), doc, optionalList(extractOptional(params, 0)), null);
@@ -2079,7 +2110,7 @@ SourceElements
 SourceElement 
   = 
   FunctionDeclaration
-  / AliasDeclaration
+  / OperatorDeclaration
   / EnumDeclaration
   / EnumStructDeclaration
   / FuncenumDeclaration

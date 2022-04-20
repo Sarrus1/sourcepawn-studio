@@ -296,10 +296,8 @@ export class Parser {
           item.parent.kind === CompletionItemKind.Method &&
           item.parent.parent.kind === CompletionItemKind.Property
         ) {
-          this.referencesMap.set(
-            `${item.name}-${item.parent.name}-${item.parent.parent.name}-${item.parent.parent.parent.name}`,
-            item
-          );
+          const key = `${item.name}-${item.parent.name}-${item.parent.parent.name}-${item.parent.parent.parent.name}`;
+          this.referencesMap.set(key, item);
         }
         this.referencesMap.set(
           `${item.name}-${item.parent.name}-${
