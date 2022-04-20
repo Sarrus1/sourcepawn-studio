@@ -129,7 +129,7 @@ export class Parser {
   lineNb: number;
   filePath: string;
   methodAndProperties: Map<string, MethodItem | PropertyItem | VariableItem>;
-  funcsAndMethodsInFile: (FunctionItem | MethodItem)[];
+  funcsAndMethodsInFile: (FunctionItem | MethodItem | PropertyItem)[];
   MmEsInFile: (MethodMapItem | EnumStructItem)[];
   referencesMap: Map<string, SPItem>;
 
@@ -155,7 +155,7 @@ export class Parser {
 
     this.getReferencesMap();
 
-    let lastFunc: FunctionItem | MethodItem | undefined;
+    let lastFunc: FunctionItem | MethodItem | PropertyItem | undefined;
     let lastMMorES: MethodMapItem | EnumStructItem | undefined;
 
     this.fileItems.tokens.sort((a, b) => {
@@ -181,15 +181,27 @@ export class Parser {
       lastMMorES: undefined,
     };
 
+    let funcIdx = 0;
+    let mmIdx = 0;
+
     this.fileItems.tokens.forEach((e, i) => {
       const range = e.range;
 
-      if (!lastFunc || !lastFunc.fullRange.contains(range)) {
+      if (
+        !lastFunc ||
+        ((lastFunc.kind === CompletionItemKind.Property ||
+          (funcIdx > 0 &&
+            this.funcsAndMethodsInFile[funcIdx - 1].kind ===
+              CompletionItemKind.Property)) &&
+          ["get", "set"].includes(e.id)) ||
+        !lastFunc.fullRange.contains(range)
+      ) {
         if (
-          this.funcsAndMethodsInFile.length > 0 &&
-          this.funcsAndMethodsInFile[0].fullRange.contains(range)
+          this.funcsAndMethodsInFile.length > funcIdx &&
+          this.funcsAndMethodsInFile[funcIdx].fullRange.contains(range)
         ) {
-          lastFunc = this.funcsAndMethodsInFile.shift();
+          lastFunc = this.funcsAndMethodsInFile[funcIdx];
+          funcIdx++;
         } else {
           lastFunc = undefined;
         }
@@ -197,10 +209,11 @@ export class Parser {
 
       if (!lastMMorES || !lastMMorES.fullRange.contains(range)) {
         if (
-          this.MmEsInFile.length > 0 &&
-          this.MmEsInFile[0].fullRange.contains(range)
+          this.MmEsInFile.length > mmIdx &&
+          this.MmEsInFile[mmIdx].fullRange.contains(range)
         ) {
-          lastMMorES = this.MmEsInFile.shift();
+          lastMMorES = this.MmEsInFile[mmIdx];
+          mmIdx++;
         } else {
           lastMMorES = undefined;
         }
@@ -217,9 +230,37 @@ export class Parser {
         thisArgs.line = this.lines[thisArgs.lineNb];
         thisArgs.offset = 0;
         thisArgs.previousItems = [];
-        thisArgs.scope = `-${lastFunc ? lastFunc.name : globalIdentifier}-${
-          lastMMorES ? lastMMorES.name : globalIdentifier
-        }`;
+
+        // Handle property getters and setters.
+        if (
+          lastMMorES &&
+          lastMMorES.kind === CompletionItemKind.Class &&
+          lastFunc &&
+          lastFunc.kind === CompletionItemKind.Method &&
+          ["get", "set"].includes(lastFunc.name)
+        ) {
+          if (
+            funcIdx > 1 &&
+            this.funcsAndMethodsInFile[funcIdx - 2].kind ===
+              CompletionItemKind.Property
+          ) {
+            thisArgs.scope = `-${lastFunc.name}-${
+              this.funcsAndMethodsInFile[funcIdx - 2].name
+            }-${lastMMorES.name}`;
+          } else if (
+            funcIdx > 2 &&
+            this.funcsAndMethodsInFile[funcIdx - 3].kind ===
+              CompletionItemKind.Property
+          ) {
+            thisArgs.scope = `-${lastFunc.name}-${
+              this.funcsAndMethodsInFile[funcIdx - 3].name
+            }-${lastMMorES.name}`;
+          }
+        } else {
+          thisArgs.scope = `-${lastFunc ? lastFunc.name : globalIdentifier}-${
+            lastMMorES ? lastMMorES.name : globalIdentifier
+          }`;
+        }
         thisArgs.outsideScope = `-${globalIdentifier}-${
           lastMMorES ? lastMMorES.name : globalIdentifier
         }`;
@@ -251,6 +292,15 @@ export class Parser {
           );
           return;
         }
+        if (
+          item.parent.kind === CompletionItemKind.Method &&
+          item.parent.parent.kind === CompletionItemKind.Property
+        ) {
+          this.referencesMap.set(
+            `${item.name}-${item.parent.name}-${item.parent.parent.name}-${item.parent.parent.parent.name}`,
+            item
+          );
+        }
         this.referencesMap.set(
           `${item.name}-${item.parent.name}-${
             item.parent.parent ? item.parent.parent.name : globalIdentifier
@@ -273,6 +323,9 @@ export class Parser {
         purgeCalls(item, this.filePath);
         this.referencesMap.set(item.name, item);
       } else if (item.kind === CompletionItemKind.Property) {
+        if (item.filePath === this.filePath) {
+          this.funcsAndMethodsInFile.push(item as PropertyItem);
+        }
         purgeCalls(item, this.filePath);
         this.methodAndProperties.set(
           `${item.name}-${item.parent.name}`,
@@ -283,9 +336,16 @@ export class Parser {
           this.funcsAndMethodsInFile.push(item as MethodItem);
         }
         purgeCalls(item, this.filePath);
+        if (item.parent.kind === CompletionItemKind.Property) {
+          this.referencesMap.set(
+            `${item.name}-${item.name}-${item.parent.name}-${item.parent.parent.name}`,
+            item as MethodItem
+          );
+          return;
+        }
         this.methodAndProperties.set(
           `${item.name}-${item.parent.name}`,
-          item as PropertyItem
+          item as MethodItem
         );
       }
     });
