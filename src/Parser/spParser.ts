@@ -21,6 +21,8 @@ import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
 import { VariableItem } from "../Backend/Items/spVariableItem";
+import { TypeDefItem } from "../Backend/Items/spTypedefItem";
+import { TypeSetItem } from "../Backend/Items/spTypesetItem";
 const spParser = require("./spParser2");
 
 export function parseFile(
@@ -130,6 +132,7 @@ export class Parser {
   filePath: string;
   methodAndProperties: Map<string, MethodItem | PropertyItem | VariableItem>;
   funcsAndMethodsInFile: (FunctionItem | MethodItem | PropertyItem)[];
+  typeDefAndSetInFile: (TypeDefItem | TypeSetItem)[];
   MmEsInFile: (MethodMapItem | EnumStructItem)[];
   referencesMap: Map<string, SPItem>;
 
@@ -148,6 +151,7 @@ export class Parser {
     this.funcsAndMethodsInFile = [];
     this.MmEsInFile = [];
     this.referencesMap = new Map();
+    this.typeDefAndSetInFile = [];
   }
 
   parse(): void {
@@ -164,9 +168,11 @@ export class Parser {
       }
       return a.range.start.line - b.range.start.line;
     });
+
     const newDiagnostics = Array.from(
       parserDiagnostics.get(URI.file(this.filePath))
     );
+
     const thisArgs = {
       parser: this,
       offset: 0,
@@ -179,14 +185,14 @@ export class Parser {
       filePath: this.filePath,
       diagnostics: newDiagnostics,
       lastMMorES: undefined,
+      inTypeDef: false,
     };
 
     let funcIdx = 0;
     let mmIdx = 0;
+    let typeIdx = 0;
 
     this.fileItems.tokens.forEach((e, i) => {
-      const range = e.range;
-
       if (
         !lastFunc ||
         ((lastFunc.kind === CompletionItemKind.Property ||
@@ -194,11 +200,11 @@ export class Parser {
             this.funcsAndMethodsInFile[funcIdx - 1].kind ===
               CompletionItemKind.Property)) &&
           ["get", "set"].includes(e.id)) ||
-        !lastFunc.fullRange.contains(range)
+        !lastFunc.fullRange.contains(e.range)
       ) {
         if (
           this.funcsAndMethodsInFile.length > funcIdx &&
-          this.funcsAndMethodsInFile[funcIdx].fullRange.contains(range)
+          this.funcsAndMethodsInFile[funcIdx].fullRange.contains(e.range)
         ) {
           lastFunc = this.funcsAndMethodsInFile[funcIdx];
           funcIdx++;
@@ -207,10 +213,10 @@ export class Parser {
         }
       }
 
-      if (!lastMMorES || !lastMMorES.fullRange.contains(range)) {
+      if (!lastMMorES || !lastMMorES.fullRange.contains(e.range)) {
         if (
           this.MmEsInFile.length > mmIdx &&
-          this.MmEsInFile[mmIdx].fullRange.contains(range)
+          this.MmEsInFile[mmIdx].fullRange.contains(e.range)
         ) {
           lastMMorES = this.MmEsInFile[mmIdx];
           mmIdx++;
@@ -219,14 +225,34 @@ export class Parser {
         }
       }
 
+      if (
+        this.typeDefAndSetInFile.length > 0 &&
+        this.typeDefAndSetInFile.length > typeIdx
+      ) {
+        if (this.typeDefAndSetInFile[typeIdx].fullRange.contains(e.range)) {
+          thisArgs.inTypeDef = true;
+        } else if (thisArgs.inTypeDef) {
+          // Check for typesets that are back to back.
+          if (
+            this.typeDefAndSetInFile.length > typeIdx + 1 &&
+            this.typeDefAndSetInFile[typeIdx + 1].fullRange.contains(e.range)
+          ) {
+            typeIdx++;
+          } else {
+            thisArgs.inTypeDef = false;
+            typeIdx++;
+          }
+        }
+      }
+
       if (checkIfPluginInfo(e.id, lastFunc, lastMMorES)) {
         return;
       }
 
-      const lineNb = range.start.line;
+      const lineNb = e.range.start.line;
 
       if (lineNb !== thisArgs.lineNb || i === 0) {
-        thisArgs.lineNb = range.start.line;
+        thisArgs.lineNb = e.range.start.line;
         thisArgs.line = this.lines[thisArgs.lineNb];
         thisArgs.offset = 0;
         thisArgs.previousItems = [];
@@ -266,8 +292,7 @@ export class Parser {
         }`;
         thisArgs.lastMMorES = lastMMorES;
       }
-
-      handleReferenceInParser.call(thisArgs, e.id, range);
+      handleReferenceInParser.call(thisArgs, e.id, e.range);
     });
     parserDiagnostics.set(URI.file(this.filePath), newDiagnostics);
   }
@@ -317,6 +342,12 @@ export class Parser {
         }
         purgeCalls(item, this.filePath);
         this.referencesMap.set(item.name, item);
+      } else if (item.kind === CompletionItemKind.TypeParameter) {
+        if (item.filePath === this.filePath) {
+          this.typeDefAndSetInFile.push(item as TypeDefItem | TypeSetItem);
+        }
+        purgeCalls(item, this.filePath);
+        this.referencesMap.set(item.name, item);
       } else if (!MPC.includes(item.kind) && item.references !== undefined) {
         purgeCalls(item, this.filePath);
         this.referencesMap.set(item.name, item);
@@ -353,6 +384,10 @@ export class Parser {
     );
 
     this.funcsAndMethodsInFile = this.funcsAndMethodsInFile.sort(
+      (a, b) => a.fullRange.start.line - b.fullRange.start.line
+    );
+
+    this.typeDefAndSetInFile = this.typeDefAndSetInFile.sort(
       (a, b) => a.fullRange.start.line - b.fullRange.start.line
     );
   }

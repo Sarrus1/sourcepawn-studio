@@ -32,6 +32,7 @@ export function handleReferenceInParser(
     allItems: SPItem[];
     filePath: string;
     diagnostics: Diagnostic[];
+    inTypeDef: boolean;
   },
   name: string,
   range: Range
@@ -65,7 +66,7 @@ export function handleReferenceInParser(
   }
 
   // Handle positional arguments.
-  if (item === undefined) {
+  if (item === undefined && !this.inTypeDef) {
     const lastFuncCall = this.previousItems
       .reverse()
       .find((e) => e.kind === CompletionItemKind.Function);
@@ -93,7 +94,8 @@ export function handleReferenceInParser(
   } else if (
     start > 0 &&
     this.previousItems.length > 0 &&
-    [".", ":"].includes(this.line[start - 1])
+    [".", ":"].includes(this.line[start - 1]) &&
+    !this.inTypeDef
   ) {
     let offset = 1;
     let item: MethodItem | PropertyItem | VariableItem;
@@ -137,7 +139,7 @@ export function handleReferenceInParser(
     }
   }
 
-  if (item === undefined) {
+  if (item === undefined && !this.inTypeDef) {
     this.diagnostics.push(
       new Diagnostic(
         range,
