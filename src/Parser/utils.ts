@@ -136,5 +136,5 @@ export function checkIfPluginInfo(
   if (lastFunc !== undefined || lastMMorES !== undefined) {
     return false;
   }
-  return name === "Plugin" || name === "myinfo";
+  return ["Plugin", "Extension", "PlVers", "SharedPlugin"].includes(name);
 }

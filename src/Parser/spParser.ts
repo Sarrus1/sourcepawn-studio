@@ -79,14 +79,14 @@ export function parseText(
       anonEnumCount: 0,
       offset,
     };
+    if (offset === 0) {
+      // Only clear the diagnostics if there is no error.
+      parserDiagnostics.set(URI.file(file), []);
+    }
     try {
       spParser.args = args;
       const out: string = spParser.parse(data);
       //console.debug(out);
-      if (offset === 0) {
-        // Only clear the diagnostics if there is no error.
-        parserDiagnostics.set(URI.file(file), []);
-      }
     } catch (err) {
       if (err.location !== undefined) {
         const range = parsedLocToRange(err.location, args);

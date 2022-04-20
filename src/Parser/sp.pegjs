@@ -172,6 +172,13 @@ TypeReservedKeyword
   / NullLiteral
   / BooleanLiteral
   / SizeofLiteral
+  / StructReservedKeywords
+
+StructReservedKeywords
+  = ExtensionToken
+  / PluginToken
+  / PlversToken
+  / SharedPluginToken
 
 ReservedWord
   = Keyword
@@ -436,6 +443,7 @@ EnumToken         = "enum"
 EnumStructToken   = EnumToken __p StructToken
 ExitToken         = "exit"
 ExplicitToken     = "explicit"
+ExtensionToken    = "Extension"
 FalseToken        = "false"
 FuncenumToken     = "funcenum"
 FunctagToken      = "functag"
@@ -467,9 +475,12 @@ NullableToken     = "__nullable__"
 NullToken         = "null"
 ObjectToken       = "object"
 OperatorToken     = "operator"
+PluginToken       = "Plugin"
+PlversToken       = "PlVers"
 ReturnToken       = "return"
 ReadonlyToken     = "readonly"
 SealedToken       = "sealed"
+SharedPluginToken = "SharedPlugin"
 StockToken        = "stock"
 StaticToken       = "static"
 StaticAssertToken = "static_assert"
@@ -1769,12 +1780,19 @@ StructDeclaration
   = 
   (
     doc:__ accessModifier:FunctionAccessModifiers* 
-    TypeIdentifier __p id:Identifier __ "=" __
-    ObjectLiteral EOS
+    StructReservedKeywords __p name:IdentifierName __ "=" __
+    infos:ObjectLiteral EOS
+    {
+      return {
+        type: "PluginInfosDeclaration",
+        infos,
+        name
+      }
+    }
   )
   /
   (
-    doc:__ StructToken __p id:Identifier __
+    doc:__ StructToken __p id:StructReservedKeywords __
     "{" __ (VariableDeclaration __)* "}" __ EOS
   )
 
