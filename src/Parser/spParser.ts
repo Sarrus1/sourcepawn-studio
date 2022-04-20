@@ -23,6 +23,7 @@ import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
 import { VariableItem } from "../Backend/Items/spVariableItem";
 import { TypeDefItem } from "../Backend/Items/spTypedefItem";
 import { TypeSetItem } from "../Backend/Items/spTypesetItem";
+import { SemanticAnalyzer } from "./interfaces";
 const spParser = require("./spParser2");
 
 export function parseFile(
@@ -173,7 +174,7 @@ export class Parser {
       parserDiagnostics.get(URI.file(this.filePath))
     );
 
-    const thisArgs = {
+    const thisArgs: SemanticAnalyzer = {
       parser: this,
       offset: 0,
       previousItems: [],

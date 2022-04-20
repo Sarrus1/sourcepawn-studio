@@ -7,33 +7,18 @@ import {
   Range,
 } from "vscode";
 
-import { Parser } from "./spParser";
-import { SPItem } from "../Backend/Items/spItems";
 import { globalIdentifier } from "../Misc/spConstants";
 import { MethodItem } from "../Backend/Items/spMethodItem";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { checkIfConstructor } from "../spUtils";
 import { VariableItem } from "../Backend/Items/spVariableItem";
-import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
+import { SemanticAnalyzer } from "./interfaces";
 
 const globalScope = `-${globalIdentifier}-${globalIdentifier}`;
 
 export function handleReferenceInParser(
-  this: {
-    parser: Parser;
-    offset: number;
-    previousItems: SPItem[];
-    line: string;
-    lineNb: number;
-    scope: string;
-    outsideScope: string;
-    lastMMorES: MethodMapItem | EnumStructItem | undefined;
-    allItems: SPItem[];
-    filePath: string;
-    diagnostics: Diagnostic[];
-    inTypeDef: boolean;
-  },
+  this: SemanticAnalyzer,
   name: string,
   range: Range
 ) {
