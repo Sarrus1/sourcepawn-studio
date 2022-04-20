@@ -137,7 +137,7 @@ export function handleReferenceInParser(
     }
   }
 
-  if (item === undefined && this.filePath.includes("src")) {
+  if (item === undefined) {
     this.diagnostics.push(
       new Diagnostic(
         range,
