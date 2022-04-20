@@ -16,6 +16,8 @@ import { MethodMapItem } from "./Items/spMethodmapItem";
 import { spParserArgs } from "../Parser/spParser";
 import { parsedLocToRange } from "../Parser/utils";
 import { reservedTokens } from "../Misc/spConstants";
+import { TypeDefItem } from "./Items/spTypedefItem";
+import { DefineItem } from "./Items/spDefineItem";
 
 export interface parsedToken {
   id: string;
@@ -34,6 +36,31 @@ export class FileItems extends Map<string, SPItem> {
     if (uri.includes("sourcemod.inc")) {
       defaultConstantItems.forEach((e) => this.set(e, new ConstantItem(e)));
       defaultKeywordsItems.forEach((e) => this.set(e, new KeywordItem(e)));
+      const zeroRange = new Range(0, 0, 0, 0);
+      this.set(
+        "INVALID_FUNCTION",
+        new DefineItem(
+          "INVALID_FUNCTION",
+          "",
+          "Hardcoded constant",
+          URI.parse(uri).fsPath,
+          zeroRange,
+          true,
+          zeroRange
+        )
+      );
+      this.set(
+        "Function",
+        new TypeDefItem(
+          "Function",
+          "",
+          URI.parse(uri).fsPath,
+          "Hardcoded constant",
+          "",
+          zeroRange,
+          zeroRange
+        )
+      );
     }
     this.includes = [];
     this.uri = uri;
@@ -57,7 +84,7 @@ export class FileItems extends Map<string, SPItem> {
    * @param  {Set<string>} documents    The documents (.inc/.sp) that have been found in the SMHome folder,
    *                                    include folder, optionalIncludes folder, etc.
    * @param  {string} filePath          The path of the file the include was imported in.
-   * @param  {boolean=false} IsBuiltIn  Whether or not the parsed file is a Sourcemod builtin.
+   * @param  {boolean} IsBuiltIn        Whether or not the parsed file is a Sourcemod builtin.
    * @returns void
    */
   resolveImport(

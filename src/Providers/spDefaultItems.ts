@@ -1,2 +1,26 @@
-export const defaultConstantItems = ["true", "false", "null"];
-export const defaultKeywordsItems = ["case", "switch", "return", "continue", "break", "sizeof", "view_as", "forward", "native", "stock", "public"];
+export const defaultConstantItems = [
+  "true",
+  "false",
+  "null",
+  "INVALID_FUNCTION",
+];
+export const defaultKeywordsItems = [
+  "any",
+  "bool",
+  "break",
+  "case",
+  "char",
+  "continue",
+  "float",
+  "Float",
+  "forward",
+  "int",
+  "native",
+  "public",
+  "return",
+  "sizeof",
+  "stock",
+  "String",
+  "switch",
+  "view_as",
+];

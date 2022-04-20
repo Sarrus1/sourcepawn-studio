@@ -72,7 +72,7 @@
     },
     {
       "comment": "Functag",
-      "match": "(functag)\\s+((?:public|stock)\\s+)*(?:(bool|int|void|char|any|float)|(\\w+))\\:(\\w+)",
+      "match": "(functag)\\s+((?:public|stock)\\s+)*(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\:(\\w+)",
       "captures": {
         "1": {
           "name": "keyword.functag.sourcepawn"
@@ -117,7 +117,7 @@
     },
     {
       "comment": "Property",
-      "match": "(property)\\s+(?:(bool|int|void|char|any|float)|(\\w+))\\s+(\\w+)",
+      "match": "(property)\\s+(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\s+(\\w+)",
       "captures": {
         "1": {
           "name": "keyword.property.sourcepawn"
@@ -135,7 +135,7 @@
     },
     {
       "comment": "Function type definition",
-      "match": "(function)\\s+(?:(bool|int|void|char|any|float)|(\\w+))\\s*\\(",
+      "match": "(function)\\s+(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\s*\\(",
       "captures": {
         "1": {
           "name": "keyword.function.sourcepawn"
@@ -206,7 +206,7 @@
     },
     {
       "comment": "view_as",
-      "match": "(view_as)\\s*<\\s*(?:(bool|int|void|char|any|float)|(\\w+))\\s*>",
+      "match": "(view_as)\\s*<\\s*(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\s*>",
       "captures": {
         "1": {
           "name": "keyword.view_as.sourcepawn"
@@ -274,7 +274,7 @@
     },
     {
       "comment": "Funcenum body",
-      "match": "^\\s*(?:(bool|int|void|char|any|float)|(\\w+))\\:(public)",
+      "match": "^\\s*(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\:(public)",
       "captures": {
         "1": {
           "name": "storage.type.built-in.primitive.sourcepawn"
@@ -301,7 +301,7 @@
     },
     {
       "comment": "Function declaration",
-      "match": "^\\s*((?:(?:static|native|stock|public|forward)\\s+)*)(?!function)(?:(?:(bool|int|void|char|any|float)|(\\w+))\\s*(?:\\s+|\\:))\\s*(\\w+)\\s*\\(",
+      "match": "^\\s*((?:(?:static|native|stock|public|forward)\\s+)*)(?!function)(?:(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\s*(?:\\s+|\\:))\\s*(\\w+)\\s*\\(",
       "captures": {
         "1": {
           "name": "keyword.function.sourcepawn"
@@ -339,7 +339,7 @@
     },
     {
       "comment": "Function params new syntax",
-      "match": "\\s*((?:(?:const|static)\\s+)*)\\s*(?:(bool|int|void|char|any|float)|(\\w+))(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\:?\\s+([A-Za-z0-9_\\&]+)\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\s*(?:\\)|,|=)",
+      "match": "\\s*((?:(?:const|static)\\s+)*)\\s*(?:(bool|int|void|char|any|float|String|Float)|(\\w+))(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\:?\\s+([A-Za-z0-9_\\&]+)\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\s*(?:\\)|,|=)",
       "captures": {
         "1": {
           "name": "keyword.function_params_new.sourcepawn"
@@ -381,7 +381,7 @@
     },
     {
       "comment": "Function params old syntax",
-      "match": "\\s*(?<!\\?\\s*)\\s*((?:(?:const|static)\\s+)*)\\s*(?:(bool|int|void|char|any|float)|(\\w+))(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\s*\\:\\s*(\\w+)\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\s*(?:\\)|,|=)",
+      "match": "\\s*(?<!\\?\\s*)\\s*((?:(?:const|static)\\s+)*)\\s*(?:(bool|int|void|char|any|float|String|Float)|(\\w+))(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\s*\\:\\s*(\\w+)\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\s*(?:\\)|,|=)",
       "captures": {
         "1": {
           "name": "keyword.function_params_old.sourcepawn"
@@ -423,7 +423,7 @@
     },
     {
       "comment": "Variable declaration new syntax",
-      "match": "^\\s*((?:(?:const|static)\\s+){0,2})(?:(bool|int|void|char|any|float)|(\\w+))((?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])*)\\s+(\\w+)\\s*((?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])*)\\s*(?:,|;|=)",
+      "match": "^\\s*((?:(?:const|static)\\s+){0,2})(?:(bool|int|void|char|any|float|String|Float)|(\\w+))((?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])*)\\s+(\\w+)\\s*((?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])*)\\s*(?:,|;|=)",
       "captures": {
         "1": {
           "name": "keyword.variable_new.sourcepawn"
@@ -465,7 +465,7 @@
     },
     {
       "comment": "Variable declaration old syntax",
-      "match": "(?<!\\?\\s*)(?:(bool|int|void|char|any|float)|(\\w+))\\s*:\\s*\\w+",
+      "match": "(?<!\\?\\s*)(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\s*:\\s*\\w+",
       "captures": {
         "1": {
           "name": "storage.type.built-in.primitive.sourcepawn"

@@ -3,7 +3,6 @@ import * as glob from "glob";
 import { join } from "path";
 import { URI } from "vscode-uri";
 import { ItemsRepository } from "../Backend/spItemsRepository";
-import { newDocumentCallback } from "../Backend/spFileHandlers";
 
 /**
  * Parse all the files in the Sourcemod API folder defined by the SourcemodHome setting.
