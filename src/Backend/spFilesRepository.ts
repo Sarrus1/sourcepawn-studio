@@ -9,6 +9,7 @@ import { ConstantItem } from "./Items/spConstantItem";
 import {
   defaultConstantItems,
   defaultKeywordsItems,
+  hardcodedDefines,
 } from "../Providers/spDefaultItems";
 import { getIncludeExtension } from "./spUtils";
 import { ParsedID } from "../Parser/interfaces";
@@ -37,18 +38,21 @@ export class FileItems extends Map<string, SPItem> {
       defaultConstantItems.forEach((e) => this.set(e, new ConstantItem(e)));
       defaultKeywordsItems.forEach((e) => this.set(e, new KeywordItem(e)));
       const zeroRange = new Range(0, 0, 0, 0);
-      this.set(
-        "INVALID_FUNCTION",
-        new DefineItem(
-          "INVALID_FUNCTION",
-          "",
-          "Hardcoded constant",
-          URI.parse(uri).fsPath,
-          zeroRange,
-          true,
-          zeroRange
+      hardcodedDefines.forEach((e) =>
+        this.set(
+          e,
+          new DefineItem(
+            e,
+            "",
+            "Hardcoded constant",
+            URI.parse(uri).fsPath,
+            zeroRange,
+            true,
+            zeroRange
+          )
         )
       );
+
       this.set(
         "Function",
         new TypeDefItem(

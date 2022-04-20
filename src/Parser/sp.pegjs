@@ -630,14 +630,9 @@ PropertyNameAndValueList
     }
 
 PropertyAssignment
-  = key:PropertyName __ "=" __ value:AssignmentExpression {
+  = key:IdentifierName __ "=" __ value:AssignmentExpression {
       return { type: "Property", key: key, value: value, kind: "init" };
     }
-
-PropertyName
-  = IdentifierName
-  / StringLiteral
-  / NumericLiteral
 
 PropertySetParameterList
   = id:Identifier { return [id]; }
@@ -1284,23 +1279,7 @@ IterationStatement
   }
   / doc:__ ForToken __
   "(" __
-  init:(ExpressionNoIn __)? ";" __
-  test:(Expression __)? ";" __
-  update:(Expression __)?
-  ")" __
-  body:Statement
-  {
-    return {
-      type: "ForStatement",
-      init: extractOptional(init, 0),
-      test: extractOptional(test, 0),
-      update: extractOptional(update, 0),
-      body: body
-    };
-  }
-  / doc:__ ForToken __
-  "(" __
-  variableType:TypeIdentifier __ declarations:VariableDeclarationList __ ";" __
+  variableType:(NewToken / TypeIdentifier)? __ declarations:VariableDeclarationList __ ";" __
   test:(Expression __)? ";" __
   update:(Expression __)?
   ")"
@@ -1313,6 +1292,22 @@ IterationStatement
         declarations,
         variableType
       },
+      test: extractOptional(test, 0),
+      update: extractOptional(update, 0),
+      body: body
+    };
+  }
+  / doc:__ ForToken __
+  "(" __
+  init:(ExpressionNoIn __)? ";" __
+  test:(Expression __)? ";" __
+  update:(Expression __)?
+  ")" __
+  body:Statement
+  {
+    return {
+      type: "ForStatement",
+      init: extractOptional(init, 0),
       test: extractOptional(test, 0),
       update: extractOptional(update, 0),
       body: body
@@ -1824,7 +1819,7 @@ StructDeclaration
   /
   (
     doc:__ StructToken __p id:StructReservedKeywords __
-    "{" __ (VariableDeclaration __)* "}" __ EOS
+    "{" __ (VariableAccessModifier? (IdentifierName (( __ ("[]")+)? __p )) IdentifierName (__ ";")? __)* "}" __ EOS
   )
 
 MethodmapDeclaration

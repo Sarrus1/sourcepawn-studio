@@ -139,7 +139,7 @@ function recursiveVariableSearch(
 
   if (obj.type === "ForLoopVariableDeclaration") {
     declarators = obj["declarations"];
-    variableType = (obj["variableType"] as ParsedID).id;
+    variableType = "int";
     found = true;
   } else if (obj["type"] === "LocalVariableDeclaration") {
     const content: VariableDeclaration = obj.content;
