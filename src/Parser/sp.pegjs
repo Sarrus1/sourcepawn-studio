@@ -1728,7 +1728,7 @@ FunctagDeclaration
   }
 
 FunctagDeclarationNoDoc
-  = FunctagToken __p accessModifier:FunctionAccessModifiers* returnType:TypeIdentifier ":" id:Identifier __ "(" __ params:(FormalParameterList __)? ")" __ EOS
+  = FunctagToken __p accessModifier:FunctionAccessModifiers* returnType:FunctagType? id:Identifier __ "(" __ params:(FormalParameterList __)? ")" __ EOS
   {
     return {
       type: "FunctagDeclaration",
@@ -1740,6 +1740,26 @@ FunctagDeclarationNoDoc
       },
       id,
     };
+  }
+  /
+  FunctagToken __p id:Identifier __p returnType:FunctagType? accessModifier:(PublicToken __)* "(" __ params:(FormalParameterList __)? ")" __ EOS
+  {
+    return {
+      type: "FunctagDeclaration",
+      loc: location(),
+      accessModifier,
+      body:{
+        body: returnType,
+        params
+      },
+      id,
+    };
+  }
+
+FunctagType
+  = returnType:TypeIdentifier ":"
+  {
+    return returnType;
   }
 
 TypeDefDeclaration
@@ -1815,7 +1835,7 @@ FuncenumBody
   }
 
 FuncenumMemberDeclaration
-  = id:TypeIdentifier ":" accessModifier:"public"
+  = id:TypeIdentifier (":"/_p) accessModifier:"public"
   "(" __ params:(FormalParameterList __)? ")" __
   {
     return {

@@ -122,7 +122,7 @@ export interface TypeDefBody {
   /**
    * The return type of the parsed typedef.
    */
-  returnType: ParsedID;
+  returnType: ParsedID | undefined;
 
   /**
    * The params of the typedef declaration.

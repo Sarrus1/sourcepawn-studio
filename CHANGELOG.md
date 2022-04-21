@@ -13,6 +13,7 @@
 - Separated primitive types from other types, like in the C/C++ extension.
 - Added better methodmap constructor support.
 - Added better methodmap property support.
+- Improved the old syntax support.
 
 ### Fixed
 
