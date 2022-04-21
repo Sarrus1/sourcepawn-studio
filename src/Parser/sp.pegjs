@@ -101,18 +101,19 @@ LineTerminator
   = [\n\r\u2028\u2029]
 
 LineTerminatorSequence "end of line"
-  = "\n"
+  = ("\n"
   / "\r\n"
   / "\r"
   / "\u2028"
-  / "\u2029"
+  / "\u2029")
+  (WhiteSpace* PreprocessorStatement)?
 
 Comment "comment"
   = MultiLineComment
   / SingleLineComment
 
 MultiLineComment
-  = "/*" txt:(!"*/" SourceCharacter)* "*/"
+  = "/*" txt:(!"*/" SourceCharacter)* "*/" (WhiteSpace* PreprocessorStatement)?
   {
     return {
       type: "MultiLineComment",
@@ -121,7 +122,7 @@ MultiLineComment
   }
 
 MultiLineCommentNoLineTerminator
-  = "/*" txt:(!("*/" / LineTerminator) SourceCharacter)* "*/"
+  = "/*" txt:(!("*/" / LineTerminator) SourceCharacter)* "*/" (WhiteSpace* PreprocessorStatement)?
   {
     return {
       type: "MultiLineCommentNoLineTerminator",
@@ -548,13 +549,13 @@ ProtectedToken    = "protected"
 // Skipped
 
 __
-  = content:(WhiteSpace / LineTerminatorSequence / Comment / PreprocessorStatement)*
+  = content:(WhiteSpace / LineTerminatorSequence / Comment)*
     {
       return content;
     }
 
 __p "separator"
-  = content:(WhiteSpace / LineTerminatorSequence / Comment / PreprocessorStatement)+
+  = content:(WhiteSpace / LineTerminatorSequence / Comment)+
 
 _p
   = content:(WhiteSpace / MultiLineCommentNoLineTerminator / SingleLineComment)+
@@ -2106,7 +2107,7 @@ UsingDeclaration
  = doc:__ "using" [^\n;]+ ";"
 
 Program
-  = body:SourceElements? 
+  = (WhiteSpace* PreprocessorStatement)? body:SourceElements? 
   {
     return {
       type: "Program",
