@@ -318,6 +318,9 @@ NumericLiteral "number"
   / literal:DecimalLiteral !(IdentifierStart / DecimalDigit) {
       return literal;
     }
+  / literal:BinaryLiteral !(IdentifierStart / DecimalDigit) {
+    return literal;
+    }
 
 DecimalLiteral
   = DecimalIntegerLiteral "." DecimalDigit* ExponentPart? {
@@ -355,7 +358,15 @@ HexIntegerLiteral
      }
 
 HexDigit
-  = [0-9a-f]i
+  = [0-9a-f_A-F]i
+
+BinaryLiteral
+  = "0b"i digits:$BinaryDigit+ {
+      return { type: "Literal", value: parseInt(digits, 2) };
+     }
+
+BinaryDigit
+  = [0-1_]i
 
 StringLiteral "string"
   = '"' chars:DoubleStringCharacter* '"' {
