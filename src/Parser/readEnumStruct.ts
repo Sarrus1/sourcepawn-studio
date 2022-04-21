@@ -56,7 +56,7 @@ export function readEnumStruct(
         processedDeclType = "";
       if (e.variableType) {
         variableType = e.variableType.name.id;
-        modifier = e.variableType.modifier;
+        modifier = e.variableType.modifier || "";
       }
       if (typeof e.variableDeclarationType === "string") {
         processedDeclType = e.variableDeclarationType;

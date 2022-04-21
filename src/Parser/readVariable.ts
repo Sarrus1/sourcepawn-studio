@@ -17,7 +17,7 @@ export function readVariable(
     processedDeclType = "";
   if (content.variableType) {
     variableType = content.variableType.name.id;
-    modifier = content.variableType.modifier;
+    modifier = content.variableType.modifier || "";
   }
   if (typeof content.variableDeclarationType === "string") {
     processedDeclType = content.variableDeclarationType;
@@ -27,6 +27,7 @@ export function readVariable(
   content.declarations.forEach((e) => {
     const range = parsedLocToRange(e.id.loc, parserArgs);
     const { doc, dep } = processDocStringComment(content.doc);
+    const arrayInitialer = e.arrayInitialer || "";
     addVariableItem(
       parserArgs,
       e.id.id,
@@ -34,7 +35,9 @@ export function readVariable(
       range,
       globalItem,
       doc,
-      `${processedDeclType} ${variableType}${modifier}${e.id.id};`.trim(),
+      `${processedDeclType} ${variableType}${modifier}${
+        e.id.id
+      }${arrayInitialer.trim()};`.trim(),
       `${e.id.id}-${parent.name}`
     );
   });

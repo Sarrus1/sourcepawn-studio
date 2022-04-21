@@ -1575,11 +1575,11 @@ VariableAccessModifier
   }
 
 VariableType
-  = name:TypeIdentifier modifier:((":" !":"__)/(( __ ("[]")+)? __p ))
+  = name:TypeIdentifier modifier:$((":" !":"__)/(( __ ("[]")+)? __p))
   {
     return {
       name,
-      modifier: buildNestedArray(modifier)
+      modifier
     };
   }
 
@@ -1669,11 +1669,12 @@ ArrayInitialer
   = "[" Expression? "]"
 
 VariableInitialisation
-  = doc:__ (TypeIdentifier":" !":")? id:Identifier _ arrayInitialer:(ArrayInitialer __)* init:Initialiser? 
+  = doc:__ (TypeIdentifier":" !":")? id:Identifier _ arrayInitialer:$(ArrayInitialer __)* init:Initialiser? 
   {
     return {
       type: "VariableDeclarator",
       id,
+      arrayInitialer,
       init: extractOptional(init, 1)
     };
   }
@@ -2037,11 +2038,11 @@ FunctionExpression
   }
 
 ParameterTypeDeclaration
-  = name:TypeIdentifier? modifier:((":" !":"__)/(__(("[]")+/"&")__)/__p)
+  = name:TypeIdentifier? modifier:$((":" !":"__)/(__(("["Expression?"]")+/"&")__)/__p )
   { 
     return {
       name, 
-      modifier: buildNestedArray(modifier)
+      modifier
     };
   }
 

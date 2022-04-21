@@ -232,6 +232,7 @@ export interface MethodmapNativeForwardDeclaration {
  */
 export interface VariableDeclarator {
   type: "VariableDeclarator";
+  arrayInitialer: string | null;
   id: ParsedID;
   init: any;
 }

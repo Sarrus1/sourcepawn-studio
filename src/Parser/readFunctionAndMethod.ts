@@ -42,7 +42,6 @@ export function readFunctionAndMethod(
   const processedReturnType = returnType && returnType.id ? returnType.id : "";
   let item: FunctionItem | MethodItem;
   let key: string = id.id;
-
   if (parent.kind === CompletionItemKind.Property) {
     item = new MethodItem(
       parent as PropertyItem,
@@ -135,14 +134,14 @@ function recursiveVariableSearch(
 
   if (obj.type === "ForLoopVariableDeclaration") {
     declarators = obj["declarations"];
-    variableType = "int";
+    variableType = "int ";
     found = true;
   } else if (obj["type"] === "LocalVariableDeclaration") {
     const content: VariableDeclaration = obj.content;
     declarators = content.declarations;
     if (content.variableType) {
       variableType = content.variableType.name.id;
-      modifier = content.variableType.modifier;
+      modifier = content.variableType.modifier || "";
     }
     //doc = content.doc;
     if (typeof content.variableDeclarationType === "string") {
@@ -156,6 +155,8 @@ function recursiveVariableSearch(
   if (found) {
     declarators.forEach((e) => {
       const range = parsedLocToRange(e.id.loc, parserArgs);
+      const arrayInitialer = e.arrayInitialer || "";
+      variableType = variableType || "";
       addVariableItem(
         parserArgs,
         e.id.id,
@@ -163,7 +164,9 @@ function recursiveVariableSearch(
         range,
         parent,
         doc,
-        `${processedDeclType} ${variableType}${modifier}${e.id.id};`.trim(),
+        `${processedDeclType} ${variableType}${modifier}${
+          e.id.id
+        }${arrayInitialer.trim()};`.trim(),
         `${e.id.id}-${parent.name}-${grandParent.name}-${
           grandParent.kind === CompletionItemKind.Property
             ? (grandParent as PropertyItem).parent.name
