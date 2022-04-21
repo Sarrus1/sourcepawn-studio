@@ -573,7 +573,7 @@ EOF
 // ----- A.3 Expressions -----
 
 PrimaryExpression
-  = Identifier
+  = TypeIdentifier
   / Literal
   / ArrayLiteral
   / ObjectLiteral
@@ -736,7 +736,7 @@ LeftHandSideExpression
 
 
 ViewAsExpression
-  = (ViewAsToken "<" TypeIdentifier ">" "(" __ Expression __")")
+  = (ViewAsToken "<" _ TypeIdentifier _ ">" "(" __ Expression __")")
 
 PostfixExpression
   = argument:LeftHandSideExpression _ operator:PostfixOperator 
