@@ -252,7 +252,7 @@ suite("Run tests", () => {
     });
 
     test("Test Signature Help provider", () => {
-      let position = new vscode.Position(24, 16);
+      let position = new vscode.Position(24, 18);
       return vscode.commands
         .executeCommand(
           "vscode.executeSignatureHelpProvider",
@@ -261,6 +261,7 @@ suite("Run tests", () => {
           "("
         )
         .then((signature: vscode.SignatureHelp) => {
+          console.log(signature.signatures);
           assert.deepEqual(
             signature.signatures[0].label,
             'native void RegConsoleCmd(const char[] cmd, ConCmd callback, const char[] description="", int flags=0)'
