@@ -138,7 +138,7 @@
     },
     {
       "comment": "Property",
-      "match": "(property)\\s+(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\s+(\\w+)",
+      "match": "(property)\\s+(?:(bool|int|void|char|any|float|String|Float)|([a-zA-Z_]\\w*))\\s+([a-zA-Z_]\\w*)",
       "captures": {
         "1": {
           "name": "keyword.property.sourcepawn"
@@ -156,7 +156,7 @@
     },
     {
       "comment": "Function type definition",
-      "match": "(function)\\s+(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\s*\\(",
+      "match": "(function)\\s+(?:(bool|int|void|char|any|float|String|Float)|([a-zA-Z_]\\w*))\\s*\\(",
       "captures": {
         "1": {
           "name": "keyword.function.sourcepawn"
@@ -360,7 +360,7 @@
     },
     {
       "comment": "Function params new syntax",
-      "match": "\\s*((?:(?:const|static|new)\\s+)+)?\\s*(?:(const|static|new)|(bool|int|void|char|any|float|String|Float)|(\\w+))?(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\:?\\s+([A-Za-z0-9_\\&]+)\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\s*(?:\\)|,|=)",
+      "match": "\\s*((?:(?:const|static|new)\\s+)+)?\\s*(?:(const|static|new)|(bool|int|void|char|any|float|String|Float)|([a-zA-Z_]\\w*))?(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\:?\\s+([A-Za-z0-9_\\&]+)\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\s*(?:\\)|,|=)",
       "captures": {
         "1": {
           "name": "keyword.function_params_new.sourcepawn"
@@ -369,10 +369,10 @@
           "name": "keyword.function_params_new.sourcepawn"
         },
         "3": {
-          "name": "storage.type.built-in.primitive.sourcepawn"
+          "name": "storage.type.built-in.primitive.function_params_new.sourcepawn"
         },
         "4": {
-          "name": "support.type.core.function_params.sourcepawn"
+          "name": "support.type.core.function_params_new.sourcepawn"
         },
         "5": {
           "patterns": [
@@ -383,11 +383,28 @@
                   "name": "constant.numeric.function_params_new.sourcepawn"
                 }
               }
+            },
+            {
+              "match": "[a-zA-Z_]\\w*",
+              "name": "variable.function_params_new.sourcepawn"
             }
           ]
         },
         "6": {
-          "name": "variable.parameter.sourcepawn"
+          "patterns": [
+            {
+              "match": "(\\d+)",
+              "captures": {
+                "1": {
+                  "name": "constant.numeric.function_params_new.sourcepawn"
+                }
+              }
+            },
+            {
+              "match": "[a-zA-Z_]\\w*",
+              "name": "variable.function_params_new.sourcepawn"
+            }
+          ]
         },
         "7": {
           "patterns": [
@@ -398,6 +415,10 @@
                   "name": "constant.numeric.function_params_new.sourcepawn"
                 }
               }
+            },
+            {
+              "match": "[a-zA-Z_]\\w*",
+              "name": "variable.function_params_new.sourcepawn"
             }
           ]
         }
@@ -405,7 +426,7 @@
     },
     {
       "comment": "Function params old syntax",
-      "match": "\\s*(?<!\\?\\s*)\\s*((?:(?:const|static)\\s+)*)\\s*(?:(bool|int|void|char|any|float|String|Float)|(\\w+))(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\s*\\:\\s*(\\w+)\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\s*(?:\\)|,|=)",
+      "match": "\\s*(?<!\\?\\s*)\\s*((?:(?:const|static)\\s+)*)\\s*(?:(bool|int|void|char|any|float|String|Float)|([a-zA-Z_]\\w*))(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\s*\\:\\s*(\\w+)\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\s*(?:\\)|,|=)",
       "captures": {
         "1": {
           "name": "keyword.function_params_old.sourcepawn"
@@ -556,7 +577,7 @@
     },
     {
       "comment": "Match the rest as types",
-      "match": "^((?:(?:const|static)\\s+){0,2})(\\w+)\\s*(?<!,\\[;)\\s*$",
+      "match": "^((?:(?:const|static)\\s+){0,2})([a-zA-Z_]\\w*)\\s*(?<!,\\[;)\\s*$",
       "captures": {
         "1": {
           "name": "keyword.sourcepawn"
@@ -577,7 +598,7 @@
     },
     {
       "comment": "Match the rest as variables",
-      "match": "\\w+",
+      "match": "[a-zA-Z_]\\w*",
       "name": "variable.parameter.sourcepawn"
     }
   ],
