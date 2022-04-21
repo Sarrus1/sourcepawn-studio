@@ -33,9 +33,9 @@
   },
 
   "if else statement": {
-    "prefix": "if else",
-    "body": ["if else(${1:})", "{", "\t${2:}", "}"],
-    "description": "if else statement"
+    "prefix": "else if",
+    "body": ["else if(${1:})", "{", "\t${2:}", "}"],
+    "description": "else if statement"
   },
 
   "include statement": {
