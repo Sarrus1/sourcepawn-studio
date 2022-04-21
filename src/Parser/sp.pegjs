@@ -1549,7 +1549,11 @@ MacroDeclaration
   }
 
 MacroDeclarationNoDoc
-  = PDefineToken _p id:IdentifierName value:[^\n]+
+  = PDefineToken _p id:IdentifierName value:(
+      !("\\" / LineTerminator) SourceCharacter { return text(); }
+      / "\\" sequence:EscapeSequence { return sequence; }
+      / LineContinuation
+    )+
   {
     return {
       type: "MacroDeclaration",
