@@ -358,7 +358,7 @@ HexIntegerLiteral
      }
 
 HexDigit
-  = [0-9a-f_A-F]i
+  = [0-9a-f_]i
 
 BinaryLiteral
   = "0b"i digits:$BinaryDigit+ {
@@ -366,7 +366,7 @@ BinaryLiteral
      }
 
 BinaryDigit
-  = [0-1_]i
+  = [0-1_]
 
 StringLiteral "string"
   = '"' chars:DoubleStringCharacter* '"' {
