@@ -360,7 +360,7 @@
     },
     {
       "comment": "Function params new syntax",
-      "match": "\\s*((?:(?:const|static|new)\\s+)+)?\\s*(?:(const|static|new)|(bool|int|void|char|any|float|String|Float)|([a-zA-Z_]\\w*))?(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\:?\\s+([A-Za-z0-9_\\&]+)\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\s*(?:\\)|,|=)",
+      "match": "\\s*((?:(?:const|static|new|decl)\\s+)+)?\\s*(?:(const|static|new)|(bool|int|void|char|any|float|String|Float)|([a-zA-Z_]\\w*))?(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\:?\\s+([A-Za-z0-9_\\&]+)\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\s*(?:\\)|,|=)",
       "captures": {
         "1": {
           "name": "keyword.function_params_new.sourcepawn"
@@ -468,7 +468,7 @@
     },
     {
       "comment": "Variable declaration new syntax",
-      "match": "^\\s*((?:(?:const|static|new)\\s+){0,3})(?:(const|static|new)|(bool|int|void|char|any|float|String|Float)|(\\w+))((?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])*)\\s+(\\w+)\\s*((?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])*)\\s*(?:,|;|=)",
+      "match": "^\\s*((?:(?:const|static|new|decl)\\s+){0,3})(?:(const|static|new)|(bool|int|void|char|any|float|String|Float)|(\\w+))((?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])*)\\s+(\\w+)\\s*((?:\\[(?:[A-Za-z0-9_\\*\\+\\s\\-]*)\\])*)\\s*(?:,|;|=)",
       "captures": {
         "1": {
           "name": "keyword.variable_new.sourcepawn"
