@@ -103,10 +103,14 @@ export function parseText(
         );
         newDiagnostics.push(diagnostic);
         parserDiagnostics.set(URI.file(file), newDiagnostics);
-        let { txt, offset } = getNextScope(data, err.location.start.line - 1);
+        let { txt, newOffset } = getNextScope(
+          data,
+          err.location.start.line - 1
+        );
         if (txt === undefined || offset === undefined) {
           return;
         }
+        newOffset += offset;
         parseText(
           txt,
           file,
@@ -114,7 +118,7 @@ export function parseText(
           itemsRepository,
           searchTokens,
           isBuiltIn,
-          offset
+          newOffset
         );
       }
     }

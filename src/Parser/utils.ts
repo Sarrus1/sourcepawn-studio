@@ -106,19 +106,19 @@ export function parsedLocToRange(
 export function getNextScope(
   txt: string,
   lineNb: number
-): { txt: string; offset: number } | undefined {
+): { txt: string; newOffset: number } | undefined {
   lineNb++;
   const lines = txt.split("\n");
   if (lineNb >= lines.length) {
-    return { txt: undefined, offset: undefined };
+    return { txt: undefined, newOffset: undefined };
   }
   while (lineNb < lines.length) {
     if (/^}/.test(lines[lineNb]) && lineNb + 1 < lines.length) {
-      return { txt: lines.slice(lineNb + 1).join("\n"), offset: lineNb + 1 };
+      return { txt: lines.slice(lineNb + 1).join("\n"), newOffset: lineNb + 1 };
     }
     lineNb++;
   }
-  return { txt: undefined, offset: undefined };
+  return { txt: undefined, newOffset: undefined };
 }
 
 /**
