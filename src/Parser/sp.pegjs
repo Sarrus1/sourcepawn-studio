@@ -529,6 +529,7 @@ PEndIfToken       = "#endif"
 PEndInputToken    = "#endinput"
 PEndScriptToken   = "#endscript"
 PErrorToken       = "#error"
+PFileToken        = "#file"
 PWarningToken     = "#warning"
 PIfToken          = "#if"
 PIncludeToken     = "#include"
@@ -1109,7 +1110,7 @@ DefineStatementNoDoc
     };
   }
   /
-  PDefineToken _p id:IdentifierName !"("
+  PDefineToken _p id:IdentifierName EOS
   {
     return {
       type: "DefineStatement",
@@ -1158,6 +1159,7 @@ OtherPreprocessorStatement
   / PEndInputToken
   / PEndScriptToken
   / PErrorToken
+  / PFileToken
   / PWarningToken
   / PIfToken          
   / PLineToken
@@ -1182,6 +1184,7 @@ PreprocessorStatement
   PragmaStatement
   / IncludeStatement
   / DefineStatement
+  / MacroDeclaration
   / OtherPreprocessorStatement
   )
   {
@@ -1539,14 +1542,14 @@ EnumStructMembers
   }
 
 MacroDeclaration
-  = doc:__ content:MacroDeclarationNoDoc
+  = content:MacroDeclarationNoDoc doc:__doc
   {
     readMacro(args, content.id, content.loc, content.value, doc);
     return content;
   }
 
 MacroDeclarationNoDoc
-  = PDefineToken _p id:IdentifierName value:("(" ( _ "%"[0-9]+ _ "," )* ( _ "%"[0-9]+ _ )? _ ")" [^\n]+) _
+  = PDefineToken _p id:IdentifierName value:[^\n]+
   {
     return {
       type: "MacroDeclaration",
@@ -2121,7 +2124,6 @@ SourceElement
   / EnumStructDeclaration
   / FuncenumDeclaration
   / FunctagDeclaration
-  / MacroDeclaration
   / UsingDeclaration
   / NativeForwardDeclaration
   / MethodmapDeclaration
