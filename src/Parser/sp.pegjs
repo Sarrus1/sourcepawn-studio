@@ -388,7 +388,7 @@ SingleStringCharacter
   / LineContinuation
 
 LineContinuation
-  = "\\" LineTerminatorSequence { return ""; }
+  = "\\" WhiteSpace* LineTerminatorSequence { return ""; }
 
 EscapeSequence
   = CharacterEscapeSequence
@@ -549,13 +549,13 @@ ProtectedToken    = "protected"
 // Skipped
 
 __
-  = content:(WhiteSpace / LineTerminatorSequence / Comment)*
+  = content:(WhiteSpace / (LineContinuation / LineTerminatorSequence) / Comment)*
     {
       return content;
     }
 
 __p "separator"
-  = content:(WhiteSpace / LineTerminatorSequence / Comment)+
+  = content:(WhiteSpace / (LineContinuation / LineTerminatorSequence) / Comment)+
 
 _p
   = content:(WhiteSpace / MultiLineCommentNoLineTerminator / SingleLineComment)+
@@ -576,7 +576,7 @@ __doc "trailing doc"
 
 EOS
   = __ ";"
-  / _ SingleLineComment? LineTerminatorSequence
+  / _ SingleLineComment? (LineContinuation / LineTerminatorSequence) 
   / _ &"}"
   / __ EOF
 
@@ -1143,7 +1143,11 @@ IncludePath
   }
 
 PragmaStatement
-  = PPragmaToken _ value:[^\n]+ __
+  = PPragmaToken _ value:(
+      !("\\" / LineTerminator) SourceCharacter { return text(); }
+      / "\\" sequence:EscapeSequence { return sequence; }
+      / LineContinuation
+    )+ __
   { 
     return {
       type:"PragmaValue",
@@ -1166,7 +1170,7 @@ OtherPreprocessorStatement
   / PLineToken
   / PTryIncludeToken
   / PUndefToken
-  ) (!LineTerminator SourceCharacter)* LineTerminatorSequence?
+  ) (!LineTerminator SourceCharacter)* (LineContinuation / LineTerminatorSequence) ?
   {
     return {
       type:"PreprocessorStatement", 
@@ -1665,7 +1669,7 @@ ArrayInitialer
   = "[" Expression? "]"
 
 VariableInitialisation
-  = doc:__ (TypeIdentifier":" !":")? id:Identifier arrayInitialer:ArrayInitialer* init:(__ Initialiser)? 
+  = doc:__ (TypeIdentifier":" !":")? id:Identifier _ arrayInitialer:(ArrayInitialer __)* init:Initialiser? 
   {
     return {
       type: "VariableDeclarator",
