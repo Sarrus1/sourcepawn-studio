@@ -2102,6 +2102,20 @@ ParameterDeclaration
     };
   }
   )
+  /
+  (
+  declarationType:ParameterDeclarationType? 
+  parameterType:TypeIdentifier id:(DotDotDotToken{ return {id:"...", loc: location()}; })
+  {
+    return {
+      type: "ParameterDeclaration",
+      declarationType,
+      parameterType,
+      init: null,
+      id
+    };
+  }
+  )
 
 FormalParameterList
   = head:ParameterDeclaration tail:(__ "," __ ParameterDeclaration)* 
