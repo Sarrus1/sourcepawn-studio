@@ -140,6 +140,13 @@ export function getItemFromPosition(
   const word = document.getText(range);
   const line = document.lineAt(position.line).text;
 
+  if (word === "float") {
+    const substring = line.slice(range.start.character);
+    if (/^float\s*\(/.test(substring)) {
+      return allItems.filter((e) => e.name === "float");
+    }
+  }
+
   // Generate an include item if the line is an #include statement and return it.
   const includeItem = makeIncludeItem(document, line, position);
   if (includeItem.length > 0) {

@@ -33,10 +33,6 @@ export function readFunctionAndMethod(
   body: FunctionBody | null,
   parent: EnumStructItem | PropertyItem | ConstantItem = globalItem
 ): void {
-  // Don't add the float native or operators.
-  if (id.id === "float") {
-    return;
-  }
   const MmEs = [CompletionItemKind.Struct, CompletionItemKind.Class];
 
   const range = parsedLocToRange(id.loc, parserArgs);

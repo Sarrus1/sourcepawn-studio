@@ -143,6 +143,8 @@ export class FunctionItem implements SPItem {
     const match = name.match(/\boperator\b[^\w]{1,2}/);
     if (match) {
       name = match[0];
+    } else if (name === "float") {
+      return undefined;
     }
     return new DocumentSymbol(
       name,
