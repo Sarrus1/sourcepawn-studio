@@ -152,6 +152,9 @@ export function getItemFromPosition(
   }
 
   return allItems.filter((e1) => {
+    if (e1.filePath !== document.uri.fsPath) {
+      return false;
+    }
     if (e1.name !== word) {
       return false;
     }
