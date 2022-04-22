@@ -299,7 +299,7 @@ export class Parser {
       }
       handleReferenceInParser.call(thisArgs, e.id, e.range);
     });
-    parserDiagnostics.set(URI.file(this.filePath), newDiagnostics);
+    // parserDiagnostics.set(URI.file(this.filePath), newDiagnostics);
   }
 
   getReferencesMap(): void {

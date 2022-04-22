@@ -7,7 +7,7 @@ import {
   ProgressLocation,
 } from "vscode";
 import { URI } from "vscode-uri";
-import { resolve } from "path";
+import { resolve, dirname, basename } from "path";
 const glob = require("glob");
 
 import { refreshDiagnostics } from "./Providers/spLinter";
@@ -21,6 +21,7 @@ import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
 import { findMainPath, checkMainPath } from "./spUtils";
 import { updateDecorations } from "./Providers/decorationsProvider";
+import { run as setFileAsMainCommand } from "./Commands/setFileAsMain";
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
@@ -237,21 +238,32 @@ function getDirectories(paths: string[], providers: Providers) {
 
 async function loadFiles(providers: Providers) {
   console.time("parse");
+
   await parseSMApi(providers.itemsRepository);
 
-  const mainPath = findMainPath();
+  let mainPath = findMainPath();
+
   if (mainPath !== undefined) {
     if (!checkMainPath(mainPath)) {
       window.showErrorMessage(
-        "A setting for the main.sp file was specified, but seems invalid. Right click on a file and use the command at the bottom of the menu to set it as main."
+        "A setting for the main.sp file was specified, but seems invalid.\
+        \nRight click on a file and use the command at the bottom of the menu to set it as main."
       );
     } else {
       providers.itemsRepository.handleDocumentOpening(mainPath);
     }
+  } else {
+    window.showWarningMessage(
+      "There are no mainpath setting set for this file. The extension might not work properly.\
+      \nRight click on a file and use the command at the bottom of the menu to set it as main."
+    );
   }
 
   // Load the currently opened file
-  if (window.activeTextEditor != undefined) {
+  if (
+    window.activeTextEditor != undefined &&
+    window.activeTextEditor.document.uri.fsPath !== mainPath
+  ) {
     providers.itemsRepository.handleDocumentOpening(
       window.activeTextEditor.document.uri.fsPath
     );
@@ -275,4 +287,8 @@ function throttle(
       }, limit);
     }
   };
+}
+
+function getFileAndDir(path: string): string {
+  return `${basename(dirname(path))}/${basename(path)}`;
 }

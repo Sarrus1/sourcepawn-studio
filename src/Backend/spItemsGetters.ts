@@ -5,13 +5,11 @@ import { URI } from "vscode-uri";
 
 import { SPItem } from "./Items/spItems";
 import { IncludeItem } from "./Items/spIncludeItem";
-import { getLastESOrMM } from "../Providers/spDefinitionProvider";
 import { FileItems } from "./spFilesRepository";
 import { getAllPossibleIncludeFolderPaths } from "./spFileHandlers";
 import { ItemsRepository } from "./spItemsRepository";
 import { findMainPath } from "../spUtils";
 import { getIncludeExtension } from "./spUtils";
-import { globalItem } from "../Misc/spConstants";
 import { MethodMapItem } from "./Items/spMethodmapItem";
 
 /**

@@ -14,7 +14,7 @@ export async function run(args: URI): Promise<number> {
     args = window.activeTextEditor.document.uri;
   }
   let workspaceFolder = Workspace.getWorkspaceFolder(args);
-  Workspace.getConfiguration("sourcepawn", workspaceFolder).update(
+  await Workspace.getConfiguration("sourcepawn", workspaceFolder).update(
     "MainPath",
     args.fsPath
   );

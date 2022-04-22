@@ -14,6 +14,7 @@
 - Added better methodmap constructor support.
 - Added better methodmap property support.
 - Improved the old syntax support.
+- Improved incorrect configuration warnings.
 
 ### Fixed
 
