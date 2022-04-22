@@ -4,7 +4,6 @@ import {
   ParsedParam,
   ParsedID,
   ParserLocation,
-  ProcessedParams,
   FunctionParam,
   FunctionBody,
   VariableDeclarator,
@@ -37,11 +36,13 @@ export function readFunctionAndMethod(
   const MmEs = [CompletionItemKind.Struct, CompletionItemKind.Class];
 
   txt = txt.replace(/\s*\r?\n\s*/gm, " ").trim();
-
+  if (id.id === "foo") {
+    console.debug("rt");
+  }
   const range = parsedLocToRange(id.loc, parserArgs);
   const fullRange = parsedLocToRange(loc, parserArgs);
   const { doc, dep } = processDocStringComment(docstring);
-  const { processedParams, details } = processFunctionParams(params);
+  const processedParams = processFunctionParams(params, doc);
   let item: FunctionItem | MethodItem;
   let key = id.id;
   if (parent.kind === CompletionItemKind.Property) {
@@ -165,32 +166,29 @@ function readBodyVariables(
   }
 }
 
-function processFunctionParams(params: ParsedParam[] | null): ProcessedParams {
-  if (params === undefined || params === null) {
-    return { processedParams: [], details: "" };
+function processFunctionParams(
+  params: ParsedParam[] | null,
+  doc: string | undefined
+): FunctionParam[] {
+  if (!params) {
+    return [];
   }
-  const processedParams = [];
-  let details = "";
-  params.forEach((e) => {
-    // Handle "..." tokens.
-    const param: FunctionParam = {
-      label: e.id.id,
-      documentation: "",
-    };
-    processedParams.push(param);
-    let processedDeclType = "";
-    if (typeof e.declarationType === "string") {
-      processedDeclType = e.declarationType + " ";
-    } else if (Array.isArray(e.declarationType)) {
-      processedDeclType = e.declarationType.join(" ") + " ";
+  const processedParams = params.map((e) => {
+    let documentation = "";
+    if (doc) {
+      const match = doc.match(
+        new RegExp(`@param\\s+(?:\\b${e.id.id}\\b)([^\\@]+)`)
+      );
+      if (match) {
+        documentation = match[1].replace(/\*/gm, "").trim();
+      }
     }
-    const processedType =
-      e.parameterType && e.parameterType.name
-        ? e.parameterType.name.id + e.parameterType.modifier
-        : "";
-    details += processedDeclType + processedType + e.id.id + ", ";
+    return {
+      label: e.id.id,
+      documentation,
+    } as FunctionParam;
   });
-  return { processedParams, details };
+  return processedParams;
 }
 
 function addParamsAsVariables(
