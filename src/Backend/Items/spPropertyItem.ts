@@ -11,12 +11,11 @@ import {
 import { URI } from "vscode-uri";
 
 import { descriptionToMD } from "../../spUtils";
-import { EnumStructItem } from "./spEnumStructItem";
 import { SPItem } from "./spItems";
 import { MethodMapItem } from "./spMethodmapItem";
 
 export class PropertyItem implements SPItem {
-  parent: MethodMapItem | EnumStructItem;
+  parent: MethodMapItem;
   name: string;
   filePath: string;
   description: string;

@@ -7,7 +7,6 @@ import {
   SymbolKind,
   LocationLink,
   Location,
-  Position,
 } from "vscode";
 import { URI } from "vscode-uri";
 
@@ -19,6 +18,7 @@ import { FunctionItem } from "./spFunctionItem";
 import { descriptionToMD } from "../../spUtils";
 import { EnumStructItem } from "./spEnumStructItem";
 import { MethodMapItem } from "./spMethodmapItem";
+import { PropertyItem } from "./spPropertyItem";
 
 export class VariableItem implements SPItem {
   name: string;
@@ -53,7 +53,7 @@ export class VariableItem implements SPItem {
   toCompletionItem(
     lastFunc: MethodItem | FunctionItem | undefined,
     lastMMorES: MethodMapItem | EnumStructItem | undefined,
-    position?: Position,
+    location?: Location,
     override?: boolean
   ): CompletionItem | undefined {
     if (override || this.parent.name === globalIdentifier) {
@@ -63,15 +63,15 @@ export class VariableItem implements SPItem {
       };
     }
 
-    if (lastFunc === undefined) {
+    if (this.filePath !== location.uri.fsPath || lastFunc === undefined) {
       return undefined;
     }
 
     if (lastMMorES === undefined) {
       if (
         lastFunc.name === this.parent.name &&
-        (this.range.end.line < position.line ||
-          this.range.end.character < position.character)
+        (this.range.end.line < location.range.start.line ||
+          this.range.end.character < location.range.start.character)
       ) {
         return {
           label: this.name,
@@ -82,14 +82,25 @@ export class VariableItem implements SPItem {
     }
 
     lastFunc = lastFunc as MethodItem;
+    const parent = this.parent as MethodItem;
     if (
-      this.parent.name === lastFunc.name &&
-      lastFunc.parent.name === lastMMorES.name
+      lastFunc.fullRange.contains(this.range) &&
+      lastFunc.parent.fullRange.contains(this.range)
     ) {
-      return {
-        label: this.name,
-        kind: this.kind,
-      };
+      if (
+        parent.parent.kind === CompletionItemKind.Property &&
+        (parent.parent as PropertyItem).parent.name === lastMMorES.name
+      ) {
+        return {
+          label: this.name,
+          kind: this.kind,
+        };
+      } else if (parent.kind === CompletionItemKind.Method) {
+        return {
+          label: this.name,
+          kind: this.kind,
+        };
+      }
     }
 
     return undefined;

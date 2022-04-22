@@ -6,6 +6,7 @@ import {
   CompletionItemKind,
   commands,
   SignatureHelp,
+  Location,
 } from "vscode";
 import { basename } from "path";
 import { URI } from "vscode-uri";
@@ -109,6 +110,7 @@ export async function getCompletionListFromPosition(
   }
 
   const line = document.lineAt(position.line).text;
+  const location = new Location(document.uri, position);
   const isMethod = isMethodCall(line, position);
   const lastFunc = getLastFunc(position, document, allItems);
   const lastESOrMM = getLastESOrMM(position, document.uri.fsPath, allItems);
@@ -125,7 +127,7 @@ export async function getCompletionListFromPosition(
   }
 
   if (!isMethod) {
-    return getNonMethodItems(allItems, position, lastFunc, lastESOrMM);
+    return getNonMethodItems(allItems, location, lastFunc, lastESOrMM);
   }
 
   let { variableType, words } = getTypeOfVariable(
@@ -195,7 +197,7 @@ function getMethodItems(
 
 function getNonMethodItems(
   allItems: SPItem[],
-  position: Position,
+  location: Location,
   lastFunc: FunctionItem | MethodItem,
   lastMMorES: MethodMapItem | EnumStructItem | undefined
 ): CompletionList {
@@ -203,7 +205,7 @@ function getNonMethodItems(
 
   allItems.forEach((item) => {
     if (!MP.includes(item.kind)) {
-      let compItem = item.toCompletionItem(lastFunc, lastMMorES, position);
+      let compItem = item.toCompletionItem(lastFunc, lastMMorES, location);
       if (compItem !== undefined) {
         items.push(compItem);
       }

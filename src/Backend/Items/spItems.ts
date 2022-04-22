@@ -34,7 +34,7 @@ export interface SPItem {
   toCompletionItem(
     lastFunc?: MethodItem | FunctionItem | undefined,
     lastESOrMM?: MethodMapItem | EnumStructItem | undefined,
-    position?: Position,
+    location?: Location,
     override?: boolean
   ): CompletionItem | undefined;
   toDefinitionItem(): LocationLink | undefined;
