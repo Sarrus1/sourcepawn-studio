@@ -264,7 +264,7 @@ suite("Run tests", () => {
           console.log(signature.signatures);
           assert.deepEqual(
             signature.signatures[0].label,
-            'native void RegConsoleCmd(const char[] cmd, ConCmd callback, const char[] description="", int flags=0)'
+            'native void RegConsoleCmd(const char[] cmd, ConCmd callback, const char[] description="", int flags=0);'
           );
           assert.equal(signature.signatures[0].parameters.length, 4);
         });
