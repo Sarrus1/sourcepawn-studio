@@ -19,16 +19,18 @@ export function readProperty(
   parent: MethodMapItem,
   docstring: ParsedComment,
   returnType: ParsedID,
-  body: (MethodDeclaration | MethodmapNativeForwardDeclaration)[]
+  body: (MethodDeclaration | MethodmapNativeForwardDeclaration)[],
+  txt: string
 ): void {
   const range = parsedLocToRange(id.loc, parserArgs);
   const fullRange = parsedLocToRange(loc, parserArgs);
   const { doc, dep } = processDocStringComment(docstring);
+  txt = txt.trim();
   const propertyItem = new PropertyItem(
     parent,
     id.id,
     parserArgs.filePath,
-    id.id,
+    txt,
     doc,
     range,
     fullRange,
@@ -45,6 +47,7 @@ export function readProperty(
       e.doc,
       e.params,
       e.body,
+      e.txt,
       propertyItem
     );
   });

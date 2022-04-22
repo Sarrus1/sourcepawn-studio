@@ -55,6 +55,7 @@ export function readMethodmap(
         e.doc,
         e.params,
         e.body,
+        e.txt,
         methodmapItem
       );
     } else if (e.type === "MethodmapNativeForwardDeclaration") {
@@ -67,6 +68,7 @@ export function readMethodmap(
         e.doc,
         e.params,
         null,
+        e.txt,
         methodmapItem
       );
     } else {
@@ -77,7 +79,8 @@ export function readMethodmap(
         methodmapItem,
         e.doc,
         e.propertyType,
-        e.body
+        e.body,
+        e.txt
       );
     }
   });

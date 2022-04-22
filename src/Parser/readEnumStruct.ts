@@ -48,6 +48,7 @@ export function readEnumStruct(
         undefined,
         e.params,
         e.body,
+        e.txt,
         enumStructItem
       );
     } else if (e["type"] === "VariableDeclaration") {

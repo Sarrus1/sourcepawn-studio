@@ -31,22 +31,24 @@ export function readFunctionAndMethod(
   docstring: ParsedComment,
   params: ParsedParam[] | null,
   body: FunctionBody | null,
+  txt: string,
   parent: EnumStructItem | PropertyItem | ConstantItem = globalItem
 ): void {
   const MmEs = [CompletionItemKind.Struct, CompletionItemKind.Class];
+
+  txt = txt.replace(/\s*\r?\n\s*/gm, " ").trim();
 
   const range = parsedLocToRange(id.loc, parserArgs);
   const fullRange = parsedLocToRange(loc, parserArgs);
   const { doc, dep } = processDocStringComment(docstring);
   const { processedParams, details } = processFunctionParams(params);
-  const processedReturnType = returnType && returnType.id ? returnType.id : "";
   let item: FunctionItem | MethodItem;
-  let key: string = id.id;
+  let key = id.id;
   if (parent.kind === CompletionItemKind.Property) {
     item = new MethodItem(
       parent as PropertyItem,
       id.id,
-      `${processedReturnType} ${id.id}(${details.replace(/, $/, "")})`.trim(),
+      txt,
       doc,
       processedParams,
       returnType ? returnType.id : "",
@@ -61,7 +63,7 @@ export function readFunctionAndMethod(
     item = new MethodItem(
       parent as EnumStructItem,
       id.id,
-      `${processedReturnType} ${id.id}(${details.replace(/, $/, "")})`.trim(),
+      txt,
       doc,
       processedParams,
       returnType ? returnType.id : "",
@@ -75,7 +77,7 @@ export function readFunctionAndMethod(
   } else {
     item = new FunctionItem(
       id.id,
-      `${processedReturnType} ${id.id}(${details.replace(/, $/, "")})`.trim(),
+      txt,
       doc,
       processedParams,
       parserArgs.filePath,

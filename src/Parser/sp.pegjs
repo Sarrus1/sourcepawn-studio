@@ -1479,7 +1479,7 @@ LabelledStatement
 OperatorDeclaration
   = doc:__ content:OperatorDeclarationNoDoc
   {
-    readFunctionAndMethod(args, content.accessModifier, content.returnType, content.id, content.loc, doc, content.params, content.body);
+    readFunctionAndMethod(args, content.accessModifier, content.returnType, content.id, content.loc, doc, content.params, content.body, content.txt);
     return content;
   }
 
@@ -1498,7 +1498,8 @@ OperatorDeclarationNoDoc
       id,
       operator,
       params: optionalList(extractOptional(params, 0)),
-      body
+      body,
+      txt:text()
     }
   }
 
@@ -1911,24 +1912,36 @@ PropertyDeclaration
       id: content.id,
       doc,
       loc: content.loc,
-      body: content.body
+      body: content.body,
+      txt: content.txt
     };
   }
 
 PropertyDeclarationNoDoc
-  = PropertyToken __p propertyType:TypeIdentifier __p id:Identifier __
+  = header:PropertyDeclarationHeader __
   "{" __ body:(MethodDeclaration / MethodmapNativeForwardDeclaration)* __ "}" __
+  {
+    return {
+      propertyType: header.propertyType,
+      id: header.id,
+      loc: location(),
+      body,
+      txt: header.txt
+    };
+  }
+
+PropertyDeclarationHeader
+  = PropertyToken __p propertyType:TypeIdentifier __p id:Identifier
   {
     return {
       propertyType,
       id,
-      loc: location(),
-      body
+      txt: text()
     };
   }
 
 MethodDeclaration
-  = doc:__ content:MethodDeclarationNoDoc
+  = doc:__ content:FunctionDeclarationNoDoc
   {
     return {
       type: "MethodDeclaration",
@@ -1938,28 +1951,13 @@ MethodDeclaration
       doc,
       loc: content.loc,
       params: content.params,
-      body: content.body
-    };
-  }
-
-MethodDeclarationNoDoc
-  = accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier __
-  "(" __ params:(FormalParameterList __)? ")" __
-  body:Block
-  {
-    return {
-      type: "MethodDeclaration",
-      accessModifier,
-      returnType,
-      loc: location(),
-      id,
-      params: optionalList(extractOptional(params, 0)),
-      body
+      body: content.body,
+      txt: content.txt
     };
   }
 
 MethodmapNativeForwardDeclaration
-  = doc:__ content:MethodmapNativeForwardDeclarationNoDoc
+  = doc:__ content:MethodmapNativeForwardDeclarationNoDoc EOS
   {
     return {
       type: "MethodmapNativeForwardDeclaration",
@@ -1969,14 +1967,15 @@ MethodmapNativeForwardDeclaration
       id: content.id,
       params: content.params,
       doc,
-      body: undefined
+      body: undefined,
+      txt: content.txt
     }
   }
 
 MethodmapNativeForwardDeclarationNoDoc
   = accessModifier:FunctionAccessModifiers* token:(NativeToken / ForwardToken) __p
   returnType:FunctionReturnTypeDeclaration? id:Identifier __
-  "(" __ params:(FormalParameterList __)? ")" EOS
+  "(" __ params:(FormalParameterList __)? ")"
   {
     accessModifier.push(token)
     return {
@@ -1985,7 +1984,8 @@ MethodmapNativeForwardDeclarationNoDoc
       returnType,
       loc: location(),
       id,
-      params: optionalList(extractOptional(params, 0))
+      params: optionalList(extractOptional(params, 0)),
+      txt: text()
     }
   }
 
@@ -2004,23 +2004,36 @@ FunctionReturnTypeDeclaration
 FunctionDeclaration
   = doc:__ content:FunctionDeclarationNoDoc
   {
-    readFunctionAndMethod(args, content.accessModifier, content.returnType, content.id, content.loc, doc, content.params, content.body);
+    readFunctionAndMethod(args, content.accessModifier, content.returnType, content.id, content.loc, doc, content.params, content.body, content.txt);
     return content;
   }
 
 FunctionDeclarationNoDoc
-  = accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier __
-  "(" __ params:(FormalParameterList __)? ")" __
+  = header:FunctionDeclarationHeader __
   body:Block
   {
     return {
       type: "FunctionDeclaration",
+      accessModifier: header.accessModifier,
+      returnType: header.returnType,
+      loc: location(),
+      id: header.id,
+      params: header.params,
+      body,
+      txt: header.txt
+    };
+  }
+
+FunctionDeclarationHeader
+  = accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier __
+  "(" __ params:(FormalParameterList __)? ")"
+  {
+    return {
       accessModifier,
       returnType,
-      loc: location(),
       id,
       params: optionalList(extractOptional(params, 0)),
-      body
+      txt: text()
     };
   }
 
@@ -2133,12 +2146,29 @@ FunctionBody
   }
 
 NativeForwardDeclaration
-  = doc:__ accessModifier:FunctionAccessModifiers* token:(NativeToken / ForwardToken) __p
+  = doc:__ content:NativeForwardDeclarationNoDoc
+  {
+    readFunctionAndMethod(args, content.accessModifier, content.returnType, content.id, content.loc, doc, content.params, null, content.txt);
+    return content;
+  }
+
+NativeForwardDeclarationNoDoc
+  = accessModifier:FunctionAccessModifiers* token:(NativeToken / ForwardToken) __p
   returnType:FunctionReturnTypeDeclaration? id:Identifier __
   "(" __ params:(FormalParameterList __)? ")" ( __ "=" __ Identifier)? EOS
   {
-    accessModifier.push(token);
-    readFunctionAndMethod(args, accessModifier, returnType, id, location(), doc, optionalList(extractOptional(params, 0)), null);
+    if (accessModifier) {
+      accessModifier.push(token);
+    }
+    return {
+      type: "NativeForwardDeclaration",
+      accessModifier,
+      returnType,
+      loc: location(),
+      id,
+      params: optionalList(extractOptional(params, 0)),
+      txt: text()
+    };
   }
 
 // Take care of weird declaration in handles.inc

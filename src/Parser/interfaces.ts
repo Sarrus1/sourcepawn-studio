@@ -203,6 +203,7 @@ export interface PropertyDeclaration {
   doc: ParsedComment;
   loc: ParserLocation;
   body;
+  txt: string;
 }
 
 export interface MethodDeclaration {
@@ -214,6 +215,7 @@ export interface MethodDeclaration {
   params: ParsedParam[];
   doc: ParsedComment;
   body;
+  txt: string;
 }
 
 export interface MethodmapNativeForwardDeclaration {
@@ -225,6 +227,7 @@ export interface MethodmapNativeForwardDeclaration {
   params: ParsedParam[];
   doc: ParsedComment;
   body: undefined;
+  txt: string;
 }
 
 /**
@@ -245,6 +248,7 @@ export interface FunctionDeclaration {
   loc: ParserLocation;
   params: ParsedParam[];
   body: FunctionBody;
+  txt: string;
 }
 
 export interface FunctionBody {
