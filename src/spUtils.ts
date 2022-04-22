@@ -31,8 +31,7 @@ export function descriptionToMD(description?: string): MarkdownString {
     .replace(/\r?\n\s*\*/gm, "")
     .replace(/^\*/, "")
     .replace(/\</gm, "\\<")
-    .replace(/\>/gm, "\\>")
-    .replace(/([\w\,]{1})\n/gm, "$1");
+    .replace(/\>/gm, "\\>");
   // Make all @ nicer
   description = description.replace(/\s*(@[A-Za-z]+)\s+/gm, "\n\n_$1_ ");
   // Make the @param nicer

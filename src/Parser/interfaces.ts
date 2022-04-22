@@ -263,7 +263,12 @@ export interface PreprocessorStatement {
   /**
    * The type of the preprocessor statement ("PragmaValue" for exemple).
    */
-  type: string;
+  type:
+    | "PragmaValue"
+    | "PreprocessorStatement"
+    | "IncludeStatement"
+    | "DefineStatement"
+    | "MacroDeclaration";
 
   /**
    * The ID of the preprocessor statement. Only for "DefineStatement" and "MacroStatement".
@@ -281,14 +286,39 @@ export interface PreprocessorStatement {
   value?: string;
 }
 
-export interface RawComment {
+export type RawComment =
+  | MultiLineComment
+  | MultiLineCommentNoLineTerminator
+  | SingleLineComment;
+
+export interface SingleLineComment {
   /**
    * The type of the comment.
    */
-  type:
-    | "MultiLineComment"
-    | "MultiLineCommentNoLineTerminator"
-    | "SingleLineComment";
+  type: "SingleLineComment";
+
+  /**
+   * The content of the comment.
+   */
+  text: string;
+}
+
+export interface MultiLineComment {
+  /**
+   * The type of the comment.
+   */
+  type: "MultiLineComment";
+
+  /**
+   * The content of the comment.
+   */
+  text: string;
+}
+export interface MultiLineCommentNoLineTerminator {
+  /**
+   * The type of the comment.
+   */
+  type: "MultiLineCommentNoLineTerminator";
 
   /**
    * The content of the comment.
