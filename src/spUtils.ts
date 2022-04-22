@@ -42,7 +42,7 @@ export function descriptionToMD(description?: string): MarkdownString {
 
   // Format other functions which are referenced in the description
   description = description.replace(/(\w+\([A-Za-z0-9_ \:]*\))/gm, "`$1`");
-  description = description.replace("DEPRECATED", "**DEPRECATED**");
+  description = description.replace("DEPRECATED", "\n\n**DEPRECATED**");
   return new MarkdownString(description);
 }
 

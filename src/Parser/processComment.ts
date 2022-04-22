@@ -1,4 +1,4 @@
-﻿import { DocString, ParsedComment } from "./interfaces";
+﻿import { DocString, ParsedComment, PreprocessorStatement } from "./interfaces";
 
 /**
  * Processes a parsed comment and tries to extrapolate a doc comment from it.
@@ -18,9 +18,16 @@ export function processDocStringComment(docstring: ParsedComment): DocString {
       if (emptyCount >= 2) {
         break;
       }
-      if (e.type === "PragmaValue") {
-        if (e.value.includes("deprecated")) {
-          dep = e.value;
+      if (e.type === "LineTerminatorSequence") {
+        const statement = e.content[
+          e.content.length - 1
+        ] as PreprocessorStatement | null;
+        if (!statement || statement.type !== "PragmaValue") {
+          emptyCount++;
+          continue;
+        }
+        if (/^deprecated/.test(statement.value)) {
+          dep = statement.value.replace(/^deprecated\s*/, "");
         }
       } else if (e.type === "SingleLineComment") {
         if (/^\s*$/.test(e.text)) {
@@ -33,7 +40,7 @@ export function processDocStringComment(docstring: ParsedComment): DocString {
         e.type === "MultiLineCommentNoLineTerminator"
       ) {
         txt.push(e.text);
-      } else if (typeof e === "string" && /[\n\r]+/.test(e)) {
+      } else {
         emptyCount++;
       }
     }

@@ -327,9 +327,20 @@ export interface MultiLineCommentNoLineTerminator {
 }
 
 export type ParsedComment =
-  | (RawComment | PreprocessorStatement)[]
+  | (RawComment | LineTerminatorSequence)[]
   | RawComment
   | undefined;
+
+export interface LineTerminatorSequence {
+  type: "LineTerminatorSequence";
+  content: LineTerminatorSequenceContent;
+}
+
+export type LineTerminatorSequenceContent = (
+  | string
+  | PreprocessorStatement
+  | null
+)[];
 
 /**
  * The Semantic Analyzer `this` object.

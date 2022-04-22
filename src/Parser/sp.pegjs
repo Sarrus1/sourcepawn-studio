@@ -101,19 +101,25 @@ LineTerminator
   = [\n\r\u2028\u2029]
 
 LineTerminatorSequence "end of line"
-  = ("\n"
+  = content:(("\n"
   / "\r\n"
   / "\r"
   / "\u2028"
   / "\u2029")
-  (WhiteSpace* PreprocessorStatement)?
+  PreprocessorStatement?)
+  {
+    return {
+      type:"LineTerminatorSequence",
+      content
+    }
+  }
 
 Comment "comment"
   = MultiLineComment
   / SingleLineComment
 
 MultiLineComment
-  = "/*" txt:(!"*/" SourceCharacter)* "*/" (WhiteSpace* PreprocessorStatement)?
+  = "/*" txt:(!"*/" SourceCharacter)* "*/" PreprocessorStatement?
   {
     return {
       type: "MultiLineComment",
@@ -122,7 +128,7 @@ MultiLineComment
   }
 
 MultiLineCommentNoLineTerminator
-  = "/*" txt:(!("*/" / LineTerminator) SourceCharacter)* "*/" (WhiteSpace* PreprocessorStatement)?
+  = "/*" txt:(!("*/" / LineTerminator) SourceCharacter)* "*/" PreprocessorStatement?
   {
     return {
       type: "MultiLineCommentNoLineTerminator",
@@ -1185,7 +1191,7 @@ LocalVariableDeclaration
   }
 
 PreprocessorStatement
-  = pre:(
+  = WhiteSpace* pre:(
   PragmaStatement
   / IncludeStatement
   / DefineStatement
@@ -2176,7 +2182,7 @@ UsingDeclaration
  = doc:__ "using" [^\n;]+ ";"
 
 Program
-  = (WhiteSpace* PreprocessorStatement)? body:SourceElements? 
+  = PreprocessorStatement? body:SourceElements? 
   {
     return {
       type: "Program",
