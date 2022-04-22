@@ -91,7 +91,7 @@ export function readFunctionAndMethod(
     );
   }
   parserArgs.fileItems.set(key, item);
-  addParamsAsVariables(parserArgs, params, item, parent);
+  addParamsAsVariables(parserArgs, params, item, parent, processedParams);
 
   if (!body) {
     // We are in a native or forward.
@@ -195,31 +195,35 @@ function addParamsAsVariables(
   parserArgs: spParserArgs,
   params: ParsedParam[] | null,
   parent: FunctionItem | MethodItem,
-  grandParent: EnumStructItem | MethodMapItem | PropertyItem | ConstantItem
+  grandParent: EnumStructItem | MethodMapItem | PropertyItem | ConstantItem,
+  processedParams: FunctionParam[]
 ): void {
   if (!params) {
     return;
   }
 
-  params.forEach((e) => {
+  params.forEach((param) => {
     let processedDeclType = "";
-    if (typeof e.declarationType === "string") {
-      processedDeclType = e.declarationType;
-    } else if (Array.isArray(e.declarationType)) {
-      processedDeclType = e.declarationType.join(" ");
+    if (typeof param.declarationType === "string") {
+      processedDeclType = param.declarationType;
+    } else if (Array.isArray(param.declarationType)) {
+      processedDeclType = param.declarationType.join(" ");
     }
     const type =
-      e.parameterType && e.parameterType.name ? e.parameterType.name.id : "";
-    const modifiers = e.parameterType ? e.parameterType.modifier : "";
+      param.parameterType && param.parameterType.name
+        ? param.parameterType.name.id
+        : "";
+    const modifiers = param.parameterType ? param.parameterType.modifier : "";
+    const doc = processedParams.find((e) => e.label === param.id.id);
     addVariableItem(
       parserArgs,
-      e.id.id,
+      param.id.id,
       type,
-      parsedLocToRange(e.id.loc, parserArgs),
+      parsedLocToRange(param.id.loc, parserArgs),
       parent,
-      "",
-      `${processedDeclType} ${type}${modifiers}${e.id.id};`,
-      `${e.id.id}-${parent.name}-${grandParent.name}-${
+      doc ? doc.documentation : "",
+      `${processedDeclType} ${type}${modifiers}${param.id.id};`,
+      `${param.id.id}-${parent.name}-${grandParent.name}-${
         grandParent.kind === CompletionItemKind.Property
           ? (grandParent as PropertyItem).parent.name
           : ""
