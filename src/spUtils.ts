@@ -25,8 +25,10 @@ export function descriptionToMD(description?: string): MarkdownString {
   description = description
     // Remove leading *< from documentation (usually present in enum member's description)
     .replace(/^\*\</, "")
+    // Remove leading * for block comments but keep indentation.
+    .replace(/\*\s*\r?\n\s*\*/gm, "\n")
     // Remove leading * for block comments.
-    .replace(/^\s*\*(?:\*|\s*)/gm, "")
+    .replace(/\r?\n\s*\*/gm, "")
     .replace(/^\*/, "")
     .replace(/\</gm, "\\<")
     .replace(/\>/gm, "\\>")
@@ -40,7 +42,7 @@ export function descriptionToMD(description?: string): MarkdownString {
   );
 
   // Format other functions which are referenced in the description
-  description = description.replace(/(\w*.\w+\([A-Za-z0-9_ \:]*\))/gm, "`$1`");
+  description = description.replace(/(\w+\([A-Za-z0-9_ \:]*\))/gm, "`$1`");
   description = description.replace("DEPRECATED", "**DEPRECATED**");
   return new MarkdownString(description);
 }
