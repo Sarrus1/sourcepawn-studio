@@ -40,8 +40,6 @@ export function processDocStringComment(docstring: ParsedComment): DocString {
         e.type === "MultiLineCommentNoLineTerminator"
       ) {
         txt.push(e.text);
-      } else {
-        emptyCount++;
       }
     }
     return { doc: txt.reverse().join("").trim(), dep };

@@ -1931,7 +1931,7 @@ PropertyDeclaration
 
 PropertyDeclarationNoDoc
   = header:PropertyDeclarationHeader __
-  "{" __ body:(MethodDeclaration / MethodmapNativeForwardDeclaration)* __ "}" __
+  "{" __ body:(MethodDeclaration / MethodmapNativeForwardDeclaration)* __ "}"
   {
     return {
       propertyType: header.propertyType,
