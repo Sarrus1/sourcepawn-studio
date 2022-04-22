@@ -24,6 +24,7 @@ const allowedParentsKinds = [
 ];
 const allowedChildrendKinds = [
   CompletionItemKind.Method,
+  CompletionItemKind.Constructor,
   CompletionItemKind.Property,
   CompletionItemKind.Variable,
   CompletionItemKind.EnumMember,

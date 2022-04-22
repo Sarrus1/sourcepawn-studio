@@ -151,22 +151,22 @@ export function getItemFromPosition(
     return includeItem;
   }
 
-  return allItems.filter((e1) => {
-    if (e1.filePath !== document.uri.fsPath) {
+  return allItems.filter((item) => {
+    if (item.name !== word) {
       return false;
     }
-    if (e1.name !== word) {
+    if (!item.range) {
       return false;
     }
-    if (!e1.range) {
-      return false;
-    }
-    if (range.isEqual(e1.range)) {
+    if (range.isEqual(item.range) && item.filePath === document.uri.fsPath) {
       return true;
     }
-    if (e1.references) {
-      for (let e2 of e1.references) {
-        if (range.isEqual(e2.range)) {
+    if (item.references) {
+      for (let ref of item.references) {
+        if (
+          range.isEqual(ref.range) &&
+          ref.uri.fsPath === document.uri.fsPath
+        ) {
           return true;
         }
       }

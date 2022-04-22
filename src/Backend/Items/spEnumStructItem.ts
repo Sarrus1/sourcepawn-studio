@@ -58,11 +58,8 @@ export class EnumStructItem implements SPItem {
   }
 
   toHover(): Hover | undefined {
-    if (!this.description) {
-      return undefined;
-    }
     return new Hover([
-      { language: "sourcepawn", value: this.name },
+      { language: "sourcepawn", value: `enum struct ${this.name}` },
       descriptionToMD(this.description),
     ]);
   }
