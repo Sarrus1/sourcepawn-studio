@@ -1187,7 +1187,9 @@ OtherPreprocessorStatement
 LocalVariableDeclaration
   = content:VariableDeclaration
   {
-    return {type: "LocalVariableDeclaration", content};
+    const value = {type: "LocalVariableDeclaration", content};
+    args.variableDecl.push(value);
+    return value;
   }
 
 PreprocessorStatement
@@ -1310,13 +1312,15 @@ IterationStatement
   ")"
   body:Statement
   {
-    return {
-      type: "ForStatement",
-      init: {
+    const init = {
         type: "ForLoopVariableDeclaration",
         declarations,
         variableType
-      },
+      };
+    args.variableDecl.push(init);
+    return {
+      type: "ForStatement",
+      init: init,
       test: extractOptional(test, 0),
       update: extractOptional(update, 0),
       body: body
@@ -1359,12 +1363,14 @@ IterationStatement
   ")" __
   body:Statement
   {
+    const left = {
+        type: "ForLoopVariableDeclaration",
+        declarations,
+      };
+    args.variableDecl.push(left);
     return {
       type: "ForInStatement",
-      left: {
-        type: "ForLoopVariableDeclaration",
-        declarations: declarations
-      },
+      left: left,
       right: right,
       body: body
     };

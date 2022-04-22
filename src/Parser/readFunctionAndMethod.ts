@@ -96,93 +96,69 @@ export function readFunctionAndMethod(
     // We are in a native or forward.
     return;
   }
-  searchVariablesInBody(parserArgs, body["body"], item, parent);
+  readBodyVariables(parserArgs, item, parent);
+  parserArgs.variableDecl = [];
   return;
 }
 
-function searchVariablesInBody(
+function readBodyVariables(
   parserArgs: spParserArgs,
-  arr,
   parent: FunctionItem | MethodItem,
   grandParent: EnumStructItem | MethodMapItem | ConstantItem
 ) {
-  if (!arr) {
-    return;
-  }
-  if (Array.isArray(arr)) {
-    for (let obj of arr) {
-      recursiveVariableSearch(parserArgs, obj, parent, grandParent);
-    }
-  } else {
-    recursiveVariableSearch(parserArgs, arr, parent, grandParent);
-  }
-}
+  parserArgs.variableDecl.forEach((e) => {
+    let declarators: VariableDeclarator[],
+      variableType: string,
+      doc = "",
+      found = false,
+      processedDeclType = "",
+      modifier = "";
 
-function recursiveVariableSearch(
-  parserArgs: spParserArgs,
-  obj,
-  parent: FunctionItem | MethodItem,
-  grandParent: EnumStructItem | MethodMapItem | PropertyItem | ConstantItem
-) {
-  if (!obj) {
-    return;
-  }
-  let declarators: VariableDeclarator[],
-    variableType: string,
-    doc = "",
-    found = false,
-    processedDeclType = "",
-    modifier = "";
+    if (e.type === "ForLoopVariableDeclaration") {
+      declarators = e["declarations"];
+      variableType = "int ";
+      found = true;
+    } else if (e["type"] === "LocalVariableDeclaration") {
+      const content: VariableDeclaration = e.content;
+      declarators = content.declarations;
+      if (content.variableType) {
+        variableType = content.variableType.name.id;
+        modifier = content.variableType.modifier || "";
+      }
+      //doc = content.doc;
+      if (typeof content.variableDeclarationType === "string") {
+        processedDeclType = content.variableDeclarationType;
+      } else if (Array.isArray(content.variableDeclarationType)) {
+        processedDeclType = content.variableDeclarationType.join(" ");
+      }
+      found = true;
+    }
 
-  if (obj.type === "ForLoopVariableDeclaration") {
-    declarators = obj["declarations"];
-    variableType = "int ";
-    found = true;
-  } else if (obj["type"] === "LocalVariableDeclaration") {
-    const content: VariableDeclaration = obj.content;
-    declarators = content.declarations;
-    if (content.variableType) {
-      variableType = content.variableType.name.id;
-      modifier = content.variableType.modifier || "";
+    if (found) {
+      declarators.forEach((e) => {
+        const range = parsedLocToRange(e.id.loc, parserArgs);
+        const arrayInitialer = e.arrayInitialer || "";
+        variableType = variableType || "";
+        addVariableItem(
+          parserArgs,
+          e.id.id,
+          variableType,
+          range,
+          parent,
+          doc,
+          `${processedDeclType}${variableType}${modifier}${
+            e.id.id
+          }${arrayInitialer.trim()};`.trim(),
+          `${e.id.id}-${parent.name}-${grandParent.name}-${
+            grandParent.kind === CompletionItemKind.Property
+              ? (grandParent as PropertyItem).parent.name
+              : ""
+          }`
+        );
+      });
+      return;
     }
-    //doc = content.doc;
-    if (typeof content.variableDeclarationType === "string") {
-      processedDeclType = content.variableDeclarationType;
-    } else if (Array.isArray(content.variableDeclarationType)) {
-      processedDeclType = content.variableDeclarationType.join(" ");
-    }
-    found = true;
-  }
-
-  if (found) {
-    declarators.forEach((e) => {
-      const range = parsedLocToRange(e.id.loc, parserArgs);
-      const arrayInitialer = e.arrayInitialer || "";
-      variableType = variableType || "";
-      addVariableItem(
-        parserArgs,
-        e.id.id,
-        variableType,
-        range,
-        parent,
-        doc,
-        `${processedDeclType}${variableType}${modifier}${
-          e.id.id
-        }${arrayInitialer.trim()};`.trim(),
-        `${e.id.id}-${parent.name}-${grandParent.name}-${
-          grandParent.kind === CompletionItemKind.Property
-            ? (grandParent as PropertyItem).parent.name
-            : ""
-        }`
-      );
-    });
-    return;
-  }
-  for (let k in obj) {
-    if (typeof obj[k] == "object" && obj[k] !== null) {
-      searchVariablesInBody(parserArgs, obj[k], parent, grandParent);
-    }
-  }
+  });
 }
 
 function processFunctionParams(params: ParsedParam[] | null): ProcessedParams {

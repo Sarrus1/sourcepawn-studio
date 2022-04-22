@@ -196,6 +196,21 @@ export interface VariableDeclaration {
   doc: ParsedComment;
 }
 
+export interface LocalVariableDeclaration {
+  type: "LocalVariableDeclaration";
+  content: VariableDeclaration;
+}
+
+export interface ForLoopVariableDeclaration {
+  type: "ForLoopVariableDeclaration";
+  content: ForLoopVariableDeclaration;
+}
+
+export type ScoppedVariablesDeclaration = (
+  | LocalVariableDeclaration
+  | ForLoopVariableDeclaration
+)[];
+
 export interface PropertyDeclaration {
   type: "PropertyDeclaration";
   propertyType: ParsedID;

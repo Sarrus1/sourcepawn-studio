@@ -21,7 +21,6 @@ import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
 import { findMainPath, checkMainPath } from "./spUtils";
 import { updateDecorations } from "./Providers/decorationsProvider";
-import { run as setFileAsMainCommand } from "./Commands/setFileAsMain";
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);

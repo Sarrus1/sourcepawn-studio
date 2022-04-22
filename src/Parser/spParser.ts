@@ -23,7 +23,7 @@ import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
 import { VariableItem } from "../Backend/Items/spVariableItem";
 import { TypeDefItem } from "../Backend/Items/spTypedefItem";
 import { TypeSetItem } from "../Backend/Items/spTypesetItem";
-import { SemanticAnalyzer } from "./interfaces";
+import { ScoppedVariablesDeclaration, SemanticAnalyzer } from "./interfaces";
 const spParser = require("./spParser2");
 
 export function parseFile(
@@ -55,6 +55,7 @@ export interface spParserArgs {
   IsBuiltIn: boolean;
   anonEnumCount: number;
   offset: number;
+  variableDecl: ScoppedVariablesDeclaration;
 }
 
 export function parseText(
@@ -81,6 +82,7 @@ export function parseText(
       IsBuiltIn: isBuiltIn,
       anonEnumCount: 0,
       offset,
+      variableDecl: [],
     };
     if (offset === 0) {
       // Only clear the diagnostics if there is no error.

@@ -385,7 +385,7 @@
               }
             },
             {
-              "match": "\\b(true|false)",
+              "match": "\\b(true|false|null)\\b",
               "name": "constant.language.boolean.sourcepawn"
             },
             {
@@ -405,7 +405,7 @@
               }
             },
             {
-              "match": "\\b(true|false)",
+              "match": "\\b(true|false|null)\\b",
               "name": "constant.language.boolean.sourcepawn"
             },
             {
@@ -425,7 +425,7 @@
               }
             },
             {
-              "match": "\\b(true|false)",
+              "match": "\\b(true|false|null)\\b",
               "name": "constant.language.boolean.sourcepawn"
             },
             {
