@@ -28,7 +28,6 @@ export interface SPItem {
   fullRange?: Range;
   references?: Location[];
   IsBuiltIn?: boolean;
-  enumStructName?: string;
   params?: FunctionParam[];
   deprecated?: string;
 

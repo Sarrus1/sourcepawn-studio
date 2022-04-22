@@ -199,20 +199,17 @@ function getNonMethodItems(
   lastFunc: FunctionItem | MethodItem,
   lastMMorES: MethodMapItem | EnumStructItem | undefined
 ): CompletionList {
-  const items = new Set<CompletionItem | undefined>();
+  const items: CompletionItem[] = [];
 
   allItems.forEach((item) => {
     if (!MP.includes(item.kind)) {
-      items.add(
-        item.toCompletionItem(lastFunc, lastMMorES, position) as CompletionItem
-      );
+      let compItem = item.toCompletionItem(lastFunc, lastMMorES, position);
+      if (compItem !== undefined) {
+        items.push(compItem);
+      }
     }
   });
-
-  items.delete(undefined);
-  return new CompletionList(
-    Array.from(items).filter((e) => e !== undefined) as CompletionItem[]
-  );
+  return new CompletionList(items);
 }
 
 /**

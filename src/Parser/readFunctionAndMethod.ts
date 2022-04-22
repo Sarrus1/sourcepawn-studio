@@ -97,7 +97,6 @@ export function readFunctionAndMethod(
     return;
   }
   readBodyVariables(parserArgs, item, parent);
-  parserArgs.variableDecl = [];
   return;
 }
 
@@ -106,7 +105,7 @@ function readBodyVariables(
   parent: FunctionItem | MethodItem,
   grandParent: EnumStructItem | MethodMapItem | ConstantItem
 ) {
-  parserArgs.variableDecl.forEach((e) => {
+  for (let e of parserArgs.variableDecl) {
     let declarators: VariableDeclarator[],
       variableType: string,
       doc = "",
@@ -135,30 +134,35 @@ function readBodyVariables(
     }
 
     if (found) {
-      declarators.forEach((e) => {
-        const range = parsedLocToRange(e.id.loc, parserArgs);
-        const arrayInitialer = e.arrayInitialer || "";
+      for (let decl of declarators) {
+        const range = parsedLocToRange(decl.id.loc, parserArgs);
+        // Break if the item's range is not in the fullrange of the parent.
+        // This means it belongs to another method of the same enum struct/methodmap.
+        // We can assume that all the next items will be the same.
+        if (!parent.fullRange.contains(range)) {
+          break;
+        }
+        const arrayInitialer = decl.arrayInitialer || "";
         variableType = variableType || "";
         addVariableItem(
           parserArgs,
-          e.id.id,
+          decl.id.id,
           variableType,
           range,
           parent,
           doc,
           `${processedDeclType}${variableType}${modifier}${
-            e.id.id
+            decl.id.id
           }${arrayInitialer.trim()};`.trim(),
-          `${e.id.id}-${parent.name}-${grandParent.name}-${
+          `${decl.id.id}-${parent.name}-${grandParent.name}-${
             grandParent.kind === CompletionItemKind.Property
               ? (grandParent as PropertyItem).parent.name
               : ""
           }`
         );
-      });
-      return;
+      }
     }
-  });
+  }
 }
 
 function processFunctionParams(params: ParsedParam[] | null): ProcessedParams {

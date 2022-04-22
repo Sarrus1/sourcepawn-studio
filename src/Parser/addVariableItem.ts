@@ -28,7 +28,6 @@ export function addVariableItem(
     parent,
     range,
     type,
-    undefined,
     details,
     docstring
   );

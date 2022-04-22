@@ -30,7 +30,6 @@ export class VariableItem implements SPItem {
   range: Range;
   type: string;
   references: Location[];
-  enumStructName: string;
 
   constructor(
     name: string,
@@ -38,7 +37,6 @@ export class VariableItem implements SPItem {
     parent: SPItem | ConstantItem,
     range: Range,
     type: string,
-    enumStruct: string,
     detail: string,
     description = ""
   ) {
@@ -47,7 +45,6 @@ export class VariableItem implements SPItem {
     this.parent = parent;
     this.range = range;
     this.type = type;
-    this.enumStructName = enumStruct;
     this.references = [];
     this.detail = detail;
     this.description = description;
