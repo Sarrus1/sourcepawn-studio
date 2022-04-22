@@ -72,7 +72,7 @@ export class PropertyItem implements SPItem {
       return undefined;
     }
     return new Hover([
-      { language: "sourcepawn", value: this.name },
+      { language: "sourcepawn", value: this.detail },
       descriptionToMD(this.description),
     ]);
   }
