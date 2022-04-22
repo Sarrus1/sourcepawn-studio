@@ -7,6 +7,7 @@ import {
   SymbolKind,
   LocationLink,
   Location,
+  Position,
 } from "vscode";
 import { URI } from "vscode-uri";
 
@@ -55,9 +56,10 @@ export class VariableItem implements SPItem {
   toCompletionItem(
     lastFunc: MethodItem | FunctionItem | undefined,
     lastMMorES: MethodMapItem | EnumStructItem | undefined,
+    position?: Position,
     override?: boolean
   ): CompletionItem | undefined {
-    if (override) {
+    if (override || this.parent.name === globalIdentifier) {
       return {
         label: this.name,
         kind: this.kind,
@@ -65,7 +67,15 @@ export class VariableItem implements SPItem {
     }
 
     if (lastFunc === undefined) {
-      if (this.parent.name === globalIdentifier) {
+      return undefined;
+    }
+
+    if (lastMMorES === undefined) {
+      if (
+        lastFunc.name === this.parent.name &&
+        (this.range.end.line < position.line ||
+          this.range.end.character < position.character)
+      ) {
         return {
           label: this.name,
           kind: this.kind,
@@ -74,14 +84,6 @@ export class VariableItem implements SPItem {
       return undefined;
     }
 
-    if (lastMMorES === undefined) {
-      if (this.parent.name === lastFunc.name) {
-        return {
-          label: this.name,
-          kind: this.kind,
-        };
-      }
-    }
     lastFunc = lastFunc as MethodItem;
     if (
       this.parent.name === lastFunc.name &&

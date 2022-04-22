@@ -125,7 +125,7 @@ export async function getCompletionListFromPosition(
   }
 
   if (!isMethod) {
-    return getNonMethodItems(allItems, lastFunc, lastESOrMM);
+    return getNonMethodItems(allItems, position, lastFunc, lastESOrMM);
   }
 
   let { variableType, words } = getTypeOfVariable(
@@ -195,6 +195,7 @@ function getMethodItems(
 
 function getNonMethodItems(
   allItems: SPItem[],
+  position: Position,
   lastFunc: FunctionItem | MethodItem,
   lastMMorES: MethodMapItem | EnumStructItem | undefined
 ): CompletionList {
@@ -202,7 +203,9 @@ function getNonMethodItems(
 
   allItems.forEach((item) => {
     if (!MP.includes(item.kind)) {
-      items.add(item.toCompletionItem(lastFunc) as CompletionItem);
+      items.add(
+        item.toCompletionItem(lastFunc, lastMMorES, position) as CompletionItem
+      );
     }
   });
 
@@ -247,7 +250,7 @@ async function getPositionalArguments(
   );
   const completions = new CompletionList();
   completions.items = params.map((e) =>
-    e.toCompletionItem(undefined, undefined, true)
+    e.toCompletionItem(undefined, undefined, undefined, true)
   );
   return completions;
 }

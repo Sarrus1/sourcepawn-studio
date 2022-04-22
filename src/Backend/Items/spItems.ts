@@ -7,6 +7,7 @@
   Hover,
   DocumentSymbol,
   LocationLink,
+  Position,
 } from "vscode";
 
 import { FunctionItem } from "./spFunctionItem";
@@ -34,6 +35,7 @@ export interface SPItem {
   toCompletionItem(
     lastFunc?: MethodItem | FunctionItem | undefined,
     lastESOrMM?: MethodMapItem | EnumStructItem | undefined,
+    position?: Position,
     override?: boolean
   ): CompletionItem | undefined;
   toDefinitionItem(): LocationLink | undefined;
