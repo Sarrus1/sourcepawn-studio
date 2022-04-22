@@ -385,6 +385,10 @@
               }
             },
             {
+              "match": "\\b(true|false)",
+              "name": "constant.language.boolean.sourcepawn"
+            },
+            {
               "match": "[a-zA-Z_]\\w*",
               "name": "variable.function_params_new.sourcepawn"
             }
@@ -401,6 +405,10 @@
               }
             },
             {
+              "match": "\\b(true|false)",
+              "name": "constant.language.boolean.sourcepawn"
+            },
+            {
               "match": "[a-zA-Z_]\\w*",
               "name": "variable.function_params_new.sourcepawn"
             }
@@ -415,6 +423,10 @@
                   "name": "constant.numeric.function_params_new.sourcepawn"
                 }
               }
+            },
+            {
+              "match": "\\b(true|false)",
+              "name": "constant.language.boolean.sourcepawn"
             },
             {
               "match": "[a-zA-Z_]\\w*",

@@ -35,7 +35,7 @@ export function readVariable(
       range,
       globalItem,
       doc,
-      `${processedDeclType} ${variableType}${modifier}${
+      `${processedDeclType}${variableType}${modifier}${
         e.id.id
       }${arrayInitialer.trim()};`.trim(),
       `${e.id.id}-${parent.name}`

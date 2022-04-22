@@ -112,7 +112,7 @@ export class VariableItem implements SPItem {
       return undefined;
     }
     return new Hover([
-      { language: "sourcepawn", value: this.detail },
+      { language: "sourcepawn", value: this.detail.trim() },
       descriptionToMD(this.description),
     ]);
   }
