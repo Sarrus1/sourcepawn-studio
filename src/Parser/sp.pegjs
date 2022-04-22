@@ -1863,7 +1863,7 @@ StructDeclaration
   = 
   (
     doc:__ accessModifier:FunctionAccessModifiers* 
-    StructReservedKeywords __p name:IdentifierName __ "=" __
+    StructReservedKeywords ( __ ":" __ / __p ) name:IdentifierName __ "=" __
     infos:ObjectLiteral EOS
     {
       return {
