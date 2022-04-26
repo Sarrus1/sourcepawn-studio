@@ -15,7 +15,7 @@
     "url": "https://github.com/Sarrus1/sourcepawn-vscode.git"
   },
   "engines": {
-    "vscode": "^1.14.0"
+    "vscode": "^1.63.0"
   },
   "categories": [
     "Programming Languages",
