@@ -11,30 +11,16 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - name: Test Packaging
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
       - run: npm install
       - uses: lannonbr/vsce-action@master
         with:
-          args: "package"
-      - name: package-version
-        run: node -p -e '`PACKAGE_VERSION=${require("./package.json").version}`' >> $GITHUB_ENV
-      - name: Changelog
-        id: changelog
-        uses: mindsers/changelog-reader-action@v2.0.0
-      - name: Append date and time to the body
-        id: date
-        run: echo NOW=Built on $(date +"%d-%b-%Y %H:%M") >> $GITHUB_ENV
-      - name: Create Release
-        uses: ncipollo/release-action@v1
+          args: "publish patch -p $VSCE_TOKEN --pre-release"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: v${{ env.PACKAGE_VERSION }}
-          artifacts: "*.vsix"
-          body: ${{ env.NOW }}${{ steps.changelog.outputs.changes }}
-          draft: false
-          allowUpdates: true
-          prerelease: true
-          replacesArtifacts: true
+          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
