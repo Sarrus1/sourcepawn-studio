@@ -18,7 +18,9 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-      - run: npm install
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm install
       - uses: lannonbr/vsce-action@master
         with:
           args: "publish patch -p $VSCE_TOKEN --pre-release"
