@@ -1,9 +1,3 @@
-import { Diagnostic } from "vscode";
-import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
-import { SPItem } from "../Backend/Items/spItems";
-import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
-import { Parser } from "./spParser";
-
 /**
  * An object which handles the state of a parser, by keeping track of
  * whether the parser is in a comment or a string.
@@ -351,21 +345,3 @@ export type LineTerminatorSequenceContent = (
   | PreprocessorStatement
   | null
 )[];
-
-/**
- * The Semantic Analyzer `this` object.
- */
-export interface SemanticAnalyzer {
-  parser: Parser;
-  offset: number;
-  previousItems: SPItem[];
-  line: string;
-  lineNb: number;
-  scope: string;
-  outsideScope: string;
-  lastMMorES: MethodMapItem | EnumStructItem | undefined;
-  allItems: SPItem[];
-  filePath: string;
-  diagnostics: Diagnostic[];
-  inTypeDef: boolean;
-}

@@ -7,30 +7,33 @@ import {
   Range,
 } from "vscode";
 
-import { globalIdentifier } from "../Misc/spConstants";
-import { MethodItem } from "../Backend/Items/spMethodItem";
-import { PropertyItem } from "../Backend/Items/spPropertyItem";
-import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
-import { checkIfConstructor } from "../spUtils";
-import { VariableItem } from "../Backend/Items/spVariableItem";
-import { SemanticAnalyzer } from "./interfaces";
+import { globalIdentifier } from "../../Misc/spConstants";
+import { MethodItem } from "../../Backend/Items/spMethodItem";
+import { PropertyItem } from "../../Backend/Items/spPropertyItem";
+import { MethodMapItem } from "../../Backend/Items/spMethodmapItem";
+import { checkIfConstructor } from "../../spUtils";
+import { VariableItem } from "../../Backend/Items/spVariableItem";
+import { Semantics } from "./spSemantics";
 
 const globalScope = `-${globalIdentifier}-${globalIdentifier}`;
 
-export function handleReferenceInParser(
-  this: SemanticAnalyzer,
-  name: string,
-  range: Range
-) {
+/**
+ * Given a token and its range and a context, find the corresponding item.
+ * @param  {Semantics} this  The Semantics object.
+ * @param  {string} name  The name of the token.
+ * @param  {Range} range  The range of the token.
+ * @returns void
+ */
+export function handleToken(this: Semantics, name: string, range: Range): void {
   const start = range.start.character;
 
   if (name === "this") {
-    let item = this.parser.items.find(
+    let item = this.allItems.find(
       (e) =>
         [CompletionItemKind.Struct, CompletionItemKind.Class].includes(
           e.kind
         ) &&
-        this.parser.filePath == e.filePath &&
+        this.filePath == e.filePath &&
         e.fullRange.contains(range)
     );
     if (item !== undefined) {
@@ -39,15 +42,13 @@ export function handleReferenceInParser(
     return;
   }
   let item =
-    this.parser.referencesMap.get(name + this.scope) ||
-    this.parser.referencesMap.get(name + this.outsideScope) ||
-    this.parser.referencesMap.get(name + globalScope) ||
-    this.parser.referencesMap.get(name);
+    this.referencesMap.get(name + this.scope) ||
+    this.referencesMap.get(name + this.outsideScope) ||
+    this.referencesMap.get(name + globalScope) ||
+    this.referencesMap.get(name);
 
   if (item === undefined && this.lastMMorES) {
-    item = this.parser.methodAndProperties.get(
-      name + "-" + this.lastMMorES.name
-    );
+    item = this.methodAndProperties.get(name + "-" + this.lastMMorES.name);
   }
 
   // Handle positional arguments.
@@ -56,7 +57,7 @@ export function handleReferenceInParser(
       .reverse()
       .find((e) => e.kind === CompletionItemKind.Function);
     if (lastFuncCall !== undefined) {
-      item = this.parser.referencesMap.get(
+      item = this.referencesMap.get(
         `${name}-${lastFuncCall.name}-${globalIdentifier}`
       );
     }
@@ -67,13 +68,8 @@ export function handleReferenceInParser(
     if (item.range.isEqual(range)) {
       return;
     }
-    item = checkIfConstructor(
-      item,
-      range,
-      this.parser.methodAndProperties,
-      this.line
-    );
-    const location = new Location(URI.file(this.parser.filePath), range);
+    item = checkIfConstructor(item, range, this.methodAndProperties, this.line);
+    const location = new Location(URI.file(this.filePath), range);
     item.references.push(location);
     this.previousItems.push(item);
   } else if (
@@ -90,7 +86,7 @@ export function handleReferenceInParser(
       if (parent.type === undefined) {
         continue;
       }
-      item = this.parser.methodAndProperties.get(`${name}-${parent.type}`);
+      item = this.methodAndProperties.get(`${name}-${parent.type}`);
       if (item !== undefined) {
         break;
       }
@@ -105,7 +101,7 @@ export function handleReferenceInParser(
         inherit !== undefined &&
         inherit.kind !== CompletionItemKind.Constant
       ) {
-        item = this.parser.methodAndProperties.get(`${name}-${inherit.name}`);
+        item = this.methodAndProperties.get(`${name}-${inherit.name}`);
         if (item !== undefined) {
           break;
         }
@@ -117,7 +113,7 @@ export function handleReferenceInParser(
       if (item.range.isEqual(range)) {
         return;
       }
-      const location = new Location(URI.file(this.parser.filePath), range);
+      const location = new Location(URI.file(this.filePath), range);
       item.references.push(location);
       this.previousItems.push(item);
       return;

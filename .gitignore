@@ -11,4 +11,4 @@ coverage/
 venv/
 chromedriver
 cfgParser.ts
-spParser2.ts
+spParser-gen.ts

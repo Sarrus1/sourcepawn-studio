@@ -6,7 +6,7 @@ import { SPItem } from "../Backend/Items/spItems";
 import { ParserLocation } from "./interfaces";
 import { spParserArgs } from "./spParser";
 
-export function purgeCalls(item: SPItem, file: string): void {
+export function purgeReferences(item: SPItem, file: string): void {
   if (item.references === undefined) {
     return;
   }
