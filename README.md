@@ -94,6 +94,8 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
     - [Event auto-completion](#event-auto-completion)
     - [Include auto-completion](#include-auto-completion)
     - [Code outline](#code-outline)
+    - [Symbol references](#symbol-references)
+    - [Symbol renaming](#symbol-renaming)
     - [Functions signature help](#functions-signature-help)
     - [Hover help](#hover-help)
     - [Go To Definition](#go-to-definition)
@@ -126,9 +128,13 @@ As of version 1.12.0, this is partly supported, however, for full support, pleas
 
 ### How to install the beta build ?
 
-First, go to the [releases page](https://github.com/Sarrus1/sourcepawn-vscode/releases) and download the `.vsix` file attached to the latest release.
-Then, open VSCode and in the extension manager, click on the `...` icon and select install from VSIX.
-Select the file you've just downloaded and you're done.
+1. Open VSCode and go to the marketplace.
+2. In the search bar, type `SourcePawn` and select the extension.
+3. Click on `Install Pre-Release`.
+
+This will install the latest development build of the extension.
+
+Note that a new build might take a few minutes (up to 15) to propagate to the Marketplace after the commit has been pushed to the dev branch.
 
 ### How to contribute ?
 
