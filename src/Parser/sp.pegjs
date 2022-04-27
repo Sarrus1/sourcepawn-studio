@@ -119,29 +119,29 @@ Comment "comment"
   / SingleLineComment
 
 MultiLineComment
-  = "/*" txt:(!"*/" SourceCharacter)* "*/" PreprocessorStatement?
+  = "/*" txt:$(!"*/" SourceCharacter)* "*/" PreprocessorStatement?
   {
     return {
       type: "MultiLineComment",
-      text: buildComment(txt)
+      text: txt
     };
   }
 
 MultiLineCommentNoLineTerminator
-  = "/*" txt:(!("*/" / LineTerminator) SourceCharacter)* "*/" PreprocessorStatement?
+  = "/*" txt:$(!("*/" / LineTerminator) SourceCharacter)* "*/" PreprocessorStatement?
   {
     return {
       type: "MultiLineCommentNoLineTerminator",
-      text: buildComment(txt)
+      text: txt
     };
   }
 
 SingleLineComment
-  = "//" txt:(!LineTerminator SourceCharacter)* LineTerminatorSequence?
+  = "//" txt:$(!LineTerminator SourceCharacter)* LineTerminatorSequence?
   {
     return {
       type: "SingleLineComment",
-      text: buildComment(txt)
+      text: txt
     };
   }
 
