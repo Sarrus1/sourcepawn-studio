@@ -9,7 +9,7 @@ import { existsSync } from "fs";
 
 import { ItemsRepository } from "./spItemsRepository";
 import { Include } from "./Items/spItems";
-import { FileItems } from "./spFilesRepository";
+import { FileItem } from "./spFilesRepository";
 import { parseText, parseFile } from "../Parser/spParser";
 import { getAllMethodmaps } from "./spItemsGetters";
 
@@ -46,7 +46,7 @@ export async function handleDocumentChange(
   const fileUri = event.document.uri.toString();
   const filePath: string = event.document.uri.fsPath.replace(".git", "");
 
-  let fileItems = new FileItems(fileUri);
+  let fileItems = new FileItem(fileUri);
   itemsRepo.documents.set(fileUri, false);
   return new Promise((resolve, reject) => {
     try {
@@ -105,7 +105,7 @@ export function newDocumentCallback(
     return;
   }
 
-  let fileItems: FileItems = new FileItems(uri.toString());
+  let fileItems: FileItem = new FileItem(uri.toString());
   itemsRepo.documents.set(uri.toString(), false);
   try {
     parseFile(filePath, fileItems, itemsRepo, false, false);
@@ -161,7 +161,7 @@ function readUnscannedImports(
 
     if (debug) console.log("found", include.uri.toString());
 
-    let fileItems: FileItems = new FileItems(include.uri);
+    let fileItems: FileItem = new FileItem(include.uri);
     try {
       parseFile(filePath, fileItems, itemsRepo, false, include.IsBuiltIn);
     } catch (err) {

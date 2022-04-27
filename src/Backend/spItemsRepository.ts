@@ -11,7 +11,7 @@ import { URI } from "vscode-uri";
 
 import { SPItem } from "./Items/spItems";
 import { events } from "../Misc/sourceEvents";
-import { FileItems } from "./spFilesRepository";
+import { FileItem } from "./spFilesRepository";
 import {
   handleAddedDocument,
   handleDocumentChange,
@@ -23,12 +23,12 @@ import { refreshCfgDiagnostics } from "../Providers/cfgLinter";
 import { updateDecorations } from "../Providers/decorationsProvider";
 
 export class ItemsRepository implements Disposable {
-  public fileItems: Map<string, FileItems>;
+  public fileItems: Map<string, FileItem>;
   public documents: Map<string, boolean>;
   private globalState: Memento;
 
   constructor(globalState: Memento) {
-    this.fileItems = new Map<string, FileItems>();
+    this.fileItems = new Map<string, FileItem>();
     this.documents = new Map<string, boolean>();
     this.globalState = globalState;
   }

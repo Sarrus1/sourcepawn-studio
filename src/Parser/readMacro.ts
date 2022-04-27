@@ -36,6 +36,6 @@ export function readMacro(
     dep,
     undefined
   );
-  parserArgs.fileItems.set(id.id, macroItem);
+  parserArgs.fileItems.items.push(macroItem);
   return;
 }

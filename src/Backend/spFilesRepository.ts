@@ -25,22 +25,22 @@ export interface parsedToken {
   range: Range;
 }
 
-export class FileItems extends Map<string, SPItem> {
+export class FileItem {
   includes: Include[];
   uri: string;
   tokens: parsedToken[];
   methodmaps: Map<string, MethodMapItem>;
+  items: SPItem[];
 
   constructor(uri: string) {
-    super();
+    this.items = [];
     // Add constants only in one map.
     if (uri.includes("sourcemod.inc")) {
-      defaultConstantItems.forEach((e) => this.set(e, new ConstantItem(e)));
-      defaultKeywordsItems.forEach((e) => this.set(e, new KeywordItem(e)));
+      defaultConstantItems.forEach((e) => this.items.push(new ConstantItem(e)));
+      defaultKeywordsItems.forEach((e) => this.items.push(new KeywordItem(e)));
       const zeroRange = new Range(0, 0, 0, 0);
       hardcodedDefines.forEach((e) =>
-        this.set(
-          e,
+        this.items.push(
           new DefineItem(
             e,
             "",
@@ -53,8 +53,7 @@ export class FileItems extends Map<string, SPItem> {
         )
       );
 
-      this.set(
-        "Function",
+      this.items.push(
         new TypeDefItem(
           "Function",
           "",

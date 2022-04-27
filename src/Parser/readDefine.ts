@@ -32,5 +32,5 @@ export function readDefine(
     parserArgs.IsBuiltIn,
     fullRange
   );
-  parserArgs.fileItems.set(id.id, defineItem);
+  parserArgs.fileItems.items.push(defineItem);
 }

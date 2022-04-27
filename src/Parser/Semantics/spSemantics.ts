@@ -2,7 +2,7 @@ import { CompletionItemKind, Diagnostic } from "vscode";
 import { URI } from "vscode-uri";
 
 import { ItemsRepository } from "../../Backend/spItemsRepository";
-import { FileItems } from "../../Backend/spFilesRepository";
+import { FileItem } from "../../Backend/spFilesRepository";
 import { SPItem } from "../../Backend/Items/spItems";
 import { handleToken } from "./handleReferencesInParser";
 import { checkIfPluginInfo } from "../utils";
@@ -19,7 +19,7 @@ import { TypeSetItem } from "../../Backend/Items/spTypesetItem";
 import { generateReferencesMap } from "./generateReferencesMap";
 
 export class Semantics {
-  fileItems: FileItems;
+  fileItems: FileItem;
   lines: string[];
   lineNb: number;
   filePath: string;
@@ -42,7 +42,7 @@ export class Semantics {
   constructor(
     lines: string[],
     filePath: string,
-    completions: FileItems,
+    completions: FileItem,
     itemsRepository: ItemsRepository
   ) {
     this.fileItems = completions;

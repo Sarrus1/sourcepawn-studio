@@ -43,7 +43,7 @@ export function readEnum(
     nameRange,
     parsedLocToRange(loc, parserArgs)
   );
-  parserArgs.fileItems.set(key, enumItem);
+  parserArgs.fileItems.items.push(enumItem);
   if (body) {
     body.forEach((e, i) =>
       readEnumMember(
@@ -113,5 +113,5 @@ function readEnumMember(
     parserArgs.IsBuiltIn,
     enumItem
   );
-  parserArgs.fileItems.set(member.id, memberItem);
+  parserArgs.fileItems.items.push(memberItem);
 }

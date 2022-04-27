@@ -28,6 +28,6 @@ export function readTypeSet(
     range,
     fullRange
   );
-  parserArgs.fileItems.set(id.id, typeDefItem);
+  parserArgs.fileItems.items.push(typeDefItem);
   return;
 }

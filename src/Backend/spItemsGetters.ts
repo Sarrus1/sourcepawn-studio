@@ -5,7 +5,7 @@ import { URI } from "vscode-uri";
 
 import { SPItem } from "./Items/spItems";
 import { IncludeItem } from "./Items/spIncludeItem";
-import { FileItems } from "./spFilesRepository";
+import { FileItem } from "./spFilesRepository";
 import { getAllPossibleIncludeFolderPaths } from "./spFileHandlers";
 import { ItemsRepository } from "./spItemsRepository";
 import { findMainPath } from "../spUtils";
@@ -76,9 +76,9 @@ function getMethodmapItems(
   uri: string
 ): void {
   let items = this.fileItems.get(uri);
-  items.forEach((v, k) => {
-    if (v.kind === CompletionItemKind.Class) {
-      methodmapItems.set(k, v as MethodMapItem);
+  items.items.forEach((e) => {
+    if (e.kind === CompletionItemKind.Class) {
+      methodmapItems.set(e.name, e as MethodMapItem);
     }
   });
 }
@@ -90,18 +90,18 @@ function getMethodmapItems(
  */
 function getFileItems(this: ItemsRepository, uri: string): SPItem[] {
   let items = this.fileItems.get(uri);
-  return items !== undefined ? Array.from(items.values()) : [];
+  return items !== undefined ? items.items : [];
 }
 
 /**
  * Recursively get all the includes from a FileItems object.
- * @param  {FileItems} fileItems    The object to get the includes from.
+ * @param  {FileItem} fileItems    The object to get the includes from.
  * @param  {Set<string>} includes   The Set to add the include to.
  * @returns void
  */
 function getIncludedFiles(
   itemsRepo: ItemsRepository,
-  fileItems: FileItems,
+  fileItems: FileItem,
   includes: Set<string>
 ): void {
   for (let include of fileItems.includes) {

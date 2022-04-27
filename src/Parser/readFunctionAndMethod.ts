@@ -90,7 +90,7 @@ export function readFunctionAndMethod(
       accessModifiers
     );
   }
-  parserArgs.fileItems.set(key, item);
+  parserArgs.fileItems.items.push(item);
   addParamsAsVariables(parserArgs, params, item, parent, processedParams);
 
   if (!body) {

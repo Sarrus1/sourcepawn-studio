@@ -36,7 +36,7 @@ export function readProperty(
     fullRange,
     returnType.id
   );
-  parserArgs.fileItems.set(`${id.id}-${parent.name}`, propertyItem);
+  parserArgs.fileItems.items.push(propertyItem);
   body.forEach((e) => {
     readFunctionAndMethod(
       parserArgs,

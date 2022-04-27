@@ -43,7 +43,7 @@ export function readMethodmap(
     fullRange,
     parserArgs.IsBuiltIn
   );
-  parserArgs.fileItems.set(id.id, methodmapItem);
+  parserArgs.fileItems.items.push(methodmapItem);
   body["body"].forEach((e) => {
     if (e.type === "MethodDeclaration") {
       readFunctionAndMethod(

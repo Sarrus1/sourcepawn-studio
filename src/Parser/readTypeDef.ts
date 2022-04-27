@@ -43,7 +43,7 @@ export function readTypeDef(
     range,
     fullRange
   );
-  parserArgs.fileItems.set(id.id, typeDefItem);
+  parserArgs.fileItems.items.push(typeDefItem);
   return;
 }
 

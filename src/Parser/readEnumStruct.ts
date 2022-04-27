@@ -36,7 +36,7 @@ export function readEnumStruct(
     parsedLocToRange(id.loc, parserArgs),
     parsedLocToRange(loc, parserArgs)
   );
-  parserArgs.fileItems.set(id.id, enumStructItem);
+  parserArgs.fileItems.items.push(enumStructItem);
   body["body"].forEach((e: ParsedEnumStructMember) => {
     if (e["type"] === "MethodDeclaration") {
       readFunctionAndMethod(

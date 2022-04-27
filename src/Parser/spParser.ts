@@ -4,7 +4,7 @@ import { resolve, dirname } from "path";
 import { URI } from "vscode-uri";
 
 import { ItemsRepository } from "../Backend/spItemsRepository";
-import { FileItems } from "../Backend/spFilesRepository";
+import { FileItem } from "../Backend/spFilesRepository";
 import { getNextScope, parsedLocToRange } from "./utils";
 import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
 import { ScoppedVariablesDeclaration } from "./interfaces";
@@ -13,7 +13,7 @@ const spParser = require("./spParser-gen");
 
 export function parseFile(
   file: string,
-  items: FileItems,
+  items: FileItem,
   itemsRepository: ItemsRepository,
   searchTokens: boolean,
   IsBuiltIn: boolean
@@ -34,7 +34,7 @@ export function parseFile(
 }
 
 export interface spParserArgs {
-  fileItems: FileItems;
+  fileItems: FileItem;
   documents: Map<string, boolean>;
   filePath: string;
   IsBuiltIn: boolean;
@@ -46,7 +46,7 @@ export interface spParserArgs {
 export function parseText(
   data: string,
   file: string,
-  items: FileItems,
+  items: FileItem,
   itemsRepository: ItemsRepository,
   searchTokens: boolean,
   isBuiltIn: boolean,

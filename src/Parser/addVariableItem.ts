@@ -32,5 +32,5 @@ export function addVariableItem(
     docstring
   );
 
-  parserArgs.fileItems.set(key, variableItem);
+  parserArgs.fileItems.items.push(variableItem);
 }
