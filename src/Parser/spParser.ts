@@ -7,7 +7,7 @@ import { ItemsRepository } from "../Backend/spItemsRepository";
 import { FileItem } from "../Backend/spFilesRepository";
 import { getNextScope, parsedLocToRange } from "./utils";
 import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
-import { ScoppedVariablesDeclaration } from "./interfaces";
+import { spParserArgs } from "./interfaces";
 import { Semantics } from "./Semantics/spSemantics";
 const spParser = require("./spParser-gen");
 
@@ -31,16 +31,6 @@ export function parseFile(
     data = readFileSync(file, "utf-8");
   }
   parseText(data, file, items, itemsRepository, searchTokens, IsBuiltIn);
-}
-
-export interface spParserArgs {
-  fileItems: FileItem;
-  documents: Map<string, boolean>;
-  filePath: string;
-  IsBuiltIn: boolean;
-  anonEnumCount: number;
-  offset: number;
-  variableDecl: ScoppedVariablesDeclaration;
 }
 
 export function parseText(

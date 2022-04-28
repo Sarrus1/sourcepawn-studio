@@ -1,3 +1,5 @@
+import { FileItem } from "../Backend/spFilesRepository";
+
 /**
  * An object which handles the state of a parser, by keeping track of
  * whether the parser is in a comment or a string.
@@ -22,6 +24,47 @@ export interface ParseState {
    * Whether the parser is in a string delimited by double quotes (") or not.
    */
   dString: boolean;
+}
+
+/**
+ * The `args` object passed to the peggy.js parser.
+ */
+export interface spParserArgs {
+  /**
+   * The FileItem object of the file being parsed.
+   */
+  fileItems: FileItem;
+
+  /**
+   * The documents object of the FileItems object.
+   */
+  documents: Map<string, boolean>;
+
+  /**
+   * The path of the file being parsed.
+   */
+  filePath: string;
+
+  /**
+   * Is the file being parsed a Sourcemod builtin ?
+   */
+  IsBuiltIn: boolean;
+
+  /**
+   * The counter for anonymous enums.
+   */
+  anonEnumCount: number;
+
+  /**
+   * The start line offset of the file being parsed when the parser has recovered from an error.
+   */
+  offset: number;
+
+  /**
+   * The variable declarations for the current scope of the parser.
+   * Used in the readFunctionsAndMethods callback, to parse the variables faster than using recursion.
+   */
+  variableDecl: ScoppedVariablesDeclaration;
 }
 
 /**
