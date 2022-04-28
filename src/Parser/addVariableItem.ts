@@ -1,6 +1,6 @@
 ﻿import { Range } from "vscode";
 
-import { spParserArgs } from "./spParser";
+import { spParserArgs } from "./interfaces";
 import { VariableItem } from "../Backend/Items/spVariableItem";
 import { SPItem } from "../Backend/Items/spItems";
 

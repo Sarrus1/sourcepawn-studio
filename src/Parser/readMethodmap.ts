@@ -1,4 +1,4 @@
-﻿import { spParserArgs } from "./spParser";
+﻿import { spParserArgs } from "./interfaces";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { globalIdentifier } from "../Misc/spConstants";
 import {

@@ -1,5 +1,5 @@
 ﻿import { MacroItem } from "../Backend/Items/spMacroItem";
-import { spParserArgs } from "./spParser";
+import { spParserArgs } from "./interfaces";
 import { ParsedComment, ParsedID, ParserLocation } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";

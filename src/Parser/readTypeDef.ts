@@ -1,4 +1,4 @@
-﻿import { spParserArgs } from "./spParser";
+﻿import { spParserArgs } from "./interfaces";
 import { TypeDefItem } from "../Backend/Items/spTypedefItem";
 import {
   ParsedParam,

@@ -1,4 +1,4 @@
-﻿import { spParserArgs } from "./spParser";
+﻿import { spParserArgs } from "./interfaces";
 import { VariableDeclaration } from "./interfaces";
 import { globalItem } from "../Misc/spConstants";
 import { parsedLocToRange } from "./utils";

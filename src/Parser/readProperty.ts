@@ -1,4 +1,4 @@
-﻿import { spParserArgs } from "./spParser";
+﻿import { spParserArgs } from "./interfaces";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import {
   MethodDeclaration,

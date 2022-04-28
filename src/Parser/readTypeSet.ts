@@ -1,4 +1,4 @@
-﻿import { spParserArgs } from "./spParser";
+﻿import { spParserArgs } from "./interfaces";
 import { TypeSetItem } from "../Backend/Items/spTypesetItem";
 import { ParsedComment, ParsedID, ParserLocation } from "./interfaces";
 import { parsedLocToRange } from "./utils";

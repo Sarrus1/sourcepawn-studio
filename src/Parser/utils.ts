@@ -4,7 +4,7 @@ import { basename } from "path";
 import { FunctionParam } from "./interfaces";
 import { SPItem } from "../Backend/Items/spItems";
 import { ParserLocation } from "./interfaces";
-import { spParserArgs } from "./spParser";
+import { spParserArgs } from "./interfaces";
 
 export function purgeReferences(item: SPItem, file: string): void {
   if (item.references === undefined) {

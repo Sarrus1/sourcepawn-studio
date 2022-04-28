@@ -1,7 +1,7 @@
 ﻿import { basename } from "path";
 import { Range } from "vscode";
 
-import { spParserArgs } from "./spParser";
+import { spParserArgs } from "./interfaces";
 import { EnumItem } from "../Backend/Items/spEnumItem";
 import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
 import {

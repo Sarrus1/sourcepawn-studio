@@ -1,5 +1,5 @@
 ﻿import { isIncludeSelfFile } from "./utils";
-import { spParserArgs } from "./spParser";
+import { spParserArgs } from "./interfaces";
 
 /**
  * Callback for a parsed include.
