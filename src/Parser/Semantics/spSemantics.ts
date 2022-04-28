@@ -28,8 +28,8 @@ export class Semantics {
   typeDefAndSetInFile: (TypeDefItem | TypeSetItem)[];
   MmEsInFile: (MethodMapItem | EnumStructItem)[];
   referencesMap: Map<string, SPItem>;
-  offset: number;
   previousItems: SPItem[];
+  offset: number;
   line: string;
   scope: string;
   outsideScope: string;
@@ -43,7 +43,8 @@ export class Semantics {
     lines: string[],
     filePath: string,
     completions: FileItem,
-    itemsRepository: ItemsRepository
+    itemsRepository: ItemsRepository,
+    offset: number
   ) {
     this.fileItems = completions;
     this.lineNb = 0;
@@ -55,6 +56,7 @@ export class Semantics {
     this.MmEsInFile = [];
     this.referencesMap = new Map();
     this.typeDefAndSetInFile = [];
+    this.offset = offset;
     generateReferencesMap.call(this);
   }
   /**
@@ -78,7 +80,6 @@ export class Semantics {
     const newDiagnostics = Array.from(
       parserDiagnostics.get(URI.file(this.filePath))
     );
-    this.offset = 0;
     this.previousItems = [];
     this.line = line;
     this.lineNb = 0;
@@ -152,9 +153,8 @@ export class Semantics {
       const lineNb = e.range.start.line;
 
       if (lineNb !== this.lineNb || i === 0) {
-        this.lineNb = e.range.start.line;
+        this.lineNb = e.range.start.line - this.offset;
         this.line = this.lines[this.lineNb];
-        this.offset = 0;
         this.previousItems = [];
 
         // Handle property getters and setters.

@@ -2,16 +2,23 @@ import {
   TextDocumentChangeEvent,
   FileCreateEvent,
   workspace as Workspace,
+  CompletionItemKind,
+  TextDocumentContentChangeEvent,
+  Range,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { resolve, dirname, join, extname } from "path";
 import { existsSync } from "fs";
 
 import { ItemsRepository } from "./spItemsRepository";
-import { Include } from "./Items/spItems";
+import { Include, SPItem } from "./Items/spItems";
 import { FileItem } from "./spFilesRepository";
 import { parseText, parseFile } from "../Parser/spParser";
 import { getAllMethodmaps } from "./spItemsGetters";
+import { MethodMapItem } from "./Items/spMethodmapItem";
+import { EnumStructItem } from "./Items/spEnumStructItem";
+import { FunctionItem } from "./Items/spFunctionItem";
+import { EnumItem } from "./Items/spEnumItem";
 
 /**
  * Handle the addition of a document by forwarding it to the newDocumentCallback function.
@@ -44,34 +51,65 @@ export async function handleDocumentChange(
   await new Promise((resolve) => setTimeout(resolve, 50));
 
   const fileUri = event.document.uri.toString();
-  const filePath: string = event.document.uri.fsPath.replace(".git", "");
+  const filePath = event.document.uri.fsPath.replace(".git", "");
 
   let fileItems = new FileItem(fileUri);
   itemsRepo.documents.set(fileUri, false);
   return new Promise((resolve, reject) => {
+    let range: Range;
+    let diffRange: Range;
+    // if (event.contentChanges.length === 0) {
+    //   resolve();
+    //   return;
+    // }
+    if (event.contentChanges.length === 1) {
+      range = getScope(itemsRepo, fileUri, event.contentChanges[0]);
+      diffRange = event.contentChanges[0].range;
+    } else if (
+      event.contentChanges.length === 2 &&
+      /\r?\n\r?/.test(event.contentChanges[0].text)
+    ) {
+      range = getScope(itemsRepo, fileUri, event.contentChanges[0]);
+      diffRange = event.contentChanges[0].range;
+    }
+
+    const text = event.document.getText(range);
     try {
       // We use parseText here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
       parseText(
-        event.document.getText(),
+        text,
         filePath,
         fileItems,
         itemsRepo,
         false,
-        false
+        false,
+        range ? range.start.line : undefined
       );
 
       readUnscannedImports(itemsRepo, fileItems.includes);
-      itemsRepo.fileItems.set(fileUri, fileItems);
+      let oldFileItem = itemsRepo.fileItems.get(fileUri);
+      if (range) {
+        cleanFileItem(
+          oldFileItem,
+          range,
+          diffRange ? diffRange.end.line - diffRange.start.line : 0
+        );
+        oldFileItem.items = oldFileItem.items.concat(fileItems.items);
+        oldFileItem.tokens = fileItems.tokens;
+      } else {
+        itemsRepo.fileItems.set(fileUri, fileItems);
+      }
 
       resolveMethodmapInherits(itemsRepo, event.document.uri);
 
       parseText(
-        event.document.getText(),
+        text,
         filePath,
         fileItems,
         itemsRepo,
         true,
-        false
+        false,
+        range ? range.start.line : undefined
       );
       resolve();
     } catch (err) {
@@ -79,6 +117,96 @@ export async function handleDocumentChange(
       reject(err);
     }
   });
+}
+
+function cleanFileItem(
+  fileItem: FileItem,
+  range: Range | undefined,
+  offset: number
+): void {
+  if (range === undefined) {
+    return;
+  }
+
+  fileItem.items = fileItem.items.filter((e) => {
+    if (!e.range) {
+      return true;
+    }
+    if (range.contains(e.range)) {
+      return false;
+    }
+    if (range.end.line < e.range.start.line) {
+      e.range = addOffsetToRange(e.range, offset);
+      if (e.fullRange) {
+        e.fullRange = addOffsetToRange(e.fullRange, offset);
+      }
+    }
+    return true;
+  });
+}
+
+function addOffsetToRange(range: Range, offset: number): Range {
+  return new Range(
+    range.start.line + offset,
+    range.start.character,
+    range.end.line + offset,
+    range.end.character
+  );
+}
+
+function getScope(
+  itemsRepo: ItemsRepository,
+  uri: string,
+  changes: TextDocumentContentChangeEvent
+): Range | undefined {
+  const localItems = itemsRepo.fileItems.get(uri).items;
+  const MmEsEnFu = [
+    CompletionItemKind.Class,
+    CompletionItemKind.Struct,
+    CompletionItemKind.Enum,
+    CompletionItemKind.Function,
+  ];
+  let prevScope: SPItem;
+  let scope: MethodMapItem | EnumStructItem | FunctionItem | EnumItem;
+
+  let scopes = localItems.filter((e) => {
+    if (MmEsEnFu.includes(e.kind)) {
+      if (e.fullRange && e.fullRange.contains(changes.range)) {
+        scope = e as MethodMapItem | EnumStructItem | FunctionItem | EnumItem;
+      }
+      return true;
+    }
+    return false;
+  });
+
+  if (scope === undefined) {
+    return undefined;
+  }
+
+  scopes = scopes.sort(
+    (a, b) => a.fullRange.start.line - b.fullRange.start.line
+  );
+
+  const endLine = scope.fullRange.end.line + computeEditRange(changes);
+
+  let scopeIdx = scopes.findIndex((e) => e === scope);
+  if (scopeIdx == 0 || undefined) {
+    return new Range(0, 0, endLine, 0);
+  }
+  prevScope = scopes[scopeIdx - 1];
+
+  const startLine = prevScope.fullRange.end.line;
+
+  return new Range(startLine + 1, 0, endLine + 1, 0);
+}
+
+function computeEditRange(changes: TextDocumentContentChangeEvent): number {
+  // Handle delete changes.
+  if (changes.text === "") {
+    return changes.range.start.line - changes.range.end.line;
+  }
+  // Handle other changes.
+  return (changes.text.match(/\n/gm) || []).length;
 }
 
 /**

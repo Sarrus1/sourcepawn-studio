@@ -101,7 +101,13 @@ export function parseText(
     }
   } else {
     const lines = data.split("\n");
-    const semantics = new Semantics(lines, file, items, itemsRepository);
+    const semantics = new Semantics(
+      lines,
+      file,
+      items,
+      itemsRepository,
+      offset
+    );
     semantics.analyze();
   }
 }

@@ -113,7 +113,7 @@ export function checkIfConstructor(
   methodsAndProperties: Map<string, MethodItem | PropertyItem | VariableItem>,
   line: string
 ): SPItem {
-  if (item.kind !== CompletionItemKind.Class) {
+  if (item.kind !== CompletionItemKind.Class || line === undefined) {
     return item;
   }
   const subLine = line.substring(range.start.character);
