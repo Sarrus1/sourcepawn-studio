@@ -660,6 +660,7 @@ MemberExpression
   = head:(
         PrimaryExpression
       / FunctionExpression
+      / ViewAsExpression
       / NewToken __ callee:MemberExpression __ args:Arguments {
           return { type: "NewExpression", callee: callee, arguments: args };
         }
