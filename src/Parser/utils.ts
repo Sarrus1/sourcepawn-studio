@@ -6,11 +6,24 @@ import { SPItem } from "../Backend/Items/spItems";
 import { ParserLocation } from "./interfaces";
 import { spParserArgs } from "./interfaces";
 
-export function purgeReferences(item: SPItem, file: string): void {
+export function purgeReferences(
+  item: SPItem,
+  file: string,
+  range: Range
+): void {
   if (item.references === undefined) {
     return;
   }
-  item.references = item.references.filter((e) => file !== e.uri.fsPath);
+  item.references = item.references.filter(
+    (e) => file !== e.uri.fsPath || !containsIfDefined(range, e.range)
+  );
+}
+
+function containsIfDefined(range1: Range, range2: Range): boolean {
+  if (range1 === undefined) {
+    return false;
+  }
+  return range1.contains(range2);
 }
 
 export function positiveRange(

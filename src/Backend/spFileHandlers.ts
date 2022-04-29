@@ -5,6 +5,7 @@ import {
   CompletionItemKind,
   TextDocumentContentChangeEvent,
   Range,
+  Location,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { resolve, dirname, join, extname } from "path";
@@ -19,6 +20,7 @@ import { MethodMapItem } from "./Items/spMethodmapItem";
 import { EnumStructItem } from "./Items/spEnumStructItem";
 import { FunctionItem } from "./Items/spFunctionItem";
 import { EnumItem } from "./Items/spEnumItem";
+import { globalItem } from "../Misc/spConstants";
 
 /**
  * Handle the addition of a document by forwarding it to the newDocumentCallback function.
@@ -43,7 +45,10 @@ export async function handleDocumentChange(
   itemsRepo: ItemsRepository,
   event: TextDocumentChangeEvent
 ): Promise<void> {
-  if (!/\.(?:sp|inc)$/.test(event.document.uri.fsPath)) {
+  if (
+    !/\.(?:sp|inc)$/.test(event.document.uri.fsPath) ||
+    event.contentChanges.length === 0
+  ) {
     return;
   }
 
@@ -57,20 +62,26 @@ export async function handleDocumentChange(
   itemsRepo.documents.set(fileUri, false);
   return new Promise((resolve, reject) => {
     let range: Range;
-    let diffRange: Range;
+    let diffLength = 0;
     // if (event.contentChanges.length === 0) {
     //   resolve();
     //   return;
     // }
     if (event.contentChanges.length === 1) {
       range = getScope(itemsRepo, fileUri, event.contentChanges[0]);
-      diffRange = event.contentChanges[0].range;
+      if (event.contentChanges[0].text === "") {
+        diffLength =
+          event.contentChanges[0].range.start.line -
+          event.contentChanges[0].range.end.line;
+      } else {
+        diffLength = (event.contentChanges[0].text.match(/\n/gm) || []).length;
+      }
     } else if (
       event.contentChanges.length === 2 &&
       /\r?\n\r?/.test(event.contentChanges[0].text)
     ) {
       range = getScope(itemsRepo, fileUri, event.contentChanges[0]);
-      diffRange = event.contentChanges[0].range;
+      diffLength = (event.contentChanges[0].text.match(/\n/gm) || []).length;
     }
 
     const text = event.document.getText(range);
@@ -88,12 +99,10 @@ export async function handleDocumentChange(
 
       readUnscannedImports(itemsRepo, fileItems.includes);
       let oldFileItem = itemsRepo.fileItems.get(fileUri);
+      let oldRefs: Map<string, Location[]>;
       if (range) {
-        cleanFileItem(
-          oldFileItem,
-          range,
-          diffRange ? diffRange.end.line - diffRange.start.line : 0
-        );
+        oldRefs = cleanFileItem(oldFileItem, range, diffLength);
+        restoreOldRefs(oldRefs, fileItems, range, event.document.uri);
         oldFileItem.items = oldFileItem.items.concat(fileItems.items);
         oldFileItem.tokens = fileItems.tokens;
       } else {
@@ -109,7 +118,8 @@ export async function handleDocumentChange(
         itemsRepo,
         true,
         false,
-        range ? range.start.line : undefined
+        range ? range.start.line : undefined,
+        range
       );
       resolve();
     } catch (err) {
@@ -119,13 +129,34 @@ export async function handleDocumentChange(
   });
 }
 
+function restoreOldRefs(
+  oldRefs: Map<string, Location[]>,
+  fileItem: FileItem,
+  range: Range,
+  uri: URI
+): void {
+  for (let item of fileItem.items) {
+    const parent = item.parent || globalItem;
+    let oldItemRefs = oldRefs.get(`${item.name}-${parent.name}`);
+    if (oldItemRefs === undefined) {
+      continue;
+    }
+    oldItemRefs = oldItemRefs.filter(
+      (e) => uri.fsPath !== e.uri.fsPath || !range.contains(e.range)
+    );
+    item.references.concat(oldItemRefs);
+  }
+}
+
 function cleanFileItem(
   fileItem: FileItem,
   range: Range | undefined,
   offset: number
-): void {
+): Map<string, Location[]> {
+  const oldRefs = new Map<string, Location[]>();
+
   if (range === undefined) {
-    return;
+    return oldRefs;
   }
 
   fileItem.items = fileItem.items.filter((e) => {
@@ -133,19 +164,25 @@ function cleanFileItem(
       return true;
     }
     if (range.contains(e.range)) {
+      if (e.references) {
+        const parent = e.parent || globalItem;
+        oldRefs.set(`${e.name}-${parent.name}`, e.references);
+      }
       return false;
     }
-    if (range.end.line < e.range.start.line) {
-      e.range = addOffsetToRange(e.range, offset);
+    if (range.end.line <= e.range.start.line) {
+      e.range = addLineOffsetToRange(e.range, offset);
       if (e.fullRange) {
-        e.fullRange = addOffsetToRange(e.fullRange, offset);
+        e.fullRange = addLineOffsetToRange(e.fullRange, offset);
       }
     }
     return true;
   });
+
+  return oldRefs;
 }
 
-function addOffsetToRange(range: Range, offset: number): Range {
+function addLineOffsetToRange(range: Range, offset: number): Range {
   return new Range(
     range.start.line + offset,
     range.start.character,
@@ -191,7 +228,7 @@ function getScope(
 
   let scopeIdx = scopes.findIndex((e) => e === scope);
   if (scopeIdx == 0 || undefined) {
-    return new Range(0, 0, endLine, 0);
+    return new Range(0, 0, endLine + 1, 0);
   }
   prevScope = scopes[scopeIdx - 1];
 

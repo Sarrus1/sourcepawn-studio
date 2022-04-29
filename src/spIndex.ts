@@ -3,11 +3,10 @@ import {
   workspace as Workspace,
   languages,
   window,
-  TextDocumentChangeEvent,
   ProgressLocation,
 } from "vscode";
 import { URI } from "vscode-uri";
-import { resolve, dirname, basename } from "path";
+import { resolve } from "path";
 const glob = require("glob");
 
 import { refreshDiagnostics } from "./Providers/spLinter";
@@ -199,7 +198,7 @@ export function activate(context: ExtensionContext) {
   );
 
   Workspace.onDidChangeTextDocument(
-    throttle(providers.itemsRepository.handleDocumentChange, 50),
+    providers.itemsRepository.handleDocumentChange,
     providers.itemsRepository,
     context.subscriptions
   );
@@ -270,24 +269,4 @@ async function loadFiles(providers: Providers) {
   updateDecorations(providers.itemsRepository);
 
   console.timeEnd("parse");
-}
-
-function throttle(
-  callback: (event: TextDocumentChangeEvent) => void,
-  limit: number
-) {
-  let waiting = false;
-  return function () {
-    if (!waiting) {
-      callback.apply(this, arguments);
-      waiting = true;
-      setTimeout(function () {
-        waiting = false;
-      }, limit);
-    }
-  };
-}
-
-function getFileAndDir(path: string): string {
-  return `${basename(dirname(path))}/${basename(path)}`;
 }

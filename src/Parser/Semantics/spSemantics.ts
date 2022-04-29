@@ -1,4 +1,4 @@
-import { CompletionItemKind, Diagnostic } from "vscode";
+import { CompletionItemKind, Diagnostic, Range } from "vscode";
 import { URI } from "vscode-uri";
 
 import { ItemsRepository } from "../../Backend/spItemsRepository";
@@ -38,13 +38,15 @@ export class Semantics {
   lastFunc: FunctionItem | MethodItem | PropertyItem | undefined;
   lastMMorES: MethodMapItem | EnumStructItem | undefined;
   inTypeDef: boolean;
+  range: Range;
 
   constructor(
     lines: string[],
     filePath: string,
     completions: FileItem,
     itemsRepository: ItemsRepository,
-    offset: number
+    offset: number,
+    range?: Range
   ) {
     this.fileItems = completions;
     this.lineNb = 0;
@@ -57,6 +59,7 @@ export class Semantics {
     this.referencesMap = new Map();
     this.typeDefAndSetInFile = [];
     this.offset = offset;
+    this.range = range;
     generateReferencesMap.call(this);
   }
   /**

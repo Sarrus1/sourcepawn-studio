@@ -1,4 +1,4 @@
-import { Diagnostic, DiagnosticSeverity } from "vscode";
+import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { URI } from "vscode-uri";
@@ -40,7 +40,8 @@ export function parseText(
   itemsRepository: ItemsRepository,
   searchTokens: boolean,
   isBuiltIn: boolean,
-  offset: number = 0
+  offset: number = 0,
+  range?: Range
 ) {
   if (data === undefined) {
     return; // Asked to parse empty file
@@ -106,7 +107,8 @@ export function parseText(
       file,
       items,
       itemsRepository,
-      offset
+      offset,
+      range
     );
     semantics.analyze();
   }

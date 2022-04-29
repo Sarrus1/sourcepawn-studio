@@ -39,6 +39,10 @@ export class EnumItem implements SPItem {
   }
 
   toCompletionItem(): CompletionItem {
+    // Remove anonymous enums
+    if (this.name.includes("#")) {
+      return undefined;
+    }
     return {
       label: this.name,
       kind: this.kind,
