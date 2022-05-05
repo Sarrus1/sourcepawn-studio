@@ -62,26 +62,33 @@ export async function handleDocumentChange(
   itemsRepo.documents.set(fileUri, false);
   return new Promise((resolve, reject) => {
     let range: Range;
+    let scopeRange: Range;
     let diffLength = 0;
-    // if (event.contentChanges.length === 0) {
-    //   resolve();
-    //   return;
-    // }
-    if (event.contentChanges.length === 1) {
-      range = getScope(itemsRepo, fileUri, event.contentChanges[0]);
-      if (event.contentChanges[0].text === "") {
-        diffLength =
-          event.contentChanges[0].range.start.line -
-          event.contentChanges[0].range.end.line;
-      } else {
-        diffLength = (event.contentChanges[0].text.match(/\n/gm) || []).length;
+
+    // FIXME: This does not work for modifications in separate scopes.
+    // The break statement below needs to be handled.
+    // TODO: Handle global scopes between two other scopes.
+    for (let change of event.contentChanges) {
+      if (range === undefined) {
+        scopeRange = getScope(itemsRepo, fileUri, change);
+        if (!scopeRange) {
+          break;
+        }
+        range = scopeRange.with();
+      } else if (!range.contains(change.range)) {
+        break;
       }
-    } else if (
-      event.contentChanges.length === 2 &&
-      /\r?\n\r?/.test(event.contentChanges[0].text)
-    ) {
-      range = getScope(itemsRepo, fileUri, event.contentChanges[0]);
-      diffLength = (event.contentChanges[0].text.match(/\n/gm) || []).length;
+      if (change.text === "") {
+        diffLength = change.range.start.line - change.range.end.line;
+      } else {
+        diffLength = (change.text.match(/\n/gm) || []).length;
+      }
+      range = new Range(
+        range.start.line,
+        range.start.character,
+        range.end.line + diffLength,
+        range.end.character
+      );
     }
 
     const text = event.document.getText(range);
@@ -98,13 +105,19 @@ export async function handleDocumentChange(
       );
 
       readUnscannedImports(itemsRepo, fileItems.includes);
-      let oldFileItem = itemsRepo.fileItems.get(fileUri);
+      // TODO: Select allItems from mainpath instead.
+      const allItems = itemsRepo.getAllItems(event.document.uri);
       let oldRefs: Map<string, Location[]>;
-      if (range) {
-        oldRefs = cleanFileItem(oldFileItem, range, diffLength);
-        restoreOldRefs(oldRefs, fileItems, range, event.document.uri);
-        oldFileItem.items = oldFileItem.items.concat(fileItems.items);
-        oldFileItem.tokens = fileItems.tokens;
+      if (scopeRange) {
+        oldRefs = cleanAllItems(
+          allItems,
+          scopeRange,
+          range.end.line - scopeRange.end.line,
+          event.document.uri
+        );
+        restoreOldRefs(oldRefs, fileItems, scopeRange, event.document.uri);
+        // oldFileItem.items = oldFileItem.items.concat(fileItems.items);
+        // oldFileItem.tokens = fileItems.tokens;
       } else {
         itemsRepo.fileItems.set(fileUri, fileItems);
       }
@@ -148,10 +161,11 @@ function restoreOldRefs(
   }
 }
 
-function cleanFileItem(
-  fileItem: FileItem,
+function cleanAllItems(
+  allItems: SPItem[],
   range: Range | undefined,
-  offset: number
+  offset: number,
+  uri: URI
 ): Map<string, Location[]> {
   const oldRefs = new Map<string, Location[]>();
 
@@ -159,21 +173,44 @@ function cleanFileItem(
     return oldRefs;
   }
 
-  fileItem.items = fileItem.items.filter((e) => {
+  allItems = allItems.filter((e) => {
+    // Keep the item if it does not have a range. Useful for hardcoded constants.
     if (!e.range) {
       return true;
     }
-    if (range.contains(e.range)) {
-      if (e.references) {
+
+    // Filter items based on if they are in the scope being parsed.
+    if (range.contains(e.range) && uri.fsPath === e.filePath) {
+      // Keep only the external (outside of the scope) references of the item.
+      if (e.references && e.references.length > 0) {
         const parent = e.parent || globalItem;
-        oldRefs.set(`${e.name}-${parent.name}`, e.references);
+        oldRefs.set(
+          `${e.name}-${parent.name}`,
+          e.references.filter(
+            (ref) => range.contains(ref.range) && ref.uri.fsPath === uri.fsPath
+          )
+        );
       }
       return false;
     }
+
+    // Offset the ranges below the scope.
     if (range.end.line <= e.range.start.line) {
       e.range = addLineOffsetToRange(e.range, offset);
       if (e.fullRange) {
         e.fullRange = addLineOffsetToRange(e.fullRange, offset);
+      }
+    }
+
+    // Offset the references below the scope.
+    if (e.references) {
+      for (let ref of e.references) {
+        if (
+          range.end.line <= ref.range.start.line &&
+          ref.uri.fsPath === uri.fsPath
+        ) {
+          ref.range = addLineOffsetToRange(ref.range, offset);
+        }
       }
     }
     return true;
@@ -234,7 +271,12 @@ function getScope(
 
   const startLine = prevScope.fullRange.end.line;
 
-  return new Range(startLine + 1, 0, endLine + 1, 0);
+  return new Range(
+    startLine + 1,
+    0,
+    endLine + 1,
+    scope.fullRange.end.character
+  );
 }
 
 function computeEditRange(changes: TextDocumentContentChangeEvent): number {
