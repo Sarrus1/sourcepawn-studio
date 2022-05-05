@@ -21,7 +21,7 @@ export function purgeReferences(
 
 function containsIfDefined(range1: Range, range2: Range): boolean {
   if (range1 === undefined) {
-    return false;
+    return true;
   }
   return range1.contains(range2);
 }
