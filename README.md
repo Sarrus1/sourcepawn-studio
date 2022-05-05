@@ -130,11 +130,15 @@ As of version 1.12.0, this is partly supported, however, for full support, pleas
 
 1. Open VSCode and go to the marketplace.
 2. In the search bar, type `SourcePawn` and select the extension.
-3. Click on `Install Pre-Release`.
+3. Click on `Switch to Pre-Release` (see screenshot below).
+
+![Pre-release](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/pre-release.png)
 
 This will install the latest development build of the extension.
 
 Note that a new build might take a few minutes (up to 15) to propagate to the Marketplace after the commit has been pushed to the dev branch.
+
+You can also install the latest pre-release by downloading the .vsix from the [releases page](https://github.com/Sarrus1/sourcepawn-vscode/releases) and [installing it manually](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix).
 
 ### How to contribute ?
 
