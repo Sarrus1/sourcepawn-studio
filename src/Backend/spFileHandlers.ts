@@ -64,11 +64,13 @@ export async function handleDocumentChange(
     let range: Range;
     let scopeRange: Range;
     let diffLength = 0;
+    const allItems = itemsRepo.getAllItems(event.document.uri);
 
     // FIXME: This does not work for modifications in separate scopes.
     // The break statement below needs to be handled.
     // TODO: Handle global scopes between two other scopes.
     for (let change of event.contentChanges) {
+      console.debug(getOffsetFromString(change.text));
       if (range === undefined) {
         scopeRange = getScope(itemsRepo, fileUri, change);
         if (!scopeRange) {
@@ -106,7 +108,7 @@ export async function handleDocumentChange(
 
       readUnscannedImports(itemsRepo, fileItems.includes);
       // TODO: Select allItems from mainpath instead.
-      const allItems = itemsRepo.getAllItems(event.document.uri);
+
       let oldRefs: Map<string, Location[]>;
       if (scopeRange) {
         oldRefs = cleanAllItems(
@@ -140,6 +142,48 @@ export async function handleDocumentChange(
       reject(err);
     }
   });
+}
+
+function shiftItems(
+  allItems: SPItem[],
+  changes: readonly TextDocumentContentChangeEvent[],
+  uri: URI
+): void {
+  for (let change of changes) {
+    for (let item of allItems) {
+      // Shift range and full range
+    }
+  }
+}
+
+// function shiftRange(initial: Range, shift: Range) {
+//   if (shift.isEmpty) {
+//     // The modification **adds** a string.
+//     if (shift.end.line > initial.start.line) {
+//       // The modification occurs after, don't shift the range.
+//       return initial;
+//     }
+//     if (initial.contains(shift)) {
+//       // The modification is **inside** the initial range.
+//       // We expand the range.
+//     }
+//   }
+// }
+
+function getOffsetFromString(text: string): Range {
+  let match = text.match(/\n/m);
+  if (!match) {
+    return new Range(0, 0, 0, text.length);
+  }
+  let newLinesCount = match.length;
+  if (newLinesCount === 0) {
+    return new Range(0, 0, 0, text.length);
+  }
+  match = text.match(/\n(.+)$/gm);
+  if (!match || match.length === 0) {
+    return new Range(0, 0, newLinesCount, 0);
+  }
+  return new Range(0, 0, newLinesCount, match[match.length - 1].length);
 }
 
 function restoreOldRefs(
