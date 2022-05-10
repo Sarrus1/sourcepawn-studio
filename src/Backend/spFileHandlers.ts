@@ -23,6 +23,7 @@ import { EnumStructItem } from "./Items/spEnumStructItem";
 import { FunctionItem } from "./Items/spFunctionItem";
 import { EnumItem } from "./Items/spEnumItem";
 import { globalItem } from "../Misc/spConstants";
+import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
 
 /**
  * Handle the addition of a document by forwarding it to the newDocumentCallback function.
@@ -110,6 +111,7 @@ function incrementalParse(
     readUnscannedImports(itemsRepo, fileItems.includes);
 
     if (!error) {
+      parserDiagnostics.delete(doc.uri);
       if (range !== undefined) {
         const oldRefs = cleanAllItems(allItems, range, doc.uri);
         restoreOldRefs(oldRefs, fileItems, range, doc.uri);
