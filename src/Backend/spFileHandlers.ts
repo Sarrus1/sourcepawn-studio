@@ -120,6 +120,7 @@ function incrementalParse(
         fileItems.items.push(...oldFileItems.items);
         fileItems.tokens.push(...oldFileItems.tokens);
         // TODO: Fix redondant includes by switching to a map.
+        // FIXME: Methods and properties references are missing after a reparse.
         fileItems.includes.push(...oldFileItems.includes);
       }
       itemsRepo.fileItems.set(doc.uri.toString(), fileItems);
