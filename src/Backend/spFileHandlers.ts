@@ -6,6 +6,7 @@ import {
   TextDocumentContentChangeEvent,
   Range,
   Location,
+  Position,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { resolve, dirname, join, extname } from "path";
@@ -70,7 +71,6 @@ export async function handleDocumentChange(
     // The break statement below needs to be handled.
     // TODO: Handle global scopes between two other scopes.
     for (let change of event.contentChanges) {
-      console.debug(getOffsetFromString(change.text));
       if (range === undefined) {
         scopeRange = getScope(itemsRepo, fileUri, change);
         if (!scopeRange) {
@@ -92,6 +92,9 @@ export async function handleDocumentChange(
         range.end.character
       );
     }
+
+    shiftItems(allItems, event.contentChanges, event.document.uri);
+    return;
 
     const text = event.document.getText(range);
     try {
@@ -144,46 +147,229 @@ export async function handleDocumentChange(
   });
 }
 
+/**
+ * Regroup informations as to how to shift ranges in a file.
+ */
+export interface RangeShifter {
+  /**
+   * The position of the change.
+   */
+  pos: Position;
+
+  /**
+   * The amount of lines to shift. Can be negative.
+   */
+  lineShift: number;
+
+  /**
+   * The amount of characters to shift. Cannot be negative.
+   */
+  charShift: number;
+}
+
+/**
+ * Shift the appropriate items' range, fullrange and references, given an array of changes.
+ * @param  {SPItem[]} allItems  All the items that can possibly be shifted.
+ * @param  {readonlyTextDocumentContentChangeEvent[]} changes  The array of changes.
+ * @param  {URI} uri  The URI of the document being edited.
+ * @returns void
+ */
 function shiftItems(
   allItems: SPItem[],
   changes: readonly TextDocumentContentChangeEvent[],
   uri: URI
 ): void {
   for (let change of changes) {
+    const shift = getOffsetFromChange(change);
     for (let item of allItems) {
-      // Shift range and full range
+      if (item.filePath === uri.fsPath) {
+        if (item.range) {
+          item.range = shiftRange(item.range, shift);
+        }
+        if (item.fullRange) {
+          item.fullRange = shiftRange(item.fullRange, shift);
+        }
+      }
+
+      if (!item.references) {
+        continue;
+      }
+      for (let ref of item.references) {
+        if (ref.uri.fsPath === uri.fsPath) {
+          ref.range = shiftRange(ref.range, shift);
+        }
+      }
     }
   }
 }
 
-// function shiftRange(initial: Range, shift: Range) {
-//   if (shift.isEmpty) {
-//     // The modification **adds** a string.
-//     if (shift.end.line > initial.start.line) {
-//       // The modification occurs after, don't shift the range.
-//       return initial;
-//     }
-//     if (initial.contains(shift)) {
-//       // The modification is **inside** the initial range.
-//       // We expand the range.
-//     }
-//   }
-// }
+/**
+ * Return a new shifted range given a RangeShifter object.
+ * Assumes the range is in the same document as the change.
+ * @param  {Range} initial  The initial range to shift.
+ * @param  {RangeShifter} shift  The RangeShifter object.
+ * @returns Range  The shifted range.
+ */
+function shiftRange(initial: Range, shift: RangeShifter): Range {
+  // The modification **adds** a string.
+  if (initial.start.isBefore(shift.pos) && initial.end.isAfter(shift.pos)) {
+    // The modification is **inside** the initial range.
+    // We expand the range.
+    if (initial.end.line === shift.pos.line) {
+      // The modifications are on the same line as the end of the range.
+      // We shift the characters as well.
+      return new Range(
+        initial.start.line,
+        initial.start.character,
+        initial.end.line + shift.lineShift,
+        initial.end.character + shift.charShift
+      );
+    }
+    if (
+      shift.lineShift < 0 &&
+      shift.pos.line - shift.lineShift === initial.end.line
+    ) {
+      // Special case when deleting lines.
+      return new Range(
+        initial.start.line,
+        initial.start.character,
+        shift.pos.line,
+        shift.pos.character + initial.end.character
+      );
+    }
+    // The modifications are not on the same line as the end of the range.
+    // We only shift the line.
+    return new Range(
+      initial.start.line,
+      initial.start.character,
+      initial.end.line + shift.lineShift,
+      initial.end.character
+    );
+  }
 
-function getOffsetFromString(text: string): Range {
-  let match = text.match(/\n/m);
+  if (shift.pos.line > initial.start.line) {
+    // The modification occurs after, don't shift the range.
+    return initial;
+  }
+
+  if (shift.pos.line < initial.start.line) {
+    // The modification is after the initial range, on a different line.
+    if (
+      shift.lineShift < 0 &&
+      shift.pos.line - shift.lineShift === initial.start.line
+    ) {
+      // Special case when deleting lines.
+      return new Range(
+        shift.pos.line,
+        shift.pos.character + initial.start.character,
+        shift.pos.line,
+        shift.pos.character + initial.end.character
+      );
+    }
+    // We shift the range down.
+    return new Range(
+      initial.start.line + shift.lineShift,
+      initial.start.character,
+      initial.end.line + shift.lineShift,
+      initial.end.character
+    );
+  }
+
+  // We are on the same line.
+  if (shift.pos.character >= initial.end.character) {
+    // The modification occurs after the last character of the range.
+    // No changes are made, we return the initial range.
+    return initial;
+  }
+
+  if (shift.lineShift > 0) {
+    if (initial.start.line === initial.end.line) {
+      // The start line and end line of the range are on the same line.
+      // We shift everything.
+      let startCharOffset = initial.start.character - shift.pos.character;
+      let endCharOffset = initial.end.character - shift.pos.character;
+      return new Range(
+        initial.start.line + shift.lineShift,
+        shift.charShift + startCharOffset,
+        initial.end.line + shift.lineShift,
+        shift.charShift + endCharOffset
+      );
+    }
+    // The start line and end line of the range are on different lines.
+    // We only shift the lines and the starting character.
+    let startCharOffset = initial.start.character - shift.pos.character;
+    return new Range(
+      initial.start.line + shift.lineShift,
+      shift.charShift + startCharOffset,
+      initial.end.line + shift.lineShift,
+      initial.end.character
+    );
+  }
+  if (shift.lineShift === 0) {
+    if (initial.start.line === initial.end.line) {
+      // The start line and end line of the range are on the same line.
+      // We shift it by the amount of characters.
+      return new Range(
+        initial.start.line,
+        initial.start.character + shift.charShift,
+        initial.end.line,
+        initial.end.character + shift.charShift
+      );
+    }
+    // The start line and end line of the range are on different lines.
+    // We only shift the starting character.
+    return new Range(
+      initial.start.line,
+      initial.start.character + shift.charShift,
+      initial.end.line,
+      initial.end.character
+    );
+  }
+  return initial;
+}
+
+/**
+ * Generate a RangeShift object from a change event.
+ * @param  {TextDocumentContentChangeEvent} change  The change event to compute.
+ * @returns RangeShifter  The computed RangeShifter object.
+ */
+function getOffsetFromChange(
+  change: TextDocumentContentChangeEvent
+): RangeShifter {
+  const pos = new Position(
+    change.range.start.line,
+    change.range.start.character
+  );
+  if (change.text === "") {
+    // This is a delete.
+    return {
+      pos,
+      lineShift: change.range.start.line - change.range.end.line,
+      charShift: change.range.start.character - change.range.end.character,
+    };
+  }
+  let match = change.text.match(/\n/gm);
   if (!match) {
-    return new Range(0, 0, 0, text.length);
+    return {
+      pos,
+      lineShift: 0,
+      charShift: change.text.length,
+    };
   }
   let newLinesCount = match.length;
-  if (newLinesCount === 0) {
-    return new Range(0, 0, 0, text.length);
-  }
-  match = text.match(/\n(.+)$/gm);
+  match = change.text.match(/\n(.+)$/gm);
   if (!match || match.length === 0) {
-    return new Range(0, 0, newLinesCount, 0);
+    return {
+      pos,
+      lineShift: newLinesCount,
+      charShift: 0,
+    };
   }
-  return new Range(0, 0, newLinesCount, match[match.length - 1].length);
+  return {
+    pos,
+    lineShift: newLinesCount,
+    charShift: match[match.length - 1].length - 1,
+  };
 }
 
 function restoreOldRefs(
