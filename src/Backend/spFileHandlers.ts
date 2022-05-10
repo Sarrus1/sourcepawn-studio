@@ -7,6 +7,7 @@ import {
   Range,
   Location,
   Position,
+  TextDocument,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { resolve, dirname, join, extname } from "path";
@@ -63,15 +64,15 @@ export async function handleDocumentChange(
   itemsRepo.documents.set(fileUri, false);
   return new Promise((resolve, reject) => {
     let range: Range;
+    // TODO: Select allItems from mainpath instead.
     const allItems = itemsRepo.getAllItems(event.document.uri);
 
     // Shift the items first in order to prepare the new scope ranges.
     shiftItems(allItems, event.contentChanges, event.document.uri);
 
     // FIXME: This does not work for modifications in separate scopes.
-    // TODO: Handle global scopes between two other scopes.
     for (let change of event.contentChanges) {
-      range = getScope(itemsRepo, fileUri, change);
+      range = getScope(itemsRepo, event.document, change);
       if (range !== undefined) {
         break;
       }
@@ -91,7 +92,6 @@ export async function handleDocumentChange(
       );
 
       readUnscannedImports(itemsRepo, fileItems.includes);
-      // TODO: Select allItems from mainpath instead.
 
       let oldRefs: Map<string, Location[]>;
       if (!error) {
@@ -439,12 +439,18 @@ function addLineOffsetToRange(range: Range, offset: number): Range {
   );
 }
 
+export type scopeItem =
+  | MethodMapItem
+  | EnumStructItem
+  | FunctionItem
+  | EnumItem;
+
 function getScope(
   itemsRepo: ItemsRepository,
-  uri: string,
-  changes: TextDocumentContentChangeEvent
+  doc: TextDocument,
+  change: TextDocumentContentChangeEvent
 ): Range | undefined {
-  const localItems = itemsRepo.fileItems.get(uri).items;
+  const localItems = itemsRepo.fileItems.get(doc.uri.toString()).items;
   const MmEsEnFu = [
     CompletionItemKind.Class,
     CompletionItemKind.Struct,
@@ -452,12 +458,16 @@ function getScope(
     CompletionItemKind.Function,
   ];
   let prevScope: SPItem;
-  let scope: MethodMapItem | EnumStructItem | FunctionItem | EnumItem;
+  let scope: scopeItem;
 
   let scopes = localItems.filter((e) => {
     if (MmEsEnFu.includes(e.kind)) {
-      if (e.fullRange && e.fullRange.contains(changes.range)) {
-        scope = e as MethodMapItem | EnumStructItem | FunctionItem | EnumItem;
+      if (
+        e.fullRange &&
+        e.fullRange.start.isBeforeOrEqual(change.range.start) &&
+        e.fullRange.end.isAfter(change.range.start)
+      ) {
+        scope = e as scopeItem;
       }
       return true;
     }
@@ -465,7 +475,49 @@ function getScope(
   });
 
   if (scope === undefined) {
-    return undefined;
+    let prevScope: scopeItem, nextScope: scopeItem;
+    for (let scope of scopes) {
+      if (change.range.start.isAfter(scope.fullRange.end)) {
+        prevScope = scope as scopeItem;
+      } else if (change.range.start.isBeforeOrEqual(scope.fullRange.end)) {
+        nextScope = scope as scopeItem;
+      }
+      if (nextScope) {
+        break;
+      }
+    }
+    if (
+      prevScope &&
+      nextScope &&
+      nextScope.fullRange.end.isBeforeOrEqual(change.range.start)
+    ) {
+      // We are at the bottom of file, after the last scope.
+      prevScope = nextScope;
+      nextScope = undefined;
+    }
+    if (!prevScope && !nextScope) {
+      // Nothing found.
+      return undefined;
+    }
+    if (!prevScope) {
+      // We are at the top of the file, before the first scope.
+      return new Range(
+        0,
+        0,
+        nextScope.fullRange.start.line,
+        nextScope.fullRange.start.character
+      );
+    }
+    if (!nextScope) {
+      // We are at the bottom of file, after the last scope.
+      return new Range(
+        prevScope.fullRange.end.line,
+        prevScope.fullRange.end.character,
+        doc.lineCount + 1,
+        0
+      );
+    }
+    return new Range(prevScope.fullRange.end, nextScope.fullRange.start);
   }
 
   scopes = scopes.sort(
@@ -489,15 +541,6 @@ function getScope(
     scope.fullRange.end.line,
     scope.fullRange.end.character
   );
-}
-
-function computeEditRange(changes: TextDocumentContentChangeEvent): number {
-  // Handle delete changes.
-  if (changes.text === "") {
-    return changes.range.start.line - changes.range.end.line;
-  }
-  // Handle other changes.
-  return (changes.text.match(/\n/gm) || []).length;
 }
 
 /**
