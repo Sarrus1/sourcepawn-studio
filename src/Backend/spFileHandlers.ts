@@ -109,19 +109,18 @@ function incrementalParse(
 
     readUnscannedImports(itemsRepo, fileItems.includes);
 
-    let oldRefs: Map<string, Location[]>;
     if (!error) {
-      if (range) {
-        oldRefs = cleanAllItems(
-          allItems,
-          range,
-          range.end.line - range.end.line,
-          doc.uri
-        );
+      if (range !== undefined) {
+        const oldRefs = cleanAllItems(allItems, range, doc.uri);
         restoreOldRefs(oldRefs, fileItems, range, doc.uri);
-      } else {
-        itemsRepo.fileItems.set(doc.uri.toString(), fileItems);
+        const oldFileItems = itemsRepo.fileItems.get(doc.uri.toString());
+        cleanOldFileItems(oldFileItems, range);
+        fileItems.items.push(...oldFileItems.items);
+        fileItems.tokens.push(...oldFileItems.tokens);
+        // TODO: Fix redondant includes by switching to a map.
+        fileItems.includes.push(...oldFileItems.includes);
       }
+      itemsRepo.fileItems.set(doc.uri.toString(), fileItems);
     }
 
     resolveMethodmapInherits(itemsRepo, doc.uri);
@@ -139,6 +138,11 @@ function incrementalParse(
   } catch (err) {
     console.error(err);
   }
+}
+
+function cleanOldFileItems(fileItems: FileItem, range: Range): void {
+  fileItems.items = fileItems.items.filter((e) => !range.contains(e.range));
+  fileItems.tokens = fileItems.tokens.filter((e) => !range.contains(e.range));
 }
 
 /**
@@ -388,7 +392,6 @@ function restoreOldRefs(
 function cleanAllItems(
   allItems: SPItem[],
   range: Range | undefined,
-  offset: number,
   uri: URI
 ): Map<string, Location[]> {
   const oldRefs = new Map<string, Location[]>();
@@ -418,38 +421,10 @@ function cleanAllItems(
       return false;
     }
 
-    // Offset the ranges below the scope.
-    if (range.end.line <= e.range.start.line) {
-      e.range = addLineOffsetToRange(e.range, offset);
-      if (e.fullRange) {
-        e.fullRange = addLineOffsetToRange(e.fullRange, offset);
-      }
-    }
-
-    // Offset the references below the scope.
-    if (e.references) {
-      for (let ref of e.references) {
-        if (
-          range.end.line <= ref.range.start.line &&
-          ref.uri.fsPath === uri.fsPath
-        ) {
-          ref.range = addLineOffsetToRange(ref.range, offset);
-        }
-      }
-    }
     return true;
   });
 
   return oldRefs;
-}
-
-function addLineOffsetToRange(range: Range, offset: number): Range {
-  return new Range(
-    range.start.line + offset,
-    range.start.character,
-    range.end.line + offset,
-    range.end.character
-  );
 }
 
 export type scopeItem =
