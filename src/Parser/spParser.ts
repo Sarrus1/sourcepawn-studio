@@ -42,9 +42,9 @@ export function parseText(
   isBuiltIn: boolean,
   offset: number = 0,
   range?: Range
-) {
+): boolean {
   if (data === undefined) {
-    return; // Asked to parse empty file
+    return false; // Asked to parse empty file
   }
   // Remove BOM if present
   if (data.charCodeAt(0) === 0xfeff) {
@@ -68,6 +68,7 @@ export function parseText(
       spParser.args = args;
       const out = spParser.parse(data);
       //console.debug(out);
+      return false;
     } catch (err) {
       if (err.location !== undefined) {
         const range = parsedLocToRange(err.location, args);
@@ -86,7 +87,7 @@ export function parseText(
           err.location.start.line - 1
         );
         if (txt === undefined || offset === undefined) {
-          return;
+          return true;
         }
         newOffset += offset;
         parseText(
@@ -99,6 +100,7 @@ export function parseText(
           newOffset
         );
       }
+      return false;
     }
   } else {
     const lines = data.split("\n");
@@ -111,5 +113,6 @@ export function parseText(
       range
     );
     semantics.analyze();
+    return false;
   }
 }

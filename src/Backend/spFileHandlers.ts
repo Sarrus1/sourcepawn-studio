@@ -63,43 +63,24 @@ export async function handleDocumentChange(
   itemsRepo.documents.set(fileUri, false);
   return new Promise((resolve, reject) => {
     let range: Range;
-    let scopeRange: Range;
-    let diffLength = 0;
     const allItems = itemsRepo.getAllItems(event.document.uri);
 
+    // Shift the items first in order to prepare the new scope ranges.
+    shiftItems(allItems, event.contentChanges, event.document.uri);
+
     // FIXME: This does not work for modifications in separate scopes.
-    // The break statement below needs to be handled.
     // TODO: Handle global scopes between two other scopes.
     for (let change of event.contentChanges) {
-      if (range === undefined) {
-        scopeRange = getScope(itemsRepo, fileUri, change);
-        if (!scopeRange) {
-          break;
-        }
-        range = scopeRange.with();
-      } else if (!range.contains(change.range)) {
+      range = getScope(itemsRepo, fileUri, change);
+      if (range !== undefined) {
         break;
       }
-      if (change.text === "") {
-        diffLength = change.range.start.line - change.range.end.line;
-      } else {
-        diffLength = (change.text.match(/\n/gm) || []).length;
-      }
-      range = new Range(
-        range.start.line,
-        range.start.character,
-        range.end.line + diffLength,
-        range.end.character
-      );
     }
-
-    shiftItems(allItems, event.contentChanges, event.document.uri);
-    return;
 
     const text = event.document.getText(range);
     try {
       // We use parseText here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
-      parseText(
+      const error = parseText(
         text,
         filePath,
         fileItems,
@@ -113,18 +94,18 @@ export async function handleDocumentChange(
       // TODO: Select allItems from mainpath instead.
 
       let oldRefs: Map<string, Location[]>;
-      if (scopeRange) {
-        oldRefs = cleanAllItems(
-          allItems,
-          scopeRange,
-          range.end.line - scopeRange.end.line,
-          event.document.uri
-        );
-        restoreOldRefs(oldRefs, fileItems, scopeRange, event.document.uri);
-        // oldFileItem.items = oldFileItem.items.concat(fileItems.items);
-        // oldFileItem.tokens = fileItems.tokens;
-      } else {
-        itemsRepo.fileItems.set(fileUri, fileItems);
+      if (!error) {
+        if (range) {
+          oldRefs = cleanAllItems(
+            allItems,
+            range,
+            range.end.line - range.end.line,
+            event.document.uri
+          );
+          restoreOldRefs(oldRefs, fileItems, range, event.document.uri);
+        } else {
+          itemsRepo.fileItems.set(fileUri, fileItems);
+        }
       }
 
       resolveMethodmapInherits(itemsRepo, event.document.uri);
@@ -491,20 +472,21 @@ function getScope(
     (a, b) => a.fullRange.start.line - b.fullRange.start.line
   );
 
-  const endLine = scope.fullRange.end.line + computeEditRange(changes);
-
   let scopeIdx = scopes.findIndex((e) => e === scope);
   if (scopeIdx == 0 || undefined) {
-    return new Range(0, 0, endLine + 1, 0);
+    return new Range(
+      0,
+      0,
+      scope.fullRange.end.line,
+      scope.fullRange.end.character
+    );
   }
   prevScope = scopes[scopeIdx - 1];
 
-  const startLine = prevScope.fullRange.end.line;
-
   return new Range(
-    startLine + 1,
-    0,
-    endLine + 1,
+    prevScope.fullRange.end.line,
+    prevScope.fullRange.end.character,
+    scope.fullRange.end.line,
     scope.fullRange.end.character
   );
 }
