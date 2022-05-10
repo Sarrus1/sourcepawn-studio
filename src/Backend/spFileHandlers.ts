@@ -57,75 +57,88 @@ export async function handleDocumentChange(
   // Hack to make the function non blocking, and not prevent the completionProvider from running.
   await new Promise((resolve) => setTimeout(resolve, 50));
 
-  const fileUri = event.document.uri.toString();
-  const filePath = event.document.uri.fsPath.replace(".git", "");
+  // TODO: Select allItems from mainpath instead.
+  const allItems = itemsRepo.getAllItems(event.document.uri);
 
-  let fileItems = new FileItem(fileUri);
-  itemsRepo.documents.set(fileUri, false);
-  return new Promise((resolve, reject) => {
-    let range: Range;
-    // TODO: Select allItems from mainpath instead.
-    const allItems = itemsRepo.getAllItems(event.document.uri);
+  // Shift the items first in order to prepare the new scope ranges.
+  shiftItems(allItems, event.contentChanges, event.document.uri);
 
-    // Shift the items first in order to prepare the new scope ranges.
-    shiftItems(allItems, event.contentChanges, event.document.uri);
+  const changes = event.contentChanges;
+  const ranges: (Range | undefined)[] = changes.map((change) =>
+    getScope(itemsRepo, event.document, change)
+  );
 
-    // FIXME: This does not work for modifications in separate scopes.
-    for (let change of event.contentChanges) {
-      range = getScope(itemsRepo, event.document, change);
-      if (range !== undefined) {
-        break;
+  const groupedRanges = new Map<string, Range>();
+
+  for (let range of ranges) {
+    if (range === undefined) {
+      incrementalParse(event.document, undefined, itemsRepo, allItems);
+      return;
+    }
+    groupedRanges.set(
+      `${range.start.line}-${range.start.character}-${range.end.line}-${range.end.character}`,
+      range
+    );
+  }
+
+  for (let range of groupedRanges.values()) {
+    incrementalParse(event.document, range, itemsRepo, allItems);
+  }
+}
+
+function incrementalParse(
+  doc: TextDocument,
+  range: Range | undefined,
+  itemsRepo: ItemsRepository,
+  allItems: SPItem[]
+) {
+  try {
+    const text = doc.getText(range);
+    let fileItems = new FileItem(doc.uri.toString());
+    itemsRepo.documents.set(doc.uri.toString(), false);
+    // We use parseText here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
+    const error = parseText(
+      text,
+      doc.uri.fsPath,
+      fileItems,
+      itemsRepo,
+      false,
+      false,
+      range ? range.start.line : undefined
+    );
+
+    readUnscannedImports(itemsRepo, fileItems.includes);
+
+    let oldRefs: Map<string, Location[]>;
+    if (!error) {
+      if (range) {
+        oldRefs = cleanAllItems(
+          allItems,
+          range,
+          range.end.line - range.end.line,
+          doc.uri
+        );
+        restoreOldRefs(oldRefs, fileItems, range, doc.uri);
+      } else {
+        itemsRepo.fileItems.set(doc.uri.toString(), fileItems);
       }
     }
 
-    const text = event.document.getText(range);
-    try {
-      // We use parseText here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
-      const error = parseText(
-        text,
-        filePath,
-        fileItems,
-        itemsRepo,
-        false,
-        false,
-        range ? range.start.line : undefined
-      );
+    resolveMethodmapInherits(itemsRepo, doc.uri);
 
-      readUnscannedImports(itemsRepo, fileItems.includes);
-
-      let oldRefs: Map<string, Location[]>;
-      if (!error) {
-        if (range) {
-          oldRefs = cleanAllItems(
-            allItems,
-            range,
-            range.end.line - range.end.line,
-            event.document.uri
-          );
-          restoreOldRefs(oldRefs, fileItems, range, event.document.uri);
-        } else {
-          itemsRepo.fileItems.set(fileUri, fileItems);
-        }
-      }
-
-      resolveMethodmapInherits(itemsRepo, event.document.uri);
-
-      parseText(
-        text,
-        filePath,
-        fileItems,
-        itemsRepo,
-        true,
-        false,
-        range ? range.start.line : undefined,
-        range
-      );
-      resolve();
-    } catch (err) {
-      console.log(err);
-      reject(err);
-    }
-  });
+    parseText(
+      text,
+      doc.uri.fsPath,
+      fileItems,
+      itemsRepo,
+      true,
+      false,
+      range ? range.start.line : undefined,
+      range
+    );
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 /**
