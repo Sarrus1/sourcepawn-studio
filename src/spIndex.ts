@@ -101,6 +101,10 @@ export function activate(context: ExtensionContext) {
         );
         return;
       }
+      providers.itemsRepository.documents.forEach((v, k) =>
+        providers.itemsRepository.documents.set(k, false)
+      );
+      providers.itemsRepository.fileItems = new Map();
       loadFiles(providers);
     }
   });
