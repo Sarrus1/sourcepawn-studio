@@ -10,40 +10,41 @@ export function processDocStringComment(docstring: ParsedComment): DocString {
   if (!docstring) {
     return { doc: undefined, dep: undefined };
   }
-  if (Array.isArray(docstring)) {
-    const txt: string[] = [];
-    let dep: string;
-    let emptyCount = 0;
-    for (let e of docstring.reverse()) {
-      if (emptyCount >= 2) {
-        break;
-      }
-      if (e.type === "LineTerminatorSequence") {
-        const statement = e.content[
-          e.content.length - 1
-        ] as PreprocessorStatement | null;
-        if (!statement || statement.type !== "PragmaValue") {
-          emptyCount++;
-          continue;
-        }
-        if (/^deprecated/.test(statement.value)) {
-          dep = statement.value.replace(/^deprecated\s*/, "");
-        }
-      } else if (e.type === "SingleLineComment") {
-        if (/^\s*$/.test(e.text)) {
-          txt.push("\n\n");
-          continue;
-        }
-        txt.push(e.text);
-      } else if (
-        e.type === "MultiLineComment" ||
-        e.type === "MultiLineCommentNoLineTerminator"
-      ) {
-        txt.push(e.text);
-      }
-    }
-    return { doc: txt.reverse().join("").trim(), dep };
+
+  if (!Array.isArray(docstring)) {
+    return { doc: docstring.text, dep: undefined };
   }
 
-  return { doc: docstring.text, dep: undefined };
+  const txt: string[] = [];
+  let dep: string;
+  let emptyCount = 0;
+  for (let e of docstring.reverse()) {
+    if (emptyCount >= 2) {
+      break;
+    }
+    if (e.type === "LineTerminatorSequence") {
+      const statement = e.content[
+        e.content.length - 1
+      ] as PreprocessorStatement | null;
+      if (!statement || statement.type !== "PragmaValue") {
+        emptyCount++;
+        continue;
+      }
+      if (/^deprecated/.test(statement.value)) {
+        dep = statement.value.replace(/^deprecated\s*/, "");
+      }
+    } else if (e.type === "SingleLineComment") {
+      if (/^\s*$/.test(e.text)) {
+        txt.push("\n\n");
+        continue;
+      }
+      txt.push(e.text);
+    } else if (
+      e.type === "MultiLineComment" ||
+      e.type === "MultiLineCommentNoLineTerminator"
+    ) {
+      txt.push(e.text);
+    }
+  }
+  return { doc: txt.reverse().join("").trim(), dep };
 }
