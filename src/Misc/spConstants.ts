@@ -7,7 +7,12 @@ export const SP_MODE: DocumentFilter = {
 };
 
 const tokenTypes = ["variable", "enumMember", "function", "class", "method"];
-const tokenModifiers = ["readonly", "declaration", "deprecated"];
+const tokenModifiers = [
+  "readonly",
+  "declaration",
+  "deprecated",
+  "modification",
+];
 
 export const SP_LEGENDS = new SemanticTokensLegend(tokenTypes, tokenModifiers);
 

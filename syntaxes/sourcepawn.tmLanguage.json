@@ -150,7 +150,7 @@
           "name": "support.type.core.property.sourcepawn"
         },
         "4": {
-          "name": "variable.parameter.sourcepawn"
+          "name": "variable.sourcepawn"
         }
       }
     },
@@ -462,7 +462,7 @@
           ]
         },
         "5": {
-          "name": "variable.parameter.sourcepawn"
+          "name": "variable.sourcepawn"
         },
         "6": {
           "patterns": [
@@ -507,7 +507,7 @@
           ]
         },
         "6": {
-          "name": "variable.parameter.sourcepawn"
+          "name": "variable.sourcepawn"
         },
         "7": {
           "patterns": [
@@ -611,7 +611,7 @@
     {
       "comment": "Match the rest as variables",
       "match": "[a-zA-Z_]\\w*",
-      "name": "variable.parameter.sourcepawn"
+      "name": "variable.sourcepawn"
     }
   ],
   "repository": {

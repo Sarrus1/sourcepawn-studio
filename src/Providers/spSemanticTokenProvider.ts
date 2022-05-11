@@ -16,7 +16,16 @@ export function semanticTokenProvider(
   let allItems: SPItem[] = itemsRepo.getAllItems(document.uri);
 
   for (let item of allItems) {
-    if (
+    if (item.kind === CompletionItemKind.Variable) {
+      if (item.filePath === document.uri.fsPath) {
+        tokensBuilder.push(item.range, "variable", ["declaration"]);
+      }
+      item.references.forEach((ref) => {
+        if (ref.uri.fsPath === document.uri.fsPath) {
+          tokensBuilder.push(ref.range, "variable", ["modification"]);
+        }
+      });
+    } else if (
       item.kind === CompletionItemKind.Constant &&
       item.references !== undefined
     ) {
