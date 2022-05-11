@@ -67,7 +67,6 @@ export function parseText(
     try {
       spParser.args = args;
       const out = spParser.parse(data);
-      //console.debug(out);
       return false;
     } catch (err) {
       if (err.location !== undefined) {

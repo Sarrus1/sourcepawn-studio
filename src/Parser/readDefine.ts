@@ -10,7 +10,7 @@ import { processDocStringComment } from "./processComment";
  * @param  {ParsedID} id  The id of the define.
  * @param  {ParserLocation} loc  The location of the define.
  * @param  {string|null} value  The value of the define, if it exists.
- * @param  {string} docstring  The documentation of the define.
+ * @param  {string} docstring  The trailing documentation of the define.
  * @returns void
  */
 export function readDefine(

@@ -120,20 +120,22 @@ Comment "comment"
   / SingleLineComment
 
 MultiLineComment
-  = "/*" txt:$(!"*/" SourceCharacter)* "*/" PreprocessorStatement?
+  = "/*" txt:$(!"*/" SourceCharacter)* "*/" pre:PreprocessorStatement?
   {
     return {
       type: "MultiLineComment",
-      text: txt
+      text: txt,
+      pre
     };
   }
 
 MultiLineCommentNoLineTerminator
-  = "/*" txt:$(!("*/" / LineTerminator) SourceCharacter)* "*/" PreprocessorStatement?
+  = "/*" txt:$(!("*/" / LineTerminator) SourceCharacter)* "*/" pre:PreprocessorStatement?
   {
     return {
       type: "MultiLineCommentNoLineTerminator",
-      text: txt
+      text: txt,
+      pre
     };
   }
 
@@ -1163,7 +1165,7 @@ PragmaStatement
       !("\\" / LineTerminator) SourceCharacter { return text(); }
       / "\\" sequence:EscapeSequence { return sequence; }
       / LineContinuation
-    )+ __
+    )+
   { 
     return {
       type:"PragmaValue",

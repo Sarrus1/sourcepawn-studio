@@ -18,7 +18,8 @@ export function processDocStringComment(docstring: ParsedComment): DocString {
   const txt: string[] = [];
   let dep: string;
   let emptyCount = 0;
-  for (let e of docstring.reverse()) {
+  docstring = docstring.reverse();
+  for (let e of docstring) {
     if (emptyCount >= 2) {
       break;
     }

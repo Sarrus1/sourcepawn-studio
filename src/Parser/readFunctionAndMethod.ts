@@ -36,9 +36,6 @@ export function readFunctionAndMethod(
   const MmEs = [CompletionItemKind.Struct, CompletionItemKind.Class];
 
   txt = txt.replace(/\s*\r?\n\s*/gm, " ").trim();
-  if (id.id === "foo") {
-    console.debug("rt");
-  }
   const range = parsedLocToRange(id.loc, parserArgs);
   const fullRange = parsedLocToRange(loc, parserArgs);
   const { doc, dep } = processDocStringComment(docstring);
@@ -97,14 +94,13 @@ export function readFunctionAndMethod(
     // We are in a native or forward.
     return;
   }
-  readBodyVariables(parserArgs, item, parent);
+  readBodyVariables(parserArgs, item);
   return;
 }
 
 function readBodyVariables(
   parserArgs: spParserArgs,
-  parent: FunctionItem | MethodItem,
-  grandParent: EnumStructItem | MethodMapItem | ConstantItem
+  parent: FunctionItem | MethodItem
 ) {
   for (let e of parserArgs.variableDecl) {
     let declarators: VariableDeclarator[],
