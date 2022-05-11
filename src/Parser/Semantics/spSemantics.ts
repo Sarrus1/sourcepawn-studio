@@ -155,8 +155,9 @@ export class Semantics {
 
       const lineNb = e.range.start.line;
 
-      if (lineNb !== this.lineNb || i === 0) {
+      if (lineNb - this.offset !== this.lineNb || i === 0) {
         this.lineNb = e.range.start.line - this.offset;
+
         this.line = this.lines[this.lineNb];
         this.previousItems = [];
 

@@ -110,21 +110,21 @@ function incrementalParse(
 
     readUnscannedImports(itemsRepo, fileItems.includes);
 
-    if (!error) {
-      parserDiagnostics.delete(doc.uri);
-      if (range !== undefined) {
-        const oldRefs = cleanAllItems(allItems, range, doc.uri);
-        restoreOldRefs(oldRefs, fileItems, range, doc.uri);
-        const oldFileItems = itemsRepo.fileItems.get(doc.uri.toString());
-        cleanOldFileItems(oldFileItems, range);
-        fileItems.items.push(...oldFileItems.items);
-        fileItems.tokens.push(...oldFileItems.tokens);
-        // TODO: Fix redondant includes by switching to a map.
-        // FIXME: Methods and properties references are missing after a reparse.
-        fileItems.includes.push(...oldFileItems.includes);
-      }
-      itemsRepo.fileItems.set(doc.uri.toString(), fileItems);
+    if (error) {
+      return;
     }
+
+    parserDiagnostics.delete(doc.uri);
+    if (range !== undefined) {
+      const oldRefs = cleanAllItems(allItems, range, doc.uri);
+      restoreOldRefs(oldRefs, fileItems, range, doc.uri);
+      const oldFileItems = itemsRepo.fileItems.get(doc.uri.toString());
+      cleanOldFileItems(oldFileItems, range);
+      fileItems.items.push(...oldFileItems.items);
+      // TODO: Fix redondant includes by switching to a map.
+      fileItems.includes.push(...oldFileItems.includes);
+    }
+    itemsRepo.fileItems.set(doc.uri.toString(), fileItems);
 
     resolveMethodmapInherits(itemsRepo, doc.uri);
 
@@ -145,7 +145,6 @@ function incrementalParse(
 
 function cleanOldFileItems(fileItems: FileItem, range: Range): void {
   fileItems.items = fileItems.items.filter((e) => !range.contains(e.range));
-  fileItems.tokens = fileItems.tokens.filter((e) => !range.contains(e.range));
 }
 
 /**
@@ -417,7 +416,8 @@ function cleanAllItems(
         oldRefs.set(
           `${e.name}-${parent.name}`,
           e.references.filter(
-            (ref) => range.contains(ref.range) && ref.uri.fsPath === uri.fsPath
+            // Only keep references that are outside of the range, as the others will be reparsed.
+            (ref) => ref.uri.fsPath !== uri.fsPath || !range.contains(ref.range)
           )
         );
       }
