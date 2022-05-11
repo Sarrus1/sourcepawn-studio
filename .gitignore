@@ -3,7 +3,6 @@ out/
 *.vsix
 .vscode-test
 .DS_Store
-package-lock.json
 dist/
 .vscode/settings.json
 .nyc_output/
