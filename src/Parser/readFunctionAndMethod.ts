@@ -126,9 +126,7 @@ function readBodyVariables(
         modifier = content.variableType.modifier || "";
       }
       //doc = content.doc;
-      if (typeof content.accessModifiers === "string") {
-        processedDeclType = content.accessModifiers;
-      } else if (Array.isArray(content.accessModifiers)) {
+      if (content.accessModifiers !== null) {
         processedDeclType = content.accessModifiers.join(" ");
       }
       found = true;
