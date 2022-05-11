@@ -83,8 +83,7 @@ export class VariableItem implements SPItem {
     if (lastMMorES === undefined) {
       if (
         lastFunc.name === this.parent.name &&
-        (this.range.end.line < location.range.start.line ||
-          this.range.end.character < location.range.start.character)
+        this.range.end.isBeforeOrEqual(location.range.start)
       ) {
         return {
           label: this.name,
