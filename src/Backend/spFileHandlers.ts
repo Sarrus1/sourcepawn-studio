@@ -409,7 +409,7 @@ function restoreOldRefs(
     oldItemRefs = oldItemRefs.filter(
       (e) => uri.fsPath !== e.uri.fsPath || !range.contains(e.range)
     );
-    item.references.concat(oldItemRefs);
+    item.references = item.references.concat(oldItemRefs);
   }
 }
 
