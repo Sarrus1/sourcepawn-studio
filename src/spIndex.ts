@@ -94,12 +94,14 @@ export function activate(context: ExtensionContext) {
 
   Workspace.onDidChangeConfiguration((e) => {
     if (e.affectsConfiguration("sourcepawn.MainPath")) {
-      let newMainPath = findMainPath();
+      const newMainPath = findMainPath();
       if (newMainPath !== undefined && !checkMainPath(newMainPath)) {
         window.showErrorMessage(
           "A setting for the main.sp file was specified, but seems invalid. Right click on a file and use the command at the bottom of the menu to set it as main."
         );
+        return;
       }
+      loadFiles(providers);
     }
   });
 
