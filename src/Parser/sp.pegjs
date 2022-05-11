@@ -9,6 +9,7 @@
   import { readFunctionAndMethod } from "./readFunctionAndMethod";
   import { readEnumStruct } from "./readEnumStruct";
   import { readMethodmap } from "./readMethodmap";
+  import { ParserLocation } from "./interfaces";
 
   var TYPES_TO_PROPERTY_NAMES = {
     CallExpression:   "callee",
@@ -1129,24 +1130,32 @@ DefineStatementNoDoc
   }
 
 IncludeStatement
-  = PIncludeToken _ path:IncludePath
+  = PIncludeToken _ pathLoc:IncludePath
   {
-    readInclude(args, path);
-    return {
-      type: "IncludeStatement",
-      path
+    const res = {
+      type: "IncludeStatement" as "IncludeStatement",
+      path: pathLoc.path as string,
+      loc: pathLoc.loc as ParserLocation
     };
+    readInclude(args, res);
+    return res;
   }
 
 IncludePath 
-  = "<" path:([A-Za-z0-9\-_\/.]+) ">"
+  = "<" path:$([A-Za-z0-9\-_\/.]+) ">"
   { 
-    return path.join("");
+    return {
+      path,
+      loc: location()
+    };
   }
   /
-  "\"" path:([A-Za-z0-9\-_\/.]+) "\""
+  "\"" path:$([A-Za-z0-9\-_\/.]+) "\""
   { 
-    return path.join("");
+    return {
+      path,
+      loc: location()
+    };
   }
 
 PragmaStatement

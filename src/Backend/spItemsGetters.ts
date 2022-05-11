@@ -104,16 +104,16 @@ function getIncludedFiles(
   fileItems: FileItem,
   includes: Set<string>
 ): void {
-  for (let include of fileItems.includes) {
-    if (includes.has(include.uri)) {
-      continue;
+  fileItems.includes.forEach((v, k) => {
+    if (includes.has(v.uri)) {
+      return;
     }
-    includes.add(include.uri);
-    let includeFileItems = itemsRepo.fileItems.get(include.uri);
+    includes.add(v.uri);
+    let includeFileItems = itemsRepo.fileItems.get(v.uri);
     if (includeFileItems) {
       getIncludedFiles(itemsRepo, includeFileItems, includes);
     }
-  }
+  });
 }
 
 /**

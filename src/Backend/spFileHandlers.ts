@@ -121,8 +121,7 @@ function incrementalParse(
       const oldFileItems = itemsRepo.fileItems.get(doc.uri.toString());
       cleanOldFileItems(oldFileItems, range);
       fileItems.items.push(...oldFileItems.items);
-      // TODO: Fix redondant includes by switching to a map.
-      fileItems.includes.push(...oldFileItems.includes);
+      oldFileItems.includes.forEach((v, k) => fileItems.includes.set(k, v));
     }
     itemsRepo.fileItems.set(doc.uri.toString(), fileItems);
 
@@ -145,6 +144,13 @@ function incrementalParse(
 
 function cleanOldFileItems(fileItems: FileItem, range: Range): void {
   fileItems.items = fileItems.items.filter((e) => !range.contains(e.range));
+  const includes = new Map<string, Include>();
+  fileItems.includes.forEach((v, k) => {
+    if (range.intersection(v.range) === undefined) {
+      includes.set(k, v);
+    }
+  });
+  fileItems.includes = includes;
 }
 
 /**
@@ -598,7 +604,7 @@ export function newDocumentCallback(
  */
 function readUnscannedImports(
   itemsRepo: ItemsRepository,
-  includes: Include[]
+  includes: Map<string, Include>
 ): void {
   const debug = ["messages", "verbose"].includes(
     Workspace.getConfiguration("sourcepawn").get("trace.server")

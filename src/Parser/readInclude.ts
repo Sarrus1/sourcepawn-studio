@@ -1,21 +1,25 @@
-﻿import { isIncludeSelfFile } from "./utils";
-import { spParserArgs } from "./interfaces";
+﻿import { isIncludeSelfFile, parsedLocToRange } from "./utils";
+import { spParserArgs, IncludeStatement } from "./interfaces";
 
 /**
  * Callback for a parsed include.
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {string} txt  The parsed text of the include.
+ * @param  {IncludeStatement} include  The parsed include statement.
  * @returns void
  */
-export function readInclude(parserArgs: spParserArgs, txt: string): void {
+export function readInclude(
+  parserArgs: spParserArgs,
+  include: IncludeStatement
+): void {
   // Include guard to avoid extension crashs.
-  if (isIncludeSelfFile(parserArgs.filePath, txt)) {
+  if (isIncludeSelfFile(parserArgs.filePath, include.path)) {
     return;
   }
   parserArgs.fileItems.resolveImport(
-    txt,
+    include.path,
     parserArgs.documents,
     parserArgs.filePath,
+    parsedLocToRange(include.loc, parserArgs),
     parserArgs.IsBuiltIn
   );
   return;

@@ -26,7 +26,7 @@ export interface parsedToken {
 }
 
 export class FileItem {
-  includes: Include[];
+  includes: Map<string, Include>;
   uri: string;
   tokens: parsedToken[];
   methodmaps: Map<string, MethodMapItem>;
@@ -65,7 +65,7 @@ export class FileItem {
         )
       );
     }
-    this.includes = [];
+    this.includes = new Map();
     this.uri = uri;
     this.tokens = [];
     this.methodmaps = new Map<string, MethodMapItem>();
@@ -77,8 +77,8 @@ export class FileItem {
    * @param  {boolean} IsBuiltIn   Whether or not the parsed include is a Sourcemod builtin.
    * @returns void
    */
-  addInclude(uri: string, IsBuiltIn: boolean): void {
-    this.includes.push(new Include(uri, IsBuiltIn));
+  addInclude(uri: string, range: Range, IsBuiltIn: boolean): void {
+    this.includes.set(uri, new Include(uri, range, IsBuiltIn));
   }
 
   /**
@@ -94,6 +94,7 @@ export class FileItem {
     includeText: string,
     documents: Map<string, boolean>,
     filePath: string,
+    range: Range,
     IsBuiltIn: boolean = false
   ): void {
     const SMHome: string = Workspace.getConfiguration(
@@ -112,7 +113,7 @@ export class FileItem {
 
     const uri = URI.file(incFilePath);
     if (documents.has(uri.toString())) {
-      this.addInclude(uri.toString(), IsBuiltIn);
+      this.addInclude(uri.toString(), range, IsBuiltIn);
       return;
     }
 
@@ -126,7 +127,7 @@ export class FileItem {
           .concat(includeDir, includeText)
       );
       if (existsSync(includeFile)) {
-        this.addInclude(URI.file(includeFile).toString(), IsBuiltIn);
+        this.addInclude(URI.file(includeFile).toString(), range, IsBuiltIn);
         return;
       }
     }

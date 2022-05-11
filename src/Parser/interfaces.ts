@@ -313,7 +313,6 @@ export interface PreprocessorStatement {
   type:
     | "PragmaValue"
     | "PreprocessorStatement"
-    | "IncludeStatement"
     | "DefineStatement"
     | "MacroDeclaration";
 
@@ -323,14 +322,29 @@ export interface PreprocessorStatement {
   id?: ParsedID;
 
   /**
-   * The path of the preprocessor statement. Only for "IncludeStatement".
-   */
-  path?: string;
-
-  /**
    * The value of the preprocessor statement.
    */
   value?: string;
+}
+
+/**
+ * Parsed Include statement.
+ */
+export interface IncludeStatement {
+  /**
+   * The type of the preprocessor statement.
+   */
+  type: "IncludeStatement";
+
+  /**
+   * The path of the include, between the <> or "".
+   */
+  path: string;
+
+  /**
+   * The location of the <path> or "path".
+   */
+  loc: ParserLocation;
 }
 
 export type RawComment =
@@ -386,5 +400,6 @@ export interface LineTerminatorSequence {
 export type LineTerminatorSequenceContent = (
   | string
   | PreprocessorStatement
+  | IncludeStatement
   | null
 )[];

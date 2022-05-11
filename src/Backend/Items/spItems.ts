@@ -47,9 +47,11 @@ export interface SPItem {
 export class Include {
   uri: string;
   IsBuiltIn: boolean;
+  range: Range;
 
-  constructor(uri: string, IsBuiltIn: boolean) {
+  constructor(uri: string, range: Range, IsBuiltIn: boolean) {
     this.uri = uri;
+    this.range = range;
     this.IsBuiltIn = IsBuiltIn;
   }
 }
