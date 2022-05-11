@@ -24,6 +24,7 @@ import { FunctionItem } from "./Items/spFunctionItem";
 import { EnumItem } from "./Items/spEnumItem";
 import { globalItem } from "../Misc/spConstants";
 import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
+import { findMainPath } from "../spUtils";
 
 /**
  * Handle the addition of a document by forwarding it to the newDocumentCallback function.
@@ -58,8 +59,10 @@ export async function handleDocumentChange(
   // Hack to make the function non blocking, and not prevent the completionProvider from running.
   await new Promise((resolve) => setTimeout(resolve, 50));
 
-  // TODO: Select allItems from mainpath instead.
-  const allItems = itemsRepo.getAllItems(event.document.uri);
+  const mainPath = findMainPath(event.document.uri);
+  const allItems = itemsRepo.getAllItems(
+    mainPath ? event.document.uri : URI.file(mainPath)
+  );
 
   // Shift the items first in order to prepare the new scope ranges.
   shiftItems(allItems, event.contentChanges, event.document.uri);
