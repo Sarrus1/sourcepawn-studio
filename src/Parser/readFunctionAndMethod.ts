@@ -126,10 +126,10 @@ function readBodyVariables(
         modifier = content.variableType.modifier || "";
       }
       //doc = content.doc;
-      if (typeof content.variableDeclarationType === "string") {
-        processedDeclType = content.variableDeclarationType;
-      } else if (Array.isArray(content.variableDeclarationType)) {
-        processedDeclType = content.variableDeclarationType.join(" ");
+      if (typeof content.accessModifiers === "string") {
+        processedDeclType = content.accessModifiers;
+      } else if (Array.isArray(content.accessModifiers)) {
+        processedDeclType = content.accessModifiers.join(" ");
       }
       found = true;
     }
@@ -154,12 +154,7 @@ function readBodyVariables(
           doc,
           `${processedDeclType}${variableType}${modifier}${
             decl.id.id
-          }${arrayInitialer.trim()};`.trim(),
-          `${decl.id.id}-${parent.name}-${grandParent.name}-${
-            grandParent.kind === CompletionItemKind.Property
-              ? (grandParent as PropertyItem).parent.name
-              : ""
-          }`
+          }${arrayInitialer.trim()};`.trim()
         );
       }
     }
@@ -222,12 +217,7 @@ function addParamsAsVariables(
       parsedLocToRange(param.id.loc, parserArgs),
       parent,
       doc ? doc.documentation : "",
-      `${processedDeclType} ${type}${modifiers}${param.id.id};`,
-      `${param.id.id}-${parent.name}-${grandParent.name}-${
-        grandParent.kind === CompletionItemKind.Property
-          ? (grandParent as PropertyItem).parent.name
-          : ""
-      }`
+      `${processedDeclType} ${type}${modifiers}${param.id.id};`
     );
   });
 }

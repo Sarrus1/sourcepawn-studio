@@ -3,14 +3,11 @@ import { VariableDeclaration } from "./interfaces";
 import { globalItem } from "../Misc/spConstants";
 import { parsedLocToRange } from "./utils";
 import { addVariableItem } from "./addVariableItem";
-import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
-import { ConstantItem } from "../Backend/Items/spConstantItem";
 import { processDocStringComment } from "./processComment";
 
 export function readVariable(
   parserArgs: spParserArgs,
-  content: VariableDeclaration,
-  parent: EnumStructItem | ConstantItem = globalItem
+  content: VariableDeclaration
 ): void {
   let variableType = "",
     modifier = "",
@@ -19,10 +16,8 @@ export function readVariable(
     variableType = content.variableType.name.id;
     modifier = content.variableType.modifier || "";
   }
-  if (typeof content.variableDeclarationType === "string") {
-    processedDeclType = content.variableDeclarationType;
-  } else if (Array.isArray(content.variableDeclarationType)) {
-    processedDeclType = content.variableDeclarationType.join(" ");
+  if (content.accessModifiers != null) {
+    processedDeclType = content.accessModifiers.join(" ");
   }
   content.declarations.forEach((e) => {
     const range = parsedLocToRange(e.id.loc, parserArgs);
@@ -38,7 +33,7 @@ export function readVariable(
       `${processedDeclType}${variableType}${modifier}${
         e.id.id
       }${arrayInitialer.trim()};`.trim(),
-      `${e.id.id}-${parent.name}`
+      content.accessModifiers
     );
   });
   return;

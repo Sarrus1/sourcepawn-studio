@@ -20,7 +20,7 @@ export function addVariableItem(
   parent: SPItem,
   docstring: string,
   details: string,
-  key: string
+  accessModifiers?: string[] | undefined
 ): void {
   const variableItem = new VariableItem(
     name,
@@ -29,7 +29,8 @@ export function addVariableItem(
     range,
     type,
     details,
-    docstring
+    docstring,
+    accessModifiers
   );
 
   parserArgs.fileItems.items.push(variableItem);

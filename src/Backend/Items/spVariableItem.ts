@@ -30,6 +30,7 @@ export class VariableItem implements SPItem {
   range: Range;
   type: string;
   references: Location[];
+  accessModifiers: string[] | undefined;
 
   constructor(
     name: string,
@@ -38,7 +39,8 @@ export class VariableItem implements SPItem {
     range: Range,
     type: string,
     detail: string,
-    description = ""
+    description = "",
+    accessModifiers: string[] | undefined
   ) {
     this.name = name;
     this.filePath = file;
@@ -48,6 +50,7 @@ export class VariableItem implements SPItem {
     this.references = [];
     this.detail = detail;
     this.description = description;
+    this.accessModifiers = accessModifiers ? accessModifiers : undefined;
   }
 
   toCompletionItem(
@@ -56,6 +59,16 @@ export class VariableItem implements SPItem {
     location?: Location,
     override?: boolean
   ): CompletionItem | undefined {
+    if (
+      this.accessModifiers !== undefined &&
+      location &&
+      this.accessModifiers.includes("static") &&
+      location.uri.fsPath !== this.filePath
+    ) {
+      // static global variables should not appear outside of their file.
+      return undefined;
+    }
+
     if (override || this.parent.name === globalIdentifier) {
       return {
         label: this.name,

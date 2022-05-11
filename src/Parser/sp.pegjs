@@ -1591,7 +1591,7 @@ MacroDeclarationNoDoc
     };
   }
 
-VariableAccessModifier
+VariableAccessModifiers
   = declarationType:((PublicToken / StockToken / ConstToken / StaticToken) __p)+ 
   { 
     return declarationType.map(e=>e[0]);
@@ -1619,13 +1619,13 @@ GlobalVariableDeclaration
 VariableDeclaration
   = (
   __ ((DeclToken / NewToken) __p)? 
-  variableDeclarationType:VariableAccessModifier? 
+  accessModifiers:VariableAccessModifiers? 
   variableType:VariableType
   declarations:VariableDeclarationList EOS doc:__doc
   {
     return {
       type: "VariableDeclaration",
-      variableDeclarationType,
+      accessModifiers,
       variableType,
       declarations: declarations,
       doc
@@ -1634,12 +1634,12 @@ VariableDeclaration
   )
   /
   (
-  __ variableDeclarationType:VariableAccessModifier
+  __ accessModifiers:VariableAccessModifiers
   declarations:VariableDeclarationListOld EOS doc:__doc
   {
     return {
       type: "VariableDeclaration",
-      variableDeclarationType,
+      accessModifiers,
       variableType: null,
       declarations: declarations,
       doc
@@ -1653,7 +1653,7 @@ VariableDeclaration
   {
     return {
       type: "VariableDeclaration",
-      variableDeclarationType: null,
+      accessModifiers: null,
       variableType: null,
       declarations: declarations,
       doc
@@ -1663,12 +1663,12 @@ VariableDeclaration
   /
   (
   __ ((DeclToken / NewToken) __p)
-  variableDeclarationType:VariableAccessModifier
+  accessModifiers:VariableAccessModifiers
   declarations:VariableDeclarationListOld EOS doc:__doc
   {
     return {
       type: "VariableDeclaration",
-      variableDeclarationType,
+      accessModifiers,
       variableType: null,
       declarations: declarations,
       doc
@@ -1886,7 +1886,7 @@ StructDeclaration
   /
   (
     doc:__ StructToken __p id:StructReservedKeywords __
-    "{" __ (VariableAccessModifier? (IdentifierName (( __ ("[]")+)? __p )) IdentifierName (__ ";")? __)* "}" __ EOS
+    "{" __ (VariableAccessModifiers? (IdentifierName (( __ ("[]")+)? __p )) IdentifierName (__ ";")? __)* "}" __ EOS
   )
 
 MethodmapDeclaration

@@ -222,7 +222,7 @@ export interface FunctionParam {
  */
 export interface VariableDeclaration {
   type: "VariableDeclaration";
-  variableDeclarationType: string[] | string | null;
+  accessModifiers: string[] | null;
   variableType: VariableType | null;
   declarations: VariableDeclarator[];
   doc: ParsedComment;

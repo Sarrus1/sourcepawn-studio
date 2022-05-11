@@ -59,10 +59,10 @@ export function readEnumStruct(
         variableType = e.variableType.name.id;
         modifier = e.variableType.modifier || "";
       }
-      if (typeof e.variableDeclarationType === "string") {
-        processedDeclType = e.variableDeclarationType;
-      } else if (Array.isArray(e.variableDeclarationType)) {
-        processedDeclType = e.variableDeclarationType.join(" ");
+      if (typeof e.accessModifiers === "string") {
+        processedDeclType = e.accessModifiers;
+      } else if (Array.isArray(e.accessModifiers)) {
+        processedDeclType = e.accessModifiers.join(" ");
       }
       const range = parsedLocToRange(e.declarations[0].id.loc);
       const name = e.declarations[0].id.id;
@@ -73,8 +73,7 @@ export function readEnumStruct(
         range,
         enumStructItem,
         "",
-        `${processedDeclType} ${variableType}${modifier}${name};`.trim(),
-        `${name}-${globalIdentifier}-${enumStructItem.name}`
+        `${processedDeclType} ${variableType}${modifier}${name};`.trim()
       );
     }
   });

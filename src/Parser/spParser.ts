@@ -99,6 +99,8 @@ export function parseText(
           isBuiltIn,
           newOffset
         );
+      } else {
+        console.error(err);
       }
       return false;
     }
