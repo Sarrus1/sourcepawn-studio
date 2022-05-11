@@ -57,7 +57,7 @@ export function run(rootpath?: string) {
     result = result.replace(/\${GithubName}/gm, GithubName);
     writeFileSync(readmeFilePath, result, "utf8");
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return 3;
   }
   return 0;

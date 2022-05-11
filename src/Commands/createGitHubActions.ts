@@ -8,7 +8,7 @@ export function run(rootpath?: string) {
   if (!workspaceFolders) {
     let err: string = "No workspace are opened.";
     window.showErrorMessage(err);
-    console.log(err);
+    console.error(err);
     return 1;
   }
 
@@ -35,7 +35,7 @@ export function run(rootpath?: string) {
   if (existsSync(masterFilePath)) {
     let err: string = "main.yml already exists, aborting.";
     window.showErrorMessage(err);
-    console.log(err);
+    console.error(err);
     return 2;
   }
   let myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
@@ -51,7 +51,7 @@ export function run(rootpath?: string) {
     result = result.replace(/\${plugin_name}/gm, rootname);
     writeFileSync(masterFilePath, result, "utf8");
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return 3;
   }
 
@@ -60,7 +60,7 @@ export function run(rootpath?: string) {
   if (existsSync(masterFilePath)) {
     let err: string = "test.yml already exists, aborting.";
     window.showErrorMessage(err);
-    console.log(err);
+    console.error(err);
     return 2;
   }
   tasksTemplatesPath = join(myExtDir, "templates/test_template.yml");
@@ -71,7 +71,7 @@ export function run(rootpath?: string) {
     result = result.replace(/\${plugin_name}/gm, rootname);
     writeFileSync(masterFilePath, result, "utf8");
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return 4;
   }
   return 0;

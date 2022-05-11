@@ -172,6 +172,6 @@ export async function run(args: URI): Promise<void> {
       }
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }

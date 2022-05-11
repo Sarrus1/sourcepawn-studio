@@ -86,7 +86,7 @@ async function downloadSM(
     }
     let download = wget.download(src, output, options);
     download.on("error", function (err) {
-      console.log(err);
+      console.error(err);
       reject(err);
     });
     download.on("start", function (fileSize: number) {

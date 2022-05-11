@@ -89,7 +89,7 @@ export function run(rootpath?: string) {
     result = result.replace(/\${include_path}/gm, sm_home);
     writeFileSync(taskFilePath, result, "utf8");
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return 4;
   }
   return 0;
