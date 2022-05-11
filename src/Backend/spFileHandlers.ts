@@ -217,6 +217,19 @@ function shiftItems(
  * @returns Range  The shifted range.
  */
 function shiftRange(initial: Range, shift: RangeShifter): Range {
+  if (shift.lineShift < 0 || shift.charShift < 0) {
+    // Make sure there are no negative ranges.
+    const deleteRange = new Range(
+      shift.pos,
+      new Position(
+        shift.pos.line - shift.lineShift,
+        shift.pos.character - shift.charShift
+      )
+    );
+    if (deleteRange.contains(initial)) {
+      return initial;
+    }
+  }
   // The modification **adds** a string.
   if (initial.start.isBefore(shift.pos) && initial.end.isAfter(shift.pos)) {
     // The modification is **inside** the initial range.
@@ -254,12 +267,12 @@ function shiftRange(initial: Range, shift: RangeShifter): Range {
   }
 
   if (shift.pos.line > initial.start.line) {
-    // The modification occurs after, don't shift the range.
+    // The modification is after the initial range, on a different line.
     return initial;
   }
 
   if (shift.pos.line < initial.start.line) {
-    // The modification is after the initial range, on a different line.
+    // The modification is before the initial range, on a different line.
     if (
       shift.lineShift < 0 &&
       shift.pos.line - shift.lineShift === initial.start.line
@@ -476,7 +489,10 @@ function getScope(
     for (let scope of scopes) {
       if (change.range.start.isAfter(scope.fullRange.end)) {
         prevScope = scope as scopeItem;
-      } else if (change.range.start.isBeforeOrEqual(scope.fullRange.end)) {
+      } else if (
+        change.range.start.isBeforeOrEqual(scope.fullRange.start) &&
+        change.range.end.isBeforeOrEqual(scope.fullRange.start)
+      ) {
         nextScope = scope as scopeItem;
       }
       if (nextScope) {
