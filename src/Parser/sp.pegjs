@@ -1829,22 +1829,27 @@ TypedefBody
     };
   }
 
-TypeSetDeclaration
-  = doc:__ content:TypeSetDeclarationNoDoc
+TypesetDeclaration
+  = doc:__ content:TypesetDeclarationNoDoc
   {
     readTypeset(args, content.id, content.loc, doc);
-    return content;
+    return {
+      type: "TypesetDeclaration",
+      id: content.id,
+      loc: content.loc,
+      body: content.body,
+      doc
+    };
   }
 
-TypeSetDeclarationNoDoc
+TypesetDeclarationNoDoc
   = TypeSetToken __p id:TypeIdentifier
-  __ "{" __ params:( TypedefBody __ )* "}" EOS
+  __ "{" __ body:( TypedefBody __ )* "}" EOS
   {
   	return {
-      type: "TypesetDeclaration",
       id,
       loc: location(),
-      params
+      body: extractList(body, 0)
     };
   }
 
@@ -2239,6 +2244,6 @@ SourceElement
   / NativeForwardDeclaration
   / MethodmapDeclaration
   / TypedefDeclaration
-  / TypeSetDeclaration
+  / TypesetDeclaration
   / StructDeclaration
   / GlobalVariableDeclaration

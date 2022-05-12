@@ -53,6 +53,10 @@ export function readTypedef(
  * @returns string
  */
 function readTypeDefParams(params: FormalParameter[]): string[] {
+  if (params === null) {
+    return [];
+  }
+
   return params.map((e) => {
     // Handle "..." tokens.
     const id = e.id.id;

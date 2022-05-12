@@ -248,6 +248,36 @@ export interface TypedefBody {
 }
 
 /**
+ * Declaration of a typeset.
+ */
+export interface TypesetDeclaration {
+  /**
+   * Generic type of the declaration.
+   */
+  type: "TypedefDeclaration";
+
+  /**
+   * ID of the typeset.
+   */
+  id: ParsedID;
+
+  /**
+   * Location of the typeset.
+   */
+  loc: ParserLocation;
+
+  /**
+   * Body of the typeset.
+   */
+  body: TypedefBody[];
+
+  /**
+   * Documentation of the typeset.
+   */
+  doc: ParsedComment;
+}
+
+/**
  * Declaration of a functag.
  */
 export interface FunctagDeclaration {
@@ -289,7 +319,7 @@ export interface FunctagBody {
   /**
    * Params of the typedef declaration.
    */
-  params: FormalParameter[];
+  params: FormalParameter[] | null;
 }
 
 /**
