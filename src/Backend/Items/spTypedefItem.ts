@@ -15,7 +15,7 @@ import { descriptionToMD } from "../../spUtils";
 import { SPItem } from "./spItems";
 import { FunctionParam } from "../../Parser/interfaces";
 
-export class TypeDefItem implements SPItem {
+export class TypedefItem implements SPItem {
   name: string;
   details: string;
   type: string;

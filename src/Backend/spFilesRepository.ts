@@ -17,7 +17,7 @@ import { MethodMapItem } from "./Items/spMethodmapItem";
 import { spParserArgs } from "../Parser/interfaces";
 import { parsedLocToRange } from "../Parser/utils";
 import { reservedTokens } from "../Misc/spConstants";
-import { TypeDefItem } from "./Items/spTypedefItem";
+import { TypedefItem } from "./Items/spTypedefItem";
 import { DefineItem } from "./Items/spDefineItem";
 
 export interface parsedToken {
@@ -54,7 +54,7 @@ export class FileItem {
       );
 
       this.items.push(
-        new TypeDefItem(
+        new TypedefItem(
           "Function",
           "",
           URI.parse(uri).fsPath,

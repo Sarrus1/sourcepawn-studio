@@ -1,5 +1,5 @@
 ﻿import { spParserArgs } from "./interfaces";
-import { TypeDefItem } from "../Backend/Items/spTypedefItem";
+import { TypedefItem } from "../Backend/Items/spTypedefItem";
 import {
   FormalParameter,
   ParsedID,
@@ -12,13 +12,13 @@ import { processDocStringComment } from "./processComment";
 
 /**
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {ParsedID} id  The id of the TypeDef.
- * @param  {ParserLocation} loc  The location of the TypeDef.
- * @param  {TypedefBody} body  The body of the TypeDef.
- * @param  {ParsedComment} docstring  The documentation of the TypeDef.
+ * @param  {ParsedID} id  The id of the Typedef.
+ * @param  {ParserLocation} loc  The location of the Typedef.
+ * @param  {TypedefBody} body  The body of the Typedef.
+ * @param  {ParsedComment} docstring  The documentation of the Typedef.
  * @returns void
  */
-export function readTypeDef(
+export function readTypedef(
   parserArgs: spParserArgs,
   id: ParsedID,
   loc: ParserLocation,
@@ -32,7 +32,7 @@ export function readTypeDef(
   if (body.returnType) {
     type = body.returnType.id;
   }
-  const typeDefItem = new TypeDefItem(
+  const typeDefItem = new TypedefItem(
     id.id,
     `typedef ${id.id} = function ${type} (${readTypeDefParams(body.params).join(
       ", "
@@ -49,10 +49,10 @@ export function readTypeDef(
 
 /**
  * Extract variables from a TypeDef's body.
- * @param  {(FormalParameter[]} params
+ * @param  {FormalParameter[]} params
  * @returns string
  */
-function readTypeDefParams(params: FormalParameter[]): string[] | undefined {
+function readTypeDefParams(params: FormalParameter[]): string[] {
   return params.map((e) => {
     // Handle "..." tokens.
     const id = e.id.id;

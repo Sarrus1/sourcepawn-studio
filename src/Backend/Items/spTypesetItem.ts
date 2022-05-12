@@ -14,7 +14,7 @@ import { basename } from "path";
 import { descriptionToMD } from "../../spUtils";
 import { SPItem } from "./spItems";
 
-export class TypeSetItem implements SPItem {
+export class TypesetItem implements SPItem {
   name: string;
   details: string;
   filePath: string;

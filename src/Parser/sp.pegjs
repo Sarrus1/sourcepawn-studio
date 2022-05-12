@@ -3,8 +3,8 @@
   import { readEnum } from "./readEnum";
   import { readDefine } from "./readDefine";
   import { readMacro } from "./readMacro";
-  import { readTypeDef } from "./readTypeDef";
-  import { readTypeSet } from "./readTypeSet";
+  import { readTypedef } from "./readTypedef";
+  import { readTypeset } from "./readTypeset";
   import { readVariable } from "./readVariable";
   import { readFunctionAndMethod } from "./readFunctionAndMethod";
   import { readEnumStruct } from "./readEnumStruct";
@@ -253,7 +253,7 @@ Keyword
   / ThisToken
   / ThrowToken
   / TryToken
-  / TypeDefToken
+  / TypedefToken
   / TypeSetToken
   / TypeofToken     
   / UnionToken        
@@ -512,7 +512,7 @@ ThisToken         = "this"  { args.fileItems.pushToken(args, {id: "this", loc: l
 ThrowToken        = "throw"
 TrueToken         = "true"
 TryToken          = "try"
-TypeDefToken      = "typedef"
+TypedefToken      = "typedef"
 TypeSetToken      = "typeset"
 TypeofToken       = "typeof"
 UintToken         = "uint"
@@ -1749,15 +1749,22 @@ EnumBody
 FunctagDeclaration
   = doc:__ content:FunctagDeclarationNoDoc
   {
-    readTypeDef(args, content.id, content.loc, content.body, doc);
-    return content;
+    readTypedef(args, content.id, content.loc, content.body, doc);
+    return {
+      type: "FunctagDeclaration",
+      id: content.id,
+      loc: content.loc,
+      body: content.body,
+      doc
+    };
   }
 
 FunctagDeclarationNoDoc
-  = FunctagToken __p accessModifier:FunctionAccessModifiers* returnType:FunctagType? id:Identifier __ "(" __ params:FormalParameterList? ")" __ EOS
+  = FunctagToken __p accessModifier:FunctionAccessModifiers* 
+  returnType:FunctagType? id:Identifier 
+  __ "(" __ params:FormalParameterList? ")" __ EOS
   {
     return {
-      type: "FunctagDeclaration",
       loc: location(),
       accessModifier,
       body:{
@@ -1768,10 +1775,11 @@ FunctagDeclarationNoDoc
     };
   }
   /
-  FunctagToken __p id:Identifier __p returnType:FunctagType? accessModifier:(PublicToken __)* "(" __ params:FormalParameterList? ")" __ EOS
+  FunctagToken __p id:Identifier __p returnType:FunctagType? 
+  accessModifier:(PublicToken __)* 
+  "(" __ params:FormalParameterList? ")" __ EOS
   {
     return {
-      type: "FunctagDeclaration",
       loc: location(),
       accessModifier,
       body:{
@@ -1788,12 +1796,12 @@ FunctagType
     return returnType;
   }
 
-TypeDefDeclaration
-  = doc:__ content:TypeDefDeclarationNoDoc
+TypedefDeclaration
+  = doc:__ content:TypedefDeclarationNoDoc
   {
-    readTypeDef(args, content.id, content.loc, content.body, doc);
+    readTypedef(args, content.id, content.loc, content.body, doc);
     return {
-      type: "TypedefStatement",
+      type: "TypedefDeclaration",
       id: content.id,
       loc: content.loc,
       body: content.body,
@@ -1801,8 +1809,8 @@ TypeDefDeclaration
     };
   }
 
-TypeDefDeclarationNoDoc
-  = TypeDefToken __p id:TypeIdentifier __ "=" __ body:TypeDefBody
+TypedefDeclarationNoDoc
+  = TypedefToken __p id:TypeIdentifier __ "=" __ body:TypedefBody
   {
     return {
       loc: location(),
@@ -1811,7 +1819,7 @@ TypeDefDeclarationNoDoc
     };
   }
 
-TypeDefBody
+TypedefBody
   = FunctionToken __ returnType:TypeIdentifier 
   __ "(" __ params:FormalParameterList? ")" __ EOS
   {
@@ -1824,13 +1832,13 @@ TypeDefBody
 TypeSetDeclaration
   = doc:__ content:TypeSetDeclarationNoDoc
   {
-    readTypeSet(args, content.id, content.loc, doc);
+    readTypeset(args, content.id, content.loc, doc);
     return content;
   }
 
 TypeSetDeclarationNoDoc
   = TypeSetToken __p id:TypeIdentifier
-  __ "{" __ params:( TypeDefBody __ )* "}" EOS
+  __ "{" __ params:( TypedefBody __ )* "}" EOS
   {
   	return {
       type: "TypesetDeclaration",
@@ -1843,7 +1851,7 @@ TypeSetDeclarationNoDoc
 FuncenumDeclaration
   = doc:__ content:FuncenumDeclarationNoDoc
   {
-    readTypeSet(args, content.id, content.loc, doc);
+    readTypeset(args, content.id, content.loc, doc);
     return content;
   }
 
@@ -2230,7 +2238,7 @@ SourceElement
   / UsingDeclaration
   / NativeForwardDeclaration
   / MethodmapDeclaration
-  / TypeDefDeclaration
+  / TypedefDeclaration
   / TypeSetDeclaration
   / StructDeclaration
   / GlobalVariableDeclaration

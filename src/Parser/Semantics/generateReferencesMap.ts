@@ -8,8 +8,8 @@ import { PropertyItem } from "../../Backend/Items/spPropertyItem";
 import { MethodMapItem } from "../../Backend/Items/spMethodmapItem";
 import { EnumStructItem } from "../../Backend/Items/spEnumStructItem";
 import { VariableItem } from "../../Backend/Items/spVariableItem";
-import { TypeDefItem } from "../../Backend/Items/spTypedefItem";
-import { TypeSetItem } from "../../Backend/Items/spTypesetItem";
+import { TypedefItem } from "../../Backend/Items/spTypedefItem";
+import { TypesetItem } from "../../Backend/Items/spTypesetItem";
 import { Semantics } from "./spSemantics";
 
 /**
@@ -65,7 +65,7 @@ export function generateReferencesMap(this: Semantics): void {
       this.referencesMap.set(item.name, item);
     } else if (item.kind === CompletionItemKind.TypeParameter) {
       if (item.filePath === this.filePath) {
-        this.typeDefAndSetInFile.push(item as TypeDefItem | TypeSetItem);
+        this.typeDefAndSetInFile.push(item as TypedefItem | TypesetItem);
       }
       purgeReferences(item, this.filePath, this.range);
       this.referencesMap.set(item.name, item);

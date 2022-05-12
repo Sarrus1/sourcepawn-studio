@@ -1,17 +1,17 @@
 ﻿import { spParserArgs } from "./interfaces";
-import { TypeSetItem } from "../Backend/Items/spTypesetItem";
+import { TypesetItem } from "../Backend/Items/spTypesetItem";
 import { ParsedComment, ParsedID, ParserLocation } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
 
 /**
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {ParsedID} id  The id of the TypeSet.
- * @param  {ParserLocation} loc  The location of the TypeSet.
- * @param  {ParsedComment} docstring  The documentation of the TypeSet.
+ * @param  {ParsedID} id  The id of the Typeset.
+ * @param  {ParserLocation} loc  The location of the Typeset.
+ * @param  {ParsedComment} docstring  The documentation of the Typeset.
  * @returns void
  */
-export function readTypeSet(
+export function readTypeset(
   parserArgs: spParserArgs,
   id: ParsedID,
   loc: ParserLocation,
@@ -20,7 +20,7 @@ export function readTypeSet(
   const range = parsedLocToRange(id.loc, parserArgs);
   const fullRange = parsedLocToRange(loc, parserArgs);
   const { doc, dep } = processDocStringComment(docstring);
-  const typeDefItem = new TypeSetItem(
+  const typeDefItem = new TypesetItem(
     id.id,
     "",
     parserArgs.filePath,

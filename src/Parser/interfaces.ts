@@ -209,7 +209,7 @@ export interface TypedefDeclaration {
   /**
    * Generic type of the declaration.
    */
-  type: "TypedefStatement";
+  type: "TypedefDeclaration";
 
   /**
    * ID of the typedef.
@@ -236,6 +236,51 @@ export interface TypedefDeclaration {
  * Body of a parsed TypeDef.
  */
 export interface TypedefBody {
+  /**
+   * Return type of the parsed typedef.
+   */
+  returnType: ParsedID;
+
+  /**
+   * Params of the typedef declaration.
+   */
+  params: FormalParameter[];
+}
+
+/**
+ * Declaration of a functag.
+ */
+export interface FunctagDeclaration {
+  /**
+   * Generic type of the declaration.
+   */
+  type: "FunctagDeclaration";
+
+  /**
+   * ID of the functag.
+   */
+  id: ParsedID;
+
+  /**
+   * Location of the functag.
+   */
+  loc: ParserLocation;
+
+  /**
+   * Body of the functag.
+   */
+  body: FunctagBody;
+
+  /**
+   * Documentation of the functag.
+   */
+  doc: ParsedComment;
+}
+
+/**
+ * Body of a parsed Functag.
+ */
+export interface FunctagBody {
   /**
    * Return type of the parsed typedef.
    */

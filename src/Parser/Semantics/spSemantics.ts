@@ -14,8 +14,8 @@ import { MethodMapItem } from "../../Backend/Items/spMethodmapItem";
 import { EnumStructItem } from "../../Backend/Items/spEnumStructItem";
 import { parserDiagnostics } from "../../Providers/Linter/compilerDiagnostics";
 import { VariableItem } from "../../Backend/Items/spVariableItem";
-import { TypeDefItem } from "../../Backend/Items/spTypedefItem";
-import { TypeSetItem } from "../../Backend/Items/spTypesetItem";
+import { TypedefItem } from "../../Backend/Items/spTypedefItem";
+import { TypesetItem } from "../../Backend/Items/spTypesetItem";
 import { generateReferencesMap } from "./generateReferencesMap";
 
 export class Semantics {
@@ -25,7 +25,7 @@ export class Semantics {
   filePath: string;
   methodAndProperties: Map<string, MethodItem | PropertyItem | VariableItem>;
   funcsAndMethodsInFile: (FunctionItem | MethodItem | PropertyItem)[];
-  typeDefAndSetInFile: (TypeDefItem | TypeSetItem)[];
+  typeDefAndSetInFile: (TypedefItem | TypesetItem)[];
   MmEsInFile: (MethodMapItem | EnumStructItem)[];
   referencesMap: Map<string, SPItem>;
   previousItems: SPItem[];
