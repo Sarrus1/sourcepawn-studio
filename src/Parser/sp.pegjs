@@ -653,6 +653,7 @@ PropertyNameAndValueList
 
 PropertyAssignment
   = key:IdentifierName __ "=" __ value:AssignmentExpression {
+      args.fileItems.pushToken(args, key);
       return { type: "Property", key: key, value: value, kind: "init" };
     }
 
@@ -711,6 +712,7 @@ CallExpression
           return { type: "CallExpression", arguments: args };
         }
       / __ "[" __ property:Expression __ "]" {
+          args.fileItems.pushToken(args, property);
           return {
             type: "MemberExpression",
             property: property,
@@ -718,6 +720,7 @@ CallExpression
           };
         }
       / __ "." __ property:IdentifierName {
+          args.fileItems.pushToken(args, property);
           return {
             type: "MemberExpression",
             property: property,
@@ -725,6 +728,7 @@ CallExpression
           };
         }
       / __ "::" __ property:IdentifierName {
+          args.fileItems.pushToken(args, property);
           return {
             type: "MemberExpression",
             property: property,
