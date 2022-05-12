@@ -13,6 +13,7 @@ import { basename } from "path";
 
 import { descriptionToMD } from "../../spUtils";
 import { SPItem } from "./spItems";
+import { FunctionParam } from "../../Parser/interfaces";
 
 export class TypeDefItem implements SPItem {
   name: string;
@@ -24,6 +25,7 @@ export class TypeDefItem implements SPItem {
   range: Range;
   fullRange: Range;
   references: Location[];
+  params?: FunctionParam[];
 
   constructor(
     name: string,

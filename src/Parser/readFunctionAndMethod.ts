@@ -1,7 +1,7 @@
 ﻿import { spParserArgs } from "./interfaces";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import {
-  ParsedParam,
+  FormalParameter,
   ParsedID,
   ParserLocation,
   FunctionParam,
@@ -17,7 +17,6 @@ import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { globalItem } from "../Misc/spConstants";
 import { ConstantItem } from "../Backend/Items/spConstantItem";
 import { MethodItem } from "../Backend/Items/spMethodItem";
-import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { CompletionItemKind } from "vscode";
 
@@ -28,7 +27,7 @@ export function readFunctionAndMethod(
   id: ParsedID,
   loc: ParserLocation,
   docstring: ParsedComment,
-  params: ParsedParam[] | null,
+  params: FormalParameter[] | null,
   body: FunctionBody | null,
   txt: string,
   parent: EnumStructItem | PropertyItem | ConstantItem = globalItem
@@ -88,7 +87,7 @@ export function readFunctionAndMethod(
     );
   }
   parserArgs.fileItems.items.push(item);
-  addParamsAsVariables(parserArgs, params, item, parent, processedParams);
+  addParamsAsVariables(parserArgs, params, item, processedParams);
 
   if (!body) {
     // We are in a native or forward.
@@ -156,7 +155,7 @@ function readBodyVariables(
 }
 
 function processFunctionParams(
-  params: ParsedParam[] | null,
+  params: FormalParameter[] | null,
   doc: string | undefined
 ): FunctionParam[] {
   if (!params) {
@@ -182,9 +181,8 @@ function processFunctionParams(
 
 function addParamsAsVariables(
   parserArgs: spParserArgs,
-  params: ParsedParam[] | null,
+  params: FormalParameter[] | null,
   parent: FunctionItem | MethodItem,
-  grandParent: EnumStructItem | MethodMapItem | PropertyItem | ConstantItem,
   processedParams: FunctionParam[]
 ): void {
   if (!params) {

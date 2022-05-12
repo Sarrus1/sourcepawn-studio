@@ -153,21 +153,6 @@ export interface DocString {
 }
 
 /**
- * Body of a parsed TypeDef.
- */
-export interface TypeDefBody {
-  /**
-   * The return type of the parsed typedef.
-   */
-  returnType: ParsedID | undefined;
-
-  /**
-   * The params of the typedef declaration.
-   */
-  params?: (ParsedParam[] | null)[] | null;
-}
-
-/**
  * Parsed type of a parsed parameter.
  */
 export interface VariableType {
@@ -185,7 +170,7 @@ export interface VariableType {
 /**
  * Parsed parameter in a formal parameter declaration.
  */
-export interface ParsedParam {
+export interface FormalParameter {
   /**
    * Type of the parsed statement.
    */
@@ -215,6 +200,51 @@ export interface ParsedParam {
 export interface FunctionParam {
   label: string;
   documentation: string;
+}
+
+/**
+ * Declaration of a typedef.
+ */
+export interface TypedefDeclaration {
+  /**
+   * Generic type of the declaration.
+   */
+  type: "TypedefStatement";
+
+  /**
+   * ID of the typedef.
+   */
+  id: ParsedID;
+
+  /**
+   * Location of the typedef.
+   */
+  loc: ParserLocation;
+
+  /**
+   * Body of the typedef.
+   */
+  body: TypedefBody;
+
+  /**
+   * Documentation of the typedef.
+   */
+  doc: ParsedComment;
+}
+
+/**
+ * Body of a parsed TypeDef.
+ */
+export interface TypedefBody {
+  /**
+   * Return type of the parsed typedef.
+   */
+  returnType: ParsedID | undefined;
+
+  /**
+   * Params of the typedef declaration.
+   */
+  params: FormalParameter[];
 }
 
 /**
@@ -259,7 +289,7 @@ export interface MethodDeclaration {
   returnType: ParsedID;
   loc: ParserLocation;
   id: ParsedID;
-  params: ParsedParam[];
+  params: FormalParameter[];
   doc: ParsedComment;
   body;
   txt: string;
@@ -271,7 +301,7 @@ export interface MethodmapNativeForwardDeclaration {
   returnType: ParsedID;
   loc: ParserLocation;
   id: ParsedID;
-  params: ParsedParam[];
+  params: FormalParameter[];
   doc: ParsedComment;
   body: undefined;
   txt: string;
@@ -293,7 +323,7 @@ export interface FunctionDeclaration {
   returnType: ParsedID | undefined;
   id: ParsedID;
   loc: ParserLocation;
-  params: ParsedParam[];
+  params: FormalParameter[];
   body: FunctionBody;
   txt: string;
 }

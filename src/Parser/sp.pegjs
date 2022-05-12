@@ -1510,10 +1510,10 @@ OperatorDeclaration
 OperatorDeclarationNoDoc
   = accessModifier:FunctionAccessModifiers* (( NativeToken/ForwardToken ) __p )?
   returnType:FunctionReturnTypeDeclaration? id:OperatorToken operator:AliasOperator __
-  "(" __ params:(FormalParameterList __)? ")" __ body:OperatorDeclarationBody
+  "(" __ params:FormalParameterList? ")" __ body:OperatorDeclarationBody
   {
     const returnTypeId = returnType ? returnType.id : "";
-    id.id = id.id + operator+returnTypeId + params[0].reduce((prev, curr)=>prev+curr.parameterType.name.id, "");
+    id.id = id.id + operator+returnTypeId + params.reduce((prev, curr)=>prev+curr.parameterType.name.id, "");
     return {
       type: "OperatorDeclaration",
       accessModifier,
@@ -1521,7 +1521,7 @@ OperatorDeclarationNoDoc
       loc: location(),
       id,
       operator,
-      params: optionalList(extractOptional(params, 0)),
+      params,
       body,
       txt:text()
     }
@@ -1754,7 +1754,7 @@ FunctagDeclaration
   }
 
 FunctagDeclarationNoDoc
-  = FunctagToken __p accessModifier:FunctionAccessModifiers* returnType:FunctagType? id:Identifier __ "(" __ params:(FormalParameterList __)? ")" __ EOS
+  = FunctagToken __p accessModifier:FunctionAccessModifiers* returnType:FunctagType? id:Identifier __ "(" __ params:FormalParameterList? ")" __ EOS
   {
     return {
       type: "FunctagDeclaration",
@@ -1768,7 +1768,7 @@ FunctagDeclarationNoDoc
     };
   }
   /
-  FunctagToken __p id:Identifier __p returnType:FunctagType? accessModifier:(PublicToken __)* "(" __ params:(FormalParameterList __)? ")" __ EOS
+  FunctagToken __p id:Identifier __p returnType:FunctagType? accessModifier:(PublicToken __)* "(" __ params:FormalParameterList? ")" __ EOS
   {
     return {
       type: "FunctagDeclaration",
@@ -1792,14 +1792,19 @@ TypeDefDeclaration
   = doc:__ content:TypeDefDeclarationNoDoc
   {
     readTypeDef(args, content.id, content.loc, content.body, doc);
-    return content;
+    return {
+      type: "TypedefStatement",
+      id: content.id,
+      loc: content.loc,
+      body: content.body,
+      doc: doc
+    };
   }
 
 TypeDefDeclarationNoDoc
   = TypeDefToken __p id:TypeIdentifier __ "=" __ body:TypeDefBody
   {
     return {
-      type: "TypeDefStatement",
       loc: location(),
       id,
       body
@@ -1808,7 +1813,7 @@ TypeDefDeclarationNoDoc
 
 TypeDefBody
   = FunctionToken __ returnType:TypeIdentifier 
-  __ "(" __ params:(FormalParameterList __)? ")" __ EOS
+  __ "(" __ params:FormalParameterList? ")" __ EOS
   {
   	return {
       returnType,
@@ -1862,7 +1867,7 @@ FuncenumBody
 
 FuncenumMemberDeclaration
   = id:TypeIdentifier (":"/_p) accessModifier:"public"
-  "(" __ params:(FormalParameterList __)? ")" __
+  "(" __ params:FormalParameterList? ")" __
   {
     return {
       id,
@@ -1999,7 +2004,7 @@ MethodmapNativeForwardDeclaration
 MethodmapNativeForwardDeclarationNoDoc
   = accessModifier:FunctionAccessModifiers* token:(NativeToken / ForwardToken) __p
   returnType:FunctionReturnTypeDeclaration? id:Identifier __
-  "(" __ params:(FormalParameterList __)? ")"
+  "(" __ params:FormalParameterList? ")"
   {
     accessModifier.push(token)
     return {
@@ -2008,7 +2013,7 @@ MethodmapNativeForwardDeclarationNoDoc
       returnType,
       loc: location(),
       id,
-      params: optionalList(extractOptional(params, 0)),
+      params,
       txt: text()
     }
   }
@@ -2050,26 +2055,26 @@ FunctionDeclarationNoDoc
 
 FunctionDeclarationHeader
   = accessModifier:FunctionAccessModifiers* returnType:FunctionReturnTypeDeclaration? id:Identifier __
-  "(" __ params:(FormalParameterList __)? ")"
+  "(" __ params:FormalParameterList? ")"
   {
     return {
       accessModifier,
       returnType,
       id,
-      params: optionalList(extractOptional(params, 0)),
+      params,
       txt: text()
     };
   }
 
 FunctionExpression
   = __ id:(Identifier __)?
-  "(" __ params:(FormalParameterList __)? ")"
+  "(" __ params:FormalParameterList? ")"
   "{" __ body:FunctionBody __ "}"
   {
     return {
       type: "FunctionExpression",
       id: extractOptional(id, 0),
-      params: optionalList(extractOptional(params, 0)),
+      params,
       body: body
     };
   }
@@ -2155,7 +2160,7 @@ ParameterDeclaration
   )
 
 FormalParameterList
-  = head:ParameterDeclaration tail:(__ "," __ ParameterDeclaration)* 
+  = head:ParameterDeclaration tail:(__ "," __ ParameterDeclaration)* __
   {
     return buildList(head, tail, 3);
   }
@@ -2179,7 +2184,7 @@ NativeForwardDeclaration
 NativeForwardDeclarationNoDoc
   = accessModifier:FunctionAccessModifiers* token:(NativeToken / ForwardToken) __p
   returnType:FunctionReturnTypeDeclaration? id:Identifier __
-  "(" __ params:(FormalParameterList __)? ")" ( __ "=" __ Identifier)? EOS
+  "(" __ params:FormalParameterList? ")" ( __ "=" __ Identifier)? EOS
   {
     if (accessModifier) {
       accessModifier.push(token);
@@ -2190,7 +2195,7 @@ NativeForwardDeclarationNoDoc
       returnType,
       loc: location(),
       id,
-      params: optionalList(extractOptional(params, 0)),
+      params,
       txt: text()
     };
   }

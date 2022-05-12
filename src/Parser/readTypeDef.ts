@@ -1,10 +1,10 @@
 ﻿import { spParserArgs } from "./interfaces";
 import { TypeDefItem } from "../Backend/Items/spTypedefItem";
 import {
-  ParsedParam,
+  FormalParameter,
   ParsedID,
   ParserLocation,
-  TypeDefBody,
+  TypedefBody,
   ParsedComment,
 } from "./interfaces";
 import { parsedLocToRange } from "./utils";
@@ -14,7 +14,7 @@ import { processDocStringComment } from "./processComment";
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
  * @param  {ParsedID} id  The id of the TypeDef.
  * @param  {ParserLocation} loc  The location of the TypeDef.
- * @param  {TypeDefBody} body  The body of the TypeDef.
+ * @param  {TypedefBody} body  The body of the TypeDef.
  * @param  {ParsedComment} docstring  The documentation of the TypeDef.
  * @returns void
  */
@@ -22,7 +22,7 @@ export function readTypeDef(
   parserArgs: spParserArgs,
   id: ParsedID,
   loc: ParserLocation,
-  body: TypeDefBody,
+  body: TypedefBody,
   docstring: ParsedComment
 ): void {
   const range = parsedLocToRange(id.loc, parserArgs);
@@ -49,19 +49,11 @@ export function readTypeDef(
 
 /**
  * Extract variables from a TypeDef's body.
- * @param  {(ParsedParam[]|null)[]|null} params
+ * @param  {(FormalParameter[]} params
  * @returns string
  */
-function readTypeDefParams(
-  params: (ParsedParam[] | null)[] | null
-): string[] | undefined {
-  if (!params) {
-    return undefined;
-  }
-  if (params.length === 0) {
-    return undefined;
-  }
-  return params[0].map((e) => {
+function readTypeDefParams(params: FormalParameter[]): string[] | undefined {
+  return params.map((e) => {
     // Handle "..." tokens.
     const id = e.id.id;
     let declType = "";
