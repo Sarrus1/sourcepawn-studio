@@ -245,6 +245,11 @@ export interface TypedefBody {
    * Params of the typedef declaration.
    */
   params: FormalParameter[];
+
+  /**
+   * Doc of the typedef when declared in a typeset. Will be empty for a regular typeset.
+   */
+  doc: ParsedComment;
 }
 
 /**

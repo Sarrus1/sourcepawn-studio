@@ -22,7 +22,7 @@ export function readTypeset(
   const { doc, dep } = processDocStringComment(docstring);
   const typeDefItem = new TypesetItem(
     id.id,
-    "",
+    `typeset ${id.id}`,
     parserArgs.filePath,
     doc,
     range,

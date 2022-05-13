@@ -1814,7 +1814,7 @@ TypedefDeclaration
   }
 
 TypedefDeclarationNoDoc
-  = TypedefToken __p id:TypeIdentifier __ "=" __ body:TypedefBody
+  = TypedefToken __p id:TypeIdentifier __ "=" body:TypedefBody
   {
     return {
       loc: location(),
@@ -1824,12 +1824,13 @@ TypedefDeclarationNoDoc
   }
 
 TypedefBody
-  = FunctionToken __ returnType:TypeIdentifier 
+  = doc:__ FunctionToken __ returnType:TypeIdentifier 
   __ "(" __ params:FormalParameterList? ")" __ EOS
   {
   	return {
       returnType,
-      params
+      params,
+      doc
     };
   }
 
@@ -1848,7 +1849,7 @@ TypesetDeclaration
 
 TypesetDeclarationNoDoc
   = TypeSetToken __p id:TypeIdentifier
-  __ "{" __ body:( TypedefBody __ )* "}" EOS
+  __ "{" body:( TypedefBody __ )* "}" EOS
   {
   	return {
       id,
