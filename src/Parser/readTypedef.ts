@@ -52,7 +52,7 @@ export function readTypedef(
  * @param  {FormalParameter[]} params
  * @returns string
  */
-function readTypeDefParams(params: FormalParameter[]): string[] {
+export function readTypeDefParams(params: FormalParameter[]): string[] {
   if (params === null) {
     return [];
   }

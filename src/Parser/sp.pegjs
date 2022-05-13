@@ -9,7 +9,7 @@
   import { readFunctionAndMethod } from "./readFunctionAndMethod";
   import { readEnumStruct } from "./readEnumStruct";
   import { readMethodmap } from "./readMethodmap";
-  import { ParserLocation } from "./interfaces";
+  import * as interfaces from "./interfaces";
 
   var TYPES_TO_PROPERTY_NAMES = {
     CallExpression:   "callee",
@@ -1141,7 +1141,7 @@ IncludeStatement
     const res = {
       type: "IncludeStatement" as "IncludeStatement",
       path: pathLoc.path as string,
-      loc: pathLoc.loc as ParserLocation
+      loc: pathLoc.loc as interfaces.ParserLocation
     };
     readInclude(args, res);
     return res;
@@ -1837,14 +1837,15 @@ TypedefBody
 TypesetDeclaration
   = doc:__ content:TypesetDeclarationNoDoc
   {
-    readTypeset(args, content.id, content.loc, doc);
-    return {
+    const res = {
       type: "TypesetDeclaration",
       id: content.id,
       loc: content.loc,
       body: content.body,
       doc
     };
+    readTypeset(args, res as interfaces.TypesetDeclaration);
+    return res;
   }
 
 TypesetDeclarationNoDoc
@@ -1861,36 +1862,56 @@ TypesetDeclarationNoDoc
 FuncenumDeclaration
   = doc:__ content:FuncenumDeclarationNoDoc
   {
-    readTypeset(args, content.id, content.loc, doc);
-    return content;
+    const res = {
+      type: "FuncenumDeclaration",
+      id: content.id,
+      loc: content.loc,
+      body: content.body,
+      doc
+    };
+    readTypeset(args, res as interfaces.FuncenumDeclaration);
+    return res;
   }
 
 FuncenumDeclarationNoDoc
   = FuncenumToken __p id:TypeIdentifier
-  __ "{" __ params:( FuncenumBody __ )? "}" EOS
+  __ "{" body:( FuncenumBody __ )? "}" EOS
   {
   	return {
-      type: "FuncenumDeclaration",
       id,
       loc: location(),
-      params
+      body: body !== undefined ? body[0] : []
     };
   }
 
 FuncenumBody
-  = head:FuncenumMemberDeclaration tail:(__ "," __ FuncenumMemberDeclaration)* ","?
+  = head:FuncenumMemberDeclaration tail:(__ "," FuncenumMemberDeclaration)* ","?
   {
-    return buildList(head, tail, 3);
+    return buildList(head, tail, 2);
   }
 
 FuncenumMemberDeclaration
-  = id:TypeIdentifier (":"/_p) accessModifier:"public"
+  = doc:__ id:TypeIdentifier (":"/_p) accessModifier:"public"
   "(" __ params:FormalParameterList? ")" __
   {
     return {
+      type: "FuncenumMemberDeclaration",
       id,
       accessModifier,
-      params
+      params,
+      doc
+    }
+  }
+  /
+  doc:__ accessModifier:"public" __
+  "("__ params:FormalParameterList? ")" __
+  {
+    return {
+      type: "FuncenumMemberDeclaration",
+      id: null,
+      accessModifier,
+      params,
+      doc
     }
   }
 

@@ -13,6 +13,7 @@ import { basename } from "path";
 
 import { descriptionToMD } from "../../spUtils";
 import { SPItem } from "./spItems";
+import { TypedefItem } from "./spTypedefItem";
 
 export class TypesetItem implements SPItem {
   name: string;
@@ -23,6 +24,7 @@ export class TypesetItem implements SPItem {
   range: Range;
   fullRange: Range;
   references: Location[];
+  childs: TypedefItem[];
 
   constructor(
     name: string,
@@ -30,7 +32,8 @@ export class TypesetItem implements SPItem {
     file: string,
     description: string,
     range: Range,
-    fullRange: Range
+    fullRange: Range,
+    childs: TypedefItem[]
   ) {
     this.name = name;
     this.details = details;
@@ -39,6 +42,7 @@ export class TypesetItem implements SPItem {
     this.range = range;
     this.fullRange = fullRange;
     this.references = [];
+    this.childs = childs;
   }
 
   toCompletionItem(): CompletionItem {
@@ -61,11 +65,8 @@ export class TypesetItem implements SPItem {
   }
 
   toHover(): Hover | undefined {
-    if (!this.description) {
-      return undefined;
-    }
     return new Hover([
-      { language: "sourcepawn", value: `typedef ${this.name}` },
+      { language: "sourcepawn", value: this.details },
       descriptionToMD(this.description),
     ]);
   }

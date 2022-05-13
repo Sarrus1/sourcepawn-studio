@@ -253,13 +253,73 @@ export interface TypedefBody {
 }
 
 /**
+ * Declaration of a funcenum member.
+ */
+export interface FuncenumMemberDeclaration {
+  /**
+   * Generic type of the declaration.
+   */
+  type: "FuncenumMemberDeclaration";
+
+  /**
+   * ID of the funcenum member, if it exists.
+   */
+  id: ParsedID | null;
+
+  /**
+   * Access modifier of the funcenum member.
+   */
+  accessModifier: "public";
+
+  /**
+   * Params of the the funcenum member.
+   */
+  params: FormalParameter[];
+
+  /**
+   * Documentation of the funcenum member.
+   */
+  doc: ParsedComment;
+}
+
+/**
+ * Declaration of a funcenum.
+ */
+export interface FuncenumDeclaration {
+  /**
+   * Generic type of the declaration.
+   */
+  type: "FuncenumDeclaration";
+
+  /**
+   * ID of the funcenum.
+   */
+  id: ParsedID;
+
+  /**
+   * Location of the the funcenum.
+   */
+  loc: ParserLocation;
+
+  /**
+   * Body of the the funcenum.
+   */
+  body: FuncenumMemberDeclaration[];
+
+  /**
+   * Documentation of the the funcenum.
+   */
+  doc: ParsedComment;
+}
+
+/**
  * Declaration of a typeset.
  */
 export interface TypesetDeclaration {
   /**
    * Generic type of the declaration.
    */
-  type: "TypedefDeclaration";
+  type: "TypesetDeclaration";
 
   /**
    * ID of the typeset.
