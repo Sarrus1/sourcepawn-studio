@@ -7,13 +7,14 @@ import {
   SymbolKind,
   LocationLink,
   Location,
+  SnippetString,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { basename } from "path";
 
 import { descriptionToMD } from "../../spUtils";
 import { SPItem } from "./spItems";
-import { FunctionParam } from "../../Parser/interfaces";
+import { FormalParameter } from "../../Parser/interfaces";
 
 export class TypedefItem implements SPItem {
   name: string;
@@ -25,7 +26,7 @@ export class TypedefItem implements SPItem {
   range: Range;
   fullRange: Range;
   references: Location[];
-  params?: FunctionParam[];
+  params_signature: FormalParameter[];
 
   constructor(
     name: string,
@@ -34,7 +35,8 @@ export class TypedefItem implements SPItem {
     description: string,
     type: string,
     range: Range,
-    fullRange: Range
+    fullRange: Range,
+    params_signature: FormalParameter[]
   ) {
     this.name = name;
     this.details = details;
@@ -44,6 +46,7 @@ export class TypedefItem implements SPItem {
     this.range = range;
     this.fullRange = fullRange;
     this.references = [];
+    this.params_signature = params_signature;
   }
 
   toCompletionItem(): CompletionItem {
@@ -86,5 +89,44 @@ export class TypedefItem implements SPItem {
       this.fullRange,
       this.range
     );
+  }
+
+  toSnippet(range: Range): CompletionItem {
+    const snippet = new SnippetString();
+    snippet.appendText(`public ${this.type} `);
+    snippet.appendPlaceholder("name");
+    snippet.appendText("(");
+    if (this.params_signature) {
+      this.params_signature.forEach((param, i) => {
+        let declarationType = Array.isArray(param.declarationType)
+          ? param.declarationType.join(" ")
+          : param.declarationType;
+        if (declarationType) {
+          snippet.appendText(declarationType);
+          snippet.appendText(" ");
+        }
+        let type = param.parameterType;
+        if (type) {
+          snippet.appendText(type.name.id);
+          snippet.appendText(type.modifier);
+        }
+        snippet.appendPlaceholder(param.id.id);
+        if (i !== this.params_signature.length - 1) {
+          snippet.appendText(", ");
+        }
+      });
+    }
+
+    snippet.appendText(")\n{\n\t");
+    snippet.appendTabstop();
+    snippet.appendText("\n}");
+    return {
+      label: this.name,
+      filterText: "$" + this.name,
+      range,
+      kind: CompletionItemKind.Function,
+      insertText: snippet,
+      detail: this.details,
+    };
   }
 }

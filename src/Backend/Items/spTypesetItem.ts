@@ -83,4 +83,8 @@ export class TypesetItem implements SPItem {
       this.range
     );
   }
+
+  toSnippet() {
+    return undefined;
+  }
 }

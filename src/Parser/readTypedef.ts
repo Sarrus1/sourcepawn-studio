@@ -41,7 +41,8 @@ export function readTypedef(
     doc,
     type,
     range,
-    fullRange
+    fullRange,
+    body.params
   );
   parserArgs.fileItems.items.push(typeDefItem);
   return;

@@ -4,6 +4,7 @@ import {
   CancellationToken,
   CompletionList,
   CompletionItemKind,
+  Range,
 } from "vscode";
 
 import { getTypeOfVariable } from "../Backend/spItemsPropertyGetters";
@@ -13,6 +14,8 @@ import {
   getCompletionListFromPosition,
   getIncludeFileCompletionList,
 } from "./Completions/spCompletionsGetters";
+import { TypedefItem } from "../Backend/Items/spTypedefItem";
+import { TypesetItem } from "../Backend/Items/spTypesetItem";
 
 export async function completionProvider(
   itemsRepo: ItemsRepository,
@@ -27,6 +30,7 @@ export async function completionProvider(
   // If the trigger char is a space, check if there is a
   // "new" behind, and deal with the associated constructor.
   if (text[text.length - 1] === " ") {
+    const allItems = itemsRepo.getAllItems(document.uri);
     if (position.character > 0) {
       const line = document
         .lineAt(position.line)
@@ -41,7 +45,6 @@ export async function completionProvider(
         if (!match[1]) {
           // If the variable is not declared here, look up its type, as it
           // has not yet been parsed.
-          const allItems = itemsRepo.getAllItems(document.uri);
           const lastFunc = getLastFunc(position, document, allItems);
           const newPos = new Position(1, match[2].length + 1);
           const lastEnumStructOrMethodMap = getLastESOrMM(
@@ -60,18 +63,16 @@ export async function completionProvider(
           type = variableType;
         } else {
           // If the variable is declared here, search its type directly.
-          type = itemsRepo
-            .getAllItems(document.uri)
-            .find(
-              (item) =>
-                item.kind === CompletionItemKind.Class && item.name === match[1]
-            ).name;
+          type = allItems.find(
+            (item) =>
+              item.kind === CompletionItemKind.Class && item.name === match[1]
+          ).name;
         }
 
         // Filter the item to only keep the constructors.
-        let items = itemsRepo
-          .getAllItems(document.uri)
-          .filter((item) => item.kind === CompletionItemKind.Constructor);
+        let items = allItems.filter(
+          (item) => item.kind === CompletionItemKind.Constructor
+        );
         return new CompletionList(
           items.map((e) => {
             // Show the associated type's constructor first.
@@ -86,6 +87,26 @@ export async function completionProvider(
       }
     }
     return new CompletionList();
+  }
+
+  if (text[text.length - 1] === "$") {
+    const allItems = itemsRepo.getAllItems(document.uri);
+    let completions = [];
+    let range = new Range(
+      position.line,
+      position.character - 1,
+      position.line,
+      position.character + 1
+    );
+
+    allItems.forEach((e) => {
+      if (e.kind !== CompletionItemKind.TypeParameter) {
+        return;
+      }
+      let typedef = e as TypedefItem | TypesetItem;
+      completions.push(typedef.toSnippet(range));
+    });
+    return new CompletionList(completions.filter((e) => e !== undefined));
   }
 
   // Check if we are dealing with an include.

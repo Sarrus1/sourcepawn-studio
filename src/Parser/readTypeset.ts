@@ -37,7 +37,8 @@ export function readTypeset(
         child_doc,
         e.returnType.id,
         undefined,
-        undefined
+        undefined,
+        e.params
       );
     });
   } else {
@@ -53,7 +54,8 @@ export function readTypeset(
         child_doc,
         "any",
         undefined,
-        undefined
+        undefined,
+        e.params
       );
     });
   }

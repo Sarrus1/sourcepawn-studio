@@ -61,7 +61,8 @@ export class FileItem {
           "Hardcoded constant",
           "",
           zeroRange,
-          zeroRange
+          zeroRange,
+          []
         )
       );
     }
