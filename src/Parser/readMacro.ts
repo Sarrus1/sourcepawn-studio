@@ -34,6 +34,7 @@ export function readMacro(
     undefined,
     fullRange,
     dep,
+    undefined,
     undefined
   );
   parserArgs.fileItems.items.push(macroItem);
