@@ -93,7 +93,7 @@ export class TypedefItem implements SPItem {
 
   toSnippet(range: Range): CompletionItem {
     const snippet = new SnippetString();
-    snippet.appendText(`public ${this.type} `);
+    snippet.appendText(`${this.type} `);
     snippet.appendPlaceholder("name");
     snippet.appendText("(");
     if (this.params_signature) {

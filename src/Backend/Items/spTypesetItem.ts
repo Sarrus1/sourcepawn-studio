@@ -84,7 +84,7 @@ export class TypesetItem implements SPItem {
     );
   }
 
-  toSnippet() {
-    return undefined;
+  toSnippet(range: Range): CompletionItem[] {
+    return this.childs.map((e) => e.toSnippet(range));
   }
 }

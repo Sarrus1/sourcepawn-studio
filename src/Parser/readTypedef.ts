@@ -28,18 +28,18 @@ export function readTypedef(
   const range = parsedLocToRange(id.loc, parserArgs);
   const fullRange = parsedLocToRange(loc, parserArgs);
   const { doc, dep } = processDocStringComment(docstring);
-  let type = "void";
+  let returnType = "";
   if (body.returnType) {
-    type = body.returnType.id;
+    returnType = body.returnType.id;
   }
   const typeDefItem = new TypedefItem(
     id.id,
-    `typedef ${id.id} = function ${type} (${readTypeDefParams(body.params).join(
-      ", "
-    )});`,
+    `typedef ${id.id} = function ${returnType} (${readTypeDefParams(
+      body.params
+    ).join(", ")});`,
     parserArgs.filePath,
     doc,
-    type,
+    returnType,
     range,
     fullRange,
     body.params

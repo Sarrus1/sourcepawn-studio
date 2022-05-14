@@ -106,7 +106,7 @@ export async function completionProvider(
       let typedef = e as TypedefItem | TypesetItem;
       completions.push(typedef.toSnippet(range));
     });
-    return new CompletionList(completions.filter((e) => e !== undefined));
+    return new CompletionList(completions.flat());
   }
 
   // Check if we are dealing with an include.
