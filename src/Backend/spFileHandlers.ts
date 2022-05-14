@@ -65,7 +65,13 @@ export async function handleDocumentChange(
   );
 
   // Shift the items first in order to prepare the new scope ranges.
-  shiftItems(allItems, event.contentChanges, event.document.uri);
+  // Replace the old fileitems as to filter the deleted items.
+  const fileItems = itemsRepo.fileItems.get(event.document.uri.toString());
+  fileItems.items = shiftItems(
+    allItems,
+    event.contentChanges,
+    event.document.uri
+  );
 
   const changes = event.contentChanges;
   const ranges: (Range | undefined)[] = changes.map((change) =>
@@ -187,29 +193,44 @@ function shiftItems(
   allItems: SPItem[],
   changes: readonly TextDocumentContentChangeEvent[],
   uri: URI
-): void {
+): SPItem[] {
+  let localFileItems: SPItem[];
   for (let change of changes) {
+    localFileItems = [];
     const shift = getOffsetFromChange(change);
     for (let item of allItems) {
+      if (item === undefined) {
+        continue;
+      }
       if (item.filePath === uri.fsPath) {
         if (item.range) {
           item.range = shiftRange(item.range, shift);
+          if (item.range === undefined) {
+            // The item was deleted.
+            item = undefined;
+            continue;
+          }
         }
         if (item.fullRange) {
           item.fullRange = shiftRange(item.fullRange, shift);
         }
+        localFileItems.push(item);
       }
 
       if (!item.references) {
         continue;
       }
-      for (let ref of item.references) {
+      item.references = item.references.filter((ref) => {
         if (ref.uri.fsPath === uri.fsPath) {
           ref.range = shiftRange(ref.range, shift);
+          // Filter the ref if it has been deleted.
+          return ref.range !== undefined;
         }
-      }
+        return true;
+      });
     }
   }
+  return localFileItems;
 }
 
 /**
@@ -230,7 +251,7 @@ function shiftRange(initial: Range, shift: RangeShifter): Range {
       )
     );
     if (deleteRange.contains(initial)) {
-      return initial;
+      return undefined;
     }
   }
   // The modification **adds** a string.
