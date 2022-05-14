@@ -83,7 +83,8 @@ export function readFunctionAndMethod(
       returnType ? returnType.id : "",
       fullRange,
       dep,
-      accessModifiers
+      accessModifiers,
+      params
     );
   }
   parserArgs.fileItems.items.push(item);

@@ -16,6 +16,7 @@ import {
 } from "./Completions/spCompletionsGetters";
 import { TypedefItem } from "../Backend/Items/spTypedefItem";
 import { TypesetItem } from "../Backend/Items/spTypesetItem";
+import { FunctionItem } from "../Backend/Items/spFunctionItem";
 
 export async function completionProvider(
   itemsRepo: ItemsRepository,
@@ -99,14 +100,29 @@ export async function completionProvider(
       position.character + 1
     );
 
+    const TyFu = [
+      CompletionItemKind.TypeParameter,
+      CompletionItemKind.Function,
+    ];
+
     allItems.forEach((e) => {
-      if (e.kind !== CompletionItemKind.TypeParameter) {
+      if (!TyFu.includes(e.kind)) {
         return;
       }
-      let typedef = e as TypedefItem | TypesetItem;
-      completions.push(typedef.toSnippet(range));
+      let item = e as TypedefItem | TypesetItem | FunctionItem;
+      let completion = item.toSnippet(range);
+      if (completion === undefined) {
+        return;
+      }
+      if (Array.isArray(completion)) {
+        for (let comp of completion) {
+          completions.push(comp);
+        }
+      } else {
+        completions.push(completion);
+      }
     });
-    return new CompletionList(completions.flat());
+    return new CompletionList(completions);
   }
 
   // Check if we are dealing with an include.

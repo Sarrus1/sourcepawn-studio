@@ -27,6 +27,31 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 
 **Details on how to use the extension available in the [Wiki](https://github.com/Sarrus1/sourcepawn-vscode/wiki)**.
 
+- [SourcePawn for VSCode](#sourcepawn-for-vscode)
+  - [Features](#features)
+  - [Screenshots](#screenshots)
+    - [.sp and .inc file highlighting](#sp-and-inc-file-highlighting)
+    - [.cfg file highlighting](#cfg-file-highlighting)
+    - [Code auto-completion](#code-auto-completion)
+    - [Event auto-completion](#event-auto-completion)
+    - [Include auto-completion](#include-auto-completion)
+    - [Callback auto-completion](#callback-auto-completion)
+    - [Code outline](#code-outline)
+    - [Symbol references](#symbol-references)
+    - [Symbol renaming](#symbol-renaming)
+    - [Functions signature help](#functions-signature-help)
+    - [Hover help](#hover-help)
+    - [Go To Definition](#go-to-definition)
+    - [Linter](#linter)
+  - [Credits](#credits)
+  - [Frequently Asked Questions](#frequently-asked-questions)
+    - [How can I donate ?](#how-can-i-donate-)
+    - [How to fix "Not a .sp file, aborting" ?](#how-to-fix-not-a-sp-file-aborting-)
+    - [How to fix "Command not found" ?](#how-to-fix-command-not-found-)
+    - [How to install the beta build ?](#how-to-install-the-beta-build-)
+    - [How to contribute ?](#how-to-contribute-)
+    - [How to run the extension from its source code ?](#how-to-run-the-extension-from-its-source-code-)
+
 ## Screenshots
 
 ### .sp and .inc file highlighting
@@ -48,6 +73,10 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 ### Include auto-completion
 
 ![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/completion-example-3.png)
+
+### Callback auto-completion
+
+![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/completion-example-4.png)
 
 ### Code outline
 
@@ -85,23 +114,6 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 
 ## Frequently Asked Questions
 
-- [SourcePawn for VSCode](#sourcepawn-for-vscode)
-  - [Features](#features)
-  - [Screenshots](#screenshots)
-    - [.sp and .inc file highlighting](#sp-and-inc-file-highlighting)
-    - [.cfg file highlighting](#cfg-file-highlighting)
-    - [Code auto-completion](#code-auto-completion)
-    - [Event auto-completion](#event-auto-completion)
-    - [Include auto-completion](#include-auto-completion)
-    - [Code outline](#code-outline)
-    - [Symbol references](#symbol-references)
-    - [Symbol renaming](#symbol-renaming)
-    - [Functions signature help](#functions-signature-help)
-    - [Hover help](#hover-help)
-    - [Go To Definition](#go-to-definition)
-    - [Linter](#linter)
-  - [Credits](#credits)
-  - [Frequently Asked Questions](#frequently-asked-questions)
     - [How can I donate ?](#how-can-i-donate-)
     - [How to fix "Not a .sp file, aborting" ?](#how-to-fix-not-a-sp-file-aborting-)
     - [How to fix "Command not found" ?](#how-to-fix-command-not-found-)

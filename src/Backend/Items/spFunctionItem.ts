@@ -9,13 +9,14 @@ import {
   LocationLink,
   CompletionItemTag,
   Location,
+  SnippetString,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { basename } from "path";
 
 import { descriptionToMD } from "../../spUtils";
 import { SPItem } from "./spItems";
-import { FunctionParam } from "../../Parser/interfaces";
+import { FormalParameter, FunctionParam } from "../../Parser/interfaces";
 
 export class FunctionItem implements SPItem {
   name: string;
@@ -31,6 +32,7 @@ export class FunctionItem implements SPItem {
   type: string;
   deprecated: string | undefined;
   accessModifiers: string[] | undefined;
+  params_signature: FormalParameter[] | null;
 
   constructor(
     name: string,
@@ -43,7 +45,8 @@ export class FunctionItem implements SPItem {
     type: string,
     fullRange: Range,
     deprecated: string | undefined,
-    accessModifiers: string[] | undefined
+    accessModifiers: string[] | undefined,
+    params_signature: FormalParameter[] | null
   ) {
     this.description = description;
     this.name = name;
@@ -57,6 +60,7 @@ export class FunctionItem implements SPItem {
     this.deprecated = deprecated;
     this.references = [];
     this.accessModifiers = accessModifiers;
+    this.params_signature = params_signature;
   }
 
   toCompletionItem(): CompletionItem {
@@ -147,5 +151,46 @@ export class FunctionItem implements SPItem {
       this.fullRange,
       this.range
     );
+  }
+
+  toSnippet(range: Range): CompletionItem | undefined {
+    if (!/\bforward\b/.test(this.detail)) {
+      return undefined;
+    }
+    const snippet = new SnippetString();
+    snippet.appendText(`public ${this.type} ${this.name}`);
+    snippet.appendText("(");
+    if (this.params_signature) {
+      this.params_signature.forEach((param, i) => {
+        let declarationType = Array.isArray(param.declarationType)
+          ? param.declarationType.join(" ")
+          : param.declarationType;
+        if (declarationType) {
+          snippet.appendText(declarationType);
+          snippet.appendText(" ");
+        }
+        let type = param.parameterType;
+        if (type) {
+          snippet.appendText(type.name.id);
+          snippet.appendText(type.modifier);
+        }
+        snippet.appendPlaceholder(param.id.id);
+        if (i !== this.params_signature.length - 1) {
+          snippet.appendText(", ");
+        }
+      });
+    }
+
+    snippet.appendText(")\n{\n\t");
+    snippet.appendTabstop();
+    snippet.appendText("\n}");
+    return {
+      label: this.name,
+      filterText: "$" + this.name,
+      range,
+      kind: CompletionItemKind.Function,
+      insertText: snippet,
+      detail: this.detail,
+    };
   }
 }
