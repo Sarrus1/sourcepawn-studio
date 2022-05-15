@@ -76,7 +76,7 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 
 ### Callback auto-completion
 
-![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/completion-example-4.png)
+![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/completion-example-4.gif)
 
 ### Code outline
 
