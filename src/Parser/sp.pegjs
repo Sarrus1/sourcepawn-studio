@@ -668,6 +668,7 @@ MemberExpression
       / NewToken __ callee:MemberExpression __ args:Arguments {
           return { type: "NewExpression", callee: callee, arguments: args };
         }
+      / "char"
     )
     tail:(
         __ "[" __ property:Expression? __ "]" {
@@ -696,8 +697,7 @@ MemberExpression
     }
 
 NewExpression
-  = MemberExpression
-  / NewToken __ callee:NewExpression {
+  = NewToken __ callee:MemberExpression {
       return { type: "NewExpression", callee: callee, arguments: [] };
     }
 
