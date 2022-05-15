@@ -106,6 +106,11 @@ function incrementalParse(
     const text = doc.getText(range);
     let fileItems = new FileItem(doc.uri.toString());
     itemsRepo.documents.set(doc.uri.toString(), false);
+    const oldDiagnostics = [...parserDiagnostics.get(doc.uri)];
+    parserDiagnostics.set(
+      doc.uri,
+      oldDiagnostics.filter((e) => !range.contains(e.range))
+    );
     // We use parseText here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
     const error = parseText(
       text,
