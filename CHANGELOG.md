@@ -15,6 +15,7 @@
 - Added better methodmap property support.
 - Improved the old syntax support.
 - Improved incorrect configuration warnings.
+- Added an autodetection method to determine which file is the main path.
 
 ### Fixed
 
