@@ -4,9 +4,10 @@ import {
   languages,
   window,
   ProgressLocation,
+  CompletionItemKind,
 } from "vscode";
 import { URI } from "vscode-uri";
-import { resolve } from "path";
+import { basename, resolve } from "path";
 const glob = require("glob");
 
 import { refreshDiagnostics } from "./Providers/spLinter";
@@ -20,6 +21,7 @@ import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
 import { findMainPath, checkMainPath } from "./spUtils";
 import { updateDecorations } from "./Providers/decorationsProvider";
+import { newDocumentCallback } from "./Backend/spFileHandlers";
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
@@ -258,19 +260,62 @@ async function loadFiles(providers: Providers) {
       providers.itemsRepository.handleDocumentOpening(mainPath);
     }
   } else {
-    window.showWarningMessage(
-      "There are no mainpath setting set for this file. The extension might not work properly.\
-      \nRight click on a file and use the command at the bottom of the menu to set it as main."
-    );
-  }
+    // Load the currently opened file
+    const files = await Workspace.findFiles("**/*.sp");
+    files.forEach((e) => newDocumentCallback(providers.itemsRepository, e));
 
-  // Load the currently opened file
-  if (
-    window.activeTextEditor != undefined &&
-    window.activeTextEditor.document.uri.fsPath !== mainPath
-  ) {
-    providers.itemsRepository.handleDocumentOpening(
-      window.activeTextEditor.document.uri.fsPath
+    const wk = Workspace.workspaceFolders;
+    if (wk === undefined) {
+      window.showWarningMessage(
+        "There are no mainpath setting set for this file, and the extension was not able to compute one.\
+        The extension will not work properly.\
+        \nRight click on a file and use the command at the bottom of the menu to set it as main."
+      );
+      return;
+    }
+
+    let smHomePath: string =
+      Workspace.getConfiguration("sourcepawn", wk[0]).get<string>(
+        "SourcemodHome"
+      ) || "";
+
+    const smHomeURI = URI.file(smHomePath).toString();
+    for (let [uri, fileItem] of providers.itemsRepository.fileItems.entries()) {
+      if (smHomePath !== "" && uri.includes(smHomeURI)) {
+        continue;
+      }
+      let found = false;
+      for (let item of fileItem.items) {
+        if (
+          item.kind === CompletionItemKind.Function &&
+          item.name === "OnPluginStart"
+        ) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        continue;
+      }
+      mainPath = URI.parse(uri).fsPath;
+      await Workspace.getConfiguration("sourcepawn", wk[0]).update(
+        "MainPath",
+        mainPath
+      );
+      break;
+    }
+    if (mainPath === "") {
+      window.showWarningMessage(
+        "There are no mainpath setting set for this file, and the extension was not able to compute one.\
+        The extension will not work properly.\
+        \nRight click on a file and use the command at the bottom of the menu to set it as main."
+      );
+      return;
+    }
+    window.showInformationMessage(
+      `There were no mainpath setting set for this file, so it was automatically set to ${basename(
+        mainPath
+      )}.\nRight click on a file and use the command at the bottom of the menu to set it as main.`
     );
   }
   updateDecorations(providers.itemsRepository);

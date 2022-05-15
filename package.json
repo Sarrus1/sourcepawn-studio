@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "3.3.8",
+  "version": "3.3.9",
   "publisher": "Sarrus",
   "main": "./dist/spIndex.js",
   "icon": "sm.png",
@@ -189,7 +189,7 @@
         },
         "sourcepawn.MainPath": {
           "type": "string",
-          "description": "The location of the main.sp file for projects with sub-scripting files, which allows the linter and the compiler to work correctly. You should use this setting per workspace.",
+          "description": "The location of the main.sp file, which allows the linter and the compiler to work correctly. You should use this setting per workspace.",
           "scope": "resource"
         },
         "sourcepawn.MainPathCompilation": {
