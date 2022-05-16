@@ -414,17 +414,22 @@ export interface MethodmapDeclaration {
   /**
    * Body of the methodmap.
    */
-  body: (
-    | PropertyDeclaration
-    | MethodDeclaration
-    | MethodmapNativeForwardDeclaration
-  )[];
+  body: MethodmapBody;
 
   /**
    * Documentation of the methodmap.
    */
   doc: ParsedComment;
 }
+
+/**
+ * Body of a methodmap.
+ */
+export type MethodmapBody = (
+  | PropertyDeclaration
+  | MethodDeclaration
+  | MethodmapNativeForwardDeclaration
+)[];
 
 /**
  * Parsed variable declaration (list or single variable).
