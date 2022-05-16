@@ -8,7 +8,7 @@ import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
 
 /**
- * Callback for a parsed enum.
+ * Process an enum declaration.
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
  * @param  {EnumDeclaration} res  Object containing the enum declaration details.
  * @returns void

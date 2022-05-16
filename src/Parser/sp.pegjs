@@ -1547,35 +1547,38 @@ OperatorDeclarationBody
     return undefined;
   }
 
-EnumStructDeclaration
-  = doc:__ content:EnumStructDeclarationNoDoc
+EnumstructDeclaration
+  = doc:__ content:EnumstructDeclarationNoDoc
   {
-    readEnumStruct(args, content.id, content.loc, doc, content.body);
-    return content;
+    const res: interfaces.EnumstructDeclaration = {
+      type:"EnumstructDeclaration",
+      id: content.id,
+      loc: content.loc,
+      body: content.body,
+      doc
+    };
+    readEnumStruct(args, res);
+    return res;
   }
 
-EnumStructDeclarationNoDoc
+EnumstructDeclarationNoDoc
   = doc:__ EnumStructToken __p id:Identifier __
-  "{" __ body:EnumStructBody __ "}" 
+  "{" __ body:EnumstructBody __ "}" 
   {
     return {
-      type:"EnumstructDeclaration ",
       id,
       loc: location(),
       body
     };
   }
 
-EnumStructBody
-  = body:EnumStructMembers? 
+EnumstructBody
+  = body:EnumstructMembers? 
   {
-    return {
-      type: "EnumStructBody",
-      body
-    };
+    return body;
   }
 
-EnumStructMembers
+EnumstructMembers
   = head:(VariableDeclaration / MethodDeclaration) tail:(VariableDeclaration / MethodDeclaration)*
   {
     return [head].concat(tail);
@@ -2282,7 +2285,7 @@ SourceElement
   FunctionDeclaration
   / OperatorDeclaration
   / EnumDeclaration
-  / EnumStructDeclaration
+  / EnumstructDeclaration
   / FuncenumDeclaration
   / FunctagDeclaration
   / UsingDeclaration

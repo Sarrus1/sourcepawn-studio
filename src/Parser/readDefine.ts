@@ -4,7 +4,7 @@ import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
 
 /**
- * Process a define statement from the parser.
+ * Process a define statement.
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
  * @param  {DefineStatement} res  The object containing the define statement details.
  * @returns void

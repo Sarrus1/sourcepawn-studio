@@ -150,9 +150,41 @@ export interface EnumMemberDeclaration {
 }
 
 /**
- * A parsed enum struct member.
+ * Enum struct member declaration.
  */
-export type ParsedEnumStructMember = MethodDeclaration | VariableDeclaration;
+export type EnumstructMemberDeclaration =
+  | MethodDeclaration
+  | VariableDeclaration;
+
+/**
+ * Enum struct declaration.
+ */
+export interface EnumstructDeclaration {
+  /**
+   * Generic type of the declaration.
+   */
+  type: "EnumstructDeclaration";
+
+  /**
+   * ID of the enum struct.
+   */
+  id: ParsedID;
+
+  /**
+   * Location of the enum struct.
+   */
+  loc: ParserLocation;
+
+  /**
+   * Body of the enum struct.
+   */
+  body: EnumstructMemberDeclaration[] | null;
+
+  /**
+   * Documentation of the enum struct.
+   */
+  doc: ParsedComment;
+}
 
 /**
  * Parsed ID.

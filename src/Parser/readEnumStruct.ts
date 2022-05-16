@@ -1,80 +1,91 @@
-﻿import { spParserArgs } from "./interfaces";
-import {
-  ParserLocation,
-  ParsedEnumStructMember,
-  ParsedID,
-  ParsedComment,
+﻿import {
+  EnumstructDeclaration,
+  EnumstructMemberDeclaration,
+  spParserArgs,
 } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { processDocStringComment } from "./processComment";
 import { readFunctionAndMethod } from "./readFunctionAndMethod";
 import { addVariableItem } from "./addVariableItem";
-import { globalIdentifier } from "../Misc/spConstants";
 
 /**
- * Callback for a parsed enum struct.
+ * Process an enum struct declaration.
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {ParsedID} id  The id of the enum struct.
- * @param  {ParserLocation} loc  The location of the enum struct.
- * @param  {ParsedComment} docstring  The doc comment above the enum.
- * @param  {any} body  The body of the enum struct.
+ * @param  {EnumstructDeclaration} res  Object containing the enum struct declaration details.
  * @returns void
  */
 export function readEnumStruct(
   parserArgs: spParserArgs,
-  id: ParsedID,
-  loc: ParserLocation,
-  docstring: ParsedComment,
-  body: any
+  res: EnumstructDeclaration
 ): void {
-  const { doc, dep } = processDocStringComment(docstring);
+  const { doc, dep } = processDocStringComment(res.doc);
   const enumStructItem = new EnumStructItem(
-    id.id,
+    res.id.id,
     parserArgs.filePath,
     doc,
-    parsedLocToRange(id.loc, parserArgs),
-    parsedLocToRange(loc, parserArgs)
+    parsedLocToRange(res.id.loc, parserArgs),
+    parsedLocToRange(res.loc, parserArgs)
   );
   parserArgs.fileItems.items.push(enumStructItem);
-  body["body"].forEach((e: ParsedEnumStructMember) => {
-    if (e["type"] === "MethodDeclaration") {
-      readFunctionAndMethod(
-        parserArgs,
-        e.accessModifier,
-        e.returnType,
-        e.id,
-        e.loc,
-        undefined,
-        e.params,
-        e.body,
-        e.txt,
-        enumStructItem
-      );
-    } else if (e["type"] === "VariableDeclaration") {
-      let variableType = "",
-        modifier = "",
-        processedDeclType = "";
-      if (e.variableType) {
-        variableType = e.variableType.name.id;
-        modifier = e.variableType.modifier || "";
-      }
-      if (typeof e.accessModifiers === "string") {
-        processedDeclType = e.accessModifiers;
-      } else if (Array.isArray(e.accessModifiers)) {
-        processedDeclType = e.accessModifiers.join(" ");
-      }
-      const range = parsedLocToRange(e.declarations[0].id.loc);
-      const name = e.declarations[0].id.id;
-      addVariableItem(
-        parserArgs,
-        name,
-        variableType,
-        range,
-        enumStructItem,
-        "",
-        `${processedDeclType} ${variableType}${modifier}${name};`.trim()
-      );
+  readEnumstructMembers(parserArgs, enumStructItem, res.body);
+}
+
+/**
+ * Process the body of an enum struct.
+ * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
+ * @param  {EnumStructItem} enumstructItem  The parent of the enum struct members.
+ * @param  {EnumstructMemberDeclaration[]} body  The body of the enum struct to parse.
+ * @returns void
+ */
+function readEnumstructMembers(
+  parserArgs: spParserArgs,
+  enumstructItem: EnumStructItem,
+  body: EnumstructMemberDeclaration[]
+): void {
+  if (!body) {
+    return;
+  }
+  body.forEach((e) => {
+    switch (e.type) {
+      case "MethodDeclaration":
+        readFunctionAndMethod(
+          parserArgs,
+          e.accessModifier,
+          e.returnType,
+          e.id,
+          e.loc,
+          undefined,
+          e.params,
+          e.body,
+          e.txt,
+          enumstructItem
+        );
+        break;
+      case "VariableDeclaration":
+        let variableType = "",
+          modifier = "",
+          processedDeclType = "";
+        if (e.variableType) {
+          variableType = e.variableType.name.id;
+          modifier = e.variableType.modifier || "";
+        }
+        if (typeof e.accessModifiers === "string") {
+          processedDeclType = e.accessModifiers;
+        } else if (Array.isArray(e.accessModifiers)) {
+          processedDeclType = e.accessModifiers.join(" ");
+        }
+        const range = parsedLocToRange(e.declarations[0].id.loc);
+        const name = e.declarations[0].id.id;
+        addVariableItem(
+          parserArgs,
+          name,
+          variableType,
+          range,
+          enumstructItem,
+          "",
+          `${processedDeclType} ${variableType}${modifier}${name};`.trim()
+        );
     }
   });
 }
