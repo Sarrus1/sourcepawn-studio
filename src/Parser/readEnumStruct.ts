@@ -71,7 +71,7 @@ function readEnumstructMembers(
           modifier = e.variableType.modifier || "";
         }
 
-        const range = parsedLocToRange(e.declarations[0].id.loc);
+        const range = parsedLocToRange(e.declarations[0].id.loc, parserArgs);
         const { doc, dep } = processDocStringComment(e.doc);
         const name = e.declarations[0].id.id;
         const variableItem = new VariableItem(
