@@ -1,44 +1,38 @@
-﻿import { spParserArgs } from "./interfaces";
+﻿import { PropertyDeclaration, spParserArgs } from "./interfaces";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
-import {
-  MethodDeclaration,
-  MethodmapNativeForwardDeclaration,
-  ParsedComment,
-  ParsedID,
-  ParserLocation,
-} from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { processDocStringComment } from "./processComment";
 import { readFunctionAndMethod } from "./readFunctionAndMethod";
 
-//TODO: Add typing.
+/**
+ * Process a methodmap's property.
+ * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
+ * @param  {MethodMapItem} methodmapItem  The parent of the property.
+ * @param  {PropertyDeclaration} res  Object containing the property declaration details.
+ * @returns void
+ */
 export function readProperty(
   parserArgs: spParserArgs,
-  id: ParsedID,
-  loc: ParserLocation,
-  parent: MethodMapItem,
-  docstring: ParsedComment,
-  returnType: ParsedID,
-  body: (MethodDeclaration | MethodmapNativeForwardDeclaration)[],
-  txt: string
+  methodmapItem: MethodMapItem,
+  res: PropertyDeclaration
 ): void {
-  const range = parsedLocToRange(id.loc, parserArgs);
-  const fullRange = parsedLocToRange(loc, parserArgs);
-  const { doc, dep } = processDocStringComment(docstring);
-  txt = txt.trim();
+  const range = parsedLocToRange(res.id.loc, parserArgs);
+  const fullRange = parsedLocToRange(res.loc, parserArgs);
+  const { doc, dep } = processDocStringComment(res.doc);
+  res.txt = res.txt.trim();
   const propertyItem = new PropertyItem(
-    parent,
-    id.id,
+    methodmapItem,
+    res.id.id,
     parserArgs.filePath,
-    txt,
+    res.txt,
     doc,
     range,
     fullRange,
-    returnType.id
+    res.propertyType.id
   );
   parserArgs.fileItems.items.push(propertyItem);
-  body.forEach((e) => {
+  res.body.forEach((e) => {
     readFunctionAndMethod(
       parserArgs,
       e.accessModifier,

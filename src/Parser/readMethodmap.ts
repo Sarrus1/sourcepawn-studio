@@ -82,16 +82,7 @@ function parseMethodmapBody(
         );
         break;
       case "PropertyDeclaration":
-        readProperty(
-          parserArgs,
-          e.id,
-          e.loc,
-          methodmapItem,
-          e.doc,
-          e.propertyType,
-          e.body,
-          e.txt
-        );
+        readProperty(parserArgs, methodmapItem, e);
     }
   });
 }

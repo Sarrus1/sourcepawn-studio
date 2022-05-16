@@ -1,32 +1,6 @@
 import { FileItem } from "../Backend/spFilesRepository";
 
 /**
- * An object which handles the state of a parser, by keeping track of
- * whether the parser is in a comment or a string.
- */
-export interface ParseState {
-  /**
-   * Whether the parser is in a block comment or not.
-   */
-  bComment: boolean;
-
-  /**
-   * Whether the parser is in a line comment or not.
-   */
-  lComment: boolean;
-
-  /**
-   * Whether the parser is in a string delimited by single quotes (') or not.
-   */
-  sString: boolean;
-
-  /**
-   * Whether the parser is in a string delimited by double quotes (") or not.
-   */
-  dString: boolean;
-}
-
-/**
  * The `args` object passed to the peggy.js parser.
  */
 export interface spParserArgs {
@@ -499,12 +473,36 @@ export type MethodmapBody = (
  * Parsed variable declaration (list or single variable).
  */
 export interface VariableDeclaration {
+  /**
+   * Generic type of the declaration.
+   */
   type: "VariableDeclaration";
-  accessModifiers: string[] | null;
+
+  /**
+   * Access modifiers of the variable.
+   */
+  accessModifiers: VariableAcessModifiers[] | null;
+
+  /**
+   * Type of the variable.
+   */
   variableType: VariableType | null;
+
+  /**
+   * Variable declarations.
+   */
   declarations: VariableDeclarator[];
+
+  /**
+   * Documentation of the variable.
+   */
   doc: ParsedComment;
 }
+
+/**
+ * Variable access modifiers.
+ */
+export type VariableAcessModifiers = "public" | "stock" | "const" | "static";
 
 export interface LocalVariableDeclaration {
   type: "LocalVariableDeclaration";
@@ -521,13 +519,43 @@ export type ScoppedVariablesDeclaration = (
   | ForLoopVariableDeclaration
 )[];
 
+/**
+ * Declaration of a methodmap's property.
+ */
 export interface PropertyDeclaration {
+  /**
+   * Generic type of the declaration.
+   */
   type: "PropertyDeclaration";
+
+  /**
+   * ID of the type of the property.
+   */
   propertyType: ParsedID;
+
+  /**
+   * ID of the property.
+   */
   id: ParsedID;
+
+  /**
+   * Documentation of the property.
+   */
   doc: ParsedComment;
+
+  /**
+   * Location of the property.
+   */
   loc: ParserLocation;
-  body;
+
+  /**
+   * Body of the property.
+   */
+  body: (MethodDeclaration | MethodmapNativeForwardDeclaration)[];
+
+  /**
+   * Raw text of the property declaration.
+   */
   txt: string;
 }
 
@@ -539,7 +567,7 @@ export interface MethodDeclaration {
   id: ParsedID;
   params: FormalParameter[];
   doc: ParsedComment;
-  body;
+  body: FunctionBody;
   txt: string;
 }
 
