@@ -616,7 +616,7 @@ export interface PreprocessorStatement {
   /**
    * The type of the preprocessor statement ("PragmaValue" for exemple).
    */
-  type: "PragmaValue" | "PreprocessorStatement" | "MacroDeclaration";
+  type: "PragmaValue" | "PreprocessorStatement";
 
   /**
    * The ID of the preprocessor statement. Only for "DefineStatement" and "MacroStatement".
@@ -627,6 +627,33 @@ export interface PreprocessorStatement {
    * The value of the preprocessor statement.
    */
   value?: string;
+}
+
+export interface MacroStatement {
+  /**
+   * Generic type of the declaration.
+   */
+  type: "MacroStatement";
+
+  /**
+   * ID of the macro.
+   */
+  id: ParsedID;
+
+  /**
+   * Location of the macro.
+   */
+  loc: ParserLocation;
+
+  /**
+   * Value of the macro.
+   */
+  value: string | null;
+
+  /**
+   * Documentation of the macro.
+   */
+  doc: ParsedComment;
 }
 
 /**
@@ -734,5 +761,6 @@ export type LineTerminatorSequenceContent = (
   | PreprocessorStatement
   | IncludeStatement
   | DefineStatement
+  | MacroStatement
   | null
 )[];

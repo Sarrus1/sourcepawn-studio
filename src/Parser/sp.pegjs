@@ -1218,7 +1218,7 @@ PreprocessorStatement
   PragmaStatement
   / IncludeStatement
   / DefineStatement
-  / MacroDeclaration
+  / MacroStatement
   / OtherPreprocessorStatement
   )
   {
@@ -1583,14 +1583,21 @@ EnumstructMembers
     return [head].concat(tail);
   }
 
-MacroDeclaration
-  = content:MacroDeclarationNoDoc doc:__doc
+MacroStatement
+  = doc:__ content:MacroStatementNoDoc
   {
-    readMacro(args, content.id, content.loc, content.value, doc);
-    return content;
+    const res: interfaces.MacroStatement = {
+      type: "MacroStatement",
+      id: content.id,
+      loc: content.loc,
+      value: content.value,
+      doc
+    }
+    readMacro(args, res);
+    return res;
   }
 
-MacroDeclarationNoDoc
+MacroStatementNoDoc
   = PDefineToken _p id:IdentifierName value:(
       !("\\" / LineTerminator) SourceCharacter { return text(); }
       / "\\" sequence:EscapeSequence { return sequence; }
@@ -1598,7 +1605,6 @@ MacroDeclarationNoDoc
     )+
   {
     return {
-      type: "MacroDeclaration",
       id,
       loc: location(),
       value: buildNestedArray(value)

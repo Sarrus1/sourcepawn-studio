@@ -15,6 +15,7 @@ export function readDefine(
 ): void {
   const range = parsedLocToRange(res.id.loc, parserArgs);
   const fullRange = parsedLocToRange(res.loc, parserArgs);
+  // FIXME: Define dep is always null because they are parsed as comments.
   const { doc, dep } = processDocStringComment(res.doc);
   const defineItem = new DefineItem(
     res.id.id,

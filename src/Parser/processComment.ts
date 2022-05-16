@@ -1,9 +1,9 @@
 ﻿import { DocString, ParsedComment, PreprocessorStatement } from "./interfaces";
 
 /**
- * Process a parsed comment and tries to extrapolate a doc comment from it.
+ * Process a parsed comment and try to extrapolate a doc comment from it.
  * This will handle `#pragma deprecated`.
- * @param  {(ParsedComment} docstring  The parsed comment to analyse.
+ * @param  {ParsedComment} docstring  The parsed comment to analyse.
  * @returns {DocString}
  */
 export function processDocStringComment(docstring: ParsedComment): DocString {
