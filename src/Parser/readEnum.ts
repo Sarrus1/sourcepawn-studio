@@ -1,59 +1,30 @@
-﻿import { basename } from "path";
-import { Range } from "vscode";
+﻿import { Range } from "vscode";
 
-import { spParserArgs } from "./interfaces";
+import { EnumDeclaration, spParserArgs } from "./interfaces";
 import { EnumItem } from "../Backend/Items/spEnumItem";
 import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
-import {
-  ParserLocation,
-  ParsedEnumMember,
-  ParsedID,
-  ParsedComment,
-} from "./interfaces";
+import { ParserLocation, EnumMemberDeclaration, ParsedID } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
 
 /**
  * Callback for a parsed enum.
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {ParsedID|undefined} id  The id of the enum.
- * @param  {ParserLocation} loc The location of the enum.
- * @param  {ParsedEnumMember[]} body  The members of the enum.
- * @param  {ParsedComment} doc The doc comment above the enum.
- * @param  {ParsedComment} lastDoc The doc comment of the last member of the enum.
+ * @param  {EnumDeclaration} res  Object containing the enum declaration details.
  * @returns void
  */
-export function readEnum(
-  parserArgs: spParserArgs,
-  id: ParsedID | undefined,
-  loc: ParserLocation,
-  body: ParsedEnumMember[],
-  docstring: ParsedComment,
-  lastDocstring: ParsedComment
-): void {
-  const { name, nameRange } = getEnumNameAndRange(parserArgs, id, loc);
-  const key = name
-    ? name
-    : `${parserArgs.anonEnumCount}-${basename(parserArgs.filePath)}`;
-  const { doc, dep } = processDocStringComment(docstring);
+export function readEnum(parserArgs: spParserArgs, res: EnumDeclaration): void {
+  const { name, nameRange } = getEnumNameAndRange(parserArgs, res.id, res.loc);
+  const { doc, dep } = processDocStringComment(res.doc);
   const enumItem = new EnumItem(
     name,
     parserArgs.filePath,
-    doc.length === 0 ? undefined : doc,
+    doc,
     nameRange,
-    parsedLocToRange(loc, parserArgs)
+    parsedLocToRange(res.loc, parserArgs)
   );
   parserArgs.fileItems.items.push(enumItem);
-  if (body) {
-    body.forEach((e, i) =>
-      readEnumMember(
-        parserArgs,
-        e,
-        enumItem,
-        i === body.length - 1 ? lastDocstring : undefined
-      )
-    );
-  }
+  readEnumMembers(parserArgs, res.body, enumItem);
 }
 
 /**
@@ -65,7 +36,7 @@ export function readEnum(
  */
 function getEnumNameAndRange(
   parserArgs: spParserArgs,
-  id: ParsedID | undefined,
+  id: ParsedID | null,
   loc: ParserLocation
 ): { name: string; nameRange: Range } {
   let name: string;
@@ -86,32 +57,31 @@ function getEnumNameAndRange(
 }
 
 /**
- * Callback for a parsed enum member.
+ * Process the body of an enum.
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {ParsedEnumMember} member  The member to be parsed.
- * @param  {EnumItem} enumItem  The parent of the enum member.
- * @param  {string} doc The doc associated to the enum member.
+ * @param  {EnumMemberDeclaration[]} body  The body of the enum to parse.
+ * @param  {EnumItem} enumItem  The parent of the enum members.
  * @returns void
  */
-function readEnumMember(
+function readEnumMembers(
   parserArgs: spParserArgs,
-  member: ParsedEnumMember,
-  enumItem: EnumItem,
-  docstring: ParsedComment
+  body: EnumMemberDeclaration[],
+  enumItem: EnumItem
 ): void {
-  const range = parsedLocToRange(member.loc, parserArgs);
-  if (docstring !== undefined) {
-    var { doc, dep } = processDocStringComment(docstring);
-  } else {
-    var { doc, dep } = processDocStringComment(member.doc);
+  if (!body) {
+    return;
   }
-  const memberItem = new EnumMemberItem(
-    member.id,
-    parserArgs.filePath,
-    doc,
-    range,
-    parserArgs.IsBuiltIn,
-    enumItem
-  );
-  parserArgs.fileItems.items.push(memberItem);
+  body.forEach((e) => {
+    const range = parsedLocToRange(e.id.loc, parserArgs);
+    const { doc, dep } = processDocStringComment(e.doc);
+    const memberItem = new EnumMemberItem(
+      e.id.id,
+      parserArgs.filePath,
+      doc,
+      range,
+      parserArgs.IsBuiltIn,
+      enumItem
+    );
+    parserArgs.fileItems.items.push(memberItem);
+  });
 }

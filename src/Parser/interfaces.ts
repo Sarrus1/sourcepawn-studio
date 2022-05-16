@@ -105,21 +105,46 @@ export interface ParserLocationDetails {
 }
 
 /**
- * A parsed enum member.
+ * Declaration of an enum.
  */
-export interface ParsedEnumMember {
+export interface EnumDeclaration {
   /**
-   * The id of the parsed enum member.
+   * Generic type of the declaration.
    */
-  id: string;
+  type: "EnumDeclaration";
 
   /**
-   * The location of the parsed enum member.
+   * ID of the enum, if it exists.
+   */
+  id: ParsedID | null;
+
+  /**
+   * Location of the enum.
    */
   loc: ParserLocation;
 
   /**
-   * The trailing comment (if it exists) of the parsed enum member.
+   * Body of the enum.
+   */
+  body: EnumMemberDeclaration[];
+
+  /**
+   * Documentation of the enum.
+   */
+  doc: ParsedComment;
+}
+
+/**
+ * Enum member declaration.
+ */
+export interface EnumMemberDeclaration {
+  /**
+   * ID of the enum member.
+   */
+  id: ParsedID;
+
+  /**
+   * The trailing comment  of the parsed enum member.
    */
   doc: ParsedComment;
 }
@@ -637,7 +662,7 @@ export interface MultiLineCommentNoLineTerminator {
 export type ParsedComment =
   | (RawComment | LineTerminatorSequence)[]
   | RawComment
-  | undefined;
+  | null;
 
 export interface LineTerminatorSequence {
   type: "LineTerminatorSequence";

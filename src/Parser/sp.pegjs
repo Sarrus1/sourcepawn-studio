@@ -1727,33 +1727,42 @@ VariableInitialisationOld
 EnumDeclaration
   = doc:__ content:EnumDeclarationNoDoc
   {
-    readEnum(args, content.id, content.loc, content.body, doc, content.lastDoc);
-    return content;
+    const res: interfaces.EnumDeclaration = {
+      type: "EnumDeclaration",
+      id: content.id,
+      loc: content.loc,
+      body: content.body,
+      doc: content.doc
+    };
+    readEnum(args, res);
+    return res;
   }
 
 EnumDeclarationNoDoc
-  = EnumToken id:(__p Identifier)? (":" !":"__)? (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
-  "{" __ body:EnumBody? lastDoc:__ "}" EOS
+  = EnumToken id:(__p Identifier)? (":" !":"__)?
+  (__ "(" AssignmentOperator __ AssignmentExpression __ ")")? __
+  "{" __ body:EnumBody? "}" EOS
   { 
     return {
-      type: "EnumDeclaration",
-      id: id ? id[1] : null,
+      id: extractOptional(id, 1),
       loc: location(),
-      body,
-      lastDoc: lastDoc
+      body
     };
-  }
- 
-EnumMemberDeclaration
-  = (TypeIdentifier (":" !":"__))? name:VariableInitialisation
-  {
-    return name.id;
   }
 
 EnumBody
-  = head:EnumMemberDeclaration tail:(__ "," __ EnumMemberDeclaration)* ","?
+  = head:EnumMemberDeclaration tail:(EnumMemberDeclaration)* __
   {
-    return buildListWithDoc(head, tail, 3);
+    return [head].concat(tail);
+  }
+ 
+EnumMemberDeclaration
+  = (TypeIdentifier (":" !":"__))? name:VariableInitialisation doc:((__ ",")? __doc)
+  {
+    return {
+      id: name.id,
+      doc: doc[1]
+    };
   }
 
 FunctagDeclaration
