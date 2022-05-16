@@ -388,6 +388,45 @@ export interface FunctagBody {
 }
 
 /**
+ * Declaration of a methodmap.
+ */
+export interface MethodmapDeclaration {
+  /**
+   * Generic type of the declaration.
+   */
+  type: "MethodmapDeclaration";
+
+  /**
+   * ID of the methodmap.
+   */
+  id: ParsedID;
+
+  /**
+   * Location of the methodmap.
+   */
+  loc: ParserLocation;
+
+  /**
+   * Inherit of the methodmap, if it exists.
+   */
+  inherit: ParsedID | "__nullable__" | null;
+
+  /**
+   * Body of the methodmap.
+   */
+  body: (
+    | PropertyDeclaration
+    | MethodDeclaration
+    | MethodmapNativeForwardDeclaration
+  )[];
+
+  /**
+   * Documentation of the methodmap.
+   */
+  doc: ParsedComment;
+}
+
+/**
  * Parsed variable declaration (list or single variable).
  */
 export interface VariableDeclaration {

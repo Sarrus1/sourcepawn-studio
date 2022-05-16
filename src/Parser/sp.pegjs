@@ -1938,8 +1938,16 @@ StructDeclaration
 MethodmapDeclaration
   = doc:__ content:MethodmapDeclarationNoDoc
   {
-    readMethodmap(args, content.id, content.loc, content.inherit, doc, content.body);
-    return content;
+    const res: interfaces.MethodmapDeclaration = {
+      type:"MethodmapDeclaration",
+      id: content.id,
+      loc: content.loc,
+      inherit: content.inherit,
+      body: content.body,
+      doc
+    }
+    readMethodmap(args, res);
+    return res;
   }
 
 MethodmapDeclarationNoDoc
@@ -1947,7 +1955,6 @@ MethodmapDeclarationNoDoc
   "{" body:MethodmapBody __ "}"  (__ ";")?
   {
     return {
-      type:"MethodmapDeclaration",
       id,
       loc: location(),
       inherit,
@@ -1965,10 +1972,7 @@ MethodmapInherit
 MethodmapBody
   = body:(PropertyDeclaration / MethodDeclaration / MethodmapNativeForwardDeclaration)*
   {
-    return {
-      type: "MethodmapBody",
-      body
-    };
+    return body;
   }
 
 PropertyDeclaration

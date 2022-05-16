@@ -1,14 +1,7 @@
-﻿import { spParserArgs } from "./interfaces";
+﻿import { MethodmapDeclaration, spParserArgs } from "./interfaces";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { globalIdentifier } from "../Misc/spConstants";
-import {
-  MethodDeclaration,
-  MethodmapNativeForwardDeclaration,
-  ParsedComment,
-  ParsedID,
-  ParserLocation,
-  PropertyDeclaration,
-} from "./interfaces";
+import { ParsedID } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
 import { readFunctionAndMethod } from "./readFunctionAndMethod";
@@ -16,26 +9,15 @@ import { readProperty } from "./readProperty";
 
 export function readMethodmap(
   parserArgs: spParserArgs,
-  id: ParsedID | undefined,
-  loc: ParserLocation,
-  inherit: ParsedID | "__nullable__" | undefined,
-  docstring: ParsedComment,
-  body: {
-    type: "MethodmapBody";
-    body: (
-      | PropertyDeclaration
-      | MethodDeclaration
-      | MethodmapNativeForwardDeclaration
-    )[];
-  }
+  res: MethodmapDeclaration
 ): void {
-  const range = parsedLocToRange(id.loc, parserArgs);
-  const fullRange = parsedLocToRange(loc, parserArgs);
-  const { doc, dep } = processDocStringComment(docstring);
+  const range = parsedLocToRange(res.id.loc, parserArgs);
+  const fullRange = parsedLocToRange(res.loc, parserArgs);
+  const { doc, dep } = processDocStringComment(res.doc);
   const methodmapItem = new MethodMapItem(
-    id.id,
-    inherit && inherit !== "__nullable__"
-      ? (inherit as ParsedID).id
+    res.id.id,
+    res.inherit && res.inherit !== "__nullable__"
+      ? (res.inherit as ParsedID).id
       : globalIdentifier,
     doc,
     parserArgs.filePath,
@@ -44,7 +26,7 @@ export function readMethodmap(
     parserArgs.IsBuiltIn
   );
   parserArgs.fileItems.items.push(methodmapItem);
-  body["body"].forEach((e) => {
+  res.body.forEach((e) => {
     if (e.type === "MethodDeclaration") {
       readFunctionAndMethod(
         parserArgs,
