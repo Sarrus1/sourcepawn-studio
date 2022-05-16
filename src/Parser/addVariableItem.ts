@@ -5,12 +5,8 @@ import { VariableItem } from "../Backend/Items/spVariableItem";
 import { SPItem } from "../Backend/Items/spItems";
 
 /**
- * Save a variable and generate the appropriate key for the Map it is stored in.
- * The key is a concatenation of the following variables:
- * - *varName*: The name of the variable
- * - *scope*: The scope of the variable (the last function's name or globalIdentifier)
- * - *enumStructName*: The name of the enum struct (empty if none)
- * - *lastFuncName*: The name of the last function (empty if none)
+ * TODO: Remove this function.
+ * Save a variable item.
  */
 export function addVariableItem(
   parserArgs: spParserArgs,

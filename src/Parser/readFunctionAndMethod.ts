@@ -20,6 +20,7 @@ import { MethodItem } from "../Backend/Items/spMethodItem";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { CompletionItemKind } from "vscode";
 
+//TODO: Add typing.
 export function readFunctionAndMethod(
   parserArgs: spParserArgs,
   accessModifiers: string[] | null,

@@ -5,6 +5,7 @@ import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
 
 /**
+ * TODO: Add typing.
  * Callback for a parsed macro.
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
  * @param  {ParsedID} id  The id of the macro.

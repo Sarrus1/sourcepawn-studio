@@ -12,7 +12,7 @@ import { readFunctionAndMethod } from "./readFunctionAndMethod";
 import { readProperty } from "./readProperty";
 
 /**
- * Process a methodmap declaration from the parser.
+ * Process a methodmap declaration.
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
  * @param  {MethodmapDeclaration} res  The object containing the methodmap declaration details.
  * @returns void
@@ -40,7 +40,7 @@ export function readMethodmap(
 }
 
 /**
- * Process a methodmap's body from the parser.
+ * Process methodmap's body.
  * @param  {spParserArgs} parserArgs  ParserArgs objects passed to the parser.
  * @param  {MethodmapBody} body  Parsed body of the methodmap.
  * @param  {MethodMapItem} methodmapItem  Methodmap item associated to the body.

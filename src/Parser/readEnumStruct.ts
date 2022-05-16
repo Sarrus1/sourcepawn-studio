@@ -7,7 +7,7 @@ import { parsedLocToRange } from "./utils";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { processDocStringComment } from "./processComment";
 import { readFunctionAndMethod } from "./readFunctionAndMethod";
-import { addVariableItem } from "./addVariableItem";
+import { VariableItem } from "../Backend/Items/spVariableItem";
 
 /**
  * Process an enum struct declaration.
@@ -65,27 +65,29 @@ function readEnumstructMembers(
       case "VariableDeclaration":
         let variableType = "",
           modifier = "",
-          processedDeclType = "";
+          accessModifiers = e.accessModifiers;
         if (e.variableType) {
           variableType = e.variableType.name.id;
           modifier = e.variableType.modifier || "";
         }
-        if (typeof e.accessModifiers === "string") {
-          processedDeclType = e.accessModifiers;
-        } else if (Array.isArray(e.accessModifiers)) {
-          processedDeclType = e.accessModifiers.join(" ");
-        }
+
         const range = parsedLocToRange(e.declarations[0].id.loc);
+        const { doc, dep } = processDocStringComment(e.doc);
         const name = e.declarations[0].id.id;
-        addVariableItem(
-          parserArgs,
+        const variableItem = new VariableItem(
           name,
-          variableType,
-          range,
+          parserArgs.filePath,
           enumstructItem,
-          "",
-          `${processedDeclType} ${variableType}${modifier}${name};`.trim()
+          range,
+          variableType,
+          `${accessModifiers.join(
+            " "
+          )} ${variableType}${modifier}${name};`.trim(),
+          doc,
+          accessModifiers
         );
+
+        parserArgs.fileItems.items.push(variableItem);
     }
   });
 }

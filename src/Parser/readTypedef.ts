@@ -1,48 +1,41 @@
-﻿import { spParserArgs } from "./interfaces";
-import { TypedefItem } from "../Backend/Items/spTypedefItem";
-import {
-  FormalParameter,
-  ParsedID,
-  ParserLocation,
-  TypedefBody,
-  ParsedComment,
+﻿import {
+  FunctagDeclaration,
+  spParserArgs,
+  TypedefDeclaration,
 } from "./interfaces";
+import { TypedefItem } from "../Backend/Items/spTypedefItem";
+import { FormalParameter } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
 
 /**
+ * Process an enum struct declaration.
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {ParsedID} id  The id of the Typedef.
- * @param  {ParserLocation} loc  The location of the Typedef.
- * @param  {TypedefBody} body  The body of the Typedef.
- * @param  {ParsedComment} docstring  The documentation of the Typedef.
+ * @param  {TypedefDeclaration|FunctagDeclaration} res  Object containing the typedef/functag declaration details.
  * @returns void
  */
 export function readTypedef(
   parserArgs: spParserArgs,
-  id: ParsedID,
-  loc: ParserLocation,
-  body: TypedefBody,
-  docstring: ParsedComment
+  res: TypedefDeclaration | FunctagDeclaration
 ): void {
-  const range = parsedLocToRange(id.loc, parserArgs);
-  const fullRange = parsedLocToRange(loc, parserArgs);
-  const { doc, dep } = processDocStringComment(docstring);
+  const range = parsedLocToRange(res.id.loc, parserArgs);
+  const fullRange = parsedLocToRange(res.loc, parserArgs);
+  const { doc, dep } = processDocStringComment(res.doc);
   let returnType = "";
-  if (body.returnType) {
-    returnType = body.returnType.id;
+  if (res.body.returnType) {
+    returnType = res.body.returnType.id;
   }
   const typeDefItem = new TypedefItem(
-    id.id,
-    `typedef ${id.id} = function ${returnType} (${readTypeDefParams(
-      body.params
+    res.id.id,
+    `typedef ${res.id.id} = function ${returnType} (${readTypeDefParams(
+      res.body.params
     ).join(", ")});`,
     parserArgs.filePath,
     doc,
     returnType,
     range,
     fullRange,
-    body.params
+    res.body.params
   );
   parserArgs.fileItems.items.push(typeDefItem);
   return;

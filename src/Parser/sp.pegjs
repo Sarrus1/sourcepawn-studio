@@ -1623,11 +1623,8 @@ VariableType
 GlobalVariableDeclaration
   = content:VariableDeclaration
   {
-    readVariable(args, content);
-    return {
-      type: "GlobalVariableDeclaration",
-      content
-    };
+    readVariable(args, content as interfaces.VariableDeclaration);
+    return content;
   }
 
 VariableDeclaration
@@ -1770,14 +1767,15 @@ EnumMemberDeclaration
 FunctagDeclaration
   = doc:__ content:FunctagDeclarationNoDoc
   {
-    readTypedef(args, content.id, content.loc, content.body, doc);
-    return {
+    const res: interfaces.FunctagDeclaration = {
       type: "FunctagDeclaration",
       id: content.id,
       loc: content.loc,
       body: content.body,
       doc
     };
+    readTypedef(args, res);
+    return res;
   }
 
 FunctagDeclarationNoDoc
@@ -1820,14 +1818,15 @@ FunctagType
 TypedefDeclaration
   = doc:__ content:TypedefDeclarationNoDoc
   {
-    readTypedef(args, content.id, content.loc, content.body, doc);
-    return {
+    const res: interfaces.TypedefDeclaration = {
       type: "TypedefDeclaration",
       id: content.id,
       loc: content.loc,
       body: content.body,
-      doc: doc
+      doc
     };
+    readTypedef(args, res);
+    return res;
   }
 
 TypedefDeclarationNoDoc

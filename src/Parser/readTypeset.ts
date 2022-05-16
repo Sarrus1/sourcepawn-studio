@@ -1,7 +1,6 @@
 ﻿import {
   FuncenumDeclaration,
   spParserArgs,
-  TypedefBody,
   TypesetDeclaration,
 } from "./interfaces";
 import { TypesetItem } from "../Backend/Items/spTypesetItem";
@@ -11,8 +10,9 @@ import { TypedefItem } from "../Backend/Items/spTypedefItem";
 import { readTypeDefParams } from "./readTypedef";
 
 /**
+ * Process a typeset declaration.
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {TypesetDeclaration} res  The result of the parsed typesetdeclaration.
+ * @param  {TypesetDeclaration|FuncenumDeclaration} res  Object containing the typeset/funcenum declaration details.
  * @returns void
  */
 export function readTypeset(
@@ -23,7 +23,7 @@ export function readTypeset(
   const fullRange = parsedLocToRange(res.loc, parserArgs);
   const { doc, dep } = processDocStringComment(res.doc);
 
-  let childs: TypedefItem[] = [];
+  let childs: TypedefItem[];
   if (res.type === "TypesetDeclaration") {
     childs = res.body.map((e, i) => {
       const { doc: child_doc, dep: child_dep } = processDocStringComment(e.doc);
@@ -52,7 +52,7 @@ export function readTypeset(
         )});`,
         parserArgs.filePath,
         child_doc,
-        "any",
+        "",
         undefined,
         undefined,
         e.params
@@ -70,5 +70,4 @@ export function readTypeset(
     childs
   );
   parserArgs.fileItems.items.push(typeDefItem);
-  return;
 }

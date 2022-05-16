@@ -12,6 +12,7 @@ import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { processDocStringComment } from "./processComment";
 import { readFunctionAndMethod } from "./readFunctionAndMethod";
 
+//TODO: Add typing.
 export function readProperty(
   parserArgs: spParserArgs,
   id: ParsedID,
