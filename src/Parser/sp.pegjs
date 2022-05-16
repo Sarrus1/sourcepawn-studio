@@ -1134,7 +1134,6 @@ DefineStatementNoDoc
   PDefineToken _p id:IdentifierName _ LineTerminator
   {
     return {
-      type: "DefineStatement",
       id,
       loc: location(),
       value: null
@@ -1144,10 +1143,10 @@ DefineStatementNoDoc
 IncludeStatement
   = PIncludeToken _ pathLoc:IncludePath
   {
-    const res = {
-      type: "IncludeStatement" as "IncludeStatement",
-      path: pathLoc.path as string,
-      loc: pathLoc.loc as interfaces.ParserLocation
+    const res: interfaces.IncludeStatement = {
+      type: "IncludeStatement",
+      path: pathLoc.path,
+      loc: pathLoc.loc
     };
     readInclude(args, res);
     return res;
