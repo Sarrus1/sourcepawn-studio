@@ -130,25 +130,32 @@ export interface ParsedEnumMember {
 export type ParsedEnumStructMember = MethodDeclaration | VariableDeclaration;
 
 /**
- * Parsed define ID.
+ * Parsed ID.
  */
 export interface ParsedID {
   /**
-   * Name of the Identifier.
+   * Name of the identifier.
    */
   id: string;
 
   /**
-   * Location of the Identifier.
+   * Location of the identifier.
    */
   loc: ParserLocation;
 }
 
 /**
- * An object which contains a parsed doc comment and a deprecation notice.
+ * Object containing a processed doc comment and a deprecation notice.
  */
 export interface DocString {
+  /**
+   * Processed doc comment, if it exists.
+   */
   doc: string | undefined;
+
+  /**
+   * Processed deprecated warning, if it exists.
+   */
   dep: string | undefined;
 }
 
