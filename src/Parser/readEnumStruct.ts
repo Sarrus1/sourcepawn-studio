@@ -65,7 +65,7 @@ function readEnumstructMembers(
       case "VariableDeclaration":
         let variableType = "",
           modifier = "",
-          accessModifiers = e.accessModifiers;
+          accessModifiers = e.accessModifiers || [];
         if (e.variableType) {
           variableType = e.variableType.name.id;
           modifier = e.variableType.modifier || "";
