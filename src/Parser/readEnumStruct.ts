@@ -55,7 +55,7 @@ function readEnumstructMembers(
           e.returnType,
           e.id,
           e.loc,
-          undefined,
+          e.doc,
           e.params,
           e.body,
           e.txt,
