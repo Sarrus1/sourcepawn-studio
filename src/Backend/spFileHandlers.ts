@@ -107,10 +107,13 @@ function incrementalParse(
     let fileItems = new FileItem(doc.uri.toString());
     itemsRepo.documents.set(doc.uri.toString(), false);
     const oldDiagnostics = [...parserDiagnostics.get(doc.uri)];
-    parserDiagnostics.set(
-      doc.uri,
-      oldDiagnostics.filter((e) => !range.contains(e.range))
-    );
+    if (range !== undefined) {
+      parserDiagnostics.set(
+        doc.uri,
+        oldDiagnostics.filter((e) => !range.contains(e.range))
+      );
+    }
+
     // We use parseText here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
     const error = parseText(
       text,
@@ -119,7 +122,7 @@ function incrementalParse(
       itemsRepo,
       false,
       false,
-      range ? range.start.line : undefined
+      range !== undefined ? range.start.line : undefined
     );
 
     readUnscannedImports(itemsRepo, fileItems.includes);
