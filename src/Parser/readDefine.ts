@@ -1,31 +1,24 @@
-﻿import { spParserArgs } from "./interfaces";
+﻿import { DefineStatement, spParserArgs } from "./interfaces";
 import { DefineItem } from "../Backend/Items/spDefineItem";
-import { ParsedComment, ParsedID, ParserLocation } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
 
 /**
- * Callback for a parsed define.
+ * Process a define statement from the parser.
  * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {ParsedID} id  The id of the define.
- * @param  {ParserLocation} loc  The location of the define.
- * @param  {string|null} value  The value of the define, if it exists.
- * @param  {string} docstring  The trailing documentation of the define.
+ * @param  {DefineStatement} res  The object containing the define statement details.
  * @returns void
  */
 export function readDefine(
   parserArgs: spParserArgs,
-  id: ParsedID,
-  loc: ParserLocation,
-  value: string | null,
-  docstring: ParsedComment
+  res: DefineStatement
 ): void {
-  const range = parsedLocToRange(id.loc, parserArgs);
-  const fullRange = parsedLocToRange(loc, parserArgs);
-  const { doc, dep } = processDocStringComment(docstring);
+  const range = parsedLocToRange(res.id.loc, parserArgs);
+  const fullRange = parsedLocToRange(res.loc, parserArgs);
+  const { doc, dep } = processDocStringComment(res.doc);
   const defineItem = new DefineItem(
-    id.id,
-    value ? value : "",
+    res.id.id,
+    res.value === null ? res.value : "",
     doc,
     parserArgs.filePath,
     range,

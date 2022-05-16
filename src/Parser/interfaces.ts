@@ -240,7 +240,7 @@ export interface TypedefDeclaration {
 }
 
 /**
- * Body of a parsed TypeDef.
+ * Body of a parsed typedef.
  */
 export interface TypedefBody {
   /**
@@ -531,11 +531,7 @@ export interface PreprocessorStatement {
   /**
    * The type of the preprocessor statement ("PragmaValue" for exemple).
    */
-  type:
-    | "PragmaValue"
-    | "PreprocessorStatement"
-    | "DefineStatement"
-    | "MacroDeclaration";
+  type: "PragmaValue" | "PreprocessorStatement" | "MacroDeclaration";
 
   /**
    * The ID of the preprocessor statement. Only for "DefineStatement" and "MacroStatement".
@@ -546,6 +542,36 @@ export interface PreprocessorStatement {
    * The value of the preprocessor statement.
    */
   value?: string;
+}
+
+/**
+ * Define statement
+ */
+export interface DefineStatement {
+  /**
+   * Generic type of the declaration.
+   */
+  type: "DefineStatement";
+
+  /**
+   * ID of the define.
+   */
+  id: ParsedID;
+
+  /**
+   * Location of the define.
+   */
+  loc: ParserLocation;
+
+  /**
+   * Value of the define.
+   */
+  value: string | null;
+
+  /**
+   * Documentation of the define.
+   */
+  doc: ParsedComment;
 }
 
 /**
@@ -622,5 +648,6 @@ export type LineTerminatorSequenceContent = (
   | string
   | PreprocessorStatement
   | IncludeStatement
+  | DefineStatement
   | null
 )[];

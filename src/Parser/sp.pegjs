@@ -1110,22 +1110,28 @@ Statement
 DefineStatement
   = content:DefineStatementNoDoc doc:__doc
   {
-    readDefine(args, content.id, content.loc, content.value, doc);
-    return content;
+    const res: interfaces.DefineStatement = {
+      type: "DefineStatement",
+      id: content.id,
+      loc: content.loc,
+      value: content.value,
+      doc
+    }
+    readDefine(args, res);
+    return res;
   }
 
 DefineStatementNoDoc
-  = PDefineToken _p id:IdentifierName value:(_p AssignmentExpression)
+  = PDefineToken _p id:IdentifierName _ value:$(AssignmentExpression)
   {
     return {
-      type: "DefineStatement",
       id,
       loc: location(),
-      value: value ? value[1]["value"] : null
+      value
     };
   }
   /
-  PDefineToken _p id:IdentifierName EOS
+  PDefineToken _p id:IdentifierName _ LineTerminator
   {
     return {
       type: "DefineStatement",
