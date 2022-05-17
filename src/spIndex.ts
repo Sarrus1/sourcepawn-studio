@@ -206,6 +206,10 @@ export function activate(context: ExtensionContext) {
     languages.registerHoverProvider(SP_MODE, providers)
   );
 
+  context.subscriptions.push(
+    languages.registerCallHierarchyProvider(SP_MODE, providers)
+  );
+
   Workspace.onDidChangeTextDocument(
     providers.itemsRepository.handleDocumentChange,
     providers.itemsRepository,
