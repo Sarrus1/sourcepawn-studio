@@ -14,6 +14,7 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 - Symbol references.
 - Symbol renaming.
 - Function signature help.
+- Call hierarchy
 - Code outline.
 - Upload to an FTP/SFTP server on successful compile.
 - Automatically run `sm plugins refresh` on a successful upload.
@@ -37,6 +38,7 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
     - [Include auto-completion](#include-auto-completion)
     - [Callback auto-completion](#callback-auto-completion)
     - [Code outline](#code-outline)
+    - [Call Hierarchy](#call-hierarchy)
     - [Symbol references](#symbol-references)
     - [Symbol renaming](#symbol-renaming)
     - [Functions signature help](#functions-signature-help)
@@ -81,6 +83,10 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 ### Code outline
 
 ![Outline example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/outline-example-1.png)
+
+### Call Hierarchy
+
+![Hierarchy example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/hierarchy-example-1.gif)
 
 ### Symbol references
 
