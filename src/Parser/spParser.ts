@@ -37,7 +37,7 @@ export function parseFile(
 export function parseText(
   data: string,
   file: string,
-  items: FileItem,
+  fileItem: FileItem,
   itemsRepository: ItemsRepository,
   searchTokens: boolean,
   isBuiltIn: boolean,
@@ -53,7 +53,7 @@ export function parseText(
   }
   if (!searchTokens) {
     const args: spParserArgs = {
-      fileItems: items,
+      fileItems: fileItem,
       documents: itemsRepository.documents,
       filePath: file,
       IsBuiltIn: isBuiltIn,
@@ -66,7 +66,11 @@ export function parseText(
       parserDiagnostics.set(URI.file(file), []);
     }
     try {
-      const preprocessor = new PreProcessor(data.split("\n"));
+      const preprocessor = new PreProcessor(
+        data.split("\n"),
+        fileItem,
+        itemsRepository
+      );
       data = preprocessor.preProcess();
       spParser.args = args;
       const out = spParser.parse(data);
@@ -95,7 +99,7 @@ export function parseText(
         parseText(
           txt,
           file,
-          items,
+          fileItem,
           itemsRepository,
           searchTokens,
           isBuiltIn,
@@ -111,7 +115,7 @@ export function parseText(
     const semantics = new Semantics(
       lines,
       file,
-      items,
+      fileItem,
       itemsRepository,
       offset,
       range
