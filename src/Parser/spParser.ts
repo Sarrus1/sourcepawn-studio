@@ -9,6 +9,7 @@ import { getNextScope, parsedLocToRange } from "./utils";
 import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
 import { spParserArgs } from "./interfaces";
 import { Semantics } from "./Semantics/spSemantics";
+import { PreProcessor } from "./PreProcessor/spPreprocessor";
 const spParser = require("./spParser-gen");
 
 export function parseFile(
@@ -65,6 +66,8 @@ export function parseText(
       parserDiagnostics.set(URI.file(file), []);
     }
     try {
+      const preprocessor = new PreProcessor(data.split("\n"));
+      data = preprocessor.preProcess();
       spParser.args = args;
       const out = spParser.parse(data);
       return false;
@@ -104,7 +107,7 @@ export function parseText(
       return false;
     }
   } else {
-    const lines = data.split("\n");
+    let lines = data.split("\n");
     const semantics = new Semantics(
       lines,
       file,

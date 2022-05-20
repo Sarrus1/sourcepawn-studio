@@ -103,6 +103,7 @@ function incrementalParse(
   allItems: SPItem[]
 ) {
   try {
+    //TODO: Handle preprocessor changes.
     const text = doc.getText(range);
     let fileItems = new FileItem(doc.uri.toString());
     itemsRepo.documents.set(doc.uri.toString(), false);
