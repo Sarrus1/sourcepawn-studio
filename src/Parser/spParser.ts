@@ -31,12 +31,17 @@ export function parseFile(
     file = resolve(folderpath, match[0]);
     data = readFileSync(file, "utf-8");
   }
-  const preprocessor = new PreProcessor(
-    data.split("\n"),
-    fileItem,
-    itemsRepository
-  );
-  data = preprocessor.preProcess();
+  if (!searchTokens) {
+    const preprocessor = new PreProcessor(
+      data.split("\n"),
+      fileItem,
+      itemsRepository
+    );
+    data = preprocessor.preProcess();
+    fileItem.text = data;
+  } else {
+    data = fileItem.text;
+  }
   parseText(data, file, fileItem, itemsRepository, searchTokens, IsBuiltIn);
 }
 

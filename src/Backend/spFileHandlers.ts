@@ -107,13 +107,14 @@ function incrementalParse(
     //const text = doc.getText(range);
     let text = doc.getText();
 
-    let fileItem = new FileItem(doc.uri.toString());
+    let fileItem = new FileItem(doc.uri.toString(), range);
     const preprocessor = new PreProcessor(
       text.split("\n"),
       fileItem,
       itemsRepo
     );
-    text = preprocessor.preProcess(range);
+    fileItem.text = preprocessor.preProcess(range);
+    text = fileItem.text;
     itemsRepo.documents.set(doc.uri.toString(), false);
     const oldDiagnostics = [...parserDiagnostics.get(doc.uri)];
     if (range !== undefined) {
@@ -469,7 +470,10 @@ function cleanAllItems(
     }
 
     // Filter items based on if they are in the scope being parsed.
-    if (range.contains(e.range) && uri.fsPath === e.filePath) {
+    if (
+      (range.contains(e.range) || e.kind === CompletionItemKind.Constant) &&
+      uri.fsPath === e.filePath
+    ) {
       // Keep only the external (outside of the scope) references of the item.
       if (e.references && e.references.length > 0) {
         const parent = e.parent || globalItem;

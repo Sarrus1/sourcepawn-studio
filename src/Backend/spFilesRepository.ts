@@ -31,8 +31,12 @@ export class FileItem {
   tokens: parsedToken[];
   methodmaps: Map<string, MethodMapItem>;
   items: SPItem[];
+  /**
+   * Preprocessed text
+   */
+  text: string;
 
-  constructor(uri: string) {
+  constructor(uri: string, range?: Range) {
     this.items = [];
     // Add constants only in one map.
     if (uri.includes("sourcemod.inc")) {
