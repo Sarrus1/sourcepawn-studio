@@ -19,7 +19,7 @@ export function readDefine(
   const { doc, dep } = processDocStringComment(res.doc);
   const defineItem = new DefineItem(
     res.id.id,
-    res.value === null ? res.value : "",
+    res.value !== null ? res.value.trim() : "",
     doc,
     parserArgs.filePath,
     range,

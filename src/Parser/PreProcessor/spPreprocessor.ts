@@ -197,19 +197,6 @@ export class PreProcessor {
     }
     value = value.trim();
     this.fileItem.defines.set(match[1], value);
-
-    const index = line.search(match[1]);
-    const range = new Range(lineNb, index, lineNb, index + match[1].length);
-    const defineItem = new DefineItem(
-      match[1],
-      value,
-      "",
-      this.uri.fsPath,
-      range,
-      false,
-      range
-    );
-    this.fileItem.items.push(defineItem);
   }
 
   private handleIf(

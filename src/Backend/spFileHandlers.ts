@@ -135,8 +135,6 @@ function incrementalParse(
       range !== undefined ? range.start.line : undefined
     );
 
-    readUnscannedImports(itemsRepo, fileItem.includes);
-
     if (error) {
       return;
     }
@@ -627,7 +625,6 @@ export function newDocumentCallback(
   } catch (error) {
     console.error(error);
   }
-  readUnscannedImports(itemsRepo, fileItems.includes);
   itemsRepo.fileItems.set(uri.toString(), fileItems);
 
   resolveMethodmapInherits(itemsRepo, uri);
