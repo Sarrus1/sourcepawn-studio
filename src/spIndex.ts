@@ -4,10 +4,9 @@ import {
   languages,
   window,
   ProgressLocation,
-  CompletionItemKind,
 } from "vscode";
 import { URI } from "vscode-uri";
-import { basename, resolve } from "path";
+import { resolve } from "path";
 const glob = require("glob");
 
 import { refreshDiagnostics } from "./Providers/spLinter";
@@ -283,44 +282,22 @@ async function loadFiles(providers: Providers) {
         "SourcemodHome"
       ) || "";
 
-    const smHomeURI = URI.file(smHomePath).toString();
-    for (let [uri, fileItem] of providers.itemsRepository.fileItems.entries()) {
-      if (smHomePath !== "" && uri.includes(smHomeURI)) {
-        continue;
-      }
-      let found = false;
-      for (let item of fileItem.items) {
-        if (
-          item.kind === CompletionItemKind.Function &&
-          item.name === "OnPluginStart"
-        ) {
-          found = true;
-          break;
+    window
+      .showWarningMessage(
+        "There is no mainpath setting set for this file. The extension will not work properly.",
+        "Select a main path",
+        "Ignore"
+      )
+      .then((v) => {
+        if (v === "Select a main path") {
+          window.showQuickPick(files.map((e) => e.fsPath)).then(async (v) => {
+            await Workspace.getConfiguration("sourcepawn", wk[0]).update(
+              "MainPath",
+              v
+            );
+          });
         }
-      }
-      if (!found) {
-        continue;
-      }
-      mainPath = URI.parse(uri).fsPath;
-      await Workspace.getConfiguration("sourcepawn", wk[0]).update(
-        "MainPath",
-        mainPath
-      );
-      break;
-    }
-    if (mainPath === "") {
-      window.showWarningMessage(
-        "There are no mainpath setting set for this file, and the extension was not able to compute one.\
-        The extension will not work properly.\
-        \nRight click on a file and use the command at the bottom of the menu to set it as main."
-      );
-      return;
-    }
-    window.showInformationMessage(
-      `There were no mainpath setting set for this file, so it was automatically set to ${basename(
-        mainPath
-      )}.\nRight click on a file and use the command at the bottom of the menu to set it as main.`
-    );
+      });
   }
   updateDecorations(providers.itemsRepository);
 
