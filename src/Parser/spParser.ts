@@ -39,10 +39,15 @@ export function parseFile(
     );
     data = preprocessor.preProcess();
     fileItem.text = data;
-  } else {
-    data = fileItem.text;
   }
-  parseText(data, file, fileItem, itemsRepository, searchTokens, IsBuiltIn);
+  parseText(
+    fileItem.text,
+    file,
+    fileItem,
+    itemsRepository,
+    searchTokens,
+    IsBuiltIn
+  );
 }
 
 export function parseText(
