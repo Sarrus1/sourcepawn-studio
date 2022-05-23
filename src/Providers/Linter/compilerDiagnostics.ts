@@ -7,4 +7,8 @@ export const compilerDiagnostics = languages.createDiagnosticCollection(
 
 export const parserDiagnostics = languages.createDiagnosticCollection("parser");
 
+export const preDiagnostics = languages.createDiagnosticCollection(
+  "preprocessor"
+);
+
 export const cfgDiagnostics = languages.createDiagnosticCollection("cfg");

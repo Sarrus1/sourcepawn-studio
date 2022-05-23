@@ -1,6 +1,5 @@
-import { Range } from "vscode";
+import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
 import { URI } from "vscode-uri";
-import { parse, compile } from "subscript";
 
 import { DefineItem } from "../../Backend/Items/spDefineItem";
 import { FileItem } from "../../Backend/spFilesRepository";
@@ -8,6 +7,7 @@ import { ItemsRepository } from "../../Backend/spItemsRepository";
 import { isIncludeSelfFile } from "../utils";
 import { newDocumentCallback } from "../../Backend/spFileHandlers";
 import { getAllDefines } from "../../Backend/spItemsGetters";
+import { preDiagnostics } from "../../Providers/Linter/compilerDiagnostics";
 
 export enum Quote {
   None,
@@ -36,8 +36,10 @@ export class PreProcessor {
   conditionWasActivated: boolean;
   skipLine: boolean;
   fileItem: FileItem;
+  uri: URI;
   itemsRepo: ItemsRepository;
   range: Range | undefined;
+  diagnostics: Diagnostic[];
 
   constructor(lines: string[], fileItem: FileItem, itemsRepo: ItemsRepository) {
     this.lines = lines;
@@ -47,6 +49,9 @@ export class PreProcessor {
     this.preprocessedLines = "";
     this.fileItem = fileItem;
     this.itemsRepo = itemsRepo;
+    this.uri = URI.parse(fileItem.uri);
+    preDiagnostics.delete(this.uri);
+    this.diagnostics = [];
   }
 
   private addLine(line: string) {
@@ -72,12 +77,12 @@ export class PreProcessor {
 
       match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>/);
       if (match) {
-        this.handleInclude(match, line);
+        this.handleInclude(match);
         continue;
       }
       match = line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"/);
       if (match) {
-        this.handleInclude(match, line);
+        this.handleInclude(match);
         continue;
       }
 
@@ -118,6 +123,7 @@ export class PreProcessor {
         this.addLine(line);
       }
     }
+    preDiagnostics.set(this.uri, this.diagnostics);
     return this.preprocessedLines;
   }
 
@@ -198,7 +204,7 @@ export class PreProcessor {
       match[1],
       value,
       "",
-      URI.parse(this.fileItem.uri).fsPath,
+      this.uri.fsPath,
       range,
       false,
       range
@@ -217,12 +223,8 @@ export class PreProcessor {
       this.addLine("");
       return;
     }
-    const defines = getAllDefines(
-      this.itemsRepo,
-      URI.parse(this.fileItem.uri),
-      this.fileItem
-    );
-    let condition = line.slice(match.index + match[0].length);
+    const defines = getAllDefines(this.itemsRepo, this.uri, this.fileItem);
+    let condition = line.slice(match.index + match[0].length).trim();
     const matches = condition.match(/\b[A-Za-z_]\w*\b/g);
     if (matches) {
       for (let i = 0; i < matches.length; i++) {
@@ -246,11 +248,17 @@ export class PreProcessor {
     }
     let evaluation = false;
     try {
-      const tree = parse(condition);
-      evaluation = compile(tree)();
+      evaluation = eval(condition);
     } catch (err) {
-      // TODO: Add document diagnostic if there is an error here.
-      console.error(condition);
+      // TODO: Make the range more precise.
+      const range = new Range(this.lineNb, 0, this.lineNb, line.length);
+      this.diagnostics.push(
+        new Diagnostic(
+          range,
+          "Invalid expression. " + err.message,
+          DiagnosticSeverity.Error
+        )
+      );
     }
 
     if (evaluation) {
@@ -275,9 +283,9 @@ export class PreProcessor {
     this.addLine(line);
   }
 
-  private handleInclude(match: RegExpMatchArray, line: string) {
+  private handleInclude(match: RegExpMatchArray) {
     const includePath = match[1];
-    const filePath = URI.parse(this.fileItem.uri).fsPath;
+    const filePath = this.uri.fsPath;
     if (isIncludeSelfFile(filePath, includePath)) {
       return;
     }
