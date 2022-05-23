@@ -31,7 +31,7 @@ export function semanticTokenProvider(
     ) {
       for (let ref of item.references) {
         if (ref.uri.fsPath === document.uri.fsPath) {
-          tokensBuilder.push(ref.range, "variable", ["readonly"]);
+          tokensBuilder.push(ref.range, "macro", ["readonly"]);
         }
       }
     } else if (item.kind === CompletionItemKind.EnumMember) {

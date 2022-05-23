@@ -6,7 +6,14 @@ export const SP_MODE: DocumentFilter = {
   scheme: "file",
 };
 
-const tokenTypes = ["variable", "enumMember", "function", "class", "method"];
+const tokenTypes = [
+  "variable",
+  "enumMember",
+  "function",
+  "class",
+  "method",
+  "macro",
+];
 const tokenModifiers = [
   "readonly",
   "declaration",

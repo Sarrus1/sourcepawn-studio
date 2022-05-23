@@ -177,7 +177,7 @@
           "name": "keyword.control.define.sourcepawn"
         },
         "2": {
-          "name": "variable.other.constant.sourcepawn"
+          "name": "meta.preprocessor.macro.sourcepawn"
         }
       }
     },
@@ -189,7 +189,7 @@
           "name": "keyword.control.undef.sourcepawn"
         },
         "2": {
-          "name": "variable.other.constant.sourcepawn"
+          "name": "meta.preprocessor.macro.sourcepawn"
         }
       }
     },
