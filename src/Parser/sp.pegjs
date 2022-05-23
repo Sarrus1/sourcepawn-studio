@@ -1,5 +1,5 @@
 {{
-  import { readInclude } from "./readInclude";
+  //import { readInclude } from "./readInclude";
   import { readEnum } from "./readEnum";
   //import { readDefine } from "./readDefine";
   //import { readMacro } from "./readMacro";
@@ -544,6 +544,7 @@ PWarningToken     = "#warning"
 PIfToken          = "#if"
 PIncludeToken     = "#include"
 PLineToken        = "#line"
+PEmitToken        = "#emit"
 PPragmaToken      = "#pragma"
 PTryIncludeToken  = "#tryinclude"
 PUndefToken       = "#undef"
@@ -1148,7 +1149,7 @@ IncludeStatement
       path: pathLoc.path,
       loc: pathLoc.loc
     };
-    readInclude(args, res);
+    //readInclude(args, res);
     return res;
   }
 
@@ -1197,6 +1198,7 @@ OtherPreprocessorStatement
   / PLineToken
   / PTryIncludeToken
   / PUndefToken
+  / PEmitToken
   ) (!LineTerminator SourceCharacter)* (LineContinuation / LineTerminatorSequence) ?
   {
     return {

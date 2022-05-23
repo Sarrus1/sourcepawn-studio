@@ -35,6 +35,39 @@ export function getAllItems(itemsRepo: ItemsRepository, uri: URI): SPItem[] {
 }
 
 /**
+ * Returns a map of all the defines parsed from a file and its known includes
+ * @param  {ItemsRepository} itemsRepo      The itemsRepository object constructed in the activation event.
+ * @param  {URI} uri                        The URI of the file we are getting the items for.
+ * @param  {FileItem} fileItem              The fileItem object.
+ * @returns Map<string, string>
+ */
+export function getAllDefines(
+  itemsRepo: ItemsRepository,
+  uri: URI,
+  fileItem: FileItem
+): Map<string, string> {
+  const defines = new Map<string, string>();
+  const mainPath = findMainPath(uri);
+  if (mainPath !== undefined && mainPath !== "") {
+    uri = URI.file(mainPath);
+  }
+
+  let includes = new Set<string>([uri.toString()]);
+
+  getIncludedFiles(itemsRepo, fileItem, includes);
+  includes.forEach((e) => {
+    const fileItem = itemsRepo.fileItems.get(e);
+    if (fileItem === undefined) {
+      return;
+    }
+    fileItem.defines.forEach((v, k) => {
+      defines.set(k, v);
+    });
+  });
+  return defines;
+}
+
+/**
  * Returns a map of all the methodmaps parsed from a file and its known includes
  * @param  {ItemsRepository} itemsRepo      The itemsRepository object constructed in the activation event.
  * @param  {URI} uri                        The URI of the file we are getting the methodmaps for.

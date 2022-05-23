@@ -35,6 +35,7 @@ export class FileItem {
    * Preprocessed text
    */
   text: string;
+  defines: Map<string, string>;
 
   constructor(uri: string, range?: Range) {
     this.items = [];
@@ -74,6 +75,7 @@ export class FileItem {
     this.uri = uri;
     this.tokens = [];
     this.methodmaps = new Map<string, MethodMapItem>();
+    this.defines = new Map();
   }
 
   /**
@@ -93,7 +95,7 @@ export class FileItem {
    *                                    include folder, optionalIncludes folder, etc.
    * @param  {string} filePath          The path of the file the include was imported in.
    * @param  {boolean} IsBuiltIn        Whether or not the parsed file is a Sourcemod builtin.
-   * @returns void
+   * @returns string
    */
   resolveImport(
     includeText: string,
@@ -101,7 +103,7 @@ export class FileItem {
     filePath: string,
     range: Range,
     IsBuiltIn: boolean = false
-  ): void {
+  ): string {
     const SMHome: string = Workspace.getConfiguration(
       "sourcepawn",
       Workspace.getWorkspaceFolder(URI.file(filePath))
@@ -119,7 +121,7 @@ export class FileItem {
     const uri = URI.file(incFilePath);
     if (documents.has(uri.toString())) {
       this.addInclude(uri.toString(), range, IsBuiltIn);
-      return;
+      return uri.toString();
     }
 
     let includeDirs: string[] = Workspace.getConfiguration("sourcepawn").get(
@@ -133,9 +135,10 @@ export class FileItem {
       );
       if (existsSync(includeFile)) {
         this.addInclude(URI.file(includeFile).toString(), range, IsBuiltIn);
-        return;
+        return uri.toString();
       }
     }
+    return undefined;
   }
 
   /**

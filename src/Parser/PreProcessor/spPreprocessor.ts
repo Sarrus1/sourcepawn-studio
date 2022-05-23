@@ -6,6 +6,8 @@ import { DefineItem } from "../../Backend/Items/spDefineItem";
 import { FileItem } from "../../Backend/spFilesRepository";
 import { ItemsRepository } from "../../Backend/spItemsRepository";
 import { isIncludeSelfFile } from "../utils";
+import { newDocumentCallback } from "../../Backend/spFileHandlers";
+import { getAllDefines } from "../../Backend/spItemsGetters";
 
 export enum Quote {
   None,
@@ -30,7 +32,6 @@ export class PreProcessor {
   lineNb: number;
   line: string;
   preprocessedLines: string;
-  defines: Map<string, string>;
   conditionState: ConditionState;
   conditionWasActivated: boolean;
   skipLine: boolean;
@@ -41,7 +42,6 @@ export class PreProcessor {
   constructor(lines: string[], fileItem: FileItem, itemsRepo: ItemsRepository) {
     this.lines = lines;
     this.lineNb = -1;
-    this.defines = new Map();
     this.conditionState = ConditionState.None;
     this.conditionWasActivated = false;
     this.preprocessedLines = "";
@@ -190,7 +190,7 @@ export class PreProcessor {
       }
     }
     value = value.trim();
-    this.defines.set(match[1], value);
+    this.fileItem.defines.set(match[1], value);
 
     const index = line.search(match[1]);
     const range = new Range(lineNb, index, lineNb, index + match[1].length);
@@ -217,13 +217,18 @@ export class PreProcessor {
       this.addLine("");
       return;
     }
+    const defines = getAllDefines(
+      this.itemsRepo,
+      URI.parse(this.fileItem.uri),
+      this.fileItem
+    );
     let condition = line.slice(match.index + match[0].length);
     const matches = condition.match(/\b[A-Za-z_]\w*\b/g);
     if (matches) {
       for (let i = 0; i < matches.length; i++) {
         // Handle "defined"
         if (matches[i] === "defined") {
-          if (i + 1 < matches.length && this.defines.has(matches[i + 1])) {
+          if (i + 1 < matches.length && defines.has(matches[i + 1])) {
             condition = condition.replace(
               RegExp(`defined\\s*${matches[i]}`),
               "true"
@@ -233,7 +238,7 @@ export class PreProcessor {
             break;
           }
         }
-        let define = this.defines.get(matches[i]);
+        let define = defines.get(matches[i]);
         if (define !== undefined) {
           condition = condition.replace(matches[i], define);
         }
@@ -276,7 +281,7 @@ export class PreProcessor {
     if (isIncludeSelfFile(filePath, includePath)) {
       return;
     }
-    this.fileItem.resolveImport(
+    const resolved = this.fileItem.resolveImport(
       includePath,
       this.itemsRepo.documents,
       filePath,
@@ -290,5 +295,9 @@ export class PreProcessor {
       false
     );
     this.addLine("");
+    if (resolved === undefined || this.itemsRepo.fileItems.has(resolved)) {
+      return;
+    }
+    newDocumentCallback(this.itemsRepo, URI.parse(resolved));
   }
 }
