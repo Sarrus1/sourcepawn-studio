@@ -1,5 +1,6 @@
 import { Range } from "vscode";
 import { URI } from "vscode-uri";
+import { DefineItem } from "../../Backend/Items/spDefineItem";
 
 import { FileItem } from "../../Backend/spFilesRepository";
 import { ItemsRepository } from "../../Backend/spItemsRepository";
@@ -34,10 +35,11 @@ export class PreProcessor {
   skipLine: boolean;
   fileItem: FileItem;
   itemsRepo: ItemsRepository;
+  range: Range | undefined;
 
   constructor(lines: string[], fileItem: FileItem, itemsRepo: ItemsRepository) {
     this.lines = lines;
-    this.lineNb = 0;
+    this.lineNb = -1;
     this.defines = new Map();
     this.conditionState = ConditionState.None;
     this.conditionWasActivated = false;
@@ -47,11 +49,19 @@ export class PreProcessor {
   }
 
   private addLine(line: string) {
-    this.preprocessedLines += line + "\n";
+    if (
+      !this.range ||
+      (this.range.start.line <= this.lineNb &&
+        this.range.end.line >= this.lineNb)
+    ) {
+      this.preprocessedLines += line + "\n";
+    }
   }
 
-  public preProcess(): string {
+  public preProcess(range?: Range | undefined): string {
+    this.range = range;
     for (let line of this.lines) {
+      this.lineNb++;
       let match = line.match(/^\s*#define\s+([A-Za-z_]\w*)[^\S\r\n]+/);
 
       if (match) {
@@ -111,8 +121,10 @@ export class PreProcessor {
   }
 
   private handleDefine(match: RegExpMatchArray, line: string) {
-    // Add the line no matter what, to get define autocompletion.
+    // Add the line no matter what, to get the define in the AST.
     this.addLine(line);
+
+    const lineNb = this.lineNb;
 
     const defineValSt = match.index + match[0].length;
     if (line.length <= defineValSt) {
@@ -176,8 +188,21 @@ export class PreProcessor {
         value += line[i];
       }
     }
+    value = value.trim();
+    this.defines.set(match[1], value);
 
-    this.defines.set(match[1], value.trim());
+    const index = line.search(match[1]);
+    const range = new Range(lineNb, index, lineNb, index + match[1].length);
+    const defineItem = new DefineItem(
+      match[1],
+      value,
+      "",
+      URI.parse(this.fileItem.uri).fsPath,
+      range,
+      false,
+      range
+    );
+    this.fileItem.items.push(defineItem);
   }
 
   private handleIf(

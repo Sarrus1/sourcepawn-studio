@@ -14,7 +14,7 @@ const spParser = require("./spParser-gen");
 
 export function parseFile(
   file: string,
-  items: FileItem,
+  fileItem: FileItem,
   itemsRepository: ItemsRepository,
   searchTokens: boolean,
   IsBuiltIn: boolean
@@ -31,7 +31,13 @@ export function parseFile(
     file = resolve(folderpath, match[0]);
     data = readFileSync(file, "utf-8");
   }
-  parseText(data, file, items, itemsRepository, searchTokens, IsBuiltIn);
+  const preprocessor = new PreProcessor(
+    data.split("\n"),
+    fileItem,
+    itemsRepository
+  );
+  data = preprocessor.preProcess();
+  parseText(data, file, fileItem, itemsRepository, searchTokens, IsBuiltIn);
 }
 
 export function parseText(
@@ -66,12 +72,6 @@ export function parseText(
       parserDiagnostics.set(URI.file(file), []);
     }
     try {
-      const preprocessor = new PreProcessor(
-        data.split("\n"),
-        fileItem,
-        itemsRepository
-      );
-      data = preprocessor.preProcess();
       spParser.args = args;
       const out = spParser.parse(data);
       return false;

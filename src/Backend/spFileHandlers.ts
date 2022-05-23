@@ -25,6 +25,7 @@ import { EnumItem } from "./Items/spEnumItem";
 import { globalItem } from "../Misc/spConstants";
 import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
 import { findMainPath } from "../spUtils";
+import { PreProcessor } from "../Parser/PreProcessor/spPreprocessor";
 
 /**
  * Handle the addition of a document by forwarding it to the newDocumentCallback function.
@@ -103,9 +104,16 @@ function incrementalParse(
   allItems: SPItem[]
 ) {
   try {
-    //TODO: Handle preprocessor changes.
-    const text = doc.getText(range);
-    let fileItems = new FileItem(doc.uri.toString());
+    //const text = doc.getText(range);
+    let text = doc.getText();
+
+    let fileItem = new FileItem(doc.uri.toString());
+    const preprocessor = new PreProcessor(
+      text.split("\n"),
+      fileItem,
+      itemsRepo
+    );
+    text = preprocessor.preProcess(range);
     itemsRepo.documents.set(doc.uri.toString(), false);
     const oldDiagnostics = [...parserDiagnostics.get(doc.uri)];
     if (range !== undefined) {
@@ -119,14 +127,14 @@ function incrementalParse(
     const error = parseText(
       text,
       doc.uri.fsPath,
-      fileItems,
+      fileItem,
       itemsRepo,
       false,
       false,
       range !== undefined ? range.start.line : undefined
     );
 
-    readUnscannedImports(itemsRepo, fileItems.includes);
+    readUnscannedImports(itemsRepo, fileItem.includes);
 
     if (error) {
       return;
@@ -135,20 +143,20 @@ function incrementalParse(
     parserDiagnostics.delete(doc.uri);
     if (range !== undefined) {
       const oldRefs = cleanAllItems(allItems, range, doc.uri);
-      restoreOldRefs(oldRefs, fileItems, range, doc.uri);
+      restoreOldRefs(oldRefs, fileItem, range, doc.uri);
       const oldFileItems = itemsRepo.fileItems.get(doc.uri.toString());
       cleanOldFileItems(oldFileItems, range);
-      fileItems.items.push(...oldFileItems.items);
-      oldFileItems.includes.forEach((v, k) => fileItems.includes.set(k, v));
+      fileItem.items.push(...oldFileItems.items);
+      oldFileItems.includes.forEach((v, k) => fileItem.includes.set(k, v));
     }
-    itemsRepo.fileItems.set(doc.uri.toString(), fileItems);
+    itemsRepo.fileItems.set(doc.uri.toString(), fileItem);
 
     resolveMethodmapInherits(itemsRepo, doc.uri);
 
     parseText(
       text,
       doc.uri.fsPath,
-      fileItems,
+      fileItem,
       itemsRepo,
       true,
       false,
@@ -547,12 +555,7 @@ function getScope(
     }
     if (!prevScope) {
       // We are at the top of the file, before the first scope.
-      return new Range(
-        0,
-        0,
-        nextScope.fullRange.start.line,
-        nextScope.fullRange.start.character
-      );
+      return new Range(0, 0, nextScope.fullRange.start.line - 1, 1000);
     }
     if (!nextScope) {
       // We are at the bottom of file, after the last scope.

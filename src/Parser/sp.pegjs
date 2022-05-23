@@ -1,8 +1,8 @@
 {{
   import { readInclude } from "./readInclude";
   import { readEnum } from "./readEnum";
-  import { readDefine } from "./readDefine";
-  import { readMacro } from "./readMacro";
+  //import { readDefine } from "./readDefine";
+  //import { readMacro } from "./readMacro";
   import { readTypedef } from "./readTypedef";
   import { readTypeset } from "./readTypeset";
   import { readVariable } from "./readVariable";
@@ -1117,7 +1117,7 @@ DefineStatement
       value: content.value,
       doc
     }
-    readDefine(args, res);
+    // readDefine(args, res);
     return res;
   }
 
@@ -1593,7 +1593,7 @@ MacroStatement
       value: content.value,
       doc
     }
-    readMacro(args, res);
+    //readMacro(args, res);
     return res;
   }
 
