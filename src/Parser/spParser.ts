@@ -118,7 +118,7 @@ export function parseText(
       } else {
         console.error(err);
       }
-      return false;
+      return true;
     }
   } else {
     let lines = data.split("\n");

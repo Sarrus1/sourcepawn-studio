@@ -1,7 +1,6 @@
 import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
 import { URI } from "vscode-uri";
 
-import { DefineItem } from "../../Backend/Items/spDefineItem";
 import { FileItem } from "../../Backend/spFilesRepository";
 import { ItemsRepository } from "../../Backend/spItemsRepository";
 import { isIncludeSelfFile } from "../utils";

@@ -36,8 +36,9 @@ export class FileItem {
    */
   text: string;
   defines: Map<string, string>;
+  failedParse: number;
 
-  constructor(uri: string, range?: Range) {
+  constructor(uri: string, failedParse = 0) {
     this.items = [];
     // Add constants only in one map.
     if (uri.includes("sourcemod.inc")) {
@@ -76,6 +77,7 @@ export class FileItem {
     this.tokens = [];
     this.methodmaps = new Map<string, MethodMapItem>();
     this.defines = new Map();
+    this.failedParse = failedParse;
   }
 
   /**

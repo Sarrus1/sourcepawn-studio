@@ -8,6 +8,8 @@ import {
   Location,
   Position,
   TextDocument,
+  window,
+  ProgressLocation,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { resolve, dirname, join, extname } from "path";
@@ -86,6 +88,28 @@ export async function handleDocumentChange(
       incrementalParse(event.document, undefined, itemsRepo, allItems);
       return;
     }
+
+    if (fileItems.failedParse > 10) {
+      // If the parsing failed more than x times for this file, reparse the whole file,
+      // as it is probably out of sync.
+      fileItems.failedParse = 0;
+      window.withProgress(
+        {
+          location: ProgressLocation.Notification,
+          title: "Extension is out of sync, reparsing the file...",
+          cancellable: false,
+        },
+        async (progress, token) => {
+          for (let i = 0; i < 10; i++) {
+            setTimeout(() => {
+              progress.report({ increment: i * 10, message: "" });
+            }, 3000);
+          }
+        }
+      );
+      incrementalParse(event.document, undefined, itemsRepo, allItems);
+      return;
+    }
     groupedRanges.set(
       `${range.start.line}-${range.start.character}-${range.end.line}-${range.end.character}`,
       range
@@ -104,10 +128,10 @@ function incrementalParse(
   allItems: SPItem[]
 ) {
   try {
-    //const text = doc.getText(range);
     let text = doc.getText();
 
-    let fileItem = new FileItem(doc.uri.toString(), range);
+    const oldFileItems = itemsRepo.fileItems.get(doc.uri.toString());
+    let fileItem = new FileItem(doc.uri.toString(), oldFileItems.failedParse);
     const preprocessor = new PreProcessor(
       text.split("\n"),
       fileItem,
@@ -136,6 +160,7 @@ function incrementalParse(
     );
 
     if (error) {
+      oldFileItems.failedParse += 1;
       return;
     }
 
@@ -143,7 +168,6 @@ function incrementalParse(
     if (range !== undefined) {
       const oldRefs = cleanAllItems(allItems, range, doc.uri);
       restoreOldRefs(oldRefs, fileItem, range, doc.uri);
-      const oldFileItems = itemsRepo.fileItems.get(doc.uri.toString());
       cleanOldFileItems(oldFileItems, range);
       fileItem.items.push(...oldFileItems.items);
       oldFileItems.includes.forEach((v, k) => fileItem.includes.set(k, v));
