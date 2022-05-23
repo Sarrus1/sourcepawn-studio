@@ -543,7 +543,8 @@
     "rcon-srcds": "^2.0.1",
     "ts-pegjs": "^1.2.1",
     "vscode-uri": "^3.0.3",
-    "wget-improved": "^3.2.1"
+    "wget-improved": "^3.2.1",
+    "subscript": "^7.3.1"
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.2",

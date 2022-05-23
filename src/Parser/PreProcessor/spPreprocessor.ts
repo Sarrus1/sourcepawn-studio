@@ -1,7 +1,8 @@
 import { Range } from "vscode";
 import { URI } from "vscode-uri";
-import { DefineItem } from "../../Backend/Items/spDefineItem";
+import { parse, compile } from "subscript";
 
+import { DefineItem } from "../../Backend/Items/spDefineItem";
 import { FileItem } from "../../Backend/spFilesRepository";
 import { ItemsRepository } from "../../Backend/spItemsRepository";
 import { isIncludeSelfFile } from "../utils";
@@ -240,14 +241,18 @@ export class PreProcessor {
     }
     let evaluation = false;
     try {
-      evaluation = eval(condition);
+      const tree = parse(condition);
+      evaluation = compile(tree)();
     } catch (err) {
+      // TODO: Add document diagnostic if there is an error here.
       console.error(condition);
     }
 
     if (evaluation) {
       this.conditionWasActivated = true;
       this.skipLine = false;
+    } else {
+      this.skipLine = true;
     }
     this.addLine("");
     return;
