@@ -650,45 +650,6 @@ export function newDocumentCallback(
 }
 
 /**
- * Recursively read the unparsed includes from a array of Include objects.
- * @param  {ItemsRepository} itemsRepo    The itemsRepository object constructed in the activation event.
- * @param  {Include[]} includes           The array of Include objects to parse.
- * @returns void
- */
-function readUnscannedImports(
-  itemsRepo: ItemsRepository,
-  includes: Map<string, Include>
-): void {
-  const debug = ["messages", "verbose"].includes(
-    Workspace.getConfiguration("sourcepawn").get("trace.server")
-  );
-  includes.forEach((include) => {
-    if (debug) console.log("reading", include.uri.toString());
-
-    const filePath = URI.parse(include.uri).fsPath;
-
-    if (itemsRepo.fileItems.has(include.uri) || !existsSync(filePath)) {
-      return;
-    }
-
-    if (debug) console.log("found", include.uri.toString());
-
-    let fileItems: FileItem = new FileItem(include.uri);
-    try {
-      parseFile(filePath, fileItems, itemsRepo, false, include.IsBuiltIn);
-    } catch (err) {
-      console.error(err, include.uri.toString());
-    }
-    if (debug) console.log("parsed", include.uri.toString());
-
-    itemsRepo.fileItems.set(include.uri, fileItems);
-    if (debug) console.log("added", include.uri.toString());
-
-    readUnscannedImports(itemsRepo, fileItems.includes);
-  });
-}
-
-/**
  * Return all the possible include directories paths, such as SMHome, etc. The function will only return existing paths.
  * @param  {URI} uri                          The URI of the file from which we are trying to read the include.
  * @param  {boolean=false} onlyOptionalPaths  Whether or not the function only return the optionalIncludeFolderPaths.
