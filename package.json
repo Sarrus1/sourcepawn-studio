@@ -535,7 +535,7 @@
     "@types/vscode": "^1.63.1",
     "clang-format": "^1.6.0",
     "decompress": "^4.2.1",
-    "ftp-deploy": "^2.3.8",
+    "ftp-deploy": "^2.4.2",
     "glob": "^7.2.0",
     "n-readlines": "^1.0.1",
     "peggy": "^1.2.0",
@@ -543,6 +543,7 @@
     "rcon-srcds": "^2.0.1",
     "ts-pegjs": "^1.2.1",
     "vscode-uri": "^3.0.3",
+    "web-tree-sitter": "^0.19.4",
     "wget-improved": "^3.2.1"
   },
   "devDependencies": {
@@ -550,8 +551,12 @@
     "@types/mocha": "^8.2.3",
     "@types/node": "^8.0.14",
     "mocha": "^9.1.3",
+    "node-loader": "2.0.0",
     "nyc": "^15.1.0",
     "ovsx": "^0.3.0",
+    "tree-sitter": "0.20.0",
+    "tree-sitter-cli": "0.19.5",
+    "tree-sitter-sourcepawn": "^0.2.0",
     "ts-loader": "^9.2.6",
     "typescript": "^4.5.4",
     "vscode-test": "^1.6.1",
@@ -559,7 +564,7 @@
     "webpack-cli": "^4.9.1"
   },
   "overrides": {
-    "@icetee/ftp": "^1.0.8"
+    "@icetee/ftp": "1.0.8"
   },
   "scripts": {
     "vscode:prepublish": "npm run generate-parser && npm run generate-spParser && webpack --mode production",
@@ -567,8 +572,9 @@
     "generate-parser": "peggy --plugin ./node_modules/ts-pegjs -o src/Parser/cfgParser/cfgParser.ts --cache src/Parser/cfgParser/cfg.pegjs",
     "generate-spParser": "peggy --plugin ./node_modules/ts-pegjs -o src/Parser/spParser-gen.ts --cache src/Parser/sp.pegjs",
     "compile": "npm run generate-parser && npm run generate-spParser && tsc -b tsconfig.json",
-    "watch": "npm run generate-parser && npm run generate-spParser && webpack --mode development --watch",
+    "watch": "webpack --mode development --watch",
     "webpack": "npm run generate-parser && webpack --mode development",
-    "test": "npm run compile && node ./dist/test/runTest.js"
+    "test": "npm run compile && node ./dist/test/runTest.js",
+    "postinstall": "node ./scripts/build.js"
   }
 }

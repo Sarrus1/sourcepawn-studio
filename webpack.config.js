@@ -19,7 +19,7 @@ const config = {
     vscode: "commonjs vscode",
   },
   resolve: {
-    extensions: [".ts", ".js"],
+    extensions: [".ts", ".js", ".node", ".wasm"],
   },
   module: {
     rules: [
@@ -31,6 +31,14 @@ const config = {
             loader: "ts-loader",
           },
         ],
+      },
+      {
+        test: /\.node$/,
+        loader: "node-loader",
+      },
+      {
+        test: /\.wasm$/,
+        type: "asset/inline",
       },
     ],
   },
