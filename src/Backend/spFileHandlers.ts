@@ -652,13 +652,13 @@ export async function newDocumentCallback(
   const data = readFileSync(filePath).toString();
   await treeSitterPromise;
   const parser = new TreeSitter();
-  const langFile = join(__dirname, "sourcepawn.wasm");
+  const langFile = join(__dirname, "tree-sitter-sourcepawn.wasm");
   const langObj = await TreeSitter.Language.load(langFile);
   parser.setLanguage(langObj);
-
   const tree = parser.parse(data);
-  return;
+
   try {
+    console.time("test");
     parseFile(filePath, fileItems, itemsRepo, false, false);
   } catch (error) {
     console.error(error);

@@ -30,7 +30,7 @@ for (li of langs) {
   }
 
   console.log("Compiling " + lang + " parser");
-  exec("npx tree-sitter build-wasm " + module, (err) => {
+  exec("npx tree-sitter build-wasm " + module + " --docker", (err) => {
     if (err)
       console.log("Failed to build wasm for " + lang + ": " + err.message);
     else
