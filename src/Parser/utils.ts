@@ -3,8 +3,8 @@ import { basename } from "path";
 
 import { FunctionParam } from "./interfaces";
 import { SPItem } from "../Backend/Items/spItems";
-import { ParserLocation } from "./interfaces";
-import { spParserArgs } from "./interfaces";
+import { ParserLocation, spParserArgs } from "./interfaces";
+import * as TreeSitter from "web-tree-sitter";
 
 export function purgeReferences(
   item: SPItem,
@@ -150,4 +150,11 @@ export function checkIfPluginInfo(
     return false;
   }
   return ["Plugin", "Extension", "PlVers", "SharedPlugin"].includes(name);
+}
+
+export function pointsToRange(
+  startPos: TreeSitter.Point,
+  endPos: TreeSitter.Point
+): Range {
+  return new Range(startPos.row, startPos.column, endPos.row, endPos.column);
 }

@@ -10,7 +10,9 @@ import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
 import { spParserArgs } from "./interfaces";
 import { Semantics } from "./Semantics/spSemantics";
 import { PreProcessor } from "./PreProcessor/spPreprocessor";
-const spParser = require("./spParser-gen");
+import { parser } from "../spIndex";
+import * as TreeSitter from "web-tree-sitter";
+import { readVariable } from "./readVariableNew";
 
 export function parseFile(
   file: string,
@@ -68,59 +70,11 @@ export function parseText(
     data = data.substring(1);
   }
   if (!searchTokens) {
-    const args: spParserArgs = {
-      fileItems: fileItem,
-      documents: itemsRepository.documents,
-      filePath: file,
-      IsBuiltIn: isBuiltIn,
-      anonEnumCount: 0,
-      offset,
-      variableDecl: [],
-    };
-    if (offset === 0) {
-      // Only clear the diagnostics if there is no error.
-      parserDiagnostics.set(URI.file(file), []);
-    }
-    try {
-      spParser.args = args;
-      const out = spParser.parse(data);
-      return false;
-    } catch (err) {
-      if (err.location !== undefined) {
-        const range = parsedLocToRange(err.location, args);
-        const diagnostic = new Diagnostic(
-          range,
-          err.message,
-          DiagnosticSeverity.Error
-        );
-        const newDiagnostics = Array.from(
-          parserDiagnostics.get(URI.file(file))
-        );
-        newDiagnostics.push(diagnostic);
-        parserDiagnostics.set(URI.file(file), newDiagnostics);
-        let { txt, newOffset } = getNextScope(
-          data,
-          err.location.start.line - 1
-        );
-        if (txt === undefined || offset === undefined) {
-          return true;
-        }
-        newOffset += offset;
-        parseText(
-          txt,
-          file,
-          fileItem,
-          itemsRepository,
-          searchTokens,
-          isBuiltIn,
-          newOffset
-        );
-      } else {
-        console.error(err);
-      }
-      return true;
-    }
+    const tree = parser.parse(data);
+    walkTree(tree, fileItem, file);
+    return false;
   } else {
+    return false;
     let lines = data.split("\n");
     const semantics = new Semantics(
       lines,
@@ -132,5 +86,13 @@ export function parseText(
     );
     semantics.analyze();
     return false;
+  }
+}
+
+function walkTree(tree: TreeSitter.Tree, fileItem: FileItem, filePath: string) {
+  for (let child of tree.rootNode.children) {
+    if (child.type === "variable_declaration_statement") {
+      readVariable(fileItem, child, filePath);
+    }
   }
 }

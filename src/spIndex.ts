@@ -6,8 +6,9 @@ import {
   ProgressLocation,
 } from "vscode";
 import { URI } from "vscode-uri";
-import { resolve } from "path";
+import { join, resolve } from "path";
 const glob = require("glob");
+import * as TreeSitter from "web-tree-sitter";
 
 import { refreshDiagnostics } from "./Providers/spLinter";
 import { registerSPLinter } from "./Providers/Linter/registerSPLinter";
@@ -21,6 +22,8 @@ import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
 import { findMainPath, checkMainPath } from "./spUtils";
 import { updateDecorations } from "./Providers/decorationsProvider";
 import { newDocumentCallback } from "./Backend/spFileHandlers";
+
+export let parser: TreeSitter;
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
@@ -247,6 +250,9 @@ function getDirectories(paths: string[], providers: Providers) {
 }
 
 async function loadFiles(providers: Providers) {
+  console.time("build parser");
+  await buildParser();
+  console.timeEnd("build parser");
   console.time("parse");
 
   await parseSMApi(providers.itemsRepository);
@@ -302,4 +308,12 @@ async function loadFiles(providers: Providers) {
   updateDecorations(providers.itemsRepository);
 
   console.timeEnd("parse");
+}
+
+async function buildParser() {
+  await TreeSitter.init();
+  parser = new TreeSitter();
+  const langFile = join(__dirname, "tree-sitter-sourcepawn.wasm");
+  const langObj = await TreeSitter.Language.load(langFile);
+  parser.setLanguage(langObj);
 }

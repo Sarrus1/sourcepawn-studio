@@ -14,6 +14,7 @@ import {
 import { URI } from "vscode-uri";
 import { resolve, dirname, join, extname } from "path";
 import { existsSync, readFileSync } from "fs";
+import * as TreeSitter from "web-tree-sitter";
 
 import { ItemsRepository } from "./spItemsRepository";
 import { Include, SPItem } from "./Items/spItems";
@@ -28,10 +29,7 @@ import { globalItem } from "../Misc/spConstants";
 import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
 import { findMainPath } from "../spUtils";
 import { PreProcessor } from "../Parser/PreProcessor/spPreprocessor";
-
-import * as TreeSitter from "web-tree-sitter";
-
-const treeSitterPromise = TreeSitter.init();
+import { parser } from "../spIndex";
 
 /**
  * Handle the addition of a document by forwarding it to the newDocumentCallback function.
@@ -649,16 +647,7 @@ export async function newDocumentCallback(
   let fileItems: FileItem = new FileItem(uri.toString());
   itemsRepo.documents.set(uri.toString(), false);
 
-  const data = readFileSync(filePath).toString();
-  await treeSitterPromise;
-  const parser = new TreeSitter();
-  const langFile = join(__dirname, "tree-sitter-sourcepawn.wasm");
-  const langObj = await TreeSitter.Language.load(langFile);
-  parser.setLanguage(langObj);
-  const tree = parser.parse(data);
-
   try {
-    console.time("test");
     parseFile(filePath, fileItems, itemsRepo, false, false);
   } catch (error) {
     console.error(error);
