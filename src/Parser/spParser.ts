@@ -1,18 +1,15 @@
-import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
+import { Range } from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { resolve, dirname } from "path";
-import { URI } from "vscode-uri";
 
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import { FileItem } from "../Backend/spFilesRepository";
-import { getNextScope, parsedLocToRange } from "./utils";
-import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
-import { spParserArgs } from "./interfaces";
 import { Semantics } from "./Semantics/spSemantics";
 import { PreProcessor } from "./PreProcessor/spPreprocessor";
 import { parser } from "../spIndex";
 import * as TreeSitter from "web-tree-sitter";
-import { readVariable } from "./readVariableNew";
+import { readVariable } from "./readVariable";
+import { readFunctionAndMethod } from "./readFunctionAndMethodNew";
 
 export function parseFile(
   file: string,
@@ -71,7 +68,8 @@ export function parseText(
   }
   if (!searchTokens) {
     const tree = parser.parse(data);
-    walkTree(tree, fileItem, file);
+    const walker = new TreeWalker(fileItem, file, tree, isBuiltIn);
+    walker.walkTree();
     return false;
   } else {
     return false;
@@ -89,10 +87,37 @@ export function parseText(
   }
 }
 
-function walkTree(tree: TreeSitter.Tree, fileItem: FileItem, filePath: string) {
-  for (let child of tree.rootNode.children) {
-    if (child.type === "variable_declaration_statement") {
-      readVariable(fileItem, child, filePath);
+export class TreeWalker {
+  fileItem: FileItem;
+  filePath: string;
+  tree: TreeSitter.Tree;
+  isBuiltin: boolean;
+
+  constructor(
+    fileItem: FileItem,
+    filePath: string,
+    tree: TreeSitter.Tree,
+    isBuiltin: boolean
+  ) {
+    this.fileItem = fileItem;
+    this.filePath = filePath;
+    this.tree = tree;
+    this.isBuiltin = isBuiltin;
+  }
+
+  public walkTree() {
+    for (let child of this.tree.rootNode.children) {
+      if (
+        child.type === "variable_declaration_statement" ||
+        child.type === "old_variable_declaration_statement"
+      ) {
+        readVariable(this, child);
+        continue;
+      }
+      if (child.type === "function_declaration") {
+        readFunctionAndMethod(this, child);
+        continue;
+      }
     }
   }
 }

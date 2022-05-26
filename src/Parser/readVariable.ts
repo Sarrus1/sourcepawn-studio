@@ -1,46 +1,43 @@
-﻿import { spParserArgs } from "./interfaces";
-import { VariableDeclaration } from "./interfaces";
+﻿import * as TreeSitter from "web-tree-sitter";
+
 import { globalItem } from "../Misc/spConstants";
-import { parsedLocToRange } from "./utils";
-import { processDocStringComment } from "./processComment";
 import { VariableItem } from "../Backend/Items/spVariableItem";
+import { pointsToRange } from "./utils";
+import { TreeWalker } from "./spParser";
 
 /**
  * Process a global variable declaration.
- * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {MethodmapDeclaration} res  The object containing the variable declaration details.
- * @returns void
  */
 export function readVariable(
-  parserArgs: spParserArgs,
-  res: VariableDeclaration
+  walker: TreeWalker,
+  node: TreeSitter.SyntaxNode
 ): void {
-  let variableType = "",
-    modifier = "",
-    processedDeclType = "";
-  if (res.variableType) {
-    variableType = res.variableType.name.id;
-    modifier = res.variableType.modifier || "";
-  }
-  if (res.accessModifiers != null) {
-    processedDeclType = res.accessModifiers.join(" ");
-  }
-  res.declarations.forEach((e) => {
-    const range = parsedLocToRange(e.id.loc, parserArgs);
-    const { doc, dep } = processDocStringComment(res.doc);
-    const arrayInitialer = e.arrayInitialer || "";
+  const variableType = node.childForFieldName("type").text;
+  let storageClass = [];
+  for (let child of node.children) {
+    // FIXME: More efficient way to do this ?
+    // FIXME: Old declarations are broken with tree-sitter-sourcepawn.
+    if (child.type === "variable_storage_class") {
+      // FIXME: Only works for 0 or 1 storage class.
+      // This has to be fixed in tree-sitter-sourcepawn.
+      storageClass.push(child.text);
+      continue;
+    }
+    if (child.type !== "variable_declaration") {
+      continue;
+    }
+    const declaration = child.childForFieldName("name");
     const variableItem = new VariableItem(
-      e.id.id,
-      parserArgs.filePath,
+      declaration.text,
+      walker.filePath,
       globalItem,
-      range,
+      pointsToRange(declaration.startPosition, declaration.endPosition),
       variableType,
-      `${processedDeclType}${variableType}${modifier}${
-        e.id.id
-      }${arrayInitialer.trim()};`.trim(),
-      doc,
-      res.accessModifiers
+      // TODO: Handle comments.
+      "detail",
+      "doc",
+      storageClass
     );
-    parserArgs.fileItems.items.push(variableItem);
-  });
+    walker.fileItem.items.push(variableItem);
+  }
 }

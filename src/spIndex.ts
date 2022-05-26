@@ -24,6 +24,7 @@ import { updateDecorations } from "./Providers/decorationsProvider";
 import { newDocumentCallback } from "./Backend/spFileHandlers";
 
 export let parser: TreeSitter;
+export let spLangObj: TreeSitter.Language;
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
@@ -314,6 +315,6 @@ async function buildParser() {
   await TreeSitter.init();
   parser = new TreeSitter();
   const langFile = join(__dirname, "tree-sitter-sourcepawn.wasm");
-  const langObj = await TreeSitter.Language.load(langFile);
-  parser.setLanguage(langObj);
+  spLangObj = await TreeSitter.Language.load(langFile);
+  parser.setLanguage(spLangObj);
 }
