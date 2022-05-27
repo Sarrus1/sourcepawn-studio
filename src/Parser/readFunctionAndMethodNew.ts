@@ -1,10 +1,8 @@
 ﻿import * as TreeSitter from "web-tree-sitter";
 
-import { spParserArgs } from "./interfaces";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
-import { FormalParameter, FunctionParam } from "./interfaces";
-import { parsedLocToRange, pointsToRange } from "./utils";
-import { addVariableItem } from "./addVariableItem";
+import { FunctionParam } from "./interfaces";
+import { pointsToRange } from "./utils";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { globalItem } from "../Misc/spConstants";
 import { ConstantItem } from "../Backend/Items/spConstantItem";
@@ -15,6 +13,7 @@ import { TreeWalker } from "./spParser";
 import { spLangObj } from "../spIndex";
 import { readVariable } from "./readVariable";
 import { VariableItem } from "../Backend/Items/spVariableItem";
+import { findDocumentation } from "./findDocumentation";
 
 export function readFunctionAndMethod(
   walker: TreeWalker,
@@ -30,13 +29,14 @@ export function readFunctionAndMethod(
   );
   // FIXME: argument_declarations contain () as well. This is not specified in node-types.json
   let params = node.children.find((e) => e.type === "argument_declarations");
-  const processedParams = processFunctionParams(params, undefined);
+  let { doc, dep } = findDocumentation(walker, node, false);
+  const processedParams = processFunctionParams(params, doc);
   let returnType = returnTypeNode ? returnTypeNode.text : "";
   let storageClass = storageClassNode ? [storageClassNode.text] : [];
   item = new FunctionItem(
     nameNode.text,
     `${storageClass} ${returnType} ${nameNode.text}${params.text}`.trim(),
-    "doc",
+    doc,
     processedParams,
     walker.filePath,
     walker.isBuiltin,
@@ -85,9 +85,19 @@ function processFunctionParams(
     if (param.type !== "argument_declaration") {
       continue;
     }
+    const label = param.childForFieldName("name").text;
+    let documentation = "";
+    if (doc) {
+      const match = doc.match(
+        new RegExp(`@param\\s+(?:\\b${label}\\b)([^\\@]+)`)
+      );
+      if (match) {
+        documentation = match[1].replace(/\*/gm, "").trim();
+      }
+    }
     processedParams.push({
-      label: param.childForFieldName("name").text,
-      documentation: "",
+      label,
+      documentation,
     } as FunctionParam);
   }
   return processedParams;
@@ -112,6 +122,7 @@ function addParamsAsVariables(
     // FIXME: No storage classes for arguments.
     // This is a problem with Tree sitter.
     const storageClass = [];
+    const doc = processedParams.find((e) => e.label === variableNameNode.text);
     const variableItem = new VariableItem(
       variableNameNode.text,
       walker.filePath,
@@ -121,9 +132,8 @@ function addParamsAsVariables(
         variableNameNode.endPosition
       ),
       variableType,
-      // TODO: Handle doc comments.
       `${storageClass.join(" ")} ${variableType} ${variableNameNode.text}`,
-      "doc",
+      doc ? doc.documentation : "",
       storageClass
     );
     walker.fileItem.items.push(variableItem);

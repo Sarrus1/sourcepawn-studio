@@ -92,6 +92,7 @@ export class TreeWalker {
   filePath: string;
   tree: TreeSitter.Tree;
   isBuiltin: boolean;
+  comments: TreeSitter.SyntaxNode[];
 
   constructor(
     fileItem: FileItem,
@@ -103,10 +104,14 @@ export class TreeWalker {
     this.filePath = filePath;
     this.tree = tree;
     this.isBuiltin = isBuiltin;
+    this.comments = [];
   }
 
   public walkTree() {
     for (let child of this.tree.rootNode.children) {
+      if (child.type === "comment") {
+        this.comments.push(child);
+      }
       if (
         child.type === "variable_declaration_statement" ||
         child.type === "old_variable_declaration_statement"
