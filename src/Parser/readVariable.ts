@@ -10,10 +10,11 @@ import { TreeWalker } from "./spParser";
  */
 export function readVariable(
   walker: TreeWalker,
-  node: TreeSitter.SyntaxNode
+  node: TreeSitter.SyntaxNode,
+  parent = globalItem
 ): void {
   const variableType = node.childForFieldName("type").text;
-  let storageClass = [];
+  let storageClass: string[] = [];
   for (let child of node.children) {
     // FIXME: More efficient way to do this ?
     // FIXME: Old declarations are broken with tree-sitter-sourcepawn.
@@ -30,11 +31,11 @@ export function readVariable(
     const variableItem = new VariableItem(
       declaration.text,
       walker.filePath,
-      globalItem,
+      parent,
       pointsToRange(declaration.startPosition, declaration.endPosition),
       variableType,
-      // TODO: Handle comments.
-      "detail",
+      // TODO: Handle doc comments.
+      `${storageClass.join(" ")} ${variableType} ${declaration.text}`,
       "doc",
       storageClass
     );
