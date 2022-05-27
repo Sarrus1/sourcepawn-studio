@@ -119,7 +119,10 @@ export class TreeWalker {
         readVariable(this, child);
         continue;
       }
-      if (child.type === "function_declaration") {
+      if (
+        child.type === "function_declaration" ||
+        child.type === "function_definition"
+      ) {
         readFunctionAndMethod(this, child);
         continue;
       }

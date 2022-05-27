@@ -17,12 +17,13 @@ import { basename } from "path";
 import { descriptionToMD } from "../../spUtils";
 import { SPItem } from "./spItems";
 import { FormalParameter, FunctionParam } from "../../Parser/interfaces";
+import { VariableItem } from "./spVariableItem";
 
 export class FunctionItem implements SPItem {
   name: string;
   description: string;
   detail: string;
-  params: FunctionParam[];
+  params: VariableItem[];
   filePath: string;
   range: Range;
   fullRange: Range;
@@ -32,25 +33,22 @@ export class FunctionItem implements SPItem {
   type: string;
   deprecated: string | undefined;
   accessModifiers: string[] | undefined;
-  params_signature: FormalParameter[] | null;
 
   constructor(
     name: string,
     detail: string,
     description: string,
-    params: FunctionParam[],
     file: string,
     IsBuiltIn: boolean,
     range: Range,
     type: string,
     fullRange: Range,
     deprecated: string | undefined,
-    accessModifiers: string[] | undefined,
-    params_signature: FormalParameter[] | null
+    accessModifiers: string[] | undefined
   ) {
     this.description = description;
     this.name = name;
-    this.params = params;
+    this.params = [];
     this.detail = detail;
     this.filePath = file;
     this.IsBuiltIn = IsBuiltIn;
@@ -60,7 +58,6 @@ export class FunctionItem implements SPItem {
     this.deprecated = deprecated;
     this.references = [];
     this.accessModifiers = accessModifiers;
-    this.params_signature = params_signature;
   }
 
   toCompletionItem(): CompletionItem {
@@ -82,7 +79,9 @@ export class FunctionItem implements SPItem {
     return {
       label: this.detail,
       documentation: descriptionToMD(this.description),
-      parameters: this.params,
+      parameters: this.params.map((e) => {
+        return { label: e.name, documentation: e.description };
+      }),
     };
   }
 
@@ -160,26 +159,25 @@ export class FunctionItem implements SPItem {
     const snippet = new SnippetString();
     snippet.appendText(`public ${this.type} ${this.name}`);
     snippet.appendText("(");
-    if (this.params_signature) {
-      this.params_signature.forEach((param, i) => {
-        let declarationType = Array.isArray(param.declarationType)
-          ? param.declarationType.join(" ")
-          : param.declarationType;
-        if (declarationType) {
-          snippet.appendText(declarationType);
-          snippet.appendText(" ");
-        }
-        let type = param.parameterType;
-        if (type) {
-          snippet.appendText(type.name.id);
-          snippet.appendText(type.modifier);
-        }
-        snippet.appendPlaceholder(param.id.id);
-        if (i !== this.params_signature.length - 1) {
-          snippet.appendText(", ");
-        }
-      });
-    }
+    this.params.forEach((param, i) => {
+      // let declarationType = Array.isArray(param)
+      //   ? param.declarationType.join(" ")
+      //   : param.declarationType;
+      let declarationType;
+      if (declarationType) {
+        snippet.appendText(declarationType);
+        snippet.appendText(" ");
+      }
+      let type = param.type;
+      if (type) {
+        snippet.appendText(type + " ");
+        //snippet.appendText(type.modifier);
+      }
+      snippet.appendPlaceholder(param.name);
+      if (i !== this.params.length - 1) {
+        snippet.appendText(", ");
+      }
+    });
 
     snippet.appendText(")\n{\n\t");
     snippet.appendTabstop();

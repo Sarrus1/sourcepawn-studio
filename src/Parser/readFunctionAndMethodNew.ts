@@ -33,19 +33,23 @@ export function readFunctionAndMethod(
   const processedParams = processFunctionParams(params, doc);
   let returnType = returnTypeNode ? returnTypeNode.text : "";
   let storageClass = storageClassNode ? [storageClassNode.text] : [];
+  let functionTypeNode = node.children.find(
+    (e) => e.type === "function_definition_type"
+  );
+  let functionType = functionTypeNode ? functionTypeNode.text : "";
+  // TODO: Separate storage classes and function types.
+  storageClass.push(functionType);
   item = new FunctionItem(
     nameNode.text,
     `${storageClass} ${returnType} ${nameNode.text}${params.text}`.trim(),
     doc,
-    processedParams,
     walker.filePath,
     walker.isBuiltin,
     pointsToRange(nameNode.startPosition, nameNode.endPosition),
     returnType,
     pointsToRange(node.startPosition, node.endPosition),
     undefined,
-    storageClass,
-    undefined
+    storageClass
   );
   readBodyVariables(
     walker,
@@ -137,5 +141,6 @@ function addParamsAsVariables(
       storageClass
     );
     walker.fileItem.items.push(variableItem);
+    parent.params.push(variableItem);
   }
 }

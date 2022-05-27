@@ -19,13 +19,14 @@ import { FunctionParam } from "../../Parser/interfaces";
 import { EnumStructItem } from "./spEnumStructItem";
 import { MethodMapItem } from "./spMethodmapItem";
 import { PropertyItem } from "./spPropertyItem";
+import { VariableItem } from "./spVariableItem";
 
 export class MethodItem implements SPItem {
   name: string;
   parent: EnumStructItem | MethodMapItem;
   description: string;
   detail: string;
-  params: FunctionParam[];
+  params: VariableItem[];
   kind: CompletionItemKind;
   fullRange: Range;
   type: string;
@@ -40,7 +41,6 @@ export class MethodItem implements SPItem {
     name: string,
     detail: string,
     description: string,
-    params: FunctionParam[],
     type: string,
     file: string,
     range: Range,
@@ -59,7 +59,7 @@ export class MethodItem implements SPItem {
     }
     this.detail = detail;
     this.description = description;
-    this.params = params;
+    this.params = [];
     this.IsBuiltIn = IsBuiltIn;
     this.filePath = file;
     this.range = range;
@@ -88,7 +88,9 @@ export class MethodItem implements SPItem {
     return {
       label: this.detail,
       documentation: descriptionToMD(this.description),
-      parameters: this.params,
+      parameters: this.params.map((e) => {
+        return { label: e.name, documentation: e.description };
+      }),
     };
   }
 

@@ -15,6 +15,7 @@ import { MethodItem } from "./spMethodItem";
 import { FunctionParam } from "../../Parser/interfaces";
 import { MethodMapItem } from "./spMethodmapItem";
 import { EnumStructItem } from "./spEnumStructItem";
+import { VariableItem } from "./spVariableItem";
 
 export interface SPItem {
   name: string;
@@ -28,7 +29,7 @@ export interface SPItem {
   fullRange?: Range;
   references?: Location[];
   IsBuiltIn?: boolean;
-  params?: FunctionParam[];
+  params?: VariableItem[];
   deprecated?: string;
 
   toCompletionItem(
