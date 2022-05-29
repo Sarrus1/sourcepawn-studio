@@ -23,16 +23,28 @@ export function findDocumentation(
   let endIndex = node.startPosition.row;
   for (let comment of walker.comments.reverse()) {
     if (endIndex === comment.endPosition.row + 1) {
-      txt.push(
-        comment.text
-          .replace(/^\/\*\s*/, "")
-          .replace(/\*\/$/, "")
-          .replace(/^\/\/\s*/, "")
-      );
+      txt.push(commentToDoc(comment.text));
       endIndex = comment.startPosition.row;
     } else {
       walker.comments = [];
     }
   }
   return { doc: txt.reverse().join("").trim(), dep };
+}
+
+/**
+ * Convert a comment to a documentation string.
+ * @param  {string} text  Comment to convert.
+ * @returns string        Processed documentation string.
+ */
+export function commentToDoc(text: string): string {
+  return (
+    text
+      // Remove leading /* and whitespace.
+      .replace(/^\/\*\s*/, "")
+      // Remove trailing */
+      .replace(/\*\/$/, "")
+      // Remove leading // and whitespace.
+      .replace(/^\/\/\s*/, "")
+  );
 }

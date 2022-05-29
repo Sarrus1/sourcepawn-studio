@@ -10,6 +10,7 @@ import { parser } from "../spIndex";
 import * as TreeSitter from "web-tree-sitter";
 import { readVariable } from "./readVariable";
 import { readFunctionAndMethod } from "./readFunctionAndMethod";
+import { readEnum } from "./readEnum";
 
 export function parseFile(
   file: string,
@@ -93,6 +94,7 @@ export class TreeWalker {
   tree: TreeSitter.Tree;
   isBuiltin: boolean;
   comments: TreeSitter.SyntaxNode[];
+  anonEnumCount: number;
 
   constructor(
     fileItem: FileItem,
@@ -105,9 +107,11 @@ export class TreeWalker {
     this.tree = tree;
     this.isBuiltin = isBuiltin;
     this.comments = [];
+    this.anonEnumCount = -1;
   }
 
   public walkTree() {
+    // TODO: Switch to a switch statement.
     for (let child of this.tree.rootNode.children) {
       // if (this.filePath.includes("spTest.sp")) {
       //   console.log(this.tree.rootNode.toString());
@@ -128,6 +132,10 @@ export class TreeWalker {
         child.type === "callback_implementation"
       ) {
         readFunctionAndMethod(this, child);
+        continue;
+      }
+      if (child.type === "enum") {
+        readEnum(this, child);
         continue;
       }
     }

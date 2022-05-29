@@ -30,14 +30,13 @@ export class EnumMemberItem implements SPItem {
   constructor(
     name: string,
     file: string,
-    description: string,
     range: Range,
     IsBuiltItn: boolean,
     enumItem: EnumItem | ConstantItem = globalItem
   ) {
     this.name = name;
     this.filePath = file;
-    this.description = description;
+    this.description = "";
     this.range = range;
     this.references = [];
     this.IsBuiltIn = IsBuiltItn;

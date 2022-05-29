@@ -1,87 +1,94 @@
-﻿import { Range } from "vscode";
+﻿import { CompletionItemKind, Range } from "vscode";
+import * as TreeSitter from "web-tree-sitter";
 
-import { EnumDeclaration, spParserArgs } from "./interfaces";
 import { EnumItem } from "../Backend/Items/spEnumItem";
 import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
-import { ParserLocation, EnumMemberDeclaration, ParsedID } from "./interfaces";
-import { parsedLocToRange } from "./utils";
-import { processDocStringComment } from "./processComment";
+import { pointsToRange } from "./utils";
+import { TreeWalker } from "./spParser";
+import { commentToDoc, findDocumentation } from "./findDocumentation";
 
 /**
  * Process an enum declaration.
- * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {EnumDeclaration} res  Object containing the enum declaration details.
- * @returns void
  */
-export function readEnum(parserArgs: spParserArgs, res: EnumDeclaration): void {
-  const { name, nameRange } = getEnumNameAndRange(parserArgs, res.id, res.loc);
-  const { doc, dep } = processDocStringComment(res.doc);
+export function readEnum(
+  walker: TreeWalker,
+  node: TreeSitter.SyntaxNode
+): void {
+  const { name, nameRange } = getEnumNameAndRange(walker, node);
+  // FIXME: argument_declarations contain () as well. This is not specified in node-types.json
+  let { doc, dep } = findDocumentation(walker, node, false);
   const enumItem = new EnumItem(
     name,
-    parserArgs.filePath,
+    walker.filePath,
     doc,
     nameRange,
-    parsedLocToRange(res.loc, parserArgs)
+    pointsToRange(node.startPosition, node.endPosition)
   );
-  parserArgs.fileItems.items.push(enumItem);
-  readEnumMembers(parserArgs, res.body, enumItem);
+  walker.fileItem.items.push(enumItem);
+  readEnumMembers(
+    walker,
+    node.children.find((e) => e.type === "enum_entries"),
+    enumItem
+  );
 }
 
 /**
  * Generate the name and the range of a potential anonymous enum.
- * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {ParsedID|undefined} id  The id of the enum.
- * @param  {ParserLocation} loc The location of the enum.
- * @returns Range
  */
 function getEnumNameAndRange(
-  parserArgs: spParserArgs,
-  id: ParsedID | null,
-  loc: ParserLocation
+  walker: TreeWalker,
+  node: TreeSitter.SyntaxNode
 ): { name: string; nameRange: Range } {
-  let name: string;
-  let nameRange: Range;
-  if (!id) {
-    parserArgs.anonEnumCount++;
-    name = `Enum#${parserArgs.anonEnumCount}`;
-    const newLoc = { ...loc };
-    newLoc.start.column = 1;
-    newLoc.end.column = 6;
-    newLoc.end.line = newLoc.start.line;
-    nameRange = parsedLocToRange(newLoc, parserArgs);
-  } else {
-    name = id.id;
-    nameRange = parsedLocToRange(id.loc, parserArgs);
+  let nameNode = node.childForFieldName("name");
+  if (nameNode) {
+    return {
+      name: nameNode.text,
+      nameRange: pointsToRange(nameNode.startPosition, nameNode.endPosition),
+    };
   }
+  walker.anonEnumCount++;
+  const name = `Enum#${walker.anonEnumCount}`;
+  const nameRange = new Range(
+    node.startPosition.row,
+    0,
+    node.startPosition.row,
+    6
+  );
   return { name, nameRange };
 }
 
 /**
  * Process the body of an enum.
- * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {EnumMemberDeclaration[]} body  The body of the enum to parse.
- * @param  {EnumItem} enumItem  The parent of the enum members.
- * @returns void
  */
 function readEnumMembers(
-  parserArgs: spParserArgs,
-  body: EnumMemberDeclaration[],
+  walker: TreeWalker,
+  body: TreeSitter.SyntaxNode,
   enumItem: EnumItem
 ): void {
   if (!body) {
     return;
   }
-  body.forEach((e) => {
-    const range = parsedLocToRange(e.id.loc, parserArgs);
-    const { doc, dep } = processDocStringComment(e.doc);
+  body.children.forEach((child) => {
+    let prevEnumMember =
+      walker.fileItem.items[walker.fileItem.items.length - 1];
+    if (
+      child.type === "comment" &&
+      prevEnumMember?.kind === CompletionItemKind.EnumMember
+    ) {
+      prevEnumMember.description += commentToDoc(child.text);
+    }
+    if (child.type !== "enum_entry") {
+      return;
+    }
+    const entry = child.childForFieldName("name");
+    const range = pointsToRange(entry.startPosition, entry.endPosition);
     const memberItem = new EnumMemberItem(
-      e.id.id,
-      parserArgs.filePath,
-      doc,
+      entry.text,
+      walker.filePath,
       range,
-      parserArgs.IsBuiltIn,
+      walker.isBuiltin,
       enumItem
     );
-    parserArgs.fileItems.items.push(memberItem);
+    walker.fileItem.items.push(memberItem);
   });
 }
