@@ -9,7 +9,7 @@ import { PreProcessor } from "./PreProcessor/spPreprocessor";
 import { parser } from "../spIndex";
 import * as TreeSitter from "web-tree-sitter";
 import { readVariable } from "./readVariable";
-import { readFunctionAndMethod } from "./readFunctionAndMethodNew";
+import { readFunctionAndMethod } from "./readFunctionAndMethod";
 
 export function parseFile(
   file: string,
@@ -109,6 +109,9 @@ export class TreeWalker {
 
   public walkTree() {
     for (let child of this.tree.rootNode.children) {
+      // if (this.filePath.includes("spTest.sp")) {
+      //   console.log(this.tree.rootNode.toString());
+      // }
       if (child.type === "comment") {
         this.comments.push(child);
       }
@@ -121,7 +124,8 @@ export class TreeWalker {
       }
       if (
         child.type === "function_declaration" ||
-        child.type === "function_definition"
+        child.type === "function_definition" ||
+        child.type === "callback_implementation"
       ) {
         readFunctionAndMethod(this, child);
         continue;

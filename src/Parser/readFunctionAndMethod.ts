@@ -1,217 +1,148 @@
-﻿import { spParserArgs } from "./interfaces";
+﻿import * as TreeSitter from "web-tree-sitter";
+
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
-import {
-  FormalParameter,
-  ParsedID,
-  ParserLocation,
-  FunctionParam,
-  FunctionBody,
-  VariableDeclarator,
-  ParsedComment,
-  VariableDeclaration,
-} from "./interfaces";
-import { parsedLocToRange } from "./utils";
-import { processDocStringComment } from "./processComment";
-import { addVariableItem } from "./addVariableItem";
+import { FunctionParam } from "./interfaces";
+import { pointsToRange } from "./utils";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { globalItem } from "../Misc/spConstants";
 import { ConstantItem } from "../Backend/Items/spConstantItem";
 import { MethodItem } from "../Backend/Items/spMethodItem";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { CompletionItemKind } from "vscode";
+import { TreeWalker } from "./spParser";
+import { spLangObj } from "../spIndex";
+import { readVariable } from "./readVariable";
+import { VariableItem } from "../Backend/Items/spVariableItem";
+import { findDocumentation } from "./findDocumentation";
 
-//TODO: Add typing.
 export function readFunctionAndMethod(
-  parserArgs: spParserArgs,
-  accessModifiers: string[] | null,
-  returnType: ParsedID | null,
-  id: ParsedID,
-  loc: ParserLocation,
-  docstring: ParsedComment,
-  params: FormalParameter[] | null,
-  body: FunctionBody | null,
-  txt: string,
+  walker: TreeWalker,
+  node: TreeSitter.SyntaxNode,
   parent: EnumStructItem | PropertyItem | ConstantItem = globalItem
 ): void {
   const MmEs = [CompletionItemKind.Struct, CompletionItemKind.Class];
-
-  txt = txt.replace(/\s*\r?\n\s*/gm, " ").trim();
-  const range = parsedLocToRange(id.loc, parserArgs);
-  const fullRange = parsedLocToRange(loc, parserArgs);
-  const { doc, dep } = processDocStringComment(docstring);
+  let item: FunctionItem;
+  let nameNode = node.childForFieldName("name");
+  let returnTypeNode = node.childForFieldName("returnType");
+  let storageClassNode = node.children.find(
+    (e) => e.type === "function_storage_class"
+  );
+  // FIXME: argument_declarations contain () as well. This is not specified in node-types.json
+  let params = node.children.find((e) => e.type === "argument_declarations");
+  let { doc, dep } = findDocumentation(walker, node, false);
   const processedParams = processFunctionParams(params, doc);
-  let item: FunctionItem | MethodItem;
-  let key = id.id;
-  if (parent.kind === CompletionItemKind.Property) {
-    item = new MethodItem(
-      parent as PropertyItem,
-      id.id,
-      txt,
-      doc,
-      processedParams,
-      returnType ? returnType.id : "",
-      parserArgs.filePath,
-      range,
-      parserArgs.IsBuiltIn,
-      fullRange,
-      dep
-    );
-    key += `-${parent.name}-${(parent as PropertyItem).parent.name}`;
-  } else if (MmEs.includes(parent.kind)) {
-    item = new MethodItem(
-      parent as EnumStructItem,
-      id.id,
-      txt,
-      doc,
-      processedParams,
-      returnType ? returnType.id : "",
-      parserArgs.filePath,
-      range,
-      parserArgs.IsBuiltIn,
-      fullRange,
-      dep
-    );
-    key += `-${parent.name}`;
-  } else {
-    item = new FunctionItem(
-      id.id,
-      txt,
-      doc,
-      processedParams,
-      parserArgs.filePath,
-      parserArgs.IsBuiltIn,
-      range,
-      returnType ? returnType.id : "",
-      fullRange,
-      dep,
-      accessModifiers,
-      params
-    );
-  }
-  parserArgs.fileItems.items.push(item);
-  addParamsAsVariables(parserArgs, params, item, processedParams);
-
-  if (!body) {
-    // We are in a native or forward.
-    return;
-  }
-  readBodyVariables(parserArgs, item);
-  return;
+  let returnType = returnTypeNode ? returnTypeNode.text : "";
+  let storageClass = storageClassNode ? [storageClassNode.text] : [];
+  let functionTypeNode = node.children.find(
+    (e) => e.type === "function_definition_type"
+  );
+  let functionType = functionTypeNode ? functionTypeNode.text : "";
+  // TODO: Separate storage classes and function types.
+  storageClass.push(functionType);
+  item = new FunctionItem(
+    nameNode.text,
+    `${storageClass.join(" ")} ${returnType} ${nameNode.text}${
+      params.text
+    }`.trim(),
+    doc,
+    walker.filePath,
+    walker.isBuiltin,
+    pointsToRange(nameNode.startPosition, nameNode.endPosition),
+    returnType,
+    pointsToRange(node.startPosition, node.endPosition),
+    undefined,
+    storageClass
+  );
+  readBodyVariables(
+    walker,
+    node.children.find((e) => e.type === "block"),
+    item
+  );
+  addParamsAsVariables(walker, params, item, processedParams);
+  walker.fileItem.items.push(item);
 }
 
 function readBodyVariables(
-  parserArgs: spParserArgs,
+  walker: TreeWalker,
+  body: TreeSitter.SyntaxNode,
   parent: FunctionItem | MethodItem
 ) {
-  for (let e of parserArgs.variableDecl) {
-    let declarators: VariableDeclarator[],
-      variableType: string,
-      doc = "",
-      found = false,
-      processedDeclType = "",
-      modifier = "";
-
-    if (e.type === "ForLoopVariableDeclaration") {
-      declarators = e["declarations"];
-      variableType = "int ";
-      found = true;
-    } else if (e["type"] === "LocalVariableDeclaration") {
-      const content: VariableDeclaration = e.content;
-      declarators = content.declarations;
-      if (content.variableType) {
-        variableType = content.variableType.name.id;
-        modifier = content.variableType.modifier || "";
-      }
-      //doc = content.doc;
-      if (content.accessModifiers !== null) {
-        processedDeclType = content.accessModifiers.join(" ");
-      }
-      found = true;
-    }
-
-    if (found) {
-      for (let decl of declarators) {
-        const range = parsedLocToRange(decl.id.loc, parserArgs);
-        // Break if the item's range is not in the fullrange of the parent.
-        // This means it belongs to another method of the same enum struct/methodmap.
-        // We can assume that all the next items will be the same.
-        if (!parent.fullRange.contains(range)) {
-          break;
-        }
-        const arrayInitialer = decl.arrayInitialer || "";
-        variableType = variableType || "";
-        addVariableItem(
-          parserArgs,
-          decl.id.id,
-          variableType,
-          range,
-          parent,
-          doc,
-          `${processedDeclType}${variableType}${modifier}${
-            decl.id.id
-          }${arrayInitialer.trim()};`.trim()
-        );
-      }
-    }
+  if (body === undefined) {
+    return;
   }
+  const query = spLangObj.query(
+    "(variable_declaration_statement) @declaration.variable"
+  );
+  const res = query.captures(body);
+  res.forEach((capture) => {
+    readVariable(walker, capture.node, parent);
+  });
 }
 
 function processFunctionParams(
-  params: FormalParameter[] | null,
+  params: TreeSitter.SyntaxNode,
   doc: string | undefined
 ): FunctionParam[] {
   if (!params) {
     return [];
   }
-  const processedParams = params.map((e) => {
+  const processedParams: FunctionParam[] = [];
+  for (let param of params.children) {
+    if (param.type !== "argument_declaration") {
+      continue;
+    }
+    const label = param.childForFieldName("name").text;
     let documentation = "";
     if (doc) {
       const match = doc.match(
-        new RegExp(`@param\\s+(?:\\b${e.id.id}\\b)([^\\@]+)`)
+        new RegExp(`@param\\s+(?:\\b${label}\\b)([^\\@]+)`)
       );
       if (match) {
         documentation = match[1].replace(/\*/gm, "").trim();
       }
     }
-    return {
-      label: e.id.id,
+    processedParams.push({
+      label,
       documentation,
-    } as FunctionParam;
-  });
+    } as FunctionParam);
+  }
   return processedParams;
 }
 
 function addParamsAsVariables(
-  parserArgs: spParserArgs,
-  params: FormalParameter[] | null,
+  walker: TreeWalker,
+  params: TreeSitter.SyntaxNode,
   parent: FunctionItem | MethodItem,
   processedParams: FunctionParam[]
 ): void {
   if (!params) {
     return;
   }
-
-  params.forEach((param) => {
-    let processedDeclType = "";
-    if (typeof param.declarationType === "string") {
-      processedDeclType = param.declarationType;
-    } else if (Array.isArray(param.declarationType)) {
-      processedDeclType = param.declarationType.join(" ");
+  for (let param of params.children) {
+    if (param.type !== "argument_declaration") {
+      continue;
     }
-    const type =
-      param.parameterType && param.parameterType.name
-        ? param.parameterType.name.id
-        : "";
-    const modifiers = param.parameterType ? param.parameterType.modifier : "";
-    const doc = processedParams.find((e) => e.label === param.id.id);
-    addVariableItem(
-      parserArgs,
-      param.id.id,
-      type,
-      parsedLocToRange(param.id.loc, parserArgs),
+    const variableTypeNode = param.childForFieldName("type");
+    const variableType = variableTypeNode ? variableTypeNode.text : "";
+    const variableNameNode = param.childForFieldName("name");
+    // FIXME: No storage classes for arguments.
+    // This is a problem with Tree sitter.
+    const storageClass = [];
+    const doc = processedParams.find((e) => e.label === variableNameNode.text);
+    const variableItem = new VariableItem(
+      variableNameNode.text,
+      walker.filePath,
       parent,
+      pointsToRange(
+        variableNameNode.startPosition,
+        variableNameNode.endPosition
+      ),
+      variableType,
+      `${storageClass.join(" ")} ${variableType} ${variableNameNode.text}`,
       doc ? doc.documentation : "",
-      `${processedDeclType} ${type}${modifiers}${param.id.id};`
+      storageClass
     );
-  });
+    walker.fileItem.items.push(variableItem);
+    parent.params.push(variableItem);
+  }
 }

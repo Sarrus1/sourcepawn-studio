@@ -6,7 +6,6 @@
 import { parsedLocToRange } from "./utils";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { processDocStringComment } from "./processComment";
-import { readFunctionAndMethod } from "./readFunctionAndMethod";
 import { VariableItem } from "../Backend/Items/spVariableItem";
 
 /**
@@ -49,18 +48,6 @@ function readEnumstructMembers(
   body.forEach((e) => {
     switch (e.type) {
       case "MethodDeclaration":
-        readFunctionAndMethod(
-          parserArgs,
-          e.accessModifier,
-          e.returnType,
-          e.id,
-          e.loc,
-          e.doc,
-          e.params,
-          e.body,
-          e.txt,
-          enumstructItem
-        );
         break;
       case "VariableDeclaration":
         let variableType = "",

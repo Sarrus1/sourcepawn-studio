@@ -3,7 +3,6 @@ import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { parsedLocToRange } from "./utils";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { processDocStringComment } from "./processComment";
-import { readFunctionAndMethod } from "./readFunctionAndMethod";
 
 /**
  * Process a methodmap's property.
@@ -33,17 +32,17 @@ export function readProperty(
   );
   parserArgs.fileItems.items.push(propertyItem);
   res.body.forEach((e) => {
-    readFunctionAndMethod(
-      parserArgs,
-      e.accessModifier,
-      e.returnType,
-      e.id,
-      e.loc,
-      e.doc,
-      e.params,
-      e.body,
-      e.txt,
-      propertyItem
-    );
+    // readFunctionAndMethod(
+    //   parserArgs,
+    //   e.accessModifier,
+    //   e.returnType,
+    //   e.id,
+    //   e.loc,
+    //   e.doc,
+    //   e.params,
+    //   e.body,
+    //   e.txt,
+    //   propertyItem
+    // );
   });
 }

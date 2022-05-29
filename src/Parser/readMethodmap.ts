@@ -8,7 +8,6 @@ import { globalIdentifier } from "../Misc/spConstants";
 import { ParsedID } from "./interfaces";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
-import { readFunctionAndMethod } from "./readFunctionAndMethod";
 import { readProperty } from "./readProperty";
 
 /**
@@ -54,32 +53,32 @@ function parseMethodmapBody(
   body.forEach((e) => {
     switch (e.type) {
       case "MethodDeclaration":
-        readFunctionAndMethod(
-          parserArgs,
-          e.accessModifier,
-          e.returnType,
-          e.id,
-          e.loc,
-          e.doc,
-          e.params,
-          e.body,
-          e.txt,
-          methodmapItem
-        );
+        // readFunctionAndMethod(
+        //   parserArgs,
+        //   e.accessModifier,
+        //   e.returnType,
+        //   e.id,
+        //   e.loc,
+        //   e.doc,
+        //   e.params,
+        //   e.body,
+        //   e.txt,
+        //   methodmapItem
+        // );
         break;
       case "MethodmapNativeForwardDeclaration":
-        readFunctionAndMethod(
-          parserArgs,
-          e.accessModifier,
-          e.returnType,
-          e.id,
-          e.loc,
-          e.doc,
-          e.params,
-          null,
-          e.txt,
-          methodmapItem
-        );
+        // readFunctionAndMethod(
+        //   parserArgs,
+        //   e.accessModifier,
+        //   e.returnType,
+        //   e.id,
+        //   e.loc,
+        //   e.doc,
+        //   e.params,
+        //   null,
+        //   e.txt,
+        //   methodmapItem
+        // );
         break;
       case "PropertyDeclaration":
         readProperty(parserArgs, methodmapItem, e);

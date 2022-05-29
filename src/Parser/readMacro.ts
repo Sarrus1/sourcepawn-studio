@@ -10,26 +10,7 @@ import { processDocStringComment } from "./processComment";
  * @returns void
  */
 export function readMacro(parserArgs: spParserArgs, res: MacroStatement): void {
-  const range = parsedLocToRange(res.id.loc, parserArgs);
-  const fullRange = parsedLocToRange(res.loc, parserArgs);
-  // FIXME: Macro docs are always empty because they are parsed as comments.
-  const { doc, dep } = processDocStringComment(res.doc);
-  const processedParams = processMacroParams(res.value, doc);
-  const macroItem = new MacroItem(
-    res.id.id,
-    res.value,
-    doc,
-    processedParams,
-    parserArgs.filePath,
-    parserArgs.IsBuiltIn,
-    range,
-    undefined,
-    fullRange,
-    dep,
-    undefined,
-    undefined
-  );
-  parserArgs.fileItems.items.push(macroItem);
+  return;
 }
 
 /**
