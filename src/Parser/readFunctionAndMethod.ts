@@ -13,7 +13,7 @@ import { TreeWalker } from "./spParser";
 import { spLangObj } from "../spIndex";
 import { readVariable } from "./readVariable";
 import { VariableItem } from "../Backend/Items/spVariableItem";
-import { findDocumentation } from "./findDocumentation";
+import { findDoc } from "./readDocumentation";
 
 export function readFunctionAndMethod(
   walker: TreeWalker,
@@ -29,7 +29,7 @@ export function readFunctionAndMethod(
   );
   // FIXME: argument_declarations contain () as well. This is not specified in node-types.json
   let params = node.children.find((e) => e.type === "argument_declarations");
-  let { doc, dep } = findDocumentation(walker, node, false);
+  let { doc, dep } = findDoc(walker, node);
   const processedParams = processFunctionParams(params, doc);
   let returnType = returnTypeNode ? returnTypeNode.text : "";
   let storageClass = storageClassNode ? [storageClassNode.text] : [];

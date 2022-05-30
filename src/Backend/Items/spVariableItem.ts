@@ -39,7 +39,7 @@ export class VariableItem implements SPItem {
     range: Range,
     type: string,
     detail: string,
-    description = "",
+    description: string,
     accessModifiers: string[] | undefined
   ) {
     this.name = name;

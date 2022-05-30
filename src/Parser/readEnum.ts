@@ -5,7 +5,7 @@ import { EnumItem } from "../Backend/Items/spEnumItem";
 import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
 import { pointsToRange } from "./utils";
 import { TreeWalker } from "./spParser";
-import { commentToDoc, findDocumentation } from "./findDocumentation";
+import { commentToDoc, findDoc } from "./readDocumentation";
 
 /**
  * Process an enum declaration.
@@ -16,7 +16,7 @@ export function readEnum(
 ): void {
   const { name, nameRange } = getEnumNameAndRange(walker, node);
   // FIXME: argument_declarations contain () as well. This is not specified in node-types.json
-  let { doc, dep } = findDocumentation(walker, node, false);
+  let { doc, dep } = findDoc(walker, node);
   const enumItem = new EnumItem(
     name,
     walker.filePath,

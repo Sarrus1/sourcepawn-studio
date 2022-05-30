@@ -3,21 +3,12 @@ import { DocString } from "./interfaces";
 import { TreeWalker } from "./spParser";
 
 /**
- * Process a parsed comment and try to extrapolate a doc comment from it.
- * This will handle `#pragma deprecated`.
- * @param  {ParsedComment} docstring  The parsed comment to analyse.
- * @returns {DocString}
+ * Try to find a documentation comment from the comments history of the TreeWalker.
+ * @param  {TreeWalker} walker  TreeWalker used to find the documentation.
+ * @param  {SyntaxNode} node    Node we are trying to find the documentation for.
+ * @returns DocString           Extrapolated DocString.
  */
-export function findDocumentation(
-  walker: TreeWalker,
-  node: SyntaxNode,
-  trailing: boolean
-): DocString {
-  if (trailing) {
-    // TODO: Handle trailing comments.
-    return { doc: undefined, dep: undefined };
-  }
-
+export function findDoc(walker: TreeWalker, node: SyntaxNode): DocString {
   const txt: string[] = [];
   let dep: string;
   let endIndex = node.startPosition.row;

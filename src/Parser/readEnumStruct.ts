@@ -50,31 +50,7 @@ function readEnumstructMembers(
       case "MethodDeclaration":
         break;
       case "VariableDeclaration":
-        let variableType = "",
-          modifier = "",
-          accessModifiers = e.accessModifiers || [];
-        if (e.variableType) {
-          variableType = e.variableType.name.id;
-          modifier = e.variableType.modifier || "";
-        }
-
-        const range = parsedLocToRange(e.declarations[0].id.loc, parserArgs);
-        const { doc, dep } = processDocStringComment(e.doc);
-        const name = e.declarations[0].id.id;
-        const variableItem = new VariableItem(
-          name,
-          parserArgs.filePath,
-          enumstructItem,
-          range,
-          variableType,
-          `${accessModifiers.join(
-            " "
-          )} ${variableType}${modifier}${name};`.trim(),
-          doc,
-          accessModifiers
-        );
-
-        parserArgs.fileItems.items.push(variableItem);
+        break;
     }
   });
 }

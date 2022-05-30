@@ -1,4 +1,4 @@
-import { Range } from "vscode";
+import { CompletionItemKind, Range } from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { resolve, dirname } from "path";
 
@@ -11,6 +11,7 @@ import * as TreeSitter from "web-tree-sitter";
 import { readVariable } from "./readVariable";
 import { readFunctionAndMethod } from "./readFunctionAndMethod";
 import { readEnum } from "./readEnum";
+import { commentToDoc } from "./readDocumentation";
 
 export function parseFile(
   file: string,
@@ -113,11 +114,8 @@ export class TreeWalker {
   public walkTree() {
     // TODO: Switch to a switch statement.
     for (let child of this.tree.rootNode.children) {
-      // if (this.filePath.includes("spTest.sp")) {
-      //   console.log(this.tree.rootNode.toString());
-      // }
       if (child.type === "comment") {
-        this.comments.push(child);
+        this.pushComment(child);
       }
       if (
         child.type === "variable_declaration_statement" ||
@@ -139,5 +137,22 @@ export class TreeWalker {
         continue;
       }
     }
+  }
+
+  /**
+   * Process a comment and add it as a variable documentation if necessary.
+   * @param  {TreeSitter.SyntaxNode} node   Node of the comment.
+   * @returns void
+   */
+  private pushComment(node: TreeSitter.SyntaxNode): void {
+    const lastItem = this.fileItem.items[this.fileItem.items.length - 1];
+    if (
+      lastItem?.kind === CompletionItemKind.Variable &&
+      lastItem.range.start.line === node.startPosition.row
+    ) {
+      lastItem.description += commentToDoc(node.text);
+      return;
+    }
+    this.comments.push(node);
   }
 }
