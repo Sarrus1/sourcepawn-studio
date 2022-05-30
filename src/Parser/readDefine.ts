@@ -1,30 +1,33 @@
-﻿import { DefineStatement, spParserArgs } from "./interfaces";
+﻿import * as TreeSitter from "web-tree-sitter";
+
 import { DefineItem } from "../Backend/Items/spDefineItem";
-import { parsedLocToRange } from "./utils";
-import { processDocStringComment } from "./processComment";
+import { pointsToRange } from "./utils";
+import { TreeWalker } from "./spParser";
 
 /**
  * Process a define statement.
- * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {DefineStatement} res  The object containing the define statement details.
+ * @param  {TreeWalker} walker            TreeWalker object.
+ * @param  {TreeSitter.SyntaxNode} node   Node to process.
  * @returns void
  */
 export function readDefine(
-  parserArgs: spParserArgs,
-  res: DefineStatement
+  walker: TreeWalker,
+  node: TreeSitter.SyntaxNode
 ): void {
-  const range = parsedLocToRange(res.id.loc, parserArgs);
-  const fullRange = parsedLocToRange(res.loc, parserArgs);
-  // FIXME: Define dep is always null because they are parsed as comments.
-  const { doc, dep } = processDocStringComment(res.doc);
+  const nameNode = node.childForFieldName("name");
+  const valueNode = node.childForFieldName("value");
+  const range = pointsToRange(nameNode.startPosition, nameNode.endPosition);
+  const fullRange = pointsToRange(node.startPosition, node.endPosition);
+
+  // FIXME: Comments are poorly handled here.
   const defineItem = new DefineItem(
-    res.id.id,
-    res.value !== null ? res.value.trim() : "",
-    doc,
-    parserArgs.filePath,
+    nameNode.text,
+    valueNode !== null ? valueNode.text.trim() : "",
+    "",
+    walker.filePath,
     range,
-    parserArgs.IsBuiltIn,
+    walker.isBuiltin,
     fullRange
   );
-  parserArgs.fileItems.items.push(defineItem);
+  walker.fileItem.items.push(defineItem);
 }

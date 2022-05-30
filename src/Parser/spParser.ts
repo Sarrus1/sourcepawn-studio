@@ -12,6 +12,7 @@ import { readVariable } from "./readVariable";
 import { readFunctionAndMethod } from "./readFunctionAndMethod";
 import { readEnum } from "./readEnum";
 import { commentToDoc } from "./readDocumentation";
+import { readDefine } from "./readDefine";
 
 export function parseFile(
   file: string,
@@ -136,6 +137,10 @@ export class TreeWalker {
         readEnum(this, child);
         continue;
       }
+      if (child.type === "preproc_define") {
+        readDefine(this, child);
+        continue;
+      }
     }
   }
 
@@ -146,8 +151,9 @@ export class TreeWalker {
    */
   private pushComment(node: TreeSitter.SyntaxNode): void {
     const lastItem = this.fileItem.items[this.fileItem.items.length - 1];
+    const VaDe = [CompletionItemKind.Variable, CompletionItemKind.Constant];
     if (
-      lastItem?.kind === CompletionItemKind.Variable &&
+      VaDe.includes(lastItem?.kind) &&
       lastItem.range.start.line === node.startPosition.row
     ) {
       lastItem.description += commentToDoc(node.text);

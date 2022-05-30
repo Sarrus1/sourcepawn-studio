@@ -17,7 +17,7 @@ export type VariableParent =
 
 /**
  * Process a variable declaration.
- * @param  {TreeWalker} walker            TreeWalker used to find the documentation.
+ * @param  {TreeWalker} walker            TreeWalker object.
  * @param  {TreeSitter.SyntaxNode} node   Node to process.
  * @param  {VariableParent} parent        Parent of the variable. Defaults to globalItem.
  * @returns void
@@ -49,7 +49,6 @@ export function readVariable(
       parent,
       pointsToRange(declaration.startPosition, declaration.endPosition),
       variableType,
-      // TODO: Handle doc comments.
       `${storageClass.join(" ")} ${variableType} ${declaration.text}`,
       "",
       storageClass

@@ -1,4 +1,5 @@
-﻿import * as TreeSitter from "web-tree-sitter";
+﻿import { CompletionItemKind } from "vscode";
+import * as TreeSitter from "web-tree-sitter";
 
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { FunctionParam } from "./interfaces";
@@ -8,19 +9,32 @@ import { globalItem } from "../Misc/spConstants";
 import { ConstantItem } from "../Backend/Items/spConstantItem";
 import { MethodItem } from "../Backend/Items/spMethodItem";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
-import { CompletionItemKind } from "vscode";
 import { TreeWalker } from "./spParser";
 import { spLangObj } from "../spIndex";
 import { readVariable } from "./readVariable";
 import { VariableItem } from "../Backend/Items/spVariableItem";
 import { findDoc } from "./readDocumentation";
+import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 
+export type MethodParent =
+  | EnumStructItem
+  | PropertyItem
+  | MethodMapItem
+  | ConstantItem;
+
+const MmEs = [CompletionItemKind.Struct, CompletionItemKind.Class];
+
+/**
+ * @param  {TreeWalker} walker                                TreeWalker object.
+ * @param  {TreeSitter.SyntaxNode} node                       Node to process.
+ * @param  {EnumStructItem|PropertyItem|ConstantItem} parent  Parent of the method. Defaults to globalItem.
+ * @returns void
+ */
 export function readFunctionAndMethod(
   walker: TreeWalker,
   node: TreeSitter.SyntaxNode,
-  parent: EnumStructItem | PropertyItem | ConstantItem = globalItem
+  parent: MethodParent = globalItem
 ): void {
-  const MmEs = [CompletionItemKind.Struct, CompletionItemKind.Class];
   let item: FunctionItem;
   let nameNode = node.childForFieldName("name");
   let returnTypeNode = node.childForFieldName("returnType");
@@ -50,7 +64,7 @@ export function readFunctionAndMethod(
     pointsToRange(nameNode.startPosition, nameNode.endPosition),
     returnType,
     pointsToRange(node.startPosition, node.endPosition),
-    undefined,
+    dep,
     storageClass
   );
   readBodyVariables(
@@ -62,11 +76,18 @@ export function readFunctionAndMethod(
   walker.fileItem.items.push(item);
 }
 
+/**
+ * Process the variables of a function/method's body.
+ * @param  {TreeWalker} walker                TreeWalker object.
+ * @param  {TreeSitter.SyntaxNode} node       Node to process.
+ * @param  {FunctionItem|MethodItem} parent   Parent item of the body.
+ * @returns void
+ */
 function readBodyVariables(
   walker: TreeWalker,
   body: TreeSitter.SyntaxNode,
   parent: FunctionItem | MethodItem
-) {
+): void {
   if (body === undefined) {
     return;
   }
@@ -79,6 +100,12 @@ function readBodyVariables(
   });
 }
 
+/**
+ * Process the params of a function/method and returns the formatted output.
+ * @param  {TreeSitter.SyntaxNode} params   Node of the params declaration.
+ * @param  {string|undefined} doc           Docstring associated to the function/method.
+ * @returns FunctionParam
+ */
 function processFunctionParams(
   params: TreeSitter.SyntaxNode,
   doc: string | undefined
@@ -109,6 +136,13 @@ function processFunctionParams(
   return processedParams;
 }
 
+/**
+ * Process the params of a function/method and adds them as variables.
+ * @param  {TreeSitter.SyntaxNode} params     Node of the params declaration.
+ * @param  {FunctionItem|MethodItem} parent   Parent of the param.
+ * @param  {FunctionParam[]} processedParams
+ * @returns void
+ */
 function addParamsAsVariables(
   walker: TreeWalker,
   params: TreeSitter.SyntaxNode,

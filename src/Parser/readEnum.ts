@@ -9,6 +9,9 @@ import { commentToDoc, findDoc } from "./readDocumentation";
 
 /**
  * Process an enum declaration.
+ * @param  {TreeWalker} walker            TreeWalker object.
+ * @param  {TreeSitter.SyntaxNode} node   Node to process.
+ * @returns void
  */
 export function readEnum(
   walker: TreeWalker,
@@ -34,6 +37,9 @@ export function readEnum(
 
 /**
  * Generate the name and the range of a potential anonymous enum.
+ * @param  {TreeWalker} walker            TreeWalker object.
+ * @param  {TreeSitter.SyntaxNode} node   Node to process.
+ * @returns void
  */
 function getEnumNameAndRange(
   walker: TreeWalker,
@@ -59,6 +65,10 @@ function getEnumNameAndRange(
 
 /**
  * Process the body of an enum.
+ * @param  {TreeWalker} walker            TreeWalker object.
+ * @param  {TreeSitter.SyntaxNode} body   Body to process.
+ * @param  {EnumItem} enumItem            Parent enum of the body.
+ * @returns void
  */
 function readEnumMembers(
   walker: TreeWalker,
