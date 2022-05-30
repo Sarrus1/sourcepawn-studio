@@ -119,52 +119,41 @@ export class TreeWalker {
   }
 
   public walkTree() {
-    // TODO: Switch to a switch statement.
     for (let child of this.tree.rootNode.children) {
-      if (child.type === "comment") {
-        this.pushComment(child);
-      }
-      if (child.type === "preproc_pragma_deprecated") {
-        this.deprecated.push(child);
-      }
-      if (
-        child.type === "variable_declaration_statement" ||
-        child.type === "old_variable_declaration_statement"
-      ) {
-        readVariable(this, child);
-        continue;
-      }
-      if (
-        child.type === "function_declaration" ||
-        child.type === "function_definition" ||
-        child.type === "callback_implementation"
-      ) {
-        readFunctionAndMethod(this, child);
-        continue;
-      }
-      if (child.type === "enum") {
-        readEnum(this, child);
-        continue;
-      }
-      if (child.type === "preproc_define") {
-        readDefine(this, child);
-        continue;
-      }
-      if (child.type === "enum_struct") {
-        readEnumStruct(this, child);
-        continue;
-      }
-      if (child.type === "methodmap") {
-        readMethodmap(this, child);
-        continue;
-      }
-      if (child.type === "typedef") {
-        readTypedef(this, child);
-        continue;
-      }
-      if (child.type === "typeset") {
-        readTypeset(this, child);
-        continue;
+      switch (child.type) {
+        case "comment":
+          this.pushComment(child);
+          break;
+        case "preproc_pragma_deprecated":
+          this.deprecated.push(child);
+          break;
+        case "variable_declaration_statement":
+        case "old_variable_declaration_statement":
+          readVariable(this, child);
+          break;
+        case "function_declaration":
+        case "function_definition":
+        case "callback_implementation":
+          readFunctionAndMethod(this, child);
+          break;
+        case "enum":
+          readEnum(this, child);
+          break;
+        case "preproc_define":
+          readDefine(this, child);
+          break;
+        case "enum_struct":
+          readEnumStruct(this, child);
+          break;
+        case "methodmap":
+          readMethodmap(this, child);
+          break;
+        case "typedef":
+          readTypedef(this, child);
+          break;
+        case "typeset":
+          readTypeset(this, child);
+          break;
       }
     }
   }
