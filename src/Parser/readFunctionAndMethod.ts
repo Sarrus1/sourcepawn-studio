@@ -44,7 +44,6 @@ export function readFunctionAndMethod(
   // FIXME: argument_declarations contain () as well. This is not specified in node-types.json
   let params = node.children.find((e) => e.type === "argument_declarations");
   let { doc, dep } = findDoc(walker, node);
-  const processedParams = processFunctionParams(params, doc);
   let returnType = returnTypeNode ? returnTypeNode.text : "";
   let storageClass = storageClassNode ? [storageClassNode.text] : [];
   let functionTypeNode = node.children.find(
@@ -72,7 +71,7 @@ export function readFunctionAndMethod(
     node.children.find((e) => e.type === "block"),
     item
   );
-  addParamsAsVariables(walker, params, item, processedParams);
+  addParamsAsVariables(walker, params, item, doc);
   walker.fileItem.items.push(item);
 }
 
@@ -138,20 +137,22 @@ function processFunctionParams(
 
 /**
  * Process the params of a function/method and adds them as variables.
- * @param  {TreeSitter.SyntaxNode} params     Node of the params declaration.
- * @param  {FunctionItem|MethodItem} parent   Parent of the param.
- * @param  {FunctionParam[]} processedParams
+ * @param  {TreeWalker} walker                TreeWalker object.
+ * @param  {TreeSitter.SyntaxNode} params     Params node.
+ * @param  {FunctionItem|MethodItem} parent   Parent function/method item of the params.
+ * @param  {string|undefined} doc             Documentation of the function if it exists.
  * @returns void
  */
 function addParamsAsVariables(
   walker: TreeWalker,
   params: TreeSitter.SyntaxNode,
   parent: FunctionItem | MethodItem,
-  processedParams: FunctionParam[]
+  doc: string | undefined
 ): void {
   if (!params) {
     return;
   }
+
   for (let param of params.children) {
     if (param.type !== "argument_declaration") {
       continue;
@@ -162,7 +163,16 @@ function addParamsAsVariables(
     // FIXME: No storage classes for arguments.
     // This is a problem with Tree sitter.
     const storageClass = [];
-    const doc = processedParams.find((e) => e.label === variableNameNode.text);
+    let documentation = "";
+    if (doc) {
+      const match = doc.match(
+        new RegExp(`@param\\s+(?:\\b${variableNameNode.text}\\b)([^\\@]+)`)
+      );
+      if (match) {
+        documentation = match[1].replace(/\*/gm, "").trim();
+      }
+    }
+
     const variableItem = new VariableItem(
       variableNameNode.text,
       walker.filePath,
@@ -173,7 +183,7 @@ function addParamsAsVariables(
       ),
       variableType,
       `${storageClass.join(" ")} ${variableType} ${variableNameNode.text}`,
-      doc ? doc.documentation : "",
+      documentation,
       storageClass
     );
     walker.fileItem.items.push(variableItem);
