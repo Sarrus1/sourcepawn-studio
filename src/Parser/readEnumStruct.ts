@@ -1,11 +1,10 @@
-﻿import {
-  EnumstructDeclaration,
-  EnumstructMemberDeclaration,
-  spParserArgs,
-} from "./interfaces";
-import { parsedLocToRange } from "./utils";
+﻿import * as TreeSitter from "web-tree-sitter";
+
+import { pointsToRange } from "./utils";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
-import { processDocStringComment } from "./processComment";
+import { TreeWalker } from "./spParser";
+import { findDoc } from "./readDocumentation";
+import { readFunctionAndMethod } from "./readFunctionAndMethod";
 import { VariableItem } from "../Backend/Items/spVariableItem";
 
 /**
@@ -15,19 +14,20 @@ import { VariableItem } from "../Backend/Items/spVariableItem";
  * @returns void
  */
 export function readEnumStruct(
-  parserArgs: spParserArgs,
-  res: EnumstructDeclaration
+  walker: TreeWalker,
+  node: TreeSitter.SyntaxNode
 ): void {
-  const { doc, dep } = processDocStringComment(res.doc);
+  const nameNode = node.childForFieldName("name");
+  const { doc, dep } = findDoc(walker, node);
   const enumStructItem = new EnumStructItem(
-    res.id.id,
-    parserArgs.filePath,
+    nameNode.text,
+    walker.filePath,
     doc,
-    parsedLocToRange(res.id.loc, parserArgs),
-    parsedLocToRange(res.loc, parserArgs)
+    pointsToRange(nameNode.startPosition, nameNode.endPosition),
+    pointsToRange(node.startPosition, node.endPosition)
   );
-  parserArgs.fileItems.items.push(enumStructItem);
-  readEnumstructMembers(parserArgs, enumStructItem, res.body);
+  walker.fileItem.items.push(enumStructItem);
+  readEnumstructMembers(walker, enumStructItem, node);
 }
 
 /**
@@ -38,19 +38,50 @@ export function readEnumStruct(
  * @returns void
  */
 function readEnumstructMembers(
-  parserArgs: spParserArgs,
+  walker: TreeWalker,
   enumstructItem: EnumStructItem,
-  body: EnumstructMemberDeclaration[]
+  node: TreeSitter.SyntaxNode
 ): void {
-  if (!body) {
-    return;
-  }
-  body.forEach((e) => {
+  node.children.forEach((e) => {
     switch (e.type) {
-      case "MethodDeclaration":
+      case "enum_struct_field":
+        readEnumStructField(walker, e, enumstructItem);
         break;
-      case "VariableDeclaration":
+      case "enum_struct_method":
+        readFunctionAndMethod(walker, e, enumstructItem);
+        break;
+      case "comment":
+        walker.pushComment(e);
+        break;
+      default:
         break;
     }
   });
+}
+
+/**
+ * Process an enum struct's field.
+ * @param  {TreeWalker} walker                Walker object.
+ * @param  {TreeSitter.SyntaxNode} node       Field node.
+ * @param  {EnumStructItem} enumStructItem    Parent item of the field.
+ * @returns void
+ */
+function readEnumStructField(
+  walker: TreeWalker,
+  node: TreeSitter.SyntaxNode,
+  enumStructItem: EnumStructItem
+): void {
+  const nameNode = node.childForFieldName("name");
+  const typeNode = node.childForFieldName("type");
+  const item = new VariableItem(
+    nameNode.text,
+    walker.filePath,
+    enumStructItem,
+    pointsToRange(nameNode.startPosition, nameNode.endPosition),
+    typeNode.text,
+    `${typeNode.text} ${nameNode.text}`,
+    "",
+    []
+  );
+  walker.fileItem.items.push(item);
 }

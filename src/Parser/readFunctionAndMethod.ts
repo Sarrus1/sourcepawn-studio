@@ -2,7 +2,6 @@
 import * as TreeSitter from "web-tree-sitter";
 
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
-import { FunctionParam } from "./interfaces";
 import { pointsToRange } from "./utils";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { globalItem } from "../Misc/spConstants";
@@ -16,12 +15,7 @@ import { VariableItem } from "../Backend/Items/spVariableItem";
 import { findDoc } from "./readDocumentation";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 
-export type MethodParent =
-  | EnumStructItem
-  | PropertyItem
-  | MethodMapItem
-  | ConstantItem;
-
+export type MethodParent = EnumStructItem | PropertyItem | MethodMapItem;
 const MmEs = [CompletionItemKind.Struct, CompletionItemKind.Class];
 
 /**
@@ -33,9 +27,9 @@ const MmEs = [CompletionItemKind.Struct, CompletionItemKind.Class];
 export function readFunctionAndMethod(
   walker: TreeWalker,
   node: TreeSitter.SyntaxNode,
-  parent: MethodParent = globalItem
+  parent: MethodParent | ConstantItem = globalItem
 ): void {
-  let item: FunctionItem;
+  let item: FunctionItem | MethodItem;
   let nameNode = node.childForFieldName("name");
   let returnTypeNode = node.childForFieldName("returnType");
   let storageClassNode = node.children.find(
@@ -52,20 +46,37 @@ export function readFunctionAndMethod(
   let functionType = functionTypeNode ? functionTypeNode.text : "";
   // TODO: Separate storage classes and function types.
   storageClass.push(functionType);
-  item = new FunctionItem(
-    nameNode.text,
-    `${storageClass.join(" ")} ${returnType} ${nameNode.text}${
-      params.text
-    }`.trim(),
-    doc,
-    walker.filePath,
-    walker.isBuiltin,
-    pointsToRange(nameNode.startPosition, nameNode.endPosition),
-    returnType,
-    pointsToRange(node.startPosition, node.endPosition),
-    dep,
-    storageClass
-  );
+  if (parent === globalItem) {
+    item = new FunctionItem(
+      nameNode.text,
+      `${storageClass.join(" ")} ${returnType} ${nameNode.text}${
+        params.text
+      }`.trim(),
+      doc,
+      walker.filePath,
+      walker.isBuiltin,
+      pointsToRange(nameNode.startPosition, nameNode.endPosition),
+      returnType,
+      pointsToRange(node.startPosition, node.endPosition),
+      dep,
+      storageClass
+    );
+  } else {
+    item = new MethodItem(
+      parent as MethodParent,
+      nameNode.text,
+      `${storageClass.join(" ")} ${returnType} ${nameNode.text}${
+        params.text
+      }`.trim(),
+      doc,
+      returnType,
+      walker.filePath,
+      pointsToRange(nameNode.startPosition, nameNode.endPosition),
+      walker.isBuiltin,
+      pointsToRange(node.startPosition, node.endPosition),
+      dep
+    );
+  }
   readBodyVariables(
     walker,
     node.children.find((e) => e.type === "block"),

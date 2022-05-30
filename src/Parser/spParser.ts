@@ -13,6 +13,7 @@ import { readFunctionAndMethod } from "./readFunctionAndMethod";
 import { readEnum } from "./readEnum";
 import { commentToDoc } from "./readDocumentation";
 import { readDefine } from "./readDefine";
+import { readEnumStruct } from "./readEnumStruct";
 
 export function parseFile(
   file: string,
@@ -141,6 +142,10 @@ export class TreeWalker {
         readDefine(this, child);
         continue;
       }
+      if (child.type === "enum_struct") {
+        readEnumStruct(this, child);
+        continue;
+      }
     }
   }
 
@@ -149,7 +154,7 @@ export class TreeWalker {
    * @param  {TreeSitter.SyntaxNode} node   Node of the comment.
    * @returns void
    */
-  private pushComment(node: TreeSitter.SyntaxNode): void {
+  public pushComment(node: TreeSitter.SyntaxNode): void {
     const lastItem = this.fileItem.items[this.fileItem.items.length - 1];
     const VaDe = [CompletionItemKind.Variable, CompletionItemKind.Constant];
     if (
