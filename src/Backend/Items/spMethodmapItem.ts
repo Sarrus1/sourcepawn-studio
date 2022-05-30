@@ -41,7 +41,7 @@ export class MethodMapItem implements SPItem {
   ) {
     this.name = name;
     this.tmpParent = parent;
-    if (parent !== globalIdentifier) {
+    if (parent !== null) {
       this.tmpParent = parent;
     }
     this.parent = globalItem;

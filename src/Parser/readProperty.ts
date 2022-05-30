@@ -1,48 +1,54 @@
-﻿import { PropertyDeclaration, spParserArgs } from "./interfaces";
+﻿import * as TreeSitter from "web-tree-sitter";
+
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
-import { parsedLocToRange } from "./utils";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
-import { processDocStringComment } from "./processComment";
+import { TreeWalker } from "./spParser";
+import { findDoc } from "./readDocumentation";
+import { pointsToRange } from "./utils";
+import { readFunctionAndMethod } from "./readFunctionAndMethod";
 
 /**
  * Process a methodmap's property.
- * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {MethodMapItem} methodmapItem  The parent of the property.
- * @param  {PropertyDeclaration} res  Object containing the property declaration details.
+ * @param  {TreeWalker} walker            TreeWalker object.
+ * @param  {TreeSitter.SyntaxNode} node   Node to process.
+ * @param  {MethodMapItem} parent         Parent item of the property.
  * @returns void
  */
 export function readProperty(
-  parserArgs: spParserArgs,
-  methodmapItem: MethodMapItem,
-  res: PropertyDeclaration
+  walker: TreeWalker,
+  node: TreeSitter.SyntaxNode,
+  parent: MethodMapItem
 ): void {
-  const range = parsedLocToRange(res.id.loc, parserArgs);
-  const fullRange = parsedLocToRange(res.loc, parserArgs);
-  const { doc, dep } = processDocStringComment(res.doc);
-  res.txt = res.txt.trim();
+  const nameNode = node.childForFieldName("name");
+  const typeNode = node.childForFieldName("type");
+  const { doc, dep } = findDoc(walker, node);
   const propertyItem = new PropertyItem(
-    methodmapItem,
-    res.id.id,
-    parserArgs.filePath,
-    res.txt,
+    parent,
+    nameNode.text,
+    walker.filePath,
+    "",
     doc,
-    range,
-    fullRange,
-    res.propertyType.id
+    pointsToRange(nameNode.startPosition, nameNode.endPosition),
+    pointsToRange(node.startPosition, node.endPosition),
+    typeNode !== null ? typeNode.text : ""
   );
-  parserArgs.fileItems.items.push(propertyItem);
-  res.body.forEach((e) => {
-    // readFunctionAndMethod(
-    //   parserArgs,
-    //   e.accessModifier,
-    //   e.returnType,
-    //   e.id,
-    //   e.loc,
-    //   e.doc,
-    //   e.params,
-    //   e.body,
-    //   e.txt,
-    //   propertyItem
-    // );
+  walker.fileItem.items.push(propertyItem);
+  node.children.forEach((e1) => {
+    if (!e1.type.startsWith("methodmap_property_")) {
+      return;
+    }
+    e1.children.forEach((e2) => {
+      // TODO: Property methods do not have parameters and variables
+      switch (e2.type) {
+        case "methodmap_property_getter":
+          readFunctionAndMethod(walker, e2, propertyItem, "get");
+          break;
+        case "methodmap_property_setter":
+          readFunctionAndMethod(walker, e2, propertyItem, "set");
+          break;
+        default:
+          break;
+      }
+    });
   });
 }

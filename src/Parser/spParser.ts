@@ -14,6 +14,7 @@ import { readEnum } from "./readEnum";
 import { commentToDoc } from "./readDocumentation";
 import { readDefine } from "./readDefine";
 import { readEnumStruct } from "./readEnumStruct";
+import { readMethodmap } from "./readMethodmap";
 
 export function parseFile(
   file: string,
@@ -144,6 +145,10 @@ export class TreeWalker {
       }
       if (child.type === "enum_struct") {
         readEnumStruct(this, child);
+        continue;
+      }
+      if (child.type === "methodmap") {
+        readMethodmap(this, child);
         continue;
       }
     }

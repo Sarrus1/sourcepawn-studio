@@ -9,8 +9,8 @@ import { VariableItem } from "../Backend/Items/spVariableItem";
 
 /**
  * Process an enum struct declaration.
- * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {EnumstructDeclaration} res  Object containing the enum struct declaration details.
+ * @param  {TreeWalker} walker            TreeWalker object.
+ * @param  {TreeSitter.SyntaxNode} node   Node to process.
  * @returns void
  */
 export function readEnumStruct(
@@ -32,9 +32,9 @@ export function readEnumStruct(
 
 /**
  * Process the body of an enum struct.
- * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {EnumStructItem} enumstructItem  The parent of the enum struct members.
- * @param  {EnumstructMemberDeclaration[]} body  The body of the enum struct to parse.
+ * @param  {TreeWalker} walker              TreeWalker object.
+ * @param  {EnumStructItem} enumstructItem  Parent item of the member.
+ * @param  {TreeSitter.SyntaxNode} node     Node to process.
  * @returns void
  */
 function readEnumstructMembers(

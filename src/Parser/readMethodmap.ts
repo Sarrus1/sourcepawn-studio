@@ -1,87 +1,78 @@
-﻿import {
-  MethodmapBody,
-  MethodmapDeclaration,
-  spParserArgs,
-} from "./interfaces";
+﻿import * as TreeSitter from "web-tree-sitter";
+
+import { pointsToRange } from "./utils";
+import { TreeWalker } from "./spParser";
+import { findDoc } from "./readDocumentation";
+import { readFunctionAndMethod } from "./readFunctionAndMethod";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
-import { globalIdentifier } from "../Misc/spConstants";
-import { ParsedID } from "./interfaces";
-import { parsedLocToRange } from "./utils";
-import { processDocStringComment } from "./processComment";
 import { readProperty } from "./readProperty";
 
 /**
  * Process a methodmap declaration.
- * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {MethodmapDeclaration} res  The object containing the methodmap declaration details.
+ * @param  {TreeWalker} walker            TreeWalker object.
+ * @param  {TreeSitter.SyntaxNode} node   Node to process.
  * @returns void
  */
 export function readMethodmap(
-  parserArgs: spParserArgs,
-  res: MethodmapDeclaration
+  walker: TreeWalker,
+  node: TreeSitter.SyntaxNode
 ): void {
-  const range = parsedLocToRange(res.id.loc, parserArgs);
-  const fullRange = parsedLocToRange(res.loc, parserArgs);
-  const { doc, dep } = processDocStringComment(res.doc);
+  const nameNode = node.childForFieldName("name");
+  const inheritNode = node.childForFieldName("inherits");
+  const { doc, dep } = findDoc(walker, node);
   const methodmapItem = new MethodMapItem(
-    res.id.id,
-    res.inherit && res.inherit !== "__nullable__"
-      ? (res.inherit as ParsedID).id
-      : globalIdentifier,
+    nameNode.text,
+    inheritNode?.text,
     doc,
-    parserArgs.filePath,
-    range,
-    fullRange,
-    parserArgs.IsBuiltIn
+    walker.filePath,
+    pointsToRange(nameNode.startPosition, nameNode.endPosition),
+    pointsToRange(node.startPosition, node.endPosition),
+    walker.isBuiltin
   );
-  parserArgs.fileItems.items.push(methodmapItem);
-  parseMethodmapBody(parserArgs, res.body, methodmapItem);
+  walker.fileItem.items.push(methodmapItem);
+  readMethodmapMembers(walker, methodmapItem, node);
 }
 
 /**
- * Process methodmap's body.
- * @param  {spParserArgs} parserArgs  ParserArgs objects passed to the parser.
- * @param  {MethodmapBody} body  Parsed body of the methodmap.
- * @param  {MethodMapItem} methodmapItem  Methodmap item associated to the body.
+ * Process the body of a methodmap.
+ * @param  {TreeWalker} walker            TreeWalker object.
+ * @param  {EnumStructItem} parent        Parent item of the member.
+ * @param  {TreeSitter.SyntaxNode} node   Node to process.
  * @returns void
  */
-function parseMethodmapBody(
-  parserArgs: spParserArgs,
-  body: MethodmapBody,
-  methodmapItem: MethodMapItem
+function readMethodmapMembers(
+  walker: TreeWalker,
+  parent: MethodMapItem,
+  node: TreeSitter.SyntaxNode
 ): void {
-  body.forEach((e) => {
+  node.children.forEach((e) => {
     switch (e.type) {
-      case "MethodDeclaration":
-        // readFunctionAndMethod(
-        //   parserArgs,
-        //   e.accessModifier,
-        //   e.returnType,
-        //   e.id,
-        //   e.loc,
-        //   e.doc,
-        //   e.params,
-        //   e.body,
-        //   e.txt,
-        //   methodmapItem
-        // );
+      case "methodmap_method":
+        readFunctionAndMethod(walker, e, parent);
         break;
-      case "MethodmapNativeForwardDeclaration":
-        // readFunctionAndMethod(
-        //   parserArgs,
-        //   e.accessModifier,
-        //   e.returnType,
-        //   e.id,
-        //   e.loc,
-        //   e.doc,
-        //   e.params,
-        //   null,
-        //   e.txt,
-        //   methodmapItem
-        // );
+      case "methodmap_method_constructor":
+        readFunctionAndMethod(walker, e, parent);
         break;
-      case "PropertyDeclaration":
-        readProperty(parserArgs, methodmapItem, e);
+      case "methodmap_method_destructor":
+        readFunctionAndMethod(walker, e, parent);
+        break;
+      case "methodmap_native":
+        readFunctionAndMethod(walker, e, parent);
+        break;
+      case "methodmap_native_constructor":
+        readFunctionAndMethod(walker, e, parent);
+        break;
+      case "methodmap_native_destructor":
+        readFunctionAndMethod(walker, e, parent);
+        break;
+      case "methodmap_property":
+        readProperty(walker, e, parent);
+        break;
+      case "comment":
+        walker.pushComment(e);
+        break;
+      default:
+        break;
     }
   });
 }

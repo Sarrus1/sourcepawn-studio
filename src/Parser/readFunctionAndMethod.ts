@@ -1,4 +1,4 @@
-﻿import { CompletionItemKind } from "vscode";
+﻿import { CompletionItemKind, Range } from "vscode";
 import * as TreeSitter from "web-tree-sitter";
 
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
@@ -27,7 +27,8 @@ const MmEs = [CompletionItemKind.Struct, CompletionItemKind.Class];
 export function readFunctionAndMethod(
   walker: TreeWalker,
   node: TreeSitter.SyntaxNode,
-  parent: MethodParent | ConstantItem = globalItem
+  parent: MethodParent | ConstantItem = globalItem,
+  getSet?: string
 ): void {
   let item: FunctionItem | MethodItem;
   let nameNode = node.childForFieldName("name");
@@ -62,16 +63,29 @@ export function readFunctionAndMethod(
       storageClass
     );
   } else {
+    const name = getSet ? getSet : nameNode.text;
+    let nameRange: Range;
+    if (getSet) {
+      let idx = node.text.search(getSet);
+      nameRange = new Range(
+        node.startPosition.row,
+        node.startPosition.column + idx,
+        node.startPosition.row,
+        node.startPosition.column + idx + "get".length
+      );
+    } else {
+      nameRange = pointsToRange(nameNode.startPosition, nameNode.endPosition);
+    }
     item = new MethodItem(
       parent as MethodParent,
-      nameNode.text,
-      `${storageClass.join(" ")} ${returnType} ${nameNode.text}${
-        params.text
+      name,
+      `${storageClass.join(" ")} ${returnType} ${name}${
+        params ? params.text : "()"
       }`.trim(),
       doc,
       returnType,
       walker.filePath,
-      pointsToRange(nameNode.startPosition, nameNode.endPosition),
+      nameRange,
       walker.isBuiltin,
       pointsToRange(node.startPosition, node.endPosition),
       dep
