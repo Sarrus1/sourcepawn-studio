@@ -101,6 +101,7 @@ export class TreeWalker {
   isBuiltin: boolean;
   comments: TreeSitter.SyntaxNode[];
   anonEnumCount: number;
+  deprecated: TreeSitter.SyntaxNode[];
 
   constructor(
     fileItem: FileItem,
@@ -114,6 +115,7 @@ export class TreeWalker {
     this.isBuiltin = isBuiltin;
     this.comments = [];
     this.anonEnumCount = -1;
+    this.deprecated = [];
   }
 
   public walkTree() {
@@ -121,6 +123,9 @@ export class TreeWalker {
     for (let child of this.tree.rootNode.children) {
       if (child.type === "comment") {
         this.pushComment(child);
+      }
+      if (child.type === "preproc_pragma_deprecated") {
+        this.deprecated.push(child);
       }
       if (
         child.type === "variable_declaration_statement" ||

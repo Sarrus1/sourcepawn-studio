@@ -12,14 +12,24 @@ export function findDoc(walker: TreeWalker, node: SyntaxNode): DocString {
   const txt: string[] = [];
   let dep: string;
   let endIndex = node.startPosition.row;
+  for (let deprec of walker.deprecated.reverse()) {
+    if (endIndex === deprec.endPosition.row) {
+      dep = deprec.childForFieldName("info")?.text;
+      break;
+    }
+    if (endIndex > deprec.endPosition.row) {
+      break;
+    }
+  }
   for (let comment of walker.comments.reverse()) {
-    if (endIndex === comment.endPosition.row + 1) {
+    if (endIndex === comment.endPosition.row + (dep ? 2 : 1)) {
       txt.push(commentToDoc(comment.text));
       endIndex = comment.startPosition.row;
     } else {
       walker.comments = [];
     }
   }
+  endIndex = node.startPosition.row;
   return { doc: txt.reverse().join("").trim(), dep };
 }
 

@@ -22,6 +22,7 @@ export class DefineItem implements SPItem {
   IsBuiltIn: boolean;
   range: Range;
   references: Location[];
+  deprecated: string | undefined;
   fullRange: Range;
 
   constructor(
@@ -31,7 +32,8 @@ export class DefineItem implements SPItem {
     file: string,
     range: Range,
     IsBuiltIn: boolean,
-    fullRange: Range
+    fullRange: Range,
+    deprecated: string | undefined
   ) {
     this.name = name;
     this.value = value;
@@ -41,6 +43,7 @@ export class DefineItem implements SPItem {
     this.references = [];
     this.IsBuiltIn = IsBuiltIn;
     this.fullRange = fullRange;
+    this.deprecated = deprecated;
   }
 
   toCompletionItem(): CompletionItem {

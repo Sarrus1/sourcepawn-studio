@@ -54,7 +54,8 @@ export class FileItem {
             URI.parse(uri).fsPath,
             zeroRange,
             true,
-            zeroRange
+            zeroRange,
+            undefined
           )
         )
       );

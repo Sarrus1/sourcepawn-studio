@@ -3,6 +3,7 @@
 import { DefineItem } from "../Backend/Items/spDefineItem";
 import { pointsToRange } from "./utils";
 import { TreeWalker } from "./spParser";
+import { findDoc } from "./readDocumentation";
 
 /**
  * Process a define statement.
@@ -18,8 +19,8 @@ export function readDefine(
   const valueNode = node.childForFieldName("value");
   const range = pointsToRange(nameNode.startPosition, nameNode.endPosition);
   const fullRange = pointsToRange(node.startPosition, node.endPosition);
+  const { doc, dep } = findDoc(walker, node);
 
-  // FIXME: Comments are poorly handled here.
   const defineItem = new DefineItem(
     nameNode.text,
     valueNode !== null ? valueNode.text.trim() : "",
@@ -27,7 +28,8 @@ export function readDefine(
     walker.filePath,
     range,
     walker.isBuiltin,
-    fullRange
+    fullRange,
+    dep
   );
   walker.fileItem.items.push(defineItem);
 }
