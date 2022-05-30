@@ -15,6 +15,7 @@ import { commentToDoc } from "./readDocumentation";
 import { readDefine } from "./readDefine";
 import { readEnumStruct } from "./readEnumStruct";
 import { readMethodmap } from "./readMethodmap";
+import { readTypedef } from "./readTypedef";
 
 export function parseFile(
   file: string,
@@ -149,6 +150,10 @@ export class TreeWalker {
       }
       if (child.type === "methodmap") {
         readMethodmap(this, child);
+        continue;
+      }
+      if (child.type === "typedef") {
+        readTypedef(this, child);
         continue;
       }
     }

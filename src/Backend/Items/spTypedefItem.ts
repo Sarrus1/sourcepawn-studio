@@ -14,7 +14,7 @@ import { basename } from "path";
 
 import { descriptionToMD } from "../../spUtils";
 import { SPItem } from "./spItems";
-import { FormalParameter } from "../../Parser/interfaces";
+import { SyntaxNode } from "web-tree-sitter";
 
 export class TypedefItem implements SPItem {
   name: string;
@@ -26,7 +26,7 @@ export class TypedefItem implements SPItem {
   range: Range;
   fullRange: Range;
   references: Location[];
-  params_signature: FormalParameter[];
+  params_signature: SyntaxNode[];
 
   constructor(
     name: string,
@@ -36,7 +36,7 @@ export class TypedefItem implements SPItem {
     type: string,
     range: Range,
     fullRange: Range,
-    params_signature: FormalParameter[]
+    params_signature: SyntaxNode[]
   ) {
     this.name = name;
     this.details = details;
@@ -98,19 +98,20 @@ export class TypedefItem implements SPItem {
     snippet.appendText("(");
     if (this.params_signature) {
       this.params_signature.forEach((param, i) => {
-        let declarationType = Array.isArray(param.declarationType)
-          ? param.declarationType.join(" ")
-          : param.declarationType;
-        if (declarationType) {
-          snippet.appendText(declarationType);
+        // let declarationType = Array.isArray(param.declarationType)
+        //   ? param.declarationType.join(" ")
+        //   : param.declarationType;
+        // if (declarationType) {
+        //   snippet.appendText(declarationType);
+        //   snippet.appendText(" ");
+        // }
+        let typeNode = param.childForFieldName("type");
+        if (typeNode) {
+          snippet.appendText(typeNode.text);
           snippet.appendText(" ");
         }
-        let type = param.parameterType;
-        if (type) {
-          snippet.appendText(type.name.id);
-          snippet.appendText(type.modifier);
-        }
-        snippet.appendPlaceholder(param.id.id);
+        let nameNode = param.childForFieldName("name");
+        snippet.appendPlaceholder(nameNode.text);
         if (i !== this.params_signature.length - 1) {
           snippet.appendText(", ");
         }

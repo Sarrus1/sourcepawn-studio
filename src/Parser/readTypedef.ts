@@ -1,71 +1,33 @@
-﻿import {
-  FunctagDeclaration,
-  spParserArgs,
-  TypedefDeclaration,
-} from "./interfaces";
+﻿import { SyntaxNode } from "web-tree-sitter";
+
 import { TypedefItem } from "../Backend/Items/spTypedefItem";
-import { FormalParameter } from "./interfaces";
-import { parsedLocToRange } from "./utils";
-import { processDocStringComment } from "./processComment";
+import { pointsToRange } from "./utils";
+import { TreeWalker } from "./spParser";
+import { findDoc } from "./readDocumentation";
 
 /**
- * Process an enum struct declaration.
- * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {TypedefDeclaration|FunctagDeclaration} res  Object containing the typedef/functag declaration details.
+ * Process a typedef declaration.
+ * @param  {TreeWalker} walker            TreeWalker object.
+ * @param  {TreeSitter.SyntaxNode} node   Node to process.
  * @returns void
  */
-export function readTypedef(
-  parserArgs: spParserArgs,
-  res: TypedefDeclaration | FunctagDeclaration
-): void {
-  const range = parsedLocToRange(res.id.loc, parserArgs);
-  const fullRange = parsedLocToRange(res.loc, parserArgs);
-  const { doc, dep } = processDocStringComment(res.doc);
-  let returnType = "";
-  if (res.body.returnType) {
-    returnType = res.body.returnType.id;
-  }
+export function readTypedef(walker: TreeWalker, node: SyntaxNode): void {
+  const nameNode = node.childForFieldName("name");
+  const body = node.children.find((e) => e.type === "typedef_expression");
+  const typeNode = body.childForFieldName("returnType");
+  const { doc, dep } = findDoc(walker, node);
   const typeDefItem = new TypedefItem(
-    res.id.id,
-    `typedef ${res.id.id} = function ${returnType} (${readTypeDefParams(
-      res.body.params
-    ).join(", ")});`,
-    parserArgs.filePath,
+    nameNode.text,
+    node.text,
+    walker.filePath,
     doc,
-    returnType,
-    range,
-    fullRange,
-    res.body.params
+    typeNode.text,
+    pointsToRange(nameNode.startPosition, nameNode.endPosition),
+    pointsToRange(node.startPosition, node.endPosition),
+    body.children
+      .find((e) => e.type === "typedef_args")
+      .children.filter((e) => e.type === "typedef_arg")
   );
-  parserArgs.fileItems.items.push(typeDefItem);
+  walker.fileItem.items.push(typeDefItem);
   return;
-}
-
-/**
- * Extract variables from a TypeDef's body.
- * @param  {FormalParameter[]} params
- * @returns string
- */
-export function readTypeDefParams(params: FormalParameter[]): string[] {
-  if (params === null) {
-    return [];
-  }
-
-  return params.map((e) => {
-    // Handle "..." tokens.
-    const id = e.id.id;
-    let declType = "";
-    if (e.declarationType) {
-      if (Array.isArray(e.declarationType)) {
-        declType = e.declarationType.join(" ");
-      } else {
-        declType = e.declarationType;
-      }
-      declType += " ";
-    }
-
-    return `${declType}${
-      e.parameterType ? e.parameterType.name.id + " " : ""
-    }${id}`;
-  });
 }

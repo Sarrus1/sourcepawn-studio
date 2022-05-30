@@ -7,7 +7,6 @@ import { TypesetItem } from "../Backend/Items/spTypesetItem";
 import { parsedLocToRange } from "./utils";
 import { processDocStringComment } from "./processComment";
 import { TypedefItem } from "../Backend/Items/spTypedefItem";
-import { readTypeDefParams } from "./readTypedef";
 
 /**
  * Process a typeset declaration.
@@ -30,15 +29,13 @@ export function readTypeset(
       const name = `${res.id.id}\$${i}`;
       return new TypedefItem(
         name,
-        `typedef ${name} = function ${e.returnType.id} (${readTypeDefParams(
-          e.params
-        ).join(", ")});`,
+        `typedef ${name} = function ${e.returnType.id} ();`,
         parserArgs.filePath,
         child_doc,
         e.returnType.id,
         undefined,
         undefined,
-        e.params
+        []
       );
     });
   } else {
@@ -47,15 +44,13 @@ export function readTypeset(
       const name = `${res.id.id}\$${i}`;
       return new TypedefItem(
         name,
-        `typedef ${name} = function (${readTypeDefParams(e.params).join(
-          ", "
-        )});`,
+        `typedef ${name} = function ();`,
         parserArgs.filePath,
         child_doc,
         "",
         undefined,
         undefined,
-        e.params
+        []
       );
     });
   }
