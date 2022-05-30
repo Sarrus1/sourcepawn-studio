@@ -62,30 +62,38 @@ export function readFunctionAndMethod(
       dep,
       storageClass
     );
-  } else {
-    const name = getSet ? getSet : nameNode.text;
-    let nameRange: Range;
-    if (getSet) {
-      let idx = node.text.search(getSet);
-      nameRange = new Range(
-        node.startPosition.row,
-        node.startPosition.column + idx,
-        node.startPosition.row,
-        node.startPosition.column + idx + "get".length
-      );
-    } else {
-      nameRange = pointsToRange(nameNode.startPosition, nameNode.endPosition);
-    }
+  } else if (getSet) {
+    // Handle properties' getters/setters.
+    let idx = node.text.search(getSet);
+    let nameRange = new Range(
+      node.startPosition.row,
+      node.startPosition.column + idx,
+      node.startPosition.row,
+      node.startPosition.column + idx + "get".length
+    );
     item = new MethodItem(
-      parent as MethodParent,
-      name,
-      `${storageClass.join(" ")} ${returnType} ${name}${
-        params ? params.text : "()"
-      }`.trim(),
+      parent as PropertyItem,
+      getSet,
+      `${storageClass.join(" ")} ${returnType} ${getSet}${"()"}`.trim(),
       doc,
       returnType,
       walker.filePath,
       nameRange,
+      walker.isBuiltin,
+      pointsToRange(node.startPosition, node.endPosition),
+      dep
+    );
+  } else {
+    item = new MethodItem(
+      parent as MethodParent,
+      nameNode.text,
+      `${storageClass.join(" ")} ${returnType} ${nameNode.text}${
+        params.text
+      }`.trim(),
+      doc,
+      returnType,
+      walker.filePath,
+      pointsToRange(nameNode.startPosition, nameNode.endPosition),
       walker.isBuiltin,
       pointsToRange(node.startPosition, node.endPosition),
       dep
@@ -107,7 +115,7 @@ export function readFunctionAndMethod(
  * @param  {FunctionItem|MethodItem} parent   Parent item of the body.
  * @returns void
  */
-function readBodyVariables(
+export function readBodyVariables(
   walker: TreeWalker,
   body: TreeSitter.SyntaxNode,
   parent: FunctionItem | MethodItem

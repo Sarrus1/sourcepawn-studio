@@ -5,7 +5,11 @@ import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 import { TreeWalker } from "./spParser";
 import { findDoc } from "./readDocumentation";
 import { pointsToRange } from "./utils";
-import { readFunctionAndMethod } from "./readFunctionAndMethod";
+import {
+  readBodyVariables,
+  readFunctionAndMethod,
+} from "./readFunctionAndMethod";
+import { MethodItem } from "../Backend/Items/spMethodItem";
 
 /**
  * Process a methodmap's property.
@@ -26,11 +30,11 @@ export function readProperty(
     parent,
     nameNode.text,
     walker.filePath,
-    "",
+    `property ${typeNode.text} ${nameNode.text}`,
     doc,
     pointsToRange(nameNode.startPosition, nameNode.endPosition),
     pointsToRange(node.startPosition, node.endPosition),
-    typeNode !== null ? typeNode.text : ""
+    typeNode.text
   );
   walker.fileItem.items.push(propertyItem);
   node.children.forEach((e1) => {
@@ -38,13 +42,21 @@ export function readProperty(
       return;
     }
     e1.children.forEach((e2) => {
-      // TODO: Property methods do not have parameters and variables
       switch (e2.type) {
         case "methodmap_property_getter":
           readFunctionAndMethod(walker, e2, propertyItem, "get");
           break;
         case "methodmap_property_setter":
           readFunctionAndMethod(walker, e2, propertyItem, "set");
+          break;
+        case "block":
+          // Properties's methods bodies are not children of the methods in the tree-sitter AST.
+          // This addresses this design choice, however it should be adressed.
+          const lastIdx = walker.fileItem.items.length - 1;
+          const lastItem = walker.fileItem.items[lastIdx] as MethodItem;
+          readBodyVariables(walker, e2, lastItem);
+          const bodyRange = pointsToRange(e2.startPosition, e2.endPosition);
+          lastItem.fullRange = lastItem.fullRange.union(bodyRange);
           break;
         default:
           break;
