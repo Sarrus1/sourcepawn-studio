@@ -96,27 +96,19 @@ export class TypedefItem implements SPItem {
     snippet.appendText(`${this.type} `);
     snippet.appendPlaceholder("name");
     snippet.appendText("(");
-    if (this.params_signature) {
-      this.params_signature.forEach((param, i) => {
-        // let declarationType = Array.isArray(param.declarationType)
-        //   ? param.declarationType.join(" ")
-        //   : param.declarationType;
-        // if (declarationType) {
-        //   snippet.appendText(declarationType);
-        //   snippet.appendText(" ");
-        // }
-        let typeNode = param.childForFieldName("type");
-        if (typeNode) {
-          snippet.appendText(typeNode.text);
-          snippet.appendText(" ");
-        }
-        let nameNode = param.childForFieldName("name");
-        snippet.appendPlaceholder(nameNode.text);
-        if (i !== this.params_signature.length - 1) {
-          snippet.appendText(", ");
-        }
-      });
+    if (!this.params_signature) {
+      return undefined;
     }
+    this.params_signature.forEach((param, i) => {
+      let nameNode = param.childForFieldName("name");
+      snippet.appendText(
+        param.text.replace(new RegExp(`\\b${nameNode.text}\\b\\s*$`), "")
+      );
+      snippet.appendPlaceholder(nameNode.text);
+      if (i !== this.params_signature.length - 1) {
+        snippet.appendText(", ");
+      }
+    });
 
     snippet.appendText(")\n{\n\t");
     snippet.appendTabstop();

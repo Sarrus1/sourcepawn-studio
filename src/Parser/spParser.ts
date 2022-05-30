@@ -16,6 +16,7 @@ import { readDefine } from "./readDefine";
 import { readEnumStruct } from "./readEnumStruct";
 import { readMethodmap } from "./readMethodmap";
 import { readTypedef } from "./readTypedef";
+import { readTypeset } from "./readTypeset";
 
 export function parseFile(
   file: string,
@@ -154,6 +155,10 @@ export class TreeWalker {
       }
       if (child.type === "typedef") {
         readTypedef(this, child);
+        continue;
+      }
+      if (child.type === "typeset") {
+        readTypeset(this, child);
         continue;
       }
     }

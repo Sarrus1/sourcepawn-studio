@@ -1,68 +1,58 @@
-﻿import {
-  FuncenumDeclaration,
-  spParserArgs,
-  TypesetDeclaration,
-} from "./interfaces";
+﻿import { SyntaxNode } from "web-tree-sitter";
+
 import { TypesetItem } from "../Backend/Items/spTypesetItem";
-import { parsedLocToRange } from "./utils";
-import { processDocStringComment } from "./processComment";
 import { TypedefItem } from "../Backend/Items/spTypedefItem";
+import { TreeWalker } from "./spParser";
+import { findDoc } from "./readDocumentation";
+import { pointsToRange } from "./utils";
 
 /**
  * Process a typeset declaration.
- * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {TypesetDeclaration|FuncenumDeclaration} res  Object containing the typeset/funcenum declaration details.
+ * @param  {TreeWalker} walker            TreeWalker object.
+ * @param  {TreeSitter.SyntaxNode} node   Node to process.
  * @returns void
  */
-export function readTypeset(
-  parserArgs: spParserArgs,
-  res: TypesetDeclaration | FuncenumDeclaration
-): void {
-  const range = parsedLocToRange(res.id.loc, parserArgs);
-  const fullRange = parsedLocToRange(res.loc, parserArgs);
-  const { doc, dep } = processDocStringComment(res.doc);
+export function readTypeset(walker: TreeWalker, node: SyntaxNode): void {
+  const nameNode = node.childForFieldName("name");
+  const { doc, dep } = findDoc(walker, node);
 
-  let childs: TypedefItem[];
-  if (res.type === "TypesetDeclaration") {
-    childs = res.body.map((e, i) => {
-      const { doc: child_doc, dep: child_dep } = processDocStringComment(e.doc);
-      const name = `${res.id.id}\$${i}`;
-      return new TypedefItem(
-        name,
-        `typedef ${name} = function ${e.returnType.id} ();`,
-        parserArgs.filePath,
+  const childs = [];
+  let counter = -1;
+  node.children.forEach((e) => {
+    if (e.type === "comment") {
+      walker.pushComment(e);
+      return;
+    }
+    if (e.type !== "typedef_expression") {
+      return;
+    }
+    counter++;
+    const { doc: child_doc, dep: child_dep } = findDoc(walker, e);
+    const typeNode = e.childForFieldName("returnType");
+    childs.push(
+      new TypedefItem(
+        `${nameNode.text}$${counter}`,
+        e.text,
+        walker.filePath,
         child_doc,
-        e.returnType.id,
+        typeNode.text,
         undefined,
-        undefined,
-        []
-      );
-    });
-  } else {
-    childs = res.body.map((e, i) => {
-      const { doc: child_doc, dep: child_dep } = processDocStringComment(e.doc);
-      const name = `${res.id.id}\$${i}`;
-      return new TypedefItem(
-        name,
-        `typedef ${name} = function ();`,
-        parserArgs.filePath,
-        child_doc,
-        "",
-        undefined,
-        undefined,
-        []
-      );
-    });
-  }
+        pointsToRange(e.startPosition, e.endPosition),
+        e.children
+          .find((e) => e.type === "typedef_args")
+          .children.filter((e) => e.type === "typedef_arg")
+      )
+    );
+  });
 
   const typeDefItem = new TypesetItem(
-    res.id.id,
-    `typeset ${res.id.id} (${childs.length} members)`,
-    parserArgs.filePath,
+    nameNode.text,
+    `typeset ${nameNode.text} (${childs.length} members)`,
+    walker.filePath,
     doc,
-    range,
-    fullRange,
+    pointsToRange(nameNode.startPosition, nameNode.endPosition),
+    pointsToRange(node.startPosition, node.endPosition),
     childs
   );
-  parserArgs.fileItems.items.push(typeDefItem);
+  walker.fileItem.items.push(typeDefItem);
 }
