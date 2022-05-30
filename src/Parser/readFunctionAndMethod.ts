@@ -100,42 +100,6 @@ function readBodyVariables(
 }
 
 /**
- * Process the params of a function/method and returns the formatted output.
- * @param  {TreeSitter.SyntaxNode} params   Node of the params declaration.
- * @param  {string|undefined} doc           Docstring associated to the function/method.
- * @returns FunctionParam
- */
-function processFunctionParams(
-  params: TreeSitter.SyntaxNode,
-  doc: string | undefined
-): FunctionParam[] {
-  if (!params) {
-    return [];
-  }
-  const processedParams: FunctionParam[] = [];
-  for (let param of params.children) {
-    if (param.type !== "argument_declaration") {
-      continue;
-    }
-    const label = param.childForFieldName("name").text;
-    let documentation = "";
-    if (doc) {
-      const match = doc.match(
-        new RegExp(`@param\\s+(?:\\b${label}\\b)([^\\@]+)`)
-      );
-      if (match) {
-        documentation = match[1].replace(/\*/gm, "").trim();
-      }
-    }
-    processedParams.push({
-      label,
-      documentation,
-    } as FunctionParam);
-  }
-  return processedParams;
-}
-
-/**
  * Process the params of a function/method and adds them as variables.
  * @param  {TreeWalker} walker                TreeWalker object.
  * @param  {TreeSitter.SyntaxNode} params     Params node.
