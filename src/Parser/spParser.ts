@@ -1,4 +1,4 @@
-import { CompletionItemKind, Range } from "vscode";
+import { CompletionItemKind, Diagnostic, Range } from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { resolve, dirname } from "path";
 
@@ -6,7 +6,7 @@ import { ItemsRepository } from "../Backend/spItemsRepository";
 import { FileItem } from "../Backend/spFilesRepository";
 import { Semantics } from "./Semantics/spSemantics";
 import { PreProcessor } from "./PreProcessor/spPreprocessor";
-import { parser } from "../spIndex";
+import { parser, spLangObj, symbolQuery } from "../spIndex";
 import * as TreeSitter from "web-tree-sitter";
 import { readVariable } from "./readVariable";
 import { readFunctionAndMethod } from "./readFunctionAndMethod";
@@ -17,6 +17,9 @@ import { readEnumStruct } from "./readEnumStruct";
 import { readMethodmap } from "./readMethodmap";
 import { readTypedef } from "./readTypedef";
 import { readTypeset } from "./readTypeset";
+import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
+import { URI } from "vscode-uri";
+import { pointsToRange } from "./utils";
 
 export function parseFile(
   file: string,
@@ -63,8 +66,7 @@ export function parseText(
   itemsRepository: ItemsRepository,
   searchTokens: boolean,
   isBuiltIn: boolean,
-  offset: number = 0,
-  range?: Range
+  offset: number = 0
 ): boolean {
   if (data === undefined) {
     return false; // Asked to parse empty file
@@ -77,17 +79,29 @@ export function parseText(
     const tree = parser.parse(data);
     const walker = new TreeWalker(fileItem, file, tree, isBuiltIn);
     walker.walkTree();
+    fileItem.symbols = symbolQuery.captures(tree.rootNode);
+    parserDiagnostics.set(
+      URI.file(file),
+      spLangObj
+        .query("(ERROR) @err")
+        .captures(tree.rootNode)
+        .map(
+          (e) =>
+            new Diagnostic(
+              pointsToRange(e.node.startPosition, e.node.endPosition),
+              e.node.text
+            )
+        )
+    );
     return false;
   } else {
-    return false;
-    let lines = data.split("\n");
+    const lines = data.split("\n");
     const semantics = new Semantics(
       lines,
       file,
       fileItem,
       itemsRepository,
-      offset,
-      range
+      offset
     );
     semantics.analyze();
     return false;

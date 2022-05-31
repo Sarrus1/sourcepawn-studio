@@ -37,12 +37,12 @@ export async function handleDocumentChange(
   event: TextDocumentChangeEvent
 ) {
   const fileUri = event.document.uri.toString();
-  const filePath: string = event.document.uri.fsPath.replace(".git", "");
+  const filePath = event.document.uri.fsPath.replace(".git", "");
 
   // Hack to make the function non blocking, and not prevent the completionProvider from running.
   await new Promise((resolve) => setTimeout(resolve, 50));
 
-  let fileItem = new FileItem(fileUri);
+  const fileItem = new FileItem(fileUri);
 
   let text = event.document.getText();
 

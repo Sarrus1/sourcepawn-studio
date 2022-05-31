@@ -5,7 +5,7 @@ import { ItemsRepository } from "../../Backend/spItemsRepository";
 import { FileItem } from "../../Backend/spFilesRepository";
 import { SPItem } from "../../Backend/Items/spItems";
 import { handleToken } from "./handleReferencesInParser";
-import { checkIfPluginInfo } from "../utils";
+import { checkIfPluginInfo, pointsToRange } from "../utils";
 import { globalIdentifier } from "../../Misc/spConstants";
 import { FunctionItem } from "../../Backend/Items/spFunctionItem";
 import { MethodItem } from "../../Backend/Items/spMethodItem";
@@ -73,12 +73,12 @@ export class Semantics {
     let lastFunc: FunctionItem | MethodItem | PropertyItem | undefined;
     let lastMMorES: MethodMapItem | EnumStructItem | undefined;
 
-    this.fileItems.tokens.sort((a, b) => {
-      if (a.range.start.line === b.range.start.line) {
-        return a.range.start.character - b.range.start.character;
-      }
-      return a.range.start.line - b.range.start.line;
-    });
+    // this.fileItems.symbols.sort((a, b) => {
+    //   if (a.range.start.line === b.range.start.line) {
+    //     return a.range.start.character - b.range.start.character;
+    //   }
+    //   return a.range.start.line - b.range.start.line;
+    // });
 
     const newDiagnostics = Array.from(
       parserDiagnostics.get(URI.file(this.filePath))
@@ -96,19 +96,23 @@ export class Semantics {
     let mmIdx = 0;
     let typeIdx = 0;
 
-    this.fileItems.tokens.forEach((e, i) => {
+    this.fileItems.symbols.forEach((e, i) => {
+      let symbol = {
+        id: e.node.text,
+        range: pointsToRange(e.node.startPosition, e.node.endPosition),
+      };
       if (
         !lastFunc ||
         ((lastFunc.kind === CompletionItemKind.Property ||
           (funcIdx > 0 &&
             this.funcsAndMethodsInFile[funcIdx - 1].kind ===
               CompletionItemKind.Property)) &&
-          ["get", "set"].includes(e.id)) ||
-        !lastFunc.fullRange.contains(e.range)
+          ["get", "set"].includes(symbol.id)) ||
+        !lastFunc.fullRange.contains(symbol.range)
       ) {
         if (
           this.funcsAndMethodsInFile.length > funcIdx &&
-          this.funcsAndMethodsInFile[funcIdx].fullRange.contains(e.range)
+          this.funcsAndMethodsInFile[funcIdx].fullRange.contains(symbol.range)
         ) {
           lastFunc = this.funcsAndMethodsInFile[funcIdx];
           funcIdx++;
@@ -117,10 +121,10 @@ export class Semantics {
         }
       }
 
-      if (!lastMMorES || !lastMMorES.fullRange.contains(e.range)) {
+      if (!lastMMorES || !lastMMorES.fullRange.contains(symbol.range)) {
         if (
           this.MmEsInFile.length > mmIdx &&
-          this.MmEsInFile[mmIdx].fullRange.contains(e.range)
+          this.MmEsInFile[mmIdx].fullRange.contains(symbol.range)
         ) {
           lastMMorES = this.MmEsInFile[mmIdx];
           mmIdx++;
@@ -133,13 +137,17 @@ export class Semantics {
         this.typeDefAndSetInFile.length > 0 &&
         this.typeDefAndSetInFile.length > typeIdx
       ) {
-        if (this.typeDefAndSetInFile[typeIdx].fullRange.contains(e.range)) {
+        if (
+          this.typeDefAndSetInFile[typeIdx].fullRange.contains(symbol.range)
+        ) {
           this.inTypeDef = true;
         } else if (this.inTypeDef) {
           // Check for typesets that are back to back.
           if (
             this.typeDefAndSetInFile.length > typeIdx + 1 &&
-            this.typeDefAndSetInFile[typeIdx + 1].fullRange.contains(e.range)
+            this.typeDefAndSetInFile[typeIdx + 1].fullRange.contains(
+              symbol.range
+            )
           ) {
             typeIdx++;
           } else {
@@ -149,14 +157,14 @@ export class Semantics {
         }
       }
 
-      if (checkIfPluginInfo(e.id, lastFunc, lastMMorES)) {
+      if (checkIfPluginInfo(symbol.id, lastFunc, lastMMorES)) {
         return;
       }
 
-      const lineNb = e.range.start.line;
+      const lineNb = symbol.range.start.line;
 
       if (lineNb - this.offset !== this.lineNb || i === 0) {
-        this.lineNb = e.range.start.line - this.offset;
+        this.lineNb = symbol.range.start.line - this.offset;
 
         this.line = this.lines[this.lineNb];
         this.previousItems = [];
@@ -196,7 +204,7 @@ export class Semantics {
         }`;
         this.lastMMorES = lastMMorES;
       }
-      handleToken.call(this, e.id, e.range);
+      handleToken.call(this, symbol.id, symbol.range);
     });
     // parserDiagnostics.set(URI.file(this.filePath), newDiagnostics);
   }

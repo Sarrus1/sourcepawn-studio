@@ -9,7 +9,7 @@ import { ConstantItem } from "../Backend/Items/spConstantItem";
 import { MethodItem } from "../Backend/Items/spMethodItem";
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { TreeWalker } from "./spParser";
-import { spLangObj } from "../spIndex";
+import { variableQuery } from "../spIndex";
 import { readVariable } from "./readVariable";
 import { VariableItem } from "../Backend/Items/spVariableItem";
 import { findDoc } from "./readDocumentation";
@@ -123,10 +123,7 @@ export function readBodyVariables(
   if (body === undefined) {
     return;
   }
-  const query = spLangObj.query(
-    "(variable_declaration_statement) @declaration.variable"
-  );
-  const res = query.captures(body);
+  const res = variableQuery.captures(body);
   res.forEach((capture) => {
     readVariable(walker, capture.node, parent);
   });

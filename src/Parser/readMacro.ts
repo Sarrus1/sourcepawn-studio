@@ -1,7 +1,4 @@
-﻿import { MacroItem } from "../Backend/Items/spMacroItem";
-import { FunctionParam, MacroStatement, spParserArgs } from "./interfaces";
-import { parsedLocToRange } from "./utils";
-import { processDocStringComment } from "./processComment";
+﻿import { FunctionParam, MacroStatement, spParserArgs } from "./interfaces";
 
 /**
  * Process a macro statement.

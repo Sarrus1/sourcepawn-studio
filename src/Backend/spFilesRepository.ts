@@ -2,6 +2,7 @@ import { Range, workspace as Workspace } from "vscode";
 import { dirname, resolve } from "path";
 import { existsSync } from "fs";
 import { URI } from "vscode-uri";
+import { QueryCapture } from "web-tree-sitter";
 
 import { Include, SPItem } from "./Items/spItems";
 import { KeywordItem } from "./Items/spKeywordItem";
@@ -28,9 +29,10 @@ export interface parsedToken {
 export class FileItem {
   includes: Map<string, Include>;
   uri: string;
-  tokens: parsedToken[];
   methodmaps: Map<string, MethodMapItem>;
   items: SPItem[];
+
+  symbols: QueryCapture[];
   /**
    * Preprocessed text
    */
@@ -75,7 +77,7 @@ export class FileItem {
     }
     this.includes = new Map();
     this.uri = uri;
-    this.tokens = [];
+    this.symbols = [];
     this.methodmaps = new Map<string, MethodMapItem>();
     this.defines = new Map();
     this.failedParse = failedParse;
@@ -142,26 +144,5 @@ export class FileItem {
       }
     }
     return undefined;
-  }
-
-  /**
-   * Add a parsed token to the array of parsed token by taking into account the offset of the error
-   * recovery.
-   * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
-   * @param  {ParsedID} id  The parsed ID of the token.
-   * @returns void
-   */
-  pushToken(parserArgs: spParserArgs, id: ParsedID): void {
-    if (reservedTokens.has(id.id)) {
-      return;
-    }
-    const range = parsedLocToRange(id.loc, parserArgs);
-
-    // Prevent duplicates in the tokens array.
-    const length = this.tokens.length;
-    if (length > 0 && this.tokens[length - 1].range.isEqual(range)) {
-      return;
-    }
-    this.tokens.push({ id: id.id, range });
   }
 }

@@ -25,6 +25,8 @@ import { newDocumentCallback } from "./Backend/spFileHandlers";
 
 export let parser: TreeSitter;
 export let spLangObj: TreeSitter.Language;
+export let symbolQuery: TreeSitter.Query;
+export let variableQuery: TreeSitter.Query;
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
@@ -317,4 +319,8 @@ async function buildParser() {
   const langFile = join(__dirname, "tree-sitter-sourcepawn.wasm");
   spLangObj = await TreeSitter.Language.load(langFile);
   parser.setLanguage(spLangObj);
+  variableQuery = spLangObj.query(
+    "(variable_declaration_statement) @declaration.variable"
+  );
+  symbolQuery = spLangObj.query("(symbol) @symbol");
 }
