@@ -27,7 +27,7 @@ export function readVariable(
   node: TreeSitter.SyntaxNode,
   parent: VariableParent = globalItem
 ): void {
-  const variableType = node.childForFieldName("type").text;
+  const variableType = node.childForFieldName("type")?.text || "";
   let storageClass: string[] = [];
   for (let child of node.children) {
     // FIXME: More efficient way to do this ?
