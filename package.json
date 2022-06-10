@@ -570,14 +570,13 @@
     "@icetee/ftp": "1.0.8"
   },
   "scripts": {
-    "vscode:prepublish": "npm run generate-parser && npm run generate-spParser && webpack --mode production",
+    "vscode:prepublish": "npm run generate-parser && webpack --mode production",
     "publish-ovsx": "ovsx publish",
     "generate-parser": "peggy --plugin ./node_modules/ts-pegjs -o src/Parser/cfgParser/cfgParser.ts --cache src/Parser/cfgParser/cfg.pegjs",
-    "generate-spParser": "peggy --plugin ./node_modules/ts-pegjs -o src/Parser/spParser-gen.ts --cache src/Parser/sp.pegjs",
-    "compile": "npm run generate-parser && npm run generate-spParser && tsc -b tsconfig.json",
+    "compile": "npm run generate-parser && tsc -b tsconfig.json",
     "watch": "webpack --mode development --watch",
     "webpack": "npm run generate-parser && webpack --mode development",
     "test": "npm run compile && node ./dist/test/runTest.js",
-    "postinstall": "node ./scripts/build.js"
+    "postinstall": "mdkir dist && cp ./bin/tree-sitter-sourcepawn.wasm ./dist && cp ./bin/tree-sitter.wasm ./dist "
   }
 }
