@@ -105,7 +105,7 @@ export async function getCompletionListFromPosition(
   position: Position
 ): Promise<CompletionList> {
   const allItems: SPItem[] = itemsRepo.getAllItems(document.uri);
-  if (allItems === []) {
+  if (allItems.length === 0) {
     return new CompletionList();
   }
 

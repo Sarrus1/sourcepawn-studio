@@ -8,7 +8,7 @@ import {
 import { URI } from "vscode-uri";
 import { join, resolve } from "path";
 const glob = require("glob");
-import * as TreeSitter from "web-tree-sitter";
+import Parser from "web-tree-sitter";
 
 import { refreshDiagnostics } from "./Providers/spLinter";
 import { registerSPLinter } from "./Providers/Linter/registerSPLinter";
@@ -23,10 +23,10 @@ import { findMainPath, checkMainPath } from "./spUtils";
 import { updateDecorations } from "./Providers/decorationsProvider";
 import { newDocumentCallback } from "./Backend/spFileHandlers";
 
-export let parser: TreeSitter;
-export let spLangObj: TreeSitter.Language;
-export let symbolQuery: TreeSitter.Query;
-export let variableQuery: TreeSitter.Query;
+export let parser: Parser;
+export let spLangObj: Parser.Language;
+export let symbolQuery: Parser.Query;
+export let variableQuery: Parser.Query;
 
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
@@ -314,10 +314,10 @@ async function loadFiles(providers: Providers) {
 }
 
 async function buildParser() {
-  await TreeSitter.init();
-  parser = new TreeSitter();
+  await Parser.init();
+  parser = new Parser();
   const langFile = join(__dirname, "tree-sitter-sourcepawn.wasm");
-  spLangObj = await TreeSitter.Language.load(langFile);
+  spLangObj = await Parser.Language.load(langFile);
   parser.setLanguage(spLangObj);
   variableQuery = spLangObj.query(
     "(variable_declaration_statement) (old_variable_declaration_statement) @declaration.variable"
