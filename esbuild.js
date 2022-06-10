@@ -19,7 +19,7 @@ const treeSitterWasmPlugin = {
 };
 
 if (!fs.existsSync(outDir)) {
-  fs.mkdir(outDir);
+  fs.mkdirSync(outDir);
 }
 
 require("esbuild")
