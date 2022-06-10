@@ -577,6 +577,6 @@
     "watch": "webpack --mode development --watch",
     "webpack": "npm run generate-parser && webpack --mode development",
     "test": "npm run compile && node ./dist/test/runTest.js",
-    "postinstall": "mdkir dist && cp ./bin/tree-sitter-sourcepawn.wasm ./dist && cp ./bin/tree-sitter.wasm ./dist "
+    "postinstall": "mkdir dist && cp ./bin/tree-sitter-sourcepawn.wasm ./dist && cp ./bin/tree-sitter.wasm ./dist "
   }
 }
