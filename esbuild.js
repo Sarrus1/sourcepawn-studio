@@ -1,14 +1,14 @@
 const fs = require("fs");
 const path = require("path");
 
-const outDir = "dist";
+const outDir = "./dist";
 
 const treeSitterWasmPlugin = {
   name: "treeSitterWasm",
   setup(build) {
     const wasmPaths = [
-      "bin/tree-sitter.wasm",
-      "bin/tree-sitter-sourcepawn.wasm",
+      "./bin/tree-sitter.wasm",
+      "./bin/tree-sitter-sourcepawn.wasm",
     ];
     // build.onEnd(result => {
     wasmPaths.forEach((wasmPath) => {
@@ -20,7 +20,7 @@ const treeSitterWasmPlugin = {
 
 require("esbuild")
   .build({
-    entryPoints: ["src/spIndex.ts"],
+    entryPoints: ["./src/spIndex.ts"],
     bundle: true,
     sourcemap: true,
     minify: true,
