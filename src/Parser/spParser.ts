@@ -141,13 +141,12 @@ export class TreeWalker {
         case "preproc_pragma_deprecated":
           this.deprecated.push(child);
           break;
-        case "variable_declaration_statement":
-        case "old_variable_declaration_statement":
+        case "global_variable_declaration":
+        case "old_global_variable_declaration":
           readVariable(this, child);
           break;
         case "function_declaration":
         case "function_definition":
-        case "callback_implementation":
           readFunctionAndMethod(this, child);
           break;
         case "enum":

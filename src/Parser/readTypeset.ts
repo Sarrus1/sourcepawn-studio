@@ -39,8 +39,8 @@ export function readTypeset(walker: TreeWalker, node: SyntaxNode): void {
         undefined,
         pointsToRange(e.startPosition, e.endPosition),
         e.children
-          .find((e) => e.type === "typedef_args")
-          .children.filter((e) => e.type === "typedef_arg")
+          .find((e) => e.type === "argument_declarations")
+          .children.filter((e) => e.type === "argument_declaration")
       )
     );
   });

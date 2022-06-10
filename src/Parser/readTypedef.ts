@@ -25,8 +25,8 @@ export function readTypedef(walker: TreeWalker, node: SyntaxNode): void {
     pointsToRange(nameNode.startPosition, nameNode.endPosition),
     pointsToRange(node.startPosition, node.endPosition),
     body.children
-      .find((e) => e.type === "typedef_args")
-      .children.filter((e) => e.type === "typedef_arg")
+      .find((e) => e.type === "argument_declarations")
+      .children.filter((e) => e.type === "argument_declaration")
   );
   walker.fileItem.items.push(typeDefItem);
   return;

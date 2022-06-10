@@ -1,1 +1,1 @@
-docker run --rm --volume C:/Users/Sarrus1/Projects/sourcepawn-vscode/node_modules/tree-sitter-sourcepawn/src:/src:Z  emscripten/emsdk:2.0.24 emcc -o tree-sitter-sourcepawn.wasm -Os -s WASM=1 -s SIDE_MODULE=1 -s EXPORTED_FUNCTIONS=[\"_tree_sitter_sourcepawn\"] -fno-exceptions parser.c
+docker run --rm --volume C:/Users/Sarrus1/Projects/sourcepawn-vscode/node_modules/tree-sitter-sourcepawn/src:/src:Z  emscripten/emsdk:2.0.24 emcc -o tree-sitter-sourcepawn.wasm -Os -I ../src -s WASM=1 -s SIDE_MODULE=1 -s EXPORTED_FUNCTIONS=[\"_tree_sitter_sourcepawn\"] -fno-exceptions parser.c
