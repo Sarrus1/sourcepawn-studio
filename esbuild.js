@@ -18,6 +18,10 @@ const treeSitterWasmPlugin = {
   },
 };
 
+if (!fs.existsSync(outDir)) {
+  fs.mkdir(outDir);
+}
+
 require("esbuild")
   .build({
     entryPoints: ["./src/spIndex.ts"],
