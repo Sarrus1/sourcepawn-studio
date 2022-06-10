@@ -320,7 +320,7 @@ async function buildParser() {
   spLangObj = await TreeSitter.Language.load(langFile);
   parser.setLanguage(spLangObj);
   variableQuery = spLangObj.query(
-    "(variable_declaration_statement) @declaration.variable"
+    "(variable_declaration_statement) (old_variable_declaration_statement) @declaration.variable"
   );
   symbolQuery = spLangObj.query("(symbol) @symbol");
 }
