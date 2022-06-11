@@ -574,6 +574,6 @@
     "test": "npm run compile && node ./dist/test/runTest.js",
     "build": "cross-env NODE_ENV=production&& node esbuild.js",
     "compile": "npm run generate-parser && node esbuild.js",
-    "watch": "cross-env ESBUILD_WATCH=true npm run generate-parser && node esbuild.js"
+    "watch": "cross-env ESBUILD_WATCH=true&& npm run generate-parser && node esbuild.js"
   }
 }
