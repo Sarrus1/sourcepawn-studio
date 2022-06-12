@@ -17,8 +17,6 @@ export function readMethodmap(
   walker: TreeWalker,
   node: TreeSitter.SyntaxNode
 ): void {
-  // FIXME: __nullable__ is not handled properly.
-  // This is a problem with tree-sitter.
   const nameNode = node.childForFieldName("name");
   const inheritNode = node.childForFieldName("inherits");
   const { doc, dep } = findDoc(walker, node);
@@ -72,6 +70,9 @@ function readMethodmapMembers(
         break;
       case "comment":
         walker.pushComment(e);
+        break;
+      case "preproc_pragma_deprecated":
+        walker.deprecated.push(e);
         break;
       default:
         break;

@@ -23,6 +23,10 @@ export function readTypeset(walker: TreeWalker, node: SyntaxNode): void {
       walker.pushComment(e);
       return;
     }
+    if (e.type === "preproc_pragma_deprecated") {
+      walker.deprecated.push(e);
+      return;
+    }
     if (e.type !== "typedef_expression") {
       return;
     }

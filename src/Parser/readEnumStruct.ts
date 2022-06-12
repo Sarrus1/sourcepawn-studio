@@ -53,6 +53,9 @@ function readEnumstructMembers(
       case "comment":
         walker.pushComment(e);
         break;
+      case "preproc_pragma_deprecated":
+        walker.deprecated.push(e);
+        break;
       default:
         break;
     }
