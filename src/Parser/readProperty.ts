@@ -34,7 +34,8 @@ export function readProperty(
     doc,
     pointsToRange(nameNode.startPosition, nameNode.endPosition),
     pointsToRange(node.startPosition, node.endPosition),
-    typeNode.text
+    typeNode.text,
+    dep
   );
   walker.fileItem.items.push(propertyItem);
   node.children.forEach((e1) => {

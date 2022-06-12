@@ -25,6 +25,7 @@ export class PropertyItem implements SPItem {
   range: Range;
   references: Location[];
   fullRange: Range;
+  deprecated: string;
 
   constructor(
     parent: MethodMapItem,
@@ -34,7 +35,8 @@ export class PropertyItem implements SPItem {
     description: string,
     range: Range,
     fullRange: Range,
-    type: string
+    type: string,
+    deprecated: string | undefined
   ) {
     this.parent = parent;
     this.name = name;
@@ -45,6 +47,7 @@ export class PropertyItem implements SPItem {
     this.type = type;
     this.detail = detail;
     this.references = [];
+    this.deprecated = deprecated;
   }
 
   toCompletionItem(): CompletionItem {
