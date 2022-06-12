@@ -36,7 +36,6 @@ export function readFunctionAndMethod(
   let storageClassNode = node.children.find(
     (e) => e.type === "function_storage_class"
   );
-  // FIXME: argument_declarations contain () as well. This is not specified in node-types.json
   let params = node.children.find((e) => e.type === "argument_declarations");
   let { doc, dep } = findDoc(walker, node);
   let returnType = returnTypeNode ? returnTypeNode.text : "";
@@ -154,9 +153,10 @@ function addParamsAsVariables(
     const variableTypeNode = param.childForFieldName("type");
     const variableType = variableTypeNode ? variableTypeNode.text : "";
     const variableNameNode = param.childForFieldName("name");
-    // FIXME: No storage classes for arguments.
-    // This is a problem with Tree sitter.
     const storageClass = [];
+    if (param.children.find((e) => e.text === "const")) {
+      storageClass.push("const");
+    }
     let documentation = "";
     if (doc) {
       const match = doc.match(

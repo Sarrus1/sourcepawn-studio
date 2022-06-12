@@ -7,7 +7,7 @@ import {
 } from "vscode";
 import { URI } from "vscode-uri";
 import { join, resolve } from "path";
-const glob = require("glob");
+import glob from "glob";
 import Parser from "web-tree-sitter";
 
 import { refreshDiagnostics } from "./Providers/spLinter";
@@ -21,7 +21,6 @@ import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
 import { findMainPath, checkMainPath } from "./spUtils";
 import { updateDecorations } from "./Providers/decorationsProvider";
-import { newDocumentCallback } from "./Backend/spFileHandlers";
 
 export let parser: Parser;
 export let spLangObj: Parser.Language;
@@ -274,7 +273,6 @@ async function loadFiles(providers: Providers) {
   } else {
     // Load the currently opened file
     const files = await Workspace.findFiles("**/*.sp");
-    files.forEach((e) => newDocumentCallback(providers.itemsRepository, e));
 
     const wk = Workspace.workspaceFolders;
     if (wk === undefined) {
@@ -285,11 +283,6 @@ async function loadFiles(providers: Providers) {
       );
       return;
     }
-
-    let smHomePath: string =
-      Workspace.getConfiguration("sourcepawn", wk[0]).get<string>(
-        "SourcemodHome"
-      ) || "";
 
     window
       .showWarningMessage(
@@ -320,7 +313,7 @@ async function buildParser() {
   spLangObj = await Parser.Language.load(langFile);
   parser.setLanguage(spLangObj);
   variableQuery = spLangObj.query(
-    "(variable_declaration_statement) (old_variable_declaration_statement) @declaration.variable"
+    "[(variable_declaration_statement) @declaration.variable (old_variable_declaration_statement)  @declaration.variable]"
   );
-  symbolQuery = spLangObj.query("(symbol) @symbol");
+  symbolQuery = spLangObj.query("[(symbol) @symbol (this) @symbol]");
 }
