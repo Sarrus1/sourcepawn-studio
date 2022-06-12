@@ -77,10 +77,7 @@ export async function newDocumentCallback(
     return;
   }
 
-  if (
-    ![".inc", ".sp"].includes(extname(uri.fsPath)) ||
-    filePath.includes(".git")
-  ) {
+  if (!isSPFile(uri.fsPath)) {
     return;
   }
 
@@ -119,7 +116,7 @@ export async function newDocumentCallback(
 /**
  * Return all the possible include directories paths, such as SMHome, etc. The function will only return existing paths.
  * @param  {URI} uri                          The URI of the file from which we are trying to read the include.
- * @param  {boolean=false} onlyOptionalPaths  Whether or not the function only return the optionalIncludeFolderPaths.
+ * @param  {boolean} onlyOptionalPaths        Whether or not the function only return the optionalIncludeFolderPaths.
  * @returns string
  */
 export function getAllPossibleIncludeFolderPaths(
@@ -176,4 +173,14 @@ function resolveMethodmapInherits(itemsRepo: ItemsRepository, uri: URI): void {
     v.parent = parent;
     v.tmpParent = undefined;
   });
+}
+
+/**
+ * Returns whether or not a file is a .sp or .inc files and filters out .git files.
+ * @param  {string} filePath  Path of the file to check.
+ * @returns boolean
+ */
+export function isSPFile(filePath: string): boolean {
+  const fileExt = extname(filePath);
+  return [".sp", ".inc"].includes(fileExt) && !filePath.includes(".git");
 }

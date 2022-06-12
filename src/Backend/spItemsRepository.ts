@@ -15,6 +15,7 @@ import { FileItem } from "./spFilesRepository";
 import {
   handleAddedDocument,
   handleDocumentChange,
+  isSPFile,
   newDocumentCallback,
 } from "./spFileHandlers";
 import { getAllItems, getItemFromPosition } from "./spItemsGetters";
@@ -40,6 +41,9 @@ export class ItemsRepository implements Disposable {
   }
 
   public handleDocumentChange(event: TextDocumentChangeEvent) {
+    if (!isSPFile(event.document.uri.fsPath)) {
+      return;
+    }
     refreshDiagnostics(event.document);
     refreshCfgDiagnostics(event.document);
     handleDocumentChange(this, event);
@@ -47,6 +51,9 @@ export class ItemsRepository implements Disposable {
   }
 
   public handleNewDocument(document: TextDocument) {
+    if (!isSPFile(document.uri.fsPath)) {
+      return;
+    }
     refreshDiagnostics(document);
     refreshCfgDiagnostics(document);
     newDocumentCallback(this, document.uri);
