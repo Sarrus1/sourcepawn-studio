@@ -7,57 +7,7 @@
     {
       "include": "#comments"
     },
-    {
-      "match": "(\\#include|\\#tryinclude)\\s*((?:\\<|\").+(?:\\>|\"))",
-      "name": "meta.include.sourcepawn",
-      "captures": {
-        "1": {
-          "name": "keyword.control.sourcepawn"
-        },
-        "2": {
-          "name": "string.sourcepawn"
-        }
-      }
-    },
-    {
-      "match": "(\\#pragma)\\s+(.+?(?=//))",
-      "name": "meta.pragma.line-comment.sourcepawn",
-      "captures": {
-        "1": {
-          "name": "keyword.control.pragma.sourcepawn"
-        },
-        "2": {
-          "name": "entity.other.attribute-name.sourcepawn"
-        }
-      }
-    },
-    {
-      "match": "(\\#pragma)\\s+(deprecated)(.*)",
-      "name": "meta.pragma.deprecated.sourcepawn",
-      "captures": {
-        "1": {
-          "name": "keyword.control.pragma.sourcepawn"
-        },
-        "2": {
-          "name": "entity.other.attribute-name.sourcepawn"
-        },
-        "3": {
-          "name": "string.deprecated.sourcepawn"
-        }
-      }
-    },
-    {
-      "match": "(\\#pragma)\\s+([A-Za-z ]+)",
-      "name": "meta.pragma.block-comment.sourcepawn",
-      "captures": {
-        "1": {
-          "name": "keyword.control.pragma.sourcepawn"
-        },
-        "2": {
-          "name": "entity.other.attribute-name.sourcepawn"
-        }
-      }
-    },
+    { "include": "#preproc" },
     {
       "comment": "Typedef",
       "match": "(typedef)\\s+(\\w+)",
@@ -170,30 +120,6 @@
       }
     },
     {
-      "match": "(\\#define)\\s*(\\w*)",
-      "name": "meta.define.sourcepawn",
-      "captures": {
-        "1": {
-          "name": "keyword.control.define.sourcepawn"
-        },
-        "2": {
-          "name": "meta.preprocessor.macro.sourcepawn"
-        }
-      }
-    },
-    {
-      "match": "(\\#undef)\\s*(\\w*)",
-      "name": "meta.undef.sourcepawn",
-      "captures": {
-        "1": {
-          "name": "keyword.control.undef.sourcepawn"
-        },
-        "2": {
-          "name": "meta.preprocessor.macro.sourcepawn"
-        }
-      }
-    },
-    {
       "comment": "Constructors",
       "match": "(new)\\s+(?:(\\w+)\\s*\\()?",
       "captures": {
@@ -204,26 +130,6 @@
           "name": "support.type.core.methodmap_constructor.sourcepawn"
         }
       }
-    },
-    {
-      "comment": "Preprocessor #if defined",
-      "match": "(#if)\\s+(defined)\\s+(\\w+)",
-      "captures": {
-        "1": {
-          "name": "keyword.control.misc.sourcepawn"
-        },
-        "2": {
-          "name": "meta.preprocessor.conditional.sourcepawn"
-        },
-        "3": {
-          "name": "variable.other.constant.sourcepawn"
-        }
-      }
-    },
-    {
-      "comment": "Preprocessor keywords",
-      "match": "#\\b(if|else|endif|emit|deprecated|undef|endinput|endscript|assert|define|error|warning|file)\\b",
-      "name": "keyword.control.misc.sourcepawn"
     },
     {
       "comment": "view_as",
@@ -241,7 +147,7 @@
       }
     },
     {
-      "comment": "Enum struct accessor",
+      "comment": "Scope access",
       "match": "([A-Za-z0-9_]+)\\:\\:([A-Za-z0-9_]*)",
       "captures": {
         "1": {
@@ -560,14 +466,29 @@
       "name": "constant.numeric.sourcepawn"
     },
     {
+      "comment": "Invalid binary number",
+      "match": "\\b0b\\b",
+      "name": "invalid.illegal.constant.numeric.sourcepawn"
+    },
+    {
       "comment": "Octodecimal number",
       "match": "\\b0o[0-7]+\\b",
       "name": "constant.numeric.sourcepawn"
     },
     {
+      "comment": "Invalid octodecimal number",
+      "match": "\\b0o\\b",
+      "name": "invalid.illegal.constant.numeric.sourcepawn"
+    },
+    {
       "comment": "Hexadecimal number",
       "match": "\\b0x[0-9a-fA-F]+\\b",
       "name": "constant.numeric.sourcepawn"
+    },
+    {
+      "comment": "Invalid hexadecimal number",
+      "match": "\\b0x\\b",
+      "name": "invalid.illegal.constant.numeric.sourcepawn"
     },
     {
       "comment": "Integer literal",
@@ -614,6 +535,7 @@
       "name": "variable.sourcepawn"
     }
   ],
+
   "repository": {
     "keywords": {
       "patterns": [
@@ -673,6 +595,105 @@
               }
             }
           ]
+        }
+      ]
+    },
+    "preproc": {
+      "patterns": [
+        {
+          "match": "(\\#include|\\#tryinclude)\\s*((?:\\<|\").+(?:\\>|\"))",
+          "name": "meta.include.sourcepawn",
+          "captures": {
+            "1": {
+              "name": "keyword.control.sourcepawn"
+            },
+            "2": {
+              "name": "string.sourcepawn"
+            }
+          }
+        },
+        {
+          "match": "(\\#pragma)\\s+(.+?(?=//))",
+          "name": "meta.pragma.line-comment.sourcepawn",
+          "captures": {
+            "1": {
+              "name": "keyword.control.pragma.sourcepawn"
+            },
+            "2": {
+              "name": "entity.other.attribute-name.sourcepawn"
+            }
+          }
+        },
+        {
+          "match": "(\\#pragma)\\s+(deprecated)(.*)",
+          "name": "meta.pragma.deprecated.sourcepawn",
+          "captures": {
+            "1": {
+              "name": "keyword.control.pragma.sourcepawn"
+            },
+            "2": {
+              "name": "entity.other.attribute-name.sourcepawn"
+            },
+            "3": {
+              "name": "string.deprecated.sourcepawn"
+            }
+          }
+        },
+        {
+          "match": "(\\#pragma)\\s+([A-Za-z ]+)",
+          "name": "meta.pragma.block-comment.sourcepawn",
+          "captures": {
+            "1": {
+              "name": "keyword.control.pragma.sourcepawn"
+            },
+            "2": {
+              "name": "entity.other.attribute-name.sourcepawn"
+            }
+          }
+        },
+        {
+          "match": "(\\#define)\\s*(\\w*)",
+          "name": "meta.define.sourcepawn",
+          "captures": {
+            "1": {
+              "name": "keyword.control.define.sourcepawn"
+            },
+            "2": {
+              "name": "meta.preprocessor.macro.sourcepawn"
+            }
+          }
+        },
+        {
+          "match": "(\\#undef)\\s*(\\w*)",
+          "name": "meta.undef.sourcepawn",
+          "captures": {
+            "1": {
+              "name": "keyword.control.undef.sourcepawn"
+            },
+            "2": {
+              "name": "meta.preprocessor.macro.sourcepawn"
+            }
+          }
+        },
+        {
+          "comment": "Preprocessor #if defined",
+          "match": "(#if)\\s+(defined)\\s+(\\w+)",
+          "captures": {
+            "1": {
+              "name": "keyword.control.misc.sourcepawn"
+            },
+            "2": {
+              "name": "meta.preprocessor.conditional.sourcepawn"
+            },
+            "3": {
+              "name": "variable.other.constant.sourcepawn"
+            }
+          }
+        },
+        {
+          "comment": "Preprocessor keywords",
+          "match": "#\\b(if|else|endif|emit|deprecated|undef|endinput|endscript|assert|define|error|warning|file)\\b",
+          "name": "keyword.control.misc.sourcepawn"
         }
       ]
     },
