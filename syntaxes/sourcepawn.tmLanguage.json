@@ -387,46 +387,28 @@
           }
         },
         {
-          "comment": "Functag",
-          "match": "(functag)\\s+((?:public|stock)\\s+)*(?:(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\:)?(\\w+)",
-          "captures": {
+          "comment": "functag",
+          "begin": "(functag)\\s+([a-zA-Z_]\\w*)\\s+(?:([a-zA-Z_]\\w*)\\:\\s*)?(?:(public|stock)\\s*)?\\(",
+          "beginCaptures": {
             "1": {
               "name": "keyword.functag.sourcepawn"
             },
             "2": {
-              "name": "keyword.functag.sourcepawn"
+              "name": "support.type.core.sourcepawn"
             },
             "3": {
-              "name": "storage.type.built-in.primitive.sourcepawn"
+              "patterns": [{ "include": "#old-type" }]
             },
             "4": {
-              "name": "support.type.core.functag.sourcepawn"
-            },
-            "5": {
-              "name": "support.type.core.functag.sourcepawn"
+              "name": "keyword.visibility.sourcepawn"
             }
-          }
-        },
-        {
-          "comment": "Functag alternative",
-          "match": "(functag)\\s+(\\w+)\\s+(?:(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\:)?((?:public|stock)\\s+)*",
-          "captures": {
-            "1": {
-              "name": "keyword.functag.sourcepawn"
-            },
-            "2": {
-              "name": "support.type.core.functag.sourcepawn"
-            },
-            "3": {
-              "name": "storage.type.built-in.primitive.sourcepawn"
-            },
-            "4": {
-              "name": "support.type.core.functag.sourcepawn"
-            },
-            "5": {
-              "name": "keyword.functag.sourcepawn"
-            }
-          }
+          },
+          "end": "\\)",
+          "patterns": [
+            { "include": "#comments" },
+            { "include": "#preproc" },
+            { "include": "#old-parameter" }
+          ]
         },
         {
           "comment": "funcenum",
@@ -449,10 +431,7 @@
                 "2": { "name": "keyword.public.funcenum.sourcepawn" }
               },
               "end": "\\)",
-              "patterns": [
-                { "include": "#literals" },
-                { "include": "#old-parameter-declaration" }
-              ]
+              "patterns": [{ "include": "#old-parameter" }]
             },
             { "include": "#comments" },
             { "include": "#preproc" }
@@ -494,6 +473,13 @@
             }
           }
         }
+      ]
+    },
+
+    "old-parameter": {
+      "patterns": [
+        { "include": "#old-parameter-declaration" },
+        { "include": "#literals" }
       ]
     },
 
