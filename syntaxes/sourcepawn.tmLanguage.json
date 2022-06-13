@@ -429,7 +429,7 @@
           }
         },
         {
-          "comment": "Funcenum",
+          "comment": "funcenum",
           "begin": "(funcenum)\\s+(\\w+)",
           "beginCaptures": {
             "1": {
@@ -442,15 +442,17 @@
           "end": "(?<=\\})",
           "patterns": [
             {
-              "comment": "Funcenum body alternative",
-              "match": "(?:([a-zA-Z_]\\w*)\\:)?\\s*(public)\\s*\\(([^\\)]*)\\)",
-              "captures": {
+              "comment": "funcenum member",
+              "begin": "(?:([a-zA-Z_]\\w*)\\:)?\\s*(public)\\s*\\(",
+              "beginCaptures": {
                 "1": { "patterns": [{ "include": "#old-type" }] },
-                "2": { "name": "keyword.public.funcenum.sourcepawn" },
-                "3": {
-                  "patterns": [{ "include": "#old-parameters" }]
-                }
-              }
+                "2": { "name": "keyword.public.funcenum.sourcepawn" }
+              },
+              "end": "\\)",
+              "patterns": [
+                { "include": "#literals" },
+                { "include": "#old-parameter-declaration" }
+              ]
             },
             { "include": "#comments" },
             { "include": "#preproc" }
@@ -495,10 +497,10 @@
       ]
     },
 
-    "old-parameters": {
+    "old-parameter-declaration": {
       "patterns": [
         {
-          "match": "\\s*(?:(const\\s+))?(?:([a-zA-Z_]\\w*)\\:)?\\s*(\\w+)\\s*",
+          "match": "\\s*(?:(const\\s+))?(?:([a-zA-Z_]\\w*)\\:)?\\s*([a-zA-Z_]\\w*)\\s*",
           "captures": {
             "1": {
               "name": "keyword.function_params_old.sourcepawn"
@@ -507,7 +509,7 @@
               "patterns": [{ "include": "#old-type" }]
             },
             "3": {
-              "name": "variable.sourcepawn"
+              "name": "variable.parameter.sourcepawn"
             }
           }
         }
