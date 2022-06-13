@@ -12,84 +12,7 @@
       "include": "#operators"
     },
     { "include": "#preproc" },
-    {
-      "comment": "Typedef",
-      "match": "(typedef)\\s+(\\w+)",
-      "captures": {
-        "1": {
-          "name": "keyword.typedef.sourcepawn"
-        },
-        "2": {
-          "name": "support.type.core.typedef.sourcepawn"
-        }
-      }
-    },
-    {
-      "comment": "Functag",
-      "match": "(functag)\\s+((?:public|stock)\\s+)*(?:(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\:)?(\\w+)",
-      "captures": {
-        "1": {
-          "name": "keyword.functag.sourcepawn"
-        },
-        "2": {
-          "name": "keyword.functag.sourcepawn"
-        },
-        "3": {
-          "name": "storage.type.built-in.primitive.sourcepawn"
-        },
-        "4": {
-          "name": "support.type.core.functag.sourcepawn"
-        },
-        "5": {
-          "name": "support.type.core.functag.sourcepawn"
-        }
-      }
-    },
-    {
-      "comment": "Functag",
-      "match": "(functag)\\s+(\\w+)\\s+(?:(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\:)?((?:public|stock)\\s+)*",
-      "captures": {
-        "1": {
-          "name": "keyword.functag.sourcepawn"
-        },
-        "2": {
-          "name": "support.type.core.functag.sourcepawn"
-        },
-        "3": {
-          "name": "storage.type.built-in.primitive.sourcepawn"
-        },
-        "4": {
-          "name": "support.type.core.functag.sourcepawn"
-        },
-        "5": {
-          "name": "keyword.functag.sourcepawn"
-        }
-      }
-    },
-    {
-      "comment": "Funcenum",
-      "match": "(funcenum)\\s+(\\w+)",
-      "captures": {
-        "1": {
-          "name": "keyword.funcenum.sourcepawn"
-        },
-        "2": {
-          "name": "support.type.core.funcenum.sourcepawn"
-        }
-      }
-    },
-    {
-      "comment": "Typeset",
-      "match": "(typeset)\\s+(\\w+)",
-      "captures": {
-        "1": {
-          "name": "keyword.typeset.sourcepawn"
-        },
-        "2": {
-          "name": "support.type.core.typeset.sourcepawn"
-        }
-      }
-    },
+    { "include": "#global-declarations" },
     {
       "comment": "Property",
       "match": "(property)\\s+(?:(bool|int|void|char|any|float|String|Float)|([a-zA-Z_]\\w*))\\s+([a-zA-Z_]\\w*)",
@@ -166,57 +89,6 @@
       "comment": "Control statements",
       "name": "keyword.control.statement.sourcepawn",
       "match": "\\s*\\b(?:if|else|for|while|do|switch|case|default|return)\\b"
-    },
-    {
-      "comment": "Enum structs",
-      "match": "^\\s*(enum\\s+struct\\s+)(\\w*)",
-      "captures": {
-        "1": {
-          "name": "keyword.enum_struct.sourcepawn"
-        },
-        "2": {
-          "name": "support.type.core.enum_struct.sourcepawn"
-        }
-      }
-    },
-    {
-      "comment": "Structs",
-      "match": "^\\s*(struct)\\s+(\\w+)",
-      "captures": {
-        "1": {
-          "name": "keyword.struct.sourcepawn"
-        },
-        "2": {
-          "name": "support.type.core.struct.sourcepawn"
-        }
-      }
-    },
-    {
-      "comment": "Enums",
-      "match": "^\\s*(enum\\s*)(\\w*)",
-      "captures": {
-        "1": {
-          "name": "keyword.enum.sourcepawn"
-        },
-        "2": {
-          "name": "support.type.core.enum.sourcepawn"
-        }
-      }
-    },
-    {
-      "comment": "Funcenum body",
-      "match": "^\\s*(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\:(public)",
-      "captures": {
-        "1": {
-          "name": "storage.type.built-in.primitive.sourcepawn"
-        },
-        "2": {
-          "name": "support.type.core.body.funcenum.sourcepawn"
-        },
-        "3": {
-          "name": "keyword.public.funcenum.sourcepawn"
-        }
-      }
     },
     {
       "comment": "Function declaration no type",
@@ -488,6 +360,189 @@
   ],
 
   "repository": {
+    "global-declarations": {
+      "patterns": [
+        {
+          "comment": "Typedef",
+          "match": "(typedef)\\s+(\\w+)",
+          "captures": {
+            "1": {
+              "name": "keyword.typedef.sourcepawn"
+            },
+            "2": {
+              "name": "support.type.core.typedef.sourcepawn"
+            }
+          }
+        },
+        {
+          "comment": "Typeset",
+          "match": "(typeset)\\s+(\\w+)",
+          "captures": {
+            "1": {
+              "name": "keyword.typeset.sourcepawn"
+            },
+            "2": {
+              "name": "support.type.core.typeset.sourcepawn"
+            }
+          }
+        },
+        {
+          "comment": "Functag",
+          "match": "(functag)\\s+((?:public|stock)\\s+)*(?:(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\:)?(\\w+)",
+          "captures": {
+            "1": {
+              "name": "keyword.functag.sourcepawn"
+            },
+            "2": {
+              "name": "keyword.functag.sourcepawn"
+            },
+            "3": {
+              "name": "storage.type.built-in.primitive.sourcepawn"
+            },
+            "4": {
+              "name": "support.type.core.functag.sourcepawn"
+            },
+            "5": {
+              "name": "support.type.core.functag.sourcepawn"
+            }
+          }
+        },
+        {
+          "comment": "Functag alternative",
+          "match": "(functag)\\s+(\\w+)\\s+(?:(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\:)?((?:public|stock)\\s+)*",
+          "captures": {
+            "1": {
+              "name": "keyword.functag.sourcepawn"
+            },
+            "2": {
+              "name": "support.type.core.functag.sourcepawn"
+            },
+            "3": {
+              "name": "storage.type.built-in.primitive.sourcepawn"
+            },
+            "4": {
+              "name": "support.type.core.functag.sourcepawn"
+            },
+            "5": {
+              "name": "keyword.functag.sourcepawn"
+            }
+          }
+        },
+        {
+          "comment": "Funcenum",
+          "begin": "(funcenum)\\s+(\\w+)",
+          "beginCaptures": {
+            "1": {
+              "name": "keyword.funcenum.sourcepawn"
+            },
+            "2": {
+              "name": "support.type.core.funcenum.sourcepawn"
+            }
+          },
+          "end": "(?<=\\})",
+          "patterns": [
+            {
+              "comment": "Funcenum body",
+              "match": "^\\s*(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\:(public)",
+              "captures": {
+                "1": {
+                  "name": "storage.type.built-in.primitive.sourcepawn"
+                },
+                "2": {
+                  "name": "support.type.core.body.funcenum.sourcepawn"
+                },
+                "3": {
+                  "name": "keyword.public.funcenum.sourcepawn"
+                }
+              }
+            },
+            {
+              "comment": "Funcenum body alternative",
+              "match": "(public)\\s*\\(([^\\)]*)\\)",
+              "captures": {
+                "1": { "name": "keyword.public.funcenum.sourcepawn" },
+                "2": {
+                  "patterns": [{ "include": "#old-parameters" }]
+                }
+              }
+            },
+            { "include": "#comments" },
+            { "include": "#preproc" }
+          ]
+        },
+        {
+          "comment": "Enum structs",
+          "match": "^\\s*(enum\\s+struct\\s+)(\\w*)",
+          "captures": {
+            "1": {
+              "name": "keyword.enum_struct.sourcepawn"
+            },
+            "2": {
+              "name": "support.type.core.enum_struct.sourcepawn"
+            }
+          }
+        },
+        {
+          "comment": "Structs",
+          "match": "^\\s*(struct)\\s+(\\w+)",
+          "captures": {
+            "1": {
+              "name": "keyword.struct.sourcepawn"
+            },
+            "2": {
+              "name": "support.type.core.struct.sourcepawn"
+            }
+          }
+        },
+        {
+          "comment": "Enums",
+          "match": "^\\s*(enum\\s*)(\\w*)",
+          "captures": {
+            "1": {
+              "name": "keyword.enum.sourcepawn"
+            },
+            "2": {
+              "name": "support.type.core.enum.sourcepawn"
+            }
+          }
+        }
+      ]
+    },
+    "old-parameters": {
+      "patterns": [
+        {
+          "match": "\\s*(?<!\\?\\s*)\\s*(?:(const\\s+))?(?:(?:(bool|any|String|Float)|([a-zA-Z_]\\w*))(?:\\[([^\\]]*)\\])?\\:)?\\s*(\\w+)\\s*(?:=\\s*([^,]+))?",
+          "captures": {
+            "1": {
+              "name": "keyword.function_params_old.sourcepawn"
+            },
+            "2": {
+              "name": "storage.type.built-in.primitive.sourcepawn"
+            },
+            "3": {
+              "name": "support.type.core.function_params_old.sourcepawn"
+            },
+            "4": {
+              "patterns": [
+                {
+                  "include": "#literals"
+                }
+              ]
+            },
+            "5": {
+              "name": "variable.sourcepawn"
+            },
+            "6": {
+              "patterns": [
+                {
+                  "include": "#literals"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
     "operators": {
       "patterns": [
         {
