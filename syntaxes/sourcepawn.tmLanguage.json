@@ -390,16 +390,32 @@
           ]
         },
         {
-          "comment": "Typeset",
-          "match": "(typeset)\\s+(\\w+)",
-          "captures": {
+          "comment": "typeset",
+          "begin": "(typeset)\\s+([a-zA-Z_]\\w*)",
+          "beginCaptures": {
             "1": {
               "name": "keyword.typeset.sourcepawn"
             },
             "2": {
-              "name": "support.type.core.typeset.sourcepawn"
+              "name": "support.type.core.sourcepawn"
             }
-          }
+          },
+          "end": "(?<=\\})",
+          "patterns": [
+            {
+              "comment": "typeset member",
+              "begin": "(function)\\s+([a-zA-Z_]\\w*)\\s*((?:\\[[^\\]]*\\]\\s*)*)\\(",
+              "beginCaptures": {
+                "1": { "name": "keyword.function.sourcepawn" },
+                "2": { "patterns": [{ "include": "#type" }] },
+                "3": { "patterns": [{ "include": "#array-indexed-access" }] }
+              },
+              "end": "\\)",
+              "patterns": [{ "include": "#parameter" }]
+            },
+            { "include": "#comments" },
+            { "include": "#preproc" }
+          ]
         },
         {
           "comment": "functag",
