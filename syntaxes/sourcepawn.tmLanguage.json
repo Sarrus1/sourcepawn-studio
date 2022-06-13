@@ -442,26 +442,12 @@
           "end": "(?<=\\})",
           "patterns": [
             {
-              "comment": "Funcenum body",
-              "match": "^\\s*(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\:(public)",
-              "captures": {
-                "1": {
-                  "name": "storage.type.built-in.primitive.sourcepawn"
-                },
-                "2": {
-                  "name": "support.type.core.body.funcenum.sourcepawn"
-                },
-                "3": {
-                  "name": "keyword.public.funcenum.sourcepawn"
-                }
-              }
-            },
-            {
               "comment": "Funcenum body alternative",
-              "match": "(public)\\s*\\(([^\\)]*)\\)",
+              "match": "(?:([a-zA-Z_]\\w*)\\:)?\\s*(public)\\s*\\(([^\\)]*)\\)",
               "captures": {
-                "1": { "name": "keyword.public.funcenum.sourcepawn" },
-                "2": {
+                "1": { "patterns": [{ "include": "#old-type" }] },
+                "2": { "name": "keyword.public.funcenum.sourcepawn" },
+                "3": {
                   "patterns": [{ "include": "#old-parameters" }]
                 }
               }
@@ -508,41 +494,42 @@
         }
       ]
     },
+
     "old-parameters": {
       "patterns": [
         {
-          "match": "\\s*(?<!\\?\\s*)\\s*(?:(const\\s+))?(?:(?:(bool|any|String|Float)|([a-zA-Z_]\\w*))(?:\\[([^\\]]*)\\])?\\:)?\\s*(\\w+)\\s*(?:=\\s*([^,]+))?",
+          "match": "\\s*(?:(const\\s+))?(?:([a-zA-Z_]\\w*)\\:)?\\s*(\\w+)\\s*",
           "captures": {
             "1": {
               "name": "keyword.function_params_old.sourcepawn"
             },
             "2": {
-              "name": "storage.type.built-in.primitive.sourcepawn"
+              "patterns": [{ "include": "#old-type" }]
             },
             "3": {
-              "name": "support.type.core.function_params_old.sourcepawn"
-            },
-            "4": {
-              "patterns": [
-                {
-                  "include": "#literals"
-                }
-              ]
-            },
-            "5": {
               "name": "variable.sourcepawn"
-            },
-            "6": {
-              "patterns": [
-                {
-                  "include": "#literals"
-                }
-              ]
             }
           }
         }
       ]
     },
+
+    "old-type": {
+      "patterns": [
+        {
+          "match": "(bool|any|String|Float)|([a-zA-Z_]\\w*)",
+          "captures": {
+            "1": {
+              "name": "storage.type.old.built-in.primitive.sourcepawn"
+            },
+            "2": {
+              "name": "support.type.core.body.sourcepawn"
+            }
+          }
+        }
+      ]
+    },
+
     "operators": {
       "patterns": [
         {
