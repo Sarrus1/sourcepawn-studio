@@ -1,11 +1,15 @@
 {
   "name": "SourcePawn",
+  "scopeName": "source.sourcepawn",
   "patterns": [
     {
-      "include": "#strings"
+      "include": "#literals"
     },
     {
       "include": "#comments"
+    },
+    {
+      "include": "#operators"
     },
     { "include": "#preproc" },
     {
@@ -456,59 +460,6 @@
       "name": "storage.type.built-in.primitive.sourcepawn"
     },
     {
-      "comment": "Float literal",
-      "match": "\\b[0-9]+\\.[0-9]+\\b",
-      "name": "constant.numeric.float.sourcepawn"
-    },
-    {
-      "comment": "Binary number",
-      "match": "\\b0b[0-1]+\\b",
-      "name": "constant.numeric.sourcepawn"
-    },
-    {
-      "comment": "Invalid binary number",
-      "match": "\\b0b\\b",
-      "name": "invalid.illegal.constant.numeric.sourcepawn"
-    },
-    {
-      "comment": "Octodecimal number",
-      "match": "\\b0o[0-7]+\\b",
-      "name": "constant.numeric.sourcepawn"
-    },
-    {
-      "comment": "Invalid octodecimal number",
-      "match": "\\b0o\\b",
-      "name": "invalid.illegal.constant.numeric.sourcepawn"
-    },
-    {
-      "comment": "Hexadecimal number",
-      "match": "\\b0x[0-9a-fA-F]+\\b",
-      "name": "constant.numeric.sourcepawn"
-    },
-    {
-      "comment": "Invalid hexadecimal number",
-      "match": "\\b0x\\b",
-      "name": "invalid.illegal.constant.numeric.sourcepawn"
-    },
-    {
-      "comment": "Integer literal",
-      "match": "\\b\\d+\\b",
-      "name": "constant.numeric.integer.sourcepawn"
-    },
-    {
-      "comment": "Boolean literal",
-      "match": "\\b(?:true|false)\\b",
-      "name": "constant.language.boolean.sourcepawn"
-    },
-    {
-      "comment": "Null constant",
-      "match": "\\bnull\\b",
-      "name": "constant.language.sourcepawn"
-    },
-    {
-      "include": "#keywords"
-    },
-    {
       "comment": "Match the rest as types",
       "match": "^((?:(?:const|static)\\s+){0,2})([a-zA-Z_]\\w*)\\s*(?<!,\\[;)\\s*$",
       "captures": {
@@ -537,16 +488,88 @@
   ],
 
   "repository": {
-    "keywords": {
+    "operators": {
       "patterns": [
         {
-          "comment": "Operator",
           "name": "keyword.operator.sourcepawn",
           "match": "%|&|\\*|/(?!\\*|/)|\\+|\\-|~|=|<|>|!|\\||\\?|:|\\^"
         }
       ]
     },
-    "strings": {
+
+    "literals": {
+      "patterns": [
+        { "include": "#boolean-literal" },
+        { "include": "#null-literal" },
+        { "include": "#numeric-literal" },
+        { "include": "#string-literal" }
+      ]
+    },
+
+    "boolean-literal": {
+      "patterns": [
+        {
+          "match": "\\b(?:true|false)\\b",
+          "name": "constant.language.boolean.sourcepawn"
+        }
+      ]
+    },
+
+    "null-literal": {
+      "patterns": [
+        {
+          "match": "\\bnull\\b",
+          "name": "constant.language.sourcepawn"
+        }
+      ]
+    },
+
+    "numeric-literal": {
+      "patterns": [
+        {
+          "comment": "Float literal",
+          "match": "\\b[0-9]+\\.[0-9]+\\b",
+          "name": "constant.numeric.float.sourcepawn"
+        },
+        {
+          "comment": "Binary literal",
+          "match": "\\b0b[0-1]+\\b",
+          "name": "constant.numeric.sourcepawn"
+        },
+        {
+          "comment": "Invalid binary",
+          "match": "\\b0b\\b",
+          "name": "invalid.illegal.constant.numeric.sourcepawn"
+        },
+        {
+          "comment": "Octodecimal literal",
+          "match": "\\b0o[0-7]+\\b",
+          "name": "constant.numeric.sourcepawn"
+        },
+        {
+          "comment": "Invalid octodecimal",
+          "match": "\\b0o\\b",
+          "name": "invalid.illegal.constant.numeric.sourcepawn"
+        },
+        {
+          "comment": "Hexadecimal literal",
+          "match": "\\b0x[0-9a-fA-F]+\\b",
+          "name": "constant.numeric.sourcepawn"
+        },
+        {
+          "comment": "Invalid hexadecimal",
+          "match": "\\b0x\\b",
+          "name": "invalid.illegal.constant.numeric.sourcepawn"
+        },
+        {
+          "comment": "Integer literal",
+          "match": "\\b\\d+\\b",
+          "name": "constant.numeric.integer.sourcepawn"
+        }
+      ]
+    },
+
+    "string-literal": {
       "patterns": [
         {
           "name": "string.quoted.double.sourcepawn",
@@ -598,6 +621,7 @@
         }
       ]
     },
+
     "preproc": {
       "patterns": [
         {
@@ -697,6 +721,7 @@
         }
       ]
     },
+
     "comments": {
       "patterns": [
         {
@@ -752,6 +777,5 @@
         }
       ]
     }
-  },
-  "scopeName": "source.sourcepawn"
+  }
 }
