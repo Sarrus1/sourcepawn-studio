@@ -706,19 +706,9 @@
           "name": "constant.numeric.sourcepawn"
         },
         {
-          "comment": "Invalid binary",
-          "match": "\\b0b\\b",
-          "name": "invalid.illegal.constant.numeric.sourcepawn"
-        },
-        {
           "comment": "Octodecimal literal",
           "match": "\\b0o[0-7]+\\b",
           "name": "constant.numeric.sourcepawn"
-        },
-        {
-          "comment": "Invalid octodecimal",
-          "match": "\\b0o\\b",
-          "name": "invalid.illegal.constant.numeric.sourcepawn"
         },
         {
           "comment": "Hexadecimal literal",
@@ -726,14 +716,14 @@
           "name": "constant.numeric.sourcepawn"
         },
         {
-          "comment": "Invalid hexadecimal",
-          "match": "\\b0x\\b",
-          "name": "invalid.illegal.constant.numeric.sourcepawn"
-        },
-        {
           "comment": "Integer literal",
           "match": "\\b\\d+\\b",
           "name": "constant.numeric.integer.sourcepawn"
+        },
+        {
+          "comment": "Invalid literal",
+          "match": "\\b[0-9]+\\w+\\b",
+          "name": "invalid.illegal.constant.sourcepawn"
         }
       ]
     },
@@ -741,54 +731,96 @@
     "string-literal": {
       "patterns": [
         {
-          "name": "string.quoted.double.sourcepawn",
           "begin": "\"",
-          "end": "[^\\\\]?\"",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.begin.sourcepawn"
+            }
+          },
+          "end": "(\")|((?:[^\\\\\\n])$)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.string.end.sourcepawn"
+            },
+            "2": {
+              "name": "invalid.illegal.newline.sourcepawn"
+            }
+          },
+          "name": "string.quoted.double.sourcepawn",
           "patterns": [
             {
-              "name": "constant.character.format.sourcepawn",
-              "match": "%(?:a|A|b|B|c|C|d|D|e|F|g|G|h|H|I|j|m|M|n|i|p|r|R|S|t|T|u|U|V|u|w|W|x|X|y|Y|z|Z|f|L|N|s|T|t|%|(?:\\d+)?\\.\\d+(?:b|d|i|u|f|s|X|x))"
+              "include": "#string_escaped_char"
             },
+            { "include": "#string_placeholder" },
             {
-              "name": "constant.character.escape.sourcepawn",
-              "match": "\\\\(?:a|b|e|f|n|r|t|v|\"|'|\\\\|%|x[A-Fa-f0-9]{1,2})"
-            },
-            {
-              "name": "constant.character.sp-translations",
-              "match": "\\{(\\w+)\\}",
-              "captures": {
-                "1": {
-                  "name": "constant.character.escape.sp-translations"
-                }
-              }
+              "include": "#line_continuation_character"
             }
           ]
         },
         {
-          "name": "string.quoted.single.sourcepawn",
           "begin": "'",
-          "end": "[^\\\\]?'",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.begin.sourcepawn"
+            }
+          },
+          "end": "(\\')|((?:[^\\\\\\n])$)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.string.end.sourcepawn"
+            },
+            "2": {
+              "name": "invalid.illegal.newline.sourcepawn"
+            }
+          },
+          "name": "string.quoted.single.c",
           "patterns": [
             {
-              "name": "constant.character.format.sourcepawn",
-              "match": "%(?:c|b|d|i|u|f|L|N|s|T|t|X|x|%|(?:\\d+)?\\.\\d+(?:b|d|i|u|f|s|X|x))"
+              "include": "#string_escaped_char"
             },
+            { "include": "#string_placeholder" },
             {
-              "name": "constant.character.escape.sourcepawn",
-              "match": "\\\\(?:a|b|e|f|n|r|t|v|\"|'|\\\\|%|x[A-Fa-f0-9]{1,2})"
-            },
-            {
-              "name": "constant.character.sp-translations",
-              "match": "\\{(\\w+)\\}",
-              "captures": {
-                "1": {
-                  "name": "constant.character.escape.sp-translations"
-                }
-              }
+              "include": "#line_continuation_character"
             }
           ]
         }
       ]
+    },
+
+    "line_continuation_character": {
+      "patterns": [
+        {
+          "match": "(\\\\)\\n",
+          "captures": {
+            "1": {
+              "name": "constant.character.escape.line-continuation.sourcepawn"
+            }
+          }
+        }
+      ]
+    },
+
+    "string_escaped_char": {
+      "patterns": [
+        {
+          "match": "\\\\(?:[abefnrt'\"\\\\]|(?:x[a-zA-Z0-9]{0,2}|\\d+);?)",
+          "name": "constant.character.escape.sourcepawn"
+        },
+        {
+          "match": "\\\\.",
+          "name": "invalid.illegal.unknown-escape.sourcepawn"
+        }
+      ]
+    },
+
+    "string_placeholder": {
+      "name": "constant.character.sp-translations",
+      "match": "\\{(\\w+)\\}",
+      "captures": {
+        "1": {
+          "name": "constant.character.escape.sp-translations"
+        }
+      }
     },
 
     "preproc": {
