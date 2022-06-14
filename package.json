@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "3.3.15",
+  "version": "3.3.16",
   "publisher": "Sarrus",
   "main": "./dist/spIndex.js",
   "icon": "sm.png",
@@ -572,8 +572,8 @@
     "publish-ovsx": "ovsx publish",
     "generate-parser": "peggy --plugin ./node_modules/ts-pegjs -o src/Parser/cfgParser/cfgParser.ts --cache src/Parser/cfgParser/cfg.pegjs",
     "test": "npm run compile && node ./dist/test/runTest.js",
-    "build": "cross-env NODE_ENV=production&& node esbuild.js",
+    "build": "node esbuild.js false",
     "compile": "npm run generate-parser && node esbuild.js",
-    "watch": "cross-env ESBUILD_WATCH=true&& npm run generate-parser && node esbuild.js"
+    "watch": "npm run generate-parser && node esbuild.js true"
   }
 }

@@ -21,19 +21,20 @@ const treeSitterWasmPlugin = {
 if (!fs.existsSync(outDir)) {
   fs.mkdirSync(outDir);
 }
+const watch = process.argv[2] === "true";
 
 require("esbuild")
   .build({
     entryPoints: ["./src/spIndex.ts"],
     bundle: true,
     sourcemap: true,
-    minify: true,
+    minify: !watch,
     outfile: `${outDir}/spIndex.js`,
     logLevel: "info",
     external: ["vscode"],
     format: "cjs",
     platform: "node",
     plugins: [treeSitterWasmPlugin],
-    watch: !!process.env.ESBUILD_WATCH,
+    watch: watch,
   })
   .catch(() => process.exit(1));
