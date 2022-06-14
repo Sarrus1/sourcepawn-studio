@@ -436,7 +436,7 @@
     "old-function-declaration": {
       "patterns": [
         {
-          "begin": "\\s*(?:(stock|public|static)\\s+)?(?:(native|forward)\\s+)?(?:(\\w+)\\:)?\\s*([a-zA-Z_]\\w*)\\(",
+          "begin": "\\s*(?:(stock|public|static)\\s+)?(?:(native|forward)\\s+)?(\\w+)\\:\\s*([a-zA-Z_]\\w*)\\(",
           "beginCaptures": {
             "1": {
               "patterns": [{ "include": "#keywords" }]
