@@ -14,24 +14,6 @@
     { "include": "#preproc" },
     { "include": "#global-declarations" },
     {
-      "comment": "Property",
-      "match": "(property)\\s+(?:(bool|int|void|char|any|float|String|Float)|([a-zA-Z_]\\w*))\\s+([a-zA-Z_]\\w*)",
-      "captures": {
-        "1": {
-          "name": "keyword.property.sourcepawn"
-        },
-        "2": {
-          "name": "storage.type.built-in.primitive.sourcepawn"
-        },
-        "3": {
-          "name": "support.type.core.property.sourcepawn"
-        },
-        "4": {
-          "name": "variable.sourcepawn"
-        }
-      }
-    },
-    {
       "comment": "Constructors",
       "match": "(new)\\s+(?:(\\w+)\\s*\\()?",
       "captures": {
@@ -74,33 +56,6 @@
       "comment": "Control statements",
       "name": "keyword.control.statement.sourcepawn",
       "match": "\\s*\\b(?:if|else|for|while|do|switch|case|default|return)\\b"
-    },
-    {
-      "comment": "Function declaration no type",
-      "match": "^\\s*((?:(?:static|native|stock|public|forward)\\s+)*)(?!function)(\\w+)\\s*\\(",
-      "captures": {
-        "1": {
-          "name": "keyword.function.sourcepawn"
-        },
-        "2": {
-          "name": "entity.name.function.function_notype.sourcepawn"
-        }
-      }
-    },
-    {
-      "comment": "Method Maps",
-      "match": "^\\s*(methodmap)\\s+(\\w+)\\s*(?:<\\s*(\\w+))?",
-      "captures": {
-        "1": {
-          "name": "keyword.methodmap.sourcepawn"
-        },
-        "2": {
-          "name": "support.type.core.methodmap.sourcepawn"
-        },
-        "3": {
-          "name": "support.type.core.methodmap_inherit.sourcepawn"
-        }
-      }
     },
     {
       "comment": "keywords",
@@ -331,6 +286,7 @@
       "patterns": [
         { "include": "#old-function-declaration" },
         { "include": "#function-declaration" },
+        { "include": "#methodmap" },
         {
           "comment": "typedef",
           "begin": "(typedef)\\s+([a-zA-Z_]\\w*)\\s*\\=\\s*(function)\\s*([a-zA-Z_]\\w*)\\s*((?:\\[[^\\]]*\\]\\s*)*)\\(",
@@ -485,6 +441,43 @@
           ]
         }
       ]
+    },
+
+    "methodmap": {
+      "comment": "methodmap",
+      "match": "\\s*(methodmap)\\s+([a-zA-Z_]\\w*)\\s*(?:(?:\\<\\s*([a-zA-Z_]\\w*)|(__nullable__)))?",
+      "captures": {
+        "1": {
+          "name": "keyword.methodmap.sourcepawn"
+        },
+        "2": {
+          "patterns": [
+            { "match": "[A-Z]\\w*", "name": "support.type.core.sourcepawn" },
+            {
+              "match": "([^A-Z])(\\w*)",
+              "captures": {
+                "1": { "name": "invalid.illegal.constant.sourcepawn" },
+                "2": { "name": "support.type.core.sourcepawn" }
+              }
+            }
+          ]
+        },
+        "3": {
+          "patterns": [
+            { "match": "[A-Z]\\w*", "name": "support.type.core.sourcepawn" },
+            {
+              "match": "([^A-Z])(\\w*)",
+              "captures": {
+                "1": { "name": "invalid.illegal.constant.sourcepawn" },
+                "2": { "name": "support.type.core.sourcepawn" }
+              }
+            }
+          ]
+        },
+        "4": {
+          "name": "keyword.__nullable__.sourcepawn"
+        }
+      }
     },
 
     "parameter": {
