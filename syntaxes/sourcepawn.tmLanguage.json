@@ -287,126 +287,13 @@
         { "include": "#old-function-declaration" },
         { "include": "#function-declaration" },
         { "include": "#methodmap" },
+        { "include": "#typedef" },
+        { "include": "#typeset" },
+        { "include": "#functag" },
+        { "include": "#funcenum" },
         { "include": "#enum_struct" },
         { "include": "#enum" },
-        {
-          "comment": "typedef",
-          "begin": "(typedef)\\s+([a-zA-Z_]\\w*)\\s*\\=\\s*(function)\\s*([a-zA-Z_]\\w*)\\s*((?:\\[[^\\]]*\\]\\s*)*)\\(",
-          "beginCaptures": {
-            "1": {
-              "name": "keyword.typedef.sourcepawn"
-            },
-            "2": {
-              "name": "support.type.core.sourcepawn"
-            },
-            "3": {
-              "name": "keyword.function.sourcepawn"
-            },
-            "4": {
-              "patterns": [{ "include": "#type" }]
-            },
-            "5": {
-              "patterns": [{ "include": "#array-indexed-access" }]
-            }
-          },
-          "end": "\\)",
-          "patterns": [
-            { "include": "#parameter" },
-            { "include": "#comments" },
-            { "include": "#preproc" }
-          ]
-        },
-        {
-          "comment": "typeset",
-          "begin": "(typeset)\\s+([a-zA-Z_]\\w*)",
-          "beginCaptures": {
-            "1": {
-              "name": "keyword.typeset.sourcepawn"
-            },
-            "2": {
-              "name": "support.type.core.sourcepawn"
-            }
-          },
-          "end": "(?<=\\})",
-          "patterns": [
-            {
-              "comment": "typeset member",
-              "begin": "(function)\\s+([a-zA-Z_]\\w*)\\s*((?:\\[[^\\]]*\\]\\s*)*)\\(",
-              "beginCaptures": {
-                "1": { "name": "keyword.function.sourcepawn" },
-                "2": { "patterns": [{ "include": "#type" }] },
-                "3": { "patterns": [{ "include": "#array-indexed-access" }] }
-              },
-              "end": "\\)",
-              "patterns": [{ "include": "#parameter" }]
-            },
-            { "include": "#comments" },
-            { "include": "#preproc" }
-          ]
-        },
-        {
-          "comment": "functag",
-          "begin": "(functag)\\s+([a-zA-Z_]\\w*)\\s+(?:([a-zA-Z_]\\w*)\\:\\s*)?(?:(public|stock)\\s*)?\\(",
-          "beginCaptures": {
-            "1": {
-              "name": "keyword.functag.sourcepawn"
-            },
-            "2": {
-              "name": "support.type.core.sourcepawn"
-            },
-            "3": {
-              "patterns": [{ "include": "#old-type" }]
-            },
-            "4": {
-              "name": "keyword.visibility.sourcepawn"
-            }
-          },
-          "end": "\\)",
-          "patterns": [
-            { "include": "#comments" },
-            { "include": "#preproc" },
-            { "include": "#old-parameter" }
-          ]
-        },
-        {
-          "comment": "funcenum",
-          "begin": "(funcenum)\\s+(\\w+)",
-          "beginCaptures": {
-            "1": {
-              "name": "keyword.funcenum.sourcepawn"
-            },
-            "2": {
-              "name": "support.type.core.funcenum.sourcepawn"
-            }
-          },
-          "end": "(?<=\\})",
-          "patterns": [
-            {
-              "comment": "funcenum member",
-              "begin": "(?:([a-zA-Z_]\\w*)\\:)?\\s*(public)\\s*\\(",
-              "beginCaptures": {
-                "1": { "patterns": [{ "include": "#old-type" }] },
-                "2": { "name": "keyword.public.funcenum.sourcepawn" }
-              },
-              "end": "\\)",
-              "patterns": [{ "include": "#old-parameter" }]
-            },
-            { "include": "#comments" },
-            { "include": "#preproc" }
-          ]
-        },
-        {
-          "comment": "Structs",
-          "match": "^\\s*(struct)\\s+(\\w+)",
-          "captures": {
-            "1": {
-              "name": "keyword.struct.sourcepawn"
-            },
-            "2": {
-              "name": "support.type.core.struct.sourcepawn"
-            }
-          }
-        }
+        { "include": "#struct" }
       ]
     },
 
@@ -441,6 +328,19 @@
         },
         "2": {
           "name": "support.type.core.enum_struct.sourcepawn"
+        }
+      }
+    },
+
+    "struct": {
+      "comment": "Struct",
+      "match": "^\\s*(struct)\\s+(\\w+)",
+      "captures": {
+        "1": {
+          "name": "keyword.struct.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.struct.sourcepawn"
         }
       }
     },
@@ -480,6 +380,112 @@
           "name": "keyword.__nullable__.sourcepawn"
         }
       }
+    },
+
+    "typedef": {
+      "begin": "(typedef)\\s+([a-zA-Z_]\\w*)\\s*\\=\\s*(function)\\s*([a-zA-Z_]\\w*)\\s*((?:\\[[^\\]]*\\]\\s*)*)\\(",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.typedef.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.sourcepawn"
+        },
+        "3": {
+          "name": "keyword.function.sourcepawn"
+        },
+        "4": {
+          "patterns": [{ "include": "#type" }]
+        },
+        "5": {
+          "patterns": [{ "include": "#array-indexed-access" }]
+        }
+      },
+      "end": "\\)",
+      "patterns": [
+        { "include": "#parameter" },
+        { "include": "#comments" },
+        { "include": "#preproc" }
+      ]
+    },
+
+    "typeset": {
+      "begin": "(typeset)\\s+([a-zA-Z_]\\w*)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.typeset.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.sourcepawn"
+        }
+      },
+      "end": "(?<=\\})",
+      "patterns": [
+        {
+          "comment": "typeset member",
+          "begin": "(function)\\s+([a-zA-Z_]\\w*)\\s*((?:\\[[^\\]]*\\]\\s*)*)\\(",
+          "beginCaptures": {
+            "1": { "name": "keyword.function.sourcepawn" },
+            "2": { "patterns": [{ "include": "#type" }] },
+            "3": { "patterns": [{ "include": "#array-indexed-access" }] }
+          },
+          "end": "\\)",
+          "patterns": [{ "include": "#parameter" }]
+        },
+        { "include": "#comments" },
+        { "include": "#preproc" }
+      ]
+    },
+
+    "functag": {
+      "begin": "(functag)\\s+([a-zA-Z_]\\w*)\\s+(?:([a-zA-Z_]\\w*)\\:\\s*)?(?:(public|stock)\\s*)?\\(",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.functag.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.sourcepawn"
+        },
+        "3": {
+          "patterns": [{ "include": "#old-type" }]
+        },
+        "4": {
+          "name": "keyword.visibility.sourcepawn"
+        }
+      },
+      "end": "\\)",
+      "patterns": [
+        { "include": "#comments" },
+        { "include": "#preproc" },
+        { "include": "#old-parameter" }
+      ]
+    },
+
+    "funcenum": {
+      "begin": "(funcenum)\\s+(\\w+)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.funcenum.sourcepawn"
+        },
+        "2": {
+          "name": "support.type.core.funcenum.sourcepawn"
+        }
+      },
+      "end": "(?<=\\})",
+      "patterns": [
+        {
+          "comment": "funcenum member",
+          "begin": "(?:([a-zA-Z_]\\w*)\\:)?\\s*(public)\\s*\\(",
+          "beginCaptures": {
+            "1": { "patterns": [{ "include": "#old-type" }] },
+            "2": { "name": "keyword.public.funcenum.sourcepawn" }
+          },
+          "end": "\\)",
+          "patterns": [{ "include": "#old-parameter" }]
+        },
+        { "include": "#comments" },
+        { "include": "#preproc" }
+      ]
     },
 
     "parameter": {
