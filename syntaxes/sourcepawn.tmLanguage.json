@@ -13,7 +13,6 @@
     },
     { "include": "#preproc" },
     { "include": "#global-declarations" },
-    { "include": "#function-declaration" },
     {
       "comment": "Property",
       "match": "(property)\\s+(?:(bool|int|void|char|any|float|String|Float)|([a-zA-Z_]\\w*))\\s+([a-zA-Z_]\\w*)",
@@ -330,6 +329,8 @@
   "repository": {
     "global-declarations": {
       "patterns": [
+        { "include": "#old-function-declaration" },
+        { "include": "#function-declaration" },
         {
           "comment": "typedef",
           "begin": "(typedef)\\s+([a-zA-Z_]\\w*)\\s*\\=\\s*(function)\\s*([a-zA-Z_]\\w*)\\s*((?:\\[[^\\]]*\\]\\s*)*)\\(",
@@ -600,6 +601,40 @@
               "patterns": [{ "include": "#array-indexed-access" }]
             },
             "4": {
+              "name": "entity.name.function.sourcepawn"
+            }
+          },
+          "end": "\\)",
+          "patterns": [
+            {
+              "include": "#parameter"
+            },
+            {
+              "include": "#old-parameter"
+            },
+            {
+              "include": "#comments"
+            },
+            {
+              "include": "#preproc"
+            }
+          ]
+        }
+      ]
+    },
+
+    "old-function-declaration": {
+      "patterns": [
+        {
+          "begin": "\\s*(?:(stock|public)\\s+)?(?:([a-zA-Z_]\\w*)\\:)?\\s*([a-zA-Z_]\\w*)\\(",
+          "beginCaptures": {
+            "1": {
+              "name": "keyword.visibility.sourcepawn"
+            },
+            "2": {
+              "patterns": [{ "include": "#old-type" }]
+            },
+            "3": {
               "name": "entity.name.function.sourcepawn"
             }
           },
