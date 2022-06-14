@@ -63,84 +63,6 @@
       "match": "\\s*\\b(?:break|continue|decl|delete|forward|native|public|const|stock|this|sizeof|property)\\b"
     },
     {
-      "comment": "Function params new syntax",
-      "match": "\\s*((?:(?:const|static|new|decl)\\s+)+)?\\s*(?:(const|static|new)|(bool|int|void|char|any|float|String|Float)|([a-zA-Z_]\\w*))?(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\:?\\s+([A-Za-z0-9_\\&]+)\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\])?\\s*(?:\\)|,|=)",
-      "captures": {
-        "1": {
-          "name": "keyword.function_params_new.sourcepawn"
-        },
-        "2": {
-          "name": "keyword.function_params_new.sourcepawn"
-        },
-        "3": {
-          "name": "storage.type.built-in.primitive.function_params_new.sourcepawn"
-        },
-        "4": {
-          "name": "support.type.core.function_params_new.sourcepawn"
-        },
-        "5": {
-          "patterns": [
-            {
-              "match": "(\\d+)",
-              "captures": {
-                "1": {
-                  "name": "constant.numeric.function_params_new.sourcepawn"
-                }
-              }
-            },
-            {
-              "match": "\\b(true|false|null)\\b",
-              "name": "constant.language.boolean.sourcepawn"
-            },
-            {
-              "match": "[a-zA-Z_]\\w*",
-              "name": "variable.function_params_new.sourcepawn"
-            }
-          ]
-        },
-        "6": {
-          "patterns": [
-            {
-              "match": "(\\d+)",
-              "captures": {
-                "1": {
-                  "name": "constant.numeric.function_params_new.sourcepawn"
-                }
-              }
-            },
-            {
-              "match": "\\b(true|false|null)\\b",
-              "name": "constant.language.boolean.sourcepawn"
-            },
-            {
-              "match": "[a-zA-Z_]\\w*",
-              "name": "variable.function_params_new.sourcepawn"
-            }
-          ]
-        },
-        "7": {
-          "patterns": [
-            {
-              "match": "(\\d+)",
-              "captures": {
-                "1": {
-                  "name": "constant.numeric.function_params_new.sourcepawn"
-                }
-              }
-            },
-            {
-              "match": "\\b(true|false|null)\\b",
-              "name": "constant.language.boolean.sourcepawn"
-            },
-            {
-              "match": "[a-zA-Z_]\\w*",
-              "name": "variable.function_params_new.sourcepawn"
-            }
-          ]
-        }
-      }
-    },
-    {
       "comment": "Function params old syntax",
       "match": "\\s*(?<!\\?\\s*)\\s*((?:(?:const|static)\\s+)*)\\s*(?:(bool|int|void|char|any|float|String|Float)|([a-zA-Z_]\\w*))(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\s*\\:\\s*(\\w+)\\s*(?:\\[([A-Za-z0-9_\\*\\+\\s\\-]*)\\]|\\s*&)?\\s*(?:\\)|,|=)",
       "captures": {
@@ -293,7 +215,8 @@
         { "include": "#enum" },
         { "include": "#struct" },
         { "include": "#old-function-declaration" },
-        { "include": "#function-declaration" }
+        { "include": "#function-declaration" },
+        { "include": "#variable-declaration" }
       ]
     },
 
@@ -655,6 +578,31 @@
         {
           "name": "keyword.operator.sourcepawn",
           "match": "%|&|\\*|/(?!\\*|/)|\\+|\\-|~|=|<|>|!|\\||\\?|:|\\^"
+        }
+      ]
+    },
+
+    "variable-declaration": {
+      "patterns": [
+        {
+          "match": "\\s*(?:(stock|public)\\s+)?(?:(const)\\s+)?(\\w+)(\\s*(?:\\[[^\\]]*\\]\\s*)*)\\s+(\\w+)\\s*(\\s*(?:\\[[^\\]]*\\]\\s*)*)",
+          "captures": {
+            "1": {
+              "name": "keyword.visibility.sourcepawn"
+            },
+            "2": {
+              "name": "keyword.storage_class.sourcepawn"
+            },
+            "3": {
+              "patterns": [{ "include": "#type" }]
+            },
+            "4": {
+              "patterns": [{ "include": "#array-indexed-access" }]
+            },
+            "5": {
+              "patterns": [{ "include": "#variable_name" }]
+            }
+          }
         }
       ]
     },
