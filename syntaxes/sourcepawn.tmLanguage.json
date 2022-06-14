@@ -13,6 +13,7 @@
     },
     { "include": "#preproc" },
     { "include": "#global-declarations" },
+    { "include": "#function-declaration" },
     {
       "comment": "Property",
       "match": "(property)\\s+(?:(bool|int|void|char|any|float|String|Float)|([a-zA-Z_]\\w*))\\s+([a-zA-Z_]\\w*)",
@@ -28,21 +29,6 @@
         },
         "4": {
           "name": "variable.sourcepawn"
-        }
-      }
-    },
-    {
-      "comment": "Function type definition",
-      "match": "(function)\\s+(?:(bool|int|void|char|any|float|String|Float)|([a-zA-Z_]\\w*))\\s*\\(",
-      "captures": {
-        "1": {
-          "name": "keyword.function.sourcepawn"
-        },
-        "2": {
-          "name": "storage.type.built-in.primitive.sourcepawn"
-        },
-        "3": {
-          "name": "support.type.core.function.sourcepawn"
         }
       }
     },
@@ -99,24 +85,6 @@
         },
         "2": {
           "name": "entity.name.function.function_notype.sourcepawn"
-        }
-      }
-    },
-    {
-      "comment": "Function declaration",
-      "match": "^\\s*((?:(?:static|native|stock|public|forward)\\s+)*)(?!function)(?:(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\s*(?:\\s+|\\:))\\s*(\\w+)\\s*\\(",
-      "captures": {
-        "1": {
-          "name": "keyword.function.sourcepawn"
-        },
-        "2": {
-          "name": "storage.type.built-in.primitive.sourcepawn"
-        },
-        "3": {
-          "name": "support.type.core.function.sourcepawn"
-        },
-        "4": {
-          "name": "entity.name.function.function.sourcepawn"
         }
       }
     },
@@ -588,7 +556,7 @@
     "type": {
       "patterns": [
         {
-          "match": "(bool|float|int|char|any)|([a-zA-Z_]\\w*)",
+          "match": "(bool|float|int|char|any|void)|([a-zA-Z_]\\w*)",
           "captures": {
             "1": {
               "name": "storage.type.built-in.primitive.sourcepawn"
@@ -613,6 +581,43 @@
               "name": "support.type.core.body.sourcepawn"
             }
           }
+        }
+      ]
+    },
+
+    "function-declaration": {
+      "patterns": [
+        {
+          "begin": "\\s*(?:(stock|public)\\s+)?([a-zA-Z_]\\w*)(\\s*(?:\\[[^\\]]*\\]\\s*)*)\\s+([a-zA-Z_]\\w*)\\(",
+          "beginCaptures": {
+            "1": {
+              "name": "keyword.visibility.sourcepawn"
+            },
+            "2": {
+              "patterns": [{ "include": "#type" }]
+            },
+            "3": {
+              "patterns": [{ "include": "#array-indexed-access" }]
+            },
+            "4": {
+              "name": "entity.name.function.sourcepawn"
+            }
+          },
+          "end": "\\)",
+          "patterns": [
+            {
+              "include": "#parameter"
+            },
+            {
+              "include": "#old-parameter"
+            },
+            {
+              "include": "#comments"
+            },
+            {
+              "include": "#preproc"
+            }
+          ]
         }
       ]
     },
