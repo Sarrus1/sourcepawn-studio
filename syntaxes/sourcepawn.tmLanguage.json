@@ -2,6 +2,7 @@
   "name": "SourcePawn",
   "scopeName": "source.sourcepawn",
   "patterns": [
+    { "include": "#line_continuation_character" },
     {
       "include": "#literals"
     },
@@ -69,13 +70,13 @@
     {
       "comment": "Control statements",
       "name": "keyword.control.statement.sourcepawn",
-      "match": "\\s*\\b(?:if|else|for|while|do|switch|case|default|return)\\b"
+      "match": "\\s*\\b(?:if|else|for|while|do|switch|case|default|return|break|continue)\\b"
     },
 
     {
       "comment": "keywords",
       "name": "keyword.sourcepawn",
-      "match": "\\s*\\b(?:break|continue|decl|delete|forward|native|public|const|stock|this|sizeof|static|property)\\b"
+      "match": "\\s*\\b(?:decl|delete|forward|native|public|const|stock|this|sizeof|static|property|sizeof)\\b"
     },
 
     { "include": "#methodmap" },
@@ -651,6 +652,7 @@
             {
               "include": "#string_escaped_char"
             },
+            { "include": "#string_format_char" },
             { "include": "#string_placeholder" },
             {
               "include": "#line_continuation_character"
@@ -678,6 +680,7 @@
             {
               "include": "#string_escaped_char"
             },
+            { "include": "#string_format_char" },
             { "include": "#string_placeholder" },
             {
               "include": "#line_continuation_character"
@@ -711,6 +714,11 @@
           "name": "invalid.illegal.unknown-escape.sourcepawn"
         }
       ]
+    },
+
+    "string_format_char": {
+      "name": "constant.character.format.sourcepawn",
+      "match": "%(?:a|A|b|B|c|C|d|D|e|F|g|G|h|H|I|j|m|M|n|i|p|r|R|S|t|T|u|U|V|u|w|W|x|X|y|Y|z|Z|f|L|N|s|T|t|%|(?:\\d+)?\\.\\d+(?:b|d|i|u|f|s|X|x))"
     },
 
     "string_placeholder": {
