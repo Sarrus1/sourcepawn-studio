@@ -7,6 +7,7 @@
 - Added a brand new parser.
 - Nicer loader.
 - Better docstring generation.
+- Complete syntax highlighting overhaul.
 - Added positional arguments support.
 - Added code folding for `#if` and `#endif` (see #210).
 - Added the possibility to use `${mainPath}` as the localRoot setting for the FTP/SFTP upload setting (see #209).
