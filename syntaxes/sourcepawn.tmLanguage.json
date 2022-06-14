@@ -60,7 +60,7 @@
     {
       "comment": "keywords",
       "name": "keyword.sourcepawn",
-      "match": "\\s*\\b(?:break|continue|decl|delete|forward|native|public|const|stock|this|sizeof)\\b"
+      "match": "\\s*\\b(?:break|continue|decl|delete|forward|native|public|const|stock|this|sizeof|property)\\b"
     },
     {
       "comment": "Function params new syntax",
@@ -284,8 +284,6 @@
   "repository": {
     "global-declarations": {
       "patterns": [
-        { "include": "#old-function-declaration" },
-        { "include": "#function-declaration" },
         { "include": "#methodmap" },
         { "include": "#typedef" },
         { "include": "#typeset" },
@@ -293,7 +291,9 @@
         { "include": "#funcenum" },
         { "include": "#enum_struct" },
         { "include": "#enum" },
-        { "include": "#struct" }
+        { "include": "#struct" },
+        { "include": "#old-function-declaration" },
+        { "include": "#function-declaration" }
       ]
     },
 
@@ -408,10 +408,8 @@
     "typeset": {
       "begin": "(typeset)\\s+(\\w+)",
       "beginCaptures": {
-        "1": { "patterns": [{ "include": "#type_name" }] },
-        "2": {
-          "name": "support.type.core.sourcepawn"
-        }
+        "1": { "name": "keyword.typeset.sourcepawn" },
+        "2": { "patterns": [{ "include": "#type_name" }] }
       },
       "end": "(?<=\\})",
       "patterns": [
@@ -432,7 +430,7 @@
     },
 
     "functag": {
-      "begin": "(functag)\\s+(\\w+)\\s+(?:([a-zA-Z_]\\w*)\\:\\s*)?(?:(public|stock)\\s*)?\\(",
+      "begin": "\\s*(functag)\\s+(\\w+)\\s+(?:([a-zA-Z_]\\w*)\\:\\s*)?(?:(public|stock)\\s*)?\\(",
       "beginCaptures": {
         "1": {
           "name": "keyword.functag.sourcepawn"
@@ -578,18 +576,21 @@
     "function-declaration": {
       "patterns": [
         {
-          "begin": "\\s*(?:(stock|public)\\s+)?(\\w+)(\\s*(?:\\[[^\\]]*\\]\\s*)*)\\s+([a-zA-Z_]\\w*)\\(",
+          "begin": "\\s*(?:(stock|public)\\s+)?(?:(native|forward)\\s+)?(\\w+)(\\s*(?:\\[[^\\]]*\\]\\s*)*)\\s+([a-zA-Z_]\\w*)\\(",
           "beginCaptures": {
             "1": {
               "name": "keyword.visibility.sourcepawn"
             },
             "2": {
-              "patterns": [{ "include": "#type" }]
+              "name": "keyword.storage_class.sourcepawn"
             },
             "3": {
-              "patterns": [{ "include": "#array-indexed-access" }]
+              "patterns": [{ "include": "#type" }]
             },
             "4": {
+              "patterns": [{ "include": "#array-indexed-access" }]
+            },
+            "5": {
               "name": "entity.name.function.sourcepawn"
             }
           },
@@ -615,15 +616,18 @@
     "old-function-declaration": {
       "patterns": [
         {
-          "begin": "\\s*(?:(stock|public)\\s+)?(?:(\\w+)\\:)?\\s*([a-zA-Z_]\\w*)\\(",
+          "begin": "\\s*(?:(stock|public)\\s+)?(?:(native|forward)\\s+)?(?:(\\w+)\\:)?\\s*([a-zA-Z_]\\w*)\\(",
           "beginCaptures": {
             "1": {
               "name": "keyword.visibility.sourcepawn"
             },
             "2": {
-              "patterns": [{ "include": "#old-type" }]
+              "name": "keyword.storage_class.sourcepawn"
             },
             "3": {
+              "patterns": [{ "include": "#old-type" }]
+            },
+            "4": {
               "name": "entity.name.function.sourcepawn"
             }
           },
@@ -711,7 +715,7 @@
         },
         {
           "comment": "Invalid literal",
-          "match": "\\b[0-9]+\\w+\\b",
+          "match": "\\b\\d+\\w+\\b",
           "name": "invalid.illegal.constant.sourcepawn"
         }
       ]
@@ -814,6 +818,7 @@
 
     "type_name": {
       "patterns": [
+        { "match": "\\b\\d\\b", "name": "constant.numeric.integer.sourcepawn" },
         { "match": "[a-zA-Z_]\\w*", "name": "support.type.core.sourcepawn" },
         {
           "match": "([0-9])(\\w*)",
@@ -827,6 +832,7 @@
 
     "variable_name": {
       "patterns": [
+        { "match": "\\b\\d\\b", "name": "constant.numeric.integer.sourcepawn" },
         { "match": "[a-zA-Z_]\\w*", "name": "variable.sourcepawn" },
         {
           "match": "([0-9])(\\w*)",
