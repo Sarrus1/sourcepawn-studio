@@ -12,43 +12,57 @@
       "include": "#operators"
     },
     { "include": "#preproc" },
-    { "include": "#global-declarations" },
     {
-      "comment": "Constructors",
-      "match": "(new)\\s+(?:(\\w+)\\s*\\()?",
+      "comment": "new statement",
+      "match": "\\s*(new)\\s+(\\w+)\\s*\\(",
       "captures": {
         "1": {
-          "name": "keyword.view.sourcepawn"
+          "patterns": [{ "include": "#keywords" }]
         },
         "2": {
-          "name": "support.type.core.methodmap_constructor.sourcepawn"
+          "patterns": [{ "include": "#type" }]
         }
       }
     },
+
     {
       "comment": "view_as",
-      "match": "(view_as)\\s*<\\s*(?:(bool|int|void|char|any|float|String|Float)|(\\w+))\\s*>",
+      "match": "\\s*(view_as)\\s*<\\s*(\\w+)\\s*>",
       "captures": {
         "1": {
-          "name": "keyword.view_as.sourcepawn"
+          "patterns": [{ "include": "#keywords" }]
         },
         "2": {
-          "name": "storage.type.built-in.primitive.sourcepawn"
-        },
-        "3": {
-          "name": "support.type.core.view_as.sourcepawn"
+          "patterns": [{ "include": "#type" }, { "include": "#old-type" }]
         }
       }
     },
+
     {
-      "comment": "Scope access",
-      "match": "([A-Za-z0-9_]+)\\:\\:([A-Za-z0-9_]*)",
+      "comment": "old type cast",
+      "match": "\\s*(\\w+)\\:\\s*(\\w+)",
       "captures": {
         "1": {
-          "name": "support.type.core.enum_struct.accessor.sourcepawn"
+          "patterns": [{ "include": "#old-type" }]
         },
         "2": {
-          "name": "variable.enum_struct.accessor.sourcepawn"
+          "patterns": [
+            { "include": "#literals" },
+            { "include": "#variable_name" }
+          ]
+        }
+      }
+    },
+
+    {
+      "comment": "Scope access",
+      "match": "(\\w+)\\:\\:(\\w*)",
+      "captures": {
+        "1": {
+          "patterns": [{ "include": "#type_name" }]
+        },
+        "2": {
+          "patterns": [{ "include": "#variable_name" }]
         }
       }
     },
@@ -57,11 +71,26 @@
       "name": "keyword.control.statement.sourcepawn",
       "match": "\\s*\\b(?:if|else|for|while|do|switch|case|default|return)\\b"
     },
+
     {
       "comment": "keywords",
       "name": "keyword.sourcepawn",
-      "match": "\\s*\\b(?:break|continue|decl|delete|forward|native|public|const|stock|this|sizeof|property)\\b"
+      "match": "\\s*\\b(?:break|continue|decl|delete|forward|native|public|const|stock|this|sizeof|static|property)\\b"
     },
+
+    { "include": "#methodmap" },
+    { "include": "#typedef" },
+    { "include": "#typeset" },
+    { "include": "#functag" },
+    { "include": "#funcenum" },
+    { "include": "#enum_struct" },
+    { "include": "#enum" },
+    { "include": "#struct" },
+    { "include": "#old-function-declaration" },
+    { "include": "#function-declaration" },
+    { "include": "#old-variable-declaration" },
+    { "include": "#variable-declaration" },
+
     {
       "comment": "Function call",
       "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*\\(",
@@ -72,56 +101,20 @@
       }
     },
     {
-      "comment": "Core types",
-      "match": "\\b(?:bool|char|float|int|void|any)\\b",
-      "name": "storage.type.built-in.primitive.sourcepawn"
-    },
-    {
-      "comment": "Match the rest as types",
-      "match": "^((?:(?:const|static)\\s+){0,2})([a-zA-Z_]\\w*)\\s*(?<!,\\[;)\\s*$",
-      "captures": {
-        "1": {
-          "name": "keyword.sourcepawn"
-        },
-        "2": {
-          "name": "support.type.sourcepawn"
-        }
-      }
-    },
-    {
-      "comment": "Match the rest of the static and const",
-      "match": "\\b(?:const|static)\\b",
-      "name": "keyword.sourcepawn"
-    },
-    {
       "match": "\\bthis\\b",
       "name": "variable.language.sourcepawn"
     },
     {
-      "comment": "Match the rest as variables",
-      "match": "[a-zA-Z_]\\w*",
-      "name": "variable.sourcepawn"
+      "match": "\\b(\\w+)\\b",
+      "captures": {
+        "1": {
+          "patterns": [{ "include": "#variable_name" }]
+        }
+      }
     }
   ],
 
   "repository": {
-    "global-declarations": {
-      "patterns": [
-        { "include": "#methodmap" },
-        { "include": "#typedef" },
-        { "include": "#typeset" },
-        { "include": "#functag" },
-        { "include": "#funcenum" },
-        { "include": "#enum_struct" },
-        { "include": "#enum" },
-        { "include": "#struct" },
-        { "include": "#old-function-declaration" },
-        { "include": "#function-declaration" },
-        { "include": "#old-variable-declaration" },
-        { "include": "#variable-declaration" }
-      ]
-    },
-
     "enum": {
       "begin": "(enum)\\s+(?:(\\w+(?:\\:)?)?(?:\\s*(\\([^\\(]*\\)))?)?",
       "beginCaptures": {
@@ -551,6 +544,10 @@
         {
           "match": "\\s*\\b(typeset|typedef|funcenum|functag)\\b",
           "name": "keyword.type_declarator.sourcepawn"
+        },
+        {
+          "match": "\\s*\\b(view_as)\\b",
+          "name": "keyword.view_as.sourcepawn"
         },
         {
           "match": "\\s*\\b(new|decl)\\b",
