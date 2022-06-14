@@ -298,14 +298,12 @@
     },
 
     "enum": {
-      "begin": "(enum)\\s+(?:([a-zA-Z_]\\w*(?:\\:)?)?(?:\\s*(\\([^\\(]*\\)))?)?",
+      "begin": "(enum)\\s+(?:(\\w+(?:\\:)?)?(?:\\s*(\\([^\\(]*\\)))?)?",
       "beginCaptures": {
         "1": {
           "name": "keyword.enum.sourcepawn"
         },
-        "2": {
-          "name": "support.type.core.sourcepawn"
-        },
+        "2": { "patterns": [{ "include": "#type_name" }] },
         "3": { "patterns": [{ "include": "#literals" }] }
       },
       "end": "(?<=\\})",
@@ -314,33 +312,33 @@
         { "include": "#comments" },
         { "include": "#preproc" },
         {
-          "match": "([a-zA-Z_]\\w*)",
-          "name": "variable.enum.sourcepawn"
+          "match": "(\\w+)",
+          "captures": { "1": { "patterns": [{ "include": "#variable_name" }] } }
         }
       ]
     },
 
     "enum_struct": {
-      "match": "\\s*(enum\\s+struct\\s+)([a-zA-Z_]\\w*)",
+      "match": "\\s*(enum\\s+struct\\s+)(\\w+)",
       "captures": {
         "1": {
           "name": "keyword.enum_struct.sourcepawn"
         },
         "2": {
-          "name": "support.type.core.enum_struct.sourcepawn"
+          "patterns": [{ "include": "#type_name" }]
         }
       }
     },
 
     "struct": {
-      "comment": "Struct",
-      "match": "^\\s*(struct)\\s+(\\w+)",
+      "comment": "struct",
+      "match": "\\s*(struct)\\s+(\\w+)",
       "captures": {
         "1": {
           "name": "keyword.struct.sourcepawn"
         },
         "2": {
-          "name": "support.type.core.struct.sourcepawn"
+          "patterns": [{ "include": "#type_name" }]
         }
       }
     },
@@ -383,14 +381,12 @@
     },
 
     "typedef": {
-      "begin": "(typedef)\\s+([a-zA-Z_]\\w*)\\s*\\=\\s*(function)\\s*([a-zA-Z_]\\w*)\\s*((?:\\[[^\\]]*\\]\\s*)*)\\(",
+      "begin": "(typedef)\\s+(\\w+)\\s*\\=\\s*(function)\\s*(\\w+)\\s*((?:\\[[^\\]]*\\]\\s*)*)\\(",
       "beginCaptures": {
         "1": {
           "name": "keyword.typedef.sourcepawn"
         },
-        "2": {
-          "name": "support.type.core.sourcepawn"
-        },
+        "2": { "patterns": [{ "include": "#type_name" }] },
         "3": {
           "name": "keyword.function.sourcepawn"
         },
@@ -410,11 +406,9 @@
     },
 
     "typeset": {
-      "begin": "(typeset)\\s+([a-zA-Z_]\\w*)",
+      "begin": "(typeset)\\s+(\\w+)",
       "beginCaptures": {
-        "1": {
-          "name": "keyword.typeset.sourcepawn"
-        },
+        "1": { "patterns": [{ "include": "#type_name" }] },
         "2": {
           "name": "support.type.core.sourcepawn"
         }
@@ -423,7 +417,7 @@
       "patterns": [
         {
           "comment": "typeset member",
-          "begin": "(function)\\s+([a-zA-Z_]\\w*)\\s*((?:\\[[^\\]]*\\]\\s*)*)\\(",
+          "begin": "(function)\\s+(\\w+)\\s*((?:\\[[^\\]]*\\]\\s*)*)\\(",
           "beginCaptures": {
             "1": { "name": "keyword.function.sourcepawn" },
             "2": { "patterns": [{ "include": "#type" }] },
@@ -438,14 +432,12 @@
     },
 
     "functag": {
-      "begin": "(functag)\\s+([a-zA-Z_]\\w*)\\s+(?:([a-zA-Z_]\\w*)\\:\\s*)?(?:(public|stock)\\s*)?\\(",
+      "begin": "(functag)\\s+(\\w+)\\s+(?:([a-zA-Z_]\\w*)\\:\\s*)?(?:(public|stock)\\s*)?\\(",
       "beginCaptures": {
         "1": {
           "name": "keyword.functag.sourcepawn"
         },
-        "2": {
-          "name": "support.type.core.sourcepawn"
-        },
+        "2": { "patterns": [{ "include": "#type_name" }] },
         "3": {
           "patterns": [{ "include": "#old-type" }]
         },
@@ -475,7 +467,7 @@
       "patterns": [
         {
           "comment": "funcenum member",
-          "begin": "(?:([a-zA-Z_]\\w*)\\:)?\\s*(public)\\s*\\(",
+          "begin": "(?:(\\w+)\\:)?\\s*(public)\\s*\\(",
           "beginCaptures": {
             "1": { "patterns": [{ "include": "#old-type" }] },
             "2": { "name": "keyword.public.funcenum.sourcepawn" }
@@ -498,7 +490,7 @@
     "parameter-declaration": {
       "patterns": [
         {
-          "match": "\\s*(?:(const)\\s+)?([a-zA-Z_]\\w*)(?:\\s+|(?:\\s*(?:&|(?:\\[\\s*\\])+)\\s*))([a-zA-Z_]\\w*)\\s*((?:\\[[^\\]]*\\]\\s*)*)",
+          "match": "\\s*(?:(const)\\s+)?(\\w+)(?:\\s+|(?:\\s*(?:&|(?:\\[\\s*\\])+)\\s*))(\\w+)\\s*((?:\\[[^\\]]*\\]\\s*)*)",
           "captures": {
             "1": {
               "name": "keyword.const.sourcepawn"
@@ -507,7 +499,7 @@
               "patterns": [{ "include": "#type" }]
             },
             "3": {
-              "name": "variable.parameter.sourcepawn"
+              "patterns": [{ "include": "#variable_name" }]
             },
             "4": { "patterns": [{ "include": "#array-indexed-access" }] }
           }
@@ -538,7 +530,7 @@
     "old-parameter-declaration": {
       "patterns": [
         {
-          "match": "\\s*(?:(const)\\s+)?(?:([a-zA-Z_]\\w*)\\:)?\\s*([a-zA-Z_]\\w*)\\s*((?:\\[[^\\]]*\\]\\s*)*)",
+          "match": "\\s*(?:(const)\\s+)?(?:(\\w+)\\:)?\\s*(\\w+)\\s*((?:\\[[^\\]]*\\]\\s*)*)",
           "captures": {
             "1": {
               "name": "keyword.function_params_old.sourcepawn"
@@ -547,7 +539,7 @@
               "patterns": [{ "include": "#old-type" }]
             },
             "3": {
-              "name": "variable.parameter.sourcepawn"
+              "patterns": [{ "include": "#variable_name" }]
             },
             "4": { "patterns": [{ "include": "#array-indexed-access" }] }
           }
@@ -558,14 +550,12 @@
     "type": {
       "patterns": [
         {
-          "match": "(bool|float|int|char|any|void)|([a-zA-Z_]\\w*)",
+          "match": "(bool|float|int|char|any|void)|(\\w+)",
           "captures": {
             "1": {
               "name": "storage.type.built-in.primitive.sourcepawn"
             },
-            "2": {
-              "name": "support.type.core.body.sourcepawn"
-            }
+            "2": { "patterns": [{ "include": "#type_name" }] }
           }
         }
       ]
@@ -574,14 +564,12 @@
     "old-type": {
       "patterns": [
         {
-          "match": "(bool|any|String|Float)|([a-zA-Z_]\\w*)",
+          "match": "(bool|any|String|Float)|(\\w+)",
           "captures": {
             "1": {
               "name": "storage.type.old.built-in.primitive.sourcepawn"
             },
-            "2": {
-              "name": "support.type.core.body.sourcepawn"
-            }
+            "2": { "patterns": [{ "include": "#type_name" }] }
           }
         }
       ]
@@ -590,7 +578,7 @@
     "function-declaration": {
       "patterns": [
         {
-          "begin": "\\s*(?:(stock|public)\\s+)?([a-zA-Z_]\\w*)(\\s*(?:\\[[^\\]]*\\]\\s*)*)\\s+([a-zA-Z_]\\w*)\\(",
+          "begin": "\\s*(?:(stock|public)\\s+)?(\\w+)(\\s*(?:\\[[^\\]]*\\]\\s*)*)\\s+([a-zA-Z_]\\w*)\\(",
           "beginCaptures": {
             "1": {
               "name": "keyword.visibility.sourcepawn"
@@ -627,7 +615,7 @@
     "old-function-declaration": {
       "patterns": [
         {
-          "begin": "\\s*(?:(stock|public)\\s+)?(?:([a-zA-Z_]\\w*)\\:)?\\s*([a-zA-Z_]\\w*)\\(",
+          "begin": "\\s*(?:(stock|public)\\s+)?(?:(\\w+)\\:)?\\s*([a-zA-Z_]\\w*)\\(",
           "beginCaptures": {
             "1": {
               "name": "keyword.visibility.sourcepawn"
@@ -822,6 +810,32 @@
           "name": "constant.character.escape.sp-translations"
         }
       }
+    },
+
+    "type_name": {
+      "patterns": [
+        { "match": "[a-zA-Z_]\\w*", "name": "support.type.core.sourcepawn" },
+        {
+          "match": "([0-9])(\\w*)",
+          "captures": {
+            "1": { "name": "invalid.illegal.constant.sourcepawn" },
+            "2": { "name": "support.type.core.sourcepawn" }
+          }
+        }
+      ]
+    },
+
+    "variable_name": {
+      "patterns": [
+        { "match": "[a-zA-Z_]\\w*", "name": "variable.sourcepawn" },
+        {
+          "match": "([0-9])(\\w*)",
+          "captures": {
+            "1": { "name": "invalid.illegal.constant.sourcepawn" },
+            "2": { "name": "variable.sourcepawn" }
+          }
+        }
+      ]
     },
 
     "preproc": {
