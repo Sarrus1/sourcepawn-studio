@@ -8,15 +8,11 @@ import { newDocumentCallback } from "../../Backend/spFileHandlers";
 import { getAllDefines } from "../../Backend/spItemsGetters";
 import { preDiagnostics } from "../../Providers/Linter/compilerDiagnostics";
 
-export enum Quote {
+export enum ParseState {
   None,
-  Single,
-  Double,
-}
-
-export interface LineState {
-  openedQuote: Quote;
-  blockComment: boolean;
+  SingleQuote,
+  DoubleQuote,
+  BlockComment,
 }
 
 export enum ConditionState {
@@ -53,6 +49,10 @@ export class PreProcessor {
     this.diagnostics = [];
   }
 
+  private getLine(): string {
+    return this.lines[this.lineNb];
+  }
+
   private addLine(line: string) {
     if (
       !this.range ||
@@ -65,48 +65,49 @@ export class PreProcessor {
 
   public preProcess(range?: Range | undefined): string {
     this.range = range;
-    for (let line of this.lines) {
-      this.lineNb++;
-      let match = line.match(/^\s*#define\s+([A-Za-z_]\w*)[^\S\r\n]+/);
+    for (this.lineNb = 0; this.lineNb < this.lines.length; this.lineNb++) {
+      let match = this.getLine().match(
+        /^\s*#define\s+([A-Za-z_]\w*)[^\S\r\n]+/
+      );
 
       if (match) {
-        this.handleDefine(match, line);
+        this.handleDefine(match, this.getLine());
         continue;
       }
 
-      match = line.match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>/);
-      if (match) {
-        this.handleInclude(match);
-        continue;
-      }
-      match = line.match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"/);
+      match = this.getLine().match(/^\s*#include\s+<([A-Za-z0-9\-_\/.]+)>/);
       if (match) {
         this.handleInclude(match);
         continue;
       }
-
-      match = line.match(/^\s*#if/);
-
+      match = this.getLine().match(/^\s*#include\s+"([A-Za-z0-9\-_\/.]+)"/);
       if (match) {
-        this.handleIf(match, line, ConditionState.if);
+        this.handleInclude(match);
         continue;
       }
 
-      match = line.match(/^\s*#elseif/);
+      match = this.getLine().match(/^\s*#if/);
 
       if (match) {
-        this.handleIf(match, line, ConditionState.elseIf);
+        this.handleIf(match, this.getLine(), ConditionState.if);
         continue;
       }
 
-      match = line.match(/^\s*#else/);
+      match = this.getLine().match(/^\s*#elseif/);
 
       if (match) {
-        this.handleElse(line);
+        this.handleIf(match, this.getLine(), ConditionState.elseIf);
         continue;
       }
 
-      match = line.match(/^\s*#endif/);
+      match = this.getLine().match(/^\s*#else/);
+
+      if (match) {
+        this.handleElse(this.getLine());
+        continue;
+      }
+
+      match = this.getLine().match(/^\s*#endif/);
 
       if (match) {
         this.conditionState = ConditionState.None;
@@ -119,7 +120,7 @@ export class PreProcessor {
       if (this.skipLine) {
         this.addLine("");
       } else {
-        this.addLine(line);
+        this.addLine(this.getLine());
       }
     }
     preDiagnostics.set(this.uri, this.diagnostics);
@@ -127,72 +128,146 @@ export class PreProcessor {
   }
 
   private handleDefine(match: RegExpMatchArray, line: string) {
+    let emptyLinesToAdd = 0;
+    let escapedChar = false;
     // Add the line no matter what, to get the define in the AST.
-    this.addLine(line);
-
-    const lineNb = this.lineNb;
+    let lineToAdd = line.replace(/\\(?:\r)$/, "").trim();
+    // this.addLine(line);
 
     const defineValSt = match.index + match[0].length;
     if (line.length <= defineValSt) {
+      this.addLine(lineToAdd);
       return;
     }
-    const lineState: LineState = {
-      openedQuote: Quote.None,
-      blockComment: false,
-    };
+    let state = ParseState.None;
+
     let value = "";
-    for (let i = defineValSt; i < line.length; i++) {
-      if (!lineState.blockComment && lineState.openedQuote === Quote.None) {
-        // No comment, no string.
-        if (i + 1 >= line.length) {
-          // Too short to continue, append value and exit.
-          // TODO: Check if multiline.
-          value += line[i];
-          break;
-        }
-        if (line[i] === "/" && line[i] === "/") {
-          // Start of a line comment, exit.
-          break;
-        }
-        if (line[i] === "/" && line[i] === "*") {
-          // Start of a block comment, check if it spans the whole line.
-          // TODO: Implement logic.
-          break;
-        }
-        if (line[i] === '"') {
-          lineState.openedQuote = Quote.Double;
-        } else if (line[i] === "'") {
-          lineState.openedQuote = Quote.Single;
-        }
-        value += line[i];
-      }
-      if (lineState.openedQuote === Quote.Single) {
-        // Single quote string.
-        if (i + 1 >= line.length) {
-          if (line[i] === "\\") {
-            // Line continuation.
+    let i = defineValSt;
+    loop: for (i; i < line.length; i++) {
+      switch (state) {
+        case ParseState.None:
+          // No comment, no string.
+          if (/^\\(?:\r)$/.test(line.slice(i))) {
+            // Line termination sequence reached.
+            this.lineNb++;
+            i = -1;
+            line = this.getLine();
+            if (line === undefined) {
+              break loop;
+            }
+            lineToAdd += line.replace(/\\(?:\r)$/, "").trim();
+            emptyLinesToAdd++;
+          }
+          if (i == line.length - 1) {
+            value += line[i];
+            break loop;
+          }
+          if (line[i] === "/" && line[i + 1] === "/") {
+            // Start of a line comment, exit.
+            break loop;
+          }
+          if (line[i] === "/" && line[i + 1] === "*") {
+            // Start of a block comment, check if it spans the whole line.
+            value += "/*";
+            i++;
+            state = ParseState.BlockComment;
+            continue loop;
+          }
+          if (line[i] === '"') {
+            state = ParseState.DoubleQuote;
+          } else if (line[i] === "'") {
+            state = ParseState.SingleQuote;
           }
           value += line[i];
-        }
-        if (line[i] === "'" && line[i - 1] !== "\\") {
-          lineState.openedQuote = Quote.None;
-        }
-        value += line[i];
-        continue;
-      }
-      if (lineState.openedQuote === Quote.Double) {
-        // Single quote string.
-        if (i + 1 >= line.length) {
-          if (line[i] === "\\") {
-            // Line continuation.
+          break;
+        case ParseState.BlockComment:
+          // In a block comment.
+          if (i == line.length - 1) {
+            // EOL, go to the next line.
+            this.lineNb++;
+            i = -1;
+            line = this.getLine();
+            if (line === undefined) {
+              break loop;
+            }
+            // Add a space to replace the line break.
+            lineToAdd += " " + line.replace(/\\(?:\r)$/, "").trim();
+            emptyLinesToAdd++;
+            continue loop;
+          }
+          if (line[i] === "*" && line[i + 1] === "/") {
+            // End of the block comment.
+            state = ParseState.None;
+            i++;
+            value += "*/";
+            continue loop;
           }
           value += line[i];
-        }
-        if (line[i] === '"' && line[i - 1] !== "\\") {
-          lineState.openedQuote = Quote.None;
-        }
-        value += line[i];
+          break;
+        case ParseState.SingleQuote:
+          // Single quote string.
+          if (!escapedChar) {
+            if (line[i] === "\\") {
+              escapedChar = true;
+            } else {
+              if (line[i] === "'") {
+                state = ParseState.None;
+              }
+              value += line[i];
+            }
+            continue;
+          }
+          escapedChar = false;
+          if (/(?:\r)?$/.test(line.slice(i))) {
+            // Line continuation
+            this.lineNb++;
+            i = -1;
+            line = this.getLine();
+            if (line === undefined) {
+              break loop;
+            }
+            // Add a space to replace the line break.
+            lineToAdd += line.replace(/\\(?:\r)$/, "").trim();
+            emptyLinesToAdd++;
+            continue loop;
+          } else {
+            value += line[i];
+          }
+          break;
+        case ParseState.DoubleQuote:
+          // Double quote string.
+          if (!escapedChar) {
+            if (line[i] === "\\") {
+              escapedChar = true;
+            } else {
+              if (line[i] === '"') {
+                state = ParseState.None;
+              }
+              value += line[i];
+            }
+            continue;
+          }
+          escapedChar = false;
+          if (/(?:\r)?$/.test(line.slice(i))) {
+            // Line continuation
+            this.lineNb++;
+            i = -1;
+            line = this.getLine();
+            if (line === undefined) {
+              break loop;
+            }
+            // Add a space to replace the line break.
+            lineToAdd += line.replace(/\\(?:\r)$/, "").trim();
+            emptyLinesToAdd++;
+            continue loop;
+          } else {
+            value += line[i];
+          }
       }
+    }
+    this.addLine(lineToAdd);
+    for (let i = 0; i < emptyLinesToAdd; i++) {
+      this.addLine("");
     }
     value = value.trim();
     this.fileItem.defines.set(match[1], value);
