@@ -79,7 +79,7 @@ export async function refreshDiagnostics(document: TextDocument) {
       filePath = mainPath;
     } else {
       scriptingFolder = dirname(document.uri.fsPath);
-      let file = openSync(tmpFile, "w", 0o765);
+      const file = openSync(tmpFile, "w", 0o765);
       writeSync(file, document.getText());
       closeSync(file);
       filePath = tmpFile;

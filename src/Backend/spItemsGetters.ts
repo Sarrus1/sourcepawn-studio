@@ -24,8 +24,8 @@ export function getAllItems(itemsRepo: ItemsRepository, uri: URI): SPItem[] {
     uri = URI.file(mainPath);
   }
 
-  let includes = new Set<string>([uri.toString()]);
-  let fileItems = itemsRepo.fileItems.get(uri.toString());
+  const includes = new Set<string>([uri.toString()]);
+  const fileItems = itemsRepo.fileItems.get(uri.toString());
   if (fileItems === undefined) {
     return [];
   }
@@ -52,7 +52,7 @@ export function getAllDefines(
     uri = URI.file(mainPath);
   }
 
-  let includes = new Set<string>([uri.toString()]);
+  const includes = new Set<string>([uri.toString()]);
 
   getIncludedFiles(itemsRepo, fileItem, includes);
   includes.forEach((e) => {
@@ -82,8 +82,8 @@ export function getAllMethodmaps(
     uri = URI.file(mainPath);
   }
 
-  let includes = new Set<string>([uri.toString()]);
-  let methodmapItems = itemsRepo.fileItems.get(uri.toString());
+  const includes = new Set<string>([uri.toString()]);
+  const methodmapItems = itemsRepo.fileItems.get(uri.toString());
   if (methodmapItems === undefined) {
     return new Map<string, MethodMapItem>();
   }
@@ -108,7 +108,7 @@ function getMethodmapItems(
   methodmapItems: Map<string, MethodMapItem>,
   uri: string
 ): void {
-  let items = this.fileItems.get(uri);
+  const items = this.fileItems.get(uri);
   items.items.forEach((e) => {
     if (e.kind === CompletionItemKind.Class) {
       methodmapItems.set(e.name, e as MethodMapItem);
@@ -122,7 +122,7 @@ function getMethodmapItems(
  * @returns SPItem
  */
 function getFileItems(this: ItemsRepository, uri: string): SPItem[] {
-  let items = this.fileItems.get(uri);
+  const items = this.fileItems.get(uri);
   return items !== undefined ? items.items : [];
 }
 
@@ -142,7 +142,7 @@ function getIncludedFiles(
       return;
     }
     includes.add(v.uri);
-    let includeFileItems = itemsRepo.fileItems.get(v.uri);
+    const includeFileItems = itemsRepo.fileItems.get(v.uri);
     if (includeFileItems) {
       getIncludedFiles(itemsRepo, includeFileItems, includes);
     }
@@ -195,7 +195,7 @@ export function getItemFromPosition(
       return true;
     }
     if (item.references) {
-      for (let ref of item.references) {
+      for (const ref of item.references) {
         if (
           range.isEqual(ref.range) &&
           ref.uri.fsPath === document.uri.fsPath

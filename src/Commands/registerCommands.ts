@@ -19,79 +19,79 @@ import { run as changeSMApiCommand } from "./changeSMApi";
  * @returns void
  */
 export function registerSMCommands(context: ExtensionContext): void {
-  let createTask = commands.registerCommand(
+  const createTask = commands.registerCommand(
     "sourcepawn-vscode.createTask",
     CreateTaskCommand.bind(undefined)
   );
   context.subscriptions.push(createTask);
 
-  let createScript = commands.registerCommand(
+  const createScript = commands.registerCommand(
     "sourcepawn-vscode.createScript",
     CreateScriptCommand.bind(undefined)
   );
   context.subscriptions.push(createScript);
 
-  let createREADME = commands.registerCommand(
+  const createREADME = commands.registerCommand(
     "sourcepawn-vscode.createREADME",
     CreateREADMECommand.bind(undefined)
   );
   context.subscriptions.push(createREADME);
 
-  let createMaster = commands.registerCommand(
+  const createMaster = commands.registerCommand(
     "sourcepawn-vscode.createMaster",
     CreateMasterCommand.bind(undefined)
   );
   context.subscriptions.push(createMaster);
 
-  let createProject = commands.registerCommand(
+  const createProject = commands.registerCommand(
     "sourcepawn-vscode.createProject",
     CreateProjectCommand.bind(undefined)
   );
   context.subscriptions.push(createProject);
 
-  let compileSM = commands.registerCommand(
+  const compileSM = commands.registerCommand(
     "sourcepawn-vscode.compileSM",
     CompileSMCommand.bind(undefined)
   );
   context.subscriptions.push(compileSM);
 
-  let uploadToServer = commands.registerCommand(
+  const uploadToServer = commands.registerCommand(
     "sourcepawn-vscode.uploadToServer",
     UploadToServerCommand.bind(undefined)
   );
   context.subscriptions.push(uploadToServer);
 
-  let refreshPlugins = commands.registerCommand(
+  const refreshPlugins = commands.registerCommand(
     "sourcepawn-vscode.refreshPlugins",
     RefreshPluginsCommand.bind(undefined)
   );
   context.subscriptions.push(refreshPlugins);
 
-  let insertParameters = commands.registerCommand(
+  const insertParameters = commands.registerCommand(
     "sourcepawn-vscode.insertParameters",
     InsertParametersCommand.bind(undefined)
   );
   context.subscriptions.push(insertParameters);
 
-  let setFileAsMain = commands.registerCommand(
+  const setFileAsMain = commands.registerCommand(
     "sourcepawn-vscode.setFileAsMain",
     setFileAsMainCommand.bind(undefined)
   );
   context.subscriptions.push(setFileAsMain);
 
-  let installSM = commands.registerCommand(
+  const installSM = commands.registerCommand(
     "sourcepawn-vscode.installSM",
     installSMCommand.bind(undefined)
   );
   context.subscriptions.push(installSM);
 
-  let createChangelog = commands.registerCommand(
+  const createChangelog = commands.registerCommand(
     "sourcepawn-vscode.createChangelog",
     createChangelogCommand.bind(undefined)
   );
   context.subscriptions.push(createChangelog);
 
-  let changeSMApi = commands.registerCommand(
+  const changeSMApi = commands.registerCommand(
     "sourcepawn-vscode.changeSMApi",
     changeSMApiCommand.bind(undefined)
   );

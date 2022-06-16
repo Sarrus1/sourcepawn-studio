@@ -8,10 +8,10 @@ import { findMainPath } from "../spUtils";
 const FTPDeploy = require("ftp-deploy");
 
 export async function run(args: any) {
-  let ftpDeploy = new FTPDeploy();
-  let workspaceFolder =
+  const ftpDeploy = new FTPDeploy();
+  const workspaceFolder =
     args === undefined ? undefined : Workspace.getWorkspaceFolder(args);
-  let config: object = Workspace.getConfiguration(
+  const config: object = Workspace.getConfiguration(
     "sourcepawn",
     workspaceFolder
   ).get("UploadOptions");
@@ -59,12 +59,12 @@ export async function run(args: any) {
       );
       return 1;
     }
-    let workspaceRoot = workspaceFolder.uri.fsPath;
+    const workspaceRoot = workspaceFolder.uri.fsPath;
     config["localRoot"] = join(workspaceRoot, config["localRoot"]);
   }
 
   // Copy the config object to avoid https://github.com/microsoft/vscode/issues/80976
-  let ftpConfig = { ...config };
+  const ftpConfig = { ...config };
   // Delete that setting to avoid problems with the ftp/sftp library
   delete ftpConfig["isRootRelative"];
 

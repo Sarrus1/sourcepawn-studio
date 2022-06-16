@@ -9,7 +9,7 @@ import { run as createChangelogCommand } from "./createCHANGELOG";
 
 export async function run(args: any) {
   // get workspace folder
-  let workspaceFolders = Workspace.workspaceFolders;
+  const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
     window.showErrorMessage("No workspace are opened.");
     return;
@@ -23,13 +23,13 @@ export async function run(args: any) {
   const input = await window.showInputBox(inputOptions);
 
   //Select the rootpath
-  let rootpath = join(workspaceFolders?.[0].uri.fsPath, input);
+  const rootpath = join(workspaceFolders?.[0].uri.fsPath, input);
   if (!existsSync(rootpath)) {
     mkdirSync(rootpath);
   }
 
   // Create the plugins folder
-  let pluginsFolderPath = join(rootpath, "plugins");
+  const pluginsFolderPath = join(rootpath, "plugins");
   if (!existsSync(pluginsFolderPath)) {
     mkdirSync(pluginsFolderPath);
   }

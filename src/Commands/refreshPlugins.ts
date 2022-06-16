@@ -11,7 +11,7 @@ export interface ServerOptions {
 }
 
 export async function run(args: any) {
-  let workspaceFolder =
+  const workspaceFolder =
     args === undefined ? undefined : Workspace.getWorkspaceFolder(args);
   const serverOptions: ServerOptions | undefined = Workspace.getConfiguration(
     "sourcepawn",
@@ -44,7 +44,7 @@ export async function run(args: any) {
   });
   try {
     await server.authenticate(serverOptions["password"]);
-    let refresh = await server.execute("sm plugins refresh");
+    const refresh = await server.execute("sm plugins refresh");
     console.log(refresh);
     return 0;
   } catch (e) {

@@ -65,7 +65,7 @@ export class PreProcessor {
 
   public preProcess(range?: Range | undefined): string {
     this.range = range;
-    for (let line of this.lines) {
+    for (const line of this.lines) {
       this.lineNb++;
       let match = line.match(/^\s*#define\s+([A-Za-z_]\w*)[^\S\r\n]+/);
 
@@ -226,7 +226,7 @@ export class PreProcessor {
             break;
           }
         }
-        let define = defines.get(matches[i]);
+        const define = defines.get(matches[i]);
         if (define !== undefined) {
           condition = condition.replace(matches[i], define);
         }

@@ -66,7 +66,7 @@ export function findMainPath(uri?: URI): string | undefined {
   // Check if it exists, meaning it's an absolute path.
   if (!existsSync(mainPath) && workspaceFolders !== undefined) {
     // If it doesn't, loop over the workspace folders until one matches.
-    for (let wk of workspaceFolders) {
+    for (const wk of workspaceFolders) {
       mainPath = resolve(wk.uri.fsPath, mainPath);
       if (existsSync(mainPath)) {
         return mainPath;

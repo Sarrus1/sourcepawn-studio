@@ -68,7 +68,7 @@ export class Semantics {
    * @returns void
    */
   analyze(): void {
-    let line = this.lines[0];
+    const line = this.lines[0];
 
     let lastFunc: FunctionItem | MethodItem | PropertyItem | undefined;
     let lastMMorES: MethodMapItem | EnumStructItem | undefined;
@@ -97,7 +97,7 @@ export class Semantics {
     let typeIdx = 0;
 
     this.fileItems.symbols.forEach((e, i) => {
-      let symbol = {
+      const symbol = {
         id: e.node.text,
         range: pointsToRange(e.node.startPosition, e.node.endPosition),
       };

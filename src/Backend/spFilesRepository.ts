@@ -129,11 +129,11 @@ export class FileItem {
       return uri.toString();
     }
 
-    let includeDirs: string[] = Workspace.getConfiguration("sourcepawn").get(
+    const includeDirs: string[] = Workspace.getConfiguration("sourcepawn").get(
       "optionalIncludeDirsPaths"
     );
-    for (let includeDir of includeDirs) {
-      let includeFile = resolve(
+    for (const includeDir of includeDirs) {
+      const includeFile = resolve(
         ...Workspace.workspaceFolders
           .map((folder) => folder.uri.fsPath)
           .concat(includeDir, includeText)

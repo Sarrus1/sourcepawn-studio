@@ -86,7 +86,7 @@ export async function run(args: URI): Promise<void> {
   } else {
     // If the outputDirectoryPath setting is not empty, make sure it exists before trying to write to it.
     if (!existsSync(outputDir)) {
-      let workspaceFolder = Workspace.workspaceFolders[0];
+      const workspaceFolder = Workspace.workspaceFolders[0];
       outputDir = join(workspaceFolder.uri.fsPath, outputDir);
       if (!existsSync(outputDir)) {
         window
@@ -114,7 +114,7 @@ export async function run(args: URI): Promise<void> {
     workspaceFolder
   ).get("compilerOptions");
 
-  let includePaths: string[] = [
+  const includePaths: string[] = [
     Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
       "SourcemodHome"
     ),

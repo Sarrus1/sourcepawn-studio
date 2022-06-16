@@ -64,7 +64,7 @@ export class EnumMemberItem implements SPItem {
   }
 
   toHover(): Hover {
-    let enumName = this.parent !== globalItem ? this.parent.name : "";
+    const enumName = this.parent !== globalItem ? this.parent.name : "";
     return new Hover([
       { language: "sourcepawn", value: `${enumName} ${this.name};` },
       descriptionToMD(this.description),

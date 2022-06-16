@@ -29,11 +29,11 @@ export async function run(args: any) {
       return downloadSM(progress, token);
     }
   );
-  let spCompPath =
+  const spCompPath =
     Workspace.getConfiguration("sourcepawn").get<string>("SpcompPath") || "";
-  let smHome =
+  const smHome =
     Workspace.getConfiguration("sourcepawn").get<string>("SourcemodHome") || "";
-  let smDir = join(outputDir, "addons/sourcemod/scripting/include");
+  const smDir = join(outputDir, "addons/sourcemod/scripting/include");
   let spComp: string;
   if (Platform === "win32") {
     spComp = join(outputDir, "addons/sourcemod/scripting/spcomp.exe");
@@ -69,7 +69,7 @@ async function downloadSM(
 ): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     let oldStatus: number = 0;
-    var src: string;
+    let src: string;
     if (Platform === "win32") {
       src = "http://sourcemod.net/latest.php?os=windows&version=1.10";
     } else if (Platform === "darwin") {
@@ -84,7 +84,7 @@ async function downloadSM(
     if (token.isCancellationRequested) {
       return;
     }
-    let download = wget.download(src, output, options);
+    const download = wget.download(src, output, options);
     download.on("error", function (err) {
       console.error(err);
       reject(err);
@@ -101,7 +101,7 @@ async function downloadSM(
     download.on("progress", function (status) {
       if (typeof status === "number") {
         status = Math.floor(status * 100);
-        let inc = status - oldStatus;
+        const inc = status - oldStatus;
         oldStatus = status;
         progress.report({
           message: "Downloading Sourcemod",

@@ -22,10 +22,10 @@ export function getSignatureAttributes(
   position: Position
 ): SignatureAttributes {
   let lineNB: number = position.line;
-  let lines = document.getText().split("\n");
+  const lines = document.getText().split("\n");
   let line = lines[lineNB];
 
-  let blankReturn = { croppedLine: undefined, parameterCount: 0 };
+  const blankReturn = { croppedLine: undefined, parameterCount: 0 };
 
   if (line[position.character - 1] === ")") {
     // We've finished this call
@@ -63,7 +63,7 @@ export function getSignatureAttributes(
     }
     i--;
   }
-  let croppedLine: string = line.slice(0, i + 1);
+  const croppedLine: string = line.slice(0, i + 1);
   return { croppedLine, parameterCount };
 }
 
@@ -111,12 +111,12 @@ export function signatureProvider(
   position: Position,
   token: CancellationToken
 ) {
-  let blankReturn = {
+  const blankReturn = {
     signatures: [],
     activeSignature: 0,
     activeParameter: 0,
   };
-  let { croppedLine, parameterCount } = getSignatureAttributes(
+  const { croppedLine, parameterCount } = getSignatureAttributes(
     document,
     position
   );
@@ -127,23 +127,23 @@ export function signatureProvider(
   // Check if it's a method
   let match = croppedLine.match(/\.(\w+)$/);
   if (match) {
-    let methodName = match[1];
-    let allItems = itemsRepo.getAllItems(document.uri);
-    let lastFunc = getLastFunc(position, document, allItems);
-    let newPos = new Position(1, croppedLine.length);
+    const methodName = match[1];
+    const allItems = itemsRepo.getAllItems(document.uri);
+    const lastFunc = getLastFunc(position, document, allItems);
+    const newPos = new Position(1, croppedLine.length);
     const lastEnumStructOrMethodMap = getLastESOrMM(
       position,
       document.uri.fsPath,
       allItems
     );
-    let { variableType, words } = getTypeOfVariable(
+    const { variableType, words } = getTypeOfVariable(
       croppedLine,
       newPos,
       allItems,
       lastFunc,
       lastEnumStructOrMethodMap
     );
-    let variableTypeItem = allItems.find(
+    const variableTypeItem = allItems.find(
       (e) =>
         [CompletionItemKind.Class, CompletionItemKind.Struct].includes(
           e.kind
@@ -160,7 +160,7 @@ export function signatureProvider(
       variableTypes = [variableTypeItem as EnumStructItem];
     }
 
-    let items = itemsRepo
+    const items = itemsRepo
       .getAllItems(document.uri)
       .filter(
         (item) =>
@@ -178,8 +178,8 @@ export function signatureProvider(
   // Match for new keywords
   match = croppedLine.match(/new\s+(\w+)/);
   if (match) {
-    let methodMapName = match[1];
-    let items = itemsRepo
+    const methodMapName = match[1];
+    const items = itemsRepo
       .getAllItems(document.uri)
       .filter(
         (item) =>

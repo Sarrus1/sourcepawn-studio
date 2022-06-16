@@ -24,14 +24,14 @@ export class SMDocumentFormattingEditProvider
     token: CancellationToken
   ): ProviderResult<TextEdit[]> {
     // Get the user's settings.
-    let insertSpaces: boolean =
+    const insertSpaces: boolean =
       Workspace.getConfiguration("editor").get("insertSpaces") || false;
-    let UseTab: string = insertSpaces ? "Never" : "Always";
-    let tabSize: number =
+    const UseTab: string = insertSpaces ? "Never" : "Always";
+    const tabSize: number =
       Workspace.getConfiguration("editor").get("tabSize") || 2;
 
-    let workspaceFolder = Workspace.getWorkspaceFolder(document.uri);
-    let defaultStyles: string[] =
+    const workspaceFolder = Workspace.getWorkspaceFolder(document.uri);
+    const defaultStyles: string[] =
       Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
         "formatterSettings"
       ) || [];
@@ -49,7 +49,7 @@ export class SMDocumentFormattingEditProvider
     );
     const range = new Range(start, end);
     const tempFile = join(__dirname, "temp_format.sp");
-    let file = openSync(tempFile, "w", 0o765);
+    const file = openSync(tempFile, "w", 0o765);
     writeSync(file, document.getText());
     closeSync(file);
     let text = this.clangFormat(tempFile, "utf-8", default_style);
@@ -70,8 +70,8 @@ export class SMDocumentFormattingEditProvider
   }
 
   clangFormat(path: string, enc: string, style): string | undefined {
-    let args = [`-style=${style}`, path];
-    let result = this.spawnClangFormat(args, [
+    const args = [`-style=${style}`, path];
+    const result = this.spawnClangFormat(args, [
       "ignore",
       "pipe",
       process.stderr,
@@ -93,7 +93,7 @@ export class SMDocumentFormattingEditProvider
       return undefined;
     }
     try {
-      let clangFormatProcess = execFileSync(nativeBinary, args);
+      const clangFormatProcess = execFileSync(nativeBinary, args);
       return clangFormatProcess.toString();
     } catch (e) {
       console.error("Error", e);

@@ -100,7 +100,7 @@ export class TypedefItem implements SPItem {
       return undefined;
     }
     this.params_signature.forEach((param, i) => {
-      let nameNode = param.childForFieldName("name");
+      const nameNode = param.childForFieldName("name");
       snippet.appendText(
         param.text.replace(new RegExp(`\\b${nameNode.text}\\b\\s*$`), "")
       );

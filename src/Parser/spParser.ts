@@ -34,9 +34,9 @@ export function parseFile(
   let data = readFileSync(file, "utf-8");
 
   // Test for symbolic links
-  let match = data.match(/^(?:\.\.\/)+(?:[\/\w\-])+\.\w+/);
+  const match = data.match(/^(?:\.\.\/)+(?:[\/\w\-])+\.\w+/);
   if (match !== null) {
-    let folderpath = dirname(file);
+    const folderpath = dirname(file);
     file = resolve(folderpath, match[0]);
     data = readFileSync(file, "utf-8");
   }
@@ -133,7 +133,7 @@ export class TreeWalker {
   }
 
   public walkTree() {
-    for (let child of this.tree.rootNode.children) {
+    for (const child of this.tree.rootNode.children) {
       switch (child.type) {
         case "comment":
           this.pushComment(child);

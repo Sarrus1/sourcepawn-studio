@@ -81,7 +81,7 @@ export async function newDocumentCallback(
     return;
   }
 
-  let fileItems: FileItem = new FileItem(uri.toString());
+  const fileItems: FileItem = new FileItem(uri.toString());
   itemsRepo.documents.set(uri.toString(), false);
 
   try {
