@@ -38,8 +38,8 @@ export function positiveRange(
 }
 
 export function isIncludeSelfFile(file: string, include: string): boolean {
-  let baseName: string = basename(file);
-  let match = include.match(/(\w*)(?:.sp|.inc)?$/);
+  const baseName: string = basename(file);
+  const match = include.match(/(\w*)(?:.sp|.inc)?$/);
   if (match) {
     return baseName == match[1];
   }
@@ -47,14 +47,14 @@ export function isIncludeSelfFile(file: string, include: string): boolean {
 }
 
 export function getParamsFromDeclaration(decl: string): FunctionParam[] {
-  let match = decl.match(/\((.+)\)/);
+  const match = decl.match(/\((.+)\)/);
   if (!match) {
     return [];
   }
   // Remove the leading and trailing parenthesis
   decl = match[1] + ",";
-  let params: FunctionParam[] = [];
-  let re = /\s*(?:(?:const|static)\s+)?(?:(\w+)(?:\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+|\s*\:\s*|\s*&?\s*))?(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
+  const params: FunctionParam[] = [];
+  const re = /\s*(?:(?:const|static)\s+)?(?:(\w+)(?:\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+|\s*\:\s*|\s*&?\s*))?(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
   let matchVariable;
   do {
     matchVariable = re.exec(decl);
@@ -76,7 +76,7 @@ export function getParenthesisCount(line: string): number {
     return pCount;
   }
   for (let i = 0; i < line.length; i++) {
-    let char = line[i];
+    const char = line[i];
     if (char === "'" || char === '"') {
       inAString = !inAString;
     } else if (!inAString && char === "(") {

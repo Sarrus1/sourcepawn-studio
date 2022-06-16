@@ -98,7 +98,7 @@ export class MethodItem implements SPItem {
     if (!this.description) {
       return new Hover([{ language: "sourcepawn", value: this.detail }]);
     }
-    let filename: string = basename(this.filePath, ".inc");
+    const filename: string = basename(this.filePath, ".inc");
     if (this.IsBuiltIn) {
       return new Hover([
         { language: "sourcepawn", value: this.detail },

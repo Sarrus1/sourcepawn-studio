@@ -28,7 +28,7 @@ export function handleToken(this: Semantics, name: string, range: Range): void {
   const start = range.start.character;
 
   if (name === "this") {
-    let item = this.allItems.find(
+    const item = this.allItems.find(
       (e) =>
         [CompletionItemKind.Struct, CompletionItemKind.Class].includes(
           e.kind

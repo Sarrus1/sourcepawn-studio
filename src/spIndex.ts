@@ -30,7 +30,7 @@ export let variableQuery: Parser.Query;
 export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
 
-  let workspaceFolders = Workspace.workspaceFolders || [];
+  const workspaceFolders = Workspace.workspaceFolders || [];
   if (workspaceFolders.length === 0) {
     window.showWarningMessage(
       "No workspace or folder found. \n Please open the folder containing your .sp file, not just the .sp file."
@@ -44,12 +44,12 @@ export function activate(context: ExtensionContext) {
     );
 
     watcher.onDidCreate((uri) => {
-      let uriString = URI.file(uri.fsPath).toString();
+      const uriString = URI.file(uri.fsPath).toString();
       providers.itemsRepository.documents.set(uriString, false);
       let mainPath = findMainPath(uri);
       if (mainPath !== undefined && mainPath !== "") {
         mainPath = URI.file(mainPath).toString();
-        for (let document of Workspace.textDocuments) {
+        for (const document of Workspace.textDocuments) {
           if (document.uri.toString() === mainPath) {
             refreshDiagnostics(document);
             break;
@@ -243,9 +243,9 @@ export function activate(context: ExtensionContext) {
 }
 
 function getDirectories(paths: string[], providers: Providers) {
-  for (let path of paths) {
-    let files = glob.sync(path.replace(/\/\s*$/, "") + "/**/*.{inc,sp}");
-    for (let file of files) {
+  for (const path of paths) {
+    const files = glob.sync(path.replace(/\/\s*$/, "") + "/**/*.{inc,sp}");
+    for (const file of files) {
       providers.itemsRepository.documents.set(URI.file(file).toString(), false);
     }
   }
@@ -259,7 +259,7 @@ async function loadFiles(providers: Providers) {
 
   await parseSMApi(providers.itemsRepository);
 
-  let mainPath = findMainPath();
+  const mainPath = findMainPath();
 
   if (mainPath !== undefined) {
     if (!checkMainPath(mainPath)) {

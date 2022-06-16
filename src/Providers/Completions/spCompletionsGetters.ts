@@ -46,7 +46,7 @@ export function getIncludeFileCompletionList(
   );
   const prevPath = tempName.replace(/((?:[^\'\<\/]+\/)+)+/, "$1");
 
-  let items: CompletionItem[] = [];
+  const items: CompletionItem[] = [];
 
   Array.from(knownIncs.keys()).forEach((e) =>
     incURIs.find((incURI) => {
@@ -130,7 +130,7 @@ export async function getCompletionListFromPosition(
     return getNonMethodItems(allItems, location, lastFunc, lastESOrMM);
   }
 
-  let { variableType, words } = getTypeOfVariable(
+  const { variableType, words } = getTypeOfVariable(
     line,
     position,
     allItems,
@@ -205,7 +205,7 @@ function getNonMethodItems(
 
   allItems.forEach((item) => {
     if (!MP.includes(item.kind)) {
-      let compItem = item.toCompletionItem(lastFunc, lastMMorES, location);
+      const compItem = item.toCompletionItem(lastFunc, lastMMorES, location);
       if (compItem !== undefined) {
         items.push(compItem);
       }

@@ -19,7 +19,7 @@ export function readEnum(
 ): void {
   const { name, nameRange } = getEnumNameAndRange(walker, node);
   // FIXME: argument_declarations contain () as well. This is not specified in node-types.json
-  let { doc, dep } = findDoc(walker, node);
+  const { doc, dep } = findDoc(walker, node);
   const enumItem = new EnumItem(
     name,
     walker.filePath,
@@ -45,7 +45,7 @@ function getEnumNameAndRange(
   walker: TreeWalker,
   node: TreeSitter.SyntaxNode
 ): { name: string; nameRange: Range } {
-  let nameNode = node.childForFieldName("name");
+  const nameNode = node.childForFieldName("name");
   if (nameNode) {
     return {
       name: nameNode.text,
@@ -79,7 +79,7 @@ function readEnumMembers(
     return;
   }
   body.children.forEach((child) => {
-    let prevEnumMember =
+    const prevEnumMember =
       walker.fileItem.items[walker.fileItem.items.length - 1];
     if (
       child.type === "comment" &&

@@ -28,8 +28,8 @@ export function readVariable(
   parent: VariableParent = globalItem
 ): void {
   const variableTypeNode = node.childForFieldName("type");
-  let storageClass: string[] = [];
-  for (let child of node.children) {
+  const storageClass: string[] = [];
+  for (const child of node.children) {
     if (child.type === "variable_storage_class") {
       storageClass.push(child.text);
       continue;

@@ -109,7 +109,7 @@ export class Providers {
     position: Position,
     token: CancellationToken
   ): Promise<Range> {
-    let items = getItemFromPosition(this.itemsRepository, document, position);
+    const items = getItemFromPosition(this.itemsRepository, document, position);
     if (items.length > 0) {
       return items[0].range;
     }

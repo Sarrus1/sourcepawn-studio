@@ -86,7 +86,7 @@ export class FunctionItem implements SPItem {
   }
 
   toHover(): Hover {
-    let filename = basename(this.filePath, ".inc");
+    const filename = basename(this.filePath, ".inc");
 
     if (!this.description) {
       return new Hover({
@@ -168,7 +168,7 @@ export class FunctionItem implements SPItem {
         snippet.appendText(declarationType);
         snippet.appendText(" ");
       }
-      let type = param.type;
+      const type = param.type;
       if (type) {
         snippet.appendText(type + " ");
         //snippet.appendText(type.modifier);

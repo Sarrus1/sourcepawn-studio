@@ -33,7 +33,7 @@ export function provideIncomingCalls(
   }
   const allItems = itemsRepo.getAllItems(URI.file(mainPath));
   const incomingCalls: CallHierarchyIncomingCall[] = [];
-  let spItem = allItems.find(
+  const spItem = allItems.find(
     (e) =>
       e.range !== undefined &&
       e.range.isEqual(item.selectionRange) &&
@@ -45,11 +45,11 @@ export function provideIncomingCalls(
   }
 
   let refs = [...spItem.references];
-  for (let caller of allItems) {
+  for (const caller of allItems) {
     if (!callKind.includes(caller.kind)) {
       continue;
     }
-    let func = caller as FunctionItem | MethodItem;
+    const func = caller as FunctionItem | MethodItem;
     const uri = URI.file(func.filePath);
     const callerItem = new CallHierarchyItem(
       convertToSymbolKind(func.kind),
@@ -89,7 +89,7 @@ export function provideOutgoingCalls(
   }
   const allItems = itemsRepo.getAllItems(URI.file(mainPath));
   const outgoingCalls: CallHierarchyOutgoingCall[] = [];
-  let spItem = allItems.find(
+  const spItem = allItems.find(
     (e) =>
       e.range !== undefined &&
       e.range.isEqual(item.selectionRange) &&
@@ -100,7 +100,7 @@ export function provideOutgoingCalls(
     return undefined;
   }
 
-  for (let calle of allItems) {
+  for (const calle of allItems) {
     if (
       !callKind.includes(calle.kind) ||
       (calle.references && calle.references.length === 0)
@@ -108,7 +108,7 @@ export function provideOutgoingCalls(
       continue;
     }
 
-    let func = calle as FunctionItem | MethodItem;
+    const func = calle as FunctionItem | MethodItem;
     const uri = URI.file(spItem.filePath);
     const calleItem = new CallHierarchyItem(
       convertToSymbolKind(func.kind),

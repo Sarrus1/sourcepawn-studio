@@ -13,9 +13,9 @@ export function semanticTokenProvider(
   document: TextDocument
 ): SemanticTokens {
   const tokensBuilder = new SemanticTokensBuilder(SP_LEGENDS);
-  let allItems: SPItem[] = itemsRepo.getAllItems(document.uri);
+  const allItems: SPItem[] = itemsRepo.getAllItems(document.uri);
 
-  for (let item of allItems) {
+  for (const item of allItems) {
     if (item.kind === CompletionItemKind.Variable) {
       if (item.filePath === document.uri.fsPath) {
         tokensBuilder.push(item.range, "variable", ["declaration"]);
@@ -29,19 +29,19 @@ export function semanticTokenProvider(
       item.kind === CompletionItemKind.Constant &&
       item.references !== undefined
     ) {
-      for (let ref of item.references) {
+      for (const ref of item.references) {
         if (ref.uri.fsPath === document.uri.fsPath) {
           tokensBuilder.push(ref.range, "macro", ["readonly"]);
         }
       }
     } else if (item.kind === CompletionItemKind.EnumMember) {
-      for (let ref of item.references) {
+      for (const ref of item.references) {
         if (ref.uri.fsPath === document.uri.fsPath) {
           tokensBuilder.push(ref.range, "enumMember", ["readonly"]);
         }
       }
     } else if (item.kind === CompletionItemKind.Function) {
-      for (let ref of item.references) {
+      for (const ref of item.references) {
         if (ref.uri.fsPath === document.uri.fsPath) {
           if (item.range.contains(ref.range)) {
             tokensBuilder.push(ref.range, "function", ["declaration"]);
@@ -55,7 +55,7 @@ export function semanticTokenProvider(
         }
       }
     } else if (item.kind === CompletionItemKind.Method) {
-      for (let ref of item.references) {
+      for (const ref of item.references) {
         if (ref.uri.fsPath === document.uri.fsPath) {
           if (item.range.contains(ref.range)) {
             tokensBuilder.push(ref.range, "method", ["declaration"]);
@@ -69,7 +69,7 @@ export function semanticTokenProvider(
         }
       }
     } else if (item.kind === CompletionItemKind.Class) {
-      for (let ref of item.references) {
+      for (const ref of item.references) {
         if (ref.uri.fsPath === document.uri.fsPath) {
           if (item.range.contains(ref.range)) {
             tokensBuilder.push(ref.range, "class", ["declaration"]);
@@ -79,7 +79,7 @@ export function semanticTokenProvider(
         }
       }
     } else if (item.kind === CompletionItemKind.Constructor) {
-      for (let ref of item.references) {
+      for (const ref of item.references) {
         if (ref.uri.fsPath === document.uri.fsPath) {
           if (item.range.contains(ref.range)) {
             tokensBuilder.push(ref.range, "class", ["declaration"]);

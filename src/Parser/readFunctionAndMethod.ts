@@ -31,19 +31,19 @@ export function readFunctionAndMethod(
   getSet?: string
 ): void {
   let item: FunctionItem | MethodItem;
-  let nameNode = node.childForFieldName("name");
-  let returnTypeNode = node.childForFieldName("returnType");
-  let storageClassNode = node.children.find(
+  const nameNode = node.childForFieldName("name");
+  const returnTypeNode = node.childForFieldName("returnType");
+  const storageClassNode = node.children.find(
     (e) => e.type === "function_storage_class"
   );
-  let params = node.children.find((e) => e.type === "argument_declarations");
-  let { doc, dep } = findDoc(walker, node);
-  let returnType = returnTypeNode ? returnTypeNode.text : "";
-  let storageClass = storageClassNode ? [storageClassNode.text] : [];
-  let functionTypeNode = node.children.find(
+  const params = node.children.find((e) => e.type === "argument_declarations");
+  const { doc, dep } = findDoc(walker, node);
+  const returnType = returnTypeNode ? returnTypeNode.text : "";
+  const storageClass = storageClassNode ? [storageClassNode.text] : [];
+  const functionTypeNode = node.children.find(
     (e) => e.type === "function_definition_type"
   );
-  let functionType = functionTypeNode ? functionTypeNode.text : "";
+  const functionType = functionTypeNode ? functionTypeNode.text : "";
   // TODO: Separate storage classes and function types.
   storageClass.push(functionType);
   if (parent === globalItem) {
@@ -63,8 +63,8 @@ export function readFunctionAndMethod(
     );
   } else if (getSet) {
     // Handle properties' getters/setters.
-    let idx = node.text.search(getSet);
-    let nameRange = new Range(
+    const idx = node.text.search(getSet);
+    const nameRange = new Range(
       node.startPosition.row,
       node.startPosition.column + idx,
       node.startPosition.row,
@@ -146,7 +146,7 @@ function addParamsAsVariables(
     return;
   }
 
-  for (let param of params.children) {
+  for (const param of params.children) {
     if (param.type !== "argument_declaration") {
       continue;
     }

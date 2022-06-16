@@ -37,7 +37,7 @@ export async function completionProvider(
         .lineAt(position.line)
         .text.substring(0, position.character);
 
-      let match = line.match(
+      const match = line.match(
         /(\w*)\s+([\w.\(\)]+)(?:\[[\w+ \d]+\])*\s*\=\s*new\s+(\w*)$/
       );
       if (match) {
@@ -53,7 +53,7 @@ export async function completionProvider(
             document.uri.fsPath,
             allItems
           );
-          let { variableType, words } = getTypeOfVariable(
+          const { variableType, words } = getTypeOfVariable(
             // Hack to use getTypeOfVariable
             match[2] + ".",
             newPos,
@@ -71,14 +71,14 @@ export async function completionProvider(
         }
 
         // Filter the item to only keep the constructors.
-        let items = allItems.filter(
+        const items = allItems.filter(
           (item) => item.kind === CompletionItemKind.Constructor
         );
         return new CompletionList(
           items.map((e) => {
             // Show the associated type's constructor first.
             if (e.name === type) {
-              let tmp = e.toCompletionItem();
+              const tmp = e.toCompletionItem();
               tmp.preselect = true;
               return tmp;
             }
@@ -92,8 +92,8 @@ export async function completionProvider(
 
   if (text[text.length - 1] === "$") {
     const allItems = itemsRepo.getAllItems(document.uri);
-    let completions = [];
-    let range = new Range(
+    const completions = [];
+    const range = new Range(
       position.line,
       position.character - 1,
       position.line,
@@ -109,13 +109,13 @@ export async function completionProvider(
       if (!TyFu.includes(e.kind)) {
         return;
       }
-      let item = e as TypedefItem | TypesetItem | FunctionItem;
-      let completion = item.toSnippet(range);
+      const item = e as TypedefItem | TypesetItem | FunctionItem;
+      const completion = item.toSnippet(range);
       if (completion === undefined) {
         return;
       }
       if (Array.isArray(completion)) {
-        for (let comp of completion) {
+        for (const comp of completion) {
           completions.push(comp);
         }
       } else {

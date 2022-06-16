@@ -18,14 +18,14 @@ export class CFGDocumentFormattingEditProvider
     options: FormattingOptions,
     token: CancellationToken
   ): ProviderResult<TextEdit[]> {
-    let workspaceFolder = Workspace.getWorkspaceFolder(document.uri);
+    const workspaceFolder = Workspace.getWorkspaceFolder(document.uri);
 
     // Get the user's settings.
-    let insertSpaces: boolean =
+    const insertSpaces: boolean =
       Workspace.getConfiguration("editor", workspaceFolder).get(
         "insertSpaces"
       ) || false;
-    let tabSize: number =
+    const tabSize: number =
       Workspace.getConfiguration("editor", workspaceFolder).get("tabSize") || 2;
 
     // Apply user settings
@@ -34,9 +34,9 @@ export class CFGDocumentFormattingEditProvider
       document.lineCount - 1,
       document.lineAt(document.lineCount - 1).text.length
     );
-    let range = new Range(start, end);
+    const range = new Range(start, end);
 
-    let text = formatCFGText(document.getText(), insertSpaces, tabSize);
+    const text = formatCFGText(document.getText(), insertSpaces, tabSize);
 
     // If process failed,
     if (text === "") {
@@ -65,10 +65,10 @@ function formatCFGText(
   let isDoubleQuoteOpen = false;
   let slashCounter = 0;
   let bracketCounter = 0;
-  let indentChar = insertSpaces ? " ".repeat(tabSize) : "\t".repeat(tabSize);
+  const indentChar = insertSpaces ? " ".repeat(tabSize) : "\t".repeat(tabSize);
   let firstStringOfLineReached = false;
 
-  for (let char of text) {
+  for (const char of text) {
     if (char === "'" && !isDoubleQuoteOpen && slashCounter < 2) {
       if (isSingleQuoteOpen && !firstStringOfLineReached) {
         newText += "'" + indentChar;

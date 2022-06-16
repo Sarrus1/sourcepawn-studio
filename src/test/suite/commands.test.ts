@@ -33,7 +33,7 @@ const examplesGithub = join(__dirname, testFolderLocation, ".github");
 
 suite("Run tests", () => {
   suiteSetup(async () => {
-    let uri: URI = URI.file(join(__dirname, testFolderLocation));
+    const uri: URI = URI.file(join(__dirname, testFolderLocation));
     vscode.commands.executeCommand("vscode.openFolder", uri);
     rmdir(examplesVscode);
     if (fs.existsSync(examplesReadme)) {
@@ -63,7 +63,7 @@ suite("Run tests", () => {
   suite("Test commands", () => {
     test("Create Task Command", () => {
       rmdir(examplesVscode);
-      let error: number = CreateTaskCommand();
+      const error: number = CreateTaskCommand();
       // If sm_home is not defined, this command will error out.
       // This counts this error as expected behaviour.
       assert.ok(error == 0 || error == 1);
@@ -89,7 +89,7 @@ suite("Run tests", () => {
   suite("Test providers", () => {
     suite("Test Position provider", () => {
       test("Test ConVar g_cvWebhook", () => {
-        let position: vscode.Position = new vscode.Position(16, 8);
+        const position: vscode.Position = new vscode.Position(16, 8);
         return vscode.commands
           .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
           .then((location: vscode.Location[]) => {
@@ -103,7 +103,7 @@ suite("Run tests", () => {
       });
 
       test("Test FooEnum test", () => {
-        let position: vscode.Position = new vscode.Position(17, 10);
+        const position: vscode.Position = new vscode.Position(17, 10);
         return vscode.commands
           .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
           .then((location: vscode.Location[]) => {
@@ -117,7 +117,7 @@ suite("Run tests", () => {
       });
 
       test("Test OnPluginStart", () => {
-        let position: vscode.Position = new vscode.Position(19, 19);
+        const position: vscode.Position = new vscode.Position(19, 19);
         return vscode.commands
           .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
           .then((location: vscode.Location[]) => {
@@ -131,7 +131,7 @@ suite("Run tests", () => {
       });
 
       test("Test CreateConVar", () => {
-        let position: vscode.Position = new vscode.Position(21, 22);
+        const position: vscode.Position = new vscode.Position(21, 22);
         return vscode.commands
           .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
           .then((location: vscode.Location[]) => {
@@ -145,7 +145,7 @@ suite("Run tests", () => {
       });
 
       test("Test test line 28", () => {
-        let position: vscode.Position = new vscode.Position(28, 4);
+        const position: vscode.Position = new vscode.Position(28, 4);
         return vscode.commands
           .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
           .then((location: vscode.Location[]) => {
@@ -159,7 +159,7 @@ suite("Run tests", () => {
       });
 
       test("Test test.fullAccountID line 28", () => {
-        let position: vscode.Position = new vscode.Position(28, 13);
+        const position: vscode.Position = new vscode.Position(28, 13);
         return vscode.commands
           .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
           .then((location: vscode.Location[]) => {
@@ -170,7 +170,7 @@ suite("Run tests", () => {
       });
 
       test("Test test line 29", () => {
-        let position: vscode.Position = new vscode.Position(29, 4);
+        const position: vscode.Position = new vscode.Position(29, 4);
         return vscode.commands
           .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
           .then((location: vscode.Location[]) => {
@@ -184,7 +184,7 @@ suite("Run tests", () => {
       });
 
       test("Test test.Init(1) line 29", () => {
-        let position: vscode.Position = new vscode.Position(29, 9);
+        const position: vscode.Position = new vscode.Position(29, 9);
         return vscode.commands
           .executeCommand("vscode.executeDefinitionProvider", mainUri, position)
           .then((location: vscode.Location[]) => {
@@ -197,7 +197,7 @@ suite("Run tests", () => {
 
     suite("Test Hover provider", () => {
       test("Test ConVar g_cvWebhook", () => {
-        let position: vscode.Position = new vscode.Position(16, 3);
+        const position: vscode.Position = new vscode.Position(16, 3);
         return vscode.commands
           .executeCommand("vscode.executeHoverProvider", mainUri, position)
           .then((hover: vscode.Hover[]) => {
@@ -207,7 +207,7 @@ suite("Run tests", () => {
       });
 
       test("Test OnPluginStart", () => {
-        let position: vscode.Position = new vscode.Position(19, 19);
+        const position: vscode.Position = new vscode.Position(19, 19);
         return vscode.commands
           .executeCommand("vscode.executeHoverProvider", mainUri, position)
           .then((hover: vscode.Hover[]) => {
@@ -217,7 +217,7 @@ suite("Run tests", () => {
       });
 
       test("Test CreateConVar", () => {
-        let position: vscode.Position = new vscode.Position(21, 22);
+        const position: vscode.Position = new vscode.Position(21, 22);
         return vscode.commands
           .executeCommand("vscode.executeHoverProvider", mainUri, position)
           .then((hover: vscode.Hover[]) => {
@@ -227,7 +227,7 @@ suite("Run tests", () => {
       });
 
       test("Test test.Init(1) line 29", () => {
-        let position: vscode.Position = new vscode.Position(29, 9);
+        const position: vscode.Position = new vscode.Position(29, 9);
         return vscode.commands
           .executeCommand("vscode.executeHoverProvider", mainUri, position)
           .then((hover: vscode.Hover[]) => {
@@ -238,7 +238,7 @@ suite("Run tests", () => {
     });
 
     test("Test Doc Completion provider", () => {
-      let position = new vscode.Position(31, 0);
+      const position = new vscode.Position(31, 0);
       return vscode.commands
         .executeCommand(
           "vscode.executeCompletionItemProvider",
@@ -252,7 +252,7 @@ suite("Run tests", () => {
     });
 
     test("Test Signature Help provider", () => {
-      let position = new vscode.Position(24, 18);
+      const position = new vscode.Position(24, 18);
       return vscode.commands
         .executeCommand(
           "vscode.executeSignatureHelpProvider",
@@ -297,7 +297,7 @@ function rmdir(dir: string): void {
     return;
   }
   fs.readdirSync(dir).forEach((f) => {
-    let pathname = join(dir, f);
+    const pathname = join(dir, f);
     if (!fs.existsSync(pathname)) {
       return fs.unlinkSync(pathname);
     }

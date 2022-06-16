@@ -53,7 +53,7 @@ export function run(rootpath?: string) {
   }
 
   // get workspace folder
-  let workspaceFolders = Workspace.workspaceFolders;
+  const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
     window.showErrorMessage("No workspace are opened.");
     return 2;
@@ -65,26 +65,26 @@ export function run(rootpath?: string) {
   }
 
   // create task folder if it doesn't exist
-  let taskFolderPath = join(rootpath, ".vscode");
+  const taskFolderPath = join(rootpath, ".vscode");
   if (!existsSync(taskFolderPath)) {
     mkdirSync(taskFolderPath);
   }
 
   // Check if file already exists
-  let taskFilePath = join(rootpath, ".vscode/tasks.json");
+  const taskFilePath = join(rootpath, ".vscode/tasks.json");
   if (existsSync(taskFilePath)) {
     window.showErrorMessage("tasks.json file already exists.");
     return 3;
   }
-  let myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
+  const myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
     .extensionPath;
-  let tasksTemplatesPath: string = join(myExtDir, "templates/tasks.json");
+  const tasksTemplatesPath: string = join(myExtDir, "templates/tasks.json");
   copyFileSync(tasksTemplatesPath, taskFilePath);
   SpcompPath = SpcompPath.replace(/\\/gm, "\\\\");
   sm_home = sm_home.replace(/\\/gm, "\\\\");
   // Replace placeholders
   try {
-    let data = readFileSync(taskFilePath, "utf8");
+    const data = readFileSync(taskFilePath, "utf8");
     let result = data.replace(/\${SpcompPath}/gm, SpcompPath);
     result = result.replace(/\${include_path}/gm, sm_home);
     writeFileSync(taskFilePath, result, "utf8");

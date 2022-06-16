@@ -27,27 +27,27 @@ export function parseSPCompErrors(
   do {
     matches = re.exec(stdout.toString() || "");
     if (matches) {
-      let range = new Range(
+      const range = new Range(
         new Position(Number(matches[2]) - 1, 0),
         new Position(Number(matches[2]) - 1, 256)
       );
-      let severity =
+      const severity =
         matches[4] === "warning"
           ? DiagnosticSeverity.Warning
           : DiagnosticSeverity.Error;
-      let uri = URI.file(
+      const uri = URI.file(
         filePath === undefined ? matches[1] : filePath
       ).toString();
       diagnostics = DocumentDiagnostics.get(uri) || [];
 
-      let message = generateDetailedError(matches[5], matches[6]);
-      let diagnostic = new Diagnostic(range, message, severity);
+      const message = generateDetailedError(matches[5], matches[6]);
+      const diagnostic = new Diagnostic(range, message, severity);
       diagnostics.push(diagnostic);
       DocumentDiagnostics.set(uri, diagnostics);
     }
   } while (matches);
   compilerDiagnostics.clear();
-  for (let [uri, diagnostics] of DocumentDiagnostics) {
+  for (const [uri, diagnostics] of DocumentDiagnostics) {
     compilerDiagnostics.set(URI.parse(uri), diagnostics);
   }
 }

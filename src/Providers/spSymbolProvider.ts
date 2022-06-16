@@ -35,10 +35,10 @@ export function symbolProvider(
   document: TextDocument,
   token: CancellationToken
 ): DocumentSymbol[] {
-  let symbols: DocumentSymbol[] = [];
-  let items = itemsRepo.getAllItems(document.uri);
-  let file = document.uri.fsPath;
-  for (let item of items) {
+  const symbols: DocumentSymbol[] = [];
+  const items = itemsRepo.getAllItems(document.uri);
+  const file = document.uri.fsPath;
+  for (const item of items) {
     if (allowedKinds.includes(item.kind) && item.filePath === file) {
       // Don't add non global variables here
       if (
@@ -47,7 +47,7 @@ export function symbolProvider(
       ) {
         continue;
       }
-      let symbol = item.toDocumentSymbol();
+      const symbol = item.toDocumentSymbol();
 
       // Check if the item can have childrens
       if (allowedParentsKinds.includes(item.kind) && symbol !== undefined) {

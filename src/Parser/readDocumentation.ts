@@ -12,7 +12,7 @@ export function findDoc(walker: TreeWalker, node: SyntaxNode): DocString {
   const txt: string[] = [];
   let dep: string;
   let endIndex = node.startPosition.row;
-  for (let deprec of walker.deprecated.reverse()) {
+  for (const deprec of walker.deprecated.reverse()) {
     if (endIndex === deprec.endPosition.row) {
       dep = deprec.childForFieldName("info")?.text;
       break;
@@ -21,7 +21,7 @@ export function findDoc(walker: TreeWalker, node: SyntaxNode): DocString {
       break;
     }
   }
-  for (let comment of walker.comments.reverse()) {
+  for (const comment of walker.comments.reverse()) {
     if (endIndex === comment.endPosition.row + (dep ? 2 : 1)) {
       txt.push(commentToDoc(comment.text));
       endIndex = comment.startPosition.row;

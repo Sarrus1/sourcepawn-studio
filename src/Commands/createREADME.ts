@@ -3,7 +3,7 @@ import { existsSync, readFileSync, copyFileSync, writeFileSync } from "fs";
 import { join, basename } from "path";
 
 export function run(rootpath?: string) {
-  let GithubName: string = Workspace.getConfiguration("sourcepawn").get(
+  const GithubName: string = Workspace.getConfiguration("sourcepawn").get(
     "GithubName"
   );
   if (!GithubName) {
@@ -23,7 +23,7 @@ export function run(rootpath?: string) {
   }
 
   // get workspace folder
-  let workspaceFolders = Workspace.workspaceFolders;
+  const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
     window.showErrorMessage("No workspace are opened.");
     return 1;
@@ -34,17 +34,17 @@ export function run(rootpath?: string) {
     rootpath = workspaceFolders?.[0].uri.fsPath;
   }
 
-  let rootname = basename(rootpath);
+  const rootname = basename(rootpath);
 
   // Check if README.md already exists
-  let readmeFilePath = join(rootpath, "README.md");
+  const readmeFilePath = join(rootpath, "README.md");
   if (existsSync(readmeFilePath)) {
     window.showErrorMessage("README.md already exists, aborting.");
     return 2;
   }
-  let myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
+  const myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
     .extensionPath;
-  let tasksTemplatesPath: string = join(
+  const tasksTemplatesPath: string = join(
     myExtDir,
     "templates/README_template.MD"
   );

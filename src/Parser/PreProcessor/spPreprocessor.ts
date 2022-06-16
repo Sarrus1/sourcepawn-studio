@@ -308,7 +308,7 @@ export class PreProcessor {
             break;
           }
         }
-        let define = defines.get(matches[i]);
+        const define = defines.get(matches[i]);
         if (define !== undefined) {
           condition = condition.replace(matches[i], define);
         }

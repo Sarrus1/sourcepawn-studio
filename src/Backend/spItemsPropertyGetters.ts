@@ -95,7 +95,7 @@ export function getTypeOfVariable(
 
   if (words.length > 1) {
     words = words.slice(0, words.length - 1).reverse();
-    for (let word of words) {
+    for (const word of words) {
       variableType = allItems.find(
         (e) =>
           (e.kind === CompletionItemKind.Method ||
@@ -124,7 +124,7 @@ export function parseMethodsFromLine(line: string, index: number): ParsedLine {
   let bCounter = 0;
   let pCounter = 0;
   let wordCounter = 0;
-  let words = [""];
+  const words = [""];
   while (i >= 0) {
     if (line[i] === "]") {
       bCounter++;

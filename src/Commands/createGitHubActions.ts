@@ -4,9 +4,9 @@ import { basename, join } from "path";
 
 export function run(rootpath?: string) {
   // get workspace folder
-  let workspaceFolders = Workspace.workspaceFolders;
+  const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
-    let err: string = "No workspace are opened.";
+    const err: string = "No workspace are opened.";
     window.showErrorMessage(err);
     console.error(err);
     return 1;
@@ -17,7 +17,7 @@ export function run(rootpath?: string) {
     rootpath = workspaceFolders?.[0].uri.fsPath;
   }
 
-  let rootname = basename(rootpath);
+  const rootname = basename(rootpath);
 
   // create .github folder if it doesn't exist
   let masterFolderPath = join(rootpath, ".github");
@@ -33,12 +33,12 @@ export function run(rootpath?: string) {
   // Check if main.yml already exists
   let masterFilePath = join(rootpath, ".github/workflows/main.yml");
   if (existsSync(masterFilePath)) {
-    let err: string = "main.yml already exists, aborting.";
+    const err: string = "main.yml already exists, aborting.";
     window.showErrorMessage(err);
     console.error(err);
     return 2;
   }
-  let myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
+  const myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
     .extensionPath;
   let tasksTemplatesPath: string = join(
     myExtDir,
@@ -58,7 +58,7 @@ export function run(rootpath?: string) {
   // Check if test.yml already exists
   masterFilePath = join(rootpath, ".github/workflows/test.yml");
   if (existsSync(masterFilePath)) {
-    let err: string = "test.yml already exists, aborting.";
+    const err: string = "test.yml already exists, aborting.";
     window.showErrorMessage(err);
     console.error(err);
     return 2;
