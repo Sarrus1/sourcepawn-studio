@@ -27,6 +27,7 @@
 - Fixed an issue where methods definition would not point to the correct method.
 - Fixed deprecated color highlighting.
 - Fixed a highlighting bugs with methods/properties definitions.
+- Fixed SP linter arguments not being parsed correctly.
 
 ### Removed
 

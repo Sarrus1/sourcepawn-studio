@@ -16,7 +16,6 @@ export function registerSPLinter(context: ExtensionContext) {
     window.onDidChangeActiveTextEditor((editor) => {
       if (editor) {
         refreshDiagnostics(editor.document);
-        refreshCfgDiagnostics(editor.document);
       }
     })
   );
