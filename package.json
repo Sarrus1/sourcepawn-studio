@@ -545,6 +545,7 @@
     "peggy": "^1.2.0",
     "prettier": "2.2.1",
     "rcon-srcds": "^2.0.1",
+    "safe-evaluate-expression": "^1.7.2",
     "ts-pegjs": "^1.2.1",
     "vsce": "^2.9.1",
     "vscode-uri": "^3.0.3",

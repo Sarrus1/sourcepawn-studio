@@ -1,5 +1,6 @@
 import { Diagnostic, DiagnosticSeverity, Range } from "vscode";
 import { URI } from "vscode-uri";
+import evaluate from "safe-evaluate-expression";
 
 import { FileItem } from "../../Backend/spFilesRepository";
 import { ItemsRepository } from "../../Backend/spItemsRepository";
@@ -316,7 +317,7 @@ export class PreProcessor {
     }
     let evaluation = false;
     try {
-      evaluation = eval(condition);
+      evaluation = evaluate(condition);
     } catch (err) {
       // TODO: Make the range more precise.
       const range = new Range(this.lineNb, 0, this.lineNb, line.length);
