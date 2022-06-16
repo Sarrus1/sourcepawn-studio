@@ -72,41 +72,43 @@ export async function refreshDiagnostics(document: TextDocument) {
     const mainPath = findMainPath(document.uri);
 
     // Separate the cases if we are using mainPath or not.
-    let scriptingFolder: string;
+    let scriptingFolderPath: string;
     let filePath: string;
     if (mainPath !== undefined && mainPath !== "") {
-      scriptingFolder = dirname(mainPath);
+      scriptingFolderPath = dirname(mainPath);
       filePath = mainPath;
     } else {
-      scriptingFolder = dirname(document.uri.fsPath);
-      const file = openSync(tmpFile, "w", 0o765);
+      scriptingFolderPath = dirname(document.uri.fsPath);
+      let file = openSync(tmpFile, "w", 0o765);
       writeSync(file, document.getText());
       closeSync(file);
       filePath = tmpFile;
     }
 
-    // Generate compiler arguments.
-    const compilerArgs = [
-      "-i" +
-        Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
-          "SourcemodHome"
-        ) || "",
-      "-i" + scriptingFolder,
-      "-i" + join(scriptingFolder, "include"),
-      "-v0",
-      filePath,
-      "-o" + tmpPath,
-    ];
+    // Add the compiler options from the settings.
+    const compilerOptions: string[] = Workspace.getConfiguration(
+      "sourcepawn",
+      workspaceFolder
+    ).get("linterCompilerOptions");
 
-    // Add a space at the beginning of every element, for security.
-    Workspace.getConfiguration("sourcepawn", workspaceFolder)
-      .get<string[]>("linterCompilerOptions")
-      .forEach((e) => compilerArgs.push(" " + e));
+    let includePaths: string[] = [
+      Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
+        "SourcemodHome"
+      ),
+      join(scriptingFolderPath, "include"),
+      scriptingFolderPath,
+    ];
 
     // Add the optional includes folders.
     getAllPossibleIncludeFolderPaths(document.uri, true).forEach((e) =>
-      compilerArgs.push(`-i${e}`)
+      includePaths.push(e)
     );
+
+    let compilerArgs = [document.uri.fsPath, `-o${tmpPath}`];
+
+    // Add include paths and compiler options to compiler args.
+    includePaths.forEach((path) => compilerArgs.push(`-i${path}`));
+    compilerArgs = compilerArgs.concat(compilerOptions);
 
     // Run the blank compile.
     execFile(spcomp, compilerArgs, (error, stdout) => {
