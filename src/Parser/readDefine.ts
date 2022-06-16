@@ -21,10 +21,12 @@ export function readDefine(
   const fullRange = pointsToRange(node.startPosition, node.endPosition);
   const { doc, dep } = findDoc(walker, node);
 
+  const { value, desc } = explodeDefine(valueNode?.text);
+
   const defineItem = new DefineItem(
     nameNode.text,
-    valueNode !== null ? valueNode.text.trim() : "",
-    "",
+    value,
+    desc,
     walker.filePath,
     range,
     walker.isBuiltin,
@@ -32,4 +34,24 @@ export function readDefine(
     dep
   );
   walker.fileItem.items.push(defineItem);
+}
+
+function explodeDefine(value: string): { value: string; desc: string } {
+  if (!value) {
+    return { value: "", desc: "" };
+  }
+  let match = value.match(/(?:\/\*)(.+?(?=\*\/))/g);
+  if (!match) {
+    match = value.match(/(?:\/\/)(.*)/);
+    if (!match) {
+      return { value: "", desc: "" };
+    }
+    let desc = match[match.length - 1].trim();
+    return {
+      value: value.slice(0, value.length - desc.length - 2).trim(),
+      desc,
+    };
+  }
+  let desc = match[match.length - 1].slice(2).trim();
+  return { value: value.slice(0, value.length - desc.length - 4).trim(), desc };
 }
