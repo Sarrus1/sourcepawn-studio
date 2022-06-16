@@ -107,6 +107,13 @@ export class PreProcessor {
         continue;
       }
 
+      match = this.getLine().match(/^\s*#emit/);
+
+      if (match) {
+        this.addLine("");
+        continue;
+      }
+
       match = this.getLine().match(/^\s*#endif/);
 
       if (match) {
