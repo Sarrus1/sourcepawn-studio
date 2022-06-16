@@ -1,4 +1,4 @@
-import { CompletionItemKind, Diagnostic, Range } from "vscode";
+import { CompletionItemKind, Diagnostic } from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { resolve, dirname } from "path";
 
@@ -34,7 +34,7 @@ export function parseFile(
   let data = readFileSync(file, "utf-8");
 
   // Test for symbolic links
-  const match = data.match(/^(?:\.\.\/)+(?:[\/\w\-])+\.\w+/);
+  const match = data.match(/^(?:\.\.\/)+(?:[/\w-])+\.\w+/);
   if (match !== null) {
     const folderpath = dirname(file);
     file = resolve(folderpath, match[0]);
