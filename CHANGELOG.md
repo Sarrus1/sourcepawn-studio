@@ -17,6 +17,7 @@
 - Improved the old syntax support.
 - Improved incorrect configuration warnings.
 - Improved missing main path error message.
+- Improved Valve KeyValue and Valve CFG highlighting.
 
 ### Fixed
 
