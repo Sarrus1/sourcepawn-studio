@@ -190,16 +190,7 @@ export function activate(context: ExtensionContext) {
           language: "sp-translations",
         },
         {
-          language: "sp-gamedata",
-        },
-        {
-          language: "valve-cfg",
-        },
-        {
-          language: "valve-ini",
-        },
-        {
-          language: "sourcemod-kv",
+          language: "valve-kv",
         },
       ],
       new CFGDocumentFormattingEditProvider()

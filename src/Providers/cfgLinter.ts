@@ -8,14 +8,6 @@ import {
 import { parse, SyntaxError } from "../Parser/cfgParser/cfgParser";
 import { cfgDiagnostics } from "./Linter/compilerDiagnostics";
 
-const cfgLangID = [
-  "sp-translations",
-  "sp-gamedata",
-  "valve-cfg",
-  "valve-ini",
-  "sourcemod-kv",
-];
-
 /**
  * Lint a Valve Key Value TextDocument object and add its diagnostics to the collection.
  * @param  {TextDocument} document    The document to lint.
@@ -32,7 +24,7 @@ export async function refreshCfgDiagnostics(document: TextDocument) {
   ).get<boolean>("enableLinter");
 
   // Stop early if linter is disabled.
-  if (!(enableLinter && cfgLangID.includes(document.languageId))) {
+  if (!enableLinter || document.languageId !== "valve-kv") {
     cfgDiagnostics.set(document.uri, []);
     return;
   }

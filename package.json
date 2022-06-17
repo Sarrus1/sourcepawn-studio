@@ -35,11 +35,8 @@
   ],
   "activationEvents": [
     "onLanguage:sourcepawn",
-    "onLanguage:sp-translations",
-    "onLanguage:sp-gamedata",
+    "onLanguage:valve-kv",
     "onLanguage:valve-cfg",
-    "onLanguage:valve-ini",
-    "onLanguage:sourcemod-kv",
     "onCommand:sourcepawn-vscode.createTask",
     "onCommand:sourcepawn-vscode.createScript",
     "onCommand:sourcepawn-vscode.createREADME",

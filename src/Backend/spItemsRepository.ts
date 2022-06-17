@@ -42,25 +42,25 @@ export class ItemsRepository implements Disposable {
   }
 
   public handleDocumentChange(event: TextDocumentChangeEvent) {
-    if (
-      !isSPFile(event.document.uri.fsPath) ||
-      event.contentChanges.length === 0
-    ) {
+    if (event.contentChanges.length === 0) {
       return;
     }
-    refreshDiagnostics(event.document);
+    if (isSPFile(event.document.uri.fsPath)) {
+      refreshDiagnostics(event.document);
+      documentChangeCallback(this, event);
+      updateDecorations(this);
+      return;
+    }
     refreshCfgDiagnostics(event.document);
-    documentChangeCallback(this, event);
-    updateDecorations(this);
   }
 
   public handleNewDocument(document: TextDocument) {
-    if (!isSPFile(document.uri.fsPath)) {
+    if (isSPFile(document.uri.fsPath)) {
+      refreshDiagnostics(document);
+      newDocumentCallback(this, document.uri);
       return;
     }
-    refreshDiagnostics(document);
     refreshCfgDiagnostics(document);
-    newDocumentCallback(this, document.uri);
   }
 
   public handleDocumentOpening(filePath: string) {
