@@ -598,7 +598,7 @@
       "patterns": [
         {
           "comment": "Float literal",
-          "match": "\\b[0-9]+\\.[0-9]+\\b",
+          "match": "[0-9]+\\.[0-9]+",
           "name": "constant.numeric.float.sourcepawn"
         },
         {
