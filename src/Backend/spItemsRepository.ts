@@ -14,7 +14,7 @@ import { events } from "../Misc/sourceEvents";
 import { FileItem } from "./spFilesRepository";
 import {
   handleAddedDocument,
-  handleDocumentChange,
+  documentChangeCallback,
   isSPFile,
   newDocumentCallback,
 } from "./spFileHandlers";
@@ -22,6 +22,7 @@ import { getAllItems, getItemFromPosition } from "./spItemsGetters";
 import { refreshDiagnostics } from "../Providers/spLinter";
 import { refreshCfgDiagnostics } from "../Providers/cfgLinter";
 import { updateDecorations } from "../Providers/decorationsProvider";
+import { performance } from "perf_hooks";
 
 export class ItemsRepository implements Disposable {
   public fileItems: Map<string, FileItem>;
@@ -41,12 +42,15 @@ export class ItemsRepository implements Disposable {
   }
 
   public handleDocumentChange(event: TextDocumentChangeEvent) {
-    if (!isSPFile(event.document.uri.fsPath)) {
+    if (
+      !isSPFile(event.document.uri.fsPath) ||
+      event.contentChanges.length === 0
+    ) {
       return;
     }
     refreshDiagnostics(event.document);
     refreshCfgDiagnostics(event.document);
-    handleDocumentChange(this, event);
+    documentChangeCallback(this, event);
     updateDecorations(this);
   }
 

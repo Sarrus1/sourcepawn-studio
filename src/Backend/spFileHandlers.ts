@@ -32,7 +32,7 @@ export function handleAddedDocument(
  * @param  {TextDocumentChangeEvent} event  The document change event triggered by the file change.
  * @returns void
  */
-export async function handleDocumentChange(
+export async function documentChangeCallback(
   itemsRepo: ItemsRepository,
   event: TextDocumentChangeEvent
 ) {
@@ -40,8 +40,7 @@ export async function handleDocumentChange(
   const filePath = event.document.uri.fsPath.replace(".git", "");
 
   // Hack to make the function non blocking, and not prevent the completionProvider from running.
-  await new Promise((resolve) => setTimeout(resolve, 50));
-
+  await null;
   const fileItem = new FileItem(fileUri);
 
   let text = event.document.getText();
