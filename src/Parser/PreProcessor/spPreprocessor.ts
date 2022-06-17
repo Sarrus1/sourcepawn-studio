@@ -301,12 +301,14 @@ export class PreProcessor {
         if (matches[i] === "defined") {
           if (i + 1 < matches.length && defines.has(matches[i + 1])) {
             condition = condition.replace(
-              RegExp(`defined\\s*${matches[i]}`),
+              RegExp(`defined\\s*${matches[i + 1]}`),
               "true"
             );
           } else {
-            condition = "false";
-            break;
+            condition = condition.replace(
+              RegExp(`defined\\s*${matches[i + 1]}`),
+              "false"
+            );
           }
         }
         const define = defines.get(matches[i]);
