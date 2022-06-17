@@ -433,26 +433,16 @@
         "configuration": "./LanguageConfigurations/SPConfiguration.language-configuration.json"
       },
       {
-        "id": "sp-translations",
+        "id": "valve-kv",
         "aliases": [
-          "SourcePawn Translations",
-          "Phrases"
+          "Valve KeyValue"
         ],
         "extensions": [
-          ".phrases.txt"
+          ".phrases.txt",
+          ".games.txt",
+          ".kv"
         ],
-        "configuration": "./LanguageConfigurations/SPMiscConfiguration.language-configuration.json"
-      },
-      {
-        "id": "sp-gamedata",
-        "aliases": [
-          "SourcePawn Gamedata",
-          "Gamedata"
-        ],
-        "extensions": [
-          ".games.txt"
-        ],
-        "configuration": "./LanguageConfigurations/SPMiscConfiguration.language-configuration.json"
+        "configuration": "./LanguageConfigurations/ValveKVConfiguration.language-configuration.json"
       },
       {
         "id": "valve-cfg",
@@ -463,29 +453,7 @@
         "extensions": [
           ".cfg"
         ],
-        "configuration": "./LanguageConfigurations/SPMiscConfiguration.language-configuration.json"
-      },
-      {
-        "id": "valve-ini",
-        "aliases": [
-          "Valve INI",
-          "INI"
-        ],
-        "extensions": [
-          ".ini"
-        ],
-        "configuration": "./LanguageConfigurations/SPMiscConfiguration.language-configuration.json"
-      },
-      {
-        "id": "sourcemod-kv",
-        "aliases": [
-          "Sourcemod KV",
-          "KV"
-        ],
-        "extensions": [
-          ".kv"
-        ],
-        "configuration": "./LanguageConfigurations/SPMiscConfiguration.language-configuration.json"
+        "configuration": "./LanguageConfigurations/ValveCFGConfiguration.language-configuration.json"
       }
     ],
     "grammars": [
@@ -502,29 +470,14 @@
         "path": "./syntaxes/sourcepawn-jsdoc.json"
       },
       {
-        "language": "sp-translations",
-        "scopeName": "text.sourcepawn-misc",
-        "path": "./syntaxes/sp-translations.tmLanguage.json"
-      },
-      {
-        "language": "sp-gamedata",
-        "scopeName": "text.sourcepawn-misc",
-        "path": "./syntaxes/sp-gamedata.tmLanguage.json"
+        "language": "valve-kv",
+        "scopeName": "text.valve-kv",
+        "path": "./syntaxes/valve-kv.tmLanguage.json"
       },
       {
         "language": "valve-cfg",
-        "scopeName": "text.sourcepawn-misc",
-        "path": "./syntaxes/sourcepawn-misc.tmLanguage.json"
-      },
-      {
-        "language": "valve-ini",
-        "scopeName": "text.sourcepawn-misc",
-        "path": "./syntaxes/sourcepawn-misc.tmLanguage.json"
-      },
-      {
-        "language": "sourcemod-kv",
-        "scopeName": "text.sourcepawn-misc",
-        "path": "./syntaxes/sourcepawn-misc.tmLanguage.json"
+        "scopeName": "text.valve-cfg",
+        "path": "./syntaxes/valve-cfg.tmLanguage.json"
       }
     ],
     "snippets": [

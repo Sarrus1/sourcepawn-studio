@@ -1,5 +1,5 @@
 {
-  "scopeName": "text.sourcepawn-misc",
+  "scopeName": "text.valve-cfg",
   "patterns": [
     {
       "include": "#keys"

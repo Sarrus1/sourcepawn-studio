@@ -1,0 +1,125 @@
+{
+  "scopeName": "text.valve-kv",
+  "patterns": [
+    { "include": "#value" },
+    {
+      "include": "#key"
+    },
+    {
+      "include": "#comments"
+    }
+  ],
+
+  "repository": {
+    "key": {
+      "patterns": [
+        {
+          "match": "(\"[^\"]*\")",
+          "name": "support.type.property-name.double.valve-kv"
+        }
+      ]
+    },
+
+    "value": {
+      "patterns": [
+        {
+          "comment": "bracket value",
+          "begin": "{",
+          "end": "}",
+          "name": "meta.structure.dictionnary.valve-kv",
+          "patterns": [
+            {
+              "include": "#source"
+            }
+          ]
+        },
+        {
+          "comment": "Double quote string",
+          "match": "(\"[^\"]*\")\\s*(\"[^\"]*\")",
+          "captures": {
+            "1": { "name": "support.type.property-name.double.valve-kv" },
+            "2": {
+              "name": "string.quoted.double.valve-kv",
+              "patterns": [
+                {
+                  "name": "constant.character.valve-kv",
+                  "match": "\\{([\\d]+)\\}",
+                  "captures": {
+                    "1": {
+                      "name": "constant.numeric.valve-kv"
+                    }
+                  }
+                },
+                {
+                  "name": "constant.character.valve-kv",
+                  "match": "\\{(\\w+)\\}",
+                  "captures": {
+                    "1": {
+                      "name": "constant.character.escape.valve-kv"
+                    }
+                  }
+                },
+                {
+                  "name": "constant.character.valve-kv",
+                  "match": "\\{([\\d]+):([A-Za-z]+)\\}",
+                  "captures": {
+                    "1": {
+                      "name": "constant.numeric.valve-kv"
+                    },
+                    "2": {
+                      "name": "string.regexp.valve-kv"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.valve-kv",
+          "match": "^[a-z_]+\\s"
+        },
+        {
+          "name": "support.function.valve-kv",
+          "match": "(\\s[a-z]+_)|(^[a-z]+_)|(^[a-z]+)|([a-z]+.cfg)"
+        },
+        {
+          "name": "support.class.valve-kv",
+          "match": "[a-zA-Z0-9+\\-_]"
+        },
+        {
+          "name": "constant.numeric.valve-kv",
+          "match": "\\s([0-9])+"
+        }
+      ]
+    },
+
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.valve-kv",
+          "match": "//(.*)$"
+        },
+        {
+          "name": "comment.line.number-sign",
+          "match": "#(.*)$"
+        },
+        {
+          "begin": "/\\*",
+          "captures": {
+            "0": {
+              "name": "comment.block.valve-kv"
+            }
+          },
+          "end": "\\*/",
+          "name": "comment.block.valve-kv"
+        }
+      ]
+    }
+  }
+}
