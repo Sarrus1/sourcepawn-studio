@@ -2,132 +2,96 @@
   "scopeName": "text.valve-cfg",
   "patterns": [
     {
-      "include": "#keys"
+      "include": "#function"
     },
     {
-      "include": "#value"
-    },
-    {
-      "include": "#keywords"
-    },
-    {
-      "include": "#strings"
+      "include": "#cvar"
     },
     {
       "include": "#comments"
+    },
+    {
+      "include": "#value"
     }
   ],
+
   "repository": {
-    "keys": {
+    "function": {
       "patterns": [
         {
-          "comment": "This matches keys with or without trailing comments.",
-          "name": "support.type.property-name.single.sp-translations",
-          "match": "^\\s*('[^']*')(\n|\\s*//.*)$",
+          "name": "support.function.valve-cfg",
+          "match": "^\\s*\\b(alias|bind_osx|bind|clear|echo|execifexists|execwithwhitelist|exec|host_writeconfig_ss|host_writeconfig|key_updatelayout|playvol|say_team|say|unbindalljoystick|unbindallmousekeyboard|unbindall)",
+          "captures": { "1": { "name": "support.function.valve-cfg" } }
+        }
+      ]
+    },
+
+    "cvar": {
+      "patterns": [
+        {
+          "match": "^\\s*(\"[A-Za-z0-9_-]*\")",
           "captures": {
-            "1": {
-              "name": "support.type.property-name.double.sp-translations"
-            },
-            "2": {
-              "name": "comment.line.double-slash"
-            }
+            "1": { "name": "support.type.property-name.valve-cfg" }
           }
         },
         {
-          "name": "support.type.property-name.double.sp-translations",
-          "match": "^\\s*(\"[^\"]*\")(\n|\\s*//.*)$",
+          "match": "^\\s*('[A-Za-z0-9_-]*')",
           "captures": {
-            "1": {
-              "name": "support.type.property-name.double.sp-translations"
-            },
-            "2": {
-              "name": "comment.line.double-slash"
-            }
+            "1": { "name": "support.type.property-name.valve-cfg" }
+          }
+        },
+        {
+          "match": "^\\s*([A-Za-z0-9_-]*)",
+          "captures": {
+            "1": { "name": "support.type.property-name.valve-cfg" }
           }
         }
       ]
     },
+
     "value": {
+      "begin": ".",
+      "end": "\\n",
+      "patterns": [{ "include": "#numeric-literal" }, { "include": "#strings" }]
+    },
+
+    "numeric-literal": {
       "patterns": [
         {
-          "name": "string.quoted.single.sp-translations",
-          "begin": "'",
-          "end": "'|\\n",
-          "patterns": [
-            {
-              "name": "constant.character.sp-translations",
-              "match": "\\{[0-9]+\\}"
-            }
-          ]
+          "comment": "Float literal",
+          "match": "[0-9]+\\.[0-9]+",
+          "name": "constant.numeric.float.sourcepawn"
         },
         {
-          "name": "string.quoted.double.sp-translations",
-          "match": "(\"[^\"]+\")\\s*(\"[^\"]*\")",
-          "captures": {
-            "1": {
-              "name": "support.type.property-name.double.sp-translations"
-            },
-            "2": {
-              "name": "string.quoted.double.sp-translations",
-              "patterns": [
-                {
-                  "name": "constant.character.sp-translations",
-                  "match": "\\{([\\d]+)\\}",
-                  "captures": {
-                    "1": {
-                      "name": "constant.numeric.sp-translations"
-                    }
-                  }
-                },
-                {
-                  "name": "constant.character.sp-translations",
-                  "match": "\\{(\\w+)\\}",
-                  "captures": {
-                    "1": {
-                      "name": "constant.character.escape.sp-translations"
-                    }
-                  }
-                },
-                {
-                  "name": "constant.character.sp-translations",
-                  "match": "\\{([\\d]+):([A-Za-z]+)\\}",
-                  "captures": {
-                    "1": {
-                      "name": "constant.numeric.sp-translations"
-                    },
-                    "2": {
-                      "name": "string.regexp.sp-translations"
-                    }
-                  }
-                }
-              ]
-            }
-          }
+          "comment": "Binary literal",
+          "match": "\\b0b[0-1]+\\b",
+          "name": "constant.numeric.sourcepawn"
+        },
+        {
+          "comment": "Octodecimal literal",
+          "match": "\\b0o[0-7]+\\b",
+          "name": "constant.numeric.sourcepawn"
+        },
+        {
+          "comment": "Hexadecimal literal",
+          "match": "\\b0x[0-9a-fA-F]+\\b",
+          "name": "constant.numeric.sourcepawn"
+        },
+        {
+          "comment": "Integer literal",
+          "match": "\\b\\d+\\b",
+          "name": "constant.numeric.integer.sourcepawn"
+        },
+        {
+          "comment": "Invalid literal",
+          "match": "\\b\\d+\\w+\\b",
+          "name": "invalid.illegal.constant.sourcepawn"
         }
       ]
     },
-    "keywords": {
-      "patterns": [
-        {
-          "name": "keyword.control.cfg",
-          "match": "^[a-z_]+\\s"
-        },
-        {
-          "name": "support.function",
-          "match": "(\\s[a-z]+_)|(^[a-z]+_)|(^[a-z]+)|([a-z]+.cfg)"
-        },
-        {
-          "name": "support.class",
-          "match": "[a-zA-Z0-9+\\-_]"
-        },
-        {
-          "name": "constant.numeric",
-          "match": "\\s([0-9])+"
-        }
-      ]
-    },
+
     "strings": {
-      "name": "string.quoted.double.cfg",
+      "name": "string.quoted.double.valve-cfg",
       "begin": "\"",
       "end": "\"",
       "patterns": [
@@ -137,25 +101,21 @@
         }
       ]
     },
+
     "comments": {
       "patterns": [
         {
-          "name": "comment.line.double-slash",
+          "name": "comment.line.valve-cfg",
           "match": "//(.*)$"
         },
         {
-          "name": "comment.line.number-sign",
+          "name": "comment.line.number-sign.valve-cfg",
           "match": "#(.*)$"
         },
         {
           "begin": "/\\*",
-          "captures": {
-            "0": {
-              "name": "comment.block.cfg"
-            }
-          },
           "end": "\\*/",
-          "name": "comment.block.cfg"
+          "name": "comment.block.valve-cfg"
         }
       ]
     }
