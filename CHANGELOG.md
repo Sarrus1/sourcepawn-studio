@@ -30,6 +30,7 @@
 - Fixed deprecated color highlighting.
 - Fixed a highlighting bugs with methods/properties definitions.
 - Fixed SP linter arguments not being parsed correctly.
+- Fixed support for standalone .sp files.
 
 ### Removed
 
