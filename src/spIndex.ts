@@ -7,7 +7,7 @@ import {
 } from "vscode";
 import { URI } from "vscode-uri";
 import { join, resolve } from "path";
-import glob from "glob";
+import * as glob from "glob";
 import Parser from "web-tree-sitter";
 
 import { refreshDiagnostics } from "./Providers/spLinter";
@@ -185,14 +185,9 @@ export function activate(context: ExtensionContext) {
 
   context.subscriptions.push(
     languages.registerDocumentFormattingEditProvider(
-      [
-        {
-          language: "sp-translations",
-        },
-        {
-          language: "valve-kv",
-        },
-      ],
+      {
+        language: "valve-kv",
+      },
       new CFGDocumentFormattingEditProvider()
     )
   );
