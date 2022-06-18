@@ -31,42 +31,36 @@ export function activate(context: ExtensionContext) {
   const providers = new Providers(context.globalState);
 
   const workspaceFolders = Workspace.workspaceFolders || [];
-  if (workspaceFolders.length === 0) {
-    window.showWarningMessage(
-      "No workspace or folder found. \n Please open the folder containing your .sp file, not just the .sp file."
-    );
-  } else {
-    const watcher = Workspace.createFileSystemWatcher(
-      "**/*.{inc,sp}",
-      false,
-      true,
-      false
-    );
+  const watcher = Workspace.createFileSystemWatcher(
+    "**/*.{inc,sp}",
+    false,
+    true,
+    false
+  );
 
-    watcher.onDidCreate((uri) => {
-      const uriString = URI.file(uri.fsPath).toString();
-      providers.itemsRepository.documents.set(uriString, false);
-      let mainPath = findMainPath(uri);
-      if (mainPath !== undefined && mainPath !== "") {
-        mainPath = URI.file(mainPath).toString();
-        for (const document of Workspace.textDocuments) {
-          if (document.uri.toString() === mainPath) {
-            refreshDiagnostics(document);
-            break;
-          }
+  watcher.onDidCreate((uri) => {
+    const uriString = URI.file(uri.fsPath).toString();
+    providers.itemsRepository.documents.set(uriString, false);
+    let mainPath = findMainPath(uri);
+    if (mainPath !== undefined && mainPath !== "") {
+      mainPath = URI.file(mainPath).toString();
+      for (const document of Workspace.textDocuments) {
+        if (document.uri.toString() === mainPath) {
+          refreshDiagnostics(document);
+          break;
         }
       }
-    });
-    watcher.onDidDelete((uri) => {
-      providers.itemsRepository.documents.delete(uri.fsPath);
-    });
+    }
+  });
+  watcher.onDidDelete((uri) => {
+    providers.itemsRepository.documents.delete(uri.fsPath);
+  });
 
-    // Get all the files from the workspaces
-    getDirectories(
-      workspaceFolders.map((e) => e.uri.fsPath),
-      providers
-    );
-  }
+  // Get all the files from the workspaces
+  getDirectories(
+    workspaceFolders.map((e) => e.uri.fsPath),
+    providers
+  );
 
   Workspace.onDidChangeWorkspaceFolders((e) => {
     getDirectories(
@@ -259,9 +253,14 @@ async function loadFiles(providers: Providers) {
   } else {
     // Load the currently opened file
     const files = await Workspace.findFiles("**/*.sp");
+    if (window.activeTextEditor) {
+      providers.itemsRepository.handleDocumentOpening(
+        window.activeTextEditor.document.uri.fsPath
+      );
+    }
 
     const wk = Workspace.workspaceFolders;
-    if (wk === undefined) {
+    if (wk === undefined && files.length > 1) {
       window.showWarningMessage(
         "There are no mainpath setting set for this file, and the extension was not able to compute one.\
         The extension will not work properly.\
@@ -270,23 +269,26 @@ async function loadFiles(providers: Providers) {
       return;
     }
 
-    window
-      .showWarningMessage(
-        "There is no mainpath setting set for this file. The extension will not work properly.",
-        "Select a main path",
-        "Ignore"
-      )
-      .then((v) => {
-        if (v === "Select a main path") {
-          window.showQuickPick(files.map((e) => e.fsPath)).then(async (v) => {
-            await Workspace.getConfiguration("sourcepawn", wk[0]).update(
-              "MainPath",
-              v
-            );
-          });
-        }
-      });
+    if (files.length > 1) {
+      window
+        .showWarningMessage(
+          "There is no mainpath setting set for this file. The extension will not work properly.",
+          "Select a main path",
+          "Ignore"
+        )
+        .then((v) => {
+          if (v === "Select a main path") {
+            window.showQuickPick(files.map((e) => e.fsPath)).then(async (v) => {
+              await Workspace.getConfiguration("sourcepawn", wk[0]).update(
+                "MainPath",
+                v
+              );
+            });
+          }
+        });
+    }
   }
+
   updateDecorations(providers.itemsRepository);
 
   console.timeEnd("parse");
