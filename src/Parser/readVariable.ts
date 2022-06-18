@@ -40,6 +40,10 @@ export function readVariable(
     ) {
       continue;
     }
+    const dimension = child.children
+      .filter((e) => e.type === "fixed_dimension" || e.type === "dimension")
+      .map((e) => e.text)
+      .join("");
     const declaration = child.childForFieldName("name");
     const variableType =
       variableTypeNode?.text || child.childForFieldName("type")?.text;
@@ -49,7 +53,9 @@ export function readVariable(
       parent,
       pointsToRange(declaration.startPosition, declaration.endPosition),
       variableType?.replace(":", ""),
-      `${storageClass.join(" ")} ${variableType} ${declaration.text}`,
+      `${storageClass.join(" ")} ${variableType} ${
+        declaration.text
+      }${dimension}`,
       "",
       storageClass
     );
