@@ -20,7 +20,7 @@ import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
 import { findMainPath, checkMainPath } from "./spUtils";
-import { updateDecorations } from "./Providers/decorationsProvider";
+import { updateDecorations } from "./Providers/spDecorationsProvider";
 
 export let parser: Parser;
 export let spLangObj: Parser.Language;

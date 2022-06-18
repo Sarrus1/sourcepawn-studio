@@ -21,7 +21,7 @@ import {
 import { getAllItems, getItemFromPosition } from "./spItemsGetters";
 import { refreshDiagnostics } from "../Providers/spLinter";
 import { refreshCfgDiagnostics } from "../Providers/cfgLinter";
-import { updateDecorations } from "../Providers/decorationsProvider";
+import { updateDecorations } from "../Providers/spDecorationsProvider";
 import { performance } from "perf_hooks";
 
 export class ItemsRepository implements Disposable {
