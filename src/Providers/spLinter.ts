@@ -104,7 +104,7 @@ export async function refreshDiagnostics(document: TextDocument) {
       includePaths.push(e)
     );
 
-    let compilerArgs = [document.uri.fsPath, `-o${tmpPath}`];
+    let compilerArgs = [filePath, `-o${tmpPath}`];
 
     // Add include paths and compiler options to compiler args.
     includePaths.forEach((path) => compilerArgs.push(`-i${path}`));
