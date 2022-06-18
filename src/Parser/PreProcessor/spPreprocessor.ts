@@ -8,6 +8,7 @@ import { isIncludeSelfFile } from "../utils";
 import { newDocumentCallback } from "../../Backend/spFileHandlers";
 import { getAllDefines } from "../../Backend/spItemsGetters";
 import { preDiagnostics } from "../../Providers/Linter/compilerDiagnostics";
+import { readFileSync } from "fs";
 
 export enum ParseState {
   None,
@@ -377,6 +378,19 @@ export class PreProcessor {
     if (resolved === undefined || this.itemsRepo.fileItems.has(resolved)) {
       return;
     }
-    newDocumentCallback(this.itemsRepo, URI.parse(resolved));
+    const uri = URI.parse(resolved);
+    const fileItem: FileItem = new FileItem(uri.toString());
+    this.itemsRepo.documents.set(uri.toString(), false);
+    try {
+      const text = readFileSync(uri.fsPath).toString();
+      const preprocessor = new PreProcessor(
+        text.split("\n"),
+        fileItem,
+        this.itemsRepo
+      );
+      fileItem.text = preprocessor.preProcess();
+    } catch (err) {
+      console.error(err);
+    }
   }
 }

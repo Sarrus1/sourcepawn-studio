@@ -109,6 +109,9 @@ function getMethodmapItems(
   uri: string
 ): void {
   const items = this.fileItems.get(uri);
+  if (items === undefined) {
+    return;
+  }
   items.items.forEach((e) => {
     if (e.kind === CompletionItemKind.Class) {
       methodmapItems.set(e.name, e as MethodMapItem);

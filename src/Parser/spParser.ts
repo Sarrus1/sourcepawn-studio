@@ -41,13 +41,15 @@ export function parseFile(
     data = readFileSync(file, "utf-8");
   }
   if (!searchTokens) {
-    const preprocessor = new PreProcessor(
-      data.split("\n"),
-      fileItem,
-      itemsRepository
-    );
-    data = preprocessor.preProcess();
-    fileItem.text = data;
+    if (fileItem.text === undefined) {
+      const preprocessor = new PreProcessor(
+        data.split("\n"),
+        fileItem,
+        itemsRepository
+      );
+      data = preprocessor.preProcess();
+      fileItem.text = data;
+    }
   }
   parseText(
     fileItem.text,
