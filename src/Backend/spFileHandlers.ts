@@ -57,6 +57,8 @@ export async function documentChangeCallback(
     console.log(error);
   }
   itemsRepo.fileItems.set(fileUri, fileItem);
+  resolveMethodmapInherits(itemsRepo, event.document.uri);
+
   parseText(text, filePath, fileItem, itemsRepo, true, false);
 }
 

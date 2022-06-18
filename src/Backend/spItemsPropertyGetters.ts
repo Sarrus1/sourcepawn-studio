@@ -57,9 +57,9 @@ export function getTypeOfVariable(
   } else {
     if (
       lastEnumStructOrMethodMap !== undefined &&
-      lastEnumStructOrMethodMap.parent !== globalItem &&
       words[words.length - 1] === "this"
     ) {
+      // Match a "this", return the type of the enum or the methodmap.
       variableType = lastEnumStructOrMethodMap.name;
     } else {
       const enumMemberItem = allItems.find(

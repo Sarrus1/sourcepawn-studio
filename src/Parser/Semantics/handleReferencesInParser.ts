@@ -33,7 +33,7 @@ export function handleToken(this: Semantics, name: string, range: Range): void {
         [CompletionItemKind.Struct, CompletionItemKind.Class].includes(
           e.kind
         ) &&
-        this.filePath == e.filePath &&
+        this.filePath === e.filePath &&
         e.fullRange.contains(range)
     );
     if (item !== undefined) {

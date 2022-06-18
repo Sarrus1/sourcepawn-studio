@@ -62,6 +62,7 @@ export class Semantics {
     this.range = range;
     generateReferencesMap.call(this);
   }
+
   /**
    * Perform a semantic analyzis on the tokens of a file in order to link each token
    * to its item in order to generate the references array of each item.
