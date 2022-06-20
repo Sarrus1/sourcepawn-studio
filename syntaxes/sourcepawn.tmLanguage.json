@@ -801,7 +801,7 @@
           }
         },
         {
-          "match": "(\\#pragma)\\s+([A-Za-z ]+)",
+          "match": "(\\#pragma)\\s+([A-Za-z _0-9]+)",
           "name": "meta.pragma.block-comment.sourcepawn",
           "captures": {
             "1": {
