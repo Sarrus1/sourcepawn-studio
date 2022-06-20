@@ -1,4 +1,5 @@
 ﻿import { SyntaxNode } from "web-tree-sitter";
+
 import { DocString } from "./interfaces";
 import { TreeWalker } from "./spParser";
 

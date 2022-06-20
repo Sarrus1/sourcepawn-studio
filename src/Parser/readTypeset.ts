@@ -8,8 +8,8 @@ import { pointsToRange } from "./utils";
 
 /**
  * Process a typeset declaration.
- * @param  {TreeWalker} walker            TreeWalker object.
- * @param  {TreeSitter.SyntaxNode} node   Node to process.
+ * @param  {TreeWalker} walker    TreeWalker object.
+ * @param  {SyntaxNode} node      Node to process.
  * @returns void
  */
 export function readTypeset(walker: TreeWalker, node: SyntaxNode): void {

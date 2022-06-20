@@ -7,8 +7,8 @@ import { findDoc } from "./readDocumentation";
 
 /**
  * Process a typedef declaration.
- * @param  {TreeWalker} walker            TreeWalker object.
- * @param  {TreeSitter.SyntaxNode} node   Node to process.
+ * @param  {TreeWalker} walker    TreeWalker object.
+ * @param  {SyntaxNode} node      Node to process.
  * @returns void
  */
 export function readTypedef(walker: TreeWalker, node: SyntaxNode): void {

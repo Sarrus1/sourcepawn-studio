@@ -3,7 +3,6 @@ import { MacroItem } from "../Backend/Items/spMacroItem";
 import { findDoc } from "./readDocumentation";
 
 import { TreeWalker } from "./spParser";
-import { FunctionParam } from "./interfaces";
 import { pointsToRange } from "./utils";
 
 /**

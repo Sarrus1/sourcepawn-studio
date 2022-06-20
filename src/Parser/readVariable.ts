@@ -1,4 +1,4 @@
-﻿import * as TreeSitter from "web-tree-sitter";
+﻿import { SyntaxNode } from "web-tree-sitter";
 
 import { globalItem } from "../Misc/spConstants";
 import { VariableItem } from "../Backend/Items/spVariableItem";
@@ -17,14 +17,14 @@ export type VariableParent =
 
 /**
  * Process a variable declaration.
- * @param  {TreeWalker} walker            TreeWalker object.
- * @param  {TreeSitter.SyntaxNode} node   Node to process.
- * @param  {VariableParent} parent        Parent of the variable. Defaults to globalItem.
+ * @param  {TreeWalker} walker        TreeWalker object.
+ * @param  {SyntaxNode} node          Node to process.
+ * @param  {VariableParent} parent    Parent of the variable. Defaults to globalItem.
  * @returns void
  */
 export function readVariable(
   walker: TreeWalker,
-  node: TreeSitter.SyntaxNode,
+  node: SyntaxNode,
   parent: VariableParent = globalItem
 ): void {
   const variableTypeNode = node.childForFieldName("type");

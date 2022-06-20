@@ -16,7 +16,6 @@ import { basename } from "path";
 
 import { descriptionToMD } from "../../spUtils";
 import { SPItem } from "./spItems";
-import { FormalParameter, FunctionParam } from "../../Parser/interfaces";
 import { VariableItem } from "./spVariableItem";
 import { isBuiltIn } from "../spItemsPropertyGetters";
 

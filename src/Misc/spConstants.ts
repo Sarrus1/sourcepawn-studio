@@ -1,4 +1,5 @@
 import { DocumentFilter, SemanticTokensLegend } from "vscode";
+
 import { ConstantItem } from "../Backend/Items/spConstantItem";
 
 export const SP_MODE: DocumentFilter = {

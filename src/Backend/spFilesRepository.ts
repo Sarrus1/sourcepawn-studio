@@ -13,11 +13,7 @@ import {
   hardcodedDefines,
 } from "../Providers/spDefaultItems";
 import { getIncludeExtension } from "./spUtils";
-import { ParsedID } from "../Parser/interfaces";
 import { MethodMapItem } from "./Items/spMethodmapItem";
-import { spParserArgs } from "../Parser/interfaces";
-import { parsedLocToRange } from "../Parser/utils";
-import { reservedTokens } from "../Misc/spConstants";
 import { TypedefItem } from "./Items/spTypedefItem";
 import { DefineItem } from "./Items/spDefineItem";
 

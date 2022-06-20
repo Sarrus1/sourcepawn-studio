@@ -1,5 +1,5 @@
 ﻿import { CompletionItemKind, Range } from "vscode";
-import * as TreeSitter from "web-tree-sitter";
+import { SyntaxNode } from "web-tree-sitter";
 
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { pointsToRange } from "./utils";
@@ -20,13 +20,13 @@ const MmEs = [CompletionItemKind.Struct, CompletionItemKind.Class];
 
 /**
  * @param  {TreeWalker} walker                                TreeWalker object.
- * @param  {TreeSitter.SyntaxNode} node                       Node to process.
+ * @param  {SyntaxNode} node                                  Node to process.
  * @param  {EnumStructItem|PropertyItem|ConstantItem} parent  Parent of the method. Defaults to globalItem.
  * @returns void
  */
 export function readFunctionAndMethod(
   walker: TreeWalker,
-  node: TreeSitter.SyntaxNode,
+  node: SyntaxNode,
   parent: MethodParent | ConstantItem = globalItem,
   getSet?: string
 ): void {
@@ -107,13 +107,13 @@ export function readFunctionAndMethod(
 /**
  * Process the variables of a function/method's body.
  * @param  {TreeWalker} walker                TreeWalker object.
- * @param  {TreeSitter.SyntaxNode} node       Node to process.
+ * @param  {SyntaxNode} node                  Node to process.
  * @param  {FunctionItem|MethodItem} parent   Parent item of the body.
  * @returns void
  */
 export function readBodyVariables(
   walker: TreeWalker,
-  body: TreeSitter.SyntaxNode,
+  body: SyntaxNode,
   parent: FunctionItem | MethodItem
 ): void {
   if (body === undefined) {
@@ -128,14 +128,14 @@ export function readBodyVariables(
 /**
  * Process the params of a function/method and adds them as variables.
  * @param  {TreeWalker} walker                TreeWalker object.
- * @param  {TreeSitter.SyntaxNode} params     Params node.
+ * @param  {SyntaxNode} params                Params node.
  * @param  {FunctionItem|MethodItem} parent   Parent function/method item of the params.
  * @param  {string|undefined} doc             Documentation of the function if it exists.
  * @returns void
  */
 function addParamsAsVariables(
   walker: TreeWalker,
-  params: TreeSitter.SyntaxNode,
+  params: SyntaxNode,
   parent: FunctionItem | MethodItem,
   doc: string | undefined
 ): void {

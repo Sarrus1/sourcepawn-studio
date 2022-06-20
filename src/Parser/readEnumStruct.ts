@@ -1,4 +1,4 @@
-﻿import * as TreeSitter from "web-tree-sitter";
+﻿import { SyntaxNode } from "web-tree-sitter";
 
 import { pointsToRange } from "./utils";
 import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
@@ -9,14 +9,11 @@ import { VariableItem } from "../Backend/Items/spVariableItem";
 
 /**
  * Process an enum struct declaration.
- * @param  {TreeWalker} walker            TreeWalker object.
- * @param  {TreeSitter.SyntaxNode} node   Node to process.
+ * @param  {TreeWalker} walker    TreeWalker object.
+ * @param  {SyntaxNode} node      Node to process.
  * @returns void
  */
-export function readEnumStruct(
-  walker: TreeWalker,
-  node: TreeSitter.SyntaxNode
-): void {
+export function readEnumStruct(walker: TreeWalker, node: SyntaxNode): void {
   const nameNode = node.childForFieldName("name");
   const { doc, dep } = findDoc(walker, node);
   const enumStructItem = new EnumStructItem(
@@ -34,13 +31,13 @@ export function readEnumStruct(
  * Process the body of an enum struct.
  * @param  {TreeWalker} walker              TreeWalker object.
  * @param  {EnumStructItem} enumstructItem  Parent item of the member.
- * @param  {TreeSitter.SyntaxNode} node     Node to process.
+ * @param  {SyntaxNode} node                Node to process.
  * @returns void
  */
 function readEnumstructMembers(
   walker: TreeWalker,
   enumstructItem: EnumStructItem,
-  node: TreeSitter.SyntaxNode
+  node: SyntaxNode
 ): void {
   node.children.forEach((e) => {
     switch (e.type) {
@@ -65,13 +62,13 @@ function readEnumstructMembers(
 /**
  * Process an enum struct's field.
  * @param  {TreeWalker} walker                Walker object.
- * @param  {TreeSitter.SyntaxNode} node       Field node.
+ * @param  {SyntaxNode} node                  Field node.
  * @param  {EnumStructItem} enumStructItem    Parent item of the field.
  * @returns void
  */
 function readEnumStructField(
   walker: TreeWalker,
-  node: TreeSitter.SyntaxNode,
+  node: SyntaxNode,
   enumStructItem: EnumStructItem
 ): void {
   const nameNode = node.childForFieldName("name");

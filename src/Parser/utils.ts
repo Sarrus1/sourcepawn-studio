@@ -1,10 +1,9 @@
 ﻿import { Range } from "vscode";
 import { basename } from "path";
+import { Point } from "web-tree-sitter";
 
 import { FunctionParam } from "./interfaces";
 import { SPItem } from "../Backend/Items/spItems";
-import { ParserLocation, spParserArgs } from "./interfaces";
-import * as TreeSitter from "web-tree-sitter";
 
 export function purgeReferences(
   item: SPItem,
@@ -89,28 +88,6 @@ export function getParenthesisCount(line: string): number {
 }
 
 /**
- * Convert a parsed location of the parser to a range.
- * @param  {ParserLocation} loc
- * @param  {spParserArgs} args?
- * @returns Range
- */
-export function parsedLocToRange(
-  loc: ParserLocation,
-  args?: spParserArgs
-): Range {
-  let offset = 0;
-  if (args !== undefined) {
-    offset = args.offset;
-  }
-  return new Range(
-    loc.start.line - 1 + offset,
-    loc.start.column - 1,
-    loc.end.line - 1 + offset,
-    loc.end.column - 1
-  );
-}
-
-/**
  * Get a guess of the next scope in a file by finding the next non indented "}".
  * @param  {string} txt  The text of the file as a string.
  * @param  {number} lineNb  The current line number.
@@ -152,9 +129,6 @@ export function checkIfPluginInfo(
   return ["Plugin", "Extension", "PlVers", "SharedPlugin"].includes(name);
 }
 
-export function pointsToRange(
-  startPos: TreeSitter.Point,
-  endPos: TreeSitter.Point
-): Range {
+export function pointsToRange(startPos: Point, endPos: Point): Range {
   return new Range(startPos.row, startPos.column, endPos.row, endPos.column);
 }

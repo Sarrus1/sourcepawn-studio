@@ -1,13 +1,13 @@
 import { CompletionItemKind, Diagnostic } from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { resolve, dirname } from "path";
+import { SyntaxNode, Tree } from "web-tree-sitter";
 
 import { ItemsRepository } from "../Backend/spItemsRepository";
 import { FileItem } from "../Backend/spFilesRepository";
 import { Semantics } from "./Semantics/spSemantics";
 import { PreProcessor } from "./PreProcessor/spPreprocessor";
 import { parser, spLangObj, symbolQuery } from "../spIndex";
-import * as TreeSitter from "web-tree-sitter";
 import { readVariable } from "./readVariable";
 import { readFunctionAndMethod } from "./readFunctionAndMethod";
 import { readEnum } from "./readEnum";
@@ -105,12 +105,12 @@ export function parseText(
 export class TreeWalker {
   fileItem: FileItem;
   filePath: string;
-  tree: TreeSitter.Tree;
-  comments: TreeSitter.SyntaxNode[];
+  tree: Tree;
+  comments: SyntaxNode[];
   anonEnumCount: number;
-  deprecated: TreeSitter.SyntaxNode[];
+  deprecated: SyntaxNode[];
 
-  constructor(fileItem: FileItem, filePath: string, tree: TreeSitter.Tree) {
+  constructor(fileItem: FileItem, filePath: string, tree: Tree) {
     this.fileItem = fileItem;
     this.filePath = filePath;
     this.tree = tree;
@@ -163,10 +163,10 @@ export class TreeWalker {
 
   /**
    * Process a comment and add it as a variable documentation if necessary.
-   * @param  {TreeSitter.SyntaxNode} node   Node of the comment.
+   * @param  {SyntaxNode} node   Node of the comment.
    * @returns void
    */
-  public pushComment(node: TreeSitter.SyntaxNode): void {
+  public pushComment(node: SyntaxNode): void {
     const lastItem = this.fileItem.items[this.fileItem.items.length - 1];
     const VaDe = [CompletionItemKind.Variable, CompletionItemKind.Constant];
     if (

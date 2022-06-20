@@ -1,5 +1,5 @@
 ﻿import { CompletionItemKind, Range } from "vscode";
-import * as TreeSitter from "web-tree-sitter";
+import { SyntaxNode } from "web-tree-sitter";
 
 import { EnumItem } from "../Backend/Items/spEnumItem";
 import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
@@ -9,16 +9,12 @@ import { commentToDoc, findDoc } from "./readDocumentation";
 
 /**
  * Process an enum declaration.
- * @param  {TreeWalker} walker            TreeWalker object.
- * @param  {TreeSitter.SyntaxNode} node   Node to process.
+ * @param  {TreeWalker} walker    TreeWalker object.
+ * @param  {SyntaxNode} node      Node to process.
  * @returns void
  */
-export function readEnum(
-  walker: TreeWalker,
-  node: TreeSitter.SyntaxNode
-): void {
+export function readEnum(walker: TreeWalker, node: SyntaxNode): void {
   const { name, nameRange } = getEnumNameAndRange(walker, node);
-  // FIXME: argument_declarations contain () as well. This is not specified in node-types.json
   const { doc, dep } = findDoc(walker, node);
   const enumItem = new EnumItem(
     name,
@@ -37,13 +33,13 @@ export function readEnum(
 
 /**
  * Generate the name and the range of a potential anonymous enum.
- * @param  {TreeWalker} walker            TreeWalker object.
- * @param  {TreeSitter.SyntaxNode} node   Node to process.
+ * @param  {TreeWalker} walker    TreeWalker object.
+ * @param  {SyntaxNode} node      Node to process.
  * @returns void
  */
 function getEnumNameAndRange(
   walker: TreeWalker,
-  node: TreeSitter.SyntaxNode
+  node: SyntaxNode
 ): { name: string; nameRange: Range } {
   const nameNode = node.childForFieldName("name");
   if (nameNode) {
@@ -65,14 +61,14 @@ function getEnumNameAndRange(
 
 /**
  * Process the body of an enum.
- * @param  {TreeWalker} walker            TreeWalker object.
- * @param  {TreeSitter.SyntaxNode} body   Body to process.
- * @param  {EnumItem} enumItem            Parent enum of the body.
+ * @param  {TreeWalker} walker    TreeWalker object.
+ * @param  {SyntaxNode} body      Body to process.
+ * @param  {EnumItem} enumItem    Parent enum of the body.
  * @returns void
  */
 function readEnumMembers(
   walker: TreeWalker,
-  body: TreeSitter.SyntaxNode,
+  body: SyntaxNode,
   enumItem: EnumItem
 ): void {
   if (!body) {

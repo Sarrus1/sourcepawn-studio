@@ -1,4 +1,4 @@
-﻿import * as TreeSitter from "web-tree-sitter";
+﻿import { SyntaxNode } from "web-tree-sitter";
 
 import { pointsToRange } from "./utils";
 import { TreeWalker } from "./spParser";
@@ -9,14 +9,11 @@ import { readProperty } from "./readProperty";
 
 /**
  * Process a methodmap declaration.
- * @param  {TreeWalker} walker            TreeWalker object.
- * @param  {TreeSitter.SyntaxNode} node   Node to process.
+ * @param  {TreeWalker} walker    TreeWalker object.
+ * @param  {SyntaxNode} node      Node to process.
  * @returns void
  */
-export function readMethodmap(
-  walker: TreeWalker,
-  node: TreeSitter.SyntaxNode
-): void {
+export function readMethodmap(walker: TreeWalker, node: SyntaxNode): void {
   const nameNode = node.childForFieldName("name");
   const inheritNode = node.childForFieldName("inherits");
   const { doc, dep } = findDoc(walker, node);
@@ -36,13 +33,13 @@ export function readMethodmap(
  * Process the body of a methodmap.
  * @param  {TreeWalker} walker            TreeWalker object.
  * @param  {EnumStructItem} parent        Parent item of the member.
- * @param  {TreeSitter.SyntaxNode} node   Node to process.
+ * @param  {SyntaxNode} node              Node to process.
  * @returns void
  */
 function readMethodmapMembers(
   walker: TreeWalker,
   parent: MethodMapItem,
-  node: TreeSitter.SyntaxNode
+  node: SyntaxNode
 ): void {
   node.children.forEach((e) => {
     switch (e.type) {

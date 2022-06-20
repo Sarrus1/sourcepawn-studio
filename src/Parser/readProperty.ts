@@ -1,4 +1,4 @@
-﻿import * as TreeSitter from "web-tree-sitter";
+﻿import { SyntaxNode } from "web-tree-sitter";
 
 import { PropertyItem } from "../Backend/Items/spPropertyItem";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
@@ -13,14 +13,14 @@ import { MethodItem } from "../Backend/Items/spMethodItem";
 
 /**
  * Process a methodmap's property.
- * @param  {TreeWalker} walker            TreeWalker object.
- * @param  {TreeSitter.SyntaxNode} node   Node to process.
- * @param  {MethodMapItem} parent         Parent item of the property.
+ * @param  {TreeWalker} walker      TreeWalker object.
+ * @param  {SyntaxNode} node        Node to process.
+ * @param  {MethodMapItem} parent   Parent item of the property.
  * @returns void
  */
 export function readProperty(
   walker: TreeWalker,
-  node: TreeSitter.SyntaxNode,
+  node: SyntaxNode,
   parent: MethodMapItem
 ): void {
   const nameNode = node.childForFieldName("name");

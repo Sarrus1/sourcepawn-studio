@@ -8,6 +8,7 @@
 import { URI } from "vscode-uri";
 import { existsSync, lstatSync } from "fs";
 import { resolve, extname } from "path";
+
 import { SPItem } from "./Backend/Items/spItems";
 import { MethodItem } from "./Backend/Items/spMethodItem";
 import { PropertyItem } from "./Backend/Items/spPropertyItem";
