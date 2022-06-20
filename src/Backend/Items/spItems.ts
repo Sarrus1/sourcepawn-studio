@@ -28,7 +28,6 @@ export interface SPItem {
   detail?: string;
   fullRange?: Range;
   references?: Location[];
-  IsBuiltIn?: boolean;
   params?: VariableItem[];
   deprecated?: string;
 
@@ -47,12 +46,10 @@ export interface SPItem {
 
 export class Include {
   uri: string;
-  IsBuiltIn: boolean;
   range: Range;
 
-  constructor(uri: string, range: Range, IsBuiltIn: boolean) {
+  constructor(uri: string, range: Range) {
     this.uri = uri;
     this.range = range;
-    this.IsBuiltIn = IsBuiltIn;
   }
 }

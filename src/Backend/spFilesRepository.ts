@@ -55,7 +55,6 @@ export class FileItem {
             "Hardcoded constant",
             URI.parse(uri).fsPath,
             zeroRange,
-            true,
             zeroRange,
             undefined
           )
@@ -86,11 +85,11 @@ export class FileItem {
   /**
    * Add a new Include to the array of parsed includes for this file.
    * @param  {string} uri          URI of the parsed include.
-   * @param  {boolean} IsBuiltIn   Whether or not the parsed include is a Sourcemod builtin.
+   * @param  {Range} range         Range of the parsed include.
    * @returns void
    */
-  addInclude(uri: string, range: Range, IsBuiltIn: boolean): void {
-    this.includes.set(uri, new Include(uri, range, IsBuiltIn));
+  addInclude(uri: string, range: Range): void {
+    this.includes.set(uri, new Include(uri, range));
   }
 
   /**
@@ -99,15 +98,13 @@ export class FileItem {
    * @param  {Set<string>} documents    The documents (.inc/.sp) that have been found in the SMHome folder,
    *                                    include folder, optionalIncludes folder, etc.
    * @param  {string} filePath          The path of the file the include was imported in.
-   * @param  {boolean} IsBuiltIn        Whether or not the parsed file is a Sourcemod builtin.
    * @returns string
    */
   resolveImport(
     includeText: string,
     documents: Map<string, boolean>,
     filePath: string,
-    range: Range,
-    IsBuiltIn: boolean = false
+    range: Range
   ): string {
     const SMHome: string = Workspace.getConfiguration(
       "sourcepawn",
@@ -125,7 +122,7 @@ export class FileItem {
 
     const uri = URI.file(incFilePath);
     if (documents.has(uri.toString())) {
-      this.addInclude(uri.toString(), range, IsBuiltIn);
+      this.addInclude(uri.toString(), range);
       return uri.toString();
     }
 
@@ -139,7 +136,7 @@ export class FileItem {
           .concat(includeDir, includeText)
       );
       if (existsSync(includeFile)) {
-        this.addInclude(URI.file(includeFile).toString(), range, IsBuiltIn);
+        this.addInclude(URI.file(includeFile).toString(), range);
         return uri.toString();
       }
     }

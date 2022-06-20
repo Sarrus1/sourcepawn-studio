@@ -29,7 +29,6 @@ export function readDefine(
     desc,
     walker.filePath,
     range,
-    walker.isBuiltin,
     fullRange,
     dep
   );

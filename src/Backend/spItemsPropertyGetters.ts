@@ -1,10 +1,12 @@
-import { Position, CompletionItemKind } from "vscode";
+import { Position, CompletionItemKind, workspace as Workspace } from "vscode";
 
 import { SPItem } from "./Items/spItems";
 import { globalIdentifier, globalItem } from "../Misc/spConstants";
 import { FunctionItem } from "./Items/spFunctionItem";
 import { MethodItem } from "./Items/spMethodItem";
 import { MethodMapItem } from "./Items/spMethodmapItem";
+import * as path from "path";
+import { URI } from "vscode-uri";
 
 export interface VariableType {
   variableType: string;
@@ -192,4 +194,22 @@ export function getAllInheritances(
   return [methodmap].concat(
     getAllInheritances(methodmap.parent as MethodMapItem, allItems)
   );
+}
+
+/**
+ * Checks whether or not a file is a SM BuiltIn by comparing the path of
+ * SMHome to its path.
+ * @param  {string} filepath    The path of the file to check.
+ * @returns boolean
+ */
+export function isBuiltIn(filepath: string): boolean {
+  const smHome = Workspace.getConfiguration("sourcepawn").get<string>(
+    "SourcemodHome"
+  );
+
+  if (!smHome) {
+    return false;
+  }
+
+  return filepath.includes(URI.file(smHome).fsPath);
 }

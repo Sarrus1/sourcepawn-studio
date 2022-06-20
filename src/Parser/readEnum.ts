@@ -96,7 +96,6 @@ function readEnumMembers(
       entry.text,
       walker.filePath,
       range,
-      walker.isBuiltin,
       enumItem
     );
     walker.fileItem.items.push(memberItem);

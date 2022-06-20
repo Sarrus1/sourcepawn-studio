@@ -18,6 +18,7 @@ import { descriptionToMD } from "../../spUtils";
 import { SPItem } from "./spItems";
 import { FormalParameter, FunctionParam } from "../../Parser/interfaces";
 import { VariableItem } from "./spVariableItem";
+import { isBuiltIn } from "../spItemsPropertyGetters";
 
 export class FunctionItem implements SPItem {
   name: string;
@@ -27,7 +28,6 @@ export class FunctionItem implements SPItem {
   filePath: string;
   range: Range;
   fullRange: Range;
-  IsBuiltIn: boolean;
   references: Location[];
   kind = CompletionItemKind.Function;
   type: string;
@@ -39,7 +39,6 @@ export class FunctionItem implements SPItem {
     detail: string,
     description: string,
     file: string,
-    IsBuiltIn: boolean,
     range: Range,
     type: string,
     fullRange: Range,
@@ -51,7 +50,6 @@ export class FunctionItem implements SPItem {
     this.params = [];
     this.detail = detail;
     this.filePath = file;
-    this.IsBuiltIn = IsBuiltIn;
     this.range = range;
     this.type = type;
     this.fullRange = fullRange;
@@ -94,7 +92,7 @@ export class FunctionItem implements SPItem {
         value: this.detail,
       });
     }
-    if (this.IsBuiltIn) {
+    if (isBuiltIn(this.filePath)) {
       return new Hover([
         {
           language: "sourcepawn",

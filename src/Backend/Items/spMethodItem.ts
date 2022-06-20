@@ -20,6 +20,7 @@ import { EnumStructItem } from "./spEnumStructItem";
 import { MethodMapItem } from "./spMethodmapItem";
 import { PropertyItem } from "./spPropertyItem";
 import { VariableItem } from "./spVariableItem";
+import { isBuiltIn } from "../spItemsPropertyGetters";
 
 export class MethodItem implements SPItem {
   name: string;
@@ -31,7 +32,6 @@ export class MethodItem implements SPItem {
   fullRange: Range;
   type: string;
   range: Range;
-  IsBuiltIn: boolean;
   filePath: string;
   references: Location[];
   deprecated: string | undefined;
@@ -44,7 +44,6 @@ export class MethodItem implements SPItem {
     type: string,
     file: string,
     range: Range,
-    IsBuiltIn: boolean = false,
     fullRange: Range,
     deprecated: string | undefined
   ) {
@@ -60,7 +59,6 @@ export class MethodItem implements SPItem {
     this.detail = detail;
     this.description = description;
     this.params = [];
-    this.IsBuiltIn = IsBuiltIn;
     this.filePath = file;
     this.range = range;
     this.fullRange = fullRange;
@@ -99,7 +97,7 @@ export class MethodItem implements SPItem {
       return new Hover([{ language: "sourcepawn", value: this.detail }]);
     }
     const filename: string = basename(this.filePath, ".inc");
-    if (this.IsBuiltIn) {
+    if (isBuiltIn(this.filePath)) {
       return new Hover([
         { language: "sourcepawn", value: this.detail },
         `[Online Documentation](https://sourcemod.dev/#/${filename}/methodmap.${this.parent}/function.${this.name})`,

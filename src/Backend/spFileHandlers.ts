@@ -53,14 +53,14 @@ export async function documentChangeCallback(
   itemsRepo.documents.set(event.document.uri.toString(), false);
   // We use parseText here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
   try {
-    parseText(text, filePath, fileItem, itemsRepo, false, false);
+    parseText(text, filePath, fileItem, itemsRepo, false);
   } catch (error) {
     console.log(error);
   }
   itemsRepo.fileItems.set(fileUri, fileItem);
   resolveMethodmapInherits(itemsRepo, event.document.uri);
 
-  parseText(text, filePath, fileItem, itemsRepo, true, false);
+  parseText(text, filePath, fileItem, itemsRepo, true);
 }
 
 /**
@@ -88,7 +88,7 @@ export async function newDocumentCallback(
   itemsRepo.documents.set(uri.toString(), false);
 
   try {
-    parseFile(filePath, fileItem, itemsRepo, false, false);
+    parseFile(filePath, fileItem, itemsRepo, false);
   } catch (error) {
     console.error(error);
   }
@@ -99,7 +99,7 @@ export async function newDocumentCallback(
   resolveMethodmapInherits(itemsRepo, uri);
 
   // Parse token references.
-  parseFile(filePath, fileItem, itemsRepo, true, false);
+  parseFile(filePath, fileItem, itemsRepo, true);
   itemsRepo.fileItems.forEach((fileItems, k) => {
     fileItems.includes.forEach((e) => {
       const uri = URI.parse(e.uri);
@@ -110,8 +110,7 @@ export async function newDocumentCallback(
         uri.fsPath,
         itemsRepo.fileItems.get(uri.toString()),
         itemsRepo,
-        true,
-        false
+        true
       );
       itemsRepo.documents.set(uri.toString(), true);
     });
@@ -216,7 +215,7 @@ function readUnscannedImports(
 
     let fileItems: FileItem = new FileItem(include.uri);
     try {
-      parseFile(filePath, fileItems, itemsRepo, false, include.IsBuiltIn);
+      parseFile(filePath, fileItems, itemsRepo, false);
     } catch (err) {
       console.error(err, include.uri.toString());
     }

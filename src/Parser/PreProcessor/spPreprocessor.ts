@@ -370,9 +370,7 @@ export class PreProcessor {
         match.index,
         this.lineNb,
         match.index + match[1].length
-      ),
-      // FIXME: Always false isbuiltin
-      false
+      )
     );
     this.addLine("");
     if (resolved === undefined || this.itemsRepo.fileItems.has(resolved)) {

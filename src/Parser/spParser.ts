@@ -25,8 +25,7 @@ export function parseFile(
   file: string,
   fileItem: FileItem,
   itemsRepository: ItemsRepository,
-  searchTokens: boolean,
-  IsBuiltIn: boolean
+  searchTokens: boolean
 ) {
   if (!existsSync(file)) {
     return;
@@ -51,14 +50,7 @@ export function parseFile(
       fileItem.text = data;
     }
   }
-  parseText(
-    fileItem.text,
-    file,
-    fileItem,
-    itemsRepository,
-    searchTokens,
-    IsBuiltIn
-  );
+  parseText(fileItem.text, file, fileItem, itemsRepository, searchTokens);
 }
 
 export function parseText(
@@ -67,7 +59,6 @@ export function parseText(
   fileItem: FileItem,
   itemsRepository: ItemsRepository,
   searchTokens: boolean,
-  isBuiltIn: boolean,
   offset: number = 0
 ): boolean {
   if (data === undefined) {
@@ -79,7 +70,7 @@ export function parseText(
   }
   if (!searchTokens) {
     const tree = parser.parse(data);
-    const walker = new TreeWalker(fileItem, file, tree, isBuiltIn);
+    const walker = new TreeWalker(fileItem, file, tree);
     walker.walkTree();
     fileItem.symbols = symbolQuery.captures(tree.rootNode);
     parserDiagnostics.set(
@@ -114,21 +105,14 @@ export class TreeWalker {
   fileItem: FileItem;
   filePath: string;
   tree: TreeSitter.Tree;
-  isBuiltin: boolean;
   comments: TreeSitter.SyntaxNode[];
   anonEnumCount: number;
   deprecated: TreeSitter.SyntaxNode[];
 
-  constructor(
-    fileItem: FileItem,
-    filePath: string,
-    tree: TreeSitter.Tree,
-    isBuiltin: boolean
-  ) {
+  constructor(fileItem: FileItem, filePath: string, tree: TreeSitter.Tree) {
     this.fileItem = fileItem;
     this.filePath = filePath;
     this.tree = tree;
-    this.isBuiltin = isBuiltin;
     this.comments = [];
     this.anonEnumCount = -1;
     this.deprecated = [];

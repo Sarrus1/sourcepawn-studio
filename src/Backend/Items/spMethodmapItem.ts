@@ -15,6 +15,7 @@ import { descriptionToMD } from "../../spUtils";
 import { SPItem } from "./spItems";
 import { ConstantItem } from "./spConstantItem";
 import { globalIdentifier, globalItem } from "../../Misc/spConstants";
+import { isBuiltIn } from "../spItemsPropertyGetters";
 
 export class MethodMapItem implements SPItem {
   name: string;
@@ -25,7 +26,6 @@ export class MethodMapItem implements SPItem {
   kind = CompletionItemKind.Class;
   type: string;
   range: Range;
-  IsBuiltIn: boolean;
   filePath: string;
   fullRange: Range;
   references: Location[];
@@ -36,8 +36,7 @@ export class MethodMapItem implements SPItem {
     description: string,
     file: string,
     range: Range,
-    fullRange: Range,
-    IsBuiltIn: boolean = false
+    fullRange: Range
   ) {
     this.name = name;
     this.tmpParent = parent;
@@ -46,7 +45,6 @@ export class MethodMapItem implements SPItem {
     }
     this.parent = globalItem;
     this.description = description;
-    this.IsBuiltIn = IsBuiltIn;
     this.filePath = file;
     this.range = range;
     this.fullRange = fullRange;
@@ -83,7 +81,7 @@ export class MethodMapItem implements SPItem {
       return new Hover([{ language: "sourcepawn", value: this.detail }]);
     }
     const filename: string = basename(this.filePath, ".inc");
-    if (this.IsBuiltIn) {
+    if (isBuiltIn(this.filePath)) {
       return new Hover([
         { language: "sourcepawn", value: this.detail },
         `[Online Documentation](https://sourcemod.dev/#/${filename}/methodmap.${this.name})`,

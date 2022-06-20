@@ -25,13 +25,11 @@ export class EnumMemberItem implements SPItem {
   kind = CompletionItemKind.EnumMember;
   range: Range;
   references: Location[];
-  IsBuiltIn: boolean;
 
   constructor(
     name: string,
     file: string,
     range: Range,
-    IsBuiltItn: boolean,
     enumItem: EnumItem | ConstantItem = globalItem
   ) {
     this.name = name;
@@ -39,7 +37,6 @@ export class EnumMemberItem implements SPItem {
     this.description = "";
     this.range = range;
     this.references = [];
-    this.IsBuiltIn = IsBuiltItn;
     this.parent = enumItem;
   }
 

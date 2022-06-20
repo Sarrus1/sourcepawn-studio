@@ -54,7 +54,6 @@ export function readFunctionAndMethod(
       }`.trim(),
       doc,
       walker.filePath,
-      walker.isBuiltin,
       pointsToRange(nameNode.startPosition, nameNode.endPosition),
       returnType,
       pointsToRange(node.startPosition, node.endPosition),
@@ -78,7 +77,6 @@ export function readFunctionAndMethod(
       returnType,
       walker.filePath,
       nameRange,
-      walker.isBuiltin,
       pointsToRange(node.startPosition, node.endPosition),
       dep
     );
@@ -93,7 +91,6 @@ export function readFunctionAndMethod(
       returnType,
       walker.filePath,
       pointsToRange(nameNode.startPosition, nameNode.endPosition),
-      walker.isBuiltin,
       pointsToRange(node.startPosition, node.endPosition),
       dep
     );

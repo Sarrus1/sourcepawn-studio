@@ -26,8 +26,7 @@ export function readMethodmap(
     doc,
     walker.filePath,
     pointsToRange(nameNode.startPosition, nameNode.endPosition),
-    pointsToRange(node.startPosition, node.endPosition),
-    walker.isBuiltin
+    pointsToRange(node.startPosition, node.endPosition)
   );
   walker.fileItem.items.push(methodmapItem);
   readMethodmapMembers(walker, methodmapItem, node);

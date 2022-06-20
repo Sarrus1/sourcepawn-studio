@@ -19,7 +19,6 @@ export class DefineItem implements SPItem {
   description?: string;
   filePath: string;
   kind = CompletionItemKind.Constant;
-  IsBuiltIn: boolean;
   range: Range;
   references: Location[];
   deprecated: string | undefined;
@@ -31,7 +30,6 @@ export class DefineItem implements SPItem {
     description: string,
     file: string,
     range: Range,
-    IsBuiltIn: boolean,
     fullRange: Range,
     deprecated: string | undefined
   ) {
@@ -41,7 +39,6 @@ export class DefineItem implements SPItem {
     this.filePath = file;
     this.range = range;
     this.references = [];
-    this.IsBuiltIn = IsBuiltIn;
     this.fullRange = fullRange;
     this.deprecated = deprecated;
   }
