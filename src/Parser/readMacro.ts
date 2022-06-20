@@ -1,45 +1,30 @@
-﻿import { FunctionParam, MacroStatement, spParserArgs } from "./interfaces";
+﻿import { SyntaxNode } from "web-tree-sitter";
+import { MacroItem } from "../Backend/Items/spMacroItem";
+import { findDoc } from "./readDocumentation";
+
+import { TreeWalker } from "./spParser";
+import { FunctionParam } from "./interfaces";
+import { pointsToRange } from "./utils";
 
 /**
- * Process a macro statement.
- * @param  {spParserArgs} parserArgs  The parserArgs objects passed to the parser.
- * @param  {MacroStatement} res  Object containing the macro statement details.
+ * Process an enum declaration.
+ * @param  {TreeWalker} walker  TreeWalker object.
+ * @param  {SyntaxNode} node    Node to process.
  * @returns void
  */
-export function readMacro(parserArgs: spParserArgs, res: MacroStatement): void {
-  return;
-}
-
-/**
- * Link docstring to a macro's params.
- * @param  {string|null} value  The raw string of the macro's body.
- * @param  {string|undefined} doc  The documentation of the macro.
- * @returns FunctionParam
- */
-function processMacroParams(
-  value: string | null,
-  doc: string | undefined
-): FunctionParam[] {
-  if (!value) {
-    return [];
-  }
-  const match = value.match(/\%\d/g);
-  if (!match || match.length === 0) {
-    return [];
-  }
-  const params = match.slice(1);
-  const processedParams = params.map((e) => {
-    let documentation = "";
-    if (doc) {
-      const match = doc.match(new RegExp(`@param\\s+(?:\\b${e}\\b)([^\\@]+)`));
-      if (match) {
-        documentation = match[1].replace(/\*/gm, "").trim();
-      }
-    }
-    return {
-      label: e,
-      documentation,
-    } as FunctionParam;
-  });
-  return processedParams;
+export function readMacro(walker: TreeWalker, node: SyntaxNode): void {
+  const nameNode = node.childForFieldName("name");
+  const { doc, dep } = findDoc(walker, node);
+  const macroItem = new MacroItem(
+    nameNode.text,
+    node.text,
+    doc,
+    walker.filePath,
+    pointsToRange(nameNode.startPosition, nameNode.endPosition),
+    "any",
+    pointsToRange(node.startPosition, node.endPosition),
+    dep,
+    []
+  );
+  walker.fileItem.items.push(macroItem);
 }

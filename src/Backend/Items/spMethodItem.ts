@@ -15,7 +15,6 @@ import { basename } from "path";
 
 import { descriptionToMD } from "../../spUtils";
 import { SPItem } from "./spItems";
-import { FunctionParam } from "../../Parser/interfaces";
 import { EnumStructItem } from "./spEnumStructItem";
 import { MethodMapItem } from "./spMethodmapItem";
 import { PropertyItem } from "./spPropertyItem";

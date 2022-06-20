@@ -47,20 +47,10 @@ function readMethodmapMembers(
   node.children.forEach((e) => {
     switch (e.type) {
       case "methodmap_method":
-        readFunctionAndMethod(walker, e, parent);
-        break;
       case "methodmap_method_constructor":
-        readFunctionAndMethod(walker, e, parent);
-        break;
       case "methodmap_method_destructor":
-        readFunctionAndMethod(walker, e, parent);
-        break;
       case "methodmap_native":
-        readFunctionAndMethod(walker, e, parent);
-        break;
       case "methodmap_native_constructor":
-        readFunctionAndMethod(walker, e, parent);
-        break;
       case "methodmap_native_destructor":
         readFunctionAndMethod(walker, e, parent);
         break;

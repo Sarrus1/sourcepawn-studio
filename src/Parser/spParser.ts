@@ -20,6 +20,7 @@ import { readTypeset } from "./readTypeset";
 import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
 import { URI } from "vscode-uri";
 import { pointsToRange } from "./utils";
+import { readMacro } from "./readMacro";
 
 export function parseFile(
   file: string,
@@ -152,6 +153,9 @@ export class TreeWalker {
           break;
         case "typeset":
           readTypeset(this, child);
+          break;
+        case "preproc_macro":
+          readMacro(this, child);
           break;
       }
     }

@@ -4,7 +4,7 @@ import { TreeWalker } from "./spParser";
 
 /**
  * Try to find a documentation comment from the comments history of the TreeWalker.
- * @param  {TreeWalker} walker  TreeWalker used to find the documentation.
+ * @param  {TreeWalker} walker  TreeWalker object used to find the documentation.
  * @param  {SyntaxNode} node    Node we are trying to find the documentation for.
  * @returns DocString           Extrapolated DocString.
  */
