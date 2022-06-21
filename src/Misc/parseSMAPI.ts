@@ -1,9 +1,8 @@
 import { window, commands, workspace as Workspace } from "vscode";
-import * as glob from "glob";
-import { FileItems } from "../Backend/spFilesRepository";
-import { parseFile } from "../Parser/spParser";
+import glob from "glob";
 import { join } from "path";
 import { URI } from "vscode-uri";
+
 import { ItemsRepository } from "../Backend/spItemsRepository";
 
 /**
@@ -43,34 +42,10 @@ export function parseSMApi(itemsRepo: ItemsRepository): Promise<void> {
     if (debug) console.log("Parsing SM API");
 
     glob(join(SMHome, "**/*.inc"), async (err, files: string[]) => {
-      files.forEach((e) => itemsRepo.documents.add(URI.file(e).toString()));
-
-      for (let file of files) {
-        if (debug) console.log("SM API Reading", file);
-
-        const items = new FileItems(URI.file(file).toString());
-        try {
-          parseFile(file, items, itemsRepo, false, true);
-        } catch (e) {
-          console.debug(e);
-        }
-
-        if (debug) console.log("SM API Done parsing", file);
-
-        const uri = URI.file(file).toString();
-        itemsRepo.fileItems.set(uri, items);
-        itemsRepo.documents.add(uri);
-
-        if (debug) console.log("SM API Done dealing with", uri);
-      }
-
-      // Parse token references.
-      for (let file of files) {
-        const items = new FileItems(URI.file(file).toString());
-        if (debug) console.log("SM API Done parsing", file);
-        parseFile(file, items, itemsRepo, true, true);
-      }
-      if (debug) console.log("Done parsing SM API");
+      files.forEach((e) =>
+        itemsRepo.documents.set(URI.file(e).toString(), false)
+      );
+      // files.forEach((e) => newDocumentCallback(itemsRepo, URI.file(e)));
       resolve();
     });
   });

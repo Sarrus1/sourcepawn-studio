@@ -5,13 +5,12 @@ import { URI } from "vscode-uri";
 
 import { SPItem } from "./Items/spItems";
 import { IncludeItem } from "./Items/spIncludeItem";
-import { getLastEnumStructNameOrMethodMap } from "../Providers/spDefinitionProvider";
-import { FileItems } from "./spFilesRepository";
+import { FileItem } from "./spFilesRepository";
 import { getAllPossibleIncludeFolderPaths } from "./spFileHandlers";
 import { ItemsRepository } from "./spItemsRepository";
 import { findMainPath } from "../spUtils";
 import { getIncludeExtension } from "./spUtils";
-import { globalItem } from "../Misc/spConstants";
+import { MethodMapItem } from "./Items/spMethodmapItem";
 
 /**
  * Returns an array of all the items parsed from a file and its known includes
@@ -25,8 +24,8 @@ export function getAllItems(itemsRepo: ItemsRepository, uri: URI): SPItem[] {
     uri = URI.file(mainPath);
   }
 
-  let includes = new Set<string>([uri.toString()]);
-  let fileItems = itemsRepo.fileItems.get(uri.toString());
+  const includes = new Set<string>([uri.toString()]);
+  const fileItems = itemsRepo.fileItems.get(uri.toString());
   if (fileItems === undefined) {
     return [];
   }
@@ -36,36 +35,117 @@ export function getAllItems(itemsRepo: ItemsRepository, uri: URI): SPItem[] {
 }
 
 /**
+ * Returns a map of all the defines parsed from a file and its known includes
+ * @param  {ItemsRepository} itemsRepo      The itemsRepository object constructed in the activation event.
+ * @param  {URI} uri                        The URI of the file we are getting the items for.
+ * @param  {FileItem} fileItem              The fileItem object.
+ * @returns Map<string, string>
+ */
+export function getAllDefines(
+  itemsRepo: ItemsRepository,
+  uri: URI,
+  fileItem: FileItem
+): Map<string, string> {
+  const defines = new Map<string, string>(fileItem.defines);
+
+  const includes = new Set<string>([uri.toString()]);
+
+  getIncludedFiles(itemsRepo, fileItem, includes);
+  includes.forEach((e) => {
+    const fileItem = itemsRepo.fileItems.get(e);
+    if (fileItem === undefined) {
+      return;
+    }
+    fileItem.defines.forEach((v, k) => {
+      defines.set(k, v);
+    });
+  });
+  return defines;
+}
+
+/**
+ * Returns a map of all the methodmaps parsed from a file and its known includes
+ * @param  {ItemsRepository} itemsRepo      The itemsRepository object constructed in the activation event.
+ * @param  {URI} uri                        The URI of the file we are getting the methodmaps for.
+ * @returns Map<string, MethodMapItem>
+ */
+export function getAllMethodmaps(
+  itemsRepo: ItemsRepository,
+  uri: URI
+): Map<string, MethodMapItem> {
+  const mainPath = findMainPath(uri);
+  if (mainPath !== undefined && mainPath !== "") {
+    uri = URI.file(mainPath);
+  }
+
+  const includes = new Set<string>([uri.toString()]);
+  const methodmapItems = itemsRepo.fileItems.get(uri.toString());
+  if (methodmapItems === undefined) {
+    return new Map<string, MethodMapItem>();
+  }
+
+  getIncludedFiles(itemsRepo, methodmapItems, includes);
+  const methodmaps = new Map<string, MethodMapItem>();
+  includes.forEach((v) => {
+    getMethodmapItems.call(itemsRepo, methodmaps, v);
+  });
+  return methodmaps;
+}
+
+/**
+ * Callback used by the map function in getAllMethodmaps. Gets all the methodmaps from a parsed file, without its includes.
+ * @param  {ItemsRepository} this
+ * @param  {Map<string, MethodMapItem>} methodmapItems
+ * @param  {string} uri
+ * @returns void
+ */
+function getMethodmapItems(
+  this: ItemsRepository,
+  methodmapItems: Map<string, MethodMapItem>,
+  uri: string
+): void {
+  const items = this.fileItems.get(uri);
+  if (items === undefined) {
+    return;
+  }
+  items.items.forEach((e) => {
+    if (e.kind === CompletionItemKind.Class) {
+      methodmapItems.set(e.name, e as MethodMapItem);
+    }
+  });
+}
+
+/**
  * Callback used by the map function in getAllItems. Gets all the items from a parsed file, without its includes.
  * @param  {string} uri    The URI of the file we should get the items for.
  * @returns SPItem
  */
 function getFileItems(this: ItemsRepository, uri: string): SPItem[] {
-  let items = this.fileItems.get(uri);
-  return items !== undefined ? Array.from(items.values()) : [];
+  const items = this.fileItems.get(uri);
+  return items !== undefined ? items.items : [];
 }
 
 /**
  * Recursively get all the includes from a FileItems object.
- * @param  {FileItems} fileItems    The object to get the includes from.
+ * @param  {FileItem} fileItems    The object to get the includes from.
  * @param  {Set<string>} includes   The Set to add the include to.
  * @returns void
  */
 function getIncludedFiles(
   itemsRepo: ItemsRepository,
-  fileItems: FileItems,
+  fileItems: FileItem,
   includes: Set<string>
 ): void {
-  for (let include of fileItems.includes) {
-    if (includes.has(include.uri)) {
-      continue;
+  fileItems.includes.forEach((v, k) => {
+    if (includes.has(v.uri)) {
+      return;
     }
-    includes.add(include.uri);
-    let includeFileItems = itemsRepo.fileItems.get(include.uri);
+    includes.add(v.uri);
+    const includeFileItems = itemsRepo.fileItems.get(v.uri);
     if (includeFileItems) {
       getIncludedFiles(itemsRepo, includeFileItems, includes);
     }
-  }
+  });
 }
 
 /**
@@ -90,57 +170,41 @@ export function getItemFromPosition(
   const word = document.getText(range);
   const line = document.lineAt(position.line).text;
 
+  if (word === "float") {
+    const substring = line.slice(range.start.character);
+    if (/^float\s*\(/.test(substring)) {
+      return allItems.filter((e) => e.name === "float");
+    }
+  }
+
   // Generate an include item if the line is an #include statement and return it.
-  let includeItem = makeIncludeItem(document, line, position);
+  const includeItem = makeIncludeItem(document, line, position);
   if (includeItem.length > 0) {
     return includeItem;
   }
 
-  let lastEnumStructOrMethodMap = getLastEnumStructNameOrMethodMap(
-    position,
-    document.uri.fsPath,
-    allItems
-  );
-
-  let items = allItems.filter((e) => {
-    if (e.name !== word) {
+  return allItems.filter((item) => {
+    if (item.name !== word) {
       return false;
     }
-
-    if (
-      e.kind === CompletionItemKind.Variable &&
-      e.parent !== globalItem &&
-      allItems.find((e1) => {
-        let check =
-          [CompletionItemKind.Function, CompletionItemKind.Method].includes(
-            e1.kind
-          ) &&
-          e1 === e.parent &&
-          e1.fullRange.contains(position) &&
-          e1.filePath === document.uri.fsPath;
-
-        // Handle variables inside of methods.
-        if (lastEnumStructOrMethodMap !== undefined && check) {
-          return (
-            e.enumStructName === lastEnumStructOrMethodMap.name &&
-            lastEnumStructOrMethodMap.fullRange.contains(e1.fullRange) &&
-            lastEnumStructOrMethodMap.fullRange.contains(e.range)
-          );
+    if (!item.range) {
+      return false;
+    }
+    if (range.isEqual(item.range) && item.filePath === document.uri.fsPath) {
+      return true;
+    }
+    if (item.references) {
+      for (const ref of item.references) {
+        if (
+          range.isEqual(ref.range) &&
+          ref.uri.fsPath === document.uri.fsPath
+        ) {
+          return true;
         }
-        return check;
-      })
-    ) {
-      return true;
-    }
-    if (e.range !== undefined && range.isEqual(e.range)) {
-      return true;
-    }
-    if (e.references !== undefined) {
-      return e.references.find((e) => range.isEqual(e.range)) !== undefined;
+      }
     }
     return false;
   });
-  return items;
 }
 
 /**

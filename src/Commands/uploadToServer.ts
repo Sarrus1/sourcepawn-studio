@@ -1,16 +1,17 @@
 ﻿import { workspace as Workspace, window, commands } from "vscode";
 import { join } from "path";
 import { run as refreshPluginsCommand } from "./refreshPlugins";
+import { findMainPath } from "../spUtils";
 // Keep the include like this,
 // otherwise FTPDeploy is not
 // recognised as a constructor
 const FTPDeploy = require("ftp-deploy");
 
 export async function run(args: any) {
-  let ftpDeploy = new FTPDeploy();
-  let workspaceFolder =
+  const ftpDeploy = new FTPDeploy();
+  const workspaceFolder =
     args === undefined ? undefined : Workspace.getWorkspaceFolder(args);
-  let config: object = Workspace.getConfiguration(
+  const config: object = Workspace.getConfiguration(
     "sourcepawn",
     workspaceFolder
   ).get("UploadOptions");
@@ -46,20 +47,24 @@ export async function run(args: any) {
   // Override the "deleteRemote" setting for safety.
   config["deleteRemote"] = false;
 
-  // Concat the workspace with it's root if the path is relative.
+  if (config["localRoot"] === "${mainPath}") {
+    config["localRoot"] = findMainPath();
+  }
+
   if (config["isRootRelative"]) {
+    // Concat the workspace with it's root if the path is relative.
     if (workspaceFolder === undefined) {
       window.showWarningMessage(
         "No workspace or folder found, with isRootRelative is set to true.\nSet it to false, or open the file from a workspace."
       );
       return 1;
     }
-    let workspaceRoot = workspaceFolder.uri.fsPath;
+    const workspaceRoot = workspaceFolder.uri.fsPath;
     config["localRoot"] = join(workspaceRoot, config["localRoot"]);
   }
 
   // Copy the config object to avoid https://github.com/microsoft/vscode/issues/80976
-  let ftpConfig = { ...config };
+  const ftpConfig = { ...config };
   // Delete that setting to avoid problems with the ftp/sftp library
   delete ftpConfig["isRootRelative"];
 

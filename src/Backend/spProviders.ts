@@ -1,5 +1,4 @@
 ﻿import {
-  Memento,
   TextDocument,
   Position,
   CancellationToken,
@@ -14,6 +13,9 @@
   ReferenceContext,
   WorkspaceEdit,
   Range,
+  CallHierarchyItem,
+  CallHierarchyIncomingCall,
+  CallHierarchyOutgoingCall,
 } from "vscode";
 import { ItemsRepository } from "./spItemsRepository";
 import { JsDocCompletionProvider } from "../Providers/spDocCompletions";
@@ -26,14 +28,19 @@ import { semanticTokenProvider } from "../Providers/spSemanticTokenProvider";
 import { referencesProvider } from "../Providers/spReferencesProvider";
 import { renameProvider } from "../Providers/spRenameProvider";
 import { getItemFromPosition } from "./spItemsGetters";
+import {
+  prepareCallHierarchy,
+  provideIncomingCalls,
+  provideOutgoingCalls,
+} from "../Providers/spCallHierarchy";
 
 export class Providers {
   documentationProvider: JsDocCompletionProvider;
   itemsRepository: ItemsRepository;
 
-  constructor(globalState?: Memento) {
+  constructor() {
     this.documentationProvider = new JsDocCompletionProvider();
-    this.itemsRepository = new ItemsRepository(globalState);
+    this.itemsRepository = new ItemsRepository();
   }
 
   public async provideCompletionItems(
@@ -101,7 +108,7 @@ export class Providers {
     position: Position,
     token: CancellationToken
   ): Promise<Range> {
-    let items = getItemFromPosition(this.itemsRepository, document, position);
+    const items = getItemFromPosition(this.itemsRepository, document, position);
     if (items.length > 0) {
       return items[0].range;
     }
@@ -121,5 +128,27 @@ export class Providers {
       newName,
       token
     );
+  }
+
+  public async provideCallHierarchyIncomingCalls(
+    item: CallHierarchyItem,
+    token: CancellationToken
+  ): Promise<CallHierarchyIncomingCall[]> {
+    return provideIncomingCalls(item, token, this.itemsRepository);
+  }
+
+  public async provideCallHierarchyOutgoingCalls(
+    item: CallHierarchyItem,
+    token: CancellationToken
+  ): Promise<CallHierarchyOutgoingCall[]> {
+    return provideOutgoingCalls(item, token, this.itemsRepository);
+  }
+
+  public async prepareCallHierarchy(
+    document: TextDocument,
+    position: Position,
+    token: CancellationToken
+  ): Promise<CallHierarchyItem | CallHierarchyItem[]> {
+    return prepareCallHierarchy.call(this, document, position, token);
   }
 }

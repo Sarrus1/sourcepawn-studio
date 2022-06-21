@@ -5,4 +5,10 @@ export const compilerDiagnostics = languages.createDiagnosticCollection(
   "compiler"
 );
 
+export const parserDiagnostics = languages.createDiagnosticCollection("parser");
+
+export const preDiagnostics = languages.createDiagnosticCollection(
+  "preprocessor"
+);
+
 export const cfgDiagnostics = languages.createDiagnosticCollection("cfg");

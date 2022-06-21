@@ -11,12 +11,11 @@ import {
 import { URI } from "vscode-uri";
 
 import { descriptionToMD } from "../../spUtils";
-import { EnumStructItem } from "./spEnumStructItem";
 import { SPItem } from "./spItems";
 import { MethodMapItem } from "./spMethodmapItem";
 
 export class PropertyItem implements SPItem {
-  parent: MethodMapItem | EnumStructItem;
+  parent: MethodMapItem;
   name: string;
   filePath: string;
   description: string;
@@ -26,24 +25,29 @@ export class PropertyItem implements SPItem {
   range: Range;
   references: Location[];
   fullRange: Range;
+  deprecated: string;
 
   constructor(
-    parent: MethodMapItem | EnumStructItem,
+    parent: MethodMapItem,
     name: string,
     file: string,
     detail: string,
     description: string,
     range: Range,
-    type: string
+    fullRange: Range,
+    type: string,
+    deprecated: string | undefined
   ) {
     this.parent = parent;
     this.name = name;
     this.filePath = file;
     this.description = description;
     this.range = range;
+    this.fullRange = fullRange;
     this.type = type;
     this.detail = detail;
     this.references = [];
+    this.deprecated = deprecated;
   }
 
   toCompletionItem(): CompletionItem {
@@ -70,7 +74,7 @@ export class PropertyItem implements SPItem {
       return undefined;
     }
     return new Hover([
-      { language: "sourcepawn", value: this.name },
+      { language: "sourcepawn", value: this.detail },
       descriptionToMD(this.description),
     ]);
   }

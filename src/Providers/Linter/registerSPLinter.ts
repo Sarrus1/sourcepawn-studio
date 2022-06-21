@@ -1,22 +1,15 @@
-﻿import {
-  workspace as Workspace,
-  window,
-  languages,
-  ExtensionContext,
-} from "vscode";
-import { refreshCfgDiagnostics } from "../cfgLinter";
+﻿import { workspace as Workspace, window, ExtensionContext } from "vscode";
 
 import { refreshDiagnostics } from "../spLinter";
 import { compilerDiagnostics } from "./compilerDiagnostics";
 import { throttles } from "./throttles";
 
 export function registerSPLinter(context: ExtensionContext) {
-  context.subscriptions.push(languages.createDiagnosticCollection("compiler"));
+  context.subscriptions.push(compilerDiagnostics);
   context.subscriptions.push(
     window.onDidChangeActiveTextEditor((editor) => {
       if (editor) {
         refreshDiagnostics(editor.document);
-        refreshCfgDiagnostics(editor.document);
       }
     })
   );

@@ -14,8 +14,8 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
-    "noImplicitAny": false,
-    "noImplicitThis": false,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
     "strictNullChecks": false
   },
   "include": ["src", "src/**/*.ts"],

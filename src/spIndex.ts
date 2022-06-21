@@ -3,12 +3,12 @@ import {
   workspace as Workspace,
   languages,
   window,
-  StatusBarAlignment,
-  StatusBarItem,
+  ProgressLocation,
 } from "vscode";
 import { URI } from "vscode-uri";
-import { resolve } from "path";
-const glob = require("glob");
+import { join, resolve } from "path";
+import * as glob from "glob";
+import Parser from "web-tree-sitter";
 
 import { refreshDiagnostics } from "./Providers/spLinter";
 import { registerSPLinter } from "./Providers/Linter/registerSPLinter";
@@ -20,53 +20,47 @@ import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
 import { findMainPath, checkMainPath } from "./spUtils";
-import { updateDecorations } from "./Providers/decorationsProvider";
+import { updateDecorations } from "./Providers/spDecorationsProvider";
+
+export let parser: Parser;
+export let spLangObj: Parser.Language;
+export let symbolQuery: Parser.Query;
+export let variableQuery: Parser.Query;
 
 export function activate(context: ExtensionContext) {
-  const providers = new Providers(context.globalState);
+  const providers = new Providers();
 
-  const SBItem = window.createStatusBarItem(StatusBarAlignment.Left, 0);
-  SBItem.command = "status.enablingSPFeatures";
-  SBItem.text = "Enabling SourcePawn features...";
-  SBItem.show();
+  const workspaceFolders = Workspace.workspaceFolders || [];
+  const watcher = Workspace.createFileSystemWatcher(
+    "**/*.{inc,sp}",
+    false,
+    true,
+    false
+  );
 
-  let workspaceFolders = Workspace.workspaceFolders || [];
-  if (workspaceFolders.length === 0) {
-    window.showWarningMessage(
-      "No workspace or folder found. \n Please open the folder containing your .sp file, not just the .sp file."
-    );
-  } else {
-    const watcher = Workspace.createFileSystemWatcher(
-      "**/*.{inc,sp}",
-      false,
-      true,
-      false
-    );
-
-    watcher.onDidCreate((uri) => {
-      let uriString = URI.file(uri.fsPath).toString();
-      providers.itemsRepository.documents.add(uriString);
-      let mainPath = findMainPath(uri);
-      if (mainPath !== undefined && mainPath !== "") {
-        mainPath = URI.file(mainPath).toString();
-        for (let document of Workspace.textDocuments) {
-          if (document.uri.toString() === mainPath) {
-            refreshDiagnostics(document);
-            break;
-          }
+  watcher.onDidCreate((uri) => {
+    const uriString = URI.file(uri.fsPath).toString();
+    providers.itemsRepository.documents.set(uriString, false);
+    let mainPath = findMainPath(uri);
+    if (mainPath !== undefined && mainPath !== "") {
+      mainPath = URI.file(mainPath).toString();
+      for (const document of Workspace.textDocuments) {
+        if (document.uri.toString() === mainPath) {
+          refreshDiagnostics(document);
+          break;
         }
       }
-    });
-    watcher.onDidDelete((uri) => {
-      providers.itemsRepository.documents.delete(uri.fsPath);
-    });
+    }
+  });
+  watcher.onDidDelete((uri) => {
+    providers.itemsRepository.documents.delete(uri.fsPath);
+  });
 
-    // Get all the files from the workspaces
-    getDirectories(
-      workspaceFolders.map((e) => e.uri.fsPath),
-      providers
-    );
-  }
+  // Get all the files from the workspaces
+  getDirectories(
+    workspaceFolders.map((e) => e.uri.fsPath),
+    providers
+  );
 
   Workspace.onDidChangeWorkspaceFolders((e) => {
     getDirectories(
@@ -83,16 +77,35 @@ export function activate(context: ExtensionContext) {
   );
   getDirectories(optionalIncludeDirs, providers);
 
-  loadFiles(providers, SBItem);
+  window.withProgress(
+    {
+      location: ProgressLocation.Window,
+      cancellable: false,
+      title: "Initializing SourcePawn features",
+    },
+    async (progress) => {
+      progress.report({ increment: 0 });
+
+      await loadFiles(providers);
+
+      progress.report({ increment: 100 });
+    }
+  );
 
   Workspace.onDidChangeConfiguration((e) => {
     if (e.affectsConfiguration("sourcepawn.MainPath")) {
-      let newMainPath = findMainPath();
+      const newMainPath = findMainPath();
       if (newMainPath !== undefined && !checkMainPath(newMainPath)) {
         window.showErrorMessage(
           "A setting for the main.sp file was specified, but seems invalid. Right click on a file and use the command at the bottom of the menu to set it as main."
         );
+        return;
       }
+      providers.itemsRepository.documents.forEach((v, k) =>
+        providers.itemsRepository.documents.set(k, false)
+      );
+      providers.itemsRepository.fileItems = new Map();
+      loadFiles(providers);
     }
   });
 
@@ -117,7 +130,8 @@ export function activate(context: ExtensionContext) {
       "\\",
       ".",
       ":",
-      " "
+      " ",
+      "$"
     )
   );
   context.subscriptions.push(
@@ -165,23 +179,9 @@ export function activate(context: ExtensionContext) {
 
   context.subscriptions.push(
     languages.registerDocumentFormattingEditProvider(
-      [
-        {
-          language: "sp-translations",
-        },
-        {
-          language: "sp-gamedata",
-        },
-        {
-          language: "valve-cfg",
-        },
-        {
-          language: "valve-ini",
-        },
-        {
-          language: "sourcemod-kv",
-        },
-      ],
+      {
+        language: "valve-kv",
+      },
       new CFGDocumentFormattingEditProvider()
     )
   );
@@ -190,16 +190,22 @@ export function activate(context: ExtensionContext) {
     languages.registerHoverProvider(SP_MODE, providers)
   );
 
+  context.subscriptions.push(
+    languages.registerCallHierarchyProvider(SP_MODE, providers)
+  );
+
   Workspace.onDidChangeTextDocument(
     providers.itemsRepository.handleDocumentChange,
     providers.itemsRepository,
     context.subscriptions
   );
+
   Workspace.onDidOpenTextDocument(
     providers.itemsRepository.handleNewDocument,
     providers.itemsRepository,
     context.subscriptions
   );
+
   Workspace.onDidCreateFiles(
     providers.itemsRepository.handleAddedDocument,
     providers.itemsRepository,
@@ -217,35 +223,85 @@ export function activate(context: ExtensionContext) {
 }
 
 function getDirectories(paths: string[], providers: Providers) {
-  for (let path of paths) {
-    let files = glob.sync(path.replace(/\/\s*$/, "") + "/**/*.{inc,sp}");
-    for (let file of files) {
-      providers.itemsRepository.documents.add(URI.file(file).toString());
+  for (const path of paths) {
+    const files = glob.sync(path.replace(/\/\s*$/, "") + "/**/*.{inc,sp}");
+    for (const file of files) {
+      providers.itemsRepository.documents.set(URI.file(file).toString(), false);
     }
   }
 }
 
-async function loadFiles(providers: Providers, SBItem: StatusBarItem) {
+async function loadFiles(providers: Providers) {
+  console.time("build parser");
+  await buildParser();
+  console.timeEnd("build parser");
+  console.time("parse");
+
   await parseSMApi(providers.itemsRepository);
 
   const mainPath = findMainPath();
+
   if (mainPath !== undefined) {
     if (!checkMainPath(mainPath)) {
       window.showErrorMessage(
-        "A setting for the main.sp file was specified, but seems invalid. Right click on a file and use the command at the bottom of the menu to set it as main."
+        "A setting for the main.sp file was specified, but seems invalid.\
+        \nRight click on a file and use the command at the bottom of the menu to set it as main."
       );
     } else {
       providers.itemsRepository.handleDocumentOpening(mainPath);
     }
+  } else {
+    // Load the currently opened file
+    const files = await Workspace.findFiles("**/*.sp");
+    if (window.activeTextEditor) {
+      providers.itemsRepository.handleDocumentOpening(
+        window.activeTextEditor.document.uri.fsPath
+      );
+    }
+
+    const wk = Workspace.workspaceFolders;
+    if (wk === undefined && files.length > 1) {
+      window.showWarningMessage(
+        "There are no mainpath setting set for this file, and the extension was not able to compute one.\
+        The extension will not work properly.\
+        \nRight click on a file and use the command at the bottom of the menu to set it as main."
+      );
+      return;
+    }
+
+    if (files.length > 1) {
+      window
+        .showWarningMessage(
+          "There is no mainpath setting set for this file. The extension will not work properly.",
+          "Select a main path",
+          "Ignore"
+        )
+        .then((v) => {
+          if (v === "Select a main path") {
+            window.showQuickPick(files.map((e) => e.fsPath)).then(async (v) => {
+              await Workspace.getConfiguration("sourcepawn", wk[0]).update(
+                "MainPath",
+                v
+              );
+            });
+          }
+        });
+    }
   }
 
-  // Load the currently opened file
-  if (window.activeTextEditor != undefined) {
-    providers.itemsRepository.handleDocumentOpening(
-      window.activeTextEditor.document.uri.fsPath
-    );
-  }
   updateDecorations(providers.itemsRepository);
 
-  SBItem.hide();
+  console.timeEnd("parse");
+}
+
+async function buildParser() {
+  await Parser.init();
+  parser = new Parser();
+  const langFile = join(__dirname, "tree-sitter-sourcepawn.wasm");
+  spLangObj = await Parser.Language.load(langFile);
+  parser.setLanguage(spLangObj);
+  variableQuery = spLangObj.query(
+    "[(variable_declaration_statement) @declaration.variable (old_variable_declaration_statement)  @declaration.variable]"
+  );
+  symbolQuery = spLangObj.query("[(symbol) @symbol (this) @symbol]");
 }

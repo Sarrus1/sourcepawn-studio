@@ -1,5 +1,41 @@
 ## Release Notes
 
+## [4.0.0]
+
+### Added
+
+- Added a brand new parser.
+- Nicer loader.
+- Better docstring generation.
+- Complete syntax highlighting overhaul.
+- Added positional arguments support.
+- Added code folding for `#if` and `#endif` (see #210).
+- Added the possibility to use `${mainPath}` as the localRoot setting for the FTP/SFTP upload setting (see #209).
+- Separated primitive types from other types, like in the C/C++ extension.
+- Added better methodmap constructor support.
+- Added better methodmap property support.
+- Improved the old syntax support.
+- Improved incorrect configuration warnings.
+- Improved missing main path error message.
+- Improved Valve KeyValue and Valve CFG highlighting.
+
+### Fixed
+
+- Fixed random strikethrough appearing throughout the code (see #216).
+- Fixed asynchronous parsing.
+- Fix a zip deploy issue for the release workflow template (thanks to [domikuss](https://github.com/domikuss) for implementing this, see #220).
+- Fixed auto closing `*/` insertion for non docstring comments.
+- Fixed an issue where items would show a definition in string and comments (see #214).
+- Fixed an issue where methods definition would not point to the correct method.
+- Fixed deprecated color highlighting.
+- Fixed a highlighting bugs with methods/properties definitions.
+- Fixed SP linter arguments not being parsed correctly.
+- Fixed support for standalone .sp files.
+
+### Removed
+
+- Removed `/* Content */` in code snippets (see #211).
+
 ## [3.1.0]
 
 ### Added

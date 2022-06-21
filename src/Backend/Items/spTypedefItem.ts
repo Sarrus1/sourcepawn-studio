@@ -7,14 +7,16 @@ import {
   SymbolKind,
   LocationLink,
   Location,
+  SnippetString,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { basename } from "path";
 
 import { descriptionToMD } from "../../spUtils";
 import { SPItem } from "./spItems";
+import { SyntaxNode } from "web-tree-sitter";
 
-export class TypeDefItem implements SPItem {
+export class TypedefItem implements SPItem {
   name: string;
   details: string;
   type: string;
@@ -24,6 +26,7 @@ export class TypeDefItem implements SPItem {
   range: Range;
   fullRange: Range;
   references: Location[];
+  params_signature: SyntaxNode[];
 
   constructor(
     name: string,
@@ -32,7 +35,8 @@ export class TypeDefItem implements SPItem {
     description: string,
     type: string,
     range: Range,
-    fullRange: Range
+    fullRange: Range,
+    params_signature: SyntaxNode[]
   ) {
     this.name = name;
     this.details = details;
@@ -42,6 +46,7 @@ export class TypeDefItem implements SPItem {
     this.range = range;
     this.fullRange = fullRange;
     this.references = [];
+    this.params_signature = params_signature;
   }
 
   toCompletionItem(): CompletionItem {
@@ -64,11 +69,11 @@ export class TypeDefItem implements SPItem {
   }
 
   toHover(): Hover | undefined {
-    if (!this.description) {
-      return undefined;
-    }
     return new Hover([
-      { language: "sourcepawn", value: this.details },
+      {
+        language: "sourcepawn",
+        value: this.details,
+      },
       descriptionToMD(this.description),
     ]);
   }
@@ -84,5 +89,37 @@ export class TypeDefItem implements SPItem {
       this.fullRange,
       this.range
     );
+  }
+
+  toSnippet(range: Range): CompletionItem {
+    const snippet = new SnippetString();
+    snippet.appendText(`${this.type} `);
+    snippet.appendPlaceholder("name");
+    snippet.appendText("(");
+    if (!this.params_signature) {
+      return undefined;
+    }
+    this.params_signature.forEach((param, i) => {
+      const nameNode = param.childForFieldName("name");
+      snippet.appendText(
+        param.text.replace(new RegExp(`\\b${nameNode.text}\\b\\s*$`), "")
+      );
+      snippet.appendPlaceholder(nameNode.text);
+      if (i !== this.params_signature.length - 1) {
+        snippet.appendText(", ");
+      }
+    });
+
+    snippet.appendText(")\n{\n\t");
+    snippet.appendTabstop();
+    snippet.appendText("\n}");
+    return {
+      label: this.name,
+      filterText: "$" + this.name,
+      range,
+      kind: CompletionItemKind.Function,
+      insertText: snippet,
+      detail: this.details,
+    };
   }
 }

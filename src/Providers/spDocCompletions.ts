@@ -15,13 +15,13 @@ const indentSize: number = 5;
 
 class SpDocCompletionItem extends CompletionItem {
   constructor(position: Position, FunctionDesc: string[], indent: string) {
-    super("/** */", CompletionItemKind.Text);
-    let snippet = new SnippetString();
-    let max = getMaxLength(FunctionDesc);
+    super("Generate docstring", CompletionItemKind.Text);
+    const snippet = new SnippetString();
+    const max = getMaxLength(FunctionDesc);
     snippet.appendText(`${indent}/**\n ${indent}* `);
     snippet.appendPlaceholder("Description");
     this.appendTextSnippet(snippet, "", indent);
-    for (let arg of FunctionDesc) {
+    for (const arg of FunctionDesc) {
       this.appendTextSnippet(
         snippet,
         "@param " + arg + " ".repeat(getSpaceLength(arg, max)),
@@ -35,10 +35,11 @@ class SpDocCompletionItem extends CompletionItem {
       indent
     );
     snippet.appendPlaceholder("Return description");
-    snippet.appendText(`\n${indent}`);
+    snippet.appendText(`\n${indent} */`);
     this.insertText = snippet;
-    let start: Position = new Position(position.line, 0);
-    let end: Position = new Position(position.line, 0);
+    this.filterText = "/*";
+    const start: Position = new Position(position.line, 0);
+    const end: Position = new Position(position.line, 0);
     this.range = new Range(start, end);
   }
 
@@ -60,14 +61,14 @@ export class JsDocCompletionProvider implements CompletionItemProvider {
     if (!document) {
       return undefined;
     }
-    let { signature, indent } = await getFullParams(document, position);
+    const { signature, indent } = await getFullParams(document, position);
     if (signature === undefined) {
       return undefined;
     }
 
-    let functionDesc = signature.parameters.map((e) => e.label.toString());
+    const functionDesc = signature.parameters.map((e) => e.label.toString());
 
-    let DocCompletionItem = new SpDocCompletionItem(
+    const DocCompletionItem = new SpDocCompletionItem(
       position,
       functionDesc,
       indent
@@ -78,7 +79,7 @@ export class JsDocCompletionProvider implements CompletionItemProvider {
 
 function getMaxLength(arr: string[]): number {
   let max: number = 0;
-  for (let str of arr) {
+  for (const str of arr) {
     if (str.length > max) max = str.length;
   }
   return max;
@@ -94,9 +95,9 @@ function getSpaceLengthReturn(max): number {
 
 async function getFullParams(document: TextDocument, position: Position) {
   const lines = document.getText().split("\n");
-  let lineNB = position.line + 1;
-  let line = lines[lineNB];
-  let newSyntaxRe = /^(\s)*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\(/;
+  const lineNB = position.line + 1;
+  const line = lines[lineNB];
+  const newSyntaxRe = /^(\s)*(?:(?:stock|public|native|forward|static)\s+)*(?:(\w*)\s+)?(\w*)\s*\(/;
   let match = line.match(newSyntaxRe);
   if (!match) {
     match = line.match(
@@ -109,8 +110,8 @@ async function getFullParams(document: TextDocument, position: Position) {
       };
     }
   }
-  let newPos = new Position(lineNB, match[0].length);
-  let res: SignatureHelp = await commands.executeCommand(
+  const newPos = new Position(lineNB, match[0].length);
+  const res: SignatureHelp = await commands.executeCommand(
     "vscode.executeSignatureHelpProvider",
     document.uri,
     newPos

@@ -35,8 +35,8 @@ export function isInAComment(
   uri: URI,
   allItems: SPItem[]
 ): boolean {
-  let file = uri.fsPath;
-  let item = allItems.find(
+  const file = uri.fsPath;
+  const item = allItems.find(
     (e) =>
       e.kind === CompletionItemKind.User &&
       e.filePath == file &&
@@ -48,7 +48,7 @@ export function isInAComment(
 export function isInAString(range: Range, line: string): boolean {
   let i = 0;
   let isEscaped = false;
-  let end = range.end.character;
+  const end = range.end.character;
   let isAString = false;
   let delimiter: string | undefined;
   for (i = 0; i < line.length && i < end; i++) {
@@ -82,22 +82,22 @@ export function isFunction(
   document: TextDocument,
   lineLength: number
 ): boolean {
-  let start = new Position(range.start.line, range.end.character);
-  let end = new Position(range.end.line, lineLength + 1);
-  let rangeAfter = new Range(start, end);
-  let rangeBefore = new Range(
+  const start = new Position(range.start.line, range.end.character);
+  const end = new Position(range.end.line, lineLength + 1);
+  const rangeAfter = new Range(start, end);
+  const rangeBefore = new Range(
     range.start.line,
     0,
     range.start.line,
     range.end.character
   );
-  let wordsAfter: string = document.getText(rangeAfter);
-  let wordsBefore: string = document.getText(rangeBefore);
+  const wordsAfter: string = document.getText(rangeAfter);
+  const wordsBefore: string = document.getText(rangeBefore);
   return /^\s*\(/.test(wordsAfter) && !/function\s+\w+$/.test(wordsBefore);
 }
 
 export function isControlStatement(line: string): boolean {
-  let toCheck: RegExp[] = [
+  const toCheck: RegExp[] = [
     /\s*\bif\b/,
     /\s*\bfor\b/,
     /\s*\bwhile\b/,
@@ -105,7 +105,7 @@ export function isControlStatement(line: string): boolean {
     /\s*\bswitch\b/,
     /\s*\breturn\b/,
   ];
-  for (let re of toCheck) {
+  for (const re of toCheck) {
     if (re.test(line)) {
       return true;
     }
@@ -113,7 +113,7 @@ export function isControlStatement(line: string): boolean {
   return false;
 }
 
-export function getLastEnumStructNameOrMethodMap(
+export function getLastESOrMM(
   position: Position,
   filePath: string,
   allItems: SPItem[]

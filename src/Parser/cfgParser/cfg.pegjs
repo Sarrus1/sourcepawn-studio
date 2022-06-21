@@ -1,114 +1,115 @@
-﻿CFG_text
-  = members:(@member) {
-  	let res = {};
-    res[members.name] = members.value;
-    res["loc"] = members["loc"];
-    return res;
-  }
-
-begin_object    = ws "{" ws
-end_object      = ws "}" ws
-name_separator  = ws Comment? ws
-value_separator = ws
-
-ws "whitespace" = [ \t\n\r]*
-
-
-Comment "comment"
-  = MultiLineComment
-  / SingleLineComment
-
-// ----- 3. Values -----
-
-value
-  = object
-  / string
-
-// ----- 4. Objects -----
-
-member
-  = name:key name_separator value:value Comment?{
-      return { name: name, value: value, loc: location() };
+﻿Start
+  = __ keyvalues:KeyValue* {
+      return keyvalues;
     }
 
-object
-  = begin_object
-    (Comment ws)?
-    members:(
-      head:member
-      tail:(value_separator @member)*
-      {
+KeyValue
+  = key:Key __ value:(Value / Section) __ {
+      return {
+        key,
+        value
+      };
+    }
 
-        var result = [head].concat(tail).map(function(element) {
-          let res = {};
-          res["name"] = element.name;
-          res["value"] = element.value;
-          res["location"] = location();
-          return res;
-        });
+Key "key"
+  = key:QuotedString
+  {
+    return {
+      loc: location(),
+      key
+    };
+  }
 
-        return result;
-      }
-    )
-    Comment?
-    end_object
-    { 
-      members["loc"] = location();
-      return members !== null ? members: {}; }
+Value "value"
+  = value:QuotedString
+  {
+    return {
+      loc: location(),
+      value
+    };
+  }
 
+Section "section"
+  = "{" __ keyvalues:KeyValue* "}" {
+      return keyvalues;
+    }
 
-// ----- 7. Strings -----
+QuotedString "string"
+  = '"' chars:DoubleStringCharacter* '"' {
+      return chars.join("");
+    }
 
-string "string"
-  = quotation_mark chars:char* quotation_mark { return chars.join(""); }
+DoubleStringCharacter
+  = !('"' / "\\") SourceCharacter { return text(); }
+  / "\\" sequence:CharacterEscapeSequence { return sequence; }
 
-key "key"
-  = quotation_mark chars:char+ quotation_mark { return chars.join(""); }
+CharacterEscapeSequence
+  = SingleEscapeCharacter
+  / char:NonEscapeCharacter { return "\\" + char; }
 
-char
-  = unescaped
-  / escape
-    sequence:(
-        '"'
-      / "\\"
-      / "/"
-      / "b" { return "\b"; }
-      / "f" { return "\f"; }
-      / "n" { return "\n"; }
-      / "r" { return "\r"; }
-      / "t" { return "\t"; }
-      / "u" digits:$(HEXDIG HEXDIG HEXDIG HEXDIG) {
-          return String.fromCharCode(parseInt(digits, 16));
-        }
-    )
-    { return sequence; }
+SingleEscapeCharacter
+  = '"'
+  / "\\"
+  / "n"  { return "\n"; }
+  / "r"  { return "\r"; }
+  / "t"  { return "\t"; }
 
-LineTerminator
-  = [\n\r\u2028\u2029]
+NonEscapeCharacter
+  = !SingleEscapeCharacter SourceCharacter { return text(); }
 
 SourceCharacter
   = .
 
+WhiteSpace "whitespace"
+  = "\t"
+  / "\v"
+  / "\f"
+  / " "
+
+LineTerminator
+  = [\n\r]
+
+LineTerminatorSequence "end of line"
+  = "\n"
+  / "\r\n"
+  / "\r"
+
+Comment "comment"
+  = comment:(MultiLineComment
+  / SingleLineComment)
+  {
+    return comment;
+  }
+
 MultiLineComment
-  = "/*" (!"*/" SourceCharacter)* "*/"
+  = value:("/*" (!"*/" SourceCharacter)* "*/")
+  {
+    return {
+      type: "MultiLineComment",
+      loc: location(),
+      value
+    };
+  }
 
 MultiLineCommentNoLineTerminator
-  = "/*" (!("*/" / LineTerminator) SourceCharacter)* "*/"
+  = value:("/*" (!("*/" / LineTerminator) SourceCharacter)* "*/")
+  {
+    return {
+      type: "MultiLineCommentNoLineTerminator",
+      loc: location(),
+      value
+    };
+  }
 
 SingleLineComment
-  = "//" (!LineTerminator SourceCharacter)*
+  = value:("//" (!LineTerminator SourceCharacter)*)
+  {
+    return {
+      type: "SingleLineComment",
+      loc: location(),
+      value
+    };
+  }
 
-escape
-  = "\\"
-
-quotation_mark
-  = '"'
-
-unescaped
-  = [^\0-\x1F\x22\x5C]
-
-// ----- Core ABNF Rules -----
-
-// See RFC 4234, Appendix B (http://tools.ietf.org/html/rfc4234).
-DIGIT  = [0-9]
-HEXDIG = [0-9a-f]i
+__
+  = (WhiteSpace / LineTerminatorSequence / Comment)*

@@ -1,10 +1,11 @@
-import { Position, CompletionItemKind } from "vscode";
+import { Position, CompletionItemKind, workspace as Workspace } from "vscode";
 
 import { SPItem } from "./Items/spItems";
 import { globalIdentifier, globalItem } from "../Misc/spConstants";
 import { FunctionItem } from "./Items/spFunctionItem";
 import { MethodItem } from "./Items/spMethodItem";
 import { MethodMapItem } from "./Items/spMethodmapItem";
+import { URI } from "vscode-uri";
 
 export interface VariableType {
   variableType: string;
@@ -57,35 +58,45 @@ export function getTypeOfVariable(
   } else {
     if (
       lastEnumStructOrMethodMap !== undefined &&
-      lastEnumStructOrMethodMap.parent !== globalItem &&
       words[words.length - 1] === "this"
     ) {
+      // Match a "this", return the type of the enum or the methodmap.
       variableType = lastEnumStructOrMethodMap.name;
     } else {
       const enumMemberItem = allItems.find(
         (e) => e.kind === CompletionItemKind.EnumMember && e.name === words[0]
       );
-      variableType = allItems.find(
-        (e) =>
-          (e.kind === CompletionItemKind.Variable &&
-            lastFuncName.includes(e.parent.name) &&
-            e.name === words[words.length - 1]) ||
-          ([CompletionItemKind.Function, CompletionItemKind.Class].includes(
-            e.kind
-          ) &&
-            e.name === words[words.length - 1]) ||
-          (e.kind === CompletionItemKind.Class &&
-            e.name === words[words.length - 1]) ||
-          (enumMemberItem !== undefined &&
+      const variable = allItems.find((e) => {
+        if (enumMemberItem !== undefined) {
+          return (
             e.kind === CompletionItemKind.Class &&
-            (e.name === words[words.length - 1] || e === enumMemberItem.parent))
-      ).type;
+            (e.name === words[words.length - 1] || e === enumMemberItem.parent)
+          );
+        }
+
+        if (e.name !== words[words.length - 1]) {
+          return false;
+        }
+        return (
+          (e.kind === CompletionItemKind.Variable &&
+            lastFuncName.includes(e.parent.name)) ||
+          [CompletionItemKind.Function, CompletionItemKind.Class].includes(
+            e.kind
+          ) ||
+          e.kind === CompletionItemKind.Class
+        );
+      });
+      if (variable !== undefined) {
+        variableType = variable.type;
+      } else {
+        return { variableType, words };
+      }
     }
   }
 
   if (words.length > 1) {
     words = words.slice(0, words.length - 1).reverse();
-    for (let word of words) {
+    for (const word of words) {
       variableType = allItems.find(
         (e) =>
           (e.kind === CompletionItemKind.Method ||
@@ -114,7 +125,7 @@ export function parseMethodsFromLine(line: string, index: number): ParsedLine {
   let bCounter = 0;
   let pCounter = 0;
   let wordCounter = 0;
-  let words = [""];
+  const words = [""];
   while (i >= 0) {
     if (line[i] === "]") {
       bCounter++;
@@ -182,4 +193,22 @@ export function getAllInheritances(
   return [methodmap].concat(
     getAllInheritances(methodmap.parent as MethodMapItem, allItems)
   );
+}
+
+/**
+ * Checks whether or not a file is a SM BuiltIn by comparing the path of
+ * SMHome to its path.
+ * @param  {string} filepath    The path of the file to check.
+ * @returns boolean
+ */
+export function isBuiltIn(filepath: string): boolean {
+  const smHome = Workspace.getConfiguration("sourcepawn").get<string>(
+    "SourcemodHome"
+  );
+
+  if (!smHome) {
+    return false;
+  }
+
+  return filepath.includes(URI.file(smHome).fsPath);
 }

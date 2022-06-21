@@ -1,5 +1,4 @@
 import {
-  Memento,
   Disposable,
   TextDocument,
   Position,
@@ -11,26 +10,25 @@ import { URI } from "vscode-uri";
 
 import { SPItem } from "./Items/spItems";
 import { events } from "../Misc/sourceEvents";
-import { FileItems } from "./spFilesRepository";
+import { FileItem } from "./spFilesRepository";
 import {
   handleAddedDocument,
-  handleDocumentChange,
+  documentChangeCallback,
+  isSPFile,
   newDocumentCallback,
 } from "./spFileHandlers";
 import { getAllItems, getItemFromPosition } from "./spItemsGetters";
 import { refreshDiagnostics } from "../Providers/spLinter";
 import { refreshCfgDiagnostics } from "../Providers/cfgLinter";
-import { updateDecorations } from "../Providers/decorationsProvider";
+import { updateDecorations } from "../Providers/spDecorationsProvider";
 
 export class ItemsRepository implements Disposable {
-  public fileItems: Map<string, FileItems>;
-  public documents: Set<string>;
-  private globalState: Memento;
+  public fileItems: Map<string, FileItem>;
+  public documents: Map<string, boolean>;
 
-  constructor(globalState: Memento) {
-    this.fileItems = new Map<string, FileItems>();
-    this.documents = new Set<string>();
-    this.globalState = globalState;
+  constructor() {
+    this.fileItems = new Map<string, FileItem>();
+    this.documents = new Map<string, boolean>();
   }
 
   public dispose() {}
@@ -40,16 +38,25 @@ export class ItemsRepository implements Disposable {
   }
 
   public handleDocumentChange(event: TextDocumentChangeEvent) {
-    refreshDiagnostics(event.document);
+    if (event.contentChanges.length === 0) {
+      return;
+    }
+    if (isSPFile(event.document.uri.fsPath)) {
+      refreshDiagnostics(event.document);
+      documentChangeCallback(this, event);
+      updateDecorations(this);
+      return;
+    }
     refreshCfgDiagnostics(event.document);
-    handleDocumentChange(this, event);
-    updateDecorations(this);
   }
 
   public handleNewDocument(document: TextDocument) {
-    refreshDiagnostics(document);
+    if (isSPFile(document.uri.fsPath)) {
+      refreshDiagnostics(document);
+      newDocumentCallback(this, document.uri);
+      return;
+    }
     refreshCfgDiagnostics(document);
-    newDocumentCallback(this, document.uri);
   }
 
   public handleDocumentOpening(filePath: string) {

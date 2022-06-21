@@ -5,7 +5,7 @@ import {
   CompletionItemKind,
 } from "vscode";
 import { ItemsRepository } from "../Backend/spItemsRepository";
-import { globalIdentifier, globalItem } from "../Misc/spConstants";
+import { globalItem } from "../Misc/spConstants";
 
 const allowedKinds = [
   CompletionItemKind.Function,
@@ -24,6 +24,7 @@ const allowedParentsKinds = [
 ];
 const allowedChildrendKinds = [
   CompletionItemKind.Method,
+  CompletionItemKind.Constructor,
   CompletionItemKind.Property,
   CompletionItemKind.Variable,
   CompletionItemKind.EnumMember,
@@ -34,10 +35,10 @@ export function symbolProvider(
   document: TextDocument,
   token: CancellationToken
 ): DocumentSymbol[] {
-  let symbols: DocumentSymbol[] = [];
-  let items = itemsRepo.getAllItems(document.uri);
-  let file = document.uri.fsPath;
-  for (let item of items) {
+  const symbols: DocumentSymbol[] = [];
+  const items = itemsRepo.getAllItems(document.uri);
+  const file = document.uri.fsPath;
+  for (const item of items) {
     if (allowedKinds.includes(item.kind) && item.filePath === file) {
       // Don't add non global variables here
       if (
@@ -46,7 +47,7 @@ export function symbolProvider(
       ) {
         continue;
       }
-      let symbol = item.toDocumentSymbol();
+      const symbol = item.toDocumentSymbol();
 
       // Check if the item can have childrens
       if (allowedParentsKinds.includes(item.kind) && symbol !== undefined) {
@@ -57,7 +58,21 @@ export function symbolProvider(
               e.filePath === file &&
               e.parent === item
           )
-          .map((e) => e.toDocumentSymbol())
+          .map((e) => {
+            const subsymbol = e.toDocumentSymbol();
+            if (e.kind === CompletionItemKind.Property) {
+              subsymbol.children = items
+                .filter(
+                  (e1) =>
+                    e1.kind === CompletionItemKind.Method &&
+                    e1.parent.name === e.name &&
+                    e1.parent.parent.name === e.parent.name
+                )
+                .map((e1) => e1.toDocumentSymbol())
+                .filter((e1) => e1 !== undefined);
+            }
+            return subsymbol;
+          })
           .filter((e) => e !== undefined);
       }
       if (symbol !== undefined) {

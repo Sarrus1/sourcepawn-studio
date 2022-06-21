@@ -4,7 +4,7 @@ import { join } from "path";
 
 export function run(rootpath?: string) {
   // get workspace folder
-  let workspaceFolders = Workspace.workspaceFolders;
+  const workspaceFolders = Workspace.workspaceFolders;
   if (workspaceFolders === undefined) {
     window.showErrorMessage("No workspace are opened.");
     return 1;
@@ -16,14 +16,14 @@ export function run(rootpath?: string) {
   }
 
   // Check if CHANGELOG.md already exists
-  let changelogFilePath = join(rootpath, "CHANGELOG.md");
+  const changelogFilePath = join(rootpath, "CHANGELOG.md");
   if (existsSync(changelogFilePath)) {
     window.showErrorMessage("CHANGELOG.md already exists, aborting.");
     return 2;
   }
-  let myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
+  const myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
     .extensionPath;
-  let changelogTemplatePath: string = join(
+  const changelogTemplatePath: string = join(
     myExtDir,
     "templates/CHANGELOG_template.md"
   );

@@ -1,85 +1,53 @@
-﻿import { positiveRange } from "./utils";
-import { Parser } from "./spParser";
+﻿import { SyntaxNode } from "web-tree-sitter";
+
 import { DefineItem } from "../Backend/Items/spDefineItem";
+import { pointsToRange } from "./utils";
+import { TreeWalker } from "./spParser";
+import { findDoc } from "./readDocumentation";
 
-export function readDefine(
-  parser: Parser,
-  match: RegExpMatchArray,
-  line: string
-): void {
-  let description = "";
-  let value = "";
-  let openDQuote = false;
-  let openSQuote = false;
-  let blockComment = false;
-  let i = match[0].length;
-  let iter = 0;
-  while (i < line.length && iter < 10000) {
-    iter++;
-    if (line[i] === '"' && !openSQuote && !blockComment) {
-      openDQuote = !openDQuote;
-      value += line[i];
-      i++;
-      continue;
-    }
-    if (line[i] === "'" && !openDQuote && !blockComment) {
-      openSQuote = !openSQuote;
-      value += line[i];
-      i++;
-      continue;
-    }
+/**
+ * Process a define statement.
+ * @param  {TreeWalker} walker    TreeWalker object.
+ * @param  {SyntaxNode} node      Node to process.
+ * @returns void
+ */
+export function readDefine(walker: TreeWalker, node: SyntaxNode): void {
+  const nameNode = node.childForFieldName("name");
+  const valueNode = node.childForFieldName("value");
+  const range = pointsToRange(nameNode.startPosition, nameNode.endPosition);
+  const fullRange = pointsToRange(node.startPosition, node.endPosition);
+  const { dep } = findDoc(walker, node);
 
-    if (!blockComment) {
-      if (i < line.length - 1) {
-        if (
-          line[i] === "/" &&
-          line[i + 1] === "*" &&
-          !(openSQuote || openDQuote)
-        ) {
-          blockComment = true;
-          i += 2;
-          continue;
-        } else if (
-          line[i] === "/" &&
-          line[i + 1] === "/" &&
-          !(openSQuote || openDQuote)
-        ) {
-          description = line.slice(i + 2);
-          break;
-        }
-      }
-      value += line[i];
-      i++;
-    } else {
-      let endComMatch = line.slice(i).match(/(.*)\*\//);
-      if (endComMatch) {
-        description += line.slice(i, i + endComMatch[1].length).trimEnd();
-        blockComment = false;
-        i += endComMatch[0].length;
-        continue;
-      }
-      description += line.slice(i).trimEnd();
-      line = parser.lines.shift();
-      parser.lineNb++;
-      if (line === undefined) {
-        return;
-      }
-      i = 0;
-      continue;
-    }
-  }
+  const { value, desc } = explodeDefine(valueNode?.text);
 
-  let range = parser.makeDefinitionRange(match[1], line);
-  let fullRange = positiveRange(parser.lineNb, 0, line.length);
-  let item = new DefineItem(
-    match[1],
+  const defineItem = new DefineItem(
+    nameNode.text,
     value,
-    description,
-    parser.filePath,
+    desc,
+    walker.filePath,
     range,
-    parser.IsBuiltIn,
-    fullRange
+    fullRange,
+    dep
   );
-  parser.fileItems.set(match[1], item);
-  return;
+  walker.fileItem.items.push(defineItem);
+}
+
+function explodeDefine(value: string): { value: string; desc: string } {
+  if (!value) {
+    return { value: "", desc: "" };
+  }
+  let match = value.match(/(?:\/\*)(.+?(?=\*\/))/g);
+  if (!match) {
+    match = value.match(/(?:\/\/)(.*)/);
+    if (!match) {
+      return { value: "", desc: "" };
+    }
+    let desc = match[match.length - 1].trim();
+    return {
+      value: value.slice(0, value.length - desc.length - 2).trim(),
+      desc,
+    };
+  }
+  let desc = match[match.length - 1].slice(2).trim();
+  return { value: value.slice(0, value.length - desc.length - 4).trim(), desc };
 }

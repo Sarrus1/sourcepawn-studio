@@ -25,22 +25,18 @@ export class EnumMemberItem implements SPItem {
   kind = CompletionItemKind.EnumMember;
   range: Range;
   references: Location[];
-  IsBuiltIn: boolean;
 
   constructor(
     name: string,
     file: string,
-    description: string,
-    enumItem: EnumItem | ConstantItem,
     range: Range,
-    IsBuiltItn: boolean
+    enumItem: EnumItem | ConstantItem = globalItem
   ) {
     this.name = name;
     this.filePath = file;
-    this.description = description;
+    this.description = "";
     this.range = range;
     this.references = [];
-    this.IsBuiltIn = IsBuiltItn;
     this.parent = enumItem;
   }
 
@@ -65,7 +61,7 @@ export class EnumMemberItem implements SPItem {
   }
 
   toHover(): Hover {
-    let enumName = this.parent !== globalItem ? this.parent.name : "";
+    const enumName = this.parent !== globalItem ? this.parent.name : "";
     return new Hover([
       { language: "sourcepawn", value: `${enumName} ${this.name};` },
       descriptionToMD(this.description),

@@ -16,7 +16,7 @@ export async function run(args: any) {
   const optionalSMHomes: OptionalSMAPI[] = Workspace.getConfiguration(
     "sourcepawn"
   ).get("availableAPIs");
-  let newSMHomeChoices: QuickPickItem[] = optionalSMHomes.map(
+  const newSMHomeChoices: QuickPickItem[] = optionalSMHomes.map(
     (optionalHome) => {
       return {
         label: optionalHome.name,
@@ -38,7 +38,7 @@ export async function run(args: any) {
         "SourcemodHome",
         newSMHome.detail
       );
-      let spCompPath = optionalSMHomes.find((e) => e.name === newSMHome.label)
+      const spCompPath = optionalSMHomes.find((e) => e.name === newSMHome.label)
         .compilerPath;
       await Workspace.getConfiguration("sourcepawn").update(
         "SpcompPath",

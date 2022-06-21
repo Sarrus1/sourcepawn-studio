@@ -1,22 +1,22 @@
 import { window, commands, SignatureHelp } from "vscode";
 
 export async function run(args: any) {
-  let document = window.activeTextEditor.document;
-  let position = window.activeTextEditor.selection.active;
+  const document = window.activeTextEditor.document;
+  const position = window.activeTextEditor.selection.active;
   const linetext = document.lineAt(position).text;
 
   if (
     linetext[position.character] === ")" &&
     linetext[position.character - 1] === "("
   ) {
-    let signatureHelp = (await commands.executeCommand(
+    const signatureHelp = (await commands.executeCommand(
       "vscode.executeSignatureHelpProvider",
       document.uri,
       position
     )) as SignatureHelp;
 
-    let label = signatureHelp.signatures[0].label;
-    let parameters = label.substring(
+    const label = signatureHelp.signatures[0].label;
+    const parameters = label.substring(
       label.indexOf("(") + 1,
       label.indexOf(")")
     );

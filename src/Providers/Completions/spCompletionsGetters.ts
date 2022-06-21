@@ -4,6 +4,9 @@ import {
   Position,
   CompletionList,
   CompletionItemKind,
+  commands,
+  SignatureHelp,
+  Location,
 } from "vscode";
 import { basename } from "path";
 import { URI } from "vscode-uri";
@@ -11,14 +14,13 @@ import { URI } from "vscode-uri";
 import { getTypeOfVariable } from "../../Backend/spItemsPropertyGetters";
 import {
   getLastFunc,
-  getLastEnumStructNameOrMethodMap,
+  getLastESOrMM,
 } from "../../Providers/spDefinitionProvider";
 import { SPItem } from "../../Backend/Items/spItems";
 import { getAllPossibleIncludeFolderPaths } from "../../Backend/spFileHandlers";
 import { ItemsRepository } from "../../Backend/spItemsRepository";
 import { isMethodCall } from "../../Backend/spUtils";
 import { getAllInheritances } from "../../Backend/spItemsPropertyGetters";
-import { globalIdentifier } from "../../Misc/spConstants";
 import { MethodMapItem } from "../../Backend/Items/spMethodmapItem";
 import { EnumStructItem } from "../../Backend/Items/spEnumStructItem";
 import { FunctionItem } from "../../Backend/Items/spFunctionItem";
@@ -34,7 +36,7 @@ const MP = [CompletionItemKind.Method, CompletionItemKind.Property];
  * @returns CompletionList
  */
 export function getIncludeFileCompletionList(
-  knownIncs: Set<string>,
+  knownIncs: Map<string, boolean>,
   document: TextDocument,
   tempName: string,
   useAp: boolean
@@ -44,9 +46,9 @@ export function getIncludeFileCompletionList(
   );
   const prevPath = tempName.replace(/((?:[^\'\<\/]+\/)+)+/, "$1");
 
-  let items: CompletionItem[] = [];
+  const items: CompletionItem[] = [];
 
-  Array.from(knownIncs).forEach((e) =>
+  Array.from(knownIncs.keys()).forEach((e) =>
     incURIs.find((incURI) => {
       const fileMatchRe = RegExp(
         `${incURI.toString()}\\/${prevPath}[^<>:;,?"*|/]+\\.(?:inc|sp)$`
@@ -66,12 +68,12 @@ export function getIncludeFileCompletionList(
   );
 
   const availableIncFolderPaths = new Set<string>();
-  knownIncs.forEach((e) => {
+  knownIncs.forEach((v, k) => {
     incURIs.forEach((incURI) => {
       const folderMatchRe = RegExp(
         `${incURI.toString()}\\/${prevPath}(\\w[^*/><?\\|:]+)\\/`
       );
-      const match = e.match(folderMatchRe);
+      const match = k.match(folderMatchRe);
       if (match) {
         availableIncFolderPaths.add(`${incURI.toString()}/${match[1]}`);
       }
@@ -97,38 +99,49 @@ export function getIncludeFileCompletionList(
  * @param  {Position} position            The position at which the completions are requested.
  * @returns CompletionList
  */
-export function getCompletionListFromPosition(
+export async function getCompletionListFromPosition(
   itemsRepo: ItemsRepository,
   document: TextDocument,
   position: Position
-): CompletionList {
+): Promise<CompletionList> {
   const allItems: SPItem[] = itemsRepo.getAllItems(document.uri);
-  if (allItems === []) {
+  if (allItems.length === 0) {
     return new CompletionList();
   }
 
   const line = document.lineAt(position.line).text;
+  const location = new Location(document.uri, position);
   const isMethod = isMethodCall(line, position);
   const lastFunc = getLastFunc(position, document, allItems);
+  const lastESOrMM = getLastESOrMM(position, document.uri.fsPath, allItems);
 
-  if (!isMethod) {
-    return getNonMethodItems(allItems, lastFunc);
+  const positionalArguments = await getPositionalArguments(
+    document,
+    position,
+    allItems,
+    line
+  );
+
+  if (positionalArguments !== undefined) {
+    return positionalArguments;
   }
 
-  const lastEnumStructOrMethodMap = getLastEnumStructNameOrMethodMap(
-    position,
-    document.uri.fsPath,
-    allItems
-  );
-  let { variableType, words } = getTypeOfVariable(
+  if (!isMethod) {
+    return getNonMethodItems(allItems, location, lastFunc, lastESOrMM);
+  }
+
+  const { variableType, words } = getTypeOfVariable(
     line,
     position,
     allItems,
     lastFunc,
-    lastEnumStructOrMethodMap
+    lastESOrMM
   );
 
-  let variableTypeItem = allItems.find(
+  if (!variableType) {
+    return new CompletionList();
+  }
+  const variableTypeItem = allItems.find(
     (e) =>
       [CompletionItemKind.Class, CompletionItemKind.Struct].includes(e.kind) &&
       e.name === variableType
@@ -160,24 +173,21 @@ function getMethodItems(
   isMethodMap: boolean,
   lastFunc: MethodItem | FunctionItem
 ): CompletionList {
-  let items = new Set<CompletionItem | undefined>();
-  try {
-    for (let item of allItems) {
-      if (
-        MP.includes(item.kind) &&
-        variableTypes.includes(item.parent as EnumStructItem | MethodMapItem) &&
-        // Don't include the constructor of the methodmap
-        !variableTypes.includes(item as EnumStructItem | MethodMapItem) &&
-        // Don't include static methods if we are not calling a method from its type.
-        // This handles suggestions for 'Database.Connect()' for example.
-        isMethodMap === /\bstatic\b[^\(]*\(/.test(item.detail as string)
-      ) {
-        items.add(item.toCompletionItem(lastFunc));
-      }
+  const items = new Set<CompletionItem | undefined>();
+
+  allItems.forEach((item) => {
+    if (
+      MP.includes(item.kind) &&
+      variableTypes.includes(item.parent as EnumStructItem | MethodMapItem) &&
+      // Don't include the constructor of the methodmap
+      !variableTypes.includes(item as EnumStructItem | MethodMapItem) &&
+      // Don't include static methods if we are not calling a method from its type.
+      // This handles suggestions for 'Database.Connect()' for example.
+      isMethodMap === /\bstatic\b[^\(]*\(/.test(item.detail as string)
+    ) {
+      items.add(item.toCompletionItem(lastFunc));
     }
-  } catch (e) {
-    console.debug(e);
-  }
+  });
 
   items.delete(undefined);
   return new CompletionList(
@@ -187,18 +197,59 @@ function getMethodItems(
 
 function getNonMethodItems(
   allItems: SPItem[],
-  lastFunc: FunctionItem | MethodItem
+  location: Location,
+  lastFunc: FunctionItem | MethodItem,
+  lastMMorES: MethodMapItem | EnumStructItem | undefined
 ): CompletionList {
-  let items = new Set<CompletionItem | undefined>();
+  const items: CompletionItem[] = [];
 
-  for (let item of allItems) {
+  allItems.forEach((item) => {
     if (!MP.includes(item.kind)) {
-      items.add(item.toCompletionItem(lastFunc) as CompletionItem);
+      const compItem = item.toCompletionItem(lastFunc, lastMMorES, location);
+      if (compItem !== undefined) {
+        items.push(compItem);
+      }
     }
-  }
+  });
+  return new CompletionList(items);
+}
 
-  items.delete(undefined);
-  return new CompletionList(
-    Array.from(items).filter((e) => e !== undefined) as CompletionItem[]
+/**
+ * Return a CompletionList object of all the positional arguments of a function, if appropriate.
+ * Return undefined otherwise.
+ * @param  {TextDocument} document  The document the completions are requested for.
+ * @param  {Position} position  The position at which the completions are requested.
+ * @param  {SPItem[]} allItems  All the SPItems of the document, including the includes.
+ * @param  {string} line  The line at which the completions are requested at.
+ * @returns CompletionList|undefined
+ */
+async function getPositionalArguments(
+  document: TextDocument,
+  position: Position,
+  allItems: SPItem[],
+  line: string
+): Promise<CompletionList | undefined> {
+  const signatureHelp = (await commands.executeCommand(
+    "vscode.executeSignatureHelpProvider",
+    document.uri,
+    position
+  )) as SignatureHelp;
+  if (signatureHelp === undefined || signatureHelp.signatures.length === 0) {
+    return undefined;
+  }
+  if (line[position.character - 1] !== ".") {
+    return undefined;
+  }
+  const match = signatureHelp.signatures[0].label.match(/(\w+)\(/);
+  if (!match) {
+    return undefined;
+  }
+  const params = allItems.filter(
+    (e) => e.kind === CompletionItemKind.Variable && e.parent.name === match[1]
   );
+  const completions = new CompletionList();
+  completions.items = params.map((e) =>
+    e.toCompletionItem(undefined, undefined, undefined, true)
+  );
+  return completions;
 }

@@ -16,7 +16,7 @@ import { URI } from "vscode-uri";
 import { join, basename } from "path";
 
 export function run(rootpath?: string) {
-  let AuthorName: string = Workspace.getConfiguration("sourcepawn").get(
+  const AuthorName: string = Workspace.getConfiguration("sourcepawn").get(
     "AuthorName"
   );
   if (!AuthorName) {
@@ -32,12 +32,12 @@ export function run(rootpath?: string) {
       });
   }
 
-  let GithubName: string = Workspace.getConfiguration("sourcepawn").get(
+  const GithubName: string = Workspace.getConfiguration("sourcepawn").get(
     "GithubName"
   );
 
   // get workspace folder
-  let workspaceFolders = Workspace.workspaceFolders;
+  const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
     window.showErrorMessage("No workspace are opened.");
     return 1;
@@ -48,24 +48,24 @@ export function run(rootpath?: string) {
     rootpath = workspaceFolders?.[0].uri.fsPath;
   }
 
-  let rootname = basename(rootpath);
+  const rootname = basename(rootpath);
 
   // create a scripting folder if it doesn't exist
-  let scriptingFolderPath = join(rootpath, "scripting");
+  const scriptingFolderPath = join(rootpath, "scripting");
   if (!existsSync(scriptingFolderPath)) {
     mkdirSync(scriptingFolderPath);
   }
 
   // Check if file already exists
-  let scriptFileName: string = rootname + ".sp";
-  let scriptFilePath = join(rootpath, "scripting", scriptFileName);
+  const scriptFileName: string = rootname + ".sp";
+  const scriptFilePath = join(rootpath, "scripting", scriptFileName);
   if (existsSync(scriptFilePath)) {
     window.showErrorMessage(scriptFileName + " already exists, aborting.");
     return 2;
   }
-  let myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
+  const myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
     .extensionPath;
-  let tasksTemplatesPath: string = join(
+  const tasksTemplatesPath: string = join(
     myExtDir,
     "templates/plugin_template.sp"
   );
@@ -73,13 +73,13 @@ export function run(rootpath?: string) {
 
   // Replace placeholders
   try {
-    let data = readFileSync(scriptFilePath, "utf8");
+    const data = readFileSync(scriptFilePath, "utf8");
     let result = data.replace(/\${AuthorName}/gm, AuthorName);
     result = result.replace(/\${plugin_name}/gm, rootname);
     result = result.replace(/\${GithubName}/gm, GithubName);
     writeFileSync(scriptFilePath, result, "utf8");
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return 3;
   }
   workspace

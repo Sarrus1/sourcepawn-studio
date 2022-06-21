@@ -8,20 +8,14 @@ import {
 import { parse, SyntaxError } from "../Parser/cfgParser/cfgParser";
 import { cfgDiagnostics } from "./Linter/compilerDiagnostics";
 
-const cfgLangID = [
-  "sp-translations",
-  "sp-gamedata",
-  "valve-cfg",
-  "valve-ini",
-  "sourcemod-kv",
-];
-
 /**
  * Lint a Valve Key Value TextDocument object and add its diagnostics to the collection.
  * @param  {TextDocument} document    The document to lint.
  * @returns void
  */
-export function refreshCfgDiagnostics(document: TextDocument): void {
+export async function refreshCfgDiagnostics(document: TextDocument) {
+  await null;
+
   // Check if the setting to activate the linter is set to true.
   const workspaceFolder = Workspace.getWorkspaceFolder(document.uri);
   const enableLinter = Workspace.getConfiguration(
@@ -30,13 +24,13 @@ export function refreshCfgDiagnostics(document: TextDocument): void {
   ).get<boolean>("enableLinter");
 
   // Stop early if linter is disabled.
-  if (!(enableLinter && cfgLangID.includes(document.languageId))) {
+  if (!enableLinter || document.languageId !== "valve-kv") {
     cfgDiagnostics.set(document.uri, []);
     return;
   }
   cfgDiagnostics.delete(document.uri);
   try {
-    const par = parse(document.getText(), undefined);
+    parse(document.getText(), undefined);
   } catch (e) {
     if (e instanceof SyntaxError) {
       const range = new Range(

@@ -13,8 +13,8 @@ export async function run(args: URI): Promise<number> {
     }
     args = window.activeTextEditor.document.uri;
   }
-  let workspaceFolder = Workspace.getWorkspaceFolder(args);
-  Workspace.getConfiguration("sourcepawn", workspaceFolder).update(
+  const workspaceFolder = Workspace.getWorkspaceFolder(args);
+  await Workspace.getConfiguration("sourcepawn", workspaceFolder).update(
     "MainPath",
     args.fsPath
   );

@@ -1,160 +1,99 @@
-﻿import { basename } from "path";
+﻿import { CompletionItemKind, Range } from "vscode";
+import { SyntaxNode } from "web-tree-sitter";
 
-import { Parser } from "./spParser";
-import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { EnumItem } from "../Backend/Items/spEnumItem";
 import { EnumMemberItem } from "../Backend/Items/spEnumMemberItem";
-import { State } from "./stateEnum";
-import { parseDocComment } from "./parseDocComment";
-import { addFullRange } from "./addFullRange";
+import { pointsToRange } from "./utils";
+import { TreeWalker } from "./spParser";
+import { commentToDoc, findDoc } from "./readDocumentation";
 
-export function readEnum(
-  parser: Parser,
-  match: RegExpMatchArray,
-  line: string,
-  IsStruct: boolean
-) {
-  let { description, params } = parseDocComment(parser);
-  if (IsStruct) {
-    parseEnumStruct(parser, match[1], description, line);
-    return;
-  }
-
-  if (!match[1]) {
-    parser.anonymousEnumCount++;
-  }
-  let nameMatch = match[1] ? match[1] : `Enum#${parser.anonymousEnumCount}`;
-  let range = parser.makeDefinitionRange(match[1] ? match[1] : "enum", line);
-  var enumCompletion: EnumItem = new EnumItem(
-    nameMatch,
-    parser.filePath,
-    description,
-    range
+/**
+ * Process an enum declaration.
+ * @param  {TreeWalker} walker    TreeWalker object.
+ * @param  {SyntaxNode} node      Node to process.
+ * @returns void
+ */
+export function readEnum(walker: TreeWalker, node: SyntaxNode): void {
+  const { name, nameRange } = getEnumNameAndRange(walker, node);
+  const { doc } = findDoc(walker, node);
+  const enumItem = new EnumItem(
+    name,
+    walker.filePath,
+    doc,
+    nameRange,
+    pointsToRange(node.startPosition, node.endPosition)
   );
-  const key = match[1]
-    ? match[1]
-    : `${parser.anonymousEnumCount}${basename(parser.filePath)}`;
-  parser.fileItems.set(key, enumCompletion);
-
-  // Set max number of iterations for safety
-  let iter = 0;
-  // Match all the enum members
-  let foundEndToken = false;
-  let i = match[0].length;
-  let isBlockComment = false;
-  let enumMemberName = "";
-  description = "";
-
-  while (!foundEndToken && iter < 10000) {
-    iter++;
-    if (line.length <= i) {
-      line = parser.lines.shift();
-      parser.lineNb++;
-      if (line === undefined) {
-        return;
-      }
-      i = 0;
-      continue;
-    }
-
-    if (isBlockComment) {
-      let endComMatch = line.slice(i).match(/(.*)\*\//);
-      if (endComMatch) {
-        description += line.slice(i, i + endComMatch[1].length).trimEnd();
-        isBlockComment = false;
-        i += endComMatch[0].length;
-        let prevEnumMember = parser.fileItems.get(
-          enumMemberName
-        ) as EnumMemberItem;
-        if (prevEnumMember !== undefined) {
-          prevEnumMember.description = description;
-        }
-        enumMemberName = "";
-        continue;
-      }
-      description += line.slice(i).trimEnd();
-      line = parser.lines.shift();
-      parser.lineNb++;
-      if (line === undefined) {
-        return;
-      }
-      i = 0;
-      continue;
-    }
-
-    if (!isBlockComment) {
-      if (line.length > i + 1) {
-        if (line[i] == "/" && line[i + 1] == "*") {
-          isBlockComment = true;
-          i += 2;
-          description = "";
-          continue;
-        }
-        if (line[i] == "/" && line[i + 1] == "/") {
-          let prevEnumMember = parser.fileItems.get(
-            enumMemberName
-          ) as EnumMemberItem;
-          if (prevEnumMember !== undefined) {
-            prevEnumMember.description = line.slice(i + 2).trim();
-          }
-          line = parser.lines.shift();
-          parser.lineNb++;
-          if (line === undefined) {
-            return;
-          }
-          i = 0;
-          continue;
-        }
-      }
-      if (line[i] == "}") {
-        foundEndToken = true;
-        continue;
-      }
-    }
-    const croppedLine = line.slice(i);
-    let iterMatch = croppedLine.match(
-      /^\s*(?:\w+\s*:\s*)?([A-Za-z_]+\w*)(?:\s*\=.+?(?=(?:\r|\n|\,|\/\*|\/\/)))?/
-    );
-    if (!iterMatch || isBlockComment) {
-      i++;
-      continue;
-    }
-    enumMemberName = iterMatch[1];
-    let range = parser.makeDefinitionRange(enumMemberName, line);
-    parser.fileItems.set(
-      enumMemberName,
-      new EnumMemberItem(
-        enumMemberName,
-        parser.filePath,
-        "",
-        enumCompletion,
-        range,
-        parser.IsBuiltIn
-      )
-    );
-    i = iterMatch[0].length;
-  }
-
-  addFullRange(parser, key);
-  return;
+  walker.fileItem.items.push(enumItem);
+  readEnumMembers(
+    walker,
+    node.children.find((e) => e.type === "enum_entries"),
+    enumItem
+  );
 }
 
-function parseEnumStruct(
-  parser: Parser,
-  enumStructName: string,
-  desc: string,
-  line: string
-): void {
-  let range = parser.makeDefinitionRange(enumStructName, line);
-  var enumStructCompletion: EnumStructItem = new EnumStructItem(
-    enumStructName,
-    parser.filePath,
-    desc,
-    range
+/**
+ * Generate the name and the range of a potential anonymous enum.
+ * @param  {TreeWalker} walker    TreeWalker object.
+ * @param  {SyntaxNode} node      Node to process.
+ * @returns void
+ */
+function getEnumNameAndRange(
+  walker: TreeWalker,
+  node: SyntaxNode
+): { name: string; nameRange: Range } {
+  const nameNode = node.childForFieldName("name");
+  if (nameNode) {
+    return {
+      name: nameNode.text,
+      nameRange: pointsToRange(nameNode.startPosition, nameNode.endPosition),
+    };
+  }
+  walker.anonEnumCount++;
+  const name = `Enum#${walker.anonEnumCount}`;
+  const nameRange = new Range(
+    node.startPosition.row,
+    0,
+    node.startPosition.row,
+    6
   );
-  parser.fileItems.set(enumStructName, enumStructCompletion);
-  parser.state.push(State.EnumStruct);
-  parser.state_data = {
-    name: enumStructName,
-  };
+  return { name, nameRange };
+}
+
+/**
+ * Process the body of an enum.
+ * @param  {TreeWalker} walker    TreeWalker object.
+ * @param  {SyntaxNode} body      Body to process.
+ * @param  {EnumItem} enumItem    Parent enum of the body.
+ * @returns void
+ */
+function readEnumMembers(
+  walker: TreeWalker,
+  body: SyntaxNode,
+  enumItem: EnumItem
+): void {
+  if (!body) {
+    return;
+  }
+  body.children.forEach((child) => {
+    const prevEnumMember =
+      walker.fileItem.items[walker.fileItem.items.length - 1];
+    if (
+      child.type === "comment" &&
+      prevEnumMember?.kind === CompletionItemKind.EnumMember
+    ) {
+      prevEnumMember.description += commentToDoc(child.text);
+    }
+    if (child.type !== "enum_entry") {
+      return;
+    }
+    const entry = child.childForFieldName("name");
+    const range = pointsToRange(entry.startPosition, entry.endPosition);
+    const memberItem = new EnumMemberItem(
+      entry.text,
+      walker.filePath,
+      range,
+      enumItem
+    );
+    walker.fileItem.items.push(memberItem);
+  });
 }

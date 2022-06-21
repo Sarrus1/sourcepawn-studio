@@ -3,7 +3,6 @@ out/
 *.vsix
 .vscode-test
 .DS_Store
-package-lock.json
 dist/
 .vscode/settings.json
 .nyc_output/
@@ -11,3 +10,4 @@ coverage/
 venv/
 chromedriver
 cfgParser.ts
+spParser-gen.ts

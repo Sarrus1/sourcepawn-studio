@@ -1,0 +1,123 @@
+{
+  "scopeName": "text.valve-kv",
+  "patterns": [
+    { "include": "#value" },
+    {
+      "include": "#key"
+    },
+    {
+      "include": "#comments"
+    }
+  ],
+
+  "repository": {
+    "key": {
+      "patterns": [
+        {
+          "match": "(\"[^\"]*\")",
+          "name": "support.type.property-name.double.valve-kv"
+        },
+        {
+          "match": "('[^']*')",
+          "name": "support.type.property-name.single.valve-kv"
+        }
+      ]
+    },
+
+    "value": {
+      "patterns": [
+        {
+          "comment": "bracket value",
+          "begin": "{",
+          "end": "}",
+          "name": "meta.structure.dictionnary.valve-kv",
+          "patterns": [
+            {
+              "include": "#source"
+            }
+          ]
+        },
+        {
+          "comment": "Double quote string",
+          "match": "(\"[^\"]*\")\\s*(\"[^\"]*\")",
+          "captures": {
+            "1": { "name": "support.type.property-name.double.valve-kv" },
+            "2": {
+              "name": "string.quoted.double.valve-kv",
+              "patterns": [{ "include": "#placeholder" }]
+            }
+          }
+        },
+        {
+          "comment": "Single quote string",
+          "match": "('[^']*')\\s*('[^']*')",
+          "captures": {
+            "1": { "name": "support.type.property-name.single.valve-kv" },
+            "2": {
+              "name": "string.quoted.single.valve-kv",
+              "patterns": [{ "include": "#placeholder" }]
+            }
+          }
+        }
+      ]
+    },
+
+    "placeholder": {
+      "match": "({)([^\\}]*)(})",
+      "captures": {
+        "1": {
+          "name:": "constant.character.valve-kv"
+        },
+        "3": {
+          "name:": "constant.character.valve-kv"
+        },
+        "2": {
+          "patterns": [
+            {
+              "match": "\\d+",
+              "name": "constant.numeric.valve-kv"
+            },
+            {
+              "name": "constant.character.escape.valve-kv",
+              "match": "\\w+"
+            },
+            {
+              "match": "([\\d]+):([A-Za-z]+)",
+              "captures": {
+                "1": {
+                  "name": "constant.numeric.valve-kv"
+                },
+                "2": {
+                  "name": "string.regexp.valve-kv"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.valve-kv",
+          "match": "//(.*)$"
+        },
+        {
+          "name": "comment.line.number-sign",
+          "match": "#(.*)$"
+        },
+        {
+          "begin": "/\\*",
+          "captures": {
+            "0": {
+              "name": "comment.block.valve-kv"
+            }
+          },
+          "end": "\\*/",
+          "name": "comment.block.valve-kv"
+        }
+      ]
+    }
+  }
+}

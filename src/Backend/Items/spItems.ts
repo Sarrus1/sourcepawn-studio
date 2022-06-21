@@ -8,8 +8,12 @@
   DocumentSymbol,
   LocationLink,
 } from "vscode";
+
 import { FunctionItem } from "./spFunctionItem";
 import { MethodItem } from "./spMethodItem";
+import { MethodMapItem } from "./spMethodmapItem";
+import { EnumStructItem } from "./spEnumStructItem";
+import { VariableItem } from "./spVariableItem";
 
 export interface SPItem {
   name: string;
@@ -22,13 +26,14 @@ export interface SPItem {
   detail?: string;
   fullRange?: Range;
   references?: Location[];
-  IsBuiltIn?: boolean;
-  enumStructName?: string;
-  params?: FunctionParam[];
+  params?: VariableItem[];
   deprecated?: string;
 
   toCompletionItem(
-    lastFunc?: MethodItem | FunctionItem
+    lastFunc?: MethodItem | FunctionItem | undefined,
+    lastESOrMM?: MethodMapItem | EnumStructItem | undefined,
+    location?: Location,
+    override?: boolean
   ): CompletionItem | undefined;
   toDefinitionItem(): LocationLink | undefined;
   toReferenceItem?(): Location[];
@@ -37,17 +42,12 @@ export interface SPItem {
   toDocumentSymbol?(): DocumentSymbol | undefined;
 }
 
-export type FunctionParam = {
-  label: string;
-  documentation: string;
-};
-
 export class Include {
   uri: string;
-  IsBuiltIn: boolean;
+  range: Range;
 
-  constructor(uri: string, IsBuiltIn: boolean) {
+  constructor(uri: string, range: Range) {
     this.uri = uri;
-    this.IsBuiltIn = IsBuiltIn;
+    this.range = range;
   }
 }

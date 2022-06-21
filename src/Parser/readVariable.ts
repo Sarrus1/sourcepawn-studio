@@ -1,73 +1,64 @@
-﻿import { addVariableItem } from "./addVariableItem";
-import { Parser } from "./spParser";
+﻿import { SyntaxNode } from "web-tree-sitter";
 
+import { globalItem } from "../Misc/spConstants";
+import { VariableItem } from "../Backend/Items/spVariableItem";
+import { pointsToRange } from "./utils";
+import { TreeWalker } from "./spParser";
+import { ConstantItem } from "../Backend/Items/spConstantItem";
+import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
+import { FunctionItem } from "../Backend/Items/spFunctionItem";
+import { MethodItem } from "../Backend/Items/spMethodItem";
+
+export type VariableParent =
+  | ConstantItem
+  | EnumStructItem
+  | FunctionItem
+  | MethodItem;
+
+/**
+ * Process a variable declaration.
+ * @param  {TreeWalker} walker        TreeWalker object.
+ * @param  {SyntaxNode} node          Node to process.
+ * @param  {VariableParent} parent    Parent of the variable. Defaults to globalItem.
+ * @returns void
+ */
 export function readVariable(
-  parser: Parser,
-  match: RegExpMatchArray,
-  line: string
-) {
-  if (
-    /^\s*(if|else|while|do|return|break|continue|delete|forward|native|property|enum|funcenum|functag|methodmap|struct|typedef|typeset|this|view_as|sizeof)/.test(
-      line
-    )
-  )
-    return;
-  if (/^\s*public\s+native/.test(line)) {
-    return;
-  }
-  let match_variables = [];
-  let match_variable: RegExpExecArray;
-  // Check if it's a multiline declaration
-  let commentMatch = line.match(/\/\//);
-  let croppedLine = line;
-  if (commentMatch) {
-    croppedLine = line.slice(0, commentMatch.index);
-  }
-  if (/(;)(?:\s*|)$/.test(croppedLine)) {
-    // Deal with "new" declarations here
-    let match = croppedLine.match(/^\s*(\w+)\s+(\w+)\s*=\s*new/);
-    if (match) {
-      addVariableItem(parser, match[2], line, match[1]);
-      return;
+  walker: TreeWalker,
+  node: SyntaxNode,
+  parent: VariableParent = globalItem
+): void {
+  const variableTypeNode = node.childForFieldName("type");
+  const storageClass: string[] = [];
+  for (const child of node.children) {
+    if (child.type === "variable_storage_class") {
+      storageClass.push(child.text);
+      continue;
     }
-    // Separate potential multiple declarations
-    let re = /\s*(?:(?:const|static|public|stock)\s+)*(\w*)\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])*\s+(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])*(?:\s*=\s*(?:(?:\"[^]*\")|(?:\'[^]*\')|(?:[^,]+)))?/g;
-    do {
-      match_variable = re.exec(line);
-      if (match_variable) {
-        match_variables.push(match_variable);
-      }
-    } while (match_variable);
-    for (let variable of match_variables) {
-      let variable_completion = variable[2].match(
-        /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
-      )[1];
-      if (!parser.IsBuiltIn) {
-        addVariableItem(parser, variable_completion, line, variable[1]);
-      }
+    if (
+      child.type !== "variable_declaration" &&
+      child.type !== "old_variable_declaration"
+    ) {
+      continue;
     }
-    return;
-  }
-  let parseLine: boolean = true;
-  while (parseLine) {
-    parseLine = !match[1].match(/(;)\s*$/);
-    // Separate potential multiple declarations
-    match_variables = match[1].match(
-      /(?:\s*)?([A-Za-z0-9_\[`\]]+(?:\s+)?(?:\=(?:(?:\s+)?(?:[\(].*?[\)]|[\{].*?[\}]|[\"].*?[\"]|[\'].*?[\'])?(?:[A-Za-z0-9_\[`\]]*)))?(?:\s+)?|(!,))/g
+    const dimension = child.children
+      .filter((e) => e.type === "fixed_dimension" || e.type === "dimension")
+      .map((e) => e.text)
+      .join("");
+    const declaration = child.childForFieldName("name");
+    const variableType =
+      variableTypeNode?.text || child.childForFieldName("type")?.text;
+    const variableItem = new VariableItem(
+      declaration.text,
+      walker.filePath,
+      parent,
+      pointsToRange(declaration.startPosition, declaration.endPosition),
+      variableType?.replace(":", ""),
+      `${storageClass.join(" ")} ${variableType} ${
+        declaration.text
+      }${dimension}`,
+      "",
+      storageClass
     );
-    if (!match_variables) {
-      break;
-    }
-    for (let variable of match_variables) {
-      let variable_completion = variable.match(
-        /(?:\s*)?([A-Za-z_,0-9]*)(?:(?:\s*)?(?:=(?:.*)))?/
-      )[1];
-      if (!parser.IsBuiltIn) {
-        addVariableItem(parser, variable_completion, line, "");
-      }
-    }
-    match[1] = parser.lines.shift();
-    line = match[1];
-    parser.lineNb++;
+    walker.fileItem.items.push(variableItem);
   }
 }

@@ -23,15 +23,26 @@ export class EnumItem implements SPItem {
   fullRange: Range;
   references: Location[];
 
-  constructor(name: string, file: string, description: string, range: Range) {
+  constructor(
+    name: string,
+    file: string,
+    description: string,
+    range: Range,
+    fullRange: Range
+  ) {
     this.name = name;
     this.filePath = file;
     this.description = description;
     this.range = range;
+    this.fullRange = fullRange;
     this.references = [];
   }
 
   toCompletionItem(): CompletionItem {
+    // Remove anonymous enums
+    if (this.name.includes("#")) {
+      return undefined;
+    }
     return {
       label: this.name,
       kind: this.kind,
@@ -51,11 +62,8 @@ export class EnumItem implements SPItem {
   }
 
   toHover(): Hover | undefined {
-    if (!this.description) {
-      return undefined;
-    }
     return new Hover([
-      { language: "sourcepawn", value: this.name },
+      { language: "sourcepawn", value: `enum ${this.name}` },
       descriptionToMD(this.description),
     ]);
   }

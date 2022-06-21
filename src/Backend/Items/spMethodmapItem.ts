@@ -14,36 +14,40 @@ import { basename } from "path";
 import { descriptionToMD } from "../../spUtils";
 import { SPItem } from "./spItems";
 import { ConstantItem } from "./spConstantItem";
+import { globalIdentifier, globalItem } from "../../Misc/spConstants";
+import { isBuiltIn } from "../spItemsPropertyGetters";
 
 export class MethodMapItem implements SPItem {
   name: string;
   parent: MethodMapItem | ConstantItem;
+  tmpParent: string;
   description: string;
   detail: string;
   kind = CompletionItemKind.Class;
   type: string;
   range: Range;
-  IsBuiltIn: boolean;
   filePath: string;
   fullRange: Range;
   references: Location[];
 
   constructor(
     name: string,
-    parent: MethodMapItem | ConstantItem,
-    detail: string,
+    parent: string,
     description: string,
     file: string,
     range: Range,
-    IsBuiltIn: boolean = false
+    fullRange: Range
   ) {
     this.name = name;
-    this.parent = parent;
-    this.detail = detail;
+    this.tmpParent = parent;
+    if (parent !== null) {
+      this.tmpParent = parent;
+    }
+    this.parent = globalItem;
     this.description = description;
-    this.IsBuiltIn = IsBuiltIn;
     this.filePath = file;
     this.range = range;
+    this.fullRange = fullRange;
     this.type = name;
     this.references = [];
   }
@@ -68,11 +72,16 @@ export class MethodMapItem implements SPItem {
   }
 
   toHover(): Hover {
+    this.detail = `methodmap ${this.name}${
+      this.parent.name !== globalIdentifier
+        ? this.name + " < " + this.parent.name
+        : ""
+    }`;
     if (!this.description) {
       return new Hover([{ language: "sourcepawn", value: this.detail }]);
     }
-    let filename: string = basename(this.filePath, ".inc");
-    if (this.IsBuiltIn) {
+    const filename: string = basename(this.filePath, ".inc");
+    if (isBuiltIn(this.filePath)) {
       return new Hover([
         { language: "sourcepawn", value: this.detail },
         `[Online Documentation](https://sourcemod.dev/#/${filename}/methodmap.${this.name})`,

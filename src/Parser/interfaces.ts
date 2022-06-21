@@ -1,25 +1,19 @@
+export interface FunctionParam {
+  label: string;
+  documentation: string;
+}
+
 /**
- * An object which handles the state of a parser, by keeping track of
- * whether the parser is in a comment or a string.
+ * Object containing a processed doc comment and a deprecation notice.
  */
-export interface ParseState {
+export interface DocString {
   /**
-   * Whether the parser is in a block comment or not.
+   * Processed doc comment, if it exists.
    */
-  bComment: boolean;
+  doc: string | undefined;
 
   /**
-   * Whether the parser is in a line comment or not.
+   * Processed deprecated warning, if it exists.
    */
-  lComment: boolean;
-
-  /**
-   * Whether the parser is in a string delimited by single quotes (') or not.
-   */
-  sString: boolean;
-
-  /**
-   * Whether the parser is in a string delimited by double quotes (") or not.
-   */
-  dString: boolean;
+  dep: string | undefined;
 }

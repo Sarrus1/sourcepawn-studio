@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "3.1.0",
+  "version": "4.0.0",
   "publisher": "Sarrus",
   "main": "./dist/spIndex.js",
   "icon": "sm.png",
@@ -14,8 +14,11 @@
     "type": "git",
     "url": "https://github.com/Sarrus1/sourcepawn-vscode.git"
   },
+  "sponsor": {
+    "url": "https://www.buymeacoffee.com/sarrus"
+  },
   "engines": {
-    "vscode": "^1.14.0"
+    "vscode": "^1.63.0"
   },
   "categories": [
     "Programming Languages",
@@ -32,11 +35,8 @@
   ],
   "activationEvents": [
     "onLanguage:sourcepawn",
-    "onLanguage:sp-translations",
-    "onLanguage:sp-gamedata",
+    "onLanguage:valve-kv",
     "onLanguage:valve-cfg",
-    "onLanguage:valve-ini",
-    "onLanguage:sourcemod-kv",
     "onCommand:sourcepawn-vscode.createTask",
     "onCommand:sourcepawn-vscode.createScript",
     "onCommand:sourcepawn-vscode.createREADME",
@@ -189,7 +189,7 @@
         },
         "sourcepawn.MainPath": {
           "type": "string",
-          "description": "The location of the main.sp file for projects with sub-scripting files, which allows the linter and the compiler to work correctly. You should use this setting per workspace.",
+          "description": "The location of the main.sp file, which allows the linter and the compiler to work correctly. You should use this setting per workspace.",
           "scope": "resource"
         },
         "sourcepawn.MainPathCompilation": {
@@ -430,26 +430,16 @@
         "configuration": "./LanguageConfigurations/SPConfiguration.language-configuration.json"
       },
       {
-        "id": "sp-translations",
+        "id": "valve-kv",
         "aliases": [
-          "SourcePawn Translations",
-          "Phrases"
+          "Valve KeyValue"
         ],
         "extensions": [
-          ".phrases.txt"
+          ".phrases.txt",
+          ".games.txt",
+          ".kv"
         ],
-        "configuration": "./LanguageConfigurations/SPMiscConfiguration.language-configuration.json"
-      },
-      {
-        "id": "sp-gamedata",
-        "aliases": [
-          "SourcePawn Gamedata",
-          "Gamedata"
-        ],
-        "extensions": [
-          ".games.txt"
-        ],
-        "configuration": "./LanguageConfigurations/SPMiscConfiguration.language-configuration.json"
+        "configuration": "./LanguageConfigurations/ValveKVConfiguration.language-configuration.json"
       },
       {
         "id": "valve-cfg",
@@ -460,29 +450,7 @@
         "extensions": [
           ".cfg"
         ],
-        "configuration": "./LanguageConfigurations/SPMiscConfiguration.language-configuration.json"
-      },
-      {
-        "id": "valve-ini",
-        "aliases": [
-          "Valve INI",
-          "INI"
-        ],
-        "extensions": [
-          ".ini"
-        ],
-        "configuration": "./LanguageConfigurations/SPMiscConfiguration.language-configuration.json"
-      },
-      {
-        "id": "sourcemod-kv",
-        "aliases": [
-          "Sourcemod KV",
-          "KV"
-        ],
-        "extensions": [
-          ".kv"
-        ],
-        "configuration": "./LanguageConfigurations/SPMiscConfiguration.language-configuration.json"
+        "configuration": "./LanguageConfigurations/ValveCFGConfiguration.language-configuration.json"
       }
     ],
     "grammars": [
@@ -499,29 +467,14 @@
         "path": "./syntaxes/sourcepawn-jsdoc.json"
       },
       {
-        "language": "sp-translations",
-        "scopeName": "text.sourcepawn-misc",
-        "path": "./syntaxes/sp-translations.tmLanguage.json"
-      },
-      {
-        "language": "sp-gamedata",
-        "scopeName": "text.sourcepawn-misc",
-        "path": "./syntaxes/sp-gamedata.tmLanguage.json"
+        "language": "valve-kv",
+        "scopeName": "text.valve-kv",
+        "path": "./syntaxes/valve-kv.tmLanguage.json"
       },
       {
         "language": "valve-cfg",
-        "scopeName": "text.sourcepawn-misc",
-        "path": "./syntaxes/sourcepawn-misc.tmLanguage.json"
-      },
-      {
-        "language": "valve-ini",
-        "scopeName": "text.sourcepawn-misc",
-        "path": "./syntaxes/sourcepawn-misc.tmLanguage.json"
-      },
-      {
-        "language": "sourcemod-kv",
-        "scopeName": "text.sourcepawn-misc",
-        "path": "./syntaxes/sourcepawn-misc.tmLanguage.json"
+        "scopeName": "text.valve-cfg",
+        "path": "./syntaxes/valve-cfg.tmLanguage.json"
       }
     ],
     "snippets": [
@@ -534,37 +487,45 @@
   "dependencies": {
     "@types/vscode": "^1.63.1",
     "clang-format": "^1.6.0",
+    "cross-env": "^7.0.3",
     "decompress": "^4.2.1",
-    "ftp-deploy": "^2.4.1",
+    "ftp-deploy": "^2.4.2",
     "glob": "^7.2.0",
     "n-readlines": "^1.0.1",
     "peggy": "^1.2.0",
     "prettier": "2.2.1",
     "rcon-srcds": "^2.0.1",
+    "safe-evaluate-expression": "^1.7.2",
     "ts-pegjs": "^1.2.1",
+    "vsce": "^2.9.1",
     "vscode-uri": "^3.0.3",
+    "web-tree-sitter": "^0.20.5",
     "wget-improved": "^3.2.1"
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
+    "@types/glob": "^7.2.0",
     "@types/mocha": "^8.2.3",
     "@types/node": "^8.0.14",
+    "esbuild": "^0.14.43",
     "mocha": "^9.1.3",
+    "node-loader": "2.0.0",
     "nyc": "^15.1.0",
+    "ovsx": "^0.3.0",
+    "tree-sitter": "^0.20.0",
+    "tree-sitter-cli": "^0.20.6",
+    "tree-sitter-sourcepawn": "^0.2.0",
     "ts-loader": "^9.2.6",
     "typescript": "^4.5.4",
-    "vscode-test": "^1.6.1",
-    "webpack": "^5.65.0",
-    "webpack-cli": "^4.9.1",
-    "ovsx": "^0.3.0"
+    "vscode-test": "^1.6.1"
   },
   "scripts": {
-    "vscode:prepublish": "npm run generate-parser && webpack --mode production",
+    "vscode:prepublish": "npm run generate-parser && npm run build",
     "publish-ovsx": "ovsx publish",
-    "generate-parser": "peggy --plugin ./node_modules/ts-pegjs -o src/Parser/cfgParser/cfgParser.ts --cache src/Parser/cfgParser/cfg.pegjs",
-    "compile": "npm run generate-parser && tsc -b tsconfig.json",
-    "watch": "npm run generate-parser && webpack --mode development --watch",
-    "webpack": "npm run generate-parser && webpack --mode development",
-    "test": "npm run compile && node ./dist/test/runTest.js"
+    "generate-parser": "peggy --plugin ./node_modules/ts-pegjs --extra-options-file src/Parser/cfgParser/cfgconfig.json -o src/Parser/cfgParser/cfgParser.ts --cache src/Parser/cfgParser/cfg.pegjs",
+    "test": "npm run compile && node ./dist/test/runTest.js",
+    "build": "node esbuild.js false",
+    "compile": "npm run generate-parser && npm run build && tsc -b tsconfig.json",
+    "watch": "npm run generate-parser && node esbuild.js true"
   }
 }

@@ -23,11 +23,18 @@ export class EnumStructItem implements SPItem {
   range: Range;
   fullRange: Range;
 
-  constructor(name: string, file: string, description: string, range: Range) {
+  constructor(
+    name: string,
+    file: string,
+    description: string,
+    range: Range,
+    fullRange: Range
+  ) {
     this.name = name;
     this.filePath = file;
     this.description = description;
     this.range = range;
+    this.fullRange = fullRange;
     this.references = [];
   }
 
@@ -51,11 +58,8 @@ export class EnumStructItem implements SPItem {
   }
 
   toHover(): Hover | undefined {
-    if (!this.description) {
-      return undefined;
-    }
     return new Hover([
-      { language: "sourcepawn", value: this.name },
+      { language: "sourcepawn", value: `enum struct ${this.name}` },
       descriptionToMD(this.description),
     ]);
   }

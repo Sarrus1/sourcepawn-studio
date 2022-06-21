@@ -8,9 +8,11 @@ import { resolve, dirname, join, extname } from "path";
 import { existsSync } from "fs";
 
 import { ItemsRepository } from "./spItemsRepository";
-import { Include } from "./Items/spItems";
-import { FileItems } from "./spFilesRepository";
+import { FileItem } from "./spFilesRepository";
 import { parseText, parseFile } from "../Parser/spParser";
+import { getAllMethodmaps } from "./spItemsGetters";
+import { PreProcessor } from "../Parser/PreProcessor/spPreprocessor";
+import { Include } from "./Items/spItems";
 
 /**
  * Handle the addition of a document by forwarding it to the newDocumentCallback function.
@@ -31,38 +33,37 @@ export function handleAddedDocument(
  * @param  {TextDocumentChangeEvent} event  The document change event triggered by the file change.
  * @returns void
  */
-export function handleDocumentChange(
+export async function documentChangeCallback(
   itemsRepo: ItemsRepository,
   event: TextDocumentChangeEvent
 ) {
   const fileUri = event.document.uri.toString();
-  const filePath: string = event.document.uri.fsPath.replace(".git", "");
+  const filePath = event.document.uri.fsPath.replace(".git", "");
 
-  let fileItems = new FileItems(fileUri);
-  itemsRepo.documents.add(fileUri);
+  // Hack to make the function non blocking, and not prevent the completionProvider from running.
+  await new Promise((resolve) => setTimeout(resolve, 75));
+
+  const fileItem = new FileItem(fileUri);
+
+  let text = event.document.getText();
+
+  const preprocessor = new PreProcessor(text.split("\n"), fileItem, itemsRepo);
+  fileItem.text = preprocessor.preProcess();
+  text = fileItem.text;
+  itemsRepo.documents.set(event.document.uri.toString(), false);
   // We use parseText here, otherwise, if the user didn't save the file, the changes wouldn't be registered.
   try {
-    parseText(
-      event.document.getText(),
-      filePath,
-      fileItems,
-      itemsRepo,
-      false,
-      false
-    );
+    parseText(text, filePath, fileItem, itemsRepo, false);
   } catch (error) {
     console.log(error);
   }
-  readUnscannedImports(itemsRepo, fileItems.includes);
-  itemsRepo.fileItems.set(fileUri, fileItems);
-  parseText(
-    event.document.getText(),
-    filePath,
-    fileItems,
-    itemsRepo,
-    true,
-    false
-  );
+  itemsRepo.fileItems.set(fileUri, fileItem);
+
+  readUnscannedImports(itemsRepo, fileItem.includes);
+
+  resolveMethodmapInherits(itemsRepo, event.document.uri);
+
+  parseText(text, filePath, fileItem, itemsRepo, true);
 }
 
 /**
@@ -71,84 +72,58 @@ export function handleDocumentChange(
  * @param  {URI} uri                      The URI of the document.
  * @returns void
  */
-export function newDocumentCallback(
+export async function newDocumentCallback(
   itemsRepo: ItemsRepository,
   uri: URI
-): void {
-  const filePath: string = uri.fsPath;
+) {
+  const filePath = uri.fsPath;
 
-  // Don't parse the document again if it was already.
   if (itemsRepo.fileItems.has(uri.toString())) {
+    // Don't parse the document again if it was already.
     return;
   }
 
-  if (
-    ![".inc", ".sp"].includes(extname(uri.fsPath)) ||
-    filePath.includes(".git")
-  ) {
+  if (!isSPFile(uri.fsPath)) {
     return;
   }
 
-  let fileItems: FileItems = new FileItems(uri.toString());
-  itemsRepo.documents.add(uri.toString());
+  const fileItem: FileItem = new FileItem(uri.toString());
+  itemsRepo.documents.set(uri.toString(), false);
+
   try {
-    parseFile(filePath, fileItems, itemsRepo, false, false);
+    parseFile(filePath, fileItem, itemsRepo, false);
   } catch (error) {
     console.error(error);
   }
-  readUnscannedImports(itemsRepo, fileItems.includes);
-  itemsRepo.fileItems.set(uri.toString(), fileItems);
+  itemsRepo.fileItems.set(uri.toString(), fileItem);
+
+  readUnscannedImports(itemsRepo, fileItem.includes);
+
+  resolveMethodmapInherits(itemsRepo, uri);
 
   // Parse token references.
-  parseFile(filePath, fileItems, itemsRepo, true, false);
-  fileItems.includes.forEach((e) => {
-    parseFile(URI.parse(e.uri).fsPath, fileItems, itemsRepo, true, false);
-  });
-}
-
-/**
- * Recursively read the unparsed includes from a array of Include objects.
- * @param  {ItemsRepository} itemsRepo    The itemsRepository object constructed in the activation event.
- * @param  {Include[]} includes           The array of Include objects to parse.
- * @returns void
- */
-function readUnscannedImports(
-  itemsRepo: ItemsRepository,
-  includes: Include[]
-): void {
-  const debug = ["messages", "verbose"].includes(
-    Workspace.getConfiguration("sourcepawn").get("trace.server")
-  );
-  includes.forEach((include) => {
-    if (debug) console.log("reading", include.uri.toString());
-
-    const filePath = URI.parse(include.uri).fsPath;
-
-    if (itemsRepo.fileItems.has(include.uri) || !existsSync(filePath)) {
-      return;
-    }
-
-    if (debug) console.log("found", include.uri.toString());
-
-    let fileItems: FileItems = new FileItems(include.uri);
-    try {
-      parseFile(filePath, fileItems, itemsRepo, false, include.IsBuiltIn);
-    } catch (err) {
-      console.error(err, include.uri.toString());
-    }
-    if (debug) console.log("parsed", include.uri.toString());
-
-    itemsRepo.fileItems.set(include.uri, fileItems);
-    if (debug) console.log("added", include.uri.toString());
-
-    readUnscannedImports(itemsRepo, fileItems.includes);
+  parseFile(filePath, fileItem, itemsRepo, true);
+  itemsRepo.fileItems.forEach((fileItems, k) => {
+    fileItems.includes.forEach((e) => {
+      const uri = URI.parse(e.uri);
+      if (itemsRepo.documents.get(uri.toString())) {
+        return;
+      }
+      parseFile(
+        uri.fsPath,
+        itemsRepo.fileItems.get(uri.toString()),
+        itemsRepo,
+        true
+      );
+      itemsRepo.documents.set(uri.toString(), true);
+    });
   });
 }
 
 /**
  * Return all the possible include directories paths, such as SMHome, etc. The function will only return existing paths.
  * @param  {URI} uri                          The URI of the file from which we are trying to read the include.
- * @param  {boolean=false} onlyOptionalPaths  Whether or not the function only return the optionalIncludeFolderPaths.
+ * @param  {boolean} onlyOptionalPaths        Whether or not the function only return the optionalIncludeFolderPaths.
  * @returns string
  */
 export function getAllPossibleIncludeFolderPaths(
@@ -184,4 +159,86 @@ export function getAllPossibleIncludeFolderPaths(
   possibleIncludePaths.push(join(scriptingFolder, "include"));
 
   return possibleIncludePaths.filter((e) => e !== "" && existsSync(e));
+}
+
+/**
+ * Deal with all the tmpParents properties of methodmaps items post parsing.
+ * @param  {ItemsRepository} itemsRepo The itemsRepository object constructed in the activation event.
+ * @param  {URI} uri  The uri of the document to check the methodmaps for (will check the includes as well).
+ * @returns void
+ */
+function resolveMethodmapInherits(itemsRepo: ItemsRepository, uri: URI): void {
+  const methodmaps = getAllMethodmaps(itemsRepo, uri);
+  methodmaps.forEach((v, k) => {
+    if (v.tmpParent === undefined) {
+      return;
+    }
+    const parent = methodmaps.get(v.tmpParent);
+    if (parent === undefined) {
+      return;
+    }
+    v.parent = parent;
+    v.tmpParent = undefined;
+  });
+}
+
+/**
+ * Returns whether or not a file is a .sp or .inc files and filters out .git files.
+ * @param  {string} filePath  Path of the file to check.
+ * @returns boolean
+ */
+export function isSPFile(filePath: string): boolean {
+  const fileExt = extname(filePath);
+  return [".sp", ".inc"].includes(fileExt) && !filePath.includes(".git");
+}
+
+/**
+ * Recursively read the unparsed includes from a array of Include objects.
+ * @param  {ItemsRepository} itemsRepo    The itemsRepository object constructed in the activation event.
+ * @param  {Include[]} includes           The array of Include objects to parse.
+ * @returns void
+ */
+function readUnscannedImports(
+  itemsRepo: ItemsRepository,
+  includes: Map<string, Include>
+): void {
+  const debug = ["messages", "verbose"].includes(
+    Workspace.getConfiguration("sourcepawn").get("trace.server")
+  );
+  includes.forEach((include) => {
+    if (debug) console.log("reading", include.uri.toString());
+
+    const filePath = URI.parse(include.uri).fsPath;
+
+    const fileItem = itemsRepo.fileItems.get(include.uri);
+    if (fileItem) {
+      if (fileItem.uri.endsWith("sourcemod.inc")) {
+        // Sourcemod.inc has some hardcoded items, we account for them here.
+        if (fileItem.items.length > 33) {
+          return;
+        }
+      } else if (fileItem.items.length > 0) {
+        return;
+      }
+    }
+
+    if (!existsSync(filePath)) {
+      return;
+    }
+
+    if (debug) console.log("found", include.uri.toString());
+
+    let fileItems: FileItem = new FileItem(include.uri);
+    try {
+      parseFile(filePath, fileItems, itemsRepo, false);
+    } catch (err) {
+      console.error(err, include.uri.toString());
+    }
+    if (debug) console.log("parsed", include.uri.toString());
+
+    itemsRepo.fileItems.set(include.uri, fileItems);
+    if (debug) console.log("added", include.uri.toString());
+
+    readUnscannedImports(itemsRepo, fileItems.includes);
+  });
 }
