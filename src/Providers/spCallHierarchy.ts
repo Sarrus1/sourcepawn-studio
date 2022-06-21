@@ -14,6 +14,7 @@ import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { MethodItem } from "../Backend/Items/spMethodItem";
 import { getItemFromPosition } from "../Backend/spItemsGetters";
 import { ItemsRepository } from "../Backend/spItemsRepository";
+import { Providers } from "../Backend/spProviders";
 import { findMainPath } from "../spUtils";
 
 const callKind = [
@@ -136,6 +137,7 @@ export function provideOutgoingCalls(
 }
 
 export function prepareCallHierarchy(
+  this: Providers,
   document: TextDocument,
   position: Position,
   token: CancellationToken

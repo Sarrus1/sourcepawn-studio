@@ -14,11 +14,10 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
-    "noImplicitAny": false,
-    "noImplicitThis": false,
+    "noImplicitThis": true,
     "noUnusedLocals": true,
     "strictNullChecks": false
   },
   "include": ["src", "src/**/*.ts"],
-  "exclude": ["node_modules", ".vscode-test", "src/Parser/cfgParser/cfgParser.ts"]
+  "exclude": ["node_modules", ".vscode-test"]
 }

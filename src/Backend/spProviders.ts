@@ -149,6 +149,6 @@ export class Providers {
     position: Position,
     token: CancellationToken
   ): Promise<CallHierarchyItem | CallHierarchyItem[]> {
-    return prepareCallHierarchy(document, position, token);
+    return prepareCallHierarchy.call(this, document, position, token);
   }
 }
