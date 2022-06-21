@@ -16,7 +16,7 @@ import { readProperty } from "./readProperty";
 export function readMethodmap(walker: TreeWalker, node: SyntaxNode): void {
   const nameNode = node.childForFieldName("name");
   const inheritNode = node.childForFieldName("inherits");
-  const { doc, dep } = findDoc(walker, node);
+  const { doc } = findDoc(walker, node);
   const methodmapItem = new MethodMapItem(
     nameNode.text,
     inheritNode?.text,

@@ -16,7 +16,7 @@ export function readDefine(walker: TreeWalker, node: SyntaxNode): void {
   const valueNode = node.childForFieldName("value");
   const range = pointsToRange(nameNode.startPosition, nameNode.endPosition);
   const fullRange = pointsToRange(node.startPosition, node.endPosition);
-  const { doc, dep } = findDoc(walker, node);
+  const { dep } = findDoc(walker, node);
 
   const { value, desc } = explodeDefine(valueNode?.text);
 

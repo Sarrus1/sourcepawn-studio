@@ -1,4 +1,4 @@
-﻿import { CompletionItemKind, Range } from "vscode";
+﻿import { Range } from "vscode";
 import { SyntaxNode } from "web-tree-sitter";
 
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
@@ -16,7 +16,6 @@ import { findDoc } from "./readDocumentation";
 import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 
 export type MethodParent = EnumStructItem | PropertyItem | MethodMapItem;
-const MmEs = [CompletionItemKind.Struct, CompletionItemKind.Class];
 
 /**
  * @param  {TreeWalker} walker                                TreeWalker object.

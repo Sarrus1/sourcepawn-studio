@@ -30,7 +30,7 @@ export async function refreshCfgDiagnostics(document: TextDocument) {
   }
   cfgDiagnostics.delete(document.uri);
   try {
-    const par = parse(document.getText(), undefined);
+    parse(document.getText(), undefined);
   } catch (e) {
     if (e instanceof SyntaxError) {
       const range = new Range(

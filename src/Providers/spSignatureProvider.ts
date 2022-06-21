@@ -136,7 +136,7 @@ export function signatureProvider(
       document.uri.fsPath,
       allItems
     );
-    const { variableType, words } = getTypeOfVariable(
+    const { variableType } = getTypeOfVariable(
       croppedLine,
       newPos,
       allItems,

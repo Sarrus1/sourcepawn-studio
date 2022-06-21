@@ -14,7 +14,7 @@ import { pointsToRange } from "./utils";
  */
 export function readTypeset(walker: TreeWalker, node: SyntaxNode): void {
   const nameNode = node.childForFieldName("name");
-  const { doc, dep } = findDoc(walker, node);
+  const { doc } = findDoc(walker, node);
 
   const childs = [];
   let counter = -1;
@@ -31,7 +31,7 @@ export function readTypeset(walker: TreeWalker, node: SyntaxNode): void {
       return;
     }
     counter++;
-    const { doc: child_doc, dep: child_dep } = findDoc(walker, e);
+    const { doc: child_doc } = findDoc(walker, e);
     const typeNode = e.childForFieldName("returnType");
     childs.push(
       new TypedefItem(

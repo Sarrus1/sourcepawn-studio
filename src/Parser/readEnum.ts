@@ -15,7 +15,7 @@ import { commentToDoc, findDoc } from "./readDocumentation";
  */
 export function readEnum(walker: TreeWalker, node: SyntaxNode): void {
   const { name, nameRange } = getEnumNameAndRange(walker, node);
-  const { doc, dep } = findDoc(walker, node);
+  const { doc } = findDoc(walker, node);
   const enumItem = new EnumItem(
     name,
     walker.filePath,

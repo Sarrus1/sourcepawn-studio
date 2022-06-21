@@ -5,7 +5,6 @@ import { globalIdentifier, globalItem } from "../Misc/spConstants";
 import { FunctionItem } from "./Items/spFunctionItem";
 import { MethodItem } from "./Items/spMethodItem";
 import { MethodMapItem } from "./Items/spMethodmapItem";
-import * as path from "path";
 import { URI } from "vscode-uri";
 
 export interface VariableType {

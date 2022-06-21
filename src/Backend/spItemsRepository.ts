@@ -1,5 +1,4 @@
 import {
-  Memento,
   Disposable,
   TextDocument,
   Position,
@@ -22,17 +21,14 @@ import { getAllItems, getItemFromPosition } from "./spItemsGetters";
 import { refreshDiagnostics } from "../Providers/spLinter";
 import { refreshCfgDiagnostics } from "../Providers/cfgLinter";
 import { updateDecorations } from "../Providers/spDecorationsProvider";
-import { performance } from "perf_hooks";
 
 export class ItemsRepository implements Disposable {
   public fileItems: Map<string, FileItem>;
   public documents: Map<string, boolean>;
-  private globalState: Memento;
 
-  constructor(globalState: Memento) {
+  constructor() {
     this.fileItems = new Map<string, FileItem>();
     this.documents = new Map<string, boolean>();
-    this.globalState = globalState;
   }
 
   public dispose() {}

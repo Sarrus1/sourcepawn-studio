@@ -28,7 +28,7 @@ export let symbolQuery: Parser.Query;
 export let variableQuery: Parser.Query;
 
 export function activate(context: ExtensionContext) {
-  const providers = new Providers(context.globalState);
+  const providers = new Providers();
 
   const workspaceFolders = Workspace.workspaceFolders || [];
   const watcher = Workspace.createFileSystemWatcher(

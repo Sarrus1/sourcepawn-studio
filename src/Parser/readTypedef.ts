@@ -15,7 +15,7 @@ export function readTypedef(walker: TreeWalker, node: SyntaxNode): void {
   const nameNode = node.childForFieldName("name");
   const body = node.children.find((e) => e.type === "typedef_expression");
   const typeNode = body.childForFieldName("returnType");
-  const { doc, dep } = findDoc(walker, node);
+  const { doc } = findDoc(walker, node);
   const typeDefItem = new TypedefItem(
     nameNode.text,
     node.text,

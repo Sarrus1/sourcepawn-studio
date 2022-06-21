@@ -15,7 +15,7 @@ import { VariableItem } from "../Backend/Items/spVariableItem";
  */
 export function readEnumStruct(walker: TreeWalker, node: SyntaxNode): void {
   const nameNode = node.childForFieldName("name");
-  const { doc, dep } = findDoc(walker, node);
+  const { doc } = findDoc(walker, node);
   const enumStructItem = new EnumStructItem(
     nameNode.text,
     walker.filePath,

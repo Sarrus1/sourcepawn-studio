@@ -1,10 +1,4 @@
-﻿import {
-  workspace as Workspace,
-  window,
-  languages,
-  ExtensionContext,
-} from "vscode";
-import { refreshCfgDiagnostics } from "../cfgLinter";
+﻿import { workspace as Workspace, window, ExtensionContext } from "vscode";
 
 import { refreshDiagnostics } from "../spLinter";
 import { compilerDiagnostics } from "./compilerDiagnostics";

@@ -521,7 +521,7 @@
   "scripts": {
     "vscode:prepublish": "npm run generate-parser && npm run build",
     "publish-ovsx": "ovsx publish",
-    "generate-parser": "peggy --plugin ./node_modules/ts-pegjs -o src/Parser/cfgParser/cfgParser.ts --cache src/Parser/cfgParser/cfg.pegjs",
+    "generate-parser": "peggy --plugin ./node_modules/ts-pegjs --extra-options-file src/Parser/cfgParser/cfgconfig.json -o src/Parser/cfgParser/cfgParser.ts --cache src/Parser/cfgParser/cfg.pegjs",
     "test": "npm run compile && node ./dist/test/runTest.js",
     "build": "node esbuild.js false",
     "compile": "npm run generate-parser && npm run build && tsc -b tsconfig.json",

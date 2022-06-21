@@ -16,8 +16,9 @@
     "noImplicitReturns": true,
     "noImplicitAny": false,
     "noImplicitThis": false,
+    "noUnusedLocals": true,
     "strictNullChecks": false
   },
   "include": ["src", "src/**/*.ts"],
-  "exclude": ["node_modules", ".vscode-test"]
+  "exclude": ["node_modules", ".vscode-test", "src/Parser/cfgParser/cfgParser.ts"]
 }

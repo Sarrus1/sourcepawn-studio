@@ -1,5 +1,4 @@
 ﻿import {
-  Memento,
   TextDocument,
   Position,
   CancellationToken,
@@ -39,9 +38,9 @@ export class Providers {
   documentationProvider: JsDocCompletionProvider;
   itemsRepository: ItemsRepository;
 
-  constructor(globalState?: Memento) {
+  constructor() {
     this.documentationProvider = new JsDocCompletionProvider();
-    this.itemsRepository = new ItemsRepository(globalState);
+    this.itemsRepository = new ItemsRepository();
   }
 
   public async provideCompletionItems(

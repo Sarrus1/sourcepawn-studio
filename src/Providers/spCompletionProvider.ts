@@ -53,7 +53,7 @@ export async function completionProvider(
             document.uri.fsPath,
             allItems
           );
-          const { variableType, words } = getTypeOfVariable(
+          const { variableType, words: _ } = getTypeOfVariable(
             // Hack to use getTypeOfVariable
             match[2] + ".",
             newPos,
