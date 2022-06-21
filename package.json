@@ -524,7 +524,7 @@
     "generate-parser": "peggy --plugin ./node_modules/ts-pegjs -o src/Parser/cfgParser/cfgParser.ts --cache src/Parser/cfgParser/cfg.pegjs",
     "test": "npm run compile && node ./dist/test/runTest.js",
     "build": "node esbuild.js false",
-    "compile": "npm run generate-parser && node esbuild.js",
+    "compile": "npm run generate-parser && tsc -b tsconfig.json",
     "watch": "npm run generate-parser && node esbuild.js true"
   }
 }
