@@ -46,11 +46,7 @@ export function getAllDefines(
   uri: URI,
   fileItem: FileItem
 ): Map<string, string> {
-  const defines = new Map<string, string>();
-  const mainPath = findMainPath(uri);
-  if (mainPath !== undefined && mainPath !== "") {
-    uri = URI.file(mainPath);
-  }
+  const defines = new Map<string, string>(fileItem.defines);
 
   const includes = new Set<string>([uri.toString()]);
 

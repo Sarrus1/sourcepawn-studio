@@ -58,6 +58,9 @@ export async function documentChangeCallback(
     console.log(error);
   }
   itemsRepo.fileItems.set(fileUri, fileItem);
+
+  readUnscannedImports(itemsRepo, fileItem.includes);
+
   resolveMethodmapInherits(itemsRepo, event.document.uri);
 
   parseText(text, filePath, fileItem, itemsRepo, true);
@@ -207,7 +210,19 @@ function readUnscannedImports(
 
     const filePath = URI.parse(include.uri).fsPath;
 
-    if (itemsRepo.fileItems.has(include.uri) || !existsSync(filePath)) {
+    const fileItem = itemsRepo.fileItems.get(include.uri);
+    if (fileItem) {
+      if (fileItem.uri.endsWith("sourcemod.inc")) {
+        // Sourcemod.inc has some hardcoded items, we account for them here.
+        if (fileItem.items.length > 33) {
+          return;
+        }
+      } else if (fileItem.items.length > 0) {
+        return;
+      }
+    }
+
+    if (!existsSync(filePath)) {
       return;
     }
 

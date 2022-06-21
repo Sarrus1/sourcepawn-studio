@@ -5,7 +5,6 @@ import evaluate from "safe-evaluate-expression";
 import { FileItem } from "../../Backend/spFilesRepository";
 import { ItemsRepository } from "../../Backend/spItemsRepository";
 import { isIncludeSelfFile } from "../utils";
-import { newDocumentCallback } from "../../Backend/spFileHandlers";
 import { getAllDefines } from "../../Backend/spItemsGetters";
 import { preDiagnostics } from "../../Providers/Linter/compilerDiagnostics";
 import { readFileSync } from "fs";
@@ -30,7 +29,7 @@ export class PreProcessor {
   line: string;
   preprocessedLines: string;
   conditionState: ConditionState;
-  conditionWasActivated: boolean;
+  conditionWasActivated: boolean[];
   skipLine: boolean;
   fileItem: FileItem;
   uri: URI;
@@ -42,7 +41,7 @@ export class PreProcessor {
     this.lines = lines;
     this.lineNb = -1;
     this.conditionState = ConditionState.None;
-    this.conditionWasActivated = false;
+    this.conditionWasActivated = [];
     this.preprocessedLines = "";
     this.fileItem = fileItem;
     this.itemsRepo = itemsRepo;
@@ -120,7 +119,7 @@ export class PreProcessor {
 
       if (match) {
         this.conditionState = ConditionState.None;
-        this.conditionWasActivated = false;
+        this.conditionWasActivated.pop();
         this.skipLine = false;
         this.addLine("");
         continue;
@@ -288,7 +287,10 @@ export class PreProcessor {
     state: ConditionState
   ) {
     this.conditionState = state;
-    if (this.conditionWasActivated) {
+    if (
+      state === ConditionState.elseIf &&
+      this.conditionWasActivated[this.conditionWasActivated.length - 1]
+    ) {
       this.skipLine = true;
       this.addLine("");
       return;
@@ -334,9 +336,10 @@ export class PreProcessor {
     }
 
     if (evaluation) {
-      this.conditionWasActivated = true;
+      this.conditionWasActivated.push(true);
       this.skipLine = false;
     } else {
+      this.conditionWasActivated.push(false);
       this.skipLine = true;
     }
     this.addLine("");
@@ -345,12 +348,12 @@ export class PreProcessor {
 
   private handleElse(line: string) {
     this.conditionState = ConditionState.else;
-    if (this.conditionWasActivated) {
+    if (this.conditionWasActivated[this.conditionWasActivated.length - 1]) {
       this.skipLine = true;
       this.addLine("");
       return;
     }
-    this.conditionWasActivated = true;
+    this.conditionWasActivated.push(true);
     this.skipLine = false;
     this.addLine(line);
   }
@@ -379,6 +382,7 @@ export class PreProcessor {
     const uri = URI.parse(resolved);
     const fileItem: FileItem = new FileItem(uri.toString());
     this.itemsRepo.documents.set(uri.toString(), false);
+    this.itemsRepo.fileItems.set(uri.toString(), fileItem);
     try {
       const text = readFileSync(uri.fsPath).toString();
       const preprocessor = new PreProcessor(

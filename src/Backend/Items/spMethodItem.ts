@@ -99,7 +99,7 @@ export class MethodItem implements SPItem {
     if (isBuiltIn(this.filePath)) {
       return new Hover([
         { language: "sourcepawn", value: this.detail },
-        `[Online Documentation](https://sourcemod.dev/#/${filename}/methodmap.${this.parent}/function.${this.name})`,
+        `[Online Documentation](https://sourcemod.dev/#/${filename}/methodmap.${this.parent.name}/function.${this.name})`,
         descriptionToMD(
           `${this.description}${
             this.deprecated ? `\nDEPRECATED ${this.deprecated}` : ""
