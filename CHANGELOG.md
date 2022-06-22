@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [4.0.2]
+
+### Removed
+
+- Removed parser generated diagnostics.
+
 ## [4.0.1]
 
 ### Fixed
