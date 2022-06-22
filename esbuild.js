@@ -10,18 +10,16 @@ const treeSitterWasmPlugin = {
       "./bin/tree-sitter.wasm",
       "./bin/tree-sitter-sourcepawn.wasm",
     ];
-    // build.onEnd(result => {
     wasmPaths.forEach((wasmPath) => {
       fs.copyFileSync(wasmPath, path.join(outDir, path.basename(wasmPath)));
     });
-    // })
   },
 };
 
 if (!fs.existsSync(outDir)) {
   fs.mkdirSync(outDir);
 }
-const watch = process.argv[2] === "true";
+const watch = process.argv[2] === "watch";
 
 require("esbuild")
   .build({
