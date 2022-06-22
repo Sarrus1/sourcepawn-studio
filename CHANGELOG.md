@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [4.0.1]
+
+### Fixed
+
+- Fixed an issue while evaluating preprocessor expression with defines that do not have a value (see #231).
+- Fixed an issue with define description having leading symbols.
+
 ## [4.0.0]
 
 ### Added

@@ -48,8 +48,6 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
   - [Credits](#credits)
   - [Frequently Asked Questions](#frequently-asked-questions)
     - [How can I donate ?](#how-can-i-donate-)
-    - [How to fix "Not a .sp file, aborting" ?](#how-to-fix-not-a-sp-file-aborting-)
-    - [How to fix "Command not found" ?](#how-to-fix-command-not-found-)
     - [How to install the beta build ?](#how-to-install-the-beta-build-)
     - [How to contribute ?](#how-to-contribute-)
     - [How to run the extension from its source code ?](#how-to-run-the-extension-from-its-source-code-)
@@ -120,29 +118,16 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 
 ## Frequently Asked Questions
 
-    - [How can I donate ?](#how-can-i-donate-)
-    - [How to fix "Not a .sp file, aborting" ?](#how-to-fix-not-a-sp-file-aborting-)
-    - [How to fix "Command not found" ?](#how-to-fix-command-not-found-)
-    - [How to install the beta build ?](#how-to-install-the-beta-build-)
-    - [How to contribute ?](#how-to-contribute-)
-    - [How to run the extension from its source code ?](#how-to-run-the-extension-from-its-source-code-)
+- [How can I donate ?](#how-can-i-donate-)
+- [How to install the beta build ?](#how-to-install-the-beta-build-)
+- [How to contribute ?](#how-to-contribute-)
+- [How to run the extension from its source code ?](#how-to-run-the-extension-from-its-source-code-)
 
 ### How can I donate ?
 
 Thanks for considering this. But please remember that all of this wouldn't be possible without the Alliedmodders community. If you wish to make a donation for this community, you can make it [here](https://sourcemod.net/donate.php).
 If you prefer to make a donation to me for this project, you can [buy me a coffee](https://www.buymeacoffee.com/sarrus)
 
-### How to fix "Not a .sp file, aborting" ?
-
-This usually happens when you have `sourcepawn.MainPath` set but don't actually need it. This setting is only to be used for large projects with multiple `.sp` files, as a way to provide an entry point for the compiler.
-Don't use this setting if you don't need to.
-NOTE: This error shouldn't appear as much as of version 1.12.0.
-
-### How to fix "Command not found" ?
-
-The `Command not found` error means that the extension could not start properly.
-This is usually due to the user trying to open a single file only and not a folder.
-As of version 1.12.0, this is partly supported, however, for full support, please open a folder when editing a project, and not just the `.sp` file.
 
 ### How to install the beta build ?
 

@@ -32,7 +32,27 @@ export function readDefine(walker: TreeWalker, node: SyntaxNode): void {
   walker.fileItem.items.push(defineItem);
 }
 
-function explodeDefine(value: string): { value: string; desc: string } {
+/**
+ * Contains the value and the description of a define, as strings.
+ */
+interface ValueDescription {
+  /**
+   * Value of the define.
+   */
+  value: string;
+
+  /**
+   * Description of the define.
+   */
+  desc: string;
+}
+
+/**
+ * Explode the parsed value of a define to extract its description.
+ * @param  {string} value     The full value (comment included) of the define.
+ * @returns ValueDescription
+ */
+function explodeDefine(value: string): ValueDescription {
   if (!value) {
     return { value: "", desc: "" };
   }
@@ -44,10 +64,13 @@ function explodeDefine(value: string): { value: string; desc: string } {
     }
     let desc = match[match.length - 1].trim();
     return {
-      value: value.slice(0, value.length - desc.length - 2).trim(),
+      value: value.slice(0, value.length - match[0].length).trim(),
       desc,
     };
   }
   let desc = match[match.length - 1].slice(2).trim();
-  return { value: value.slice(0, value.length - desc.length - 4).trim(), desc };
+  return {
+    value: value.slice(0, value.length - match[0].length - 2).trim(),
+    desc,
+  };
 }

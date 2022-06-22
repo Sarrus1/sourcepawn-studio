@@ -68,7 +68,7 @@ export class PreProcessor {
     this.range = range;
     for (this.lineNb = 0; this.lineNb < this.lines.length; this.lineNb++) {
       let match = this.getLine().match(
-        /^\s*#define\s+([A-Za-z_]\w*)[^\S\r\n]+/
+        /^\s*#define\s+([A-Za-z_]\w*)[^\S\r\n]*/
       );
 
       if (match) {
@@ -144,7 +144,9 @@ export class PreProcessor {
 
     const defineValSt = match.index + match[0].length;
     if (line.length <= defineValSt) {
+      // The define does not have a value, return early.
       this.addLine(lineToAdd);
+      this.fileItem.defines.set(match[1], "");
       return;
     }
     let state = ParseState.None;
