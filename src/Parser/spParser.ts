@@ -74,19 +74,6 @@ export function parseText(
     const walker = new TreeWalker(fileItem, file, tree);
     walker.walkTree();
     fileItem.symbols = symbolQuery.captures(tree.rootNode);
-    parserDiagnostics.set(
-      URI.file(file),
-      spLangObj
-        .query("(ERROR) @err")
-        .captures(tree.rootNode)
-        .map(
-          (e) =>
-            new Diagnostic(
-              pointsToRange(e.node.startPosition, e.node.endPosition),
-              e.node.text
-            )
-        )
-    );
     return false;
   } else {
     const lines = data.split("\n");
