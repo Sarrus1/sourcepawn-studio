@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [4.0.4]
+
+### Fixed
+
+- Improved the parser.
+
 ## [4.0.3]
 
 ### Fixed

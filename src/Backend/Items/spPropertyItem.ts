@@ -70,9 +70,6 @@ export class PropertyItem implements SPItem {
   }
 
   toHover(): Hover | undefined {
-    if (!this.description) {
-      return undefined;
-    }
     return new Hover([
       { language: "sourcepawn", value: this.detail },
       descriptionToMD(this.description),
