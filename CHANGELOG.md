@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [4.0.5]
+
+### Fixed
+
+- Fixed enum struct attributes missing.
+
 ## [4.0.4]
 
 ### Fixed
