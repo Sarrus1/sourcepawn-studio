@@ -94,6 +94,17 @@ export class VariableItem implements SPItem {
     }
 
     lastFunc = lastFunc as MethodItem;
+    if (
+      this.parent.kind === CompletionItemKind.Struct &&
+      this.parent === lastMMorES
+    ) {
+      // Enum struct field
+      return {
+        label: this.name,
+        kind: this.kind,
+      };
+    }
+
     const parent = this.parent as MethodItem;
     if (
       lastFunc.fullRange.contains(this.range) &&

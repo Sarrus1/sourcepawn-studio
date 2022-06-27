@@ -7,8 +7,8 @@ const treeSitterWasmPlugin = {
   name: "treeSitterWasm",
   setup(build) {
     const wasmPaths = [
-      "./bin/tree-sitter.wasm",
-      "./bin/tree-sitter-sourcepawn.wasm",
+      "./node_modules/web-tree-sitter/tree-sitter.wasm",
+      "./node_modules/tree-sitter-sourcepawn/tree-sitter-sourcepawn.wasm",
     ];
     wasmPaths.forEach((wasmPath) => {
       fs.copyFileSync(wasmPath, path.join(outDir, path.basename(wasmPath)));

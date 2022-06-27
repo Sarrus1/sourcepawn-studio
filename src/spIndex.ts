@@ -86,7 +86,7 @@ export function activate(context: ExtensionContext) {
     async (progress) => {
       progress.report({ increment: 0 });
 
-      await loadFiles(providers);
+      await loadFiles(providers, context);
 
       progress.report({ increment: 100 });
     }
@@ -105,7 +105,7 @@ export function activate(context: ExtensionContext) {
         providers.itemsRepository.documents.set(k, false)
       );
       providers.itemsRepository.fileItems = new Map();
-      loadFiles(providers);
+      loadFiles(providers, context);
     }
   });
 
@@ -231,7 +231,7 @@ function getDirectories(paths: string[], providers: Providers) {
   }
 }
 
-async function loadFiles(providers: Providers) {
+async function loadFiles(providers: Providers, context: ExtensionContext) {
   console.time("build parser");
   await buildParser();
   console.timeEnd("build parser");
@@ -244,7 +244,7 @@ async function loadFiles(providers: Providers) {
   if (mainPath !== undefined) {
     if (!checkMainPath(mainPath)) {
       window.showErrorMessage(
-        "A setting for the main.sp file was specified, but seems invalid.\
+        "A setting for the main .sp file was specified, but seems invalid.\
         \nRight click on a file and use the command at the bottom of the menu to set it as main."
       );
     } else {
@@ -262,19 +262,22 @@ async function loadFiles(providers: Providers) {
     const wk = Workspace.workspaceFolders;
     if (wk === undefined && files.length > 1) {
       window.showWarningMessage(
-        "There are no mainpath setting set for this file, and the extension was not able to compute one.\
-        The extension will not work properly.\
-        \nRight click on a file and use the command at the bottom of the menu to set it as main."
+        "There are no mainpath set for this workspace.\
+        The extension might not work properly.\
+        \nRight click on a file and `Set file as main path`."
       );
       return;
     }
 
-    if (files.length > 1) {
+    if (
+      files.length > 1 &&
+      !context.workspaceState.get("sp-mainpath-dontshowagain")
+    ) {
       window
         .showWarningMessage(
-          "There is no mainpath setting set for this file. The extension will not work properly.",
+          "There is no mainpath set for this workspace. The extension will not work properly.",
           "Select a main path",
-          "Ignore"
+          "Don't show again"
         )
         .then((v) => {
           if (v === "Select a main path") {
@@ -284,6 +287,8 @@ async function loadFiles(providers: Providers) {
                 v
               );
             });
+          } else if (v === "Don't show again") {
+            context.workspaceState.update("sp-mainpath-dontshowagain", true);
           }
         });
     }

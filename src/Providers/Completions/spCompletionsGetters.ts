@@ -27,6 +27,8 @@ import { FunctionItem } from "../../Backend/Items/spFunctionItem";
 import { MethodItem } from "../../Backend/Items/spMethodItem";
 
 const MP = [CompletionItemKind.Method, CompletionItemKind.Property];
+const MPV = MP;
+MPV.push(CompletionItemKind.Variable);
 
 /**
  * Generate a CompletionList object of the possible includes file that can fit the already typed #include statement.
@@ -164,20 +166,27 @@ export async function getCompletionListFromPosition(
         (e) => e.name === words[0] && e.kind === CompletionItemKind.Class
       );
 
-  return getMethodItems(allItems, variableTypes, isMethodMap, lastFunc);
+  return getMethodItems(
+    allItems,
+    variableTypes,
+    isMethodMap,
+    lastFunc,
+    new Location(document.uri, position)
+  );
 }
 
 function getMethodItems(
   allItems: SPItem[],
   variableTypes: (MethodMapItem | EnumStructItem)[],
   isMethodMap: boolean,
-  lastFunc: MethodItem | FunctionItem
+  lastFunc: MethodItem | FunctionItem,
+  loc: Location
 ): CompletionList {
   const items = new Set<CompletionItem | undefined>();
 
   allItems.forEach((item) => {
     if (
-      MP.includes(item.kind) &&
+      MPV.includes(item.kind) &&
       variableTypes.includes(item.parent as EnumStructItem | MethodMapItem) &&
       // Don't include the constructor of the methodmap
       !variableTypes.includes(item as EnumStructItem | MethodMapItem) &&
@@ -185,7 +194,17 @@ function getMethodItems(
       // This handles suggestions for 'Database.Connect()' for example.
       isMethodMap === /\bstatic\b[^\(]*\(/.test(item.detail as string)
     ) {
-      items.add(item.toCompletionItem(lastFunc));
+      try {
+        items.add(
+          item.toCompletionItem(
+            lastFunc,
+            item.parent as MethodMapItem | EnumStructItem,
+            loc
+          )
+        );
+      } catch (err) {
+        console.error(err);
+      }
     }
   });
 
