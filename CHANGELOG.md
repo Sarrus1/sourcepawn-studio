@@ -2,6 +2,10 @@
 
 ## [4.0.5]
 
+### Added
+
+- Added a "Don't show again" option for mainpath warnings.
+
 ### Fixed
 
 - Fixed enum struct attributes missing.
