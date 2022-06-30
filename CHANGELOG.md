@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fixed an error when using the `!!template` snippet (see #236).
+- Fixed a highlighting bug for function default parameters.
 
 ## [4.0.5]
 
