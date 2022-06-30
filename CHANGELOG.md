@@ -6,6 +6,7 @@
 
 - Fixed an error when using the `!!template` snippet (see #236).
 - Fixed a highlighting bug for function default parameters.
+- Fixed broken variable suggestions.
 
 ## [4.0.5]
 

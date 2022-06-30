@@ -27,8 +27,11 @@ import { FunctionItem } from "../../Backend/Items/spFunctionItem";
 import { MethodItem } from "../../Backend/Items/spMethodItem";
 
 const MP = [CompletionItemKind.Method, CompletionItemKind.Property];
-const MPV = MP;
-MPV.push(CompletionItemKind.Variable);
+const MPV = [
+  CompletionItemKind.Method,
+  CompletionItemKind.Property,
+  CompletionItemKind.Variable,
+];
 
 /**
  * Generate a CompletionList object of the possible includes file that can fit the already typed #include statement.
