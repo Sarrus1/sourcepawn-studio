@@ -598,32 +598,32 @@
       "patterns": [
         {
           "comment": "Float literal",
-          "match": "[0-9]+\\.[0-9]+",
+          "match": "\\s*[0-9]+\\.[0-9]+",
           "name": "constant.numeric.float.sourcepawn"
         },
         {
           "comment": "Binary literal",
-          "match": "\\b0b[0-1]+\\b",
+          "match": "\\s*\\b0b[0-1]+\\b",
           "name": "constant.numeric.sourcepawn"
         },
         {
           "comment": "Octodecimal literal",
-          "match": "\\b0o[0-7]+\\b",
+          "match": "\\s*\\b0o[0-7]+\\b",
           "name": "constant.numeric.sourcepawn"
         },
         {
           "comment": "Hexadecimal literal",
-          "match": "\\b0x[0-9a-fA-F]+\\b",
+          "match": "\\s*\\b0x[0-9a-fA-F]+\\b",
           "name": "constant.numeric.sourcepawn"
         },
         {
           "comment": "Integer literal",
-          "match": "\\b\\d+\\b",
+          "match": "\\s*\\b\\d+\\b",
           "name": "constant.numeric.integer.sourcepawn"
         },
         {
           "comment": "Invalid literal",
-          "match": "\\b\\d+\\w+\\b",
+          "match": "\\s*\\b\\d+\\w+\\b",
           "name": "invalid.illegal.constant.sourcepawn"
         }
       ]
