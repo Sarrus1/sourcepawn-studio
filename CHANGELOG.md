@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [4.0.6]
+
+### Fixed
+
+- Fixed an error when using the `!!template` snippet (see #236).
+
 ## [4.0.5]
 
 ### Added
