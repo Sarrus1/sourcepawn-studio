@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [4.0.7]
+
+### Fixed
+
+- Fixed defines descriptions and values.
+
 ## [4.0.6]
 
 ### Fixed
