@@ -6,6 +6,10 @@
 
 - Added `enum struct` fields dimensions in hovers.
 
+### Improved
+
+- Improved the KeyValue formatter.
+
 ### Fixed
 
 - Fixed defines descriptions and values.

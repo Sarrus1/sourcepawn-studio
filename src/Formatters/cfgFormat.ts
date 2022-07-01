@@ -88,18 +88,37 @@ class CfgFormat {
       out += "\n";
     }
     // Map all top KeyValue to their formatted string.
-    out += this.parsed.keyvalues.map((e) => this.writeKeyValue(e)).join("\n");
+    out += this.parsed.keyvalues
+      .map((e) => this.writeKeyValue(e, 0, true))
+      .join("\n");
     return out;
   }
 
+  /**
+   * Generate an indent string which is used as base for indentation.
+   * @param  {boolean} insertSpaces   Use spaces or tabs for indentation.
+   * @param  {number} tabSize         Number of tabs/spaces to use.
+   * @returns string
+   */
   private makeIndentString(insertSpaces: boolean, tabSize: number): string {
     const base = insertSpaces ? " " : "\t";
     return base.repeat(tabSize);
   }
 
-  private writeKeyValue(keyvalue: KeyValue, offset = 0): string {
+  /**
+   * Write a KeyValue pair.
+   * @param  {KeyValue} keyvalue      The KeyValue object from the parser.
+   * @param  {number} maxKeyLength    The max key length for this section.
+   * @param  {boolean} last           Whether it is the last KeyValue of the section.
+   * @returns string
+   */
+  private writeKeyValue(
+    keyvalue: KeyValue,
+    maxKeyLength: number,
+    last: boolean
+  ): string {
     let out = `"${keyvalue.key.txt}"`;
-    const diff = offset - keyvalue.key.txt.length;
+    const diff = maxKeyLength - keyvalue.key.txt.length;
     if (diff > 0) {
       out += " ".repeat(diff);
     }
@@ -110,11 +129,14 @@ class CfgFormat {
     }
     if (keyvalue.value.type === "section") {
       out += "\n" + this.writeSection(keyvalue.value);
+      if (!last) {
+        out += "\n";
+      }
       if (keyvalue.trailDoc.length > 0) {
         // Write the trailing comment if it exists.
-        out += keyvalue.trailDoc
-          .map((e) => this.writeComment(e, true))
-          .join("\n");
+        out +=
+          "\n" +
+          keyvalue.trailDoc.map((e) => this.writeComment(e, true)).join("\n");
       }
     } else {
       out += this.indentString + this.writeValue(keyvalue.value);
@@ -131,6 +153,11 @@ class CfgFormat {
     return this.indentLine(out);
   }
 
+  /**
+   * Write a section.
+   * @param  {Section} section  The Section object from the parser.
+   * @returns string
+   */
   private writeSection(section: Section): string {
     let output = "";
     section.doc.forEach((e) => {
@@ -138,16 +165,25 @@ class CfgFormat {
     });
     output += this.indentLine("{\n");
     this.indent++;
-    const offset = this.getKeyOffset(section.keyvalues);
-    section.keyvalues.forEach((e) => {
-      output += this.writeKeyValue(e, offset);
+    const offset = this.getMaxKeyLength(section.keyvalues);
+    section.keyvalues.forEach((e, i) => {
+      output += this.writeKeyValue(
+        e,
+        offset,
+        i === section.keyvalues.length - 1
+      );
     });
     this.indent--;
-    output += this.indentLine("}\n");
+    output += this.indentLine("}");
     return output;
   }
 
-  private getKeyOffset(keyvalues: KeyValue[]): number {
+  /**
+   * Get the max key length of the section.
+   * @param  {KeyValue[]} keyvalues The KeyValues of the section.
+   * @returns number
+   */
+  private getMaxKeyLength(keyvalues: KeyValue[]): number {
     let offset = 0;
     keyvalues.forEach((e) => {
       if (e.value.type === "section") {
@@ -160,11 +196,22 @@ class CfgFormat {
     return offset;
   }
 
+  /**
+   * Write a value.
+   * @param  {Value} value  The Value object from the parser.
+   * @returns string
+   */
   private writeValue(value: Value): string {
     let out = `"${value.txt}"`;
     return out;
   }
 
+  /**
+   * Write a comment.
+   * @param  {Comment} comment The comment object from the parser.
+   * @param  {boolean} indent  Whether to indent the comment.
+   * @returns string
+   */
   private writeComment(comment: Comment, indent = true): string {
     let out = "";
     switch (comment.type) {
@@ -181,6 +228,11 @@ class CfgFormat {
     return out;
   }
 
+  /**
+   * Indent a line according to the current state.
+   * @param line  Line to indent.
+   * @returns
+   */
   private indentLine(line: string): string {
     let out = this.indentString.repeat(this.indent) + line;
     return out;
