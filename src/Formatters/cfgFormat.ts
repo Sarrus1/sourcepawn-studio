@@ -10,6 +10,14 @@
   Range,
   window,
 } from "vscode";
+import { parse } from "../Parser/cfgParser/cfgParser";
+import {
+  Comment,
+  KeyValue,
+  ParserOutput,
+  Section,
+  Value,
+} from "../Parser/cfgParser/cfgParserInterfaces";
 
 export class CFGDocumentFormattingEditProvider
   implements DocumentFormattingEditProvider {
@@ -35,8 +43,13 @@ export class CFGDocumentFormattingEditProvider
       document.lineAt(document.lineCount - 1).text.length
     );
     const range = new Range(start, end);
-
-    const text = formatCFGText(document.getText(), insertSpaces, tabSize);
+    const formatter = new CfgFormat(insertSpaces, tabSize);
+    let text = "";
+    try {
+      text = formatter.format(document.getText());
+    } catch (err) {
+      console.debug(err);
+    }
 
     // If process failed,
     if (text === "") {
@@ -48,96 +61,84 @@ export class CFGDocumentFormattingEditProvider
     return [new TextEdit(range, text)];
   }
 }
-/**
- * Formats a string parsed from a Sourcemod .kv file
- * @param  {string} text              The string to format
- * @param  {boolean} insertSpaces     Use tabs or spaces for indentation
- * @param  {number} tabSize           Tabsize of each indent
- * @returns string                    The formatted string
- */
-function formatCFGText(
-  text: string,
-  insertSpaces: boolean,
-  tabSize: number
-): string {
-  let newText = "";
-  let isSingleQuoteOpen = false;
-  let isDoubleQuoteOpen = false;
-  let slashCounter = 0;
-  let bracketCounter = 0;
-  const indentChar = insertSpaces ? " ".repeat(tabSize) : "\t".repeat(tabSize);
-  let firstStringOfLineReached = false;
 
-  for (const char of text) {
-    if (char === "'" && !isDoubleQuoteOpen && slashCounter < 2) {
-      if (isSingleQuoteOpen && !firstStringOfLineReached) {
-        newText += "'" + indentChar;
-        firstStringOfLineReached = true;
-      } else {
-        newText += char;
-      }
-      isSingleQuoteOpen = !isSingleQuoteOpen;
-    } else if (char === '"' && !isSingleQuoteOpen && slashCounter < 2) {
-      if (isDoubleQuoteOpen && !firstStringOfLineReached) {
-        newText += '"' + indentChar;
-        firstStringOfLineReached = true;
-      } else {
-        newText += char;
-      }
-      isDoubleQuoteOpen = !isDoubleQuoteOpen;
-    } else if (
-      char === "{" &&
-      !(isSingleQuoteOpen || isDoubleQuoteOpen) &&
-      slashCounter < 2
-    ) {
-      // Make sure to trim all previous spaces
-      newText = newText.replace(/\s*$/, "");
-      firstStringOfLineReached = false;
-      newText += "\n" + indentChar.repeat(bracketCounter);
-      bracketCounter++;
-      newText += char;
-      newText += "\n" + indentChar.repeat(bracketCounter);
-    } else if (
-      char === "}" &&
-      !(isSingleQuoteOpen || isDoubleQuoteOpen) &&
-      slashCounter < 2
-    ) {
-      firstStringOfLineReached = false;
-      bracketCounter--;
-      newText += "\n" + indentChar.repeat(bracketCounter);
-      newText += char;
-      newText += "\n" + indentChar.repeat(bracketCounter);
-    } else if (
-      char === "/" &&
-      slashCounter < 2 &&
-      !(isSingleQuoteOpen || isDoubleQuoteOpen)
-    ) {
-      // Deal with comments
-      slashCounter++;
-      newText += char;
-      if (slashCounter === 2) {
-        newText += " ";
-      } else if (slashCounter === 1 && firstStringOfLineReached) {
-        newText =
-          newText.slice(0, newText.length - 1) +
-          " " +
-          newText.slice(newText.length - 1, newText.length);
-      }
-    } else if (char === "\n" && slashCounter == 2) {
-      slashCounter = 0;
-      if (!firstStringOfLineReached) {
-        newText += "\n" + indentChar.repeat(bracketCounter);
-      }
-    } else if (
-      !/\s|\n/.test(char) ||
-      isSingleQuoteOpen ||
-      (isDoubleQuoteOpen && slashCounter < 2)
-    ) {
-      // Don't append existing spaces.
-      newText += char;
-    }
+class CfgFormat {
+  indent: number;
+  output: string;
+  parsed: ParserOutput;
+  rawText: string;
+  indentString: string;
+
+  constructor(insertSpaces: boolean, tabSize: number) {
+    this.indent = 0;
+    this.output = "";
+    this.indentString = this.makeIndentString(insertSpaces, tabSize);
   }
-  // Remove trailing withspaces.
-  newText = newText.replace(/\s*$/, "").replace(/\s*}$/, "\n}");
-  return newText;
+
+  /**
+   * Parse a keyvalue file content and format it.
+   */
+  public format(text: string): string {
+    this.rawText = text;
+    this.parsed = parse(this.rawText);
+    const out = this.parsed.keyvalues
+      .map((e) => this.writeKeyValue(e))
+      .join("\n");
+    return out;
+  }
+
+  private makeIndentString(insertSpaces: boolean, tabSize: number): string {
+    const base = insertSpaces ? " " : "\t";
+    return base.repeat(tabSize);
+  }
+
+  private writeSection(section: Section): string {
+    let output = "";
+    section.doc.forEach((e) => {
+      output += this.writeComment(e) + "\n";
+    });
+    output += this.indentLine("{\n");
+    this.indent++;
+    section.keyvalues.forEach((e) => {
+      output += this.writeKeyValue(e);
+    });
+    this.indent--;
+    output += this.indentLine("}\n");
+    return output;
+  }
+
+  private writeKeyValue(keyvalue: KeyValue): string {
+    let out = `"${keyvalue.key.txt}"`;
+    if (keyvalue.value.type === "section") {
+      out += "\n" + this.writeSection(keyvalue.value);
+    } else {
+      out += this.indentString + this.writeValue(keyvalue.value);
+    }
+    return this.indentLine(out);
+  }
+
+  private writeValue(value: Value): string {
+    let out = `"${value.txt}"`;
+    // TODO: Handle comments
+    out += "\n";
+    return out;
+  }
+
+  private writeComment(comment: Comment): string {
+    let out = "";
+    switch (comment.type) {
+      case "MultiLineComment":
+      case "MultiLineCommentNoLineTerminator":
+        out = "/* " + comment.value + " */";
+        break;
+      default:
+        out = "// " + comment.value;
+    }
+    return this.indentLine(out);
+  }
+
+  private indentLine(line: string): string {
+    let out = this.indentString.repeat(this.indent) + line;
+    return out;
+  }
 }
