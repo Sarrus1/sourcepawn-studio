@@ -68,8 +68,8 @@ CharacterEscapeSequence
   / char:NonEscapeCharacter { return "\\" + char; }
 
 SingleEscapeCharacter
-  = '"'
-  / "\\"
+  = '"'  { return "\\\""; }
+  / "\\" { return "\\"; }
   / "n"  { return "\n"; }
   / "r"  { return "\r"; }
   / "t"  { return "\t"; }

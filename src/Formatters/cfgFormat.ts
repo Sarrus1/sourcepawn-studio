@@ -48,7 +48,7 @@ export class CFGDocumentFormattingEditProvider
     try {
       text = formatter.format(document.getText());
     } catch (err) {
-      console.debug(err);
+      console.error(err);
     }
 
     // If process failed,
@@ -81,15 +81,50 @@ class CfgFormat {
   public format(text: string): string {
     this.rawText = text;
     this.parsed = parse(this.rawText);
-    const out = this.parsed.keyvalues
-      .map((e) => this.writeKeyValue(e))
-      .join("\n");
+    // Parse the top comment.
+    let out = this.parsed.doc.map((e) => this.writeComment(e)).join("\n");
+    if (out !== "") {
+      // Add a newline if needed.
+      out += "\n";
+    }
+    // Map all top KeyValue to their formatted string.
+    out += this.parsed.keyvalues.map((e) => this.writeKeyValue(e)).join("\n");
     return out;
   }
 
   private makeIndentString(insertSpaces: boolean, tabSize: number): string {
     const base = insertSpaces ? " " : "\t";
     return base.repeat(tabSize);
+  }
+
+  private writeKeyValue(keyvalue: KeyValue): string {
+    let out = `"${keyvalue.key.txt}"`;
+    if (keyvalue.doc.length > 0) {
+      // Write the middle comment if it exists.
+      out += this.indentString;
+      out += keyvalue.doc.map((e) => this.writeComment(e, false)).join("\n");
+    }
+    if (keyvalue.value.type === "section") {
+      out += "\n" + this.writeSection(keyvalue.value);
+      if (keyvalue.trailDoc.length > 0) {
+        // Write the trailing comment if it exists.
+        out += keyvalue.trailDoc
+          .map((e) => this.writeComment(e, true))
+          .join("\n");
+      }
+    } else {
+      out += this.indentString + this.writeValue(keyvalue.value);
+      if (keyvalue.trailDoc.length > 0) {
+        // Write the trailing comment if it exists.
+        out += this.indentString;
+        out += keyvalue.trailDoc
+          .map((e) => this.writeComment(e, false))
+          .join("\n");
+      }
+    }
+
+    out += "\n";
+    return this.indentLine(out);
   }
 
   private writeSection(section: Section): string {
@@ -107,34 +142,25 @@ class CfgFormat {
     return output;
   }
 
-  private writeKeyValue(keyvalue: KeyValue): string {
-    let out = `"${keyvalue.key.txt}"`;
-    if (keyvalue.value.type === "section") {
-      out += "\n" + this.writeSection(keyvalue.value);
-    } else {
-      out += this.indentString + this.writeValue(keyvalue.value);
-    }
-    return this.indentLine(out);
-  }
-
   private writeValue(value: Value): string {
     let out = `"${value.txt}"`;
-    // TODO: Handle comments
-    out += "\n";
     return out;
   }
 
-  private writeComment(comment: Comment): string {
+  private writeComment(comment: Comment, indent = true): string {
     let out = "";
     switch (comment.type) {
       case "MultiLineComment":
       case "MultiLineCommentNoLineTerminator":
-        out = "/* " + comment.value + " */";
+        out = "/*" + comment.value + "*/";
         break;
       default:
-        out = "// " + comment.value;
+        out = "//" + comment.value;
     }
-    return this.indentLine(out);
+    if (indent) {
+      return this.indentLine(out);
+    }
+    return out;
   }
 
   private indentLine(line: string): string {
