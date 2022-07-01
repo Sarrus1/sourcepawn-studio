@@ -97,8 +97,12 @@ class CfgFormat {
     return base.repeat(tabSize);
   }
 
-  private writeKeyValue(keyvalue: KeyValue): string {
+  private writeKeyValue(keyvalue: KeyValue, offset = 0): string {
     let out = `"${keyvalue.key.txt}"`;
+    const diff = offset - keyvalue.key.txt.length;
+    if (diff > 0) {
+      out += " ".repeat(diff);
+    }
     if (keyvalue.doc.length > 0) {
       // Write the middle comment if it exists.
       out += this.indentString;
@@ -134,12 +138,26 @@ class CfgFormat {
     });
     output += this.indentLine("{\n");
     this.indent++;
+    const offset = this.getKeyOffset(section.keyvalues);
     section.keyvalues.forEach((e) => {
-      output += this.writeKeyValue(e);
+      output += this.writeKeyValue(e, offset);
     });
     this.indent--;
     output += this.indentLine("}\n");
     return output;
+  }
+
+  private getKeyOffset(keyvalues: KeyValue[]): number {
+    let offset = 0;
+    keyvalues.forEach((e) => {
+      if (e.value.type === "section") {
+        return;
+      }
+      if (e.key.txt.length > offset) {
+        offset = e.key.txt.length;
+      }
+    });
+    return offset;
   }
 
   private writeValue(value: Value): string {
