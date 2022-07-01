@@ -6,20 +6,20 @@ import {
   DiagnosticSeverity,
 } from "vscode";
 
-import { parse, SyntaxError } from "../Parser/cfgParser/cfgParser";
+import { parse, SyntaxError } from "../Parser/kvParser/kvParser";
 import {
   KeyValue,
   ParserOutput,
   ParserRange,
-} from "../Parser/cfgParser/cfgParserInterfaces";
-import { cfgDiagnostics } from "./Linter/compilerDiagnostics";
+} from "../Parser/kvParser/kvParserInterfaces";
+import { kvDiagnostics } from "./Linter/compilerDiagnostics";
 
 /**
  * Lint a Valve Key Value TextDocument object and add its diagnostics to the collection.
  * @param  {TextDocument} document    The document to lint.
  * @returns void
  */
-export async function refreshCfgDiagnostics(document: TextDocument) {
+export async function refreshKVDiagnostics(document: TextDocument) {
   await null;
 
   // Check if the setting to activate the linter is set to true.
@@ -31,10 +31,10 @@ export async function refreshCfgDiagnostics(document: TextDocument) {
 
   // Stop early if linter is disabled.
   if (!enableLinter || document.languageId !== "valve-kv") {
-    cfgDiagnostics.set(document.uri, []);
+    kvDiagnostics.set(document.uri, []);
     return;
   }
-  cfgDiagnostics.delete(document.uri);
+  kvDiagnostics.delete(document.uri);
 
   let parsed: ParserOutput;
   try {
@@ -50,11 +50,11 @@ export async function refreshCfgDiagnostics(document: TextDocument) {
 
       const msg = e.name + " " + e.message;
       const diag = new Diagnostic(range, msg);
-      cfgDiagnostics.set(document.uri, [diag]);
+      kvDiagnostics.set(document.uri, [diag]);
     }
     return;
   }
-  cfgDiagnostics.set(document.uri, lookForDuplicates(parsed.keyvalues));
+  kvDiagnostics.set(document.uri, lookForDuplicates(parsed.keyvalues));
 }
 
 function lookForDuplicates(keyvalues: KeyValue[]): Diagnostic[] {

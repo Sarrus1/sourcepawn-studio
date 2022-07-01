@@ -10,16 +10,16 @@
   Range,
   window,
 } from "vscode";
-import { parse } from "../Parser/cfgParser/cfgParser";
+import { parse } from "../Parser/kvParser/kvParser";
 import {
   Comment,
   KeyValue,
   ParserOutput,
   Section,
   Value,
-} from "../Parser/cfgParser/cfgParserInterfaces";
+} from "../Parser/kvParser/kvParserInterfaces";
 
-export class CFGDocumentFormattingEditProvider
+export class KVDocumentFormattingEditProvider
   implements DocumentFormattingEditProvider {
   public provideDocumentFormattingEdits(
     document: TextDocument,
@@ -43,7 +43,7 @@ export class CFGDocumentFormattingEditProvider
       document.lineAt(document.lineCount - 1).text.length
     );
     const range = new Range(start, end);
-    const formatter = new CfgFormat(insertSpaces, tabSize);
+    const formatter = new KVFormat(insertSpaces, tabSize);
     let text = "";
     try {
       text = formatter.format(document.getText());
@@ -62,7 +62,7 @@ export class CFGDocumentFormattingEditProvider
   }
 }
 
-class CfgFormat {
+class KVFormat {
   indent: number;
   output: string;
   parsed: ParserOutput;

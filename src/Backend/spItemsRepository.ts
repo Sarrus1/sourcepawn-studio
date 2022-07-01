@@ -20,7 +20,7 @@ import {
 } from "./spFileHandlers";
 import { getAllItems, getItemFromPosition } from "./spItemsGetters";
 import { refreshDiagnostics } from "../Providers/spLinter";
-import { refreshCfgDiagnostics } from "../Providers/cfgLinter";
+import { refreshKVDiagnostics } from "../Providers/kvLinter";
 import { updateDecorations } from "../Providers/spDecorationsProvider";
 
 export class ItemsRepository implements Disposable {
@@ -48,7 +48,7 @@ export class ItemsRepository implements Disposable {
       updateDecorations(this);
       return;
     }
-    refreshCfgDiagnostics(event.document);
+    refreshKVDiagnostics(event.document);
   }
 
   public handleNewDocument(document: TextDocument) {
@@ -57,7 +57,7 @@ export class ItemsRepository implements Disposable {
       newDocumentCallback(this, document.uri);
       return;
     }
-    refreshCfgDiagnostics(document);
+    refreshKVDiagnostics(document);
   }
 
   public handleDocumentOpening(filePath: string) {
@@ -67,7 +67,7 @@ export class ItemsRepository implements Disposable {
       (e) => e.uri.fsPath === uri.fsPath
     );
     if (doc !== undefined) {
-      refreshCfgDiagnostics(doc);
+      refreshKVDiagnostics(doc);
     }
   }
 

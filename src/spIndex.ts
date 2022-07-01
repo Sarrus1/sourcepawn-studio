@@ -12,13 +12,13 @@ import Parser from "web-tree-sitter";
 
 import { refreshDiagnostics } from "./Providers/spLinter";
 import { registerSPLinter } from "./Providers/Linter/registerSPLinter";
-import { registerCFGLinter } from "./Providers/Linter/registerCFGLinter";
+import { registerKVLinter } from "./Providers/Linter/registerKVLinter";
 import { parseSMApi } from "./Misc/parseSMAPI";
 import { SP_MODE, SP_LEGENDS } from "./Misc/spConstants";
 import { Providers } from "./Backend/spProviders";
 import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
-import { CFGDocumentFormattingEditProvider } from "./Formatters/cfgFormat";
+import { KVDocumentFormattingEditProvider } from "./Formatters/kvFormat";
 import { findMainPath, checkMainPath } from "./spUtils";
 import { updateDecorations } from "./Providers/spDecorationsProvider";
 
@@ -182,7 +182,7 @@ export function activate(context: ExtensionContext) {
       {
         language: "valve-kv",
       },
-      new CFGDocumentFormattingEditProvider()
+      new KVDocumentFormattingEditProvider()
     )
   );
 
@@ -218,8 +218,8 @@ export function activate(context: ExtensionContext) {
   // Register SM linter
   registerSPLinter(context);
 
-  // Register CFG linter
-  registerCFGLinter(context);
+  // Register KV linter
+  registerKVLinter(context);
 }
 
 function getDirectories(paths: string[], providers: Providers) {
