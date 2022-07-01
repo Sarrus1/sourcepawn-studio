@@ -10,6 +10,7 @@
 
 - Improved the KeyValue formatter.
 - Improved the KeyValue linter.
+- Slightly improved asynchronous parsing.
 
 ### Fixed
 
