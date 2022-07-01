@@ -10,6 +10,7 @@
 
 - Fixed defines descriptions and values.
 - Fixed semantic resolution for `enum struct` scope operator (`::`) and `methodmap` static methods.
+- Fixed `static` methodmap's method support.
 
 ## [4.0.6]
 
