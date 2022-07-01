@@ -2,6 +2,10 @@
 
 ## [4.0.7]
 
+### Added
+
+- Added `enum struct` fields dimensions in hovers.
+
 ### Fixed
 
 - Fixed defines descriptions and values.

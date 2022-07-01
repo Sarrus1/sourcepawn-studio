@@ -73,13 +73,17 @@ function readEnumStructField(
 ): void {
   const nameNode = node.childForFieldName("name");
   const typeNode = node.childForFieldName("type");
+  const dimension = node.children
+    .filter((e) => e.type === "fixed_dimension" || e.type === "dimension")
+    .map((e) => e.text)
+    .join("");
   const item = new VariableItem(
     nameNode.text,
     walker.filePath,
     enumStructItem,
     pointsToRange(nameNode.startPosition, nameNode.endPosition),
     typeNode.text,
-    `${typeNode.text} ${nameNode.text}`,
+    `${typeNode.text} ${nameNode.text}${dimension}`,
     "",
     []
   );

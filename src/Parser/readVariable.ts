@@ -5,15 +5,10 @@ import { VariableItem } from "../Backend/Items/spVariableItem";
 import { pointsToRange } from "./utils";
 import { TreeWalker } from "./spParser";
 import { ConstantItem } from "../Backend/Items/spConstantItem";
-import { EnumStructItem } from "../Backend/Items/spEnumStructItem";
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
 import { MethodItem } from "../Backend/Items/spMethodItem";
 
-export type VariableParent =
-  | ConstantItem
-  | EnumStructItem
-  | FunctionItem
-  | MethodItem;
+export type VariableParent = ConstantItem | FunctionItem | MethodItem;
 
 /**
  * Process a variable declaration.
