@@ -3,9 +3,15 @@ import {
   workspace as Workspace,
   Range,
   Diagnostic,
+  DiagnosticSeverity,
 } from "vscode";
 
 import { parse, SyntaxError } from "../Parser/cfgParser/cfgParser";
+import {
+  KeyValue,
+  ParserOutput,
+  ParserRange,
+} from "../Parser/cfgParser/cfgParserInterfaces";
 import { cfgDiagnostics } from "./Linter/compilerDiagnostics";
 
 /**
@@ -29,8 +35,10 @@ export async function refreshCfgDiagnostics(document: TextDocument) {
     return;
   }
   cfgDiagnostics.delete(document.uri);
+
+  let parsed: ParserOutput;
   try {
-    parse(document.getText(), undefined);
+    parsed = parse(document.getText());
   } catch (e) {
     if (e instanceof SyntaxError) {
       const range = new Range(
@@ -44,5 +52,50 @@ export async function refreshCfgDiagnostics(document: TextDocument) {
       const diag = new Diagnostic(range, msg);
       cfgDiagnostics.set(document.uri, [diag]);
     }
+    return;
   }
+  cfgDiagnostics.set(document.uri, lookForDuplicates(parsed.keyvalues));
+}
+
+function lookForDuplicates(keyvalues: KeyValue[]): Diagnostic[] {
+  const map = new Map<string, Range[]>();
+  let diagnostics: Diagnostic[] = [];
+  for (let keyvalue of keyvalues) {
+    const range = parserRangeToRange(keyvalue.key.loc);
+    const key = keyvalue.key.txt;
+    if (keyvalue.value.type === "section") {
+      diagnostics = diagnostics.concat(
+        lookForDuplicates(keyvalue.value.keyvalues)
+      );
+    }
+    const prevRanges = map.get(key);
+    if (prevRanges === undefined) {
+      map.set(key, [range]);
+      continue;
+    }
+    if (prevRanges.length === 1) {
+      // Add the first diagnostic.
+      diagnostics.push(
+        new Diagnostic(
+          prevRanges[0],
+          "Duplicate object key",
+          DiagnosticSeverity.Warning
+        )
+      );
+    }
+    prevRanges.push(range);
+    diagnostics.push(
+      new Diagnostic(range, "Duplicate object key", DiagnosticSeverity.Warning)
+    );
+  }
+  return diagnostics;
+}
+
+function parserRangeToRange(range: ParserRange): Range {
+  return new Range(
+    range.start.line - 1,
+    range.start.column - 1,
+    range.end.line - 1,
+    range.end.column - 1
+  );
 }

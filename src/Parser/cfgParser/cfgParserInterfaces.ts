@@ -23,12 +23,12 @@ export interface ParserPos {
   offset: number;
 
   /**
-   * Zero based line index.
+   * One based line index.
    */
   line: number;
 
   /**
-   * Zero based column index.
+   * One based column index.
    */
   column: number;
 }

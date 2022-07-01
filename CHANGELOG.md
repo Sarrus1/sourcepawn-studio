@@ -9,6 +9,7 @@
 ### Improved
 
 - Improved the KeyValue formatter.
+- Improved the KeyValue linter.
 
 ### Fixed
 

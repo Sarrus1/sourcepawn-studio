@@ -249,6 +249,11 @@ async function loadFiles(providers: Providers, context: ExtensionContext) {
       );
     } else {
       providers.itemsRepository.handleDocumentOpening(mainPath);
+      if (window.activeTextEditor) {
+        providers.itemsRepository.handleDocumentOpening(
+          window.activeTextEditor.document.uri.fsPath
+        );
+      }
     }
   } else {
     // Load the currently opened file

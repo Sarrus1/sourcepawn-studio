@@ -5,6 +5,7 @@ import {
   CompletionList,
   FileCreateEvent,
   TextDocumentChangeEvent,
+  workspace as Workspace,
 } from "vscode";
 import { URI } from "vscode-uri";
 
@@ -60,7 +61,14 @@ export class ItemsRepository implements Disposable {
   }
 
   public handleDocumentOpening(filePath: string) {
-    newDocumentCallback(this, URI.file(filePath));
+    const uri = URI.file(filePath);
+    newDocumentCallback(this, uri);
+    const doc = Workspace.textDocuments.find(
+      (e) => e.uri.fsPath === uri.fsPath
+    );
+    if (doc !== undefined) {
+      refreshCfgDiagnostics(doc);
+    }
   }
 
   public getEventCompletions(): CompletionList {
