@@ -40,15 +40,15 @@ export async function documentChangeCallback(
   const fileUri = event.document.uri.toString();
   const filePath = event.document.uri.fsPath.replace(".git", "");
 
+  // Hack to make the function non blocking, and not prevent the completionProvider from running.
+  await new Promise((resolve) => setTimeout(resolve, 75));
   const fileItem = new FileItem(fileUri);
 
   let text = event.document.getText();
 
   const preprocessor = new PreProcessor(text.split("\n"), fileItem, itemsRepo);
 
-  await setTimeout(() => {
-    fileItem.text = preprocessor.preProcess();
-  }, 0);
+  fileItem.text = preprocessor.preProcess();
 
   text = fileItem.text;
   itemsRepo.documents.set(event.document.uri.toString(), false);

@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [4.0.8]
+
+### Fixed
+
+- Fixed a typo in previous version.
+
 ## [4.0.7]
 
 ### Added
