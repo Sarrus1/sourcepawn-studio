@@ -84,6 +84,11 @@ export function handleToken(this: Semantics, name: string, range: Range): void {
       const parent = this.previousItems[this.previousItems.length - offset];
       offset++;
       if (parent.type === undefined) {
+        // Enum struct scope operator (::) or methodmap static method.
+        item = this.methodAndProperties.get(`${name}-${parent.name}`);
+        if (item !== undefined) {
+          break;
+        }
         continue;
       }
       item = this.methodAndProperties.get(`${name}-${parent.type}`);

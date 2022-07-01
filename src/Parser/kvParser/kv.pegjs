@@ -1,37 +1,57 @@
-﻿Start
-  = __ keyvalues:KeyValue* {
-      return keyvalues;
+﻿{{
+  function buildComment(content) {
+    return content
+      .flat()
+      .filter((e) => e !== undefined)
+      .join("");
+  }
+}}
+
+Start
+  = doc:__ keyvalues:KeyValue* {
+      return {
+        doc,
+        keyvalues
+        };
     }
 
 KeyValue
-  = key:Key __ value:(Value / Section) __ {
+  = key:Key doc:__ value:(Value / Section) trailDoc:__ {
       return {
+      	doc,
+        trailDoc,
         key,
         value
       };
     }
 
 Key "key"
-  = key:QuotedString
+  = txt:QuotedString
   {
     return {
+      type: "key",
       loc: location(),
-      key
+      txt
     };
   }
 
 Value "value"
-  = value:QuotedString
+  = txt:QuotedString
   {
     return {
+      type: "value",
       loc: location(),
-      value
+      txt
     };
   }
 
 Section "section"
-  = "{" __ keyvalues:KeyValue* "}" {
-      return keyvalues;
+  = "{" doc:__ keyvalues:KeyValue* "}" {
+      return {
+        type: "section",
+      	doc,
+      	keyvalues
+      };
     }
 
 QuotedString "string"
@@ -48,8 +68,8 @@ CharacterEscapeSequence
   / char:NonEscapeCharacter { return "\\" + char; }
 
 SingleEscapeCharacter
-  = '"'
-  / "\\"
+  = '"'  { return "\\\""; }
+  / "\\" { return "\\"; }
   / "n"  { return "\n"; }
   / "r"  { return "\r"; }
   / "t"  { return "\t"; }
@@ -82,34 +102,37 @@ Comment "comment"
   }
 
 MultiLineComment
-  = value:("/*" (!"*/" SourceCharacter)* "*/")
+  = "/*" txt:(!"*/" SourceCharacter)* "*/"
   {
     return {
       type: "MultiLineComment",
       loc: location(),
-      value
+      value: buildComment(txt)
     };
   }
 
 MultiLineCommentNoLineTerminator
-  = value:("/*" (!("*/" / LineTerminator) SourceCharacter)* "*/")
+  = "/*" txt:(!("*/" / LineTerminator) SourceCharacter)* "*/"
   {
     return {
       type: "MultiLineCommentNoLineTerminator",
       loc: location(),
-      value
+      value: buildComment(txt)
     };
   }
 
 SingleLineComment
-  = value:("//" (!LineTerminator SourceCharacter)*)
+  = "//" txt:(!LineTerminator SourceCharacter)*
   {
     return {
       type: "SingleLineComment",
       loc: location(),
-      value
+      value: buildComment(txt)
     };
   }
 
 __
-  = (WhiteSpace / LineTerminatorSequence / Comment)*
+  = txt: (WhiteSpace / LineTerminatorSequence / Comment)*
+  {
+  	return txt.filter(e=>typeof(e)!=="string");
+  }

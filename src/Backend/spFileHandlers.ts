@@ -40,15 +40,16 @@ export async function documentChangeCallback(
   const fileUri = event.document.uri.toString();
   const filePath = event.document.uri.fsPath.replace(".git", "");
 
-  // Hack to make the function non blocking, and not prevent the completionProvider from running.
-  await new Promise((resolve) => setTimeout(resolve, 75));
-
   const fileItem = new FileItem(fileUri);
 
   let text = event.document.getText();
 
   const preprocessor = new PreProcessor(text.split("\n"), fileItem, itemsRepo);
-  fileItem.text = preprocessor.preProcess();
+
+  await setTimeout(() => {
+    fileItem.text = preprocessor.preProcess();
+  }, 0);
+
   text = fileItem.text;
   itemsRepo.documents.set(event.document.uri.toString(), false);
   // We use parseText here, otherwise, if the user didn't save the file, the changes wouldn't be registered.

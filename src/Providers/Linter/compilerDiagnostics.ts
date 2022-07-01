@@ -11,4 +11,4 @@ export const preDiagnostics = languages.createDiagnosticCollection(
   "preprocessor"
 );
 
-export const cfgDiagnostics = languages.createDiagnosticCollection("cfg");
+export const kvDiagnostics = languages.createDiagnosticCollection("kv");

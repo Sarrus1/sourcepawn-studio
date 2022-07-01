@@ -1,5 +1,24 @@
 ## Release Notes
 
+## [4.0.7]
+
+### Added
+
+- Added `enum struct` fields dimensions in hovers.
+
+### Improved
+
+- Improved the KeyValue formatter.
+- Improved the KeyValue linter.
+- Slightly improved asynchronous parsing.
+
+### Fixed
+
+- Fixed defines descriptions and values.
+- Fixed semantic resolution for `enum struct` scope operator (`::`) and `methodmap` static methods.
+- Fixed `static` methodmap's method support.
+- Fixed highlighting inside array access.
+
 ## [4.0.6]
 
 ### Fixed

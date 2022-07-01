@@ -9,5 +9,4 @@ dist/
 coverage/
 venv/
 chromedriver
-cfgParser.ts
-spParser-gen.ts
+kvParser.ts

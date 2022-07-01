@@ -1,4 +1,4 @@
-﻿import { Range } from "vscode";
+﻿import { CompletionItemKind, Range } from "vscode";
 import { SyntaxNode } from "web-tree-sitter";
 
 import { FunctionItem } from "../Backend/Items/spFunctionItem";
@@ -18,15 +18,19 @@ import { MethodMapItem } from "../Backend/Items/spMethodmapItem";
 export type MethodParent = EnumStructItem | PropertyItem | MethodMapItem;
 
 /**
- * @param  {TreeWalker} walker                                TreeWalker object.
- * @param  {SyntaxNode} node                                  Node to process.
- * @param  {EnumStructItem|PropertyItem|ConstantItem} parent  Parent of the method. Defaults to globalItem.
+ * @param  {TreeWalker} walker                                              TreeWalker object.
+ * @param  {SyntaxNode} node                                                Node to process.
+ * @param  {EnumStructItem|MethodMapItem|PropertyItem|ConstantItem} parent  Parent of the method. Defaults to globalItem.
  * @returns void
  */
 export function readFunctionAndMethod(
   walker: TreeWalker,
   node: SyntaxNode,
-  parent: MethodParent | ConstantItem = globalItem,
+  parent:
+    | EnumStructItem
+    | MethodMapItem
+    | MethodParent
+    | ConstantItem = globalItem,
   getSet?: string
 ): void {
   let item: FunctionItem | MethodItem;
@@ -80,12 +84,26 @@ export function readFunctionAndMethod(
       dep
     );
   } else {
+    let methodStorageClass: string[] = [];
+    let details = `${storageClass.join(" ")} ${returnType} ${nameNode.text}${
+      params.text
+    }`.trim();
+    if (parent.kind === CompletionItemKind.Class) {
+      // All methodmap methods are public.
+      methodStorageClass.push("public");
+      methodStorageClass = methodStorageClass.concat(
+        node.children
+          .filter((e) => e.type === "static" || e.type === "native")
+          .map((e) => e.text)
+      );
+      details = `${methodStorageClass.join(" ")} ${returnType} ${
+        nameNode.text
+      }${params.text}`.trim();
+    }
     item = new MethodItem(
       parent as MethodParent,
       nameNode.text,
-      `${storageClass.join(" ")} ${returnType} ${nameNode.text}${
-        params.text
-      }`.trim(),
+      details,
       doc,
       returnType,
       walker.filePath,
