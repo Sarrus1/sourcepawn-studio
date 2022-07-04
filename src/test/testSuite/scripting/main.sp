@@ -126,6 +126,9 @@ public Action SendDiscordWebhook(int client, int args)
 
 	return Plugin_Continue;
 }
+enum struct Data{
+  ConVar cvField;
+}
 
 public void OnWebHookExecuted(HTTPResponse response, DataPack pack)
 {
@@ -139,6 +142,8 @@ public void OnWebHookExecuted(HTTPResponse response, DataPack pack)
 		return;
 	}
 	PrintToServer("The webhook has been sent successfuly.");
+  Data foo;
+  foo.cvField.BoolValue;
 }
 
 #define FOO ;

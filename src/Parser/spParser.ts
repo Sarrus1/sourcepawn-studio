@@ -1,4 +1,4 @@
-import { CompletionItemKind, Diagnostic } from "vscode";
+import { CompletionItemKind } from "vscode";
 import { existsSync, readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { SyntaxNode, Tree } from "web-tree-sitter";
@@ -7,7 +7,7 @@ import { ItemsRepository } from "../Backend/spItemsRepository";
 import { FileItem } from "../Backend/spFilesRepository";
 import { Semantics } from "./Semantics/spSemantics";
 import { PreProcessor } from "./PreProcessor/spPreprocessor";
-import { parser, spLangObj, symbolQuery } from "../spIndex";
+import { parser, symbolQuery } from "../spIndex";
 import { readVariable } from "./readVariable";
 import { readFunctionAndMethod } from "./readFunctionAndMethod";
 import { readEnum } from "./readEnum";
@@ -17,9 +17,6 @@ import { readEnumStruct } from "./readEnumStruct";
 import { readMethodmap } from "./readMethodmap";
 import { readTypedef } from "./readTypedef";
 import { readTypeset } from "./readTypeset";
-import { parserDiagnostics } from "../Providers/Linter/compilerDiagnostics";
-import { URI } from "vscode-uri";
-import { pointsToRange } from "./utils";
 import { readMacro } from "./readMacro";
 
 export function parseFile(
