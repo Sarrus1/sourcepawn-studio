@@ -9,7 +9,7 @@
       "runtimeExecutable": "${execPath}",
       "args": ["--extensionDevelopmentPath=${workspaceRoot}"],
       "sourceMaps": true,
-      "outFiles": ["${workspaceRoot}/client/out/**/*.js"]
+      "outFiles": ["${workspaceRoot}/dist/**/*.js"]
     },
     {
       "name": "Extension Tests",
@@ -17,12 +17,12 @@
       "request": "launch",
       "runtimeExecutable": "${execPath}",
       "args": [
-        "${workspaceRoot}/client/src/test/examples",
         "--disable-extensions",
         "--extensionDevelopmentPath=${workspaceRoot}",
         "--extensionTestsPath=${workspaceRoot}/dist/test/suite/index"
       ],
-      "outFiles": ["${workspaceRoot}/client/out/test/**/*.js"]
+      "outFiles": ["${workspaceRoot}/dist/**/*.js"],
+      "preLaunchTask": "npm: pretest"
     }
   ]
 }

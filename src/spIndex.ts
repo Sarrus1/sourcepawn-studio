@@ -7,8 +7,8 @@ import {
 } from "vscode";
 import { URI } from "vscode-uri";
 import { join, resolve } from "path";
-import * as glob from "glob";
-import Parser from "web-tree-sitter";
+import glob = require("glob");
+import Parser = require("web-tree-sitter");
 
 import { refreshDiagnostics } from "./Providers/spLinter";
 import { registerSPLinter } from "./Providers/Linter/registerSPLinter";

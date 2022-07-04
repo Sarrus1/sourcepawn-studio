@@ -485,47 +485,50 @@
     ]
   },
   "dependencies": {
-    "@types/vscode": "^1.63.1",
-    "clang-format": "^1.6.0",
-    "cross-env": "^7.0.3",
     "decompress": "^4.2.1",
     "ftp-deploy": "^2.4.2",
     "glob": "^7.2.0",
-    "n-readlines": "^1.0.1",
-    "peggy": "^1.2.0",
-    "prettier": "2.2.1",
     "rcon-srcds": "^2.0.1",
     "safe-evaluate-expression": "^1.7.2",
-    "ts-pegjs": "^1.2.1",
-    "vsce": "^2.9.1",
     "vscode-uri": "^3.0.3",
     "web-tree-sitter": "^0.20.5",
-    "wget-improved": "^3.2.1"
+    "wget-improved": "^3.2.1",
+    "tree-sitter": "^0.20.0",
+    "tree-sitter-cli": "^0.20.6",
+    "tree-sitter-sourcepawn": "^0.3.0"
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
     "@types/glob": "^7.2.0",
-    "@types/mocha": "^8.2.3",
+    "@types/mocha": "^9.1.1",
     "@types/node": "^8.0.14",
+    "@types/vscode": "^1.63.1",
+    "vsce": "^2.9.1",
+    "peggy": "^1.2.0",
+    "ts-pegjs": "^1.2.1",
     "esbuild": "^0.14.43",
-    "mocha": "^9.1.3",
+    "mocha": "^10.0.0",
     "node-loader": "2.0.0",
     "nyc": "^15.1.0",
     "ovsx": "^0.3.0",
-    "tree-sitter": "^0.20.0",
-    "tree-sitter-cli": "^0.20.6",
-    "tree-sitter-sourcepawn": "^0.3.0",
     "ts-loader": "^9.2.6",
     "typescript": "^4.5.4",
-    "vscode-test": "^1.6.1"
+    "@vscode/test-electron": "^1.6.1"
   },
   "scripts": {
     "vscode:prepublish": "npm run generate-parser && npm run build",
     "publish-ovsx": "ovsx publish",
     "generate-parser": "peggy --plugin ./node_modules/ts-pegjs --extra-options-file src/Parser/kvParser/kvconfig.json -o src/Parser/kvParser/kvParser.ts --cache src/Parser/kvParser/kv.pegjs",
-    "test": "npm run compile && node ./dist/test/runTest.js",
+    "pretest": "npm run compile",
+    "test": "node ./dist/test/runTest.js",
     "build": "node esbuild.js prod",
     "compile": "npm run generate-parser && npm run build && tsc -b tsconfig.json",
     "watch": "npm run generate-parser && node esbuild.js watch"
+  },
+  "__metadata": {
+    "id": "217597eb-5e7a-45ee-a236-5456c0f90948",
+    "publisherDisplayName": "Sarrus",
+    "publisherId": "ace08d21-1e01-422f-822b-c4f6145e6d5f",
+    "isPreReleaseVersion": false
   }
 }

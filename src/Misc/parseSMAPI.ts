@@ -1,5 +1,5 @@
 import { window, commands, workspace as Workspace } from "vscode";
-import glob from "glob";
+import glob = require("glob");
 import { join } from "path";
 import { URI } from "vscode-uri";
 

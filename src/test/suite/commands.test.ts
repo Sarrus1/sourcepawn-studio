@@ -235,6 +235,16 @@ suite("Run tests", () => {
             assert.deepEqual(hover[0].range, new vscode.Range(29, 6, 29, 10));
           });
       });
+
+      test("cvField.BoolValue", () => {
+        const position: vscode.Position = new vscode.Position(145, 19);
+        return vscode.commands
+          .executeCommand("vscode.executeHoverProvider", mainUri, position)
+          .then((hover: vscode.Hover[]) => {
+            assert.ok(hover.length > 0);
+            assert.deepEqual(hover[0].range, new vscode.Range(145, 14, 145, 23));
+          });
+      });
     });
 
     test("Test Doc Completion provider", () => {
@@ -264,20 +274,19 @@ suite("Run tests", () => {
           console.log(signature.signatures);
           assert.deepEqual(
             signature.signatures[0].label,
-            'native void RegConsoleCmd(const char[] cmd, ConCmd callback, const char[] description="", int flags=0);'
+            'native void RegConsoleCmd(const char[] cmd, ConCmd callback, const char[] description="", int flags=0)'
           );
           assert.equal(signature.signatures[0].parameters.length, 4);
         });
     });
 
-    /*test("Test Formater provider", () => {
+    test("Test Formater provider", () => {
       return vscode.commands
         .executeCommand("vscode.executeFormatDocumentProvider", mainUri)
         .then((edits: vscode.TextEdit[]) => {
           assert.ok(edits !== undefined);
         });
     });
-    */
 
     /*
     test("Test Semantic Token Highlighting provider", () => {
