@@ -2,6 +2,10 @@
 
 ## [4.0.10]
 
+### Improved
+
+- Improved main path instructions.
+
 ### Fixed
 
 - Tests are back.

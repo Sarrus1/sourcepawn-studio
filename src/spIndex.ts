@@ -4,6 +4,7 @@ import {
   languages,
   window,
   ProgressLocation,
+  env,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { join, resolve } from "path";
@@ -282,6 +283,7 @@ async function loadFiles(providers: Providers, context: ExtensionContext) {
         .showWarningMessage(
           "There is no mainpath set for this workspace. The extension will not work properly.",
           "Select a main path",
+          "Learn more",
           "Don't show again"
         )
         .then((v) => {
@@ -292,6 +294,12 @@ async function loadFiles(providers: Providers, context: ExtensionContext) {
                 v
               );
             });
+          } else if (v === "Learn more") {
+            env.openExternal(
+              URI.parse(
+                "https://github.com/Sarrus1/sourcepawn-vscode/wiki#setting-up-your-project"
+              )
+            );
           } else if (v === "Don't show again") {
             context.workspaceState.update("sp-mainpath-dontshowagain", true);
           }
