@@ -16,11 +16,15 @@ import { run as CreateChangelogCommand } from "../../Commands/createCHANGELOG";
 const testFolderLocation = "/../../../src/test/testSuite/";
 const testMainLocation = "scripting/main.sp";
 const testSecondaryLocation = "scripting/include/second.sp";
+const testKvLocation = "scripting/test.phrases.txt";
 const mainUri: URI = URI.file(
   join(__dirname, testFolderLocation, testMainLocation)
 );
 const secondaryUri: URI = URI.file(
   join(__dirname, testFolderLocation, testSecondaryLocation)
+);
+const kvUri: URI = URI.file(
+  join(__dirname, testFolderLocation, testKvLocation)
 );
 const examplesVscode = join(__dirname, testFolderLocation, ".vscode");
 const examplesReadme = join(__dirname, testFolderLocation, "README.md");
@@ -30,6 +34,7 @@ const examplesScript = join(
   "scripting/testSuite.sp"
 );
 const examplesGithub = join(__dirname, testFolderLocation, ".github");
+const examplesChangelog = join(__dirname, testFolderLocation, "CHANGELOG.md");
 
 suite("Run tests", () => {
   suiteSetup(async () => {
@@ -41,6 +46,9 @@ suite("Run tests", () => {
     }
     if (fs.existsSync(examplesScript)) {
       fs.unlinkSync(examplesScript);
+    }
+    if (fs.existsSync(examplesChangelog)) {
+      fs.unlinkSync(examplesChangelog);
     }
     rmdir(examplesGithub);
     vscode.commands.executeCommand("vscode.open", mainUri);
@@ -56,6 +64,9 @@ suite("Run tests", () => {
     }
     if (fs.existsSync(examplesScript)) {
       fs.unlinkSync(examplesScript);
+    }
+    if (fs.existsSync(examplesChangelog)) {
+      fs.unlinkSync(examplesChangelog);
     }
     rmdir(examplesGithub);
   });
@@ -87,7 +98,7 @@ suite("Run tests", () => {
   });
 
   suite("Test providers", () => {
-    suite("Test Position provider", () => {
+    suite("Test Definition provider", () => {
       test("Test ConVar g_cvWebhook", () => {
         const position: vscode.Position = new vscode.Position(16, 8);
         return vscode.commands
@@ -242,7 +253,91 @@ suite("Run tests", () => {
           .executeCommand("vscode.executeHoverProvider", mainUri, position)
           .then((hover: vscode.Hover[]) => {
             assert.ok(hover.length > 0);
-            assert.deepEqual(hover[0].range, new vscode.Range(145, 14, 145, 23));
+            assert.deepEqual(
+              hover[0].range,
+              new vscode.Range(145, 14, 145, 23)
+            );
+          });
+      });
+    });
+
+    suite("Test Completion provider", () => {
+      test("Test Include completion provider", () => {
+        const position = new vscode.Position(2, 9);
+        return vscode.commands
+          .executeCommand(
+            "vscode.executeCompletionItemProvider",
+            mainUri,
+            position,
+            "<"
+          )
+          .then((docCompletion: vscode.CompletionList) => {
+            assert.ok(docCompletion.items.length > 0);
+          });
+      });
+      test("Test global scope completion provider", () => {
+        const position = new vscode.Position(18, 0);
+        return vscode.commands
+          .executeCommand(
+            "vscode.executeCompletionItemProvider",
+            mainUri,
+            position,
+            "a"
+          )
+          .then((docCompletion: vscode.CompletionList) => {
+            assert.ok(docCompletion.items.length > 0);
+          });
+      });
+      test("Test global scope callback completion provider", () => {
+        const position = new vscode.Position(18, 0);
+        return vscode.commands
+          .executeCommand(
+            "vscode.executeCompletionItemProvider",
+            mainUri,
+            position,
+            "$"
+          )
+          .then((docCompletion: vscode.CompletionList) => {
+            assert.ok(docCompletion.items.length > 0);
+          });
+      });
+      test("Test local scope completions provider", () => {
+        const position = new vscode.Position(142, 3);
+        return vscode.commands
+          .executeCommand(
+            "vscode.executeCompletionItemProvider",
+            mainUri,
+            position,
+            "c"
+          )
+          .then((docCompletion: vscode.CompletionList) => {
+            assert.ok(docCompletion.items.length > 0);
+          });
+      });
+      test("Test methodmap attributes completion provider", () => {
+        const position = new vscode.Position(46, 8);
+        return vscode.commands
+          .executeCommand(
+            "vscode.executeCompletionItemProvider",
+            mainUri,
+            position,
+            "."
+          )
+          .then((docCompletion: vscode.CompletionList) => {
+            assert.ok(docCompletion.items.length > 0);
+          });
+      });
+      test("Test enum struct attributes completion provider", () => {
+        const position = new vscode.Position(145, 13);
+        return vscode.commands
+          .executeCommand(
+            "vscode.executeCompletionItemProvider",
+            mainUri,
+            position,
+            "."
+          )
+          .then((docCompletion: vscode.CompletionList) => {
+            assert.ok(docCompletion.items.length > 0);
           });
       });
     });
@@ -280,12 +375,22 @@ suite("Run tests", () => {
         });
     });
 
-    test("Test Formater provider", () => {
-      return vscode.commands
-        .executeCommand("vscode.executeFormatDocumentProvider", mainUri)
-        .then((edits: vscode.TextEdit[]) => {
-          assert.ok(edits !== undefined);
-        });
+    suite("Test Hover provider", () => {
+      test("Test SP Formater provider", () => {
+        return vscode.commands
+          .executeCommand("vscode.executeFormatDocumentProvider", mainUri)
+          .then((edits: vscode.TextEdit[]) => {
+            assert.ok(edits !== undefined);
+          });
+      });
+
+      test("Test KV Formater provider", () => {
+        return vscode.commands
+          .executeCommand("vscode.executeFormatDocumentProvider", kvUri)
+          .then((edits: vscode.TextEdit[]) => {
+            assert.ok(edits !== undefined);
+          });
+      });
     });
 
     /*

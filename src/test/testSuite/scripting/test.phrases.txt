@@ -1,0 +1,44 @@
+"Phrases"  // Comment
+{
+  "Chat Prefix"  // Comment
+  {
+    "en"  "{green}[Warn]"  /* Comment */
+    "fr"  "{green}[Warn]"
+    "de"  "{green}[Warn]"
+    "sv"  "{green}[Warn]"
+    "nl"  "{green}[Warn]"
+  }
+
+  /* Comment */
+  "warn_warnlog"
+  {
+    "#format"  "{1:N},{2:s},{3:s},{4:N},{5:s},{6:s},{7:s}"
+    "en"       "ADMIN (NICK: {1} | ID: {2} | IP: {3}) issued a warning on PLAYER (NICK: {4} | ID: {5} | IP: {6}) with reason: {7}"
+    "fr"       "ADMIN (PSEUDO: {1} | ID: {2} | IP: {3}) a donne un avertissement au JOUEUR (PSEUDO: {4} | ID: {5} | IP: {6}) avec comme motif: {7}"
+    "de"       "ADMIN (NICK: {1} | ID: {2} | IP: {3}) hat SPIELER (NICK: {4} | ID: {5} | IP: {6}) wegen: {7}"
+    "sv"       "ADMIN (NICK: {1} | ID: {2} | IP: {3}) utfärdade en varning på SPPELAREN (NICK: {4} | ID: {5} | IP: {6}) med anledningen: {7}"
+    "nl"       "ADMIN (NICK: {1} | ID: {2} | IP: {3}) gaf een waarschuwing aan PLAYER (NICK: {4} | ID: {5} | IP: {6}) met de reden: {7}"
+  }
+
+  /* Comment */
+  "warn_max_ban"
+  {
+    "#format"  "{1:s}"
+    "en"       "You reached maximum warnings (Reason: {1}"
+    "fr"       "Tu as ete suffisamment averti"
+    "de"       "Dies ist Deine letzte Warnung!"
+    "sv"       "Du nådde max antal varningar"
+    "nl"       "Je hebt het maximale waarschuwings niveau bereikt"  /* Comment */
+    "warn_message"  /* Comment */
+/* Comment */
+    {
+      "#format"  ""
+      "en"       /* Comment */  "{red}You have been issued a warning. Follow the rules or further actions will be taken."
+      "fr"       "{red}Tu viens de recevoir un avertissement. Respecte les regles ou des sanctions seront prises."
+      "de"       "{red}Du wurdest verwarnt. Halte Dich an die Regeln, oder weitere Konsequenzen werden gezogen."
+      "sv"       /* Comment */  "{red}Du har utfärdats en varning. Följ reglerna eller ytterligare åtgärder kommer att vidtas."
+      "nl"       "{red}Je kreeg een waarschuwing. Volg de regels of meerdere acties zullen worden ondernomen."
+    }
+  }
+}
+/* Comment */

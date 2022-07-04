@@ -114,7 +114,7 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 
 - [Dreae's](https://github.com/Dreae/sourcepawn-vscode) extension which is not supported anymore, and on which this extension is based on.
 - [Deathreus'](https://github.com/Deathreus/SPLinter) extension which helped me to implement the linting feature.
-- Everybody that has helped me improved the extension on the [discord server](https://discord.tensor.fr).
+- Everybody that has helped me improved the extension on the [discord server](https://discord.com/invite/u2Z7dfk).
 
 ## Frequently Asked Questions
 
@@ -127,7 +127,6 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 
 Thanks for considering this. But please remember that all of this wouldn't be possible without the Alliedmodders community. If you wish to make a donation for this community, you can make it [here](https://sourcemod.net/donate.php).
 If you prefer to make a donation to me for this project, you can [buy me a coffee](https://www.buymeacoffee.com/sarrus)
-
 
 ### How to install the beta build ?
 

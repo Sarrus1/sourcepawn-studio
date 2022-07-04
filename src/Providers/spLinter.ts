@@ -4,7 +4,7 @@ import {
   workspace as Workspace,
   Range,
 } from "vscode";
-import { openSync, writeSync, unlink, closeSync } from "fs";
+import { openSync, writeSync, unlink, closeSync, existsSync } from "fs";
 import { join, extname, dirname } from "path";
 import { execFile } from "child_process";
 
@@ -114,11 +114,13 @@ export async function refreshDiagnostics(document: TextDocument) {
     execFile(spcomp, compilerArgs, (error, stdout) => {
       // If it compiled successfully, delete the temporary files.
       if (!error) {
-        unlink(tmpPath, (err) => {
-          if (err) {
-            console.error(err);
-          }
-        });
+        if (existsSync(tmpPath)) {
+          unlink(tmpPath, (err) => {
+            if (err) {
+              console.error(err);
+            }
+          });
+        }
       }
       parseSPCompErrors(
         stdout,
