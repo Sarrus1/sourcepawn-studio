@@ -40,10 +40,22 @@ export function readVariable(
       .map((e) => e.text)
       .join("");
     const declaration = child.childForFieldName("name");
-    const variableType =
+    let variableType =
       variableTypeNode?.text || child.childForFieldName("type")?.text;
+
+    let variableName = declaration.text;
+    if (
+      variableType !== "" &&
+      variableName === "" &&
+      walker.fileItem.items.length > 0
+    ) {
+      // Assume we are in a `int foo, baz;` style declaration.
+      variableName = variableType;
+      variableType =
+        walker.fileItem.items[walker.fileItem.items.length - 1].type;
+    }
     const variableItem = new VariableItem(
-      declaration.text,
+      variableName,
       walker.filePath,
       parent,
       pointsToRange(declaration.startPosition, declaration.endPosition),

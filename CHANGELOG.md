@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [4.0.10]
+
+### Fixed
+
+- Tests are back.
+- Fixed chained variable declaration parsing.
+
 ## [4.0.9]
 
 ### Fixed
