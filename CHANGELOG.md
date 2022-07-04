@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [4.0.9]
+
+### Fixed
+
+- Enum struct field resolution error.
+
 ## [4.0.8]
 
 ### Fixed

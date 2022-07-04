@@ -100,7 +100,8 @@ export function getTypeOfVariable(
       variableType = allItems.find(
         (e) =>
           (e.kind === CompletionItemKind.Method ||
-            e.kind === CompletionItemKind.Property) &&
+            e.kind === CompletionItemKind.Property ||
+            e.kind === CompletionItemKind.Variable) &&
           e.parent.name === variableType &&
           e.name === word
       ).type;
