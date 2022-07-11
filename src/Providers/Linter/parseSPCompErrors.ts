@@ -17,8 +17,7 @@ function generateDetailedError(errorCode: string, errorMsg: string): string {
 }
 export function parseSPCompErrors(
   stdout: string,
-  compilerDiagnostics: DiagnosticCollection,
-  filePath?: string
+  compilerDiagnostics: DiagnosticCollection
 ): void {
   const DocumentDiagnostics: Map<string, Diagnostic[]> = new Map();
   const re = /([:\/\\A-Za-z\-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning) ([0-9]*)):\s+(.*)/gm;
@@ -35,9 +34,7 @@ export function parseSPCompErrors(
         matches[4] === "warning"
           ? DiagnosticSeverity.Warning
           : DiagnosticSeverity.Error;
-      const uri = URI.file(
-        filePath === undefined ? matches[1] : filePath
-      ).toString();
+      const uri = URI.file(matches[1]).toString();
       diagnostics = DocumentDiagnostics.get(uri) || [];
 
       const message = generateDetailedError(matches[5], matches[6]);
