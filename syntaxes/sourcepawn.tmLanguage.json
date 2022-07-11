@@ -15,7 +15,7 @@
     { "include": "#preproc" },
     {
       "comment": "new statement",
-      "match": "\\s*(new)\\s+(\\w+)\\s*\\(",
+      "match": "(new)\\s+(\\w+)\\s*\\(",
       "captures": {
         "1": {
           "patterns": [{ "include": "#keywords" }]
@@ -28,7 +28,7 @@
 
     {
       "comment": "view_as",
-      "match": "\\s*(view_as)\\s*<\\s*(\\w+)\\s*>",
+      "match": "(view_as)\\s*<\\s*(\\w+)\\s*>",
       "captures": {
         "1": {
           "patterns": [{ "include": "#keywords" }]
@@ -41,7 +41,7 @@
 
     {
       "comment": "old type cast",
-      "match": "\\s*(\\w+)\\:\\s*(\\w+)",
+      "match": "(\\w+)\\:\\s*(\\w+)",
       "captures": {
         "1": {
           "patterns": [{ "include": "#old-type" }]
@@ -70,7 +70,7 @@
     {
       "comment": "Control statements",
       "name": "keyword.control.statement.sourcepawn",
-      "match": "\\s*\\b(?:if|else|for|while|do|switch|case|default|return|break|continue)\\b"
+      "match": "\\b(?:if|else|for|while|do|switch|case|default|return|break|continue)\\b"
     },
 
     {
@@ -127,7 +127,7 @@
     },
 
     "enum_struct": {
-      "match": "\\s*(enum\\s+struct\\s+)(\\w+)",
+      "match": "(enum\\s+struct\\s+)(\\w+)",
       "captures": {
         "1": {
           "patterns": [{ "include": "#keywords" }]
@@ -151,12 +151,12 @@
     "other-keywords": {
       "comment": "other-keywords",
       "name": "keyword.sourcepawn",
-      "match": "\\s*\\b(?:decl|delete|forward|native|public|const|stock|this|sizeof|static|property)\\b"
+      "match": "\\b(?:decl|delete|forward|native|public|const|stock|this|sizeof|static|property)\\b"
     },
 
     "struct": {
       "comment": "struct",
-      "match": "\\s*(struct)\\s+(\\w+)",
+      "match": "(struct)\\s+(\\w+)",
       "captures": {
         "1": {
           "patterns": [{ "include": "#keywords" }]
@@ -169,7 +169,7 @@
 
     "methodmap": {
       "comment": "methodmap",
-      "match": "\\s*(methodmap)\\s+([a-zA-Z_]\\w*)\\s*(?:(?:\\<\\s*([a-zA-Z_]\\w*)|(__nullable__)))?",
+      "match": "(methodmap)\\s+([a-zA-Z_]\\w*)\\s*(?:(?:\\<\\s*([a-zA-Z_]\\w*)|(__nullable__)))?",
       "captures": {
         "1": {
           "patterns": [{ "include": "#keywords" }]
@@ -256,7 +256,7 @@
     },
 
     "functag": {
-      "begin": "\\s*(functag)\\s+(\\w+)\\s+(?:([a-zA-Z_]\\w*)\\:\\s*)?(?:(public|stock)\\s*)?\\(",
+      "begin": "(functag)\\s+(\\w+)\\s+(?:([a-zA-Z_]\\w*)\\:\\s*)?(?:(public|stock)\\s*)?\\(",
       "beginCaptures": {
         "1": {
           "patterns": [{ "include": "#keywords" }]
@@ -307,22 +307,16 @@
     "parameters": {
       "patterns": [
         { "include": "#keywords" },
-        { "include": "#parameter" },
-        { "include": "#old-parameter" }
-      ]
-    },
-
-    "parameter": {
-      "patterns": [
+        { "include": "#literals" },
         { "include": "#parameter-declaration" },
-        { "include": "#literals" }
+        { "include": "#old-parameter-declaration" }
       ]
     },
 
     "parameter-declaration": {
       "patterns": [
         {
-          "match": "\\s*(\\w+)(?:\\s+|(?:\\s*(?:&|(?:\\[\\s*\\])+)\\s*))(\\w+)\\s*((?:\\[[^\\]]*\\]\\s*)*)",
+          "match": "(\\w+)(?:\\s+|(?:\\s*(?:&|(?:\\[\\s*\\])+)\\s*))(\\w+)(?:\\s*((?:\\[[^\\]]*\\]\\s*)+))?",
           "captures": {
             "1": {
               "patterns": [{ "include": "#type" }]
@@ -356,17 +350,10 @@
       ]
     },
 
-    "old-parameter": {
-      "patterns": [
-        { "include": "#old-parameter-declaration" },
-        { "include": "#literals" }
-      ]
-    },
-
     "old-parameter-declaration": {
       "patterns": [
         {
-          "match": "\\s*(?:(\\w+)\\:)?\\s*(\\w+)\\s*((?:\\[[^\\]]*\\]\\s*)*)",
+          "match": "(?<!=)\\s*(?:(\\w+)\\:)?\\s*(\\w+)\\s*((?:\\[[^\\]]*\\]\\s*)*)",
           "captures": {
             "1": {
               "patterns": [{ "include": "#old-type" }]
@@ -411,7 +398,7 @@
     "function-declaration": {
       "patterns": [
         {
-          "begin": "\\s*(?:(stock|public|static)\\s+)?(?:(native|forward)\\s+)?(\\w+)(\\s*(?:\\[[^\\]]*\\]\\s*)*)\\s+([a-zA-Z_]\\w*)\\(",
+          "begin": "(?:(stock|public|static)\\s+)?(?:(native|forward)\\s+)?(\\w+)(\\s*(?:\\[[^\\]]*\\]\\s*)*)\\s+([a-zA-Z_]\\w*)\\(",
           "beginCaptures": {
             "1": {
               "patterns": [{ "include": "#keywords" }]
@@ -448,7 +435,7 @@
     "old-function-declaration": {
       "patterns": [
         {
-          "begin": "\\s*(?:(stock|public|static)\\s+)?(?:(native|forward)\\s+)?(\\w+)\\:\\s*([a-zA-Z_]\\w*)\\(",
+          "begin": "(?:(stock|public|static)\\s+)?(?:(native|forward)\\s+)?(\\w+)\\:\\s*([a-zA-Z_]\\w*)\\(",
           "beginCaptures": {
             "1": {
               "patterns": [{ "include": "#keywords" }]
@@ -491,7 +478,7 @@
     "variable-declaration": {
       "patterns": [
         {
-          "match": "\\s*(?:(stock|public)\\s+)?((?:(?:const|static)\\s+)*)(\\w+)(\\s*(?:\\[[^\\]]*\\]\\s*)*)\\s+(\\w+)\\s*(\\s*(?:\\[[^\\]]*\\]\\s*)*)",
+          "match": "(?:(stock|public)\\s+)?((?:(?:const|static)\\s+)*)(\\w+)(\\s*(?:\\[[^\\]]*\\]\\s*)*)\\s+(\\w+)\\s*(\\s*(?:\\[[^\\]]*\\]\\s*)*)",
           "captures": {
             "1": {
               "patterns": [{ "include": "#keywords" }]
@@ -519,7 +506,7 @@
     "old-variable-declaration": {
       "patterns": [
         {
-          "match": "\\s*(?:(stock|public)\\s+)?((?:(?:const|static)\\s+)*)(new|decl)\\s+(?:(\\w+)\\:\\s*)?(\\w+)(\\s*(?:\\[[^\\]]*\\]\\s*)*)",
+          "match": "(?:(stock|public)\\s+)?((?:(?:const|static)\\s+)*)(new|decl)\\s+(?:(\\w+)\\:\\s*)?(\\w+)(\\s*(?:\\[[^\\]]*\\]\\s*)*)",
           "captures": {
             "1": {
               "patterns": [{ "include": "#keywords" }]
@@ -547,33 +534,33 @@
     "keywords": {
       "patterns": [
         {
-          "match": "\\s*\\b(public|stock)\\b",
+          "match": "\\b(public|stock)\\b",
           "name": "keyword.visibility.sourcepawn"
         },
         {
-          "match": "\\s*\\b(const|static)\\b",
+          "match": "\\b(const|static)\\b",
           "name": "keyword.storage_class.sourcepawn"
         },
         {
-          "match": "\\s*\\b(typeset|typedef|funcenum|functag)\\b",
+          "match": "\\b(typeset|typedef|funcenum|functag)\\b",
           "name": "keyword.type_declarator.sourcepawn"
         },
         {
-          "match": "\\s*\\b(view_as)\\b",
+          "match": "\\b(view_as)\\b",
           "name": "keyword.view_as.sourcepawn"
         },
         {
-          "match": "\\s*\\b(new|decl)\\b",
+          "match": "\\b(new|decl)\\b",
           "name": "keyword.variable_declarator.sourcepawn"
         },
         {
-          "match": "\\s*\\b(function)\\b",
+          "match": "\\b(function)\\b",
           "name": "keyword.function.sourcepawn"
         },
-        { "match": "\\s*\\b(enum)\\b", "name": "keyword.enum.sourcepawn" },
-        { "match": "\\s*\\b(struct)\\b", "name": "keyword.struct.sourcepawn" },
+        { "match": "\\b(enum)\\b", "name": "keyword.enum.sourcepawn" },
+        { "match": "\\b(struct)\\b", "name": "keyword.struct.sourcepawn" },
         {
-          "match": "\\s*\\b(methodmap)\\b",
+          "match": "\\b(methodmap)\\b",
           "name": "keyword.methodmap.sourcepawn"
         }
       ]
@@ -610,32 +597,32 @@
       "patterns": [
         {
           "comment": "Float literal",
-          "match": "\\s*[0-9]+\\.[0-9]+",
+          "match": "[0-9]+\\.[0-9]+",
           "name": "constant.numeric.float.sourcepawn"
         },
         {
           "comment": "Binary literal",
-          "match": "\\s*\\b0b[0-1]+\\b",
+          "match": "\\b0b[0-1]+\\b",
           "name": "constant.numeric.sourcepawn"
         },
         {
           "comment": "Octodecimal literal",
-          "match": "\\s*\\b0o[0-7]+\\b",
+          "match": "\\b0o[0-7]+\\b",
           "name": "constant.numeric.sourcepawn"
         },
         {
           "comment": "Hexadecimal literal",
-          "match": "\\s*\\b0x[0-9a-fA-F]+\\b",
+          "match": "\\b0x[0-9a-fA-F]+\\b",
           "name": "constant.numeric.sourcepawn"
         },
         {
           "comment": "Integer literal",
-          "match": "\\s*\\b\\d+\\b",
+          "match": "\\b\\d+\\b",
           "name": "constant.numeric.integer.sourcepawn"
         },
         {
           "comment": "Invalid literal",
-          "match": "\\s*\\b\\d+\\w+\\b",
+          "match": "\\b\\d+\\w+\\b",
           "name": "invalid.illegal.constant.sourcepawn"
         }
       ]
@@ -825,6 +812,18 @@
           }
         },
         {
+          "match": "(\\#error)\\s+(.*)",
+          "name": "meta.pragma.deprecated.sourcepawn",
+          "captures": {
+            "1": {
+              "name": "keyword.control.error.sourcepawn"
+            },
+            "2": {
+              "name": "string.error_msg.sourcepawn"
+            }
+          }
+        },
+        {
           "match": "(\\#define)\\s*(\\w*)",
           "name": "meta.define.sourcepawn",
           "captures": {
@@ -850,7 +849,7 @@
         },
         {
           "comment": "Preprocessor keywords",
-          "match": "#\\b(if|else|endif|emit|deprecated|undef|endinput|endscript|assert|define|error|warning|file)\\b\\s*",
+          "match": "#\\b(if|else|endif|emit|deprecated|undef|endinput|endscript|assert|define|warning|file)\\b\\s*",
           "name": "keyword.control.misc.sourcepawn"
         },
         {
