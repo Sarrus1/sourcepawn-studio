@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [4.0.11]
+
+### Fixed
+
+- Fixed a highlighting issue with default parameter values.
+
 ## [4.0.10]
 
 ### Improved
