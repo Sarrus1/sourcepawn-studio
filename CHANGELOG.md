@@ -1,5 +1,13 @@
 ## Release Notes
 
+## [4.0.11]
+
+### Fixed
+
+- Fixed a highlighting issue with default parameter values (see #242).
+- Fixed a highlighting issue with preprocessor directives (see #240).
+- Fixed a linter issue when MainPath was not set immediatly (see #241).
+
 ## [4.0.10]
 
 ### Improved

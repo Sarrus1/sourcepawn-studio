@@ -122,11 +122,7 @@ export async function refreshDiagnostics(document: TextDocument) {
           });
         }
       }
-      parseSPCompErrors(
-        stdout,
-        compilerDiagnostics,
-        mainPath === undefined ? document.uri.fsPath : undefined
-      );
+      parseSPCompErrors(stdout, compilerDiagnostics);
     });
   }, 300);
 }

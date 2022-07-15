@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "4.0.10",
+  "version": "4.0.11",
   "publisher": "Sarrus",
   "main": "./dist/spIndex.js",
   "icon": "sm.png",
@@ -495,7 +495,7 @@
     "wget-improved": "^3.2.1",
     "tree-sitter": "^0.20.0",
     "tree-sitter-cli": "^0.20.6",
-    "tree-sitter-sourcepawn": "^0.3.0"
+    "tree-sitter-sourcepawn": "^0.4.0"
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
