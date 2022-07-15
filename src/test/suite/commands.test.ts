@@ -275,6 +275,7 @@ suite("Run tests", () => {
             assert.ok(docCompletion.items.length > 0);
           });
       });
+
       test("Test global scope completion provider", () => {
         const position = new vscode.Position(18, 0);
         return vscode.commands
@@ -288,6 +289,7 @@ suite("Run tests", () => {
             assert.ok(docCompletion.items.length > 0);
           });
       });
+
       test("Test global scope callback completion provider", () => {
         const position = new vscode.Position(18, 0);
         return vscode.commands
@@ -301,6 +303,7 @@ suite("Run tests", () => {
             assert.ok(docCompletion.items.length > 0);
           });
       });
+
       test("Test local scope completions provider", () => {
         const position = new vscode.Position(142, 3);
         return vscode.commands
@@ -314,6 +317,7 @@ suite("Run tests", () => {
             assert.ok(docCompletion.items.length > 0);
           });
       });
+
       test("Test methodmap attributes completion provider", () => {
         const position = new vscode.Position(46, 8);
         return vscode.commands
@@ -327,6 +331,7 @@ suite("Run tests", () => {
             assert.ok(docCompletion.items.length > 0);
           });
       });
+
       test("Test enum struct attributes completion provider", () => {
         const position = new vscode.Position(145, 13);
         return vscode.commands
@@ -389,6 +394,20 @@ suite("Run tests", () => {
           .executeCommand("vscode.executeFormatDocumentProvider", kvUri)
           .then((edits: vscode.TextEdit[]) => {
             assert.ok(edits !== undefined);
+          });
+      });
+    });
+
+    suite("Test document edits", () => {
+      test("Test document edit", () => {
+        return vscode.workspace
+          .openTextDocument(mainUri)
+          .then((a: vscode.TextDocument) => {
+            vscode.window.showTextDocument(a, 1, false).then((e) => {
+              e.edit((edit) => {
+                edit.insert(new vscode.Position(0, 0), "a");
+              });
+            });
           });
       });
     });
