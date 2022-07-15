@@ -495,7 +495,7 @@
     "wget-improved": "^3.2.1",
     "tree-sitter": "^0.20.0",
     "tree-sitter-cli": "^0.20.6",
-    "tree-sitter-sourcepawn": "^0.3.0"
+    "tree-sitter-sourcepawn": "^0.4.0"
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
