@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [4.0.12]
+
+### Fixed
+
+- Function declaration highlighting bug.
+
 ## [4.0.11]
 
 ### Fixed

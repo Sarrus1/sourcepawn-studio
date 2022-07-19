@@ -353,7 +353,7 @@
     "old-parameter-declaration": {
       "patterns": [
         {
-          "match": "(?<!=)\\s*(?:(\\w+)\\:)?\\s*(\\w+)\\s*((?:\\[[^\\]]*\\]\\s*)*)",
+          "match": "(?<!=\\s*)(?:(\\w+)\\:\\s*)?(\\w+)\\s*((?:\\[[^\\]]*\\]\\s*)+)?",
           "captures": {
             "1": {
               "patterns": [{ "include": "#old-type" }]
