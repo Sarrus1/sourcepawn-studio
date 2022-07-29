@@ -17,10 +17,13 @@ function generateDetailedError(errorCode: string, errorMsg: string): string {
 }
 export function parseSPCompErrors(
   stdout: string,
-  compilerDiagnostics: DiagnosticCollection
+  compilerDiagnostics: DiagnosticCollection,
+  tmpFileUri?: URI,
+  originFileUri?: URI
 ): void {
   const DocumentDiagnostics: Map<string, Diagnostic[]> = new Map();
-  const re = /([:\/\\A-Za-z\-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning) ([0-9]*)):\s+(.*)/gm;
+  const re =
+    /([:\/\\A-Za-z\-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning) ([0-9]*)):\s+(.*)/gm;
   let matches: RegExpExecArray | null;
   let diagnostics: Diagnostic[];
   do {
@@ -34,13 +37,17 @@ export function parseSPCompErrors(
         matches[4] === "warning"
           ? DiagnosticSeverity.Warning
           : DiagnosticSeverity.Error;
-      const uri = URI.file(matches[1]).toString();
-      diagnostics = DocumentDiagnostics.get(uri) || [];
+      let uri = URI.file(matches[1]);
+      if (tmpFileUri.fsPath == uri.fsPath) {
+        // Acount for the temp.sp file.
+        uri = originFileUri;
+      }
+      diagnostics = DocumentDiagnostics.get(uri.toString()) || [];
 
       const message = generateDetailedError(matches[5], matches[6]);
       const diagnostic = new Diagnostic(range, message, severity);
       diagnostics.push(diagnostic);
-      DocumentDiagnostics.set(uri, diagnostics);
+      DocumentDiagnostics.set(uri.toString(), diagnostics);
     }
   } while (matches);
   compilerDiagnostics.clear();

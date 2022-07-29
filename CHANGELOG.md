@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [4.0.13]
+
+### Fixed
+
+- Linter errors going to the wrong file when Main Path is not set (see #448 and #449).
+
 ## [4.0.12]
 
 ### Fixed
