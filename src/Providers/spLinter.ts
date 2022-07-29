@@ -14,6 +14,7 @@ import { findMainPath } from "../spUtils";
 import { TimeoutFunction } from "./Linter/throttles";
 import { compilerDiagnostics } from "./Linter/compilerDiagnostics";
 import { throttles } from "./Linter/throttles";
+import { URI } from "vscode-uri";
 
 /**
  * Lint a TextDocument object and add its diagnostics to the
@@ -122,7 +123,12 @@ export async function refreshDiagnostics(document: TextDocument) {
           });
         }
       }
-      parseSPCompErrors(stdout, compilerDiagnostics);
+      parseSPCompErrors(
+        stdout,
+        compilerDiagnostics,
+        URI.file(tmpFile),
+        document.uri
+      );
     });
   }, 300);
 }
