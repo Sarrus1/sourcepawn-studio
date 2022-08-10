@@ -133,7 +133,7 @@ export class FileItem {
       );
       if (existsSync(includeFile)) {
         this.addInclude(URI.file(includeFile).toString(), range);
-        return uri.toString();
+        return URI.file(includeFile).toString();
       }
     }
     return undefined;
