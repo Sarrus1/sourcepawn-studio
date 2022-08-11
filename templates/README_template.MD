@@ -1,9 +1,29 @@
-# ${plugin_name}
-
-
-![Downloads](https://img.shields.io/github/downloads/${GithubName}/${plugin_name}/total?style=flat-square) ![Last commit](https://img.shields.io/github/last-commit/${GithubName}/${plugin_name}?style=flat-square) ![Open issues](https://img.shields.io/github/issues/${GithubName}/${plugin_name}?style=flat-square) ![Closed issues](https://img.shields.io/github/issues-closed/${GithubName}/${plugin_name}?style=flat-square) ![Size](https://img.shields.io/github/repo-size/${GithubName}/${plugin_name}?style=flat-square) ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/${GithubName}/${plugin_name}/Compile%20and%20release?style=flat-square)
-
-## Description ##
+<div align="center">
+  <h1><code>${plugin_name}</code></h1>
+  <p>
+    <strong>Short Description</strong>
+  </p>
+  <p style="margin-bottom: 0.5ex;">
+    <img
+        src="https://img.shields.io/github/downloads/${GithubName}/${plugin_name}/total"
+    />
+    <img
+        src="https://img.shields.io/github/last-commit/${GithubName}/${plugin_name}"
+    />
+    <img
+        src="https://img.shields.io/github/issues/${GithubName}/${plugin_name}"
+    />
+    <img
+        src="https://img.shields.io/github/issues-closed/${GithubName}/${plugin_name}"
+    />
+    <img
+        src="https://img.shields.io/github/repo-size/${GithubName}/${plugin_name}"
+    />
+    <img
+        src="https://img.shields.io/github/workflow/status/${GithubName}/${plugin_name}/Compile%20and%20release"
+    />
+  </p>
+</div>
 
 
 ## Requirements ##

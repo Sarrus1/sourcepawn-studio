@@ -6,6 +6,10 @@
 
 - Fixed a bug when resolving optional include files (see #251, thanks [BoneTM](https://github.com/BoneTM) for the PR!).
 
+### Improved
+
+- Improved the README template.
+
 ## [4.0.13]
 
 ### Fixed
