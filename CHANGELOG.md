@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [4.1.0]
+
+### Added
+
+- Added debouncing for better parsing performances.
+
 ## [4.0.14]
 
 ### Fixed
