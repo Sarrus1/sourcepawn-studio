@@ -1,34 +1,24 @@
-﻿name: Build extension
+﻿name: Deploy Extension to the Marketplace
 
 on:
-  push:
-    branches:
-      - dev
+  release:
+    types: [released]
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-    if: "contains(github.event.head_commit.message, 'marketplace')"
     strategy:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v3
-        with:
-          path: "**/node_modules"
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm install
+      - run: npm install
       - uses: lannonbr/vsce-action@master
         with:
-          args: "publish -p $VSCE_TOKEN --pre-release"
+          args: "publish -p $VSCE_TOKEN"
         env:
           VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
       - uses: lannonbr/vsce-action@master
-        name: Create new Github release
+        name: Edit last release
         with:
           args: "package"
       - name: package-version
@@ -46,6 +36,10 @@ jobs:
           artifacts: "*.vsix"
           body: ${{ steps.changelog.outputs.changes }}
           draft: false
-          allowUpdates: false
-          prerelease: true
+          allowUpdates: true
+          prerelease: false
           replacesArtifacts: true
+      - name: publish to Open VSX
+        run: npm run publish-ovsx -- -p $OVSX_TOKEN
+        env:
+          OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}

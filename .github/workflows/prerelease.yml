@@ -1,25 +1,32 @@
-﻿name: Deploy Extension
+﻿name: Build extension
 
 on:
-  push:
-    branches:
-      - master
+  release:
+    types: [prereleased]
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - run: npm install
+      - uses: actions/cache@v3
+        with:
+          path: "**/node_modules"
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm install
       - uses: lannonbr/vsce-action@master
         with:
-          args: "publish -p $VSCE_TOKEN"
+          args: "publish -p $VSCE_TOKEN --pre-release"
         env:
           VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
       - uses: lannonbr/vsce-action@master
-        name: Edit last release
+        name: Create new Github release
         with:
           args: "package"
       - name: package-version
@@ -38,9 +45,5 @@ jobs:
           body: ${{ steps.changelog.outputs.changes }}
           draft: false
           allowUpdates: true
-          prerelease: false
+          prerelease: true
           replacesArtifacts: true
-      - name: publish to Open VSX
-        run: npm run publish-ovsx -- -p $OVSX_TOKEN
-        env:
-          OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
