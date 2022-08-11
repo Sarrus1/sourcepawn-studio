@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [4.0.14]
+
+### Fixed
+
+- Fixed a bug when resolving optional include files (see #251, thanks [BoneTM](https://github.com/BoneTM) for the PR!).
+
 ## [4.0.13]
 
 ### Fixed
