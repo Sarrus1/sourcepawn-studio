@@ -15,6 +15,12 @@ export function semanticTokenProvider(
   const tokensBuilder = new SemanticTokensBuilder(SP_LEGENDS);
   const allItems: SPItem[] = itemsRepo.getAllItems(document.uri);
 
+  // Don't run the semanticProvider if a parsing is running on this file.
+  let debouncer = itemsRepo.debouncers.get(document.uri.fsPath);
+  if (debouncer?.isRunning) {
+    return undefined;
+  }
+
   for (const item of allItems) {
     if (item.kind === CompletionItemKind.Variable) {
       if (item.filePath === document.uri.fsPath) {

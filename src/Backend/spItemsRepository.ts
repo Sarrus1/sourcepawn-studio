@@ -17,19 +17,21 @@ import {
   documentChangeCallback,
   isSPFile,
   newDocumentCallback,
+  Debouncer,
 } from "./spFileHandlers";
 import { getAllItems, getItemFromPosition } from "./spItemsGetters";
 import { refreshDiagnostics } from "../Providers/spLinter";
 import { refreshKVDiagnostics } from "../Providers/kvLinter";
-import { updateDecorations } from "../Providers/spDecorationsProvider";
 
 export class ItemsRepository implements Disposable {
   public fileItems: Map<string, FileItem>;
   public documents: Map<string, boolean>;
+  public debouncers: Map<string, Debouncer>;
 
   constructor() {
-    this.fileItems = new Map<string, FileItem>();
-    this.documents = new Map<string, boolean>();
+    this.fileItems = new Map();
+    this.documents = new Map();
+    this.debouncers = new Map();
   }
 
   public dispose() {}
@@ -44,8 +46,14 @@ export class ItemsRepository implements Disposable {
     }
     if (isSPFile(event.document.uri.fsPath)) {
       refreshDiagnostics(event.document);
-      documentChangeCallback(this, event);
-      updateDecorations(this);
+
+      // Debounce potential call.
+      let debouncer = this.debouncers.get(event.document.uri.fsPath);
+      if (debouncer == undefined) {
+        debouncer = new Debouncer(documentChangeCallback);
+        this.debouncers.set(event.document.uri.fsPath, debouncer);
+      }
+      debouncer.callable([this, event]);
       return;
     }
     refreshKVDiagnostics(event.document);

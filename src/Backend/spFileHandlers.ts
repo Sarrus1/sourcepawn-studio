@@ -2,6 +2,7 @@ import {
   TextDocumentChangeEvent,
   FileCreateEvent,
   workspace as Workspace,
+  commands,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { resolve, dirname, join, extname } from "path";
@@ -13,6 +14,7 @@ import { parseText, parseFile } from "../Parser/spParser";
 import { getAllMethodmaps } from "./spItemsGetters";
 import { PreProcessor } from "../Parser/PreProcessor/spPreprocessor";
 import { Include } from "./Items/spItems";
+import { updateDecorations } from "../Providers/spDecorationsProvider";
 
 /**
  * Handle the addition of a document by forwarding it to the newDocumentCallback function.
@@ -27,21 +29,47 @@ export function handleAddedDocument(
   event.files.forEach((e) => newDocumentCallback(itemsRepo, e));
 }
 
+export type DebouncerArgs = [ItemsRepository, TextDocumentChangeEvent];
+
+export class Debouncer {
+  timeout: NodeJS.Timer;
+  callable: (...DebouncerArgs) => void;
+  isRunning: boolean;
+
+  constructor(
+    callback: (
+      itemsRepo: ItemsRepository,
+      event: TextDocumentChangeEvent
+    ) => void
+  ) {
+    this.callable = function (args: DebouncerArgs) {
+      clearTimeout(this.timeout);
+      this.isRunning = true;
+      this.timeout = setTimeout(() => {
+        callback(...args);
+        this.isRunning = false;
+        commands.executeCommand(
+          "vscode.provideDocumentSemanticTokens",
+          args[1].document.uri
+        );
+      }, 300);
+    };
+  }
+}
+
 /**
  * Handle the changes in a document by creating a new FileItem object and parsing the file, even if it wasn't saved.
  * @param  {ItemsRepository} itemsRepo      The itemsRepository object constructed in the activation event.
  * @param  {TextDocumentChangeEvent} event  The document change event triggered by the file change.
  * @returns void
  */
-export async function documentChangeCallback(
+export function documentChangeCallback(
   itemsRepo: ItemsRepository,
   event: TextDocumentChangeEvent
 ) {
   const fileUri = event.document.uri.toString();
   const filePath = event.document.uri.fsPath.replace(".git", "");
 
-  // Hack to make the function non blocking, and not prevent the completionProvider from running.
-  await new Promise((resolve) => setTimeout(resolve, 75));
   const fileItem = new FileItem(fileUri);
 
   let text = event.document.getText();
@@ -65,6 +93,7 @@ export async function documentChangeCallback(
   resolveMethodmapInherits(itemsRepo, event.document.uri);
 
   parseText(text, filePath, fileItem, itemsRepo, true);
+  updateDecorations(itemsRepo);
 }
 
 /**
