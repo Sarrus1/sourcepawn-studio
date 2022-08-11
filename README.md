@@ -1,8 +1,51 @@
-# SourcePawn for VSCode
-
-SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the SourceMod 1.7+ syntax.
-
-[![Version](https://vsmarketplacebadge.apphb.com/version-short/Sarrus.sourcepawn-vscode.svg)](https://github.com/Sarrus1/sourcepawn-vscode/releases/latest) [![Installs](https://vsmarketplacebadge.apphb.com/installs/Sarrus.sourcepawn-vscode.svg)](https://marketplace.visualstudio.com/items?itemName=Sarrus.sourcepawn-vscode) [![Rating](https://vsmarketplacebadge.apphb.com/rating-short/Sarrus.sourcepawn-vscode.svg)](https://marketplace.visualstudio.com/items?itemName=Sarrus.sourcepawn-vscode&ssr=false#review-details) ![Last commit](https://img.shields.io/github/last-commit/Sarrus1/sourcepawn-vscode) [![Open issues](https://img.shields.io/github/issues/Sarrus1/sourcepawn-vscode)](https://github.com/Sarrus1/sourcepawn-vscode/issues) [![Closed issues](https://img.shields.io/github/issues-closed/Sarrus1/sourcepawn-vscode)](https://github.com/Sarrus1/sourcepawn-vscode/issues?q=is%3Aissue+is%3Aclosed) ![Code Factor](https://www.codefactor.io/repository/github/Sarrus1/sourcepawn-vscode/badge) ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Sarrus1/sourcepawn-vscode/Package%20Extension) [![codecov](https://codecov.io/gh/Sarrus1/sourcepawn-vscode/branch/master/graph/badge.svg)](https://codecov.io/gh/Sarrus1/sourcepawn-vscode)
+<div align="center">
+  <h1>SourcePawn for VSCode</h1>
+  <p>
+    <strong>SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the SourceMod old and new syntax.
+    </strong>
+  </p>
+  <p style="margin-bottom: 0.5ex;">
+    <a href="https://github.com/Sarrus1/sourcepawn-vscode/releases/latest">
+      <img
+        src="https://vsmarketplacebadge.apphb.com/version-short/Sarrus.sourcepawn-vscode.svg"
+        />
+    </a>
+    <a href="https://marketplace.visualstudio.com/items?itemName=Sarrus.sourcepawn-vscode">
+      <img
+        src="https://vsmarketplacebadge.apphb.com/installs/Sarrus.sourcepawn-vscode.svg"
+        />
+    </a>
+    <a href="https://marketplace.visualstudio.com/items?itemName=Sarrus.sourcepawn-vscode&ssr=false#review-details">
+      <img
+        src="https://vsmarketplacebadge.apphb.com/rating-short/Sarrus.sourcepawn-vscode.svg"
+        />
+    </a>
+    <img
+      src="https://img.shields.io/github/last-commit/Sarrus1/sourcepawn-vscode"
+      />
+    <a href="https://github.com/Sarrus1/sourcepawn-vscode/issues">
+      <img
+        src="https://img.shields.io/github/issues/Sarrus1/sourcepawn-vscode"
+        />
+    </a>
+    <a href="https://github.com/Sarrus1/sourcepawn-vscode/issues?q=is%3Aissue+is%3Aclosed">
+      <img
+        src="https://img.shields.io/github/issues-closed/Sarrus1/sourcepawn-vscode"
+        />
+    </a>
+    <img
+      src="https://www.codefactor.io/repository/github/Sarrus1/sourcepawn-vscode/badge"
+      />
+    <img
+      src="https://img.shields.io/github/workflow/status/Sarrus1/sourcepawn-vscode/Package%20Extension"
+      />
+    <a href="https://codecov.io/gh/Sarrus1/sourcepawn-vscode">
+      <img
+        src="https://codecov.io/gh/Sarrus1/sourcepawn-vscode/branch/master/graph/badge.svg"
+        />
+    </a>
+  </p>
+</div>
 
 ![Example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/example.gif)
 
@@ -28,29 +71,28 @@ SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the 
 
 **Details on how to use the extension available in the [Wiki](https://github.com/Sarrus1/sourcepawn-vscode/wiki)**.
 
-- [SourcePawn for VSCode](#sourcepawn-for-vscode)
-  - [Features](#features)
-  - [Screenshots](#screenshots)
-    - [.sp and .inc file highlighting](#sp-and-inc-file-highlighting)
-    - [.cfg file highlighting](#cfg-file-highlighting)
-    - [Code auto-completion](#code-auto-completion)
-    - [Event auto-completion](#event-auto-completion)
-    - [Include auto-completion](#include-auto-completion)
-    - [Callback auto-completion](#callback-auto-completion)
-    - [Code outline](#code-outline)
-    - [Call Hierarchy](#call-hierarchy)
-    - [Symbol references](#symbol-references)
-    - [Symbol renaming](#symbol-renaming)
-    - [Functions signature help](#functions-signature-help)
-    - [Hover help](#hover-help)
-    - [Go To Definition](#go-to-definition)
-    - [Linter](#linter)
-  - [Credits](#credits)
-  - [Frequently Asked Questions](#frequently-asked-questions)
-    - [How can I donate ?](#how-can-i-donate-)
-    - [How to install the beta build ?](#how-to-install-the-beta-build-)
-    - [How to contribute ?](#how-to-contribute-)
-    - [How to run the extension from its source code ?](#how-to-run-the-extension-from-its-source-code-)
+- [Features](#features)
+- [Screenshots](#screenshots)
+  - [.sp and .inc file highlighting](#sp-and-inc-file-highlighting)
+  - [.cfg file highlighting](#cfg-file-highlighting)
+  - [Code auto-completion](#code-auto-completion)
+  - [Event auto-completion](#event-auto-completion)
+  - [Include auto-completion](#include-auto-completion)
+  - [Callback auto-completion](#callback-auto-completion)
+  - [Code outline](#code-outline)
+  - [Call Hierarchy](#call-hierarchy)
+  - [Symbol references](#symbol-references)
+  - [Symbol renaming](#symbol-renaming)
+  - [Functions signature help](#functions-signature-help)
+  - [Hover help](#hover-help)
+  - [Go To Definition](#go-to-definition)
+  - [Linter](#linter)
+- [Credits](#credits)
+- [Frequently Asked Questions](#frequently-asked-questions)
+  - [How can I donate ?](#how-can-i-donate-)
+  - [How to install the beta build ?](#how-to-install-the-beta-build-)
+  - [How to contribute ?](#how-to-contribute-)
+  - [How to run the extension from its source code ?](#how-to-run-the-extension-from-its-source-code-)
 
 ## Screenshots
 
