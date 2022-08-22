@@ -46,10 +46,6 @@ export async function refreshDiagnostics(document: TextDocument) {
     return;
   }
 
-  const tmpPath = join(
-    extensions.getExtension("Sarrus.sourcepawn-vscode").extensionPath,
-    "tmpCompiled.smx"
-  );
   const tmpFile = join(__dirname, "temp.sp");
   const spcomp =
     Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
@@ -105,7 +101,7 @@ export async function refreshDiagnostics(document: TextDocument) {
       includePaths.push(e)
     );
 
-    let compilerArgs = [filePath, `-o${tmpPath}`];
+    let compilerArgs = [filePath, `--syntax-only`];
 
     // Add include paths and compiler options to compiler args.
     includePaths.forEach((path) => compilerArgs.push(`-i${path}`));
@@ -113,16 +109,6 @@ export async function refreshDiagnostics(document: TextDocument) {
 
     // Run the blank compile.
     execFile(spcomp, compilerArgs, (error, stdout) => {
-      // If it compiled successfully, delete the temporary files.
-      if (!error) {
-        if (existsSync(tmpPath)) {
-          unlink(tmpPath, (err) => {
-            if (err) {
-              console.error(err);
-            }
-          });
-        }
-      }
       parseSPCompErrors(
         stdout,
         compilerDiagnostics,
