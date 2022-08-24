@@ -1,10 +1,9 @@
 import {
-  extensions,
   TextDocument,
   workspace as Workspace,
   Range,
 } from "vscode";
-import { openSync, writeSync, unlink, closeSync, existsSync } from "fs";
+import { openSync, writeSync, closeSync } from "fs";
 import { join, extname, dirname } from "path";
 import { execFile } from "child_process";
 
