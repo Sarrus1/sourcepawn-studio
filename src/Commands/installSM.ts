@@ -26,7 +26,7 @@ export async function run(args: any) {
       cancellable: true,
     },
     async (progress, token) => {
-      return downloadSM(progress, token);
+      return getSourceModVersion(progress, token);
     }
   );
   const spCompPath =
@@ -63,7 +63,28 @@ function updatePath(smDir: string, spComp: string): void {
   Workspace.getConfiguration("sourcepawn").update("SpcompPath", spComp, true);
 }
 
+async function getSourceModVersion(
+  progress: Progress<{ message?: string; increment?: number }>,
+  token: CancellationToken
+): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    window.showWarningMessage(
+      "Do you want to install the latest stable version or developer version of SourceMod?",
+      "Stable",
+      "Dev"
+    )
+    .then((choice) => {
+      if(choice === "Stable") {
+        resolve(downloadSM("1.11", progress, token));
+      } else if(choice === "Dev") {
+        resolve(downloadSM("1.12", progress, token));
+      }
+    });
+  });
+}
+
 async function downloadSM(
+  smVersion: string,
   progress: Progress<{ message?: string; increment?: number }>,
   token: CancellationToken
 ): Promise<void> {
@@ -76,11 +97,11 @@ async function downloadSM(
     };
 
     if (Platform === "win32") {
-      options.path = "/smdrop/1.11/sourcemod-latest-windows";
+      options.path = "/smdrop/" + smVersion + "/sourcemod-latest-windows";
     } else if (Platform === "darwin") {
-      options.path = "/smdrop/1.11/sourcemod-latest-mac";
+      options.path = "/smdrop/" + smVersion + "/sourcemod-latest-mac";
     } else {
-      options.path = "/smdrop/1.11/sourcemod-latest-linux";
+      options.path = "/smdrop/" + smVersion + "/sourcemod-latest-linux";
     }
 
     let request = wget.request(options, function(response) {
@@ -99,7 +120,7 @@ async function downloadSM(
 
           const output = join(outputDir, "sm.gz");
 
-          const download = wget.download("https://sm.alliedmods.net/smdrop/1.11/" + content, output, options);
+          const download = wget.download("https://sm.alliedmods.net/smdrop/" + smVersion + "/" + content, output, options);
           download.on("error", function (err) {
             console.error(err);
             reject(err);
