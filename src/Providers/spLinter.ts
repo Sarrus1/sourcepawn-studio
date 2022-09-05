@@ -6,7 +6,7 @@ import {
 } from "vscode";
 import { openSync, writeSync, unlink, closeSync, existsSync } from "fs";
 import { join, extname, dirname } from "path";
-import { execFile } from "child_process";
+import { spawn } from "child_process";
 
 import { getAllPossibleIncludeFolderPaths } from "../Backend/spFileHandlers";
 import { parseSPCompErrors } from "./Linter/parseSPCompErrors";
@@ -110,25 +110,26 @@ export async function refreshDiagnostics(document: TextDocument) {
     // Add include paths and compiler options to compiler args.
     includePaths.forEach((path) => compilerArgs.push(`-i${path}`));
     compilerArgs = compilerArgs.concat(compilerOptions);
+    const compiler = spawn(spcomp, compilerArgs, { shell: true });
+    let scriptOutput = "";
+    compiler.stdout.on("data", (stdout) => {
+      scriptOutput += stdout.toString();
+    });
 
-    // Run the blank compile.
-    execFile(spcomp, compilerArgs, (error, stdout) => {
-      // If it compiled successfully, delete the temporary files.
-      if (!error) {
-        if (existsSync(tmpPath)) {
-          unlink(tmpPath, (err) => {
-            if (err) {
-              console.error(err);
-            }
-          });
-        }
-      }
+    compiler.on("close", (code) => {
       parseSPCompErrors(
-        stdout,
+        scriptOutput,
         compilerDiagnostics,
         URI.file(tmpFile),
         document.uri
       );
+      if (existsSync(tmpPath)) {
+        unlink(tmpPath, (err) => {
+          if (err) {
+            console.error(err);
+          }
+        });
+      }
     });
   }, 300);
 }
