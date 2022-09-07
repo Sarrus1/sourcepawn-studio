@@ -21,11 +21,6 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm install
       - uses: lannonbr/vsce-action@master
-        with:
-          args: "publish -p $VSCE_TOKEN --pre-release"
-        env:
-          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
-      - uses: lannonbr/vsce-action@master
         name: Create new Github release
         with:
           args: "package"
@@ -47,3 +42,8 @@ jobs:
           allowUpdates: true
           prerelease: true
           replacesArtifacts: true
+      - uses: lannonbr/vsce-action@master
+        with:
+          args: "publish -p $VSCE_TOKEN --pre-release"
+        env:
+          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}

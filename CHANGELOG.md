@@ -6,6 +6,10 @@
 
 - Added debouncing for better parsing performances.
 
+### Fixed
+
+- Fixed a hanging process error when calling spcomp.
+
 ## [4.0.14]
 
 ### Fixed
