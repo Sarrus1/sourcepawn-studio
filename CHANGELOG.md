@@ -9,6 +9,7 @@
 ### Fixed
 
 - Fixed a hanging process error when calling spcomp.
+- Fixed incorrect highlighting for `"%.f"` in string literals (see #254).
 
 ## [4.0.14]
 
