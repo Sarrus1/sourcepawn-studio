@@ -11,6 +11,7 @@
 - Fixed a hanging process error when calling spcomp.
 - Fixed incorrect highlighting for `"%.f"` in string literals (see #254).
 - Fixed incorrect snippet generation for forwards (see #253).
+- Fixed macros' signature not working (see #255).
 
 ## [4.0.14]
 
