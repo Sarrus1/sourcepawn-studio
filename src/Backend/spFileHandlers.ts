@@ -70,7 +70,7 @@ export function documentChangeCallback(
   const fileUri = event.document.uri.toString();
   const filePath = event.document.uri.fsPath.replace(".git", "");
 
-  const fileItem = new FileItem(fileUri);
+  const fileItem = new FileItem(fileUri, itemsRepo.documents);
 
   let text = event.document.getText();
 
@@ -117,7 +117,7 @@ export async function newDocumentCallback(
     return;
   }
 
-  const fileItem: FileItem = new FileItem(uri.toString());
+  const fileItem: FileItem = new FileItem(uri.toString(), itemsRepo.documents);
   itemsRepo.documents.set(uri.toString(), false);
 
   try {
@@ -258,7 +258,7 @@ function readUnscannedImports(
 
     if (debug) console.log("found", include.uri.toString());
 
-    let fileItems: FileItem = new FileItem(include.uri);
+    let fileItems: FileItem = new FileItem(include.uri, itemsRepo.documents);
     try {
       parseFile(filePath, fileItems, itemsRepo, false);
     } catch (err) {
