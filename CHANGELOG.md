@@ -5,6 +5,7 @@
 ### Added
 
 - Added debouncing for better parsing performances.
+- Added `sourcemod` as default include.
 
 ### Fixed
 
