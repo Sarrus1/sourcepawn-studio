@@ -45,6 +45,10 @@ export async function refreshDiagnostics(document: TextDocument) {
     return;
   }
 
+  const tmpPath = join(
+    extensions.getExtension("Sarrus.sourcepawn-vscode").extensionPath,
+    "tmpCompiled.smx"
+  );
   const tmpFile = join(__dirname, "temp.sp");
   const spcomp =
     Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
@@ -100,7 +104,7 @@ export async function refreshDiagnostics(document: TextDocument) {
       includePaths.push(e)
     );
 
-    let compilerArgs = [filePath, `--syntax-only`];
+    let compilerArgs = [filePath, `-o${tmpPath}`];
 
     // Add include paths and compiler options to compiler args.
     includePaths.forEach((path) => compilerArgs.push(`-i${path}`));
