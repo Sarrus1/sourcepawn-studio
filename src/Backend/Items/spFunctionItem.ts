@@ -157,20 +157,27 @@ export class FunctionItem implements SPItem {
     snippet.appendText(`public ${this.type} ${this.name}`);
     snippet.appendText("(");
     this.params.forEach((param, i) => {
-      // let declarationType = Array.isArray(param)
-      //   ? param.declarationType.join(" ")
-      //   : param.declarationType;
-      let declarationType;
-      if (declarationType) {
-        snippet.appendText(declarationType);
-        snippet.appendText(" ");
+      let match = param.detail.match(RegExp(`\\b${param.name}\\b`));
+      if (!match) {
+        return;
       }
-      const type = param.type;
-      if (type) {
-        snippet.appendText(type + " ");
-        //snippet.appendText(type.modifier);
+      const firstPart = param.detail.slice(0, match.index).trim();
+      const secondPart = param.detail
+        .slice(match.index + param.name.length)
+        .trim();
+      if (firstPart) {
+        snippet.appendText(firstPart);
+        if (!firstPart.endsWith("&")) {
+          snippet.appendText(" ");
+        }
       }
       snippet.appendPlaceholder(param.name);
+      if (secondPart) {
+        snippet.appendText(secondPart);
+        if (!firstPart.startsWith("[") && i !== this.params.length - 1) {
+          snippet.appendText(" ");
+        }
+      }
       if (i !== this.params.length - 1) {
         snippet.appendText(", ");
       }

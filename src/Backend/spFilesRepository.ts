@@ -34,9 +34,8 @@ export class FileItem {
    */
   text: string;
   defines: Map<string, string>;
-  failedParse: number;
 
-  constructor(uri: string, failedParse = 0) {
+  constructor(uri: string, documents: Map<string, boolean>) {
     this.items = [];
     // Add constants only in one map.
     if (uri.includes("sourcemod.inc")) {
@@ -71,11 +70,16 @@ export class FileItem {
       );
     }
     this.includes = new Map();
+    this.resolveImport(
+      "sourcemod",
+      documents,
+      uri.toString(),
+      new Range(0, 0, 0, 0)
+    );
     this.uri = uri;
     this.symbols = [];
     this.methodmaps = new Map<string, MethodMapItem>();
     this.defines = new Map();
-    this.failedParse = failedParse;
   }
 
   /**

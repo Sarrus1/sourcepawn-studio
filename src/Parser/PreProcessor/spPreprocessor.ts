@@ -382,7 +382,10 @@ export class PreProcessor {
       return;
     }
     const uri = URI.parse(resolved);
-    const fileItem: FileItem = new FileItem(uri.toString());
+    const fileItem: FileItem = new FileItem(
+      uri.toString(),
+      this.itemsRepo.documents
+    );
     this.itemsRepo.documents.set(uri.toString(), false);
     this.itemsRepo.fileItems.set(uri.toString(), fileItem);
     try {

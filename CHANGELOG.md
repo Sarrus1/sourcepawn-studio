@@ -1,14 +1,18 @@
 ## Release Notes
 
-## [4.1.0]
+## [4.2.0]
 
 ### Added
 
 - Added debouncing for better parsing performances.
+- Added `sourcemod` as default include.
 
 ### Fixed
 
 - Fixed a hanging process error when calling spcomp.
+- Fixed incorrect highlighting for `"%.f"` in string literals (see #254).
+- Fixed incorrect snippet generation for forwards (see #253).
+- Fixed macros' signature not working (see #255).
 
 ## [4.0.14]
 
