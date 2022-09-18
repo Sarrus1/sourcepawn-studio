@@ -2,10 +2,12 @@ import {
   TextDocument,
   workspace as Workspace,
   Range,
+  extensions,
 } from "vscode";
-import { openSync, writeSync, closeSync } from "fs";
+import { openSync, writeSync, closeSync, existsSync, unlink } from "fs";
 import { join, extname, dirname } from "path";
 import { spawn } from "child_process";
+import { URI } from "vscode-uri";
 
 import { getAllPossibleIncludeFolderPaths } from "../Backend/spFileHandlers";
 import { parseSPCompErrors } from "./Linter/parseSPCompErrors";
@@ -13,7 +15,6 @@ import { findMainPath } from "../spUtils";
 import { TimeoutFunction } from "./Linter/throttles";
 import { compilerDiagnostics } from "./Linter/compilerDiagnostics";
 import { throttles } from "./Linter/throttles";
-import { URI } from "vscode-uri";
 
 /**
  * Lint a TextDocument object and add its diagnostics to the
