@@ -6,6 +6,7 @@
 
 - Fixed a linter bug on compilation.
 - Fixed missing comment highlighting in Valve CFG format.
+- Fixed too many `"` when completing quote includes.
 
 ## [4.2.0]
 

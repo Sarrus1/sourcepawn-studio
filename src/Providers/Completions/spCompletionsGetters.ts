@@ -62,7 +62,7 @@ export function getIncludeFileCompletionList(
         const path = URI.parse(e).fsPath;
         items.push({
           label: basename(path, ".inc"),
-          insertText: `${basename(path, ".inc")}${useAp ? '"' : ">"}`,
+          insertText: `${basename(path, ".inc")}${useAp ? "" : ">"}`,
           kind: CompletionItemKind.File,
           detail: path,
         });
