@@ -2,13 +2,13 @@
   "scopeName": "text.valve-cfg",
   "patterns": [
     {
+      "include": "#comments"
+    },
+    {
       "include": "#function"
     },
     {
       "include": "#cvar"
-    },
-    {
-      "include": "#comments"
     },
     {
       "include": "#value"
@@ -105,15 +105,16 @@
     "comments": {
       "patterns": [
         {
-          "name": "comment.line.valve-cfg",
-          "match": "//(.*)$"
-        },
-        {
-          "name": "comment.line.number-sign.valve-cfg",
-          "match": "#(.*)$"
+          "match": "\\/\\/.*",
+          "name": "comment.valve-cfg"
         },
         {
           "begin": "/\\*",
+          "captures": {
+            "0": {
+              "name": "comment.valve-cfg"
+            }
+          },
           "end": "\\*/",
           "name": "comment.block.valve-cfg"
         }

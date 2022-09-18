@@ -38,7 +38,7 @@ export function parseSPCompErrors(
           ? DiagnosticSeverity.Warning
           : DiagnosticSeverity.Error;
       let uri = URI.file(matches[1]);
-      if (tmpFileUri.fsPath == uri.fsPath) {
+      if (tmpFileUri && tmpFileUri.fsPath == uri.fsPath) {
         // Acount for the temp.sp file.
         uri = originFileUri;
       }

@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [4.2.1]
+
+### Fixed
+
+- Fixed a linter bug on compilation.
+- Fixed missing comment highlighting in Valve CFG format.
+
 ## [4.2.0]
 
 ### Added
