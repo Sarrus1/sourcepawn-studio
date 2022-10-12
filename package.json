@@ -490,8 +490,6 @@
     "glob": "^7.2.0",
     "rcon-srcds": "^2.0.1",
     "safe-evaluate-expression": "^1.7.2",
-    "tree-sitter": "^0.20.0",
-    "tree-sitter-cli": "^0.20.6",
     "tree-sitter-sourcepawn": "^0.4.0",
     "vscode-uri": "^3.0.3",
     "web-tree-sitter": "^0.20.5",
