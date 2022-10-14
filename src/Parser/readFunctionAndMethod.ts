@@ -190,7 +190,7 @@ function addParamsAsVariables(
         variableNameNode.endPosition
       ),
       variableType,
-      `${storageClass.join(" ")} ${param.text}`,
+      param.text,
       documentation,
       storageClass
     );

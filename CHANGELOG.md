@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [4.2.2]
+
+### Fixed
+
+- Fixed a snippet generation issue (see #260).
+
 ## [4.2.1]
 
 ### Fixed

@@ -174,7 +174,7 @@ export class FunctionItem implements SPItem {
       snippet.appendPlaceholder(param.name);
       if (secondPart) {
         snippet.appendText(secondPart);
-        if (!firstPart.startsWith("[") && i !== this.params.length - 1) {
+        if (!secondPart.startsWith("[") && i !== this.params.length - 1) {
           snippet.appendText(" ");
         }
       }
