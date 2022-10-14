@@ -848,8 +848,34 @@
           }
         },
         {
+          "comment": "Preprocessor warning and error with trailing comment",
+          "match": "(#\\bwarning|error\\b)\\s*(.+?)(?=/(?:/|\\*))",
+          "name": "meta.undef.sourcepawn",
+          "captures": {
+            "1": {
+              "name": "keyword.control.misc.sourcepawn"
+            },
+            "2": {
+              "name": "string.warning.sourcepawn"
+            }
+          }
+        },
+        {
+          "comment": "Preprocessor warning and error",
+          "match": "(#\\bwarning|error\\b)\\s*(.*)",
+          "name": "meta.undef.sourcepawn",
+          "captures": {
+            "1": {
+              "name": "keyword.control.misc.sourcepawn"
+            },
+            "2": {
+              "name": "string.warning.sourcepawn"
+            }
+          }
+        },
+        {
           "comment": "Preprocessor keywords",
-          "match": "#\\b(if|else|endif|emit|deprecated|undef|endinput|endscript|assert|define|warning|file)\\b\\s*",
+          "match": "#\\b(if|else|endif|emit|deprecated|undef|endinput|endscript|assert|define|file)\\b\\s*",
           "name": "keyword.control.misc.sourcepawn"
         },
         {

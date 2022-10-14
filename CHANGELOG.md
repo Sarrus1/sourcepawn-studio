@@ -6,6 +6,7 @@
 
 - Fixed a snippet generation issue (see #260).
 - Fixed a highlighting issue were expanded integers and hexadecimals literals would show as invalid.
+- Fixed highlighting for `#warning` and `#error`.
 
 ## [4.2.1]
 
