@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fixed a snippet generation issue (see #260).
+- Fixed a highlighting issue were expanded integers and hexadecimals literals would show as invalid.
 
 ## [4.2.1]
 
