@@ -161,20 +161,20 @@ export class FunctionItem implements SPItem {
       if (!match) {
         return;
       }
-      const firstPart = param.detail.slice(0, match.index).trim();
-      const secondPart = param.detail
+      const prefix = param.detail.slice(0, match.index).trim();
+      const postfix = param.detail
         .slice(match.index + param.name.length)
         .trim();
-      if (firstPart) {
-        snippet.appendText(firstPart);
-        if (!firstPart.endsWith("&")) {
+      if (prefix) {
+        snippet.appendText(prefix);
+        if (!prefix.endsWith("&")) {
           snippet.appendText(" ");
         }
       }
       snippet.appendPlaceholder(param.name);
-      if (secondPart) {
-        snippet.appendText(secondPart);
-        if (!secondPart.startsWith("[") && i !== this.params.length - 1) {
+      if (postfix) {
+        snippet.appendText(postfix);
+        if (!postfix.startsWith("[") && i !== this.params.length - 1) {
           snippet.appendText(" ");
         }
       }
