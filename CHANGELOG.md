@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fixed invalid highlighting for variables names `error` (see #262).
+- Fixed missing highlighting for number padding format specifier (see #263).
 
 ## [4.2.2]
 
