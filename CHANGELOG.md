@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [4.2.3]
+
+### Fixed
+
+- Fixed invalid highlighting for variables names `error` (see #262).
+
 ## [4.2.2]
 
 ### Fixed
