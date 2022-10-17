@@ -812,18 +812,6 @@
           }
         },
         {
-          "match": "(\\#error)\\s+(.*)",
-          "name": "meta.pragma.deprecated.sourcepawn",
-          "captures": {
-            "1": {
-              "name": "keyword.control.error.sourcepawn"
-            },
-            "2": {
-              "name": "string.error_msg.sourcepawn"
-            }
-          }
-        },
-        {
           "match": "(\\#define)\\s*(\\w*)",
           "name": "meta.define.sourcepawn",
           "captures": {
@@ -849,7 +837,7 @@
         },
         {
           "comment": "Preprocessor warning and error with trailing comment",
-          "match": "(#\\bwarning|error\\b)\\s*(.+?)(?=/(?:/|\\*))",
+          "match": "(#\\b(?:warning|error)\\b)\\s*(.+?)(?=/(?:/|\\*))",
           "name": "meta.undef.sourcepawn",
           "captures": {
             "1": {
@@ -862,7 +850,7 @@
         },
         {
           "comment": "Preprocessor warning and error",
-          "match": "(#\\bwarning|error\\b)\\s*(.*)",
+          "match": "(#\\b(?:warning|error)\\b)\\s*(.*)",
           "name": "meta.undef.sourcepawn",
           "captures": {
             "1": {
