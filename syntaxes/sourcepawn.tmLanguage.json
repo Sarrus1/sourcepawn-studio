@@ -717,7 +717,7 @@
 
     "string_format_char": {
       "name": "constant.character.format.sourcepawn",
-      "match": "%(?:a|A|b|B|c|C|d|D|e|F|g|G|h|H|I|j|m|M|n|i|p|r|R|S|t|T|u|U|V|u|w|W|x|X|y|Y|z|Z|f|L|N|s|T|t|%|(?:\\d+)?\\.\\d*(?:b|d|i|u|f|s|X|x))"
+      "match": "%(?:a|A|b|B|c|C|d|D|e|F|g|G|h|H|I|j|m|M|n|i|p|r|R|S|t|T|u|U|V|u|w|W|x|X|y|Y|z|Z|f|L|N|s|T|t|%|(?:\\d+)?\\.?\\d*(?:b|d|i|u|f|s|X|x))"
     },
 
     "string_placeholder": {
