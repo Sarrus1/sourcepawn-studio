@@ -74,5 +74,24 @@ export function run(rootpath?: string) {
     console.error(err);
     return 4;
   }
+
+  // Check if dependencies.sh already exists
+  masterFilePath = join(rootpath, ".github/workflows/dependencies.sh");
+  if (existsSync(masterFilePath)) {
+    const err: string = "dependencies.sh already exists, aborting.";
+    window.showErrorMessage(err);
+    console.error(err);
+    return 2;
+  }
+  tasksTemplatesPath = join(myExtDir, "templates/dependencies.sh");
+  result = readFileSync(tasksTemplatesPath, "utf-8");
+  
+  try {
+    writeFileSync(masterFilePath, result, "utf8");
+  } catch (err) {
+    console.error(err);
+    return 4;
+  }
+
   return 0;
 }
