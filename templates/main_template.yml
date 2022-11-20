@@ -15,6 +15,15 @@ jobs:
 
       - name: Set environment variables
         run: echo SCRIPTS_PATH=$(pwd) >> $GITHUB_ENV
+
+      - name: Download plugin dependencies
+        run: |
+          mkdir scripting/include
+          cd scripting/include
+          bash ../../.github/workflows/dependencies.sh
+        working-directory: ./
+
+
       - name: Setup SourcePawn Compiler ${{ matrix.SM_VERSION }}
         id: setup_sp
         uses: rumblefrog/setup-sp@master
