@@ -16,7 +16,7 @@ pub fn parse_document(parser: &mut Parser, file_item: &mut FileItem) -> Result<(
     for mut node in root_node.children(&mut cursor) {
         let kind = node.kind();
         match kind {
-            "function_declaration" => {
+            "function_declaration" | "function_definition" => {
                 parse_function(file_item, &mut node)?;
             }
             _ => {

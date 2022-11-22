@@ -37,7 +37,10 @@ impl Store {
         let uri_string = params.text_document.uri.path();
         let text = params.text_document.text;
         let mut file_item = FileItem::new(uri_string.to_string(), text, vec![]);
-        parse_document(&mut self.parser, &mut file_item);
+        match parse_document(&mut self.parser, &mut file_item) {
+            Err(err) => eprintln!("Failed to parse {} because of {}", uri_string, err),
+            Ok(()) => {}
+        }
         self.documents.insert(uri_string.to_string(), file_item);
 
         Ok(())
@@ -54,18 +57,24 @@ impl Store {
         let mut file_item = self.documents.get_mut(&uri_string).unwrap();
         file_item.text = text;
         file_item.sp_items.clear();
-        parse_document(&mut self.parser, &mut file_item);
+        match parse_document(&mut self.parser, &mut file_item) {
+            Err(err) => eprintln!("Failed to parse {} because of {}", uri_string, err),
+            Ok(()) => {}
+        }
 
         Ok(())
     }
 
-    pub fn provide_completions(&self, _params: CompletionParams) -> CompletionResponse {
-        let mut result: Vec<CompletionItem> = Vec::new();
+    pub fn provide_completions(&self, params: &CompletionParams) -> CompletionResponse {
+        let mut results: Vec<CompletionItem> = Vec::new();
         for (_, file_item) in self.documents.iter() {
             for sp_item in file_item.sp_items.iter() {
-                result.push(to_completion(sp_item));
+                let res = to_completion(sp_item, params);
+                if res.is_some() {
+                    results.push(res.unwrap());
+                }
             }
         }
-        CompletionResponse::Array(result)
+        CompletionResponse::Array(results)
     }
 }

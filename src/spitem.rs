@@ -1,4 +1,4 @@
-use lsp_types::CompletionItem;
+use lsp_types::{CompletionItem, CompletionParams};
 
 use self::function_item::FunctionItem;
 
@@ -11,22 +11,8 @@ pub enum SPItem {
     Function(FunctionItem),
 }
 
-// impl fmt::Debug for SPItem {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         f.debug_struct("SPItem")
-//             .field("name", &self.name)
-//             .field("kind", &self.kind)
-//             .field("type", &self.type_)
-//             .field("range", &self.range)
-//             .field("full range", &self.full_range)
-//             .field("description", &self.description)
-//             .field("file_path", &self.uri_string)
-//             .finish()
-//     }
-// }
-
-pub fn to_completion(sp_item: &SPItem) -> CompletionItem {
+pub fn to_completion(sp_item: &SPItem, params: &CompletionParams) -> Option<CompletionItem> {
     match sp_item {
-        SPItem::Function(function_item) => function_item::to_completion(function_item),
+        SPItem::Function(function_item) => function_item::to_completion(function_item, params),
     }
 }

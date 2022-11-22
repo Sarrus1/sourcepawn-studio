@@ -5,7 +5,7 @@ use tree_sitter::Node;
 use crate::{
     fileitem::FileItem,
     spitem::{
-        function_item::{FunctionItem, FunctionVisibility},
+        function_item::{FunctionDefinitionType, FunctionItem, FunctionVisibility},
         SPItem,
     },
     utils::ts_range_to_lsp_range,
@@ -20,8 +20,8 @@ pub(crate) fn parse_function(file_item: &mut FileItem, node: &mut Node) -> Resul
     let mut visibility_node: Option<Node> = None;
     // Arguments of the declaration
     let mut args_node: Option<Node> = None;
-    // Type of function declaration ("native" or "forward")
-    let mut function_type_node: Option<Node> = None;
+    // Type of function definition ("native" or "forward")
+    let mut definition_type_node: Option<Node> = None;
 
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
@@ -34,7 +34,7 @@ pub(crate) fn parse_function(file_item: &mut FileItem, node: &mut Node) -> Resul
                 args_node = Some(child);
             }
             "function_definition_type" => {
-                function_type_node = Some(child);
+                definition_type_node = Some(child);
             }
             _ => {
                 continue;
@@ -68,8 +68,18 @@ pub(crate) fn parse_function(file_item: &mut FileItem, node: &mut Node) -> Resul
         if visibility_text.contains("static") {
             visibility.push(FunctionVisibility::Static);
         }
+    }
 
-        eprintln!("visibility {:?}", visibility);
+    let mut definition_type = FunctionDefinitionType::None;
+    if definition_type_node.is_some() {
+        definition_type = match definition_type_node
+            .unwrap()
+            .utf8_text(&file_item.text.as_bytes())?
+        {
+            "forward" => FunctionDefinitionType::Forward,
+            "native" => FunctionDefinitionType::Native,
+            _ => FunctionDefinitionType::None,
+        }
     }
 
     let function_item = FunctionItem {
@@ -82,6 +92,7 @@ pub(crate) fn parse_function(file_item: &mut FileItem, node: &mut Node) -> Resul
         deprecated: false,
         detail: "".to_string(),
         visibility,
+        definition_type,
     };
 
     file_item.sp_items.push(SPItem::Function(function_item));

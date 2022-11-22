@@ -10,7 +10,7 @@ pub trait RequestHandler: Request {
 impl RequestHandler for Completion {
     fn handle(store: &mut Store, id: RequestId, params: Self::Params) -> Response {
         eprintln!("got completion request #{}: {:?}", id, params);
-        let result = store.provide_completions(params);
+        let result = store.provide_completions(&params);
         let result = serde_json::to_value(&result).unwrap();
         Response {
             id,
