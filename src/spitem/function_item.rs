@@ -60,6 +60,11 @@ pub(crate) fn to_completion(
         .visibility
         .contains(&FunctionVisibility::Static)
     {
+        eprintln!(
+            "{}",
+            params.text_document_position.text_document.uri.to_string()
+        );
+        eprintln!("{}", function_item.uri_string);
         if params.text_document_position.text_document.uri.to_string() != function_item.uri_string {
             return None;
         }

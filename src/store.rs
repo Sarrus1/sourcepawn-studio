@@ -36,9 +36,11 @@ impl Store {
             .filter_map(|e| e.ok())
         {
             let f_name = entry.file_name().to_string_lossy();
-
             if f_name.ends_with(".sp") || f_name.ends_with(".inc") {
                 let uri = Url::from_file_path(entry.path()).unwrap();
+                if self.documents.contains_key(&uri.to_string()) {
+                    return;
+                }
                 self.documents.insert(uri.to_string(), Document::default());
             }
         }
@@ -46,6 +48,9 @@ impl Store {
 
     pub fn parse_directories(&mut self, directories: &Vec<PathBuf>) {
         for path in directories {
+            if !path.exists() {
+                continue;
+            }
             self.find_documents(path);
         }
     }
@@ -56,18 +61,18 @@ impl Store {
         n: lsp_server::Notification,
     ) -> Result<(), io::Error> {
         let params: DidOpenTextDocumentParams = n.extract(DidOpenTextDocument::METHOD).unwrap();
-        let uri_string = params.text_document.uri.path();
+        let uri = params.text_document.uri;
         let text = params.text_document.text;
         let mut file_item = Document {
-            uri: uri_string.to_string(),
+            uri: uri.to_string(),
             text: text,
             ..Default::default()
         };
         match parse_document(&mut self.parser, &mut file_item) {
-            Err(err) => eprintln!("Failed to parse {} because of {}", uri_string, err),
+            Err(err) => eprintln!("Failed to parse {} because of {}", uri, err),
             Ok(()) => {}
         }
-        self.documents.insert(uri_string.to_string(), file_item);
+        self.documents.insert(uri.to_string(), file_item);
 
         Ok(())
     }
@@ -78,13 +83,13 @@ impl Store {
         n: lsp_server::Notification,
     ) -> Result<(), io::Error> {
         let params: DidChangeTextDocumentParams = n.extract(DidChangeTextDocument::METHOD).unwrap();
-        let uri_string = params.text_document.uri.path().to_string();
+        let uri = params.text_document.uri;
         let text = params.content_changes[0].text.to_string();
-        let mut file_item = self.documents.get_mut(&uri_string).unwrap();
+        let mut file_item = self.documents.get_mut(&uri.to_string()).unwrap();
         file_item.text = text;
         file_item.sp_items.clear();
         match parse_document(&mut self.parser, &mut file_item) {
-            Err(err) => eprintln!("Failed to parse {} because of {}", uri_string, err),
+            Err(err) => eprintln!("Failed to parse {} because of {}", uri, err),
             Ok(()) => {}
         }
 
