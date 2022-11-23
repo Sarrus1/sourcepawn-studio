@@ -24,8 +24,8 @@ impl Document {
     pub fn parse(
         &mut self,
         environment: &Environment,
-        documents: &HashMap<String, Document>,
         parser: &mut Parser,
+        documents: &HashMap<String, Document>,
     ) -> Result<(), Utf8Error> {
         let tree = parser.parse(&self.text, None).unwrap();
         let root_node = tree.root_node();

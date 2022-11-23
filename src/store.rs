@@ -1,3 +1,4 @@
+use lazy_static::lazy_static;
 use lsp_types::{
     notification::{DidChangeTextDocument, DidOpenTextDocument, Notification},
     CompletionItem, CompletionParams, CompletionResponse, DidChangeTextDocumentParams,
@@ -7,25 +8,20 @@ use std::{collections::HashMap, fs, io, path::PathBuf, sync::Arc};
 use tree_sitter::Parser;
 use walkdir::WalkDir;
 
-use crate::{environment::Environment, fileitem::Document, server::Server, spitem::to_completion};
+use crate::{document::Document, environment::Environment, server::Server, spitem::to_completion};
 
+#[derive(Clone)]
 pub struct Store {
     /// Any documents the server has handled, indexed by their URL
     pub documents: HashMap<String, Document>,
     pub environment: Environment,
-    parser: Parser,
 }
 
 impl Store {
     pub fn new(current_dir: PathBuf) -> Self {
-        let mut parser = Parser::new();
-        parser
-            .set_language(tree_sitter_sourcepawn::language())
-            .expect("Error loading SourcePawn grammar");
         let environment = Environment::new(Arc::new(current_dir));
         Store {
             documents: HashMap::new(),
-            parser,
             environment,
         }
     }
@@ -70,13 +66,18 @@ impl Store {
         }
     }
 
-    pub fn handle_open_document(&mut self, uri: &String, text: String) -> Result<(), io::Error> {
+    pub fn handle_open_document(
+        &mut self,
+        uri: &String,
+        text: String,
+        parser: &mut Parser,
+    ) -> Result<(), io::Error> {
         let mut document = Document {
             uri: uri.to_string(),
             text,
             ..Default::default()
         };
-        document.parse(&self.environment, &self.documents, &mut self.parser);
+        document.parse(&self.environment, parser, &self.documents);
         eprintln!("{:?}", document.includes);
         self.documents.insert(uri.to_string(), document);
 
@@ -85,20 +86,5 @@ impl Store {
 
     pub fn handle_change_document(&mut self, n: lsp_server::Notification) -> Result<(), io::Error> {
         Ok(())
-    }
-
-    pub fn provide_completions(&self, params: &CompletionParams) -> CompletionResponse {
-        let mut results: Vec<CompletionItem> = Vec::new();
-        for (_, file_item) in self.documents.iter() {
-            eprintln!("uri {}", file_item.uri);
-            for sp_item in file_item.sp_items.iter() {
-                let res = to_completion(sp_item, params);
-                if res.is_some() {
-                    results.push(res.unwrap());
-                }
-            }
-        }
-
-        CompletionResponse::Array(results)
     }
 }

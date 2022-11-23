@@ -3,7 +3,7 @@ use std::{collections::HashMap, str::Utf8Error};
 use lsp_types::Url;
 use tree_sitter::Node;
 
-use crate::{environment::Environment, fileitem::Document, utils};
+use crate::{document::Document, environment::Environment, utils};
 
 pub fn parse_include(
     environment: &Environment,

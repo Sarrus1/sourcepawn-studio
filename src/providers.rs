@@ -1,21 +1,16 @@
-use lsp_server::{RequestId, Response};
-use lsp_types::request::{Completion, Request};
+mod completion;
+
+use std::sync::Arc;
+
+use lsp_types::Url;
 
 use crate::store::Store;
 
-pub trait RequestHandler: Request {
-    fn handle(store: &mut Store, id: RequestId, params: Self::Params) -> Response;
-}
+pub use self::completion::provide_completions;
 
-impl RequestHandler for Completion {
-    fn handle(store: &mut Store, id: RequestId, params: Self::Params) -> Response {
-        eprintln!("got completion request #{}: {:?}", id, params);
-        let result = store.provide_completions(&params);
-        let result = serde_json::to_value(&result).unwrap();
-        Response {
-            id,
-            result: Some(result),
-            error: None,
-        }
-    }
+#[derive(Clone)]
+pub struct FeatureRequest<P> {
+    pub params: P,
+    pub store: Store,
+    pub uri: Arc<Url>,
 }

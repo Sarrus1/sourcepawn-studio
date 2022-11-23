@@ -1,4 +1,4 @@
-use crate::{options::Options, providers::RequestHandler, store::Store};
+use crate::{dispatch, options::Options, providers::FeatureRequest, store::Store};
 use std::{io, path::PathBuf, sync::Arc};
 
 use anyhow;
@@ -7,27 +7,15 @@ use lsp_server::{Connection, ExtractError, Message, Request, RequestId};
 use lsp_types::{
     notification::{DidChangeTextDocument, DidOpenTextDocument, Notification, ShowMessage},
     request::{Completion, WorkspaceConfiguration},
-    CompletionOptions, ConfigurationItem, ConfigurationParams, DidOpenTextDocumentParams,
-    InitializeParams, MessageType, OneOf, ServerCapabilities, ShowMessageParams,
-    TextDocumentSyncCapability, TextDocumentSyncKind,
+    CompletionOptions, CompletionParams, ConfigurationItem, ConfigurationParams,
+    DidOpenTextDocumentParams, InitializeParams, MessageType, OneOf, ServerCapabilities,
+    ShowMessageParams, TextDocumentSyncCapability, TextDocumentSyncKind, Url,
 };
+use serde::Serialize;
 use threadpool::ThreadPool;
+use tree_sitter::Parser;
 
 use crate::client::LspClient;
-
-macro_rules! request_match {
-    ($req_type:ty, $store:expr, $connection:expr, $req:expr) => {
-        match cast::<$req_type>($req) {
-            Ok((id, params)) => {
-                let resp = <$req_type>::handle(&mut $store, id, params);
-                $connection.sender.send(Message::Response(resp))?;
-                continue;
-            }
-            Err(err @ ExtractError::JsonError { .. }) => panic!("{:?}", err),
-            Err(ExtractError::MethodMismatch(req)) => req,
-        };
-    };
-}
 
 #[derive(Debug)]
 enum InternalMessage {
@@ -39,6 +27,7 @@ struct ServerFork {
     connection: Arc<Connection>,
     internal_tx: Sender<InternalMessage>,
     client: LspClient,
+    store: Store,
 }
 
 impl ServerFork {
@@ -85,6 +74,14 @@ impl ServerFork {
 
         Ok(options.unwrap_or_default())
     }
+
+    pub fn feature_request<P>(&self, uri: Arc<Url>, params: P) -> FeatureRequest<P> {
+        FeatureRequest {
+            params,
+            store: self.store.clone(),
+            uri,
+        }
+    }
 }
 
 pub struct Server {
@@ -94,12 +91,17 @@ pub struct Server {
     internal_tx: Sender<InternalMessage>,
     internal_rx: Receiver<InternalMessage>,
     pool: ThreadPool,
+    parser: Parser,
 }
 
 impl Server {
     pub fn new(connection: Connection, current_dir: PathBuf) -> Self {
         let client = LspClient::new(connection.sender.clone());
         let (internal_tx, internal_rx) = crossbeam_channel::unbounded();
+        let mut parser = Parser::new();
+        parser
+            .set_language(tree_sitter_sourcepawn::language())
+            .expect("Error loading SourcePawn grammar");
         Self {
             connection: Arc::new(connection),
             client,
@@ -107,6 +109,7 @@ impl Server {
             internal_tx,
             store: Store::new(current_dir),
             pool: threadpool::Builder::new().build(),
+            parser,
         }
     }
 
@@ -143,14 +146,15 @@ impl Server {
             connection: self.connection.clone(),
             client: self.client.clone(),
             internal_tx: self.internal_tx.clone(),
+            store: self.store.clone(),
         }
     }
 
-    fn did_open(&mut self, n: lsp_server::Notification) -> Result<(), io::Error> {
-        let params: DidOpenTextDocumentParams = n.extract(DidOpenTextDocument::METHOD).unwrap();
+    fn did_open(&mut self, params: DidOpenTextDocumentParams) -> anyhow::Result<()> {
         let uri = params.text_document.uri;
         let text = params.text_document.text;
-        self.store.handle_open_document(&uri.to_string(), text);
+        self.store
+            .handle_open_document(&uri.to_string(), text, &mut self.parser);
 
         Ok(())
     }
@@ -158,8 +162,46 @@ impl Server {
     fn reparse_all(&mut self) -> anyhow::Result<()> {
         for document in self.store.iter().collect::<Vec<_>>() {
             self.store
-                .handle_open_document(&document.uri, document.text)?;
+                .handle_open_document(&document.uri, document.text, &mut self.parser)?;
         }
+
+        Ok(())
+    }
+
+    fn completion(&self, id: RequestId, mut params: CompletionParams) -> anyhow::Result<()> {
+        let uri = Arc::new(params.text_document_position.text_document.uri.clone());
+        self.handle_feature_request(id, params, uri, crate::providers::provide_completions)?;
+        Ok(())
+    }
+
+    fn handle_feature_request<P, R, H>(
+        &self,
+        id: RequestId,
+        params: P,
+        uri: Arc<Url>,
+        handler: H,
+    ) -> anyhow::Result<()>
+    where
+        P: Send + 'static,
+        R: Serialize,
+        H: FnOnce(FeatureRequest<P>) -> R + Send + 'static,
+    {
+        self.spawn(move |server| {
+            let request = server.feature_request(uri, params);
+            if request.store.iter().next().is_none() {
+                let code = lsp_server::ErrorCode::InvalidRequest as i32;
+                let message = "unknown document".to_string();
+                let response = lsp_server::Response::new_err(id, code, message);
+                server.connection.sender.send(response.into()).unwrap();
+            } else {
+                let result = handler(request);
+                server
+                    .connection
+                    .sender
+                    .send(lsp_server::Response::new_ok(id, result).into())
+                    .unwrap();
+            }
+        });
 
         Ok(())
     }
@@ -170,32 +212,26 @@ impl Server {
                             recv(&self.connection.receiver) -> msg => {
                         eprintln!("got msg: {:?}", msg);
                         match msg? {
-                            Message::Request(req) => {
-                                if self.connection.handle_shutdown(&req)? {
+                            Message::Request(request) => {
+                                if self.connection.handle_shutdown(&request)? {
                                     return Ok(());
                                 }
-                                eprintln!("got request: {:?}", req);
-                                match req.method.as_str() {
-                                    <Completion as lsp_types::request::Request>::METHOD => {
-                                        request_match!(Completion, self.store, self.connection, req);
-                                    }
-                                    _ => {
-                                        eprintln!("Unhandled request {}", req.method);
-                                    }
+                                if let Some(response) = dispatch::RequestDispatcher::new(request)
+                                .on::<Completion, _>(|id, params| self.completion(id, params))?
+                                .default()
+                                {
+                                    self.connection.sender.send(response.into())?;
                                 }
                             }
                             Message::Response(resp) => {
                                 self.client.recv_response(resp)?;
                             }
-                            Message::Notification(not) => {
-                                match not.method.as_str() {
-                                    DidOpenTextDocument::METHOD => self.did_open(not)?,
-                                    // DidChangeTextDocument::METHOD => {
-                                    //     self.store.handle_change_document(not)?
-                                    // }
-                                    _ => {}
+                            Message::Notification(notification) => {
+                                dispatch::NotificationDispatcher::new(notification)
+                                .on::<DidOpenTextDocument, _>(|params| self.did_open(params))?
+                                // .on::<DidChangeTextDocument, _>(|params| self.did_change(params))?
+                                .default();
                                 }
-                            }
                         }
                     }
                     recv(&self.internal_rx) -> msg => {

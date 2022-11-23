@@ -3,7 +3,7 @@ use std::str::Utf8Error;
 use tree_sitter::Node;
 
 use crate::{
-    fileitem::Document,
+    document::Document,
     spitem::{
         function_item::{FunctionDefinitionType, FunctionItem, FunctionVisibility},
         SPItem,

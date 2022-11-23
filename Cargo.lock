@@ -376,6 +376,7 @@ dependencies = [
  "crossbeam-channel",
  "dashmap",
  "derive-new",
+ "log",
  "lsp-server",
  "lsp-types",
  "serde",

@@ -5,8 +5,9 @@ use crate::server::Server;
 use lsp_server::Connection;
 
 mod client;
+mod dispatch;
+mod document;
 mod environment;
-mod fileitem;
 mod options;
 mod parser;
 mod providers;
@@ -14,7 +15,6 @@ mod server;
 mod spitem;
 mod store;
 mod utils;
-mod workspace;
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     // Note that  we must have our logging only write out to stderr.
