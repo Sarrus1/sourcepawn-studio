@@ -231,6 +231,12 @@
           "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable.",
           "scope": "resource"
         },
+        "SourcePawnLanguageServer.includesDirectories": {
+          "type": "array",
+          "default": [],
+          "description": "Include folders paths for the compiler and the linter.",
+          "scope": "resource"
+        },
         "sourcepawn.compilerOptions": {
           "type": "array",
           "default": [
@@ -493,14 +499,15 @@
     "tree-sitter-sourcepawn": "^0.4.0",
     "vscode-uri": "^3.0.3",
     "web-tree-sitter": "^0.20.5",
-    "wget-improved": "^3.2.1"
+    "wget-improved": "^3.2.1",
+    "vscode-languageclient": "^8.0.2"
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
     "@types/glob": "^7.2.0",
     "@types/mocha": "^9.1.1",
     "@types/node": "^8.0.14",
-    "@types/vscode": "^1.63.1",
+    "@types/vscode": "^1.73.1",
     "@vscode/test-electron": "^1.6.1",
     "esbuild": "^0.14.43",
     "mocha": "^10.0.0",
