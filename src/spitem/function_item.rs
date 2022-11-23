@@ -1,6 +1,6 @@
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Range};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// SPItem representation of a first order SourcePawn function, which can be converted to a
 /// [CompletionItem](lsp_types::CompletionItem), [Location](lsp_types::Location), etc.
 pub struct FunctionItem {
@@ -79,7 +79,7 @@ pub(crate) fn to_completion(
 }
 
 /// Visibility of a SourcePawn function.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum FunctionVisibility {
     Public,
     Static,
@@ -87,7 +87,7 @@ pub enum FunctionVisibility {
 }
 
 /// Definition type of a SourcePawn function.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum FunctionDefinitionType {
     Forward,
     Native,

@@ -11,7 +11,7 @@ use crate::{
     utils::ts_range_to_lsp_range,
 };
 
-pub(crate) fn parse_function(file_item: &mut Document, node: &mut Node) -> Result<(), Utf8Error> {
+pub fn parse_function(file_item: &mut Document, node: &mut Node) -> Result<(), Utf8Error> {
     // Name of the function
     let name_node = node.child_by_field_name("name");
     // Return type of the function

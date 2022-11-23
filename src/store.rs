@@ -3,30 +3,35 @@ use lsp_types::{
     CompletionItem, CompletionParams, CompletionResponse, DidChangeTextDocumentParams,
     DidOpenTextDocumentParams, Url,
 };
-use std::{collections::HashMap, io, path::PathBuf};
+use std::{collections::HashMap, fs, io, path::PathBuf, sync::Arc};
 use tree_sitter::Parser;
 use walkdir::WalkDir;
 
-use crate::{fileitem::Document, parser::parse_document, spitem::to_completion};
+use crate::{environment::Environment, fileitem::Document, server::Server, spitem::to_completion};
 
 pub struct Store {
     /// Any documents the server has handled, indexed by their URL
-    documents: HashMap<String, Document>,
-
+    pub documents: HashMap<String, Document>,
+    pub environment: Environment,
     parser: Parser,
 }
 
 impl Store {
-    pub fn new() -> Self {
+    pub fn new(current_dir: PathBuf) -> Self {
         let mut parser = Parser::new();
         parser
             .set_language(tree_sitter_sourcepawn::language())
             .expect("Error loading SourcePawn grammar");
-
+        let environment = Environment::new(Arc::new(current_dir));
         Store {
             documents: HashMap::new(),
             parser,
+            environment,
         }
+    }
+
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item = Document> + 'a {
+        self.documents.values().cloned()
     }
 
     pub fn find_documents(&mut self, base_path: &PathBuf) {
@@ -41,64 +46,51 @@ impl Store {
                 if self.documents.contains_key(&uri.to_string()) {
                     return;
                 }
-                self.documents.insert(uri.to_string(), Document::default());
+                let text =
+                    fs::read_to_string(uri.to_file_path().unwrap()).expect("Failed to read file.");
+                self.documents.insert(
+                    uri.to_string(),
+                    Document {
+                        uri: uri.to_string(),
+                        text,
+                        ..Default::default()
+                    },
+                );
             }
         }
     }
 
-    pub fn parse_directories(&mut self, directories: &Vec<PathBuf>) {
+    pub fn parse_directories(&mut self) {
+        let directories = self.environment.options.includes_directories.clone();
         for path in directories {
             if !path.exists() {
                 continue;
             }
-            self.find_documents(path);
+            self.find_documents(&path);
         }
     }
 
-    pub fn handle_open_document(
-        &mut self,
-        _connection: &lsp_server::Connection,
-        n: lsp_server::Notification,
-    ) -> Result<(), io::Error> {
-        let params: DidOpenTextDocumentParams = n.extract(DidOpenTextDocument::METHOD).unwrap();
-        let uri = params.text_document.uri;
-        let text = params.text_document.text;
-        let mut file_item = Document {
+    pub fn handle_open_document(&mut self, uri: &String, text: String) -> Result<(), io::Error> {
+        let mut document = Document {
             uri: uri.to_string(),
-            text: text,
+            text,
             ..Default::default()
         };
-        match parse_document(&mut self.parser, &mut file_item) {
-            Err(err) => eprintln!("Failed to parse {} because of {}", uri, err),
-            Ok(()) => {}
-        }
-        self.documents.insert(uri.to_string(), file_item);
+        document.parse(&self.environment, &self.documents, &mut self.parser);
+        eprintln!("{:?}", document.includes);
+        self.documents.insert(uri.to_string(), document);
 
         Ok(())
     }
 
-    pub fn handle_change_document(
-        &mut self,
-        _connection: &lsp_server::Connection,
-        n: lsp_server::Notification,
-    ) -> Result<(), io::Error> {
-        let params: DidChangeTextDocumentParams = n.extract(DidChangeTextDocument::METHOD).unwrap();
-        let uri = params.text_document.uri;
-        let text = params.content_changes[0].text.to_string();
-        let mut file_item = self.documents.get_mut(&uri.to_string()).unwrap();
-        file_item.text = text;
-        file_item.sp_items.clear();
-        match parse_document(&mut self.parser, &mut file_item) {
-            Err(err) => eprintln!("Failed to parse {} because of {}", uri, err),
-            Ok(()) => {}
-        }
-
+    pub fn handle_change_document(&mut self, n: lsp_server::Notification) -> Result<(), io::Error> {
         Ok(())
     }
 
     pub fn provide_completions(&self, params: &CompletionParams) -> CompletionResponse {
         let mut results: Vec<CompletionItem> = Vec::new();
         for (_, file_item) in self.documents.iter() {
+            eprintln!("uri {}", file_item.uri);
             for sp_item in file_item.sp_items.iter() {
                 let res = to_completion(sp_item, params);
                 if res.is_some() {

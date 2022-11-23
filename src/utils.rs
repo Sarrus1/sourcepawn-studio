@@ -19,3 +19,16 @@ pub fn ts_range_to_lsp_range(range: &tree_sitter::Range) -> lsp_types::Range {
 pub fn point_to_lsp_position(point: &tree_sitter::Point) -> lsp_types::Position {
     Position::new(point.row as u32, point.column as u32)
 }
+
+/// Add `.inc` to a trimmed include text if it does not have an extension (.sp or .inc).
+///
+/// # Arguments
+///
+/// * `include_text` - Include text to edit.
+pub fn add_include_extension(include_text: &mut String) -> &String {
+    if !include_text.ends_with(".sp") && !include_text.ends_with(".inc") {
+        include_text.push_str(".inc");
+    }
+
+    include_text
+}

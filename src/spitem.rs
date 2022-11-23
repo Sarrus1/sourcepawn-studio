@@ -4,7 +4,7 @@ use self::function_item::FunctionItem;
 
 pub mod function_item;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// Generic representation of an item, which can be converted to a
 /// [CompletionItem](lsp_types::CompletionItem), [Location](lsp_types::Location), etc.
 pub enum SPItem {

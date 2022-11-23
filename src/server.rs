@@ -1,8 +1,5 @@
-use crate::{
-    environment::Environment, options::Options, providers::RequestHandler, store::Store,
-    workspace::Workspace,
-};
-use std::{cell::RefCell, path::PathBuf, sync::Arc};
+use crate::{options::Options, providers::RequestHandler, store::Store};
+use std::{io, path::PathBuf, sync::Arc};
 
 use anyhow;
 use crossbeam_channel::{Receiver, Sender};
@@ -10,8 +7,9 @@ use lsp_server::{Connection, ExtractError, Message, Request, RequestId};
 use lsp_types::{
     notification::{DidChangeTextDocument, DidOpenTextDocument, Notification, ShowMessage},
     request::{Completion, WorkspaceConfiguration},
-    CompletionOptions, ConfigurationItem, ConfigurationParams, InitializeParams, MessageType,
-    OneOf, ServerCapabilities, ShowMessageParams, TextDocumentSyncCapability, TextDocumentSyncKind,
+    CompletionOptions, ConfigurationItem, ConfigurationParams, DidOpenTextDocumentParams,
+    InitializeParams, MessageType, OneOf, ServerCapabilities, ShowMessageParams,
+    TextDocumentSyncCapability, TextDocumentSyncKind,
 };
 use threadpool::ThreadPool;
 
@@ -21,8 +19,7 @@ macro_rules! request_match {
     ($req_type:ty, $store:expr, $connection:expr, $req:expr) => {
         match cast::<$req_type>($req) {
             Ok((id, params)) => {
-                let resp = <$req_type>::handle(&mut $store.borrow_mut(), id, params);
-                // eprintln!("send response: {:?}", resp);
+                let resp = <$req_type>::handle(&mut $store, id, params);
                 $connection.sender.send(Message::Response(resp))?;
                 continue;
             }
@@ -93,26 +90,23 @@ impl ServerFork {
 pub struct Server {
     connection: Arc<Connection>,
     client: LspClient,
-    store: RefCell<Store>,
+    pub store: Store,
     internal_tx: Sender<InternalMessage>,
     internal_rx: Receiver<InternalMessage>,
     pool: ThreadPool,
-    workspace: Workspace,
 }
 
 impl Server {
     pub fn new(connection: Connection, current_dir: PathBuf) -> Self {
         let client = LspClient::new(connection.sender.clone());
-        let workspace = Workspace::new(Environment::new(Arc::new(current_dir)));
         let (internal_tx, internal_rx) = crossbeam_channel::unbounded();
         Self {
             connection: Arc::new(connection),
             client,
             internal_rx,
             internal_tx,
-            store: RefCell::new(Store::new()),
+            store: Store::new(current_dir),
             pool: threadpool::Builder::new().build(),
-            workspace,
         }
     }
 
@@ -128,14 +122,14 @@ impl Server {
         .unwrap();
         let initialization_params = self.connection.initialize(server_capabilities)?;
         let params: InitializeParams = serde_json::from_value(initialization_params).unwrap();
-        self.workspace.environment.client_capabilities = Arc::new(params.capabilities);
-        self.workspace.environment.client_info = params.client_info.map(Arc::new);
+        self.store.environment.client_capabilities = Arc::new(params.capabilities);
+        self.store.environment.client_info = params.client_info.map(Arc::new);
 
         self.spawn(move |server| {
             let _ = server.pull_config();
         });
         let base_path = PathBuf::from(params.workspace_folders.unwrap()[0].uri.path());
-        self.store.borrow_mut().find_documents(&base_path);
+        self.store.find_documents(&base_path);
         Ok(())
     }
 
@@ -150,6 +144,24 @@ impl Server {
             client: self.client.clone(),
             internal_tx: self.internal_tx.clone(),
         }
+    }
+
+    fn did_open(&mut self, n: lsp_server::Notification) -> Result<(), io::Error> {
+        let params: DidOpenTextDocumentParams = n.extract(DidOpenTextDocument::METHOD).unwrap();
+        let uri = params.text_document.uri;
+        let text = params.text_document.text;
+        self.store.handle_open_document(&uri.to_string(), text);
+
+        Ok(())
+    }
+
+    fn reparse_all(&mut self) -> anyhow::Result<()> {
+        for document in self.store.iter().collect::<Vec<_>>() {
+            self.store
+                .handle_open_document(&document.uri, document.text)?;
+        }
+
+        Ok(())
     }
 
     fn process_messages(&mut self) -> anyhow::Result<()> {
@@ -177,10 +189,10 @@ impl Server {
                             }
                             Message::Notification(not) => {
                                 match not.method.as_str() {
-                                    DidOpenTextDocument::METHOD => self.store.borrow_mut().handle_open_document(&self.connection, not)?,
-                                    DidChangeTextDocument::METHOD => {
-                                        self.store.borrow_mut().handle_change_document(&self.connection, not)?
-                                    }
+                                    DidOpenTextDocument::METHOD => self.did_open(not)?,
+                                    // DidChangeTextDocument::METHOD => {
+                                    //     self.store.handle_change_document(not)?
+                                    // }
                                     _ => {}
                                 }
                             }
@@ -189,8 +201,9 @@ impl Server {
                     recv(&self.internal_rx) -> msg => {
                         match msg? {
                             InternalMessage::SetOptions(options) => {
-                                self.workspace.environment.options = options;
-                                self.store.borrow_mut().parse_directories(&self.workspace.environment.options.includes_directories);
+                                self.store.environment.options = options;
+                                self.store.parse_directories();
+                                self.reparse_all();
                             }
                         }
                 }
