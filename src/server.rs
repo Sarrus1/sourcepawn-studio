@@ -1,7 +1,11 @@
-use crate::{options::Options, providers::RequestHandler, store::Store};
-use std::{cell::RefCell, sync::Arc};
+use crate::{
+    environment::Environment, options::Options, providers::RequestHandler, store::Store,
+    workspace::Workspace,
+};
+use std::{cell::RefCell, path::PathBuf, sync::Arc};
 
 use anyhow;
+use crossbeam_channel::{Receiver, Sender};
 use lsp_server::{Connection, ExtractError, Message, Request, RequestId};
 use lsp_types::{
     notification::{DidChangeTextDocument, DidOpenTextDocument, Notification, ShowMessage},
@@ -28,9 +32,15 @@ macro_rules! request_match {
     };
 }
 
+#[derive(Debug)]
+enum InternalMessage {
+    SetOptions(Arc<Options>),
+}
+
 #[derive(Clone)]
 struct ServerFork {
     connection: Arc<Connection>,
+    internal_tx: Sender<InternalMessage>,
     client: LspClient,
 }
 
@@ -46,7 +56,10 @@ impl ServerFork {
             Ok(mut json) => {
                 eprintln!("Received config {:?}", json);
                 let value = json.pop().expect("invalid configuration request");
-                Some(self.parse_options(value)?);
+                let options = self.parse_options(value)?;
+                self.internal_tx
+                    .send(InternalMessage::SetOptions(Arc::new(options)))
+                    .unwrap();
             }
             Err(why) => {
                 eprintln!("Retrieving configuration failed: {}", why);
@@ -80,22 +93,26 @@ impl ServerFork {
 pub struct Server {
     connection: Arc<Connection>,
     client: LspClient,
-    initalize_params: Option<InitializeParams>,
     store: RefCell<Store>,
-    options: Option<Options>,
+    internal_tx: Sender<InternalMessage>,
+    internal_rx: Receiver<InternalMessage>,
     pool: ThreadPool,
+    workspace: Workspace,
 }
 
 impl Server {
-    pub fn new(connection: Connection) -> Self {
+    pub fn new(connection: Connection, current_dir: PathBuf) -> Self {
         let client = LspClient::new(connection.sender.clone());
+        let workspace = Workspace::new(Environment::new(Arc::new(current_dir)));
+        let (internal_tx, internal_rx) = crossbeam_channel::unbounded();
         Self {
             connection: Arc::new(connection),
             client,
-            initalize_params: None,
+            internal_rx,
+            internal_tx,
             store: RefCell::new(Store::new()),
-            options: None,
             pool: threadpool::Builder::new().build(),
+            workspace,
         }
     }
 
@@ -110,11 +127,15 @@ impl Server {
         })
         .unwrap();
         let initialization_params = self.connection.initialize(server_capabilities)?;
-        eprintln!("Init params {:?}", initialization_params.to_string());
-        self.initalize_params = serde_json::from_value(initialization_params).unwrap();
+        let params: InitializeParams = serde_json::from_value(initialization_params).unwrap();
+        self.workspace.environment.client_capabilities = Arc::new(params.capabilities);
+        self.workspace.environment.client_info = params.client_info.map(Arc::new);
+
         self.spawn(move |server| {
             let _ = server.pull_config();
         });
+        let base_path = PathBuf::from(params.workspace_folders.unwrap()[0].uri.path());
+        self.store.borrow_mut().find_documents(&base_path);
         Ok(())
     }
 
@@ -127,42 +148,51 @@ impl Server {
         ServerFork {
             connection: self.connection.clone(),
             client: self.client.clone(),
+            internal_tx: self.internal_tx.clone(),
         }
     }
 
     fn process_messages(&mut self) -> anyhow::Result<()> {
         loop {
             crossbeam_channel::select! {
-                        recv(&self.connection.receiver) -> msg => {
-                    eprintln!("got msg: {:?}", msg);
-                    match msg? {
-                        Message::Request(req) => {
-                            if self.connection.handle_shutdown(&req)? {
-                                return Ok(());
+                            recv(&self.connection.receiver) -> msg => {
+                        eprintln!("got msg: {:?}", msg);
+                        match msg? {
+                            Message::Request(req) => {
+                                if self.connection.handle_shutdown(&req)? {
+                                    return Ok(());
+                                }
+                                eprintln!("got request: {:?}", req);
+                                match req.method.as_str() {
+                                    <Completion as lsp_types::request::Request>::METHOD => {
+                                        request_match!(Completion, self.store, self.connection, req);
+                                    }
+                                    _ => {
+                                        eprintln!("Unhandled request {}", req.method);
+                                    }
+                                }
                             }
-                            eprintln!("got request: {:?}", req);
-                            match req.method.as_str() {
-                                <Completion as lsp_types::request::Request>::METHOD => {
-                                    request_match!(Completion, self.store, self.connection, req);
-                                }
-                                _ => {
-                                    eprintln!("Unhandled request {}", req.method);
-                                }
+                            Message::Response(resp) => {
+                                self.client.recv_response(resp)?;
                             }
-                        }
-                        Message::Response(resp) => {
-                            self.client.recv_response(resp)?;
-                        }
-                        Message::Notification(not) => {
-                            match not.method.as_str() {
-                                DidOpenTextDocument::METHOD => self.store.borrow_mut().handle_open_document(&self.connection, not)?,
-                                DidChangeTextDocument::METHOD => {
-                                    self.store.borrow_mut().handle_change_document(&self.connection, not)?
+                            Message::Notification(not) => {
+                                match not.method.as_str() {
+                                    DidOpenTextDocument::METHOD => self.store.borrow_mut().handle_open_document(&self.connection, not)?,
+                                    DidChangeTextDocument::METHOD => {
+                                        self.store.borrow_mut().handle_change_document(&self.connection, not)?
+                                    }
+                                    _ => {}
                                 }
-                                _ => {}
                             }
                         }
                     }
+                    recv(&self.internal_rx) -> msg => {
+                        match msg? {
+                            InternalMessage::SetOptions(options) => {
+                                self.workspace.environment.options = options;
+                                self.store.borrow_mut().parse_directories(&self.workspace.environment.options.includes_directories);
+                            }
+                        }
                 }
             }
         }

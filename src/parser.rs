@@ -2,14 +2,14 @@ use std::str::Utf8Error;
 
 use tree_sitter::Parser;
 
-use crate::fileitem::FileItem;
+use crate::fileitem::Document;
 
 use self::{function_parser::parse_function, include_parser::parse_include};
 
 mod function_parser;
 mod include_parser;
 
-pub fn parse_document(parser: &mut Parser, file_item: &mut FileItem) -> Result<(), Utf8Error> {
+pub fn parse_document(parser: &mut Parser, file_item: &mut Document) -> Result<(), Utf8Error> {
     let tree = parser.parse(&file_item.text, None).unwrap();
     let root_node = tree.root_node();
     let mut cursor = root_node.walk();

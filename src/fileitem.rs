@@ -1,18 +1,18 @@
-use std::collections::{HashMap, HashSet};
+use std::{collections::HashSet, sync::Arc};
 
 use derive_new::new;
 
 use crate::spitem::SPItem;
 
 #[derive(Debug, Default, new)]
-pub struct FileItem {
+pub struct Document {
     pub uri: String,
     pub text: String,
     pub sp_items: Vec<SPItem>,
     pub includes: HashSet<String>,
 }
 
-impl FileItem {
+impl Document {
     fn resolve_import(
         include_text: &String,
         documents: &HashSet<String>,

@@ -5,6 +5,7 @@ use crate::server::Server;
 use lsp_server::Connection;
 
 mod client;
+mod environment;
 mod fileitem;
 mod options;
 mod parser;
@@ -13,6 +14,7 @@ mod server;
 mod spitem;
 mod store;
 mod utils;
+mod workspace;
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     // Note that  we must have our logging only write out to stderr.
@@ -22,7 +24,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     // Create the transport. Includes the stdio (stdin and stdout) versions but this could
     // also be implemented to use sockets or HTTP.
     let (connection, io_threads) = Connection::stdio();
-    Server::new(connection).run()?;
+    Server::new(connection, env::current_dir()?).run()?;
     io_threads.join()?;
 
     // Shut down gracefully.
