@@ -14,6 +14,7 @@ use lsp_types::{
 };
 use serde::{de::DeserializeOwned, Serialize};
 use std::error::Error;
+use threadpool::ThreadPool;
 
 use crate::client::LspClient;
 
@@ -32,6 +33,55 @@ macro_rules! request_match {
     };
 }
 
+#[derive(Clone)]
+struct ServerFork {
+    connection: Arc<Connection>,
+    client: LspClient,
+}
+
+impl ServerFork {
+    pub fn pull_config(&self) -> anyhow::Result<()> {
+        let params = ConfigurationParams {
+            items: vec![ConfigurationItem {
+                section: Some("SourcePawnLanguageServer".to_string()),
+                scope_uri: None,
+            }],
+        };
+        match self.client.send_request::<WorkspaceConfiguration>(params) {
+            Ok(mut json) => {
+                eprintln!("Received config {:?}", json);
+                let value = json.pop().expect("invalid configuration request");
+                Some(self.parse_options(value)?);
+            }
+            Err(why) => {
+                eprintln!("Retrieving configuration failed: {}", why);
+            }
+        };
+
+        Ok(())
+    }
+
+    pub fn parse_options(&self, value: serde_json::Value) -> anyhow::Result<Options> {
+        let options: Option<Options> = match serde_json::from_value(value) {
+            Ok(new_options) => new_options,
+            Err(why) => {
+                self.client.send_notification::<ShowMessage>(
+                    ShowMessageParams {
+                        message: format!(
+                            "The SourcePawnLanguageServer configuration is invalid; using the default settings instead.\nDetails: {why}"
+                        ),
+                        typ: MessageType::WARNING,
+                    },
+                )?;
+
+                None
+            }
+        };
+
+        Ok(options.unwrap_or_default())
+    }
+}
+
 pub struct Server {
     connection: Arc<Connection>,
     client: LspClient,
@@ -39,6 +89,7 @@ pub struct Server {
     store: RefCell<Store>,
     options: Option<Options>,
     next_id: AtomicI32,
+    pool: ThreadPool,
 }
 
 impl Server {
@@ -51,6 +102,7 @@ impl Server {
             store: RefCell::new(Store::new()),
             options: None,
             next_id: AtomicI32::new(1),
+            pool: threadpool::Builder::new().build(),
         }
     }
 
@@ -67,42 +119,59 @@ impl Server {
         let initialization_params = self.connection.initialize(server_capabilities)?;
         eprintln!("Init params {:?}", initialization_params.to_string());
         self.initalize_params = serde_json::from_value(initialization_params).unwrap();
-        self.pull_config()?;
+        self.spawn(move |server| {
+            let _ = server.pull_config();
+        });
         Ok(())
     }
 
+    fn spawn(&self, job: impl FnOnce(ServerFork) + Send + 'static) {
+        let fork = self.fork();
+        self.pool.execute(move || job(fork));
+    }
+
+    fn fork(&self) -> ServerFork {
+        ServerFork {
+            connection: self.connection.clone(),
+            client: self.client.clone(),
+        }
+    }
+
     fn process_messages(&mut self) -> anyhow::Result<()> {
-        for msg in &self.connection.receiver {
-            eprintln!("got msg: {:?}", msg);
-            match msg {
-                Message::Request(req) => {
-                    if self.connection.handle_shutdown(&req)? {
-                        return Ok(());
-                    }
-                    eprintln!("got request: {:?}", req);
-                    match req.method.as_str() {
-                        <Completion as lsp_types::request::Request>::METHOD => {
-                            request_match!(Completion, self.store, self.connection, req);
+        loop {
+            crossbeam_channel::select! {
+                        recv(&self.connection.receiver) -> msg => {
+                    eprintln!("got msg: {:?}", msg);
+                    match msg? {
+                        Message::Request(req) => {
+                            if self.connection.handle_shutdown(&req)? {
+                                return Ok(());
+                            }
+                            eprintln!("got request: {:?}", req);
+                            match req.method.as_str() {
+                                <Completion as lsp_types::request::Request>::METHOD => {
+                                    request_match!(Completion, self.store, self.connection, req);
+                                }
+                                _ => {
+                                    eprintln!("Unhandled request {}", req.method);
+                                }
+                            }
                         }
-                        _ => {
-                            eprintln!("Unhandled request {}", req.method);
+                        Message::Response(resp) => {
+                            // Assume we only receive Options here.
+                            self.client.recv_response(resp)?;
+                            eprintln!("got response");
+                        }
+                        Message::Notification(not) => {
+                            match process_notification(not, &self.connection, &self.store) {
+                                Ok(()) => continue,
+                                Err(err) => eprintln!("An error has occured: {}", err),
+                            };
                         }
                     }
-                }
-                Message::Response(resp) => {
-                    // Assume we only receive Options here.
-                    let options = self.parse_options(resp.result.unwrap());
-                    eprintln!("got response: {:?}", options?);
-                }
-                Message::Notification(not) => {
-                    match process_notification(not, &self.connection, &self.store) {
-                        Ok(()) => continue,
-                        Err(err) => eprintln!("An error has occured: {}", err),
-                    };
                 }
             }
         }
-        Ok(())
     }
 
     pub fn send_request<R>(&self, params: R::Params) -> anyhow::Result<()>
@@ -120,50 +189,6 @@ impl Server {
             .sender
             .send(Request::new(id, R::METHOD.to_string(), params).into())?;
         Ok(())
-    }
-
-    pub fn pull_config(&mut self) -> anyhow::Result<()> {
-        let params = ConfigurationParams {
-            items: vec![ConfigurationItem {
-                section: Some("SourcePawnLanguageServer".to_string()),
-                scope_uri: None,
-            }],
-        };
-        self.send_request::<WorkspaceConfiguration>(params)?;
-        // match self.send_request::<WorkspaceConfiguration>(params) {
-        //     Ok(mut json) => {
-        //         eprintln!("Received config {:?}", json);
-        //         let value = json.pop().expect("invalid configuration request");
-        //         self.options = Some(self.parse_options(value)?);
-        //     }
-        //     Err(why) => {
-        //         eprintln!("Retrieving configuration failed: {}", why);
-        //     }
-        // };
-
-        eprintln!("Received config {:?}", "");
-
-        Ok(())
-    }
-
-    pub fn parse_options(&self, value: serde_json::Value) -> anyhow::Result<Options> {
-        let options: Option<Vec<Options>> = match serde_json::from_value(value) {
-            Ok(new_options) => new_options,
-            Err(why) => {
-                self.client.send_notification::<ShowMessage>(
-                    ShowMessageParams {
-                        message: format!(
-                            "The SourcePawnLanguageServer configuration is invalid; using the default settings instead.\nDetails: {why}"
-                        ),
-                        typ: MessageType::WARNING,
-                    },
-                )?;
-
-                None
-            }
-        };
-
-        Ok(options.unwrap_or_default().pop().unwrap())
     }
 
     pub fn run(mut self) -> anyhow::Result<()> {
