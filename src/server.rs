@@ -1,8 +1,5 @@
 use crate::{options::Options, providers::RequestHandler, store::Store};
-use std::{
-    cell::RefCell,
-    sync::{atomic::AtomicI32, Arc},
-};
+use std::{cell::RefCell, sync::Arc};
 
 use anyhow;
 use lsp_server::{Connection, ExtractError, Message, Request, RequestId};
@@ -12,8 +9,6 @@ use lsp_types::{
     CompletionOptions, ConfigurationItem, ConfigurationParams, InitializeParams, MessageType,
     OneOf, ServerCapabilities, ShowMessageParams, TextDocumentSyncCapability, TextDocumentSyncKind,
 };
-use serde::{de::DeserializeOwned, Serialize};
-use std::error::Error;
 use threadpool::ThreadPool;
 
 use crate::client::LspClient;
@@ -88,7 +83,6 @@ pub struct Server {
     initalize_params: Option<InitializeParams>,
     store: RefCell<Store>,
     options: Option<Options>,
-    next_id: AtomicI32,
     pool: ThreadPool,
 }
 
@@ -101,7 +95,6 @@ impl Server {
             initalize_params: None,
             store: RefCell::new(Store::new()),
             options: None,
-            next_id: AtomicI32::new(1),
             pool: threadpool::Builder::new().build(),
         }
     }
@@ -158,15 +151,16 @@ impl Server {
                             }
                         }
                         Message::Response(resp) => {
-                            // Assume we only receive Options here.
                             self.client.recv_response(resp)?;
-                            eprintln!("got response");
                         }
                         Message::Notification(not) => {
-                            match process_notification(not, &self.connection, &self.store) {
-                                Ok(()) => continue,
-                                Err(err) => eprintln!("An error has occured: {}", err),
-                            };
+                            match not.method.as_str() {
+                                DidOpenTextDocument::METHOD => self.store.borrow_mut().handle_open_document(&self.connection, not)?,
+                                DidChangeTextDocument::METHOD => {
+                                    self.store.borrow_mut().handle_change_document(&self.connection, not)?
+                                }
+                                _ => {}
+                            }
                         }
                     }
                 }
@@ -174,44 +168,11 @@ impl Server {
         }
     }
 
-    pub fn send_request<R>(&self, params: R::Params) -> anyhow::Result<()>
-    where
-        R: lsp_types::request::Request,
-        R::Params: Serialize,
-        R::Result: DeserializeOwned,
-    {
-        let id = RequestId::from(
-            self.next_id
-                .fetch_add(1, std::sync::atomic::Ordering::SeqCst),
-        );
-
-        self.connection
-            .sender
-            .send(Request::new(id, R::METHOD.to_string(), params).into())?;
-        Ok(())
-    }
-
     pub fn run(mut self) -> anyhow::Result<()> {
         self.initialize()?;
         self.process_messages()?;
         Ok(())
     }
-}
-
-fn process_notification(
-    not: lsp_server::Notification,
-    connection: &Connection,
-    store: &RefCell<Store>,
-) -> Result<(), Box<dyn Error>> {
-    eprintln!("got notification: {:?}", not);
-    match not.method.as_str() {
-        DidOpenTextDocument::METHOD => store.borrow_mut().handle_open_document(connection, not)?,
-        DidChangeTextDocument::METHOD => {
-            store.borrow_mut().handle_change_document(connection, not)?
-        }
-        _ => {}
-    }
-    Ok(())
 }
 
 fn cast<R>(req: Request) -> Result<(RequestId, R::Params), ExtractError<Request>>
