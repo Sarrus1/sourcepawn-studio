@@ -36,7 +36,11 @@ impl Store {
         let params: DidOpenTextDocumentParams = n.extract(DidOpenTextDocument::METHOD).unwrap();
         let uri_string = params.text_document.uri.path();
         let text = params.text_document.text;
-        let mut file_item = FileItem::new(uri_string.to_string(), text, vec![]);
+        let mut file_item = FileItem {
+            uri: uri_string.to_string(),
+            text,
+            ..Default::default()
+        };
         match parse_document(&mut self.parser, &mut file_item) {
             Err(err) => eprintln!("Failed to parse {} because of {}", uri_string, err),
             Ok(()) => {}
