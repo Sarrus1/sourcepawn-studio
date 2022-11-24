@@ -1,6 +1,6 @@
 use std::str::Utf8Error;
 
-use tree_sitter::Node;
+use tree_sitter::{Node, QueryCursor, QueryMatch};
 
 use crate::{
     document::Document,
@@ -10,6 +10,8 @@ use crate::{
     },
     utils::ts_range_to_lsp_range,
 };
+
+use super::{variable_parser::parse_variable, VARIABLE_QUERY};
 
 pub fn parse_function(file_item: &mut Document, node: &mut Node) -> Result<(), Utf8Error> {
     // Name of the function
@@ -23,6 +25,8 @@ pub fn parse_function(file_item: &mut Document, node: &mut Node) -> Result<(), U
     // Type of function definition ("native" or "forward")
     let mut definition_type_node: Option<Node> = None;
 
+    let mut block_node: Option<Node> = None;
+
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
         let kind = child.kind();
@@ -35,6 +39,9 @@ pub fn parse_function(file_item: &mut Document, node: &mut Node) -> Result<(), U
             }
             "function_definition_type" => {
                 definition_type_node = Some(child);
+            }
+            "block" => {
+                block_node = Some(child);
             }
             _ => {
                 continue;
@@ -96,6 +103,26 @@ pub fn parse_function(file_item: &mut Document, node: &mut Node) -> Result<(), U
     };
 
     file_item.sp_items.push(SPItem::Function(function_item));
+    match block_node {
+        Some(block_node) => read_body_variables(file_item, block_node, file_item.text.to_string())?,
+        None => {}
+    }
+    Ok(())
+}
 
+fn read_body_variables(
+    file_item: &mut Document,
+    block_node: Node,
+    text: String,
+) -> Result<(), Utf8Error> {
+    let mut cursor = QueryCursor::new();
+    let matches = cursor
+        .matches(&VARIABLE_QUERY, block_node, text.as_bytes())
+        .collect::<Vec<QueryMatch>>();
+    for match_ in matches.iter() {
+        for capture in match_.captures.iter() {
+            parse_variable(file_item, &mut capture.node.clone())?;
+        }
+    }
     Ok(())
 }

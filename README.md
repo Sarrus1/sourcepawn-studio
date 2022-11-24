@@ -20,3 +20,5 @@
   </p>
   <!-- <img src="https://raw.githubusercontent.com/Sarrus1/sourcepawn-lsp/main/img/logo.png" alt="Logo"> -->
 </div>
+
+**This is still a work in progress**
