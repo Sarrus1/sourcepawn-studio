@@ -4,6 +4,7 @@ use std::{
 };
 
 use derive_new::new;
+use lsp_types::Url;
 use tree_sitter::Parser;
 
 use crate::{
@@ -12,11 +13,13 @@ use crate::{
     spitem::SPItem,
 };
 
-#[derive(Debug, Default, Clone, new)]
+#[derive(Debug, Clone, new)]
 pub struct Document {
-    pub uri: String,
+    pub uri: Url,
     pub text: String,
+    #[new(default)]
     pub sp_items: Vec<SPItem>,
+    #[new(default)]
     pub includes: HashSet<String>,
 }
 
@@ -25,7 +28,7 @@ impl Document {
         &mut self,
         environment: &Environment,
         parser: &mut Parser,
-        documents: &HashMap<String, Document>,
+        documents: &HashMap<Url, Document>,
     ) -> Result<(), Utf8Error> {
         let tree = parser.parse(&self.text, None).unwrap();
         let root_node = tree.root_node();

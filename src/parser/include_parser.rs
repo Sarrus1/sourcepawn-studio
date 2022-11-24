@@ -7,7 +7,7 @@ use crate::{document::Document, environment::Environment, utils};
 
 pub fn parse_include(
     environment: &Environment,
-    documents: &HashMap<String, Document>,
+    documents: &HashMap<Url, Document>,
     document: &mut Document,
     node: &mut Node,
 ) -> Result<(), Utf8Error> {
@@ -29,7 +29,7 @@ pub fn parse_include(
 fn resolve_import(
     environment: &Environment,
     include_text: &mut String,
-    documents: &HashMap<String, Document>,
+    documents: &HashMap<Url, Document>,
 ) -> Option<String> {
     let include_directories = &environment.options.includes_directories;
     eprintln!("include_directories {:?}", include_directories);
@@ -38,7 +38,7 @@ fn resolve_import(
         let path = include_directory.clone().join(include_text);
         eprintln!("PATH {:?}", path);
         let uri = Url::from_file_path(path).unwrap();
-        if documents.contains_key(&uri.to_string()) {
+        if documents.contains_key(&uri) {
             return Some(uri.to_string());
         }
     }

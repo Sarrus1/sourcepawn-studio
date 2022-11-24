@@ -1,19 +1,14 @@
-use lazy_static::lazy_static;
-use lsp_types::{
-    notification::{DidChangeTextDocument, DidOpenTextDocument, Notification},
-    CompletionItem, CompletionParams, CompletionResponse, DidChangeTextDocumentParams,
-    DidOpenTextDocumentParams, Url,
-};
+use lsp_types::Url;
 use std::{collections::HashMap, fs, io, path::PathBuf, sync::Arc};
 use tree_sitter::Parser;
 use walkdir::WalkDir;
 
-use crate::{document::Document, environment::Environment, server::Server, spitem::to_completion};
+use crate::{document::Document, environment::Environment};
 
 #[derive(Clone)]
 pub struct Store {
     /// Any documents the server has handled, indexed by their URL
-    pub documents: HashMap<String, Document>,
+    pub documents: HashMap<Url, Document>,
     pub environment: Environment,
 }
 
@@ -30,6 +25,10 @@ impl Store {
         self.documents.values().cloned()
     }
 
+    pub fn get(&self, uri: &Url) -> Option<Document> {
+        self.documents.get(uri).cloned()
+    }
+
     pub fn find_documents(&mut self, base_path: &PathBuf) {
         for entry in WalkDir::new(base_path)
             .follow_links(true)
@@ -39,19 +38,12 @@ impl Store {
             let f_name = entry.file_name().to_string_lossy();
             if f_name.ends_with(".sp") || f_name.ends_with(".inc") {
                 let uri = Url::from_file_path(entry.path()).unwrap();
-                if self.documents.contains_key(&uri.to_string()) {
+                if self.documents.contains_key(&uri) {
                     return;
                 }
                 let text =
                     fs::read_to_string(uri.to_file_path().unwrap()).expect("Failed to read file.");
-                self.documents.insert(
-                    uri.to_string(),
-                    Document {
-                        uri: uri.to_string(),
-                        text,
-                        ..Default::default()
-                    },
-                );
+                self.documents.insert(uri.clone(), Document::new(uri, text));
             }
         }
     }
@@ -68,18 +60,16 @@ impl Store {
 
     pub fn handle_open_document(
         &mut self,
-        uri: &String,
+        uri: Url,
         text: String,
         parser: &mut Parser,
     ) -> Result<(), io::Error> {
-        let mut document = Document {
-            uri: uri.to_string(),
-            text,
-            ..Default::default()
-        };
-        document.parse(&self.environment, parser, &self.documents);
+        let mut document = Document::new(uri.clone(), text);
+        document
+            .parse(&self.environment, parser, &self.documents)
+            .expect("Couldn't parse document");
         eprintln!("{:?}", document.includes);
-        self.documents.insert(uri.to_string(), document);
+        self.documents.insert(uri, document);
 
         Ok(())
     }

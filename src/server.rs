@@ -1,11 +1,11 @@
 use crate::{dispatch, options::Options, providers::FeatureRequest, store::Store};
-use std::{io, path::PathBuf, sync::Arc};
+use std::{path::PathBuf, sync::Arc};
 
 use anyhow;
 use crossbeam_channel::{Receiver, Sender};
-use lsp_server::{Connection, ExtractError, Message, Request, RequestId};
+use lsp_server::{Connection, Message, RequestId};
 use lsp_types::{
-    notification::{DidChangeTextDocument, DidOpenTextDocument, Notification, ShowMessage},
+    notification::{DidOpenTextDocument, ShowMessage},
     request::{Completion, WorkspaceConfiguration},
     CompletionOptions, CompletionParams, ConfigurationItem, ConfigurationParams,
     DidOpenTextDocumentParams, InitializeParams, MessageType, OneOf, ServerCapabilities,
@@ -154,7 +154,8 @@ impl Server {
         let uri = params.text_document.uri;
         let text = params.text_document.text;
         self.store
-            .handle_open_document(&uri.to_string(), text, &mut self.parser);
+            .handle_open_document(uri, text, &mut self.parser)
+            .expect("Couldn't parse file");
 
         Ok(())
     }
@@ -162,13 +163,14 @@ impl Server {
     fn reparse_all(&mut self) -> anyhow::Result<()> {
         for document in self.store.iter().collect::<Vec<_>>() {
             self.store
-                .handle_open_document(&document.uri, document.text, &mut self.parser)?;
+                .handle_open_document(document.uri, document.text, &mut self.parser)
+                .expect("Couldn't parse file");
         }
 
         Ok(())
     }
 
-    fn completion(&self, id: RequestId, mut params: CompletionParams) -> anyhow::Result<()> {
+    fn completion(&self, id: RequestId, params: CompletionParams) -> anyhow::Result<()> {
         let uri = Arc::new(params.text_document_position.text_document.uri.clone());
         self.handle_feature_request(id, params, uri, crate::providers::provide_completions)?;
         Ok(())
@@ -209,7 +211,7 @@ impl Server {
     fn process_messages(&mut self) -> anyhow::Result<()> {
         loop {
             crossbeam_channel::select! {
-                            recv(&self.connection.receiver) -> msg => {
+                recv(&self.connection.receiver) -> msg => {
                         eprintln!("got msg: {:?}", msg);
                         match msg? {
                             Message::Request(request) => {
@@ -239,7 +241,7 @@ impl Server {
                             InternalMessage::SetOptions(options) => {
                                 self.store.environment.options = options;
                                 self.store.parse_directories();
-                                self.reparse_all();
+                                self.reparse_all().expect("Failed to reparse all files.");
                             }
                         }
                 }
@@ -252,12 +254,4 @@ impl Server {
         self.process_messages()?;
         Ok(())
     }
-}
-
-fn cast<R>(req: Request) -> Result<(RequestId, R::Params), ExtractError<Request>>
-where
-    R: lsp_types::request::Request,
-    R::Params: serde::de::DeserializeOwned,
-{
-    req.extract(R::METHOD)
 }
