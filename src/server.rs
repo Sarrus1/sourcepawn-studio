@@ -1,5 +1,5 @@
 use crate::{dispatch, options::Options, providers::FeatureRequest, store::Store, utils};
-use std::{path::PathBuf, sync::Arc};
+use std::{path::PathBuf, sync::Arc, time::Instant};
 
 use anyhow;
 use crossbeam_channel::{Receiver, Sender};
@@ -152,7 +152,9 @@ impl Server {
         }
     }
 
-    fn did_open(&mut self, params: DidOpenTextDocumentParams) -> anyhow::Result<()> {
+    fn did_open(&mut self, mut params: DidOpenTextDocumentParams) -> anyhow::Result<()> {
+        utils::normalize_uri(&mut params.text_document.uri);
+
         let uri = Arc::new(params.text_document.uri);
         let text = params.text_document.text;
         self.store
@@ -186,11 +188,13 @@ impl Server {
     }
 
     fn reparse_all(&mut self) -> anyhow::Result<()> {
+        let now = Instant::now();
         for document in self.store.iter().collect::<Vec<_>>() {
             self.store
                 .handle_open_document(document.uri, document.text, &mut self.parser)
                 .expect("Couldn't parse file");
         }
+        eprintln!("Reparsed all the files in {:.2?}", now.elapsed());
 
         Ok(())
     }

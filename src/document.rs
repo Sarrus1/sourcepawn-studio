@@ -22,6 +22,8 @@ pub struct Document {
     pub sp_items: Vec<SPItem>,
     #[new(default)]
     pub includes: HashSet<String>,
+    #[new(value = "false")]
+    pub parsed: bool,
 }
 
 impl Document {
