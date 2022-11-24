@@ -1,0 +1,55 @@
+name: release
+
+on:
+    release:
+        types: [created]
+
+jobs:
+    release:
+        name: release ${{ matrix.target }}
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - target: x86_64-pc-windows-gnu
+                      archive: zip
+                    - target: x86_64-unknown-linux-musl
+                      archive: tar.gz
+                    - target: x86_64-apple-darwin
+                      archive: tar.gz
+        steps:
+            - uses: actions/checkout@master
+            - name: Compile and release
+              uses: rust-build/rust-build.action@v1.3.2
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  RUSTTARGET: ${{ matrix.target }}
+                  ARCHIVE_TYPES: ${{ matrix.archive }}
+                  # ARCHIVE_NAME: sourcepawn_lsp-${{ github.event.release.tag_name }}-${{ matrix.name }}
+            - name: Add changelog
+              id: changelog
+              uses: mindsers/changelog-reader-action@v2.0.0
+            - name: Edit Release
+              uses: irongut/EditRelease@v1.2.0
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  id: ${{ github.event.release.id }}
+                  body: ${{ steps.changelog.outputs.changes }}
+                  replacebody: true
+
+    cargo:
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: stable
+                  override: true
+            - uses: katyo/publish-crates@v1
+              with:
+                  registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+                  args: --allow-dirty
