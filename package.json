@@ -187,7 +187,7 @@
           "description": "The location of the SourceMod compiler",
           "scope": "resource"
         },
-        "sourcepawn.MainPath": {
+        "SourcePawnLanguageServer.mainPath": {
           "type": "string",
           "description": "The location of the main.sp file, which allows the linter and the compiler to work correctly. You should use this setting per workspace.",
           "scope": "resource"
