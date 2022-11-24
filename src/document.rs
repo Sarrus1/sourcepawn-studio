@@ -21,7 +21,7 @@ pub struct Document {
     #[new(default)]
     pub sp_items: Vec<SPItem>,
     #[new(default)]
-    pub includes: HashSet<String>,
+    pub includes: HashSet<Url>,
     #[new(value = "false")]
     pub parsed: bool,
 }
@@ -55,6 +55,7 @@ impl Document {
                 }
             }
         }
+        self.parsed = true;
 
         Ok(())
     }

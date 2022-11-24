@@ -1,5 +1,10 @@
 use lsp_types::Url;
-use std::{collections::HashMap, fs, io, path::PathBuf, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    fs, io,
+    path::PathBuf,
+    sync::Arc,
+};
 use tree_sitter::Parser;
 use walkdir::WalkDir;
 
@@ -84,7 +89,21 @@ impl Store {
             .parse(&self.environment, parser, &self.documents)
             .expect("Couldn't parse document");
         self.documents.insert(uri, document.clone());
+        self.read_unscanned_imports(&document.includes, parser);
 
         Ok(document)
+    }
+
+    fn read_unscanned_imports(&mut self, includes: &HashSet<Url>, parser: &mut Parser) {
+        for include_uri in includes.iter() {
+            let document = self.get(include_uri).expect("Include does not exist.");
+            if document.parsed {
+                return;
+            }
+            let document = self
+                .handle_open_document(document.uri, document.text, parser)
+                .expect("Couldn't parse file");
+            self.read_unscanned_imports(&document.includes, parser)
+        }
     }
 }

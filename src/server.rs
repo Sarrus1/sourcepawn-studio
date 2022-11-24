@@ -8,7 +8,7 @@ use lsp_types::{
     notification::{DidChangeTextDocument, DidOpenTextDocument, ShowMessage},
     request::{Completion, WorkspaceConfiguration},
     CompletionOptions, CompletionParams, ConfigurationItem, ConfigurationParams,
-    DidChangeTextDocumentParams, DidOpenTextDocumentParams, InitializeParams, MessageType, OneOf,
+    DidChangeTextDocumentParams, DidOpenTextDocumentParams, InitializeParams, MessageType,
     ServerCapabilities, ShowMessageParams, TextDocumentSyncCapability, TextDocumentSyncKind, Url,
 };
 use serde::Serialize;
@@ -118,7 +118,6 @@ impl Server {
             text_document_sync: Some(TextDocumentSyncCapability::Kind(
                 TextDocumentSyncKind::INCREMENTAL,
             )),
-            definition_provider: Some(OneOf::Left(true)),
             completion_provider: Some(CompletionOptions {
                 ..Default::default()
             }),
@@ -188,12 +187,16 @@ impl Server {
     }
 
     fn reparse_all(&mut self) -> anyhow::Result<()> {
+        let main_uri = Url::from_file_path(self.store.environment.options.main_path.clone())
+            .expect("Main Path is invalid");
+        let document = self
+            .store
+            .get(&main_uri)
+            .expect("Main Path does not exist.");
         let now = Instant::now();
-        for document in self.store.iter().collect::<Vec<_>>() {
-            self.store
-                .handle_open_document(document.uri, document.text, &mut self.parser)
-                .expect("Couldn't parse file");
-        }
+        self.store
+            .handle_open_document(document.uri, document.text, &mut self.parser)
+            .expect("Couldn't parse file");
         eprintln!("Reparsed all the files in {:.2?}", now.elapsed());
 
         Ok(())
