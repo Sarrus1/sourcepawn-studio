@@ -18,5 +18,5 @@
     </a>
     <img alt="GitHub" src="https://img.shields.io/github/license/Sarrus1/sourcepawn-lsp">
   </p>
-  <img src="https://raw.githubusercontent.com/Sarrus1/sourcepawn-lsp/main/img/logo.png" alt="Logo">
+  <!-- <img src="https://raw.githubusercontent.com/Sarrus1/sourcepawn-lsp/main/img/logo.png" alt="Logo"> -->
 </div>
