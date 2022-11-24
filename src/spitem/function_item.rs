@@ -1,4 +1,8 @@
-use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Range};
+use std::sync::Arc;
+
+use lsp_types::{
+    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Range, Url,
+};
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a first order SourcePawn function, which can be converted to a
@@ -20,7 +24,7 @@ pub struct FunctionItem {
     pub description: String,
 
     /// Uri of the file where the function is declared.
-    pub uri_string: String,
+    pub uri: Arc<Url>,
 
     /// Whether the function is deprecated.
     pub deprecated: bool,
@@ -60,7 +64,9 @@ pub(crate) fn to_completion(
         .visibility
         .contains(&FunctionVisibility::Static)
     {
-        if params.text_document_position.text_document.uri.to_string() != function_item.uri_string {
+        if params.text_document_position.text_document.uri.to_string()
+            != function_item.uri.to_string()
+        {
             return None;
         }
     }

@@ -88,7 +88,7 @@ pub fn parse_function(file_item: &mut Document, node: &mut Node) -> Result<(), U
         range: ts_range_to_lsp_range(&name_node.range()),
         full_range: ts_range_to_lsp_range(&node.range()),
         description: "".to_string(),
-        uri_string: file_item.uri.to_string(),
+        uri: file_item.uri.clone(),
         deprecated: false,
         detail: "".to_string(),
         visibility,

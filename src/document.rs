@@ -10,7 +10,10 @@ use tree_sitter::Parser;
 
 use crate::{
     environment::Environment,
-    parser::{function_parser::parse_function, include_parser::parse_include},
+    parser::{
+        function_parser::parse_function, include_parser::parse_include,
+        variable_parser::parse_variable,
+    },
     spitem::SPItem,
 };
 
@@ -46,6 +49,9 @@ impl Document {
             match kind {
                 "function_declaration" | "function_definition" => {
                     parse_function(self, &mut node)?;
+                }
+                "global_variable_declaration" | "old_global_variable_declaration" => {
+                    parse_variable(self, &mut node)?;
                 }
                 "preproc_include" | "preproc_tryinclude" => {
                     parse_include(environment, documents, self, &mut node)?;

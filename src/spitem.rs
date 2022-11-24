@@ -4,19 +4,20 @@ use lsp_types::{CompletionItem, CompletionParams, Url};
 
 use crate::{document::Document, store::Store};
 
-use self::function_item::FunctionItem;
-
 pub mod function_item;
+pub mod variable_item;
 
 #[derive(Debug, Clone)]
 /// Generic representation of an item, which can be converted to a
 /// [CompletionItem](lsp_types::CompletionItem), [Location](lsp_types::Location), etc.
 pub enum SPItem {
-    Function(FunctionItem),
+    Function(function_item::FunctionItem),
+    Variable(variable_item::VariableItem),
 }
 
 pub fn to_completion(sp_item: &SPItem, params: &CompletionParams) -> Option<CompletionItem> {
     match sp_item {
+        SPItem::Variable(variable_item) => variable_item::to_completion(variable_item, params),
         SPItem::Function(function_item) => function_item::to_completion(function_item, params),
     }
 }
