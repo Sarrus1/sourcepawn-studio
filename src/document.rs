@@ -1,6 +1,7 @@
 use std::{
     collections::{HashMap, HashSet},
     str::Utf8Error,
+    sync::Arc,
 };
 
 use derive_new::new;
@@ -15,7 +16,7 @@ use crate::{
 
 #[derive(Debug, Clone, new)]
 pub struct Document {
-    pub uri: Url,
+    pub uri: Arc<Url>,
     pub text: String,
     #[new(default)]
     pub sp_items: Vec<SPItem>,
@@ -24,11 +25,15 @@ pub struct Document {
 }
 
 impl Document {
+    pub fn text(&self) -> &str {
+        &self.text
+    }
+
     pub fn parse(
         &mut self,
         environment: &Environment,
         parser: &mut Parser,
-        documents: &HashMap<Url, Document>,
+        documents: &HashMap<Arc<Url>, Document>,
     ) -> Result<(), Utf8Error> {
         let tree = parser.parse(&self.text, None).unwrap();
         let root_node = tree.root_node();

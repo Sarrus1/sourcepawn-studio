@@ -1,20 +1,8 @@
 use std::env;
 use std::error::Error;
 
-use crate::server::Server;
 use lsp_server::Connection;
-
-mod client;
-mod dispatch;
-mod document;
-mod environment;
-mod options;
-mod parser;
-mod providers;
-mod server;
-mod spitem;
-mod store;
-mod utils;
+use sourcepawn_lsp::Server;
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     // Note that  we must have our logging only write out to stderr.

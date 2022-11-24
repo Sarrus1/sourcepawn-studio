@@ -8,7 +8,7 @@ use crate::{document::Document, environment::Environment};
 #[derive(Clone)]
 pub struct Store {
     /// Any documents the server has handled, indexed by their URL
-    pub documents: HashMap<Url, Document>,
+    pub documents: HashMap<Arc<Url>, Document>,
     pub environment: Environment,
 }
 
@@ -29,6 +29,20 @@ impl Store {
         self.documents.get(uri).cloned()
     }
 
+    pub fn load(&mut self, path: PathBuf, parser: &mut Parser) -> anyhow::Result<Option<Document>> {
+        let uri = Arc::new(Url::from_file_path(path.clone()).unwrap());
+
+        if let Some(document) = self.get(&uri) {
+            return Ok(Some(document));
+        }
+
+        let data = fs::read(&path)?;
+        let text = String::from_utf8_lossy(&data).into_owned();
+        let document = self.handle_open_document(uri, text, parser)?;
+
+        Ok(Some(document))
+    }
+
     pub fn find_documents(&mut self, base_path: &PathBuf) {
         for entry in WalkDir::new(base_path)
             .follow_links(true)
@@ -43,7 +57,8 @@ impl Store {
                 }
                 let text =
                     fs::read_to_string(uri.to_file_path().unwrap()).expect("Failed to read file.");
-                self.documents.insert(uri.clone(), Document::new(uri, text));
+                let document = Document::new(Arc::new(uri.clone()), text);
+                self.documents.insert(Arc::new(uri), document);
             }
         }
     }
@@ -60,21 +75,16 @@ impl Store {
 
     pub fn handle_open_document(
         &mut self,
-        uri: Url,
+        uri: Arc<Url>,
         text: String,
         parser: &mut Parser,
-    ) -> Result<(), io::Error> {
+    ) -> Result<Document, io::Error> {
         let mut document = Document::new(uri.clone(), text);
         document
             .parse(&self.environment, parser, &self.documents)
             .expect("Couldn't parse document");
-        eprintln!("{:?}", document.includes);
-        self.documents.insert(uri, document);
+        self.documents.insert(uri, document.clone());
 
-        Ok(())
-    }
-
-    pub fn handle_change_document(&mut self, n: lsp_server::Notification) -> Result<(), io::Error> {
-        Ok(())
+        Ok(document)
     }
 }

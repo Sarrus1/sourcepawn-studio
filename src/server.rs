@@ -1,15 +1,15 @@
-use crate::{dispatch, options::Options, providers::FeatureRequest, store::Store};
+use crate::{dispatch, options::Options, providers::FeatureRequest, store::Store, utils};
 use std::{path::PathBuf, sync::Arc};
 
 use anyhow;
 use crossbeam_channel::{Receiver, Sender};
 use lsp_server::{Connection, Message, RequestId};
 use lsp_types::{
-    notification::{DidOpenTextDocument, ShowMessage},
+    notification::{DidChangeTextDocument, DidOpenTextDocument, ShowMessage},
     request::{Completion, WorkspaceConfiguration},
     CompletionOptions, CompletionParams, ConfigurationItem, ConfigurationParams,
-    DidOpenTextDocumentParams, InitializeParams, MessageType, OneOf, ServerCapabilities,
-    ShowMessageParams, TextDocumentSyncCapability, TextDocumentSyncKind, Url,
+    DidChangeTextDocumentParams, DidOpenTextDocumentParams, InitializeParams, MessageType, OneOf,
+    ServerCapabilities, ShowMessageParams, TextDocumentSyncCapability, TextDocumentSyncKind, Url,
 };
 use serde::Serialize;
 use threadpool::ThreadPool;
@@ -115,7 +115,9 @@ impl Server {
 
     fn initialize(&mut self) -> anyhow::Result<()> {
         let server_capabilities = serde_json::to_value(&ServerCapabilities {
-            text_document_sync: Some(TextDocumentSyncCapability::Kind(TextDocumentSyncKind::FULL)),
+            text_document_sync: Some(TextDocumentSyncCapability::Kind(
+                TextDocumentSyncKind::INCREMENTAL,
+            )),
             definition_provider: Some(OneOf::Left(true)),
             completion_provider: Some(CompletionOptions {
                 ..Default::default()
@@ -151,11 +153,34 @@ impl Server {
     }
 
     fn did_open(&mut self, params: DidOpenTextDocumentParams) -> anyhow::Result<()> {
-        let uri = params.text_document.uri;
+        let uri = Arc::new(params.text_document.uri);
         let text = params.text_document.text;
         self.store
             .handle_open_document(uri, text, &mut self.parser)
             .expect("Couldn't parse file");
+
+        Ok(())
+    }
+
+    fn did_change(&mut self, mut params: DidChangeTextDocumentParams) -> anyhow::Result<()> {
+        utils::normalize_uri(&mut params.text_document.uri);
+
+        let uri = Arc::new(params.text_document.uri.clone());
+
+        match self.store.get(&uri) {
+            Some(old_document) => {
+                let mut text = old_document.text().to_string();
+                utils::apply_document_edit(&mut text, params.content_changes);
+                self.store
+                    .handle_open_document(uri, text, &mut self.parser)?;
+            }
+            None => match uri.to_file_path() {
+                Ok(path) => {
+                    self.store.load(path, &mut self.parser)?;
+                }
+                Err(_) => return Ok(()),
+            },
+        };
 
         Ok(())
     }
@@ -231,7 +256,7 @@ impl Server {
                             Message::Notification(notification) => {
                                 dispatch::NotificationDispatcher::new(notification)
                                 .on::<DidOpenTextDocument, _>(|params| self.did_open(params))?
-                                // .on::<DidChangeTextDocument, _>(|params| self.did_change(params))?
+                                .on::<DidChangeTextDocument, _>(|params| self.did_change(params))?
                                 .default();
                                 }
                         }

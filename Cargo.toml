@@ -1,7 +1,14 @@
 [package]
-name = "sourcepawn-lsp"
+name = "sourcepawn_lsp"
 version = "0.1.0"
 edition = "2021"
+
+[[bin]]
+name = "sourcepawn_lsp"
+test = false
+
+[lib]
+doctest = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -20,3 +27,4 @@ dashmap = "5.4.0"
 threadpool = "1.8.1"
 walkdir = "2.3.2"
 log = "0.4.17"
+rowan = "0.15.10"
