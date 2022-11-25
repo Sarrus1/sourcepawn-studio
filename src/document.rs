@@ -22,7 +22,7 @@ pub struct Document {
     pub uri: Arc<Url>,
     pub text: String,
     #[new(default)]
-    pub sp_items: Vec<SPItem>,
+    pub sp_items: Vec<Arc<SPItem>>,
     #[new(default)]
     pub includes: HashSet<Url>,
     #[new(value = "false")]
@@ -51,7 +51,7 @@ impl Document {
                     parse_function(self, &mut node)?;
                 }
                 "global_variable_declaration" | "old_global_variable_declaration" => {
-                    parse_variable(self, &mut node)?;
+                    parse_variable(self, &mut node, None)?;
                 }
                 "preproc_include" | "preproc_tryinclude" => {
                     parse_include(environment, documents, self, &mut node)?;

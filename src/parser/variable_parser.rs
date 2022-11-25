@@ -1,17 +1,21 @@
-use std::str::Utf8Error;
+use std::{str::Utf8Error, sync::Arc};
 
 use tree_sitter::Node;
 
 use crate::{
     document::Document,
     spitem::{
-        variable_item::{VariableItem, VariableVisibility},
+        variable_item::{self, VariableItem, VariableVisibility},
         SPItem,
     },
     utils::ts_range_to_lsp_range,
 };
 
-pub fn parse_variable(file_item: &mut Document, node: &mut Node) -> Result<(), Utf8Error> {
+pub fn parse_variable(
+    file_item: &mut Document,
+    node: &mut Node,
+    parent: Option<Arc<SPItem>>,
+) -> Result<(), Utf8Error> {
     let mut cursor = node.walk();
     // Type of the variable
     let type_node = node.child_by_field_name("type");
@@ -63,8 +67,10 @@ pub fn parse_variable(file_item: &mut Document, node: &mut Node) -> Result<(), U
                     deprecated: false,
                     detail: "".to_string(),
                     visibility: visibility.clone(),
+                    parent: parent.clone(),
                 };
-                file_item.sp_items.push(SPItem::Variable(variable_item));
+                let variable_item = Arc::new(SPItem::Variable(variable_item));
+                file_item.sp_items.push(variable_item);
             }
             _ => {}
         }

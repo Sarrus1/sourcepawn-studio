@@ -202,7 +202,8 @@ impl Server {
         Ok(())
     }
 
-    fn completion(&self, id: RequestId, params: CompletionParams) -> anyhow::Result<()> {
+    fn completion(&self, id: RequestId, mut params: CompletionParams) -> anyhow::Result<()> {
+        utils::normalize_uri(&mut params.text_document_position.text_document.uri);
         let uri = Arc::new(params.text_document_position.text_document.uri.clone());
         self.handle_feature_request(id, params, uri, crate::providers::provide_completions)?;
         Ok(())

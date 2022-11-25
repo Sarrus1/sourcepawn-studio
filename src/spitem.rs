@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, sync::Arc};
 
 use lsp_types::{CompletionItem, CompletionParams, Url};
 
@@ -17,12 +17,12 @@ pub enum SPItem {
 
 pub fn to_completion(sp_item: &SPItem, params: &CompletionParams) -> Option<CompletionItem> {
     match sp_item {
-        SPItem::Variable(variable_item) => variable_item::to_completion(variable_item, params),
+        SPItem::Variable(variable_item) => variable_item.to_completion(params),
         SPItem::Function(function_item) => function_item::to_completion(function_item, params),
     }
 }
 
-pub fn get_all_items(store: &Store, main_path_uri: Url) -> Vec<SPItem> {
+pub fn get_all_items(store: &Store, main_path_uri: Url) -> Vec<Arc<SPItem>> {
     let mut includes: HashSet<Url> = HashSet::new();
     includes.insert(main_path_uri.clone());
     let mut all_items = vec![];

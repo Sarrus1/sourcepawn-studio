@@ -1,11 +1,11 @@
-use std::str::Utf8Error;
+use std::{str::Utf8Error, sync::Arc};
 
 use tree_sitter::{Node, QueryCursor, QueryMatch};
 
 use crate::{
     document::Document,
     spitem::{
-        function_item::{FunctionDefinitionType, FunctionItem, FunctionVisibility},
+        function_item::{self, FunctionDefinitionType, FunctionItem, FunctionVisibility},
         SPItem,
     },
     utils::ts_range_to_lsp_range,
@@ -89,7 +89,7 @@ pub fn parse_function(file_item: &mut Document, node: &mut Node) -> Result<(), U
         }
     }
 
-    let function_item = FunctionItem {
+    let mut function_item = FunctionItem {
         name: name?.to_string(),
         type_: type_?.to_string(),
         range: ts_range_to_lsp_range(&name_node.range()),
@@ -101,12 +101,18 @@ pub fn parse_function(file_item: &mut Document, node: &mut Node) -> Result<(), U
         visibility,
         definition_type,
     };
-
-    file_item.sp_items.push(SPItem::Function(function_item));
+    let function_item = Arc::new(SPItem::Function(function_item));
     match block_node {
-        Some(block_node) => read_body_variables(file_item, block_node, file_item.text.to_string())?,
+        Some(block_node) => read_body_variables(
+            file_item,
+            block_node,
+            file_item.text.to_string(),
+            function_item.clone(),
+        )?,
         None => {}
     }
+    file_item.sp_items.push(function_item);
+
     Ok(())
 }
 
@@ -114,6 +120,7 @@ fn read_body_variables(
     file_item: &mut Document,
     block_node: Node,
     text: String,
+    function_item: Arc<SPItem>,
 ) -> Result<(), Utf8Error> {
     let mut cursor = QueryCursor::new();
     let matches = cursor
@@ -121,7 +128,11 @@ fn read_body_variables(
         .collect::<Vec<QueryMatch>>();
     for match_ in matches.iter() {
         for capture in match_.captures.iter() {
-            parse_variable(file_item, &mut capture.node.clone())?;
+            parse_variable(
+                file_item,
+                &mut capture.node.clone(),
+                Some(function_item.clone()),
+            )?;
         }
     }
     Ok(())
