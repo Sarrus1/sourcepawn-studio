@@ -4,6 +4,8 @@ use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Range, Url,
 };
 
+use crate::document::Documentation;
+
 #[derive(Debug, Clone)]
 /// SPItem representation of a first order SourcePawn function, which can be converted to a
 /// [CompletionItem](lsp_types::CompletionItem), [Location](lsp_types::Location), etc.
@@ -20,14 +22,11 @@ pub struct FunctionItem {
     /// Range of the whole function, including its block.
     pub full_range: Range,
 
-    /// Description of the function.
-    pub description: String,
+    /// Documentation of the function.
+    pub documentation: Documentation,
 
     /// Uri of the file where the function is declared.
     pub uri: Arc<Url>,
-
-    /// Whether the function is deprecated.
-    pub deprecated: bool,
 
     /// Full function signature.
     pub detail: String,
@@ -39,6 +38,12 @@ pub struct FunctionItem {
     pub definition_type: FunctionDefinitionType,
     // params: VariableItem[];
     // references: Location[];
+}
+
+impl FunctionItem {
+    fn is_deprecated(&self) -> bool {
+        self.documentation.deprecated.is_some()
+    }
 }
 
 /// Return a [CompletionItem](lsp_types::CompletionItem) from a [FunctionItem].
@@ -54,7 +59,7 @@ pub(crate) fn to_completion(
     params: &CompletionParams,
 ) -> Option<CompletionItem> {
     let mut tags = vec![];
-    if function_item.deprecated {
+    if function_item.is_deprecated() {
         tags.push(CompletionItemTag::DEPRECATED);
     }
 
@@ -75,6 +80,8 @@ pub(crate) fn to_completion(
         label: function_item.name.to_string(),
         kind: Some(CompletionItemKind::FUNCTION),
         tags: Some(tags),
+        detail: Some(function_item.type_.to_string()),
+        deprecated: Some(function_item.is_deprecated()),
         ..Default::default()
     })
 }

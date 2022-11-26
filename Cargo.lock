@@ -420,6 +420,7 @@ dependencies = [
  "log",
  "lsp-server",
  "lsp-types",
+ "regex",
  "rowan",
  "serde",
  "serde_json",

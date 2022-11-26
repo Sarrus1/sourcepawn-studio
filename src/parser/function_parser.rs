@@ -3,7 +3,7 @@ use std::{str::Utf8Error, sync::Arc};
 use tree_sitter::{Node, QueryCursor, QueryMatch};
 
 use crate::{
-    document::Document,
+    document::{find_doc, Document},
     spitem::{
         function_item::{FunctionDefinitionType, FunctionItem, FunctionVisibility},
         variable_item::{VariableItem, VariableStorageClass},
@@ -14,7 +14,12 @@ use crate::{
 
 use super::{variable_parser::parse_variable, VARIABLE_QUERY};
 
-pub fn parse_function(file_item: &mut Document, node: &mut Node) -> Result<(), Utf8Error> {
+pub fn parse_function(
+    file_item: &mut Document,
+    node: &mut Node,
+    comments: &mut Vec<Node>,
+    deprecated: &mut Vec<Node>,
+) -> Result<(), Utf8Error> {
     // Name of the function
     let name_node = node.child_by_field_name("name");
     // Return type of the function
@@ -89,15 +94,20 @@ pub fn parse_function(file_item: &mut Document, node: &mut Node) -> Result<(), U
             _ => FunctionDefinitionType::None,
         }
     }
+    let documentation = find_doc(
+        comments,
+        deprecated,
+        node.start_position().row,
+        &file_item.text,
+    )?;
 
     let function_item = FunctionItem {
         name: name?.to_string(),
         type_: type_?.to_string(),
         range: ts_range_to_lsp_range(&name_node.range()),
         full_range: ts_range_to_lsp_range(&node.range()),
-        description: "".to_string(),
+        documentation,
         uri: file_item.uri.clone(),
-        deprecated: false,
         detail: "".to_string(),
         visibility,
         definition_type,
