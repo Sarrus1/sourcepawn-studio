@@ -5,7 +5,7 @@ use tree_sitter::Node;
 use crate::{
     document::Document,
     spitem::{
-        variable_item::{self, VariableItem, VariableStorageClass, VariableVisibility},
+        variable_item::{VariableItem, VariableStorageClass, VariableVisibility},
         SPItem,
     },
     utils::ts_range_to_lsp_range,

@@ -117,7 +117,7 @@ pub fn parse_function(file_item: &mut Document, node: &mut Node) -> Result<(), U
         params_node,
         file_item.text.to_string(),
         function_item.clone(),
-    );
+    )?;
     file_item.sp_items.push(function_item);
 
     Ok(())

@@ -4,8 +4,6 @@ use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Range, Url,
 };
 
-use super::SPItem;
-
 #[derive(Debug, Clone)]
 /// SPItem representation of a first order SourcePawn function, which can be converted to a
 /// [CompletionItem](lsp_types::CompletionItem), [Location](lsp_types::Location), etc.
