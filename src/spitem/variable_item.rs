@@ -32,6 +32,10 @@ pub struct VariableItem {
 
     /// Visibility of the variable.
     pub visibility: Vec<VariableVisibility>,
+
+    /// Visibility of the variable.
+    pub storage_class: Vec<VariableStorageClass>,
+
     // references: Location[];
     pub parent: Option<Arc<SPItem>>,
 }
@@ -81,8 +85,14 @@ impl VariableItem {
 #[derive(Debug, PartialEq, Clone)]
 pub enum VariableVisibility {
     Public,
-    Static,
     Stock,
+}
+
+/// Storage class of a SourcePawn variable.
+#[derive(Debug, PartialEq, Clone)]
+pub enum VariableStorageClass {
+    Const,
+    Static,
 }
 
 fn range_contains_pos(range: Range, position: Position) -> bool {

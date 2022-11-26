@@ -5,7 +5,7 @@ use tree_sitter::Node;
 use crate::{
     document::Document,
     spitem::{
-        variable_item::{self, VariableItem, VariableVisibility},
+        variable_item::{self, VariableItem, VariableStorageClass, VariableVisibility},
         SPItem,
     },
     utils::ts_range_to_lsp_range,
@@ -19,12 +19,15 @@ pub fn parse_variable(
     let mut cursor = node.walk();
     // Type of the variable
     let type_node = node.child_by_field_name("type");
-    // Visibility of the variable (public, static, stock)
+    // Visibility of the variable (public, stock)
     let mut visibility: Vec<VariableVisibility> = vec![];
+    // Storage class of the variable (public, stock)
+    let mut storage_class: Vec<VariableStorageClass> = vec![];
+
     for child in node.children(&mut cursor) {
         let kind = child.kind();
         match kind {
-            "variable_storage_class" => {
+            "variable_visibility" => {
                 let visibility_text = child.utf8_text(&file_item.text.as_bytes())?;
                 if visibility_text.contains("stock") {
                     visibility.push(VariableVisibility::Stock);
@@ -32,8 +35,14 @@ pub fn parse_variable(
                 if visibility_text.contains("public") {
                     visibility.push(VariableVisibility::Public);
                 }
-                if visibility_text.contains("static") {
-                    visibility.push(VariableVisibility::Static);
+            }
+            "variable_storage_class" => {
+                let storage_class_text = child.utf8_text(&file_item.text.as_bytes())?;
+                if storage_class_text.contains("const") {
+                    storage_class.push(VariableStorageClass::Const);
+                }
+                if storage_class_text.contains("static") {
+                    storage_class.push(VariableStorageClass::Static);
                 }
             }
             "variable_declaration" | "old_variable_declaration" => {
@@ -67,6 +76,7 @@ pub fn parse_variable(
                     deprecated: false,
                     detail: "".to_string(),
                     visibility: visibility.clone(),
+                    storage_class: storage_class.clone(),
                     parent: parent.clone(),
                 };
                 let variable_item = Arc::new(SPItem::Variable(variable_item));
