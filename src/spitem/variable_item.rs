@@ -4,6 +4,8 @@ use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Position, Range, Url,
 };
 
+use crate::document::Description;
+
 use super::SPItem;
 
 #[derive(Debug, Clone)]
@@ -18,14 +20,11 @@ pub struct VariableItem {
     /// Range of the name of the variable.
     pub range: Range,
 
-    /// Description of the variable.
-    pub description: String,
+    /// Documentation of the variable.
+    pub documentation: Description,
 
     /// Uri of the file where the variable is declared.
     pub uri: Arc<Url>,
-
-    /// Whether the variable is deprecated.
-    pub deprecated: bool,
 
     /// Full variable signature.
     pub detail: String,
@@ -51,7 +50,7 @@ impl VariableItem {
     /// * `params` - [CompletionParams](lsp_types::CompletionParams) of the request.
     pub(crate) fn to_completion(&self, params: &CompletionParams) -> Option<CompletionItem> {
         let mut tags = vec![];
-        if self.deprecated {
+        if self.documentation.deprecated.is_some() {
             tags.push(CompletionItemTag::DEPRECATED);
         }
         if self.parent.is_some() {
@@ -95,12 +94,12 @@ pub enum VariableStorageClass {
     Static,
 }
 
-fn range_contains_pos(range: Range, position: Position) -> bool {
+pub fn range_contains_pos(range: Range, position: Position) -> bool {
     if range.start.line < position.line && range.end.line > position.line {
         return true;
     }
     if range.start.character <= position.character && range.end.character >= position.character {
-        return false;
+        return true;
     }
     if range.start.line == position.line || range.end.line == position.line {
         return true;

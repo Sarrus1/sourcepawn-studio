@@ -4,7 +4,7 @@ use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Range, Url,
 };
 
-use crate::document::Documentation;
+use crate::document::Description;
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a first order SourcePawn function, which can be converted to a
@@ -23,7 +23,7 @@ pub struct FunctionItem {
     pub full_range: Range,
 
     /// Documentation of the function.
-    pub documentation: Documentation,
+    pub documentation: Description,
 
     /// Uri of the file where the function is declared.
     pub uri: Arc<Url>,

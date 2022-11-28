@@ -3,7 +3,7 @@ use std::{str::Utf8Error, sync::Arc};
 use tree_sitter::{Node, QueryCursor, QueryMatch};
 
 use crate::{
-    document::{find_doc, Document},
+    document::{find_doc, Description, Document},
     spitem::{
         function_item::{FunctionDefinitionType, FunctionItem, FunctionVisibility},
         variable_item::{VariableItem, VariableStorageClass},
@@ -193,9 +193,8 @@ fn read_function_parameters(
             name: name.to_string(),
             type_: type_.to_string(),
             range: ts_range_to_lsp_range(&name_node.range()),
-            description: "".to_string(),
+            documentation: Description::default(),
             uri: file_item.uri.clone(),
-            deprecated: false,
             detail: detail.to_string(),
             visibility: vec![],
             storage_class,

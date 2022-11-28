@@ -132,6 +132,7 @@ impl LineIndex {
         }
     }
 
+    #[allow(dead_code)]
     pub fn lines(&self, range: TextRange) -> impl Iterator<Item = TextRange> + '_ {
         let lo = partition_point(&self.newlines, |&it| it < range.start());
         let hi = partition_point(&self.newlines, |&it| it <= range.end());
