@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use lsp_types::{CompletionItem, CompletionItemKind, CompletionParams, Location, Range, Url};
+use lsp_types::{
+    CompletionItem, CompletionItemKind, CompletionParams, Hover, HoverContents, HoverParams,
+    LanguageString, Location, MarkedString, Range, Url,
+};
 
 use crate::{providers::hover::description::Description, utils::uri_to_file_name};
 
@@ -42,6 +45,33 @@ impl EnumItem {
             kind: Some(CompletionItemKind::ENUM),
             detail: uri_to_file_name(&self.uri),
             ..Default::default()
+        })
+    }
+
+    /// Return a [Hover] from an [EnumItem].
+    ///
+    /// # Arguments
+    ///
+    /// * `_params` - [HoverParams] of the request.
+    pub(crate) fn to_hover(&self, _params: &HoverParams) -> Option<Hover> {
+        Some(Hover {
+            contents: HoverContents::Array(vec![
+                self.formatted_text(),
+                MarkedString::String(self.description.to_md()),
+            ]),
+            range: None,
+        })
+    }
+
+    /// Formatted representation of the enum.
+    ///
+    /// # Exemple
+    ///
+    /// `enum Action`
+    fn formatted_text(&self) -> MarkedString {
+        MarkedString::LanguageString(LanguageString {
+            language: "sourcepawn".to_string(),
+            value: format!("enum {}", self.name),
         })
     }
 }

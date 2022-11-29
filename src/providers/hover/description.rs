@@ -1,5 +1,4 @@
 use lazy_static::lazy_static;
-use lsp_types::MarkupContent;
 use regex::Regex;
 
 #[derive(Debug, Clone, Default)]
@@ -9,7 +8,7 @@ pub struct Description {
 }
 
 impl Description {
-    fn documentation_to_md(&self) -> String {
+    pub fn to_md(&self) -> String {
         lazy_static! {
             static ref RE1: Regex = Regex::new(r"^\*<").unwrap();
             static ref RE2: Regex = Regex::new(r"\*\s*\r?\n\s*\*").unwrap();
@@ -34,12 +33,5 @@ impl Description {
         let text = text.replace("DEPRECATED", "\n\n**DEPRECATED**");
 
         return text;
-    }
-
-    pub fn description_to_md(&self) -> MarkupContent {
-        MarkupContent {
-            kind: lsp_types::MarkupKind::Markdown,
-            value: self.documentation_to_md(),
-        }
     }
 }

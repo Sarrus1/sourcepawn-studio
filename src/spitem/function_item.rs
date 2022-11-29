@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Location, Range, Url,
+    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Hover, HoverContents,
+    HoverParams, LanguageString, Location, MarkedString, Range, Url,
 };
 
 use crate::providers::hover::description::Description;
@@ -75,6 +76,33 @@ impl FunctionItem {
             detail: Some(self.type_.to_string()),
             deprecated: Some(self.is_deprecated()),
             ..Default::default()
+        })
+    }
+
+    /// Return a [Hover] from a [FunctionItem].
+    ///
+    /// # Arguments
+    ///
+    /// * `_params` - [HoverParams] of the request.
+    pub(crate) fn to_hover(&self, _params: &HoverParams) -> Option<Hover> {
+        Some(Hover {
+            contents: HoverContents::Array(vec![
+                self.formatted_text(),
+                MarkedString::String(self.description.to_md()),
+            ]),
+            range: None,
+        })
+    }
+
+    /// Formatted representation of a [FunctionItem].
+    ///
+    /// # Exemple
+    ///
+    /// `void OnPluginStart()`
+    fn formatted_text(&self) -> MarkedString {
+        MarkedString::LanguageString(LanguageString {
+            language: "sourcepawn".to_string(),
+            value: format!("{} {}()", self.type_, self.name),
         })
     }
 }

@@ -1,6 +1,8 @@
 use std::{collections::HashSet, sync::Arc};
 
-use lsp_types::{CompletionItem, CompletionParams, Location, Position, Range, Url};
+use lsp_types::{
+    CompletionItem, CompletionParams, Hover, HoverParams, Location, Position, Range, Url,
+};
 
 use crate::{
     document::Document, providers::hover::description::Description, store::Store,
@@ -51,7 +53,7 @@ fn get_included_files(store: &Store, document: Document, includes: &mut HashSet<
     }
 }
 
-pub fn get_item_from_position(store: &Store, position: Position, uri: Url) -> Option<Arc<SPItem>> {
+pub fn get_item_from_position(store: &Store, position: Position, uri: &Url) -> Option<Arc<SPItem>> {
     let all_items = get_all_items(store);
     for item in all_items.iter() {
         match item.range() {
@@ -131,6 +133,15 @@ impl SPItem {
             SPItem::Function(item) => item.to_completion(params),
             SPItem::Enum(item) => item.to_completion(params),
             SPItem::EnumMember(item) => item.to_completion(params),
+        }
+    }
+
+    pub fn to_hover(&self, params: &HoverParams) -> Option<Hover> {
+        match self {
+            SPItem::Variable(item) => item.to_hover(params),
+            SPItem::Function(item) => item.to_hover(params),
+            SPItem::Enum(item) => item.to_hover(params),
+            SPItem::EnumMember(item) => item.to_hover(params),
         }
     }
 }
