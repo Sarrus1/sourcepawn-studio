@@ -1,6 +1,6 @@
 use std::{collections::HashSet, sync::Arc};
 
-use lsp_types::{CompletionItem, CompletionParams, Position, Range, Url};
+use lsp_types::{CompletionItem, CompletionParams, Location, Position, Range, Url};
 
 use crate::{document::Document, providers::hover::description::Description, store::Store};
 
@@ -53,13 +53,23 @@ fn get_included_files(store: &Store, document: Document, includes: &mut HashSet<
     }
 }
 
-pub fn get_item_from_position(store: &Store, pos: Position) -> Option<Arc<SPItem>> {
+pub fn get_item_from_position(store: &Store, position: Position, uri: Url) -> Option<Arc<SPItem>> {
     let all_items = get_all_items(store);
     for item in all_items.iter() {
         match item.range() {
             Some(range) => {
-                if range_contains_pos(range, pos) {
+                if range_contains_pos(range, position) && item.uri().as_ref().eq(&uri) {
                     return Some(item.clone());
+                }
+            }
+            None => {}
+        }
+        match item.references() {
+            Some(references) => {
+                for reference in references.iter() {
+                    if range_contains_pos(reference.range, position) && reference.uri.eq(&uri) {
+                        return Some(item.clone());
+                    }
                 }
             }
             None => {
@@ -90,6 +100,20 @@ impl SPItem {
         match self {
             SPItem::Variable(item) => Some(item.description.clone()),
             SPItem::Function(item) => Some(item.description.clone()),
+        }
+    }
+
+    pub fn uri(&self) -> Arc<Url> {
+        match self {
+            SPItem::Variable(item) => item.uri.clone(),
+            SPItem::Function(item) => item.uri.clone(),
+        }
+    }
+
+    pub fn references(&self) -> Option<&Vec<Location>> {
+        match self {
+            SPItem::Variable(item) => Some(&item.references),
+            SPItem::Function(item) => Some(&item.references),
         }
     }
 }
