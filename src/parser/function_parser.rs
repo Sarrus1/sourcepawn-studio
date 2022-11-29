@@ -112,6 +112,7 @@ pub fn parse_function(
         detail: "".to_string(),
         visibility,
         definition_type,
+        references: vec![],
     };
     let function_item = Arc::new(SPItem::Function(function_item));
     match block_node {
@@ -200,6 +201,7 @@ fn read_function_parameters(
             visibility: vec![],
             storage_class,
             parent: Some(function_item.clone()),
+            references: vec![],
         };
         let variable_item = Arc::new(SPItem::Variable(variable_item));
         file_item.sp_items.push(variable_item);

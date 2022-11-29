@@ -78,6 +78,7 @@ pub fn parse_variable(
                     visibility: visibility.clone(),
                     storage_class: storage_class.clone(),
                     parent: parent.clone(),
+                    references: vec![],
                 };
                 let variable_item = Arc::new(SPItem::Variable(variable_item));
                 file_item.sp_items.push(variable_item);

@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Position, Range, Url,
+    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Location, Position,
+    Range, Url,
 };
 
 use crate::providers::hover::description::Description;
@@ -35,7 +36,10 @@ pub struct VariableItem {
     /// Visibility of the variable.
     pub storage_class: Vec<VariableStorageClass>,
 
-    // references: Location[];
+    /// References to this variable.
+    pub references: Vec<Location>,
+
+    /// Parent of this variable, if it is not global.
     pub parent: Option<Arc<SPItem>>,
 }
 

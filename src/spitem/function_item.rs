@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Range, Url,
+    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Location, Range, Url,
 };
 
 use crate::providers::hover::description::Description;
@@ -36,8 +36,10 @@ pub struct FunctionItem {
 
     /// Definition type of the function.
     pub definition_type: FunctionDefinitionType,
+
+    /// References to this function.
+    pub references: Vec<Location>,
     // params: VariableItem[];
-    // references: Location[];
 }
 
 impl FunctionItem {
