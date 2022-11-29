@@ -2,9 +2,10 @@ use std::{collections::HashSet, sync::Arc};
 
 use lsp_types::{CompletionItem, CompletionParams, Location, Position, Range, Url};
 
-use crate::{document::Document, providers::hover::description::Description, store::Store};
-
-use self::variable_item::range_contains_pos;
+use crate::{
+    document::Document, providers::hover::description::Description, store::Store,
+    utils::range_contains_pos,
+};
 
 pub mod function_item;
 pub mod variable_item;

@@ -1,11 +1,10 @@
 use std::sync::Arc;
 
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Location, Position,
-    Range, Url,
+    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Location, Range, Url,
 };
 
-use crate::providers::hover::description::Description;
+use crate::{providers::hover::description::Description, utils::range_contains_pos};
 
 use super::SPItem;
 
@@ -95,17 +94,4 @@ pub enum VariableVisibility {
 pub enum VariableStorageClass {
     Const,
     Static,
-}
-
-pub fn range_contains_pos(range: Range, position: Position) -> bool {
-    if range.start.line < position.line && range.end.line > position.line {
-        return true;
-    }
-    if range.start.character <= position.character && range.end.character >= position.character {
-        return true;
-    }
-    if range.start.line == position.line || range.end.line == position.line {
-        return true;
-    }
-    return false;
 }
