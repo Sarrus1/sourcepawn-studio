@@ -17,6 +17,7 @@ use threadpool::ThreadPool;
 use tree_sitter::Parser;
 
 use crate::client::LspClient;
+use crate::providers;
 
 #[derive(Debug)]
 enum InternalMessage {
@@ -205,7 +206,7 @@ impl Server {
     fn completion(&self, id: RequestId, mut params: CompletionParams) -> anyhow::Result<()> {
         utils::normalize_uri(&mut params.text_document_position.text_document.uri);
         let uri = Arc::new(params.text_document_position.text_document.uri.clone());
-        self.handle_feature_request(id, params, uri, crate::providers::provide_completions)?;
+        self.handle_feature_request(id, params, uri, providers::completion::provide_completions)?;
         Ok(())
     }
 
@@ -218,7 +219,7 @@ impl Server {
                 .uri
                 .clone(),
         );
-        self.handle_feature_request(id, params, uri, crate::providers::provide_hover)?;
+        self.handle_feature_request(id, params, uri, providers::hover::provide_hover)?;
         Ok(())
     }
 

@@ -4,6 +4,8 @@ use crate::spitem::get_item_from_position;
 
 use super::FeatureRequest;
 
+pub mod description;
+
 pub fn provide_hover(request: FeatureRequest<HoverParams>) -> Option<Hover> {
     let item = get_item_from_position(
         &request.store,

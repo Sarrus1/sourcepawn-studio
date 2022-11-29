@@ -4,7 +4,7 @@ use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Position, Range, Url,
 };
 
-use crate::document::Description;
+use crate::providers::hover::description::Description;
 
 use super::SPItem;
 
@@ -20,8 +20,8 @@ pub struct VariableItem {
     /// Range of the name of the variable.
     pub range: Range,
 
-    /// Documentation of the variable.
-    pub documentation: Description,
+    /// Description of the variable.
+    pub description: Description,
 
     /// Uri of the file where the variable is declared.
     pub uri: Arc<Url>,
@@ -50,7 +50,7 @@ impl VariableItem {
     /// * `params` - [CompletionParams](lsp_types::CompletionParams) of the request.
     pub(crate) fn to_completion(&self, params: &CompletionParams) -> Option<CompletionItem> {
         let mut tags = vec![];
-        if self.documentation.deprecated.is_some() {
+        if self.description.deprecated.is_some() {
             tags.push(CompletionItemTag::DEPRECATED);
         }
         if self.parent.is_some() {

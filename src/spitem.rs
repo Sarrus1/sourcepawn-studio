@@ -2,10 +2,7 @@ use std::{collections::HashSet, sync::Arc};
 
 use lsp_types::{CompletionItem, CompletionParams, Position, Range, Url};
 
-use crate::{
-    document::{Description, Document},
-    store::Store,
-};
+use crate::{document::Document, providers::hover::description::Description, store::Store};
 
 use self::variable_item::range_contains_pos;
 
@@ -91,8 +88,8 @@ impl SPItem {
 
     pub fn documentation(&self) -> Option<Description> {
         match self {
-            SPItem::Variable(item) => Some(item.documentation.clone()),
-            SPItem::Function(item) => Some(item.documentation.clone()),
+            SPItem::Variable(item) => Some(item.description.clone()),
+            SPItem::Function(item) => Some(item.description.clone()),
         }
     }
 }

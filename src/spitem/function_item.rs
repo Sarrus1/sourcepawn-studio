@@ -4,7 +4,7 @@ use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Range, Url,
 };
 
-use crate::document::Description;
+use crate::providers::hover::description::Description;
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a first order SourcePawn function, which can be converted to a
@@ -22,8 +22,8 @@ pub struct FunctionItem {
     /// Range of the whole function, including its block.
     pub full_range: Range,
 
-    /// Documentation of the function.
-    pub documentation: Description,
+    /// Description of the function.
+    pub description: Description,
 
     /// Uri of the file where the function is declared.
     pub uri: Arc<Url>,
@@ -42,7 +42,7 @@ pub struct FunctionItem {
 
 impl FunctionItem {
     fn is_deprecated(&self) -> bool {
-        self.documentation.deprecated.is_some()
+        self.description.deprecated.is_some()
     }
 }
 

@@ -3,7 +3,8 @@ use std::{str::Utf8Error, sync::Arc};
 use tree_sitter::Node;
 
 use crate::{
-    document::{Description, Document},
+    document::Document,
+    providers::hover::description::Description,
     spitem::{
         variable_item::{VariableItem, VariableStorageClass, VariableVisibility},
         SPItem,
@@ -71,7 +72,7 @@ pub fn parse_variable(
                     name: name.to_string(),
                     type_: type_.to_string(),
                     range: ts_range_to_lsp_range(&name_node.range()),
-                    documentation: Description::default(),
+                    description: Description::default(),
                     uri: file_item.uri.clone(),
                     detail: "".to_string(),
                     visibility: visibility.clone(),
