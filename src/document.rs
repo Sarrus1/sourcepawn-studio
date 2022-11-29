@@ -13,7 +13,7 @@ use tree_sitter::{Node, Parser};
 use crate::{
     environment::Environment,
     parser::{
-        function_parser::parse_function, include_parser::parse_include,
+        enum_parser::parse_enum, function_parser::parse_function, include_parser::parse_include,
         variable_parser::parse_variable,
     },
     providers::hover::description::Description,
@@ -45,6 +45,7 @@ impl Document {
     ) -> Result<(), Utf8Error> {
         let tree = parser.parse(&self.text, None).unwrap();
         let root_node = tree.root_node();
+        let mut anon_enum_counter = 0;
         let mut comments: Vec<Node> = vec![];
         let mut deprecated: Vec<Node> = vec![];
         let mut cursor = root_node.walk();
@@ -60,6 +61,15 @@ impl Document {
                 }
                 "preproc_include" | "preproc_tryinclude" => {
                     parse_include(environment, documents, self, &mut node)?;
+                }
+                "enum" => {
+                    parse_enum(
+                        self,
+                        &mut node,
+                        &mut comments,
+                        &mut deprecated,
+                        &mut anon_enum_counter,
+                    )?;
                 }
                 "comment" => {
                     comments.push(node);

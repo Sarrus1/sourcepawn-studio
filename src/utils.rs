@@ -84,14 +84,14 @@ pub fn apply_document_edit(old_text: &mut String, changes: Vec<TextDocumentConte
 /// * `range` - [Range] to check against.
 /// * `position` - [Position] to check against.
 pub fn range_contains_pos(range: Range, position: Position) -> bool {
-    if range.start.line < position.line && range.end.line > position.line {
-        return true;
+    if range.start.line > position.line || range.end.line < position.line {
+        return false;
     }
-    if range.start.character <= position.character && range.end.character >= position.character {
-        return true;
+    if range.start.line == position.line && range.start.character > position.character {
+        return false;
     }
-    if range.start.line == position.line || range.end.line == position.line {
-        return true;
+    if range.end.line == position.line && range.end.character < position.character {
+        return false;
     }
-    return false;
+    return true;
 }

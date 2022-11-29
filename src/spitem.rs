@@ -7,6 +7,7 @@ use crate::{
     utils::range_contains_pos,
 };
 
+pub mod enum_item;
 pub mod function_item;
 pub mod variable_item;
 
@@ -16,6 +17,7 @@ pub mod variable_item;
 pub enum SPItem {
     Function(function_item::FunctionItem),
     Variable(variable_item::VariableItem),
+    Enum(enum_item::EnumItem),
 }
 
 pub fn get_all_items(store: &Store) -> Vec<Arc<SPItem>> {
@@ -80,6 +82,7 @@ impl SPItem {
         match self {
             SPItem::Variable(item) => Some(item.range),
             SPItem::Function(item) => Some(item.range),
+            SPItem::Enum(item) => Some(item.range),
         }
     }
 
@@ -87,6 +90,7 @@ impl SPItem {
         match self {
             SPItem::Variable(item) => Some(item.name.clone()),
             SPItem::Function(item) => Some(item.name.clone()),
+            SPItem::Enum(item) => Some(item.name.clone()),
         }
     }
 
@@ -94,6 +98,7 @@ impl SPItem {
         match self {
             SPItem::Variable(item) => Some(item.description.clone()),
             SPItem::Function(item) => Some(item.description.clone()),
+            SPItem::Enum(item) => Some(item.description.clone()),
         }
     }
 
@@ -101,6 +106,7 @@ impl SPItem {
         match self {
             SPItem::Variable(item) => item.uri.clone(),
             SPItem::Function(item) => item.uri.clone(),
+            SPItem::Enum(item) => item.uri.clone(),
         }
     }
 
@@ -108,13 +114,15 @@ impl SPItem {
         match self {
             SPItem::Variable(item) => Some(&item.references),
             SPItem::Function(item) => Some(&item.references),
+            SPItem::Enum(item) => Some(&item.references),
         }
     }
 
     pub fn to_completion(&self, params: &CompletionParams) -> Option<CompletionItem> {
         match self {
-            SPItem::Variable(variable_item) => variable_item.to_completion(params),
-            SPItem::Function(function_item) => function_item.to_completion(params),
+            SPItem::Variable(item) => item.to_completion(params),
+            SPItem::Function(item) => item.to_completion(params),
+            SPItem::Enum(item) => item.to_completion(params),
         }
     }
 }
