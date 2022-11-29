@@ -86,7 +86,7 @@ impl SPItem {
         }
     }
 
-    pub fn documentation(&self) -> Option<Description> {
+    pub fn description(&self) -> Option<Description> {
         match self {
             SPItem::Variable(item) => Some(item.description.clone()),
             SPItem::Function(item) => Some(item.description.clone()),

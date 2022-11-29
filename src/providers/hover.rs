@@ -18,7 +18,7 @@ pub fn provide_hover(request: FeatureRequest<HoverParams>) -> Option<Hover> {
     let item = item.unwrap();
 
     Some(Hover {
-        contents: HoverContents::Markup(item.documentation().unwrap().description_to_md()),
+        contents: HoverContents::Markup(item.description().unwrap().description_to_md()),
         range: item.range(),
     })
 }
