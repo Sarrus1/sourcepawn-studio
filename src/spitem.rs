@@ -17,13 +17,6 @@ pub enum SPItem {
     Variable(variable_item::VariableItem),
 }
 
-pub fn to_completion(sp_item: &SPItem, params: &CompletionParams) -> Option<CompletionItem> {
-    match sp_item {
-        SPItem::Variable(variable_item) => variable_item.to_completion(params),
-        SPItem::Function(function_item) => function_item::to_completion(function_item, params),
-    }
-}
-
 pub fn get_all_items(store: &Store) -> Vec<Arc<SPItem>> {
     let main_path = store.environment.options.main_path.clone();
     let main_path_uri = Url::from_file_path(main_path).expect("Invalid main path");
@@ -114,6 +107,13 @@ impl SPItem {
         match self {
             SPItem::Variable(item) => Some(&item.references),
             SPItem::Function(item) => Some(&item.references),
+        }
+    }
+
+    pub fn to_completion(&self, params: &CompletionParams) -> Option<CompletionItem> {
+        match self {
+            SPItem::Variable(variable_item) => variable_item.to_completion(params),
+            SPItem::Function(function_item) => function_item.to_completion(params),
         }
     }
 }

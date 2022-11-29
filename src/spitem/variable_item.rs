@@ -50,7 +50,6 @@ impl VariableItem {
     ///
     /// # Arguments
     ///
-    /// * `variable_item` - [VariableItem] to convert.
     /// * `params` - [CompletionParams](lsp_types::CompletionParams) of the request.
     pub(crate) fn to_completion(&self, params: &CompletionParams) -> Option<CompletionItem> {
         let mut tags = vec![];

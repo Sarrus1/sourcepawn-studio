@@ -46,46 +46,37 @@ impl FunctionItem {
     fn is_deprecated(&self) -> bool {
         self.description.deprecated.is_some()
     }
-}
 
-/// Return a [CompletionItem](lsp_types::CompletionItem) from a [FunctionItem].
-///
-/// If the conditions are not appropriate (ex: asking for a static outside of its file), return None.
-///
-/// # Arguments
-///
-/// * `function_item` - [FunctionItem] to convert.
-/// * `params` - [CompletionParams](lsp_types::CompletionParams) of the request.
-pub(crate) fn to_completion(
-    function_item: &FunctionItem,
-    params: &CompletionParams,
-) -> Option<CompletionItem> {
-    let mut tags = vec![];
-    if function_item.is_deprecated() {
-        tags.push(CompletionItemTag::DEPRECATED);
-    }
-
-    // Don't return a CompletionItem if it's a static and the request did not come from the file
-    // of the declaration.
-    if function_item
-        .visibility
-        .contains(&FunctionVisibility::Static)
-    {
-        if params.text_document_position.text_document.uri.to_string()
-            != function_item.uri.to_string()
-        {
-            return None;
+    /// Return a [CompletionItem](lsp_types::CompletionItem) from a [FunctionItem].
+    ///
+    /// If the conditions are not appropriate (ex: asking for a static outside of its file), return None.
+    ///
+    /// # Arguments
+    ///
+    /// * `params` - [CompletionParams](lsp_types::CompletionParams) of the request.
+    pub(crate) fn to_completion(&self, params: &CompletionParams) -> Option<CompletionItem> {
+        let mut tags = vec![];
+        if self.is_deprecated() {
+            tags.push(CompletionItemTag::DEPRECATED);
         }
-    }
 
-    Some(CompletionItem {
-        label: function_item.name.to_string(),
-        kind: Some(CompletionItemKind::FUNCTION),
-        tags: Some(tags),
-        detail: Some(function_item.type_.to_string()),
-        deprecated: Some(function_item.is_deprecated()),
-        ..Default::default()
-    })
+        // Don't return a CompletionItem if it's a static and the request did not come from the file
+        // of the declaration.
+        if self.visibility.contains(&FunctionVisibility::Static) {
+            if params.text_document_position.text_document.uri.to_string() != self.uri.to_string() {
+                return None;
+            }
+        }
+
+        Some(CompletionItem {
+            label: self.name.to_string(),
+            kind: Some(CompletionItemKind::FUNCTION),
+            tags: Some(tags),
+            detail: Some(self.type_.to_string()),
+            deprecated: Some(self.is_deprecated()),
+            ..Default::default()
+        })
+    }
 }
 
 /// Visibility of a SourcePawn function.
