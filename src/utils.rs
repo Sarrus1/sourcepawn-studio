@@ -1,4 +1,4 @@
-use lsp_types::{Position, Range, TextDocumentContentChangeEvent};
+use lsp_types::{Position, Range, TextDocumentContentChangeEvent, Url};
 
 use crate::{line_index::LineIndex, line_index_ext::LineIndexExt};
 
@@ -94,4 +94,22 @@ pub fn range_contains_pos(range: Range, position: Position) -> bool {
         return false;
     }
     return true;
+}
+
+/// Extracts the filename from a [Uri](Url). Returns [None] if it does not exist.
+///
+/// # Arguments
+///
+/// * `uri` - [Uri](Url) to extract.
+pub fn uri_to_file_name(uri: &Url) -> Option<String> {
+    match uri.to_file_path() {
+        Ok(path) => match path.as_path().file_name() {
+            Some(file_name) => match file_name.to_str() {
+                Some(file_name) => Some(file_name.to_string()),
+                None => None,
+            },
+            None => None,
+        },
+        Err(_) => None,
+    }
 }

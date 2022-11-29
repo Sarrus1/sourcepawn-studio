@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionParams, Location, Range, Url};
 
-use crate::providers::hover::description::Description;
+use crate::{providers::hover::description::Description, utils::uri_to_file_name};
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a SourcePawn enum.
@@ -40,21 +40,8 @@ impl EnumItem {
         Some(CompletionItem {
             label: self.name.to_string(),
             kind: Some(CompletionItemKind::ENUM),
-            detail: self.detail(),
+            detail: uri_to_file_name(&self.uri),
             ..Default::default()
         })
-    }
-
-    fn detail(&self) -> Option<String> {
-        match self.uri.to_file_path() {
-            Ok(path) => match path.as_path().file_name() {
-                Some(file_name) => match file_name.to_str() {
-                    Some(file_name) => Some(file_name.to_string()),
-                    None => None,
-                },
-                None => None,
-            },
-            Err(_) => None,
-        }
     }
 }
