@@ -8,6 +8,7 @@ use crate::{
 };
 
 pub mod enum_item;
+pub mod enum_member_item;
 pub mod function_item;
 pub mod variable_item;
 
@@ -18,6 +19,7 @@ pub enum SPItem {
     Function(function_item::FunctionItem),
     Variable(variable_item::VariableItem),
     Enum(enum_item::EnumItem),
+    EnumMember(enum_member_item::EnumMemberItem),
 }
 
 pub fn get_all_items(store: &Store) -> Vec<Arc<SPItem>> {
@@ -83,14 +85,16 @@ impl SPItem {
             SPItem::Variable(item) => Some(item.range),
             SPItem::Function(item) => Some(item.range),
             SPItem::Enum(item) => Some(item.range),
+            SPItem::EnumMember(item) => Some(item.range),
         }
     }
 
-    pub fn name(&self) -> Option<String> {
+    pub fn name(&self) -> String {
         match self {
-            SPItem::Variable(item) => Some(item.name.clone()),
-            SPItem::Function(item) => Some(item.name.clone()),
-            SPItem::Enum(item) => Some(item.name.clone()),
+            SPItem::Variable(item) => item.name.clone(),
+            SPItem::Function(item) => item.name.clone(),
+            SPItem::Enum(item) => item.name.clone(),
+            SPItem::EnumMember(item) => item.name.clone(),
         }
     }
 
@@ -99,6 +103,7 @@ impl SPItem {
             SPItem::Variable(item) => Some(item.description.clone()),
             SPItem::Function(item) => Some(item.description.clone()),
             SPItem::Enum(item) => Some(item.description.clone()),
+            SPItem::EnumMember(item) => Some(item.description.clone()),
         }
     }
 
@@ -107,6 +112,7 @@ impl SPItem {
             SPItem::Variable(item) => item.uri.clone(),
             SPItem::Function(item) => item.uri.clone(),
             SPItem::Enum(item) => item.uri.clone(),
+            SPItem::EnumMember(item) => item.uri.clone(),
         }
     }
 
@@ -115,6 +121,7 @@ impl SPItem {
             SPItem::Variable(item) => Some(&item.references),
             SPItem::Function(item) => Some(&item.references),
             SPItem::Enum(item) => Some(&item.references),
+            SPItem::EnumMember(item) => Some(&item.references),
         }
     }
 
@@ -123,6 +130,7 @@ impl SPItem {
             SPItem::Variable(item) => item.to_completion(params),
             SPItem::Function(item) => item.to_completion(params),
             SPItem::Enum(item) => item.to_completion(params),
+            SPItem::EnumMember(item) => item.to_completion(params),
         }
     }
 }
