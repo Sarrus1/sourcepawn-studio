@@ -165,9 +165,9 @@ export async function getCompletionListFromPosition(
   const isMethodMap =
     words.length === 1 &&
     undefined !==
-      allItems.find(
-        (e) => e.name === words[0] && e.kind === CompletionItemKind.Class
-      );
+    allItems.find(
+      (e) => e.name === words[0] && e.kind === CompletionItemKind.Class
+    );
 
   return getMethodItems(
     allItems,
@@ -198,6 +198,17 @@ function getMethodItems(
       isMethodMap === /\bstatic\b[^\(]*\(/.test(item.detail as string)
     ) {
       try {
+        // prevent duplicate methods from inherit methodmap
+        let duplicateItem: CompletionItem | null = null
+        items.forEach(x=>{
+          if (item.parent?.parent?.name === x.detail && item.name === x.label){
+            duplicateItem = x
+          }
+        })
+        if (duplicateItem !== null) {
+          items.delete(duplicateItem)
+        }
+
         items.add(
           item.toCompletionItem(
             lastFunc,
