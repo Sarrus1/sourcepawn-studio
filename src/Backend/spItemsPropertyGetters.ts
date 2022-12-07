@@ -15,6 +15,7 @@ export interface VariableType {
 export interface ParsedLine {
   words: string[];
   isNameSpace: boolean;
+  isViewAs: boolean;
 }
 
 export interface MethodIndex {
@@ -45,7 +46,7 @@ export function getTypeOfVariable(
   lastFunc: FunctionItem | MethodItem | undefined,
   lastEnumStructOrMethodMap: SPItem | undefined
 ): VariableType {
-  let { words, isNameSpace } = parseMethodsFromLine(line, position.character);
+  let { words, isNameSpace, isViewAs } = parseMethodsFromLine(line, position.character);
   let variableType: string;
 
   const lastFuncName =
@@ -53,7 +54,10 @@ export function getTypeOfVariable(
       ? [globalIdentifier]
       : [globalIdentifier, lastFunc.name];
 
-  if (isNameSpace) {
+  if (isViewAs && words[words.length - 1] === "view_as") {
+    variableType = words[0];
+    return { variableType, words };
+  } else if (isNameSpace) {
     variableType = words[words.length - 1];
   } else {
     if (
@@ -127,6 +131,7 @@ export function parseMethodsFromLine(line: string, index: number): ParsedLine {
   let pCounter = 0;
   let wordCounter = 0;
   const words = [""];
+  let isViewAs = false;
   while (i >= 0) {
     if (line[i] === "]") {
       bCounter++;
@@ -137,7 +142,12 @@ export function parseMethodsFromLine(line: string, index: number): ParsedLine {
     } else if (line[i] === "(") {
       pCounter--;
     } else if (bCounter === 0 && pCounter === 0) {
-      if (/\w/.test(line[i])) {
+      if (line[i] === '>'){
+        isViewAs = true;
+      } else if (line[i] === "<") {
+        wordCounter++;
+        words[wordCounter] = "";
+      } else if (/\w/.test(line[i])) {
         words[wordCounter] = line[i] + words[wordCounter];
       } else if (line[i] === ".") {
         wordCounter++;
@@ -155,7 +165,7 @@ export function parseMethodsFromLine(line: string, index: number): ParsedLine {
     }
     i--;
   }
-  return { words, isNameSpace };
+  return { words, isNameSpace, isViewAs };
 }
 
 function getMethodIndex(i: number, line: string): MethodIndex {
