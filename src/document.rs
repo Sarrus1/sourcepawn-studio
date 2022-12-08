@@ -54,6 +54,7 @@ impl Comment {
     }
 }
 
+#[derive(Debug)]
 pub struct Deprecated {
     pub text: String,
     pub range: Range,
@@ -117,7 +118,7 @@ pub fn find_doc(walker: &mut Walker, end_row: usize) -> Result<Description, Utf8
     let mut text: Vec<String> = vec![];
 
     for deprecated in walker.deprecated.iter().rev() {
-        if end_row == deprecated.range.end.line {
+        if end_row == deprecated.range.end.line + 1 {
             dep = Some(deprecated.text.clone());
             break;
         }
