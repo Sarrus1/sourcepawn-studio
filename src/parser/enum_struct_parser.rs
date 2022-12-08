@@ -12,7 +12,7 @@ use crate::{
     utils::ts_range_to_lsp_range,
 };
 
-use super::function_parser::parse_function;
+use super::{comment_parser::parse_deprecated, function_parser::parse_function};
 
 pub fn parse_enum_struct(
     document: &mut Document,
@@ -56,8 +56,7 @@ fn parse_enum_struct_members(
                     .unwrap()
             }
             "comment" => walker.comments.push(Comment::new(child, &document.text)),
-            "preproc_pragma_deprecated" => { //TODO:
-            }
+            "preproc_pragma" => parse_deprecated(child, &document.text, walker),
             _ => {}
         }
     }

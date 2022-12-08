@@ -13,9 +13,9 @@ use tree_sitter::{Node, Parser};
 use crate::{
     environment::Environment,
     parser::{
-        enum_parser::parse_enum, enum_struct_parser::parse_enum_struct,
-        function_parser::parse_function, include_parser::parse_include,
-        variable_parser::parse_variable,
+        comment_parser::parse_deprecated, enum_parser::parse_enum,
+        enum_struct_parser::parse_enum_struct, function_parser::parse_function,
+        include_parser::parse_include, variable_parser::parse_variable,
     },
     providers::hover::description::Description,
     spitem::SPItem,
@@ -55,22 +55,8 @@ impl Comment {
 }
 
 pub struct Deprecated {
-    text: String,
-    range: Range,
-}
-
-impl Deprecated {
-    pub fn new(node: Node, source: &str) -> Self {
-        Self {
-            text: node
-                .child_by_field_name("info")
-                .unwrap()
-                .utf8_text(source.as_bytes())
-                .unwrap()
-                .to_string(),
-            range: ts_range_to_lsp_range(&node.range()),
-        }
-    }
+    pub text: String,
+    pub range: Range,
 }
 
 impl Document {
@@ -113,6 +99,7 @@ impl Document {
                 "comment" => {
                     walker.comments.push(Comment::new(node, &self.text));
                 }
+                "preproc_pragma" => parse_deprecated(node, &self.text, &mut walker),
                 _ => {
                     continue;
                 }

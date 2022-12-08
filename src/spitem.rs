@@ -65,17 +65,16 @@ pub fn get_item_from_position(
 ) -> Option<Arc<Mutex<SPItem>>> {
     let all_items = get_all_items(store);
     for item in all_items.iter() {
-        match item.lock().unwrap().range() {
+        let item_lock = item.lock().unwrap();
+        match item_lock.range() {
             Some(range) => {
-                if range_contains_pos(range, position)
-                    && item.lock().unwrap().uri().as_ref().eq(&uri)
-                {
+                if range_contains_pos(range, position) && item_lock.uri().as_ref().eq(&uri) {
                     return Some(item.clone());
                 }
             }
             None => {}
         }
-        match item.lock().unwrap().references() {
+        match item_lock.references() {
             Some(references) => {
                 for reference in references.iter() {
                     if range_contains_pos(reference.range, position) && reference.uri.eq(&uri) {
