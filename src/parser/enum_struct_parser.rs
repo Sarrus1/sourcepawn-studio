@@ -6,7 +6,7 @@ use std::{
 use tree_sitter::Node;
 
 use crate::{
-    document::{find_doc, Document, Walker},
+    document::{find_doc, Comment, Document, Walker},
     providers::hover::description::Description,
     spitem::{enum_struct_item::EnumStructItem, variable_item::VariableItem, SPItem},
     utils::ts_range_to_lsp_range,
@@ -23,7 +23,7 @@ pub fn parse_enum_struct(
     let name_node = node.child_by_field_name("name").unwrap();
     let name = name_node.utf8_text(&document.text.as_bytes());
 
-    let documentation = find_doc(walker, node.start_position().row, &document.text)?;
+    let documentation = find_doc(walker, node.start_position().row)?;
 
     let enum_struct_item = EnumStructItem {
         name: name?.to_string(),
@@ -55,8 +55,7 @@ fn parse_enum_struct_members(
                 parse_function(document, &mut child, walker, Some(enum_struct_item.clone()))
                     .unwrap()
             }
-            "comment" => { //TODO:
-            }
+            "comment" => walker.comments.push(Comment::new(child, &document.text)),
             "preproc_pragma_deprecated" => { //TODO:
             }
             _ => {}

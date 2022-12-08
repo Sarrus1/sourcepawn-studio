@@ -98,7 +98,7 @@ pub fn parse_function(
             _ => FunctionDefinitionType::None,
         }
     }
-    let documentation = find_doc(walker, node.start_position().row, &document.text)?;
+    let documentation = find_doc(walker, node.start_position().row)?;
 
     let function_item = FunctionItem {
         name: name?.to_string(),

@@ -21,7 +21,7 @@ pub fn parse_enum(
 ) -> Result<(), Utf8Error> {
     let (name, range) =
         get_enum_name_and_range(node, &document.text, &mut walker.anon_enum_counter);
-    let documentation = find_doc(walker, node.start_position().row, &document.text)?;
+    let documentation = find_doc(walker, node.start_position().row)?;
 
     let enum_item = EnumItem {
         name,

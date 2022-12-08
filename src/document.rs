@@ -6,7 +6,7 @@ use std::{
 
 use derive_new::new;
 use lazy_static::lazy_static;
-use lsp_types::Url;
+use lsp_types::{Range, Url};
 use regex::Regex;
 use tree_sitter::{Node, Parser};
 
@@ -19,6 +19,7 @@ use crate::{
     },
     providers::hover::description::Description,
     spitem::SPItem,
+    utils::ts_range_to_lsp_range,
 };
 
 #[derive(Debug, Clone, new)]
@@ -33,10 +34,43 @@ pub struct Document {
     pub parsed: bool,
 }
 
-pub struct Walker<'a> {
-    pub comments: Vec<Node<'a>>,
-    pub deprecated: Vec<Node<'a>>,
+pub struct Walker {
+    pub comments: Vec<Comment>,
+    pub deprecated: Vec<Deprecated>,
     pub anon_enum_counter: u32,
+}
+
+pub struct Comment {
+    text: String,
+    range: Range,
+}
+
+impl Comment {
+    pub fn new(node: Node, source: &str) -> Self {
+        Self {
+            text: node.utf8_text(source.as_bytes()).unwrap().to_string(),
+            range: ts_range_to_lsp_range(&node.range()),
+        }
+    }
+}
+
+pub struct Deprecated {
+    text: String,
+    range: Range,
+}
+
+impl Deprecated {
+    pub fn new(node: Node, source: &str) -> Self {
+        Self {
+            text: node
+                .child_by_field_name("info")
+                .unwrap()
+                .utf8_text(source.as_bytes())
+                .unwrap()
+                .to_string(),
+            range: ts_range_to_lsp_range(&node.range()),
+        }
+    }
 }
 
 impl Document {
@@ -77,7 +111,7 @@ impl Document {
                 }
                 "enum_struct" => parse_enum_struct(self, &mut node, &mut walker)?,
                 "comment" => {
-                    walker.comments.push(node);
+                    walker.comments.push(Comment::new(node, &self.text));
                 }
                 _ => {
                     continue;
@@ -90,26 +124,17 @@ impl Document {
     }
 }
 
-pub fn find_doc(
-    walker: &mut Walker,
-    mut end_row: usize,
-    source: &String,
-) -> Result<Description, Utf8Error> {
+pub fn find_doc(walker: &mut Walker, end_row: usize) -> Result<Description, Utf8Error> {
+    let mut end_row = end_row as u32;
     let mut dep: Option<String> = None;
     let mut text: Vec<String> = vec![];
 
     for deprecated in walker.deprecated.iter().rev() {
-        if end_row == deprecated.end_position().row {
-            dep = Some(
-                deprecated
-                    .child_by_field_name("info")
-                    .unwrap()
-                    .utf8_text(source.as_bytes())?
-                    .to_string(),
-            );
+        if end_row == deprecated.range.end.line {
+            dep = Some(deprecated.text.clone());
             break;
         }
-        if end_row > deprecated.end_position().row {
+        if end_row > deprecated.range.end.line {
             break;
         }
     }
@@ -119,10 +144,10 @@ pub fn find_doc(
     }
 
     for comment in walker.comments.iter().rev() {
-        if end_row == comment.end_position().row + offset {
-            let comment_text = comment.utf8_text(source.as_bytes())?.to_string();
+        if end_row == comment.range.end.line + offset {
+            let comment_text = comment.text.clone();
             text.push(comment_to_doc(&comment_text));
-            end_row = comment.start_position().row;
+            end_row = comment.range.start.line;
         } else {
             break;
         }
