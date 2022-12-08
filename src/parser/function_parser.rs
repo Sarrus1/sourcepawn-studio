@@ -17,9 +17,10 @@ use super::{variable_parser::parse_variable, VARIABLE_QUERY};
 
 pub fn parse_function(
     file_item: &mut Document,
-    node: &mut Node,
+    node: &Node,
     comments: &mut Vec<Node>,
     deprecated: &mut Vec<Node>,
+    parent: Option<Arc<SPItem>>,
 ) -> Result<(), Utf8Error> {
     // Name of the function
     let name_node = node.child_by_field_name("name");
@@ -113,6 +114,7 @@ pub fn parse_function(
         visibility,
         definition_type,
         references: vec![],
+        parent,
     };
     let function_item = Arc::new(SPItem::Function(function_item));
     match block_node {

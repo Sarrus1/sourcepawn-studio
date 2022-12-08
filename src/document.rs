@@ -13,7 +13,8 @@ use tree_sitter::{Node, Parser};
 use crate::{
     environment::Environment,
     parser::{
-        enum_parser::parse_enum, function_parser::parse_function, include_parser::parse_include,
+        enum_parser::parse_enum, enum_struct_parser::parse_enum_struct,
+        function_parser::parse_function, include_parser::parse_include,
         variable_parser::parse_variable,
     },
     providers::hover::description::Description,
@@ -54,7 +55,7 @@ impl Document {
             let kind = node.kind();
             match kind {
                 "function_declaration" | "function_definition" => {
-                    parse_function(self, &mut node, &mut comments, &mut deprecated)?;
+                    parse_function(self, &mut node, &mut comments, &mut deprecated, None)?;
                 }
                 "global_variable_declaration" | "old_global_variable_declaration" => {
                     parse_variable(self, &mut node, None)?;
@@ -70,6 +71,9 @@ impl Document {
                         &mut deprecated,
                         &mut anon_enum_counter,
                     )?;
+                }
+                "enum_struct" => {
+                    parse_enum_struct(self, &mut node, &mut comments, &mut deprecated)?
                 }
                 "comment" => {
                     comments.push(node);

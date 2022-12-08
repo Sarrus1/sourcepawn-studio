@@ -56,30 +56,42 @@ impl VariableItem {
         if self.description.deprecated.is_some() {
             tags.push(CompletionItemTag::DEPRECATED);
         }
-        if self.parent.is_some() {
-            if self.uri.to_string() != params.text_document_position.text_document.uri.to_string() {
-                return None;
-            }
-            let parent = Arc::clone(&self.parent.as_ref().unwrap());
-            let parent_range = match &*parent {
-                SPItem::Function(parent) => parent.full_range,
-                _ => todo!(),
-            };
-            eprintln!(
-                "{:?} {:?}",
-                parent_range, params.text_document_position.position
-            );
-            if !range_contains_pos(parent_range, params.text_document_position.position) {
-                return None;
+
+        match &self.parent {
+            Some(parent) => match parent.as_ref() {
+                SPItem::Function(parent) => {
+                    if self.uri.to_string()
+                        != params.text_document_position.text_document.uri.to_string()
+                    {
+                        return None;
+                    }
+                    if !range_contains_pos(
+                        parent.full_range,
+                        params.text_document_position.position,
+                    ) {
+                        return None;
+                    }
+                    return Some(CompletionItem {
+                        label: self.name.to_string(),
+                        kind: Some(CompletionItemKind::VARIABLE),
+                        tags: Some(tags),
+                        ..Default::default()
+                    });
+                }
+                _ => {
+                    eprintln!("Unhandled case in variable_item to_completion.");
+                    return None;
+                }
+            },
+            None => {
+                return Some(CompletionItem {
+                    label: self.name.to_string(),
+                    kind: Some(CompletionItemKind::VARIABLE),
+                    tags: Some(tags),
+                    ..Default::default()
+                });
             }
         }
-
-        Some(CompletionItem {
-            label: self.name.to_string(),
-            kind: Some(CompletionItemKind::VARIABLE),
-            tags: Some(tags),
-            ..Default::default()
-        })
     }
 
     /// Return a [Hover] from a [VariableItem].

@@ -7,6 +7,8 @@ use lsp_types::{
 
 use crate::providers::hover::description::Description;
 
+use super::SPItem;
+
 #[derive(Debug, Clone)]
 /// SPItem representation of a first order SourcePawn function, which can be converted to a
 /// [CompletionItem](lsp_types::CompletionItem), [Location](lsp_types::Location), etc.
@@ -41,6 +43,8 @@ pub struct FunctionItem {
     /// References to this function.
     pub references: Vec<Location>,
     // params: VariableItem[];
+    /// Parent of the method. None if it's a first class function.
+    pub parent: Option<Arc<SPItem>>,
 }
 
 impl FunctionItem {
