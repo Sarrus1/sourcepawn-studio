@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Hover, HoverContents,
@@ -40,7 +40,7 @@ pub struct VariableItem {
     pub references: Vec<Location>,
 
     /// Parent of this variable, if it is not global.
-    pub parent: Option<Arc<SPItem>>,
+    pub parent: Option<Arc<Mutex<SPItem>>>,
 }
 
 impl VariableItem {
@@ -58,7 +58,7 @@ impl VariableItem {
         }
 
         match &self.parent {
-            Some(parent) => match parent.as_ref() {
+            Some(parent) => match &*parent.lock().unwrap() {
                 SPItem::Function(parent) => {
                     if self.uri.to_string()
                         != params.text_document_position.text_document.uri.to_string()

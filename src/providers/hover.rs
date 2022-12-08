@@ -18,7 +18,7 @@ pub fn provide_hover(request: FeatureRequest<HoverParams>) -> Option<Hover> {
     );
 
     match item {
-        Some(item) => item.to_hover(&request.params),
+        Some(item) => item.lock().unwrap().to_hover(&request.params),
         None => None,
     }
 }

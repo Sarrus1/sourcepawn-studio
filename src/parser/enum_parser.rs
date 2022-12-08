@@ -1,4 +1,7 @@
-use std::{str::Utf8Error, sync::Arc};
+use std::{
+    str::Utf8Error,
+    sync::{Arc, Mutex},
+};
 
 use tree_sitter::Node;
 
@@ -37,7 +40,7 @@ pub fn parse_enum(
             break;
         }
     }
-    let enum_item = Arc::new(SPItem::Enum(enum_item));
+    let enum_item = Arc::new(Mutex::new(SPItem::Enum(enum_item)));
     if enum_entries.is_some() {
         read_enum_members(
             document,
@@ -83,7 +86,7 @@ fn get_enum_name_and_range(
 fn read_enum_members(
     file_item: &mut Document,
     body_node: &Node,
-    enum_item: Arc<SPItem>,
+    enum_item: Arc<Mutex<SPItem>>,
     source: &String,
     uri: Arc<Url>,
 ) {
@@ -106,6 +109,6 @@ fn read_enum_members(
         };
         file_item
             .sp_items
-            .push(Arc::new(SPItem::EnumMember(enum_member_item)));
+            .push(Arc::new(Mutex::new(SPItem::EnumMember(enum_member_item))));
     }
 }

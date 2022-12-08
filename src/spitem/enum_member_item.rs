@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionParams, Hover, HoverContents, HoverParams,
@@ -19,7 +19,7 @@ pub struct EnumMemberItem {
     pub range: Range,
 
     /// Parent of the enum member.
-    pub parent: Arc<SPItem>,
+    pub parent: Arc<Mutex<SPItem>>,
 
     /// Description of the enum member.
     pub description: Description,
@@ -41,7 +41,7 @@ impl EnumMemberItem {
         Some(CompletionItem {
             label: self.name.clone(),
             kind: Some(CompletionItemKind::ENUM_MEMBER),
-            detail: Some(self.parent.name().clone()),
+            detail: Some(self.parent.lock().unwrap().name().clone()),
             ..Default::default()
         })
     }
@@ -68,7 +68,7 @@ impl EnumMemberItem {
     /// `Plugin_Continue`
     fn formatted_text(&self) -> MarkedString {
         let mut value = "".to_string();
-        match self.parent.as_ref() {
+        match &*self.parent.lock().unwrap() {
             SPItem::Enum(parent) => {
                 if parent.name.contains("#") {
                     value = self.name.clone()

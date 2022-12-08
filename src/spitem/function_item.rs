@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Hover, HoverContents,
@@ -42,9 +42,12 @@ pub struct FunctionItem {
 
     /// References to this function.
     pub references: Vec<Location>,
-    // params: VariableItem[];
+
+    /// Parameters of the function.
+    pub params: Vec<Arc<Mutex<SPItem>>>,
+
     /// Parent of the method. None if it's a first class function.
-    pub parent: Option<Arc<SPItem>>,
+    pub parent: Option<Arc<Mutex<SPItem>>>,
 }
 
 impl FunctionItem {

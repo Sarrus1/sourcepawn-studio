@@ -1,4 +1,7 @@
-use std::{collections::HashSet, sync::Arc};
+use std::{
+    collections::HashSet,
+    sync::{Arc, Mutex},
+};
 
 use lsp_types::{
     CompletionItem, CompletionParams, Hover, HoverParams, Location, Position, Range, Url,
@@ -26,7 +29,7 @@ pub enum SPItem {
     EnumStruct(enum_struct_item::EnumStructItem),
 }
 
-pub fn get_all_items(store: &Store) -> Vec<Arc<SPItem>> {
+pub fn get_all_items(store: &Store) -> Vec<Arc<Mutex<SPItem>>> {
     let main_path = store.environment.options.main_path.clone();
     let main_path_uri = Url::from_file_path(main_path).expect("Invalid main path");
     let mut includes: HashSet<Url> = HashSet::new();
@@ -55,18 +58,24 @@ fn get_included_files(store: &Store, document: Document, includes: &mut HashSet<
     }
 }
 
-pub fn get_item_from_position(store: &Store, position: Position, uri: &Url) -> Option<Arc<SPItem>> {
+pub fn get_item_from_position(
+    store: &Store,
+    position: Position,
+    uri: &Url,
+) -> Option<Arc<Mutex<SPItem>>> {
     let all_items = get_all_items(store);
     for item in all_items.iter() {
-        match item.range() {
+        match item.lock().unwrap().range() {
             Some(range) => {
-                if range_contains_pos(range, position) && item.uri().as_ref().eq(&uri) {
+                if range_contains_pos(range, position)
+                    && item.lock().unwrap().uri().as_ref().eq(&uri)
+                {
                     return Some(item.clone());
                 }
             }
             None => {}
         }
-        match item.references() {
+        match item.lock().unwrap().references() {
             Some(references) => {
                 for reference in references.iter() {
                     if range_contains_pos(reference.range, position) && reference.uri.eq(&uri) {
@@ -131,6 +140,15 @@ impl SPItem {
             SPItem::Enum(item) => Some(&item.references),
             SPItem::EnumMember(item) => Some(&item.references),
             SPItem::EnumStruct(item) => Some(&item.references),
+        }
+    }
+
+    pub fn push_params(&mut self, param: Arc<Mutex<SPItem>>) {
+        match self {
+            SPItem::Function(item) => item.params.push(param),
+            _ => {
+                eprintln!("Cannot push params to an item that does not have params.")
+            }
         }
     }
 
