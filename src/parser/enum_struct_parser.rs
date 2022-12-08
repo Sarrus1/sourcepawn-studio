@@ -3,7 +3,7 @@ use std::{str::Utf8Error, sync::Arc};
 use tree_sitter::Node;
 
 use crate::{
-    document::{find_doc, Document},
+    document::{find_doc, Document, Walker},
     providers::hover::description::Description,
     spitem::{enum_struct_item::EnumStructItem, variable_item::VariableItem, SPItem},
     utils::ts_range_to_lsp_range,
@@ -14,19 +14,13 @@ use super::function_parser::parse_function;
 pub fn parse_enum_struct(
     document: &mut Document,
     node: &mut Node,
-    comments: &mut Vec<Node>,
-    deprecated: &mut Vec<Node>,
+    walker: &mut Walker,
 ) -> Result<(), Utf8Error> {
     // Name of the enum struct
     let name_node = node.child_by_field_name("name").unwrap();
     let name = name_node.utf8_text(&document.text.as_bytes());
 
-    let documentation = find_doc(
-        comments,
-        deprecated,
-        node.start_position().row,
-        &document.text,
-    )?;
+    let documentation = find_doc(walker, node.start_position().row, &document.text)?;
 
     let enum_struct_item = EnumStructItem {
         name: name?.to_string(),
@@ -38,13 +32,7 @@ pub fn parse_enum_struct(
     };
 
     let enum_struct_item = Arc::new(SPItem::EnumStruct(enum_struct_item));
-    parse_enum_struct_members(
-        document,
-        node,
-        enum_struct_item.clone(),
-        comments,
-        deprecated,
-    );
+    parse_enum_struct_members(document, node, enum_struct_item.clone(), walker);
     document.sp_items.push(enum_struct_item);
 
     Ok(())
@@ -54,21 +42,16 @@ fn parse_enum_struct_members(
     document: &mut Document,
     node: &Node,
     enum_struct_item: Arc<SPItem>,
-    comments: &mut Vec<Node>,
-    deprecated: &mut Vec<Node>,
+    walker: &mut Walker,
 ) {
     let mut cursor = node.walk();
     for mut child in node.children(&mut cursor) {
         match child.kind() {
             "enum_struct_field" => parse_enum_struct_field(document, &child, &enum_struct_item),
-            "enum_struct_method" => parse_function(
-                document,
-                &mut child,
-                comments,
-                deprecated,
-                Some(enum_struct_item.clone()),
-            )
-            .unwrap(),
+            "enum_struct_method" => {
+                parse_function(document, &mut child, walker, Some(enum_struct_item.clone()))
+                    .unwrap()
+            }
             "comment" => { //TODO:
             }
             "preproc_pragma_deprecated" => { //TODO:

@@ -3,7 +3,7 @@ use std::{str::Utf8Error, sync::Arc};
 use tree_sitter::Node;
 
 use crate::{
-    document::{find_doc, Document},
+    document::{find_doc, Document, Walker},
     providers::hover::description::Description,
     spitem::{enum_item::EnumItem, enum_member_item::EnumMemberItem, SPItem},
     utils::ts_range_to_lsp_range,
@@ -14,17 +14,11 @@ use lsp_types::{Position, Range, Url};
 pub fn parse_enum(
     document: &mut Document,
     node: &mut Node,
-    comments: &mut Vec<Node>,
-    deprecated: &mut Vec<Node>,
-    anon_enum_counter: &mut u32,
+    walker: &mut Walker,
 ) -> Result<(), Utf8Error> {
-    let (name, range) = get_enum_name_and_range(node, &document.text, anon_enum_counter);
-    let documentation = find_doc(
-        comments,
-        deprecated,
-        node.start_position().row,
-        &document.text,
-    )?;
+    let (name, range) =
+        get_enum_name_and_range(node, &document.text, &mut walker.anon_enum_counter);
+    let documentation = find_doc(walker, node.start_position().row, &document.text)?;
 
     let enum_item = EnumItem {
         name,

@@ -33,6 +33,12 @@ pub struct Document {
     pub parsed: bool,
 }
 
+pub struct Walker<'a> {
+    pub comments: Vec<Node<'a>>,
+    pub deprecated: Vec<Node<'a>>,
+    pub anon_enum_counter: u32,
+}
+
 impl Document {
     pub fn text(&self) -> &str {
         &self.text
@@ -46,16 +52,19 @@ impl Document {
     ) -> Result<(), Utf8Error> {
         let tree = parser.parse(&self.text, None).unwrap();
         let root_node = tree.root_node();
-        let mut anon_enum_counter = 0;
-        let mut comments: Vec<Node> = vec![];
-        let mut deprecated: Vec<Node> = vec![];
+        let mut walker = Walker {
+            comments: vec![],
+            deprecated: vec![],
+            anon_enum_counter: 0,
+        };
+
         let mut cursor = root_node.walk();
 
         for mut node in root_node.children(&mut cursor) {
             let kind = node.kind();
             match kind {
                 "function_declaration" | "function_definition" => {
-                    parse_function(self, &mut node, &mut comments, &mut deprecated, None)?;
+                    parse_function(self, &mut node, &mut walker, None)?;
                 }
                 "global_variable_declaration" | "old_global_variable_declaration" => {
                     parse_variable(self, &mut node, None)?;
@@ -64,19 +73,11 @@ impl Document {
                     parse_include(environment, documents, self, &mut node)?;
                 }
                 "enum" => {
-                    parse_enum(
-                        self,
-                        &mut node,
-                        &mut comments,
-                        &mut deprecated,
-                        &mut anon_enum_counter,
-                    )?;
+                    parse_enum(self, &mut node, &mut walker)?;
                 }
-                "enum_struct" => {
-                    parse_enum_struct(self, &mut node, &mut comments, &mut deprecated)?
-                }
+                "enum_struct" => parse_enum_struct(self, &mut node, &mut walker)?,
                 "comment" => {
-                    comments.push(node);
+                    walker.comments.push(node);
                 }
                 _ => {
                     continue;
@@ -90,15 +91,14 @@ impl Document {
 }
 
 pub fn find_doc(
-    comments: &mut Vec<Node>,
-    deprecated: &mut Vec<Node>,
+    walker: &mut Walker,
     mut end_row: usize,
     source: &String,
 ) -> Result<Description, Utf8Error> {
     let mut dep: Option<String> = None;
     let mut text: Vec<String> = vec![];
 
-    for deprecated in deprecated.iter().rev() {
+    for deprecated in walker.deprecated.iter().rev() {
         if end_row == deprecated.end_position().row {
             dep = Some(
                 deprecated
@@ -118,7 +118,7 @@ pub fn find_doc(
         offset = 2;
     }
 
-    for comment in comments.iter().rev() {
+    for comment in walker.comments.iter().rev() {
         if end_row == comment.end_position().row + offset {
             let comment_text = comment.utf8_text(source.as_bytes())?.to_string();
             text.push(comment_to_doc(&comment_text));
@@ -127,7 +127,7 @@ pub fn find_doc(
             break;
         }
     }
-    comments.clear();
+    walker.comments.clear();
     let doc = Description {
         text: text.join(""),
         deprecated: dep,

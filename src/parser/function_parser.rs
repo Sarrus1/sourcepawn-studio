@@ -3,7 +3,7 @@ use std::{str::Utf8Error, sync::Arc};
 use tree_sitter::{Node, QueryCursor, QueryMatch};
 
 use crate::{
-    document::{find_doc, Document},
+    document::{find_doc, Document, Walker},
     providers::hover::description::Description,
     spitem::{
         function_item::{FunctionDefinitionType, FunctionItem, FunctionVisibility},
@@ -18,8 +18,7 @@ use super::{variable_parser::parse_variable, VARIABLE_QUERY};
 pub fn parse_function(
     file_item: &mut Document,
     node: &Node,
-    comments: &mut Vec<Node>,
-    deprecated: &mut Vec<Node>,
+    walker: &mut Walker,
     parent: Option<Arc<SPItem>>,
 ) -> Result<(), Utf8Error> {
     // Name of the function
@@ -96,12 +95,7 @@ pub fn parse_function(
             _ => FunctionDefinitionType::None,
         }
     }
-    let documentation = find_doc(
-        comments,
-        deprecated,
-        node.start_position().row,
-        &file_item.text,
-    )?;
+    let documentation = find_doc(walker, node.start_position().row, &file_item.text)?;
 
     let function_item = FunctionItem {
         name: name?.to_string(),
