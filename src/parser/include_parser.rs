@@ -49,8 +49,10 @@ fn resolve_import(
     documents: &HashMap<Arc<Url>, Document>,
     document_uri: &Arc<Url>,
 ) -> Option<Url> {
+    // Add the extension to the file if needed.
     let include_text = utils::add_include_extension(include_text);
 
+    // Look for the include in the same directory or the closest include directory.
     let document_path = document_uri.to_file_path().unwrap();
     let document_dirpath = document_path.parent().unwrap();
     let mut include_file_path = document_dirpath.join(include_text);
@@ -62,6 +64,7 @@ fn resolve_import(
         return Some(uri);
     }
 
+    // Look for the includes in the include directories.
     for include_directory in include_directories.iter() {
         let path = include_directory.clone().join(include_text);
         let uri = Url::from_file_path(path).unwrap();
