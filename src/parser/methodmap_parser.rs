@@ -11,6 +11,8 @@ use crate::{
     utils::ts_range_to_lsp_range,
 };
 
+use super::function_parser::parse_function;
+
 pub fn parse_methodmap(
     document: &mut Document,
     node: &mut Node,
@@ -38,7 +40,33 @@ pub fn parse_methodmap(
     };
 
     let methodmap_item = Arc::new(Mutex::new(SPItem::Methodmap(methodmap_item)));
+    read_methodmap_members(document, node, methodmap_item.clone(), walker);
     document.sp_items.push(methodmap_item);
 
     Ok(())
+}
+
+fn read_methodmap_members(
+    document: &mut Document,
+    node: &Node,
+    methodmap_item: Arc<Mutex<SPItem>>,
+    walker: &mut Walker,
+) {
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        match child.kind() {
+            "methodmap_method"
+            | "methodmap_method_constructor"
+            | "methodmap_method_destructor"
+            | "methodmap_native"
+            | "methodmap_native_constructor"
+            | "methodmap_native_destructor" => {
+                parse_function(document, node, walker, Some(methodmap_item.clone())).unwrap();
+            }
+            "methodmap_property" => {}
+            "comment" => walker.push_comment(child, &document.text),
+            "preproc_pragma" => {}
+            _ => {}
+        }
+    }
 }

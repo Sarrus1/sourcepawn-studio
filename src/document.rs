@@ -6,21 +6,24 @@ use std::{
 
 use derive_new::new;
 use lazy_static::lazy_static;
-use lsp_types::{Range, Url};
+use lsp_types::Url;
 use regex::Regex;
-use tree_sitter::{Node, Parser};
+use tree_sitter::Parser;
 
 use crate::{
     environment::Environment,
     parser::{
-        comment_parser::parse_deprecated, define_parser::parse_define, enum_parser::parse_enum,
-        enum_struct_parser::parse_enum_struct, function_parser::parse_function,
-        include_parser::parse_include, methodmap_parser::parse_methodmap,
+        comment_parser::{Comment, Deprecated},
+        define_parser::parse_define,
+        enum_parser::parse_enum,
+        enum_struct_parser::parse_enum_struct,
+        function_parser::parse_function,
+        include_parser::parse_include,
+        methodmap_parser::parse_methodmap,
         variable_parser::parse_variable,
     },
     providers::hover::description::Description,
     spitem::SPItem,
-    utils::ts_range_to_lsp_range,
 };
 
 #[derive(Debug, Clone, new)]
@@ -39,26 +42,6 @@ pub struct Walker {
     pub comments: Vec<Comment>,
     pub deprecated: Vec<Deprecated>,
     pub anon_enum_counter: u32,
-}
-
-pub struct Comment {
-    text: String,
-    range: Range,
-}
-
-impl Comment {
-    pub fn new(node: Node, source: &str) -> Self {
-        Self {
-            text: node.utf8_text(source.as_bytes()).unwrap().to_string(),
-            range: ts_range_to_lsp_range(&node.range()),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct Deprecated {
-    pub text: String,
-    pub range: Range,
 }
 
 impl Document {
@@ -108,9 +91,9 @@ impl Document {
                 "preproc_macro" => {}
                 "enum_struct" => parse_enum_struct(self, &mut node, &mut walker)?,
                 "comment" => {
-                    walker.comments.push(Comment::new(node, &self.text));
+                    walker.push_comment(node, &self.text);
                 }
-                "preproc_pragma" => parse_deprecated(node, &self.text, &mut walker),
+                "preproc_pragma" => walker.push_deprecated(node, &self.text),
                 _ => {
                     continue;
                 }

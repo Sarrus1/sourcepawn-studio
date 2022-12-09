@@ -6,13 +6,13 @@ use std::{
 use tree_sitter::Node;
 
 use crate::{
-    document::{find_doc, Comment, Document, Walker},
+    document::{find_doc, Document, Walker},
     providers::hover::description::Description,
     spitem::{enum_struct_item::EnumStructItem, variable_item::VariableItem, SPItem},
     utils::ts_range_to_lsp_range,
 };
 
-use super::{comment_parser::parse_deprecated, function_parser::parse_function};
+use super::function_parser::parse_function;
 
 pub fn parse_enum_struct(
     document: &mut Document,
@@ -55,8 +55,8 @@ fn parse_enum_struct_members(
                 parse_function(document, &mut child, walker, Some(enum_struct_item.clone()))
                     .unwrap()
             }
-            "comment" => walker.comments.push(Comment::new(child, &document.text)),
-            "preproc_pragma" => parse_deprecated(child, &document.text, walker),
+            "comment" => walker.push_comment(child, &document.text),
+            "preproc_pragma" => walker.push_deprecated(child, &document.text),
             _ => {}
         }
     }
