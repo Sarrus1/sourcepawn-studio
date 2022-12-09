@@ -2,6 +2,7 @@ use lazy_static::lazy_static;
 use tree_sitter::Query;
 
 pub mod comment_parser;
+pub mod define_parser;
 pub mod enum_parser;
 pub mod enum_struct_parser;
 pub mod function_parser;

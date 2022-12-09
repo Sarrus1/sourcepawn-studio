@@ -13,7 +13,7 @@ use tree_sitter::{Node, Parser};
 use crate::{
     environment::Environment,
     parser::{
-        comment_parser::parse_deprecated, enum_parser::parse_enum,
+        comment_parser::parse_deprecated, define_parser::parse_define, enum_parser::parse_enum,
         enum_struct_parser::parse_enum_struct, function_parser::parse_function,
         include_parser::parse_include, variable_parser::parse_variable,
     },
@@ -96,6 +96,13 @@ impl Document {
                 "enum" => {
                     parse_enum(self, &mut node, &mut walker)?;
                 }
+                "preproc_define" => {
+                    parse_define(self, &mut node, &mut walker)?;
+                }
+                "methodmap" => {}
+                "typedef" => {}
+                "typeset" => {}
+                "preproc_macro" => {}
                 "enum_struct" => parse_enum_struct(self, &mut node, &mut walker)?,
                 "comment" => {
                     walker.comments.push(Comment::new(node, &self.text));
