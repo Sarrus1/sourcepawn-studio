@@ -49,7 +49,7 @@ pub fn get_all_items(store: &Store) -> Vec<Arc<Mutex<SPItem>>> {
 fn get_included_files(store: &Store, document: Document, includes: &mut HashSet<Url>) {
     for include_uri in document.includes.iter() {
         if includes.contains(include_uri) {
-            return;
+            continue;
         }
         includes.insert(include_uri.clone());
         if let Some(include_document) = store.get(include_uri) {

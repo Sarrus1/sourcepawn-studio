@@ -98,7 +98,7 @@ impl Store {
         for include_uri in includes.iter() {
             let document = self.get(include_uri).expect("Include does not exist.");
             if document.parsed {
-                return;
+                continue;
             }
             let document = self
                 .handle_open_document(document.uri, document.text, parser)

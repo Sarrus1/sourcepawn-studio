@@ -259,7 +259,7 @@ impl Server {
         loop {
             crossbeam_channel::select! {
                 recv(&self.connection.receiver) -> msg => {
-                        eprintln!("got msg: {:?}", msg);
+                        // eprintln!("got msg: {:?}", msg);
                         match msg? {
                             Message::Request(request) => {
                                 if self.connection.handle_shutdown(&request)? {
