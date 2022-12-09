@@ -11,7 +11,7 @@ use crate::{
     utils::ts_range_to_lsp_range,
 };
 
-use super::function_parser::parse_function;
+use super::{function_parser::parse_function, property_parser::parse_property};
 
 pub fn parse_methodmap(
     document: &mut Document,
@@ -22,11 +22,14 @@ pub fn parse_methodmap(
     let name = name_node.utf8_text(&document.text.as_bytes()).unwrap();
     let inherit_node = node.child_by_field_name("inherits");
     let inherit = match inherit_node {
-        Some(inherit_node) => inherit_node
-            .utf8_text(&document.text.as_bytes())
-            .unwrap()
-            .trim(),
-        None => "",
+        Some(inherit_node) => Some(
+            inherit_node
+                .utf8_text(&document.text.as_bytes())
+                .unwrap()
+                .trim()
+                .to_string(),
+        ),
+        None => None,
     };
 
     let methodmap_item = MethodmapItem {
@@ -37,6 +40,7 @@ pub fn parse_methodmap(
         description: find_doc(walker, node.start_position().row)?,
         uri: document.uri.clone(),
         references: vec![],
+        tmp_parent: inherit,
     };
 
     let methodmap_item = Arc::new(Mutex::new(SPItem::Methodmap(methodmap_item)));
@@ -53,7 +57,7 @@ fn read_methodmap_members(
     walker: &mut Walker,
 ) {
     let mut cursor = node.walk();
-    for child in node.children(&mut cursor) {
+    for mut child in node.children(&mut cursor) {
         match child.kind() {
             "methodmap_method"
             | "methodmap_method_constructor"
@@ -63,9 +67,11 @@ fn read_methodmap_members(
             | "methodmap_native_destructor" => {
                 parse_function(document, node, walker, Some(methodmap_item.clone())).unwrap();
             }
-            "methodmap_property" => {}
+            "methodmap_property" => {
+                parse_property(document, &mut child, walker, methodmap_item.clone()).unwrap();
+            }
             "comment" => walker.push_comment(child, &document.text),
-            "preproc_pragma" => {}
+            "preproc_pragma" => walker.push_deprecated(child, &document.text),
             _ => {}
         }
     }

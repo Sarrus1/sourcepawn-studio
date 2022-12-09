@@ -18,6 +18,7 @@ pub mod enum_member_item;
 pub mod enum_struct_item;
 pub mod function_item;
 pub mod methodmap_item;
+pub mod property_item;
 pub mod variable_item;
 
 #[derive(Debug, Clone)]
@@ -31,6 +32,7 @@ pub enum SPItem {
     EnumStruct(enum_struct_item::EnumStructItem),
     Define(define_item::DefineItem),
     Methodmap(methodmap_item::MethodmapItem),
+    Property(property_item::PropertyItem),
 }
 
 pub fn get_all_items(store: &Store) -> Vec<Arc<Mutex<SPItem>>> {
@@ -105,6 +107,7 @@ impl SPItem {
             SPItem::EnumStruct(item) => Some(item.range),
             SPItem::Define(item) => Some(item.range),
             SPItem::Methodmap(item) => Some(item.range),
+            SPItem::Property(item) => Some(item.range),
         }
     }
 
@@ -117,6 +120,7 @@ impl SPItem {
             SPItem::EnumStruct(item) => item.name.clone(),
             SPItem::Define(item) => item.name.clone(),
             SPItem::Methodmap(item) => item.name.clone(),
+            SPItem::Property(item) => item.name.clone(),
         }
     }
 
@@ -129,6 +133,7 @@ impl SPItem {
             SPItem::EnumStruct(item) => Some(item.description.clone()),
             SPItem::Define(item) => Some(item.description.clone()),
             SPItem::Methodmap(item) => Some(item.description.clone()),
+            SPItem::Property(item) => Some(item.description.clone()),
         }
     }
 
@@ -141,6 +146,7 @@ impl SPItem {
             SPItem::EnumStruct(item) => item.uri.clone(),
             SPItem::Define(item) => item.uri.clone(),
             SPItem::Methodmap(item) => item.uri.clone(),
+            SPItem::Property(item) => item.uri.clone(),
         }
     }
 
@@ -153,6 +159,7 @@ impl SPItem {
             SPItem::EnumStruct(item) => Some(&item.references),
             SPItem::Define(item) => Some(&item.references),
             SPItem::Methodmap(item) => Some(&item.references),
+            SPItem::Property(item) => Some(&item.references),
         }
     }
 
@@ -174,6 +181,7 @@ impl SPItem {
             SPItem::EnumStruct(item) => item.to_completion(params),
             SPItem::Define(item) => item.to_completion(params),
             SPItem::Methodmap(item) => item.to_completion(params),
+            SPItem::Property(item) => item.to_completion(params),
         }
     }
 
@@ -186,6 +194,7 @@ impl SPItem {
             SPItem::EnumStruct(item) => item.to_hover(params),
             SPItem::Define(item) => item.to_hover(params),
             SPItem::Methodmap(item) => item.to_hover(params),
+            SPItem::Property(item) => item.to_hover(params),
         }
     }
 }

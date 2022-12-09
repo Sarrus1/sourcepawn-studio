@@ -18,6 +18,9 @@ pub struct MethodmapItem {
     /// Parent of the methodmap.
     pub parent: Option<Arc<Mutex<SPItem>>>,
 
+    /// Temporary parent of the methodmap.
+    pub tmp_parent: Option<String>,
+
     /// Range of the name of the methodmap.
     pub range: Range,
 
