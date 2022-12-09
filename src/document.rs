@@ -15,7 +15,8 @@ use crate::{
     parser::{
         comment_parser::parse_deprecated, define_parser::parse_define, enum_parser::parse_enum,
         enum_struct_parser::parse_enum_struct, function_parser::parse_function,
-        include_parser::parse_include, variable_parser::parse_variable,
+        include_parser::parse_include, methodmap_parser::parse_methodmap,
+        variable_parser::parse_variable,
     },
     providers::hover::description::Description,
     spitem::SPItem,
@@ -99,7 +100,9 @@ impl Document {
                 "preproc_define" => {
                     parse_define(self, &mut node, &mut walker)?;
                 }
-                "methodmap" => {}
+                "methodmap" => {
+                    parse_methodmap(self, &mut node, &mut walker)?;
+                }
                 "typedef" => {}
                 "typeset" => {}
                 "preproc_macro" => {}
