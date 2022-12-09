@@ -1,4 +1,4 @@
-use std::{collections::HashMap, str::Utf8Error, sync::Arc};
+use std::{collections::HashMap, path::PathBuf, str::Utf8Error, sync::Arc};
 
 use lsp_types::Url;
 use tree_sitter::Node;
@@ -20,7 +20,12 @@ pub fn parse_include(
         return Ok(());
     }
     let mut path = path[1..path.len() - 1].trim().to_string();
-    let uri = resolve_import(environment, &mut path, &documents);
+    let uri = resolve_import(
+        &environment.options.includes_directories,
+        &mut path,
+        &documents,
+        &document.uri,
+    );
     if uri.is_none() {
         return Ok(());
     }
@@ -30,13 +35,33 @@ pub fn parse_include(
     Ok(())
 }
 
+/// Resolve an include from its `#include` directive and the file it was imported in.
+///
+/// # Arguments
+///
+/// * `include_directories` - List of directories to look for includes files.
+/// * `include_text` - Text of the include such as `"file.sp"` or `<file>`.
+/// * `documents` - List of known documents.
+/// * `document_uri` - Uri of the document where the include declaration is parsed from.
 fn resolve_import(
-    environment: &Environment,
+    include_directories: &Vec<PathBuf>,
     include_text: &mut String,
     documents: &HashMap<Arc<Url>, Document>,
+    document_uri: &Arc<Url>,
 ) -> Option<Url> {
-    let include_directories = &environment.options.includes_directories;
     let include_text = utils::add_include_extension(include_text);
+
+    let document_path = document_uri.to_file_path().unwrap();
+    let document_dirpath = document_path.parent().unwrap();
+    let mut include_file_path = document_dirpath.join(include_text);
+    if !include_file_path.exists() {
+        include_file_path = document_dirpath.join("include").join(include_text);
+    }
+    let uri = Url::from_file_path(&include_file_path).unwrap();
+    if documents.contains_key(&uri) {
+        return Some(uri);
+    }
+
     for include_directory in include_directories.iter() {
         let path = include_directory.clone().join(include_text);
         let uri = Url::from_file_path(path).unwrap();
