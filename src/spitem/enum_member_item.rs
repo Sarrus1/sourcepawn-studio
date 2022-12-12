@@ -2,11 +2,12 @@ use std::sync::{Arc, Mutex};
 
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionParams, Hover, HoverContents, HoverParams,
-    LanguageString, Location, MarkedString, Range, Url,
+    LanguageString, MarkedString, Range, Url,
 };
 
 use crate::providers::hover::description::Description;
 
+use super::Location;
 use super::SPItem;
 
 #[derive(Debug, Clone)]

@@ -1,8 +1,9 @@
 use std::sync::{Arc, Mutex};
 
+use super::Location;
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionParams, Hover, HoverContents, HoverParams,
-    LanguageString, Location, MarkedString, Range, Url,
+    LanguageString, MarkedString, Range, Url,
 };
 
 use crate::{providers::hover::description::Description, utils::uri_to_file_name};

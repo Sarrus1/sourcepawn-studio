@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashSet,
     str::Utf8Error,
     sync::{Arc, Mutex},
 };
@@ -11,7 +11,6 @@ use regex::Regex;
 use tree_sitter::Parser;
 
 use crate::{
-    environment::Environment,
     parser::{
         comment_parser::{Comment, Deprecated},
         define_parser::parse_define,
@@ -23,7 +22,9 @@ use crate::{
         variable_parser::parse_variable,
     },
     providers::hover::description::Description,
+    semantic_analyzer::find_references,
     spitem::SPItem,
+    store::Store,
 };
 
 #[derive(Debug, Clone, new)]
@@ -49,12 +50,7 @@ impl Document {
         &self.text
     }
 
-    pub fn parse(
-        &mut self,
-        environment: &Environment,
-        parser: &mut Parser,
-        documents: &HashMap<Arc<Url>, Document>,
-    ) -> Result<(), Utf8Error> {
+    pub fn parse(&mut self, store: &mut Store, parser: &mut Parser) -> Result<(), Utf8Error> {
         let tree = parser.parse(&self.text, None).unwrap();
         let root_node = tree.root_node();
         let mut walker = Walker {
@@ -75,7 +71,7 @@ impl Document {
                     parse_variable(self, &mut node, None)?;
                 }
                 "preproc_include" | "preproc_tryinclude" => {
-                    parse_include(environment, documents, self, &mut node)?;
+                    parse_include(&store.environment, &store.documents, self, &mut node)?;
                 }
                 "enum" => {
                     parse_enum(self, &mut node, &mut walker)?;
@@ -100,6 +96,8 @@ impl Document {
             }
         }
         self.parsed = true;
+        store.documents.insert(self.uri.clone(), self.clone());
+        find_references(&store, root_node, self.clone());
 
         Ok(())
     }

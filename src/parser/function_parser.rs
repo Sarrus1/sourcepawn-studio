@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use tree_sitter::{Node, QueryCursor, QueryMatch};
+use tree_sitter::{Node, QueryCursor};
 
 use crate::{
     document::{find_doc, Document, Walker},
@@ -143,10 +143,8 @@ fn read_body_variables(
     function_item: Arc<Mutex<SPItem>>,
 ) -> Result<(), Utf8Error> {
     let mut cursor = QueryCursor::new();
-    let matches = cursor
-        .matches(&VARIABLE_QUERY, block_node, text.as_bytes())
-        .collect::<Vec<QueryMatch>>();
-    for match_ in matches.iter() {
+    let matches = cursor.captures(&VARIABLE_QUERY, block_node, text.as_bytes());
+    for (match_, _) in matches {
         for capture in match_.captures.iter() {
             parse_variable(
                 file_item,

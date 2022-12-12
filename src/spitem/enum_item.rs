@@ -2,9 +2,10 @@ use std::sync::Arc;
 
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionParams, Hover, HoverContents, HoverParams,
-    LanguageString, Location, MarkedString, Range, Url,
+    LanguageString, MarkedString, Range, Url,
 };
 
+use super::Location;
 use crate::{providers::hover::description::Description, utils::uri_to_file_name};
 
 #[derive(Debug, Clone)]

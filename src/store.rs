@@ -86,11 +86,10 @@ impl Store {
     ) -> Result<Document, io::Error> {
         let mut document = Document::new(uri.clone(), text);
         document
-            .parse(&self.environment, parser, &self.documents)
+            .parse(self, parser)
             .expect("Couldn't parse document");
-        self.documents.insert(uri, document.clone());
-        self.read_unscanned_imports(&document.includes, parser);
 
+        self.read_unscanned_imports(&document.includes, parser);
         Ok(document)
     }
 

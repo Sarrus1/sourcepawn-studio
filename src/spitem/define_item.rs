@@ -2,10 +2,12 @@ use std::sync::Arc;
 
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionParams, Hover, HoverContents, HoverParams,
-    LanguageString, Location, MarkedString, Range, Url,
+    LanguageString, MarkedString, Range, Url,
 };
 
 use crate::{providers::hover::description::Description, utils::uri_to_file_name};
+
+use super::Location;
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a SourcePawn define.
