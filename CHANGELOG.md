@@ -7,6 +7,7 @@
 - Improved clang format default settings (thank you [K4ryuu](https://github.com/K4ryuu)!, see #273).
 - Fixed methodmap inherit with same method name (thank you see [BoneTM](https://github.com/BoneTM)!, #275).
 - Fixed `view_as` completion (thank you [BoneTM](https://github.com/BoneTM)!, see #276).
+- Fixed formatter support for `.inc` files.
 
 ## [4.2.3]
 
