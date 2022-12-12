@@ -172,7 +172,6 @@ export function activate(context: ExtensionContext) {
       {
         language: "sourcepawn",
         scheme: "file",
-        pattern: "**/*.sp",
       },
       new SMDocumentFormattingEditProvider()
     )
