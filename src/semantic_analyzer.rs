@@ -51,17 +51,30 @@ pub fn find_references(store: &Store, root_node: Node, document: Document) {
     }
 }
 
+/// key format: "{outermost_scope}-{outer_scope}-{item_name}"
+/// key format: "{outer_scope}-{item_name}"
 fn build_tokens_map(all_items: Vec<Arc<Mutex<SPItem>>>) -> HashMap<String, Arc<Mutex<SPItem>>> {
     let mut tokens_map: HashMap<String, Arc<Mutex<SPItem>>> = HashMap::new();
 
     for item in all_items.iter() {
         match &*item.lock().unwrap() {
+            // Match variables
             SPItem::Variable(variable_item) => match &variable_item.parent {
+                // Match non global variables
                 Some(variable_item_parent) => match &*variable_item_parent.lock().unwrap() {
+                    // Match variables in a function or method
                     SPItem::Function(variable_item_parent_function) => {
                         let key = format!(
                             "{}-{}",
                             variable_item_parent_function.name, variable_item.name
+                        );
+                        tokens_map.insert(key, item.clone());
+                    }
+                    // Match variables as enum struct fields
+                    SPItem::EnumStruct(variable_item_parent_enum_struct) => {
+                        let key = format!(
+                            "{}-{}",
+                            variable_item_parent_enum_struct.name, variable_item.name
                         );
                         tokens_map.insert(key, item.clone());
                     }
@@ -87,6 +100,26 @@ fn build_tokens_map(all_items: Vec<Arc<Mutex<SPItem>>>) -> HashMap<String, Arc<M
                     tokens_map.insert(function_item.name.to_string(), item.clone());
                 }
             },
+            SPItem::Methodmap(methodmap_item) => {
+                tokens_map.insert(methodmap_item.name.to_string(), item.clone());
+            }
+            SPItem::EnumStruct(enum_struct_item) => {
+                tokens_map.insert(enum_struct_item.name.to_string(), item.clone());
+            }
+            SPItem::Enum(enum_item) => {
+                tokens_map.insert(enum_item.name.to_string(), item.clone());
+            }
+            SPItem::Define(define_item) => {
+                tokens_map.insert(define_item.name.to_string(), item.clone());
+            }
+            SPItem::EnumMember(enum_member_item) => {
+                let key = format!(
+                    "{}-{}",
+                    enum_member_item.parent.lock().unwrap().name(),
+                    enum_member_item.name
+                );
+                tokens_map.insert(key, item.clone());
+            } // TODO: add typedef and typeset here
             _ => {}
         }
     }
