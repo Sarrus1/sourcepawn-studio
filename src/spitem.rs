@@ -3,7 +3,10 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use lsp_types::{CompletionItem, CompletionParams, Hover, HoverParams, Position, Range, Url};
+use lsp_types::{
+    CompletionItem, CompletionParams, GotoDefinitionParams, Hover, HoverParams, LocationLink,
+    Position, Range, Url,
+};
 
 use crate::{
     document::Document, providers::hover::description::Description, store::Store,
@@ -227,6 +230,19 @@ impl SPItem {
             SPItem::Define(item) => item.to_hover(params),
             SPItem::Methodmap(item) => item.to_hover(params),
             SPItem::Property(item) => item.to_hover(params),
+        }
+    }
+
+    pub fn to_definition(&self, params: &GotoDefinitionParams) -> Option<LocationLink> {
+        match self {
+            SPItem::Variable(item) => item.to_definition(params),
+            SPItem::Function(item) => item.to_definition(params),
+            SPItem::Enum(item) => item.to_definition(params),
+            SPItem::EnumMember(item) => item.to_definition(params),
+            SPItem::EnumStruct(item) => item.to_definition(params),
+            SPItem::Define(item) => item.to_definition(params),
+            SPItem::Methodmap(item) => item.to_definition(params),
+            SPItem::Property(item) => item.to_definition(params),
         }
     }
 }

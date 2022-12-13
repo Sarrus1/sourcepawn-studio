@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use super::Location;
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionParams, Hover, HoverContents, HoverParams,
-    LanguageString, MarkedString, Range, Url,
+    CompletionItem, CompletionItemKind, CompletionParams, GotoDefinitionParams, Hover,
+    HoverContents, HoverParams, LanguageString, LocationLink, MarkedString, Range, Url,
 };
 
 use crate::{providers::hover::description::Description, utils::uri_to_file_name};
@@ -57,6 +57,20 @@ impl EnumStructItem {
                 MarkedString::String(self.description.to_md()),
             ]),
             range: None,
+        })
+    }
+
+    /// Return a [LocationLink] from an [EnumStructItem].
+    ///
+    /// # Arguments
+    ///
+    /// * `_params` - [GotoDefinitionParams] of the request.
+    pub(crate) fn to_definition(&self, _params: &GotoDefinitionParams) -> Option<LocationLink> {
+        Some(LocationLink {
+            target_range: self.range,
+            target_uri: self.uri.as_ref().clone(),
+            target_selection_range: self.range,
+            origin_selection_range: None,
         })
     }
 

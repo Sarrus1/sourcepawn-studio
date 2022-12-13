@@ -6,11 +6,11 @@ use crossbeam_channel::{Receiver, Sender};
 use lsp_server::{Connection, Message, RequestId};
 use lsp_types::{
     notification::{DidChangeTextDocument, DidOpenTextDocument, ShowMessage},
-    request::{Completion, HoverRequest, WorkspaceConfiguration},
+    request::{Completion, GotoDefinition, HoverRequest, WorkspaceConfiguration},
     CompletionOptions, CompletionParams, ConfigurationItem, ConfigurationParams,
-    DidChangeTextDocumentParams, DidOpenTextDocumentParams, HoverParams, HoverProviderCapability,
-    InitializeParams, MessageType, ServerCapabilities, ShowMessageParams,
-    TextDocumentSyncCapability, TextDocumentSyncKind, Url,
+    DidChangeTextDocumentParams, DidOpenTextDocumentParams, GotoDefinitionParams, HoverParams,
+    HoverProviderCapability, InitializeParams, MessageType, OneOf, ServerCapabilities,
+    ShowMessageParams, TextDocumentSyncCapability, TextDocumentSyncKind, Url,
 };
 use serde::Serialize;
 use threadpool::ThreadPool;
@@ -122,6 +122,7 @@ impl Server {
             )),
             completion_provider: Some(CompletionOptions::default()),
             hover_provider: Some(HoverProviderCapability::Simple(true)),
+            definition_provider: Some(OneOf::Left(true)),
             ..Default::default()
         })
         .unwrap();
@@ -223,6 +224,19 @@ impl Server {
         Ok(())
     }
 
+    fn definition(&self, id: RequestId, mut params: GotoDefinitionParams) -> anyhow::Result<()> {
+        utils::normalize_uri(&mut params.text_document_position_params.text_document.uri);
+        let uri = Arc::new(
+            params
+                .text_document_position_params
+                .text_document
+                .uri
+                .clone(),
+        );
+        self.handle_feature_request(id, params, uri, providers::definition::provide_definition)?;
+        Ok(())
+    }
+
     fn handle_feature_request<P, R, H>(
         &self,
         id: RequestId,
@@ -268,6 +282,7 @@ impl Server {
                                 if let Some(response) = dispatch::RequestDispatcher::new(request)
                                 .on::<Completion, _>(|id, params| self.completion(id, params))?
                                 .on::<HoverRequest, _>(|id, params| self.hover(id, params))?
+                                .on::<GotoDefinition, _>(|id, params| self.definition(id, params))?
                                 .default()
                                 {
                                     self.connection.sender.send(response.into())?;
