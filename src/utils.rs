@@ -96,6 +96,25 @@ pub fn range_contains_pos(range: Range, position: Position) -> bool {
     return true;
 }
 
+/// Returns true if [Range] b contains [Range] a.
+///
+/// # Arguments
+///
+/// * `a` - [Range] to check against.
+/// * `b` - [Range] to check against.
+pub fn range_contains_range(a: &Range, b: &Range) -> bool {
+    if a.start.line < b.start.line || a.end.line > b.end.line {
+        return false;
+    }
+    if a.start.line == b.start.line && a.start.character < b.start.character {
+        return false;
+    }
+    if a.end.line == b.end.line && a.end.character > b.end.character {
+        return false;
+    }
+    return true;
+}
+
 /// Extracts the filename from a [Uri](Url). Returns [None] if it does not exist.
 ///
 /// # Arguments

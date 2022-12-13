@@ -20,7 +20,7 @@ use crate::{
     document::Document,
     spitem::{get_all_items, Location, SPItem},
     store::Store,
-    utils::ts_range_to_lsp_range,
+    utils::{range_contains_range, ts_range_to_lsp_range},
 };
 
 pub fn find_references(store: &Store, root_node: Node, document: Document) {
@@ -29,24 +29,80 @@ pub fn find_references(store: &Store, root_node: Node, document: Document) {
         return;
     }
     let all_items = all_items.unwrap();
-    let tokens_maps = build_tokens_map(all_items, &document.uri);
+    let (tokens_maps, funcs_and_methods_in_file) = build_tokens_map(all_items, &document.uri);
+
+    // let mut lines = document.text.lines();
+    let mut func_scope: Option<Arc<Mutex<SPItem>>> = None;
+    // let mut es_ms_scope: Option<Arc<Mutex<SPItem>>> = None;
+    // let line = lines.next();
+    // let mut lineNb = 0;
+    // let mut scope = "";
+    // let mut outsideScope = "";
+    // this.lastMMorES = undefined;
+    // this.inTypeDef = false;
+
+    let mut func_idx = 0;
+    // let mut es_ms_idx = 0;
+    // let mut typeIdx = 0;
     let mut cursor = QueryCursor::new();
     let matches = cursor.captures(&SYMBOL_QUERY, root_node, document.text.as_bytes());
     for (match_, _) in matches {
         for capture in match_.captures.iter() {
-            let text = capture.node.utf8_text(document.text.as_bytes()).unwrap();
-            let item = tokens_maps.get(&text.to_string());
-            match item {
-                Some(item) => {
-                    let reference = Location {
-                        uri: document.uri.clone(),
-                        range: ts_range_to_lsp_range(&capture.node.range()),
-                    };
-                    item.lock().unwrap().push_reference(reference);
+            let text = capture
+                .node
+                .utf8_text(document.text.as_bytes())
+                .unwrap()
+                .to_string();
+            let range = ts_range_to_lsp_range(&capture.node.range());
+
+            if func_scope.is_none()
+                || !range_contains_range(
+                    &range,
+                    &func_scope
+                        .as_ref()
+                        .unwrap()
+                        .lock()
+                        .unwrap()
+                        .full_range()
+                        .unwrap(),
+                )
+            {
+                if func_idx < funcs_and_methods_in_file.len()
+                    && range_contains_range(
+                        &range,
+                        &funcs_and_methods_in_file[func_idx]
+                            .lock()
+                            .unwrap()
+                            .full_range()
+                            .unwrap(),
+                    )
+                {
+                    func_scope = Some(funcs_and_methods_in_file[func_idx].clone());
+                    func_idx += 1;
+                } else {
+                    func_scope = None;
                 }
-                None => {
-                    continue;
-                }
+            }
+            let key: String;
+            if func_scope.is_some() {
+                key = format!(
+                    "{}-{}",
+                    func_scope.clone().unwrap().lock().unwrap().name(),
+                    text
+                );
+            } else {
+                key = text.clone();
+            }
+
+            let item = tokens_maps.get(&key).or_else(|| tokens_maps.get(&text));
+            if item.is_some() {
+                let item = item.unwrap();
+                let reference = Location {
+                    uri: document.uri.clone(),
+                    range: ts_range_to_lsp_range(&capture.node.range()),
+                };
+                item.lock().unwrap().push_reference(reference);
+                continue;
             }
         }
     }
@@ -57,8 +113,9 @@ pub fn find_references(store: &Store, root_node: Node, document: Document) {
 fn build_tokens_map(
     all_items: Vec<Arc<Mutex<SPItem>>>,
     uri: &Arc<Url>,
-) -> HashMap<String, Arc<Mutex<SPItem>>> {
+) -> (HashMap<String, Arc<Mutex<SPItem>>>, Vec<Arc<Mutex<SPItem>>>) {
     let mut tokens_map: HashMap<String, Arc<Mutex<SPItem>>> = HashMap::new();
+    let mut funcs_and_methods_in_file = vec![];
 
     for item in all_items.iter() {
         purge_references(item, &uri);
@@ -102,6 +159,9 @@ fn build_tokens_map(
                     _ => {}
                 },
                 None => {
+                    if function_item.uri.eq(uri) {
+                        funcs_and_methods_in_file.push(item.clone());
+                    }
                     tokens_map.insert(function_item.name.to_string(), item.clone());
                 }
             },
@@ -124,7 +184,7 @@ fn build_tokens_map(
         }
     }
 
-    tokens_map
+    (tokens_map, funcs_and_methods_in_file)
 }
 
 fn purge_references(item: &Arc<Mutex<SPItem>>, uri: &Arc<Url>) {

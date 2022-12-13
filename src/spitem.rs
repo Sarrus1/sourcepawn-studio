@@ -133,6 +133,19 @@ impl SPItem {
         }
     }
 
+    pub fn full_range(&self) -> Option<Range> {
+        match self {
+            SPItem::Variable(item) => Some(item.range),
+            SPItem::Function(item) => Some(item.full_range),
+            SPItem::Enum(item) => Some(item.full_range),
+            SPItem::EnumMember(item) => Some(item.range),
+            SPItem::EnumStruct(item) => Some(item.full_range),
+            SPItem::Define(item) => Some(item.full_range),
+            SPItem::Methodmap(item) => Some(item.full_range),
+            SPItem::Property(item) => Some(item.full_range),
+        }
+    }
+
     pub fn name(&self) -> String {
         match self {
             SPItem::Variable(item) => item.name.clone(),
