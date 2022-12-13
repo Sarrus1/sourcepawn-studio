@@ -4,6 +4,7 @@ use std::{
 };
 
 use lazy_static::lazy_static;
+use lsp_types::Url;
 use tree_sitter::{Node, Query, QueryCursor};
 
 lazy_static! {
@@ -28,7 +29,7 @@ pub fn find_references(store: &Store, root_node: Node, document: Document) {
         return;
     }
     let all_items = all_items.unwrap();
-    let tokens_maps = build_tokens_map(all_items);
+    let tokens_maps = build_tokens_map(all_items, &document.uri);
     let mut cursor = QueryCursor::new();
     let matches = cursor.captures(&SYMBOL_QUERY, root_node, document.text.as_bytes());
     for (match_, _) in matches {
@@ -53,10 +54,14 @@ pub fn find_references(store: &Store, root_node: Node, document: Document) {
 
 /// key format: "{outermost_scope}-{outer_scope}-{item_name}"
 /// key format: "{outer_scope}-{item_name}"
-fn build_tokens_map(all_items: Vec<Arc<Mutex<SPItem>>>) -> HashMap<String, Arc<Mutex<SPItem>>> {
+fn build_tokens_map(
+    all_items: Vec<Arc<Mutex<SPItem>>>,
+    uri: &Arc<Url>,
+) -> HashMap<String, Arc<Mutex<SPItem>>> {
     let mut tokens_map: HashMap<String, Arc<Mutex<SPItem>>> = HashMap::new();
 
     for item in all_items.iter() {
+        purge_references(item, &uri);
         match &*item.lock().unwrap() {
             // Match variables
             SPItem::Variable(variable_item) => match &variable_item.parent {
@@ -125,4 +130,19 @@ fn build_tokens_map(all_items: Vec<Arc<Mutex<SPItem>>>) -> HashMap<String, Arc<M
     }
 
     tokens_map
+}
+
+fn purge_references(item: &Arc<Mutex<SPItem>>, uri: &Arc<Url>) {
+    let mut new_references = vec![];
+    let item_lock = item.lock().unwrap();
+    let old_references = item_lock.references();
+    if old_references.is_none() {
+        return;
+    }
+    let old_references = old_references.unwrap();
+    for reference in old_references {
+        if reference.uri.eq(&uri) {
+            new_references.push(reference);
+        }
+    }
 }
