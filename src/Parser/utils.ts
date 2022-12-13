@@ -5,24 +5,11 @@ import { Point } from "web-tree-sitter";
 import { FunctionParam } from "./interfaces";
 import { SPItem } from "../Backend/Items/spItems";
 
-export function purgeReferences(
-  item: SPItem,
-  file: string,
-  range: Range
-): void {
+export function purgeReferences(item: SPItem, file: string): void {
   if (item.references === undefined) {
     return;
   }
-  item.references = item.references.filter(
-    (e) => file !== e.uri.fsPath || !containsIfDefined(range, e.range)
-  );
-}
-
-function containsIfDefined(range1: Range, range2: Range): boolean {
-  if (range1 === undefined) {
-    return true;
-  }
-  return range1.contains(range2);
+  item.references = item.references.filter((e) => file !== e.uri.fsPath);
 }
 
 export function positiveRange(
@@ -53,7 +40,8 @@ export function getParamsFromDeclaration(decl: string): FunctionParam[] {
   // Remove the leading and trailing parenthesis
   decl = match[1] + ",";
   const params: FunctionParam[] = [];
-  const re = /\s*(?:(?:const|static)\s+)?(?:(\w+)(?:\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+|\s*\:\s*|\s*&?\s*))?(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
+  const re =
+    /\s*(?:(?:const|static)\s+)?(?:(\w+)(?:\s*(?:\[(?:[A-Za-z_0-9+* ]*)\])?\s+|\s*\:\s*|\s*&?\s*))?(\w+)(?:\[(?:[A-Za-z_0-9+* ]*)\])?(?:\s*=\s*(?:[^,]+))?/g;
   let matchVariable;
   do {
     matchVariable = re.exec(decl);
