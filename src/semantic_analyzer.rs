@@ -118,12 +118,7 @@ fn build_tokens_map(
                 tokens_map.insert(define_item.name.to_string(), item.clone());
             }
             SPItem::EnumMember(enum_member_item) => {
-                let key = format!(
-                    "{}-{}",
-                    enum_member_item.parent.lock().unwrap().name(),
-                    enum_member_item.name
-                );
-                tokens_map.insert(key, item.clone());
+                tokens_map.insert(enum_member_item.name.to_string(), item.clone());
             } // TODO: add typedef and typeset here
             _ => {}
         }
