@@ -65,7 +65,7 @@ fn read_methodmap_members(
             | "methodmap_native"
             | "methodmap_native_constructor"
             | "methodmap_native_destructor" => {
-                parse_function(document, node, walker, Some(methodmap_item.clone())).unwrap();
+                parse_function(document, &child, walker, Some(methodmap_item.clone())).unwrap();
             }
             "methodmap_property" => {
                 parse_property(document, &mut child, walker, methodmap_item.clone()).unwrap();
