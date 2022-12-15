@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    str::Lines,
     sync::{Arc, Mutex},
 };
 
@@ -136,25 +137,130 @@ fn capture_text_range(capture: &QueryCapture, source: &String) -> (String, Range
     (text, range)
 }
 
+#[derive(Debug, Default)]
+pub struct Analyzer {
+    pub lines: Vec<String>,
+    pub line_nb: usize,
+    pub tokens_map: HashMap<String, Arc<Mutex<SPItem>>>,
+    pub funcs_in_file: Vec<Arc<Mutex<SPItem>>>,
+    pub mm_es_in_file: Vec<Arc<Mutex<SPItem>>>,
+    pub scope: Scope,
+    pub func_idx: usize,
+    pub mm_es_idx: usize,
+    pub token_idx: u32,
+}
+
+impl Analyzer {
+    pub fn new(all_items: Vec<Arc<Mutex<SPItem>>>, document: &Document) -> Self {
+        let mut tokens_map: HashMap<String, Arc<Mutex<SPItem>>> = HashMap::new();
+        let mut funcs_in_file = vec![];
+        let mut mm_es_in_file = vec![];
+
+        for item in all_items.iter() {
+            purge_references(item, &document.uri);
+            match &*item.lock().unwrap() {
+                // Match variables
+                SPItem::Variable(variable_item) => match &variable_item.parent {
+                    // Match non global variables
+                    Some(variable_item_parent) => match &*variable_item_parent.lock().unwrap() {
+                        // Match variables in a function or method
+                        SPItem::Function(variable_item_parent_function) => {
+                            let key = format!(
+                                "{}-{}",
+                                variable_item_parent_function.name, variable_item.name
+                            );
+                            tokens_map.insert(key, item.clone());
+                        }
+                        // Match variables as enum struct fields
+                        SPItem::EnumStruct(variable_item_parent_enum_struct) => {
+                            let key = format!(
+                                "{}-{}",
+                                variable_item_parent_enum_struct.name, variable_item.name
+                            );
+                            tokens_map.insert(key, item.clone());
+                        }
+                        _ => {}
+                    },
+                    None => {
+                        tokens_map.insert(variable_item.name.to_string(), item.clone());
+                    }
+                },
+                SPItem::Function(function_item) => match &function_item.parent {
+                    Some(method_item_parent) => match &*method_item_parent.lock().unwrap() {
+                        SPItem::Methodmap(method_item_parent) => {
+                            let key = format!("{}-{}", method_item_parent.name, function_item.name);
+                            tokens_map.insert(key, item.clone());
+                        }
+                        SPItem::EnumStruct(method_item_parent) => {
+                            let key = format!("{}-{}", method_item_parent.name, function_item.name);
+                            tokens_map.insert(key, item.clone());
+                        }
+                        _ => {}
+                    },
+                    None => {
+                        if function_item.uri.eq(&document.uri) {
+                            funcs_in_file.push(item.clone());
+                        }
+                        tokens_map.insert(function_item.name.to_string(), item.clone());
+                    }
+                },
+                SPItem::Methodmap(methodmap_item) => {
+                    if methodmap_item.uri.eq(&document.uri) {
+                        mm_es_in_file.push(item.clone());
+                    }
+                    tokens_map.insert(methodmap_item.name.to_string(), item.clone());
+                }
+                SPItem::EnumStruct(enum_struct_item) => {
+                    if enum_struct_item.uri.eq(&document.uri) {
+                        mm_es_in_file.push(item.clone());
+                    }
+                    tokens_map.insert(enum_struct_item.name.to_string(), item.clone());
+                }
+                SPItem::Enum(enum_item) => {
+                    tokens_map.insert(enum_item.name.to_string(), item.clone());
+                }
+                SPItem::Define(define_item) => {
+                    tokens_map.insert(define_item.name.to_string(), item.clone());
+                }
+                SPItem::EnumMember(enum_member_item) => {
+                    tokens_map.insert(enum_member_item.name.to_string(), item.clone());
+                } // TODO: add typedef and typeset here
+                _ => {}
+            }
+        }
+
+        Self {
+            tokens_map,
+            funcs_in_file,
+            mm_es_in_file,
+            lines: document
+                .text
+                .lines()
+                .map(|x| x.to_string())
+                .collect::<Vec<String>>(),
+            ..Default::default()
+        }
+    }
+
+    pub fn update_scope(&mut self, range: Range) {
+        self.scope
+            .update_func(range, &mut self.func_idx, &self.funcs_in_file);
+        self.scope
+            .update_mm_es(range, &mut self.mm_es_idx, &self.mm_es_in_file);
+    }
+}
+
 pub fn find_references(store: &Store, root_node: Node, document: Document) {
     let all_items = get_all_items(store);
     if all_items.is_none() {
         return;
     }
     let all_items = all_items.unwrap();
-    let (tokens_maps, funcs_in_file, mm_es_in_file) = build_tokens_map(all_items, &document.uri);
-
-    // let mut lines = document.text.lines();
-    let mut scope = Scope::default();
-    // let line = lines.next();
-    // let mut lineNb = 0;
+    let mut analyzer = Analyzer::new(all_items, &document);
     // let mut scope = "";
     // let mut outsideScope = "";
     // this.lastMMorES = undefined;
     // this.inTypeDef = false;
-
-    let mut func_idx = 0;
-    let mut mm_es_idx = 0;
     // let mut typeIdx = 0;
     let mut cursor = QueryCursor::new();
     let matches = cursor.captures(&SYMBOL_QUERY, root_node, document.text.as_bytes());
@@ -162,31 +268,31 @@ pub fn find_references(store: &Store, root_node: Node, document: Document) {
         for capture in match_.captures.iter() {
             let (token, range) = capture_text_range(capture, &document.text);
 
-            scope.update_func(range, &mut func_idx, &funcs_in_file);
+            analyzer.update_scope(range);
 
-            scope.update_mm_es(range, &mut mm_es_idx, &mm_es_in_file);
+            resolve_item(&analyzer, &token, range, &document);
 
-            resolve_item(&scope, &token, range, &tokens_maps, &document);
+            analyzer.token_idx += 1;
         }
     }
 }
 
-fn resolve_item(
-    scope: &Scope,
-    token: &String,
-    range: Range,
-    tokens_map: &HashMap<String, Arc<Mutex<SPItem>>>,
-    document: &Document,
-) {
-    let full_key = format!("{}-{}-{}", scope.mm_es_key(), scope.func_key(), token);
-    let semi_key = format!("{}-{}", scope.mm_es_key(), token);
-    let mid_key = format!("{}-{}", scope.func_key(), token);
+fn resolve_item(analyzer: &Analyzer, token: &String, range: Range, document: &Document) {
+    let full_key = format!(
+        "{}-{}-{}",
+        analyzer.scope.mm_es_key(),
+        analyzer.scope.func_key(),
+        token
+    );
+    let semi_key = format!("{}-{}", analyzer.scope.mm_es_key(), token);
+    let mid_key = format!("{}-{}", analyzer.scope.func_key(), token);
 
-    let item = tokens_map
+    let item = analyzer
+        .tokens_map
         .get(&full_key)
-        .or_else(|| tokens_map.get(&mid_key))
-        .or_else(|| tokens_map.get(&semi_key))
-        .or_else(|| tokens_map.get(token));
+        .or_else(|| analyzer.tokens_map.get(&mid_key))
+        .or_else(|| analyzer.tokens_map.get(&semi_key))
+        .or_else(|| analyzer.tokens_map.get(token));
 
     if item.is_none() {
         return;
@@ -197,96 +303,6 @@ fn resolve_item(
         range,
     };
     item.lock().unwrap().push_reference(reference);
-}
-
-/// key format: "{outermost_scope}-{outer_scope}-{item_name}"
-/// key format: "{outer_scope}-{item_name}"
-fn build_tokens_map(
-    all_items: Vec<Arc<Mutex<SPItem>>>,
-    uri: &Arc<Url>,
-) -> (
-    HashMap<String, Arc<Mutex<SPItem>>>,
-    Vec<Arc<Mutex<SPItem>>>,
-    Vec<Arc<Mutex<SPItem>>>,
-) {
-    let mut tokens_map: HashMap<String, Arc<Mutex<SPItem>>> = HashMap::new();
-    let mut funcs_in_file = vec![];
-    let mut mm_es_in_file = vec![];
-
-    for item in all_items.iter() {
-        purge_references(item, &uri);
-        match &*item.lock().unwrap() {
-            // Match variables
-            SPItem::Variable(variable_item) => match &variable_item.parent {
-                // Match non global variables
-                Some(variable_item_parent) => match &*variable_item_parent.lock().unwrap() {
-                    // Match variables in a function or method
-                    SPItem::Function(variable_item_parent_function) => {
-                        let key = format!(
-                            "{}-{}",
-                            variable_item_parent_function.name, variable_item.name
-                        );
-                        tokens_map.insert(key, item.clone());
-                    }
-                    // Match variables as enum struct fields
-                    SPItem::EnumStruct(variable_item_parent_enum_struct) => {
-                        let key = format!(
-                            "{}-{}",
-                            variable_item_parent_enum_struct.name, variable_item.name
-                        );
-                        tokens_map.insert(key, item.clone());
-                    }
-                    _ => {}
-                },
-                None => {
-                    tokens_map.insert(variable_item.name.to_string(), item.clone());
-                }
-            },
-            SPItem::Function(function_item) => match &function_item.parent {
-                Some(method_item_parent) => match &*method_item_parent.lock().unwrap() {
-                    SPItem::Methodmap(method_item_parent) => {
-                        let key = format!("{}-{}", method_item_parent.name, function_item.name);
-                        tokens_map.insert(key, item.clone());
-                    }
-                    SPItem::EnumStruct(method_item_parent) => {
-                        let key = format!("{}-{}", method_item_parent.name, function_item.name);
-                        tokens_map.insert(key, item.clone());
-                    }
-                    _ => {}
-                },
-                None => {
-                    if function_item.uri.eq(uri) {
-                        funcs_in_file.push(item.clone());
-                    }
-                    tokens_map.insert(function_item.name.to_string(), item.clone());
-                }
-            },
-            SPItem::Methodmap(methodmap_item) => {
-                if methodmap_item.uri.eq(uri) {
-                    mm_es_in_file.push(item.clone());
-                }
-                tokens_map.insert(methodmap_item.name.to_string(), item.clone());
-            }
-            SPItem::EnumStruct(enum_struct_item) => {
-                if enum_struct_item.uri.eq(uri) {
-                    mm_es_in_file.push(item.clone());
-                }
-                tokens_map.insert(enum_struct_item.name.to_string(), item.clone());
-            }
-            SPItem::Enum(enum_item) => {
-                tokens_map.insert(enum_item.name.to_string(), item.clone());
-            }
-            SPItem::Define(define_item) => {
-                tokens_map.insert(define_item.name.to_string(), item.clone());
-            }
-            SPItem::EnumMember(enum_member_item) => {
-                tokens_map.insert(enum_member_item.name.to_string(), item.clone());
-            } // TODO: add typedef and typeset here
-            _ => {}
-        }
-    }
-
-    (tokens_map, funcs_in_file, mm_es_in_file)
 }
 
 fn purge_references(item: &Arc<Mutex<SPItem>>, uri: &Arc<Url>) {
