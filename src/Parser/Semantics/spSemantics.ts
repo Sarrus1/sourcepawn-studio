@@ -29,7 +29,6 @@ export class Semantics {
   MmEsInFile: (MethodMapItem | EnumStructItem)[];
   referencesMap: Map<string, SPItem>;
   previousItems: SPItem[];
-  offset: number;
   line: string;
   scope: string;
   outsideScope: string;
@@ -43,8 +42,7 @@ export class Semantics {
     lines: string[],
     filePath: string,
     completions: FileItem,
-    itemsRepository: ItemsRepository,
-    offset: number
+    itemsRepository: ItemsRepository
   ) {
     this.fileItems = completions;
     this.lineNb = 0;
@@ -56,7 +54,6 @@ export class Semantics {
     this.MmEsInFile = [];
     this.referencesMap = new Map();
     this.typeDefAndSetInFile = [];
-    this.offset = offset;
     generateReferencesMap.call(this);
   }
 
@@ -161,8 +158,8 @@ export class Semantics {
 
       const lineNb = symbol.range.start.line;
 
-      if (lineNb - this.offset !== this.lineNb || i === 0) {
-        this.lineNb = symbol.range.start.line - this.offset;
+      if (lineNb !== this.lineNb || i === 0) {
+        this.lineNb = symbol.range.start.line;
 
         this.line = this.lines[this.lineNb];
         this.previousItems = [];

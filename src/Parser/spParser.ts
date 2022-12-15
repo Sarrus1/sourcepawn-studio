@@ -74,13 +74,7 @@ export function parseText(
     return false;
   } else {
     const lines = data.split("\n");
-    const semantics = new Semantics(
-      lines,
-      file,
-      fileItem,
-      itemsRepository,
-      offset
-    );
+    const semantics = new Semantics(lines, file, fileItem, itemsRepository);
     semantics.analyze();
     return false;
   }

@@ -102,13 +102,13 @@ export function generateReferencesMap(this: Semantics): void {
 
   this.MmEsInFile = this.MmEsInFile.sort(
     (a, b) => a.fullRange.start.line - b.fullRange.start.line
-  ).filter((e) => e.fullRange.start.line >= this.offset);
+  );
 
-  this.funcsAndMethodsInFile = this.funcsAndMethodsInFile
-    .sort((a, b) => a.fullRange.start.line - b.fullRange.start.line)
-    .filter((e) => e.fullRange.start.line >= this.offset);
+  this.funcsAndMethodsInFile = this.funcsAndMethodsInFile.sort(
+    (a, b) => a.fullRange.start.line - b.fullRange.start.line
+  );
 
-  this.typeDefAndSetInFile = this.typeDefAndSetInFile
-    .sort((a, b) => a.fullRange.start.line - b.fullRange.start.line)
-    .filter((e) => e.fullRange.start.line >= this.offset);
+  this.typeDefAndSetInFile = this.typeDefAndSetInFile.sort(
+    (a, b) => a.fullRange.start.line - b.fullRange.start.line
+  );
 }
