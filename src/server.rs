@@ -140,7 +140,10 @@ impl Server {
         self.spawn(move |server| {
             let _ = server.pull_config();
         });
-        let base_path = PathBuf::from(params.workspace_folders.unwrap()[0].uri.path());
+        let base_path = params.workspace_folders.unwrap()[0]
+            .uri
+            .to_file_path()
+            .unwrap();
         self.store.find_documents(&base_path);
         Ok(())
     }
