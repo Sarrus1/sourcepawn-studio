@@ -1,6 +1,5 @@
 use std::{
     collections::HashMap,
-    str::Lines,
     sync::{Arc, Mutex},
 };
 
@@ -140,7 +139,9 @@ fn capture_text_range(capture: &QueryCapture, source: &String) -> (String, Range
 #[derive(Debug, Default)]
 pub struct Analyzer {
     pub lines: Vec<String>,
-    pub line_nb: usize,
+    pub all_items: Vec<Arc<Mutex<SPItem>>>,
+    pub previous_items: Vec<Arc<Mutex<SPItem>>>,
+    pub line_nb: u32,
     pub tokens_map: HashMap<String, Arc<Mutex<SPItem>>>,
     pub funcs_in_file: Vec<Arc<Mutex<SPItem>>>,
     pub mm_es_in_file: Vec<Arc<Mutex<SPItem>>>,
@@ -231,6 +232,7 @@ impl Analyzer {
 
         Self {
             tokens_map,
+            all_items,
             funcs_in_file,
             mm_es_in_file,
             lines: document
@@ -248,6 +250,17 @@ impl Analyzer {
         self.scope
             .update_mm_es(range, &mut self.mm_es_idx, &self.mm_es_in_file);
     }
+
+    pub fn line(&self) -> &String {
+        &self.lines[self.line_nb as usize]
+    }
+
+    pub fn get(&self, key: &String) -> Option<Arc<Mutex<SPItem>>> {
+        match self.tokens_map.get(key) {
+            Some(res) => Some(res.clone()),
+            None => None,
+        }
+    }
 }
 
 pub fn find_references(store: &Store, root_node: Node, document: Document) {
@@ -257,11 +270,6 @@ pub fn find_references(store: &Store, root_node: Node, document: Document) {
     }
     let all_items = all_items.unwrap();
     let mut analyzer = Analyzer::new(all_items, &document);
-    // let mut scope = "";
-    // let mut outsideScope = "";
-    // this.lastMMorES = undefined;
-    // this.inTypeDef = false;
-    // let mut typeIdx = 0;
     let mut cursor = QueryCursor::new();
     let matches = cursor.captures(&SYMBOL_QUERY, root_node, document.text.as_bytes());
     for (match_, _) in matches {
@@ -269,15 +277,18 @@ pub fn find_references(store: &Store, root_node: Node, document: Document) {
             let (token, range) = capture_text_range(capture, &document.text);
 
             analyzer.update_scope(range);
-
-            resolve_item(&analyzer, &token, range, &document);
+            resolve_item(&mut analyzer, &token, range, &document);
 
             analyzer.token_idx += 1;
         }
     }
 }
 
-fn resolve_item(analyzer: &Analyzer, token: &String, range: Range, document: &Document) {
+fn resolve_item(analyzer: &mut Analyzer, token: &String, range: Range, document: &Document) {
+    if range.start.line != analyzer.line_nb || analyzer.token_idx == 0 {
+        analyzer.line_nb = range.start.line;
+        analyzer.previous_items.clear();
+    }
     let full_key = format!(
         "{}-{}-{}",
         analyzer.scope.mm_es_key(),
@@ -294,15 +305,109 @@ fn resolve_item(analyzer: &Analyzer, token: &String, range: Range, document: &Do
         .or_else(|| analyzer.tokens_map.get(&semi_key))
         .or_else(|| analyzer.tokens_map.get(token));
 
-    if item.is_none() {
+    if item.is_some() {
+        let item = item.unwrap();
+        let reference = Location {
+            uri: document.uri.clone(),
+            range,
+        };
+        item.lock().unwrap().push_reference(reference);
+        analyzer.previous_items.push(item.clone());
         return;
     }
-    let item = item.unwrap();
-    let reference = Location {
-        uri: document.uri.clone(),
-        range,
-    };
-    item.lock().unwrap().push_reference(reference);
+
+    if range.start.character > 0 && analyzer.previous_items.len() > 0 {
+        let char = analyzer.line().as_bytes()[(range.start.character - 1) as usize] as char;
+        if char != ':' && char != '.' {
+            return;
+        }
+        let mut item: Option<Arc<Mutex<SPItem>>> = None;
+        for parent in analyzer.previous_items.iter().rev() {
+            let parent = parent.lock().unwrap().clone();
+            match &parent {
+                SPItem::EnumStruct(es) => {
+                    // Enum struct scope operator (::).
+                    item = analyzer.get(&format!("{}-{}", es.name, token));
+                    if item.is_some() {
+                        break;
+                    }
+                }
+                SPItem::Methodmap(mm) => {
+                    // Methodmap static method.
+                    item = analyzer.get(&format!("{}-{}", mm.name, token));
+                    if item.is_some() {
+                        break;
+                    }
+                }
+                _ => {}
+            }
+            item = analyzer.get(&format!("{}-{}", parent.type_(), token));
+            if item.is_some() {
+                break;
+            }
+            for inherit in find_inherit(&analyzer.all_items, &parent).into_iter() {
+                item = analyzer.get(&format!("{}-{}", inherit.lock().unwrap().name(), token));
+                if item.is_some() {
+                    break;
+                }
+            }
+        }
+        if item.is_none() {
+            return;
+        }
+        let item = item.unwrap();
+        let reference = Location {
+            uri: document.uri.clone(),
+            range,
+        };
+        item.lock().unwrap().push_reference(reference);
+        analyzer.previous_items.push(item.clone());
+    }
+    // TODO: Handle positional arguments
+}
+
+struct Inherit {
+    item: Option<Arc<Mutex<SPItem>>>,
+}
+
+impl Iterator for Inherit {
+    type Item = Arc<Mutex<SPItem>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.item.is_none() {
+            return None;
+        }
+        let item = self.item.clone().unwrap();
+        let item = item.lock().unwrap();
+        match &*item {
+            SPItem::Methodmap(inherit) => match &inherit.parent {
+                Some(parent) => {
+                    self.item = Some(parent.clone());
+                    return Some(parent.clone());
+                }
+                None => return None,
+            },
+            _ => return None,
+        }
+    }
+}
+
+fn find_inherit(all_items: &Vec<Arc<Mutex<SPItem>>>, parent: &SPItem) -> Inherit {
+    let mut inherit = None;
+    for item_ in all_items.iter() {
+        let item_lock = item_.lock().unwrap();
+        match &*item_lock {
+            SPItem::Methodmap(mm_item) => {
+                if mm_item.name == parent.type_() {
+                    inherit = Some(item_.clone());
+                    break;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    Inherit { item: inherit }
 }
 
 fn purge_references(item: &Arc<Mutex<SPItem>>, uri: &Arc<Url>) {

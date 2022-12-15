@@ -115,6 +115,22 @@ pub fn range_contains_range(a: &Range, b: &Range) -> bool {
     return true;
 }
 
+/// Returns true if [Range] a and [Range] b are equal.
+///
+/// # Arguments
+///
+/// * `a` - [Range] to check against.
+/// * `b` - [Range] to check against.
+pub fn range_equals_range(a: &Range, b: &Range) -> bool {
+    if a.start.line != b.start.line || a.end.line != b.end.line {
+        return false;
+    }
+    if a.start.character != b.start.character || a.end.character != b.end.character {
+        return false;
+    }
+    return true;
+}
+
 /// Extracts the filename from a [Uri](Url). Returns [None] if it does not exist.
 ///
 /// # Arguments

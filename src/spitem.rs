@@ -9,8 +9,10 @@ use lsp_types::{
 };
 
 use crate::{
-    document::Document, providers::hover::description::Description, store::Store,
-    utils::range_contains_pos,
+    document::Document,
+    providers::hover::description::Description,
+    store::Store,
+    utils::{range_contains_pos, range_equals_range},
 };
 
 pub mod define_item;
@@ -159,6 +161,19 @@ impl SPItem {
         }
     }
 
+    pub fn type_(&self) -> String {
+        match self {
+            SPItem::Variable(item) => item.type_.clone(),
+            SPItem::Function(item) => item.type_.clone(),
+            SPItem::Enum(item) => item.name.clone(),
+            SPItem::EnumMember(item) => item.parent.lock().unwrap().name(),
+            SPItem::EnumStruct(item) => item.name.clone(),
+            SPItem::Define(_) => "".to_string(),
+            SPItem::Methodmap(item) => item.name.clone(),
+            SPItem::Property(item) => item.type_.clone(),
+        }
+    }
+
     pub fn description(&self) -> Option<Description> {
         match self {
             SPItem::Variable(item) => Some(item.description.clone()),
@@ -199,6 +214,11 @@ impl SPItem {
     }
 
     pub fn push_reference(&mut self, reference: Location) {
+        if range_equals_range(&self.range().unwrap(), &reference.range)
+            && self.uri().eq(&reference.uri)
+        {
+            return;
+        }
         match self {
             SPItem::Variable(item) => item.references.push(reference),
             SPItem::Function(item) => item.references.push(reference),

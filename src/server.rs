@@ -1,4 +1,10 @@
-use crate::{dispatch, options::Options, providers::FeatureRequest, store::Store, utils};
+use crate::{
+    dispatch,
+    options::Options,
+    providers::FeatureRequest,
+    store::Store,
+    utils::{self, normalize_uri},
+};
 use std::{path::PathBuf, sync::Arc, time::Instant};
 
 use anyhow;
@@ -189,8 +195,9 @@ impl Server {
     }
 
     fn reparse_all(&mut self) -> anyhow::Result<()> {
-        let main_uri = Url::from_file_path(self.store.environment.options.main_path.clone())
+        let mut main_uri = Url::from_file_path(&self.store.environment.options.main_path)
             .expect("Main Path is invalid");
+        normalize_uri(&mut main_uri);
         let document = self
             .store
             .get(&main_uri)

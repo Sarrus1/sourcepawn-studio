@@ -7,5 +7,5 @@ use serde::{Deserialize, Serialize};
 #[serde(default)]
 pub struct Options {
     pub includes_directories: Vec<PathBuf>,
-    pub main_path: String,
+    pub main_path: PathBuf,
 }
