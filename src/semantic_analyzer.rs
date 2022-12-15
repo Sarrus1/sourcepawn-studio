@@ -1,6 +1,5 @@
 use std::{
     collections::HashMap,
-    fmt::format,
     sync::{Arc, Mutex},
 };
 
@@ -161,34 +160,43 @@ pub fn find_references(store: &Store, root_node: Node, document: Document) {
     let matches = cursor.captures(&SYMBOL_QUERY, root_node, document.text.as_bytes());
     for (match_, _) in matches {
         for capture in match_.captures.iter() {
-            let (text, range) = capture_text_range(capture, &document.text);
+            let (token, range) = capture_text_range(capture, &document.text);
 
             scope.update_func(range, &mut func_idx, &funcs_in_file);
 
             scope.update_mm_es(range, &mut mm_es_idx, &mm_es_in_file);
 
-            let full_key = format!("{}-{}-{}", scope.mm_es_key(), scope.func_key(), text);
-            let semi_key = format!("{}-{}", scope.mm_es_key(), text);
-            let mid_key = format!("{}-{}", scope.func_key(), text);
-
-            let item = tokens_maps
-                .get(&full_key)
-                .or_else(|| tokens_maps.get(&mid_key))
-                .or_else(|| tokens_maps.get(&semi_key))
-                .or_else(|| tokens_maps.get(&text));
-
-            if item.is_none() {
-                continue;
-            }
-            let item = item.unwrap();
-            let reference = Location {
-                uri: document.uri.clone(),
-                range,
-            };
-            item.lock().unwrap().push_reference(reference);
-            continue;
+            resolve_item(&scope, &token, range, &tokens_maps, &document);
         }
     }
+}
+
+fn resolve_item(
+    scope: &Scope,
+    token: &String,
+    range: Range,
+    tokens_map: &HashMap<String, Arc<Mutex<SPItem>>>,
+    document: &Document,
+) {
+    let full_key = format!("{}-{}-{}", scope.mm_es_key(), scope.func_key(), token);
+    let semi_key = format!("{}-{}", scope.mm_es_key(), token);
+    let mid_key = format!("{}-{}", scope.func_key(), token);
+
+    let item = tokens_map
+        .get(&full_key)
+        .or_else(|| tokens_map.get(&mid_key))
+        .or_else(|| tokens_map.get(&semi_key))
+        .or_else(|| tokens_map.get(token));
+
+    if item.is_none() {
+        return;
+    }
+    let item = item.unwrap();
+    let reference = Location {
+        uri: document.uri.clone(),
+        range,
+    };
+    item.lock().unwrap().push_reference(reference);
 }
 
 /// key format: "{outermost_scope}-{outer_scope}-{item_name}"
