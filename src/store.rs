@@ -88,6 +88,7 @@ impl Store {
         document
             .parse(self, parser)
             .expect("Couldn't parse document");
+        document.find_references(&self);
 
         Ok(document)
     }

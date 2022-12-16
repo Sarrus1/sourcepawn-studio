@@ -6,9 +6,10 @@ use std::{
 
 use derive_new::new;
 use lazy_static::lazy_static;
+use lsp_types::Range;
 use lsp_types::Url;
 use regex::Regex;
-use tree_sitter::Parser;
+use tree_sitter::{Node, Parser, Query, QueryCursor};
 
 use crate::{
     parser::{
@@ -24,7 +25,33 @@ use crate::{
     providers::hover::description::Description,
     spitem::SPItem,
     store::Store,
+    utils::ts_range_to_lsp_range,
 };
+
+lazy_static! {
+    static ref SYMBOL_QUERY: Query = {
+        Query::new(
+            tree_sitter_sourcepawn::language(),
+            "[(symbol) @symbol (this) @symbol]",
+        )
+        .unwrap()
+    };
+}
+
+#[derive(Debug, Clone)]
+pub struct Token {
+    pub text: String,
+    pub range: Range,
+}
+
+impl Token {
+    pub fn new(node: Node, source: &String) -> Self {
+        Self {
+            text: node.utf8_text(source.as_bytes()).unwrap().to_string(),
+            range: ts_range_to_lsp_range(&node.range()),
+        }
+    }
+}
 
 #[derive(Debug, Clone, new)]
 pub struct Document {
@@ -36,6 +63,8 @@ pub struct Document {
     pub includes: HashSet<Url>,
     #[new(value = "false")]
     pub parsed: bool,
+    #[new(value = "vec![]")]
+    pub tokens: Vec<Arc<Token>>,
 }
 
 pub struct Walker {
@@ -97,9 +126,20 @@ impl Document {
         self.parsed = true;
         store.documents.insert(self.uri.clone(), self.clone());
         store.read_unscanned_imports(&self.includes, parser);
-        self.find_references(store, root_node);
+        self.extract_tokens(root_node);
 
         Ok(())
+    }
+
+    pub fn extract_tokens(&mut self, root_node: Node) {
+        let mut cursor = QueryCursor::new();
+        let matches = cursor.captures(&SYMBOL_QUERY, root_node, self.text.as_bytes());
+        for (match_, _) in matches {
+            for capture in match_.captures.iter() {
+                self.tokens
+                    .push(Arc::new(Token::new(capture.node, &self.text)));
+            }
+        }
     }
 }
 
