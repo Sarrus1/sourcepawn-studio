@@ -225,8 +225,15 @@ impl Analyzer {
                 }
                 SPItem::EnumMember(enum_member_item) => {
                     tokens_map.insert(enum_member_item.name.to_string(), item.clone());
-                } // TODO: add typedef and typeset here
-                _ => {}
+                }
+                SPItem::Property(property_item) => match &*property_item.parent.lock().unwrap() {
+                    SPItem::Methodmap(property_item_parent) => {
+                        let key = format!("{}-{}", property_item_parent.name, property_item.name);
+                        tokens_map.insert(key, item.clone());
+                    }
+                    _ => { /* Won't happen */ }
+                },
+                // TODO: add typedef and typeset here
             }
         }
 
