@@ -270,23 +270,25 @@ impl Analyzer {
     }
 }
 
-pub fn find_references(store: &Store, root_node: Node, document: Document) {
-    let all_items = get_all_items(store);
-    if all_items.is_none() {
-        return;
-    }
-    let all_items = all_items.unwrap();
-    let mut analyzer = Analyzer::new(all_items, &document);
-    let mut cursor = QueryCursor::new();
-    let matches = cursor.captures(&SYMBOL_QUERY, root_node, document.text.as_bytes());
-    for (match_, _) in matches {
-        for capture in match_.captures.iter() {
-            let (token, range) = capture_text_range(capture, &document.text);
+impl Document {
+    pub fn find_references(&self, store: &Store, root_node: Node) {
+        let all_items = get_all_items(store);
+        if all_items.is_none() {
+            return;
+        }
+        let all_items = all_items.unwrap();
+        let mut analyzer = Analyzer::new(all_items, &self);
+        let mut cursor = QueryCursor::new();
+        let matches = cursor.captures(&SYMBOL_QUERY, root_node, self.text.as_bytes());
+        for (match_, _) in matches {
+            for capture in match_.captures.iter() {
+                let (token, range) = capture_text_range(capture, &self.text);
 
-            analyzer.update_scope(range);
-            resolve_item(&mut analyzer, &token, range, &document);
+                analyzer.update_scope(range);
+                resolve_item(&mut analyzer, &token, range, &self);
 
-            analyzer.token_idx += 1;
+                analyzer.token_idx += 1;
+            }
         }
     }
 }

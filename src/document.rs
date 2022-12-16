@@ -8,7 +8,7 @@ use derive_new::new;
 use lazy_static::lazy_static;
 use lsp_types::Url;
 use regex::Regex;
-use tree_sitter::{Parser, Tree};
+use tree_sitter::Parser;
 
 use crate::{
     parser::{
@@ -49,7 +49,7 @@ impl Document {
         &self.text
     }
 
-    pub fn parse(&mut self, store: &mut Store, parser: &mut Parser) -> Result<Tree, Utf8Error> {
+    pub fn parse(&mut self, store: &mut Store, parser: &mut Parser) -> Result<(), Utf8Error> {
         let tree = parser.parse(&self.text, None).unwrap();
         let root_node = tree.root_node();
         let mut walker = Walker {
@@ -96,8 +96,10 @@ impl Document {
         }
         self.parsed = true;
         store.documents.insert(self.uri.clone(), self.clone());
+        store.read_unscanned_imports(&self.includes, parser);
+        self.find_references(store, root_node);
 
-        Ok(tree.clone())
+        Ok(())
     }
 }
 
