@@ -49,7 +49,16 @@ impl PropertyItem {
     /// # Arguments
     ///
     /// * `params` - [CompletionParams](lsp_types::CompletionParams) of the request.
-    pub(crate) fn to_completion(&self, _params: &CompletionParams) -> Option<CompletionItem> {
+    pub(crate) fn to_completion(
+        &self,
+        _params: &CompletionParams,
+        request_method: bool,
+    ) -> Option<CompletionItem> {
+        // Don't return a property if non method items are requested.
+        if !request_method {
+            return None;
+        }
+
         let mut tags = vec![];
         if self.is_deprecated() {
             tags.push(CompletionItemTag::DEPRECATED);

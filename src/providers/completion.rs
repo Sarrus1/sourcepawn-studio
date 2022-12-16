@@ -1,15 +1,17 @@
-use std::sync::{Arc, Mutex};
+use lsp_types::{CompletionItem, CompletionList, CompletionParams, Position};
 
-use lazy_static::lazy_static;
-use lsp_types::{CompletionItem, CompletionList, CompletionParams, Position, Url};
-use regex::Regex;
+use crate::spitem::{get_all_items, get_items_from_position, SPItem};
 
-use crate::{
-    spitem::{get_all_items, get_items_from_position, SPItem},
-    utils::range_contains_pos,
+use self::{
+    context::{get_line_words, is_method_call},
+    getters::get_children_of_mm_or_es,
 };
 
 use super::FeatureRequest;
+
+mod context;
+mod getters;
+mod matchtoken;
 
 pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<CompletionList> {
     let document = request.store.get(&request.uri)?;
@@ -20,7 +22,10 @@ pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<
     if !is_method_call(line, position) {
         let mut items: Vec<CompletionItem> = Vec::new();
         for sp_item in all_items.iter() {
-            let res = sp_item.lock().unwrap().to_completion(&request.params);
+            let res = sp_item
+                .lock()
+                .unwrap()
+                .to_completion(&request.params, false);
             if let Some(res) = res {
                 items.push(res);
             }
@@ -60,6 +65,7 @@ pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<
                         SPItem::Methodmap(mm_item) => {
                             return Some(CompletionList {
                                 // TODO: Handle inherit here
+                                // TODO: Handle static methods
                                 items: get_children_of_mm_or_es(
                                     &all_items,
                                     mm_item.name,
@@ -86,81 +92,4 @@ pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<
     }
 
     None
-}
-
-fn find_func(
-    all_items: &Vec<Arc<Mutex<SPItem>>>,
-    uri: Arc<Url>,
-    pos: Position,
-) -> Option<Arc<Mutex<SPItem>>> {
-    for item in all_items {
-        if let SPItem::Function(function_item) = &*item.lock().unwrap() {
-            if function_item.uri.eq(&uri) && range_contains_pos(function_item.full_range, pos) {
-                return Some(item.clone());
-            }
-        }
-    }
-
-    None
-}
-
-fn is_method_call(line: &str, pos: Position) -> bool {
-    lazy_static! {
-        static ref RE: Regex = Regex::new(r"(?:\.|::)\w*$").unwrap();
-    }
-    let sub_line: String = line.chars().take(pos.character as usize).collect();
-    RE.is_match(&sub_line)
-}
-
-#[derive(Debug)]
-pub struct MatchToken {
-    pub text: String,
-    pub range: lsp_types::Range,
-}
-
-fn get_line_words(line: &str, pos: Position) -> Vec<Option<MatchToken>> {
-    lazy_static! {
-        static ref RE: Regex = Regex::new(r"\w+").unwrap();
-    }
-    let sub_line: String = line.chars().take(pos.character as usize).collect();
-
-    let mut res: Vec<Option<MatchToken>> = vec![];
-    for caps in RE.captures_iter(&sub_line) {
-        res.push(caps.get(0).map(|m| MatchToken {
-            text: m.as_str().to_string(),
-            range: lsp_types::Range {
-                start: Position {
-                    line: pos.line,
-                    character: m.start() as u32,
-                },
-                end: Position {
-                    line: pos.line,
-                    character: m.end() as u32,
-                },
-            },
-        }));
-    }
-
-    res
-}
-
-fn get_children_of_mm_or_es(
-    all_item: &[Arc<Mutex<SPItem>>],
-    parent_name: String,
-    params: CompletionParams,
-) -> Vec<CompletionItem> {
-    let mut res: Vec<CompletionItem> = vec![];
-    for item in all_item.iter() {
-        let item_lock = item.lock().unwrap();
-        if let Some(parent_) = item_lock.parent() {
-            if parent_name != parent_.lock().unwrap().name() {
-                continue;
-            }
-            if let Some(completion) = item_lock.to_completion(&params) {
-                res.push(completion);
-            }
-        }
-    }
-
-    res
 }

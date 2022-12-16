@@ -267,16 +267,20 @@ impl SPItem {
         }
     }
 
-    pub fn to_completion(&self, params: &CompletionParams) -> Option<CompletionItem> {
+    pub fn to_completion(
+        &self,
+        params: &CompletionParams,
+        request_method: bool,
+    ) -> Option<CompletionItem> {
         match self {
-            SPItem::Variable(item) => item.to_completion(params),
-            SPItem::Function(item) => item.to_completion(params),
+            SPItem::Variable(item) => item.to_completion(params, request_method),
+            SPItem::Function(item) => item.to_completion(params, request_method),
             SPItem::Enum(item) => item.to_completion(params),
             SPItem::EnumMember(item) => item.to_completion(params),
             SPItem::EnumStruct(item) => item.to_completion(params),
             SPItem::Define(item) => item.to_completion(params),
             SPItem::Methodmap(item) => item.to_completion(params),
-            SPItem::Property(item) => item.to_completion(params),
+            SPItem::Property(item) => item.to_completion(params, request_method),
         }
     }
 

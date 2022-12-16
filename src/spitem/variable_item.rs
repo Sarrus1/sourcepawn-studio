@@ -52,7 +52,11 @@ impl VariableItem {
     /// # Arguments
     ///
     /// * `params` - [CompletionParams](lsp_types::CompletionParams) of the request.
-    pub(crate) fn to_completion(&self, params: &CompletionParams) -> Option<CompletionItem> {
+    pub(crate) fn to_completion(
+        &self,
+        params: &CompletionParams,
+        request_method: bool,
+    ) -> Option<CompletionItem> {
         let mut tags = vec![];
         if self.description.deprecated.is_some() {
             tags.push(CompletionItemTag::DEPRECATED);
@@ -75,6 +79,18 @@ impl VariableItem {
                     Some(CompletionItem {
                         label: self.name.to_string(),
                         kind: Some(CompletionItemKind::VARIABLE),
+                        tags: Some(tags),
+                        ..Default::default()
+                    })
+                }
+                SPItem::EnumStruct(_) => {
+                    // Don't return a field if non method items are requested.
+                    if !request_method {
+                        return None;
+                    }
+                    Some(CompletionItem {
+                        label: self.name.to_string(),
+                        kind: Some(CompletionItemKind::FIELD),
                         tags: Some(tags),
                         ..Default::default()
                     })

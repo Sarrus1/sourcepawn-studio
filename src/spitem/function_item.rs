@@ -63,7 +63,16 @@ impl FunctionItem {
     /// # Arguments
     ///
     /// * `params` - [CompletionParams](lsp_types::CompletionParams) of the request.
-    pub(crate) fn to_completion(&self, params: &CompletionParams) -> Option<CompletionItem> {
+    pub(crate) fn to_completion(
+        &self,
+        params: &CompletionParams,
+        request_method: bool,
+    ) -> Option<CompletionItem> {
+        // Don't return a method if non method items are requested.
+        if !request_method && self.parent.is_some() {
+            return None;
+        }
+
         let mut tags = vec![];
         if self.is_deprecated() {
             tags.push(CompletionItemTag::DEPRECATED);
