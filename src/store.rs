@@ -8,7 +8,7 @@ use std::{
 use tree_sitter::Parser;
 use walkdir::WalkDir;
 
-use crate::{document::Document, environment::Environment};
+use crate::{document::Document, environment::Environment, semantic_analyzer::find_references};
 
 #[derive(Clone)]
 pub struct Store {
@@ -85,11 +85,13 @@ impl Store {
         parser: &mut Parser,
     ) -> Result<Document, io::Error> {
         let mut document = Document::new(uri.clone(), text);
-        document
+        let tree = document
             .parse(self, parser)
             .expect("Couldn't parse document");
-
         self.read_unscanned_imports(&document.includes, parser);
+
+        find_references(self, tree.root_node(), document.clone());
+
         Ok(document)
     }
 

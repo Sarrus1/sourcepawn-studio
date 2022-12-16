@@ -100,6 +100,7 @@ pub struct Server {
     internal_rx: Receiver<InternalMessage>,
     pool: ThreadPool,
     parser: Parser,
+    config_pulled: bool,
 }
 
 impl Server {
@@ -118,6 +119,7 @@ impl Server {
             store: Store::new(current_dir),
             pool: threadpool::Builder::new().build(),
             parser,
+            config_pulled: false,
         }
     }
 
@@ -163,9 +165,23 @@ impl Server {
     }
 
     fn did_open(&mut self, mut params: DidOpenTextDocumentParams) -> anyhow::Result<()> {
+        if !self.config_pulled {
+            return Ok(());
+        }
         utils::normalize_uri(&mut params.text_document.uri);
-
         let uri = Arc::new(params.text_document.uri);
+
+        // Don't parse the document if it has already been opened.
+        // GoToDefinition request will trigger a new parse.
+        let document = self.store.documents.get(&uri);
+        match document {
+            Some(document) => {
+                if document.parsed {
+                    return Ok(());
+                }
+            }
+            None => {}
+        }
         let text = params.text_document.text;
         self.store
             .handle_open_document(uri, text, &mut self.parser)
@@ -312,6 +328,7 @@ impl Server {
                     recv(&self.internal_rx) -> msg => {
                         match msg? {
                             InternalMessage::SetOptions(options) => {
+                                self.config_pulled = true;
                                 self.store.environment.options = options;
                                 self.store.parse_directories();
                                 self.reparse_all().expect("Failed to reparse all files.");

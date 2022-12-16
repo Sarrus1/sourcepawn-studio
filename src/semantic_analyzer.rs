@@ -412,15 +412,16 @@ fn find_inherit(all_items: &Vec<Arc<Mutex<SPItem>>>, parent: &SPItem) -> Inherit
 
 fn purge_references(item: &Arc<Mutex<SPItem>>, uri: &Arc<Url>) {
     let mut new_references = vec![];
-    let item_lock = item.lock().unwrap();
+    let mut item_lock = item.lock().unwrap();
     let old_references = item_lock.references();
     if old_references.is_none() {
         return;
     }
     let old_references = old_references.unwrap();
     for reference in old_references {
-        if reference.uri.eq(&uri) {
-            new_references.push(reference);
+        if reference.uri.ne(&uri) {
+            new_references.push(reference.clone());
         }
     }
+    item_lock.set_new_references(new_references);
 }

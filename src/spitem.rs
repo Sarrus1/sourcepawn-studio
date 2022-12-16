@@ -98,6 +98,7 @@ pub fn get_items_from_position(
             Some(range) => {
                 if range_contains_pos(range, position) && item_lock.uri().as_ref().eq(&uri) {
                     res.push(item.clone());
+                    continue;
                 }
             }
             None => {
@@ -109,6 +110,7 @@ pub fn get_items_from_position(
                 for reference in references.iter() {
                     if range_contains_pos(reference.range, position) && reference.uri.eq(&uri) {
                         res.push(item.clone());
+                        break;
                     }
                 }
             }
@@ -117,7 +119,6 @@ pub fn get_items_from_position(
             }
         }
     }
-
     res
 }
 
@@ -228,6 +229,19 @@ impl SPItem {
             SPItem::Define(item) => item.references.push(reference),
             SPItem::Methodmap(item) => item.references.push(reference),
             SPItem::Property(item) => item.references.push(reference),
+        }
+    }
+
+    pub fn set_new_references(&mut self, references: Vec<Location>) {
+        match self {
+            SPItem::Variable(item) => item.references = references,
+            SPItem::Function(item) => item.references = references,
+            SPItem::Enum(item) => item.references = references,
+            SPItem::EnumMember(item) => item.references = references,
+            SPItem::EnumStruct(item) => item.references = references,
+            SPItem::Define(item) => item.references = references,
+            SPItem::Methodmap(item) => item.references = references,
+            SPItem::Property(item) => item.references = references,
         }
     }
 
