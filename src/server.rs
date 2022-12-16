@@ -7,7 +7,6 @@ use crate::{
 };
 use std::{path::PathBuf, sync::Arc, time::Instant};
 
-use anyhow;
 use crossbeam_channel::{Receiver, Sender};
 use lsp_server::{Connection, Message, RequestId};
 use lsp_types::{
@@ -174,13 +173,10 @@ impl Server {
         // Don't parse the document if it has already been opened.
         // GoToDefinition request will trigger a new parse.
         let document = self.store.documents.get(&uri);
-        match document {
-            Some(document) => {
-                if document.parsed {
-                    return Ok(());
-                }
+        if let Some(document) = document {
+            if document.parsed {
+                return Ok(());
             }
-            None => {}
         }
         let text = params.text_document.text;
         self.store

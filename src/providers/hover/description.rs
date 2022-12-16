@@ -30,8 +30,6 @@ impl Description {
         let text = RE7.replace_all(&text, "\n\n_${1}_ ").into_owned();
         let text = RE8.replace_all(&text, "${1} `${2}` — >").into_owned();
         let text = RE9.replace_all(&text, "`${1}`").into_owned();
-        let text = text.replace("DEPRECATED", "\n\n**DEPRECATED**");
-
-        return text;
+        text.replace("DEPRECATED", "\n\n**DEPRECATED**")
     }
 }

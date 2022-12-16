@@ -43,7 +43,7 @@ impl EnumMemberItem {
         Some(CompletionItem {
             label: self.name.clone(),
             kind: Some(CompletionItemKind::ENUM_MEMBER),
-            detail: Some(self.parent.lock().unwrap().name().clone()),
+            detail: Some(self.parent.lock().unwrap().name()),
             ..Default::default()
         })
     }
@@ -84,19 +84,16 @@ impl EnumMemberItem {
     /// `Plugin_Continue`
     fn formatted_text(&self) -> MarkedString {
         let mut value = "".to_string();
-        match &*self.parent.lock().unwrap() {
-            SPItem::Enum(parent) => {
-                if parent.name.contains("#") {
-                    value = self.name.clone()
-                } else {
-                    value = format!("{}::{}", parent.name, self.name);
-                }
+        if let SPItem::Enum(parent) = &*self.parent.lock().unwrap() {
+            if parent.name.contains('#') {
+                value = self.name.clone()
+            } else {
+                value = format!("{}::{}", parent.name, self.name);
             }
-            _ => {}
         }
         MarkedString::LanguageString(LanguageString {
             language: "sourcepawn".to_string(),
-            value: value,
+            value,
         })
     }
 }

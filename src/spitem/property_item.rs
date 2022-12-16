@@ -59,7 +59,7 @@ impl PropertyItem {
             label: self.name.to_string(),
             kind: Some(CompletionItemKind::PROPERTY),
             tags: Some(tags),
-            detail: Some(self.parent.lock().unwrap().name().to_string()),
+            detail: Some(self.parent.lock().unwrap().name()),
             deprecated: Some(self.is_deprecated()),
             ..Default::default()
         })

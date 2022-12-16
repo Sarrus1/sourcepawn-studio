@@ -49,7 +49,7 @@ pub fn normalize_uri(uri: &mut lsp_types::Url) {
     }
 
     if let Some(mut segments) = uri.path_segments() {
-        if let Some(mut path) = segments.next().and_then(|text| fix_drive_letter(text)) {
+        if let Some(mut path) = segments.next().and_then(fix_drive_letter) {
             for segment in segments {
                 path.push('/');
                 path.push_str(segment);
@@ -93,7 +93,8 @@ pub fn range_contains_pos(range: Range, position: Position) -> bool {
     if range.end.line == position.line && range.end.character < position.character {
         return false;
     }
-    return true;
+
+    true
 }
 
 /// Returns true if [Range] a contains [Range] b.
@@ -112,7 +113,8 @@ pub fn range_contains_range(a: &Range, b: &Range) -> bool {
     if b.end.line == a.end.line && b.end.character > a.end.character {
         return false;
     }
-    return true;
+
+    true
 }
 
 /// Returns true if [Range] a and [Range] b are equal.
@@ -128,7 +130,8 @@ pub fn range_equals_range(a: &Range, b: &Range) -> bool {
     if a.start.character != b.start.character || a.end.character != b.end.character {
         return false;
     }
-    return true;
+
+    true
 }
 
 /// Extracts the filename from a [Uri](Url). Returns [None] if it does not exist.
@@ -139,10 +142,7 @@ pub fn range_equals_range(a: &Range, b: &Range) -> bool {
 pub fn uri_to_file_name(uri: &Url) -> Option<String> {
     match uri.to_file_path() {
         Ok(path) => match path.as_path().file_name() {
-            Some(file_name) => match file_name.to_str() {
-                Some(file_name) => Some(file_name.to_string()),
-                None => None,
-            },
+            Some(file_name) => file_name.to_str().map(|file_name| file_name.to_string()),
             None => None,
         },
         Err(_) => None,

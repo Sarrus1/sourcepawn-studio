@@ -72,26 +72,24 @@ impl VariableItem {
                     ) {
                         return None;
                     }
-                    return Some(CompletionItem {
+                    Some(CompletionItem {
                         label: self.name.to_string(),
                         kind: Some(CompletionItemKind::VARIABLE),
                         tags: Some(tags),
                         ..Default::default()
-                    });
+                    })
                 }
                 _ => {
                     eprintln!("Unhandled case in variable_item to_completion.");
-                    return None;
+                    None
                 }
             },
-            None => {
-                return Some(CompletionItem {
-                    label: self.name.to_string(),
-                    kind: Some(CompletionItemKind::VARIABLE),
-                    tags: Some(tags),
-                    ..Default::default()
-                });
-            }
+            None => Some(CompletionItem {
+                label: self.name.to_string(),
+                kind: Some(CompletionItemKind::VARIABLE),
+                tags: Some(tags),
+                ..Default::default()
+            }),
         }
     }
 
@@ -138,14 +136,14 @@ impl VariableItem {
 }
 
 /// Visibility of a SourcePawn variable.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum VariableVisibility {
     Public,
     Stock,
 }
 
 /// Storage class of a SourcePawn variable.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum VariableStorageClass {
     Const,
     Static,

@@ -17,7 +17,7 @@ pub fn provide_hover(request: FeatureRequest<HoverParams>) -> Option<Hover> {
             .uri
             .clone(),
     );
-    if items.len() == 0 {
+    if items.is_empty() {
         return None;
     }
     let hover = items[0].lock().unwrap().to_hover(&request.params);

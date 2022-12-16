@@ -13,16 +13,14 @@ impl Walker {
         lazy_static! {
             static ref RE: Regex = Regex::new(r"#pragma\s+deprecated(.*)").unwrap();
         }
-        let text = node.utf8_text(&source.as_bytes()).unwrap();
-        match RE.captures(text) {
-            Some(caps) => match caps.get(1) {
-                Some(text) => self.deprecated.push(Deprecated {
+        let text = node.utf8_text(source.as_bytes()).unwrap();
+        if let Some(caps) = RE.captures(text) {
+            if let Some(text) = caps.get(1) {
+                self.deprecated.push(Deprecated {
                     text: text.as_str().to_string(),
                     range: ts_range_to_lsp_range(&node.range()),
-                }),
-                None => {}
-            },
-            None => {}
+                })
+            }
         };
     }
 }

@@ -32,7 +32,7 @@ pub fn parse_variable(
         let kind = child.kind();
         match kind {
             "variable_visibility" => {
-                let visibility_text = child.utf8_text(&file_item.text.as_bytes())?;
+                let visibility_text = child.utf8_text(file_item.text.as_bytes())?;
                 if visibility_text.contains("stock") {
                     visibility.push(VariableVisibility::Stock);
                 }
@@ -41,7 +41,7 @@ pub fn parse_variable(
                 }
             }
             "variable_storage_class" => {
-                let storage_class_text = child.utf8_text(&file_item.text.as_bytes())?;
+                let storage_class_text = child.utf8_text(file_item.text.as_bytes())?;
                 if storage_class_text.contains("const") {
                     storage_class.push(VariableStorageClass::Const);
                 }
@@ -58,7 +58,7 @@ pub fn parse_variable(
                     let kind = sub_child.kind();
                     match kind {
                         "fixed_dimension" | "dimension" => {
-                            let dimension_text = sub_child.utf8_text(&file_item.text.as_bytes())?;
+                            let dimension_text = sub_child.utf8_text(file_item.text.as_bytes())?;
                             dimensions.push(dimension_text.to_string());
                         }
                         _ => {
@@ -67,10 +67,10 @@ pub fn parse_variable(
                     }
                 }
                 let type_ = match type_node {
-                    Some(type_node) => type_node.utf8_text(&file_item.text.as_bytes())?,
+                    Some(type_node) => type_node.utf8_text(file_item.text.as_bytes())?,
                     None => "",
                 };
-                let name = name_node.utf8_text(&file_item.text.as_bytes())?;
+                let name = name_node.utf8_text(file_item.text.as_bytes())?;
                 let variable_item = VariableItem {
                     name: name.to_string(),
                     type_: type_.to_string(),

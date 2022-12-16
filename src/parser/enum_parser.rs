@@ -41,10 +41,10 @@ pub fn parse_enum(
         }
     }
     let enum_item = Arc::new(Mutex::new(SPItem::Enum(enum_item)));
-    if enum_entries.is_some() {
+    if let Some(enum_entries) = enum_entries {
         read_enum_members(
             document,
-            &enum_entries.unwrap(),
+            &enum_entries,
             enum_item.clone(),
             &document.text.to_string(),
             document.uri.clone(),
@@ -61,8 +61,8 @@ fn get_enum_name_and_range(
     anon_enum_counter: &mut u32,
 ) -> (String, Range) {
     let name_node = node.child_by_field_name("name");
-    if name_node.is_some() {
-        let name_node = name_node.unwrap();
+    if let Some(name_node) = name_node {
+        let name_node = name_node;
         let name = name_node.utf8_text(source.as_bytes()).unwrap();
         return (name.to_string(), ts_range_to_lsp_range(&name_node.range()));
     }

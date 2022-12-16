@@ -17,11 +17,11 @@ pub fn parse_define(
     walker: &mut Walker,
 ) -> Result<(), Utf8Error> {
     let name_node = node.child_by_field_name("name").unwrap();
-    let name = name_node.utf8_text(&document.text.as_bytes()).unwrap();
+    let name = name_node.utf8_text(document.text.as_bytes()).unwrap();
     let value_node = node.child_by_field_name("value");
     let value = match value_node {
         Some(value_node) => value_node
-            .utf8_text(&document.text.as_bytes())
+            .utf8_text(document.text.as_bytes())
             .unwrap()
             .trim(),
         None => "",

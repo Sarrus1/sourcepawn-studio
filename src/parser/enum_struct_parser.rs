@@ -21,7 +21,7 @@ pub fn parse_enum_struct(
 ) -> Result<(), Utf8Error> {
     // Name of the enum struct
     let name_node = node.child_by_field_name("name").unwrap();
-    let name = name_node.utf8_text(&document.text.as_bytes());
+    let name = name_node.utf8_text(document.text.as_bytes());
 
     let documentation = find_doc(walker, node.start_position().row)?;
 
@@ -48,12 +48,11 @@ fn parse_enum_struct_members(
     walker: &mut Walker,
 ) {
     let mut cursor = node.walk();
-    for mut child in node.children(&mut cursor) {
+    for child in node.children(&mut cursor) {
         match child.kind() {
             "enum_struct_field" => parse_enum_struct_field(document, &child, &enum_struct_item),
             "enum_struct_method" => {
-                parse_function(document, &mut child, walker, Some(enum_struct_item.clone()))
-                    .unwrap()
+                parse_function(document, &child, walker, Some(enum_struct_item.clone())).unwrap()
             }
             "comment" => walker.push_comment(child, &document.text),
             "preproc_pragma" => walker.push_deprecated(child, &document.text),
@@ -69,10 +68,10 @@ fn parse_enum_struct_field(
 ) {
     // Name of the enum struct field
     let name_node = node.child_by_field_name("name").unwrap();
-    let name = name_node.utf8_text(&document.text.as_bytes()).unwrap();
+    let name = name_node.utf8_text(document.text.as_bytes()).unwrap();
 
     let type_node = node.child_by_field_name("type").unwrap();
-    let type_ = type_node.utf8_text(&document.text.as_bytes()).unwrap();
+    let type_ = type_node.utf8_text(document.text.as_bytes()).unwrap();
 
     let mut dimensions: Vec<String> = vec![];
 
@@ -81,7 +80,7 @@ fn parse_enum_struct_field(
         let kind = child.kind();
         match kind {
             "fixed_dimension" | "dimension" => {
-                let dimension_text = child.utf8_text(&document.text.as_bytes()).unwrap();
+                let dimension_text = child.utf8_text(document.text.as_bytes()).unwrap();
                 dimensions.push(dimension_text.to_string());
             }
             _ => {

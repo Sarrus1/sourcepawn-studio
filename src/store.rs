@@ -26,7 +26,7 @@ impl Store {
         }
     }
 
-    pub fn iter<'a>(&'a self) -> impl Iterator<Item = Document> + 'a {
+    pub fn iter(&'_ self) -> impl Iterator<Item = Document> + '_ {
         self.documents.values().cloned()
     }
 
@@ -84,11 +84,11 @@ impl Store {
         text: String,
         parser: &mut Parser,
     ) -> Result<Document, io::Error> {
-        let mut document = Document::new(uri.clone(), text);
+        let mut document = Document::new(uri, text);
         document
             .parse(self, parser)
             .expect("Couldn't parse document");
-        document.find_references(&self);
+        document.find_references(self);
 
         Ok(document)
     }

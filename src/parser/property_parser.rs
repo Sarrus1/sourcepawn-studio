@@ -18,9 +18,9 @@ pub fn parse_property(
     parent: Arc<Mutex<SPItem>>,
 ) -> Result<(), Utf8Error> {
     let name_node = node.child_by_field_name("name").unwrap();
-    let name = name_node.utf8_text(&document.text.as_bytes()).unwrap();
+    let name = name_node.utf8_text(document.text.as_bytes()).unwrap();
     let type_node = node.child_by_field_name("type").unwrap();
-    let type_ = type_node.utf8_text(&document.text.as_bytes()).unwrap();
+    let type_ = type_node.utf8_text(document.text.as_bytes()).unwrap();
 
     let property_item = PropertyItem {
         name: name.to_string(),

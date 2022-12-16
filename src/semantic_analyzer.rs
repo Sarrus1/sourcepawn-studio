@@ -21,10 +21,10 @@ impl Document {
             return;
         }
         let all_items = all_items.unwrap();
-        let mut analyzer = Analyzer::new(all_items, &self);
+        let mut analyzer = Analyzer::new(all_items, self);
         for token in self.tokens.iter() {
             analyzer.update_scope(token.range);
-            resolve_item(&mut analyzer, &token, &self);
+            resolve_item(&mut analyzer, token, self);
 
             analyzer.token_idx += 1;
         }
@@ -52,8 +52,8 @@ fn resolve_item(analyzer: &mut Analyzer, token: &Arc<Token>, document: &Document
         .or_else(|| analyzer.tokens_map.get(&semi_key))
         .or_else(|| analyzer.tokens_map.get(&token.text));
 
-    if item.is_some() {
-        let item = item.unwrap();
+    if let Some(item) = item {
+        let item = item;
         let reference = Location {
             uri: document.uri.clone(),
             range: token.range,
@@ -63,7 +63,7 @@ fn resolve_item(analyzer: &mut Analyzer, token: &Arc<Token>, document: &Document
         return;
     }
 
-    if token.range.start.character > 0 && analyzer.previous_items.len() > 0 {
+    if token.range.start.character > 0 && !analyzer.previous_items.is_empty() {
         let char = analyzer.line().as_bytes()[(token.range.start.character - 1) as usize] as char;
         if char != ':' && char != '.' {
             return;
@@ -92,7 +92,7 @@ fn resolve_item(analyzer: &mut Analyzer, token: &Arc<Token>, document: &Document
             if item.is_some() {
                 break;
             }
-            for inherit in find_inherit(&analyzer.all_items, &parent).into_iter() {
+            for inherit in find_inherit(&analyzer.all_items, &parent) {
                 item = analyzer.get(&format!(
                     "{}-{}",
                     inherit.lock().unwrap().name(),
@@ -112,7 +112,7 @@ fn resolve_item(analyzer: &mut Analyzer, token: &Arc<Token>, document: &Document
             range: token.range,
         };
         item.lock().unwrap().push_reference(reference);
-        analyzer.previous_items.push(item.clone());
+        analyzer.previous_items.push(item);
     }
     // TODO: Handle positional arguments
 }
@@ -126,7 +126,7 @@ fn purge_references(item: &Arc<Mutex<SPItem>>, uri: &Arc<Url>) {
     }
     let old_references = old_references.unwrap();
     for reference in old_references {
-        if reference.uri.ne(&uri) {
+        if reference.uri.ne(uri) {
             new_references.push(reference.clone());
         }
     }

@@ -37,7 +37,7 @@ impl EnumItem {
     ///
     /// * `_params` - [CompletionParams](lsp_types::CompletionParams) of the request.
     pub(crate) fn to_completion(&self, _params: &CompletionParams) -> Option<CompletionItem> {
-        if self.name.contains("#") {
+        if self.name.contains('#') {
             return None;
         }
 

@@ -17,7 +17,7 @@ pub fn provide_definition(
             .uri
             .clone(),
     );
-    if items.len() == 0 {
+    if items.is_empty() {
         return None;
     }
     let mut definitions = vec![];

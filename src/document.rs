@@ -93,7 +93,7 @@ impl Document {
             let kind = node.kind();
             match kind {
                 "function_declaration" | "function_definition" => {
-                    parse_function(self, &mut node, &mut walker, None)?;
+                    parse_function(self, &node, &mut walker, None)?;
                 }
                 "global_variable_declaration" | "old_global_variable_declaration" => {
                     parse_variable(self, &mut node, None)?;
@@ -180,15 +180,15 @@ pub fn find_doc(walker: &mut Walker, end_row: usize) -> Result<Description, Utf8
     Ok(doc)
 }
 
-fn comment_to_doc(text: &String) -> String {
+fn comment_to_doc(text: &str) -> String {
     lazy_static! {
         static ref RE1: Regex = Regex::new(r"^/\*\s*").unwrap();
         static ref RE2: Regex = Regex::new(r"\*/$").unwrap();
         static ref RE3: Regex = Regex::new(r"//\s*").unwrap();
     }
-    let text = RE1.replace_all(&text, "").into_owned();
+    let text = RE1.replace_all(text, "").into_owned();
     let text = RE2.replace_all(&text, "").into_owned();
     let text = RE3.replace_all(&text, "").into_owned();
 
-    return text;
+    text
 }

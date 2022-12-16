@@ -12,7 +12,7 @@ pub fn parse_include(
     node: &mut Node,
 ) -> Result<(), Utf8Error> {
     let path_node = node.child_by_field_name("path").unwrap();
-    let path = path_node.utf8_text(&document.text.as_bytes())?;
+    let path = path_node.utf8_text(document.text.as_bytes())?;
 
     // Remove leading and trailing "<" and ">" or ".
     if path.len() < 2 {
@@ -23,7 +23,7 @@ pub fn parse_include(
     let uri = resolve_import(
         &environment.options.includes_directories,
         &mut path,
-        &documents,
+        documents,
         &document.uri,
     );
     if uri.is_none() {
@@ -44,7 +44,7 @@ pub fn parse_include(
 /// * `documents` - List of known documents.
 /// * `document_uri` - Uri of the document where the include declaration is parsed from.
 fn resolve_import(
-    include_directories: &Vec<PathBuf>,
+    include_directories: &[PathBuf],
     include_text: &mut String,
     documents: &HashMap<Arc<Url>, Document>,
     document_uri: &Arc<Url>,

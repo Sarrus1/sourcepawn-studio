@@ -64,18 +64,18 @@ pub fn parse_function(
         return Ok(());
     }
     let name_node = name_node.unwrap();
-    let name = name_node.utf8_text(&document.text.as_bytes());
+    let name = name_node.utf8_text(document.text.as_bytes());
 
     let mut type_ = Ok("");
-    if type_node.is_some() {
-        type_ = type_node.unwrap().utf8_text(&document.text.as_bytes());
+    if let Some(type_node) = type_node {
+        type_ = type_node.utf8_text(document.text.as_bytes());
     }
 
     let mut visibility = vec![];
     if visibility_node.is_some() {
         let visibility_text = visibility_node
             .unwrap()
-            .utf8_text(&document.text.as_bytes())?;
+            .utf8_text(document.text.as_bytes())?;
         if visibility_text.contains("stock") {
             visibility.push(FunctionVisibility::Stock);
         }
@@ -91,7 +91,7 @@ pub fn parse_function(
     if definition_type_node.is_some() {
         definition_type = match definition_type_node
             .unwrap()
-            .utf8_text(&document.text.as_bytes())?
+            .utf8_text(document.text.as_bytes())?
         {
             "forward" => FunctionDefinitionType::Forward,
             "native" => FunctionDefinitionType::Native,
@@ -116,14 +116,13 @@ pub fn parse_function(
     };
 
     let function_item = Arc::new(Mutex::new(SPItem::Function(function_item)));
-    match block_node {
-        Some(block_node) => read_body_variables(
+    if let Some(block_node) = block_node {
+        read_body_variables(
             document,
             block_node,
             document.text.to_string(),
             function_item.clone(),
-        )?,
-        None => {}
+        )?
     }
     read_function_parameters(
         document,
@@ -183,13 +182,13 @@ fn read_function_parameters(
             }
         }
         let name_node = name_node.unwrap();
-        let name = name_node.utf8_text(&file_item.text.as_bytes())?;
+        let name = name_node.utf8_text(file_item.text.as_bytes())?;
 
         let type_ = match type_node {
-            Some(type_node) => type_node.utf8_text(&file_item.text.as_bytes())?,
+            Some(type_node) => type_node.utf8_text(file_item.text.as_bytes())?,
             None => "",
         };
-        let detail = child.utf8_text(&text.as_bytes())?;
+        let detail = child.utf8_text(text.as_bytes())?;
         let variable_item = VariableItem {
             name: name.to_string(),
             type_: type_.to_string(),

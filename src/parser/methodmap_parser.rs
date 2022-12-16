@@ -19,12 +19,12 @@ pub fn parse_methodmap(
     walker: &mut Walker,
 ) -> Result<(), Utf8Error> {
     let name_node = node.child_by_field_name("name").unwrap();
-    let name = name_node.utf8_text(&document.text.as_bytes()).unwrap();
+    let name = name_node.utf8_text(document.text.as_bytes()).unwrap();
     let inherit_node = node.child_by_field_name("inherits");
     let inherit = match inherit_node {
         Some(inherit_node) => Some(
             inherit_node
-                .utf8_text(&document.text.as_bytes())
+                .utf8_text(document.text.as_bytes())
                 .unwrap()
                 .trim()
                 .to_string(),

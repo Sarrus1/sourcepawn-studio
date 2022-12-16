@@ -99,14 +99,14 @@ impl Analyzer {
                 SPItem::EnumMember(enum_member_item) => {
                     tokens_map.insert(enum_member_item.name.to_string(), item.clone());
                 }
-                SPItem::Property(property_item) => match &*property_item.parent.lock().unwrap() {
-                    SPItem::Methodmap(property_item_parent) => {
+                SPItem::Property(property_item) => {
+                    if let SPItem::Methodmap(property_item_parent) =
+                        &*property_item.parent.lock().unwrap()
+                    {
                         let key = format!("{}-{}", property_item_parent.name, property_item.name);
                         tokens_map.insert(key, item.clone());
                     }
-                    _ => { /* Won't happen */ }
-                },
-                // TODO: add typedef and typeset here
+                } // TODO: add typedef and typeset here
             }
         }
 
@@ -136,9 +136,6 @@ impl Analyzer {
     }
 
     pub fn get(&self, key: &String) -> Option<Arc<Mutex<SPItem>>> {
-        match self.tokens_map.get(key) {
-            Some(res) => Some(res.clone()),
-            None => None,
-        }
+        self.tokens_map.get(key).cloned()
     }
 }

@@ -71,10 +71,10 @@ impl FunctionItem {
 
         // Don't return a CompletionItem if it's a static and the request did not come from the file
         // of the declaration.
-        if self.visibility.contains(&FunctionVisibility::Static) {
-            if params.text_document_position.text_document.uri.to_string() != self.uri.to_string() {
-                return None;
-            }
+        if self.visibility.contains(&FunctionVisibility::Static)
+            && params.text_document_position.text_document.uri.to_string() != self.uri.to_string()
+        {
+            return None;
         }
 
         Some(CompletionItem {
@@ -130,7 +130,7 @@ impl FunctionItem {
 }
 
 /// Visibility of a SourcePawn function.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum FunctionVisibility {
     Public,
     Static,
@@ -138,7 +138,7 @@ pub enum FunctionVisibility {
 }
 
 /// Definition type of a SourcePawn function.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum FunctionDefinitionType {
     Forward,
     Native,
