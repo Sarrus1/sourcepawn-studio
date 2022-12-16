@@ -141,6 +141,16 @@ impl Document {
             }
         }
     }
+
+    pub fn line(&self, line_nb: u32) -> Option<&str> {
+        for (i, line) in self.text.lines().enumerate() {
+            if i == line_nb as usize {
+                return Some(line);
+            }
+        }
+
+        None
+    }
 }
 
 pub fn find_doc(walker: &mut Walker, end_row: usize) -> Result<Description, Utf8Error> {

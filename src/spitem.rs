@@ -162,6 +162,19 @@ impl SPItem {
         }
     }
 
+    pub fn parent(&self) -> Option<Arc<Mutex<SPItem>>> {
+        match self {
+            SPItem::Variable(item) => item.parent.clone(),
+            SPItem::Function(item) => item.parent.clone(),
+            SPItem::Enum(_) => None,
+            SPItem::EnumMember(item) => Some(item.parent.clone()),
+            SPItem::EnumStruct(_) => None,
+            SPItem::Define(_) => None,
+            SPItem::Methodmap(_) => None,
+            SPItem::Property(item) => Some(item.parent.clone()),
+        }
+    }
+
     pub fn type_(&self) -> String {
         match self {
             SPItem::Variable(item) => item.type_.clone(),

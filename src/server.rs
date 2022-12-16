@@ -127,7 +127,20 @@ impl Server {
             text_document_sync: Some(TextDocumentSyncCapability::Kind(
                 TextDocumentSyncKind::INCREMENTAL,
             )),
-            completion_provider: Some(CompletionOptions::default()),
+            completion_provider: Some(CompletionOptions {
+                trigger_characters: Some(vec![
+                    "<".to_string(),
+                    '"'.to_string(),
+                    "'".to_string(),
+                    "/".to_string(),
+                    "\\".to_string(),
+                    ".".to_string(),
+                    ":".to_string(),
+                    " ".to_string(),
+                    "$".to_string(),
+                ]),
+                ..Default::default()
+            }),
             hover_provider: Some(HoverProviderCapability::Simple(true)),
             definition_provider: Some(OneOf::Left(true)),
             ..Default::default()
