@@ -10,6 +10,7 @@ use crate::{
     document::{Document, Token},
     spitem::{get_all_items, Location, SPItem},
     store::Store,
+    utils::range_contains_range,
 };
 
 use self::{analyzer::Analyzer, inherit::find_inherit};
@@ -24,6 +25,7 @@ impl Document {
         let mut analyzer = Analyzer::new(all_items, self);
         for token in self.tokens.iter() {
             analyzer.update_scope(token.range);
+            analyzer.update_line_context(token);
             resolve_item(&mut analyzer, token, self);
 
             analyzer.token_idx += 1;
@@ -31,11 +33,59 @@ impl Document {
     }
 }
 
-fn resolve_item(analyzer: &mut Analyzer, token: &Arc<Token>, document: &Document) {
-    if token.range.start.line != analyzer.line_nb || analyzer.token_idx == 0 {
-        analyzer.line_nb = token.range.start.line;
-        analyzer.previous_items.clear();
+/// Try to solve for the `this` token. Returns `false` only if the token's text is not
+/// `this`. Otherwise, will return `true` when it matches of when it ends.
+///
+/// # Arguments
+///
+/// * `analyzer` - [Analyzer] object.
+/// * `token` - [Token] to analyze.
+/// * `document` - [Document](super::document::Document) to analyze.
+fn resolve_this(analyzer: &mut Analyzer, token: &Arc<Token>, document: &Document) -> bool {
+    if token.text != "this" {
+        return false;
     }
+    for item in analyzer.all_items.iter() {
+        let item_lock = item.lock().unwrap();
+        match &*item_lock {
+            SPItem::Methodmap(mm_item) => {
+                if mm_item.uri.eq(&document.uri)
+                    && range_contains_range(&mm_item.full_range, &token.range)
+                {
+                    analyzer.previous_items.push(item.clone());
+                    return true;
+                }
+            }
+            SPItem::EnumStruct(es_item) => {
+                if es_item.uri.eq(&document.uri)
+                    && range_contains_range(&es_item.full_range, &token.range)
+                {
+                    analyzer.previous_items.push(item.clone());
+                    return true;
+                }
+            }
+            _ => {
+                continue;
+            }
+        }
+    }
+
+    true
+}
+
+/// Try to solve for a non method token, i.e which does not depend on the type of the previous
+/// token on the same line. Returns `true` if it did resolve, `false` otherwise.
+///
+/// # Arguments
+///
+/// * `analyzer` - [Analyzer] object.
+/// * `token` - [Token] to analyze.
+/// * `document` - [Document](super::document::Document) to analyze.
+fn resolve_non_method_item(
+    analyzer: &mut Analyzer,
+    token: &Arc<Token>,
+    document: &Document,
+) -> bool {
     let full_key = format!(
         "{}-{}-{}",
         analyzer.scope.mm_es_key(),
@@ -60,6 +110,18 @@ fn resolve_item(analyzer: &mut Analyzer, token: &Arc<Token>, document: &Document
         };
         item.lock().unwrap().push_reference(reference);
         analyzer.previous_items.push(item.clone());
+        return true;
+    }
+
+    false
+}
+
+fn resolve_item(analyzer: &mut Analyzer, token: &Arc<Token>, document: &Document) {
+    if resolve_this(analyzer, token, document) {
+        return;
+    }
+
+    if resolve_non_method_item(analyzer, token, document) {
         return;
     }
 

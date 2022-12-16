@@ -5,7 +5,10 @@ use std::{
 
 use lsp_types::Range;
 
-use crate::{document::Document, spitem::SPItem};
+use crate::{
+    document::{Document, Token},
+    spitem::SPItem,
+};
 
 use super::{purge_references, scope::Scope};
 
@@ -137,5 +140,12 @@ impl Analyzer {
 
     pub fn get(&self, key: &String) -> Option<Arc<Mutex<SPItem>>> {
         self.tokens_map.get(key).cloned()
+    }
+
+    pub fn update_line_context(&mut self, token: &Arc<Token>) {
+        if token.range.start.line != self.line_nb || self.token_idx == 0 {
+            self.line_nb = token.range.start.line;
+            self.previous_items.clear();
+        }
     }
 }
