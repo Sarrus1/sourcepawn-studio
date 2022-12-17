@@ -12,7 +12,7 @@ pub struct Options {
 
 impl Options {
     /// Return all possible include folder paths.
-    pub fn get_all_possible_include_folder(&self) -> Vec<PathBuf> {
+    pub fn get_all_possible_include_folders(&self) -> Vec<PathBuf> {
         let mut res: Vec<PathBuf> = vec![];
         for path in self.includes_directories.iter() {
             if path.exists() {

@@ -14,16 +14,16 @@ use super::context::get_line_words;
 ///
 /// # Arguments
 ///
-/// * `all_item` - Vector of [SPItem](crate::spitem::SPItem).
+/// * `all_items` - Vector of [SPItem](crate::spitem::SPItem).
 /// * `parent_name` - Name of the parent.
 /// * `params` - [Parameters](lsp_types::completion::CompletionParams) of the completion request.
 pub(super) fn get_children_of_mm_or_es(
-    all_item: &[Arc<Mutex<SPItem>>],
+    all_items: &[Arc<Mutex<SPItem>>],
     parent_name: String,
     params: CompletionParams,
 ) -> Vec<CompletionItem> {
     let mut res: Vec<CompletionItem> = vec![];
-    for item in all_item.iter() {
+    for item in all_items.iter() {
         let item_lock = item.lock().unwrap();
         if let Some(parent_) = item_lock.parent() {
             if parent_name != parent_.lock().unwrap().name() {
@@ -43,7 +43,7 @@ pub(super) fn get_children_of_mm_or_es(
 ///
 /// # Arguments
 ///
-/// * `all_item` - Vector of [SPItem](crate::spitem::SPItem).
+/// * `all_items` - Vector of [SPItem](crate::spitem::SPItem).
 /// * `params` - [Parameters](lsp_types::completion::CompletionParams) of the completion request.
 pub(super) fn get_non_method_completions(
     all_items: Vec<Arc<Mutex<SPItem>>>,
@@ -68,17 +68,17 @@ pub(super) fn get_non_method_completions(
 ///
 /// # Arguments
 ///
-/// * `all_item` - Vector of [SPItem](crate::spitem::SPItem).
-/// * `line` - Line of the document to analyze.
+/// * `all_items` - Vector of [SPItem](crate::spitem::SPItem).
+/// * `sub_line` - Sub line of the document to analyze.
 /// * `position` - [Position](lsp_types::Position) of the request.
 /// * `params` - [Parameters](lsp_types::completion::CompletionParams) of the completion request.
 pub(super) fn get_method_completions(
     all_items: Vec<Arc<Mutex<SPItem>>>,
-    line: &str,
+    sub_line: &str,
     position: Position,
     request: FeatureRequest<CompletionParams>,
 ) -> Option<CompletionList> {
-    let words = get_line_words(line, position);
+    let words = get_line_words(sub_line, position);
     for word in words.into_iter().flatten().rev() {
         let word_pos = Position {
             line: word.range.start.line,
