@@ -100,33 +100,34 @@ pub(super) fn get_method_completions(
         for item in items.iter() {
             let type_ = item.lock().unwrap().type_();
             for item_ in all_items.iter() {
-                if item_.lock().unwrap().name() == type_ {
-                    let item_lock = item_.lock().unwrap().clone();
-                    match item_lock {
-                        SPItem::Methodmap(mm_item) => {
-                            return Some(CompletionList {
-                                // TODO: Handle inherit here
-                                // TODO: Handle static methods
-                                items: get_children_of_mm_or_es(
-                                    &all_items,
-                                    mm_item.name,
-                                    request.params,
-                                ),
-                                ..Default::default()
-                            });
-                        }
-                        SPItem::EnumStruct(es_item) => {
-                            return Some(CompletionList {
-                                items: get_children_of_mm_or_es(
-                                    &all_items,
-                                    es_item.name,
-                                    request.params,
-                                ),
-                                ..Default::default()
-                            });
-                        }
-                        _ => {}
+                if item_.lock().unwrap().name() != type_ {
+                    continue;
+                }
+                let item_lock = item_.lock().unwrap().clone();
+                match item_lock {
+                    SPItem::Methodmap(mm_item) => {
+                        return Some(CompletionList {
+                            // TODO: Handle inherit here
+                            // TODO: Handle static methods
+                            items: get_children_of_mm_or_es(
+                                &all_items,
+                                mm_item.name,
+                                request.params,
+                            ),
+                            ..Default::default()
+                        });
                     }
+                    SPItem::EnumStruct(es_item) => {
+                        return Some(CompletionList {
+                            items: get_children_of_mm_or_es(
+                                &all_items,
+                                es_item.name,
+                                request.params,
+                            ),
+                            ..Default::default()
+                        });
+                    }
+                    _ => {}
                 }
             }
         }
