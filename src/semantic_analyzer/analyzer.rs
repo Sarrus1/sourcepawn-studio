@@ -109,7 +109,8 @@ impl Analyzer {
                         let key = format!("{}-{}", property_item_parent.name, property_item.name);
                         tokens_map.insert(key, item.clone());
                     }
-                } // TODO: add typedef and typeset here
+                }
+                SPItem::Include(_) => {} // TODO: add typedef and typeset here
             }
         }
 

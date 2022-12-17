@@ -1,9 +1,19 @@
-use std::{collections::HashMap, path::PathBuf, str::Utf8Error, sync::Arc};
+use std::{
+    collections::HashMap,
+    path::PathBuf,
+    str::Utf8Error,
+    sync::{Arc, Mutex},
+};
 
 use lsp_types::Url;
 use tree_sitter::Node;
 
-use crate::{document::Document, environment::Environment, utils};
+use crate::{
+    document::Document,
+    environment::Environment,
+    spitem::{include_item::IncludeItem, SPItem},
+    utils::{self, ts_range_to_lsp_range},
+};
 
 pub fn parse_include(
     environment: &Environment,
@@ -20,17 +30,28 @@ pub fn parse_include(
         return Ok(());
     }
     let mut path = path[1..path.len() - 1].trim().to_string();
-    let uri = resolve_import(
+    let include_uri = resolve_import(
         &environment.options.includes_directories,
         &mut path,
         documents,
         &document.uri,
     );
-    if uri.is_none() {
+    if include_uri.is_none() {
         return Ok(());
     }
-    let uri = uri.unwrap();
-    document.includes.insert(uri);
+    let include_uri = include_uri.unwrap();
+    document.includes.insert(include_uri.clone());
+
+    let include_uri = Arc::new(include_uri);
+
+    let include_item = IncludeItem {
+        name: path,
+        range: ts_range_to_lsp_range(&path_node.range()),
+        uri: document.uri.clone(),
+        include_uri,
+    };
+    let include_item = Arc::new(Mutex::new(SPItem::Include(include_item)));
+    document.sp_items.push(include_item);
 
     Ok(())
 }

@@ -20,6 +20,7 @@ pub mod enum_item;
 pub mod enum_member_item;
 pub mod enum_struct_item;
 pub mod function_item;
+pub mod include_item;
 pub mod methodmap_item;
 pub mod property_item;
 pub mod variable_item;
@@ -43,6 +44,7 @@ pub enum SPItem {
     Define(define_item::DefineItem),
     Methodmap(methodmap_item::MethodmapItem),
     Property(property_item::PropertyItem),
+    Include(include_item::IncludeItem),
 }
 
 pub fn get_all_items(store: &Store) -> Option<Vec<Arc<Mutex<SPItem>>>> {
@@ -133,6 +135,7 @@ impl SPItem {
             SPItem::Define(item) => Some(item.range),
             SPItem::Methodmap(item) => Some(item.range),
             SPItem::Property(item) => Some(item.range),
+            SPItem::Include(item) => Some(item.range),
         }
     }
 
@@ -146,6 +149,7 @@ impl SPItem {
             SPItem::Define(item) => Some(item.full_range),
             SPItem::Methodmap(item) => Some(item.full_range),
             SPItem::Property(item) => Some(item.full_range),
+            SPItem::Include(item) => Some(item.range),
         }
     }
 
@@ -159,6 +163,7 @@ impl SPItem {
             SPItem::Define(item) => item.name.clone(),
             SPItem::Methodmap(item) => item.name.clone(),
             SPItem::Property(item) => item.name.clone(),
+            SPItem::Include(item) => item.name.clone(),
         }
     }
 
@@ -172,6 +177,7 @@ impl SPItem {
             SPItem::Define(_) => None,
             SPItem::Methodmap(_) => None,
             SPItem::Property(item) => Some(item.parent.clone()),
+            SPItem::Include(_) => None,
         }
     }
 
@@ -185,6 +191,7 @@ impl SPItem {
             SPItem::Define(_) => "".to_string(),
             SPItem::Methodmap(item) => item.name.clone(),
             SPItem::Property(item) => item.type_.clone(),
+            SPItem::Include(_) => "".to_string(),
         }
     }
 
@@ -198,6 +205,7 @@ impl SPItem {
             SPItem::Define(item) => Some(item.description.clone()),
             SPItem::Methodmap(item) => Some(item.description.clone()),
             SPItem::Property(item) => Some(item.description.clone()),
+            SPItem::Include(_) => None,
         }
     }
 
@@ -211,6 +219,7 @@ impl SPItem {
             SPItem::Define(item) => item.uri.clone(),
             SPItem::Methodmap(item) => item.uri.clone(),
             SPItem::Property(item) => item.uri.clone(),
+            SPItem::Include(item) => item.uri.clone(),
         }
     }
 
@@ -224,6 +233,7 @@ impl SPItem {
             SPItem::Define(item) => Some(&item.references),
             SPItem::Methodmap(item) => Some(&item.references),
             SPItem::Property(item) => Some(&item.references),
+            SPItem::Include(_) => None,
         }
     }
 
@@ -242,6 +252,7 @@ impl SPItem {
             SPItem::Define(item) => item.references.push(reference),
             SPItem::Methodmap(item) => item.references.push(reference),
             SPItem::Property(item) => item.references.push(reference),
+            SPItem::Include(_) => {}
         }
     }
 
@@ -255,6 +266,7 @@ impl SPItem {
             SPItem::Define(item) => item.references = references,
             SPItem::Methodmap(item) => item.references = references,
             SPItem::Property(item) => item.references = references,
+            SPItem::Include(_) => {}
         }
     }
 
@@ -281,6 +293,7 @@ impl SPItem {
             SPItem::Define(item) => item.to_completion(params),
             SPItem::Methodmap(item) => item.to_completion(params),
             SPItem::Property(item) => item.to_completion(params, request_method),
+            SPItem::Include(item) => item.to_completion(params),
         }
     }
 
@@ -294,6 +307,7 @@ impl SPItem {
             SPItem::Define(item) => item.to_hover(params),
             SPItem::Methodmap(item) => item.to_hover(params),
             SPItem::Property(item) => item.to_hover(params),
+            SPItem::Include(item) => item.to_hover(params),
         }
     }
 
@@ -307,6 +321,7 @@ impl SPItem {
             SPItem::Define(item) => item.to_definition(params),
             SPItem::Methodmap(item) => item.to_definition(params),
             SPItem::Property(item) => item.to_definition(params),
+            SPItem::Include(item) => item.to_definition(params),
         }
     }
 }
