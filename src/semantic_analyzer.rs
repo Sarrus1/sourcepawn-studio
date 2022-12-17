@@ -18,10 +18,6 @@ use self::{analyzer::Analyzer, resolvers::resolve_item};
 impl Document {
     pub fn find_references(&self, store: &Store) {
         let all_items = get_all_items(store);
-        if all_items.is_none() {
-            return;
-        }
-        let all_items = all_items.unwrap();
         let mut analyzer = Analyzer::new(all_items, self);
         for token in self.tokens.iter() {
             analyzer.update_scope(token.range);

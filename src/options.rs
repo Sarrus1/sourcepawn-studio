@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 
+use lsp_types::Url;
 use serde::{Deserialize, Serialize};
+
+use crate::utils::normalize_uri;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -31,5 +34,19 @@ impl Options {
         }
 
         res
+    }
+
+    /// Return the [uri](lsp_types::Url) main path. [None] if it does not exist.
+    pub fn get_main_path_uri(&self) -> Option<Url> {
+        if !self.main_path.exists() {
+            return None;
+        }
+        let main_uri = Url::from_file_path(&self.main_path);
+        if let Ok(mut main_uri) = main_uri {
+            normalize_uri(&mut main_uri);
+            return Some(main_uri);
+        }
+
+        None
     }
 }

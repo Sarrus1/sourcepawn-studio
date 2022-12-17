@@ -17,7 +17,7 @@ mod matchtoken;
 
 pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<CompletionList> {
     let document = request.store.get(&request.uri)?;
-    let all_items = get_all_items(&request.store)?;
+    let all_items = get_all_items(&request.store);
     let position = request.params.text_document_position.position;
     let line = document.line(position.line)?;
     let sub_line: String = line.chars().take(position.character as usize).collect();

@@ -1,10 +1,4 @@
-use crate::{
-    dispatch,
-    options::Options,
-    providers::FeatureRequest,
-    store::Store,
-    utils::{self, normalize_uri},
-};
+use crate::{dispatch, options::Options, providers::FeatureRequest, store::Store, utils};
 use std::{path::PathBuf, sync::Arc, time::Instant};
 
 use crossbeam_channel::{Receiver, Sender};
@@ -223,9 +217,26 @@ impl Server {
     }
 
     fn reparse_all(&mut self) -> anyhow::Result<()> {
-        let mut main_uri = Url::from_file_path(&self.store.environment.options.main_path)
-            .expect("Main Path is invalid");
-        normalize_uri(&mut main_uri);
+        self.store.parse_directories();
+        let main_uri = self.store.environment.options.get_main_path_uri();
+        if main_uri.is_none() {
+            // Send a warning for a potential invalid main path here.
+            let mut uris: Vec<Url> = vec![];
+            for uri in self.store.documents.keys() {
+                uris.push(uri.as_ref().clone());
+            }
+            for uri in uris.iter() {
+                let document = self.store.get(uri);
+                if let Some(document) = document {
+                    self.store
+                        .handle_open_document(document.uri, document.text, &mut self.parser)
+                        .unwrap();
+                }
+            }
+            eprintln!("Stop");
+            return Ok(());
+        }
+        let main_uri = main_uri.unwrap();
         let document = self
             .store
             .get(&main_uri)
@@ -339,7 +350,6 @@ impl Server {
                             InternalMessage::SetOptions(options) => {
                                 self.config_pulled = true;
                                 self.store.environment.options = options;
-                                self.store.parse_directories();
                                 self.reparse_all().expect("Failed to reparse all files.");
                             }
                         }

@@ -62,7 +62,7 @@ impl Store {
                 }
                 let text =
                     fs::read_to_string(uri.to_file_path().unwrap()).expect("Failed to read file.");
-                let document = Document::new(Arc::new(uri.clone()), text);
+                let document = Document::new(Arc::new(uri.clone()), text.clone());
                 self.documents.insert(Arc::new(uri), document);
             }
         }

@@ -47,27 +47,29 @@ pub enum SPItem {
     Include(include_item::IncludeItem),
 }
 
-pub fn get_all_items(store: &Store) -> Option<Vec<Arc<Mutex<SPItem>>>> {
-    let main_path = store.environment.options.main_path.clone();
-    let main_path_uri = Url::from_file_path(main_path);
-    if main_path_uri.is_err() {
-        return None;
-    }
-    let main_path_uri = main_path_uri.unwrap();
-    let mut includes: HashSet<Url> = HashSet::new();
-    includes.insert(main_path_uri.clone());
+pub fn get_all_items(store: &Store) -> Vec<Arc<Mutex<SPItem>>> {
     let mut all_items = vec![];
-    if let Some(document) = store.documents.get(&main_path_uri) {
-        get_included_files(store, document, &mut includes);
-        for include in includes.iter() {
-            let document = store.documents.get(include).unwrap();
-            for item in document.sp_items.iter() {
-                all_items.push(item.clone());
+    if let Some(main_path_uri) = store.environment.options.get_main_path_uri() {
+        let mut includes: HashSet<Url> = HashSet::new();
+        includes.insert(main_path_uri.clone());
+        if let Some(document) = store.documents.get(&main_path_uri) {
+            get_included_files(store, document, &mut includes);
+            for include in includes.iter() {
+                let document = store.documents.get(include).unwrap();
+                for item in document.sp_items.iter() {
+                    all_items.push(item.clone());
+                }
             }
+        }
+        return all_items;
+    }
+    for document in store.documents.values() {
+        for item in document.sp_items.iter() {
+            all_items.push(item.clone());
         }
     }
 
-    Some(all_items)
+    all_items
 }
 
 fn get_included_files(store: &Store, document: &Document, includes: &mut HashSet<Url>) {
@@ -90,10 +92,6 @@ pub fn get_items_from_position(
     let uri = Arc::new(uri);
     let all_items = get_all_items(store);
     let mut res = vec![];
-    if all_items.is_none() {
-        return res;
-    }
-    let all_items = all_items.unwrap();
     for item in all_items.iter() {
         let item_lock = item.lock().unwrap();
         match item_lock.range() {
