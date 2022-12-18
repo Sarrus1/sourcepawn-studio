@@ -1,15 +1,21 @@
-use crate::{dispatch, options::Options, providers::FeatureRequest, store::Store, utils};
+use crate::{
+    capabilities::ClientCapabilitiesExt, dispatch, options::Options, providers::FeatureRequest,
+    store::Store, utils,
+};
 use std::{path::PathBuf, sync::Arc, time::Instant};
 
 use crossbeam_channel::{Receiver, Sender};
 use lsp_server::{Connection, Message, RequestId};
 use lsp_types::{
-    notification::{DidChangeTextDocument, DidOpenTextDocument, ShowMessage},
+    notification::{
+        DidChangeConfiguration, DidChangeTextDocument, DidOpenTextDocument, ShowMessage,
+    },
     request::{Completion, GotoDefinition, HoverRequest, WorkspaceConfiguration},
     CompletionOptions, CompletionParams, ConfigurationItem, ConfigurationParams,
-    DidChangeTextDocumentParams, DidOpenTextDocumentParams, GotoDefinitionParams, HoverParams,
-    HoverProviderCapability, InitializeParams, MessageType, OneOf, ServerCapabilities,
-    ShowMessageParams, TextDocumentSyncCapability, TextDocumentSyncKind, Url,
+    DidChangeConfigurationParams, DidChangeTextDocumentParams, DidOpenTextDocumentParams,
+    GotoDefinitionParams, HoverParams, HoverProviderCapability, InitializeParams, MessageType,
+    OneOf, ServerCapabilities, ShowMessageParams, TextDocumentSyncCapability, TextDocumentSyncKind,
+    Url,
 };
 use serde::Serialize;
 use threadpool::ThreadPool;
@@ -33,6 +39,15 @@ struct ServerFork {
 
 impl ServerFork {
     pub fn pull_config(&self) -> anyhow::Result<()> {
+        if !self
+            .store
+            .environment
+            .client_capabilities
+            .has_pull_configuration_support()
+        {
+            return Ok(());
+        }
+
         let params = ConfigurationParams {
             items: vec![ConfigurationItem {
                 section: Some("SourcePawnLanguageServer".to_string()),
@@ -216,6 +231,29 @@ impl Server {
         Ok(())
     }
 
+    fn did_change_configuration(
+        &mut self,
+        params: DidChangeConfigurationParams,
+    ) -> anyhow::Result<()> {
+        if self
+            .store
+            .environment
+            .client_capabilities
+            .has_pull_configuration_support()
+        {
+            self.spawn(move |server| {
+                let _ = server.pull_config();
+            });
+        } else {
+            let options = self.fork().parse_options(params.settings)?;
+            self.store.environment.options = Arc::new(options);
+            self.config_pulled = true;
+            self.reparse_all()?;
+        }
+
+        Ok(())
+    }
+
     fn reparse_all(&mut self) -> anyhow::Result<()> {
         self.store.parse_directories();
         let main_uri = self.store.environment.options.get_main_path_uri();
@@ -341,6 +379,9 @@ impl Server {
                                 dispatch::NotificationDispatcher::new(notification)
                                 .on::<DidOpenTextDocument, _>(|params| self.did_open(params))?
                                 .on::<DidChangeTextDocument, _>(|params| self.did_change(params))?
+                                .on::<DidChangeConfiguration, _>(|params| {
+                                    self.did_change_configuration(params)
+                                })?
                                 .default();
                                 }
                         }

@@ -1,3 +1,4 @@
+mod capabilities;
 mod client;
 mod dispatch;
 mod document;
