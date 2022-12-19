@@ -10,12 +10,16 @@ use lsp_types::{
     notification::{
         DidChangeConfiguration, DidChangeTextDocument, DidOpenTextDocument, ShowMessage,
     },
-    request::{Completion, GotoDefinition, HoverRequest, WorkspaceConfiguration},
+    request::{
+        Completion, GotoDefinition, HoverRequest, SemanticTokensFullRequest, WorkspaceConfiguration,
+    },
     CompletionOptions, CompletionParams, ConfigurationItem, ConfigurationParams,
     DidChangeConfigurationParams, DidChangeTextDocumentParams, DidOpenTextDocumentParams,
     GotoDefinitionParams, HoverParams, HoverProviderCapability, InitializeParams, MessageType,
-    OneOf, ServerCapabilities, ShowMessageParams, TextDocumentSyncCapability, TextDocumentSyncKind,
-    Url,
+    OneOf, SemanticTokenModifier, SemanticTokenType, SemanticTokensFullOptions,
+    SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams,
+    SemanticTokensServerCapabilities, ServerCapabilities, ShowMessageParams,
+    TextDocumentSyncCapability, TextDocumentSyncKind, Url, WorkDoneProgressOptions,
 };
 use serde::Serialize;
 use threadpool::ThreadPool;
@@ -152,6 +156,31 @@ impl Server {
             }),
             hover_provider: Some(HoverProviderCapability::Simple(true)),
             definition_provider: Some(OneOf::Left(true)),
+            semantic_tokens_provider: Some(
+                SemanticTokensServerCapabilities::SemanticTokensOptions(SemanticTokensOptions {
+                    work_done_progress_options: WorkDoneProgressOptions {
+                        work_done_progress: None,
+                    },
+                    legend: SemanticTokensLegend {
+                        token_types: vec![
+                            SemanticTokenType::VARIABLE,
+                            SemanticTokenType::ENUM_MEMBER,
+                            SemanticTokenType::FUNCTION,
+                            SemanticTokenType::CLASS,
+                            SemanticTokenType::METHOD,
+                            SemanticTokenType::MACRO,
+                        ],
+                        token_modifiers: vec![
+                            SemanticTokenModifier::READONLY,
+                            SemanticTokenModifier::DECLARATION,
+                            SemanticTokenModifier::DEPRECATED,
+                            SemanticTokenModifier::MODIFICATION,
+                        ],
+                    },
+                    range: Some(false),
+                    full: Some(SemanticTokensFullOptions::Delta { delta: Some(false) }),
+                }),
+            ),
             ..Default::default()
         })
         .unwrap();
@@ -321,6 +350,22 @@ impl Server {
         Ok(())
     }
 
+    fn semantic_tokens(
+        &self,
+        id: RequestId,
+        mut params: SemanticTokensParams,
+    ) -> anyhow::Result<()> {
+        utils::normalize_uri(&mut params.text_document.uri);
+        let uri = Arc::new(params.text_document.uri.clone());
+        self.handle_feature_request(
+            id,
+            params,
+            uri,
+            providers::semantic_tokens::provide_semantic_tokens,
+        )?;
+        Ok(())
+    }
+
     fn handle_feature_request<P, R, H>(
         &self,
         id: RequestId,
@@ -367,6 +412,8 @@ impl Server {
                                 .on::<Completion, _>(|id, params| self.completion(id, params))?
                                 .on::<HoverRequest, _>(|id, params| self.hover(id, params))?
                                 .on::<GotoDefinition, _>(|id, params| self.definition(id, params))?
+                                .on::<SemanticTokensFullRequest, _>(|id, params| self.semantic_tokens(id, params))?
+
                                 .default()
                                 {
                                     self.connection.sender.send(response.into())?;
