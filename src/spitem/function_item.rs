@@ -88,7 +88,7 @@ impl FunctionItem {
 
         Some(CompletionItem {
             label: self.name.to_string(),
-            kind: Some(CompletionItemKind::FUNCTION),
+            kind: Some(self.completion_kind()),
             tags: Some(tags),
             detail: Some(self.type_.to_string()),
             deprecated: Some(self.is_deprecated()),
@@ -135,6 +135,16 @@ impl FunctionItem {
             language: "sourcepawn".to_string(),
             value: format!("{} {}()", self.type_, self.name),
         })
+    }
+
+    /// Returns a [CompletionItemKind](lsp_types::CompletionItemKind) depending on
+    /// if it is a function or a method.
+    fn completion_kind(&self) -> CompletionItemKind {
+        if self.parent.is_some() {
+            CompletionItemKind::METHOD
+        } else {
+            CompletionItemKind::FUNCTION
+        }
     }
 }
 
