@@ -300,7 +300,6 @@ impl Server {
                         .unwrap();
                 }
             }
-            eprintln!("Stop");
             return Ok(());
         }
         let main_uri = main_uri.unwrap();
