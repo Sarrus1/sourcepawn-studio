@@ -123,10 +123,9 @@ export async function run(args: URI): Promise<void> {
   ];
 
   // Add the optional includes folders.
-  getAllPossibleIncludeFolderPaths(
-    URI.file(fileToCompilePath),
-    true
-  ).forEach((e) => includePaths.push(e));
+  getAllPossibleIncludeFolderPaths(URI.file(fileToCompilePath), true).forEach(
+    (e) => includePaths.push(e)
+  );
 
   let compilerArgs = [fileToCompilePath, `-o${outputDir}`];
 
