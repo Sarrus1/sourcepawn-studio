@@ -18,7 +18,7 @@
     "url": "https://www.buymeacoffee.com/sarrus"
   },
   "engines": {
-    "vscode": "^1.63.0"
+    "vscode": "^1.73.1"
   },
   "categories": [
     "Programming Languages",
@@ -528,7 +528,7 @@
     "ts-loader": "^9.2.6",
     "ts-pegjs": "^1.2.1",
     "typescript": "^4.5.4",
-    "vsce": "^2.9.1"
+    "vsce": "^2.15.0"
   },
   "scripts": {
     "vscode:prepublish": "npm run generate-parser && npm run build",
