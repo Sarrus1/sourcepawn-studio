@@ -4,6 +4,9 @@
     <strong>Language Server Protocol implementation for the SourcePawn programming language written in Rust</strong>
   </p>
   <p style="margin-bottom: 0.5ex;">
+    <a href="https://github.com/Sarrus1/sourcepawn-lsp/releases/latest">
+        <img src="https://img.shields.io/github/downloads/Sarrus1/sourcepawn-lsp/total"/>
+    </a>
     <a href="https://github.com/Sarrus1/sourcepawn-lsp/actions/workflows/release.yml">
       <img
         alt="Github release status"
