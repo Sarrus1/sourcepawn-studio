@@ -16,6 +16,7 @@ import {
 } from "fs";
 import axios from "axios";
 import unzipper from "unzipper";
+import { execSync } from "child_process";
 
 export async function run(args: any) {
   const lspPath = join(
@@ -40,7 +41,7 @@ export async function run(args: any) {
       cancellable: true,
     },
     async (progress, token) => {
-      return downloadLanguageServer("0.1.0", progress, token);
+      return downloadLanguageServer(version, progress, token);
     }
   );
   return 0;
@@ -125,6 +126,9 @@ async function downloadLanguageServer(
           }
         })
         .on("close", () => {
+          if (platform() != "win32") {
+            execSync(`chmod +x ${outPath}`);
+          }
           rmSync(zipPath);
           resolve();
         });

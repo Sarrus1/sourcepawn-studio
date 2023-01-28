@@ -6,7 +6,7 @@ import {
   LanguageClientOptions,
   ServerOptions,
 } from "vscode-languageclient/node";
-import { platform, arch } from "os";
+import { platform } from "os";
 import { existsSync } from "fs";
 
 import { registerSMCommands } from "./Commands/registerCommands";
@@ -20,18 +20,11 @@ import {
 let client: LanguageClient;
 
 function makeCommand() {
-  let lsp_path = join(
+  return join(
     extensions.getExtension("Sarrus.sourcepawn-vscode").extensionPath,
-    "bin"
+    "languageServer",
+    platform() == "win32" ? "sourcepawn_lsp.exe" : "sourcepawn_lsp"
   );
-  const platform_ = platform();
-  const arch_ = arch();
-  if (platform_ === "win32") {
-    lsp_path = join(lsp_path, "win32/sourcepawn_lsp.exe");
-  } else {
-    lsp_path = "./" + join(lsp_path, `${platform_}_${arch_}/sourcepawn_lsp`);
-  }
-  return lsp_path;
 }
 
 async function installLanguageServer(context: ExtensionContext) {
