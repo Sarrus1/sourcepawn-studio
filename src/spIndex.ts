@@ -12,7 +12,10 @@ import { existsSync } from "fs";
 import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { KVDocumentFormattingEditProvider } from "./Formatters/kvFormat";
-import { run as installLanguageServerCommand } from "./Commands/installLanguageServer";
+import {
+  getLatestVersionName,
+  run as installLanguageServerCommand,
+} from "./Commands/installLanguageServer";
 
 let client: LanguageClient;
 
@@ -31,18 +34,35 @@ function makeCommand() {
   return lsp_path;
 }
 
-async function installLanguageServer() {
+async function installLanguageServer(context: ExtensionContext) {
   const lspPath = join(
     extensions.getExtension("Sarrus.sourcepawn-vscode").extensionPath,
     "languageServer"
   );
   if (!existsSync(lspPath)) {
     await installLanguageServerCommand(undefined);
+    const version = await getLatestVersionName();
+    context.globalState.update("language_server_version", version);
   }
 }
 
+async function checkForLanguageServerUpdate(context: ExtensionContext) {
+  const latestVersion = await getLatestVersionName();
+  const installedVersion = context.globalState.get("language_server_version");
+  if (
+    latestVersion === undefined ||
+    installedVersion === undefined ||
+    latestVersion === installedVersion
+  ) {
+    return;
+  }
+  await installLanguageServerCommand(undefined);
+  context.globalState.update("language_server_version", latestVersion);
+  client.start();
+}
+
 export async function activate(context: ExtensionContext) {
-  await installLanguageServer();
+  await installLanguageServer(context);
 
   registerSMCommands(context);
 
@@ -94,6 +114,7 @@ export async function activate(context: ExtensionContext) {
   );
 
   client.start();
+  checkForLanguageServerUpdate(context);
 }
 
 export function deactivate(): Thenable<void> | undefined {

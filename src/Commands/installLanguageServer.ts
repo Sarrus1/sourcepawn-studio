@@ -46,7 +46,7 @@ export async function run(args: any) {
   return 0;
 }
 
-async function getLatestVersionName() {
+export async function getLatestVersionName() {
   const res = await axios.get(
     "https://api.github.com/repos/Sarrus1/sourcepawn-lsp/releases/latest"
   );
