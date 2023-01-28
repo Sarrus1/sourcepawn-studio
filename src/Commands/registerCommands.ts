@@ -12,6 +12,7 @@ import { run as setFileAsMainCommand } from "./setFileAsMain";
 import { run as installSMCommand } from "./installSM";
 import { run as createChangelogCommand } from "./createCHANGELOG";
 import { run as changeSMApiCommand } from "./changeSMApi";
+import { run as installLanguageServerCommand } from "./installLanguageServer";
 
 /**
  * Register all the commands of the extension.
@@ -96,4 +97,10 @@ export function registerSMCommands(context: ExtensionContext): void {
     changeSMApiCommand.bind(undefined)
   );
   context.subscriptions.push(changeSMApi);
+
+  const installLanguageServer = commands.registerCommand(
+    "sourcepawn-vscode.installLanguageServer",
+    installLanguageServerCommand.bind(undefined)
+  );
+  context.subscriptions.push(installLanguageServer);
 }

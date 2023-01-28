@@ -48,7 +48,8 @@
     "onCommand:sourcepawn-vscode.insertParameters",
     "onCommand:sourcepawn-vscode.setFileAsMain",
     "onCommand:sourcepawn-vscode.createChangelog",
-    "onCommand:sourcepawn-vscode.changeSMApi"
+    "onCommand:sourcepawn-vscode.changeSMApi",
+    "onCommand:sourcepawn-vscode.installLanguageServer"
   ],
   "contributes": {
     "commands": [
@@ -119,6 +120,11 @@
       {
         "command": "sourcepawn-vscode.changeSMApi",
         "title": "Change SM API",
+        "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.installLanguageServer",
+        "title": "Install Language Server",
         "category": "SM"
       }
     ],
@@ -491,22 +497,26 @@
     ]
   },
   "dependencies": {
+    "axios": "^1.2.6",
     "decompress": "^4.2.1",
     "ftp-deploy": "^2.4.2",
     "glob": "^7.2.0",
     "rcon-srcds": "^2.0.1",
     "safe-evaluate-expression": "^1.7.2",
     "tree-sitter-sourcepawn": "^0.4.0",
+    "unzipper": "^0.10.11",
+    "vscode-languageclient": "^8.0.2",
     "vscode-uri": "^3.0.3",
     "web-tree-sitter": "^0.20.5",
-    "wget-improved": "^3.2.1",
-    "vscode-languageclient": "^8.0.2"
+    "wget-improved": "^3.2.1"
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
+    "@types/axios": "^0.14.0",
     "@types/glob": "^7.2.0",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^8.0.14",
+    "@types/node": "^14.14.0",
+    "@types/unzipper": "^0.10.5",
     "@types/vscode": "^1.73.1",
     "@vscode/test-electron": "^1.6.1",
     "esbuild": "^0.14.43",

@@ -7,10 +7,12 @@ import {
   ServerOptions,
 } from "vscode-languageclient/node";
 import { platform, arch } from "os";
+import { existsSync } from "fs";
 
 import { registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { KVDocumentFormattingEditProvider } from "./Formatters/kvFormat";
+import { run as installLanguageServerCommand } from "./Commands/installLanguageServer";
 
 let client: LanguageClient;
 
@@ -29,7 +31,19 @@ function makeCommand() {
   return lsp_path;
 }
 
-export function activate(context: ExtensionContext) {
+async function installLanguageServer() {
+  const lspPath = join(
+    extensions.getExtension("Sarrus.sourcepawn-vscode").extensionPath,
+    "languageServer"
+  );
+  if (!existsSync(lspPath)) {
+    await installLanguageServerCommand(undefined);
+  }
+}
+
+export async function activate(context: ExtensionContext) {
+  await installLanguageServer();
+
   registerSMCommands(context);
 
   context.subscriptions.push(
