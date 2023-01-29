@@ -58,10 +58,15 @@ impl Store {
             if f_name.ends_with(".sp") || f_name.ends_with(".inc") {
                 let uri = Url::from_file_path(entry.path()).unwrap();
                 if self.documents.contains_key(&uri) {
-                    return;
+                    continue;
                 }
-                let text =
-                    fs::read_to_string(uri.to_file_path().unwrap()).expect("Failed to read file.");
+                let text = match fs::read_to_string(uri.to_file_path().unwrap()) {
+                    Ok(text) => text,
+                    Err(_err) => {
+                        eprintln!("Failed to read file {:?} ", uri.to_file_path().unwrap());
+                        continue;
+                    }
+                };
                 let document = Document::new(Arc::new(uri.clone()), text.clone());
                 self.documents.insert(Arc::new(uri), document);
             }
