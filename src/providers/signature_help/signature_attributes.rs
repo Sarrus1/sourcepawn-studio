@@ -93,7 +93,7 @@ impl SignatureAttributes {
 ///
 /// * `chars` - Vector of [char] which represent the line to analyze.
 /// * `i` - Index of the  [Position] of the trigger character in the vector of chars.
-fn is_in_a_string_or_array(chars: &Vec<char>, i: usize) -> bool {
+fn is_in_a_string_or_array(chars: &[char], i: usize) -> bool {
     let mut double_quote_count = 0;
     let mut found_double_quote = false;
     let mut single_quote_count = 0;

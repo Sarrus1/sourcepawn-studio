@@ -199,11 +199,11 @@ impl Server {
         self.spawn(move |server| {
             let _ = server.pull_config();
         });
-        let base_path = params.workspace_folders.unwrap()[0]
-            .uri
-            .to_file_path()
-            .unwrap();
-        self.store.find_documents(&base_path);
+        for folder in params.workspace_folders.unwrap_or_default() {
+            self.store
+                .find_documents(&folder.uri.to_file_path().unwrap())
+        }
+
         Ok(())
     }
 
@@ -323,14 +323,51 @@ impl Server {
         Ok(())
     }
 
-    fn completion(&self, id: RequestId, mut params: CompletionParams) -> anyhow::Result<()> {
+    /// Check if a [uri](Url) is know or not. If it is not, scan its parent folder and analyze all the documents that
+    /// have not been scanned.
+    ///
+    /// # Arguments
+    ///
+    /// * `uri` - [Uri](Url) of the document to test for.
+    fn read_unscanned_document(&mut self, uri: Arc<Url>) {
+        if self.store.documents.get(&uri).is_some() {
+            return;
+        }
+        let path = uri.to_file_path().unwrap();
+        let parent_dir = path.parent().unwrap().to_path_buf();
+        self.store.find_documents(&parent_dir);
+        let uris: Vec<Url> = self
+            .store
+            .documents
+            .keys()
+            .map(|uri| uri.as_ref().clone())
+            .collect();
+        for uri in uris {
+            let document = self.store.documents.get(&uri);
+            if let Some(document) = document {
+                if !document.parsed {
+                    self.store
+                        .handle_open_document(
+                            document.uri.clone(),
+                            document.text.clone(),
+                            &mut self.parser,
+                        )
+                        .unwrap();
+                }
+            }
+        }
+    }
+
+    fn completion(&mut self, id: RequestId, mut params: CompletionParams) -> anyhow::Result<()> {
         utils::normalize_uri(&mut params.text_document_position.text_document.uri);
         let uri = Arc::new(params.text_document_position.text_document.uri.clone());
+        self.read_unscanned_document(uri.clone());
+
         self.handle_feature_request(id, params, uri, providers::completion::provide_completions)?;
         Ok(())
     }
 
-    fn hover(&self, id: RequestId, mut params: HoverParams) -> anyhow::Result<()> {
+    fn hover(&mut self, id: RequestId, mut params: HoverParams) -> anyhow::Result<()> {
         utils::normalize_uri(&mut params.text_document_position_params.text_document.uri);
         let uri = Arc::new(
             params
@@ -339,11 +376,17 @@ impl Server {
                 .uri
                 .clone(),
         );
+        self.read_unscanned_document(uri.clone());
+
         self.handle_feature_request(id, params, uri, providers::hover::provide_hover)?;
         Ok(())
     }
 
-    fn definition(&self, id: RequestId, mut params: GotoDefinitionParams) -> anyhow::Result<()> {
+    fn definition(
+        &mut self,
+        id: RequestId,
+        mut params: GotoDefinitionParams,
+    ) -> anyhow::Result<()> {
         utils::normalize_uri(&mut params.text_document_position_params.text_document.uri);
         let uri = Arc::new(
             params
@@ -352,17 +395,21 @@ impl Server {
                 .uri
                 .clone(),
         );
+        self.read_unscanned_document(uri.clone());
+
         self.handle_feature_request(id, params, uri, providers::definition::provide_definition)?;
         Ok(())
     }
 
     fn semantic_tokens(
-        &self,
+        &mut self,
         id: RequestId,
         mut params: SemanticTokensParams,
     ) -> anyhow::Result<()> {
         utils::normalize_uri(&mut params.text_document.uri);
         let uri = Arc::new(params.text_document.uri.clone());
+        self.read_unscanned_document(uri.clone());
+
         self.handle_feature_request(
             id,
             params,
@@ -372,7 +419,11 @@ impl Server {
         Ok(())
     }
 
-    fn signature_help(&self, id: RequestId, mut params: SignatureHelpParams) -> anyhow::Result<()> {
+    fn signature_help(
+        &mut self,
+        id: RequestId,
+        mut params: SignatureHelpParams,
+    ) -> anyhow::Result<()> {
         utils::normalize_uri(&mut params.text_document_position_params.text_document.uri);
         let uri = Arc::new(
             params
@@ -381,6 +432,8 @@ impl Server {
                 .uri
                 .clone(),
         );
+        self.read_unscanned_document(uri.clone());
+
         self.handle_feature_request(
             id,
             params,
