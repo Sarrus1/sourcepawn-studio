@@ -1,10 +1,16 @@
 ## Release Notes
 
+## [0.3.0]
+
+### Added
+
+-   Add SignatureHelp provider.
+
 ## [0.2.1]
 
 ### Fixed
 
--   Fixed a potential panic when reading an unvalid file.
+-   Fixed a potential panic when reading an invalid file.
 
 ## [0.2.0]
 
