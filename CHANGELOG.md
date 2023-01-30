@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.3.1]
+
+### Fixed
+
+-   Fixed panic when opening a file without opening its parent folder first.
+
 ## [0.3.0]
 
 ### Added
