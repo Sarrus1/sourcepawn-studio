@@ -11,15 +11,17 @@ use lsp_types::{
         DidChangeConfiguration, DidChangeTextDocument, DidOpenTextDocument, ShowMessage,
     },
     request::{
-        Completion, GotoDefinition, HoverRequest, SemanticTokensFullRequest, WorkspaceConfiguration,
+        Completion, GotoDefinition, HoverRequest, SemanticTokensFullRequest, SignatureHelpRequest,
+        WorkspaceConfiguration,
     },
     CompletionOptions, CompletionParams, ConfigurationItem, ConfigurationParams,
     DidChangeConfigurationParams, DidChangeTextDocumentParams, DidOpenTextDocumentParams,
     GotoDefinitionParams, HoverParams, HoverProviderCapability, InitializeParams, MessageType,
     OneOf, SemanticTokenModifier, SemanticTokenType, SemanticTokensFullOptions,
     SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams,
-    SemanticTokensServerCapabilities, ServerCapabilities, ShowMessageParams,
-    TextDocumentSyncCapability, TextDocumentSyncKind, Url, WorkDoneProgressOptions,
+    SemanticTokensServerCapabilities, ServerCapabilities, ShowMessageParams, SignatureHelpOptions,
+    SignatureHelpParams, TextDocumentSyncCapability, TextDocumentSyncKind, Url,
+    WorkDoneProgressOptions,
 };
 use serde::Serialize;
 use threadpool::ThreadPool;
@@ -156,6 +158,11 @@ impl Server {
             }),
             hover_provider: Some(HoverProviderCapability::Simple(true)),
             definition_provider: Some(OneOf::Left(true)),
+            signature_help_provider: Some(SignatureHelpOptions {
+                trigger_characters: Some(vec![",".to_string(), "(".to_string()]),
+                retrigger_characters: Some(vec![",".to_string(), "(".to_string()]),
+                ..Default::default()
+            }),
             semantic_tokens_provider: Some(
                 SemanticTokensServerCapabilities::SemanticTokensOptions(SemanticTokensOptions {
                     work_done_progress_options: WorkDoneProgressOptions {
@@ -287,7 +294,7 @@ impl Server {
         self.store.parse_directories();
         let main_uri = self.store.environment.options.get_main_path_uri();
         if main_uri.is_none() {
-            // Send a warning for a potential invalid main path here.
+            // TODO: Send a warning for a potential invalid main path here.
             let mut uris: Vec<Url> = vec![];
             for uri in self.store.documents.keys() {
                 uris.push(uri.as_ref().clone());
@@ -365,6 +372,24 @@ impl Server {
         Ok(())
     }
 
+    fn signature_help(&self, id: RequestId, mut params: SignatureHelpParams) -> anyhow::Result<()> {
+        utils::normalize_uri(&mut params.text_document_position_params.text_document.uri);
+        let uri = Arc::new(
+            params
+                .text_document_position_params
+                .text_document
+                .uri
+                .clone(),
+        );
+        self.handle_feature_request(
+            id,
+            params,
+            uri,
+            providers::signature_help::provide_signature_help,
+        )?;
+        Ok(())
+    }
+
     fn handle_feature_request<P, R, H>(
         &self,
         id: RequestId,
@@ -412,6 +437,7 @@ impl Server {
                                 .on::<HoverRequest, _>(|id, params| self.hover(id, params))?
                                 .on::<GotoDefinition, _>(|id, params| self.definition(id, params))?
                                 .on::<SemanticTokensFullRequest, _>(|id, params| self.semantic_tokens(id, params))?
+                                .on::<SignatureHelpRequest, _>(|id, params| self.signature_help(id, params))?
 
                                 .default()
                                 {

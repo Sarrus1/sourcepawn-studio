@@ -107,7 +107,14 @@ pub fn parse_function(
         full_range: ts_range_to_lsp_range(&node.range()),
         description: documentation,
         uri: document.uri.clone(),
-        detail: "".to_string(),
+        detail: build_detail(
+            document,
+            name,
+            type_,
+            params_node,
+            visibility_node,
+            definition_type_node,
+        )?,
         visibility,
         definition_type,
         references: vec![],
@@ -135,8 +142,49 @@ pub fn parse_function(
     Ok(())
 }
 
+fn build_detail(
+    document: &Document,
+    name: Result<&str, Utf8Error>,
+    type_: Result<&str, Utf8Error>,
+    params_node: Option<Node>,
+    visibility_node: Option<Node>,
+    definition_type_node: Option<Node>,
+) -> Result<String, Utf8Error> {
+    let mut detail = format!("{} {}", type_?.to_string(), name?.to_string());
+    if params_node.is_some() {
+        detail.push_str(
+            params_node
+                .unwrap()
+                .utf8_text(document.text.as_bytes())
+                .unwrap(),
+        );
+    }
+    if visibility_node.is_some() {
+        detail = format!(
+            "{} {}",
+            visibility_node
+                .unwrap()
+                .utf8_text(document.text.as_bytes())?
+                .to_string(),
+            detail
+        )
+    }
+
+    if definition_type_node.is_some() {
+        detail = format!(
+            "{} {}",
+            definition_type_node
+                .unwrap()
+                .utf8_text(document.text.as_bytes())?,
+            detail
+        );
+    }
+
+    Ok(detail.trim().to_string())
+}
+
 fn read_body_variables(
-    file_item: &mut Document,
+    document: &mut Document,
     block_node: Node,
     text: String,
     function_item: Arc<Mutex<SPItem>>,
@@ -146,7 +194,7 @@ fn read_body_variables(
     for (match_, _) in matches {
         for capture in match_.captures.iter() {
             parse_variable(
-                file_item,
+                document,
                 &mut capture.node.clone(),
                 Some(function_item.clone()),
             )?;
@@ -202,6 +250,10 @@ fn read_function_parameters(
             references: vec![],
         };
         let variable_item = Arc::new(Mutex::new(SPItem::Variable(variable_item)));
+        function_item
+            .lock()
+            .unwrap()
+            .push_param(variable_item.clone());
         file_item.sp_items.push(variable_item);
     }
 
