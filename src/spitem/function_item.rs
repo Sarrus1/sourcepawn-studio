@@ -2,8 +2,9 @@ use std::sync::{Arc, Mutex};
 
 use super::Location;
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, GotoDefinitionParams,
-    Hover, HoverContents, HoverParams, LanguageString, LocationLink, MarkedString, Range, Url,
+    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Documentation,
+    GotoDefinitionParams, Hover, HoverContents, HoverParams, LanguageString, LocationLink,
+    MarkedString, MarkupContent, ParameterInformation, Range, SignatureInformation, Url,
 };
 
 use crate::providers::hover::description::Description;
@@ -125,6 +126,26 @@ impl FunctionItem {
         })
     }
 
+    /// Return a [SignatureInformation] from a [FunctionItem].
+    pub(crate) fn to_signature_help(&self, parameter_count: u32) -> Option<SignatureInformation> {
+        let mut parameters: Vec<ParameterInformation> = vec![];
+        for param in self.params.iter() {
+            parameters.push(ParameterInformation {
+                label: lsp_types::ParameterLabel::Simple(param.lock().unwrap().name()),
+                documentation: None,
+            })
+        }
+        Some(SignatureInformation {
+            label: self.detail.clone(),
+            documentation: Some(Documentation::MarkupContent(MarkupContent {
+                kind: lsp_types::MarkupKind::Markdown,
+                value: self.description.to_md(),
+            })),
+            parameters: Some(parameters),
+            active_parameter: Some(parameter_count),
+        })
+    }
+
     /// Formatted representation of a [FunctionItem].
     ///
     /// # Exemple
@@ -133,7 +154,7 @@ impl FunctionItem {
     fn formatted_text(&self) -> MarkedString {
         MarkedString::LanguageString(LanguageString {
             language: "sourcepawn".to_string(),
-            value: format!("{} {}()", self.type_, self.name),
+            value: self.detail.to_string(),
         })
     }
 

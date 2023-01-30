@@ -5,7 +5,7 @@ use std::{
 
 use lsp_types::{
     CompletionItem, CompletionParams, GotoDefinitionParams, Hover, HoverParams, LocationLink,
-    Position, Range, Url,
+    Position, Range, SignatureInformation, Url,
 };
 
 use crate::{
@@ -268,7 +268,7 @@ impl SPItem {
         }
     }
 
-    pub fn push_params(&mut self, param: Arc<Mutex<SPItem>>) {
+    pub fn push_param(&mut self, param: Arc<Mutex<SPItem>>) {
         match self {
             SPItem::Function(item) => item.params.push(param),
             _ => {
@@ -320,6 +320,13 @@ impl SPItem {
             SPItem::Methodmap(item) => item.to_definition(params),
             SPItem::Property(item) => item.to_definition(params),
             SPItem::Include(item) => item.to_definition(params),
+        }
+    }
+
+    pub fn to_signature_help(&self, parameter_count: u32) -> Option<SignatureInformation> {
+        match self {
+            SPItem::Function(item) => item.to_signature_help(parameter_count),
+            _ => None,
         }
     }
 }

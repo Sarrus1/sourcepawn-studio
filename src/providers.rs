@@ -2,6 +2,7 @@ pub mod completion;
 pub mod definition;
 pub mod hover;
 pub mod semantic_tokens;
+pub mod signature_help;
 
 use std::sync::Arc;
 
