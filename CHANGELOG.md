@@ -1,5 +1,21 @@
 ## Release Notes
 
+## [5.0.1]
+
+### Added
+
+- Added OpenVSX pre-releases support.
+
+### Fixed
+
+- Fixed vulnerabilities.
+
+## [5.0.0]
+
+### Added
+
+- Switched to [SourcePawn Language Server](https://github.com/Sarrus1/sourcepawn-lsp).
+
 ## [4.2.3]
 
 ### Fixed

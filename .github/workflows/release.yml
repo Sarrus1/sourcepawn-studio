@@ -40,6 +40,6 @@ jobs:
           prerelease: false
           replacesArtifacts: true
       - name: publish to Open VSX
-        run: npm run publish-ovsx -- -p $OVSX_TOKEN
+        run: npx ovsx publish -p $OVSX_TOKEN
         env:
           OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
