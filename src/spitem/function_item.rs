@@ -130,9 +130,13 @@ impl FunctionItem {
     pub(crate) fn to_signature_help(&self, parameter_count: u32) -> Option<SignatureInformation> {
         let mut parameters: Vec<ParameterInformation> = vec![];
         for param in self.params.iter() {
+            let param_ = param.lock().unwrap();
             parameters.push(ParameterInformation {
-                label: lsp_types::ParameterLabel::Simple(param.lock().unwrap().name()),
-                documentation: None,
+                label: lsp_types::ParameterLabel::Simple(param_.name()),
+                documentation: match param_.description() {
+                    Some(description) => Some(Documentation::String(description.text)),
+                    None => None,
+                },
             })
         }
         Some(SignatureInformation {

@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use regex::Regex;
 use tree_sitter::{Node, QueryCursor};
 
 use crate::{
@@ -105,7 +106,7 @@ pub fn parse_function(
         type_: type_?.to_string(),
         range: ts_range_to_lsp_range(&name_node.range()),
         full_range: ts_range_to_lsp_range(&node.range()),
-        description: documentation,
+        description: documentation.clone(),
         uri: document.uri.clone(),
         detail: build_detail(
             document,
@@ -133,6 +134,7 @@ pub fn parse_function(
     }
     read_function_parameters(
         document,
+        documentation,
         params_node,
         document.text.to_string(),
         function_item.clone(),
@@ -205,6 +207,7 @@ fn read_body_variables(
 
 fn read_function_parameters(
     file_item: &mut Document,
+    documentation: Description,
     params_node: Option<Node>,
     text: String,
     function_item: Arc<Mutex<SPItem>>,
@@ -237,11 +240,18 @@ fn read_function_parameters(
             None => "",
         };
         let detail = child.utf8_text(text.as_bytes())?;
+
         let variable_item = VariableItem {
             name: name.to_string(),
             type_: type_.to_string(),
             range: ts_range_to_lsp_range(&name_node.range()),
-            description: Description::default(),
+            description: Description {
+                text: match extract_param_doc(name, &documentation) {
+                    Some(text) => text,
+                    None => "".to_string(),
+                },
+                deprecated: None,
+            },
             uri: file_item.uri.clone(),
             detail: detail.to_string(),
             visibility: vec![],
@@ -258,4 +268,15 @@ fn read_function_parameters(
     }
 
     Ok(())
+}
+
+fn extract_param_doc(name: &str, documentation: &Description) -> Option<String> {
+    let re = Regex::new(&format!("@param\\s+(?:\\b{}\\b)([^@]+)", name.to_string())).unwrap();
+    if let Some(caps) = re.captures(&documentation.text) {
+        if let Some(text) = caps.get(1) {
+            return Some(text.as_str().replace("*", "").trim().to_string());
+        }
+    };
+
+    None
 }
