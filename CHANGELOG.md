@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.3.2]
+
+### Fixed
+
+-   Fixed invalid file reads when the file contains invalid UTF-8 characters.
+
 ## [0.3.1]
 
 ### Fixed

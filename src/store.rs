@@ -8,7 +8,7 @@ use std::{
 use tree_sitter::Parser;
 use walkdir::WalkDir;
 
-use crate::{document::Document, environment::Environment};
+use crate::{document::Document, environment::Environment, utils::read_to_string_lossy};
 
 #[derive(Clone)]
 pub struct Store {
@@ -60,7 +60,7 @@ impl Store {
                 if self.documents.contains_key(&uri) {
                     continue;
                 }
-                let text = match fs::read_to_string(uri.to_file_path().unwrap()) {
+                let text = match read_to_string_lossy(uri.to_file_path().unwrap()) {
                     Ok(text) => text,
                     Err(_err) => {
                         eprintln!("Failed to read file {:?} ", uri.to_file_path().unwrap());

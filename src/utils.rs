@@ -1,3 +1,5 @@
+use std::{fs::File, io::Read, path::PathBuf};
+
 use lsp_types::{Position, Range, TextDocumentContentChangeEvent, Url};
 
 use crate::{line_index::LineIndex, line_index_ext::LineIndexExt};
@@ -147,4 +149,18 @@ pub fn uri_to_file_name(uri: &Url) -> Option<String> {
         },
         Err(_) => None,
     }
+}
+
+/// Read a file from its path in a lossy way. If the file non UTF-8 characters, they will be replaced
+/// by a �.
+///
+/// # Arguments
+///
+/// * `path` - [Path][PathBuf] of the file.
+pub fn read_to_string_lossy(path: PathBuf) -> anyhow::Result<String> {
+    let mut file = File::open(path)?;
+    let mut buf = vec![];
+    file.read_to_end(&mut buf)?;
+
+    Ok(String::from_utf8_lossy(&buf).to_string())
 }
