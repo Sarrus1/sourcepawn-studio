@@ -4,7 +4,6 @@ version = "0.4.0"
 edition = "2021"
 description = "Language Server implention for the SourcePawn programming language."
 license = "GPL-3.0"
-license-file = "LICENSE"
 
 [[bin]]
 name = "sourcepawn_lsp"
