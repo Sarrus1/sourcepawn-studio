@@ -152,22 +152,16 @@ fn build_detail(
     visibility_node: Option<Node>,
     definition_type_node: Option<Node>,
 ) -> Result<String, Utf8Error> {
-    let mut detail = format!("{} {}", type_?.to_string(), name?.to_string());
-    if params_node.is_some() {
-        detail.push_str(
-            params_node
-                .unwrap()
-                .utf8_text(document.text.as_bytes())
-                .unwrap(),
-        );
+    let mut detail = format!("{} {}", type_?, name?);
+    if let Some(params_node) = params_node {
+        detail.push_str(params_node.utf8_text(document.text.as_bytes()).unwrap());
     }
     if visibility_node.is_some() {
         detail = format!(
             "{} {}",
             visibility_node
                 .unwrap()
-                .utf8_text(document.text.as_bytes())?
-                .to_string(),
+                .utf8_text(document.text.as_bytes())?,
             detail
         )
     }
@@ -271,10 +265,10 @@ fn read_function_parameters(
 }
 
 fn extract_param_doc(name: &str, documentation: &Description) -> Option<String> {
-    let re = Regex::new(&format!("@param\\s+(?:\\b{}\\b)([^@]+)", name.to_string())).unwrap();
+    let re = Regex::new(&format!("@param\\s+(?:\\b{}\\b)([^@]+)", name)).unwrap();
     if let Some(caps) = re.captures(&documentation.text) {
         if let Some(text) = caps.get(1) {
-            return Some(text.as_str().replace("*", "").trim().to_string());
+            return Some(text.as_str().replace('*', "").trim().to_string());
         }
     };
 
