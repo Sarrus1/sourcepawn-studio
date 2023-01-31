@@ -57,7 +57,7 @@ export function findMainPath(uri?: URI): string | undefined {
     uri === undefined ? undefined : Workspace.getWorkspaceFolder(uri);
   let mainPath: string =
     Workspace.getConfiguration("SourcePawnLanguageServer", workspaceFolder).get(
-      "MainPath"
+      "mainPath"
     ) || "";
   if (mainPath === "") {
     return undefined;

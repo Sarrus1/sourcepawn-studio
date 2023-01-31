@@ -17,6 +17,7 @@ export async function run(args: URI): Promise<number> {
   await Workspace.getConfiguration(
     "SourcePawnLanguageServer",
     workspaceFolder
-  ).update("MainPath", args.fsPath);
+  ).update("mainPath", args.fsPath);
+
   return 0;
 }
