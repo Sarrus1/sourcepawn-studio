@@ -1,6 +1,10 @@
 ## Release Notes
 
-## [0.3.2]
+## [0.4.0]
+
+### Added
+
+-   Add Reference provider.
 
 ### Fixed
 
