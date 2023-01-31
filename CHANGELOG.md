@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [5.0.2]
+
+### Added
+
+- Added error handling when downloading a version of `sourcepawn_lsp`.
+
 ## [5.0.1]
 
 ### Added
