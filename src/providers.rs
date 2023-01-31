@@ -1,6 +1,7 @@
 pub mod completion;
 pub mod definition;
 pub mod hover;
+pub mod reference;
 pub mod semantic_tokens;
 pub mod signature_help;
 

@@ -11,13 +11,13 @@ use lsp_types::{
         DidChangeConfiguration, DidChangeTextDocument, DidOpenTextDocument, ShowMessage,
     },
     request::{
-        Completion, GotoDefinition, HoverRequest, SemanticTokensFullRequest, SignatureHelpRequest,
-        WorkspaceConfiguration,
+        Completion, GotoDefinition, HoverRequest, References, SemanticTokensFullRequest,
+        SignatureHelpRequest, WorkspaceConfiguration,
     },
     CompletionOptions, CompletionParams, ConfigurationItem, ConfigurationParams,
     DidChangeConfigurationParams, DidChangeTextDocumentParams, DidOpenTextDocumentParams,
     GotoDefinitionParams, HoverParams, HoverProviderCapability, InitializeParams, MessageType,
-    OneOf, SemanticTokenModifier, SemanticTokenType, SemanticTokensFullOptions,
+    OneOf, ReferenceParams, SemanticTokenModifier, SemanticTokenType, SemanticTokensFullOptions,
     SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams,
     SemanticTokensServerCapabilities, ServerCapabilities, ShowMessageParams, SignatureHelpOptions,
     SignatureHelpParams, TextDocumentSyncCapability, TextDocumentSyncKind, Url,
@@ -163,6 +163,7 @@ impl Server {
                 retrigger_characters: Some(vec![",".to_string(), "(".to_string()]),
                 ..Default::default()
             }),
+            references_provider: Some(OneOf::Left(true)),
             semantic_tokens_provider: Some(
                 SemanticTokensServerCapabilities::SemanticTokensOptions(SemanticTokensOptions {
                     work_done_progress_options: WorkDoneProgressOptions {
@@ -443,6 +444,15 @@ impl Server {
         Ok(())
     }
 
+    fn reference(&mut self, id: RequestId, mut params: ReferenceParams) -> anyhow::Result<()> {
+        utils::normalize_uri(&mut params.text_document_position.text_document.uri);
+        let uri = Arc::new(params.text_document_position.text_document.uri.clone());
+        self.read_unscanned_document(uri.clone());
+
+        self.handle_feature_request(id, params, uri, providers::reference::provide_reference)?;
+        Ok(())
+    }
+
     fn handle_feature_request<P, R, H>(
         &self,
         id: RequestId,
@@ -491,6 +501,7 @@ impl Server {
                                 .on::<GotoDefinition, _>(|id, params| self.definition(id, params))?
                                 .on::<SemanticTokensFullRequest, _>(|id, params| self.semantic_tokens(id, params))?
                                 .on::<SignatureHelpRequest, _>(|id, params| self.signature_help(id, params))?
+                                .on::<References, _>(|id, params| self.reference(id, params))?
 
                                 .default()
                                 {

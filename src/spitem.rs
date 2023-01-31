@@ -32,6 +32,15 @@ pub struct Location {
     pub range: Range,
 }
 
+impl Location {
+    pub fn to_lsp_location(&self) -> lsp_types::Location {
+        lsp_types::Location {
+            uri: self.uri.as_ref().clone(),
+            range: self.range,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 /// Generic representation of an item, which can be converted to a
 /// [CompletionItem](lsp_types::CompletionItem), [Location](lsp_types::Location), etc.
