@@ -2,9 +2,10 @@ use std::sync::{Arc, Mutex};
 
 use super::Location;
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, Documentation,
-    GotoDefinitionParams, Hover, HoverContents, HoverParams, LanguageString, LocationLink,
-    MarkedString, MarkupContent, ParameterInformation, Range, SignatureInformation, Url,
+    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, DocumentSymbol,
+    Documentation, GotoDefinitionParams, Hover, HoverContents, HoverParams, LanguageString,
+    LocationLink, MarkedString, MarkupContent, ParameterInformation, Range, SignatureInformation,
+    SymbolKind, SymbolTag, Url,
 };
 
 use crate::providers::hover::description::Description;
@@ -159,6 +160,24 @@ impl FunctionItem {
         MarkedString::LanguageString(LanguageString {
             language: "sourcepawn".to_string(),
             value: self.detail.to_string(),
+        })
+    }
+
+    /// Return a [DocumentSymbol] from a [FunctionItem].
+    pub(crate) fn to_document_symbol(&self) -> Option<DocumentSymbol> {
+        let mut tags = vec![];
+        if self.description.deprecated.is_some() {
+            tags.push(SymbolTag::DEPRECATED);
+        }
+        Some(DocumentSymbol {
+            name: self.name.to_string(),
+            detail: Some(self.detail.to_string()),
+            kind: SymbolKind::FUNCTION,
+            tags: Some(tags),
+            range: self.full_range,
+            deprecated: None,
+            selection_range: self.range,
+            children: None,
         })
     }
 

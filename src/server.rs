@@ -11,17 +11,17 @@ use lsp_types::{
         DidChangeConfiguration, DidChangeTextDocument, DidOpenTextDocument, ShowMessage,
     },
     request::{
-        Completion, GotoDefinition, HoverRequest, References, SemanticTokensFullRequest,
-        SignatureHelpRequest, WorkspaceConfiguration,
+        Completion, DocumentSymbolRequest, GotoDefinition, HoverRequest, References,
+        SemanticTokensFullRequest, SignatureHelpRequest, WorkspaceConfiguration,
     },
     CompletionOptions, CompletionParams, ConfigurationItem, ConfigurationParams,
     DidChangeConfigurationParams, DidChangeTextDocumentParams, DidOpenTextDocumentParams,
-    GotoDefinitionParams, HoverParams, HoverProviderCapability, InitializeParams, MessageType,
-    OneOf, ReferenceParams, SemanticTokenModifier, SemanticTokenType, SemanticTokensFullOptions,
-    SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams,
-    SemanticTokensServerCapabilities, ServerCapabilities, ShowMessageParams, SignatureHelpOptions,
-    SignatureHelpParams, TextDocumentSyncCapability, TextDocumentSyncKind, Url,
-    WorkDoneProgressOptions,
+    DocumentSymbolParams, GotoDefinitionParams, HoverParams, HoverProviderCapability,
+    InitializeParams, MessageType, OneOf, ReferenceParams, SemanticTokenModifier,
+    SemanticTokenType, SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
+    SemanticTokensParams, SemanticTokensServerCapabilities, ServerCapabilities, ShowMessageParams,
+    SignatureHelpOptions, SignatureHelpParams, TextDocumentSyncCapability, TextDocumentSyncKind,
+    Url, WorkDoneProgressOptions,
 };
 use serde::Serialize;
 use threadpool::ThreadPool;
@@ -164,6 +164,7 @@ impl Server {
                 ..Default::default()
             }),
             references_provider: Some(OneOf::Left(true)),
+            document_symbol_provider: Some(OneOf::Left(true)),
             semantic_tokens_provider: Some(
                 SemanticTokensServerCapabilities::SemanticTokensOptions(SemanticTokensOptions {
                     work_done_progress_options: WorkDoneProgressOptions {
@@ -453,6 +454,24 @@ impl Server {
         Ok(())
     }
 
+    fn document_symbol(
+        &mut self,
+        id: RequestId,
+        mut params: DocumentSymbolParams,
+    ) -> anyhow::Result<()> {
+        utils::normalize_uri(&mut params.text_document.uri);
+        let uri = Arc::new(params.text_document.uri.clone());
+        self.read_unscanned_document(uri.clone());
+
+        self.handle_feature_request(
+            id,
+            params,
+            uri,
+            providers::document_symbol::provide_document_symbol,
+        )?;
+        Ok(())
+    }
+
     fn handle_feature_request<P, R, H>(
         &self,
         id: RequestId,
@@ -502,6 +521,7 @@ impl Server {
                                 .on::<SemanticTokensFullRequest, _>(|id, params| self.semantic_tokens(id, params))?
                                 .on::<SignatureHelpRequest, _>(|id, params| self.signature_help(id, params))?
                                 .on::<References, _>(|id, params| self.reference(id, params))?
+                                .on::<DocumentSymbolRequest, _>(|id, params| self.document_symbol(id, params))?
 
                                 .default()
                                 {
