@@ -20,7 +20,7 @@ pub fn provide_hover(request: FeatureRequest<HoverParams>) -> Option<Hover> {
     if items.is_empty() {
         return None;
     }
-    let hover = items[0].lock().unwrap().to_hover(&request.params);
+    let hover = items[0].read().unwrap().to_hover(&request.params);
 
     hover
 }

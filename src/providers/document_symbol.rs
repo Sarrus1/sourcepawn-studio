@@ -9,7 +9,7 @@ pub fn provide_document_symbol(
     let document = request.store.documents.get(&uri)?;
     let mut symbols: Vec<DocumentSymbol> = vec![];
     for item in document.sp_items.clone() {
-        let symbol = item.lock().unwrap().to_document_symbol();
+        let symbol = item.read().unwrap().to_document_symbol();
         if let Some(symbol) = symbol {
             symbols.push(symbol);
         }

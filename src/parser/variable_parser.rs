@@ -1,6 +1,6 @@
 use std::{
     str::Utf8Error,
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
 };
 
 use tree_sitter::Node;
@@ -18,7 +18,7 @@ use crate::{
 pub fn parse_variable(
     file_item: &mut Document,
     node: &mut Node,
-    parent: Option<Arc<Mutex<SPItem>>>,
+    parent: Option<Arc<RwLock<SPItem>>>,
 ) -> Result<(), Utf8Error> {
     let mut cursor = node.walk();
     // Type of the variable
@@ -83,7 +83,7 @@ pub fn parse_variable(
                     parent: parent.clone(),
                     references: vec![],
                 };
-                let variable_item = Arc::new(Mutex::new(SPItem::Variable(variable_item)));
+                let variable_item = Arc::new(RwLock::new(SPItem::Variable(variable_item)));
                 file_item.sp_items.push(variable_item);
             }
             _ => {}

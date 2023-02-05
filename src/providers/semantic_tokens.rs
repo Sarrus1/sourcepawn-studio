@@ -38,7 +38,7 @@ pub fn provide_semantic_tokens(
     }));
 
     for item in all_items.iter() {
-        let item_lock = item.lock().unwrap();
+        let item_lock = item.read().unwrap();
         match &*item_lock {
             SPItem::Variable(variable_item) => {
                 if variable_item.uri.eq(&uri) {

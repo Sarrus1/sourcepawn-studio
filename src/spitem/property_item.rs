@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use super::Location;
 use lsp_types::{
@@ -18,7 +18,7 @@ pub struct PropertyItem {
     pub name: String,
 
     /// Parent of the property.
-    pub parent: Arc<Mutex<SPItem>>,
+    pub parent: Arc<RwLock<SPItem>>,
 
     /// Type of the property.
     pub type_: String,
@@ -68,7 +68,7 @@ impl PropertyItem {
             label: self.name.to_string(),
             kind: Some(CompletionItemKind::PROPERTY),
             tags: Some(tags),
-            detail: Some(self.parent.lock().unwrap().name()),
+            detail: Some(self.parent.read().unwrap().name()),
             deprecated: Some(self.is_deprecated()),
             ..Default::default()
         })
@@ -111,7 +111,7 @@ impl PropertyItem {
     fn formatted_text(&self) -> MarkedString {
         MarkedString::LanguageString(LanguageString {
             language: "sourcepawn".to_string(),
-            value: format!("{} {}", self.parent.lock().unwrap().name(), self.name),
+            value: format!("{} {}", self.parent.read().unwrap().name(), self.name),
         })
     }
 }

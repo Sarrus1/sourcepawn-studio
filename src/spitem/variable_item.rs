@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use super::Location;
 use lsp_types::{
@@ -42,7 +42,7 @@ pub struct VariableItem {
     pub references: Vec<Location>,
 
     /// Parent of this variable, if it is not global.
-    pub parent: Option<Arc<Mutex<SPItem>>>,
+    pub parent: Option<Arc<RwLock<SPItem>>>,
 }
 
 impl VariableItem {
@@ -64,7 +64,7 @@ impl VariableItem {
         }
 
         match &self.parent {
-            Some(parent) => match &*parent.lock().unwrap() {
+            Some(parent) => match &*parent.read().unwrap() {
                 SPItem::Function(parent) => {
                     if self.uri.to_string()
                         != params.text_document_position.text_document.uri.to_string()

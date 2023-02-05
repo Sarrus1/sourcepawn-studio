@@ -1,12 +1,12 @@
 use crate::{spitem::SPItem, utils::range_contains_range};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use lsp_types::Range;
 
 #[derive(Debug, Default)]
 pub struct Scope {
-    pub func: Option<Arc<Mutex<SPItem>>>,
-    pub mm_es: Option<Arc<Mutex<SPItem>>>,
+    pub func: Option<Arc<RwLock<SPItem>>>,
+    pub mm_es: Option<Arc<RwLock<SPItem>>>,
 }
 
 impl Scope {
@@ -14,7 +14,7 @@ impl Scope {
         self.func
             .as_ref()
             .unwrap()
-            .lock()
+            .read()
             .unwrap()
             .full_range()
             .unwrap()
@@ -24,7 +24,7 @@ impl Scope {
         self.mm_es
             .as_ref()
             .unwrap()
-            .lock()
+            .read()
             .unwrap()
             .full_range()
             .unwrap()
@@ -34,7 +34,7 @@ impl Scope {
         &mut self,
         range: Range,
         func_idx: &mut usize,
-        funcs_in_file: &Vec<Arc<Mutex<SPItem>>>,
+        funcs_in_file: &Vec<Arc<RwLock<SPItem>>>,
     ) {
         // Do not update the function, we are still in its scope.
         if self.func.is_some() && range_contains_range(&self.func_full_range(), &range) {
@@ -47,7 +47,7 @@ impl Scope {
         }
 
         let next_func_range = funcs_in_file[*func_idx]
-            .lock()
+            .read()
             .unwrap()
             .full_range()
             .unwrap();
@@ -64,7 +64,7 @@ impl Scope {
         &mut self,
         range: Range,
         mm_es_idx: &mut usize,
-        mm_es_in_file: &Vec<Arc<Mutex<SPItem>>>,
+        mm_es_in_file: &Vec<Arc<RwLock<SPItem>>>,
     ) {
         // Do not update the function, we are still in its scope.
         if self.mm_es.is_some() && range_contains_range(&self.mm_es_full_range(), &range) {
@@ -77,7 +77,7 @@ impl Scope {
         }
 
         let next_mm_es_range = mm_es_in_file[*mm_es_idx]
-            .lock()
+            .read()
             .unwrap()
             .full_range()
             .unwrap();
@@ -94,13 +94,13 @@ impl Scope {
         if self.func.is_none() {
             return "".to_string();
         }
-        self.func.clone().unwrap().lock().unwrap().name()
+        self.func.clone().unwrap().read().unwrap().name()
     }
 
     pub fn mm_es_key(&self) -> String {
         if self.mm_es.is_none() {
             return "".to_string();
         }
-        self.mm_es.clone().unwrap().lock().unwrap().name()
+        self.mm_es.clone().unwrap().read().unwrap().name()
     }
 }

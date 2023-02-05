@@ -1,7 +1,7 @@
 use std::{
     collections::HashSet,
     str::Utf8Error,
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
 };
 
 use derive_new::new;
@@ -58,7 +58,7 @@ pub struct Document {
     pub uri: Arc<Url>,
     pub text: String,
     #[new(default)]
-    pub sp_items: Vec<Arc<Mutex<SPItem>>>,
+    pub sp_items: Vec<Arc<RwLock<SPItem>>>,
     #[new(default)]
     pub includes: HashSet<Url>,
     #[new(value = "false")]

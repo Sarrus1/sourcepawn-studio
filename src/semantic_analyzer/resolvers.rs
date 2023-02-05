@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use crate::{
     document::{Document, Token},
@@ -21,7 +21,7 @@ fn resolve_this(analyzer: &mut Analyzer, token: &Arc<Token>, document: &Document
         return false;
     }
     for item in analyzer.all_items.iter() {
-        let item_lock = item.lock().unwrap();
+        let item_lock = item.read().unwrap();
         match &*item_lock {
             SPItem::Methodmap(mm_item) => {
                 if mm_item.uri.eq(&document.uri)
@@ -83,7 +83,7 @@ fn resolve_non_method_item(
             uri: document.uri.clone(),
             range: token.range,
         };
-        item.lock().unwrap().push_reference(reference);
+        item.write().unwrap().push_reference(reference);
         analyzer.previous_items.push(item.clone());
         return true;
     }
@@ -105,9 +105,9 @@ pub(super) fn resolve_item(analyzer: &mut Analyzer, token: &Arc<Token>, document
         if char != ':' && char != '.' {
             return;
         }
-        let mut item: Option<Arc<Mutex<SPItem>>> = None;
+        let mut item: Option<Arc<RwLock<SPItem>>> = None;
         for parent in analyzer.previous_items.iter().rev() {
-            let parent = parent.lock().unwrap().clone();
+            let parent = parent.read().unwrap().clone();
             match &parent {
                 SPItem::EnumStruct(es) => {
                     // Enum struct scope operator (::).
@@ -132,7 +132,7 @@ pub(super) fn resolve_item(analyzer: &mut Analyzer, token: &Arc<Token>, document
             for inherit in find_inherit(&analyzer.all_items, &parent) {
                 item = analyzer.get(&format!(
                     "{}-{}",
-                    inherit.lock().unwrap().name(),
+                    inherit.read().unwrap().name(),
                     token.text
                 ));
                 if item.is_some() {
@@ -148,7 +148,7 @@ pub(super) fn resolve_item(analyzer: &mut Analyzer, token: &Arc<Token>, document
             uri: document.uri.clone(),
             range: token.range,
         };
-        item.lock().unwrap().push_reference(reference);
+        item.write().unwrap().push_reference(reference);
         analyzer.previous_items.push(item);
     }
     // TODO: Handle positional arguments

@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use lsp_types::Url;
 
@@ -29,9 +29,9 @@ impl Document {
     }
 }
 
-fn purge_references(item: &Arc<Mutex<SPItem>>, uri: &Arc<Url>) {
+fn purge_references(item: &Arc<RwLock<SPItem>>, uri: &Arc<Url>) {
     let mut new_references = vec![];
-    let mut item_lock = item.lock().unwrap();
+    let mut item_lock = item.write().unwrap();
     let old_references = item_lock.references();
     if old_references.is_none() {
         return;

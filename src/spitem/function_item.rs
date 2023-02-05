@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use super::Location;
 use lsp_types::{
@@ -47,10 +47,10 @@ pub struct FunctionItem {
     pub references: Vec<Location>,
 
     /// Parameters of the function.
-    pub params: Vec<Arc<Mutex<SPItem>>>,
+    pub params: Vec<Arc<RwLock<SPItem>>>,
 
     /// Parent of the method. None if it's a first class function.
-    pub parent: Option<Arc<Mutex<SPItem>>>,
+    pub parent: Option<Arc<RwLock<SPItem>>>,
 }
 
 impl FunctionItem {
@@ -131,7 +131,7 @@ impl FunctionItem {
     pub(crate) fn to_signature_help(&self, parameter_count: u32) -> Option<SignatureInformation> {
         let mut parameters: Vec<ParameterInformation> = vec![];
         for param in self.params.iter() {
-            let param_ = param.lock().unwrap();
+            let param_ = param.read().unwrap();
             parameters.push(ParameterInformation {
                 label: lsp_types::ParameterLabel::Simple(param_.name()),
                 documentation: match param_.description() {

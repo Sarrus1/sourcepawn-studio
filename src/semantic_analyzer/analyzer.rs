@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
 };
 
 use lsp_types::Range;
@@ -15,12 +15,12 @@ use super::{purge_references, scope::Scope};
 #[derive(Debug, Default)]
 pub struct Analyzer {
     pub lines: Vec<String>,
-    pub all_items: Vec<Arc<Mutex<SPItem>>>,
-    pub previous_items: Vec<Arc<Mutex<SPItem>>>,
+    pub all_items: Vec<Arc<RwLock<SPItem>>>,
+    pub previous_items: Vec<Arc<RwLock<SPItem>>>,
     pub line_nb: u32,
-    pub tokens_map: HashMap<String, Arc<Mutex<SPItem>>>,
-    pub funcs_in_file: Vec<Arc<Mutex<SPItem>>>,
-    pub mm_es_in_file: Vec<Arc<Mutex<SPItem>>>,
+    pub tokens_map: HashMap<String, Arc<RwLock<SPItem>>>,
+    pub funcs_in_file: Vec<Arc<RwLock<SPItem>>>,
+    pub mm_es_in_file: Vec<Arc<RwLock<SPItem>>>,
     pub scope: Scope,
     pub func_idx: usize,
     pub mm_es_idx: usize,
@@ -28,18 +28,18 @@ pub struct Analyzer {
 }
 
 impl Analyzer {
-    pub fn new(all_items: Vec<Arc<Mutex<SPItem>>>, document: &Document) -> Self {
-        let mut tokens_map: HashMap<String, Arc<Mutex<SPItem>>> = HashMap::new();
+    pub fn new(all_items: Vec<Arc<RwLock<SPItem>>>, document: &Document) -> Self {
+        let mut tokens_map: HashMap<String, Arc<RwLock<SPItem>>> = HashMap::new();
         let mut funcs_in_file = vec![];
         let mut mm_es_in_file = vec![];
 
         for item in all_items.iter() {
             purge_references(item, &document.uri);
-            match &*item.lock().unwrap() {
+            match &*item.read().unwrap() {
                 // Match variables
                 SPItem::Variable(variable_item) => match &variable_item.parent {
                     // Match non global variables
-                    Some(variable_item_parent) => match &*variable_item_parent.lock().unwrap() {
+                    Some(variable_item_parent) => match &*variable_item_parent.read().unwrap() {
                         // Match variables in a function or method
                         SPItem::Function(variable_item_parent_function) => {
                             let key = format!(
@@ -63,7 +63,7 @@ impl Analyzer {
                     }
                 },
                 SPItem::Function(function_item) => match &function_item.parent {
-                    Some(method_item_parent) => match &*method_item_parent.lock().unwrap() {
+                    Some(method_item_parent) => match &*method_item_parent.read().unwrap() {
                         SPItem::Methodmap(method_item_parent) => {
                             let key = format!("{}-{}", method_item_parent.name, function_item.name);
                             tokens_map.insert(key, item.clone());
@@ -104,7 +104,7 @@ impl Analyzer {
                 }
                 SPItem::Property(property_item) => {
                     if let SPItem::Methodmap(property_item_parent) =
-                        &*property_item.parent.lock().unwrap()
+                        &*property_item.parent.read().unwrap()
                     {
                         let key = format!("{}-{}", property_item_parent.name, property_item.name);
                         tokens_map.insert(key, item.clone());
@@ -139,7 +139,7 @@ impl Analyzer {
         &self.lines[self.line_nb as usize]
     }
 
-    pub fn get(&self, key: &String) -> Option<Arc<Mutex<SPItem>>> {
+    pub fn get(&self, key: &String) -> Option<Arc<RwLock<SPItem>>> {
         self.tokens_map.get(key).cloned()
     }
 

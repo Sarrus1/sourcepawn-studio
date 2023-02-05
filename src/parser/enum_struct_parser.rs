@@ -1,6 +1,6 @@
 use std::{
     str::Utf8Error,
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
 };
 
 use tree_sitter::Node;
@@ -34,7 +34,7 @@ pub fn parse_enum_struct(
         references: vec![],
     };
 
-    let enum_struct_item = Arc::new(Mutex::new(SPItem::EnumStruct(enum_struct_item)));
+    let enum_struct_item = Arc::new(RwLock::new(SPItem::EnumStruct(enum_struct_item)));
     parse_enum_struct_members(document, node, enum_struct_item.clone(), walker);
     document.sp_items.push(enum_struct_item);
 
@@ -44,7 +44,7 @@ pub fn parse_enum_struct(
 fn parse_enum_struct_members(
     document: &mut Document,
     node: &Node,
-    enum_struct_item: Arc<Mutex<SPItem>>,
+    enum_struct_item: Arc<RwLock<SPItem>>,
     walker: &mut Walker,
 ) {
     let mut cursor = node.walk();
@@ -64,7 +64,7 @@ fn parse_enum_struct_members(
 fn parse_enum_struct_field(
     document: &mut Document,
     node: &Node,
-    enum_struct_item: &Arc<Mutex<SPItem>>,
+    enum_struct_item: &Arc<RwLock<SPItem>>,
 ) {
     // Name of the enum struct field
     let name_node = node.child_by_field_name("name").unwrap();
@@ -102,7 +102,7 @@ fn parse_enum_struct_field(
         references: vec![],
     };
 
-    let enum_struct_field_item = Arc::new(Mutex::new(SPItem::Variable(enum_struct_field_item)));
+    let enum_struct_field_item = Arc::new(RwLock::new(SPItem::Variable(enum_struct_field_item)));
 
     document.sp_items.push(enum_struct_field_item);
 }

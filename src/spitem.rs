@@ -1,6 +1,6 @@
 use std::{
     collections::HashSet,
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
 };
 
 use lsp_types::{
@@ -56,7 +56,7 @@ pub enum SPItem {
     Include(include_item::IncludeItem),
 }
 
-pub fn get_all_items(store: &Store) -> Vec<Arc<Mutex<SPItem>>> {
+pub fn get_all_items(store: &Store) -> Vec<Arc<RwLock<SPItem>>> {
     let mut all_items = vec![];
     if let Some(main_path_uri) = store.environment.options.get_main_path_uri() {
         let mut includes: HashSet<Url> = HashSet::new();
@@ -97,12 +97,12 @@ pub fn get_items_from_position(
     store: &Store,
     position: Position,
     uri: Url,
-) -> Vec<Arc<Mutex<SPItem>>> {
+) -> Vec<Arc<RwLock<SPItem>>> {
     let uri = Arc::new(uri);
     let all_items = get_all_items(store);
     let mut res = vec![];
     for item in all_items.iter() {
-        let item_lock = item.lock().unwrap();
+        let item_lock = item.read().unwrap();
         match item_lock.range() {
             Some(range) => {
                 if range_contains_pos(range, position) && item_lock.uri().as_ref().eq(&uri) {
@@ -174,7 +174,7 @@ impl SPItem {
         }
     }
 
-    pub fn parent(&self) -> Option<Arc<Mutex<SPItem>>> {
+    pub fn parent(&self) -> Option<Arc<RwLock<SPItem>>> {
         match self {
             SPItem::Variable(item) => item.parent.clone(),
             SPItem::Function(item) => item.parent.clone(),
@@ -193,7 +193,7 @@ impl SPItem {
             SPItem::Variable(item) => item.type_.clone(),
             SPItem::Function(item) => item.type_.clone(),
             SPItem::Enum(item) => item.name.clone(),
-            SPItem::EnumMember(item) => item.parent.lock().unwrap().name(),
+            SPItem::EnumMember(item) => item.parent.read().unwrap().name(),
             SPItem::EnumStruct(item) => item.name.clone(),
             SPItem::Define(_) => "".to_string(),
             SPItem::Methodmap(item) => item.name.clone(),
@@ -277,7 +277,7 @@ impl SPItem {
         }
     }
 
-    pub fn push_param(&mut self, param: Arc<Mutex<SPItem>>) {
+    pub fn push_param(&mut self, param: Arc<RwLock<SPItem>>) {
         match self {
             SPItem::Function(item) => item.params.push(param),
             _ => {

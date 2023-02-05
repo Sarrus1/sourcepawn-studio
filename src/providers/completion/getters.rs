@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use lsp_types::{CompletionItem, CompletionList, CompletionParams, Position};
 
@@ -18,15 +18,15 @@ use super::context::get_line_words;
 /// * `parent_name` - Name of the parent.
 /// * `params` - [Parameters](lsp_types::completion::CompletionParams) of the completion request.
 pub(super) fn get_children_of_mm_or_es(
-    all_items: &[Arc<Mutex<SPItem>>],
+    all_items: &[Arc<RwLock<SPItem>>],
     parent_name: String,
     params: CompletionParams,
 ) -> Vec<CompletionItem> {
     let mut res: Vec<CompletionItem> = vec![];
     for item in all_items.iter() {
-        let item_lock = item.lock().unwrap();
+        let item_lock = item.read().unwrap();
         if let Some(parent_) = item_lock.parent() {
-            if parent_name != parent_.lock().unwrap().name() {
+            if parent_name != parent_.read().unwrap().name() {
                 continue;
             }
             if let Some(completion) = item_lock.to_completion(&params, true) {
@@ -46,12 +46,12 @@ pub(super) fn get_children_of_mm_or_es(
 /// * `all_items` - Vector of [SPItem](crate::spitem::SPItem).
 /// * `params` - [Parameters](lsp_types::completion::CompletionParams) of the completion request.
 pub(super) fn get_non_method_completions(
-    all_items: Vec<Arc<Mutex<SPItem>>>,
+    all_items: Vec<Arc<RwLock<SPItem>>>,
     params: CompletionParams,
 ) -> Option<CompletionList> {
     let mut items: Vec<CompletionItem> = Vec::new();
     for sp_item in all_items.iter() {
-        let res = sp_item.lock().unwrap().to_completion(&params, false);
+        let res = sp_item.read().unwrap().to_completion(&params, false);
         if let Some(res) = res {
             items.push(res);
         }
@@ -73,7 +73,7 @@ pub(super) fn get_non_method_completions(
 /// * `position` - [Position](lsp_types::Position) of the request.
 /// * `params` - [Parameters](lsp_types::completion::CompletionParams) of the completion request.
 pub(super) fn get_method_completions(
-    all_items: Vec<Arc<Mutex<SPItem>>>,
+    all_items: Vec<Arc<RwLock<SPItem>>>,
     sub_line: &str,
     position: Position,
     request: FeatureRequest<CompletionParams>,
@@ -98,12 +98,12 @@ pub(super) fn get_method_completions(
             continue;
         }
         for item in items.iter() {
-            let type_ = item.lock().unwrap().type_();
+            let type_ = item.read().unwrap().type_();
             for item_ in all_items.iter() {
-                if item_.lock().unwrap().name() != type_ {
+                if item_.read().unwrap().name() != type_ {
                     continue;
                 }
-                let item_lock = item_.lock().unwrap().clone();
+                let item_lock = item_.read().unwrap().clone();
                 match item_lock {
                     SPItem::Methodmap(mm_item) => {
                         return Some(CompletionList {

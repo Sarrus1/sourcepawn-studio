@@ -1,6 +1,6 @@
 use std::{
     str::Utf8Error,
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
 };
 
 use tree_sitter::Node;
@@ -37,7 +37,7 @@ pub fn parse_define(
         references: vec![],
     };
 
-    let define_item = Arc::new(Mutex::new(SPItem::Define(define_item)));
+    let define_item = Arc::new(RwLock::new(SPItem::Define(define_item)));
     document.sp_items.push(define_item);
 
     Ok(())

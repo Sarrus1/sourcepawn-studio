@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use super::Location;
 use lsp_types::{
@@ -17,7 +17,7 @@ pub struct MethodmapItem {
     pub name: String,
 
     /// Parent of the methodmap.
-    pub parent: Option<Arc<Mutex<SPItem>>>,
+    pub parent: Option<Arc<RwLock<SPItem>>>,
 
     /// Temporary parent of the methodmap.
     pub tmp_parent: Option<String>,
@@ -92,7 +92,7 @@ impl MethodmapItem {
         if self.parent.is_some() {
             suffix = format!(
                 " < {}",
-                self.parent.as_ref().unwrap().lock().unwrap().name()
+                self.parent.as_ref().unwrap().read().unwrap().name()
             );
         }
         MarkedString::LanguageString(LanguageString {
