@@ -1,10 +1,16 @@
 ## Release Notes
 
+## [0.5.0]
+
+### Added
+
+-   Added Document Symbol provider.
+
 ## [0.4.0]
 
 ### Added
 
--   Add Reference provider.
+-   Added Reference provider.
 
 ### Fixed
 
@@ -20,7 +26,7 @@
 
 ### Added
 
--   Add SignatureHelp provider.
+-   Added SignatureHelp provider.
 
 ## [0.2.1]
 
