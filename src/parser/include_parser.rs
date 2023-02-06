@@ -2,7 +2,7 @@ use std::{
     collections::HashMap,
     path::PathBuf,
     str::Utf8Error,
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
 };
 
 use lsp_types::Url;
@@ -50,7 +50,7 @@ pub fn parse_include(
         uri: document.uri.clone(),
         include_uri,
     };
-    let include_item = Arc::new(Mutex::new(SPItem::Include(include_item)));
+    let include_item = Arc::new(RwLock::new(SPItem::Include(include_item)));
     document.sp_items.push(include_item);
 
     Ok(())

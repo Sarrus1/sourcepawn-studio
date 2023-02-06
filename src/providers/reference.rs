@@ -22,7 +22,7 @@ pub fn provide_reference(request: FeatureRequest<ReferenceParams>) -> Option<Vec
     );
     let mut locations = vec![];
     for item in items {
-        let item = item.lock().unwrap();
+        let item = item.read().unwrap();
         let references = item.references();
         if let Some(references) = references {
             locations.extend(references.clone());

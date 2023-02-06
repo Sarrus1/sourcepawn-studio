@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use lsp_types::Url;
 
@@ -17,7 +17,7 @@ use self::{analyzer::Analyzer, resolvers::resolve_item};
 
 impl Document {
     pub fn find_references(&self, store: &Store) {
-        let all_items = get_all_items(store);
+        let all_items = get_all_items(store, false);
         let mut analyzer = Analyzer::new(all_items, self);
         for token in self.tokens.iter() {
             analyzer.update_scope(token.range);
@@ -29,9 +29,9 @@ impl Document {
     }
 }
 
-fn purge_references(item: &Arc<Mutex<SPItem>>, uri: &Arc<Url>) {
+fn purge_references(item: &Arc<RwLock<SPItem>>, uri: &Arc<Url>) {
     let mut new_references = vec![];
-    let mut item_lock = item.lock().unwrap();
+    let mut item_lock = item.write().unwrap();
     let old_references = item_lock.references();
     if old_references.is_none() {
         return;

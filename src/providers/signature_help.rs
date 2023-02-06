@@ -31,7 +31,7 @@ pub fn provide_signature_help(
     let mut signatures: Vec<SignatureInformation> = Vec::new();
     for item in items {
         let signature_help = item
-            .lock()
+            .read()
             .unwrap()
             .to_signature_help(signature_attributes.parameter_count);
         if let Some(signature_help) = signature_help {

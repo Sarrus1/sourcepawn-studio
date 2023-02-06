@@ -1,6 +1,6 @@
 use std::{
     str::Utf8Error,
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
 };
 
 use tree_sitter::Node;
@@ -41,9 +41,10 @@ pub fn parse_methodmap(
         uri: document.uri.clone(),
         references: vec![],
         tmp_parent: inherit,
+        children: vec![],
     };
 
-    let methodmap_item = Arc::new(Mutex::new(SPItem::Methodmap(methodmap_item)));
+    let methodmap_item = Arc::new(RwLock::new(SPItem::Methodmap(methodmap_item)));
     read_methodmap_members(document, node, methodmap_item.clone(), walker);
     document.sp_items.push(methodmap_item);
 
@@ -53,7 +54,7 @@ pub fn parse_methodmap(
 fn read_methodmap_members(
     document: &mut Document,
     node: &Node,
-    methodmap_item: Arc<Mutex<SPItem>>,
+    methodmap_item: Arc<RwLock<SPItem>>,
     walker: &mut Walker,
 ) {
     let mut cursor = node.walk();

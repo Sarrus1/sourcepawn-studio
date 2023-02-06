@@ -1,6 +1,6 @@
 use std::{
     str::Utf8Error,
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
 };
 
 use regex::Regex;
@@ -23,7 +23,7 @@ pub fn parse_function(
     document: &mut Document,
     node: &Node,
     walker: &mut Walker,
-    parent: Option<Arc<Mutex<SPItem>>>,
+    parent: Option<Arc<RwLock<SPItem>>>,
 ) -> Result<(), Utf8Error> {
     // Name of the function
     let name_node = node.child_by_field_name("name");
@@ -119,11 +119,12 @@ pub fn parse_function(
         visibility,
         definition_type,
         references: vec![],
-        parent,
+        parent: parent.as_ref().map(Arc::downgrade),
         params: vec![],
+        children: vec![],
     };
 
-    let function_item = Arc::new(Mutex::new(SPItem::Function(function_item)));
+    let function_item = Arc::new(RwLock::new(SPItem::Function(function_item)));
     if let Some(block_node) = block_node {
         read_body_variables(
             document,
@@ -139,7 +140,11 @@ pub fn parse_function(
         document.text.to_string(),
         function_item.clone(),
     )?;
-    document.sp_items.push(function_item);
+    if let Some(parent) = &parent {
+        parent.write().unwrap().push_child(function_item);
+    } else {
+        document.sp_items.push(function_item);
+    }
 
     Ok(())
 }
@@ -183,7 +188,7 @@ fn read_body_variables(
     document: &mut Document,
     block_node: Node,
     text: String,
-    function_item: Arc<Mutex<SPItem>>,
+    function_item: Arc<RwLock<SPItem>>,
 ) -> Result<(), Utf8Error> {
     let mut cursor = QueryCursor::new();
     let matches = cursor.captures(&VARIABLE_QUERY, block_node, text.as_bytes());
@@ -204,7 +209,7 @@ fn read_function_parameters(
     documentation: Description,
     params_node: Option<Node>,
     text: String,
-    function_item: Arc<Mutex<SPItem>>,
+    function_item: Arc<RwLock<SPItem>>,
 ) -> Result<(), Utf8Error> {
     if params_node.is_none() {
         return Ok(());
@@ -250,15 +255,15 @@ fn read_function_parameters(
             detail: detail.to_string(),
             visibility: vec![],
             storage_class,
-            parent: Some(function_item.clone()),
+            parent: Some(Arc::downgrade(&function_item)),
             references: vec![],
         };
-        let variable_item = Arc::new(Mutex::new(SPItem::Variable(variable_item)));
+        let variable_item = Arc::new(RwLock::new(SPItem::Variable(variable_item)));
         function_item
-            .lock()
+            .write()
             .unwrap()
             .push_param(variable_item.clone());
-        file_item.sp_items.push(variable_item);
+        function_item.write().unwrap().push_child(variable_item);
     }
 
     Ok(())

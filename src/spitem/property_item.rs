@@ -1,9 +1,10 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock, Weak};
 
 use super::Location;
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, GotoDefinitionParams,
-    Hover, HoverContents, HoverParams, LanguageString, LocationLink, MarkedString, Range, Url,
+    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, DocumentSymbol,
+    GotoDefinitionParams, Hover, HoverContents, HoverParams, LanguageString, LocationLink,
+    MarkedString, Range, SymbolKind, SymbolTag, Url,
 };
 
 use crate::providers::hover::description::Description;
@@ -18,7 +19,7 @@ pub struct PropertyItem {
     pub name: String,
 
     /// Parent of the property.
-    pub parent: Arc<Mutex<SPItem>>,
+    pub parent: Weak<RwLock<SPItem>>,
 
     /// Type of the property.
     pub type_: String,
@@ -49,6 +50,7 @@ impl PropertyItem {
     /// # Arguments
     ///
     /// * `params` - [CompletionParams](lsp_types::CompletionParams) of the request.
+    /// * `request_method` - Whether we are requesting method completions or not.
     pub(crate) fn to_completion(
         &self,
         _params: &CompletionParams,
@@ -68,7 +70,7 @@ impl PropertyItem {
             label: self.name.to_string(),
             kind: Some(CompletionItemKind::PROPERTY),
             tags: Some(tags),
-            detail: Some(self.parent.lock().unwrap().name()),
+            detail: Some(self.parent.upgrade().unwrap().read().unwrap().name()),
             deprecated: Some(self.is_deprecated()),
             ..Default::default()
         })
@@ -103,6 +105,25 @@ impl PropertyItem {
         })
     }
 
+    /// Return a [DocumentSymbol] from a [DefineItem].
+    pub(crate) fn to_document_symbol(&self) -> Option<DocumentSymbol> {
+        let mut tags = vec![];
+        if self.description.deprecated.is_some() {
+            tags.push(SymbolTag::DEPRECATED);
+        }
+        #[allow(deprecated)]
+        Some(DocumentSymbol {
+            name: self.name.to_string(),
+            detail: None,
+            kind: SymbolKind::PROPERTY,
+            tags: Some(tags),
+            range: self.full_range,
+            deprecated: None,
+            selection_range: self.range,
+            children: None,
+        })
+    }
+
     /// Formatted representation of a [PropertyItem].
     ///
     /// # Exemple
@@ -111,7 +132,11 @@ impl PropertyItem {
     fn formatted_text(&self) -> MarkedString {
         MarkedString::LanguageString(LanguageString {
             language: "sourcepawn".to_string(),
-            value: format!("{} {}", self.parent.lock().unwrap().name(), self.name),
+            value: format!(
+                "{} {}",
+                self.parent.upgrade().unwrap().read().unwrap().name(),
+                self.name
+            ),
         })
     }
 }

@@ -1,17 +1,17 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use crate::spitem::SPItem;
 
 pub(super) struct Inherit {
-    item: Option<Arc<Mutex<SPItem>>>,
+    item: Option<Arc<RwLock<SPItem>>>,
 }
 
 impl Iterator for Inherit {
-    type Item = Arc<Mutex<SPItem>>;
+    type Item = Arc<RwLock<SPItem>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let item = self.item.clone()?;
-        let item = item.lock().unwrap();
+        let item = item.read().unwrap();
         match &*item {
             SPItem::Methodmap(inherit) => match &inherit.parent {
                 Some(parent) => {
@@ -25,10 +25,10 @@ impl Iterator for Inherit {
     }
 }
 
-pub(super) fn find_inherit(all_items: &[Arc<Mutex<SPItem>>], parent: &SPItem) -> Inherit {
+pub(super) fn find_inherit(all_items: &[Arc<RwLock<SPItem>>], parent: &SPItem) -> Inherit {
     let mut inherit = None;
     for item_ in all_items.iter() {
-        let item_lock = item_.lock().unwrap();
+        let item_lock = item_.read().unwrap();
         if let SPItem::Methodmap(mm_item) = &*item_lock {
             if mm_item.name == parent.type_() {
                 inherit = Some(item_.clone());

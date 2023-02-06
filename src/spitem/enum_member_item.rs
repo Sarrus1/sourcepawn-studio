@@ -1,8 +1,8 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock, Weak};
 
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionParams, Hover, HoverContents, HoverParams,
-    LanguageString, MarkedString, Range, Url,
+    CompletionItem, CompletionItemKind, CompletionParams, DocumentSymbol, Hover, HoverContents,
+    HoverParams, LanguageString, MarkedString, Range, SymbolKind, SymbolTag, Url,
 };
 use lsp_types::{GotoDefinitionParams, LocationLink};
 
@@ -20,8 +20,8 @@ pub struct EnumMemberItem {
     /// Range of the name of the enum member.
     pub range: Range,
 
-    /// Parent of the enum member.
-    pub parent: Arc<Mutex<SPItem>>,
+    /// Parent of the method. None if it's a first class function.
+    pub parent: Weak<RwLock<SPItem>>,
 
     /// Description of the enum member.
     pub description: Description,
@@ -43,7 +43,7 @@ impl EnumMemberItem {
         Some(CompletionItem {
             label: self.name.clone(),
             kind: Some(CompletionItemKind::ENUM_MEMBER),
-            detail: Some(self.parent.lock().unwrap().name()),
+            detail: Some(self.parent.upgrade().unwrap().read().unwrap().name()),
             ..Default::default()
         })
     }
@@ -77,6 +77,25 @@ impl EnumMemberItem {
         })
     }
 
+    /// Return a [DocumentSymbol] from a [DefineItem].
+    pub(crate) fn to_document_symbol(&self) -> Option<DocumentSymbol> {
+        let mut tags = vec![];
+        if self.description.deprecated.is_some() {
+            tags.push(SymbolTag::DEPRECATED);
+        }
+        #[allow(deprecated)]
+        Some(DocumentSymbol {
+            name: self.name.to_string(),
+            detail: None,
+            kind: SymbolKind::ENUM_MEMBER,
+            tags: Some(tags),
+            range: self.range,
+            deprecated: None,
+            selection_range: self.range,
+            children: None,
+        })
+    }
+
     /// Formatted representation of the enum member.
     ///
     /// # Exemple
@@ -84,7 +103,7 @@ impl EnumMemberItem {
     /// `Plugin_Continue`
     fn formatted_text(&self) -> MarkedString {
         let mut value = "".to_string();
-        if let SPItem::Enum(parent) = &*self.parent.lock().unwrap() {
+        if let SPItem::Enum(parent) = &*self.parent.upgrade().unwrap().read().unwrap() {
             if parent.name.contains('#') {
                 value = self.name.clone()
             } else {

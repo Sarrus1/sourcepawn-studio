@@ -1,6 +1,6 @@
 use std::{
     str::Utf8Error,
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
 };
 
 use tree_sitter::Node;
@@ -15,7 +15,7 @@ pub fn parse_property(
     document: &mut Document,
     node: &mut Node,
     walker: &mut Walker,
-    parent: Arc<Mutex<SPItem>>,
+    parent: Arc<RwLock<SPItem>>,
 ) -> Result<(), Utf8Error> {
     let name_node = node.child_by_field_name("name").unwrap();
     let name = name_node.utf8_text(document.text.as_bytes()).unwrap();
@@ -30,10 +30,10 @@ pub fn parse_property(
         description: find_doc(walker, node.start_position().row)?,
         uri: document.uri.clone(),
         references: vec![],
-        parent,
+        parent: Arc::downgrade(&parent),
     };
 
-    let property_item = Arc::new(Mutex::new(SPItem::Property(property_item)));
+    let property_item = Arc::new(RwLock::new(SPItem::Property(property_item)));
     document.sp_items.push(property_item);
     // TODO: Add getter and setter parsing.
     Ok(())

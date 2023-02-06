@@ -1,11 +1,11 @@
 use std::{
     collections::HashSet,
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
 };
 
 use lsp_types::{
-    CompletionItem, CompletionParams, GotoDefinitionParams, Hover, HoverParams, LocationLink,
-    Position, Range, SignatureInformation, Url,
+    CompletionItem, CompletionParams, DocumentSymbol, GotoDefinitionParams, Hover, HoverParams,
+    LocationLink, Position, Range, SignatureInformation, Url,
 };
 
 use crate::{
@@ -56,7 +56,7 @@ pub enum SPItem {
     Include(include_item::IncludeItem),
 }
 
-pub fn get_all_items(store: &Store) -> Vec<Arc<Mutex<SPItem>>> {
+pub fn get_all_items(store: &Store, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
     let mut all_items = vec![];
     if let Some(main_path_uri) = store.environment.options.get_main_path_uri() {
         let mut includes: HashSet<Url> = HashSet::new();
@@ -67,6 +67,13 @@ pub fn get_all_items(store: &Store) -> Vec<Arc<Mutex<SPItem>>> {
                 let document = store.documents.get(include).unwrap();
                 for item in document.sp_items.iter() {
                     all_items.push(item.clone());
+                    if flat {
+                        if let Some(children) = item.read().unwrap().children() {
+                            for child in children {
+                                all_items.push(child.clone());
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -97,12 +104,12 @@ pub fn get_items_from_position(
     store: &Store,
     position: Position,
     uri: Url,
-) -> Vec<Arc<Mutex<SPItem>>> {
+) -> Vec<Arc<RwLock<SPItem>>> {
     let uri = Arc::new(uri);
-    let all_items = get_all_items(store);
+    let all_items = get_all_items(store, true);
     let mut res = vec![];
     for item in all_items.iter() {
-        let item_lock = item.lock().unwrap();
+        let item_lock = item.read().unwrap();
         match item_lock.range() {
             Some(range) => {
                 if range_contains_pos(range, position) && item_lock.uri().as_ref().eq(&uri) {
@@ -174,16 +181,16 @@ impl SPItem {
         }
     }
 
-    pub fn parent(&self) -> Option<Arc<Mutex<SPItem>>> {
+    pub fn parent(&self) -> Option<Arc<RwLock<SPItem>>> {
         match self {
-            SPItem::Variable(item) => item.parent.clone(),
-            SPItem::Function(item) => item.parent.clone(),
+            SPItem::Variable(item) => item.parent.clone().map(|parent| parent.upgrade().unwrap()),
+            SPItem::Function(item) => item.parent.clone().map(|parent| parent.upgrade().unwrap()),
             SPItem::Enum(_) => None,
-            SPItem::EnumMember(item) => Some(item.parent.clone()),
+            SPItem::EnumMember(item) => Some(item.parent.upgrade().unwrap()),
             SPItem::EnumStruct(_) => None,
             SPItem::Define(_) => None,
             SPItem::Methodmap(_) => None,
-            SPItem::Property(item) => Some(item.parent.clone()),
+            SPItem::Property(item) => Some(item.parent.upgrade().unwrap()),
             SPItem::Include(_) => None,
         }
     }
@@ -193,7 +200,7 @@ impl SPItem {
             SPItem::Variable(item) => item.type_.clone(),
             SPItem::Function(item) => item.type_.clone(),
             SPItem::Enum(item) => item.name.clone(),
-            SPItem::EnumMember(item) => item.parent.lock().unwrap().name(),
+            SPItem::EnumMember(item) => item.parent.upgrade().unwrap().read().unwrap().name(),
             SPItem::EnumStruct(item) => item.name.clone(),
             SPItem::Define(_) => "".to_string(),
             SPItem::Methodmap(item) => item.name.clone(),
@@ -244,6 +251,16 @@ impl SPItem {
         }
     }
 
+    pub fn children(&self) -> Option<&Vec<Arc<RwLock<SPItem>>>> {
+        match self {
+            SPItem::Function(item) => Some(&item.children),
+            SPItem::Enum(item) => Some(&item.children),
+            SPItem::EnumStruct(item) => Some(&item.children),
+            SPItem::Methodmap(item) => Some(&item.children),
+            _ => None,
+        }
+    }
+
     pub fn push_reference(&mut self, reference: Location) {
         if range_equals_range(&self.range().unwrap(), &reference.range)
             && self.uri().eq(&reference.uri)
@@ -263,6 +280,16 @@ impl SPItem {
         }
     }
 
+    pub fn push_child(&mut self, child: Arc<RwLock<SPItem>>) {
+        match self {
+            SPItem::Function(item) => item.children.push(child),
+            SPItem::Enum(item) => item.children.push(child),
+            SPItem::EnumStruct(item) => item.children.push(child),
+            SPItem::Methodmap(item) => item.children.push(child),
+            _ => {}
+        }
+    }
+
     pub fn set_new_references(&mut self, references: Vec<Location>) {
         match self {
             SPItem::Variable(item) => item.references = references,
@@ -277,7 +304,7 @@ impl SPItem {
         }
     }
 
-    pub fn push_param(&mut self, param: Arc<Mutex<SPItem>>) {
+    pub fn push_param(&mut self, param: Arc<RwLock<SPItem>>) {
         match self {
             SPItem::Function(item) => item.params.push(param),
             _ => {
@@ -286,21 +313,51 @@ impl SPItem {
         }
     }
 
-    pub fn to_completion(
+    pub fn to_completions(
         &self,
         params: &CompletionParams,
         request_method: bool,
-    ) -> Option<CompletionItem> {
+    ) -> Vec<CompletionItem> {
         match self {
-            SPItem::Variable(item) => item.to_completion(params, request_method),
-            SPItem::Function(item) => item.to_completion(params, request_method),
-            SPItem::Enum(item) => item.to_completion(params),
-            SPItem::EnumMember(item) => item.to_completion(params),
-            SPItem::EnumStruct(item) => item.to_completion(params),
-            SPItem::Define(item) => item.to_completion(params),
-            SPItem::Methodmap(item) => item.to_completion(params),
-            SPItem::Property(item) => item.to_completion(params, request_method),
-            SPItem::Include(item) => item.to_completion(params),
+            SPItem::Variable(item) => {
+                let mut res = vec![];
+                if let Some(completion) = item.to_completion(params, request_method) {
+                    res.push(completion)
+                }
+                res
+            }
+            SPItem::Function(item) => item.to_completions(params, request_method),
+            SPItem::Enum(item) => item.to_completions(params, request_method),
+            SPItem::EnumMember(item) => {
+                let mut res = vec![];
+                if let Some(completion) = item.to_completion(params) {
+                    res.push(completion)
+                }
+                res
+            }
+            SPItem::EnumStruct(item) => item.to_completions(params, request_method),
+            SPItem::Define(item) => {
+                let mut res = vec![];
+                if let Some(completion) = item.to_completion(params) {
+                    res.push(completion)
+                }
+                res
+            }
+            SPItem::Methodmap(item) => item.to_completions(params, request_method),
+            SPItem::Property(item) => {
+                let mut res = vec![];
+                if let Some(completion) = item.to_completion(params, request_method) {
+                    res.push(completion)
+                }
+                res
+            }
+            SPItem::Include(item) => {
+                let mut res = vec![];
+                if let Some(completion) = item.to_completion(params) {
+                    res.push(completion)
+                }
+                res
+            }
         }
     }
 
@@ -329,6 +386,20 @@ impl SPItem {
             SPItem::Methodmap(item) => item.to_definition(params),
             SPItem::Property(item) => item.to_definition(params),
             SPItem::Include(item) => item.to_definition(params),
+        }
+    }
+
+    pub fn to_document_symbol(&self) -> Option<DocumentSymbol> {
+        match self {
+            SPItem::Variable(item) => item.to_document_symbol(),
+            SPItem::Function(item) => item.to_document_symbol(),
+            SPItem::Define(item) => item.to_document_symbol(),
+            SPItem::Enum(item) => item.to_document_symbol(),
+            SPItem::EnumMember(item) => item.to_document_symbol(),
+            SPItem::EnumStruct(item) => item.to_document_symbol(),
+            SPItem::Methodmap(item) => item.to_document_symbol(),
+            SPItem::Property(item) => item.to_document_symbol(),
+            _ => None,
         }
     }
 

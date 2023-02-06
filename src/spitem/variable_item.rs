@@ -1,9 +1,10 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock, Weak};
 
 use super::Location;
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, GotoDefinitionParams,
-    Hover, HoverContents, HoverParams, LanguageString, LocationLink, MarkedString, Range, Url,
+    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, DocumentSymbol,
+    GotoDefinitionParams, Hover, HoverContents, HoverParams, LanguageString, LocationLink,
+    MarkedString, Range, SymbolKind, SymbolTag, Url,
 };
 
 use crate::{providers::hover::description::Description, utils::range_contains_pos};
@@ -41,7 +42,7 @@ pub struct VariableItem {
     pub references: Vec<Location>,
 
     /// Parent of this variable, if it is not global.
-    pub parent: Option<Arc<Mutex<SPItem>>>,
+    pub parent: Option<Weak<RwLock<SPItem>>>,
 }
 
 impl VariableItem {
@@ -52,6 +53,7 @@ impl VariableItem {
     /// # Arguments
     ///
     /// * `params` - [CompletionParams](lsp_types::CompletionParams) of the request.
+    /// * `request_method` - Whether we are requesting method completions or not.
     pub(crate) fn to_completion(
         &self,
         params: &CompletionParams,
@@ -63,7 +65,7 @@ impl VariableItem {
         }
 
         match &self.parent {
-            Some(parent) => match &*parent.lock().unwrap() {
+            Some(parent) => match &*parent.upgrade().unwrap().read().unwrap() {
                 SPItem::Function(parent) => {
                     if self.uri.to_string()
                         != params.text_document_position.text_document.uri.to_string()
@@ -135,6 +137,31 @@ impl VariableItem {
             target_uri: self.uri.as_ref().clone(),
             target_selection_range: self.range,
             origin_selection_range: None,
+        })
+    }
+
+    /// Return a [DocumentSymbol] from a [VariableItem].
+    pub(crate) fn to_document_symbol(&self) -> Option<DocumentSymbol> {
+        let mut tags = vec![];
+        if self.description.deprecated.is_some() {
+            tags.push(SymbolTag::DEPRECATED);
+        }
+        let mut kind = SymbolKind::VARIABLE;
+        if let Some(parent) = &self.parent {
+            if let SPItem::EnumStruct(_) = &*parent.upgrade().unwrap().read().unwrap() {
+                kind = SymbolKind::FIELD;
+            }
+        }
+        #[allow(deprecated)]
+        Some(DocumentSymbol {
+            name: self.name.to_string(),
+            detail: Some(self.detail.to_string()),
+            kind,
+            tags: Some(tags),
+            range: self.range,
+            deprecated: None,
+            selection_range: self.range,
+            children: None,
         })
     }
 

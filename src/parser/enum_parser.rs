@@ -1,6 +1,6 @@
 use std::{
     str::Utf8Error,
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
 };
 
 use tree_sitter::Node;
@@ -30,6 +30,7 @@ pub fn parse_enum(
         description: documentation,
         uri: document.uri.clone(),
         references: vec![],
+        children: vec![],
     };
 
     let mut cursor = node.walk();
@@ -40,10 +41,9 @@ pub fn parse_enum(
             break;
         }
     }
-    let enum_item = Arc::new(Mutex::new(SPItem::Enum(enum_item)));
+    let enum_item = Arc::new(RwLock::new(SPItem::Enum(enum_item)));
     if let Some(enum_entries) = enum_entries {
         read_enum_members(
-            document,
             &enum_entries,
             enum_item.clone(),
             &document.text.to_string(),
@@ -84,9 +84,8 @@ fn get_enum_name_and_range(
 }
 
 fn read_enum_members(
-    file_item: &mut Document,
     body_node: &Node,
-    enum_item: Arc<Mutex<SPItem>>,
+    enum_item: Arc<RwLock<SPItem>>,
     source: &String,
     uri: Arc<Url>,
 ) {
@@ -103,12 +102,13 @@ fn read_enum_members(
             name,
             uri: uri.clone(),
             range,
-            parent: enum_item.clone(),
+            parent: Arc::downgrade(&enum_item),
             description: Description::default(),
             references: vec![],
         };
-        file_item
-            .sp_items
-            .push(Arc::new(Mutex::new(SPItem::EnumMember(enum_member_item))));
+        enum_item
+            .write()
+            .unwrap()
+            .push_child(Arc::new(RwLock::new(SPItem::EnumMember(enum_member_item))));
     }
 }
