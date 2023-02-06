@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, Weak};
 
 use super::Location;
 use lsp_types::{
@@ -42,7 +42,7 @@ pub struct VariableItem {
     pub references: Vec<Location>,
 
     /// Parent of this variable, if it is not global.
-    pub parent: Option<Arc<RwLock<SPItem>>>,
+    pub parent: Option<Weak<RwLock<SPItem>>>,
 }
 
 impl VariableItem {
@@ -53,6 +53,7 @@ impl VariableItem {
     /// # Arguments
     ///
     /// * `params` - [CompletionParams](lsp_types::CompletionParams) of the request.
+    /// * `request_method` - Whether we are requesting method completions or not.
     pub(crate) fn to_completion(
         &self,
         params: &CompletionParams,
@@ -64,7 +65,7 @@ impl VariableItem {
         }
 
         match &self.parent {
-            Some(parent) => match &*parent.read().unwrap() {
+            Some(parent) => match &*parent.upgrade().unwrap().read().unwrap() {
                 SPItem::Function(parent) => {
                     if self.uri.to_string()
                         != params.text_document_position.text_document.uri.to_string()

@@ -37,80 +37,69 @@ impl Analyzer {
             purge_references(item, &document.uri);
             match &*item.read().unwrap() {
                 // Match variables
-                SPItem::Variable(variable_item) => match &variable_item.parent {
-                    // Match non global variables
-                    Some(variable_item_parent) => match &*variable_item_parent.read().unwrap() {
-                        // Match variables in a function or method
-                        SPItem::Function(variable_item_parent_function) => {
-                            let key = format!(
-                                "{}-{}",
-                                variable_item_parent_function.name, variable_item.name
-                            );
-                            tokens_map.insert(key, item.clone());
-                        }
-                        // Match variables as enum struct fields
-                        SPItem::EnumStruct(variable_item_parent_enum_struct) => {
-                            let key = format!(
-                                "{}-{}",
-                                variable_item_parent_enum_struct.name, variable_item.name
-                            );
-                            tokens_map.insert(key, item.clone());
-                        }
-                        _ => {}
-                    },
-                    None => {
-                        tokens_map.insert(variable_item.name.to_string(), item.clone());
+                SPItem::Variable(variable_item) => {
+                    // Global variable
+                    tokens_map.insert(variable_item.name.to_string(), item.clone());
+                }
+                SPItem::Function(function_item) => {
+                    // First level function.
+                    if function_item.uri.eq(&document.uri) {
+                        funcs_in_file.push(item.clone());
                     }
-                },
-                SPItem::Function(function_item) => match &function_item.parent {
-                    Some(method_item_parent) => match &*method_item_parent.read().unwrap() {
-                        SPItem::Methodmap(method_item_parent) => {
-                            let key = format!("{}-{}", method_item_parent.name, function_item.name);
-                            tokens_map.insert(key, item.clone());
-                        }
-                        SPItem::EnumStruct(method_item_parent) => {
-                            let key = format!("{}-{}", method_item_parent.name, function_item.name);
-                            tokens_map.insert(key, item.clone());
-                        }
-                        _ => {}
-                    },
-                    None => {
-                        if function_item.uri.eq(&document.uri) {
-                            funcs_in_file.push(item.clone());
-                        }
-                        tokens_map.insert(function_item.name.to_string(), item.clone());
+                    tokens_map.insert(function_item.name.to_string(), item.clone());
+                    // All variables of the function.
+                    for child in &function_item.children {
+                        let key =
+                            format!("{}-{}", function_item.name, child.read().unwrap().name());
+                        tokens_map.insert(key, child.clone());
                     }
-                },
+                }
                 SPItem::Methodmap(methodmap_item) => {
                     if methodmap_item.uri.eq(&document.uri) {
                         mm_es_in_file.push(item.clone());
                     }
                     tokens_map.insert(methodmap_item.name.to_string(), item.clone());
+                    // All properties and methods of the enum struct.
+                    for child in &methodmap_item.children {
+                        let key =
+                            format!("{}-{}", methodmap_item.name, child.read().unwrap().name());
+                        tokens_map.insert(key, child.clone());
+                    }
                 }
                 SPItem::EnumStruct(enum_struct_item) => {
                     if enum_struct_item.uri.eq(&document.uri) {
                         mm_es_in_file.push(item.clone());
                     }
                     tokens_map.insert(enum_struct_item.name.to_string(), item.clone());
+                    // All fields and methods of the enum struct.
+                    for child in &enum_struct_item.children {
+                        let key =
+                            format!("{}-{}", enum_struct_item.name, child.read().unwrap().name());
+                        tokens_map.insert(key, child.clone());
+                    }
                 }
                 SPItem::Enum(enum_item) => {
                     tokens_map.insert(enum_item.name.to_string(), item.clone());
+                    // All enum members the enum.
+                    for child in &enum_item.children {
+                        tokens_map.insert(child.read().unwrap().name(), child.clone());
+                    }
                 }
                 SPItem::Define(define_item) => {
                     tokens_map.insert(define_item.name.to_string(), item.clone());
                 }
-                SPItem::EnumMember(enum_member_item) => {
-                    tokens_map.insert(enum_member_item.name.to_string(), item.clone());
-                }
                 SPItem::Property(property_item) => {
                     if let SPItem::Methodmap(property_item_parent) =
-                        &*property_item.parent.read().unwrap()
+                        &*property_item.parent.upgrade().unwrap().read().unwrap()
                     {
                         let key = format!("{}-{}", property_item_parent.name, property_item.name);
                         tokens_map.insert(key, item.clone());
                     }
                 }
-                SPItem::Include(_) => {} // TODO: add typedef and typeset here
+                SPItem::Include(_) => {}
+                _ => {
+                    // TODO: add typedef and typeset here
+                }
             }
         }
 

@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, Weak};
 
 use super::Location;
 use lsp_types::{
@@ -18,7 +18,7 @@ pub struct PropertyItem {
     pub name: String,
 
     /// Parent of the property.
-    pub parent: Arc<RwLock<SPItem>>,
+    pub parent: Weak<RwLock<SPItem>>,
 
     /// Type of the property.
     pub type_: String,
@@ -49,6 +49,7 @@ impl PropertyItem {
     /// # Arguments
     ///
     /// * `params` - [CompletionParams](lsp_types::CompletionParams) of the request.
+    /// * `request_method` - Whether we are requesting method completions or not.
     pub(crate) fn to_completion(
         &self,
         _params: &CompletionParams,
@@ -68,7 +69,7 @@ impl PropertyItem {
             label: self.name.to_string(),
             kind: Some(CompletionItemKind::PROPERTY),
             tags: Some(tags),
-            detail: Some(self.parent.read().unwrap().name()),
+            detail: Some(self.parent.upgrade().unwrap().read().unwrap().name()),
             deprecated: Some(self.is_deprecated()),
             ..Default::default()
         })
@@ -111,7 +112,11 @@ impl PropertyItem {
     fn formatted_text(&self) -> MarkedString {
         MarkedString::LanguageString(LanguageString {
             language: "sourcepawn".to_string(),
-            value: format!("{} {}", self.parent.read().unwrap().name(), self.name),
+            value: format!(
+                "{} {}",
+                self.parent.upgrade().unwrap().read().unwrap().name(),
+                self.name
+            ),
         })
     }
 }

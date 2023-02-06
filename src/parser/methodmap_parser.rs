@@ -41,6 +41,7 @@ pub fn parse_methodmap(
         uri: document.uri.clone(),
         references: vec![],
         tmp_parent: inherit,
+        children: vec![],
     };
 
     let methodmap_item = Arc::new(RwLock::new(SPItem::Methodmap(methodmap_item)));

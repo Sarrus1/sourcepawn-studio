@@ -1,11 +1,11 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionParams, GotoDefinitionParams, Hover,
     HoverContents, HoverParams, LanguageString, LocationLink, MarkedString, Range, Url,
 };
 
-use super::Location;
+use super::{Location, SPItem};
 use crate::{providers::hover::description::Description, utils::uri_to_file_name};
 
 #[derive(Debug, Clone)]
@@ -28,25 +28,38 @@ pub struct EnumItem {
 
     /// References to this enum.
     pub references: Vec<Location>,
+
+    /// Children ([EnumMemberItem](super::enum_member_item::EnumMemberItem)) of this enum.
+    pub children: Vec<Arc<RwLock<SPItem>>>,
 }
 
 impl EnumItem {
-    /// Return a [CompletionItem](lsp_types::CompletionItem) from an [EnumItem].
+    /// Return a vector of [CompletionItem](lsp_types::CompletionItem) from an [EnumItem] and its children.
     ///
     /// # Arguments
     ///
-    /// * `_params` - [CompletionParams](lsp_types::CompletionParams) of the request.
-    pub(crate) fn to_completion(&self, _params: &CompletionParams) -> Option<CompletionItem> {
-        if self.name.contains('#') {
-            return None;
+    /// * `params` - [CompletionParams](lsp_types::CompletionParams) of the request.
+    /// * `request_method` - Whether we are requesting method completions or not.
+    pub(crate) fn to_completions(
+        &self,
+        params: &CompletionParams,
+        request_method: bool,
+    ) -> Vec<CompletionItem> {
+        let mut res = vec![];
+        if !self.name.contains('#') {
+            res.push(CompletionItem {
+                label: self.name.to_string(),
+                kind: Some(CompletionItemKind::ENUM),
+                detail: uri_to_file_name(&self.uri),
+                ..Default::default()
+            })
         }
 
-        Some(CompletionItem {
-            label: self.name.to_string(),
-            kind: Some(CompletionItemKind::ENUM),
-            detail: uri_to_file_name(&self.uri),
-            ..Default::default()
-        })
+        for child in &self.children {
+            res.extend(child.read().unwrap().to_completions(params, request_method));
+        }
+
+        res
     }
 
     /// Return a [Hover] from an [EnumItem].

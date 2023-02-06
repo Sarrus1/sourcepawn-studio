@@ -119,8 +119,9 @@ pub fn parse_function(
         visibility,
         definition_type,
         references: vec![],
-        parent,
+        parent: parent.as_ref().map(Arc::downgrade),
         params: vec![],
+        children: vec![],
     };
 
     let function_item = Arc::new(RwLock::new(SPItem::Function(function_item)));
@@ -139,7 +140,11 @@ pub fn parse_function(
         document.text.to_string(),
         function_item.clone(),
     )?;
-    document.sp_items.push(function_item);
+    if let Some(parent) = &parent {
+        parent.write().unwrap().push_child(function_item);
+    } else {
+        document.sp_items.push(function_item);
+    }
 
     Ok(())
 }
@@ -250,7 +255,7 @@ fn read_function_parameters(
             detail: detail.to_string(),
             visibility: vec![],
             storage_class,
-            parent: Some(function_item.clone()),
+            parent: Some(Arc::downgrade(&function_item)),
             references: vec![],
         };
         let variable_item = Arc::new(RwLock::new(SPItem::Variable(variable_item)));
@@ -258,7 +263,7 @@ fn read_function_parameters(
             .write()
             .unwrap()
             .push_param(variable_item.clone());
-        file_item.sp_items.push(variable_item);
+        function_item.write().unwrap().push_child(variable_item);
     }
 
     Ok(())

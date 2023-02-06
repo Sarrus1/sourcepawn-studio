@@ -6,6 +6,18 @@ use lsp_types::{
     SemanticTokensLegend,
 };
 
+pub(super) mod build_define;
+pub(super) mod build_enum;
+pub(super) mod build_enum_member;
+pub(super) mod build_enum_struct;
+pub(super) mod build_es_field;
+pub(super) mod build_function;
+pub(super) mod build_global_variable;
+pub(super) mod build_local_variable;
+pub(super) mod build_method;
+pub(super) mod build_methodmap;
+pub(super) mod build_property;
+
 #[derive(Debug, Default)]
 pub(super) struct SemanticTokensBuilder {
     prev_line: u32,

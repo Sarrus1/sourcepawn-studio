@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, Weak};
 
 use super::Location;
 use lsp_types::{
@@ -50,7 +50,10 @@ pub struct FunctionItem {
     pub params: Vec<Arc<RwLock<SPItem>>>,
 
     /// Parent of the method. None if it's a first class function.
-    pub parent: Option<Arc<RwLock<SPItem>>>,
+    pub parent: Option<Weak<RwLock<SPItem>>>,
+
+    /// Children ([VariableItem](super::variable_item::VariableItem)) of this function.
+    pub children: Vec<Arc<RwLock<SPItem>>>,
 }
 
 impl FunctionItem {
@@ -58,21 +61,23 @@ impl FunctionItem {
         self.description.deprecated.is_some()
     }
 
-    /// Return a [CompletionItem](lsp_types::CompletionItem) from a [FunctionItem].
+    /// Return a vector of [CompletionItem](lsp_types::CompletionItem) from a [FunctionItem] and its children.
     ///
     /// If the conditions are not appropriate (ex: asking for a static outside of its file), return None.
     ///
     /// # Arguments
     ///
     /// * `params` - [CompletionParams](lsp_types::CompletionParams) of the request.
-    pub(crate) fn to_completion(
+    /// * `request_method` - Whether we are requesting method completions or not.
+    pub(crate) fn to_completions(
         &self,
         params: &CompletionParams,
         request_method: bool,
-    ) -> Option<CompletionItem> {
+    ) -> Vec<CompletionItem> {
+        let mut res = vec![];
         // Don't return a method if non method items are requested.
         if !request_method && self.parent.is_some() {
-            return None;
+            return res;
         }
 
         let mut tags = vec![];
@@ -85,17 +90,23 @@ impl FunctionItem {
         if self.visibility.contains(&FunctionVisibility::Static)
             && params.text_document_position.text_document.uri.to_string() != self.uri.to_string()
         {
-            return None;
+            return res;
         }
 
-        Some(CompletionItem {
+        res.push(CompletionItem {
             label: self.name.to_string(),
             kind: Some(self.completion_kind()),
             tags: Some(tags),
             detail: Some(self.type_.to_string()),
             deprecated: Some(self.is_deprecated()),
             ..Default::default()
-        })
+        });
+
+        for child in &self.children {
+            res.extend(child.read().unwrap().to_completions(params, request_method));
+        }
+
+        res
     }
 
     /// Return a [Hover] from a [FunctionItem].

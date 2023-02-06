@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, Weak};
 
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionParams, Hover, HoverContents, HoverParams,
@@ -20,8 +20,8 @@ pub struct EnumMemberItem {
     /// Range of the name of the enum member.
     pub range: Range,
 
-    /// Parent of the enum member.
-    pub parent: Arc<RwLock<SPItem>>,
+    /// Parent of the method. None if it's a first class function.
+    pub parent: Weak<RwLock<SPItem>>,
 
     /// Description of the enum member.
     pub description: Description,
@@ -43,7 +43,7 @@ impl EnumMemberItem {
         Some(CompletionItem {
             label: self.name.clone(),
             kind: Some(CompletionItemKind::ENUM_MEMBER),
-            detail: Some(self.parent.read().unwrap().name()),
+            detail: Some(self.parent.upgrade().unwrap().read().unwrap().name()),
             ..Default::default()
         })
     }
@@ -84,7 +84,7 @@ impl EnumMemberItem {
     /// `Plugin_Continue`
     fn formatted_text(&self) -> MarkedString {
         let mut value = "".to_string();
-        if let SPItem::Enum(parent) = &*self.parent.read().unwrap() {
+        if let SPItem::Enum(parent) = &*self.parent.upgrade().unwrap().read().unwrap() {
             if parent.name.contains('#') {
                 value = self.name.clone()
             } else {

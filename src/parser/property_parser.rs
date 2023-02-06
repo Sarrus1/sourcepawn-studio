@@ -30,7 +30,7 @@ pub fn parse_property(
         description: find_doc(walker, node.start_position().row)?,
         uri: document.uri.clone(),
         references: vec![],
-        parent,
+        parent: Arc::downgrade(&parent),
     };
 
     let property_item = Arc::new(RwLock::new(SPItem::Property(property_item)));

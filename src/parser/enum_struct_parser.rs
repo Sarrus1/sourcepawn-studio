@@ -32,6 +32,7 @@ pub fn parse_enum_struct(
         description: documentation,
         uri: document.uri.clone(),
         references: vec![],
+        children: vec![],
     };
 
     let enum_struct_item = Arc::new(RwLock::new(SPItem::EnumStruct(enum_struct_item)));
@@ -98,11 +99,14 @@ fn parse_enum_struct_field(
         detail: format!("{} {}{}", type_, name, dimensions.join("")),
         visibility: vec![],
         storage_class: vec![],
-        parent: Some(enum_struct_item.clone()),
+        parent: Some(Arc::downgrade(enum_struct_item)),
         references: vec![],
     };
 
     let enum_struct_field_item = Arc::new(RwLock::new(SPItem::Variable(enum_struct_field_item)));
 
-    document.sp_items.push(enum_struct_field_item);
+    enum_struct_item
+        .write()
+        .unwrap()
+        .push_child(enum_struct_field_item);
 }

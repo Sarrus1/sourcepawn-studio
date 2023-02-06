@@ -29,9 +29,7 @@ pub(super) fn get_children_of_mm_or_es(
             if parent_name != parent_.read().unwrap().name() {
                 continue;
             }
-            if let Some(completion) = item_lock.to_completion(&params, true) {
-                res.push(completion);
-            }
+            res.extend(item_lock.to_completions(&params, true));
         }
     }
 
@@ -51,10 +49,8 @@ pub(super) fn get_non_method_completions(
 ) -> Option<CompletionList> {
     let mut items: Vec<CompletionItem> = Vec::new();
     for sp_item in all_items.iter() {
-        let res = sp_item.read().unwrap().to_completion(&params, false);
-        if let Some(res) = res {
-            items.push(res);
-        }
+        let res = sp_item.read().unwrap().to_completions(&params, false);
+        items.extend(res);
     }
 
     Some(CompletionList {

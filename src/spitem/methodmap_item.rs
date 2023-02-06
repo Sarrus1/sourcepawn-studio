@@ -36,21 +36,38 @@ pub struct MethodmapItem {
 
     /// References to this methodmap.
     pub references: Vec<Location>,
+
+    /// Children ([FunctionItem](super::function_item::FunctionItem),
+    /// [PropertyItem](super::property_item::PropertyItem)) of this methodmap.
+    pub children: Vec<Arc<RwLock<SPItem>>>,
 }
 
 impl MethodmapItem {
-    /// Return a [CompletionItem](lsp_types::CompletionItem) from an [MethodmapItem].
+    /// Return a vector of [CompletionItem](lsp_types::CompletionItem) from a [MethodmapItem] and its children.
     ///
     /// # Arguments
     ///
-    /// * `_params` - [CompletionParams](lsp_types::CompletionParams) of the request.
-    pub(crate) fn to_completion(&self, _params: &CompletionParams) -> Option<CompletionItem> {
-        Some(CompletionItem {
+    /// * `params` - [CompletionParams](lsp_types::CompletionParams) of the request.
+    /// * `request_method` - Whether we are requesting method completions or not.
+    pub(crate) fn to_completions(
+        &self,
+        params: &CompletionParams,
+        request_method: bool,
+    ) -> Vec<CompletionItem> {
+        let mut res = vec![];
+
+        res.push(CompletionItem {
             label: self.name.to_string(),
             kind: Some(CompletionItemKind::CLASS),
             detail: uri_to_file_name(&self.uri),
             ..Default::default()
-        })
+        });
+
+        for child in &self.children {
+            res.extend(child.read().unwrap().to_completions(params, request_method));
+        }
+
+        res
     }
 
     /// Return a [Hover] from an [MethodmapItem].

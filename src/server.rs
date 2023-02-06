@@ -178,6 +178,9 @@ impl Server {
                             SemanticTokenType::CLASS,
                             SemanticTokenType::METHOD,
                             SemanticTokenType::MACRO,
+                            SemanticTokenType::PROPERTY,
+                            SemanticTokenType::STRUCT,
+                            SemanticTokenType::ENUM,
                         ],
                         token_modifiers: vec![
                             SemanticTokenModifier::READONLY,
