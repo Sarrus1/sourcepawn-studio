@@ -1,8 +1,8 @@
 use std::sync::{Arc, RwLock, Weak};
 
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionParams, Hover, HoverContents, HoverParams,
-    LanguageString, MarkedString, Range, Url,
+    CompletionItem, CompletionItemKind, CompletionParams, DocumentSymbol, Hover, HoverContents,
+    HoverParams, LanguageString, MarkedString, Range, SymbolKind, SymbolTag, Url,
 };
 use lsp_types::{GotoDefinitionParams, LocationLink};
 
@@ -74,6 +74,25 @@ impl EnumMemberItem {
             target_uri: self.uri.as_ref().clone(),
             target_selection_range: self.range,
             origin_selection_range: None,
+        })
+    }
+
+    /// Return a [DocumentSymbol] from a [DefineItem].
+    pub(crate) fn to_document_symbol(&self) -> Option<DocumentSymbol> {
+        let mut tags = vec![];
+        if self.description.deprecated.is_some() {
+            tags.push(SymbolTag::DEPRECATED);
+        }
+        #[allow(deprecated)]
+        Some(DocumentSymbol {
+            name: self.name.to_string(),
+            detail: None,
+            kind: SymbolKind::ENUM_MEMBER,
+            tags: Some(tags),
+            range: self.range,
+            deprecated: None,
+            selection_range: self.range,
+            children: None,
         })
     }
 

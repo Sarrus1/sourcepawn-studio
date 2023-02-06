@@ -393,14 +393,13 @@ impl SPItem {
         match self {
             SPItem::Variable(item) => item.to_document_symbol(),
             SPItem::Function(item) => item.to_document_symbol(),
+            SPItem::Define(item) => item.to_document_symbol(),
+            SPItem::Enum(item) => item.to_document_symbol(),
+            SPItem::EnumMember(item) => item.to_document_symbol(),
+            SPItem::EnumStruct(item) => item.to_document_symbol(),
+            SPItem::Methodmap(item) => item.to_document_symbol(),
+            SPItem::Property(item) => item.to_document_symbol(),
             _ => None,
-            // SPItem::Enum(item) => item.to_document_symbol(),
-            // SPItem::EnumMember(item) => item.to_document_symbol(),
-            // SPItem::EnumStruct(item) => item.to_document_symbol(),
-            // SPItem::Define(item) => item.to_document_symbol(),
-            // SPItem::Methodmap(item) => item.to_document_symbol(),
-            // SPItem::Property(item) => item.to_document_symbol(),
-            // SPItem::Include(item) => item.to_document_symbol(),
         }
     }
 

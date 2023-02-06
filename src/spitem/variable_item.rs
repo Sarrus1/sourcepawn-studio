@@ -146,10 +146,17 @@ impl VariableItem {
         if self.description.deprecated.is_some() {
             tags.push(SymbolTag::DEPRECATED);
         }
+        let mut kind = SymbolKind::VARIABLE;
+        if let Some(parent) = &self.parent {
+            if let SPItem::EnumStruct(_) = &*parent.upgrade().unwrap().read().unwrap() {
+                kind = SymbolKind::FIELD;
+            }
+        }
+        #[allow(deprecated)]
         Some(DocumentSymbol {
             name: self.name.to_string(),
             detail: Some(self.detail.to_string()),
-            kind: SymbolKind::VARIABLE,
+            kind,
             tags: Some(tags),
             range: self.range,
             deprecated: None,

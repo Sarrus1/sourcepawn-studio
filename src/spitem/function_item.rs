@@ -162,6 +162,44 @@ impl FunctionItem {
         })
     }
 
+    /// Return a [DocumentSymbol] from a [FunctionItem].
+    pub(crate) fn to_document_symbol(&self) -> Option<DocumentSymbol> {
+        let mut tags = vec![];
+        if self.description.deprecated.is_some() {
+            tags.push(SymbolTag::DEPRECATED);
+        }
+        let mut kind = SymbolKind::FUNCTION;
+        if let Some(parent) = &self.parent {
+            match &*parent.upgrade().unwrap().read().unwrap() {
+                SPItem::EnumStruct(_) => kind = SymbolKind::METHOD,
+                SPItem::Methodmap(mm_item) => {
+                    if mm_item.name == self.name {
+                        kind = SymbolKind::CONSTRUCTOR
+                    } else {
+                        kind = SymbolKind::METHOD
+                    }
+                }
+                _ => {}
+            }
+        }
+        #[allow(deprecated)]
+        Some(DocumentSymbol {
+            name: self.name.to_string(),
+            detail: Some(self.detail.to_string()),
+            kind,
+            tags: Some(tags),
+            range: self.full_range,
+            deprecated: None,
+            selection_range: self.range,
+            children: Some(
+                self.children
+                    .iter()
+                    .filter_map(|child| child.read().unwrap().to_document_symbol())
+                    .collect(),
+            ),
+        })
+    }
+
     /// Formatted representation of a [FunctionItem].
     ///
     /// # Exemple
@@ -171,24 +209,6 @@ impl FunctionItem {
         MarkedString::LanguageString(LanguageString {
             language: "sourcepawn".to_string(),
             value: self.detail.to_string(),
-        })
-    }
-
-    /// Return a [DocumentSymbol] from a [FunctionItem].
-    pub(crate) fn to_document_symbol(&self) -> Option<DocumentSymbol> {
-        let mut tags = vec![];
-        if self.description.deprecated.is_some() {
-            tags.push(SymbolTag::DEPRECATED);
-        }
-        Some(DocumentSymbol {
-            name: self.name.to_string(),
-            detail: Some(self.detail.to_string()),
-            kind: SymbolKind::FUNCTION,
-            tags: Some(tags),
-            range: self.full_range,
-            deprecated: None,
-            selection_range: self.range,
-            children: None,
         })
     }
 
