@@ -1,4 +1,7 @@
-use std::sync::{Arc, RwLock, Weak};
+use std::{
+    collections::HashSet,
+    sync::{Arc, RwLock, Weak},
+};
 
 use super::Location;
 use lsp_types::{
@@ -38,7 +41,7 @@ pub struct FunctionItem {
     pub detail: String,
 
     /// Visibility of the function.
-    pub visibility: Vec<FunctionVisibility>,
+    pub visibility: HashSet<FunctionVisibility>,
 
     /// Definition type of the function.
     pub definition_type: FunctionDefinitionType,
@@ -59,6 +62,10 @@ pub struct FunctionItem {
 impl FunctionItem {
     fn is_deprecated(&self) -> bool {
         self.description.deprecated.is_some()
+    }
+
+    pub fn is_static(&self) -> bool {
+        self.visibility.contains(&FunctionVisibility::Static)
     }
 
     /// Return a vector of [CompletionItem](lsp_types::CompletionItem) from a [FunctionItem] and its children.
@@ -83,14 +90,6 @@ impl FunctionItem {
         let mut tags = vec![];
         if self.is_deprecated() {
             tags.push(CompletionItemTag::DEPRECATED);
-        }
-
-        // Don't return a CompletionItem if it's a static and the request did not come from the file
-        // of the declaration.
-        if self.visibility.contains(&FunctionVisibility::Static)
-            && params.text_document_position.text_document.uri.to_string() != self.uri.to_string()
-        {
-            return res;
         }
 
         res.push(CompletionItem {
@@ -224,7 +223,7 @@ impl FunctionItem {
 }
 
 /// Visibility of a SourcePawn function.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum FunctionVisibility {
     Public,
     Static,

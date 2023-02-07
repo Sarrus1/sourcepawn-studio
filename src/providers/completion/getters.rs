@@ -9,33 +9,6 @@ use crate::{
 
 use super::context::get_line_words;
 
-/// Search in a vector of items for the childs of a type and return the associated
-/// vector of [CompletionItem](lsp_types::CompletionItem).
-///
-/// # Arguments
-///
-/// * `all_items` - Vector of [SPItem](crate::spitem::SPItem).
-/// * `parent_name` - Name of the parent.
-/// * `params` - [Parameters](lsp_types::completion::CompletionParams) of the completion request.
-pub(super) fn get_children_of_mm_or_es(
-    all_items: &[Arc<RwLock<SPItem>>],
-    parent_name: String,
-    params: CompletionParams,
-) -> Vec<CompletionItem> {
-    let mut res: Vec<CompletionItem> = vec![];
-    for item in all_items.iter() {
-        let item_lock = item.read().unwrap();
-        if let Some(parent_) = item_lock.parent() {
-            if parent_name != parent_.read().unwrap().name() {
-                continue;
-            }
-            res.extend(item_lock.to_completions(&params, true));
-        }
-    }
-
-    res
-}
-
 /// Return a [CompletionList](lsp_types::CompletionList) of all non method completions (that don't come
 /// after a `.` or `::`).
 ///
@@ -95,31 +68,55 @@ pub(super) fn get_method_completions(
         }
         for item in items.iter() {
             let type_ = item.read().unwrap().type_();
-            for item_ in all_items.iter() {
-                if item_.read().unwrap().name() != type_ {
+            for type_item in all_items.iter() {
+                if type_item.read().unwrap().name() != type_ {
                     continue;
                 }
-                let item_lock = item_.read().unwrap().clone();
+                let item_lock = type_item.read().unwrap().clone();
                 match item_lock {
                     SPItem::Methodmap(mm_item) => {
+                        let mut items = vec![];
+                        for child in mm_item.children.iter() {
+                            match &*child.read().unwrap() {
+                                SPItem::Function(method_item) => {
+                                    if item.read().unwrap().name()
+                                        == type_item.read().unwrap().name()
+                                    {
+                                        if method_item.is_static() {
+                                            // We are trying to call static methods.
+                                            items.extend(
+                                                method_item.to_completions(&request.params, true),
+                                            );
+                                        }
+                                        continue;
+                                    } else if !method_item.is_static() {
+                                        // We are trying to call non static methods.
+                                        items.extend(
+                                            method_item.to_completions(&request.params, true),
+                                        );
+                                    }
+                                }
+                                SPItem::Property(property_item) => {
+                                    items.extend(property_item.to_completion(&request.params, true))
+                                }
+                                _ => {}
+                            }
+                        }
                         return Some(CompletionList {
                             // TODO: Handle inherit here
-                            // TODO: Handle static methods
-                            items: get_children_of_mm_or_es(
-                                &all_items,
-                                mm_item.name,
-                                request.params,
-                            ),
+                            items,
                             ..Default::default()
                         });
                     }
                     SPItem::EnumStruct(es_item) => {
+                        let mut items = vec![];
+                        for child in es_item.children.iter() {
+                            items.extend(
+                                child.read().unwrap().to_completions(&request.params, true),
+                            );
+                        }
                         return Some(CompletionList {
-                            items: get_children_of_mm_or_es(
-                                &all_items,
-                                es_item.name,
-                                request.params,
-                            ),
+                            items,
                             ..Default::default()
                         });
                     }

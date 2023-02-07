@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     str::Utf8Error,
     sync::{Arc, RwLock},
 };
@@ -38,6 +39,10 @@ pub fn parse_function(
 
     let mut block_node: Option<Node> = None;
 
+    let mut visibility = HashSet::new();
+
+    let mut definition_type = FunctionDefinitionType::None;
+
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
         let kind = child.kind();
@@ -54,9 +59,16 @@ pub fn parse_function(
             "block" => {
                 block_node = Some(child);
             }
-            _ => {
-                continue;
+            "static" => {
+                visibility.insert(FunctionVisibility::Static);
             }
+            "public" => {
+                visibility.insert(FunctionVisibility::Public);
+            }
+            "native" => {
+                definition_type = FunctionDefinitionType::Native;
+            }
+            _ => {}
         }
     }
 
@@ -72,23 +84,21 @@ pub fn parse_function(
         type_ = type_node.utf8_text(document.text.as_bytes());
     }
 
-    let mut visibility = vec![];
     if visibility_node.is_some() {
         let visibility_text = visibility_node
             .unwrap()
             .utf8_text(document.text.as_bytes())?;
         if visibility_text.contains("stock") {
-            visibility.push(FunctionVisibility::Stock);
+            visibility.insert(FunctionVisibility::Stock);
         }
         if visibility_text.contains("public") {
-            visibility.push(FunctionVisibility::Public);
+            visibility.insert(FunctionVisibility::Public);
         }
         if visibility_text.contains("static") {
-            visibility.push(FunctionVisibility::Static);
+            visibility.insert(FunctionVisibility::Static);
         }
     }
 
-    let mut definition_type = FunctionDefinitionType::None;
     if definition_type_node.is_some() {
         definition_type = match definition_type_node
             .unwrap()
@@ -99,6 +109,7 @@ pub fn parse_function(
             _ => FunctionDefinitionType::None,
         }
     }
+
     let documentation = find_doc(walker, node.start_position().row)?;
 
     let function_item = FunctionItem {

@@ -34,7 +34,7 @@ pub fn parse_property(
     };
 
     let property_item = Arc::new(RwLock::new(SPItem::Property(property_item)));
-    document.sp_items.push(property_item);
+    parent.write().unwrap().push_child(property_item);
     // TODO: Add getter and setter parsing.
     Ok(())
 }
