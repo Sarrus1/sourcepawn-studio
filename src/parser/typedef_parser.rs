@@ -9,7 +9,7 @@ use crate::{
     document::{find_doc, Document, Walker},
     providers::hover::description::Description,
     spitem::{
-        parameters::{Parameter, Type},
+        parameter::{Parameter, Type},
         typedef_item::TypedefItem,
         SPItem,
     },

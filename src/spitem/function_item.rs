@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, RwLock, Weak},
 };
 
-use super::{parameters::Parameter, Location};
+use super::{parameter::Parameter, Location};
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, CompletionTextEdit,
     DocumentSymbol, Documentation, GotoDefinitionParams, Hover, HoverContents, HoverParams,

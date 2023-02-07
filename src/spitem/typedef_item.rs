@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use super::{parameters::Parameter, Location};
+use super::{parameter::Parameter, Location};
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, CompletionTextEdit,
     DocumentSymbol, GotoDefinitionParams, Hover, HoverContents, HoverParams, InsertTextFormat,

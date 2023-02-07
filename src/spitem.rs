@@ -15,7 +15,7 @@ use crate::{
     utils::{range_contains_pos, range_equals_range},
 };
 
-use self::parameters::Parameter;
+use self::parameter::Parameter;
 
 pub(crate) mod define_item;
 pub(crate) mod enum_item;
@@ -24,7 +24,7 @@ pub(crate) mod enum_struct_item;
 pub(crate) mod function_item;
 pub(crate) mod include_item;
 pub(crate) mod methodmap_item;
-pub(crate) mod parameters;
+pub(crate) mod parameter;
 pub(crate) mod property_item;
 pub(crate) mod typedef_item;
 pub(crate) mod variable_item;

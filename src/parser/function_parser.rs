@@ -12,7 +12,7 @@ use crate::{
     providers::hover::description::Description,
     spitem::{
         function_item::{FunctionDefinitionType, FunctionItem, FunctionVisibility},
-        parameters::Parameter,
+        parameter::Parameter,
         variable_item::{VariableItem, VariableStorageClass},
         SPItem,
     },
