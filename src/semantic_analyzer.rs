@@ -1,4 +1,7 @@
-use std::sync::{Arc, RwLock};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
 use lsp_types::Url;
 
@@ -26,6 +29,7 @@ impl Document {
 
             analyzer.token_idx += 1;
         }
+        resolve_methodmap_inherits(get_all_items(store, false));
     }
 }
 
@@ -43,4 +47,33 @@ fn purge_references(item: &Arc<RwLock<SPItem>>, uri: &Arc<Url>) {
         }
     }
     item_lock.set_new_references(new_references);
+}
+
+/// Resolve methodmap inheritances when possible.
+///
+/// # Arguments
+///
+/// * `all_items` - All included first level [items](SPItem).
+pub fn resolve_methodmap_inherits(all_items: Vec<Arc<RwLock<SPItem>>>) {
+    let mut methodmaps = HashMap::new();
+    let mut methodmaps_to_resolve = vec![];
+    all_items.iter().for_each(|item| {
+        if let SPItem::Methodmap(mm_item) = &*item.read().unwrap() {
+            methodmaps.insert(mm_item.name.to_string(), item.clone());
+            if mm_item.tmp_parent.is_some() {
+                methodmaps_to_resolve.push(item.clone());
+            }
+        }
+    });
+
+    for mm in methodmaps_to_resolve.iter() {
+        let mut mm = mm.write().unwrap();
+        if let SPItem::Methodmap(mm_item) = &*mm {
+            if let Some(tmp_parent) = &mm_item.tmp_parent {
+                if let Some(parent) = methodmaps.get(tmp_parent) {
+                    mm.set_parent(parent.clone());
+                }
+            }
+        }
+    }
 }

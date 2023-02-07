@@ -313,6 +313,18 @@ impl SPItem {
         }
     }
 
+    pub fn set_parent(&mut self, parent: Arc<RwLock<SPItem>>) {
+        match self {
+            SPItem::Methodmap(item) => {
+                item.parent = Some(parent);
+                item.tmp_parent = None
+            }
+            _ => {
+                eprintln!("Cannot set the methodmap inherits of an item that is not a methodmap.")
+            }
+        }
+    }
+
     pub fn to_completions(
         &self,
         params: &CompletionParams,
