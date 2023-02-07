@@ -1,6 +1,11 @@
 import { homedir } from "os";
 import { join } from "path";
-import { workspace, ExtensionContext, languages, extensions } from "vscode";
+import {
+  workspace as Workspace,
+  ExtensionContext,
+  languages,
+  extensions,
+} from "vscode";
 import {
   LanguageClient,
   LanguageClientOptions,
@@ -16,6 +21,7 @@ import {
   getLatestVersionName,
   run as installLanguageServerCommand,
 } from "./Commands/installLanguageServer";
+import { migrateSettings } from "./spUtils";
 
 let client: LanguageClient;
 
@@ -96,7 +102,7 @@ export async function activate(context: ExtensionContext) {
   const clientOptions: LanguageClientOptions = {
     documentSelector: [{ language: "sourcepawn" }],
     synchronize: {
-      fileEvents: workspace.createFileSystemWatcher("**/*.{inc,sp}"),
+      fileEvents: Workspace.createFileSystemWatcher("**/*.{inc,sp}"),
     },
   };
 
@@ -107,7 +113,13 @@ export async function activate(context: ExtensionContext) {
   );
 
   client.start();
-  checkForLanguageServerUpdate(context);
+  try {
+    checkForLanguageServerUpdate(context);
+  } catch (error) {
+    console.error("Couldn't update the language server.", error);
+  }
+
+  migrateSettings(client);
 }
 
 export function deactivate(): Thenable<void> | undefined {

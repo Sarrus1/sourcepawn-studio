@@ -2,11 +2,13 @@
   Location,
   MarkdownString,
   Range,
+  window,
   workspace as Workspace,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { existsSync, lstatSync } from "fs";
 import { resolve, extname } from "path";
+import { LanguageClient } from "vscode-languageclient/node";
 
 /**
  * Parse a Sourcemod JSDoc documentation string and convert it to a MarkdownString.
@@ -95,4 +97,38 @@ export function checkMainPath(mainPath: string): boolean {
  */
 export function locationFromRange(filePath: string, range: Range): Location {
   return new Location(URI.file(filePath), range);
+}
+
+/**
+ * If needed, prompt the user to migrate their settings to use the LanguageServer.
+ * @param  {LanguageClient} client  Instance of the language server to restart if needed.
+ */
+export function migrateSettings(client: LanguageClient) {
+  let smHome: string =
+    Workspace.getConfiguration("sourcepawn").get("SourcemodHome");
+  let optionalIncludeDirsPaths: string[] = Workspace.getConfiguration(
+    "sourcepawn"
+  ).get("optionalIncludeDirsPaths");
+
+  let includesDirectories: string[] = Workspace.getConfiguration(
+    "SourcePawnLanguageServer"
+  ).get("includesDirectories");
+
+  if (includesDirectories.length == 0 && smHome) {
+    window
+      .showInformationMessage(
+        "Would you like to automatically migrate your SourcePawn settings to use the language server?",
+        "Yes",
+        "No"
+      )
+      .then((choice) => {
+        if (choice === "Yes") {
+          Workspace.getConfiguration("SourcePawnLanguageServer").update(
+            "includesDirectories",
+            [smHome].concat(optionalIncludeDirsPaths)
+          );
+          client.restart();
+        }
+      });
+  }
 }
