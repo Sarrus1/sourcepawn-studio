@@ -75,8 +75,10 @@ pub(super) fn get_method_completions(
                 let item_lock = type_item.read().unwrap().clone();
                 match item_lock {
                     SPItem::Methodmap(mm_item) => {
+                        let mut children = mm_item.children;
+                        extend_children(&mut children, &mm_item.parent);
                         let mut items = vec![];
-                        for child in mm_item.children.iter() {
+                        for child in children.iter() {
                             match &*child.read().unwrap() {
                                 SPItem::Function(method_item) => {
                                     if item.read().unwrap().name()
@@ -103,7 +105,6 @@ pub(super) fn get_method_completions(
                             }
                         }
                         return Some(CompletionList {
-                            // TODO: Handle inherit here
                             items,
                             ..Default::default()
                         });
@@ -127,4 +128,13 @@ pub(super) fn get_method_completions(
     }
 
     None
+}
+
+fn extend_children(children: &mut Vec<Arc<RwLock<SPItem>>>, mm_item: &Option<Arc<RwLock<SPItem>>>) {
+    if let Some(mm_item) = mm_item {
+        if let SPItem::Methodmap(mm_item) = &*mm_item.read().unwrap() {
+            children.extend(mm_item.children.clone());
+            extend_children(children, &mm_item.parent);
+        }
+    }
 }
