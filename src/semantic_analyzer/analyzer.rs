@@ -49,6 +49,7 @@ impl Analyzer {
                     tokens_map.insert(function_item.name.to_string(), item.clone());
                     // All variables of the function.
                     for child in &function_item.children {
+                        purge_references(child, &document.uri);
                         let key =
                             format!("{}-{}", function_item.name, child.read().unwrap().name());
                         tokens_map.insert(key, child.clone());
@@ -61,6 +62,7 @@ impl Analyzer {
                     tokens_map.insert(methodmap_item.name.to_string(), item.clone());
                     // All properties and methods of the enum struct.
                     for child in &methodmap_item.children {
+                        purge_references(child, &document.uri);
                         let key =
                             format!("{}-{}", methodmap_item.name, child.read().unwrap().name());
                         tokens_map.insert(key, child.clone());
@@ -73,6 +75,7 @@ impl Analyzer {
                     tokens_map.insert(enum_struct_item.name.to_string(), item.clone());
                     // All fields and methods of the enum struct.
                     for child in &enum_struct_item.children {
+                        purge_references(child, &document.uri);
                         let key =
                             format!("{}-{}", enum_struct_item.name, child.read().unwrap().name());
                         tokens_map.insert(key, child.clone());
@@ -82,6 +85,7 @@ impl Analyzer {
                     tokens_map.insert(enum_item.name.to_string(), item.clone());
                     // All enum members the enum.
                     for child in &enum_item.children {
+                        purge_references(child, &document.uri);
                         tokens_map.insert(child.read().unwrap().name(), child.clone());
                     }
                 }
