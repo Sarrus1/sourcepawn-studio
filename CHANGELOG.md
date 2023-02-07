@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [5.0.3]
+
+### Added
+
+- Added a function to automatically migrate the settings to the new `sourcepawn_lsp` format.
+
 ## [5.0.2]
 
 ### Added

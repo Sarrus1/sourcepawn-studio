@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "5.0.2",
+  "version": "5.0.3",
   "publisher": "Sarrus",
   "main": "./dist/spIndex.js",
   "icon": "sm.png",
@@ -32,24 +32,6 @@
     "AlliedMods",
     "AlliedModders",
     "multi-root ready"
-  ],
-  "activationEvents": [
-    "onLanguage:sourcepawn",
-    "onLanguage:valve-kv",
-    "onLanguage:valve-cfg",
-    "onCommand:sourcepawn-vscode.createTask",
-    "onCommand:sourcepawn-vscode.createScript",
-    "onCommand:sourcepawn-vscode.createREADME",
-    "onCommand:sourcepawn-vscode.createMaster",
-    "onCommand:sourcepawn-vscode.createProject",
-    "onCommand:sourcepawn-vscode.compileSM",
-    "onCommand:sourcepawn-vscode.uploadToServer",
-    "onCommand:sourcepawn-vscode.refreshPlugins",
-    "onCommand:sourcepawn-vscode.insertParameters",
-    "onCommand:sourcepawn-vscode.setFileAsMain",
-    "onCommand:sourcepawn-vscode.createChangelog",
-    "onCommand:sourcepawn-vscode.changeSMApi",
-    "onCommand:sourcepawn-vscode.installLanguageServer"
   ],
   "contributes": {
     "commands": [
