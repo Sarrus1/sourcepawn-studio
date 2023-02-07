@@ -1,5 +1,5 @@
 use lazy_static::lazy_static;
-use lsp_types::Position;
+use lsp_types::{CompletionContext, Position};
 use regex::Regex;
 
 use super::matchtoken::MatchToken;
@@ -15,6 +15,21 @@ pub(super) fn is_method_call(sub_line: &str) -> bool {
         static ref RE: Regex = Regex::new(r"(?:\.|::)\w*$").unwrap();
     }
     RE.is_match(sub_line)
+}
+
+/// Check if the trigger character of a [Completion request](lsp_types::request::Completion) is a "$".
+///
+/// # Arguments
+///
+/// * `context` - [CompletionContext] of the original request.
+pub(super) fn is_callback_completion_request(context: Option<CompletionContext>) -> bool {
+    if let Some(context) = context {
+        if let Some(trigger_character) = context.trigger_character {
+            return trigger_character == "$";
+        }
+    }
+
+    false
 }
 
 /// Given a line of a document, return all the words before a given [position](lsp_types::Position).

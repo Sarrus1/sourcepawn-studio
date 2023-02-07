@@ -100,10 +100,11 @@ impl Analyzer {
                         tokens_map.insert(key, item.clone());
                     }
                 }
-                SPItem::Include(_) => {}
-                _ => {
-                    // TODO: add typedef and typeset here
+                SPItem::Typedef(typedef_item) => {
+                    tokens_map.insert(typedef_item.name.to_string(), item.clone());
                 }
+                SPItem::Include(_) => {}
+                SPItem::EnumMember(_) => {}
             }
         }
 
