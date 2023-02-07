@@ -5,10 +5,10 @@ use std::{
 
 use super::{parameters::Parameter, Location};
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, DocumentSymbol,
-    Documentation, GotoDefinitionParams, Hover, HoverContents, HoverParams, LanguageString,
-    LocationLink, MarkedString, MarkupContent, ParameterInformation, Range, SignatureInformation,
-    SymbolKind, SymbolTag, Url,
+    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, CompletionTextEdit,
+    DocumentSymbol, Documentation, GotoDefinitionParams, Hover, HoverContents, HoverParams,
+    InsertTextFormat, LanguageString, LocationLink, MarkedString, MarkupContent,
+    ParameterInformation, Range, SignatureInformation, SymbolKind, SymbolTag, TextEdit, Url,
 };
 
 use crate::providers::hover::description::Description;
@@ -193,6 +193,61 @@ impl FunctionItem {
                     .filter_map(|child| child.read().unwrap().to_document_symbol())
                     .collect(),
             ),
+        })
+    }
+
+    /// Return a snippet [CompletionItem] from a [FunctionItem] for a callback completion.
+    ///
+    /// # Arguments
+    ///
+    /// * `range` - [Range] of the "$" that will be replaced.
+    pub(crate) fn to_snippet_completion(&self, range: Range) -> Option<CompletionItem> {
+        if self.definition_type != FunctionDefinitionType::Forward {
+            // Only forwards can implement a callback.
+            return None;
+        }
+
+        let mut tags = vec![];
+        if self.is_deprecated() {
+            tags.push(CompletionItemTag::DEPRECATED);
+        }
+
+        let mut snippet_text = format!("public {} {}(", self.type_, self.name);
+        for (i, parameter) in self.params.iter().enumerate() {
+            let parameter = parameter.read().unwrap();
+            if parameter.is_const {
+                snippet_text.push_str("const ");
+            }
+            if let Some(type_) = &parameter.type_ {
+                snippet_text.push_str(&type_.name);
+                if type_.is_pointer {
+                    snippet_text.push('&')
+                }
+                for dimension in type_.dimension.iter() {
+                    snippet_text.push_str(dimension);
+                }
+                snippet_text.push(' ');
+            }
+            snippet_text.push_str(&format!("${{{}:{}}}", i + 1, parameter.name));
+            if i < self.params.len() - 1 {
+                snippet_text.push_str(", ");
+            }
+        }
+        snippet_text.push_str(")\n{\n\t$0\n}");
+
+        Some(CompletionItem {
+            label: self.name.to_string(),
+            filter_text: Some(format!("${}", self.name)),
+            kind: Some(CompletionItemKind::FUNCTION),
+            tags: Some(tags),
+            detail: Some(self.type_.to_string()),
+            text_edit: Some(CompletionTextEdit::Edit(TextEdit {
+                range,
+                new_text: snippet_text,
+            })),
+            deprecated: Some(self.is_deprecated()),
+            insert_text_format: Some(InsertTextFormat::SNIPPET),
+            ..Default::default()
         })
     }
 

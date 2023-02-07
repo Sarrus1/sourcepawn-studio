@@ -49,10 +49,18 @@ pub(super) fn get_callback_completions(
     );
     let mut items = vec![];
     for item in all_items.iter() {
-        if let SPItem::Typedef(typedef_item) = &*item.read().unwrap() {
-            if let Some(completion) = typedef_item.to_snippet_completion(range) {
-                items.push(completion);
+        match &*item.read().unwrap() {
+            SPItem::Typedef(typedef_item) => {
+                if let Some(completion) = typedef_item.to_snippet_completion(range) {
+                    items.push(completion);
+                }
             }
+            SPItem::Function(function_item) => {
+                if let Some(completion) = function_item.to_snippet_completion(range) {
+                    items.push(completion);
+                }
+            }
+            _ => {}
         }
     }
 
