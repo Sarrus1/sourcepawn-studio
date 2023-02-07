@@ -7,12 +7,16 @@ use tree_sitter::Node;
 
 use crate::{
     document::{find_doc, Document, Walker},
+    providers::hover::description::Description,
     spitem::{
-        typedef_item::{Parameter, Type, TypedefItem},
+        parameters::{Parameter, Type},
+        typedef_item::TypedefItem,
         SPItem,
     },
     utils::ts_range_to_lsp_range,
 };
+
+use super::function_parser::extract_param_doc;
 
 pub fn parse_typedef(
     document: &mut Document,
@@ -59,7 +63,7 @@ pub fn parse_typedef(
         type_: type_.to_string(),
         range: ts_range_to_lsp_range(&name_node.range()),
         full_range: ts_range_to_lsp_range(&node.range()),
-        description,
+        description: description.clone(),
         uri: document.uri.clone(),
         detail: node.utf8_text(document.text.as_bytes())?.to_string(),
         references: vec![],
@@ -67,23 +71,25 @@ pub fn parse_typedef(
     };
 
     let typedef_item = Arc::new(RwLock::new(SPItem::Typedef(typedef_item)));
-    read_typedef_parameters(
+    read_argument_declarations(
         document,
         argument_declarations_node.unwrap(),
         typedef_item.clone(),
+        description,
     )?;
     document.sp_items.push(typedef_item);
 
     Ok(())
 }
 
-fn read_typedef_parameters(
-    document: &mut Document,
-    arguments_declaration_node: Node,
-    typedef_item: Arc<RwLock<SPItem>>,
+pub(super) fn read_argument_declarations(
+    document: &Document,
+    argument_declarations_node: Node,
+    parent: Arc<RwLock<SPItem>>,
+    description: Description,
 ) -> Result<(), Utf8Error> {
-    let mut cursor = arguments_declaration_node.walk();
-    for child in arguments_declaration_node.children(&mut cursor) {
+    let mut cursor = argument_declarations_node.walk();
+    for child in argument_declarations_node.children(&mut cursor) {
         match child.kind() {
             "argument_declaration" => {
                 let name_node = child.child_by_field_name("name");
@@ -103,11 +109,18 @@ fn read_typedef_parameters(
                     name: name?.to_string(),
                     is_const,
                     type_: parse_argument_type(document, type_node),
+                    description: Description {
+                        text: match extract_param_doc(name?, &description) {
+                            Some(text) => text,
+                            None => "".to_string(),
+                        },
+                        deprecated: None,
+                    },
                 };
-                typedef_item
+                parent
                     .write()
                     .unwrap()
-                    .push_type_param(Arc::new(RwLock::new(parameter)));
+                    .push_param(Arc::new(RwLock::new(parameter)));
             }
             "rest_argument" => {
                 // TODO: Handle this
@@ -118,7 +131,10 @@ fn read_typedef_parameters(
     Ok(())
 }
 
-fn parse_argument_type(document: &mut Document, argument_type_node: Option<Node>) -> Option<Type> {
+pub(crate) fn parse_argument_type(
+    document: &Document,
+    argument_type_node: Option<Node>,
+) -> Option<Type> {
     let argument_type_node = argument_type_node?;
 
     let mut cursor = argument_type_node.walk();

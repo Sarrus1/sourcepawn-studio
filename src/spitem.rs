@@ -15,7 +15,7 @@ use crate::{
     utils::{range_contains_pos, range_equals_range},
 };
 
-use self::typedef_item::Parameter;
+use self::parameters::Parameter;
 
 pub(crate) mod define_item;
 pub(crate) mod enum_item;
@@ -24,6 +24,7 @@ pub(crate) mod enum_struct_item;
 pub(crate) mod function_item;
 pub(crate) mod include_item;
 pub(crate) mod methodmap_item;
+pub(crate) mod parameters;
 pub(crate) mod property_item;
 pub(crate) mod typedef_item;
 pub(crate) mod variable_item;
@@ -314,20 +315,12 @@ impl SPItem {
         }
     }
 
-    pub fn push_param(&mut self, param: Arc<RwLock<SPItem>>) {
-        match self {
-            SPItem::Function(item) => item.params.push(param),
-            _ => {
-                eprintln!("Cannot push params to an item that does not have params.")
-            }
-        }
-    }
-
-    pub fn push_type_param(&mut self, param: Arc<RwLock<Parameter>>) {
+    pub fn push_param(&mut self, param: Arc<RwLock<Parameter>>) {
         match self {
             SPItem::Typedef(item) => item.params.push(param),
+            SPItem::Function(item) => item.params.push(param),
             _ => {
-                eprintln!("Can only push type params to typedefs.")
+                eprintln!("Can only push type params to functions and typedefs.")
             }
         }
     }

@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use super::Location;
+use super::{parameters::Parameter, Location};
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, CompletionTextEdit,
     DocumentSymbol, GotoDefinitionParams, Hover, HoverContents, HoverParams, InsertTextFormat,
@@ -176,18 +176,4 @@ impl TypedefItem {
             value: self.detail.to_string(),
         })
     }
-}
-
-#[derive(Debug, Clone)]
-pub struct Parameter {
-    pub type_: Option<Type>,
-    pub name: String,
-    pub is_const: bool,
-}
-
-#[derive(Debug, Clone)]
-pub struct Type {
-    pub is_pointer: bool,
-    pub name: String,
-    pub dimension: Vec<String>,
 }

@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, RwLock, Weak},
 };
 
-use super::Location;
+use super::{parameters::Parameter, Location};
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, DocumentSymbol,
     Documentation, GotoDefinitionParams, Hover, HoverContents, HoverParams, LanguageString,
@@ -50,7 +50,7 @@ pub struct FunctionItem {
     pub references: Vec<Location>,
 
     /// Parameters of the function.
-    pub params: Vec<Arc<RwLock<SPItem>>>,
+    pub params: Vec<Arc<RwLock<Parameter>>>,
 
     /// Parent of the method. None if it's a first class function.
     pub parent: Option<Weak<RwLock<SPItem>>>,
@@ -141,13 +141,10 @@ impl FunctionItem {
     pub(crate) fn to_signature_help(&self, parameter_count: u32) -> Option<SignatureInformation> {
         let mut parameters: Vec<ParameterInformation> = vec![];
         for param in self.params.iter() {
-            let param_ = param.read().unwrap();
+            let param = param.read().unwrap();
             parameters.push(ParameterInformation {
-                label: lsp_types::ParameterLabel::Simple(param_.name()),
-                documentation: match param_.description() {
-                    Some(description) => Some(Documentation::String(description.text)),
-                    None => None,
-                },
+                label: lsp_types::ParameterLabel::Simple(param.name.to_string()),
+                documentation: Some(Documentation::String(param.description.text.to_string())),
             })
         }
         Some(SignatureInformation {
