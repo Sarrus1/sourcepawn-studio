@@ -95,11 +95,16 @@ pub(super) fn read_argument_declarations(
                 let name_node = child.child_by_field_name("name");
                 let type_node = child.child_by_field_name("type");
                 let mut is_const = false;
+                let mut dimensions = vec![];
                 let mut sub_cursor = child.walk();
                 for sub_child in child.children(&mut sub_cursor) {
-                    let sub_child_text = sub_child.utf8_text(document.text.as_bytes())?;
-                    if sub_child_text == "const" {
-                        is_const = true;
+                    match sub_child.kind() {
+                        "const" => is_const = true,
+                        "dimension" | "fixed_dimension" => {
+                            let dimension = sub_child.utf8_text(document.text.as_bytes())?;
+                            dimensions.push(dimension.to_string());
+                        }
+                        _ => {}
                     }
                 }
                 let name_node = name_node.unwrap();
@@ -116,6 +121,7 @@ pub(super) fn read_argument_declarations(
                         },
                         deprecated: None,
                     },
+                    dimensions,
                 };
                 parent
                     .write()
@@ -141,7 +147,7 @@ pub(crate) fn parse_argument_type(
     let mut type_ = Type {
         name: "".to_string(),
         is_pointer: false,
-        dimension: vec![],
+        dimensions: vec![],
     };
 
     for child in argument_type_node.children(&mut cursor) {
@@ -154,8 +160,8 @@ pub(crate) fn parse_argument_type(
                     .to_string();
             }
             "&" => type_.is_pointer = true,
-            "dimension" => {
-                type_.dimension.push(
+            "dimension" | "fixed_dimension" => {
+                type_.dimensions.push(
                     child
                         .utf8_text(document.text.as_bytes())
                         .unwrap()

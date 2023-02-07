@@ -137,12 +137,15 @@ impl TypedefItem {
                 if type_.is_pointer {
                     snippet_text.push('&')
                 }
-                for dimension in type_.dimension.iter() {
+                for dimension in type_.dimensions.iter() {
                     snippet_text.push_str(dimension);
                 }
                 snippet_text.push(' ');
             }
             snippet_text.push_str(&format!("${{{}:{}}}", i + 2, parameter.name));
+            for dimension in parameter.dimensions.iter() {
+                snippet_text.push_str(dimension);
+            }
             if i < self.params.len() - 1 {
                 snippet_text.push_str(", ");
             }

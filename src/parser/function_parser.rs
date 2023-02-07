@@ -236,13 +236,20 @@ fn read_function_parameters(
         let name_node = child.child_by_field_name("name");
         let type_node = child.child_by_field_name("type");
         let mut is_const = false;
+        let mut dimensions = vec![];
         let mut storage_class: Vec<VariableStorageClass> = vec![];
         let mut sub_cursor = child.walk();
         for sub_child in child.children(&mut sub_cursor) {
-            let sub_child_text = sub_child.utf8_text(text.as_bytes())?;
-            if sub_child_text == "const" {
-                is_const = true;
-                storage_class.push(VariableStorageClass::Const);
+            match sub_child.kind() {
+                "const" => {
+                    is_const = true;
+                    storage_class.push(VariableStorageClass::Const);
+                }
+                "dimension" | "fixed_dimension" => {
+                    let dimension = sub_child.utf8_text(text.as_bytes())?;
+                    dimensions.push(dimension.to_string());
+                }
+                _ => {}
             }
         }
         let name_node = name_node.unwrap();
@@ -280,6 +287,7 @@ fn read_function_parameters(
             is_const,
             type_: parse_argument_type(document, type_node),
             description,
+            dimensions,
         };
         function_item
             .write()
