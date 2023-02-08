@@ -83,7 +83,7 @@ impl Analyzer {
                 }
                 SPItem::Enum(enum_item) => {
                     tokens_map.insert(enum_item.name.to_string(), item.clone());
-                    // All enum members the enum.
+                    // All enum members of the enum.
                     for child in &enum_item.children {
                         purge_references(child, &document.uri);
                         tokens_map.insert(child.read().unwrap().name(), child.clone());
@@ -102,6 +102,15 @@ impl Analyzer {
                 }
                 SPItem::Typedef(typedef_item) => {
                     tokens_map.insert(typedef_item.name.to_string(), item.clone());
+                }
+                SPItem::Typeset(typeset_item) => {
+                    tokens_map.insert(typeset_item.name.to_string(), item.clone());
+                    // All typedef members of the typeset.
+                    for child in &typeset_item.children {
+                        purge_references(child, &document.uri);
+                        let key = format!("{}-{}", typeset_item.name, child.read().unwrap().name());
+                        tokens_map.insert(key, child.clone());
+                    }
                 }
                 SPItem::Include(_) => {}
                 SPItem::EnumMember(_) => {}

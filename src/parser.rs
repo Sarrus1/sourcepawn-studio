@@ -10,6 +10,7 @@ pub mod include_parser;
 pub mod methodmap_parser;
 pub mod property_parser;
 pub mod typedef_parser;
+pub mod typeset_parser;
 pub mod variable_parser;
 
 lazy_static! {

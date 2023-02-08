@@ -55,6 +55,9 @@ pub(super) fn get_callback_completions(
                     items.push(completion);
                 }
             }
+            SPItem::Typeset(typeset_item) => {
+                items.extend(typeset_item.to_snippet_completion(range))
+            }
             SPItem::Function(function_item) => {
                 if let Some(completion) = function_item.to_snippet_completion(range) {
                     items.push(completion);

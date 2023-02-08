@@ -21,6 +21,7 @@ use crate::{
         include_parser::parse_include,
         methodmap_parser::parse_methodmap,
         typedef_parser::parse_typedef,
+        typeset_parser::parse_typeset,
         variable_parser::parse_variable,
     },
     providers::hover::description::Description,
@@ -114,7 +115,7 @@ impl Document {
                     parse_methodmap(self, &mut node, &mut walker)?;
                 }
                 "typedef" => parse_typedef(self, &node, &mut walker)?,
-                "typeset" => {}
+                "typeset" => parse_typeset(self, &node, &mut walker)?,
                 "preproc_macro" => {}
                 "enum_struct" => parse_enum_struct(self, &mut node, &mut walker)?,
                 "comment" => {

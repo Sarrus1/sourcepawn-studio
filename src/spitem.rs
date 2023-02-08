@@ -27,6 +27,7 @@ pub(crate) mod methodmap_item;
 pub(crate) mod parameter;
 pub(crate) mod property_item;
 pub(crate) mod typedef_item;
+pub(crate) mod typeset_item;
 pub(crate) mod variable_item;
 
 /// Represents a location inside a resource, such as a line inside a text file.
@@ -59,6 +60,7 @@ pub enum SPItem {
     Property(property_item::PropertyItem),
     Include(include_item::IncludeItem),
     Typedef(typedef_item::TypedefItem),
+    Typeset(typeset_item::TypesetItem),
 }
 
 pub fn get_all_items(store: &Store, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
@@ -151,6 +153,7 @@ impl SPItem {
             SPItem::Methodmap(item) => Some(item.range),
             SPItem::Property(item) => Some(item.range),
             SPItem::Typedef(item) => Some(item.range),
+            SPItem::Typeset(item) => Some(item.range),
             SPItem::Include(item) => Some(item.range),
         }
     }
@@ -166,6 +169,7 @@ impl SPItem {
             SPItem::Methodmap(item) => Some(item.full_range),
             SPItem::Property(item) => Some(item.full_range),
             SPItem::Typedef(item) => Some(item.full_range),
+            SPItem::Typeset(item) => Some(item.full_range),
             SPItem::Include(item) => Some(item.range),
         }
     }
@@ -181,6 +185,7 @@ impl SPItem {
             SPItem::Methodmap(item) => item.name.clone(),
             SPItem::Property(item) => item.name.clone(),
             SPItem::Typedef(item) => item.name.clone(),
+            SPItem::Typeset(item) => item.name.clone(),
             SPItem::Include(item) => item.name.clone(),
         }
     }
@@ -196,6 +201,7 @@ impl SPItem {
             SPItem::Methodmap(_) => None,
             SPItem::Property(item) => Some(item.parent.upgrade().unwrap()),
             SPItem::Typedef(_) => None,
+            SPItem::Typeset(_) => None,
             SPItem::Include(_) => None,
         }
     }
@@ -211,6 +217,7 @@ impl SPItem {
             SPItem::Methodmap(item) => item.name.clone(),
             SPItem::Property(item) => item.type_.clone(),
             SPItem::Typedef(item) => item.type_.clone(),
+            SPItem::Typeset(item) => item.name.clone(),
             SPItem::Include(_) => "".to_string(),
         }
     }
@@ -226,6 +233,7 @@ impl SPItem {
             SPItem::Methodmap(item) => Some(item.description.clone()),
             SPItem::Property(item) => Some(item.description.clone()),
             SPItem::Typedef(item) => Some(item.description.clone()),
+            SPItem::Typeset(item) => Some(item.description.clone()),
             SPItem::Include(_) => None,
         }
     }
@@ -241,6 +249,7 @@ impl SPItem {
             SPItem::Methodmap(item) => item.uri.clone(),
             SPItem::Property(item) => item.uri.clone(),
             SPItem::Typedef(item) => item.uri.clone(),
+            SPItem::Typeset(item) => item.uri.clone(),
             SPItem::Include(item) => item.uri.clone(),
         }
     }
@@ -256,6 +265,7 @@ impl SPItem {
             SPItem::Methodmap(item) => Some(&item.references),
             SPItem::Property(item) => Some(&item.references),
             SPItem::Typedef(item) => Some(&item.references),
+            SPItem::Typeset(item) => Some(&item.references),
             SPItem::Include(_) => None,
         }
     }
@@ -266,6 +276,7 @@ impl SPItem {
             SPItem::Enum(item) => Some(&item.children),
             SPItem::EnumStruct(item) => Some(&item.children),
             SPItem::Methodmap(item) => Some(&item.children),
+            SPItem::Typeset(item) => Some(&item.children),
             _ => None,
         }
     }
@@ -286,6 +297,7 @@ impl SPItem {
             SPItem::Methodmap(item) => item.references.push(reference),
             SPItem::Property(item) => item.references.push(reference),
             SPItem::Typedef(item) => item.references.push(reference),
+            SPItem::Typeset(item) => item.references.push(reference),
             SPItem::Include(_) => {}
         }
     }
@@ -296,6 +308,7 @@ impl SPItem {
             SPItem::Enum(item) => item.children.push(child),
             SPItem::EnumStruct(item) => item.children.push(child),
             SPItem::Methodmap(item) => item.children.push(child),
+            SPItem::Typeset(item) => item.children.push(child),
             _ => {}
         }
     }
@@ -311,6 +324,7 @@ impl SPItem {
             SPItem::Methodmap(item) => item.references = references,
             SPItem::Property(item) => item.references = references,
             SPItem::Typedef(item) => item.references = references,
+            SPItem::Typeset(item) => item.references = references,
             SPItem::Include(_) => {}
         }
     }
@@ -382,6 +396,13 @@ impl SPItem {
                 }
                 res
             }
+            SPItem::Typeset(item) => {
+                let mut res = vec![];
+                if let Some(completion) = item.to_completion(params) {
+                    res.push(completion)
+                }
+                res
+            }
             SPItem::Include(item) => {
                 let mut res = vec![];
                 if let Some(completion) = item.to_completion(params) {
@@ -403,6 +424,7 @@ impl SPItem {
             SPItem::Methodmap(item) => item.to_hover(params),
             SPItem::Property(item) => item.to_hover(params),
             SPItem::Typedef(item) => item.to_hover(params),
+            SPItem::Typeset(item) => item.to_hover(params),
             SPItem::Include(item) => item.to_hover(params),
         }
     }
@@ -418,6 +440,7 @@ impl SPItem {
             SPItem::Methodmap(item) => item.to_definition(params),
             SPItem::Property(item) => item.to_definition(params),
             SPItem::Typedef(item) => item.to_definition(params),
+            SPItem::Typeset(item) => item.to_definition(params),
             SPItem::Include(item) => item.to_definition(params),
         }
     }
@@ -431,8 +454,9 @@ impl SPItem {
             SPItem::EnumMember(item) => item.to_document_symbol(),
             SPItem::EnumStruct(item) => item.to_document_symbol(),
             SPItem::Methodmap(item) => item.to_document_symbol(),
-            SPItem::Typedef(item) => item.to_document_symbol(),
             SPItem::Property(item) => item.to_document_symbol(),
+            SPItem::Typedef(item) => item.to_document_symbol(),
+            SPItem::Typeset(item) => item.to_document_symbol(),
             SPItem::Include(_) => None,
         }
     }
