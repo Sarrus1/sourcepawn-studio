@@ -12,9 +12,13 @@ use crate::{document::Document, environment::Environment, utils::read_to_string_
 
 #[derive(Clone)]
 pub struct Store {
-    /// Any documents the server has handled, indexed by their URL
+    /// Any documents the server has handled, indexed by their URL.
     pub documents: HashMap<Arc<Url>, Document>,
+
     pub environment: Environment,
+
+    /// Whether this is the first parse of the documents (starting the server).
+    pub first_parse: bool,
 }
 
 impl Store {
@@ -23,6 +27,7 @@ impl Store {
         Store {
             documents: HashMap::new(),
             environment,
+            first_parse: true,
         }
     }
 
@@ -93,7 +98,10 @@ impl Store {
         document
             .parse(self, parser)
             .expect("Couldn't parse document");
-        document.find_references(self);
+        if !self.first_parse {
+            // Don't try to find references yet, all the tokens might not be referenced.
+            document.find_references(self);
+        }
 
         Ok(document)
     }
@@ -108,6 +116,12 @@ impl Store {
                 .handle_open_document(document.uri, document.text, parser)
                 .expect("Couldn't parse file");
             self.read_unscanned_imports(&document.includes, parser)
+        }
+    }
+
+    pub fn find_all_references(&self) {
+        for document in self.documents.values() {
+            document.find_references(&self);
         }
     }
 }

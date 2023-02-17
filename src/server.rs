@@ -298,6 +298,7 @@ impl Server {
     fn reparse_all(&mut self) -> anyhow::Result<()> {
         self.store.parse_directories();
         let main_uri = self.store.environment.options.get_main_path_uri();
+        let now = Instant::now();
         if main_uri.is_none() {
             // TODO: Send a warning for a potential invalid main path here.
             let mut uris: Vec<Url> = vec![];
@@ -312,17 +313,18 @@ impl Server {
                         .unwrap();
                 }
             }
-            return Ok(());
+        } else {
+            let main_uri = main_uri.unwrap();
+            let document = self
+                .store
+                .get(&main_uri)
+                .expect("Main Path does not exist.");
+            self.store
+                .handle_open_document(document.uri, document.text, &mut self.parser)
+                .expect("Couldn't parse file");
         }
-        let main_uri = main_uri.unwrap();
-        let document = self
-            .store
-            .get(&main_uri)
-            .expect("Main Path does not exist.");
-        let now = Instant::now();
-        self.store
-            .handle_open_document(document.uri, document.text, &mut self.parser)
-            .expect("Couldn't parse file");
+        self.store.find_all_references();
+        self.store.first_parse = false;
         eprintln!("Reparsed all the files in {:.2?}", now.elapsed());
 
         Ok(())
