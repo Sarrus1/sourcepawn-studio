@@ -99,7 +99,7 @@ impl Document {
                     parse_variable(self, &mut node, None)?;
                 }
                 "preproc_include" | "preproc_tryinclude" => {
-                    parse_include(&store.environment, &store.documents, self, &mut node)?;
+                    parse_include(store, self, &mut node)?;
                 }
                 "enum" => {
                     parse_enum(self, &mut node, &mut walker)?;
