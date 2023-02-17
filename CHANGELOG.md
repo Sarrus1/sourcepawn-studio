@@ -1,5 +1,16 @@
 ## Release Notes
 
+## [0.5.1]
+
+### Added
+
+-   Added notifications when a setting is invalid.
+
+### Fixed
+
+-   Fixed changes in IncludeDirectories not being detected.
+-   Fixed some references not being resolved on the initial parse.
+
 ## [0.5.0]
 
 ### Added
