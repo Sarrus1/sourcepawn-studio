@@ -296,11 +296,15 @@ impl Server {
     }
 
     fn reparse_all(&mut self) -> anyhow::Result<()> {
-        self.store.parse_directories();
+        self.parse_directories();
         let main_uri = self.store.environment.options.get_main_path_uri();
         let now = Instant::now();
         if main_uri.is_none() {
-            // TODO: Send a warning for a potential invalid main path here.
+            self.client
+                .send_notification::<ShowMessage>(ShowMessageParams {
+                    message: format!("Invalid MaintPath setting.\nPlease make sure it is valid."),
+                    typ: MessageType::WARNING,
+                })?;
             let mut uris: Vec<Url> = vec![];
             for uri in self.store.documents.keys() {
                 uris.push(uri.as_ref().clone());
@@ -328,6 +332,25 @@ impl Server {
         eprintln!("Reparsed all the files in {:.2?}", now.elapsed());
 
         Ok(())
+    }
+
+    fn parse_directories(&mut self) {
+        let directories = self.store.environment.options.includes_directories.clone();
+        for path in directories {
+            if !path.exists() {
+                self.client
+                    .send_notification::<ShowMessage>(ShowMessageParams {
+                        message: format!(
+                            "Invalid IncludeDirectory path: {}",
+                            path.to_str().unwrap_or_default()
+                        ),
+                        typ: MessageType::WARNING,
+                    })
+                    .unwrap_or_default();
+                continue;
+            }
+            self.store.find_documents(&path);
+        }
     }
 
     /// Check if a [uri](Url) is know or not. If it is not, scan its parent folder and analyze all the documents that

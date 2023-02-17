@@ -78,16 +78,6 @@ impl Store {
         }
     }
 
-    pub fn parse_directories(&mut self) {
-        let directories = self.environment.options.includes_directories.clone();
-        for path in directories {
-            if !path.exists() {
-                continue;
-            }
-            self.find_documents(&path);
-        }
-    }
-
     pub fn handle_open_document(
         &mut self,
         uri: Arc<Url>,
