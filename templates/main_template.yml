@@ -35,7 +35,7 @@ jobs:
 
       - name: Changelog
         id: changelog
-        uses: mindsers/changelog-reader-action@v2.0.0
+        uses: mindsers/changelog-reader-action@v2
 
       - name: Install zip
         uses: montudor/action-zip@v1
