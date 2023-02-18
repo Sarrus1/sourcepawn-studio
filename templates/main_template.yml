@@ -42,8 +42,7 @@ jobs:
 
       - name: Zip output
         run: |
-          cd plugins
-          zip -qq -r ${plugin_name}-${{ steps.setup_sp.outputs.plugin-version }}.zip ${plugin_name}.smx
+          zip -qq -y -r ${{ github.event.repository.name }}-${{ steps.setup_sp.outputs.plugin-version }}.zip configs plugins scripting extensions gamedata translations data
         working-directory: ${{ env.SCRIPTS_PATH }}
 
       - name: Create Release
@@ -53,7 +52,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: v${{ steps.setup_sp.outputs.plugin-version }}
-          artifacts: "./plugins/${plugin_name}-${{ steps.setup_sp.outputs.plugin-version }}.zip"
+          artifacts: "${{ github.event.repository.name }}-${{ steps.setup_sp.outputs.plugin-version }}.zip"
           body: ${{ steps.changelog.outputs.changes }}
           draft: false
           allowUpdates: true
