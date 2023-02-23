@@ -6,7 +6,7 @@ use sourcepawn_lsp::Server;
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     // Note that  we must have our logging only write out to stderr.
-    eprintln!("starting generic LSP server");
+    eprintln!("Starting SourcePawn server");
     env::set_var("RUST_BACKTRACE", "1");
 
     // Create the transport. Includes the stdio (stdin and stdout) versions but this could
@@ -16,6 +16,6 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     io_threads.join()?;
 
     // Shut down gracefully.
-    eprintln!("shutting down server");
+    eprintln!("Shutting down SourcePawn server");
     Ok(())
 }
