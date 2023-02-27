@@ -33,7 +33,7 @@ impl Document {
     }
 }
 
-fn purge_references(item: &Arc<RwLock<SPItem>>, uri: &Arc<Url>) {
+pub fn purge_references(item: &Arc<RwLock<SPItem>>, uri: &Arc<Url>) {
     let mut new_references = vec![];
     let mut item_lock = item.write().unwrap();
     let old_references = item_lock.references();

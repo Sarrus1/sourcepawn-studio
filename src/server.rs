@@ -23,6 +23,7 @@ use lsp_types::{
     SignatureHelpOptions, SignatureHelpParams, TextDocumentSyncCapability, TextDocumentSyncKind,
     Url, WorkDoneProgressOptions,
 };
+use notify::Watcher;
 use serde::Serialize;
 use threadpool::ThreadPool;
 use tree_sitter::Parser;
@@ -33,6 +34,7 @@ use crate::providers;
 #[derive(Debug)]
 enum InternalMessage {
     SetOptions(Arc<Options>),
+    FileEvent(notify::Event),
 }
 
 #[derive(Clone)]
@@ -207,6 +209,29 @@ impl Server {
         for folder in params.workspace_folders.unwrap_or_default() {
             self.store
                 .find_documents(&folder.uri.to_file_path().unwrap())
+        }
+
+        Ok(())
+    }
+
+    fn register_file_watching(&mut self) -> anyhow::Result<()> {
+        // TODO: Check if this is enough to delete the watcher
+        self.store.watcher = None;
+
+        let tx = self.internal_tx.clone();
+        let watcher = notify::recommended_watcher(move |ev: Result<_, _>| {
+            if let Ok(ev) = ev {
+                let _ = tx.send(InternalMessage::FileEvent(ev));
+            }
+        });
+
+        if let Ok(mut watcher) = watcher {
+            for include_dir_path in self.store.environment.options.includes_directories.iter() {
+                if include_dir_path.exists() {
+                    watcher.watch(include_dir_path, notify::RecursiveMode::Recursive)?;
+                }
+            }
+            self.store.register_watcher(watcher);
         }
 
         Ok(())
@@ -532,6 +557,61 @@ impl Server {
         Ok(())
     }
 
+    fn handle_file_event(&mut self, event: notify::Event) {
+        match event.kind {
+            notify::EventKind::Create(_) => {
+                for path in event.paths {
+                    let _ = self.store.load(path, &mut self.parser);
+                }
+            }
+            notify::EventKind::Modify(modify_event) => {
+                let uri = Url::from_file_path(event.paths[0].clone());
+                if uri.is_err() {
+                    return;
+                }
+                let mut uri = uri.unwrap();
+                utils::normalize_uri(&mut uri);
+                match modify_event {
+                    notify::event::ModifyKind::Name(_) => {
+                        // TODO: Handle folder name changes.
+                        let uri = Url::from_file_path(event.paths[0].clone());
+                        if uri.is_err() {
+                            return;
+                        }
+                        let mut uri = uri.unwrap();
+                        utils::normalize_uri(&mut uri);
+                        match self.store.get(&uri) {
+                            Some(_) => {
+                                self.store.remove(&uri);
+                            }
+                            None => {
+                                let _ = self
+                                    .store
+                                    .load(uri.to_file_path().unwrap(), &mut self.parser);
+                            }
+                        }
+                    }
+                    _ => {
+                        if let Some(document) = self.store.documents.get(&uri) {
+                            let _ = self.store.handle_open_document(
+                                Arc::new(uri),
+                                document.text.clone(),
+                                &mut self.parser,
+                            );
+                        }
+                    }
+                }
+            }
+            notify::EventKind::Remove(_) => {
+                for mut uri in event.paths.iter().flat_map(Url::from_file_path) {
+                    utils::normalize_uri(&mut uri);
+                    self.store.remove(&uri);
+                }
+            }
+            notify::EventKind::Any | notify::EventKind::Access(_) | notify::EventKind::Other => {}
+        };
+    }
+
     fn process_messages(&mut self) -> anyhow::Result<()> {
         loop {
             crossbeam_channel::select! {
@@ -575,7 +655,11 @@ impl Server {
                             InternalMessage::SetOptions(options) => {
                                 self.config_pulled = true;
                                 self.store.environment.options = options;
+                                self.register_file_watching()?;
                                 self.reparse_all().expect("Failed to reparse all files.");
+                            }
+                            InternalMessage::FileEvent(event) => {
+                                self.handle_file_event(event);
                             }
                         }
                 }

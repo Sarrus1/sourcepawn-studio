@@ -29,34 +29,18 @@ pub fn parse_include(
         return Ok(());
     }
     let mut path = path[1..path.len() - 1].trim().to_string();
-    let mut include_uri = resolve_import(
+    let include_uri = resolve_import(
         &store.environment.options.includes_directories,
         &mut path,
         &store.documents,
         &document.uri,
     );
     if include_uri.is_none() {
-        // Reparse all the unread include directories to look for the missing include.
-        // If the user changes the name of an include outside of the scope of the editor
-        // (in the include directories for example), the server will not get notified, so
-        // we have to do the check manually.
-        // We do this check only if we detect a missing include, to avoid unneccessary OS calls.
-        let directories = store.environment.options.includes_directories.clone();
-        for path in directories {
-            if path.exists() {
-                store.find_documents(&path);
-            }
-        }
-        include_uri = resolve_import(
-            &store.environment.options.includes_directories,
-            &mut path,
-            &store.documents,
-            &document.uri,
-        );
-        if include_uri.is_none() {
-            return Ok(());
-        }
+        // The include was not found.
+        document.missing_includes.insert(path);
+        return Ok(());
     }
+
     let include_uri = include_uri.unwrap();
     document.includes.insert(include_uri.clone());
 

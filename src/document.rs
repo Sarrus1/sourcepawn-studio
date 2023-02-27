@@ -65,6 +65,8 @@ pub struct Document {
     pub parsed: bool,
     #[new(value = "vec![]")]
     pub tokens: Vec<Arc<Token>>,
+    #[new(value = "HashSet::new()")]
+    pub missing_includes: HashSet<String>,
 }
 
 pub struct Walker {
@@ -150,6 +152,81 @@ impl Document {
         }
 
         None
+    }
+
+    pub fn sp_items(&self) -> Vec<Arc<RwLock<SPItem>>> {
+        let mut sp_items = vec![];
+        for item in self.sp_items.iter() {
+            sp_items.push(item.clone());
+        }
+
+        sp_items
+    }
+
+    pub fn sp_items_flat(&self) -> Vec<Arc<RwLock<SPItem>>> {
+        let mut sp_items = vec![];
+        for item in self.sp_items.iter() {
+            sp_items.push(item.clone());
+            match &*item.read().unwrap() {
+                SPItem::Function(function_item) => {
+                    for child_item in function_item.children.iter() {
+                        sp_items.push(child_item.clone())
+                    }
+                }
+                SPItem::Enum(enum_item) => {
+                    for child_item in enum_item.children.iter() {
+                        sp_items.push(child_item.clone())
+                    }
+                }
+                SPItem::EnumStruct(es_item) => {
+                    for child_item in es_item.children.iter() {
+                        sp_items.push(child_item.clone());
+                        match &*child_item.read().unwrap() {
+                            SPItem::Function(method_item) => {
+                                for sub_child_item in method_item.children.iter() {
+                                    sp_items.push(sub_child_item.clone());
+                                }
+                            }
+                            SPItem::EnumMember(_)
+                            | SPItem::Variable(_)
+                            | SPItem::Property(_)
+                            | SPItem::Include(_)
+                            | SPItem::Methodmap(_)
+                            | SPItem::Enum(_)
+                            | SPItem::EnumStruct(_)
+                            | SPItem::Define(_) => {}
+                        }
+                    }
+                }
+                SPItem::Methodmap(mm_item) => {
+                    for child_item in mm_item.children.iter() {
+                        sp_items.push(child_item.clone());
+                        match &*child_item.read().unwrap() {
+                            SPItem::Function(method_item) => {
+                                for sub_child_item in method_item.children.iter() {
+                                    sp_items.push(sub_child_item.clone());
+                                }
+                            }
+                            SPItem::EnumMember(_)
+                            | SPItem::Property(_)
+                            | SPItem::Variable(_)
+                            | SPItem::Include(_)
+                            | SPItem::Methodmap(_)
+                            | SPItem::Enum(_)
+                            | SPItem::EnumStruct(_)
+                            | SPItem::Define(_) => {}
+                        }
+                    }
+                }
+                SPItem::Variable(_)
+                | SPItem::EnumMember(_)
+                | SPItem::Property(_)
+                | SPItem::Include(_)
+                | SPItem::Define(_) => {}
+            }
+        }
+
+        sp_items
     }
 }
 

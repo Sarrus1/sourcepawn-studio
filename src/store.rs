@@ -3,12 +3,15 @@ use std::{
     collections::{HashMap, HashSet},
     fs, io,
     path::PathBuf,
-    sync::Arc,
+    sync::{Arc, Mutex},
 };
 use tree_sitter::Parser;
 use walkdir::WalkDir;
 
-use crate::{document::Document, environment::Environment, utils::read_to_string_lossy};
+use crate::{
+    document::Document, environment::Environment, semantic_analyzer::purge_references,
+    spitem::SPItem, utils::read_to_string_lossy,
+};
 
 #[derive(Clone)]
 pub struct Store {
@@ -19,6 +22,8 @@ pub struct Store {
 
     /// Whether this is the first parse of the documents (starting the server).
     pub first_parse: bool,
+
+    pub watcher: Option<Arc<Mutex<notify::RecommendedWatcher>>>,
 }
 
 impl Store {
@@ -28,6 +33,7 @@ impl Store {
             documents: HashMap::new(),
             environment,
             first_parse: true,
+            watcher: None,
         }
     }
 
@@ -37,6 +43,40 @@ impl Store {
 
     pub fn get(&self, uri: &Url) -> Option<Document> {
         self.documents.get(uri).cloned()
+    }
+
+    pub fn remove(&mut self, uri: &Url) {
+        self.documents.remove(uri);
+        let uri_arc = Arc::new(uri.clone());
+        let path = uri.to_file_path().unwrap();
+        for document in self.documents.values_mut() {
+            if document.includes.contains(uri) {
+                // Consider the include to be missing.
+                document
+                    .missing_includes
+                    .insert(path.as_path().to_str().unwrap().to_string());
+            }
+            document.includes.remove(uri);
+            let mut sp_items = vec![];
+            // Purge references to the deleted file.
+            for item in document.sp_items.iter() {
+                purge_references(item, &uri_arc);
+                // Delete Include items.
+                match &*item.read().unwrap() {
+                    SPItem::Include(include_item) => {
+                        if uri.ne(&*include_item.include_uri) {
+                            sp_items.push(item.clone());
+                        }
+                    }
+                    _ => sp_items.push(item.clone()),
+                }
+            }
+            document.sp_items = sp_items;
+        }
+    }
+
+    pub fn register_watcher(&mut self, watcher: notify::RecommendedWatcher) {
+        self.watcher = Some(Arc::new(Mutex::new(watcher)));
     }
 
     pub fn load(&mut self, path: PathBuf, parser: &mut Parser) -> anyhow::Result<Option<Document>> {
@@ -49,8 +89,27 @@ impl Store {
         let data = fs::read(&path)?;
         let text = String::from_utf8_lossy(&data).into_owned();
         let document = self.handle_open_document(uri, text, parser)?;
+        self.resolve_missing_includes(parser);
 
         Ok(Some(document))
+    }
+
+    fn resolve_missing_includes(&mut self, parser: &mut Parser) {
+        let mut to_reload = HashSet::new();
+        for document in self.documents.values() {
+            for missing_include in document.missing_includes.iter() {
+                for uri in self.documents.keys() {
+                    if uri.as_str().contains(missing_include) {
+                        to_reload.insert(document.uri.clone());
+                    }
+                }
+            }
+        }
+        for uri in to_reload {
+            if let Some(document) = self.documents.get(&uri) {
+                let _ = self.handle_open_document(uri, document.text.clone(), parser);
+            }
+        }
     }
 
     pub fn find_documents(&mut self, base_path: &PathBuf) {

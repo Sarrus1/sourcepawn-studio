@@ -64,15 +64,11 @@ pub fn get_all_items(store: &Store, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
         if let Some(document) = store.documents.get(&main_path_uri) {
             get_included_files(store, document, &mut includes);
             for include in includes.iter() {
-                let document = store.documents.get(include).unwrap();
-                for item in document.sp_items.iter() {
-                    all_items.push(item.clone());
+                if let Some(document) = store.documents.get(include) {
                     if flat {
-                        if let Some(children) = item.read().unwrap().children() {
-                            for child in children {
-                                all_items.push(child.clone());
-                            }
-                        }
+                        all_items.extend(document.sp_items_flat());
+                    } else {
+                        all_items.extend(document.sp_items())
                     }
                 }
             }
