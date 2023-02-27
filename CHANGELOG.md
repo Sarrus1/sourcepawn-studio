@@ -1,5 +1,13 @@
 ## Release Notes
 
+## [0.6.0]
+
+### Added
+
+-   Added `typedef` and `typeset` support.
+-   Added callback completions.
+-   Added file rename/deletion support in includeDirectories.
+
 ## [0.5.1]
 
 ### Added
