@@ -124,9 +124,9 @@ impl Document {
             }
         }
         self.parsed = true;
+        self.extract_tokens(root_node);
         store.documents.insert(self.uri.clone(), self.clone());
         store.read_unscanned_imports(&self.includes, parser);
-        self.extract_tokens(root_node);
 
         Ok(())
     }
