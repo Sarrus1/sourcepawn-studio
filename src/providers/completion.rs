@@ -3,8 +3,8 @@ use lsp_types::{CompletionList, CompletionParams};
 use crate::{providers::completion::include::get_include_completions, spitem::get_all_items};
 
 use self::{
-    context::is_method_call,
-    getters::{get_method_completions, get_non_method_completions},
+    context::{is_callback_completion_request, is_method_call},
+    getters::{get_callback_completions, get_method_completions, get_non_method_completions},
     include::is_include_statement,
 };
 
@@ -25,6 +25,9 @@ pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<
     let include_st = is_include_statement(&sub_line);
     if let Some(include_st) = include_st {
         return get_include_completions(request, include_st);
+    }
+    if is_callback_completion_request(request.params.context.clone()) {
+        return get_callback_completions(all_items, position);
     }
 
     if !is_method_call(&sub_line) {

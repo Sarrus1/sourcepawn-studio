@@ -3,12 +3,12 @@ use std::{
     sync::{Arc, RwLock, Weak},
 };
 
-use super::Location;
+use super::{parameter::Parameter, Location};
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, DocumentSymbol,
-    Documentation, GotoDefinitionParams, Hover, HoverContents, HoverParams, LanguageString,
-    LocationLink, MarkedString, MarkupContent, ParameterInformation, Range, SignatureInformation,
-    SymbolKind, SymbolTag, Url,
+    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, CompletionTextEdit,
+    DocumentSymbol, Documentation, GotoDefinitionParams, Hover, HoverContents, HoverParams,
+    InsertTextFormat, LanguageString, LocationLink, MarkedString, MarkupContent,
+    ParameterInformation, Range, SignatureInformation, SymbolKind, SymbolTag, TextEdit, Url,
 };
 
 use crate::providers::hover::description::Description;
@@ -50,7 +50,7 @@ pub struct FunctionItem {
     pub references: Vec<Location>,
 
     /// Parameters of the function.
-    pub params: Vec<Arc<RwLock<SPItem>>>,
+    pub params: Vec<Arc<RwLock<Parameter>>>,
 
     /// Parent of the method. None if it's a first class function.
     pub parent: Option<Weak<RwLock<SPItem>>>,
@@ -141,13 +141,10 @@ impl FunctionItem {
     pub(crate) fn to_signature_help(&self, parameter_count: u32) -> Option<SignatureInformation> {
         let mut parameters: Vec<ParameterInformation> = vec![];
         for param in self.params.iter() {
-            let param_ = param.read().unwrap();
+            let param = param.read().unwrap();
             parameters.push(ParameterInformation {
-                label: lsp_types::ParameterLabel::Simple(param_.name()),
-                documentation: match param_.description() {
-                    Some(description) => Some(Documentation::String(description.text)),
-                    None => None,
-                },
+                label: lsp_types::ParameterLabel::Simple(param.name.to_string()),
+                documentation: Some(Documentation::String(param.description.text.to_string())),
             })
         }
         Some(SignatureInformation {
@@ -196,6 +193,64 @@ impl FunctionItem {
                     .filter_map(|child| child.read().unwrap().to_document_symbol())
                     .collect(),
             ),
+        })
+    }
+
+    /// Return a snippet [CompletionItem] from a [FunctionItem] for a callback completion.
+    ///
+    /// # Arguments
+    ///
+    /// * `range` - [Range] of the "$" that will be replaced.
+    pub(crate) fn to_snippet_completion(&self, range: Range) -> Option<CompletionItem> {
+        if self.definition_type != FunctionDefinitionType::Forward {
+            // Only forwards can implement a callback.
+            return None;
+        }
+
+        let mut tags = vec![];
+        if self.is_deprecated() {
+            tags.push(CompletionItemTag::DEPRECATED);
+        }
+
+        let mut snippet_text = format!("public {} {}(", self.type_, self.name);
+        for (i, parameter) in self.params.iter().enumerate() {
+            let parameter = parameter.read().unwrap();
+            if parameter.is_const {
+                snippet_text.push_str("const ");
+            }
+            if let Some(type_) = &parameter.type_ {
+                snippet_text.push_str(&type_.name);
+                if type_.is_pointer {
+                    snippet_text.push('&')
+                }
+                for dimension in type_.dimensions.iter() {
+                    snippet_text.push_str(dimension);
+                }
+                snippet_text.push(' ');
+            }
+            snippet_text.push_str(&format!("${{{}:{}}}", i + 1, parameter.name));
+            for dimension in parameter.dimensions.iter() {
+                snippet_text.push_str(dimension);
+            }
+            if i < self.params.len() - 1 {
+                snippet_text.push_str(", ");
+            }
+        }
+        snippet_text.push_str(")\n{\n\t$0\n}");
+
+        Some(CompletionItem {
+            label: self.name.to_string(),
+            filter_text: Some(format!("${}", self.name)),
+            kind: Some(CompletionItemKind::FUNCTION),
+            tags: Some(tags),
+            detail: Some(self.type_.to_string()),
+            text_edit: Some(CompletionTextEdit::Edit(TextEdit {
+                range,
+                new_text: snippet_text,
+            })),
+            deprecated: Some(self.is_deprecated()),
+            insert_text_format: Some(InsertTextFormat::SNIPPET),
+            ..Default::default()
         })
     }
 

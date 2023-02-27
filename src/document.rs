@@ -20,6 +20,8 @@ use crate::{
         function_parser::parse_function,
         include_parser::parse_include,
         methodmap_parser::parse_methodmap,
+        typedef_parser::parse_typedef,
+        typeset_parser::parse_typeset,
         variable_parser::parse_variable,
     },
     providers::hover::description::Description,
@@ -112,8 +114,8 @@ impl Document {
                 "methodmap" => {
                     parse_methodmap(self, &mut node, &mut walker)?;
                 }
-                "typedef" => {}
-                "typeset" => {}
+                "typedef" => parse_typedef(self, &node, &mut walker)?,
+                "typeset" => parse_typeset(self, &node, &mut walker)?,
                 "preproc_macro" => {}
                 "enum_struct" => parse_enum_struct(self, &mut node, &mut walker)?,
                 "comment" => {
@@ -188,6 +190,8 @@ impl Document {
                                 }
                             }
                             SPItem::EnumMember(_)
+                            | SPItem::Typedef(_)
+                            | SPItem::Typeset(_)
                             | SPItem::Variable(_)
                             | SPItem::Property(_)
                             | SPItem::Include(_)
@@ -208,6 +212,8 @@ impl Document {
                                 }
                             }
                             SPItem::EnumMember(_)
+                            | SPItem::Typedef(_)
+                            | SPItem::Typeset(_)
                             | SPItem::Property(_)
                             | SPItem::Variable(_)
                             | SPItem::Include(_)
@@ -218,7 +224,13 @@ impl Document {
                         }
                     }
                 }
+                SPItem::Typeset(ts_item) => {
+                    for child_item in ts_item.children.iter() {
+                        sp_items.push(child_item.clone())
+                    }
+                }
                 SPItem::Variable(_)
+                | SPItem::Typedef(_)
                 | SPItem::EnumMember(_)
                 | SPItem::Property(_)
                 | SPItem::Include(_)

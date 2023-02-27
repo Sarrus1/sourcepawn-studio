@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use lsp_types::{CompletionItem, CompletionList, CompletionParams, Position};
+use lsp_types::{CompletionItem, CompletionList, CompletionParams, Position, Range};
 
 use crate::{
     providers::FeatureRequest,
@@ -24,6 +24,47 @@ pub(super) fn get_non_method_completions(
     for sp_item in all_items.iter() {
         let res = sp_item.read().unwrap().to_completions(&params, false);
         items.extend(res);
+    }
+
+    Some(CompletionList {
+        items,
+        ..Default::default()
+    })
+}
+
+/// Return a [CompletionList](lsp_types::CompletionList) of all callback completions.
+///
+/// # Arguments
+///
+/// * `all_items` - Vector of [SPItem](crate::spitem::SPItem).
+/// * `position` - [Position] of the completion request.
+pub(super) fn get_callback_completions(
+    all_items: Vec<Arc<RwLock<SPItem>>>,
+    position: Position,
+) -> Option<CompletionList> {
+    // This range is used to replace the "$" that has been inserted as a trigger for the completion.
+    let range = Range::new(
+        Position::new(position.line, position.character - 1),
+        Position::new(position.line, position.character + 1),
+    );
+    let mut items = vec![];
+    for item in all_items.iter() {
+        match &*item.read().unwrap() {
+            SPItem::Typedef(typedef_item) => {
+                if let Some(completion) = typedef_item.to_snippet_completion(range) {
+                    items.push(completion);
+                }
+            }
+            SPItem::Typeset(typeset_item) => {
+                items.extend(typeset_item.to_snippet_completion(range))
+            }
+            SPItem::Function(function_item) => {
+                if let Some(completion) = function_item.to_snippet_completion(range) {
+                    items.push(completion);
+                }
+            }
+            _ => {}
+        }
     }
 
     Some(CompletionList {

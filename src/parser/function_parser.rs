@@ -12,13 +12,14 @@ use crate::{
     providers::hover::description::Description,
     spitem::{
         function_item::{FunctionDefinitionType, FunctionItem, FunctionVisibility},
+        parameter::Parameter,
         variable_item::{VariableItem, VariableStorageClass},
         SPItem,
     },
     utils::ts_range_to_lsp_range,
 };
 
-use super::{variable_parser::parse_variable, VARIABLE_QUERY};
+use super::{typedef_parser::parse_argument_type, variable_parser::parse_variable, VARIABLE_QUERY};
 
 pub fn parse_function(
     document: &mut Document,
@@ -33,7 +34,7 @@ pub fn parse_function(
     // Visibility of the function (public, static, stock)
     let mut visibility_node: Option<Node> = None;
     // Parameters of the declaration
-    let mut params_node: Option<Node> = None;
+    let mut argument_declarations_node: Option<Node> = None;
     // Type of function definition ("native" or "forward")
     let mut definition_type_node: Option<Node> = None;
 
@@ -51,7 +52,7 @@ pub fn parse_function(
                 visibility_node = Some(child);
             }
             "argument_declarations" => {
-                params_node = Some(child);
+                argument_declarations_node = Some(child);
             }
             "function_definition_type" => {
                 definition_type_node = Some(child);
@@ -123,7 +124,7 @@ pub fn parse_function(
             document,
             name,
             type_,
-            params_node,
+            argument_declarations_node,
             visibility_node,
             definition_type_node,
         )?,
@@ -147,7 +148,7 @@ pub fn parse_function(
     read_function_parameters(
         document,
         documentation,
-        params_node,
+        argument_declarations_node,
         document.text.to_string(),
         function_item.clone(),
     )?;
@@ -216,53 +217,62 @@ fn read_body_variables(
 }
 
 fn read_function_parameters(
-    file_item: &mut Document,
+    document: &mut Document,
     documentation: Description,
-    params_node: Option<Node>,
+    argument_declarations_node: Option<Node>,
     text: String,
     function_item: Arc<RwLock<SPItem>>,
 ) -> Result<(), Utf8Error> {
-    if params_node.is_none() {
+    if argument_declarations_node.is_none() {
         return Ok(());
     }
-    let params_node = params_node.unwrap();
-    let mut cursor = params_node.walk();
-    for child in params_node.children(&mut cursor) {
-        let kind = child.kind();
-        if kind != "argument_declaration" {
+
+    let argument_declarations_node = argument_declarations_node.unwrap();
+    let mut cursor = argument_declarations_node.walk();
+    for child in argument_declarations_node.children(&mut cursor) {
+        if child.kind() != "argument_declaration" {
             continue;
         }
         let name_node = child.child_by_field_name("name");
         let type_node = child.child_by_field_name("type");
+        let mut is_const = false;
+        let mut dimensions = vec![];
         let mut storage_class: Vec<VariableStorageClass> = vec![];
         let mut sub_cursor = child.walk();
         for sub_child in child.children(&mut sub_cursor) {
-            let sub_child_text = sub_child.utf8_text(text.as_bytes())?;
-            if sub_child_text == "const" {
-                storage_class.push(VariableStorageClass::Const);
+            match sub_child.kind() {
+                "const" => {
+                    is_const = true;
+                    storage_class.push(VariableStorageClass::Const);
+                }
+                "dimension" | "fixed_dimension" => {
+                    let dimension = sub_child.utf8_text(text.as_bytes())?;
+                    dimensions.push(dimension.to_string());
+                }
+                _ => {}
             }
         }
         let name_node = name_node.unwrap();
-        let name = name_node.utf8_text(file_item.text.as_bytes())?;
+        let name = name_node.utf8_text(document.text.as_bytes())?;
 
         let type_ = match type_node {
-            Some(type_node) => type_node.utf8_text(file_item.text.as_bytes())?,
+            Some(type_node) => type_node.utf8_text(document.text.as_bytes())?,
             None => "",
         };
         let detail = child.utf8_text(text.as_bytes())?;
-
+        let description = Description {
+            text: match extract_param_doc(name, &documentation) {
+                Some(text) => text,
+                None => "".to_string(),
+            },
+            deprecated: None,
+        };
         let variable_item = VariableItem {
             name: name.to_string(),
             type_: type_.to_string(),
             range: ts_range_to_lsp_range(&name_node.range()),
-            description: Description {
-                text: match extract_param_doc(name, &documentation) {
-                    Some(text) => text,
-                    None => "".to_string(),
-                },
-                deprecated: None,
-            },
-            uri: file_item.uri.clone(),
+            description: description.clone(),
+            uri: document.uri.clone(),
             detail: detail.to_string(),
             visibility: vec![],
             storage_class,
@@ -270,17 +280,25 @@ fn read_function_parameters(
             references: vec![],
         };
         let variable_item = Arc::new(RwLock::new(SPItem::Variable(variable_item)));
+        function_item.write().unwrap().push_child(variable_item);
+
+        let parameter = Parameter {
+            name: name.to_string(),
+            is_const,
+            type_: parse_argument_type(document, type_node),
+            description,
+            dimensions,
+        };
         function_item
             .write()
             .unwrap()
-            .push_param(variable_item.clone());
-        function_item.write().unwrap().push_child(variable_item);
+            .push_param(Arc::new(RwLock::new(parameter)));
     }
 
     Ok(())
 }
 
-fn extract_param_doc(name: &str, documentation: &Description) -> Option<String> {
+pub(crate) fn extract_param_doc(name: &str, documentation: &Description) -> Option<String> {
     let re = Regex::new(&format!("@param\\s+(?:\\b{}\\b)([^@]+)", name)).unwrap();
     if let Some(caps) = re.captures(&documentation.text) {
         if let Some(text) = caps.get(1) {
