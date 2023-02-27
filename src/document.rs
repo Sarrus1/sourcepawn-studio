@@ -190,6 +190,8 @@ impl Document {
                                 }
                             }
                             SPItem::EnumMember(_)
+                            | SPItem::Typedef(_)
+                            | SPItem::Typeset(_)
                             | SPItem::Variable(_)
                             | SPItem::Property(_)
                             | SPItem::Include(_)
@@ -210,6 +212,8 @@ impl Document {
                                 }
                             }
                             SPItem::EnumMember(_)
+                            | SPItem::Typedef(_)
+                            | SPItem::Typeset(_)
                             | SPItem::Property(_)
                             | SPItem::Variable(_)
                             | SPItem::Include(_)
@@ -220,7 +224,13 @@ impl Document {
                         }
                     }
                 }
+                SPItem::Typeset(ts_item) => {
+                    for child_item in ts_item.children.iter() {
+                        sp_items.push(child_item.clone())
+                    }
+                }
                 SPItem::Variable(_)
+                | SPItem::Typedef(_)
                 | SPItem::EnumMember(_)
                 | SPItem::Property(_)
                 | SPItem::Include(_)
