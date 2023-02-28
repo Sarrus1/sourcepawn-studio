@@ -1,6 +1,6 @@
 use crate::{
-    capabilities::ClientCapabilitiesExt, dispatch, options::Options, providers::FeatureRequest,
-    store::Store, utils,
+    capabilities::ClientCapabilitiesExt, dispatch, lsp_ext, options::Options,
+    providers::FeatureRequest, store::Store, utils,
 };
 use std::{path::PathBuf, sync::Arc, time::Instant};
 
@@ -117,6 +117,7 @@ pub struct Server {
     pool: ThreadPool,
     parser: Parser,
     config_pulled: bool,
+    indexing: bool,
 }
 
 impl Server {
@@ -136,6 +137,7 @@ impl Server {
             pool: threadpool::Builder::new().build(),
             parser,
             config_pulled: false,
+            indexing: false,
         }
     }
 
@@ -210,7 +212,24 @@ impl Server {
             self.store
                 .find_documents(&folder.uri.to_file_path().unwrap())
         }
+        self.send_status()?;
 
+        Ok(())
+    }
+
+    fn get_status(&self) -> lsp_ext::ServerStatusParams {
+        let status = lsp_ext::ServerStatusParams {
+            health: crate::lsp_ext::Health::Ok,
+            quiescent: !self.indexing,
+            message: None,
+        };
+
+        status
+    }
+
+    fn send_status(&self) -> anyhow::Result<()> {
+        self.client
+            .send_notification::<lsp_ext::ServerStatusNotification>(self.get_status())?;
         Ok(())
     }
 
@@ -321,6 +340,8 @@ impl Server {
     }
 
     fn reparse_all(&mut self) -> anyhow::Result<()> {
+        self.indexing = true;
+        self.send_status()?;
         self.parse_directories();
         let main_uri = self.store.environment.options.get_main_path_uri();
         let now = Instant::now();
@@ -355,6 +376,8 @@ impl Server {
         self.store.find_all_references();
         self.store.first_parse = false;
         eprintln!("Reparsed all the files in {:.2?}", now.elapsed());
+        self.indexing = false;
+        self.send_status()?;
 
         Ok(())
     }
