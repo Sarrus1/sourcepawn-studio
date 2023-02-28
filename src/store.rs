@@ -2,7 +2,7 @@ use lsp_types::Url;
 use std::{
     collections::{HashMap, HashSet},
     fs, io,
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{Arc, Mutex},
 };
 use tree_sitter::Parser;
@@ -86,6 +86,10 @@ impl Store {
             return Ok(Some(document));
         }
 
+        if !self.is_sourcepawn_file(&path) {
+            return Ok(None);
+        }
+
         let data = fs::read(&path)?;
         let text = String::from_utf8_lossy(&data).into_owned();
         let document = self.handle_open_document(uri, text, parser)?;
@@ -118,8 +122,7 @@ impl Store {
             .into_iter()
             .filter_map(|e| e.ok())
         {
-            let f_name = entry.file_name().to_string_lossy();
-            if f_name.ends_with(".sp") || f_name.ends_with(".inc") {
+            if self.is_sourcepawn_file(&entry.path()) {
                 let uri = Url::from_file_path(entry.path()).unwrap();
                 if self.documents.contains_key(&uri) {
                     continue;
@@ -183,5 +186,10 @@ impl Store {
         }
 
         children
+    }
+
+    fn is_sourcepawn_file(&self, path: &Path) -> bool {
+        let f_name = path.file_name().unwrap_or_default().to_string_lossy();
+        f_name.ends_with(".sp") || f_name.ends_with(".inc")
     }
 }
