@@ -23,7 +23,7 @@ import {
 } from "./Commands/installLanguageServer";
 import { migrateSettings } from "./spUtils";
 
-let client: LanguageClient;
+export let client: LanguageClient;
 
 function makeCommand() {
   return join(

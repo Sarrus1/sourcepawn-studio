@@ -17,6 +17,7 @@ import {
 import axios from "axios";
 import unzipper from "unzipper";
 import { execSync } from "child_process";
+import { client } from "../spIndex";
 
 export async function run(args: any) {
   const lspPath = join(
@@ -44,6 +45,7 @@ export async function run(args: any) {
       return downloadLanguageServer(version, progress, token);
     }
   );
+  client.restart();
   return 0;
 }
 
