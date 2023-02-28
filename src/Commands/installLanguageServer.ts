@@ -45,7 +45,9 @@ export async function run(args: any) {
       return downloadLanguageServer(version, progress, token);
     }
   );
-  client.restart();
+  if (client) {
+    client.restart();
+  }
   return 0;
 }
 

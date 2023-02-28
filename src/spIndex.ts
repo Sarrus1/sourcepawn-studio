@@ -55,10 +55,8 @@ async function checkForLanguageServerUpdate(context: ExtensionContext) {
   ) {
     return;
   }
-  await client.stop();
   await installLanguageServerCommand(undefined);
   context.globalState.update("language_server_version", latestVersion);
-  client.start();
 }
 
 export async function activate(context: ExtensionContext) {
