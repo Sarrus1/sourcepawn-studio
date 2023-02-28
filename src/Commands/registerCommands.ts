@@ -1,4 +1,4 @@
-﻿import { commands, ExtensionContext } from "vscode";
+﻿import * as vscode from "vscode";
 import { run as CreateTaskCommand } from "./createTask";
 import { run as CreateScriptCommand } from "./createScript";
 import { run as CreateREADMECommand } from "./createREADME";
@@ -13,94 +13,135 @@ import { run as installSMCommand } from "./installSM";
 import { run as createChangelogCommand } from "./createCHANGELOG";
 import { run as changeSMApiCommand } from "./changeSMApi";
 import { run as installLanguageServerCommand } from "./installLanguageServer";
+import { CommandFactory } from "../ctx";
 
 /**
- * Register all the commands of the extension.
- * @param  {ExtensionContext} context The extension's context.
+ * Register all the vscode.commands of the extension.
+ * @param  {vscode.ExtensionContext} context The extension's context.
  * @returns void
  */
-export function registerSMCommands(context: ExtensionContext): void {
-  const createTask = commands.registerCommand(
+export function registerSMCommands(context: vscode.ExtensionContext): void {
+  const createTask = vscode.commands.registerCommand(
     "sourcepawn-vscode.createTask",
     CreateTaskCommand.bind(undefined)
   );
   context.subscriptions.push(createTask);
 
-  const createScript = commands.registerCommand(
+  const createScript = vscode.commands.registerCommand(
     "sourcepawn-vscode.createScript",
     CreateScriptCommand.bind(undefined)
   );
   context.subscriptions.push(createScript);
 
-  const createREADME = commands.registerCommand(
+  const createREADME = vscode.commands.registerCommand(
     "sourcepawn-vscode.createREADME",
     CreateREADMECommand.bind(undefined)
   );
   context.subscriptions.push(createREADME);
 
-  const createMaster = commands.registerCommand(
+  const createMaster = vscode.commands.registerCommand(
     "sourcepawn-vscode.createMaster",
     CreateMasterCommand.bind(undefined)
   );
   context.subscriptions.push(createMaster);
 
-  const createProject = commands.registerCommand(
+  const createProject = vscode.commands.registerCommand(
     "sourcepawn-vscode.createProject",
     CreateProjectCommand.bind(undefined)
   );
   context.subscriptions.push(createProject);
 
-  const compileSM = commands.registerCommand(
+  const compileSM = vscode.commands.registerCommand(
     "sourcepawn-vscode.compileSM",
     CompileSMCommand.bind(undefined)
   );
   context.subscriptions.push(compileSM);
 
-  const uploadToServer = commands.registerCommand(
+  const uploadToServer = vscode.commands.registerCommand(
     "sourcepawn-vscode.uploadToServer",
     UploadToServerCommand.bind(undefined)
   );
   context.subscriptions.push(uploadToServer);
 
-  const refreshPlugins = commands.registerCommand(
+  const refreshPlugins = vscode.commands.registerCommand(
     "sourcepawn-vscode.refreshPlugins",
     RefreshPluginsCommand.bind(undefined)
   );
   context.subscriptions.push(refreshPlugins);
 
-  const insertParameters = commands.registerCommand(
+  const insertParameters = vscode.commands.registerCommand(
     "sourcepawn-vscode.insertParameters",
     InsertParametersCommand.bind(undefined)
   );
   context.subscriptions.push(insertParameters);
 
-  const setFileAsMain = commands.registerCommand(
+  const setFileAsMain = vscode.commands.registerCommand(
     "sourcepawn-vscode.setFileAsMain",
     setFileAsMainCommand.bind(undefined)
   );
   context.subscriptions.push(setFileAsMain);
 
-  const installSM = commands.registerCommand(
+  const installSM = vscode.commands.registerCommand(
     "sourcepawn-vscode.installSM",
     installSMCommand.bind(undefined)
   );
   context.subscriptions.push(installSM);
 
-  const createChangelog = commands.registerCommand(
+  const createChangelog = vscode.commands.registerCommand(
     "sourcepawn-vscode.createChangelog",
     createChangelogCommand.bind(undefined)
   );
   context.subscriptions.push(createChangelog);
 
-  const changeSMApi = commands.registerCommand(
+  const changeSMApi = vscode.commands.registerCommand(
     "sourcepawn-vscode.changeSMApi",
     changeSMApiCommand.bind(undefined)
   );
   context.subscriptions.push(changeSMApi);
 
-  const installLanguageServer = commands.registerCommand(
+  const installLanguageServer = vscode.commands.registerCommand(
     "sourcepawn-vscode.installLanguageServer",
     installLanguageServerCommand.bind(undefined)
   );
   context.subscriptions.push(installLanguageServer);
+}
+
+/**
+ * Prepare a record of server specific commands.
+ * @returns Record
+ */
+export function createServerCommands(): Record<string, CommandFactory> {
+  return {
+    reload: {
+      enabled: (ctx) => async () => {
+        void vscode.window.showInformationMessage(
+          "Reloading sourcepawn_lsp..."
+        );
+        await ctx.restart();
+      },
+      disabled: (ctx) => async () => {
+        void vscode.window.showInformationMessage(
+          "Reloading sourcepawn_lsp..."
+        );
+        await ctx.start();
+      },
+    },
+    startServer: {
+      enabled: (ctx) => async () => {
+        await ctx.start();
+      },
+      disabled: (ctx) => async () => {
+        await ctx.start();
+      },
+    },
+    stopServer: {
+      enabled: (ctx) => async () => {
+        await ctx.stopAndDispose();
+        ctx.setServerStatus({
+          health: "stopped",
+        });
+      },
+      disabled: (_) => async () => {},
+    },
+  };
 }

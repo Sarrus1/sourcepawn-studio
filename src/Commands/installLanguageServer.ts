@@ -17,7 +17,8 @@ import {
 import axios from "axios";
 import unzipper from "unzipper";
 import { execSync } from "child_process";
-import { client } from "../spIndex";
+
+import { ctx } from "../spIndex";
 
 export async function run(args: any) {
   const lspPath = join(
@@ -45,8 +46,8 @@ export async function run(args: any) {
       return downloadLanguageServer(version, progress, token);
     }
   );
-  if (client) {
-    client.restart();
+  if (ctx) {
+    await ctx.restart();
   }
   return 0;
 }

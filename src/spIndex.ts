@@ -1,20 +1,9 @@
-import { homedir } from "os";
-import { join } from "path";
-import {
-  workspace as Workspace,
-  ExtensionContext,
-  languages,
-  extensions,
-} from "vscode";
-import {
-  LanguageClient,
-  LanguageClientOptions,
-  ServerOptions,
-} from "vscode-languageclient/node";
-import { platform } from "os";
-import { existsSync } from "fs";
+import * as vscode from "vscode";
 
-import { registerSMCommands } from "./Commands/registerCommands";
+import {
+  createServerCommands,
+  registerSMCommands,
+} from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { KVDocumentFormattingEditProvider } from "./Formatters/kvFormat";
 import {
@@ -22,30 +11,11 @@ import {
   run as installLanguageServerCommand,
 } from "./Commands/installLanguageServer";
 import { migrateSettings } from "./spUtils";
+import { Ctx } from "./ctx";
 
-export let client: LanguageClient;
+export let ctx: Ctx | undefined;
 
-function makeCommand() {
-  return join(
-    extensions.getExtension("Sarrus.sourcepawn-vscode").extensionPath,
-    "languageServer",
-    platform() == "win32" ? "sourcepawn_lsp.exe" : "sourcepawn_lsp"
-  );
-}
-
-async function installLanguageServer(context: ExtensionContext) {
-  const lspPath = join(
-    extensions.getExtension("Sarrus.sourcepawn-vscode").extensionPath,
-    "languageServer"
-  );
-  if (!existsSync(lspPath)) {
-    await installLanguageServerCommand(undefined);
-    const version = await getLatestVersionName();
-    context.globalState.update("language_server_version", version);
-  }
-}
-
-async function checkForLanguageServerUpdate(context: ExtensionContext) {
+async function checkForLanguageServerUpdate(context: vscode.ExtensionContext) {
   const latestVersion = await getLatestVersionName();
   const installedVersion = context.globalState.get("language_server_version");
   if (
@@ -59,13 +29,15 @@ async function checkForLanguageServerUpdate(context: ExtensionContext) {
   context.globalState.update("language_server_version", latestVersion);
 }
 
-export async function activate(context: ExtensionContext) {
-  await installLanguageServer(context);
+export async function activate(context: vscode.ExtensionContext) {
+  ctx = new Ctx(context, createServerCommands());
+  ctx.start();
+  migrateSettings(ctx);
 
   registerSMCommands(context);
 
   context.subscriptions.push(
-    languages.registerDocumentFormattingEditProvider(
+    vscode.languages.registerDocumentFormattingEditProvider(
       {
         language: "sourcepawn",
         scheme: "file",
@@ -75,7 +47,7 @@ export async function activate(context: ExtensionContext) {
   );
 
   context.subscriptions.push(
-    languages.registerDocumentFormattingEditProvider(
+    vscode.languages.registerDocumentFormattingEditProvider(
       {
         language: "valve-kv",
       },
@@ -83,47 +55,9 @@ export async function activate(context: ExtensionContext) {
     )
   );
 
-  const serverOptions: ServerOptions = {
-    run: {
-      command: makeCommand(),
-      args: [],
-    },
-    debug: {
-      command: "cargo",
-      args: [
-        "run",
-        "--manifest-path",
-        join(homedir(), "dev/sourcepawn-lsp/Cargo.toml"),
-      ],
-    },
-  };
-
-  const clientOptions: LanguageClientOptions = {
-    documentSelector: [{ language: "sourcepawn" }],
-    synchronize: {
-      fileEvents: Workspace.createFileSystemWatcher("**/*.{inc,sp}"),
-    },
-  };
-
-  client = new LanguageClient(
-    "SourcePawnLanguageServer",
-    serverOptions,
-    clientOptions
-  );
-
-  client.start();
   try {
     checkForLanguageServerUpdate(context);
   } catch (error) {
     console.error("Couldn't update the language server.", error);
   }
-
-  migrateSettings(client);
-}
-
-export function deactivate(): Thenable<void> | undefined {
-  if (!client) {
-    return undefined;
-  }
-  return client.stop();
 }

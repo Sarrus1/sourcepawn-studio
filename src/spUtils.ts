@@ -8,7 +8,8 @@
 import { URI } from "vscode-uri";
 import { existsSync, lstatSync } from "fs";
 import { resolve, extname } from "path";
-import { LanguageClient } from "vscode-languageclient/node";
+
+import { Ctx } from "./ctx";
 
 /**
  * Parse a Sourcemod JSDoc documentation string and convert it to a MarkdownString.
@@ -101,9 +102,9 @@ export function locationFromRange(filePath: string, range: Range): Location {
 
 /**
  * If needed, prompt the user to migrate their settings to use the LanguageServer.
- * @param  {LanguageClient} client  Instance of the language server to restart if needed.
+ * @param  {Ctx} ctx  Instance of the language server to restart if needed.
  */
-export function migrateSettings(client: LanguageClient) {
+export function migrateSettings(ctx: Ctx) {
   let smHome: string =
     Workspace.getConfiguration("sourcepawn").get("SourcemodHome");
   let optionalIncludeDirsPaths: string[] = Workspace.getConfiguration(
@@ -127,7 +128,7 @@ export function migrateSettings(client: LanguageClient) {
             "includesDirectories",
             [smHome].concat(optionalIncludeDirsPaths)
           );
-          client.restart();
+          ctx.restart();
         }
       });
   }
