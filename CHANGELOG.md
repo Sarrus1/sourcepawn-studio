@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [0.6.1]
+
+### Added
+
+-   Added status notifications.
+-   Added support for folder rename in includeDirectories.
+
 ## [0.6.0]
 
 ### Added
