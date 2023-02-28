@@ -49,4 +49,19 @@ impl Options {
 
         None
     }
+
+    /// Returns true if the given path is a parent or one of the IncludeDirectories.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - Path to check against.
+    pub fn is_parent_of_include_dir(&self, path: &PathBuf) -> bool {
+        for include_dir in self.includes_directories.iter() {
+            if include_dir.starts_with(path) {
+                return true;
+            }
+        }
+
+        false
+    }
 }

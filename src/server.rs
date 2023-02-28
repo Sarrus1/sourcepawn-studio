@@ -27,6 +27,7 @@ use notify::Watcher;
 use serde::Serialize;
 use threadpool::ThreadPool;
 use tree_sitter::Parser;
+use walkdir::WalkDir;
 
 use crate::client::LspClient;
 use crate::providers;
@@ -596,21 +597,62 @@ impl Server {
                 utils::normalize_uri(&mut uri);
                 match modify_event {
                     notify::event::ModifyKind::Name(_) => {
-                        // TODO: Handle folder name changes.
-                        let uri = Url::from_file_path(event.paths[0].clone());
+                        if event.paths[0].is_dir() {
+                            if self
+                                .store
+                                .environment
+                                .options
+                                .is_parent_of_include_dir(&event.paths[0])
+                            {
+                                // The path of one of the watched directory has changed. We must unwatch it.
+                                if let Some(watcher) = &self.store.watcher {
+                                    watcher
+                                        .lock()
+                                        .unwrap()
+                                        .unwatch(event.paths[0].as_path())
+                                        .unwrap_or_default();
+                                    return;
+                                }
+                            }
+                        }
+                        let uri = Url::from_file_path(&event.paths[0]);
                         if uri.is_err() {
                             return;
                         }
                         let mut uri = uri.unwrap();
                         utils::normalize_uri(&mut uri);
-                        match self.store.get(&uri) {
-                            Some(_) => {
-                                self.store.remove(&uri);
+                        let mut uris = self.store.get_all_files_in_folder(&uri);
+                        if uris.is_empty() {
+                            if event.paths[0].is_dir() {
+                                // The second notification of a folder rename causes an empty vector.
+                                // Iterate over all the files of the folder instead.
+                                for entry in WalkDir::new(&event.paths[0])
+                                    .follow_links(true)
+                                    .into_iter()
+                                    .filter_map(|e| e.ok())
+                                {
+                                    if entry.path().is_file() {
+                                        let uri = Url::from_file_path(entry.path());
+                                        if uri.is_ok() {
+                                            uris.push(uri.unwrap());
+                                        }
+                                    }
+                                }
+                            } else {
+                                // Assume the event points to a file which has been deleted for the rename.
+                                uris.push(uri);
                             }
-                            None => {
-                                let _ = self
-                                    .store
-                                    .load(uri.to_file_path().unwrap(), &mut self.parser);
+                        }
+                        for uri in uris.iter() {
+                            match self.store.get(&uri) {
+                                Some(_) => {
+                                    self.store.remove(&uri);
+                                }
+                                None => {
+                                    let _ = self
+                                        .store
+                                        .load(uri.to_file_path().unwrap(), &mut self.parser);
+                                }
                             }
                         }
                     }

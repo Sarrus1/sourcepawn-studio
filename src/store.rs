@@ -173,4 +173,15 @@ impl Store {
             document.find_references(&self);
         }
     }
+
+    pub fn get_all_files_in_folder(&self, folder_uri: &Url) -> Vec<Url> {
+        let mut children = vec![];
+        for uri in self.documents.keys() {
+            if uri.as_str().contains(folder_uri.as_str()) {
+                children.push((**uri).clone());
+            }
+        }
+
+        children
+    }
 }
