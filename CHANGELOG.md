@@ -1,5 +1,16 @@
 ## Release Notes
 
+## [5.0.4]
+
+### Added
+
+- Added the status of the server in the VSCode bottom toolbar.
+- Added a way to restart the server from the VSCode toolbar.
+
+### Fixed
+
+- Improved the reliability of downloading a new version of the server.
+
 ## [5.0.3]
 
 ### Added
