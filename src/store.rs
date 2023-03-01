@@ -171,9 +171,16 @@ impl Store {
         }
     }
 
-    pub fn find_all_references(&self) {
-        for document in self.documents.values() {
-            document.find_references(&self);
+    pub fn find_all_references(&mut self) {
+        let uris: Vec<Arc<Url>> = self.documents.keys().map(|uri| (*uri).clone()).collect();
+        let mut unresolved_tokens = HashSet::new();
+        for uri in uris {
+            if let Some(document) = self.documents.get(&uri) {
+                unresolved_tokens = document.find_references(self);
+            }
+            if let Some(document) = self.documents.get_mut(&uri) {
+                document.unresolved_tokens = unresolved_tokens.clone();
+            }
         }
     }
 

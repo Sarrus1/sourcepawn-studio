@@ -69,6 +69,8 @@ pub struct Document {
     pub tokens: Vec<Arc<Token>>,
     #[new(value = "HashSet::new()")]
     pub missing_includes: HashSet<String>,
+    #[new(value = "HashSet::new()")]
+    pub unresolved_tokens: HashSet<String>,
 }
 
 pub struct Walker {

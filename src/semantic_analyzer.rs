@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     sync::{Arc, RwLock},
 };
 
@@ -19,17 +19,23 @@ use crate::{
 use self::{analyzer::Analyzer, resolvers::resolve_item};
 
 impl Document {
-    pub fn find_references(&self, store: &Store) {
+    pub fn find_references(&self, store: &Store) -> HashSet<String> {
         let all_items = get_all_items(store, false);
+        let mut unresolved_tokens = HashSet::new();
         let mut analyzer = Analyzer::new(all_items, self);
         for token in self.tokens.iter() {
             analyzer.update_scope(token.range);
             analyzer.update_line_context(token);
-            resolve_item(&mut analyzer, token, self);
+            if resolve_item(&mut analyzer, token, self).is_none() {
+                // Token was not resolved
+                unresolved_tokens.insert(token.text.clone());
+            }
 
             analyzer.token_idx += 1;
         }
         resolve_methodmap_inherits(get_all_items(store, false));
+
+        unresolved_tokens
     }
 }
 
