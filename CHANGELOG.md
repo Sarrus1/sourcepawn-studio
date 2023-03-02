@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [5.1.0]
+
+### Fixed
+
+- Revert the premature release of v5.
+
 ## [4.2.4]
 
 ### Fixed
