@@ -1,11 +1,10 @@
 use std::{
-    collections::HashMap,
-    collections::HashSet,
     str::Utf8Error,
     sync::{Arc, RwLock},
 };
 
 use derive_new::new;
+use fxhash::{FxHashMap, FxHashSet};
 use lazy_static::lazy_static;
 use lsp_types::Range;
 use lsp_types::Url;
@@ -51,17 +50,17 @@ pub struct Document {
     #[new(default)]
     pub sp_items: Vec<Arc<RwLock<SPItem>>>,
     #[new(default)]
-    pub includes: HashMap<Url, Token>,
+    pub includes: FxHashMap<Url, Token>,
     #[new(value = "false")]
     pub parsed: bool,
     #[new(value = "vec![]")]
     pub tokens: Vec<Arc<Token>>,
     #[new(default)]
-    pub missing_includes: HashMap<String, Range>,
+    pub missing_includes: FxHashMap<String, Range>,
     #[new(default)]
-    pub unresolved_tokens: HashSet<String>,
+    pub unresolved_tokens: FxHashSet<String>,
     #[new(default)]
-    pub declarations: HashMap<String, Arc<RwLock<SPItem>>>,
+    pub declarations: FxHashMap<String, Arc<RwLock<SPItem>>>,
 }
 
 pub struct Walker {

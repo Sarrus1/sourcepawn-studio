@@ -1,10 +1,10 @@
 use std::{
-    collections::HashSet,
     path::PathBuf,
     str::Utf8Error,
     sync::{Arc, RwLock},
 };
 
+use fxhash::FxHashSet;
 use lsp_types::{Range, Url};
 use tree_sitter::Node;
 
@@ -81,7 +81,7 @@ pub(crate) fn add_include(document: &mut Document, include_uri: Url, path: Strin
 pub(crate) fn resolve_import(
     include_directories: &[PathBuf],
     include_text: &mut String,
-    documents: &HashSet<Arc<Url>>,
+    documents: &FxHashSet<Arc<Url>>,
     document_uri: &Arc<Url>,
 ) -> Option<Url> {
     // Add the extension to the file if needed.

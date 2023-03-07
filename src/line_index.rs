@@ -2,8 +2,9 @@
 
 //! `LineIndex` maps flat `TextSize` offsets into `(Line, Column)`
 //! representation.
-use std::{collections::HashMap, iter};
+use std::iter;
 
+use fxhash::FxHashMap;
 use rowan::{TextRange, TextSize};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -11,7 +12,7 @@ pub struct LineIndex {
     /// Offset the the beginning of each line, zero-based
     pub(crate) newlines: Vec<TextSize>,
     /// List of non-ASCII characters on each line
-    pub(crate) utf16_lines: HashMap<u32, Vec<Utf16Char>>,
+    pub(crate) utf16_lines: FxHashMap<u32, Vec<Utf16Char>>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -56,7 +57,7 @@ impl Utf16Char {
 
 impl LineIndex {
     pub fn new(text: &str) -> LineIndex {
-        let mut utf16_lines = HashMap::default();
+        let mut utf16_lines = FxHashMap::default();
         let mut utf16_chars = Vec::new();
 
         let mut newlines = vec![0.into()];

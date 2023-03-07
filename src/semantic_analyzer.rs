@@ -1,8 +1,6 @@
-use std::{
-    collections::{HashMap, HashSet},
-    sync::{Arc, RwLock},
-};
+use std::sync::{Arc, RwLock};
 
+use fxhash::{FxHashMap, FxHashSet};
 use lsp_types::Url;
 
 pub mod analyzer;
@@ -24,7 +22,7 @@ impl Store {
         }
         let all_items = get_all_items(self, false);
         let document = self.documents.get(uri).unwrap();
-        let mut unresolved_tokens = HashSet::new();
+        let mut unresolved_tokens = FxHashSet::default();
         let mut analyzer = Analyzer::new(all_items, document);
         for token in document.tokens.iter() {
             analyzer.update_scope(token.range);
@@ -64,7 +62,7 @@ pub fn purge_references(item: &Arc<RwLock<SPItem>>, uri: &Arc<Url>) {
 ///
 /// * `all_items` - All included first level [items](SPItem).
 pub fn resolve_methodmap_inherits(all_items: Vec<Arc<RwLock<SPItem>>>) {
-    let mut methodmaps = HashMap::new();
+    let mut methodmaps = FxHashMap::default();
     let mut methodmaps_to_resolve = vec![];
     all_items.iter().for_each(|item| {
         if let SPItem::Methodmap(mm_item) = &*item.read().unwrap() {

@@ -1,8 +1,6 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, RwLock},
-};
+use std::sync::{Arc, RwLock};
 
+use fxhash::FxHashMap;
 use lsp_types::Range;
 
 use crate::{
@@ -18,7 +16,7 @@ pub struct Analyzer {
     pub all_items: Vec<Arc<RwLock<SPItem>>>,
     pub previous_items: Vec<Arc<RwLock<SPItem>>>,
     pub line_nb: u32,
-    pub tokens_map: HashMap<String, Arc<RwLock<SPItem>>>,
+    pub tokens_map: FxHashMap<String, Arc<RwLock<SPItem>>>,
     pub funcs_in_file: Vec<Arc<RwLock<SPItem>>>,
     pub mm_es_in_file: Vec<Arc<RwLock<SPItem>>>,
     pub scope: Scope,
@@ -29,7 +27,7 @@ pub struct Analyzer {
 
 impl Analyzer {
     pub fn new(all_items: Vec<Arc<RwLock<SPItem>>>, document: &Document) -> Self {
-        let mut tokens_map: HashMap<String, Arc<RwLock<SPItem>>> = HashMap::new();
+        let mut tokens_map = FxHashMap::default();
         let mut funcs_in_file = vec![];
         let mut mm_es_in_file = vec![];
 

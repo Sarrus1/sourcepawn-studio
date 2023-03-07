@@ -1,8 +1,6 @@
-use std::{
-    collections::HashSet,
-    sync::{Arc, RwLock},
-};
+use std::sync::{Arc, RwLock};
 
+use fxhash::FxHashSet;
 use lsp_types::{
     CompletionItem, CompletionParams, DocumentSymbol, GotoDefinitionParams, Hover, HoverParams,
     LocationLink, Position, Range, SignatureInformation, Url,
@@ -66,7 +64,7 @@ pub enum SPItem {
 pub fn get_all_items(store: &Store, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
     let mut all_items = vec![];
     if let Some(main_path_uri) = store.environment.options.get_main_path_uri() {
-        let mut includes: HashSet<Url> = HashSet::new();
+        let mut includes = FxHashSet::default();
         includes.insert(main_path_uri.clone());
         if let Some(document) = store.documents.get(&main_path_uri) {
             get_included_files(store, document, &mut includes);
@@ -91,7 +89,7 @@ pub fn get_all_items(store: &Store, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
     all_items
 }
 
-fn get_included_files(store: &Store, document: &Document, includes: &mut HashSet<Url>) {
+fn get_included_files(store: &Store, document: &Document, includes: &mut FxHashSet<Url>) {
     for include_uri in document.includes.keys() {
         if includes.contains(include_uri) {
             continue;

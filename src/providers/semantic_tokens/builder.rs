@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use anyhow::anyhow;
+use fxhash::FxHashMap;
 use lsp_types::{
     Range, SemanticToken, SemanticTokenModifier, SemanticTokenType, SemanticTokens,
     SemanticTokensLegend,
@@ -25,8 +24,8 @@ pub(super) struct SemanticTokensBuilder {
     data_is_sorted_and_delta_encoded: bool,
     data: Vec<SemanticToken>,
     data_len: usize,
-    token_type_str_to_int: HashMap<SemanticTokenType, u32>,
-    token_modifier_str_to_int: HashMap<SemanticTokenModifier, u32>,
+    token_type_str_to_int: FxHashMap<SemanticTokenType, u32>,
+    token_modifier_str_to_int: FxHashMap<SemanticTokenModifier, u32>,
     has_legend: bool,
 }
 

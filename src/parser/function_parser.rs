@@ -1,9 +1,9 @@
 use std::{
-    collections::HashSet,
     str::Utf8Error,
     sync::{Arc, RwLock},
 };
 
+use fxhash::FxHashSet;
 use regex::Regex;
 use tree_sitter::{Node, QueryCursor};
 
@@ -41,7 +41,7 @@ impl Document {
 
         let mut block_node: Option<Node> = None;
 
-        let mut visibility = HashSet::new();
+        let mut visibility = FxHashSet::default();
 
         let mut definition_type = FunctionDefinitionType::None;
 

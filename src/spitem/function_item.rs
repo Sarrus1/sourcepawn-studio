@@ -1,9 +1,7 @@
-use std::{
-    collections::HashSet,
-    sync::{Arc, RwLock, Weak},
-};
+use std::sync::{Arc, RwLock, Weak};
 
 use super::{parameter::Parameter, Location};
+use fxhash::FxHashSet;
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, CompletionTextEdit,
     DocumentSymbol, Documentation, GotoDefinitionParams, Hover, HoverContents, HoverParams,
@@ -41,7 +39,7 @@ pub struct FunctionItem {
     pub detail: String,
 
     /// Visibility of the function.
-    pub visibility: HashSet<FunctionVisibility>,
+    pub visibility: FxHashSet<FunctionVisibility>,
 
     /// Definition type of the function.
     pub definition_type: FunctionDefinitionType,

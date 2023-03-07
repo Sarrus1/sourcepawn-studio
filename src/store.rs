@@ -1,6 +1,6 @@
+use fxhash::{FxHashMap, FxHashSet};
 use lsp_types::Url;
 use std::{
-    collections::{HashMap, HashSet},
     fs, io,
     path::{Path, PathBuf},
     str::Utf8Error,
@@ -21,7 +21,7 @@ use crate::{
 #[derive(Clone)]
 pub struct Store {
     /// Any documents the server has handled, indexed by their URL.
-    pub documents: HashMap<Arc<Url>, Document>,
+    pub documents: FxHashMap<Arc<Url>, Document>,
 
     pub environment: Environment,
 
@@ -35,7 +35,7 @@ impl Store {
     pub fn new(current_dir: PathBuf) -> Self {
         let environment = Environment::new(Arc::new(current_dir));
         Store {
-            documents: HashMap::new(),
+            documents: FxHashMap::default(),
             environment,
             first_parse: true,
             watcher: None,
@@ -124,7 +124,7 @@ impl Store {
     }
 
     fn resolve_missing_includes(&mut self, parser: &mut Parser) {
-        let mut to_reload = HashSet::new();
+        let mut to_reload = FxHashSet::default();
         for document in self.documents.values() {
             for missing_include in document.missing_includes.keys() {
                 for uri in self.documents.keys() {
@@ -173,7 +173,7 @@ impl Store {
     ) -> Result<Document, io::Error> {
         let prev_declarations = match self.documents.get(&(*uri).clone()) {
             Some(document) => document.declarations.clone(),
-            None => HashMap::new(),
+            None => FxHashMap::default(),
         };
         let mut document = Document::new(uri.clone(), text);
         self.parse(&mut document, parser)
@@ -190,7 +190,7 @@ impl Store {
     fn sync_references(
         &mut self,
         document: &mut Document,
-        prev_declarations: HashMap<String, Arc<RwLock<SPItem>>>,
+        prev_declarations: FxHashMap<String, Arc<RwLock<SPItem>>>,
     ) {
         let mut deleted_declarations = prev_declarations;
         deleted_declarations.retain(|k, _| !document.declarations.contains_key(k));
@@ -208,7 +208,7 @@ impl Store {
                 }
             }
         }
-        let documents_keys: HashSet<Arc<Url>> = self.documents.keys().cloned().collect();
+        let documents_keys = self.documents.keys().cloned().collect();
         for uri_to_reload in to_reload.iter() {
             // resolve includes
             if let Some(doc_to_reload) = self.documents.get_mut(uri_to_reload) {
@@ -292,7 +292,11 @@ impl Store {
         Ok(())
     }
 
-    pub fn read_unscanned_imports(&mut self, includes: &HashMap<Url, Token>, parser: &mut Parser) {
+    pub fn read_unscanned_imports(
+        &mut self,
+        includes: &FxHashMap<Url, Token>,
+        parser: &mut Parser,
+    ) {
         for include_uri in includes.keys() {
             let document = self.get(include_uri).expect("Include does not exist.");
             if document.parsed {
