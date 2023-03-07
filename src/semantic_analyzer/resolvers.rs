@@ -145,9 +145,7 @@ pub(super) fn resolve_item(
                 }
             }
         }
-        if item.is_none() {
-            return None;
-        }
+        item.as_ref()?;
         let item = item.unwrap();
         let reference = Location {
             uri: document.uri.clone(),

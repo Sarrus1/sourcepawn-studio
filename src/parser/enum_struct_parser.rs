@@ -12,34 +12,34 @@ use crate::{
     utils::ts_range_to_lsp_range,
 };
 
-use super::function_parser::parse_function;
+impl Document {
+    pub(crate) fn parse_enum_struct(
+        &mut self,
+        node: &mut Node,
+        walker: &mut Walker,
+    ) -> Result<(), Utf8Error> {
+        // Name of the enum struct
+        let name_node = node.child_by_field_name("name").unwrap();
+        let name = name_node.utf8_text(self.text.as_bytes());
 
-pub fn parse_enum_struct(
-    document: &mut Document,
-    node: &mut Node,
-    walker: &mut Walker,
-) -> Result<(), Utf8Error> {
-    // Name of the enum struct
-    let name_node = node.child_by_field_name("name").unwrap();
-    let name = name_node.utf8_text(document.text.as_bytes());
+        let documentation = find_doc(walker, node.start_position().row)?;
 
-    let documentation = find_doc(walker, node.start_position().row)?;
+        let enum_struct_item = EnumStructItem {
+            name: name?.to_string(),
+            range: ts_range_to_lsp_range(&name_node.range()),
+            full_range: ts_range_to_lsp_range(&node.range()),
+            description: documentation,
+            uri: self.uri.clone(),
+            references: vec![],
+            children: vec![],
+        };
 
-    let enum_struct_item = EnumStructItem {
-        name: name?.to_string(),
-        range: ts_range_to_lsp_range(&name_node.range()),
-        full_range: ts_range_to_lsp_range(&node.range()),
-        description: documentation,
-        uri: document.uri.clone(),
-        references: vec![],
-        children: vec![],
-    };
+        let enum_struct_item = Arc::new(RwLock::new(SPItem::EnumStruct(enum_struct_item)));
+        parse_enum_struct_members(self, node, enum_struct_item.clone(), walker);
+        self.sp_items.push(enum_struct_item);
 
-    let enum_struct_item = Arc::new(RwLock::new(SPItem::EnumStruct(enum_struct_item)));
-    parse_enum_struct_members(document, node, enum_struct_item.clone(), walker);
-    document.sp_items.push(enum_struct_item);
-
-    Ok(())
+        Ok(())
+    }
 }
 
 fn parse_enum_struct_members(
@@ -52,9 +52,9 @@ fn parse_enum_struct_members(
     for child in node.children(&mut cursor) {
         match child.kind() {
             "enum_struct_field" => parse_enum_struct_field(document, &child, &enum_struct_item),
-            "enum_struct_method" => {
-                parse_function(document, &child, walker, Some(enum_struct_item.clone())).unwrap()
-            }
+            "enum_struct_method" => document
+                .parse_function(&child, walker, Some(enum_struct_item.clone()))
+                .unwrap(),
             "comment" => walker.push_comment(child, &document.text),
             "preproc_pragma" => walker.push_deprecated(child, &document.text),
             _ => {}

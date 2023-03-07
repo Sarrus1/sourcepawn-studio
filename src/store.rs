@@ -3,14 +3,18 @@ use std::{
     collections::{HashMap, HashSet},
     fs, io,
     path::{Path, PathBuf},
+    str::Utf8Error,
     sync::{Arc, Mutex},
 };
 use tree_sitter::Parser;
 use walkdir::WalkDir;
 
 use crate::{
-    document::Document, environment::Environment, semantic_analyzer::purge_references,
-    spitem::SPItem, utils::read_to_string_lossy,
+    document::{Document, Walker},
+    environment::Environment,
+    semantic_analyzer::purge_references,
+    spitem::SPItem,
+    utils::read_to_string_lossy,
 };
 
 #[derive(Clone)]
@@ -122,7 +126,7 @@ impl Store {
             .into_iter()
             .filter_map(|e| e.ok())
         {
-            if self.is_sourcepawn_file(&entry.path()) {
+            if self.is_sourcepawn_file(entry.path()) {
                 let uri = Url::from_file_path(entry.path()).unwrap();
                 if self.documents.contains_key(&uri) {
                     continue;
@@ -147,15 +151,92 @@ impl Store {
         parser: &mut Parser,
     ) -> Result<Document, io::Error> {
         let mut document = Document::new(uri, text);
-        document
-            .parse(self, parser)
+        self.parse(&mut document, parser)
             .expect("Couldn't parse document");
         if !self.first_parse {
             // Don't try to find references yet, all the tokens might not be referenced.
-            document.find_references(self);
+            document.unresolved_tokens = document.find_references(self);
+            // if !document.unresolved_tokens.is_empty() {
+            //     eprintln!(
+            //         "{:?}\n{:?}",
+            //         &document.uri.as_str(),
+            //         &document.unresolved_tokens
+            //     );
+            // }
+            // for sub_doc in self.documents.values_mut() {
+            //     for item in document.sp_items.iter() {
+            //         if sub_doc
+            //             .unresolved_tokens
+            //             .contains(&item.read().unwrap().name())
+            //         {
+            //             // Tokens that have been deleted are missing from the unresolved tokens.
+            //             // Might trigger an infinite loop.
+            //             eprintln!(
+            //                 "Found ref for {:?} in {}",
+            //                 sub_doc.unresolved_tokens.get(&item.read().unwrap().name()),
+            //                 &sub_doc.uri
+            //             );
+            //             sub_doc.parsed = false;
+            //         }
+            //     }
+            // }
         }
 
         Ok(document)
+    }
+
+    pub fn parse(&mut self, document: &mut Document, parser: &mut Parser) -> Result<(), Utf8Error> {
+        let tree = parser.parse(&document.text, None).unwrap();
+        let root_node = tree.root_node();
+        let mut walker = Walker {
+            comments: vec![],
+            deprecated: vec![],
+            anon_enum_counter: 0,
+        };
+
+        let mut cursor = root_node.walk();
+
+        for mut node in root_node.children(&mut cursor) {
+            let kind = node.kind();
+            match kind {
+                "function_declaration" | "function_definition" => {
+                    document.parse_function(&node, &mut walker, None)?;
+                }
+                "global_variable_declaration" | "old_global_variable_declaration" => {
+                    document.parse_variable(&mut node, None)?;
+                }
+                "preproc_include" | "preproc_tryinclude" => {
+                    self.parse_include(document, &mut node)?;
+                }
+                "enum" => {
+                    document.parse_enum(&mut node, &mut walker)?;
+                }
+                "preproc_define" => {
+                    document.parse_define(&mut node, &mut walker)?;
+                }
+                "methodmap" => {
+                    document.parse_methodmap(&mut node, &mut walker)?;
+                }
+                "typedef" => document.parse_typedef(&node, &mut walker)?,
+                "typeset" => document.parse_typeset(&node, &mut walker)?,
+                "preproc_macro" => {}
+                "enum_struct" => document.parse_enum_struct(&mut node, &mut walker)?,
+                "comment" => {
+                    walker.push_comment(node, &document.text);
+                }
+                "preproc_pragma" => walker.push_deprecated(node, &document.text),
+                _ => {
+                    continue;
+                }
+            }
+        }
+        document.parsed = true;
+        document.extract_tokens(root_node);
+        self.documents
+            .insert(document.uri.clone(), document.clone());
+        self.read_unscanned_imports(&document.includes, parser);
+
+        Ok(())
     }
 
     pub fn read_unscanned_imports(&mut self, includes: &HashSet<Url>, parser: &mut Parser) {
@@ -180,6 +261,9 @@ impl Store {
             }
             if let Some(document) = self.documents.get_mut(&uri) {
                 document.unresolved_tokens = unresolved_tokens.clone();
+            }
+            if !unresolved_tokens.is_empty() {
+                eprintln!("{:?}\n{:?}", &uri.as_str(), &unresolved_tokens);
             }
         }
     }

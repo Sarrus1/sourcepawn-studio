@@ -219,13 +219,11 @@ impl Server {
     }
 
     fn get_status(&self) -> lsp_ext::ServerStatusParams {
-        let status = lsp_ext::ServerStatusParams {
+        lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,
             quiescent: !self.indexing,
             message: None,
-        };
-
-        status
+        }
     }
 
     fn send_status(&self) -> anyhow::Result<()> {
@@ -346,10 +344,18 @@ impl Server {
         self.parse_directories();
         let main_uri = self.store.environment.options.get_main_path_uri();
         let now = Instant::now();
-        if main_uri.is_none() {
+        if let Some(main_uri) = main_uri {
+            let document = self
+                .store
+                .get(&main_uri)
+                .expect("Main Path does not exist.");
+            self.store
+                .handle_open_document(document.uri, document.text, &mut self.parser)
+                .expect("Couldn't parse file");
+        } else {
             self.client
                 .send_notification::<ShowMessage>(ShowMessageParams {
-                    message: format!("Invalid MaintPath setting.\nPlease make sure it is valid."),
+                    message: "Invalid MainPath setting.\nPlease make sure it is valid.".to_string(),
                     typ: MessageType::WARNING,
                 })?;
             let mut uris: Vec<Url> = vec![];
@@ -364,15 +370,6 @@ impl Server {
                         .unwrap();
                 }
             }
-        } else {
-            let main_uri = main_uri.unwrap();
-            let document = self
-                .store
-                .get(&main_uri)
-                .expect("Main Path does not exist.");
-            self.store
-                .handle_open_document(document.uri, document.text, &mut self.parser)
-                .expect("Couldn't parse file");
         }
         self.store.find_all_references();
         self.store.first_parse = false;
@@ -597,22 +594,21 @@ impl Server {
                 utils::normalize_uri(&mut uri);
                 match modify_event {
                     notify::event::ModifyKind::Name(_) => {
-                        if event.paths[0].is_dir() {
-                            if self
+                        if event.paths[0].is_dir()
+                            && self
                                 .store
                                 .environment
                                 .options
                                 .is_parent_of_include_dir(&event.paths[0])
-                            {
-                                // The path of one of the watched directory has changed. We must unwatch it.
-                                if let Some(watcher) = &self.store.watcher {
-                                    watcher
-                                        .lock()
-                                        .unwrap()
-                                        .unwatch(event.paths[0].as_path())
-                                        .unwrap_or_default();
-                                    return;
-                                }
+                        {
+                            // The path of one of the watched directory has changed. We must unwatch it.
+                            if let Some(watcher) = &self.store.watcher {
+                                watcher
+                                    .lock()
+                                    .unwrap()
+                                    .unwatch(event.paths[0].as_path())
+                                    .unwrap_or_default();
+                                return;
                             }
                         }
                         let uri = Url::from_file_path(&event.paths[0]);
@@ -633,8 +629,8 @@ impl Server {
                                 {
                                     if entry.path().is_file() {
                                         let uri = Url::from_file_path(entry.path());
-                                        if uri.is_ok() {
-                                            uris.push(uri.unwrap());
+                                        if let Ok(uri) = uri {
+                                            uris.push(uri);
                                         }
                                     }
                                 }
@@ -644,9 +640,9 @@ impl Server {
                             }
                         }
                         for uri in uris.iter() {
-                            match self.store.get(&uri) {
+                            match self.store.get(uri) {
                                 Some(_) => {
-                                    self.store.remove(&uri);
+                                    self.store.remove(uri);
                                 }
                                 None => {
                                     let _ = self

@@ -15,47 +15,49 @@ use crate::{
     utils::{self, ts_range_to_lsp_range},
 };
 
-pub fn parse_include(
-    store: &mut Store,
-    document: &mut Document,
-    node: &mut Node,
-) -> Result<(), Utf8Error> {
-    let path_node = node.child_by_field_name("path").unwrap();
-    let path = path_node.utf8_text(document.text.as_bytes())?;
+impl Store {
+    pub(crate) fn parse_include(
+        &mut self,
+        document: &mut Document,
+        node: &mut Node,
+    ) -> Result<(), Utf8Error> {
+        let path_node = node.child_by_field_name("path").unwrap();
+        let path = path_node.utf8_text(document.text.as_bytes())?;
 
-    // Remove leading and trailing "<" and ">" or ".
-    if path.len() < 2 {
-        // The include path is empty.
-        return Ok(());
+        // Remove leading and trailing "<" and ">" or ".
+        if path.len() < 2 {
+            // The include path is empty.
+            return Ok(());
+        }
+        let mut path = path[1..path.len() - 1].trim().to_string();
+        let include_uri = resolve_import(
+            &self.environment.options.includes_directories,
+            &mut path,
+            &self.documents,
+            &document.uri,
+        );
+        if include_uri.is_none() {
+            // The include was not found.
+            document.missing_includes.insert(path);
+            return Ok(());
+        }
+
+        let include_uri = include_uri.unwrap();
+        document.includes.insert(include_uri.clone());
+
+        let include_uri = Arc::new(include_uri);
+
+        let include_item = IncludeItem {
+            name: path,
+            range: ts_range_to_lsp_range(&path_node.range()),
+            uri: document.uri.clone(),
+            include_uri,
+        };
+        let include_item = Arc::new(RwLock::new(SPItem::Include(include_item)));
+        document.sp_items.push(include_item);
+
+        Ok(())
     }
-    let mut path = path[1..path.len() - 1].trim().to_string();
-    let include_uri = resolve_import(
-        &store.environment.options.includes_directories,
-        &mut path,
-        &store.documents,
-        &document.uri,
-    );
-    if include_uri.is_none() {
-        // The include was not found.
-        document.missing_includes.insert(path);
-        return Ok(());
-    }
-
-    let include_uri = include_uri.unwrap();
-    document.includes.insert(include_uri.clone());
-
-    let include_uri = Arc::new(include_uri);
-
-    let include_item = IncludeItem {
-        name: path,
-        range: ts_range_to_lsp_range(&path_node.range()),
-        uri: document.uri.clone(),
-        include_uri,
-    };
-    let include_item = Arc::new(RwLock::new(SPItem::Include(include_item)));
-    document.sp_items.push(include_item);
-
-    Ok(())
 }
 
 /// Resolve an include from its `#include` directive and the file it was imported in.

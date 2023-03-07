@@ -19,146 +19,146 @@ use crate::{
     utils::ts_range_to_lsp_range,
 };
 
-use super::{typedef_parser::parse_argument_type, variable_parser::parse_variable, VARIABLE_QUERY};
+use super::{typedef_parser::parse_argument_type, VARIABLE_QUERY};
 
-pub fn parse_function(
-    document: &mut Document,
-    node: &Node,
-    walker: &mut Walker,
-    parent: Option<Arc<RwLock<SPItem>>>,
-) -> Result<(), Utf8Error> {
-    // Name of the function
-    let name_node = node.child_by_field_name("name");
-    // Return type of the function
-    let type_node = node.child_by_field_name("returnType");
-    // Visibility of the function (public, static, stock)
-    let mut visibility_node: Option<Node> = None;
-    // Parameters of the declaration
-    let mut argument_declarations_node: Option<Node> = None;
-    // Type of function definition ("native" or "forward")
-    let mut definition_type_node: Option<Node> = None;
+impl Document {
+    pub fn parse_function(
+        &mut self,
+        node: &Node,
+        walker: &mut Walker,
+        parent: Option<Arc<RwLock<SPItem>>>,
+    ) -> Result<(), Utf8Error> {
+        // Name of the function
+        let name_node = node.child_by_field_name("name");
+        // Return type of the function
+        let type_node = node.child_by_field_name("returnType");
+        // Visibility of the function (public, static, stock)
+        let mut visibility_node: Option<Node> = None;
+        // Parameters of the declaration
+        let mut argument_declarations_node: Option<Node> = None;
+        // Type of function definition ("native" or "forward")
+        let mut definition_type_node: Option<Node> = None;
 
-    let mut block_node: Option<Node> = None;
+        let mut block_node: Option<Node> = None;
 
-    let mut visibility = HashSet::new();
+        let mut visibility = HashSet::new();
 
-    let mut definition_type = FunctionDefinitionType::None;
+        let mut definition_type = FunctionDefinitionType::None;
 
-    let mut cursor = node.walk();
-    for child in node.children(&mut cursor) {
-        let kind = child.kind();
-        match kind {
-            "function_visibility" => {
-                visibility_node = Some(child);
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            let kind = child.kind();
+            match kind {
+                "function_visibility" => {
+                    visibility_node = Some(child);
+                }
+                "argument_declarations" => {
+                    argument_declarations_node = Some(child);
+                }
+                "function_definition_type" => {
+                    definition_type_node = Some(child);
+                }
+                "block" => {
+                    block_node = Some(child);
+                }
+                "static" => {
+                    visibility.insert(FunctionVisibility::Static);
+                }
+                "public" => {
+                    visibility.insert(FunctionVisibility::Public);
+                }
+                "native" => {
+                    definition_type = FunctionDefinitionType::Native;
+                }
+                _ => {}
             }
-            "argument_declarations" => {
-                argument_declarations_node = Some(child);
+        }
+
+        if name_node.is_none() {
+            // A function always has a name.
+            return Ok(());
+        }
+        let name_node = name_node.unwrap();
+        let name = name_node.utf8_text(self.text.as_bytes());
+
+        let mut type_ = Ok("");
+        if let Some(type_node) = type_node {
+            type_ = type_node.utf8_text(self.text.as_bytes());
+        }
+
+        if visibility_node.is_some() {
+            let visibility_text = visibility_node.unwrap().utf8_text(self.text.as_bytes())?;
+            if visibility_text.contains("stock") {
+                visibility.insert(FunctionVisibility::Stock);
             }
-            "function_definition_type" => {
-                definition_type_node = Some(child);
-            }
-            "block" => {
-                block_node = Some(child);
-            }
-            "static" => {
-                visibility.insert(FunctionVisibility::Static);
-            }
-            "public" => {
+            if visibility_text.contains("public") {
                 visibility.insert(FunctionVisibility::Public);
             }
-            "native" => {
-                definition_type = FunctionDefinitionType::Native;
+            if visibility_text.contains("static") {
+                visibility.insert(FunctionVisibility::Static);
             }
-            _ => {}
         }
-    }
 
-    if name_node.is_none() {
-        // A function always has a name.
-        return Ok(());
-    }
-    let name_node = name_node.unwrap();
-    let name = name_node.utf8_text(document.text.as_bytes());
-
-    let mut type_ = Ok("");
-    if let Some(type_node) = type_node {
-        type_ = type_node.utf8_text(document.text.as_bytes());
-    }
-
-    if visibility_node.is_some() {
-        let visibility_text = visibility_node
-            .unwrap()
-            .utf8_text(document.text.as_bytes())?;
-        if visibility_text.contains("stock") {
-            visibility.insert(FunctionVisibility::Stock);
+        if definition_type_node.is_some() {
+            definition_type = match definition_type_node
+                .unwrap()
+                .utf8_text(self.text.as_bytes())?
+            {
+                "forward" => FunctionDefinitionType::Forward,
+                "native" => FunctionDefinitionType::Native,
+                _ => FunctionDefinitionType::None,
+            }
         }
-        if visibility_text.contains("public") {
-            visibility.insert(FunctionVisibility::Public);
-        }
-        if visibility_text.contains("static") {
-            visibility.insert(FunctionVisibility::Static);
-        }
-    }
 
-    if definition_type_node.is_some() {
-        definition_type = match definition_type_node
-            .unwrap()
-            .utf8_text(document.text.as_bytes())?
-        {
-            "forward" => FunctionDefinitionType::Forward,
-            "native" => FunctionDefinitionType::Native,
-            _ => FunctionDefinitionType::None,
+        let documentation = find_doc(walker, node.start_position().row)?;
+
+        let function_item = FunctionItem {
+            name: name?.to_string(),
+            type_: type_?.to_string(),
+            range: ts_range_to_lsp_range(&name_node.range()),
+            full_range: ts_range_to_lsp_range(&node.range()),
+            description: documentation.clone(),
+            uri: self.uri.clone(),
+            detail: build_detail(
+                self,
+                name,
+                type_,
+                argument_declarations_node,
+                visibility_node,
+                definition_type_node,
+            )?,
+            visibility,
+            definition_type,
+            references: vec![],
+            parent: parent.as_ref().map(Arc::downgrade),
+            params: vec![],
+            children: vec![],
+        };
+
+        let function_item = Arc::new(RwLock::new(SPItem::Function(function_item)));
+        if let Some(block_node) = block_node {
+            read_body_variables(
+                self,
+                block_node,
+                self.text.to_string(),
+                function_item.clone(),
+            )?
         }
-    }
-
-    let documentation = find_doc(walker, node.start_position().row)?;
-
-    let function_item = FunctionItem {
-        name: name?.to_string(),
-        type_: type_?.to_string(),
-        range: ts_range_to_lsp_range(&name_node.range()),
-        full_range: ts_range_to_lsp_range(&node.range()),
-        description: documentation.clone(),
-        uri: document.uri.clone(),
-        detail: build_detail(
-            document,
-            name,
-            type_,
+        read_function_parameters(
+            self,
+            documentation,
             argument_declarations_node,
-            visibility_node,
-            definition_type_node,
-        )?,
-        visibility,
-        definition_type,
-        references: vec![],
-        parent: parent.as_ref().map(Arc::downgrade),
-        params: vec![],
-        children: vec![],
-    };
-
-    let function_item = Arc::new(RwLock::new(SPItem::Function(function_item)));
-    if let Some(block_node) = block_node {
-        read_body_variables(
-            document,
-            block_node,
-            document.text.to_string(),
+            self.text.to_string(),
             function_item.clone(),
-        )?
-    }
-    read_function_parameters(
-        document,
-        documentation,
-        argument_declarations_node,
-        document.text.to_string(),
-        function_item.clone(),
-    )?;
-    if let Some(parent) = &parent {
-        parent.write().unwrap().push_child(function_item);
-    } else {
-        document.sp_items.push(function_item);
-    }
+        )?;
+        if let Some(parent) = &parent {
+            parent.write().unwrap().push_child(function_item);
+        } else {
+            self.sp_items.push(function_item);
+        }
 
-    Ok(())
+        Ok(())
+    }
 }
 
 fn build_detail(
@@ -206,11 +206,7 @@ fn read_body_variables(
     let matches = cursor.captures(&VARIABLE_QUERY, block_node, text.as_bytes());
     for (match_, _) in matches {
         for capture in match_.captures.iter() {
-            parse_variable(
-                document,
-                &mut capture.node.clone(),
-                Some(function_item.clone()),
-            )?;
+            document.parse_variable(&mut capture.node.clone(), Some(function_item.clone()))?;
         }
     }
     Ok(())
