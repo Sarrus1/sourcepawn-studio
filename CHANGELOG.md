@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [0.7.0]
+
+### Added
+
+-   Added support for adding/deleting/editing documents outside of the editor (see #13).
+-   Added support for refreshing semantic analysis outside of the edited file (see #12).
+
 ## [0.6.1]
 
 ### Added
