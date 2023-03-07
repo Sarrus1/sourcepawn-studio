@@ -14,45 +14,45 @@ use crate::{
 
 use lsp_types::{Position, Range, Url};
 
-pub fn parse_enum(
-    document: &mut Document,
-    node: &mut Node,
-    walker: &mut Walker,
-) -> Result<(), Utf8Error> {
-    let (name, range) =
-        get_enum_name_and_range(node, &document.text, &mut walker.anon_enum_counter);
-    let documentation = find_doc(walker, node.start_position().row)?;
+impl Document {
+    pub fn parse_enum(&mut self, node: &mut Node, walker: &mut Walker) -> Result<(), Utf8Error> {
+        let (name, range) =
+            get_enum_name_and_range(node, &self.text, &mut walker.anon_enum_counter);
+        let documentation = find_doc(walker, node.start_position().row)?;
 
-    let enum_item = EnumItem {
-        name,
-        range,
-        full_range: ts_range_to_lsp_range(&node.range()),
-        description: documentation,
-        uri: document.uri.clone(),
-        references: vec![],
-        children: vec![],
-    };
+        let enum_item = EnumItem {
+            name,
+            range,
+            full_range: ts_range_to_lsp_range(&node.range()),
+            description: documentation,
+            uri: self.uri.clone(),
+            references: vec![],
+            children: vec![],
+        };
 
-    let mut cursor = node.walk();
-    let mut enum_entries: Option<Node> = None;
-    for child in node.children(&mut cursor) {
-        if child.kind() == "enum_entries" {
-            enum_entries = Some(child);
-            break;
+        let mut cursor = node.walk();
+        let mut enum_entries: Option<Node> = None;
+        for child in node.children(&mut cursor) {
+            if child.kind() == "enum_entries" {
+                enum_entries = Some(child);
+                break;
+            }
         }
-    }
-    let enum_item = Arc::new(RwLock::new(SPItem::Enum(enum_item)));
-    if let Some(enum_entries) = enum_entries {
-        read_enum_members(
-            &enum_entries,
-            enum_item.clone(),
-            &document.text.to_string(),
-            document.uri.clone(),
-        );
-    }
-    document.sp_items.push(enum_item);
+        let enum_item = Arc::new(RwLock::new(SPItem::Enum(enum_item)));
+        if let Some(enum_entries) = enum_entries {
+            read_enum_members(
+                &enum_entries,
+                enum_item.clone(),
+                &self.text.to_string(),
+                self.uri.clone(),
+            );
+        }
+        self.sp_items.push(enum_item.clone());
+        self.declarations
+            .insert(enum_item.clone().read().unwrap().key(), enum_item);
 
-    Ok(())
+        Ok(())
+    }
 }
 
 fn get_enum_name_and_range(

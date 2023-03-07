@@ -92,7 +92,7 @@ pub fn get_all_items(store: &Store, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
 }
 
 fn get_included_files(store: &Store, document: &Document, includes: &mut HashSet<Url>) {
-    for include_uri in document.includes.iter() {
+    for include_uri in document.includes.keys() {
         if includes.contains(include_uri) {
             continue;
         }
@@ -326,6 +326,22 @@ impl SPItem {
             SPItem::Typedef(item) => item.references = references,
             SPItem::Typeset(item) => item.references = references,
             SPItem::Include(_) => {}
+        }
+    }
+
+    pub(crate) fn key(&self) -> String {
+        match self {
+            SPItem::Variable(item) => item.key(),
+            SPItem::Function(item) => item.key(),
+            SPItem::Enum(item) => item.key(),
+            SPItem::EnumMember(item) => item.key(),
+            SPItem::EnumStruct(item) => item.key(),
+            SPItem::Define(item) => item.key(),
+            SPItem::Methodmap(item) => item.key(),
+            SPItem::Property(item) => item.key(),
+            SPItem::Typedef(item) => item.key(),
+            SPItem::Typeset(item) => item.key(),
+            SPItem::Include(_) => todo!(),
         }
     }
 

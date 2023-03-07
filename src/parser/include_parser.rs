@@ -1,61 +1,73 @@
 use std::{
-    collections::HashMap,
+    collections::HashSet,
     path::PathBuf,
     str::Utf8Error,
     sync::{Arc, RwLock},
 };
 
-use lsp_types::Url;
+use lsp_types::{Range, Url};
 use tree_sitter::Node;
 
 use crate::{
-    document::Document,
+    document::{Document, Token},
     spitem::{include_item::IncludeItem, SPItem},
     store::Store,
     utils::{self, ts_range_to_lsp_range},
 };
 
-pub fn parse_include(
-    store: &mut Store,
-    document: &mut Document,
-    node: &mut Node,
-) -> Result<(), Utf8Error> {
-    let path_node = node.child_by_field_name("path").unwrap();
-    let path = path_node.utf8_text(document.text.as_bytes())?;
+impl Store {
+    pub(crate) fn parse_include(
+        &mut self,
+        document: &mut Document,
+        node: &mut Node,
+    ) -> Result<(), Utf8Error> {
+        let path_node = node.child_by_field_name("path").unwrap();
+        let path = path_node.utf8_text(document.text.as_bytes())?;
+        let range = ts_range_to_lsp_range(&path_node.range());
 
-    // Remove leading and trailing "<" and ">" or ".
-    if path.len() < 2 {
-        // The include path is empty.
-        return Ok(());
+        // Remove leading and trailing "<" and ">" or ".
+        if path.len() < 2 {
+            // The include path is empty.
+            return Ok(());
+        }
+        let mut path = path[1..path.len() - 1].trim().to_string();
+        let include_uri = resolve_import(
+            &self.environment.options.includes_directories,
+            &mut path,
+            &self.documents.keys().cloned().collect(),
+            &document.uri,
+        );
+        if include_uri.is_none() {
+            // The include was not found.
+            document.missing_includes.insert(path, range);
+            return Ok(());
+        }
+
+        add_include(document, include_uri.unwrap(), path, range);
+
+        Ok(())
     }
-    let mut path = path[1..path.len() - 1].trim().to_string();
-    let include_uri = resolve_import(
-        &store.environment.options.includes_directories,
-        &mut path,
-        &store.documents,
-        &document.uri,
+}
+
+pub(crate) fn add_include(document: &mut Document, include_uri: Url, path: String, range: Range) {
+    document.includes.insert(
+        include_uri.clone(),
+        Token {
+            text: path.clone(),
+            range,
+        },
     );
-    if include_uri.is_none() {
-        // The include was not found.
-        document.missing_includes.insert(path);
-        return Ok(());
-    }
-
-    let include_uri = include_uri.unwrap();
-    document.includes.insert(include_uri.clone());
 
     let include_uri = Arc::new(include_uri);
 
     let include_item = IncludeItem {
         name: path,
-        range: ts_range_to_lsp_range(&path_node.range()),
+        range,
         uri: document.uri.clone(),
         include_uri,
     };
     let include_item = Arc::new(RwLock::new(SPItem::Include(include_item)));
     document.sp_items.push(include_item);
-
-    Ok(())
 }
 
 /// Resolve an include from its `#include` directive and the file it was imported in.
@@ -64,12 +76,12 @@ pub fn parse_include(
 ///
 /// * `include_directories` - List of directories to look for includes files.
 /// * `include_text` - Text of the include such as `"file.sp"` or `<file>`.
-/// * `documents` - List of known documents.
+/// * `documents` - Set of known documents.
 /// * `document_uri` - Uri of the document where the include declaration is parsed from.
-fn resolve_import(
+pub(crate) fn resolve_import(
     include_directories: &[PathBuf],
     include_text: &mut String,
-    documents: &HashMap<Arc<Url>, Document>,
+    documents: &HashSet<Arc<Url>>,
     document_uri: &Arc<Url>,
 ) -> Option<Url> {
     // Add the extension to the file if needed.
@@ -83,7 +95,7 @@ fn resolve_import(
         include_file_path = document_dirpath.join("include").join(include_text);
     }
     let uri = Url::from_file_path(&include_file_path).unwrap();
-    if documents.contains_key(&uri) {
+    if documents.contains(&uri) {
         return Some(uri);
     }
 
@@ -91,7 +103,7 @@ fn resolve_import(
     for include_directory in include_directories.iter() {
         let path = include_directory.clone().join(include_text);
         let uri = Url::from_file_path(path).unwrap();
-        if documents.contains_key(&uri) {
+        if documents.contains(&uri) {
             return Some(uri);
         }
     }

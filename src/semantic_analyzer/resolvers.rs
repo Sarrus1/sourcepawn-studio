@@ -91,19 +91,24 @@ fn resolve_non_method_item(
     false
 }
 
-pub(super) fn resolve_item(analyzer: &mut Analyzer, token: &Arc<Token>, document: &Document) {
+pub(super) fn resolve_item(
+    analyzer: &mut Analyzer,
+    token: &Arc<Token>,
+    document: &Document,
+) -> Option<()> {
     if resolve_this(analyzer, token, document) {
-        return;
+        return Some(());
     }
 
     if resolve_non_method_item(analyzer, token, document) {
-        return;
+        return Some(());
     }
 
     if token.range.start.character > 0 && !analyzer.previous_items.is_empty() {
+        // FIXME: Indexing can probably made faster here.
         let char = analyzer.line().as_bytes()[(token.range.start.character - 1) as usize] as char;
         if char != ':' && char != '.' {
-            return;
+            return None;
         }
         let mut item: Option<Arc<RwLock<SPItem>>> = None;
         for parent in analyzer.previous_items.iter().rev() {
@@ -140,9 +145,7 @@ pub(super) fn resolve_item(analyzer: &mut Analyzer, token: &Arc<Token>, document
                 }
             }
         }
-        if item.is_none() {
-            return;
-        }
+        item.as_ref()?;
         let item = item.unwrap();
         let reference = Location {
             uri: document.uri.clone(),
@@ -150,6 +153,10 @@ pub(super) fn resolve_item(analyzer: &mut Analyzer, token: &Arc<Token>, document
         };
         item.write().unwrap().push_reference(reference);
         analyzer.previous_items.push(item);
+
+        return Some(());
     }
+
+    None
     // TODO: Handle positional arguments
 }

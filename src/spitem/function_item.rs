@@ -254,6 +254,18 @@ impl FunctionItem {
         })
     }
 
+    /// Return a key to be used as a unique identifier in a map containing all the items.
+    pub(crate) fn key(&self) -> String {
+        match &self.parent {
+            Some(parent) => format!(
+                "{}-{}",
+                parent.upgrade().unwrap().read().unwrap().key(),
+                self.name
+            ),
+            None => self.name.clone(),
+        }
+    }
+
     /// Formatted representation of a [FunctionItem].
     ///
     /// # Exemple

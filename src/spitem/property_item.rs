@@ -124,6 +124,15 @@ impl PropertyItem {
         })
     }
 
+    /// Return a key to be used as a unique identifier in a map containing all the items.
+    pub(crate) fn key(&self) -> String {
+        format!(
+            "{}-{}",
+            self.parent.upgrade().unwrap().read().unwrap().key(),
+            self.name
+        )
+    }
+
     /// Formatted representation of a [PropertyItem].
     ///
     /// # Exemple

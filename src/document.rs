@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     collections::HashSet,
     str::Utf8Error,
     sync::{Arc, RwLock},
@@ -9,24 +10,12 @@ use lazy_static::lazy_static;
 use lsp_types::Range;
 use lsp_types::Url;
 use regex::Regex;
-use tree_sitter::{Node, Parser, Query, QueryCursor};
+use tree_sitter::{Node, Query, QueryCursor};
 
 use crate::{
-    parser::{
-        comment_parser::{Comment, Deprecated},
-        define_parser::parse_define,
-        enum_parser::parse_enum,
-        enum_struct_parser::parse_enum_struct,
-        function_parser::parse_function,
-        include_parser::parse_include,
-        methodmap_parser::parse_methodmap,
-        typedef_parser::parse_typedef,
-        typeset_parser::parse_typeset,
-        variable_parser::parse_variable,
-    },
+    parser::comment_parser::{Comment, Deprecated},
     providers::hover::description::Description,
     spitem::SPItem,
-    store::Store,
     utils::ts_range_to_lsp_range,
 };
 
@@ -62,13 +51,17 @@ pub struct Document {
     #[new(default)]
     pub sp_items: Vec<Arc<RwLock<SPItem>>>,
     #[new(default)]
-    pub includes: HashSet<Url>,
+    pub includes: HashMap<Url, Token>,
     #[new(value = "false")]
     pub parsed: bool,
     #[new(value = "vec![]")]
     pub tokens: Vec<Arc<Token>>,
-    #[new(value = "HashSet::new()")]
-    pub missing_includes: HashSet<String>,
+    #[new(default)]
+    pub missing_includes: HashMap<String, Range>,
+    #[new(default)]
+    pub unresolved_tokens: HashSet<String>,
+    #[new(default)]
+    pub declarations: HashMap<String, Arc<RwLock<SPItem>>>,
 }
 
 pub struct Walker {
@@ -80,59 +73,6 @@ pub struct Walker {
 impl Document {
     pub fn text(&self) -> &str {
         &self.text
-    }
-
-    pub fn parse(&mut self, store: &mut Store, parser: &mut Parser) -> Result<(), Utf8Error> {
-        let tree = parser.parse(&self.text, None).unwrap();
-        let root_node = tree.root_node();
-        let mut walker = Walker {
-            comments: vec![],
-            deprecated: vec![],
-            anon_enum_counter: 0,
-        };
-
-        let mut cursor = root_node.walk();
-
-        for mut node in root_node.children(&mut cursor) {
-            let kind = node.kind();
-            match kind {
-                "function_declaration" | "function_definition" => {
-                    parse_function(self, &node, &mut walker, None)?;
-                }
-                "global_variable_declaration" | "old_global_variable_declaration" => {
-                    parse_variable(self, &mut node, None)?;
-                }
-                "preproc_include" | "preproc_tryinclude" => {
-                    parse_include(store, self, &mut node)?;
-                }
-                "enum" => {
-                    parse_enum(self, &mut node, &mut walker)?;
-                }
-                "preproc_define" => {
-                    parse_define(self, &mut node, &mut walker)?;
-                }
-                "methodmap" => {
-                    parse_methodmap(self, &mut node, &mut walker)?;
-                }
-                "typedef" => parse_typedef(self, &node, &mut walker)?,
-                "typeset" => parse_typeset(self, &node, &mut walker)?,
-                "preproc_macro" => {}
-                "enum_struct" => parse_enum_struct(self, &mut node, &mut walker)?,
-                "comment" => {
-                    walker.push_comment(node, &self.text);
-                }
-                "preproc_pragma" => walker.push_deprecated(node, &self.text),
-                _ => {
-                    continue;
-                }
-            }
-        }
-        self.parsed = true;
-        self.extract_tokens(root_node);
-        store.documents.insert(self.uri.clone(), self.clone());
-        store.read_unscanned_imports(&self.includes, parser);
-
-        Ok(())
     }
 
     pub fn extract_tokens(&mut self, root_node: Node) {

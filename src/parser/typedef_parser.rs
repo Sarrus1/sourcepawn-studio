@@ -18,68 +18,72 @@ use crate::{
 
 use super::function_parser::extract_param_doc;
 
-pub fn parse_typedef(
-    document: &mut Document,
-    node: &Node,
-    walker: &mut Walker,
-) -> Result<(), Utf8Error> {
-    // Name of the typedef
-    let name_node = node.child_by_field_name("name");
-    // Return type of the typedef
-    let mut type_node = None;
-    // Parameters of the declaration
-    let mut argument_declarations_node = None;
+impl Document {
+    pub(crate) fn parse_typedef(
+        &mut self,
+        node: &Node,
+        walker: &mut Walker,
+    ) -> Result<(), Utf8Error> {
+        // Name of the typedef
+        let name_node = node.child_by_field_name("name");
+        // Return type of the typedef
+        let mut type_node = None;
+        // Parameters of the declaration
+        let mut argument_declarations_node = None;
 
-    let mut cursor = node.walk();
-    for child in node.children(&mut cursor) {
-        let kind = child.kind();
-        if kind == "typedef_expression" {
-            type_node = child.child_by_field_name("returnType");
-            let mut sub_cursor = child.walk();
-            for sub_child in child.children(&mut sub_cursor) {
-                if sub_child.kind() == "argument_declarations" {
-                    argument_declarations_node = Some(sub_child)
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            let kind = child.kind();
+            if kind == "typedef_expression" {
+                type_node = child.child_by_field_name("returnType");
+                let mut sub_cursor = child.walk();
+                for sub_child in child.children(&mut sub_cursor) {
+                    if sub_child.kind() == "argument_declarations" {
+                        argument_declarations_node = Some(sub_child)
+                    }
                 }
             }
         }
+
+        if name_node.is_none() {
+            // A typedef always has a name and parameters.
+            return Ok(());
+        }
+        let name_node = name_node.unwrap();
+        let name = name_node.utf8_text(self.text.as_bytes())?.to_string();
+
+        let mut type_ = "";
+        if let Some(type_node) = type_node {
+            type_ = type_node.utf8_text(self.text.as_bytes())?;
+        }
+
+        let description = find_doc(walker, node.start_position().row)?;
+
+        let typedef_item = TypedefItem {
+            name,
+            type_: type_.to_string(),
+            range: ts_range_to_lsp_range(&name_node.range()),
+            full_range: ts_range_to_lsp_range(&node.range()),
+            description: description.clone(),
+            uri: self.uri.clone(),
+            detail: node.utf8_text(self.text.as_bytes())?.to_string(),
+            references: vec![],
+            params: vec![],
+        };
+
+        let typedef_item = Arc::new(RwLock::new(SPItem::Typedef(typedef_item)));
+        read_argument_declarations(
+            self,
+            argument_declarations_node.unwrap(),
+            typedef_item.clone(),
+            description,
+        )?;
+        self.sp_items.push(typedef_item.clone());
+        self.declarations
+            .insert(typedef_item.clone().read().unwrap().key(), typedef_item);
+
+        Ok(())
     }
-
-    if name_node.is_none() {
-        // A typedef always has a name and parameters.
-        return Ok(());
-    }
-    let name_node = name_node.unwrap();
-    let name = name_node.utf8_text(document.text.as_bytes());
-
-    let mut type_ = "";
-    if let Some(type_node) = type_node {
-        type_ = type_node.utf8_text(document.text.as_bytes())?;
-    }
-
-    let description = find_doc(walker, node.start_position().row)?;
-
-    let typedef_item = TypedefItem {
-        name: name?.to_string(),
-        type_: type_.to_string(),
-        range: ts_range_to_lsp_range(&name_node.range()),
-        full_range: ts_range_to_lsp_range(&node.range()),
-        description: description.clone(),
-        uri: document.uri.clone(),
-        detail: node.utf8_text(document.text.as_bytes())?.to_string(),
-        references: vec![],
-        params: vec![],
-    };
-
-    let typedef_item = Arc::new(RwLock::new(SPItem::Typedef(typedef_item)));
-    read_argument_declarations(
-        document,
-        argument_declarations_node.unwrap(),
-        typedef_item.clone(),
-        description,
-    )?;
-    document.sp_items.push(typedef_item);
-
-    Ok(())
 }
 
 pub(super) fn read_argument_declarations(
