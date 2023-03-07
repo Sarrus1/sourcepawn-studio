@@ -104,6 +104,25 @@ impl Store {
         Ok(Some(document))
     }
 
+    pub fn reload(
+        &mut self,
+        path: PathBuf,
+        parser: &mut Parser,
+    ) -> anyhow::Result<Option<Document>> {
+        let uri = Arc::new(Url::from_file_path(path.clone()).unwrap());
+
+        if !self.is_sourcepawn_file(&path) {
+            return Ok(None);
+        }
+
+        let data = fs::read(&path)?;
+        let text = String::from_utf8_lossy(&data).into_owned();
+        let document = self.handle_open_document(&uri, text, parser)?;
+        self.resolve_missing_includes(parser);
+
+        Ok(Some(document))
+    }
+
     fn resolve_missing_includes(&mut self, parser: &mut Parser) {
         let mut to_reload = HashSet::new();
         for document in self.documents.values() {

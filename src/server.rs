@@ -323,6 +323,11 @@ impl Server {
         for mut change in params.changes {
             utils::normalize_uri(&mut change.uri);
             match change.typ {
+                FileChangeType::CHANGED => {
+                    let _ = self
+                        .store
+                        .reload(change.uri.to_file_path().unwrap(), &mut self.parser);
+                }
                 FileChangeType::DELETED => self.store.remove(&change.uri, &mut self.parser),
                 FileChangeType::CREATED => {
                     if let Ok(path) = change.uri.to_file_path() {
@@ -676,12 +681,10 @@ impl Server {
                         }
                     }
                     _ => {
-                        if let Some(document) = self.store.documents.get(&uri) {
-                            let _ = self.store.handle_open_document(
-                                &Arc::new(uri),
-                                document.text.clone(),
-                                &mut self.parser,
-                            );
+                        if self.store.documents.contains_key(&uri) {
+                            let _ = self
+                                .store
+                                .reload(uri.to_file_path().unwrap(), &mut self.parser);
                         }
                     }
                 }
