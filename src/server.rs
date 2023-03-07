@@ -8,20 +8,21 @@ use crossbeam_channel::{Receiver, Sender};
 use lsp_server::{Connection, Message, RequestId};
 use lsp_types::{
     notification::{
-        DidChangeConfiguration, DidChangeTextDocument, DidOpenTextDocument, ShowMessage,
+        DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles, DidOpenTextDocument,
+        ShowMessage,
     },
     request::{
         Completion, DocumentSymbolRequest, GotoDefinition, HoverRequest, References,
         SemanticTokensFullRequest, SignatureHelpRequest, WorkspaceConfiguration,
     },
     CompletionOptions, CompletionParams, ConfigurationItem, ConfigurationParams,
-    DidChangeConfigurationParams, DidChangeTextDocumentParams, DidOpenTextDocumentParams,
-    DocumentSymbolParams, GotoDefinitionParams, HoverParams, HoverProviderCapability,
-    InitializeParams, MessageType, OneOf, ReferenceParams, SemanticTokenModifier,
-    SemanticTokenType, SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
-    SemanticTokensParams, SemanticTokensServerCapabilities, ServerCapabilities, ShowMessageParams,
-    SignatureHelpOptions, SignatureHelpParams, TextDocumentSyncCapability, TextDocumentSyncKind,
-    Url, WorkDoneProgressOptions,
+    DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
+    DidOpenTextDocumentParams, DocumentSymbolParams, FileChangeType, GotoDefinitionParams,
+    HoverParams, HoverProviderCapability, InitializeParams, MessageType, OneOf, ReferenceParams,
+    SemanticTokenModifier, SemanticTokenType, SemanticTokensFullOptions, SemanticTokensLegend,
+    SemanticTokensOptions, SemanticTokensParams, SemanticTokensServerCapabilities,
+    ServerCapabilities, ShowMessageParams, SignatureHelpOptions, SignatureHelpParams,
+    TextDocumentSyncCapability, TextDocumentSyncKind, Url, WorkDoneProgressOptions,
 };
 use notify::Watcher;
 use serde::Serialize;
@@ -286,7 +287,7 @@ impl Server {
         }
         let text = params.text_document.text;
         self.store
-            .handle_open_document(uri, text, &mut self.parser)
+            .handle_open_document(&uri, text, &mut self.parser)
             .expect("Couldn't parse file");
 
         Ok(())
@@ -302,7 +303,7 @@ impl Server {
                 let mut text = old_document.text().to_string();
                 utils::apply_document_edit(&mut text, params.content_changes);
                 self.store
-                    .handle_open_document(uri, text, &mut self.parser)?;
+                    .handle_open_document(&uri, text, &mut self.parser)?;
             }
             None => match uri.to_file_path() {
                 Ok(path) => {
@@ -311,6 +312,28 @@ impl Server {
                 Err(_) => return Ok(()),
             },
         };
+
+        Ok(())
+    }
+
+    fn did_change_watched_files(
+        &mut self,
+        params: DidChangeWatchedFilesParams,
+    ) -> anyhow::Result<()> {
+        for mut change in params.changes {
+            utils::normalize_uri(&mut change.uri);
+            match change.typ {
+                FileChangeType::DELETED => self.store.remove(&change.uri, &mut self.parser),
+                FileChangeType::CREATED => {
+                    if let Ok(path) = change.uri.to_file_path() {
+                        let _ = self
+                            .store
+                            .load(path.as_path().to_path_buf(), &mut self.parser);
+                    }
+                }
+                _ => {}
+            }
+        }
 
         Ok(())
     }
@@ -350,7 +373,7 @@ impl Server {
                 .get(&main_uri)
                 .expect("Main Path does not exist.");
             self.store
-                .handle_open_document(document.uri, document.text, &mut self.parser)
+                .handle_open_document(&document.uri, document.text, &mut self.parser)
                 .expect("Couldn't parse file");
         } else {
             self.client
@@ -366,7 +389,7 @@ impl Server {
                 let document = self.store.get(uri);
                 if let Some(document) = document {
                     self.store
-                        .handle_open_document(document.uri, document.text, &mut self.parser)
+                        .handle_open_document(&document.uri, document.text, &mut self.parser)
                         .unwrap();
                 }
             }
@@ -424,7 +447,7 @@ impl Server {
                 if !document.parsed {
                     self.store
                         .handle_open_document(
-                            document.uri.clone(),
+                            &document.uri.clone(),
                             document.text.clone(),
                             &mut self.parser,
                         )
@@ -642,7 +665,7 @@ impl Server {
                         for uri in uris.iter() {
                             match self.store.get(uri) {
                                 Some(_) => {
-                                    self.store.remove(uri);
+                                    self.store.remove(uri, &mut self.parser);
                                 }
                                 None => {
                                     let _ = self
@@ -655,7 +678,7 @@ impl Server {
                     _ => {
                         if let Some(document) = self.store.documents.get(&uri) {
                             let _ = self.store.handle_open_document(
-                                Arc::new(uri),
+                                &Arc::new(uri),
                                 document.text.clone(),
                                 &mut self.parser,
                             );
@@ -666,7 +689,7 @@ impl Server {
             notify::EventKind::Remove(_) => {
                 for mut uri in event.paths.iter().flat_map(Url::from_file_path) {
                     utils::normalize_uri(&mut uri);
-                    self.store.remove(&uri);
+                    self.store.remove(&uri, &mut self.parser);
                 }
             }
             notify::EventKind::Any | notify::EventKind::Access(_) | notify::EventKind::Other => {}
@@ -706,6 +729,9 @@ impl Server {
                                 .on::<DidChangeTextDocument, _>(|params| self.did_change(params))?
                                 .on::<DidChangeConfiguration, _>(|params| {
                                     self.did_change_configuration(params)
+                                })?
+                                .on::<DidChangeWatchedFiles, _>(|params| {
+                                    self.did_change_watched_files(params)
                                 })?
                                 .default();
                                 }

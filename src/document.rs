@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     collections::HashSet,
     str::Utf8Error,
     sync::{Arc, RwLock},
@@ -50,15 +51,17 @@ pub struct Document {
     #[new(default)]
     pub sp_items: Vec<Arc<RwLock<SPItem>>>,
     #[new(default)]
-    pub includes: HashSet<Url>,
+    pub includes: HashMap<Url, Token>,
     #[new(value = "false")]
     pub parsed: bool,
     #[new(value = "vec![]")]
     pub tokens: Vec<Arc<Token>>,
-    #[new(value = "HashSet::new()")]
-    pub missing_includes: HashSet<String>,
-    #[new(value = "HashSet::new()")]
+    #[new(default)]
+    pub missing_includes: HashMap<String, Range>,
+    #[new(default)]
     pub unresolved_tokens: HashSet<String>,
+    #[new(default)]
+    pub declarations: HashMap<String, Arc<RwLock<SPItem>>>,
 }
 
 pub struct Walker {

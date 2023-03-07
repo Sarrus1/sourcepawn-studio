@@ -50,7 +50,7 @@ impl Document {
             return Ok(());
         }
         let name_node = name_node.unwrap();
-        let name = name_node.utf8_text(self.text.as_bytes());
+        let name = name_node.utf8_text(self.text.as_bytes())?.to_string();
 
         let mut type_ = "";
         if let Some(type_node) = type_node {
@@ -60,7 +60,7 @@ impl Document {
         let description = find_doc(walker, node.start_position().row)?;
 
         let typedef_item = TypedefItem {
-            name: name?.to_string(),
+            name,
             type_: type_.to_string(),
             range: ts_range_to_lsp_range(&name_node.range()),
             full_range: ts_range_to_lsp_range(&node.range()),
@@ -78,7 +78,9 @@ impl Document {
             typedef_item.clone(),
             description,
         )?;
-        self.sp_items.push(typedef_item);
+        self.sp_items.push(typedef_item.clone());
+        self.declarations
+            .insert(typedef_item.clone().read().unwrap().key(), typedef_item);
 
         Ok(())
     }

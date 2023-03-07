@@ -88,7 +88,9 @@ impl Document {
         };
 
         let typeset_item = Arc::new(RwLock::new(SPItem::Typeset(typeset_item)));
-        self.sp_items.push(typeset_item);
+        self.sp_items.push(typeset_item.clone());
+        self.declarations
+            .insert(typeset_item.clone().read().unwrap().key(), typeset_item);
 
         Ok(())
     }

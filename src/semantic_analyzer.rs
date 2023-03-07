@@ -11,31 +11,34 @@ mod resolvers;
 pub mod scope;
 
 use crate::{
-    document::Document,
     spitem::{get_all_items, SPItem},
     store::Store,
 };
 
 use self::{analyzer::Analyzer, resolvers::resolve_item};
 
-impl Document {
-    pub fn find_references(&self, store: &Store) -> HashSet<String> {
-        let all_items = get_all_items(store, false);
+impl Store {
+    pub fn find_references(&mut self, uri: &Url) {
+        if !self.documents.contains_key(uri) {
+            return;
+        }
+        let all_items = get_all_items(self, false);
+        let document = self.documents.get(uri).unwrap();
         let mut unresolved_tokens = HashSet::new();
-        let mut analyzer = Analyzer::new(all_items, self);
-        for token in self.tokens.iter() {
+        let mut analyzer = Analyzer::new(all_items, document);
+        for token in document.tokens.iter() {
             analyzer.update_scope(token.range);
             analyzer.update_line_context(token);
-            if resolve_item(&mut analyzer, token, self).is_none() {
+            if resolve_item(&mut analyzer, token, document).is_none() {
                 // Token was not resolved
                 unresolved_tokens.insert(token.text.clone());
             }
 
             analyzer.token_idx += 1;
         }
-        resolve_methodmap_inherits(get_all_items(store, false));
-
-        unresolved_tokens
+        resolve_methodmap_inherits(get_all_items(self, false));
+        let document = self.documents.get_mut(uri).unwrap();
+        document.unresolved_tokens = unresolved_tokens;
     }
 }
 

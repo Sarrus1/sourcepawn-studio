@@ -11,8 +11,6 @@ use crate::{
     utils::ts_range_to_lsp_range,
 };
 
-use super::property_parser::parse_property;
-
 impl Document {
     pub(crate) fn parse_methodmap(
         &mut self,
@@ -20,7 +18,7 @@ impl Document {
         walker: &mut Walker,
     ) -> Result<(), Utf8Error> {
         let name_node = node.child_by_field_name("name").unwrap();
-        let name = name_node.utf8_text(self.text.as_bytes()).unwrap();
+        let name = name_node.utf8_text(self.text.as_bytes())?.to_string();
         let inherit_node = node.child_by_field_name("inherits");
         let inherit = match inherit_node {
             Some(inherit_node) => Some(
@@ -34,7 +32,7 @@ impl Document {
         };
 
         let methodmap_item = MethodmapItem {
-            name: name.to_string(),
+            name,
             range: ts_range_to_lsp_range(&name_node.range()),
             full_range: ts_range_to_lsp_range(&node.range()),
             // TODO: Handle inherit
@@ -48,7 +46,9 @@ impl Document {
 
         let methodmap_item = Arc::new(RwLock::new(SPItem::Methodmap(methodmap_item)));
         read_methodmap_members(self, node, methodmap_item.clone(), walker);
-        self.sp_items.push(methodmap_item);
+        self.sp_items.push(methodmap_item.clone());
+        self.declarations
+            .insert(methodmap_item.clone().read().unwrap().key(), methodmap_item);
 
         Ok(())
     }
@@ -74,7 +74,9 @@ fn read_methodmap_members(
                     .unwrap();
             }
             "methodmap_property" => {
-                parse_property(document, &mut child, walker, methodmap_item.clone()).unwrap();
+                document
+                    .parse_property(&mut child, walker, methodmap_item.clone())
+                    .unwrap();
             }
             "comment" => walker.push_comment(child, &document.text),
             "preproc_pragma" => walker.push_deprecated(child, &document.text),

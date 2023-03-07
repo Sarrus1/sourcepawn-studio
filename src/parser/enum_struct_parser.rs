@@ -18,14 +18,13 @@ impl Document {
         node: &mut Node,
         walker: &mut Walker,
     ) -> Result<(), Utf8Error> {
-        // Name of the enum struct
         let name_node = node.child_by_field_name("name").unwrap();
-        let name = name_node.utf8_text(self.text.as_bytes());
+        let name = name_node.utf8_text(self.text.as_bytes())?.to_string();
 
         let documentation = find_doc(walker, node.start_position().row)?;
 
         let enum_struct_item = EnumStructItem {
-            name: name?.to_string(),
+            name,
             range: ts_range_to_lsp_range(&name_node.range()),
             full_range: ts_range_to_lsp_range(&node.range()),
             description: documentation,
@@ -36,7 +35,11 @@ impl Document {
 
         let enum_struct_item = Arc::new(RwLock::new(SPItem::EnumStruct(enum_struct_item)));
         parse_enum_struct_members(self, node, enum_struct_item.clone(), walker);
-        self.sp_items.push(enum_struct_item);
+        self.sp_items.push(enum_struct_item.clone());
+        self.declarations.insert(
+            enum_struct_item.clone().read().unwrap().key(),
+            enum_struct_item,
+        );
 
         Ok(())
     }

@@ -39,77 +39,69 @@ impl Analyzer {
                 // Match variables
                 SPItem::Variable(variable_item) => {
                     // Global variable
-                    tokens_map.insert(variable_item.name.to_string(), item.clone());
+                    tokens_map.insert(variable_item.key(), item.clone());
                 }
                 SPItem::Function(function_item) => {
                     // First level function.
                     if function_item.uri.eq(&document.uri) {
                         funcs_in_file.push(item.clone());
                     }
-                    tokens_map.insert(function_item.name.to_string(), item.clone());
+                    tokens_map.insert(function_item.key(), item.clone());
                     // All variables of the function.
                     for child in &function_item.children {
                         purge_references(child, &document.uri);
-                        let key =
-                            format!("{}-{}", function_item.name, child.read().unwrap().name());
-                        tokens_map.insert(key, child.clone());
+                        tokens_map.insert(child.read().unwrap().key(), child.clone());
                     }
                 }
                 SPItem::Methodmap(methodmap_item) => {
                     if methodmap_item.uri.eq(&document.uri) {
                         mm_es_in_file.push(item.clone());
                     }
-                    tokens_map.insert(methodmap_item.name.to_string(), item.clone());
+                    tokens_map.insert(methodmap_item.key(), item.clone());
                     // All properties and methods of the enum struct.
                     for child in &methodmap_item.children {
                         purge_references(child, &document.uri);
-                        let key =
-                            format!("{}-{}", methodmap_item.name, child.read().unwrap().name());
-                        tokens_map.insert(key, child.clone());
+                        tokens_map.insert(child.read().unwrap().key(), child.clone());
                     }
                 }
                 SPItem::EnumStruct(enum_struct_item) => {
                     if enum_struct_item.uri.eq(&document.uri) {
                         mm_es_in_file.push(item.clone());
                     }
-                    tokens_map.insert(enum_struct_item.name.to_string(), item.clone());
+                    tokens_map.insert(enum_struct_item.key(), item.clone());
                     // All fields and methods of the enum struct.
                     for child in &enum_struct_item.children {
                         purge_references(child, &document.uri);
-                        let key =
-                            format!("{}-{}", enum_struct_item.name, child.read().unwrap().name());
-                        tokens_map.insert(key, child.clone());
+                        tokens_map.insert(child.read().unwrap().key(), child.clone());
                     }
                 }
                 SPItem::Enum(enum_item) => {
-                    tokens_map.insert(enum_item.name.to_string(), item.clone());
+                    tokens_map.insert(enum_item.key(), item.clone());
                     // All enum members of the enum.
                     for child in &enum_item.children {
                         purge_references(child, &document.uri);
-                        tokens_map.insert(child.read().unwrap().name(), child.clone());
+                        tokens_map.insert(child.read().unwrap().key(), child.clone());
                     }
                 }
                 SPItem::Define(define_item) => {
-                    tokens_map.insert(define_item.name.to_string(), item.clone());
+                    tokens_map.insert(define_item.key(), item.clone());
                 }
                 SPItem::Property(property_item) => {
-                    if let SPItem::Methodmap(property_item_parent) =
+                    if let SPItem::Methodmap(_) =
                         &*property_item.parent.upgrade().unwrap().read().unwrap()
                     {
-                        let key = format!("{}-{}", property_item_parent.name, property_item.name);
-                        tokens_map.insert(key, item.clone());
+                        tokens_map.insert(property_item.key(), item.clone());
                     }
                 }
                 SPItem::Typedef(typedef_item) => {
-                    tokens_map.insert(typedef_item.name.to_string(), item.clone());
+                    tokens_map.insert(typedef_item.key(), item.clone());
                 }
                 SPItem::Typeset(typeset_item) => {
-                    tokens_map.insert(typeset_item.name.to_string(), item.clone());
+                    tokens_map.insert(typeset_item.key(), item.clone());
                     // All typedef members of the typeset.
                     for child in &typeset_item.children {
                         purge_references(child, &document.uri);
-                        let key = format!("{}-{}", typeset_item.name, child.read().unwrap().name());
-                        tokens_map.insert(key, child.clone());
+                        tokens_map.insert(child.read().unwrap().key(), child.clone());
                     }
                 }
                 SPItem::Include(_) => {}

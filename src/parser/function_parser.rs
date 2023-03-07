@@ -79,7 +79,7 @@ impl Document {
             return Ok(());
         }
         let name_node = name_node.unwrap();
-        let name = name_node.utf8_text(self.text.as_bytes());
+        let name = name_node.utf8_text(self.text.as_bytes())?.to_string();
 
         let mut type_ = Ok("");
         if let Some(type_node) = type_node {
@@ -113,7 +113,7 @@ impl Document {
         let documentation = find_doc(walker, node.start_position().row)?;
 
         let function_item = FunctionItem {
-            name: name?.to_string(),
+            name: name.clone(),
             type_: type_?.to_string(),
             range: ts_range_to_lsp_range(&name_node.range()),
             full_range: ts_range_to_lsp_range(&node.range()),
@@ -121,7 +121,7 @@ impl Document {
             uri: self.uri.clone(),
             detail: build_detail(
                 self,
-                name,
+                &name,
                 type_,
                 argument_declarations_node,
                 visibility_node,
@@ -152,10 +152,12 @@ impl Document {
             function_item.clone(),
         )?;
         if let Some(parent) = &parent {
-            parent.write().unwrap().push_child(function_item);
+            parent.write().unwrap().push_child(function_item.clone());
         } else {
-            self.sp_items.push(function_item);
+            self.sp_items.push(function_item.clone());
         }
+        self.declarations
+            .insert(function_item.clone().read().unwrap().key(), function_item);
 
         Ok(())
     }
@@ -163,13 +165,13 @@ impl Document {
 
 fn build_detail(
     document: &Document,
-    name: Result<&str, Utf8Error>,
+    name: &str,
     type_: Result<&str, Utf8Error>,
     params_node: Option<Node>,
     visibility_node: Option<Node>,
     definition_type_node: Option<Node>,
 ) -> Result<String, Utf8Error> {
-    let mut detail = format!("{} {}", type_?, name?);
+    let mut detail = format!("{} {}", type_?, name);
     if let Some(params_node) = params_node {
         detail.push_str(params_node.utf8_text(document.text.as_bytes()).unwrap());
     }

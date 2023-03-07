@@ -18,7 +18,7 @@ impl Document {
         walker: &mut Walker,
     ) -> Result<(), Utf8Error> {
         let name_node = node.child_by_field_name("name").unwrap();
-        let name = name_node.utf8_text(self.text.as_bytes()).unwrap();
+        let name = name_node.utf8_text(self.text.as_bytes())?.to_string();
         let value_node = node.child_by_field_name("value");
         let value = match value_node {
             Some(value_node) => value_node.utf8_text(self.text.as_bytes()).unwrap().trim(),
@@ -26,7 +26,7 @@ impl Document {
         };
 
         let define_item = DefineItem {
-            name: name.to_string(),
+            name,
             range: ts_range_to_lsp_range(&name_node.range()),
             full_range: ts_range_to_lsp_range(&node.range()),
             value: value.to_string(),
@@ -36,7 +36,9 @@ impl Document {
         };
 
         let define_item = Arc::new(RwLock::new(SPItem::Define(define_item)));
-        self.sp_items.push(define_item);
+        self.sp_items.push(define_item.clone());
+        self.declarations
+            .insert(define_item.clone().read().unwrap().key(), define_item);
 
         Ok(())
     }

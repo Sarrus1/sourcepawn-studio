@@ -86,9 +86,12 @@ impl Document {
                     };
                     let variable_item = Arc::new(RwLock::new(SPItem::Variable(variable_item)));
                     if let Some(parent) = &parent {
+                        // Don't add the variable item as a declaration if it's a local variable.
                         parent.write().unwrap().push_child(variable_item);
                     } else {
-                        self.sp_items.push(variable_item);
+                        self.sp_items.push(variable_item.clone());
+                        self.declarations
+                            .insert(variable_item.clone().read().unwrap().key(), variable_item);
                     }
                 }
                 _ => {}

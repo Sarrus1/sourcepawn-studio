@@ -47,7 +47,9 @@ impl Document {
                 self.uri.clone(),
             );
         }
-        self.sp_items.push(enum_item);
+        self.sp_items.push(enum_item.clone());
+        self.declarations
+            .insert(enum_item.clone().read().unwrap().key(), enum_item);
 
         Ok(())
     }

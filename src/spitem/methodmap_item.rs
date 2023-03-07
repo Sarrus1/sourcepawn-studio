@@ -124,6 +124,11 @@ impl MethodmapItem {
         })
     }
 
+    /// Return a key to be used as a unique identifier in a map containing all the items.
+    pub(crate) fn key(&self) -> String {
+        self.name.clone()
+    }
+
     /// Formatted representation of the methodmap.
     ///
     /// # Exemple
