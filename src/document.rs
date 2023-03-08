@@ -6,8 +6,8 @@ use std::{
 use derive_new::new;
 use fxhash::{FxHashMap, FxHashSet};
 use lazy_static::lazy_static;
-use lsp_types::Range;
 use lsp_types::Url;
+use lsp_types::{Diagnostic, Range};
 use regex::Regex;
 use tree_sitter::{Node, Query, QueryCursor};
 
@@ -61,6 +61,8 @@ pub struct Document {
     pub unresolved_tokens: FxHashSet<String>,
     #[new(default)]
     pub declarations: FxHashMap<String, Arc<RwLock<SPItem>>>,
+    #[new(default)]
+    pub diagnostics: Vec<Diagnostic>,
 }
 
 pub struct Walker {

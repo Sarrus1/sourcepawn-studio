@@ -25,7 +25,7 @@ impl Server {
         } else {
             self.client
                 .send_notification::<ShowMessage>(ShowMessageParams {
-                    message: "Invalid MainPath setting.\nPlease make sure it is valid.".to_string(),
+                    message: "Invalid MainPath setting.\nPlease make sure it is valid.\nIf you are using VSCode, the setting API of sourcepawn-vscode has changed.".to_string(),
                     typ: MessageType::WARNING,
                 })?;
             let mut uris: Vec<Url> = vec![];
@@ -45,6 +45,7 @@ impl Server {
         self.store.first_parse = false;
         eprintln!("Reparsed all the files in {:.2?}", now.elapsed());
         self.indexing = false;
+        self.reload_diagnostics();
         self.send_status()?;
 
         Ok(())

@@ -11,6 +11,7 @@ impl Server {
                 for path in event.paths {
                     let _ = self.store.load(path, &mut self.parser);
                 }
+                self.reload_diagnostics();
             }
             notify::EventKind::Modify(modify_event) => {
                 let uri = Url::from_file_path(event.paths[0].clone());
@@ -87,12 +88,14 @@ impl Server {
                         }
                     }
                 }
+                self.reload_diagnostics();
             }
             notify::EventKind::Remove(_) => {
                 for mut uri in event.paths.iter().flat_map(Url::from_file_path) {
                     utils::normalize_uri(&mut uri);
                     self.store.remove(&uri, &mut self.parser);
                 }
+                self.reload_diagnostics();
             }
             notify::EventKind::Any | notify::EventKind::Access(_) | notify::EventKind::Other => {}
         };

@@ -1,13 +1,14 @@
-use crate::{lsp_ext, options::Options, store::Store};
+use crate::{linter::spcomp::SPCompDiagnostic, lsp_ext, options::Options, store::Store};
 use std::{path::PathBuf, sync::Arc};
 
 use crossbeam_channel::{Receiver, Sender};
+use fxhash::FxHashMap;
 use lsp_server::{Connection, Message};
 use lsp_types::{
     CompletionOptions, HoverProviderCapability, InitializeParams, OneOf, SemanticTokenModifier,
     SemanticTokenType, SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
     SemanticTokensServerCapabilities, ServerCapabilities, SignatureHelpOptions,
-    TextDocumentSyncCapability, TextDocumentSyncKind, WorkDoneProgressOptions,
+    TextDocumentSyncCapability, TextDocumentSyncKind, Url, WorkDoneProgressOptions,
 };
 
 use threadpool::ThreadPool;
@@ -17,6 +18,7 @@ use crate::client::LspClient;
 
 use self::fork::ServerFork;
 
+mod diagnostics;
 mod files;
 mod fork;
 mod notifications;
@@ -26,6 +28,7 @@ mod requests;
 enum InternalMessage {
     SetOptions(Arc<Options>),
     FileEvent(notify::Event),
+    Diagnostics(FxHashMap<Url, Vec<SPCompDiagnostic>>),
 }
 
 pub struct Server {
@@ -192,6 +195,9 @@ impl Server {
                             }
                             InternalMessage::FileEvent(event) => {
                                 self.handle_file_event(event);
+                            }
+                            InternalMessage::Diagnostics(diagnostics) => {
+                                self.publish_diagnostics(diagnostics)?;
                             }
                         }
                 }
