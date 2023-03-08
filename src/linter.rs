@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::{fs, process::Command};
 
 use fxhash::FxHashMap;
 use lazy_static::lazy_static;
@@ -57,19 +57,30 @@ impl Store {
         &mut self,
         uri: Url,
     ) -> FxHashMap<Url, Vec<SPCompDiagnostic>> {
+        let out_path = uri
+            .to_file_path()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("tmp6306493182.smx");
         let output = if cfg!(target_os = "windows") {
             Command::new("cmd")
                 .arg("/C")
                 .args(self.build_args(uri))
+                .arg(format!("-o{}", out_path.to_str().unwrap()))
                 .output()
                 .expect("failed to execute process")
         } else {
             Command::new("sh")
                 .arg("-c")
                 .args(self.build_args(uri))
+                .arg(format!("-o{}", out_path.to_str().unwrap()))
                 .output()
                 .expect("failed to execute process")
         };
+        if out_path.exists() {
+            fs::remove_file(out_path);
+        }
         self.clear_all_diagnostics();
         let output = String::from_utf8_lossy(&output.stdout);
         let mut res: FxHashMap<Url, Vec<SPCompDiagnostic>> = FxHashMap::default();
@@ -91,15 +102,33 @@ impl Store {
     }
 
     fn build_args(&mut self, uri: Url) -> Vec<String> {
-        vec![
+        let file_path = uri.to_file_path().unwrap();
+        let mut args = vec![
             self.environment
                 .options
                 .spcomp_path
                 .to_str()
                 .unwrap()
                 .to_string(),
-            uri.to_file_path().unwrap().to_str().unwrap().to_string(),
-        ]
+            file_path.to_str().unwrap().to_string(),
+        ];
+        for includes_directory in self.environment.options.includes_directories.iter() {
+            args.push(format!("-i{}", includes_directory.to_str().unwrap()));
+        }
+        let parent_path = file_path.parent().unwrap();
+        args.push(format!("-i{}", parent_path.to_str().unwrap()));
+        let include_path = parent_path.join("include");
+        if include_path.exists() {
+            args.push(format!("-i{}", include_path.to_str().unwrap()));
+        }
+
+        if cfg!(target_os = "windows") {
+            args.push("-oc:\\nul".to_string())
+        } else {
+            args.push("-o/dev/null".to_string())
+        }
+
+        args
     }
 }
 
@@ -114,7 +143,7 @@ fn parse_spcomp_errors(output: &str) -> Vec<SPCompDiagnostic> {
     for captures in RE.captures_iter(output) {
         diagnostics.push(SPCompDiagnostic {
             uri: Url::from_file_path(captures.get(1).unwrap().as_str()).unwrap(),
-            line_index: captures.get(2).unwrap().as_str().parse::<u32>().unwrap(),
+            line_index: captures.get(2).unwrap().as_str().parse::<u32>().unwrap() - 1,
             severity: match captures.get(4).unwrap().as_str() {
                 "warning" => SPCompSeverity::Warning,
                 "error" => SPCompSeverity::Error,

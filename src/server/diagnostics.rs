@@ -1,5 +1,5 @@
 use fxhash::FxHashMap;
-use lsp_types::{notification::PublishDiagnostics, PublishDiagnosticsParams, Url};
+use lsp_types::{notification::PublishDiagnostics, Diagnostic, PublishDiagnosticsParams, Url};
 
 use crate::{linter::SPCompDiagnostic, Server};
 
@@ -28,13 +28,17 @@ impl Server {
         diagnostics_map: FxHashMap<Url, Vec<SPCompDiagnostic>>,
     ) -> anyhow::Result<()> {
         for (uri, diagnostics) in diagnostics_map {
+            let lsp_diagnostics: Vec<Diagnostic> = diagnostics
+                .iter()
+                .map(|diagnostic| diagnostic.to_lsp_diagnostic())
+                .collect();
+            if let Some(document) = self.store.documents.get_mut(&uri) {
+                document.diagnostics = lsp_diagnostics.clone();
+            }
             self.client
                 .send_notification::<PublishDiagnostics>(PublishDiagnosticsParams {
                     uri,
-                    diagnostics: diagnostics
-                        .iter()
-                        .map(|diagnostic| diagnostic.to_lsp_diagnostic())
-                        .collect(),
+                    diagnostics: lsp_diagnostics,
                     version: None,
                 })?;
         }
