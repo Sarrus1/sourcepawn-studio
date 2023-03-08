@@ -134,7 +134,7 @@ pub(super) fn get_method_completions(
             let type_ = item.read().unwrap().type_();
             let type_item = all_items
                 .iter()
-                .find(|type_item| type_item.read().unwrap().name() != type_);
+                .find(|type_item| type_item.read().unwrap().name() == type_);
             if type_item.is_none() {
                 continue;
             }
