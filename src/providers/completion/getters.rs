@@ -109,61 +109,59 @@ pub(super) fn get_method_completions(
         }
         for item in items.iter() {
             let type_ = item.read().unwrap().type_();
-            for type_item in all_items.iter() {
-                if type_item.read().unwrap().name() != type_ {
-                    continue;
-                }
-                let item_lock = type_item.read().unwrap().clone();
-                match item_lock {
-                    SPItem::Methodmap(mm_item) => {
-                        let mut children = mm_item.children;
-                        extend_children(&mut children, &mm_item.parent);
-                        let mut items = vec![];
-                        for child in children.iter() {
-                            match &*child.read().unwrap() {
-                                SPItem::Function(method_item) => {
-                                    if item.read().unwrap().name()
-                                        == type_item.read().unwrap().name()
-                                    {
-                                        if method_item.is_static() {
-                                            // We are trying to call static methods.
-                                            items.extend(
-                                                method_item.to_completions(&request.params, true),
-                                            );
-                                        }
-                                        continue;
-                                    } else if !method_item.is_static() {
-                                        // We are trying to call non static methods.
+            let type_item = all_items
+                .iter()
+                .find(|type_item| type_item.read().unwrap().name() != type_);
+            if type_item.is_none() {
+                continue;
+            }
+            let type_item = type_item.unwrap();
+            match type_item.read().unwrap().clone() {
+                SPItem::Methodmap(mm_item) => {
+                    let mut children = mm_item.children;
+                    extend_children(&mut children, &mm_item.parent);
+                    let mut items = vec![];
+                    for child in children.iter() {
+                        match &*child.read().unwrap() {
+                            SPItem::Function(method_item) => {
+                                if method_item.is_ctr() {
+                                    // We don't want constructors here.
+                                    continue;
+                                }
+                                if is_static_call(item, type_item) {
+                                    // We are trying to call static methods.
+                                    if method_item.is_static() {
                                         items.extend(
                                             method_item.to_completions(&request.params, true),
                                         );
                                     }
+                                } else if !method_item.is_static() {
+                                    // We are trying to call non static methods.
+                                    items.extend(method_item.to_completions(&request.params, true));
                                 }
-                                SPItem::Property(property_item) => {
-                                    items.extend(property_item.to_completion(&request.params, true))
-                                }
-                                _ => {}
                             }
+                            SPItem::Property(property_item) => {
+                                items.extend(property_item.to_completion(&request.params, true))
+                            }
+                            _ => {}
                         }
-                        return Some(CompletionList {
-                            items,
-                            ..Default::default()
-                        });
                     }
-                    SPItem::EnumStruct(es_item) => {
-                        let mut items = vec![];
-                        for child in es_item.children.iter() {
-                            items.extend(
-                                child.read().unwrap().to_completions(&request.params, true),
-                            );
-                        }
-                        return Some(CompletionList {
-                            items,
-                            ..Default::default()
-                        });
-                    }
-                    _ => {}
+                    return Some(CompletionList {
+                        items,
+                        ..Default::default()
+                    });
                 }
+                SPItem::EnumStruct(es_item) => {
+                    let mut items = vec![];
+                    for child in es_item.children.iter() {
+                        items.extend(child.read().unwrap().to_completions(&request.params, true));
+                    }
+                    return Some(CompletionList {
+                        items,
+                        ..Default::default()
+                    });
+                }
+                _ => {}
             }
         }
     }
@@ -178,4 +176,23 @@ fn extend_children(children: &mut Vec<Arc<RwLock<SPItem>>>, mm_item: &Option<Arc
             extend_children(children, &mm_item.parent);
         }
     }
+}
+
+/// Return whether or not the method call is a static call.
+///
+/// If the name of the method caller is the same as the name of the type, it's a static call.
+///
+/// # Example
+///
+/// ```
+/// Database.Connect(); // <- Static call
+/// cvFoo.GetStringValue(); // <- Non static call
+/// ```
+///
+/// # Arguments
+///
+/// * `item` - [SPItem](crate::spitem::SPItem) of the call origin.
+/// * `type_item` - [SPItem](crate::spitem::SPItem) associated with the type.
+fn is_static_call(item: &Arc<RwLock<SPItem>>, type_item: &Arc<RwLock<SPItem>>) -> bool {
+    item.read().unwrap().name() == type_item.read().unwrap().name()
 }

@@ -264,6 +264,17 @@ impl FunctionItem {
         }
     }
 
+    /// Return whether or not the method is a methodmap constructor.
+    pub(crate) fn is_ctr(&self) -> bool {
+        if let Some(parent) = &self.parent {
+            if let SPItem::Methodmap(mm_item) = &*parent.upgrade().unwrap().read().unwrap() {
+                return mm_item.name == self.name;
+            }
+        }
+
+        false
+    }
+
     /// Formatted representation of a [FunctionItem].
     ///
     /// # Exemple
