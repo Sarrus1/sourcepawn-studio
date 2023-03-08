@@ -35,7 +35,6 @@ impl Document {
             name,
             range: ts_range_to_lsp_range(&name_node.range()),
             full_range: ts_range_to_lsp_range(&node.range()),
-            // TODO: Handle inherit
             parent: None,
             description: find_doc(walker, node.start_position().row)?,
             uri: self.uri.clone(),
