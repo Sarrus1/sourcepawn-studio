@@ -16,6 +16,9 @@ import { Ctx } from "./ctx";
 export let ctx: Ctx | undefined;
 
 async function checkForLanguageServerUpdate(context: vscode.ExtensionContext) {
+  if (context.extensionMode === vscode.ExtensionMode.Development) {
+    return;
+  }
   const latestVersion = await getLatestVersionName();
   const installedVersion = context.globalState.get("language_server_version");
   if (
