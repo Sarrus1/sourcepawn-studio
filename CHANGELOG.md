@@ -1,5 +1,15 @@
 ## Release Notes
 
+## [5.2.0]
+
+### Added
+
+- Improved the setting migration.
+
+### Fixed
+
+- Fixed the server trying to update in debug mode.
+
 ## [5.0.4]
 
 ### Added
