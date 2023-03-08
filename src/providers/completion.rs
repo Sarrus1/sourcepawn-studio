@@ -8,7 +8,7 @@ use crate::{
 };
 
 use self::{
-    context::{is_callback_completion_request, is_method_call},
+    context::{is_callback_completion_request, is_doc_completion, is_method_call},
     getters::{get_callback_completions, get_method_completions, get_non_method_completions},
     include::is_include_statement,
 };
@@ -19,7 +19,7 @@ pub(crate) mod context;
 mod getters;
 mod include;
 mod matchtoken;
-// "*".to_string(),
+
 pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<CompletionList> {
     let document = request.store.get(&request.uri)?;
     let all_items = get_all_items(&request.store, false);
@@ -50,6 +50,14 @@ pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<
                     return get_callback_completions(all_items, position);
                 }
                 return None;
+            }
+            '*' => {
+                if let Some(item) = is_doc_completion(&pre_line, &position, &all_items) {
+                    return item
+                        .read()
+                        .unwrap()
+                        .doc_completion(document.line(position.line + 1).unwrap());
+                }
             }
             _ => {
                 // In the last case, the user might be picking on an unfinished completion:

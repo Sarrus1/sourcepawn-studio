@@ -1,12 +1,14 @@
+use std::cmp;
 use std::sync::{Arc, RwLock, Weak};
 
 use super::{parameter::Parameter, Location};
 use fxhash::FxHashSet;
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, CompletionTextEdit,
-    DocumentSymbol, Documentation, GotoDefinitionParams, Hover, HoverContents, HoverParams,
-    InsertTextFormat, LanguageString, LocationLink, MarkedString, MarkupContent,
-    ParameterInformation, Range, SignatureInformation, SymbolKind, SymbolTag, TextEdit, Url,
+    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionList, CompletionParams,
+    CompletionTextEdit, DocumentSymbol, Documentation, GotoDefinitionParams, Hover, HoverContents,
+    HoverParams, InsertTextFormat, LanguageString, LocationLink, MarkedString, MarkupContent,
+    ParameterInformation, Position, Range, SignatureInformation, SymbolKind, SymbolTag, TextEdit,
+    Url,
 };
 
 use crate::providers::hover::description::Description;
@@ -252,6 +254,78 @@ impl FunctionItem {
         })
     }
 
+    /// Return a snippet [CompletionItem] from a [FunctionItem] for a doc completion.
+    ///
+    /// # Arguments
+    ///
+    /// * `line` - Line of text of the function declaration to extract the indentation string.
+    pub(crate) fn doc_completion(&self, line: &str) -> Option<CompletionList> {
+        // Get the indent of the doc comment.
+        // Getting it directly from the file avoids the problem of dealing with tabs and spaces.
+        let indent: String = line
+            .chars()
+            .take(self.full_range.start.character as usize)
+            .collect();
+
+        let max_param_len = self.longest_param();
+
+        let mut snippet_text = format!("{}/**\n{} * ${{1:Description}}\n", indent, indent);
+        if !self.params.is_empty() || self.type_ != "void" {
+            // Add a space between the parameters and the description if needed.
+            snippet_text.push_str(format!("{} *\n", indent).as_str());
+        }
+        for (i, param) in self.params.iter().enumerate() {
+            let name = param.read().unwrap().name.clone();
+            snippet_text.push_str(
+                format!(
+                    "{} * @param {}{}    ${{{}:Param description}}\n",
+                    indent,
+                    name,
+                    " ".repeat(max_param_len - name.len()),
+                    i + 2
+                )
+                .as_str(),
+            );
+        }
+
+        if self.type_ != "void" {
+            snippet_text.push_str(
+                format!(
+                    "{} * @return ${{{}:Return description}}\n",
+                    indent,
+                    self.params.len() + 2
+                )
+                .as_str(),
+            );
+        }
+        snippet_text.push_str(format!("{} */", indent).as_str());
+        let comp_item = CompletionItem {
+            label: "Doc Completion".to_string(),
+            filter_text: Some("/*".to_string()),
+            kind: Some(CompletionItemKind::TEXT),
+            text_edit: Some(CompletionTextEdit::Edit(TextEdit {
+                range: Range {
+                    start: Position {
+                        line: self.full_range.start.line - 1,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: self.full_range.start.line - 1,
+                        character: 0,
+                    },
+                },
+                new_text: snippet_text,
+            })),
+            insert_text_format: Some(InsertTextFormat::SNIPPET),
+            ..Default::default()
+        };
+
+        Some(CompletionList {
+            items: vec![comp_item],
+            ..Default::default()
+        })
+    }
+
     /// Return a key to be used as a unique identifier in a map containing all the items.
     pub(crate) fn key(&self) -> String {
         match &self.parent {
@@ -273,6 +347,15 @@ impl FunctionItem {
         }
 
         false
+    }
+
+    pub(crate) fn longest_param(&self) -> usize {
+        let mut max = 0;
+        for param in self.params.iter() {
+            max = cmp::max(max, param.read().unwrap().name.len());
+        }
+
+        max
     }
 
     /// Formatted representation of a [FunctionItem].

@@ -2,8 +2,8 @@ use std::sync::{Arc, RwLock};
 
 use fxhash::FxHashSet;
 use lsp_types::{
-    CompletionItem, CompletionParams, DocumentSymbol, GotoDefinitionParams, Hover, HoverParams,
-    LocationLink, Position, Range, SignatureInformation, Url,
+    CompletionItem, CompletionList, CompletionParams, DocumentSymbol, GotoDefinitionParams, Hover,
+    HoverParams, LocationLink, Position, Range, SignatureInformation, Url,
 };
 
 use crate::{
@@ -374,6 +374,22 @@ impl SPItem {
             SPItem::EnumStruct(_) => None,
             SPItem::Define(_) => None,
             SPItem::Methodmap(item) => item.ctr(),
+            SPItem::Property(_) => None,
+            SPItem::Typedef(_) => None,
+            SPItem::Typeset(_) => None,
+            SPItem::Include(_) => None,
+        }
+    }
+
+    pub fn doc_completion(&self, line: &str) -> Option<CompletionList> {
+        match self {
+            SPItem::Variable(_) => None,
+            SPItem::Function(item) => item.doc_completion(line),
+            SPItem::Enum(_) => None,
+            SPItem::EnumMember(_) => None,
+            SPItem::EnumStruct(_) => None,
+            SPItem::Define(_) => None,
+            SPItem::Methodmap(_) => None,
             SPItem::Property(_) => None,
             SPItem::Typedef(_) => None,
             SPItem::Typeset(_) => None,

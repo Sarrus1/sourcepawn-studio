@@ -1,6 +1,10 @@
+use std::sync::{Arc, RwLock};
+
 use lazy_static::lazy_static;
 use lsp_types::{CompletionContext, Position};
 use regex::Regex;
+
+use crate::spitem::SPItem;
 
 use super::matchtoken::MatchToken;
 
@@ -28,6 +32,37 @@ pub(crate) fn is_ctr_call(pre_line: &str) -> bool {
         static ref RE: Regex = Regex::new(r"new\s+\w*$").unwrap();
     }
     RE.is_match(pre_line)
+}
+
+/// Given a prefix line of a document, return whether or not the end of the prefix line is right after
+/// a constructor call i.e after a `new`.
+///
+/// # Arguments
+///
+/// * `pre_line` - Prefix line to check against.
+pub(crate) fn is_doc_completion(
+    pre_line: &str,
+    position: &Position,
+    all_items: &[Arc<RwLock<SPItem>>],
+) -> Option<Arc<RwLock<SPItem>>> {
+    lazy_static! {
+        static ref RE: Regex = Regex::new(r"/\*\*?$").unwrap();
+    }
+    if !RE.is_match(pre_line) {
+        return None;
+    }
+    all_items
+        .iter()
+        .find(|&item| {
+            let item = &*item.read().unwrap();
+            if let SPItem::Function(function_item) = item {
+                if position.line == function_item.full_range.start.line - 1 {
+                    return true;
+                }
+            }
+            false
+        })
+        .cloned()
 }
 
 /// Check if the trigger character of a [Completion request](lsp_types::request::Completion) is a "$".

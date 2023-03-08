@@ -77,6 +77,7 @@ impl Server {
                     ":".to_string(),
                     " ".to_string(),
                     "$".to_string(),
+                    "*".to_string(),
                 ]),
                 ..Default::default()
             }),
