@@ -22,6 +22,9 @@
     <img alt="GitHub" src="https://img.shields.io/github/license/Sarrus1/sourcepawn-lsp">
   </p>
   <!-- <img src="https://raw.githubusercontent.com/Sarrus1/sourcepawn-lsp/main/img/logo.png" alt="Logo"> -->
-</div>
 
 **This is still a work in progress**
+
+[More information](https://github.com/users/Sarrus1/projects/1/views/1) on the progress of the project
+
+</div>
