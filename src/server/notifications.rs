@@ -74,12 +74,16 @@ impl Server {
                         .reload(change.uri.to_file_path().unwrap(), &mut self.parser);
                     self.reload_diagnostics();
                 }
-                FileChangeType::DELETED => self.store.remove(&change.uri, &mut self.parser),
+                FileChangeType::DELETED => {
+                    self.store.remove(&change.uri, &mut self.parser);
+                    self.reload_diagnostics();
+                }
                 FileChangeType::CREATED => {
                     if let Ok(path) = change.uri.to_file_path() {
                         let _ = self
                             .store
                             .load(path.as_path().to_path_buf(), &mut self.parser);
+                        self.reload_diagnostics();
                     }
                 }
                 _ => {}

@@ -45,6 +45,7 @@ impl Server {
         self.store.first_parse = false;
         eprintln!("Reparsed all the files in {:.2?}", now.elapsed());
         self.indexing = false;
+        self.reload_diagnostics();
         self.send_status()?;
 
         Ok(())
