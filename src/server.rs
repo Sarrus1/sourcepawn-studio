@@ -1,4 +1,4 @@
-use crate::{linter::SPCompDiagnostic, lsp_ext, options::Options, store::Store};
+use crate::{linter::spcomp::SPCompDiagnostic, lsp_ext, options::Options, store::Store};
 use std::{path::PathBuf, sync::Arc};
 
 use crossbeam_channel::{Receiver, Sender};

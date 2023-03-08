@@ -4,7 +4,7 @@ use lsp_types::{
     Diagnostic, MessageType, PublishDiagnosticsParams, ShowMessageParams, Url,
 };
 
-use crate::{linter::SPCompDiagnostic, Server};
+use crate::{linter::spcomp::SPCompDiagnostic, Server};
 
 use super::InternalMessage;
 
