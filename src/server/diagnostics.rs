@@ -9,6 +9,7 @@ use crate::{linter::SPCompDiagnostic, Server};
 use super::InternalMessage;
 
 impl Server {
+    /// Reload the diagnostics of the workspace, by running spcomp.
     pub(crate) fn reload_diagnostics(&mut self) {
         if let Some(main_path_uri) = self.store.environment.options.get_main_path_uri() {
             // Only reload the diagnostics if the main path is defined.
@@ -31,6 +32,11 @@ impl Server {
         }
     }
 
+    /// Publish the diagnostics of the latest diagnostics update.
+    ///
+    /// # Arguments
+    ///
+    /// * `diagnostics_map` - The latest diagnostics.
     pub(crate) fn publish_diagnostics(
         &mut self,
         diagnostics_map: FxHashMap<Url, Vec<SPCompDiagnostic>>,

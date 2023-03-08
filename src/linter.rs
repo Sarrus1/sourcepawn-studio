@@ -7,6 +7,7 @@ use regex::Regex;
 
 use crate::store::Store;
 
+/// Severity levels of spcomp errors.
 #[derive(Debug)]
 enum SPCompSeverity {
     Warning,
@@ -15,6 +16,7 @@ enum SPCompSeverity {
 }
 
 impl SPCompSeverity {
+    /// Convert to a [LSP DiagnosticSeverity](lsp_types::DiagnosticSeverity).
     fn to_lsp_severity(&self) -> DiagnosticSeverity {
         match self {
             SPCompSeverity::Warning => DiagnosticSeverity::WARNING,
@@ -24,15 +26,24 @@ impl SPCompSeverity {
     }
 }
 
+/// Representation of an spcomp error.
 #[derive(Debug)]
 pub(crate) struct SPCompDiagnostic {
+    /// [Uri](Url) of the document where the error comes from.
     uri: Url,
+
+    /// Line index of the error.
     line_index: u32,
+
+    /// Severity of the error.
     severity: SPCompSeverity,
+
+    /// Message of the error.
     message: String,
 }
 
 impl SPCompDiagnostic {
+    /// Convert to an [LSP Diagnostic](lsp_types::Diagnostic).
     pub(crate) fn to_lsp_diagnostic(&self) -> Diagnostic {
         Diagnostic {
             range: Range {
@@ -53,6 +64,15 @@ impl SPCompDiagnostic {
 }
 
 impl Store {
+    /// Run spcomp and extract the potential errors from its output.
+    ///
+    /// # Errors
+    ///
+    /// Will throw an error if spcomp fails to run (outside of errors related to the compilation).
+    ///
+    /// # Arguments
+    ///
+    /// * `uri` - [Uri](Url) of the file to compile.
     pub(crate) fn get_spcomp_diagnostics(
         &mut self,
         uri: Url,
@@ -98,12 +118,18 @@ impl Store {
         Ok(res)
     }
 
+    /// Clear all diagnostics from the documents in the store.
     fn clear_all_diagnostics(&mut self) {
         for document in self.documents.values_mut() {
             document.diagnostics.clear();
         }
     }
 
+    /// Return a [vector](Vec) of [strings](String) of the arguments to run spcomp.
+    ///
+    /// # Arguments
+    ///
+    /// * `uri` - [Uri](Url) of the file to compile.
     fn build_args(&mut self, uri: &Url) -> Vec<String> {
         let file_path = uri.to_file_path().unwrap();
         let mut args = vec![
@@ -127,10 +153,17 @@ impl Store {
 
         args.push(format!("-o{}", get_out_path(uri).to_str().unwrap()));
 
+        args.push("--syntax-only".to_string());
+
         args
     }
 }
 
+/// Return a [vector](Vec) of [SPCompDiagnostics](SPCompDiagnostic) of the errors that spcomp threw.
+///
+/// # Arguments
+///
+/// * `stdout` - Standard output of spcomp.
 fn parse_spcomp_errors(stdout: &str) -> Vec<SPCompDiagnostic> {
     lazy_static! {
         static ref RE: Regex = Regex::new(
@@ -156,6 +189,11 @@ fn parse_spcomp_errors(stdout: &str) -> Vec<SPCompDiagnostic> {
     diagnostics
 }
 
+/// Generate a temporary path for the output of spcomp. This is not needed with the `--syntax-only` switch.
+///
+/// # Arguments
+///
+/// * `uri` - [Uri](Url) of the file to compile.
 fn get_out_path(uri: &Url) -> PathBuf {
     uri.to_file_path()
         .unwrap()
