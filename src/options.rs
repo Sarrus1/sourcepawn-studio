@@ -11,6 +11,7 @@ use crate::utils::normalize_uri;
 pub struct Options {
     pub includes_directories: Vec<PathBuf>,
     pub main_path: PathBuf,
+    pub spcomp_path: PathBuf,
 }
 
 impl Options {
