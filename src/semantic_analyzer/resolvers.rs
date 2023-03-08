@@ -2,6 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::{
     document::{Document, Token},
+    providers::completion::context::is_ctr_call,
     spitem::{Location, SPItem},
     utils::range_contains_range,
 };
@@ -78,11 +79,30 @@ fn resolve_non_method_item(
         .or_else(|| analyzer.tokens_map.get(&token.text));
 
     if let Some(item) = item {
-        let item = item;
         let reference = Location {
             uri: document.uri.clone(),
             range: token.range,
         };
+
+        if let SPItem::Methodmap(mm_item) = &*item.read().unwrap() {
+            if token.range.start.character >= 4 {
+                // Don't check the line if there is not enough space for a `new` keyword.
+                // We use 4 instead of 3 to account for at least one space after `new`.
+                let pre_line: String = analyzer
+                    .line()
+                    .chars()
+                    .take(token.range.start.character as usize)
+                    .collect();
+                if is_ctr_call(&pre_line) {
+                    if let Some(ctr_item) = mm_item.ctr() {
+                        ctr_item.write().unwrap().push_reference(reference);
+                        analyzer.previous_items.push(ctr_item);
+                        return true;
+                    }
+                }
+            }
+        }
+
         item.write().unwrap().push_reference(reference);
         analyzer.previous_items.push(item.clone());
         return true;
