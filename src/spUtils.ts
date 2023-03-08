@@ -105,17 +105,27 @@ export function locationFromRange(filePath: string, range: Range): Location {
  * @param  {Ctx} ctx  Instance of the language server to restart if needed.
  */
 export function migrateSettings(ctx: Ctx) {
-  let smHome: string =
+  const smHome: string =
     Workspace.getConfiguration("sourcepawn").get("SourcemodHome");
-  let optionalIncludeDirsPaths: string[] = Workspace.getConfiguration(
+  const optionalIncludeDirsPaths: string[] = Workspace.getConfiguration(
     "sourcepawn"
   ).get("optionalIncludeDirsPaths");
 
-  let includesDirectories: string[] = Workspace.getConfiguration(
+  const includesDirectories: string[] = Workspace.getConfiguration(
     "SourcePawnLanguageServer"
   ).get("includesDirectories");
 
-  if (includesDirectories.length == 0 && smHome) {
+  const oldSpcompPath: string =
+    Workspace.getConfiguration("sourcepawn").get("SpcompPath");
+
+  const newSpcompPath: string = Workspace.getConfiguration(
+    "SourcePawnLanguageServer"
+  ).get("spcompPath");
+
+  if (
+    (includesDirectories.length == 0 && smHome) ||
+    (!newSpcompPath && oldSpcompPath)
+  ) {
     window
       .showInformationMessage(
         "Would you like to automatically migrate your SourcePawn settings to use the language server?",
@@ -128,6 +138,14 @@ export function migrateSettings(ctx: Ctx) {
             "includesDirectories",
             [smHome].concat(optionalIncludeDirsPaths)
           );
+
+          if (oldSpcompPath && !newSpcompPath) {
+            Workspace.getConfiguration("SourcePawnLanguageServer").update(
+              "spcompPath",
+              oldSpcompPath
+            );
+          }
+
           ctx.restart();
         }
       });

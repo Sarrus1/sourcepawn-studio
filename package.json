@@ -178,7 +178,8 @@
         "sourcepawn.SourcemodHome": {
           "type": "string",
           "description": "The location of the SourceMod API include files found in addons/sourcemod/scripting/include",
-          "scope": "resource"
+          "scope": "resource",
+          "deprecationMessage": "Use `SourcePawnLanguageServer.includesDirectories` instead."
         },
         "sourcepawn.AuthorName": {
           "type": "string",
@@ -191,7 +192,19 @@
         "sourcepawn.SpcompPath": {
           "type": "string",
           "description": "The location of the SourceMod compiler",
+          "scope": "resource",
+          "deprecationMessage": "Use `SourcePawnLanguageServer.spcompPath` instead."
+        },
+        "SourcePawnLanguageServer.spcompPath": {
+          "type": "string",
+          "description": "Location of the SourceMod compiler (spcomp)",
           "scope": "resource"
+        },
+        "sourcepawn.MainPath": {
+          "type": "string",
+          "description": "The location of the main.sp file, which allows the linter and the compiler to work correctly. You should use this setting per workspace.",
+          "scope": "resource",
+          "deprecationMessage": "Use `sourcepawn.mainPath` instead."
         },
         "SourcePawnLanguageServer.mainPath": {
           "type": "string",

@@ -33,9 +33,9 @@ async function checkForLanguageServerUpdate(context: vscode.ExtensionContext) {
 }
 
 export async function activate(context: vscode.ExtensionContext) {
+  migrateSettings(ctx);
   ctx = new Ctx(context, createServerCommands());
   ctx.start();
-  migrateSettings(ctx);
 
   registerSMCommands(context);
 
