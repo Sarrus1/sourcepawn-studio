@@ -13,7 +13,7 @@ use crate::{
     store::Store,
 };
 
-use self::{analyzer::Analyzer, resolvers::resolve_item};
+use self::analyzer::Analyzer;
 
 impl Store {
     pub fn find_references(&mut self, uri: &Url) {
@@ -27,7 +27,7 @@ impl Store {
         for token in document.tokens.iter() {
             analyzer.update_scope(token.range);
             analyzer.update_line_context(token);
-            if resolve_item(&mut analyzer, token, document).is_none() {
+            if analyzer.resolve_item(token, document).is_none() {
                 // Token was not resolved
                 unresolved_tokens.insert(token.text.clone());
             }
