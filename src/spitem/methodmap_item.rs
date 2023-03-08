@@ -129,6 +129,19 @@ impl MethodmapItem {
         self.name.clone()
     }
 
+    /// Returns the constructor of the methodmap if it exists.
+    pub(crate) fn ctr(&self) -> Option<Arc<RwLock<SPItem>>> {
+        self.children
+            .iter()
+            .find(|child| {
+                if let SPItem::Function(method_item) = &*child.read().unwrap() {
+                    return method_item.is_ctr();
+                }
+                false
+            })
+            .cloned()
+    }
+
     /// Formatted representation of the methodmap.
     ///
     /// # Exemple

@@ -73,22 +73,45 @@ pub(super) fn get_callback_completions(
     })
 }
 
+/// Return a [CompletionList](lsp_types::CompletionList) of all constructor completions.
+///
+/// # Arguments
+///
+/// * `all_items` - Vector of [SPItem](crate::spitem::SPItem).
+/// * `params` - [Parameters](lsp_types::completion::CompletionParams) of the completion request.
+pub(super) fn get_ctr_completions(
+    all_items: Vec<Arc<RwLock<SPItem>>>,
+    params: CompletionParams,
+) -> Option<CompletionList> {
+    let mut items = vec![];
+    for ctr in all_items
+        .iter()
+        .filter_map(|item| item.read().unwrap().ctr())
+    {
+        items.extend(ctr.read().unwrap().to_completions(&params, true))
+    }
+    Some(CompletionList {
+        items,
+        ..Default::default()
+    })
+}
+
 /// Return a [CompletionList](lsp_types::CompletionList) of all method completions (that should come
 /// after a `.` or `::`).
 ///
 /// # Arguments
 ///
 /// * `all_items` - Vector of [SPItem](crate::spitem::SPItem).
-/// * `sub_line` - Sub line of the document to analyze.
+/// * `pre_line` - Prefix line of the document to analyze.
 /// * `position` - [Position](lsp_types::Position) of the request.
 /// * `params` - [Parameters](lsp_types::completion::CompletionParams) of the completion request.
 pub(super) fn get_method_completions(
     all_items: Vec<Arc<RwLock<SPItem>>>,
-    sub_line: &str,
+    pre_line: &str,
     position: Position,
     request: FeatureRequest<CompletionParams>,
 ) -> Option<CompletionList> {
-    let words = get_line_words(sub_line, position);
+    let words = get_line_words(pre_line, position);
     for word in words.into_iter().flatten().rev() {
         let word_pos = Position {
             line: word.range.start.line,

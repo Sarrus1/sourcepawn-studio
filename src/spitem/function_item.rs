@@ -291,7 +291,11 @@ impl FunctionItem {
     /// if it is a function or a method.
     fn completion_kind(&self) -> CompletionItemKind {
         if self.parent.is_some() {
-            CompletionItemKind::METHOD
+            if self.is_ctr() {
+                CompletionItemKind::CONSTRUCTOR
+            } else {
+                CompletionItemKind::METHOD
+            }
         } else {
             CompletionItemKind::FUNCTION
         }

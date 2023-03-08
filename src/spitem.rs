@@ -365,6 +365,22 @@ impl SPItem {
         }
     }
 
+    pub fn ctr(&self) -> Option<Arc<RwLock<SPItem>>> {
+        match self {
+            SPItem::Variable(_) => None,
+            SPItem::Function(_) => None,
+            SPItem::Enum(_) => None,
+            SPItem::EnumMember(_) => None,
+            SPItem::EnumStruct(_) => None,
+            SPItem::Define(_) => None,
+            SPItem::Methodmap(item) => item.ctr(),
+            SPItem::Property(_) => None,
+            SPItem::Typedef(_) => None,
+            SPItem::Typeset(_) => None,
+            SPItem::Include(_) => None,
+        }
+    }
+
     pub fn to_completions(
         &self,
         params: &CompletionParams,

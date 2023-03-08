@@ -14,22 +14,22 @@ pub(super) struct IncludeStatement {
     use_chevron: bool,
 }
 
-/// Determine whether the current sub line is the beginning of an include statement.
+/// Determine whether the current prefix line is the beginning of an include statement.
 /// Return None if it's not, and an [IncludeStatement] object if it is.
 ///
 /// # Arguments
 ///
-/// * `sub_line` - Sub line to process.
-pub(super) fn is_include_statement(sub_line: &str) -> Option<IncludeStatement> {
+/// * `pre_line` - Prefix line to process.
+pub(super) fn is_include_statement(pre_line: &str) -> Option<IncludeStatement> {
     lazy_static! {
         static ref RE1: Regex = Regex::new(r"^\s*#\s*include\s*(?:<([^>]*)>?)").unwrap();
         static ref RE2: Regex = Regex::new("^\\s*#\\s*include\\s*(?:\"([^\"]*)\"?)").unwrap();
     }
 
-    let mut match_ = RE1.captures(sub_line);
+    let mut match_ = RE1.captures(pre_line);
     let mut use_chevron = true;
     if match_.is_none() {
-        match_ = RE2.captures(sub_line);
+        match_ = RE2.captures(pre_line);
         use_chevron = false;
     }
 
