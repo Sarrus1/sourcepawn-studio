@@ -19,28 +19,63 @@ pub(crate) mod context;
 mod getters;
 mod include;
 mod matchtoken;
-
+// "*".to_string(),
 pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<CompletionList> {
     let document = request.store.get(&request.uri)?;
     let all_items = get_all_items(&request.store, false);
     let position = request.params.text_document_position.position;
     let line = document.line(position.line)?;
     let pre_line: String = line.chars().take(position.character as usize).collect();
+    if let Some(trigger_char) = line.chars().last() {
+        // The trigger character allows us to fine control which completion to trigger.
+        match trigger_char {
+            '<' | '"' | '\'' | '/' | '\\' => {
+                let include_st = is_include_statement(&pre_line);
+                if let Some(include_st) = include_st {
+                    return get_include_completions(request, include_st);
+                }
+                return None;
+            }
+            '.' | ':' => {
+                return get_method_completions(all_items, &pre_line, position, request);
+            }
+            ' ' => {
+                if is_ctr_call(&pre_line) {
+                    return get_ctr_completions(all_items, request.params);
+                }
+                return get_non_method_completions(all_items, request.params);
+            }
+            '$' => {
+                if is_callback_completion_request(request.params.context) {
+                    return get_callback_completions(all_items, position);
+                }
+                return None;
+            }
+            _ => {
+                // In the last case, the user might be picking on an unfinished completion:
+                // If the user starts to type the completion for a method, clicks elsewhere,
+                // then starts typing the name of the method again, we will end up in this block.
+                // Therefore, this block must cover all possibilities.
+                let include_st = is_include_statement(&pre_line);
+                if let Some(include_st) = include_st {
+                    return get_include_completions(request, include_st);
+                }
 
-    let include_st = is_include_statement(&pre_line);
-    if let Some(include_st) = include_st {
-        return get_include_completions(request, include_st);
-    }
-    if is_callback_completion_request(request.params.context.clone()) {
-        return get_callback_completions(all_items, position);
-    }
+                if is_callback_completion_request(request.params.context.clone()) {
+                    return get_callback_completions(all_items, position);
+                }
 
-    if !is_method_call(&pre_line) {
-        if is_ctr_call(&pre_line) {
-            return get_ctr_completions(all_items, request.params);
+                if !is_method_call(&pre_line) {
+                    if is_ctr_call(&pre_line) {
+                        return get_ctr_completions(all_items, request.params);
+                    }
+                    return get_non_method_completions(all_items, request.params);
+                }
+
+                return get_method_completions(all_items, &pre_line, position, request);
+            }
         }
-        return get_non_method_completions(all_items, request.params);
     }
 
-    get_method_completions(all_items, &pre_line, position, request)
+    None
 }
