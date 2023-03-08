@@ -1,4 +1,4 @@
-use std::{fs, process::Command};
+use std::{fs, path::PathBuf, process::Command};
 
 use fxhash::FxHashMap;
 use lazy_static::lazy_static;
@@ -56,35 +56,38 @@ impl Store {
     pub(crate) fn get_spcomp_diagnostics(
         &mut self,
         uri: Url,
-    ) -> FxHashMap<Url, Vec<SPCompDiagnostic>> {
-        let out_path = uri
-            .to_file_path()
-            .unwrap()
-            .parent()
-            .unwrap()
-            .join("tmp6306493182.smx");
+    ) -> anyhow::Result<FxHashMap<Url, Vec<SPCompDiagnostic>>> {
         let output = if cfg!(target_os = "windows") {
             Command::new("cmd")
                 .arg("/C")
-                .args(self.build_args(uri))
-                .arg(format!("-o{}", out_path.to_str().unwrap()))
+                .args(self.build_args(&uri))
                 .output()
-                .expect("failed to execute process")
         } else {
             Command::new("sh")
                 .arg("-c")
-                .args(self.build_args(uri))
-                .arg(format!("-o{}", out_path.to_str().unwrap()))
+                .args(self.build_args(&uri))
                 .output()
-                .expect("failed to execute process")
         };
+
+        let out_path = get_out_path(&uri);
         if out_path.exists() {
-            fs::remove_file(out_path);
+            let _ = fs::remove_file(out_path);
         }
+
         self.clear_all_diagnostics();
-        let output = String::from_utf8_lossy(&output.stdout);
+
+        let output = output?;
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        if !stderr.is_empty() {
+            return Err(anyhow::anyhow!(
+                "Failed to run spcomp with error: {}",
+                stderr
+            ));
+        }
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
         let mut res: FxHashMap<Url, Vec<SPCompDiagnostic>> = FxHashMap::default();
-        for diagnostic in parse_spcomp_errors(&output) {
+        for diagnostic in parse_spcomp_errors(&stdout) {
             if let Some(diagnostics) = res.get_mut(&diagnostic.uri) {
                 diagnostics.push(diagnostic);
             } else {
@@ -92,7 +95,7 @@ impl Store {
             }
         }
 
-        res
+        Ok(res)
     }
 
     fn clear_all_diagnostics(&mut self) {
@@ -101,7 +104,7 @@ impl Store {
         }
     }
 
-    fn build_args(&mut self, uri: Url) -> Vec<String> {
+    fn build_args(&mut self, uri: &Url) -> Vec<String> {
         let file_path = uri.to_file_path().unwrap();
         let mut args = vec![
             self.environment
@@ -122,17 +125,13 @@ impl Store {
             args.push(format!("-i{}", include_path.to_str().unwrap()));
         }
 
-        if cfg!(target_os = "windows") {
-            args.push("-oc:\\nul".to_string())
-        } else {
-            args.push("-o/dev/null".to_string())
-        }
+        args.push(format!("-o{}", get_out_path(uri).to_str().unwrap()));
 
         args
     }
 }
 
-fn parse_spcomp_errors(output: &str) -> Vec<SPCompDiagnostic> {
+fn parse_spcomp_errors(stdout: &str) -> Vec<SPCompDiagnostic> {
     lazy_static! {
         static ref RE: Regex = Regex::new(
             r"([:/\\A-Za-z\-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning) ([0-9]*)):\s+(.*)"
@@ -140,7 +139,7 @@ fn parse_spcomp_errors(output: &str) -> Vec<SPCompDiagnostic> {
         .unwrap();
     }
     let mut diagnostics = vec![];
-    for captures in RE.captures_iter(output) {
+    for captures in RE.captures_iter(stdout) {
         diagnostics.push(SPCompDiagnostic {
             uri: Url::from_file_path(captures.get(1).unwrap().as_str()).unwrap(),
             line_index: captures.get(2).unwrap().as_str().parse::<u32>().unwrap() - 1,
@@ -155,4 +154,12 @@ fn parse_spcomp_errors(output: &str) -> Vec<SPCompDiagnostic> {
     }
 
     diagnostics
+}
+
+fn get_out_path(uri: &Url) -> PathBuf {
+    uri.to_file_path()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("tmp6306493182.smx")
 }
