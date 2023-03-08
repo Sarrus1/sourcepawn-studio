@@ -1,5 +1,18 @@
 ## Release Notes
 
+## [0.8.0]
+
+### Added
+
+-   Added a linter provider.
+-   Added constructor completion when using the `new` keyword.
+-   Added a document completion provider (type `/*` above a function/method declaration).
+
+### Fixed
+
+-   Fixed constructors appearing in method completions.
+-   Fixed constructors being identified as methodmaps references.
+
 ## [0.7.0]
 
 ### Added
