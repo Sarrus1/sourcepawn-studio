@@ -116,8 +116,11 @@ impl Analyzer {
         }
 
         if token.range.start.character > 0 && !self.previous_items.is_empty() {
-            // FIXME: Indexing can probably made faster here.
-            let char = self.line().as_bytes()[(token.range.start.character - 1) as usize] as char;
+            let char = self
+                .line()
+                .chars()
+                .nth((token.range.start.character - 1) as usize)
+                .unwrap();
             if char != ':' && char != '.' {
                 return None;
             }
