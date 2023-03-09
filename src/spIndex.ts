@@ -6,36 +6,22 @@ import {
 } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { KVDocumentFormattingEditProvider } from "./Formatters/kvFormat";
-import {
-  getLatestVersionName,
-  run as installLanguageServerCommand,
-} from "./Commands/installLanguageServer";
+
 import { migrateSettings } from "./spUtils";
 import { Ctx } from "./ctx";
 
 export let ctx: Ctx | undefined;
 
-async function checkForLanguageServerUpdate(context: vscode.ExtensionContext) {
-  if (context.extensionMode === vscode.ExtensionMode.Development) {
-    return;
-  }
-  const latestVersion = await getLatestVersionName();
-  const installedVersion = context.globalState.get("language_server_version");
-  if (
-    latestVersion === undefined ||
-    installedVersion === undefined ||
-    latestVersion === installedVersion
-  ) {
-    return;
-  }
-  await installLanguageServerCommand(undefined);
-  context.globalState.update("language_server_version", latestVersion);
-}
-
 export async function activate(context: vscode.ExtensionContext) {
-  migrateSettings(ctx);
+  migrateSettings();
   ctx = new Ctx(context, createServerCommands());
-  ctx.start();
+  ctx.start().then(() => {
+    try {
+      ctx.checkForLanguageServerUpdate();
+    } catch (error) {
+      console.error("Couldn't update the language server.", error);
+    }
+  });
 
   registerSMCommands(context);
 
@@ -57,10 +43,4 @@ export async function activate(context: vscode.ExtensionContext) {
       new KVDocumentFormattingEditProvider()
     )
   );
-
-  try {
-    checkForLanguageServerUpdate(context);
-  } catch (error) {
-    console.error("Couldn't update the language server.", error);
-  }
 }

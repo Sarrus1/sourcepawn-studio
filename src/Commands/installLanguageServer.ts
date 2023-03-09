@@ -49,8 +49,7 @@ export async function run(args: any) {
       return downloadLanguageServer(version, progress, token);
     }
   );
-
-  await ctx?.start();
+  ctx?.start();
 
   return 0;
 }

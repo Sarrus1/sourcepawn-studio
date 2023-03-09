@@ -79,6 +79,24 @@ export class Ctx {
     }
   }
 
+  async checkForLanguageServerUpdate() {
+    if (this.extCtx.extensionMode === vscode.ExtensionMode.Development) {
+      return;
+    }
+    const latestVersion = await getLatestVersionName();
+    const installedVersion = this.state.serverVersion;
+    if (
+      latestVersion === undefined ||
+      installedVersion === undefined ||
+      latestVersion === installedVersion
+    ) {
+      return;
+    }
+    await installLanguageServerCommand(undefined);
+    this.state.updateServerVersion(latestVersion);
+    this.start();
+  }
+
   private async getOrCreateClient() {
     await this.installLanguageServerIfAbsent();
     if (!this._client) {
