@@ -1,5 +1,16 @@
 ## Release Notes
 
+## [0.9.0]
+
+### Added
+
+-   Added spcomp status report.
+-   Added automatic mainpath detection when missing.
+
+### Fixed
+
+-   Fixed diagnostics not disappearing.
+
 ## [0.8.0]
 
 ### Added
