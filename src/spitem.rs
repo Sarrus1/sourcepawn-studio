@@ -63,7 +63,7 @@ pub enum SPItem {
 
 pub fn get_all_items(store: &Store, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
     let mut all_items = vec![];
-    if let Some(main_path_uri) = store.environment.options.get_main_path_uri() {
+    if let Ok(Some(main_path_uri)) = store.environment.options.get_main_path_uri() {
         let mut includes = FxHashSet::default();
         includes.insert(main_path_uri.clone());
         if let Some(document) = store.documents.get(&main_path_uri) {

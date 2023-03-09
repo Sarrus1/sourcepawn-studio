@@ -76,6 +76,17 @@ impl Document {
         &self.text
     }
 
+    pub fn extension(&self) -> String {
+        self.uri
+            .to_file_path()
+            .unwrap()
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string()
+    }
+
     pub(crate) fn uri(&self) -> Url {
         (*self.uri.as_ref()).clone()
     }

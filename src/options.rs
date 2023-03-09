@@ -37,18 +37,21 @@ impl Options {
         res
     }
 
-    /// Return the [uri](lsp_types::Url) main path. [None] if it does not exist.
-    pub fn get_main_path_uri(&self) -> Option<Url> {
+    /// Return the [uri](lsp_types::Url) main path. [None] if it is empty. [Err] otherwise.
+    pub fn get_main_path_uri(&self) -> anyhow::Result<Option<Url>> {
+        if self.main_path.to_str().unwrap().is_empty() {
+            return Ok(None);
+        }
         if !self.main_path.exists() {
-            return None;
+            return Err(anyhow::anyhow!("Main path does not exist."));
         }
         let main_uri = Url::from_file_path(&self.main_path);
         if let Ok(mut main_uri) = main_uri {
             normalize_uri(&mut main_uri);
-            return Some(main_uri);
+            return Ok(Some(main_uri));
         }
 
-        None
+        Err(anyhow::anyhow!("Main path does not exist."))
     }
 
     /// Returns true if the given path is a parent or one of the IncludeDirectories.

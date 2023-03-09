@@ -12,7 +12,7 @@ impl Server {
     /// Reload the diagnostics of the workspace, by running spcomp.
     pub(crate) fn reload_diagnostics(&mut self) {
         self.store.clear_all_diagnostics();
-        if let Some(main_path_uri) = self.store.environment.options.get_main_path_uri() {
+        if let Ok(Some(main_path_uri)) = self.store.environment.options.get_main_path_uri() {
             // Only reload the diagnostics if the main path is defined.
             self.spawn(move |mut server| {
                 let _ = server.send_spcomp_status(false);
