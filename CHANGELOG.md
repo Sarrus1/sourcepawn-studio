@@ -1,5 +1,18 @@
 ## Release Notes
 
+## [5.3.0]
+
+### Added
+
+- Added spcomp status in the StatusBar.
+- Added support for dynamic configuration with the server.
+
+### Fixed
+
+- Fixed commands using the old settings.
+- Fixed and improved the installSM command.
+- Fixed crashes when updating the server.
+
 ## [5.2.0]
 
 ### Added
