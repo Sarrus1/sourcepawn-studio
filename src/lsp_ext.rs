@@ -22,3 +22,15 @@ pub enum Health {
     Warning,
     Error,
 }
+
+pub enum SpcompStatusNotification {}
+
+impl Notification for SpcompStatusNotification {
+    type Params = SpcompStatusParams;
+    const METHOD: &'static str = "experimental/spcompStatus";
+}
+
+#[derive(Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
+pub struct SpcompStatusParams {
+    pub quiescent: bool,
+}

@@ -1,5 +1,5 @@
 use crate::{
-    capabilities::ClientCapabilitiesExt, client::LspClient, options::Options,
+    capabilities::ClientCapabilitiesExt, client::LspClient, lsp_ext, options::Options,
     providers::FeatureRequest, store::Store,
 };
 use std::sync::Arc;
@@ -81,5 +81,13 @@ impl ServerFork {
             store: self.store.clone(),
             uri,
         }
+    }
+
+    pub(crate) fn send_spcomp_status(&self, quiescent: bool) -> anyhow::Result<()> {
+        self.client
+            .send_notification::<lsp_ext::SpcompStatusNotification>(
+                lsp_ext::SpcompStatusParams { quiescent },
+            )?;
+        Ok(())
     }
 }

@@ -15,6 +15,7 @@ impl Server {
         if let Some(main_path_uri) = self.store.environment.options.get_main_path_uri() {
             // Only reload the diagnostics if the main path is defined.
             self.spawn(move |mut server| {
+                let _ = server.send_spcomp_status(false);
                 if let Ok(diagnostics_map) = server.store.get_spcomp_diagnostics(main_path_uri) {
                     server
                         .internal_tx
@@ -29,6 +30,7 @@ impl Server {
                             typ: MessageType::ERROR,
                         });
                 }
+                let _ = server.send_spcomp_status(true);
             });
         }
     }
