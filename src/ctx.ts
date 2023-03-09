@@ -120,6 +120,18 @@ export class Ctx {
           this.setSpcompStatus(params)
         )
       );
+      this.pushClientCleanup(
+        vscode.workspace.onDidChangeConfiguration((event) => {
+          if (event.affectsConfiguration("SourcePawnLanguageServer")) {
+            this._client.sendNotification(
+              lc.DidChangeConfigurationNotification.type,
+              {
+                settings: {},
+              }
+            );
+          }
+        })
+      );
     }
     return this._client;
   }
