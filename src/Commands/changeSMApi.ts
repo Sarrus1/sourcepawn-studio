@@ -13,9 +13,8 @@ interface OptionalSMAPI {
 }
 
 export async function run(args: any) {
-  const optionalSMHomes: OptionalSMAPI[] = Workspace.getConfiguration(
-    "sourcepawn"
-  ).get("availableAPIs");
+  const optionalSMHomes: OptionalSMAPI[] =
+    Workspace.getConfiguration("sourcepawn").get("availableAPIs");
   const newSMHomeChoices: QuickPickItem[] = optionalSMHomes.map(
     (optionalHome) => {
       return {
@@ -38,10 +37,11 @@ export async function run(args: any) {
         "SourcemodHome",
         newSMHome.detail
       );
-      const spCompPath = optionalSMHomes.find((e) => e.name === newSMHome.label)
-        .compilerPath;
-      await Workspace.getConfiguration("sourcepawn").update(
-        "SpcompPath",
+      const spCompPath = optionalSMHomes.find(
+        (e) => e.name === newSMHome.label
+      ).compilerPath;
+      await Workspace.getConfiguration("SourcePawnLanguageServer").update(
+        "spcompPath",
         spCompPath
       );
       commands.executeCommand("workbench.action.reloadWindow");

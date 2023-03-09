@@ -52,9 +52,10 @@ export async function run(args: URI): Promise<void> {
 
   // Invoke the compiler.
   const spcomp =
-    Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
-      "SpcompPath"
-    ) || "";
+    Workspace.getConfiguration(
+      "SourcePawnLanguageServer",
+      workspaceFolder
+    ).get<string>("spcompPath") || "";
 
   if (!spcomp) {
     window
