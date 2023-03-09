@@ -141,7 +141,8 @@ export class Ctx {
     if (!this._client) {
       return;
     }
-    await this._client.stop();
+    // Increase the timeout in-case the server is parsing a file.
+    await this._client.stop(10 * 1000);
   }
 
   async stopAndDispose() {

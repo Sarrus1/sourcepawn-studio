@@ -21,6 +21,8 @@ import { execSync } from "child_process";
 import { ctx } from "../spIndex";
 
 export async function run(args: any) {
+  await ctx?.stop();
+
   const lspPath = join(
     extensions.getExtension("Sarrus.sourcepawn-vscode").extensionPath,
     "languageServer"
@@ -36,6 +38,7 @@ export async function run(args: any) {
     );
     return 1;
   }
+
   await window.withProgress(
     {
       location: ProgressLocation.Notification,
@@ -46,9 +49,9 @@ export async function run(args: any) {
       return downloadLanguageServer(version, progress, token);
     }
   );
-  if (ctx) {
-    await ctx.restart();
-  }
+
+  await ctx?.start();
+
   return 0;
 }
 
