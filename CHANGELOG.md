@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [5.3.1]
+
+### Fixed
+
+- Fixed language server installation issue.
+
 ## [5.3.0]
 
 ### Added
