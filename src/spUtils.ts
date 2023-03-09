@@ -2,14 +2,11 @@
   Location,
   MarkdownString,
   Range,
-  window,
   workspace as Workspace,
 } from "vscode";
 import { URI } from "vscode-uri";
 import { existsSync, lstatSync } from "fs";
 import { resolve, extname } from "path";
-
-import { Ctx } from "./ctx";
 
 /**
  * Parse a Sourcemod JSDoc documentation string and convert it to a MarkdownString.
@@ -101,10 +98,9 @@ export function locationFromRange(filePath: string, range: Range): Location {
 }
 
 /**
- * If needed, prompt the user to migrate their settings to use the LanguageServer.
- * @param  {Ctx} ctx  Instance of the language server to restart if needed.
+ * If needed, migrate the settings of the user to use the LanguageServer.
  */
-export function migrateSettings(ctx: Ctx) {
+export function migrateSettings() {
   const smHome: string =
     Workspace.getConfiguration("sourcepawn").get("SourcemodHome");
   const optionalIncludeDirsPaths: string[] = Workspace.getConfiguration(
@@ -126,28 +122,18 @@ export function migrateSettings(ctx: Ctx) {
     (includesDirectories.length == 0 && smHome) ||
     (!newSpcompPath && oldSpcompPath)
   ) {
-    window
-      .showInformationMessage(
-        "Would you like to automatically migrate your SourcePawn settings to use the language server?",
-        "Yes",
-        "No"
-      )
-      .then((choice) => {
-        if (choice === "Yes") {
-          Workspace.getConfiguration("SourcePawnLanguageServer").update(
-            "includesDirectories",
-            [smHome].concat(optionalIncludeDirsPaths)
-          );
+    Workspace.getConfiguration("SourcePawnLanguageServer").update(
+      "includesDirectories",
+      Array.from(new Set([smHome].concat(optionalIncludeDirsPaths))),
+      true
+    );
 
-          if (oldSpcompPath && !newSpcompPath) {
-            Workspace.getConfiguration("SourcePawnLanguageServer").update(
-              "spcompPath",
-              oldSpcompPath
-            );
-          }
-
-          ctx.restart();
-        }
-      });
+    if (oldSpcompPath && !newSpcompPath) {
+      Workspace.getConfiguration("SourcePawnLanguageServer").update(
+        "spcompPath",
+        oldSpcompPath,
+        true
+      );
+    }
   }
 }
