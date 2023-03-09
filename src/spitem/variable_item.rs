@@ -183,9 +183,22 @@ impl VariableItem {
     ///
     /// `int foo;`
     fn formatted_text(&self) -> MarkedString {
+        let mut visibility = "".to_string();
+        for vis in self.visibility.iter() {
+            visibility.push_str(vis.to_string());
+            visibility.push(' ');
+        }
+        let mut storage_class = "".to_string();
+        for sto in self.storage_class.iter() {
+            storage_class.push_str(sto.to_string());
+            storage_class.push(' ');
+        }
+        let prefix = format!("{}{}", visibility, storage_class);
         MarkedString::LanguageString(LanguageString {
             language: "sourcepawn".to_string(),
-            value: format!("{} {};", self.type_, self.name),
+            value: format!("{} {} {};", prefix.trim(), self.type_, self.name)
+                .trim()
+                .to_string(),
         })
     }
 }
@@ -197,9 +210,27 @@ pub enum VariableVisibility {
     Stock,
 }
 
+impl VariableVisibility {
+    fn to_string(&self) -> &str {
+        match self {
+            Self::Public => "public",
+            Self::Stock => "stock",
+        }
+    }
+}
+
 /// Storage class of a SourcePawn variable.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum VariableStorageClass {
     Const,
     Static,
+}
+
+impl VariableStorageClass {
+    fn to_string(&self) -> &str {
+        match self {
+            Self::Const => "const",
+            Self::Static => "static",
+        }
+    }
 }
