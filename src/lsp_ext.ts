@@ -12,3 +12,10 @@ export type ServerStatusParams = {
   quiescent: boolean;
   message?: string;
 };
+
+export const spcompStatus = new lc.NotificationType<ServerStatusParams>(
+  "experimental/spcompStatus"
+);
+export type SpcompStatusParams = {
+  quiescent: boolean;
+};

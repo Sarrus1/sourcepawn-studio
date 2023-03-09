@@ -21,7 +21,8 @@ export type CtxInit = Ctx & {
 };
 
 export class Ctx {
-  readonly statusBar: vscode.StatusBarItem;
+  readonly serverStatusBar: vscode.StatusBarItem;
+  readonly spcompStatusBar: vscode.StatusBarItem;
 
   private _client: lc.LanguageClient | undefined;
   private _serverPath: string | undefined;
@@ -40,10 +41,16 @@ export class Ctx {
       "languageServer",
       platform() == "win32" ? "sourcepawn_lsp.exe" : "sourcepawn_lsp"
     );
-    this.statusBar = vscode.window.createStatusBarItem(
+
+    this.serverStatusBar = vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Left
     );
-    this.statusBar.show();
+    this.serverStatusBar.show();
+
+    this.spcompStatusBar = vscode.window.createStatusBarItem(
+      vscode.StatusBarAlignment.Left
+    );
+    this.spcompStatusBar.show();
 
     this.state = new PersistentState(extCtx.globalState);
     this.clientSubscriptions = [];
@@ -53,10 +60,13 @@ export class Ctx {
     this.setServerStatus({
       health: "stopped",
     });
+    this.setSpcompStatus({
+      quiescent: true,
+    });
   }
 
   dispose() {
-    this.statusBar.dispose();
+    this.serverStatusBar.dispose();
     void this.disposeClient();
     this.commandDisposables.forEach((disposable) => disposable.dispose());
   }
@@ -103,6 +113,11 @@ export class Ctx {
       this.pushClientCleanup(
         this._client.onNotification(lsp_ext.serverStatus, (params) =>
           this.setServerStatus(params)
+        )
+      );
+      this.pushClientCleanup(
+        this._client.onNotification(lsp_ext.spcompStatus, (params) =>
+          this.setSpcompStatus(params)
         )
       );
     }
@@ -191,7 +206,7 @@ export class Ctx {
 
   setServerStatus(status: lsp_ext.ServerStatusParams | { health: "stopped" }) {
     let icon = "";
-    const statusBar = this.statusBar;
+    const statusBar = this.serverStatusBar;
     switch (status.health) {
       case "ok":
         statusBar.tooltip =
@@ -232,10 +247,26 @@ export class Ctx {
         statusBar.color = undefined;
         statusBar.backgroundColor = undefined;
         statusBar.text = `$(stop-circle) sourcepawn-lsp`;
+        this.setSpcompStatus({
+          quiescent: true,
+        });
         return;
     }
     if (!status.quiescent) icon = "$(sync~spin) ";
     statusBar.text = `${icon}sourcepawn-lsp`;
+  }
+
+  setSpcompStatus(status: lsp_ext.SpcompStatusParams) {
+    const statusBar = this.spcompStatusBar;
+    if (status.quiescent) {
+      statusBar.hide();
+    } else {
+      statusBar.show();
+      statusBar.tooltip = "spcomp is running";
+      statusBar.color = undefined;
+      statusBar.backgroundColor = undefined;
+      statusBar.text = `$(sync~spin) spcomp`;
+    }
   }
 
   pushExtCleanup(d: Disposable) {
