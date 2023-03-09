@@ -61,7 +61,7 @@ export async function run(args: URI): Promise<void> {
   if (!spcomp) {
     window
       .showErrorMessage(
-        "SourceMod compiler not found in the project. You need to set the spCompPath setting to be able to compile a plugin.",
+        "Sourcemod compiler not found in the project. You need to set the spCompPath setting to be able to compile a plugin.",
         "Open Settings"
       )
       .then((choice) => {

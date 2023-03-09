@@ -15,7 +15,7 @@ export function run(rootpath?: string) {
   if (!sm_home) {
     window
       .showWarningMessage(
-        "SourceMod API not found in the project. You should set SourceMod Home for tasks generation to work. Do you want to install it automatically?",
+        "Sourcemod API not found in the project. You should set Sourcemod Home for tasks generation to work. Do you want to install it automatically?",
         "Yes",
         "No, open Settings"
       )
@@ -37,7 +37,7 @@ export function run(rootpath?: string) {
   if (!spcompPath) {
     window
       .showErrorMessage(
-        "SourceMod compiler not found in the project. You need to set spcompPath for tasks generation to work.",
+        "Sourcemod compiler not found in the project. You need to set spcompPath for tasks generation to work.",
         "Open Settings"
       )
       .then((choice) => {

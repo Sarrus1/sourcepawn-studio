@@ -4,6 +4,7 @@ import {
   ProgressLocation,
   CancellationToken,
   Progress,
+  QuickPickItem,
 } from "vscode";
 import { join } from "path";
 import { platform, homedir } from "os";
@@ -30,9 +31,9 @@ export async function run(args: any) {
     }
   );
   const spCompPath =
-    Workspace.getConfiguration("sourcepawn").get<string>("SpcompPath") || "";
-  const smHome =
-    Workspace.getConfiguration("sourcepawn").get<string>("SourcemodHome") || "";
+    Workspace.getConfiguration("SourcePawnLanguageServer").get<string>(
+      "spcompPath"
+    ) || "";
   const smDir = join(outputDir, "addons/sourcemod/scripting/include");
   let spComp: string;
   if (Platform === "win32") {
@@ -40,10 +41,10 @@ export async function run(args: any) {
   } else {
     spComp = join(outputDir, "addons/sourcemod/scripting/spcomp");
   }
-  if (spCompPath != "" || smHome != "") {
+  if (spCompPath != "") {
     window
       .showInformationMessage(
-        "The setting for SpcompPath or SourcemodHome is not empty, do you want to override them ?",
+        "The setting for spcompPath is not empty, do you want to override it?",
         "Yes",
         "No"
       )
@@ -59,8 +60,20 @@ export async function run(args: any) {
 }
 
 function updatePath(smDir: string, spComp: string): void {
-  Workspace.getConfiguration("sourcepawn").update("SourcemodHome", smDir, true);
-  Workspace.getConfiguration("sourcepawn").update("SpcompPath", spComp, true);
+  const includeDirectories = Workspace.getConfiguration(
+    "SourcePawnLanguageServer"
+  ).get<string[]>("includesDirectories");
+  includeDirectories.push(smDir);
+  Workspace.getConfiguration("SourcePawnLanguageServer").update(
+    "includesDirectories",
+    Array.from(new Set(includeDirectories)), // avoid duplicates
+    true
+  );
+  Workspace.getConfiguration("SourcePawnLanguageServer").update(
+    "spcompPath",
+    spComp,
+    true
+  );
 }
 
 async function getSourceModVersion(
@@ -68,19 +81,25 @@ async function getSourceModVersion(
   token: CancellationToken
 ): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-    window.showWarningMessage(
-      "Do you want to install the latest stable version or developer version of SourceMod?",
-      "Stable",
-      "Dev"
-    )
-    .then((choice) => {
-      if(choice === "Stable") {
-        resolve(downloadSM("1.11", progress, token));
-      } else if(choice === "Dev") {
-        resolve(downloadSM("1.12", progress, token));
-      }
-    });
+    window
+      .showQuickPick(buildQuickPickSMVersion(), {
+        title: "Pick a version of Sourcemod to install",
+      })
+      .then((value) => {
+        resolve(downloadSM(value.label, progress, token));
+      });
   });
+}
+
+function buildQuickPickSMVersion(): QuickPickItem[] {
+  return [
+    { label: "1.7", description: "Legacy" },
+    { label: "1.8", description: "Legacy" },
+    { label: "1.9", description: "Legacy" },
+    { label: "1.10", description: "Legacy" },
+    { label: "1.11", description: "Stable", picked: true },
+    { label: "1.12", description: "Dev" },
+  ];
 }
 
 async function downloadSM(
@@ -90,10 +109,10 @@ async function downloadSM(
 ): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const options = {
-      protocol: 'https',
-      host: 'sm.alliedmods.net',
-      path: '',
-      method: 'GET'
+      protocol: "https",
+      host: "sm.alliedmods.net",
+      path: "",
+      method: "GET",
     };
 
     if (Platform === "win32") {
@@ -104,29 +123,37 @@ async function downloadSM(
       options.path = "/smdrop/" + smVersion + "/sourcemod-latest-linux";
     }
 
-    let request = wget.request(options, function(response) {
+    let request = wget.request(options, function (response) {
       let oldStatus: number = 0;
-      let content = '';
+      let content = "";
       if (response.statusCode === 200) {
-        response.on('error', function(err) {
+        response.on("error", function (err) {
           console.log(err);
         });
-        response.on('data', function(chunk) {
+        response.on("data", function (chunk) {
           content += chunk;
         });
-        response.on('end', function() {
-          progress.report({ message: "Downloading SourceMod: " + content });
+        response.on("end", function () {
+          progress.report({ message: "Downloading Sourcemod: " + content });
           console.log(content);
 
           const output = join(outputDir, "sm.gz");
 
-          const download = wget.download("https://sm.alliedmods.net/smdrop/" + smVersion + "/" + content, output, options);
+          const download = wget.download(
+            "https://sm.alliedmods.net/smdrop/" + smVersion + "/" + content,
+            output,
+            options
+          );
           download.on("error", function (err) {
             console.error(err);
             reject(err);
           });
           download.on("start", function (fileSize: number) {
-            console.log("filesize: ", Math.ceil(fileSize / Math.pow(10, 6)), "Mo");
+            console.log(
+              "filesize: ",
+              Math.ceil(fileSize / Math.pow(10, 6)),
+              "Mo"
+            );
           });
           download.on("end", async function (endStatus) {
             console.log(endStatus);
@@ -146,17 +173,17 @@ async function downloadSM(
             }
           });
           token.onCancellationRequested(() => {
-            console.log("SourceMod download was cancelled by the user.");
+            console.log("Sourcemod download was cancelled by the user.");
             //TODO: Actually stop the download here. Might need a better NPM package...
           });
         });
       } else {
-        console.log('Response: ' + response.statusCode);
+        console.log("Response: " + response.statusCode);
       }
     });
 
     request.end();
-    request.on('error', function(err) {
+    request.on("error", function (err) {
       console.log(err);
     });
   });
