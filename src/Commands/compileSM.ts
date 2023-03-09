@@ -15,6 +15,7 @@ import { findMainPath } from "../spUtils";
 import { run as refreshPluginsCommand } from "./refreshPlugins";
 import { compilerDiagnostics } from "../Providers/Linter/compilerDiagnostics";
 import { parseSPCompErrors } from "../Providers/Linter/parseSPCompErrors";
+import { ctx } from "../spIndex";
 
 // Create an OutputChannel variable here but do not initialize yet.
 let output: OutputChannel;
@@ -144,6 +145,7 @@ export async function run(args: URI): Promise<void> {
   output.show();
 
   try {
+    ctx?.setSpcompStatus({ quiescent: false });
     // Compile in child process.
     let command = spcomp + "\n";
     compilerArgs.forEach((e) => {
@@ -154,6 +156,7 @@ export async function run(args: URI): Promise<void> {
     });
     output.appendLine(`${command}\n`);
     execFile(spcomp, compilerArgs, async (error, stdout) => {
+      ctx?.setSpcompStatus({ quiescent: true });
       output.append(stdout.toString().trim());
       parseSPCompErrors(stdout.toString().trim(), compilerDiagnostics);
       if (
