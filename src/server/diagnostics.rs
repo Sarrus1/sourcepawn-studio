@@ -11,6 +11,7 @@ use super::InternalMessage;
 impl Server {
     /// Reload the diagnostics of the workspace, by running spcomp.
     pub(crate) fn reload_diagnostics(&mut self) {
+        self.store.clear_all_diagnostics();
         if let Some(main_path_uri) = self.store.environment.options.get_main_path_uri() {
             // Only reload the diagnostics if the main path is defined.
             self.spawn(move |mut server| {
@@ -32,7 +33,9 @@ impl Server {
         }
     }
 
-    /// Publish the diagnostics of the latest diagnostics update.
+    /// Update the diagnostics of the store with the latest diagnostics, and then
+    /// publish all the diagnostics of the store.
+    /// This will override all diagnostics that have already been sent to the client.
     ///
     /// # Arguments
     ///
@@ -41,18 +44,18 @@ impl Server {
         &mut self,
         diagnostics_map: FxHashMap<Url, Vec<SPCompDiagnostic>>,
     ) -> anyhow::Result<()> {
-        for (uri, diagnostics) in diagnostics_map {
-            let lsp_diagnostics: Vec<Diagnostic> = diagnostics
-                .iter()
-                .map(|diagnostic| diagnostic.to_lsp_diagnostic())
-                .collect();
-            if let Some(document) = self.store.documents.get_mut(&uri) {
-                document.diagnostics = lsp_diagnostics.clone();
+        for (uri, document) in self.store.documents.iter_mut() {
+            if let Some(diagnostics) = diagnostics_map.get(uri) {
+                let lsp_diagnostics: Vec<Diagnostic> = diagnostics
+                    .iter()
+                    .map(|diagnostic| diagnostic.to_lsp_diagnostic())
+                    .collect();
+                document.diagnostics = lsp_diagnostics;
             }
             self.client
                 .send_notification::<PublishDiagnostics>(PublishDiagnosticsParams {
-                    uri,
-                    diagnostics: lsp_diagnostics,
+                    uri: document.uri(),
+                    diagnostics: document.diagnostics.clone(),
                     version: None,
                 })?;
         }

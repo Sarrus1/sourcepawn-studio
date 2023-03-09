@@ -76,6 +76,10 @@ impl Document {
         &self.text
     }
 
+    pub(crate) fn uri(&self) -> Url {
+        (*self.uri.as_ref()).clone()
+    }
+
     pub fn extract_tokens(&mut self, root_node: Node) {
         let mut cursor = QueryCursor::new();
         let matches = cursor.captures(&SYMBOL_QUERY, root_node, self.text.as_bytes());

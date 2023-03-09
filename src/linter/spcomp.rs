@@ -94,8 +94,6 @@ impl Store {
             let _ = fs::remove_file(out_path);
         }
 
-        self.clear_all_diagnostics();
-
         let output = output?;
         let stderr = String::from_utf8_lossy(&output.stderr);
         if !stderr.is_empty() {
