@@ -27,7 +27,7 @@ pub(super) fn is_method_call(pre_line: &str) -> bool {
 /// # Arguments
 ///
 /// * `pre_line` - Prefix line to check against.
-pub(crate) fn is_ctr_call(pre_line: &str) -> bool {
+pub(crate) fn is_ctor_call(pre_line: &str) -> bool {
     lazy_static! {
         static ref RE: Regex = Regex::new(r"new\s+\w*$").unwrap();
     }

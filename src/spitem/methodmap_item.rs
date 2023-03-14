@@ -130,12 +130,12 @@ impl MethodmapItem {
     }
 
     /// Returns the constructor of the methodmap if it exists.
-    pub(crate) fn ctr(&self) -> Option<Arc<RwLock<SPItem>>> {
+    pub(crate) fn ctor(&self) -> Option<Arc<RwLock<SPItem>>> {
         self.children
             .iter()
             .find(|child| {
                 if let SPItem::Function(method_item) = &*child.read().unwrap() {
-                    return method_item.is_ctr();
+                    return method_item.is_ctor();
                 }
                 false
             })

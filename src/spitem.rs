@@ -365,7 +365,7 @@ impl SPItem {
         }
     }
 
-    pub fn ctr(&self) -> Option<Arc<RwLock<SPItem>>> {
+    pub fn ctor(&self) -> Option<Arc<RwLock<SPItem>>> {
         match self {
             SPItem::Variable(_) => None,
             SPItem::Function(_) => None,
@@ -373,7 +373,7 @@ impl SPItem {
             SPItem::EnumMember(_) => None,
             SPItem::EnumStruct(_) => None,
             SPItem::Define(_) => None,
-            SPItem::Methodmap(item) => item.ctr(),
+            SPItem::Methodmap(item) => item.ctor(),
             SPItem::Property(_) => None,
             SPItem::Typedef(_) => None,
             SPItem::Typeset(_) => None,

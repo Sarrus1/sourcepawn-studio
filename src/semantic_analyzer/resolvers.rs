@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::{
     document::{Document, Token},
-    providers::completion::context::is_ctr_call,
+    providers::completion::context::is_ctor_call,
     spitem::{Location, SPItem},
     utils::range_contains_range,
 };
@@ -88,10 +88,10 @@ impl Analyzer {
                         .chars()
                         .take(token.range.start.character as usize)
                         .collect();
-                    if is_ctr_call(&pre_line) {
-                        if let Some(ctr_item) = mm_item.ctr() {
-                            ctr_item.write().unwrap().push_reference(reference);
-                            self.previous_items.push(ctr_item);
+                    if is_ctor_call(&pre_line) {
+                        if let Some(ctor_item) = mm_item.ctor() {
+                            ctor_item.write().unwrap().push_reference(reference);
+                            self.previous_items.push(ctor_item);
                             return true;
                         }
                     }

@@ -79,16 +79,16 @@ pub(super) fn get_callback_completions(
 ///
 /// * `all_items` - Vector of [SPItem](crate::spitem::SPItem).
 /// * `params` - [Parameters](lsp_types::completion::CompletionParams) of the completion request.
-pub(super) fn get_ctr_completions(
+pub(super) fn get_ctor_completions(
     all_items: Vec<Arc<RwLock<SPItem>>>,
     params: CompletionParams,
 ) -> Option<CompletionList> {
     let mut items = vec![];
-    for ctr in all_items
+    for ctor in all_items
         .iter()
-        .filter_map(|item| item.read().unwrap().ctr())
+        .filter_map(|item| item.read().unwrap().ctor())
     {
-        items.extend(ctr.read().unwrap().to_completions(&params, true))
+        items.extend(ctor.read().unwrap().to_completions(&params, true))
     }
     Some(CompletionList {
         items,
@@ -147,7 +147,7 @@ pub(super) fn get_method_completions(
                     for child in children.iter() {
                         match &*child.read().unwrap() {
                             SPItem::Function(method_item) => {
-                                if method_item.is_ctr() {
+                                if method_item.is_ctor() {
                                     // We don't want constructors here.
                                     continue;
                                 }

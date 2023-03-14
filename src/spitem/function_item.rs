@@ -339,7 +339,7 @@ impl FunctionItem {
     }
 
     /// Return whether or not the method is a methodmap constructor.
-    pub(crate) fn is_ctr(&self) -> bool {
+    pub(crate) fn is_ctor(&self) -> bool {
         if let Some(parent) = &self.parent {
             if let SPItem::Methodmap(mm_item) = &*parent.upgrade().unwrap().read().unwrap() {
                 return mm_item.name == self.name;
@@ -374,7 +374,7 @@ impl FunctionItem {
     /// if it is a function or a method.
     fn completion_kind(&self) -> CompletionItemKind {
         if self.parent.is_some() {
-            if self.is_ctr() {
+            if self.is_ctor() {
                 CompletionItemKind::CONSTRUCTOR
             } else {
                 CompletionItemKind::METHOD

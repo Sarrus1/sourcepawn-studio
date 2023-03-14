@@ -2,7 +2,7 @@ use lsp_types::{CompletionList, CompletionParams};
 
 use crate::{
     providers::completion::{
-        context::is_ctr_call, getters::get_ctr_completions, include::get_include_completions,
+        context::is_ctor_call, getters::get_ctor_completions, include::get_include_completions,
     },
     spitem::get_all_items,
 };
@@ -40,8 +40,8 @@ pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<
                 return get_method_completions(all_items, &pre_line, position, request);
             }
             ' ' => {
-                if is_ctr_call(&pre_line) {
-                    return get_ctr_completions(all_items, request.params);
+                if is_ctor_call(&pre_line) {
+                    return get_ctor_completions(all_items, request.params);
                 }
                 return get_non_method_completions(all_items, request.params);
             }
@@ -74,8 +74,8 @@ pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<
                 }
 
                 if !is_method_call(&pre_line) {
-                    if is_ctr_call(&pre_line) {
-                        return get_ctr_completions(all_items, request.params);
+                    if is_ctor_call(&pre_line) {
+                        return get_ctor_completions(all_items, request.params);
                     }
                     return get_non_method_completions(all_items, request.params);
                 }
