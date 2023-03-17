@@ -32,11 +32,10 @@ pub struct Store {
 }
 
 impl Store {
-    pub fn new(current_dir: PathBuf) -> Self {
-        let environment = Environment::new(Arc::new(current_dir));
+    pub fn new() -> Self {
         Store {
             documents: FxHashMap::default(),
-            environment,
+            environment: Environment::new(),
             first_parse: true,
             watcher: None,
         }

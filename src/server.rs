@@ -1,5 +1,5 @@
 use crate::{linter::spcomp::SPCompDiagnostic, lsp_ext, options::Options, store::Store};
-use std::{path::PathBuf, sync::Arc};
+use std::sync::Arc;
 
 use crossbeam_channel::{Receiver, Sender};
 use fxhash::FxHashMap;
@@ -44,7 +44,7 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn new(connection: Connection, current_dir: PathBuf) -> Self {
+    pub fn new(connection: Connection) -> Self {
         let client = LspClient::new(connection.sender.clone());
         let (internal_tx, internal_rx) = crossbeam_channel::unbounded();
         let mut parser = Parser::new();
@@ -56,7 +56,7 @@ impl Server {
             client,
             internal_rx,
             internal_tx,
-            store: Store::new(current_dir),
+            store: Store::new(),
             pool: threadpool::Builder::new().build(),
             parser,
             config_pulled: false,
