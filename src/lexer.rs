@@ -31,10 +31,8 @@ impl LexerState {
             self.character += 1;
         }
     }
-}
 
-impl PartialEq<Position> for LexerState {
-    fn eq(&self, pos: &Position) -> bool {
+    fn is_at_pos(&self, pos: &Position) -> bool {
         self.line == pos.line && self.character == pos.character
     }
 }
@@ -55,9 +53,6 @@ impl Document {
             ..Default::default()
         };
         for char_ in self.text.chars() {
-            if char_ == '\n' {
-                state.increment_line_count();
-            }
             state.increment_character_count();
             state.prev = state.cur;
             state.cur = char_;
@@ -130,8 +125,15 @@ impl Document {
                 },
             }
 
-            if state == pos {
+            if state.is_at_pos(&pos) {
                 return state.literal;
+            }
+
+            if char_ == '\n' {
+                // Reset the line counter after the position comparison
+                // to avoid an edge case when the position is at the very end
+                // of the line.
+                state.increment_line_count();
             }
         }
 
@@ -322,6 +324,23 @@ char foo[64] = "Hello World!"; /* A comment
 #define FOO = "Hello World"
 
   |
+"#,
+        );
+        let pos = fixture.documents[0].cursor.unwrap();
+
+        assert_eq!(
+            fixture.documents[0].to_document().get_lexer_state(pos),
+            None
+        );
+    }
+
+    #[test]
+    fn preproc_statement_include() {
+        let fixture = Fixture::parse(
+            r#"
+//! /main.sp
+#include "main.sp"    
+                  |
 "#,
         );
         let pos = fixture.documents[0].cursor.unwrap();

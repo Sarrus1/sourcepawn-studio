@@ -26,6 +26,13 @@ pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<
     let position = request.params.text_document_position.position;
     let line = document.line(position.line)?;
     let pre_line: String = line.chars().take(position.character as usize).collect();
+
+    let lexer_literal = document.get_lexer_state(position);
+    if lexer_literal.is_some() {
+        // TODO: Return only define statements here if in a preprocessor statement.
+        return None;
+    }
+
     if let Some(trigger_char) = line.chars().last() {
         // The trigger character allows us to fine control which completion to trigger.
         match trigger_char {

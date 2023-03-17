@@ -65,9 +65,6 @@ impl Server {
     }
 
     fn initialize(&mut self) -> anyhow::Result<()> {
-        let (_id, params) = self.connection.initialize_start()?;
-        let _params: InitializeParams = serde_json::from_value(params)?;
-
         let server_capabilities = serde_json::to_value(&ServerCapabilities {
             text_document_sync: Some(TextDocumentSyncCapability::Kind(
                 TextDocumentSyncKind::INCREMENTAL,
