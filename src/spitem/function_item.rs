@@ -82,6 +82,11 @@ impl FunctionItem {
         request_method: bool,
     ) -> Vec<CompletionItem> {
         let mut res = vec![];
+
+        for child in &self.children {
+            res.extend(child.read().unwrap().to_completions(params, request_method));
+        }
+
         // Don't return a method if non method items are requested.
         if !request_method && self.parent.is_some() {
             return res;
@@ -100,10 +105,6 @@ impl FunctionItem {
             deprecated: Some(self.is_deprecated()),
             ..Default::default()
         });
-
-        for child in &self.children {
-            res.extend(child.read().unwrap().to_completions(params, request_method));
-        }
 
         res
     }

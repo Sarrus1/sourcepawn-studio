@@ -50,7 +50,7 @@ pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<
                 if is_ctor_call(&pre_line) {
                     return get_ctor_completions(all_items, request.params);
                 }
-                return get_non_method_completions(all_items, request.params);
+                return None;
             }
             '$' => {
                 if is_callback_completion_request(request.params.context) {
