@@ -1,16 +1,10 @@
 [package]
 name = "sourcepawn_lsp"
-version = "0.9.0"
+version = "0.9.1"
 edition = "2021"
 description = "Language Server implention for the SourcePawn programming language."
 license = "GPL-3.0"
-exclude = [
-  ".gitattributes",
-  ".gitignore",
-  ".github/**",
-  ".vscode/**",
-  "*.snap",
-]
+exclude = [".gitattributes", ".gitignore", ".github/**", ".vscode/**", "*.snap"]
 
 [[bin]]
 name = "sourcepawn_lsp"
@@ -18,7 +12,6 @@ test = false
 
 [lib]
 doctest = false
-
 
 
 [dependencies]

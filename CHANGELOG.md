@@ -1,5 +1,13 @@
 ## Release Notes
 
+## [0.9.1]
+
+### Fixed
+
+-   Fixed incorrect completion triggers.
+-   Fixed unresolved variables in methods.
+-   Fixed missing completions in methods.
+
 ## [0.9.0]
 
 ### Added
