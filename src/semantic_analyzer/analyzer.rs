@@ -60,6 +60,17 @@ impl Analyzer {
                     for child in &methodmap_item.children {
                         purge_references(child, &document.uri);
                         tokens_map.insert(child.read().unwrap().key(), child.clone());
+                        if let SPItem::Function(method_item) = &*child.read().unwrap() {
+                            if method_item.uri.eq(&document.uri) {
+                                funcs_in_file.push(child.clone());
+                            }
+                            // All variables of the method.
+                            for sub_child in &method_item.children {
+                                purge_references(sub_child, &document.uri);
+                                tokens_map
+                                    .insert(sub_child.read().unwrap().key(), sub_child.clone());
+                            }
+                        }
                     }
                 }
                 SPItem::EnumStruct(enum_struct_item) => {
@@ -71,6 +82,17 @@ impl Analyzer {
                     for child in &enum_struct_item.children {
                         purge_references(child, &document.uri);
                         tokens_map.insert(child.read().unwrap().key(), child.clone());
+                        if let SPItem::Function(method_item) = &*child.read().unwrap() {
+                            if method_item.uri.eq(&document.uri) {
+                                funcs_in_file.push(child.clone());
+                            }
+                            // All variables of the method.
+                            for sub_child in &method_item.children {
+                                purge_references(sub_child, &document.uri);
+                                tokens_map
+                                    .insert(sub_child.read().unwrap().key(), sub_child.clone());
+                            }
+                        }
                     }
                 }
                 SPItem::Enum(enum_item) => {
