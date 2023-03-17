@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     // Create the transport. Includes the stdio (stdin and stdout) versions but this could
     // also be implemented to use sockets or HTTP.
     let (connection, io_threads) = Connection::stdio();
-    Server::new(connection, env::current_dir()?).run()?;
+    Server::new(connection).run()?;
     io_threads.join()?;
 
     // Shut down gracefully.
