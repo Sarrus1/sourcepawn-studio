@@ -28,19 +28,14 @@ impl SemanticTokensBuilder {
         }
         for ref_ in function_item.references.iter() {
             if ref_.uri.eq(uri) {
+                let mut modifiers = vec![];
                 if function_item.range.eq(&ref_.range) {
-                    self.push(
-                        ref_.range,
-                        type_.clone(),
-                        Some(vec![SemanticTokenModifier::DECLARATION]),
-                    )?;
-                } else {
-                    let mut dep: Vec<SemanticTokenModifier> = vec![];
-                    if function_item.description.deprecated.is_some() {
-                        dep.push(SemanticTokenModifier::DEPRECATED);
-                    }
-                    self.push(ref_.range, type_.clone(), Some(dep))?;
+                    modifiers.push(SemanticTokenModifier::DECLARATION);
                 }
+                if function_item.description.deprecated.is_some() {
+                    modifiers.push(SemanticTokenModifier::DEPRECATED);
+                }
+                self.push(ref_.range, type_.clone(), Some(modifiers))?;
             }
         }
         function_item.children.iter().for_each(|child| {
