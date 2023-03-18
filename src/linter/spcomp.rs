@@ -80,15 +80,28 @@ impl Store {
         let output = if cfg!(target_os = "windows") {
             Command::new("cmd")
                 .arg("/C")
+                .arg(
+                    self.environment
+                        .options
+                        .spcomp_path
+                        .to_str()
+                        .unwrap()
+                        .to_string(),
+                )
                 .args(self.build_args(&uri))
                 .output()
         } else {
-            Command::new("sh")
-                .arg("-c")
-                .args(self.build_args(&uri))
-                .output()
+            Command::new(
+                self.environment
+                    .options
+                    .spcomp_path
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+            )
+            .args(self.build_args(&uri))
+            .output()
         };
-
         let out_path = get_out_path(&uri);
         if out_path.exists() {
             let _ = fs::remove_file(out_path);
@@ -123,15 +136,7 @@ impl Store {
     /// * `uri` - [Uri](Url) of the file to compile.
     fn build_args(&mut self, uri: &Url) -> Vec<String> {
         let file_path = uri.to_file_path().unwrap();
-        let mut args = vec![
-            self.environment
-                .options
-                .spcomp_path
-                .to_str()
-                .unwrap()
-                .to_string(),
-            file_path.to_str().unwrap().to_string(),
-        ];
+        let mut args = vec![file_path.to_str().unwrap().to_string()];
         for includes_directory in self.environment.options.includes_directories.iter() {
             args.push(format!("-i{}", includes_directory.to_str().unwrap()));
         }
