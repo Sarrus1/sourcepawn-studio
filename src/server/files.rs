@@ -2,10 +2,36 @@ use std::{sync::Arc, time::Instant};
 
 use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams, Url};
 
-use crate::Server;
+use crate::{document::Document, store::Store, Server};
 
 mod events;
 mod watching;
+
+impl Store {
+    /// Check if a document is a potential main file.
+    /// Used when the mainPath was not set by the user.
+    ///
+    /// A document is a potential main file when it is not in an includeDirectory,
+    /// if it is a .sp file and it contains `OnPluginStart(`.
+    ///
+    /// # Arguments
+    ///
+    /// * `document` - [Document] to check against.
+    fn is_main_heuristic(&self, document: &Document) -> Option<Url> {
+        let path = document.path();
+        let path = path.to_str().unwrap();
+        for include_directory in self.environment.options.includes_directories.iter() {
+            if path.contains(include_directory.to_str().unwrap()) {
+                return None;
+            }
+        }
+        if document.extension() == "sp" && document.text.contains("OnPluginStart()") {
+            return Some(document.uri());
+        }
+
+        None
+    }
+}
 
 impl Server {
     pub(super) fn reparse_all(&mut self) -> anyhow::Result<()> {
@@ -17,12 +43,12 @@ impl Server {
         if let Ok(main_uri) = main_uri {
             if let Some(main_uri) = main_uri {
                 self.parse_files_for_main_path(&main_uri);
-            } else if let Some(uri) = self.store.documents.values().find_map(|document| {
-                if document.extension() == "sp" && document.text.contains("OnPluginStart()") {
-                    return Some(document.uri());
-                }
-                None
-            }) {
+            } else if let Some(uri) = self
+                .store
+                .documents
+                .values()
+                .find_map(|document| self.store.is_main_heuristic(document))
+            {
                 // Assume we found the main path.
                 let path = uri.to_file_path().unwrap();
                 let mut old_options = self.store.environment.options.as_ref().clone();

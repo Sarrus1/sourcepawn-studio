@@ -1,4 +1,5 @@
 use std::{
+    path::PathBuf,
     str::Utf8Error,
     sync::{Arc, RwLock},
 };
@@ -85,6 +86,10 @@ impl Document {
             .to_str()
             .unwrap()
             .to_string()
+    }
+
+    pub(crate) fn path(&self) -> PathBuf {
+        self.uri().to_file_path().unwrap()
     }
 
     pub(crate) fn uri(&self) -> Url {
