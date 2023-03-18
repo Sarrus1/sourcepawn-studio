@@ -93,6 +93,7 @@ impl Server {
             }),
             references_provider: Some(OneOf::Left(true)),
             document_symbol_provider: Some(OneOf::Left(true)),
+            rename_provider: Some(OneOf::Left(true)),
             semantic_tokens_provider: Some(
                 SemanticTokensServerCapabilities::SemanticTokensOptions(SemanticTokensOptions {
                     work_done_progress_options: WorkDoneProgressOptions {

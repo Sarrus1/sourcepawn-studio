@@ -5,7 +5,7 @@ use crate::{dispatch, providers::FeatureRequest};
 use lsp_server::{Request, RequestId};
 use lsp_types::{
     request::{
-        Completion, DocumentSymbolRequest, GotoDefinition, HoverRequest, References,
+        Completion, DocumentSymbolRequest, GotoDefinition, HoverRequest, References, Rename,
         SemanticTokensFullRequest, SignatureHelpRequest,
     },
     Url,
@@ -19,6 +19,7 @@ mod definition;
 mod document_symbol;
 mod hover;
 mod reference;
+mod rename;
 mod semantic_tokens;
 mod signature_help;
 
@@ -35,6 +36,7 @@ impl Server {
             .on::<SignatureHelpRequest, _>(|id, params| self.signature_help(id, params))?
             .on::<References, _>(|id, params| self.reference(id, params))?
             .on::<DocumentSymbolRequest, _>(|id, params| self.document_symbol(id, params))?
+            .on::<Rename, _>(|id, params| self.rename(id, params))?
             .default()
         {
             self.connection.sender.send(response.into())?;
