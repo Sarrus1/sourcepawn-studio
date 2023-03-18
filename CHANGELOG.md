@@ -1,5 +1,16 @@
 ## Release Notes
 
+## [0.9.2]
+
+### Added
+
+-   Added rename provider.
+
+### Fixed
+
+-   Fixed incorrect heuristic when inferring the mainPath (Thanks [Suza](https://github.com/Zabaniya001)!).
+-   Fixed spcomp linting on macOS and Linux.
+
 ## [0.9.1]
 
 ### Fixed
