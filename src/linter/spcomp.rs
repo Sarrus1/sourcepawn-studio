@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf, process::Command};
+use std::{env, fs, path::PathBuf, process::Command};
 
 use fxhash::FxHashMap;
 use lazy_static::lazy_static;
@@ -80,7 +80,7 @@ impl Store {
         let output = Command::new(self.environment.options.spcomp_path.to_str().unwrap())
             .args(self.build_args(&uri))
             .output();
-        let out_path = get_out_path(&uri);
+        let out_path = self.get_out_path();
         if out_path.exists() {
             let _ = fs::remove_file(out_path);
         }
@@ -125,11 +125,16 @@ impl Store {
             args.push(format!("-i{}", include_path.to_str().unwrap()));
         }
 
-        args.push(format!("-o{}", get_out_path(uri).to_str().unwrap()));
+        args.push(format!("-o{}", self.get_out_path().to_str().unwrap()));
 
         args.push("--syntax-only".to_string());
 
         args
+    }
+
+    /// Generate a temporary path for the output of spcomp. This is not needed with the `--syntax-only` switch.
+    fn get_out_path(&self) -> PathBuf {
+        env::temp_dir().join(format!("{}.smx", self.environment.sp_comp_uuid))
     }
 }
 
@@ -161,17 +166,4 @@ fn parse_spcomp_errors(stdout: &str) -> Vec<SPCompDiagnostic> {
     }
 
     diagnostics
-}
-
-/// Generate a temporary path for the output of spcomp. This is not needed with the `--syntax-only` switch.
-///
-/// # Arguments
-///
-/// * `uri` - [Uri](Url) of the file to compile.
-fn get_out_path(uri: &Url) -> PathBuf {
-    uri.to_file_path()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .join("tmp6306493182.smx")
 }
