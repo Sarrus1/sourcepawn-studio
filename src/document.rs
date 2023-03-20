@@ -1,6 +1,5 @@
 use std::{
     path::PathBuf,
-    str::Utf8Error,
     sync::{Arc, RwLock},
 };
 
@@ -9,12 +8,10 @@ use fxhash::{FxHashMap, FxHashSet};
 use lazy_static::lazy_static;
 use lsp_types::Url;
 use lsp_types::{Diagnostic, Range};
-use regex::Regex;
 use tree_sitter::{Node, Query, QueryCursor};
 
 use crate::{
     parser::comment_parser::{Comment, Deprecated},
-    providers::hover::description::Description,
     spitem::SPItem,
     utils::ts_range_to_lsp_range,
 };
@@ -201,54 +198,4 @@ impl Document {
 
         sp_items
     }
-}
-
-pub fn find_doc(walker: &mut Walker, end_row: usize) -> Result<Description, Utf8Error> {
-    let mut end_row = end_row as u32;
-    let mut dep: Option<String> = None;
-    let mut text: Vec<String> = vec![];
-
-    for deprecated in walker.deprecated.iter().rev() {
-        if end_row == deprecated.range.end.line + 1 {
-            dep = Some(deprecated.text.clone());
-            break;
-        }
-        if end_row > deprecated.range.end.line {
-            break;
-        }
-    }
-    let mut offset = 1;
-    if dep.is_some() {
-        offset = 2;
-    }
-
-    for comment in walker.comments.iter().rev() {
-        if end_row == comment.range.end.line + offset {
-            let comment_text = comment.text.clone();
-            text.push(comment_to_doc(&comment_text));
-            end_row = comment.range.start.line;
-        } else {
-            break;
-        }
-    }
-    walker.comments.clear();
-    let doc = Description {
-        text: text.join(""),
-        deprecated: dep,
-    };
-
-    Ok(doc)
-}
-
-fn comment_to_doc(text: &str) -> String {
-    lazy_static! {
-        static ref RE1: Regex = Regex::new(r"^/\*\s*").unwrap();
-        static ref RE2: Regex = Regex::new(r"\*/$").unwrap();
-        static ref RE3: Regex = Regex::new(r"//\s*").unwrap();
-    }
-    let text = RE1.replace_all(text, "").into_owned();
-    let text = RE2.replace_all(&text, "").into_owned();
-    let text = RE3.replace_all(&text, "").into_owned();
-
-    text
 }

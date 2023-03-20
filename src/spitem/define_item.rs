@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionParams, DocumentSymbol, GotoDefinitionParams,
-    Hover, HoverContents, HoverParams, LanguageString, LocationLink, MarkedString, Range,
-    SymbolKind, SymbolTag, Url,
+    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, DocumentSymbol,
+    GotoDefinitionParams, Hover, HoverContents, HoverParams, LanguageString, LocationLink,
+    MarkedString, Range, SymbolKind, SymbolTag, Url,
 };
 
 use crate::{providers::hover::description::Description, utils::uri_to_file_name};
@@ -42,9 +42,15 @@ impl DefineItem {
     ///
     /// * `_params` - [CompletionParams](lsp_types::CompletionParams) of the request.
     pub(crate) fn to_completion(&self, _params: &CompletionParams) -> Option<CompletionItem> {
+        let mut tags = vec![];
+        if self.description.deprecated.is_some() {
+            tags.push(CompletionItemTag::DEPRECATED);
+        }
+
         Some(CompletionItem {
             label: self.name.to_string(),
             kind: Some(CompletionItemKind::CONSTANT),
+            tags: Some(tags),
             detail: uri_to_file_name(&self.uri),
             ..Default::default()
         })

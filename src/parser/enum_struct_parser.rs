@@ -6,7 +6,7 @@ use std::{
 use tree_sitter::Node;
 
 use crate::{
-    document::{find_doc, Document, Walker},
+    document::{Document, Walker},
     providers::hover::description::Description,
     spitem::{enum_struct_item::EnumStructItem, variable_item::VariableItem, SPItem},
     utils::ts_range_to_lsp_range,
@@ -21,7 +21,7 @@ impl Document {
         let name_node = node.child_by_field_name("name").unwrap();
         let name = name_node.utf8_text(self.text.as_bytes())?.to_string();
 
-        let documentation = find_doc(walker, node.start_position().row)?;
+        let documentation = walker.find_doc(node.start_position().row, false)?;
 
         let enum_struct_item = EnumStructItem {
             name,

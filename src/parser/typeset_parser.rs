@@ -6,7 +6,7 @@ use std::{
 use tree_sitter::Node;
 
 use crate::{
-    document::{find_doc, Document, Walker},
+    document::{Document, Walker},
     spitem::{typedef_item::TypedefItem, typeset_item::TypesetItem, SPItem},
     utils::ts_range_to_lsp_range,
 };
@@ -24,7 +24,7 @@ impl Document {
         let name_node = name_node.unwrap();
         let name = name_node.utf8_text(self.text.as_bytes())?;
 
-        let description = find_doc(walker, node.start_position().row)?;
+        let description = walker.find_doc(node.start_position().row, false)?;
 
         let mut children = vec![];
 
@@ -50,7 +50,7 @@ impl Document {
                         type_ = type_node.utf8_text(self.text.as_bytes())?;
                     }
 
-                    let description = find_doc(walker, node.start_position().row)?;
+                    let description = walker.find_doc(node.start_position().row, false)?;
 
                     let typedef_item = TypedefItem {
                         name: format!("{}{}", name, counter),

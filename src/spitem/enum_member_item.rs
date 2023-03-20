@@ -1,8 +1,8 @@
 use std::sync::{Arc, RwLock, Weak};
 
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionParams, DocumentSymbol, Hover, HoverContents,
-    HoverParams, LanguageString, MarkedString, Range, SymbolKind, SymbolTag, Url,
+    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, DocumentSymbol, Hover,
+    HoverContents, HoverParams, LanguageString, MarkedString, Range, SymbolKind, SymbolTag, Url,
 };
 use lsp_types::{GotoDefinitionParams, LocationLink};
 
@@ -40,9 +40,15 @@ impl EnumMemberItem {
     ///
     /// * `_params` - [CompletionParams](lsp_types::CompletionParams) of the request.
     pub(crate) fn to_completion(&self, _params: &CompletionParams) -> Option<CompletionItem> {
+        let mut tags = vec![];
+        if self.description.deprecated.is_some() {
+            tags.push(CompletionItemTag::DEPRECATED);
+        }
+
         Some(CompletionItem {
             label: self.name.clone(),
             kind: Some(CompletionItemKind::ENUM_MEMBER),
+            tags: Some(tags),
             detail: Some(self.parent.upgrade().unwrap().read().unwrap().name()),
             ..Default::default()
         })

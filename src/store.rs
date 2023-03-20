@@ -273,6 +273,7 @@ impl Store {
                 "enum_struct" => document.parse_enum_struct(&mut node, &mut walker)?,
                 "comment" => {
                     walker.push_comment(node, &document.text);
+                    walker.push_inline_comment(&document.sp_items);
                 }
                 "preproc_pragma" => walker.push_deprecated(node, &document.text),
                 _ => {

@@ -6,7 +6,7 @@ use std::{
 use tree_sitter::Node;
 
 use crate::{
-    document::{find_doc, Document, Walker},
+    document::{Document, Walker},
     providers::hover::description::Description,
     spitem::{
         parameter::{Parameter, Type},
@@ -57,7 +57,7 @@ impl Document {
             type_ = type_node.utf8_text(self.text.as_bytes())?;
         }
 
-        let description = find_doc(walker, node.start_position().row)?;
+        let description = walker.find_doc(node.start_position().row, false)?;
 
         let typedef_item = TypedefItem {
             name,

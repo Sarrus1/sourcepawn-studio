@@ -6,7 +6,7 @@ use std::{
 use tree_sitter::Node;
 
 use crate::{
-    document::{find_doc, Document, Walker},
+    document::{Document, Walker},
     spitem::{define_item::DefineItem, SPItem},
     utils::ts_range_to_lsp_range,
 };
@@ -30,7 +30,7 @@ impl Document {
             range: ts_range_to_lsp_range(&name_node.range()),
             full_range: ts_range_to_lsp_range(&node.range()),
             value: value.to_string(),
-            description: find_doc(walker, node.start_position().row)?,
+            description: walker.find_doc(node.start_position().row, true)?,
             uri: self.uri.clone(),
             references: vec![],
         };

@@ -8,7 +8,7 @@ use regex::Regex;
 use tree_sitter::{Node, QueryCursor};
 
 use crate::{
-    document::{find_doc, Document, Walker},
+    document::{Document, Walker},
     providers::hover::description::Description,
     spitem::{
         function_item::{FunctionDefinitionType, FunctionItem, FunctionVisibility},
@@ -110,7 +110,7 @@ impl Document {
             }
         }
 
-        let documentation = find_doc(walker, node.start_position().row)?;
+        let documentation = walker.find_doc(node.start_position().row, false)?;
 
         let function_item = FunctionItem {
             name: name.clone(),

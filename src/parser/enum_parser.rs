@@ -6,7 +6,7 @@ use std::{
 use tree_sitter::Node;
 
 use crate::{
-    document::{find_doc, Document, Walker},
+    document::{Document, Walker},
     providers::hover::description::Description,
     spitem::{enum_item::EnumItem, enum_member_item::EnumMemberItem, SPItem},
     utils::ts_range_to_lsp_range,
@@ -18,7 +18,7 @@ impl Document {
     pub fn parse_enum(&mut self, node: &mut Node, walker: &mut Walker) -> Result<(), Utf8Error> {
         let (name, range) =
             get_enum_name_and_range(node, &self.text, &mut walker.anon_enum_counter);
-        let documentation = find_doc(walker, node.start_position().row)?;
+        let documentation = walker.find_doc(node.start_position().row, false)?;
 
         let enum_item = EnumItem {
             name,
@@ -45,6 +45,7 @@ impl Document {
                 enum_item.clone(),
                 &self.text.to_string(),
                 self.uri.clone(),
+                walker,
             );
         }
         self.sp_items.push(enum_item.clone());
@@ -88,27 +89,36 @@ fn read_enum_members(
     enum_item: Arc<RwLock<SPItem>>,
     source: &String,
     uri: Arc<Url>,
+    walker: &mut Walker,
 ) {
     let mut cursor = body_node.walk();
     for child in body_node.children(&mut cursor) {
-        let kind = child.kind();
-        if kind != "enum_entry" {
-            continue;
+        match child.kind() {
+            "enum_entry" => {
+                let name_node = child.child_by_field_name("name").unwrap();
+                let name = name_node.utf8_text(source.as_bytes()).unwrap().to_string();
+                let range = ts_range_to_lsp_range(&name_node.range());
+                let enum_member_item = EnumMemberItem {
+                    name,
+                    uri: uri.clone(),
+                    range,
+                    parent: Arc::downgrade(&enum_item),
+                    description: Description::default(),
+                    references: vec![],
+                };
+                enum_item
+                    .write()
+                    .unwrap()
+                    .push_child(Arc::new(RwLock::new(SPItem::EnumMember(enum_member_item))));
+            }
+            "comment" => {
+                walker.push_comment(child, source);
+                walker.push_inline_comment(enum_item.read().unwrap().children().unwrap());
+            }
+            "preproc_pragma" => {
+                walker.push_deprecated(child, source);
+            }
+            _ => {}
         }
-        let name_node = child.child_by_field_name("name").unwrap();
-        let name = name_node.utf8_text(source.as_bytes()).unwrap().to_string();
-        let range = ts_range_to_lsp_range(&name_node.range());
-        let enum_member_item = EnumMemberItem {
-            name,
-            uri: uri.clone(),
-            range,
-            parent: Arc::downgrade(&enum_item),
-            description: Description::default(),
-            references: vec![],
-        };
-        enum_item
-            .write()
-            .unwrap()
-            .push_child(Arc::new(RwLock::new(SPItem::EnumMember(enum_member_item))));
     }
 }
