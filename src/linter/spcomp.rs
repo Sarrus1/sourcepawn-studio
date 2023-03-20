@@ -77,31 +77,9 @@ impl Store {
         &mut self,
         uri: Url,
     ) -> anyhow::Result<FxHashMap<Url, Vec<SPCompDiagnostic>>> {
-        let output = if cfg!(target_os = "windows") {
-            Command::new("cmd")
-                .arg("/C")
-                .arg(
-                    self.environment
-                        .options
-                        .spcomp_path
-                        .to_str()
-                        .unwrap()
-                        .to_string(),
-                )
-                .args(self.build_args(&uri))
-                .output()
-        } else {
-            Command::new(
-                self.environment
-                    .options
-                    .spcomp_path
-                    .to_str()
-                    .unwrap()
-                    .to_string(),
-            )
+        let output = Command::new(self.environment.options.spcomp_path.to_str().unwrap())
             .args(self.build_args(&uri))
-            .output()
-        };
+            .output();
         let out_path = get_out_path(&uri);
         if out_path.exists() {
             let _ = fs::remove_file(out_path);
