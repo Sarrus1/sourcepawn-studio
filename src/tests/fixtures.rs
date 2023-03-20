@@ -112,7 +112,7 @@ impl FixtureDocument {
         }
     }
 
-    fn fake_uri(&self, path: &PathBuf) -> Url {
+    fn fake_uri(&self, path: &Path) -> Url {
         let root = if cfg!(windows) {
             PathBuf::from("C:/")
         } else {

@@ -18,7 +18,7 @@ use crate::{
     utils::read_to_string_lossy,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Store {
     /// Any documents the server has handled, indexed by their URL.
     pub documents: FxHashMap<Arc<Url>, Document>,
@@ -34,10 +34,8 @@ pub struct Store {
 impl Store {
     pub fn new() -> Self {
         Store {
-            documents: FxHashMap::default(),
-            environment: Environment::new(),
             first_parse: true,
-            watcher: None,
+            ..Default::default()
         }
     }
 
