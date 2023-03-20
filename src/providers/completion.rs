@@ -16,6 +16,7 @@ use self::{
 use super::FeatureRequest;
 
 pub(crate) mod context;
+mod defaults;
 mod getters;
 mod include;
 mod matchtoken;

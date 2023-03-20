@@ -1,13 +1,13 @@
 use std::sync::{Arc, RwLock};
 
-use lsp_types::{CompletionItem, CompletionList, CompletionParams, Position, Range};
+use lsp_types::{CompletionList, CompletionParams, Position, Range};
 
 use crate::{
     providers::FeatureRequest,
     spitem::{get_items_from_position, SPItem},
 };
 
-use super::context::get_line_words;
+use super::{context::get_line_words, defaults::get_default_completions};
 
 /// Return a [CompletionList](lsp_types::CompletionList) of all non method completions (that don't come
 /// after a `.` or `::`).
@@ -20,7 +20,7 @@ pub(super) fn get_non_method_completions(
     all_items: Vec<Arc<RwLock<SPItem>>>,
     params: CompletionParams,
 ) -> Option<CompletionList> {
-    let mut items: Vec<CompletionItem> = Vec::new();
+    let mut items = get_default_completions();
     for sp_item in all_items.iter() {
         let res = sp_item.read().unwrap().to_completions(&params, false);
         items.extend(res);
@@ -42,12 +42,13 @@ pub(super) fn get_callback_completions(
     all_items: Vec<Arc<RwLock<SPItem>>>,
     position: Position,
 ) -> Option<CompletionList> {
+    let mut items = get_default_completions();
+
     // This range is used to replace the "$" that has been inserted as a trigger for the completion.
     let range = Range::new(
         Position::new(position.line, position.character - 1),
         Position::new(position.line, position.character + 1),
     );
-    let mut items = vec![];
     for item in all_items.iter() {
         match &*item.read().unwrap() {
             SPItem::Typedef(typedef_item) => {
@@ -83,7 +84,7 @@ pub(super) fn get_ctor_completions(
     all_items: Vec<Arc<RwLock<SPItem>>>,
     params: CompletionParams,
 ) -> Option<CompletionList> {
-    let mut items = vec![];
+    let mut items = get_default_completions();
     for ctor in all_items
         .iter()
         .filter_map(|item| item.read().unwrap().ctor())
@@ -143,7 +144,7 @@ pub(super) fn get_method_completions(
                 SPItem::Methodmap(mm_item) => {
                     let mut children = mm_item.children;
                     extend_children(&mut children, &mm_item.parent);
-                    let mut items = vec![];
+                    let mut items = get_default_completions();
                     for child in children.iter() {
                         match &*child.read().unwrap() {
                             SPItem::Function(method_item) => {
@@ -175,7 +176,7 @@ pub(super) fn get_method_completions(
                     });
                 }
                 SPItem::EnumStruct(es_item) => {
-                    let mut items = vec![];
+                    let mut items = get_default_completions();
                     for child in es_item.children.iter() {
                         items.extend(child.read().unwrap().to_completions(&request.params, true));
                     }
