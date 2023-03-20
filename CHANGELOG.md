@@ -1,5 +1,16 @@
 ## Release Notes
 
+## [0.9.3]
+
+### Added
+
+-   Added inline comments support for variables, enum members and defines.
+-   Added default completions (`sizeof`, `voids`, etc).
+
+### Fixed
+
+-   Fixed a potential panic in the resolver (see [#281](https://github.com/Sarrus1/sourcepawn-vscode/issues/281), thanks [Keldra](https://github.com/ddorab)!).
+
 ## [0.9.2]
 
 ### Added
