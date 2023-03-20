@@ -119,8 +119,8 @@ impl Analyzer {
             let char = self
                 .line()
                 .chars()
-                .nth((token.range.start.character - 1) as usize)
-                .unwrap();
+                .nth((token.range.start.character - 1) as usize)?;
+
             if char != ':' && char != '.' {
                 return None;
             }
