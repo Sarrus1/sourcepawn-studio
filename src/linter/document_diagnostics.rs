@@ -15,13 +15,6 @@ pub struct DocumentDiagnostics {
 }
 
 impl DocumentDiagnostics {
-    /// Clear all the diagnostics.
-    pub(super) fn clear(&mut self) {
-        self.sp_comp_diagnostics.clear();
-        self.local_diagnostics.clear();
-        self.global_diagnostics.clear();
-    }
-
     /// Return a concatenation of all the [Diagnostics](lsp_types::Diagnostic).
     pub(crate) fn all(&self) -> Vec<Diagnostic> {
         let mut lsp_diagnostics: Vec<Diagnostic> = self

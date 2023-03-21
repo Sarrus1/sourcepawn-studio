@@ -211,6 +211,7 @@ fn read_body_variables(
             document.parse_variable(&mut capture.node.clone(), Some(function_item.clone()))?;
         }
     }
+
     Ok(())
 }
 
