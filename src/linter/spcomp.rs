@@ -129,6 +129,8 @@ impl Store {
 
         args.push("--syntax-only".to_string());
 
+        args.extend(self.environment.options.linter_arguments.clone());
+
         args
     }
 

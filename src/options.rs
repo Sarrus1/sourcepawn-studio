@@ -12,6 +12,7 @@ pub struct Options {
     pub includes_directories: Vec<PathBuf>,
     pub main_path: PathBuf,
     pub spcomp_path: PathBuf,
+    pub linter_arguments: Vec<String>,
 }
 
 impl Options {
