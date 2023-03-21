@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "5.3.1",
+  "version": "5.3.2",
   "publisher": "Sarrus",
   "main": "./dist/spIndex.js",
   "icon": "sm.png",
@@ -269,6 +269,13 @@
           "type": "array",
           "default": [],
           "description": "SourcePawn linter compiler options. Don't add paths here.",
+          "scope": "resource",
+          "deprecationMessage": "Use `SourcePawnLanguageServer.linterArguments` instead."
+        },
+        "SourcePawnLanguageServer.linterArguments": {
+          "type": "array",
+          "default": [],
+          "description": "Linter arguments that will be passed to spcomp. Note that the compilation target, include directories and output path are already handled by the server.",
           "scope": "resource"
         },
         "sourcepawn.availableAPIs": {

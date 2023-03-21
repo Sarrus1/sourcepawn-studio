@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [5.3.2]
+
+### Added
+
+- Added a new linter arguments settings to match the LanguageServer's specifications.
+
 ## [5.3.1]
 
 ### Fixed
