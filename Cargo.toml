@@ -1,6 +1,6 @@
 [package]
 name = "sourcepawn_lsp"
-version = "0.9.3"
+version = "0.9.4"
 edition = "2021"
 description = "Language Server implemention for the SourcePawn programming language."
 license = "GPL-3.0"

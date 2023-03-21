@@ -1,5 +1,13 @@
 ## Release Notes
 
+## [0.9.4]
+
+### Added
+
+-   Added support for linter arguments.
+-   Added deprecated lint.
+-   Added invalid syntax lint.
+
 ## [0.9.3]
 
 ### Added
