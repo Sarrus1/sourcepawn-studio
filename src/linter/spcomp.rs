@@ -8,7 +8,7 @@ use regex::Regex;
 use crate::store::Store;
 
 /// Severity levels of spcomp errors.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum SPCompSeverity {
     Warning,
     Error,
@@ -27,7 +27,7 @@ impl SPCompSeverity {
 }
 
 /// Representation of an spcomp error.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct SPCompDiagnostic {
     /// [Uri](Url) of the document where the error comes from.
     uri: Url,
@@ -137,6 +137,18 @@ impl Store {
     /// Generate a temporary path for the output of spcomp. This is not needed with the `--syntax-only` switch.
     fn get_out_path(&self) -> PathBuf {
         env::temp_dir().join(format!("{}.smx", self.environment.sp_comp_uuid))
+    }
+
+    /// Ingest a map of spcomp_diganostics into the [Store].
+    pub(crate) fn ingest_spcomp_diagnostics(
+        &mut self,
+        spcomp_diagnostics_map: FxHashMap<Url, Vec<SPCompDiagnostic>>,
+    ) {
+        for (uri, diagnostics) in spcomp_diagnostics_map.iter() {
+            if let Some(document) = self.documents.get_mut(uri) {
+                document.diagnostics.sp_comp_diagnostics = (*diagnostics).clone();
+            }
+        }
     }
 }
 

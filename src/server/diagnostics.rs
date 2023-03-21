@@ -1,10 +1,9 @@
-use fxhash::FxHashMap;
 use lsp_types::{
     notification::{PublishDiagnostics, ShowMessage},
-    Diagnostic, MessageType, PublishDiagnosticsParams, ShowMessageParams, Url,
+    MessageType, PublishDiagnosticsParams, ShowMessageParams,
 };
 
-use crate::{linter::spcomp::SPCompDiagnostic, Server};
+use crate::{spitem::get_all_items, Server};
 
 use super::InternalMessage;
 
@@ -12,6 +11,9 @@ impl Server {
     /// Reload the diagnostics of the workspace, by running spcomp.
     pub(crate) fn reload_diagnostics(&mut self) {
         self.store.clear_all_diagnostics();
+
+        self.lint_all_documents();
+
         if let Ok(Some(main_path_uri)) = self.store.environment.options.get_main_path_uri() {
             // Only reload the diagnostics if the main path is defined.
             self.spawn(move |mut server| {
@@ -35,29 +37,22 @@ impl Server {
         }
     }
 
-    /// Update the diagnostics of the store with the latest diagnostics, and then
-    /// publish all the diagnostics of the store.
-    /// This will override all diagnostics that have already been sent to the client.
-    ///
-    /// # Arguments
-    ///
-    /// * `diagnostics_map` - The latest diagnostics.
-    pub(crate) fn publish_diagnostics(
-        &mut self,
-        diagnostics_map: FxHashMap<Url, Vec<SPCompDiagnostic>>,
-    ) -> anyhow::Result<()> {
-        for (uri, document) in self.store.documents.iter_mut() {
-            if let Some(diagnostics) = diagnostics_map.get(uri) {
-                let lsp_diagnostics: Vec<Diagnostic> = diagnostics
-                    .iter()
-                    .map(|diagnostic| diagnostic.to_lsp_diagnostic())
-                    .collect();
-                document.diagnostics = lsp_diagnostics;
-            }
+    /// Lint all documents with the custom linter.
+    pub fn lint_all_documents(&mut self) {
+        self.store.clear_all_global_diagnostics();
+        let all_items_flat = get_all_items(&self.store, true);
+        self.store.get_deprecated_diagnostics(&all_items_flat);
+        let _ = self.publish_diagnostics();
+    }
+
+    /// Publish all the diagnostics of the store. This will override all diagnostics that have already
+    /// been sent to the client.
+    pub fn publish_diagnostics(&mut self) -> anyhow::Result<()> {
+        for document in self.store.documents.values() {
             self.client
                 .send_notification::<PublishDiagnostics>(PublishDiagnosticsParams {
                     uri: document.uri(),
-                    diagnostics: document.diagnostics.clone(),
+                    diagnostics: document.diagnostics.all(),
                     version: None,
                 })?;
         }

@@ -6,11 +6,12 @@ use std::{
 use derive_new::new;
 use fxhash::{FxHashMap, FxHashSet};
 use lazy_static::lazy_static;
+use lsp_types::Range;
 use lsp_types::Url;
-use lsp_types::{Diagnostic, Range};
 use tree_sitter::{Node, Query, QueryCursor};
 
 use crate::{
+    linter::document_diagnostics::DocumentDiagnostics,
     parser::comment_parser::{Comment, Deprecated},
     spitem::SPItem,
     utils::ts_range_to_lsp_range,
@@ -60,7 +61,7 @@ pub struct Document {
     #[new(default)]
     pub declarations: FxHashMap<String, Arc<RwLock<SPItem>>>,
     #[new(default)]
-    pub diagnostics: Vec<Diagnostic>,
+    pub diagnostics: DocumentDiagnostics,
 }
 
 pub struct Walker {

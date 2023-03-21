@@ -62,7 +62,7 @@ impl Walker {
         let mut text: Vec<String> = vec![];
         for deprecated in self.deprecated.iter().rev() {
             if end_row == deprecated.range.end.line + 1 {
-                dep = Some(deprecated.text.clone());
+                dep = Some(deprecated.text.trim().to_string());
                 break;
             }
             if end_row > deprecated.range.end.line {

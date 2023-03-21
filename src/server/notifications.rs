@@ -58,6 +58,8 @@ impl Server {
             },
         };
 
+        self.lint_all_documents();
+
         Ok(())
     }
 

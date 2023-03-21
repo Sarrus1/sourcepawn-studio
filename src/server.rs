@@ -198,7 +198,8 @@ impl Server {
                                 self.handle_file_event(event);
                             }
                             InternalMessage::Diagnostics(diagnostics) => {
-                                self.publish_diagnostics(diagnostics)?;
+                                self.store.ingest_spcomp_diagnostics(diagnostics);
+                                self.publish_diagnostics()?;
                             }
                         }
                 }
