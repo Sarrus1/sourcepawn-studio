@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.9.5]
+
+### Added
+
+-   Added call hierarchy provider.
+
 ## [0.9.4]
 
 ### Added
