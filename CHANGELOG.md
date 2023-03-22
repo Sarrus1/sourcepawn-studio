@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [5.3.3]
+
+### Fixed
+
+- Re-introduced the keyvalues linter.
+
 ## [5.3.2]
 
 ### Added
