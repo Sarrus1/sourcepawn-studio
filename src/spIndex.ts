@@ -9,6 +9,7 @@ import { KVDocumentFormattingEditProvider } from "./Formatters/kvFormat";
 
 import { migrateSettings } from "./spUtils";
 import { Ctx } from "./ctx";
+import { registerKVLinter } from "./Keyvalues/registerKVLinter";
 
 export let ctx: Ctx | undefined;
 
@@ -43,4 +44,7 @@ export async function activate(context: vscode.ExtensionContext) {
       new KVDocumentFormattingEditProvider()
     )
   );
+
+  // Register KV linter
+  registerKVLinter(context);
 }

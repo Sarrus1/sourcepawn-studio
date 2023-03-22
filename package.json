@@ -551,7 +551,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run generate-parser && npm run build",
-    "generate-parser": "peggy --plugin ./node_modules/ts-pegjs --extra-options-file src/Parser/kvParser/kvconfig.json -o src/Parser/kvParser/kvParser.ts --cache src/Parser/kvParser/kv.pegjs",
+    "generate-parser": "peggy --plugin ./node_modules/ts-pegjs --extra-options-file src/Keyvalues/kvconfig.json -o src/Keyvalues/kvParser.ts --cache src/Keyvalues/kv.pegjs",
     "pretest": "npm run compile",
     "test": "node ./dist/test/runTest.js",
     "build": "node esbuild.js prod",
