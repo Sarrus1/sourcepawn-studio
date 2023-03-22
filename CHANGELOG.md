@@ -35,6 +35,12 @@
 
 - Fixed the server trying to update in debug mode.
 
+## [5.1.0]
+
+### Fixed
+
+- Revert the premature release of v5.
+
 ## [5.0.4]
 
 ### Added
