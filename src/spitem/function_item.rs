@@ -4,11 +4,11 @@ use std::sync::{Arc, RwLock, Weak};
 use super::{parameter::Parameter, Location};
 use fxhash::FxHashSet;
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionList, CompletionParams,
-    CompletionTextEdit, DocumentSymbol, Documentation, GotoDefinitionParams, Hover, HoverContents,
-    HoverParams, InsertTextFormat, LanguageString, LocationLink, MarkedString, MarkupContent,
-    ParameterInformation, Position, Range, SignatureInformation, SymbolKind, SymbolTag, TextEdit,
-    Url,
+    CallHierarchyItem, CompletionItem, CompletionItemKind, CompletionItemTag, CompletionList,
+    CompletionParams, CompletionTextEdit, DocumentSymbol, Documentation, GotoDefinitionParams,
+    Hover, HoverContents, HoverParams, InsertTextFormat, LanguageString, LocationLink,
+    MarkedString, MarkupContent, ParameterInformation, Position, Range, SignatureInformation,
+    SymbolKind, SymbolTag, TextEdit, Url,
 };
 
 use crate::providers::hover::description::Description;
@@ -165,25 +165,12 @@ impl FunctionItem {
         if self.description.deprecated.is_some() {
             tags.push(SymbolTag::DEPRECATED);
         }
-        let mut kind = SymbolKind::FUNCTION;
-        if let Some(parent) = &self.parent {
-            match &*parent.upgrade().unwrap().read().unwrap() {
-                SPItem::EnumStruct(_) => kind = SymbolKind::METHOD,
-                SPItem::Methodmap(mm_item) => {
-                    if mm_item.name == self.name {
-                        kind = SymbolKind::CONSTRUCTOR
-                    } else {
-                        kind = SymbolKind::METHOD
-                    }
-                }
-                _ => {}
-            }
-        }
+
         #[allow(deprecated)]
         Some(DocumentSymbol {
             name: self.name.to_string(),
             detail: Some(self.detail.to_string()),
-            kind,
+            kind: self.symbol_kind(),
             tags: Some(tags),
             range: self.full_range,
             deprecated: None,
@@ -325,6 +312,44 @@ impl FunctionItem {
             items: vec![comp_item],
             ..Default::default()
         })
+    }
+
+    /// Return the [SymbolKind](lsp_types::SymbolKind) of this [FunctionItem](self::FunctionItem).
+    pub(crate) fn symbol_kind(&self) -> SymbolKind {
+        let mut kind = SymbolKind::FUNCTION;
+        if let Some(parent) = &self.parent {
+            match &*parent.upgrade().unwrap().read().unwrap() {
+                SPItem::EnumStruct(_) => kind = SymbolKind::METHOD,
+                SPItem::Methodmap(mm_item) => {
+                    if mm_item.name == self.name {
+                        kind = SymbolKind::CONSTRUCTOR
+                    } else {
+                        kind = SymbolKind::METHOD
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        kind
+    }
+
+    /// Return a [CallHierarchyItem](lsp_types::CallHierarchyItem) from this [FunctionItem](self::FunctionItem).
+    pub(crate) fn to_call_hierarchy(&self) -> CallHierarchyItem {
+        CallHierarchyItem {
+            name: self.name.clone(),
+            kind: self.symbol_kind(),
+            range: self.full_range,
+            selection_range: self.range,
+            tags: if self.is_deprecated() {
+                Some(vec![SymbolTag::DEPRECATED])
+            } else {
+                None
+            },
+            detail: Some(self.detail.clone()),
+            uri: (*self.uri).clone(),
+            data: None,
+        }
     }
 
     /// Return a key to be used as a unique identifier in a map containing all the items.

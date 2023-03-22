@@ -1,3 +1,4 @@
+pub mod call_hierarchy;
 pub mod completion;
 pub mod definition;
 pub mod document_symbol;

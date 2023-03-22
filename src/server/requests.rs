@@ -5,7 +5,8 @@ use crate::{dispatch, providers::FeatureRequest};
 use lsp_server::{Request, RequestId};
 use lsp_types::{
     request::{
-        Completion, DocumentSymbolRequest, GotoDefinition, HoverRequest, References, Rename,
+        CallHierarchyIncomingCalls, CallHierarchyOutgoingCalls, CallHierarchyPrepare, Completion,
+        DocumentSymbolRequest, GotoDefinition, HoverRequest, References, Rename,
         SemanticTokensFullRequest, SignatureHelpRequest,
     },
     Url,
@@ -14,6 +15,7 @@ use serde::Serialize;
 
 use crate::Server;
 
+mod call_hierarchy;
 mod completion;
 mod definition;
 mod document_symbol;
@@ -37,6 +39,13 @@ impl Server {
             .on::<References, _>(|id, params| self.reference(id, params))?
             .on::<DocumentSymbolRequest, _>(|id, params| self.document_symbol(id, params))?
             .on::<Rename, _>(|id, params| self.rename(id, params))?
+            .on::<CallHierarchyOutgoingCalls, _>(|id, params| {
+                self.call_hierarchy_outgoing(id, params)
+            })?
+            .on::<CallHierarchyIncomingCalls, _>(|id, params| {
+                self.call_hierarchy_incoming(id, params)
+            })?
+            .on::<CallHierarchyPrepare, _>(|id, params| self.call_hierarchy_prepare(id, params))?
             .default()
         {
             self.connection.sender.send(response.into())?;
