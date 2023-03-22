@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "5.1.0",
+  "version": "5.3.3",
   "publisher": "Sarrus",
   "main": "./dist/spIndex.js",
   "icon": "sm.png",
@@ -18,7 +18,7 @@
     "url": "https://www.buymeacoffee.com/sarrus"
   },
   "engines": {
-    "vscode": "^1.63.0"
+    "vscode": "^1.73.1"
   },
   "categories": [
     "Programming Languages",
@@ -48,7 +48,8 @@
     "onCommand:sourcepawn-vscode.insertParameters",
     "onCommand:sourcepawn-vscode.setFileAsMain",
     "onCommand:sourcepawn-vscode.createChangelog",
-    "onCommand:sourcepawn-vscode.changeSMApi"
+    "onCommand:sourcepawn-vscode.changeSMApi",
+    "onCommand:sourcepawn-vscode.installLanguageServer"
   ],
   "contributes": {
     "commands": [
@@ -120,6 +121,11 @@
         "command": "sourcepawn-vscode.changeSMApi",
         "title": "Change SM API",
         "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.installLanguageServer",
+        "title": "Install Language Server",
+        "category": "SM"
       }
     ],
     "menus": {
@@ -172,7 +178,8 @@
         "sourcepawn.SourcemodHome": {
           "type": "string",
           "description": "The location of the SourceMod API include files found in addons/sourcemod/scripting/include",
-          "scope": "resource"
+          "scope": "resource",
+          "deprecationMessage": "Use `SourcePawnLanguageServer.includesDirectories` instead."
         },
         "sourcepawn.AuthorName": {
           "type": "string",
@@ -185,9 +192,21 @@
         "sourcepawn.SpcompPath": {
           "type": "string",
           "description": "The location of the SourceMod compiler",
+          "scope": "resource",
+          "deprecationMessage": "Use `SourcePawnLanguageServer.spcompPath` instead."
+        },
+        "SourcePawnLanguageServer.spcompPath": {
+          "type": "string",
+          "description": "Location of the SourceMod compiler (spcomp)",
           "scope": "resource"
         },
         "sourcepawn.MainPath": {
+          "type": "string",
+          "description": "The location of the main.sp file, which allows the linter and the compiler to work correctly. You should use this setting per workspace.",
+          "scope": "resource",
+          "deprecationMessage": "Use `sourcepawn.mainPath` instead."
+        },
+        "SourcePawnLanguageServer.mainPath": {
           "type": "string",
           "description": "The location of the main.sp file, which allows the linter and the compiler to work correctly. You should use this setting per workspace.",
           "scope": "resource"
@@ -231,6 +250,12 @@
           "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable.",
           "scope": "resource"
         },
+        "SourcePawnLanguageServer.includesDirectories": {
+          "type": "array",
+          "default": [],
+          "description": "Include folders paths for the compiler and the linter.",
+          "scope": "resource"
+        },
         "sourcepawn.compilerOptions": {
           "type": "array",
           "default": [
@@ -244,6 +269,13 @@
           "type": "array",
           "default": [],
           "description": "SourcePawn linter compiler options. Don't add paths here.",
+          "scope": "resource",
+          "deprecationMessage": "Use `SourcePawnLanguageServer.linterArguments` instead."
+        },
+        "SourcePawnLanguageServer.linterArguments": {
+          "type": "array",
+          "default": [],
+          "description": "Linter arguments that will be passed to spcomp. Note that the compilation target, include directories and output path are already handled by the server.",
           "scope": "resource"
         },
         "sourcepawn.availableAPIs": {
@@ -502,12 +534,15 @@
     ]
   },
   "dependencies": {
+    "axios": "^1.2.6",
     "decompress": "^4.2.1",
     "ftp-deploy": "^2.4.2",
     "glob": "^7.2.0",
     "rcon-srcds": "^2.0.1",
     "safe-evaluate-expression": "^1.7.2",
     "tree-sitter-sourcepawn": "^0.4.0",
+    "unzipper": "^0.10.11",
+    "vscode-languageclient": "^8.0.2",
     "vscode-uri": "^3.0.3",
     "web-tree-sitter": "^0.20.5",
     "wget-improved": "^3.2.1"
@@ -516,24 +551,24 @@
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
     "@types/glob": "^7.2.0",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^8.0.14",
-    "@types/vscode": "^1.63.1",
+    "@types/node": "^14.14.0",
+    "@types/unzipper": "^0.10.5",
+    "@types/vscode": "^1.73.1",
     "@vscode/test-electron": "^1.6.1",
     "esbuild": "^0.14.43",
     "mocha": "^10.0.0",
     "node-loader": "2.0.0",
     "nyc": "^15.1.0",
-    "ovsx": "^0.3.0",
+    "ovsx": "^0.8.0",
     "peggy": "^1.2.0",
     "ts-loader": "^9.2.6",
     "ts-pegjs": "^1.2.1",
     "typescript": "^4.5.4",
-    "vsce": "^2.9.1"
+    "vsce": "^2.15.0"
   },
   "scripts": {
     "vscode:prepublish": "npm run generate-parser && npm run build",
-    "publish-ovsx": "ovsx publish",
-    "generate-parser": "peggy --plugin ./node_modules/ts-pegjs --extra-options-file src/Parser/kvParser/kvconfig.json -o src/Parser/kvParser/kvParser.ts --cache src/Parser/kvParser/kv.pegjs",
+    "generate-parser": "peggy --plugin ./node_modules/ts-pegjs --extra-options-file src/Keyvalues/kvconfig.json -o src/Keyvalues/kvParser.ts --cache src/Keyvalues/kv.pegjs",
     "pretest": "npm run compile",
     "test": "node ./dist/test/runTest.js",
     "build": "node esbuild.js prod",

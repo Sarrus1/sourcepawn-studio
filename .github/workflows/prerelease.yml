@@ -47,3 +47,7 @@ jobs:
           args: "publish -p $VSCE_TOKEN --pre-release"
         env:
           VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+      - name: publish to Open VSX
+        run: npx ovsx publish -p $OVSX_TOKEN --pre-release
+        env:
+          OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}

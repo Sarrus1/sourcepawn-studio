@@ -5,16 +5,14 @@ import {
   OutputChannel,
 } from "vscode";
 import { URI } from "vscode-uri";
-import { basename, extname, join, dirname } from "path";
+import { basename, extname, join, dirname, resolve } from "path";
 import { existsSync, mkdirSync } from "fs";
 import { execFile } from "child_process";
 
 import { run as uploadToServerCommand } from "./uploadToServer";
-import { getAllPossibleIncludeFolderPaths } from "../Backend/spFileHandlers";
 import { findMainPath } from "../spUtils";
 import { run as refreshPluginsCommand } from "./refreshPlugins";
-import { compilerDiagnostics } from "../Providers/Linter/compilerDiagnostics";
-import { parseSPCompErrors } from "../Providers/Linter/parseSPCompErrors";
+import { ctx } from "../spIndex";
 
 // Create an OutputChannel variable here but do not initialize yet.
 let output: OutputChannel;
@@ -52,14 +50,15 @@ export async function run(args: URI): Promise<void> {
 
   // Invoke the compiler.
   const spcomp =
-    Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
-      "SpcompPath"
-    ) || "";
+    Workspace.getConfiguration(
+      "SourcePawnLanguageServer",
+      workspaceFolder
+    ).get<string>("spcompPath") || "";
 
   if (!spcomp) {
     window
       .showErrorMessage(
-        "SourceMod compiler not found in the project. You need to set the spCompPath setting to be able to compile a plugin.",
+        "Sourcemod compiler not found in the project. You need to set the spCompPath setting to be able to compile a plugin.",
         "Open Settings"
       )
       .then((choice) => {
@@ -123,10 +122,9 @@ export async function run(args: URI): Promise<void> {
   ];
 
   // Add the optional includes folders.
-  getAllPossibleIncludeFolderPaths(
-    URI.file(fileToCompilePath),
-    true
-  ).forEach((e) => includePaths.push(e));
+  getAllPossibleIncludeFolderPaths(URI.file(fileToCompilePath), true).forEach(
+    (e) => includePaths.push(e)
+  );
 
   let compilerArgs = [fileToCompilePath, `-o${outputDir}`];
 
@@ -144,6 +142,7 @@ export async function run(args: URI): Promise<void> {
   output.show();
 
   try {
+    ctx?.setSpcompStatus({ quiescent: false });
     // Compile in child process.
     let command = spcomp + "\n";
     compilerArgs.forEach((e) => {
@@ -154,8 +153,8 @@ export async function run(args: URI): Promise<void> {
     });
     output.appendLine(`${command}\n`);
     execFile(spcomp, compilerArgs, async (error, stdout) => {
+      ctx?.setSpcompStatus({ quiescent: true });
       output.append(stdout.toString().trim());
-      parseSPCompErrors(stdout.toString().trim(), compilerDiagnostics);
       if (
         Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
           "uploadAfterSuccessfulCompile"
@@ -174,4 +173,45 @@ export async function run(args: URI): Promise<void> {
   } catch (error) {
     console.error(error);
   }
+}
+
+/**
+ * Return all the possible include directories paths, such as SMHome, etc. The function will only return existing paths.
+ * @param  {URI} uri                          The URI of the file from which we are trying to read the include.
+ * @param  {boolean} onlyOptionalPaths        Whether or not the function only return the optionalIncludeFolderPaths.
+ * @returns string
+ */
+export function getAllPossibleIncludeFolderPaths(
+  uri: URI,
+  onlyOptionalPaths = false
+): string[] {
+  let possibleIncludePaths: string[] = [];
+  const workspaceFolder = Workspace.getWorkspaceFolder(uri);
+
+  possibleIncludePaths = Workspace.getConfiguration(
+    "sourcepawn",
+    workspaceFolder
+  ).get("optionalIncludeDirsPaths");
+  possibleIncludePaths = possibleIncludePaths.map((e) =>
+    resolve(workspaceFolder === undefined ? "" : workspaceFolder.uri.fsPath, e)
+  );
+
+  if (onlyOptionalPaths) {
+    return possibleIncludePaths;
+  }
+
+  const smHome = Workspace.getConfiguration(
+    "sourcepawn",
+    workspaceFolder
+  ).get<string>("SourcemodHome");
+
+  if (smHome !== undefined) {
+    possibleIncludePaths.push(smHome);
+  }
+
+  const scriptingFolder = dirname(uri.fsPath);
+  possibleIncludePaths.push(scriptingFolder);
+  possibleIncludePaths.push(join(scriptingFolder, "include"));
+
+  return possibleIncludePaths.filter((e) => e !== "" && existsSync(e));
 }

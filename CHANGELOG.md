@@ -1,19 +1,90 @@
 ## Release Notes
 
+## [5.3.3]
+
+### Fixed
+
+- Re-introduced the keyvalues linter.
+
+## [5.3.2]
+
+### Added
+
+- Added a new linter arguments settings to match the LanguageServer's specifications.
+
+## [5.3.1]
+
+### Fixed
+
+- Fixed language server installation issue.
+
+## [5.3.0]
+
+### Added
+
+- Added spcomp status in the StatusBar.
+- Added support for dynamic configuration with the server.
+
+### Fixed
+
+- Fixed commands using the old settings.
+- Fixed and improved the installSM command.
+- Fixed crashes when updating the server.
+
+## [5.2.0]
+
+### Added
+
+- Improved the setting migration.
+
+### Fixed
+
+- Fixed the server trying to update in debug mode.
+
 ## [5.1.0]
 
 ### Fixed
 
 - Revert the premature release of v5.
 
-## [4.2.4]
+## [5.0.4]
+
+### Added
+
+- Added the status of the server in the VSCode bottom toolbar.
+- Added a way to restart the server from the VSCode toolbar.
 
 ### Fixed
 
-- Improved clang format default settings (thank you [K4ryuu](https://github.com/K4ryuu)!, see #273).
-- Fixed methodmap inherit with same method name (thank you see [BoneTM](https://github.com/BoneTM)!, #275).
-- Fixed `view_as` completion (thank you [BoneTM](https://github.com/BoneTM)!, see #276).
-- Fixed formatter support for `.inc` files.
+- Improved the reliability of downloading a new version of the server.
+
+## [5.0.3]
+
+### Added
+
+- Added a function to automatically migrate the settings to the new `sourcepawn_lsp` format.
+
+## [5.0.2]
+
+### Added
+
+- Added error handling when downloading a version of `sourcepawn_lsp`.
+
+## [5.0.1]
+
+### Added
+
+- Added OpenVSX pre-releases support.
+
+### Fixed
+
+- Fixed vulnerabilities.
+
+## [5.0.0]
+
+### Added
+
+- Switched to [SourcePawn Language Server](https://github.com/Sarrus1/sourcepawn-lsp).
 
 ## [4.2.3]
 

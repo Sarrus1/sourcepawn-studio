@@ -10,17 +10,18 @@
   Range,
   window,
 } from "vscode";
-import { parse } from "../Parser/kvParser/kvParser";
+import { parse } from "../Keyvalues/kvParser";
 import {
   Comment,
   KeyValue,
   ParserOutput,
   Section,
   Value,
-} from "../Parser/kvParser/kvParserInterfaces";
+} from "../Keyvalues/kvParserInterfaces";
 
 export class KVDocumentFormattingEditProvider
-  implements DocumentFormattingEditProvider {
+  implements DocumentFormattingEditProvider
+{
   public provideDocumentFormattingEdits(
     document: TextDocument,
     options: FormattingOptions,

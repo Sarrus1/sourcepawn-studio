@@ -10,15 +10,15 @@
       },
 
       "osx": {
-        "command": "${SpcompPath}"
+        "command": "${spcompPath}"
       },
 
-			"linux": {
-        "command": "${SpcompPath}"
+      "linux": {
+        "command": "${spcompPath}"
       },
 
-			"windows": {
-        "command": "${SpcompPath}"
+      "windows": {
+        "command": "${spcompPath}"
       },
 
       "args": [
