@@ -1,5 +1,6 @@
 use std::{sync::Arc, time::Instant};
 
+use anyhow::anyhow;
 use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams, Url};
 
 use crate::{document::Document, store::Store, Server};
@@ -137,9 +138,12 @@ impl Server {
     /// # Arguments
     ///
     /// * `uri` - [Uri](Url) of the document to test for.
-    pub(super) fn read_unscanned_document(&mut self, uri: Arc<Url>) {
+    pub(super) fn read_unscanned_document(&mut self, uri: Arc<Url>) -> anyhow::Result<()> {
         if self.store.documents.get(&uri).is_some() {
-            return;
+            return Ok(());
+        }
+        if uri.to_file_path().is_err() {
+            return Err(anyhow!("Couldn't extract a path from {}", uri));
         }
         let path = uri.to_file_path().unwrap();
         let parent_dir = path.parent().unwrap().to_path_buf();
@@ -164,5 +168,7 @@ impl Server {
                 }
             }
         }
+
+        Ok(())
     }
 }

@@ -23,7 +23,7 @@ impl Server {
                 .clone(),
         );
 
-        self.read_unscanned_document(uri.clone());
+        self.read_unscanned_document(uri.clone())?;
 
         self.handle_feature_request(id, params, uri, providers::call_hierarchy::prepare)?;
 

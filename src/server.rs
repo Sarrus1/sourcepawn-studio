@@ -125,10 +125,9 @@ impl Server {
             ),
             call_hierarchy_provider: Some(CallHierarchyServerCapability::Simple(true)),
             ..Default::default()
-        })
-        .unwrap();
+        })?;
         let initialization_params = self.connection.initialize(server_capabilities)?;
-        let params: InitializeParams = serde_json::from_value(initialization_params).unwrap();
+        let params: InitializeParams = serde_json::from_value(initialization_params)?;
         self.store.environment.client_capabilities = Arc::new(params.capabilities);
         self.store.environment.client_info = params.client_info.map(Arc::new);
 
