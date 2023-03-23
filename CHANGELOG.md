@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [5.3.4]
+
+### Fixed
+
+- Improved the workflow templates (Thanks [Suza](https://github.com/Zabaniya001)!).
+
 ## [5.3.3]
 
 ### Fixed
