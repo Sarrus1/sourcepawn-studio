@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.9.6]
+
+### Added
+
+-   Added support for AMXXPawn.
+
 ## [0.9.5]
 
 ### Added
