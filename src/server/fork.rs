@@ -34,7 +34,7 @@ impl ServerFork {
 
         let params = ConfigurationParams {
             items: vec![ConfigurationItem {
-                section: Some("SourcePawnLanguageServer".to_string()),
+                section: Some(self.store.environment.configuration_section().to_string()),
                 scope_uri: None,
             }],
         };

@@ -29,8 +29,12 @@ pub fn point_to_lsp_position(point: &tree_sitter::Point) -> lsp_types::Position 
 /// # Arguments
 ///
 /// * `include_text` - Include text to edit.
-pub fn add_include_extension(include_text: &mut String) -> &String {
-    if !include_text.ends_with(".sp") && !include_text.ends_with(".inc") {
+pub fn add_include_extension(include_text: &mut String, amxxpawn_mode: bool) -> &String {
+    if amxxpawn_mode {
+        if !include_text.ends_with(".sma") && !include_text.ends_with(".inc") {
+            include_text.push_str(".inc");
+        }
+    } else if !include_text.ends_with(".sp") && !include_text.ends_with(".inc") {
         include_text.push_str(".inc");
     }
 

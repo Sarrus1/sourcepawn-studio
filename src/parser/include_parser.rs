@@ -31,7 +31,7 @@ impl Store {
             return Ok(());
         }
         let mut path = path[1..path.len() - 1].trim().to_string();
-        let include_uri = resolve_import(
+        let include_uri = self.resolve_import(
             &self.environment.options.includes_directories,
             &mut path,
             &self.documents.keys().cloned().collect(),
@@ -46,6 +46,49 @@ impl Store {
         add_include(document, include_uri.unwrap(), path, range);
 
         Ok(())
+    }
+
+    /// Resolve an include from its `#include` directive and the file it was imported in.
+    ///
+    /// # Arguments
+    ///
+    /// * `include_directories` - List of directories to look for includes files.
+    /// * `include_text` - Text of the include such as `"file.sp"` or `<file>`.
+    /// * `documents` - Set of known documents.
+    /// * `document_uri` - Uri of the document where the include declaration is parsed from.
+    pub(crate) fn resolve_import(
+        &self,
+        include_directories: &[PathBuf],
+        include_text: &mut String,
+        documents: &FxHashSet<Arc<Url>>,
+        document_uri: &Arc<Url>,
+    ) -> Option<Url> {
+        // Add the extension to the file if needed.
+        let include_text =
+            utils::add_include_extension(include_text, self.environment.amxxpawn_mode);
+
+        // Look for the include in the same directory or the closest include directory.
+        let document_path = document_uri.to_file_path().unwrap();
+        let document_dirpath = document_path.parent().unwrap();
+        let mut include_file_path = document_dirpath.join(include_text);
+        if !include_file_path.exists() {
+            include_file_path = document_dirpath.join("include").join(include_text);
+        }
+        let uri = Url::from_file_path(&include_file_path).unwrap();
+        if documents.contains(&uri) {
+            return Some(uri);
+        }
+
+        // Look for the includes in the include directories.
+        for include_directory in include_directories.iter() {
+            let path = include_directory.clone().join(include_text);
+            let uri = Url::from_file_path(path).unwrap();
+            if documents.contains(&uri) {
+                return Some(uri);
+            }
+        }
+
+        None
     }
 }
 
@@ -68,45 +111,4 @@ pub(crate) fn add_include(document: &mut Document, include_uri: Url, path: Strin
     };
     let include_item = Arc::new(RwLock::new(SPItem::Include(include_item)));
     document.sp_items.push(include_item);
-}
-
-/// Resolve an include from its `#include` directive and the file it was imported in.
-///
-/// # Arguments
-///
-/// * `include_directories` - List of directories to look for includes files.
-/// * `include_text` - Text of the include such as `"file.sp"` or `<file>`.
-/// * `documents` - Set of known documents.
-/// * `document_uri` - Uri of the document where the include declaration is parsed from.
-pub(crate) fn resolve_import(
-    include_directories: &[PathBuf],
-    include_text: &mut String,
-    documents: &FxHashSet<Arc<Url>>,
-    document_uri: &Arc<Url>,
-) -> Option<Url> {
-    // Add the extension to the file if needed.
-    let include_text = utils::add_include_extension(include_text);
-
-    // Look for the include in the same directory or the closest include directory.
-    let document_path = document_uri.to_file_path().unwrap();
-    let document_dirpath = document_path.parent().unwrap();
-    let mut include_file_path = document_dirpath.join(include_text);
-    if !include_file_path.exists() {
-        include_file_path = document_dirpath.join("include").join(include_text);
-    }
-    let uri = Url::from_file_path(&include_file_path).unwrap();
-    if documents.contains(&uri) {
-        return Some(uri);
-    }
-
-    // Look for the includes in the include directories.
-    for include_directory in include_directories.iter() {
-        let path = include_directory.clone().join(include_text);
-        let uri = Url::from_file_path(path).unwrap();
-        if documents.contains(&uri) {
-            return Some(uri);
-        }
-    }
-
-    None
 }

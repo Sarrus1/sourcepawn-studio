@@ -15,7 +15,6 @@ doctest = false
 
 
 [dependencies]
-clap = "4.0.26"
 lsp-server = "0.6.0"
 lsp-types = "0.93.2"
 serde = "1.0.147"
@@ -35,6 +34,7 @@ regex = "1.7.0"
 notify = "5.1.0"
 fxhash = "0.2.1"
 tempfile = "3.4.0"
+clap = { version = "4.1.13", features = ["derive"] }
 
 [dependencies.uuid]
 version = "1.3.0"

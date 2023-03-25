@@ -45,7 +45,7 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn new(connection: Connection) -> Self {
+    pub fn new(connection: Connection, amxxpawn_mode: bool) -> Self {
         let client = LspClient::new(connection.sender.clone());
         let (internal_tx, internal_rx) = crossbeam_channel::unbounded();
         let mut parser = Parser::new();
@@ -57,7 +57,7 @@ impl Server {
             client,
             internal_rx,
             internal_tx,
-            store: Store::new(),
+            store: Store::new(amxxpawn_mode),
             pool: threadpool::Builder::new().build(),
             parser,
             config_pulled: false,

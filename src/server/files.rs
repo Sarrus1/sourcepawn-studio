@@ -19,6 +19,9 @@ impl Store {
     ///
     /// * `document` - [Document] to check against.
     fn is_main_heuristic(&self, document: &Document) -> Option<Url> {
+        if self.environment.amxxpawn_mode {
+            return None;
+        }
         let path = document.path();
         let path = path.to_str().unwrap();
         for include_directory in self.environment.options.includes_directories.iter() {

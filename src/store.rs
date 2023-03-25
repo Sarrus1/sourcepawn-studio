@@ -12,7 +12,7 @@ use walkdir::WalkDir;
 use crate::{
     document::{Document, Token, Walker},
     environment::Environment,
-    parser::include_parser::{add_include, resolve_import},
+    parser::include_parser::add_include,
     semantic_analyzer::purge_references,
     spitem::SPItem,
     utils::read_to_string_lossy,
@@ -32,9 +32,10 @@ pub struct Store {
 }
 
 impl Store {
-    pub fn new() -> Self {
+    pub fn new(amxxpawn_mode: bool) -> Self {
         Store {
             first_parse: true,
+            environment: Environment::new(amxxpawn_mode),
             ..Default::default()
         }
     }
@@ -210,7 +211,7 @@ impl Store {
             // resolve includes
             if let Some(doc_to_reload) = self.documents.get_mut(uri_to_reload) {
                 for (mut missing_inc_path, range) in doc_to_reload.missing_includes.clone() {
-                    if let Some(include_uri) = resolve_import(
+                    if let Some(include_uri) = self.resolve_import(
                         &self.environment.options.includes_directories,
                         &mut missing_inc_path,
                         &documents_keys,
@@ -328,6 +329,11 @@ impl Store {
 
     fn is_sourcepawn_file(&self, path: &Path) -> bool {
         let f_name = path.file_name().unwrap_or_default().to_string_lossy();
-        f_name.ends_with(".sp") || f_name.ends_with(".inc")
+
+        if self.environment.amxxpawn_mode {
+            f_name.ends_with(".sma") || f_name.ends_with(".inc")
+        } else {
+            f_name.ends_with(".sp") || f_name.ends_with(".inc")
+        }
     }
 }

@@ -154,7 +154,8 @@ impl TestBed {
 
         let client = LspClient::new(client_conn.sender);
 
-        let server_thread = std::thread::spawn(move || Server::new(server_conn).run().unwrap());
+        let server_thread =
+            std::thread::spawn(move || Server::new(server_conn, false).run().unwrap());
         let client_thread = {
             let client = client.clone();
             std::thread::spawn(move || {
