@@ -284,7 +284,10 @@ impl Store {
         }
         document.parsed = true;
         document.extract_tokens(root_node);
-        document.get_syntax_error_diagnostics(root_node);
+        document.get_syntax_error_diagnostics(
+            root_node,
+            self.environment.options.disable_syntax_linter,
+        );
         self.documents
             .insert(document.uri.clone(), document.clone());
         self.read_unscanned_imports(&document.includes, parser);

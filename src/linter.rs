@@ -67,7 +67,15 @@ impl Document {
     /// # Arguments
     ///
     /// * `root_node` - [Root Node](tree_sitter::Node) of the document to scan.
-    pub(super) fn get_syntax_error_diagnostics(&mut self, root_node: Node) {
+    /// * `disable_syntax_linter` - Whether or not the syntax linter should run.
+    pub(super) fn get_syntax_error_diagnostics(
+        &mut self,
+        root_node: Node,
+        disable_syntax_linter: bool,
+    ) {
+        if disable_syntax_linter {
+            return;
+        }
         self.diagnostics.local_diagnostics.clear();
         let mut cursor = QueryCursor::new();
         let matches = cursor.captures(&ERROR_QUERY, root_node, self.text.as_bytes());
