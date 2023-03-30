@@ -248,6 +248,13 @@
           "type": "array",
           "default": [],
           "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable.",
+          "scope": "resource",
+          "deprecationMessage": "Use `SourcePawnLanguageServer.includeDirectories` instead."
+        },
+        "SourcePawnLanguageServer.disableSyntaxLinter": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disable the language server's syntax linter. This is independant from spcomp.",
           "scope": "resource"
         },
         "SourcePawnLanguageServer.includesDirectories": {
