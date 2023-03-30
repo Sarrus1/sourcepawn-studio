@@ -1,5 +1,15 @@
 ## Release Notes
 
+## [5.3.5]
+
+### Added
+
+- Added more settings to the `changeSMApi` command.
+
+### Fixed
+
+- Fixed the compile command.
+
 ## [5.3.4]
 
 ### Fixed
