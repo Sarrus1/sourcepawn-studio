@@ -1,5 +1,16 @@
 ## Release Notes
 
+## [0.9.7]
+
+### Added
+
+-   Added a setting to disable the syntax linter.
+-   Added support for mainPaths relative to the workspace's root.
+
+### Fixed
+
+-   Updated the parser to take into account new syntax elements.
+
 ## [0.9.6]
 
 ### Added
