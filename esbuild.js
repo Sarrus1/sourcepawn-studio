@@ -1,20 +1,5 @@
 const fs = require("fs");
-const path = require("path");
-
 const outDir = "./dist";
-
-const treeSitterWasmPlugin = {
-  name: "treeSitterWasm",
-  setup(build) {
-    const wasmPaths = [
-      "./node_modules/web-tree-sitter/tree-sitter.wasm",
-      "./node_modules/tree-sitter-sourcepawn/tree-sitter-sourcepawn.wasm",
-    ];
-    wasmPaths.forEach((wasmPath) => {
-      fs.copyFileSync(wasmPath, path.join(outDir, path.basename(wasmPath)));
-    });
-  },
-};
 
 const nativeNodeModulesPlugin = {
   name: "native-node-modules",
@@ -68,7 +53,7 @@ require("esbuild")
     external: ["vscode"],
     format: "cjs",
     platform: "node",
-    plugins: [treeSitterWasmPlugin, nativeNodeModulesPlugin],
+    plugins: [nativeNodeModulesPlugin],
     watch: watch,
   })
   .catch(() => process.exit(1));
