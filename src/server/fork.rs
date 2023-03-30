@@ -72,7 +72,18 @@ impl ServerFork {
             }
         };
 
-        Ok(options.unwrap_or_default())
+        if let Some(mut options) = options {
+            if options.main_path.is_absolute() {
+                return Ok(options);
+            }
+            if let Some(root_uri) = self.store.environment.root_uri.clone() {
+                // Try to resolve the main path as relative.
+                options.main_path = root_uri.to_file_path().unwrap().join(options.main_path);
+            }
+            Ok(options)
+        } else {
+            Ok(options.unwrap_or_default())
+        }
     }
 
     pub fn feature_request<P>(&self, uri: Arc<Url>, params: P) -> FeatureRequest<P> {

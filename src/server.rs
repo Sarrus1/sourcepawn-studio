@@ -130,6 +130,7 @@ impl Server {
         let params: InitializeParams = serde_json::from_value(initialization_params)?;
         self.store.environment.client_capabilities = Arc::new(params.capabilities);
         self.store.environment.client_info = params.client_info.map(Arc::new);
+        self.store.environment.root_uri = params.root_uri;
 
         self.spawn(move |server| {
             let _ = server.pull_config();

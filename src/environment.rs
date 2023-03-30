@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use lsp_types::{ClientCapabilities, ClientInfo};
+use lsp_types::{ClientCapabilities, ClientInfo, Url};
 use uuid::Uuid;
 
 use crate::options::Options;
@@ -12,6 +12,7 @@ pub struct Environment {
     pub options: Arc<Options>,
     pub(super) sp_comp_uuid: Uuid,
     pub amxxpawn_mode: bool,
+    pub root_uri: Option<Url>,
 }
 
 impl Environment {
@@ -23,6 +24,7 @@ impl Environment {
             options: Arc::new(Options::default()),
             sp_comp_uuid: Uuid::new_v4(),
             amxxpawn_mode,
+            root_uri: None,
         }
     }
 
