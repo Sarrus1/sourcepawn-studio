@@ -108,10 +108,10 @@ export async function run(args: URI): Promise<void> {
   outputDir += basename(fileToCompilePath, ".sp") + ".smx";
 
   // Add the compiler options from the settings.
-  const compilerOptions: string[] = Workspace.getConfiguration(
+  const compilerArguments: string[] = Workspace.getConfiguration(
     "sourcepawn",
     workspaceFolder
-  ).get("compilerOptions");
+  ).get("compilerArguments");
 
   const includePaths: string[] = [
     join(scriptingFolderPath, "include"),
@@ -132,7 +132,7 @@ export async function run(args: URI): Promise<void> {
 
   // Add include paths and compiler options to compiler args.
   includePaths.forEach((path) => compilerArgs.push(`-i${path}`));
-  compilerArgs = compilerArgs.concat(compilerOptions);
+  compilerArgs = compilerArgs.concat(compilerArguments);
 
   // Create Output Channel if it does not exist.
   if (!output) {

@@ -263,7 +263,7 @@
           "description": "Include folders paths for the compiler and the linter.",
           "scope": "resource"
         },
-        "sourcepawn.compilerOptions": {
+        "sourcepawn.compilerArguments": {
           "type": "array",
           "default": [
             "-O2",
@@ -290,11 +290,13 @@
           "default": [
             {
               "name": "",
-              "SMHomePath": "",
-              "compilerPath": ""
+              "includeDirectories": [],
+              "spcompPath": "",
+              "compilerArguments": [],
+              "linterArguments": []
             }
           ],
-          "description": "Optional SourceMod homes when using multiple APIs. NOTE THAT THE NAMES SHOULD BE UNIQUE.",
+          "description": "Available Sourcemod APIs to quickly changed between them.",
           "scope": "resource"
         },
         "sourcepawn.outputDirectoryPath": {
