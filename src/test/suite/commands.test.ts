@@ -29,10 +29,10 @@ suite("Run tests", () => {
     vscode.commands.executeCommand("vscode.openFolder", uri);
     rmdir(examplesVscode);
     if (fs.existsSync(examplesReadme)) {
-      fs.unlinkSync(examplesReadme);
+      fs.rmSync(examplesReadme);
     }
     if (fs.existsSync(examplesChangelog)) {
-      fs.unlinkSync(examplesChangelog);
+      fs.rmSync(examplesChangelog);
     }
     rmdir(examplesGithub);
     vscode.commands.executeCommand("vscode.open", kvUri);
@@ -93,18 +93,7 @@ function rmdir(dir: string): void {
   if (!fs.existsSync(dir)) {
     return;
   }
-  fs.readdirSync(dir).forEach((f) => {
-    const pathname = join(dir, f);
-    if (!fs.existsSync(pathname)) {
-      return fs.unlinkSync(pathname);
-    }
-    if (fs.statSync(pathname).isDirectory()) {
-      return rmdir(pathname);
-    } else {
-      return fs.unlinkSync(pathname);
-    }
-  });
-  return fs.rmdirSync(dir);
+  return fs.rmSync(dir);
 }
 
 function sleep(ms: number): Promise<void> {
