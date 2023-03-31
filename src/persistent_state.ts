@@ -1,9 +1,7 @@
 import * as vscode from "vscode";
 
 export class PersistentState {
-  constructor(private readonly globalState: vscode.Memento) {
-    const { serverVersion } = this;
-  }
+  constructor(private readonly globalState: vscode.Memento) {}
 
   /**
    * Version of the extension that installed the server.
