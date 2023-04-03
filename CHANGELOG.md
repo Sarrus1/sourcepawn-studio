@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.9.8]
+
+### Fixed
+
+-   Fixed a crash when the mainPath setting was empty.
+
 ## [0.9.7]
 
 ### Added
