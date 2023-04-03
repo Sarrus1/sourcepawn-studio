@@ -73,7 +73,7 @@ impl ServerFork {
         };
 
         if let Some(mut options) = options {
-            if options.main_path.is_absolute() {
+            if options.main_path.is_absolute() || options.main_path.to_str().unwrap().is_empty() {
                 return Ok(options);
             }
             if let Some(root_uri) = self.store.environment.root_uri.clone() {

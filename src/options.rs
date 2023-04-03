@@ -44,7 +44,7 @@ impl Options {
         if self.main_path.to_str().unwrap().is_empty() {
             return Ok(None);
         }
-        if !self.main_path.exists() {
+        if !self.main_path.exists() || !self.main_path.is_file() {
             return Err(anyhow::anyhow!("Main path does not exist."));
         }
         let main_uri = Url::from_file_path(&self.main_path);
@@ -53,7 +53,9 @@ impl Options {
             return Ok(Some(main_uri));
         }
 
-        Err(anyhow::anyhow!("Main path does not exist."))
+        Err(anyhow::anyhow!(
+            "Main path could not be converted to a Uri."
+        ))
     }
 
     /// Returns true if the given path is a parent or one of the IncludeDirectories.
