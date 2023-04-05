@@ -1,0 +1,14 @@
+[package]
+name = "sourcepawn_lexer"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "sourcepawn_lexer"
+test = false
+
+[lib]
+doctest = false
+
+[dependencies]
+logos = "0.12.1"
