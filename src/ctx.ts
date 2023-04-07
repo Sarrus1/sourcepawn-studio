@@ -106,12 +106,11 @@ export class Ctx {
           args: [],
         },
         debug: {
-          command: "cargo",
-          args: [
-            "run",
-            "--manifest-path",
-            join(homedir(), "dev/sourcepawn-lsp/Cargo.toml"),
-          ],
+          command: join(
+            homedir(),
+            "dev/sourcepawn-lsp/target/debug/sourcepawn_lsp" +
+              (platform() == "win32" ? ".exe" : "")
+          ),
         },
       };
 

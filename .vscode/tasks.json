@@ -1,14 +1,49 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"type": "typescript",
-			"tsconfig": "tsconfig.json",
-			"problemMatcher": [
-				"$tsc"
-			],
-			"group": "build",
-			"label": "tsc: build - tsconfig.json"
-		}
-	]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build Extension in Watch Mode",
+      "group": "build",
+      "type": "npm",
+      "script": "watch",
+      "path": "${workspaceFolder}",
+      "problemMatcher": {
+        "base": "$tsc-watch"
+      },
+      "isBackground": true
+    },
+    {
+      "label": "Build Extension",
+      "group": "build",
+      "type": "npm",
+      "script": "build",
+      "problemMatcher": {
+        "base": "$tsc"
+      }
+    },
+    {
+      "label": "Build Server",
+      "group": "build",
+      "type": "shell",
+      "command": "cargo build --manifest-path=../sourcepawn-lsp/Cargo.toml",
+      "problemMatcher": "$rustc"
+    },
+    {
+      "label": "Build Server (Release)",
+      "group": "build",
+      "type": "shell",
+      "command": "cargo build --release --manifest-path=../sourcepawn-lsp/Cargo.toml",
+      "problemMatcher": "$rustc"
+    },
+    {
+      "label": "Build Server and Extension",
+      "dependsOn": ["Build Server", "Build Extension"],
+      "problemMatcher": "$rustc"
+    },
+    {
+      "label": "Build Server (Release) and Extension",
+      "dependsOn": ["Build Server (Release)", "Build Extension"],
+      "problemMatcher": "$rustc"
+    }
+  ]
 }
