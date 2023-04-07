@@ -250,9 +250,10 @@ export class Ctx {
         break;
       case "warning":
         statusBar.tooltip =
-          (status.message ? status.message + "\n" : "") + "Click to reload.";
+          (status.message ? status.message + "\n" : "") +
+          "Click to stop the server.";
 
-        statusBar.command = "sourcepawn-vscode.reloadWorkspace";
+        statusBar.command = "sourcepawn-vscode.stopServer";
         statusBar.color = new vscode.ThemeColor(
           "statusBarItem.warningForeground"
         );
@@ -263,9 +264,10 @@ export class Ctx {
         break;
       case "error":
         statusBar.tooltip =
-          (status.message ? status.message + "\n" : "") + "Click to reload.";
+          (status.message ? status.message + "\n" : "") +
+          "Click to stop the server.";
 
-        statusBar.command = "sourcepawn-vscode.reloadWorkspace";
+        statusBar.command = "sourcepawn-vscode.stopServer";
         statusBar.color = new vscode.ThemeColor(
           "statusBarItem.errorForeground"
         );
