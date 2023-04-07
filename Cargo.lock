@@ -1089,7 +1089,7 @@ checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 
 [[package]]
 name = "sourcepawn_lsp"
-version = "0.9.8"
+version = "0.9.9"
 dependencies = [
  "anyhow",
  "assert_unordered",

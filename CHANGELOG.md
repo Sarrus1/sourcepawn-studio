@@ -1,5 +1,16 @@
 ## Release Notes
 
+## [0.9.9]
+
+### Added
+
+-   Added better error reporting to the client.
+
+### Fixed
+
+-   Fixed a crash when parsing spcomp's output.
+-   Fixed the server dying too easily.
+
 ## [0.9.8]
 
 ### Fixed
