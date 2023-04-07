@@ -50,9 +50,10 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
 fn setup_logger(opts: Opts) {
     let verbosity_level = if !opts.quiet {
         match opts.verbosity {
-            0 => LevelFilter::Warn,
-            1 => LevelFilter::Info,
-            2 => LevelFilter::Debug,
+            0 => LevelFilter::Error,
+            1 => LevelFilter::Warn,
+            2 => LevelFilter::Info,
+            3 => LevelFilter::Debug,
             _ => LevelFilter::Trace,
         }
     } else {
