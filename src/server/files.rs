@@ -3,7 +3,7 @@ use std::{sync::Arc, time::Instant};
 use anyhow::anyhow;
 use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams, Url};
 
-use crate::{document::Document, store::Store, Server};
+use crate::{document::Document, lsp_ext, store::Store, Server};
 
 mod events;
 mod watching;
@@ -40,7 +40,11 @@ impl Store {
 impl Server {
     pub(super) fn reparse_all(&mut self) -> anyhow::Result<()> {
         self.indexing = true;
-        self.send_status()?;
+        self.send_status(lsp_ext::ServerStatusParams {
+            health: crate::lsp_ext::Health::Ok,
+            quiescent: !self.indexing,
+            message: None,
+        })?;
         self.parse_directories();
         let main_uri = self.store.environment.options.get_main_path_uri();
         let now = Instant::now();
@@ -89,7 +93,11 @@ impl Server {
         eprintln!("Reparsed all the files in {:.2?}", now.elapsed());
         self.indexing = false;
         self.reload_diagnostics();
-        self.send_status()?;
+        self.send_status(lsp_ext::ServerStatusParams {
+            health: crate::lsp_ext::Health::Ok,
+            quiescent: !self.indexing,
+            message: None,
+        })?;
 
         Ok(())
     }

@@ -139,22 +139,18 @@ impl Server {
             self.store
                 .find_documents(&folder.uri.to_file_path().unwrap())
         }
-        self.send_status()?;
+        self.send_status(lsp_ext::ServerStatusParams {
+            health: crate::lsp_ext::Health::Ok,
+            quiescent: !self.indexing,
+            message: None,
+        })?;
 
         Ok(())
     }
 
-    fn get_status(&self) -> lsp_ext::ServerStatusParams {
-        lsp_ext::ServerStatusParams {
-            health: crate::lsp_ext::Health::Ok,
-            quiescent: !self.indexing,
-            message: None,
-        }
-    }
-
-    fn send_status(&self) -> anyhow::Result<()> {
+    fn send_status(&self, status: lsp_ext::ServerStatusParams) -> anyhow::Result<()> {
         self.client
-            .send_notification::<lsp_ext::ServerStatusNotification>(self.get_status())?;
+            .send_notification::<lsp_ext::ServerStatusNotification>(status)?;
         Ok(())
     }
 
@@ -178,13 +174,31 @@ impl Server {
                 recv(&self.connection.receiver) -> msg => {
                         match msg? {
                             Message::Request(request) => {
-                                self.handle_request(request)?;
+                                if let Err(error) = self.handle_request(request) {
+                                    self.send_status(lsp_ext::ServerStatusParams {
+                                        health: crate::lsp_ext::Health::Error,
+                                        quiescent: !self.indexing,
+                                        message: Some(error.to_string()),
+                                    })?;
+                                }
                             }
                             Message::Response(resp) => {
-                                self.client.recv_response(resp)?;
+                                if let Err(error) = self.client.recv_response(resp) {
+                                    self.send_status(lsp_ext::ServerStatusParams {
+                                        health: crate::lsp_ext::Health::Error,
+                                        quiescent: !self.indexing,
+                                        message: Some(error.to_string()),
+                                    })?;
+                                }
                             }
                             Message::Notification(notification) => {
-                                self.handle_notification(notification)?;
+                                if let Err(error) = self.handle_notification(notification) {
+                                    self.send_status(lsp_ext::ServerStatusParams {
+                                        health: crate::lsp_ext::Health::Error,
+                                        quiescent: !self.indexing,
+                                        message: Some(error.to_string()),
+                                    })?;
+                                }
                             }
                         }
                     }
