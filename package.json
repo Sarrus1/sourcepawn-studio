@@ -49,7 +49,8 @@
     "onCommand:sourcepawn-vscode.setFileAsMain",
     "onCommand:sourcepawn-vscode.createChangelog",
     "onCommand:sourcepawn-vscode.changeSMApi",
-    "onCommand:sourcepawn-vscode.installLanguageServer"
+    "onCommand:sourcepawn-vscode.installLanguageServer",
+    "onCommand:sourcepawn-vscode.startServer"
   ],
   "contributes": {
     "commands": [
@@ -124,8 +125,15 @@
       },
       {
         "command": "sourcepawn-vscode.installLanguageServer",
-        "title": "Install Language Server",
-        "category": "SM"
+        "title": "Install SourcePawn Language Server"
+      },
+      {
+        "command": "sourcepawn-vscode.stopServer",
+        "title": "Stop SourcePawn Language Server"
+      },
+      {
+        "command": "sourcepawn-vscode.startServer",
+        "title": "Start SourcePawn Language Server"
       }
     ],
     "menus": {

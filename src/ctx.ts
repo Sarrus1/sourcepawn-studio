@@ -159,6 +159,7 @@ export class Ctx {
       return;
     }
     await client.start();
+    this.updateCommands();
   }
 
   async restart() {
@@ -170,6 +171,7 @@ export class Ctx {
     if (!this._client) {
       return;
     }
+    this.updateCommands("disable");
     // Increase the timeout in-case the server is parsing a file.
     await this._client.stop(10 * 1000);
   }
@@ -178,6 +180,7 @@ export class Ctx {
     if (!this._client) {
       return;
     }
+    this.updateCommands("disable");
     await this.disposeClient();
   }
 
@@ -198,7 +201,7 @@ export class Ctx {
     };
 
     for (const [name, factory] of Object.entries(this.commandFactories)) {
-      const fullName = `sourcepawn-lsp.${name}`;
+      const fullName = `sourcepawn-vscode.${name}`;
       let callback;
       if (isClientRunning(this)) {
         // we asserted that `client` is defined
@@ -241,7 +244,7 @@ export class Ctx {
       case "ok":
         statusBar.tooltip =
           (status.message ?? "Ready") + "\nClick to stop server.";
-        statusBar.command = "sourcepawn-lsp.stopServer";
+        statusBar.command = "sourcepawn-vscode.stopServer";
         statusBar.color = undefined;
         statusBar.backgroundColor = undefined;
         break;
@@ -249,7 +252,7 @@ export class Ctx {
         statusBar.tooltip =
           (status.message ? status.message + "\n" : "") + "Click to reload.";
 
-        statusBar.command = "sourcepawn-lsp.reloadWorkspace";
+        statusBar.command = "sourcepawn-vscode.reloadWorkspace";
         statusBar.color = new vscode.ThemeColor(
           "statusBarItem.warningForeground"
         );
@@ -262,7 +265,7 @@ export class Ctx {
         statusBar.tooltip =
           (status.message ? status.message + "\n" : "") + "Click to reload.";
 
-        statusBar.command = "sourcepawn-lsp.reloadWorkspace";
+        statusBar.command = "sourcepawn-vscode.reloadWorkspace";
         statusBar.color = new vscode.ThemeColor(
           "statusBarItem.errorForeground"
         );
@@ -273,7 +276,7 @@ export class Ctx {
         break;
       case "stopped":
         statusBar.tooltip = "Server is stopped.\nClick to start.";
-        statusBar.command = "sourcepawn-lsp.startServer";
+        statusBar.command = "sourcepawn-vscode.startServer";
         statusBar.color = undefined;
         statusBar.backgroundColor = undefined;
         statusBar.text = `$(stop-circle) sourcepawn-lsp`;
