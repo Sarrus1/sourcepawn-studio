@@ -87,8 +87,6 @@ fn lex_pragma_arguments(lex: &mut Lexer<Token>) -> Option<()> {
 }
 
 #[derive(Logos, Debug, PartialEq, Eq)]
-// char prefix
-#[logos(subpattern cp = r"[uUL]")]
 // white space
 #[logos(subpattern ws = r"[ \t\v\r\n\f]")]
 // escape sequence
@@ -112,7 +110,7 @@ pub enum Token {
     #[regex(r#""([^"\\\n]|(?&es))*""#)]
     StringLiteral,
 
-    #[regex(r"(?&cp)?'([^'\\\n]|(?&es))*'")]
+    #[regex(r"'([^'\\\n]|(?&es))*'")]
     CharLiteral,
 
     #[regex(r"\d[0-9_]*\.[0-9_]+(e\-?\d+)?")]
