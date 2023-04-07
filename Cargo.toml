@@ -47,6 +47,9 @@ assert_unordered = "0.3.5"
 criterion = { version = "0.4.0" }
 insta = { version = "1.28.0", features = ["glob", "redactions", "json"] }
 
+[profile.dev]
+debug = 2
+
 [profile.dev.package.insta]
 opt-level = 3
 

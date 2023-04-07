@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // Used to attach LLDB to a running LSP server.
+            // NOTE: Might require root permissions. For this run:
+            //
+            // `echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope`
+            //
+            // Don't forget to set `debug = 2` in `Cargo.toml` before building the server
+
+            "name": "Attach To Server",
+            "type": "lldb",
+            "request": "attach",
+            "program": "${workspaceFolder}/target/debug/rust-analyzer",
+            "pid": "${command:pickMyProcess}",
+            "sourceLanguages": ["rust"]
+        },
+        {
+            "name": "Win Attach to Server",
+            "type": "cppvsdbg",
+            "processId": "${command:pickProcess}",
+            "request": "attach"
+        }
+    ]
+}
