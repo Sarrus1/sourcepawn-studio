@@ -3,7 +3,7 @@ use std::{env, fs, path::PathBuf, process::Command};
 use fxhash::FxHashMap;
 use lazy_static::lazy_static;
 use lsp_types::{Diagnostic, DiagnosticSeverity, Position, Range, Url};
-use regex::Regex;
+use regex::{Captures, Regex};
 
 use crate::store::Store;
 
@@ -43,6 +43,20 @@ pub(crate) struct SPCompDiagnostic {
 }
 
 impl SPCompDiagnostic {
+    pub(crate) fn from_spcomp_captures(captures: Captures) -> Option<Self> {
+        Some(Self {
+            uri: Url::from_file_path(captures.get(1)?.as_str()).ok()?,
+            line_index: captures.get(2)?.as_str().parse::<u32>().ok()? - 1,
+            severity: match captures.get(4)?.as_str() {
+                "warning" => SPCompSeverity::Warning,
+                "error" => SPCompSeverity::Error,
+                "fatal error" => SPCompSeverity::FatalError,
+                _ => todo!(),
+            },
+            message: captures.get(6)?.as_str().to_string(),
+        })
+    }
+
     /// Convert to an [LSP Diagnostic](lsp_types::Diagnostic).
     pub(crate) fn to_lsp_diagnostic(&self) -> Diagnostic {
         Diagnostic {
@@ -164,20 +178,7 @@ fn parse_spcomp_errors(stdout: &str) -> Vec<SPCompDiagnostic> {
         )
         .unwrap();
     }
-    let mut diagnostics = vec![];
-    for captures in RE.captures_iter(stdout) {
-        diagnostics.push(SPCompDiagnostic {
-            uri: Url::from_file_path(captures.get(1).unwrap().as_str()).unwrap(),
-            line_index: captures.get(2).unwrap().as_str().parse::<u32>().unwrap() - 1,
-            severity: match captures.get(4).unwrap().as_str() {
-                "warning" => SPCompSeverity::Warning,
-                "error" => SPCompSeverity::Error,
-                "fatal error" => SPCompSeverity::FatalError,
-                _ => todo!(),
-            },
-            message: captures.get(6).unwrap().as_str().to_string(),
-        });
-    }
-
-    diagnostics
+    RE.captures_iter(stdout)
+        .flat_map(SPCompDiagnostic::from_spcomp_captures)
+        .collect()
 }
