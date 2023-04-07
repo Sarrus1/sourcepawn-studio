@@ -2,18 +2,8 @@ use logos::Logos;
 use sourcepawn_lexer::Token;
 
 fn main() {
-    let input = r#"
-        //#include "a"
-        "int\
-        hello"
-        #define FOO(%1) 42%1
-        stock foo() {
-            int a = 2 + 2 * 2;
-            string b \
-            = "hello";
-            return a;
-        }
-    "#;
+    let input = r#"#pragma deprecated foo
+"#;
 
     let mut lexer = Token::lexer(input);
 

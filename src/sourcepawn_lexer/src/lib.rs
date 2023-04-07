@@ -1,4 +1,90 @@
-use logos::Logos;
+use itertools::Itertools;
+use logos::{Lexer, Logos};
+
+fn lex_pragma_arguments(lex: &mut Lexer<Token>) -> Option<()> {
+    let mut in_block_comment = false;
+    let mut looking_for_newline = false;
+    let mut ignore_newline = false;
+    let mut offset = 0;
+    for (ch, next_ch) in lex.remainder().chars().tuple_windows() {
+        if in_block_comment {
+            match ch {
+                '*' => {
+                    if next_ch == '/' {
+                        // Exit block comment.
+                        in_block_comment = false;
+                        looking_for_newline = true;
+                    }
+                }
+                '\\' => {
+                    if next_ch == '\n' {
+                        // Line continuation in block comment.
+                        ignore_newline = true;
+                    }
+                }
+                '\n' => {
+                    if ignore_newline {
+                        // Line continuation.
+                        ignore_newline = false;
+                    } else {
+                        // Newline in block comment breaks the pragma.
+                        return Some(());
+                    }
+                }
+                _ => {}
+            }
+            offset += 1;
+        } else if looking_for_newline {
+            // Lookahead for a newline without any non-whitespace characters.
+            if next_ch == '\n' {
+                // Found a newline, the block comment is not part of the pragma.
+                return Some(());
+            }
+            if next_ch.is_whitespace() {
+                offset += 1;
+            } else {
+                // Non-whitespace character found, bump the lexer and continue.
+                lex.bump(offset + 2);
+                looking_for_newline = false;
+            }
+        } else {
+            match ch {
+                '/' => {
+                    match next_ch {
+                        '/' => {
+                            // Line comments break the pragma.
+                            return Some(());
+                        }
+                        '*' => {
+                            // Enter block comment.
+                            in_block_comment = true;
+                            continue;
+                        }
+                        _ => {}
+                    }
+                }
+                '\n' => {
+                    if !ignore_newline {
+                        // Reached the end of the pragma.
+                        return Some(());
+                    }
+                    // Line continuation.
+                    ignore_newline = false;
+                }
+                '\\' => {
+                    if next_ch == '\n' {
+                        // Line continuation.
+                        ignore_newline = true;
+                    }
+                }
+                _ => {}
+            }
+            lex.bump(1);
+        }
+    }
+
+    Some(())
+}
 
 #[derive(Logos, Debug, PartialEq, Eq)]
 // char prefix
@@ -222,7 +308,7 @@ pub enum Token {
     #[token("#optional_semicolons")]
     MOptionalSemi,
 
-    #[token("#pragma")]
+    #[token("#pragma", lex_pragma_arguments)]
     MPragma,
 
     #[token("#require_newdecls")]

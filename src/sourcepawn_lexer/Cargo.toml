@@ -11,4 +11,5 @@ test = false
 doctest = false
 
 [dependencies]
+itertools = "0.10.5"
 logos = "0.12.1"
