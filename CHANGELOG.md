@@ -1,5 +1,15 @@
 ## Release Notes
 
+## [5.3.6]
+
+### Added
+
+- Added logging options for the Language Server.
+
+### Fixed
+
+- Fixed extension not starting/stopping the server when running the commands.
+
 ## [5.3.5]
 
 ### Added
