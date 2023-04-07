@@ -100,10 +100,28 @@ export class Ctx {
   private async getOrCreateClient() {
     await this.installLanguageServerIfAbsent();
     if (!this._client) {
+      const traceServer = vscode.workspace
+        .getConfiguration("sourcepawn")
+        .get<string>("trace.server");
+      let traceServerLevel = 0;
+      switch (traceServer) {
+        case "warn":
+          traceServerLevel = 1;
+          break;
+        case "info":
+          traceServerLevel = 2;
+          break;
+        case "debug":
+          traceServerLevel = 3;
+          break;
+        case "trace":
+          traceServerLevel = 4;
+          break;
+      }
       const serverOptions: lc.ServerOptions = {
         run: {
           command: this._serverPath,
-          args: [],
+          args: [`-${"v".repeat(traceServerLevel)}` ?? ""],
         },
         debug: {
           command: join(
@@ -111,6 +129,7 @@ export class Ctx {
             "dev/sourcepawn-lsp/target/debug/sourcepawn_lsp" +
               (platform() == "win32" ? ".exe" : "")
           ),
+          args: ["-vvv"],
         },
       };
 

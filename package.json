@@ -463,12 +463,14 @@
         "sourcepawn.trace.server": {
           "type": "string",
           "enum": [
-            "off",
-            "messages",
-            "verbose"
+            "error",
+            "warn",
+            "info",
+            "debug",
+            "trace"
           ],
-          "default": "off",
-          "description": "Traces the communication between VSCode and the language server service."
+          "default": "info",
+          "description": "Set the logging level of the SourcePawnLanguageServer."
         }
       }
     },
