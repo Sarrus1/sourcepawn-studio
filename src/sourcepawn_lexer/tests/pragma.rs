@@ -17,6 +17,16 @@ fn simple_pragma() {
 }
 
 #[test]
+fn pragma_no_line_break() {
+    let input = "#pragma deprecated foo";
+
+    let mut lexer = Token::lexer(input);
+    assert_eq!(lexer.next(), Some(Token::MPragma));
+    assert_eq!(lexer.span(), 0..22);
+    assert_eq!(lexer.slice(), "#pragma deprecated foo");
+}
+
+#[test]
 fn pragma_trailing_line_comment() {
     let input = r#"#pragma deprecated foo //bar
 "#;
@@ -138,5 +148,19 @@ bar
 
     assert_eq!(lexer.next(), Some(Token::Newline));
     assert_eq!(lexer.span(), 28..29);
+    assert_eq!(lexer.slice(), "\n");
+}
+
+#[test]
+fn pragma_line_continuation_carriage_return() {
+    let input = "#pragma deprecated foo \\\r\nbar\n";
+
+    let mut lexer = Token::lexer(input);
+    assert_eq!(lexer.next(), Some(Token::MPragma));
+    assert_eq!(lexer.span(), 0..29);
+    assert_eq!(lexer.slice(), "#pragma deprecated foo \\\r\nbar");
+
+    assert_eq!(lexer.next(), Some(Token::Newline));
+    assert_eq!(lexer.span(), 29..30);
     assert_eq!(lexer.slice(), "\n");
 }

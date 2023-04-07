@@ -1,12 +1,16 @@
-use itertools::Itertools;
 use logos::{Lexer, Logos};
 
 fn lex_pragma_arguments(lex: &mut Lexer<Token>) -> Option<()> {
     let mut in_block_comment = false;
     let mut looking_for_newline = false;
-    let mut ignore_newline = false;
+    let mut ignore_newline = 0;
     let mut offset = 0;
-    for (ch, next_ch) in lex.remainder().chars().tuple_windows() {
+    let mut iter = lex.remainder().chars().peekable();
+    while let Some(ch) = iter.next() {
+        let mut next_ch = '\0';
+        if let Some(ch) = iter.peek() {
+            next_ch = *ch;
+        }
         if in_block_comment {
             match ch {
                 '*' => {
@@ -16,16 +20,15 @@ fn lex_pragma_arguments(lex: &mut Lexer<Token>) -> Option<()> {
                         looking_for_newline = true;
                     }
                 }
-                '\\' => {
-                    if next_ch == '\n' {
-                        // Line continuation in block comment.
-                        ignore_newline = true;
-                    }
-                }
-                '\n' => {
-                    if ignore_newline {
+                '\\' => match next_ch {
+                    '\n' => ignore_newline += 1,
+                    '\r' => ignore_newline += 2,
+                    _ => {}
+                },
+                '\n' | '\r' => {
+                    if ignore_newline > 0 {
                         // Line continuation.
-                        ignore_newline = false;
+                        ignore_newline -= 1;
                     } else {
                         // Newline in block comment breaks the pragma.
                         return Some(());
@@ -36,7 +39,7 @@ fn lex_pragma_arguments(lex: &mut Lexer<Token>) -> Option<()> {
             offset += 1;
         } else if looking_for_newline {
             // Lookahead for a newline without any non-whitespace characters.
-            if next_ch == '\n' {
+            if next_ch == '\n' || next_ch == '\r' {
                 // Found a newline, the block comment is not part of the pragma.
                 return Some(());
             }
@@ -63,20 +66,19 @@ fn lex_pragma_arguments(lex: &mut Lexer<Token>) -> Option<()> {
                         _ => {}
                     }
                 }
-                '\n' => {
-                    if !ignore_newline {
+                '\n' | '\r' => {
+                    if ignore_newline == 0 {
                         // Reached the end of the pragma.
                         return Some(());
                     }
                     // Line continuation.
-                    ignore_newline = false;
+                    ignore_newline -= 1;
                 }
-                '\\' => {
-                    if next_ch == '\n' {
-                        // Line continuation.
-                        ignore_newline = true;
-                    }
-                }
+                '\\' => match next_ch {
+                    '\n' => ignore_newline += 1,
+                    '\r' => ignore_newline += 2,
+                    _ => {}
+                },
                 _ => {}
             }
             lex.bump(1);

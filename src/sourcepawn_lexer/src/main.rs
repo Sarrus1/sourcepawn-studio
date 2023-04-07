@@ -2,8 +2,7 @@ use logos::Logos;
 use sourcepawn_lexer::Token;
 
 fn main() {
-    let input = r#"#pragma deprecated foo
-"#;
+    let input = "#pragma a\\\r\nba\n";
 
     let mut lexer = Token::lexer(input);
 
