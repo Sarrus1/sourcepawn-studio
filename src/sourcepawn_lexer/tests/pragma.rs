@@ -1,5 +1,5 @@
 use logos::Logos;
-use sourcepawn_lexer::Token;
+use sourcepawn_lexer::lexer::Token;
 
 #[test]
 fn simple_pragma() {
