@@ -2,7 +2,7 @@ use logos::Logos;
 use sourcepawn_lexer::lexer::Token;
 
 #[test]
-fn simple_pragma() {
+fn pragma_simple() {
     let input = r#"#pragma deprecated foo
 "#;
 

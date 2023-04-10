@@ -185,7 +185,7 @@ pub enum Token {
     #[token("__nullable__")]
     Nullable,
 
-    #[token("#define")]
+    #[token("#define", lex_preprocessor_arguments)]
     MDefine,
 
     #[token("#deprecate")]
@@ -203,7 +203,7 @@ pub enum Token {
     #[token("#file")]
     MFile,
 
-    #[token("#if")]
+    #[token("#if", lex_preprocessor_arguments)]
     MIf,
 
     #[token("#include")]
