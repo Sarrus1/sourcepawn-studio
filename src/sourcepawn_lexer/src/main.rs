@@ -6,7 +6,7 @@ void bar() {
 }
 "#;
 
-    let lexer = sourcepawn_lexer::lexer::SourcePawnLexer::new(input);
+    let lexer = sourcepawn_lexer::SourcePawnLexer::new(input);
     for symbol in lexer {
         println!("{:?}", symbol)
     }

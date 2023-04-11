@@ -1,4 +1,6 @@
-pub mod lexer;
+mod lexer;
 mod pragma;
-pub mod token;
-pub mod token_kind;
+mod token;
+mod token_kind;
+
+pub use self::{lexer::Range, lexer::SourcePawnLexer, lexer::Symbol, token_kind::TokenKind};

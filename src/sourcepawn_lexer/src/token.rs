@@ -1,7 +1,7 @@
 use crate::pragma::lex_pragma_arguments;
 use logos::Logos;
 
-#[derive(Logos, Debug, PartialEq, Eq)]
+#[derive(Logos, Debug, Clone, PartialEq, Eq)]
 // white space
 #[logos(subpattern ws = r"[ \t\v\f]")]
 // escape sequence
