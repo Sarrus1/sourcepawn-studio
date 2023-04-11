@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "5.3.6",
+  "version": "5.3.7",
   "publisher": "Sarrus",
   "main": "./dist/spIndex.js",
   "icon": "sm.png",
@@ -261,7 +261,7 @@
         },
         "SourcePawnLanguageServer.disableSyntaxLinter": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Disable the language server's syntax linter. This is independant from spcomp.",
           "scope": "resource"
         },

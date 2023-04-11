@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [5.3.7]
+
+### Fixed
+
+- Turned off the syntax linter by default.
+
 ## [5.3.6]
 
 ### Added
