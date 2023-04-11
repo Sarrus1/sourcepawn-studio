@@ -1,4 +1,4 @@
-use crate::preprocessor_arguments::lex_preprocessor_arguments;
+use crate::pragma::lex_pragma_arguments;
 use logos::Logos;
 
 #[derive(Logos, Debug, PartialEq, Eq)]
@@ -185,7 +185,7 @@ pub enum Token {
     #[token("__nullable__")]
     Nullable,
 
-    #[token("#define", lex_preprocessor_arguments)]
+    #[token("#define")]
     MDefine,
 
     #[token("#deprecate")]
@@ -203,7 +203,7 @@ pub enum Token {
     #[token("#file")]
     MFile,
 
-    #[token("#if", lex_preprocessor_arguments)]
+    #[token("#if")]
     MIf,
 
     #[token("#include")]
@@ -221,7 +221,7 @@ pub enum Token {
     #[token("#optional_semicolons")]
     MOptionalSemi,
 
-    #[token("#pragma", lex_preprocessor_arguments)]
+    #[token("#pragma", lex_pragma_arguments)]
     MPragma,
 
     #[token("#require_newdecls")]

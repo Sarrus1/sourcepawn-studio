@@ -2,7 +2,7 @@ use logos::Lexer;
 
 use crate::lexer::Token;
 
-pub fn lex_preprocessor_arguments(lex: &mut Lexer<Token>) -> Option<()> {
+pub fn lex_pragma_arguments(lex: &mut Lexer<Token>) -> Option<()> {
     let mut in_block_comment = false;
     let mut looking_for_newline = false;
     let mut ignore_newline = 0;
