@@ -89,7 +89,9 @@ impl Walker {
                 break;
             }
         }
-        self.comments.clear();
+        if !trailing {
+            self.comments.clear();
+        }
         let doc = Description {
             text: text.join(""),
             deprecated: dep,
