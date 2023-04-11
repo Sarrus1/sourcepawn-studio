@@ -1,6 +1,6 @@
 use logos::Lexer;
 
-use crate::lexer::Token;
+use crate::token::Token;
 
 pub fn lex_pragma_arguments(lex: &mut Lexer<Token>) -> Option<()> {
     let mut in_block_comment = false;
