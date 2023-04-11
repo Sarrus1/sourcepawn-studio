@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.9.10]
+
+### Fixed
+
+-   Fixed descriptions not appearing on hover.
+
 ## [0.9.9]
 
 ### Added
