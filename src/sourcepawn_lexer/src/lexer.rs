@@ -3,7 +3,7 @@ use logos::Logos;
 
 #[derive(Logos, Debug, PartialEq, Eq)]
 // white space
-#[logos(subpattern ws = r"[ \t\v\r\n\f]")]
+#[logos(subpattern ws = r"[ \t\v\f]")]
 // escape sequence
 #[logos(subpattern es = r#"[\\](['"%?\\abefnrtv]|[0-7]+|[xu][a-fA-F0-9]+|[\r]?[\n])"#)]
 pub enum Token {

@@ -1,12 +1,15 @@
-use logos::Logos;
 use sourcepawn_lexer::lexer::Token;
 
 fn main() {
-    let input = "#pragma a\\\r\nba\n";
+    let input = r#"int foo;
+#pragma deprecated Do not use this.
+void bar() {
+    return;
+}
+"#;
 
-    let mut lexer = Token::lexer(input);
-
-    while let Some(token) = lexer.next() {
-        println!("{:?}: {:?}", token, lexer.slice());
+    let lexer = sourcepawn_lexer::token_kind::SourcePawnLexer::new(input);
+    for symbol in lexer {
+        println!("{:?}", symbol)
     }
 }
