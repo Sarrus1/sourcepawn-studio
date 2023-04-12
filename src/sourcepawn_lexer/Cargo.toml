@@ -2,10 +2,9 @@
 name = "sourcepawn_lexer"
 version = "0.1.0"
 edition = "2021"
-
-[[bin]]
-name = "sourcepawn_lexer"
-test = false
+description = "A lossless SourcePawn lexer"
+license = "MIT"
+exclude = [".gitignore"]
 
 [lib]
 doctest = false
