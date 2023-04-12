@@ -5,7 +5,8 @@
     "editor.formatOnSave": true,
     "rust-analyzer.linkedProjects": [
         "Cargo.toml",
-        "src/sourcepawn_lexer/Cargo.toml"
+        "src/sourcepawn_lexer/Cargo.toml",
+        "src/sourcepawn_preprocessor/Cargo.toml",
     ],
     "rust-analyzer.showUnlinkedFileNotification": false
 }
