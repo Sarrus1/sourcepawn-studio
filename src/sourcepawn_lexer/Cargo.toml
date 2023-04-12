@@ -1,0 +1,21 @@
+[package]
+name = "sourcepawn_lexer"
+version = "0.1.0"
+edition = "2021"
+description = "A lossless SourcePawn lexer"
+license = "MIT"
+exclude = [".gitignore"]
+
+[lib]
+doctest = false
+
+[dependencies]
+logos = "0.12.1"
+
+[dev-dependencies]
+criterion = "0.3"
+minreq = { version = "2.7.0", features = ["https"] }
+
+[[bench]]
+name = "bench_main"
+harness = false
