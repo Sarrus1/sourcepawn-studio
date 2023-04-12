@@ -8,7 +8,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     let input = response.as_str().unwrap();
     c.bench_function("surftimer_sql", |b| {
         b.iter(|| {
-            let res: Vec<_> = black_box(SourcePawnLexer::new(input).collect());
+            let _res: Vec<_> = black_box(SourcePawnLexer::new(input).collect());
         })
     });
 }
