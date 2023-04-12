@@ -380,7 +380,7 @@ impl TryFrom<Token> for TokenKind {
             Token::Colon => TokenKind::Colon,
             Token::Scope => TokenKind::Scope,
             Token::Dot => TokenKind::Dot,
-            _ => !todo!(),
+            _ => return Err("Cannot convert token."),
         };
 
         Ok(token_kind)
