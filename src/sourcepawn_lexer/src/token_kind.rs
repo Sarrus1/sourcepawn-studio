@@ -1,253 +1,184 @@
 use crate::token::Token;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Literal {
+    IntegerLiteral,
+    HexLiteral,
+    BinaryLiteral,
+    OctodecimalLiteral,
+    StringLiteral,
+    CharLiteral,
+    FloatLiteral,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Comment {
+    /// Line comments such as `// comment`
+    LineComment,
+    /// Block comments such as `/* comment */`
+    BlockComment,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Operator {
+    /// ...
+    Ellipses,
+    /// +
+    Plus,
+    /// -
+    Minus,
+    /// *
+    Star,
+    /// /
+    Slash,
+    /// %
+    Percent,
+    /// &
+    Ampersand,
+    /// |
+    Bitor,
+    /// ^
+    Bitxor,
+    /// >>
+    Shr,
+    /// >>>
+    Ushr,
+    /// <<
+    Shl,
+    /// =
+    Assign,
+    /// +=
+    AssignAdd,
+    /// -=
+    AssignSub,
+    /// *=
+    AssignMul,
+    /// /=
+    AssignDiv,
+    /// %=
+    AssignMod,
+    /// &=
+    AssignBitAnd,
+    /// |=
+    AssignBitOr,
+    /// ^=
+    AssignBitXor,
+    /// >>=
+    AssignShr,
+    /// >>>=
+    AssignUshl,
+    /// <<=
+    AssignShl,
+    /// ++
+    Increment,
+    /// --
+    Decrement,
+    /// ==
+    Equals,
+    /// !=
+    NotEquals,
+    /// <
+    Lt,
+    /// <=
+    Le,
+    /// >
+    Gt,
+    /// >=
+    Ge,
+    /// &&
+    And,
+    /// ||
+    Or,
+    /// !
+    Not,
+    /// ~
+    Tilde,
+    /// ?
+    Qmark,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenKind {
     Identifier,
-
-    IntegerLiteral,
-
-    HexLiteral,
-
-    BinaryLiteral,
-
-    OctodecimalLiteral,
-
-    StringLiteral,
-
-    CharLiteral,
-
-    FloatLiteral,
-
+    Literal(Literal),
+    Comment(Comment),
+    Operator(Operator),
     Newline,
-
     LineContinuation,
-
-    LineComment,
-
-    BlockComment,
-
     Bool,
-
     Break,
-
     Case,
-
     Char,
-
     Class,
-
     Const,
-
     Continue,
-
     Decl,
-
     Default,
-
     Defined,
-
     Delete,
-
     Do,
-
     Else,
-
     Enum,
-
     False,
-
     Float,
-
     For,
-
     Forward,
-
     Functag,
-
     Function,
-
     If,
-
     Int,
-
     InvalidFunction,
-
     Methodmap,
-
     Native,
-
     Null,
-
     New,
-
     Object,
-
     Property,
-
     Public,
-
     Return,
-
     Sizeof,
-
     Static,
-
     Stock,
-
     Struct,
-
     Switch,
-
     This,
-
     True,
-
     Typedef,
-
     Typeset,
-
     Union,
-
     Using,
-
     ViewAs,
-
     Void,
-
     While,
-
     Nullable,
-
     MDefine,
-
     MDeprecate,
-
     MElse,
-
     MEndif,
-
     MEndinput,
-
     MFile,
-
     MIf,
-
     MInclude,
-
     MLeaving,
-
     MLine,
-
     MOptionalNewdecls,
-
     MOptionalSemi,
-
     MPragma,
-
     MRequireNewdecls,
-
     MRequireSemi,
-
     MTryinclude,
-
     MUndef,
-
     Intrinsics,
-
-    Ellipses,
-
-    Plus,
-
-    Minus,
-
-    Star,
-
-    Slash,
-
-    Percent,
-
-    Ampersand,
-
-    Bitor,
-
-    Bitxor,
-
-    Shr,
-
-    Ushr,
-
-    Shl,
-
-    Assign,
-
     Semicolon,
-
     LBrace,
-
     RBrace,
-
     LParen,
-
     RParen,
-
     LBracket,
-
     RBracket,
-
-    AssignAdd,
-
-    AssignSub,
-
-    AssignMul,
-
-    AssignDiv,
-
-    AssignMod,
-
-    AssignBitAnd,
-
-    AssignBitOr,
-
-    AssignBitXor,
-
-    AssignShr,
-
-    AssignUshl,
-
-    AssignShl,
-
-    Increment,
-
-    Decrement,
-
-    Equals,
-
-    NotEquals,
-
-    Lt,
-
-    Le,
-
-    Gt,
-
-    Ge,
-
-    And,
-
-    Or,
-
     Comma,
-
-    Not,
-
-    Tilde,
-
-    Qmark,
-
     Colon,
-
     Scope,
-
     Dot,
 }
 
@@ -257,17 +188,17 @@ impl TryFrom<Token> for TokenKind {
     fn try_from(token: Token) -> Result<Self, Self::Error> {
         let token_kind = match token {
             Token::Identifier => TokenKind::Identifier,
-            Token::IntegerLiteral => TokenKind::IntegerLiteral,
-            Token::HexLiteral => TokenKind::HexLiteral,
-            Token::BinaryLiteral => TokenKind::BinaryLiteral,
-            Token::OctodecimalLiteral => TokenKind::OctodecimalLiteral,
-            Token::StringLiteral => TokenKind::StringLiteral,
-            Token::CharLiteral => TokenKind::CharLiteral,
-            Token::FloatLiteral => TokenKind::FloatLiteral,
+            Token::IntegerLiteral => TokenKind::Literal(Literal::IntegerLiteral),
+            Token::HexLiteral => TokenKind::Literal(Literal::HexLiteral),
+            Token::BinaryLiteral => TokenKind::Literal(Literal::BinaryLiteral),
+            Token::OctodecimalLiteral => TokenKind::Literal(Literal::OctodecimalLiteral),
+            Token::StringLiteral => TokenKind::Literal(Literal::StringLiteral),
+            Token::CharLiteral => TokenKind::Literal(Literal::CharLiteral),
+            Token::FloatLiteral => TokenKind::Literal(Literal::FloatLiteral),
             Token::Newline => TokenKind::Newline,
             Token::LineContinuation => TokenKind::LineContinuation,
-            Token::LineComment => TokenKind::LineComment,
-            Token::BlockComment => TokenKind::BlockComment,
+            Token::LineComment => TokenKind::Comment(Comment::LineComment),
+            Token::BlockComment => TokenKind::Comment(Comment::BlockComment),
             Token::Bool => TokenKind::Bool,
             Token::Break => TokenKind::Break,
             Token::Case => TokenKind::Case,
@@ -332,19 +263,19 @@ impl TryFrom<Token> for TokenKind {
             Token::MTryinclude => TokenKind::MTryinclude,
             Token::MUndef => TokenKind::MUndef,
             Token::Intrinsics => TokenKind::Intrinsics,
-            Token::Ellipses => TokenKind::Ellipses,
-            Token::Plus => TokenKind::Plus,
-            Token::Minus => TokenKind::Minus,
-            Token::Star => TokenKind::Star,
-            Token::Slash => TokenKind::Slash,
-            Token::Percent => TokenKind::Percent,
-            Token::Ampersand => TokenKind::Ampersand,
-            Token::Bitor => TokenKind::Bitor,
-            Token::Bitxor => TokenKind::Bitxor,
-            Token::Shr => TokenKind::Shr,
-            Token::Ushr => TokenKind::Ushr,
-            Token::Shl => TokenKind::Shl,
-            Token::Assign => TokenKind::Assign,
+            Token::Ellipses => TokenKind::Operator(Operator::Ellipses),
+            Token::Plus => TokenKind::Operator(Operator::Plus),
+            Token::Minus => TokenKind::Operator(Operator::Minus),
+            Token::Star => TokenKind::Operator(Operator::Star),
+            Token::Slash => TokenKind::Operator(Operator::Slash),
+            Token::Percent => TokenKind::Operator(Operator::Percent),
+            Token::Ampersand => TokenKind::Operator(Operator::Ampersand),
+            Token::Bitor => TokenKind::Operator(Operator::Bitor),
+            Token::Bitxor => TokenKind::Operator(Operator::Bitxor),
+            Token::Shr => TokenKind::Operator(Operator::Shr),
+            Token::Ushr => TokenKind::Operator(Operator::Ushr),
+            Token::Shl => TokenKind::Operator(Operator::Shl),
+            Token::Assign => TokenKind::Operator(Operator::Assign),
             Token::Semicolon => TokenKind::Semicolon,
             Token::LBrace => TokenKind::LBrace,
             Token::RBrace => TokenKind::RBrace,
@@ -352,31 +283,31 @@ impl TryFrom<Token> for TokenKind {
             Token::RParen => TokenKind::RParen,
             Token::LBracket => TokenKind::LBracket,
             Token::RBracket => TokenKind::RBracket,
-            Token::AssignAdd => TokenKind::AssignAdd,
-            Token::AssignSub => TokenKind::AssignSub,
-            Token::AssignMul => TokenKind::AssignMul,
-            Token::AssignDiv => TokenKind::AssignDiv,
-            Token::AssignMod => TokenKind::AssignMod,
-            Token::AssignBitAnd => TokenKind::AssignBitAnd,
-            Token::AssignBitOr => TokenKind::AssignBitOr,
-            Token::AssignBitXor => TokenKind::AssignBitXor,
-            Token::AssignShr => TokenKind::AssignShr,
-            Token::AssignUshl => TokenKind::AssignUshl,
-            Token::AssignShl => TokenKind::AssignShl,
-            Token::Increment => TokenKind::Increment,
-            Token::Decrement => TokenKind::Decrement,
-            Token::Equals => TokenKind::Equals,
-            Token::NotEquals => TokenKind::NotEquals,
-            Token::Lt => TokenKind::Lt,
-            Token::Le => TokenKind::Le,
-            Token::Gt => TokenKind::Gt,
-            Token::Ge => TokenKind::Ge,
-            Token::And => TokenKind::And,
-            Token::Or => TokenKind::Or,
+            Token::AssignAdd => TokenKind::Operator(Operator::AssignAdd),
+            Token::AssignSub => TokenKind::Operator(Operator::AssignSub),
+            Token::AssignMul => TokenKind::Operator(Operator::AssignMul),
+            Token::AssignDiv => TokenKind::Operator(Operator::AssignDiv),
+            Token::AssignMod => TokenKind::Operator(Operator::AssignMod),
+            Token::AssignBitAnd => TokenKind::Operator(Operator::AssignBitAnd),
+            Token::AssignBitOr => TokenKind::Operator(Operator::AssignBitOr),
+            Token::AssignBitXor => TokenKind::Operator(Operator::AssignBitXor),
+            Token::AssignShr => TokenKind::Operator(Operator::AssignShr),
+            Token::AssignUshl => TokenKind::Operator(Operator::AssignUshl),
+            Token::AssignShl => TokenKind::Operator(Operator::AssignShl),
+            Token::Increment => TokenKind::Operator(Operator::Increment),
+            Token::Decrement => TokenKind::Operator(Operator::Decrement),
+            Token::Equals => TokenKind::Operator(Operator::Equals),
+            Token::NotEquals => TokenKind::Operator(Operator::NotEquals),
+            Token::Lt => TokenKind::Operator(Operator::Lt),
+            Token::Le => TokenKind::Operator(Operator::Le),
+            Token::Gt => TokenKind::Operator(Operator::Gt),
+            Token::Ge => TokenKind::Operator(Operator::Ge),
+            Token::And => TokenKind::Operator(Operator::And),
+            Token::Or => TokenKind::Operator(Operator::Or),
             Token::Comma => TokenKind::Comma,
-            Token::Not => TokenKind::Not,
-            Token::Tilde => TokenKind::Tilde,
-            Token::Qmark => TokenKind::Qmark,
+            Token::Not => TokenKind::Operator(Operator::Not),
+            Token::Tilde => TokenKind::Operator(Operator::Tilde),
+            Token::Qmark => TokenKind::Operator(Operator::Qmark),
             Token::Colon => TokenKind::Colon,
             Token::Scope => TokenKind::Scope,
             Token::Dot => TokenKind::Dot,

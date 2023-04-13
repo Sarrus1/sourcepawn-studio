@@ -1,10 +1,10 @@
 #[allow(unused_macros)]
 macro_rules! assert_token_eq {
-    ($lexer:expr, $token_kind:ident, $text:expr, $start_line:expr, $start_col:expr, $end_line:expr, $end_col:expr) => {
+    ($lexer:expr, $token_kind:expr, $text:expr, $start_line:expr, $start_col:expr, $end_line:expr, $end_col:expr) => {
         assert_eq!(
             $lexer.next().unwrap(),
             Symbol {
-                token_kind: TokenKind::$token_kind,
+                token_kind: $token_kind,
                 text: $text.to_string(),
                 range: Range {
                     start_line: $start_line,
