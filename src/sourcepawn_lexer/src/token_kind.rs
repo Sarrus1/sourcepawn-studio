@@ -318,6 +318,9 @@ pub enum TokenKind {
     Colon,
     Scope,
     Dot,
+
+    /// End of file. This will always be the last token.
+    Eof,
 }
 
 impl TryFrom<Token> for TokenKind {

@@ -19,6 +19,7 @@ fn pragma_simple() {
         22
     );
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 22, 1, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 0, 1, 0);
 }
 
 #[test]
@@ -35,6 +36,7 @@ fn pragma_no_line_break() {
         0,
         22
     );
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 0, 22, 0, 22);
 }
 
 #[test]
@@ -61,6 +63,8 @@ fn pragma_trailing_line_comment() {
         0,
         28
     );
+    assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 28, 1, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 0, 1, 0);
 }
 
 #[test]
@@ -88,6 +92,7 @@ fn pragma_trailing_block_comment() {
         28
     );
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 28, 1, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 0, 1, 0);
 }
 
 #[test]
@@ -106,6 +111,7 @@ fn pragma_with_block_comment() {
         32
     );
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 32, 1, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 0, 1, 0);
 }
 
 #[test]
@@ -125,6 +131,7 @@ bar
         3
     );
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 3, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0);
 }
 
 #[test]
@@ -154,6 +161,7 @@ fn pragma_with_trailing_multiline_block_comment() {
     );
     assert_token_eq!(lexer, TokenKind::Identifier, "bar", 1, 4, 1, 7);
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 7, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0);
 }
 
 #[test]
@@ -173,6 +181,7 @@ fn pragma_with_trailing_line_continuated_multiline_block_comment() {
         6
     );
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 6, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0);
 }
 
 #[test]
@@ -192,6 +201,7 @@ bar
         3
     );
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 3, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0);
 }
 
 #[test]
@@ -209,4 +219,5 @@ fn pragma_line_continuation_carriage_return() {
         3
     );
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 3, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0);
 }

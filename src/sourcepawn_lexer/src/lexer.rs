@@ -25,6 +25,7 @@ pub struct SourcepawnLexer<'a> {
     line_number: usize,
     line_span_start: usize,
     in_preprocessor: bool,
+    eof: bool,
 }
 
 impl SourcepawnLexer<'_> {
@@ -34,6 +35,7 @@ impl SourcepawnLexer<'_> {
             line_number: 0,
             line_span_start: 0,
             in_preprocessor: false,
+            eof: false,
         }
     }
 
@@ -52,7 +54,22 @@ impl Iterator for SourcepawnLexer<'_> {
         lazy_static! {
             static ref RE2: Regex = Regex::new(r"\\\r?\n").unwrap();
         }
-        let token = self.lexer.next()?;
+        let token = self.lexer.next();
+        if token.is_none() && !self.eof {
+            // Reached EOF
+            self.eof = true;
+            return Some(Symbol {
+                token_kind: TokenKind::Eof,
+                text: "\0".to_string(),
+                range: Range {
+                    start_line: self.line_number,
+                    end_line: self.line_number,
+                    start_col: self.lexer.source().len() - self.line_span_start,
+                    end_col: self.lexer.source().len() - self.line_span_start,
+                },
+            });
+        }
+        let token = token?;
 
         let start_line = self.line_number;
         let start_col = self.lexer.span().start - self.line_span_start;

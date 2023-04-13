@@ -6,7 +6,7 @@ use sourcepawn_lexer::*;
 #[test]
 fn define_simple() {
     let input = r#"#define FOO 1
-"#;
+     "#;
 
     let mut lexer = SourcepawnLexer::new(input);
     assert!(!lexer.in_preprocessor());
@@ -34,6 +34,7 @@ fn define_simple() {
     assert!(lexer.in_preprocessor());
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 13, 1, 0);
     assert!(!lexer.in_preprocessor());
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 5, 1, 5);
 }
 
 #[test]
@@ -53,6 +54,7 @@ fn define_no_value() {
     );
     assert_token_eq!(lexer, TokenKind::Identifier, "FOO", 0, 8, 0, 11);
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 11, 1, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 0, 1, 0);
 }
 
 #[test]
@@ -79,6 +81,7 @@ fn define_no_line_break() {
         0,
         13
     );
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 0, 13, 0, 13);
 }
 
 #[test]
@@ -116,6 +119,7 @@ fn define_trailing_line_comment() {
         19
     );
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 19, 1, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 0, 1, 0);
 }
 
 #[test]
@@ -153,6 +157,7 @@ fn define_trailing_block_comment() {
         19
     );
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 19, 1, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 0, 1, 0);
 }
 
 #[test]
@@ -208,6 +213,7 @@ fn define_with_block_comment() {
         23
     );
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 23, 1, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 0, 1, 0);
 }
 
 #[test]
@@ -257,6 +263,7 @@ fn define_with_block_comment_and_line_continuation() {
         3
     );
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 3, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0);
 }
 
 #[test]
@@ -305,6 +312,7 @@ fn define_with_trailing_multiline_block_comment() {
         7
     );
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 7, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0);
 }
 
 #[test]
@@ -353,6 +361,7 @@ fn define_with_trailing_line_continuated_multiline_block_comment() {
         6
     );
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 6, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0);
 }
 
 #[test]
@@ -393,6 +402,7 @@ fn define_line_continuation() {
         3
     );
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 3, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0);
 }
 
 #[test]
@@ -431,4 +441,5 @@ fn define_line_continuation_carriage_return() {
         3
     );
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 3, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0);
 }
