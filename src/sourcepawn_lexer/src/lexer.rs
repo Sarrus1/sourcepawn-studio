@@ -1,4 +1,6 @@
+use lazy_static::lazy_static;
 use logos::{Lexer, Logos};
+use regex::Regex;
 
 use crate::{token::Token, token_kind::TokenKind};
 
@@ -38,6 +40,12 @@ impl Iterator for SourcePawnLexer<'_> {
     type Item = Symbol;
 
     fn next(&mut self) -> Option<Symbol> {
+        lazy_static! {
+            static ref RE1: Regex = Regex::new(r"\n").unwrap();
+        }
+        lazy_static! {
+            static ref RE2: Regex = Regex::new(r"\\\r?\n").unwrap();
+        }
         let token = self.lexer.next()?;
 
         let start_line = self.line_number;
@@ -45,10 +53,15 @@ impl Iterator for SourcePawnLexer<'_> {
         let text = self.lexer.slice().to_string();
         match token {
             Token::StringLiteral | Token::BlockComment | Token::MPragma => {
-                let line_breaks: Vec<_> = text.match_indices('\n').collect();
-                if let Some(last) = line_breaks.last() {
+                let line_breaks: Vec<_> = RE1.find_iter(text.as_str()).collect();
+                let line_continuations: Vec<_> = RE2.find_iter(text.as_str()).collect();
+
+                if let Some(last) = line_continuations.last() {
                     self.line_number += line_breaks.len();
-                    self.line_span_start = self.lexer.span().start + last.0;
+                    self.line_span_start = self.lexer.span().start + last.end();
+                } else if let Some(last) = line_breaks.last() {
+                    self.line_number += line_breaks.len();
+                    self.line_span_start = self.lexer.span().start + last.start();
                 }
             }
             Token::LineContinuation | Token::Newline => {

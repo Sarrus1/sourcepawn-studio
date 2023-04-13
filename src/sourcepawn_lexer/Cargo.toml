@@ -10,7 +10,9 @@ exclude = [".gitignore"]
 doctest = false
 
 [dependencies]
+lazy_static = "1.4.0"
 logos = "0.12.1"
+regex = "1.7.3"
 
 [dev-dependencies]
 criterion = "0.3"

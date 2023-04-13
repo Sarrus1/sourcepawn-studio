@@ -263,19 +263,19 @@ fn define_with_trailing_line_continuated_multiline_block_comment() {
         0,
         14,
         1,
-        3
+        2
     );
-    assert_token_eq!(lexer, TokenKind::Operator(Operator::Plus), "+", 1, 4, 1, 5);
+    assert_token_eq!(lexer, TokenKind::Operator(Operator::Plus), "+", 1, 3, 1, 4);
     assert_token_eq!(
         lexer,
         TokenKind::Literal(Literal::IntegerLiteral),
         "1",
         1,
-        6,
+        5,
         1,
-        7
+        6
     );
-    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 7, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 6, 2, 0);
 }
 
 #[test]

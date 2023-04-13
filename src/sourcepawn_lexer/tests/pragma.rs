@@ -122,9 +122,9 @@ bar
         0,
         0,
         1,
-        4
+        3
     );
-    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 4, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 3, 2, 0);
 }
 
 #[test]
@@ -170,9 +170,9 @@ fn pragma_with_trailing_line_continuated_multiline_block_comment() {
         0,
         0,
         1,
-        7
+        6
     );
-    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 7, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 6, 2, 0);
 }
 
 #[test]
@@ -189,8 +189,9 @@ bar
         0,
         0,
         1,
-        4
+        3
     );
+    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 3, 2, 0);
 }
 
 #[test]
@@ -205,7 +206,7 @@ fn pragma_line_continuation_carriage_return() {
         0,
         0,
         1,
-        4
+        3
     );
-    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 4, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 3, 2, 0);
 }
