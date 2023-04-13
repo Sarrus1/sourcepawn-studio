@@ -11,7 +11,7 @@ fn pragma_simple() {
     let mut lexer = SourcePawnLexer::new(input);
     assert_token_eq!(
         lexer,
-        TokenKind::MPragma,
+        TokenKind::PreprocDir(PreprocDir::MPragma),
         "#pragma deprecated foo",
         0,
         0,
@@ -28,7 +28,7 @@ fn pragma_no_line_break() {
     let mut lexer = SourcePawnLexer::new(input);
     assert_token_eq!(
         lexer,
-        TokenKind::MPragma,
+        TokenKind::PreprocDir(PreprocDir::MPragma),
         "#pragma deprecated foo",
         0,
         0,
@@ -45,7 +45,7 @@ fn pragma_trailing_line_comment() {
     let mut lexer = SourcePawnLexer::new(input);
     assert_token_eq!(
         lexer,
-        TokenKind::MPragma,
+        TokenKind::PreprocDir(PreprocDir::MPragma),
         "#pragma deprecated foo ",
         0,
         0,
@@ -71,7 +71,7 @@ fn pragma_trailing_block_comment() {
     let mut lexer = SourcePawnLexer::new(input);
     assert_token_eq!(
         lexer,
-        TokenKind::MPragma,
+        TokenKind::PreprocDir(PreprocDir::MPragma),
         "#pragma deprecated foo ",
         0,
         0,
@@ -98,7 +98,7 @@ fn pragma_with_block_comment() {
     let mut lexer = SourcePawnLexer::new(input);
     assert_token_eq!(
         lexer,
-        TokenKind::MPragma,
+        TokenKind::PreprocDir(PreprocDir::MPragma),
         "#pragma deprecated foo /* */ bar",
         0,
         0,
@@ -117,7 +117,7 @@ bar
     let mut lexer = SourcePawnLexer::new(input);
     assert_token_eq!(
         lexer,
-        TokenKind::MPragma,
+        TokenKind::PreprocDir(PreprocDir::MPragma),
         "#pragma deprecated foo /* */ \\\nbar",
         0,
         0,
@@ -136,7 +136,7 @@ fn pragma_with_trailing_multiline_block_comment() {
     let mut lexer = SourcePawnLexer::new(input);
     assert_token_eq!(
         lexer,
-        TokenKind::MPragma,
+        TokenKind::PreprocDir(PreprocDir::MPragma),
         "#pragma deprecated foo ",
         0,
         0,
@@ -165,7 +165,7 @@ fn pragma_with_trailing_line_continuated_multiline_block_comment() {
     let mut lexer = SourcePawnLexer::new(input);
     assert_token_eq!(
         lexer,
-        TokenKind::MPragma,
+        TokenKind::PreprocDir(PreprocDir::MPragma),
         "#pragma deprecated foo /* \\\n*/ bar",
         0,
         0,
@@ -184,7 +184,7 @@ bar
     let mut lexer = SourcePawnLexer::new(input);
     assert_token_eq!(
         lexer,
-        TokenKind::MPragma,
+        TokenKind::PreprocDir(PreprocDir::MPragma),
         "#pragma deprecated foo \\\nbar",
         0,
         0,
@@ -201,7 +201,7 @@ fn pragma_line_continuation_carriage_return() {
     let mut lexer = SourcePawnLexer::new(input);
     assert_token_eq!(
         lexer,
-        TokenKind::MPragma,
+        TokenKind::PreprocDir(PreprocDir::MPragma),
         "#pragma deprecated foo \\\r\nbar",
         0,
         0,

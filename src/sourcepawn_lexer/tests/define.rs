@@ -10,7 +10,15 @@ fn define_simple() {
 
     let mut lexer = SourcePawnLexer::new(input);
     assert!(!lexer.in_preprocessor());
-    assert_token_eq!(lexer, TokenKind::MDefine, "#define", 0, 0, 0, 7);
+    assert_token_eq!(
+        lexer,
+        TokenKind::PreprocDir(PreprocDir::MDefine),
+        "#define",
+        0,
+        0,
+        0,
+        7
+    );
     assert!(lexer.in_preprocessor());
     assert_token_eq!(lexer, TokenKind::Identifier, "FOO", 0, 8, 0, 11);
     assert!(lexer.in_preprocessor());
@@ -34,7 +42,15 @@ fn define_no_value() {
 "#;
 
     let mut lexer = SourcePawnLexer::new(input);
-    assert_token_eq!(lexer, TokenKind::MDefine, "#define", 0, 0, 0, 7);
+    assert_token_eq!(
+        lexer,
+        TokenKind::PreprocDir(PreprocDir::MDefine),
+        "#define",
+        0,
+        0,
+        0,
+        7
+    );
     assert_token_eq!(lexer, TokenKind::Identifier, "FOO", 0, 8, 0, 11);
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 11, 1, 0);
 }
@@ -44,7 +60,15 @@ fn define_no_line_break() {
     let input = "#define FOO 1";
 
     let mut lexer = SourcePawnLexer::new(input);
-    assert_token_eq!(lexer, TokenKind::MDefine, "#define", 0, 0, 0, 7);
+    assert_token_eq!(
+        lexer,
+        TokenKind::PreprocDir(PreprocDir::MDefine),
+        "#define",
+        0,
+        0,
+        0,
+        7
+    );
     assert_token_eq!(lexer, TokenKind::Identifier, "FOO", 0, 8, 0, 11);
     assert_token_eq!(
         lexer,
@@ -63,7 +87,15 @@ fn define_trailing_line_comment() {
 "#;
 
     let mut lexer = SourcePawnLexer::new(input);
-    assert_token_eq!(lexer, TokenKind::MDefine, "#define", 0, 0, 0, 7);
+    assert_token_eq!(
+        lexer,
+        TokenKind::PreprocDir(PreprocDir::MDefine),
+        "#define",
+        0,
+        0,
+        0,
+        7
+    );
     assert_token_eq!(lexer, TokenKind::Identifier, "FOO", 0, 8, 0, 11);
     assert_token_eq!(
         lexer,
@@ -92,7 +124,15 @@ fn define_trailing_block_comment() {
 "#;
 
     let mut lexer = SourcePawnLexer::new(input);
-    assert_token_eq!(lexer, TokenKind::MDefine, "#define", 0, 0, 0, 7);
+    assert_token_eq!(
+        lexer,
+        TokenKind::PreprocDir(PreprocDir::MDefine),
+        "#define",
+        0,
+        0,
+        0,
+        7
+    );
     assert_token_eq!(lexer, TokenKind::Identifier, "FOO", 0, 8, 0, 11);
     assert_token_eq!(
         lexer,
@@ -121,7 +161,15 @@ fn define_with_block_comment() {
 "#;
 
     let mut lexer = SourcePawnLexer::new(input);
-    assert_token_eq!(lexer, TokenKind::MDefine, "#define", 0, 0, 0, 7);
+    assert_token_eq!(
+        lexer,
+        TokenKind::PreprocDir(PreprocDir::MDefine),
+        "#define",
+        0,
+        0,
+        0,
+        7
+    );
     assert_token_eq!(lexer, TokenKind::Identifier, "FOO", 0, 8, 0, 11);
     assert_token_eq!(
         lexer,
@@ -169,7 +217,15 @@ fn define_with_block_comment_and_line_continuation() {
 "#;
 
     let mut lexer = SourcePawnLexer::new(input);
-    assert_token_eq!(lexer, TokenKind::MDefine, "#define", 0, 0, 0, 7);
+    assert_token_eq!(
+        lexer,
+        TokenKind::PreprocDir(PreprocDir::MDefine),
+        "#define",
+        0,
+        0,
+        0,
+        7
+    );
     assert_token_eq!(lexer, TokenKind::Identifier, "FOO", 0, 8, 0, 11);
     assert_token_eq!(
         lexer,
@@ -210,7 +266,15 @@ fn define_with_trailing_multiline_block_comment() {
 "#;
 
     let mut lexer = SourcePawnLexer::new(input);
-    assert_token_eq!(lexer, TokenKind::MDefine, "#define", 0, 0, 0, 7);
+    assert_token_eq!(
+        lexer,
+        TokenKind::PreprocDir(PreprocDir::MDefine),
+        "#define",
+        0,
+        0,
+        0,
+        7
+    );
     assert_token_eq!(lexer, TokenKind::Identifier, "FOO", 0, 8, 0, 11);
     assert_token_eq!(
         lexer,
@@ -250,7 +314,15 @@ fn define_with_trailing_line_continuated_multiline_block_comment() {
 "#;
 
     let mut lexer = SourcePawnLexer::new(input);
-    assert_token_eq!(lexer, TokenKind::MDefine, "#define", 0, 0, 0, 7);
+    assert_token_eq!(
+        lexer,
+        TokenKind::PreprocDir(PreprocDir::MDefine),
+        "#define",
+        0,
+        0,
+        0,
+        7
+    );
     assert_token_eq!(lexer, TokenKind::Identifier, "FOO", 0, 8, 0, 11);
     assert_token_eq!(
         lexer,
@@ -290,7 +362,15 @@ fn define_line_continuation() {
 "#;
 
     let mut lexer = SourcePawnLexer::new(input);
-    assert_token_eq!(lexer, TokenKind::MDefine, "#define", 0, 0, 0, 7);
+    assert_token_eq!(
+        lexer,
+        TokenKind::PreprocDir(PreprocDir::MDefine),
+        "#define",
+        0,
+        0,
+        0,
+        7
+    );
     assert_token_eq!(lexer, TokenKind::Identifier, "FOO", 0, 8, 0, 11);
     assert_token_eq!(
         lexer,
@@ -320,7 +400,15 @@ fn define_line_continuation_carriage_return() {
     let input = "#define FOO 1 \\\r\n+ 1\n";
 
     let mut lexer = SourcePawnLexer::new(input);
-    assert_token_eq!(lexer, TokenKind::MDefine, "#define", 0, 0, 0, 7);
+    assert_token_eq!(
+        lexer,
+        TokenKind::PreprocDir(PreprocDir::MDefine),
+        "#define",
+        0,
+        0,
+        0,
+        7
+    );
     assert_token_eq!(lexer, TokenKind::Identifier, "FOO", 0, 8, 0, 11);
     assert_token_eq!(
         lexer,

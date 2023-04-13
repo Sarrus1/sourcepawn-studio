@@ -197,11 +197,66 @@ pub enum Operator {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PreprocDir {
+    /// `#define`
+    MDefine,
+
+    /// `#deprecate`
+    MDeprecate,
+
+    /// `#else`
+    MElse,
+
+    /// `#elseif`
+    MEndif,
+
+    /// `#endinput`
+    MEndinput,
+
+    /// `#file`
+    MFile,
+
+    /// `#if`
+    MIf,
+
+    /// `#include`
+    MInclude,
+
+    /// `#leaving`
+    MLeaving,
+
+    /// `__LINE__`
+    MLine,
+
+    /// `#optional_newdecls`
+    MOptionalNewdecls,
+
+    /// `#optional_semicolons`
+    MOptionalSemi,
+
+    /// `#pragma`
+    MPragma,
+
+    /// `#require_newdecls`
+    MRequireNewdecls,
+
+    /// `#require_semicolons`
+    MRequireSemi,
+
+    /// `#try_include`
+    MTryinclude,
+
+    /// `#undef`
+    MUndef,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenKind {
     Identifier,
     Literal(Literal),
     Comment(Comment),
     Operator(Operator),
+    PreprocDir(PreprocDir),
     Newline,
     LineContinuation,
     Bool,
@@ -250,23 +305,6 @@ pub enum TokenKind {
     Void,
     While,
     Nullable,
-    MDefine,
-    MDeprecate,
-    MElse,
-    MEndif,
-    MEndinput,
-    MFile,
-    MIf,
-    MInclude,
-    MLeaving,
-    MLine,
-    MOptionalNewdecls,
-    MOptionalSemi,
-    MPragma,
-    MRequireNewdecls,
-    MRequireSemi,
-    MTryinclude,
-    MUndef,
     Intrinsics,
     Semicolon,
     LBrace,
@@ -345,23 +383,23 @@ impl TryFrom<Token> for TokenKind {
             Token::Void => TokenKind::Void,
             Token::While => TokenKind::While,
             Token::Nullable => TokenKind::Nullable,
-            Token::MDefine => TokenKind::MDefine,
-            Token::MDeprecate => TokenKind::MDeprecate,
-            Token::MElse => TokenKind::MElse,
-            Token::MEndif => TokenKind::MEndif,
-            Token::MEndinput => TokenKind::MEndinput,
-            Token::MFile => TokenKind::MFile,
-            Token::MIf => TokenKind::MIf,
-            Token::MInclude => TokenKind::MInclude,
-            Token::MLeaving => TokenKind::MLeaving,
-            Token::MLine => TokenKind::MLine,
-            Token::MOptionalNewdecls => TokenKind::MOptionalNewdecls,
-            Token::MOptionalSemi => TokenKind::MOptionalSemi,
-            Token::MPragma => TokenKind::MPragma,
-            Token::MRequireNewdecls => TokenKind::MRequireNewdecls,
-            Token::MRequireSemi => TokenKind::MRequireSemi,
-            Token::MTryinclude => TokenKind::MTryinclude,
-            Token::MUndef => TokenKind::MUndef,
+            Token::MDefine => TokenKind::PreprocDir(PreprocDir::MDefine),
+            Token::MDeprecate => TokenKind::PreprocDir(PreprocDir::MDeprecate),
+            Token::MElse => TokenKind::PreprocDir(PreprocDir::MElse),
+            Token::MEndif => TokenKind::PreprocDir(PreprocDir::MEndif),
+            Token::MEndinput => TokenKind::PreprocDir(PreprocDir::MEndinput),
+            Token::MFile => TokenKind::PreprocDir(PreprocDir::MFile),
+            Token::MIf => TokenKind::PreprocDir(PreprocDir::MIf),
+            Token::MInclude => TokenKind::PreprocDir(PreprocDir::MInclude),
+            Token::MLeaving => TokenKind::PreprocDir(PreprocDir::MLeaving),
+            Token::MLine => TokenKind::PreprocDir(PreprocDir::MLine),
+            Token::MOptionalNewdecls => TokenKind::PreprocDir(PreprocDir::MOptionalNewdecls),
+            Token::MOptionalSemi => TokenKind::PreprocDir(PreprocDir::MOptionalSemi),
+            Token::MPragma => TokenKind::PreprocDir(PreprocDir::MPragma),
+            Token::MRequireNewdecls => TokenKind::PreprocDir(PreprocDir::MRequireNewdecls),
+            Token::MRequireSemi => TokenKind::PreprocDir(PreprocDir::MRequireSemi),
+            Token::MTryinclude => TokenKind::PreprocDir(PreprocDir::MTryinclude),
+            Token::MUndef => TokenKind::PreprocDir(PreprocDir::MUndef),
             Token::Intrinsics => TokenKind::Intrinsics,
             Token::Ellipses => TokenKind::Operator(Operator::Ellipses),
             Token::Plus => TokenKind::Operator(Operator::Plus),
