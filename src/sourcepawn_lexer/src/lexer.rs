@@ -20,16 +20,16 @@ pub struct Symbol {
 }
 
 #[derive(Debug, Clone)]
-pub struct SourcePawnLexer<'a> {
+pub struct SourcepawnLexer<'a> {
     lexer: Lexer<'a, Token>,
     line_number: usize,
     line_span_start: usize,
     in_preprocessor: bool,
 }
 
-impl SourcePawnLexer<'_> {
-    pub fn new(input: &str) -> SourcePawnLexer {
-        SourcePawnLexer {
+impl SourcepawnLexer<'_> {
+    pub fn new(input: &str) -> SourcepawnLexer {
+        SourcepawnLexer {
             lexer: Token::lexer(input),
             line_number: 0,
             line_span_start: 0,
@@ -42,7 +42,7 @@ impl SourcePawnLexer<'_> {
     }
 }
 
-impl Iterator for SourcePawnLexer<'_> {
+impl Iterator for SourcepawnLexer<'_> {
     type Item = Symbol;
 
     fn next(&mut self) -> Option<Symbol> {

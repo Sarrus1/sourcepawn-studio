@@ -8,7 +8,7 @@ fn define_simple() {
     let input = r#"#define FOO 1
 "#;
 
-    let mut lexer = SourcePawnLexer::new(input);
+    let mut lexer = SourcepawnLexer::new(input);
     assert!(!lexer.in_preprocessor());
     assert_token_eq!(
         lexer,
@@ -41,7 +41,7 @@ fn define_no_value() {
     let input = r#"#define FOO
 "#;
 
-    let mut lexer = SourcePawnLexer::new(input);
+    let mut lexer = SourcepawnLexer::new(input);
     assert_token_eq!(
         lexer,
         TokenKind::PreprocDir(PreprocDir::MDefine),
@@ -59,7 +59,7 @@ fn define_no_value() {
 fn define_no_line_break() {
     let input = "#define FOO 1";
 
-    let mut lexer = SourcePawnLexer::new(input);
+    let mut lexer = SourcepawnLexer::new(input);
     assert_token_eq!(
         lexer,
         TokenKind::PreprocDir(PreprocDir::MDefine),
@@ -86,7 +86,7 @@ fn define_trailing_line_comment() {
     let input = r#"#define FOO 1 //bar
 "#;
 
-    let mut lexer = SourcePawnLexer::new(input);
+    let mut lexer = SourcepawnLexer::new(input);
     assert_token_eq!(
         lexer,
         TokenKind::PreprocDir(PreprocDir::MDefine),
@@ -123,7 +123,7 @@ fn define_trailing_block_comment() {
     let input = r#"#define FOO 1 /* */
 "#;
 
-    let mut lexer = SourcePawnLexer::new(input);
+    let mut lexer = SourcepawnLexer::new(input);
     assert_token_eq!(
         lexer,
         TokenKind::PreprocDir(PreprocDir::MDefine),
@@ -160,7 +160,7 @@ fn define_with_block_comment() {
     let input = r#"#define FOO 1 /* */ + 1
 "#;
 
-    let mut lexer = SourcePawnLexer::new(input);
+    let mut lexer = SourcepawnLexer::new(input);
     assert_token_eq!(
         lexer,
         TokenKind::PreprocDir(PreprocDir::MDefine),
@@ -216,7 +216,7 @@ fn define_with_block_comment_and_line_continuation() {
 + 1
 "#;
 
-    let mut lexer = SourcePawnLexer::new(input);
+    let mut lexer = SourcepawnLexer::new(input);
     assert_token_eq!(
         lexer,
         TokenKind::PreprocDir(PreprocDir::MDefine),
@@ -265,7 +265,7 @@ fn define_with_trailing_multiline_block_comment() {
 */ + 1
 "#;
 
-    let mut lexer = SourcePawnLexer::new(input);
+    let mut lexer = SourcepawnLexer::new(input);
     assert_token_eq!(
         lexer,
         TokenKind::PreprocDir(PreprocDir::MDefine),
@@ -313,7 +313,7 @@ fn define_with_trailing_line_continuated_multiline_block_comment() {
 */ + 1
 "#;
 
-    let mut lexer = SourcePawnLexer::new(input);
+    let mut lexer = SourcepawnLexer::new(input);
     assert_token_eq!(
         lexer,
         TokenKind::PreprocDir(PreprocDir::MDefine),
@@ -361,7 +361,7 @@ fn define_line_continuation() {
 + 1
 "#;
 
-    let mut lexer = SourcePawnLexer::new(input);
+    let mut lexer = SourcepawnLexer::new(input);
     assert_token_eq!(
         lexer,
         TokenKind::PreprocDir(PreprocDir::MDefine),
@@ -399,7 +399,7 @@ fn define_line_continuation() {
 fn define_line_continuation_carriage_return() {
     let input = "#define FOO 1 \\\r\n+ 1\n";
 
-    let mut lexer = SourcePawnLexer::new(input);
+    let mut lexer = SourcepawnLexer::new(input);
     assert_token_eq!(
         lexer,
         TokenKind::PreprocDir(PreprocDir::MDefine),
