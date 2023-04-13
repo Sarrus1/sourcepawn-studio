@@ -2,96 +2,197 @@ use crate::token::Token;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Literal {
+    /// Integer literal.
+    ///
+    /// # Examples
+    /// ```
+    /// 1234
+    /// 10_000_000
+    /// ```
     IntegerLiteral,
+
+    /// Hexadecimal literal.
+    ///
+    /// # Examples
+    /// ```
+    /// 0x1234
+    /// ```
     HexLiteral,
+
+    /// Binary literal.
+    ///
+    /// # Examples
+    /// ```
+    /// 0b1010
+    /// ```
     BinaryLiteral,
+
+    /// Octodecimal literal.
+    ///
+    /// # Examples
+    /// ```
+    /// 0o1234
+    /// ```
     OctodecimalLiteral,
+
+    /// String literal.
+    ///
+    /// # Examples
+    /// ```
+    /// "string"
+    /// "string with \"escape\""
+    /// "string with line continuation\
+    /// "
+    /// ```
     StringLiteral,
+
+    /// Char literal.
+    ///
+    /// # Examples
+    /// ```
+    /// 'c'
+    /// ```
     CharLiteral,
+
+    /// Float literal.
+    ///
+    /// # Examples
+    /// ```
+    /// 1.0
+    /// 1.0e10
+    /// 1.0e-10
+    /// ```
     FloatLiteral,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Comment {
-    /// Line comments such as `// comment`
+    /// Line comments.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // comment
+    /// ```
     LineComment,
-    /// Block comments such as `/* comment */`
+
+    /// Block comments.
+    ///
+    /// # Examples
+    /// ```
+    /// /* comment */
+    /// ```
     BlockComment,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Operator {
-    /// ...
+    /// `...`
     Ellipses,
-    /// +
+
+    /// `+`
     Plus,
-    /// -
+
+    /// `-`
     Minus,
-    /// *
+
+    /// `*`
     Star,
-    /// /
+
+    /// `/`
     Slash,
-    /// %
+
+    /// `%`
     Percent,
-    /// &
+
+    /// `&`
     Ampersand,
-    /// |
+
+    /// `|`
     Bitor,
-    /// ^
+
+    /// `^`
     Bitxor,
-    /// >>
+
+    /// `>>`
     Shr,
-    /// >>>
+
+    /// `>>>`
     Ushr,
-    /// <<
+
+    /// `<<`
     Shl,
-    /// =
+
+    /// `=`
     Assign,
-    /// +=
+
+    /// `+=`
     AssignAdd,
-    /// -=
+
+    /// `-=`
     AssignSub,
-    /// *=
+
+    /// `*=`
     AssignMul,
-    /// /=
+
+    /// `/=`
     AssignDiv,
-    /// %=
+
+    /// `%=`
     AssignMod,
-    /// &=
+
+    /// `&=`
     AssignBitAnd,
-    /// |=
+
+    /// `|=`
     AssignBitOr,
-    /// ^=
+
+    /// `^=`
     AssignBitXor,
-    /// >>=
+
+    /// `>>=`
     AssignShr,
-    /// >>>=
+
+    /// `>>>=`
     AssignUshl,
-    /// <<=
+
+    /// `<<=`
     AssignShl,
-    /// ++
+
+    /// `++`
     Increment,
-    /// --
+
+    /// `--`
     Decrement,
-    /// ==
+
+    /// `==`
     Equals,
-    /// !=
+
+    /// `!=`
     NotEquals,
-    /// <
+
+    /// `<`
     Lt,
-    /// <=
+
+    /// `<=`
     Le,
-    /// >
+
+    /// `>`
     Gt,
-    /// >=
+
+    /// `>=`
     Ge,
-    /// &&
+
+    /// `&&`
     And,
-    /// ||
+
+    /// `||`
     Or,
-    /// !
+
+    /// `!`
     Not,
-    /// ~
+
+    /// `~`
     Tilde,
 }
 
