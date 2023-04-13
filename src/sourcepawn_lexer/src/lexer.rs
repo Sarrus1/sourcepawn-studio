@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use logos::{Lexer, Logos};
 use regex::Regex;
 
-use crate::{token::Token, token_kind::TokenKind};
+use crate::{token::Token, token_kind::TokenKind, PreprocDir};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Range {
@@ -12,11 +12,107 @@ pub struct Range {
     pub end_col: usize,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Eq)]
 pub struct Symbol {
     pub token_kind: TokenKind,
-    pub text: String,
+    text: Option<String>,
     pub range: Range,
+}
+
+impl PartialEq for Symbol {
+    fn eq(&self, other: &Self) -> bool {
+        self.token_kind == other.token_kind
+            && self.text() == other.text()
+            && self.range == other.range
+    }
+}
+
+impl Symbol {
+    pub fn new(token_kind: TokenKind, text: Option<&str>, range: Range) -> Self {
+        Self {
+            token_kind,
+            text: text.map(|s| s.to_string()),
+            range,
+        }
+    }
+
+    pub fn text(&self) -> String {
+        match &self.token_kind {
+            TokenKind::Operator(op) => return op.text(),
+            TokenKind::PreprocDir(dir) => {
+                if self.token_kind == TokenKind::PreprocDir(PreprocDir::MPragma) {
+                    return self.text.clone().unwrap();
+                }
+                return dir.text();
+            }
+            TokenKind::Comment(_) | TokenKind::Literal(_) | TokenKind::Identifier => {
+                return self.text.clone().unwrap()
+            }
+            TokenKind::Newline => "\n",
+            TokenKind::LineContinuation => "\\\n",
+            TokenKind::Bool => "bool",
+            TokenKind::Break => "break",
+            TokenKind::Case => "case",
+            TokenKind::Char => "char",
+            TokenKind::Class => "class",
+            TokenKind::Const => "const",
+            TokenKind::Continue => "continue",
+            TokenKind::Decl => "decl",
+            TokenKind::Default => "default",
+            TokenKind::Defined => "defined",
+            TokenKind::Delete => "delete",
+            TokenKind::Do => "do",
+            TokenKind::Else => "else",
+            TokenKind::Enum => "enum",
+            TokenKind::False => "false",
+            TokenKind::Float => "float",
+            TokenKind::For => "for",
+            TokenKind::Forward => "forward",
+            TokenKind::Functag => "functag",
+            TokenKind::Function => "function",
+            TokenKind::If => "if",
+            TokenKind::Int => "int",
+            TokenKind::InvalidFunction => "INVALID_FUNCTION",
+            TokenKind::Methodmap => "methodmap",
+            TokenKind::Native => "native",
+            TokenKind::Null => "null",
+            TokenKind::New => "new",
+            TokenKind::Object => "object",
+            TokenKind::Property => "property",
+            TokenKind::Public => "public",
+            TokenKind::Return => "return",
+            TokenKind::Sizeof => "sizeof",
+            TokenKind::Static => "static",
+            TokenKind::Stock => "stock",
+            TokenKind::Struct => "struct",
+            TokenKind::Switch => "switch",
+            TokenKind::This => "this",
+            TokenKind::True => "true",
+            TokenKind::Typedef => "typedef",
+            TokenKind::Typeset => "typeset",
+            TokenKind::Union => "union",
+            TokenKind::Using => "using",
+            TokenKind::ViewAs => "view_as",
+            TokenKind::Void => "void",
+            TokenKind::While => "while",
+            TokenKind::Nullable => "__nullable__",
+            TokenKind::Intrinsics => "__intrinsics__",
+            TokenKind::Semicolon => ";",
+            TokenKind::LBrace => "{",
+            TokenKind::RBrace => "}",
+            TokenKind::LParen => "(",
+            TokenKind::RParen => ")",
+            TokenKind::LBracket => "[",
+            TokenKind::RBracket => "]",
+            TokenKind::Comma => ",",
+            TokenKind::Qmark => "?",
+            TokenKind::Colon => ":",
+            TokenKind::Scope => "::",
+            TokenKind::Dot => ".",
+            TokenKind::Eof => "\0",
+        }
+        .to_string()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -60,7 +156,7 @@ impl Iterator for SourcepawnLexer<'_> {
             self.eof = true;
             return Some(Symbol {
                 token_kind: TokenKind::Eof,
-                text: "\0".to_string(),
+                text: None,
                 range: Range {
                     start_line: self.line_number,
                     end_line: self.line_number,
@@ -73,12 +169,27 @@ impl Iterator for SourcepawnLexer<'_> {
 
         let start_line = self.line_number;
         let start_col = self.lexer.span().start - self.line_span_start;
-        let text = self.lexer.slice().to_string();
+        let text = match token {
+            Token::Identifier
+            | Token::IntegerLiteral
+            | Token::HexLiteral
+            | Token::BinaryLiteral
+            | Token::OctodecimalLiteral
+            | Token::StringLiteral
+            | Token::CharLiteral
+            | Token::FloatLiteral
+            | Token::BlockComment
+            | Token::LineComment
+            | Token::MPragma => Some(self.lexer.slice().to_string()),
+            _ => None,
+        };
+
         match token {
             Token::StringLiteral | Token::BlockComment | Token::MPragma => {
                 if token == Token::MPragma {
                     self.in_preprocessor = true;
                 }
+                let text = text.clone().unwrap();
                 let line_breaks: Vec<_> = RE1.find_iter(text.as_str()).collect();
                 let line_continuations: Vec<_> = RE2.find_iter(text.as_str()).collect();
 

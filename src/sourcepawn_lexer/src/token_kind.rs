@@ -196,6 +196,50 @@ pub enum Operator {
     Tilde,
 }
 
+impl Operator {
+    pub fn text(&self) -> String {
+        match self {
+            self::Operator::Ellipses => "...",
+            self::Operator::Plus => "+",
+            self::Operator::Minus => "-",
+            self::Operator::Star => "*",
+            self::Operator::Slash => "/",
+            self::Operator::Percent => "%",
+            self::Operator::Ampersand => "&",
+            self::Operator::Bitor => "|",
+            self::Operator::Bitxor => "^",
+            self::Operator::Shr => ">>",
+            self::Operator::Ushr => ">>>",
+            self::Operator::Shl => "<<",
+            self::Operator::Assign => "=",
+            self::Operator::AssignAdd => "+=",
+            self::Operator::AssignSub => "-=",
+            self::Operator::AssignMul => "*=",
+            self::Operator::AssignDiv => "/=",
+            self::Operator::AssignMod => "%=",
+            self::Operator::AssignBitAnd => "&=",
+            self::Operator::AssignBitOr => "|=",
+            self::Operator::AssignBitXor => "^=",
+            self::Operator::AssignShr => ">>=",
+            self::Operator::AssignUshl => ">>>=",
+            self::Operator::AssignShl => "<<=",
+            self::Operator::Increment => "++",
+            self::Operator::Decrement => "--",
+            self::Operator::Equals => "==",
+            self::Operator::NotEquals => "!=",
+            self::Operator::Lt => "<",
+            self::Operator::Le => "<=",
+            self::Operator::Gt => ">",
+            self::Operator::Ge => ">=",
+            self::Operator::And => "&&",
+            self::Operator::Or => "||",
+            self::Operator::Not => "!",
+            self::Operator::Tilde => "~",
+        }
+        .to_string()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PreprocDir {
     /// `#define`
@@ -248,6 +292,31 @@ pub enum PreprocDir {
 
     /// `#undef`
     MUndef,
+}
+
+impl PreprocDir {
+    pub fn text(&self) -> String {
+        match self {
+            self::PreprocDir::MDefine => "#define",
+            self::PreprocDir::MDeprecate => "#deprecate",
+            self::PreprocDir::MElse => "#else",
+            self::PreprocDir::MEndif => "#elseif",
+            self::PreprocDir::MEndinput => "#endinput",
+            self::PreprocDir::MFile => "#file",
+            self::PreprocDir::MIf => "#if",
+            self::PreprocDir::MInclude => "#include",
+            self::PreprocDir::MLeaving => "#leaving",
+            self::PreprocDir::MLine => "__LINE__",
+            self::PreprocDir::MOptionalNewdecls => "#optional_newdecls",
+            self::PreprocDir::MOptionalSemi => "#optional_semicolons",
+            self::PreprocDir::MPragma => unimplemented!("#pragma have their own text."),
+            self::PreprocDir::MRequireNewdecls => "#require_newdecls",
+            self::PreprocDir::MRequireSemi => "#require_semicolons",
+            self::PreprocDir::MTryinclude => "#try_include",
+            self::PreprocDir::MUndef => "#undef",
+        }
+        .to_string()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
