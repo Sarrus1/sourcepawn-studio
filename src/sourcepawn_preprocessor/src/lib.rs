@@ -5,6 +5,8 @@ pub struct SourcepawnPreprocessor<'a> {
     lexer: SourcepawnLexer<'a>,
     current_line: String,
     prev_end: usize,
+    conditions_stack: Vec<bool>,
+    out: Vec<String>,
 }
 
 impl<'a> SourcepawnPreprocessor<'a> {
@@ -13,10 +15,11 @@ impl<'a> SourcepawnPreprocessor<'a> {
             lexer: SourcepawnLexer::new(input),
             current_line: "".to_string(),
             prev_end: 0,
+            conditions_stack: vec![],
+            out: vec![],
         }
     }
     pub fn preprocess_input(&mut self) -> String {
-        let mut out: Vec<String> = vec![];
         while let Some(symbol) = self.lexer.next() {
             match symbol.token_kind {
                 // TokenKind::MIf => {
@@ -31,13 +34,13 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 // }
                 TokenKind::Newline => {
                     self.push_ws(&symbol);
-                    out.push(self.current_line.clone());
+                    self.push_current_line();
                     self.current_line = "".to_string();
                     self.prev_end = 0;
                 }
                 TokenKind::Eof => {
                     self.push_ws(&symbol);
-                    out.push(self.current_line.clone());
+                    self.push_current_line();
                     break;
                 }
                 _ => {
@@ -48,12 +51,18 @@ impl<'a> SourcepawnPreprocessor<'a> {
             }
         }
 
-        out.join("\n")
+        self.out.join("\n")
     }
 
     fn push_ws(&mut self, symbol: &Symbol) {
         let ws_diff = symbol.range.start_col - self.prev_end;
         self.current_line.push_str(&" ".repeat(ws_diff));
+    }
+
+    fn push_current_line(&mut self) {
+        if self.conditions_stack.is_empty() {
+            self.out.push(self.current_line.clone());
+        }
     }
 }
 #[cfg(test)]
