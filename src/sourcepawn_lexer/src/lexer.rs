@@ -24,6 +24,7 @@ pub struct SourcePawnLexer<'a> {
     lexer: Lexer<'a, Token>,
     line_number: usize,
     line_span_start: usize,
+    in_preprocessor: bool,
 }
 
 impl SourcePawnLexer<'_> {
@@ -32,7 +33,12 @@ impl SourcePawnLexer<'_> {
             lexer: Token::lexer(input),
             line_number: 0,
             line_span_start: 0,
+            in_preprocessor: false,
         }
+    }
+
+    pub fn in_preprocessor(&self) -> bool {
+        self.in_preprocessor
     }
 }
 
@@ -53,6 +59,9 @@ impl Iterator for SourcePawnLexer<'_> {
         let text = self.lexer.slice().to_string();
         match token {
             Token::StringLiteral | Token::BlockComment | Token::MPragma => {
+                if token == Token::MPragma {
+                    self.in_preprocessor = true;
+                }
                 let line_breaks: Vec<_> = RE1.find_iter(text.as_str()).collect();
                 let line_continuations: Vec<_> = RE2.find_iter(text.as_str()).collect();
 
@@ -60,11 +69,32 @@ impl Iterator for SourcePawnLexer<'_> {
                     self.line_number += line_breaks.len();
                     self.line_span_start = self.lexer.span().start + last.end();
                 } else if let Some(last) = line_breaks.last() {
+                    self.in_preprocessor = false;
                     self.line_number += line_breaks.len();
                     self.line_span_start = self.lexer.span().start + last.start();
                 }
             }
-            Token::LineContinuation | Token::Newline => {
+            Token::MDefine
+            | Token::MDeprecate
+            | Token::MIf
+            | Token::MElse
+            | Token::MEndinput
+            | Token::MFile
+            | Token::MOptionalNewdecls
+            | Token::MOptionalSemi
+            | Token::MRequireNewdecls
+            | Token::MRequireSemi
+            | Token::MTryinclude
+            | Token::MUndef
+            | Token::MEndif
+            | Token::MInclude
+            | Token::MLeaving => self.in_preprocessor = true,
+            Token::LineContinuation => {
+                self.line_number += 1;
+                self.line_span_start = self.lexer.span().end;
+            }
+            Token::Newline => {
+                self.in_preprocessor = false;
                 self.line_number += 1;
                 self.line_span_start = self.lexer.span().end;
             }

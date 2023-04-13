@@ -9,8 +9,11 @@ fn define_simple() {
 "#;
 
     let mut lexer = SourcePawnLexer::new(input);
+    assert!(!lexer.in_preprocessor());
     assert_token_eq!(lexer, TokenKind::MDefine, "#define", 0, 0, 0, 7);
+    assert!(lexer.in_preprocessor());
     assert_token_eq!(lexer, TokenKind::Identifier, "FOO", 0, 8, 0, 11);
+    assert!(lexer.in_preprocessor());
     assert_token_eq!(
         lexer,
         TokenKind::Literal(Literal::IntegerLiteral),
@@ -20,7 +23,9 @@ fn define_simple() {
         0,
         13
     );
+    assert!(lexer.in_preprocessor());
     assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 13, 1, 0);
+    assert!(!lexer.in_preprocessor());
 }
 
 #[test]
