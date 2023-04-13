@@ -1,52 +1,74 @@
-use sourcepawn_lexer::{SourcePawnLexer, Symbol, TokenKind};
+use sourcepawn_lexer::{SourcepawnLexer, Symbol, TokenKind};
 
-pub fn preprocess_input(input: &str) -> String {
-    let mut out: Vec<String> = vec![];
-    let mut lexer = SourcePawnLexer::new(input);
-    let mut prev_end = 0;
-    let mut current_line = "".to_string();
-    while let Some(symbol) = lexer.next() {
-        match symbol.token_kind {
-            // TokenKind::MIf => {
-            //     let mut if_condition = IfCondition::default();
-            //     while let Some(symbol) = lexer.next() {
-            //         if symbol.token_kind == TokenKind::Newline {
-            //             break;
-            //         }
-            //         if_condition.symbols.push(symbol);
-            //     }
-            //     println!("{:?}", if_condition.evaluate());
-            // }
-            TokenKind::Newline => {
-                let ws_diff = symbol.range.start_col - prev_end;
-                current_line.push_str(&" ".repeat(ws_diff));
-                out.push(current_line);
-                current_line = "".to_string();
-                prev_end = 0;
-            }
-            _ => {
-                let ws_diff = symbol.range.start_col - prev_end;
-                current_line.push_str(&" ".repeat(ws_diff));
-                prev_end = symbol.range.end_col;
-                current_line.push_str(&symbol.text);
-            }
-        }
-    }
-    out.push(current_line);
-
-    out.join("\n")
+#[derive(Debug, Clone)]
+pub struct SourcepawnPreprocessor<'a> {
+    lexer: SourcepawnLexer<'a>,
+    current_line: String,
+    prev_end: usize,
 }
 
+impl<'a> SourcepawnPreprocessor<'a> {
+    pub fn new(input: &'a str) -> Self {
+        Self {
+            lexer: SourcepawnLexer::new(input),
+            current_line: "".to_string(),
+            prev_end: 0,
+        }
+    }
+    pub fn preprocess_input(&mut self) -> String {
+        let mut out: Vec<String> = vec![];
+        while let Some(symbol) = self.lexer.next() {
+            match symbol.token_kind {
+                // TokenKind::MIf => {
+                //     let mut if_condition = IfCondition::default();
+                //     while let Some(symbol) = lexer.next() {
+                //         if symbol.token_kind == TokenKind::Newline {
+                //             break;
+                //         }
+                //         if_condition.symbols.push(symbol);
+                //     }
+                //     println!("{:?}", if_condition.evaluate());
+                // }
+                TokenKind::Newline => {
+                    self.push_ws(&symbol);
+                    out.push(self.current_line.clone());
+                    self.current_line = "".to_string();
+                    self.prev_end = 0;
+                }
+                TokenKind::Eof => {
+                    self.push_ws(&symbol);
+                    out.push(self.current_line.clone());
+                    break;
+                }
+                _ => {
+                    self.push_ws(&symbol);
+                    self.prev_end = symbol.range.end_col;
+                    self.current_line.push_str(&symbol.text());
+                }
+            }
+        }
+
+        out.join("\n")
+    }
+
+    fn push_ws(&mut self, symbol: &Symbol) {
+        let ws_diff = symbol.range.start_col - self.prev_end;
+        self.current_line.push_str(&" ".repeat(ws_diff));
+    }
+}
 #[cfg(test)]
 mod test {
-    use crate::preprocess_input;
+    use crate::SourcepawnPreprocessor;
 
     #[test]
     fn no_preprocessor_directives() {
         let input = r#"
-int foo;
-int bar;"#;
-        assert_eq!(preprocess_input(input), input);
+        int foo;
+        int bar;
+        "#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), input);
     }
 }
 
