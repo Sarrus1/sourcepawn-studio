@@ -93,8 +93,6 @@ pub enum Operator {
     Not,
     /// ~
     Tilde,
-    /// ?
-    Qmark,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -177,6 +175,7 @@ pub enum TokenKind {
     LBracket,
     RBracket,
     Comma,
+    Qmark,
     Colon,
     Scope,
     Dot,
@@ -307,7 +306,7 @@ impl TryFrom<Token> for TokenKind {
             Token::Comma => TokenKind::Comma,
             Token::Not => TokenKind::Operator(Operator::Not),
             Token::Tilde => TokenKind::Operator(Operator::Tilde),
-            Token::Qmark => TokenKind::Operator(Operator::Qmark),
+            Token::Qmark => TokenKind::Qmark,
             Token::Colon => TokenKind::Colon,
             Token::Scope => TokenKind::Scope,
             Token::Dot => TokenKind::Dot,
