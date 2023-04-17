@@ -230,4 +230,51 @@ mod test {
         let mut preprocessor = SourcepawnPreprocessor::new(input);
         assert_eq!(preprocessor.preprocess_input(), output);
     }
+
+    #[test]
+    fn if_directive_expansion_1() {
+        let input = r#"#define FOO 1
+#if FOO
+    int foo;
+#endif"#;
+        let output = r#"#define FOO 1
+
+    int foo;
+      "#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
+    fn if_directive_expansion_2() {
+        let input = r#"#define FOO 1
+#if FOO == 1
+    int foo;
+#endif"#;
+        let output = r#"#define FOO 1
+
+    int foo;
+      "#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
+    fn if_directive_nested_expansion_1() {
+        let input = r#"#define FOO BAR
+#define BAR 1
+#if FOO == 1
+    int foo;
+#endif"#;
+        let output = r#"#define FOO BAR
+#define BAR 1
+
+    int foo;
+      "#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
 }

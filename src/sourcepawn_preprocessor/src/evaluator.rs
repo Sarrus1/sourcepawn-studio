@@ -27,7 +27,14 @@ impl<'a> IfCondition<'a> {
         let mut operator_stack: Vec<PreOperator> = vec![];
         let mut may_be_unary = true;
         let mut looking_for_defined = false;
-        for symbol in &self.symbols {
+        let mut symbol_iter = self.symbols.iter().peekable();
+        let mut expansion_stack = vec![];
+        while symbol_iter.peek().is_some() || !expansion_stack.is_empty() {
+            let symbol = if !expansion_stack.is_empty() {
+                expansion_stack.pop().unwrap()
+            } else {
+                symbol_iter.next().unwrap()
+            };
             match &symbol.token_kind {
                 TokenKind::LParen => {
                     operator_stack.push(PreOperator::LParen);
@@ -41,7 +48,10 @@ impl<'a> IfCondition<'a> {
                         looking_for_defined = false;
                         may_be_unary = false;
                     } else {
-                        todo!("Identifier: {:?}", symbol.text());
+                        // FIXME: Handle infinite recursion.
+                        // TODO: Handle function-like macros.
+                        // TODO: Handle mayebe_unary.
+                        expansion_stack.extend(self.defines_map.get(&symbol.text()).unwrap());
                     }
                 }
                 TokenKind::RParen => {
