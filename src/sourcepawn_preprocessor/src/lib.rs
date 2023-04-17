@@ -1,3 +1,4 @@
+use fxhash::FxHashMap;
 use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
 
 #[derive(Debug, Clone)]
@@ -7,6 +8,7 @@ pub struct SourcepawnPreprocessor<'a> {
     prev_end: usize,
     conditions_stack: Vec<bool>,
     out: Vec<String>,
+    defines_map: FxHashMap<String, Vec<Symbol>>,
 }
 
 impl<'a> SourcepawnPreprocessor<'a> {
@@ -17,22 +19,89 @@ impl<'a> SourcepawnPreprocessor<'a> {
             prev_end: 0,
             conditions_stack: vec![],
             out: vec![],
+            defines_map: FxHashMap::default(),
         }
     }
     pub fn preprocess_input(&mut self) -> String {
         while let Some(symbol) = self.lexer.next() {
-            match symbol.token_kind {
-                TokenKind::PreprocDir(PreprocDir::MIf) => {
-                    let mut if_condition = IfCondition::default();
-                    while self.lexer.in_preprocessor() {
-                        if let Some(symbol) = self.lexer.next() {
-                            if_condition.symbols.push(symbol);
-                        } else {
-                            break;
+            if !self.conditions_stack.is_empty() && !*self.conditions_stack.last().unwrap() {
+                match symbol.token_kind {
+                    TokenKind::PreprocDir(dir) => match dir {
+                        PreprocDir::MEndif => {
+                            self.conditions_stack.pop();
                         }
+                        PreprocDir::MElse => {
+                            let last = self.conditions_stack.pop().unwrap();
+                            self.conditions_stack.push(!last);
+                        }
+                        _ => todo!(),
+                    },
+                    TokenKind::Newline => {
+                        self.push_current_line();
+                        self.current_line = "".to_string();
+                        self.prev_end = 0;
                     }
-                    eprintln!("Evaluate {}", if_condition.evaluate());
+                    _ => (),
                 }
+                continue;
+            }
+            match &symbol.token_kind {
+                TokenKind::PreprocDir(dir) => match dir {
+                    PreprocDir::MIf => {
+                        let line_nb = symbol.range.start_line;
+                        let mut if_condition = IfCondition::new(&self.defines_map);
+                        while self.lexer.in_preprocessor() {
+                            if let Some(symbol) = self.lexer.next() {
+                                if_condition.symbols.push(symbol);
+                            } else {
+                                break;
+                            }
+                        }
+                        self.conditions_stack.push(if_condition.evaluate());
+                        let line_diff =
+                            if_condition.symbols.last().unwrap().range.end_line - line_nb;
+                        for _ in 0..line_diff {
+                            self.out.push(String::new());
+                        }
+                        self.prev_end = 0;
+                    }
+                    PreprocDir::MDefine => {
+                        self.push_ws(&symbol);
+                        self.prev_end = symbol.range.end_col;
+                        self.current_line.push_str(&symbol.text());
+                        let mut define_name = String::new();
+                        let mut define_value = vec![];
+                        while self.lexer.in_preprocessor() {
+                            if let Some(symbol) = self.lexer.next() {
+                                self.push_ws(&symbol);
+                                self.prev_end = symbol.range.end_col;
+                                if symbol.token_kind != TokenKind::Newline {
+                                    self.current_line.push_str(&symbol.text());
+                                }
+                                if define_name.is_empty() {
+                                    if TokenKind::Identifier == symbol.token_kind {
+                                        define_name = symbol.text();
+                                    } else {
+                                        // We are looking for the define's name.
+                                        continue;
+                                    }
+                                } else {
+                                    define_value.push(symbol);
+                                }
+                            } else {
+                                break;
+                            }
+                        }
+                        self.push_current_line();
+                        self.current_line = "".to_string();
+                        self.prev_end = 0;
+                        self.defines_map.insert(define_name, define_value);
+                    }
+                    PreprocDir::MEndif => {
+                        self.conditions_stack.pop();
+                    }
+                    _ => todo!(),
+                },
                 TokenKind::Newline => {
                     self.push_ws(&symbol);
                     self.push_current_line();
@@ -61,18 +130,24 @@ impl<'a> SourcepawnPreprocessor<'a> {
     }
 
     fn push_current_line(&mut self) {
-        if self.conditions_stack.is_empty() {
-            self.out.push(self.current_line.clone());
-        }
+        self.out.push(self.current_line.clone());
     }
 }
 
-#[derive(Default, Debug)]
-pub struct IfCondition {
+#[derive(Debug)]
+pub struct IfCondition<'a> {
     symbols: Vec<Symbol>,
+    defines_map: &'a FxHashMap<String, Vec<Symbol>>,
 }
 
-impl IfCondition {
+impl<'a> IfCondition<'a> {
+    pub fn new(defines_map: &'a FxHashMap<String, Vec<Symbol>>) -> Self {
+        Self {
+            symbols: vec![],
+            defines_map,
+        }
+    }
+
     pub fn evaluate(&self) -> bool {
         let val = self.yard();
         val != 0
@@ -82,11 +157,23 @@ impl IfCondition {
         let mut output_queue: Vec<i32> = vec![];
         let mut operator_stack: Vec<PreOperator> = vec![];
         let mut may_be_unary = true;
+        let mut looking_for_defined = false;
         for symbol in &self.symbols {
             match &symbol.token_kind {
                 TokenKind::LParen => {
                     operator_stack.push(PreOperator::LParen);
-                    may_be_unary = true;
+                    if !looking_for_defined {
+                        may_be_unary = true;
+                    }
+                }
+                TokenKind::Identifier => {
+                    if looking_for_defined {
+                        output_queue.push(self.defines_map.contains_key(&symbol.text()).into());
+                        looking_for_defined = false;
+                        may_be_unary = false;
+                    } else {
+                        todo!("Identifier: {:?}", symbol.text());
+                    }
                 }
                 TokenKind::RParen => {
                     while let Some(top) = operator_stack.last() {
@@ -98,6 +185,9 @@ impl IfCondition {
                             process_op(&mut output_queue, &operator_stack.pop().unwrap());
                         }
                     }
+                }
+                TokenKind::Defined => {
+                    looking_for_defined = true;
                 }
                 TokenKind::Operator(op) => {
                     let mut cur_op = PreOperator::from_op(op);
@@ -309,7 +399,8 @@ impl PreOperator {
 
 #[cfg(test)]
 mod test {
-    use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
+    use fxhash::FxHashMap;
+    use sourcepawn_lexer::{SourcepawnLexer, Symbol, TokenKind};
 
     use crate::{IfCondition, SourcepawnPreprocessor};
 
@@ -324,10 +415,11 @@ mod test {
         assert_eq!(preprocessor.preprocess_input(), input);
     }
 
-    fn build_if_condition(input: &str) -> IfCondition {
+    fn evaluate_if_condition(input: &str) -> bool {
         let mut lexer = SourcepawnLexer::new(input);
-        let mut if_condition = IfCondition::default();
-        while let Some(symbol) = lexer.next() {
+        let defines_map: FxHashMap<String, Vec<Symbol>> = FxHashMap::default();
+        let mut if_condition = IfCondition::new(&defines_map);
+        if let Some(symbol) = lexer.next() {
             if TokenKind::PreprocDir(sourcepawn_lexer::PreprocDir::MIf) == symbol.token_kind {
                 while lexer.in_preprocessor() {
                     if let Some(symbol) = lexer.next() {
@@ -339,110 +431,196 @@ mod test {
             }
         }
 
-        if_condition
+        if_condition.evaluate()
     }
 
     #[test]
     fn if_directive_simple_true() {
         let input = r#"#if 1"#;
 
-        let if_condition = build_if_condition(input);
-        assert!(if_condition.evaluate());
+        assert!(evaluate_if_condition(input));
     }
 
     #[test]
     fn if_directive_simple_false() {
         let input = r#"#if 0"#;
 
-        let if_condition = build_if_condition(input);
-        assert!(!if_condition.evaluate());
+        assert!(!evaluate_if_condition(input));
     }
 
     #[test]
     fn if_directive_simple_true_with_ws() {
         let input = r#"#if 1 "#;
 
-        let if_condition = build_if_condition(input);
-        assert!(if_condition.evaluate());
+        assert!(evaluate_if_condition(input));
     }
 
     #[test]
     fn if_directive_simple_true_parenthesis() {
         let input = r#"#if (1)"#;
 
-        let if_condition = build_if_condition(input);
-        assert!(if_condition.evaluate());
+        assert!(evaluate_if_condition(input));
     }
 
     #[test]
     fn if_directive_simple_binary_true() {
         let input = r#"#if 1+1"#;
 
-        let if_condition = build_if_condition(input);
-        assert!(if_condition.evaluate());
+        assert!(evaluate_if_condition(input));
     }
 
     #[test]
     fn if_directive_simple_binary_false() {
         let input = r#"#if 1-1"#;
 
-        let if_condition = build_if_condition(input);
-        assert!(!if_condition.evaluate());
+        assert!(!evaluate_if_condition(input));
     }
 
     #[test]
     fn if_directive_simple_unary_false() {
         let input = r#"#if !1"#;
 
-        let if_condition = build_if_condition(input);
-        assert!(!if_condition.evaluate());
+        assert!(!evaluate_if_condition(input));
     }
 
     #[test]
     fn if_directive_equality_true() {
         let input = r#"#if 1 == 1"#;
 
-        let if_condition = build_if_condition(input);
-        assert!(if_condition.evaluate());
+        assert!(evaluate_if_condition(input));
     }
 
     #[test]
     fn if_directive_difference_true() {
         let input = r#"#if 1 != 0"#;
 
-        let if_condition = build_if_condition(input);
-        assert!(if_condition.evaluate());
+        assert!(evaluate_if_condition(input));
     }
 
     #[test]
     fn if_directive_equality_false() {
         let input = r#"#if 1 == 0"#;
 
-        let if_condition = build_if_condition(input);
-        assert!(!if_condition.evaluate());
+        assert!(!evaluate_if_condition(input));
     }
 
     #[test]
     fn if_directive_difference_false() {
         let input = r#"#if 1 != 1"#;
 
-        let if_condition = build_if_condition(input);
-        assert!(!if_condition.evaluate());
+        assert!(!evaluate_if_condition(input));
     }
 
     #[test]
     fn if_directive_complexe_expression_1() {
         let input = r#"#if (1 + 1) && (0 + 0)"#;
 
-        let if_condition = build_if_condition(input);
-        assert!(!if_condition.evaluate());
+        assert!(!evaluate_if_condition(input));
     }
 
     #[test]
     fn if_directive_complexe_expression_2() {
         let input = r#"#if (true && 1) || (true + 1)"#;
 
-        let if_condition = build_if_condition(input);
-        assert!(if_condition.evaluate());
+        assert!(evaluate_if_condition(input));
+    }
+
+    #[test]
+    fn if_directive_defined() {
+        let input = r#"#define FOO
+#if defined FOO
+    int foo;
+#endif"#;
+        let output = r#"#define FOO
+
+    int foo;
+      "#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
+    fn if_directive_defined_complex_1() {
+        let input = r#"#define FOO
+#if defined FOO && defined BAR
+    int foo;
+    int bar;
+#endif"#;
+        let output = r#"#define FOO
+
+
+
+      "#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
+    fn if_directive_defined_complex_2() {
+        let input = r#"#define FOO
+#define BAR
+#if defined FOO && defined BAR
+    int foo;
+    int bar;
+#endif"#;
+        let output = r#"#define FOO
+#define BAR
+
+    int foo;
+    int bar;
+      "#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
+    fn if_directive_defined_complex_3() {
+        let input = r#"#define FOO
+#define BAR
+#if defined FOO
+    int foo;
+    #if defined BAR
+    int bar;
+    #endif
+#endif"#;
+        let output = r#"#define FOO
+#define BAR
+
+    int foo;
+
+    int bar;
+          
+      "#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
+    fn if_directive_defined_complex_4() {
+        let input = r#"#define FOO
+#if defined FOO
+    int foo;
+    #if defined BAZ
+    int bar;
+    #else
+    int baz;
+    #endif
+#endif"#;
+        let output = r#"#define FOO
+
+    int foo;
+
+
+         
+    int baz;
+          
+      "#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
     }
 }
