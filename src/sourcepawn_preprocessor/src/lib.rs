@@ -1,5 +1,8 @@
 use fxhash::FxHashMap;
+use preprocessor_operator::PreOperator;
 use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
+
+mod preprocessor_operator;
 
 #[derive(Debug, Clone)]
 pub struct SourcepawnPreprocessor<'a> {
@@ -182,7 +185,7 @@ impl<'a> IfCondition<'a> {
                             may_be_unary = false;
                             break;
                         } else {
-                            process_op(&mut output_queue, &operator_stack.pop().unwrap());
+                            operator_stack.pop().unwrap().process_op(&mut output_queue);
                         }
                     }
                 }
@@ -207,7 +210,7 @@ impl<'a> IfCondition<'a> {
                         if (!cur_op.is_unary() && top.priority() <= cur_op.priority())
                             || (cur_op.is_unary() && top.priority() < cur_op.priority())
                         {
-                            process_op(&mut output_queue, &operator_stack.pop().unwrap());
+                            &operator_stack.pop().unwrap().process_op(&mut output_queue);
                         } else {
                             break;
                         }
@@ -235,15 +238,11 @@ impl<'a> IfCondition<'a> {
             }
         }
         while !operator_stack.is_empty() {
-            process_op(&mut output_queue, &operator_stack.pop().unwrap());
+            operator_stack.pop().unwrap().process_op(&mut output_queue);
         }
 
         *output_queue.last().unwrap()
     }
-}
-
-fn to_bool<T: std::cmp::PartialEq<i32>>(value: T) -> bool {
-    value != 0
 }
 
 fn is_unary(op: &Operator) -> bool {
@@ -251,150 +250,6 @@ fn is_unary(op: &Operator) -> bool {
         op,
         Operator::Not | Operator::Tilde | Operator::Minus | Operator::Plus
     )
-}
-
-fn process_op(stack: &mut Vec<i32>, op: &PreOperator) {
-    if op.is_unary() {
-        let right = stack.pop().unwrap_or(0);
-        let result: i32 = match op {
-            PreOperator::Not => (!to_bool(right)).into(),
-            PreOperator::Tilde => !right,
-            PreOperator::Negate => -right,
-            PreOperator::Confirm => right,
-            _ => unreachable!(),
-        };
-        stack.push(result);
-        return;
-    }
-    let right = stack.pop().unwrap_or(0);
-    let left = stack.pop().unwrap_or(0);
-    let result: i32 = match op {
-        PreOperator::Equals => (left == right).into(),
-        PreOperator::NotEquals => (left != right).into(),
-        PreOperator::Lt => (left < right).into(),
-        PreOperator::Gt => (left > right).into(),
-        PreOperator::Le => (left <= right).into(),
-        PreOperator::Ge => (left >= right).into(),
-        PreOperator::Plus => left + right,
-        PreOperator::Minus => left - right,
-        PreOperator::Slash => left / right,
-        PreOperator::Star => left * right,
-        PreOperator::And => (to_bool(left) && to_bool(right)).into(),
-        PreOperator::Or => (to_bool(left) || to_bool(right)).into(),
-        PreOperator::Bitor => left | right,
-        PreOperator::Bitxor => left ^ right,
-        PreOperator::Ampersand => left & right,
-        PreOperator::Shl => left << right,
-        PreOperator::Shr => left >> right,
-        PreOperator::Ushr => (left as u32 >> right as u32) as i32,
-        PreOperator::Percent => left % right,
-        PreOperator::Defined => todo!(),
-        PreOperator::Qmark => todo!(),
-        PreOperator::Not
-        | PreOperator::Tilde
-        | PreOperator::Negate
-        | PreOperator::Confirm
-        | PreOperator::LParen
-        | PreOperator::RParen => unreachable!(),
-    };
-    stack.push(result);
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum PreOperator {
-    Not,
-    Tilde,
-
-    /// Unary `-`.
-    Negate,
-
-    /// Unary `+`.
-    Confirm,
-    Star,
-    Slash,
-    Percent,
-    Minus,
-    Plus,
-    Shl,
-    Shr,
-    Ushr,
-    Ampersand,
-    Bitxor,
-    Bitor,
-    Lt,
-    Le,
-    Gt,
-    Ge,
-    Equals,
-    NotEquals,
-    And,
-    Or,
-    Qmark,
-    Defined,
-    LParen,
-    RParen,
-}
-
-impl PreOperator {
-    fn from_op(op: &Operator) -> Self {
-        match op {
-            Operator::Not => PreOperator::Not,
-            Operator::Tilde => PreOperator::Tilde,
-            Operator::Star => PreOperator::Star,
-            Operator::Slash => PreOperator::Slash,
-            Operator::Percent => PreOperator::Percent,
-            Operator::Minus => PreOperator::Minus,
-            Operator::Plus => PreOperator::Plus,
-            Operator::Shl => PreOperator::Shl,
-            Operator::Shr => PreOperator::Shr,
-            Operator::Ushr => PreOperator::Ushr,
-            Operator::Ampersand => PreOperator::Ampersand,
-            Operator::Bitxor => PreOperator::Bitxor,
-            Operator::Bitor => PreOperator::Bitor,
-            Operator::Lt => PreOperator::Lt,
-            Operator::Le => PreOperator::Le,
-            Operator::Gt => PreOperator::Gt,
-            Operator::Ge => PreOperator::Ge,
-            Operator::Equals => PreOperator::Equals,
-            Operator::NotEquals => PreOperator::NotEquals,
-            Operator::And => PreOperator::And,
-            Operator::Or => PreOperator::Or,
-            _ => todo!("Operator: {:?}", op),
-        }
-    }
-
-    fn is_unary(&self) -> bool {
-        matches!(
-            self,
-            PreOperator::Not
-                | PreOperator::Tilde
-                | PreOperator::Negate
-                | PreOperator::Confirm
-                | PreOperator::Defined
-        )
-    }
-
-    fn priority(&self) -> i32 {
-        match self {
-            PreOperator::Not
-            | PreOperator::Tilde
-            | PreOperator::Negate
-            | PreOperator::Confirm
-            | PreOperator::Defined => 2,
-            PreOperator::Star | PreOperator::Slash | PreOperator::Percent => 3,
-            PreOperator::Minus | PreOperator::Plus => 4,
-            PreOperator::Shl | PreOperator::Shr | PreOperator::Ushr => 5,
-            PreOperator::Ampersand => 6,
-            PreOperator::Bitxor => 7,
-            PreOperator::Bitor => 8,
-            PreOperator::Lt | PreOperator::Le | PreOperator::Gt | PreOperator::Ge => 9,
-            PreOperator::Equals | PreOperator::NotEquals => 10,
-            PreOperator::And => 11,
-            PreOperator::Or => 12,
-            PreOperator::Qmark => 13,
-            PreOperator::LParen | PreOperator::RParen => panic!("Invalid operator: {:?}", &self),
-        }
-    }
 }
 
 #[cfg(test)]
