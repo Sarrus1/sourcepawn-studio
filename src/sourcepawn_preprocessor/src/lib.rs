@@ -27,6 +27,8 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     while self.lexer.in_preprocessor() {
                         if let Some(symbol) = self.lexer.next() {
                             if_condition.symbols.push(symbol);
+                        } else {
+                            break;
                         }
                     }
                     eprintln!("Evaluate {}", if_condition.evaluate());
@@ -64,31 +66,6 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }
     }
 }
-#[cfg(test)]
-mod test {
-    use crate::SourcepawnPreprocessor;
-
-    #[test]
-    fn no_preprocessor_directives() {
-        let input = r#"
-        int foo;
-        int bar;
-        "#;
-
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), input);
-    }
-
-    #[test]
-    fn if_directive() {
-        let input = r#"
-        #if (1+1 == 2) && (1+1==2)
-        "#;
-
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        preprocessor.preprocess_input();
-    }
-}
 
 #[derive(Default, Debug)]
 pub struct IfCondition {
@@ -98,7 +75,6 @@ pub struct IfCondition {
 impl IfCondition {
     pub fn evaluate(&self) -> bool {
         let val = self.yard();
-        eprintln!("Val: {}", val);
         val != 0
     }
 
@@ -149,9 +125,6 @@ impl IfCondition {
                     operator_stack.push(cur_op);
                     may_be_unary = true;
                 }
-                // TokenKind::True | TokenKind::False | TokenKind::Literal(_) => {
-                //     output_queue.push(symbol.clone())
-                // }
                 TokenKind::True => {
                     output_queue.push(1);
                     may_be_unary = false;
@@ -167,11 +140,10 @@ impl IfCondition {
                     }
                     _ => todo!("Literal: {:?}", lit),
                 },
-                TokenKind::Comment(_) | TokenKind::Newline => (),
+                TokenKind::Comment(_) | TokenKind::Newline | TokenKind::Eof => (),
                 _ => todo!("TokenKind: {:?}", &symbol.token_kind),
             }
         }
-        eprintln!("Output: {:?}", output_queue);
         while !operator_stack.is_empty() {
             process_op(&mut output_queue, &operator_stack.pop().unwrap());
         }
@@ -192,6 +164,18 @@ fn is_unary(op: &Operator) -> bool {
 }
 
 fn process_op(stack: &mut Vec<i32>, op: &PreOperator) {
+    if op.is_unary() {
+        let right = stack.pop().unwrap_or(0);
+        let result: i32 = match op {
+            PreOperator::Not => (!to_bool(right)).into(),
+            PreOperator::Tilde => !right,
+            PreOperator::Negate => -right,
+            PreOperator::Confirm => right,
+            _ => unreachable!(),
+        };
+        stack.push(result);
+        return;
+    }
     let right = stack.pop().unwrap_or(0);
     let left = stack.pop().unwrap_or(0);
     let result: i32 = match op {
@@ -207,7 +191,21 @@ fn process_op(stack: &mut Vec<i32>, op: &PreOperator) {
         PreOperator::Star => left * right,
         PreOperator::And => (to_bool(left) && to_bool(right)).into(),
         PreOperator::Or => (to_bool(left) || to_bool(right)).into(),
-        _ => todo!("Operator: {:?}", op),
+        PreOperator::Bitor => left | right,
+        PreOperator::Bitxor => left ^ right,
+        PreOperator::Ampersand => left & right,
+        PreOperator::Shl => left << right,
+        PreOperator::Shr => left >> right,
+        PreOperator::Ushr => (left as u32 >> right as u32) as i32,
+        PreOperator::Percent => left % right,
+        PreOperator::Defined => todo!(),
+        PreOperator::Qmark => todo!(),
+        PreOperator::Not
+        | PreOperator::Tilde
+        | PreOperator::Negate
+        | PreOperator::Confirm
+        | PreOperator::LParen
+        | PreOperator::RParen => unreachable!(),
     };
     stack.push(result);
 }
@@ -306,5 +304,145 @@ impl PreOperator {
             PreOperator::Qmark => 13,
             PreOperator::LParen | PreOperator::RParen => panic!("Invalid operator: {:?}", &self),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
+
+    use crate::{IfCondition, SourcepawnPreprocessor};
+
+    #[test]
+    fn no_preprocessor_directives() {
+        let input = r#"
+        int foo;
+        int bar;
+        "#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), input);
+    }
+
+    fn build_if_condition(input: &str) -> IfCondition {
+        let mut lexer = SourcepawnLexer::new(input);
+        let mut if_condition = IfCondition::default();
+        while let Some(symbol) = lexer.next() {
+            if TokenKind::PreprocDir(sourcepawn_lexer::PreprocDir::MIf) == symbol.token_kind {
+                while lexer.in_preprocessor() {
+                    if let Some(symbol) = lexer.next() {
+                        if_condition.symbols.push(symbol);
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+
+        if_condition
+    }
+
+    #[test]
+    fn if_directive_simple_true() {
+        let input = r#"#if 1"#;
+
+        let if_condition = build_if_condition(input);
+        assert!(if_condition.evaluate());
+    }
+
+    #[test]
+    fn if_directive_simple_false() {
+        let input = r#"#if 0"#;
+
+        let if_condition = build_if_condition(input);
+        assert!(!if_condition.evaluate());
+    }
+
+    #[test]
+    fn if_directive_simple_true_with_ws() {
+        let input = r#"#if 1 "#;
+
+        let if_condition = build_if_condition(input);
+        assert!(if_condition.evaluate());
+    }
+
+    #[test]
+    fn if_directive_simple_true_parenthesis() {
+        let input = r#"#if (1)"#;
+
+        let if_condition = build_if_condition(input);
+        assert!(if_condition.evaluate());
+    }
+
+    #[test]
+    fn if_directive_simple_binary_true() {
+        let input = r#"#if 1+1"#;
+
+        let if_condition = build_if_condition(input);
+        assert!(if_condition.evaluate());
+    }
+
+    #[test]
+    fn if_directive_simple_binary_false() {
+        let input = r#"#if 1-1"#;
+
+        let if_condition = build_if_condition(input);
+        assert!(!if_condition.evaluate());
+    }
+
+    #[test]
+    fn if_directive_simple_unary_false() {
+        let input = r#"#if !1"#;
+
+        let if_condition = build_if_condition(input);
+        assert!(!if_condition.evaluate());
+    }
+
+    #[test]
+    fn if_directive_equality_true() {
+        let input = r#"#if 1 == 1"#;
+
+        let if_condition = build_if_condition(input);
+        assert!(if_condition.evaluate());
+    }
+
+    #[test]
+    fn if_directive_difference_true() {
+        let input = r#"#if 1 != 0"#;
+
+        let if_condition = build_if_condition(input);
+        assert!(if_condition.evaluate());
+    }
+
+    #[test]
+    fn if_directive_equality_false() {
+        let input = r#"#if 1 == 0"#;
+
+        let if_condition = build_if_condition(input);
+        assert!(!if_condition.evaluate());
+    }
+
+    #[test]
+    fn if_directive_difference_false() {
+        let input = r#"#if 1 != 1"#;
+
+        let if_condition = build_if_condition(input);
+        assert!(!if_condition.evaluate());
+    }
+
+    #[test]
+    fn if_directive_complexe_expression_1() {
+        let input = r#"#if (1 + 1) && (0 + 0)"#;
+
+        let if_condition = build_if_condition(input);
+        assert!(!if_condition.evaluate());
+    }
+
+    #[test]
+    fn if_directive_complexe_expression_2() {
+        let input = r#"#if (true && 1) || (true + 1)"#;
+
+        let if_condition = build_if_condition(input);
+        assert!(if_condition.evaluate());
     }
 }
