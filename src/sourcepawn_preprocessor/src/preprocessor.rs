@@ -122,13 +122,16 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     let last = self.conditions_stack.pop().unwrap();
                     self.conditions_stack.push(!last);
                 }
+                // TODO: Handle #elseif.
                 _ => todo!(),
             },
             TokenKind::Newline => {
+                // Keep the newline to keep the line numbers in sync.
                 self.push_current_line();
                 self.current_line = "".to_string();
                 self.prev_end = 0;
             }
+            // Skip any token that is not a directive or a newline.
             _ => (),
         }
     }
