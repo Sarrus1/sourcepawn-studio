@@ -121,7 +121,7 @@ export class Ctx {
       const serverOptions: lc.ServerOptions = {
         run: {
           command: this._serverPath,
-          args: [`-${"v".repeat(traceServerLevel)}` ?? ""],
+          args: [traceServerLevel > 0 ? `-${"v".repeat(traceServerLevel)}` : ""],
         },
         debug: {
           command: join(
