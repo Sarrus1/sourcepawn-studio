@@ -84,8 +84,8 @@ pub enum PreOperator {
     RParen,
 }
 
-impl PreOperator {
-    pub fn from_op(op: &Operator) -> Self {
+impl From<&Operator> for PreOperator {
+    fn from(op: &Operator) -> Self {
         match op {
             Operator::Not => PreOperator::Not,
             Operator::Tilde => PreOperator::Tilde,
@@ -108,10 +108,12 @@ impl PreOperator {
             Operator::NotEquals => PreOperator::NotEquals,
             Operator::And => PreOperator::And,
             Operator::Or => PreOperator::Or,
-            _ => todo!("Operator: {:?}", op),
+            _ => unimplemented!("Operator: {:?}", op),
         }
     }
+}
 
+impl PreOperator {
     pub fn is_unary(&self) -> bool {
         matches!(
             self,

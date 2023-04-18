@@ -69,7 +69,7 @@ impl<'a> IfCondition<'a> {
                     looking_for_defined = true;
                 }
                 TokenKind::Operator(op) => {
-                    let mut cur_op = PreOperator::from_op(op);
+                    let mut cur_op = PreOperator::from(op);
                     if may_be_unary && is_unary(op) {
                         cur_op = match op {
                             Operator::Not => PreOperator::Not,
