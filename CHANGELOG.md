@@ -1,5 +1,15 @@
 ## Release Notes
 
+## [5.3.8]
+
+### Added
+
+- Improved the server tooltip. 
+
+### Fixed
+
+- Fixed server crashing due to wrong invocation (see #296).
+
 ## [5.3.7]
 
 ### Fixed
