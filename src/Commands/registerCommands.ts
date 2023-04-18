@@ -112,23 +112,9 @@ export function registerSMCommands(context: vscode.ExtensionContext): void {
  */
 export function createServerCommands(): Record<string, CommandFactory> {
   return {
-    reload: {
-      enabled: (ctx) => async () => {
-        void vscode.window.showInformationMessage(
-          "Reloading sourcepawn_lsp..."
-        );
-        await ctx.restart();
-      },
-      disabled: (ctx) => async () => {
-        void vscode.window.showInformationMessage(
-          "Reloading sourcepawn_lsp..."
-        );
-        await ctx.start();
-      },
-    },
     startServer: {
       enabled: (ctx) => async () => {
-        await ctx.start();
+        await ctx.restart();
       },
       disabled: (ctx) => async () => {
         await ctx.start();
@@ -140,6 +126,14 @@ export function createServerCommands(): Record<string, CommandFactory> {
         ctx.setServerStatus({
           health: "stopped",
         });
+      },
+      disabled: (_) => async () => {},
+    },
+    openLogs: {
+      enabled: (ctx) => async () => {
+        if (ctx.client.outputChannel) {
+          ctx.client.outputChannel.show();
+        }
       },
       disabled: (_) => async () => {},
     },

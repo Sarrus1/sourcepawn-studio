@@ -121,7 +121,9 @@ export class Ctx {
       const serverOptions: lc.ServerOptions = {
         run: {
           command: this._serverPath,
-          args: [traceServerLevel > 0 ? `-${"v".repeat(traceServerLevel)}` : ""],
+          args: [
+            traceServerLevel > 0 ? `-${"v".repeat(traceServerLevel)}` : "",
+          ],
         },
         debug: {
           command: join(
@@ -259,19 +261,19 @@ export class Ctx {
   setServerStatus(status: lsp_ext.ServerStatusParams | { health: "stopped" }) {
     let icon = "";
     const statusBar = this.serverStatusBar;
+    statusBar.tooltip = new vscode.MarkdownString("", true);
+    statusBar.tooltip.isTrusted = true;
     switch (status.health) {
       case "ok":
-        statusBar.tooltip =
-          (status.message ?? "Ready") + "\nClick to stop server.";
+        statusBar.tooltip.appendText(status.message ?? "Ready");
         statusBar.command = "sourcepawn-vscode.stopServer";
         statusBar.color = undefined;
         statusBar.backgroundColor = undefined;
         break;
       case "warning":
-        statusBar.tooltip =
-          (status.message ? status.message + "\n" : "") +
-          "Click to stop the server.";
-
+        if (status.message) {
+          statusBar.tooltip.appendText(status.message);
+        }
         statusBar.command = "sourcepawn-vscode.stopServer";
         statusBar.color = new vscode.ThemeColor(
           "statusBarItem.warningForeground"
@@ -282,9 +284,9 @@ export class Ctx {
         icon = "$(warning) ";
         break;
       case "error":
-        statusBar.tooltip =
-          (status.message ? status.message + "\n" : "") +
-          "Click to stop the server.";
+        if (status.message) {
+          statusBar.tooltip.appendText(status.message);
+        }
 
         statusBar.command = "sourcepawn-vscode.stopServer";
         statusBar.color = new vscode.ThemeColor(
@@ -296,7 +298,10 @@ export class Ctx {
         icon = "$(error) ";
         break;
       case "stopped":
-        statusBar.tooltip = "Server is stopped.\nClick to start.";
+        statusBar.tooltip.appendText("Server is stopped");
+        statusBar.tooltip.appendMarkdown(
+          "\n\n[Start server](command:rust-analyzer.startServer)"
+        );
         statusBar.command = "sourcepawn-vscode.startServer";
         statusBar.color = undefined;
         statusBar.backgroundColor = undefined;
@@ -306,6 +311,22 @@ export class Ctx {
         });
         return;
     }
+    if (statusBar.tooltip.value) {
+      statusBar.tooltip.appendText("\n\n");
+    }
+    statusBar.tooltip.appendMarkdown(
+      "\n\n[Open logs](command:sourcepawn-vscode.openLogs)"
+    );
+    // TODO:
+    // statusBar.tooltip.appendMarkdown(
+    //   "\n\n[Reload Workspace](command:sourcepawn-vscode.reloadWorkspace)"
+    // );
+    statusBar.tooltip.appendMarkdown(
+      "\n\n[Restart server](command:sourcepawn-vscode.startServer)"
+    );
+    statusBar.tooltip.appendMarkdown(
+      "\n\n[Stop server](command:sourcepawn-vscode.stopServer)"
+    );
     if (!status.quiescent) icon = "$(sync~spin) ";
     statusBar.text = `${icon}sourcepawn-lsp`;
   }

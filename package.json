@@ -134,6 +134,10 @@
       {
         "command": "sourcepawn-vscode.startServer",
         "title": "Start SourcePawn Language Server"
+      },
+      {
+        "command": "sourcepawn-vscode.openLogs",
+        "title": "Open SourcePawn Language Server logs"
       }
     ],
     "menus": {
