@@ -321,6 +321,25 @@ mod test {
     }
 
     #[test]
+    fn if_directive_nested_expansion_2() {
+        let input = r#"#define FOO BAR + 4
+#define BAR 1 + BAZ
+#define BAZ 2 + 3
+#if FOO == 10
+    int foo;
+#endif"#;
+        let output = r#"#define FOO BAR + 4
+#define BAR 1 + BAZ
+#define BAZ 2 + 3
+
+    int foo;
+"#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
     fn if_directive_nested_expansion_infinite_loop_1() {
         let input = r#"#define FOO BAR
 #define BAR FOO
@@ -481,6 +500,23 @@ int foo = FOO;
         let output = r#"#define FOO BAR +   2
 #define BAR 1
 int foo = 1 +   2;
+"#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
+    fn define_expansion_nested_2() {
+        let input = r#"#define FOO BAR + 3
+#define BAR 1 + BAZ
+#define BAZ 2
+int foo = FOO;
+"#;
+        let output = r#"#define FOO BAR + 3
+#define BAR 1 + BAZ
+#define BAZ 2
+int foo = 1 + 2 + 3;
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);

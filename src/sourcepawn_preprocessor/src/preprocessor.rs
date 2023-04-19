@@ -77,6 +77,9 @@ impl<'a> SourcepawnPreprocessor<'a> {
         let depth = 0;
         let mut stack = vec![(symbol, symbol.delta, depth)];
         while let Some((symbol, delta, d)) = stack.pop() {
+            if d == 5 {
+                continue;
+            }
             match &symbol.token_kind {
                 TokenKind::Identifier => {
                     for (i, child) in self

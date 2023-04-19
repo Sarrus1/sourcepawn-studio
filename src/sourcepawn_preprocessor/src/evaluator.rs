@@ -22,20 +22,19 @@ impl<'a> IfCondition<'a> {
         val != 0
     }
 
-    fn expand_define(&self, expansion_stack: &mut Vec<&'a Symbol>, symbol: &Symbol) {
+    fn expand_define(&self, expansion_stack: &mut Vec<&'a Symbol>, symbol: &'a Symbol) {
         let depth = 0;
         let mut stack = vec![(symbol, depth)];
-
-        while let Some((sym, d)) = stack.pop() {
+        while let Some((symbol, d)) = stack.pop() {
             if d == 5 {
                 continue;
             }
-            for sub_symbol in self.defines_map.get(&sym.text()).unwrap() {
-                if sub_symbol.token_kind == TokenKind::Identifier {
-                    stack.push((sub_symbol, d + 1));
-                } else {
-                    expansion_stack.push(sub_symbol);
+            if symbol.token_kind == TokenKind::Identifier {
+                for child in self.defines_map.get(&symbol.text()).unwrap().iter() {
+                    stack.push((child, d + 1));
                 }
+            } else {
+                expansion_stack.push(symbol);
             }
         }
     }
