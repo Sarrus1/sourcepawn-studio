@@ -119,15 +119,57 @@ mod test {
     }
 
     #[test]
-    fn if_directive_complexe_expression_1() {
+    fn if_directive_complex_expression_1() {
         let input = r#"#if (1 + 1) && (0 + 0)"#;
 
         assert!(!evaluate_if_condition(input));
     }
 
     #[test]
-    fn if_directive_complexe_expression_2() {
+    fn if_directive_complex_expression_2() {
         let input = r#"#if (true && 1) || (true + 1)"#;
+
+        assert!(evaluate_if_condition(input));
+    }
+
+    #[test]
+    fn if_directive_int_1() {
+        let input = r#"#if 1000 == 1000"#;
+
+        assert!(evaluate_if_condition(input));
+    }
+
+    #[test]
+    fn if_directive_int_2() {
+        let input = r#"#if (10_00) == 1000"#;
+
+        assert!(evaluate_if_condition(input));
+    }
+
+    #[test]
+    fn if_directive_binary_1() {
+        let input = r#"#if 0x0001 == 0x0001"#;
+
+        assert!(evaluate_if_condition(input));
+    }
+
+    #[test]
+    fn if_directive_binary_2() {
+        let input = r#"#if 0x000_1 == 0x000_1"#;
+
+        assert!(evaluate_if_condition(input));
+    }
+
+    #[test]
+    fn if_directive_char_1() {
+        let input = r#"#if 'a' == 'a'"#;
+
+        assert!(evaluate_if_condition(input));
+    }
+
+    #[test]
+    fn if_directive_char_2() {
+        let input = r#"#if 'a' != 'b'"#;
 
         assert!(evaluate_if_condition(input));
     }

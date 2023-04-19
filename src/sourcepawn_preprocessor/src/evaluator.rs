@@ -23,7 +23,7 @@ impl<'a> IfCondition<'a> {
     }
 
     fn expand_define(&self, expansion_stack: &mut Vec<&'a Symbol>, symbol: &Symbol) {
-        let mut depth = 0;
+        let depth = 0;
         let mut stack = vec![(symbol, depth)];
 
         while let Some((sym, d)) = stack.pop() {
@@ -119,11 +119,20 @@ impl<'a> IfCondition<'a> {
                     may_be_unary = false;
                 }
                 TokenKind::Literal(lit) => match lit {
-                    Literal::IntegerLiteral => {
-                        output_queue.push(symbol.text().parse().unwrap());
+                    Literal::IntegerLiteral
+                    | Literal::BinaryLiteral
+                    | Literal::HexLiteral
+                    | Literal::OctodecimalLiteral
+                    | Literal::CharLiteral => {
+                        output_queue.push(lit.to_int(&symbol.text()).unwrap_or(0) as i32);
                         may_be_unary = false;
                     }
-                    _ => todo!("Literal: {:?}", lit),
+                    _ => {
+                        unimplemented!(
+                            "Literal {:?} is not supported in expression evaluation.",
+                            lit
+                        )
+                    }
                 },
                 TokenKind::Comment(_) | TokenKind::Newline | TokenKind::Eof => (),
                 _ => todo!("TokenKind: {:?}", &symbol.token_kind),
