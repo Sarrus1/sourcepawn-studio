@@ -85,10 +85,8 @@ impl Literal {
                         if ch == 'x' {
                             x_reached = true;
                         }
-                    } else {
-                        if ch.is_numeric() {
-                            buf.push(ch);
-                        }
+                    } else if ch.is_numeric() {
+                        buf.push(ch);
                     }
                 }
                 u32::from_str_radix(&buf, 2).ok()
@@ -99,10 +97,8 @@ impl Literal {
                         if ch == 'x' {
                             x_reached = true;
                         }
-                    } else {
-                        if ch.is_numeric() {
-                            buf.push(ch);
-                        }
+                    } else if ch.is_numeric() {
+                        buf.push(ch);
                     }
                 }
                 u32::from_str_radix(&buf, 8).ok()
@@ -113,10 +109,8 @@ impl Literal {
                         if ch == 'x' {
                             x_reached = true;
                         }
-                    } else {
-                        if ch.is_numeric() {
-                            buf.push(ch);
-                        }
+                    } else if ch.is_numeric() {
+                        buf.push(ch);
                     }
                 }
                 u32::from_str_radix(&buf, 16).ok()

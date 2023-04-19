@@ -141,7 +141,7 @@ impl Symbol {
             },
             TokenKind::Comment(com) => {
                 if *com == Comment::BlockComment {
-                    return text.replace("\n", "").replace("\r\n", "");
+                    return text.replace('\n', "").replace("\r\n", "");
                 }
             }
             _ => (),
@@ -186,8 +186,9 @@ impl SourcepawnLexer<'_> {
         } else {
             Delta::default()
         };
-        self.prev_range = Some(range.clone());
-        return delta;
+        self.prev_range = Some(*range);
+
+        delta
     }
 }
 

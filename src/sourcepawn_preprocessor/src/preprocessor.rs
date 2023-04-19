@@ -1,5 +1,5 @@
 use fxhash::FxHashMap;
-use sourcepawn_lexer::{Literal, PreprocDir, SourcepawnLexer, Symbol, TokenKind, Range};
+use sourcepawn_lexer::{Literal, PreprocDir, Range, SourcepawnLexer, Symbol, TokenKind};
 
 use crate::evaluator::IfCondition;
 
@@ -202,7 +202,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
 
     fn push_ws(&mut self, symbol: &Symbol) {
         self.current_line
-            .push_str(&" ".repeat(symbol.delta.col.abs() as usize));
+            .push_str(&" ".repeat(symbol.delta.col.unsigned_abs() as usize));
     }
 
     fn push_current_line(&mut self) {
