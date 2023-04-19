@@ -11,7 +11,7 @@ macro_rules! assert_token_eq {
                     start_col: $start_col,
                     end_line: $end_line,
                     end_col: $end_col
-                }
+                },
             )
         );
     };

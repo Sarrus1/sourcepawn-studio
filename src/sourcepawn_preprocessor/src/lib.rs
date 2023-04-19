@@ -351,6 +351,128 @@ int foo = 1;
     }
 
     #[test]
+    fn define_expansion_2() {
+        let input = r#"#define FOO "test"
+char foo[64] = FOO;
+"#;
+        let output = r#"#define FOO "test"
+char foo[64] = "test";
+"#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
+    fn define_expansion_comment_1() {
+        let input = r#"#define FOO 1 //comment
+int foo = FOO;
+"#;
+        let output = r#"#define FOO 1 //comment
+int foo = 1;
+"#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
+    fn define_expansion_comment_2() {
+        let input = r#"#define FOO 1 /* comment */
+int foo = FOO;
+"#;
+        let output = r#"#define FOO 1 /* comment */
+int foo = 1;
+"#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
+    fn define_expansion_comment_3() {
+        let input = r#"#define FOO 1 /* long\
+comment */
+int foo = FOO;
+"#;
+        let output = r#"#define FOO 1 /* long\
+comment */
+int foo = 1;
+"#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
+    fn define_expansion_comment_4() {
+        let input = r#"#define FOO 1 /* long\
+comment */ + 2
+int foo = FOO;
+int bar;
+"#;
+        let output = r#"#define FOO 1 /* long\
+comment */ + 2
+int foo = 1 + 2;
+int bar;
+"#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
+    fn define_expansion_comment_5() {
+        let input = r#"#define FOO 1 /* long\
+comment */ + 2 // Line comment
+int foo = FOO;
+int bar;
+"#;
+        let output = r#"#define FOO 1 /* long\
+comment */ + 2 // Line comment
+int foo = 1 + 2;
+int bar;
+"#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
+    fn define_expansion_line_continuation_1() {
+        let input = r#"#define FOO "test \
+expansion"
+char foo[64] = FOO;
+"#;
+        let output = r#"#define FOO "test \
+expansion"
+char foo[64] = "test expansion";
+"#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
+    fn define_expansion_line_continuation_2() {
+        let input = r#"#define FOO "test \
+expansion \
+\
+also"
+char foo[64] = FOO;
+"#;
+        let output = r#"#define FOO "test \
+expansion \
+\
+also"
+char foo[64] = "test expansion also";
+"#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
     fn define_expansion_nested_1() {
         let input = r#"#define FOO BAR +   2
 #define BAR 1

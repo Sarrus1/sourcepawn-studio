@@ -1,5 +1,5 @@
 use fxhash::FxHashMap;
-use sourcepawn_lexer::{PreprocDir, Range, SourcepawnLexer, Symbol, TokenKind};
+use sourcepawn_lexer::{Literal, PreprocDir, SourcepawnLexer, Symbol, TokenKind, Range};
 
 use crate::evaluator::IfCondition;
 
@@ -79,15 +79,39 @@ impl<'a> SourcepawnPreprocessor<'a> {
         while let Some((symbol, delta, d)) = stack.pop() {
             match &symbol.token_kind {
                 TokenKind::Identifier => {
-                    for child in self.defines_map.get(&symbol.text()).unwrap() {
-                        stack.push((child, symbol.delta, d + 1));
+                    for (i, child) in self
+                        .defines_map
+                        .get(&symbol.text())
+                        .unwrap()
+                        .iter()
+                        .enumerate()
+                    {
+                        stack.push((
+                            child,
+                            if i == 0 { symbol.delta } else { child.delta },
+                            d + 1,
+                        ));
                     }
                 }
-                TokenKind::Newline | TokenKind::LineContinuation => (),
+                TokenKind::Literal(Literal::StringLiteral)
+                | TokenKind::Literal(Literal::CharLiteral) => {
+                    let text = symbol.inline_text();
+                    expansion_stack.push(Symbol::new(
+                        symbol.token_kind.clone(),
+                        Some(&text),
+                        Range {
+                            start_line: symbol.range.start_line,
+                            end_line: symbol.range.start_line,
+                            start_col: symbol.range.start_col,
+                            end_col: text.len(),
+                        },
+                        symbol.delta,
+                    ));
+                }
+                TokenKind::Newline | TokenKind::LineContinuation | TokenKind::Comment(_) => (),
                 _ => {
                     let mut symbol = symbol.clone();
                     symbol.delta = delta;
-                    eprintln!("Symbol: {:?}, offset {:?}", symbol, delta);
                     expansion_stack.push(symbol);
                 }
             }

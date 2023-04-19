@@ -12,11 +12,18 @@ pub struct Range {
     pub end_col: usize,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Delta {
+    pub line: i32,
+    pub col: i32,
+}
+
 #[derive(Debug, Clone, Eq)]
 pub struct Symbol {
     pub token_kind: TokenKind,
     text: Option<String>,
     pub range: Range,
+    pub delta: Delta,
 }
 
 impl PartialEq for Symbol {
@@ -28,11 +35,12 @@ impl PartialEq for Symbol {
 }
 
 impl Symbol {
-    pub fn new(token_kind: TokenKind, text: Option<&str>, range: Range) -> Self {
+    pub fn new(token_kind: TokenKind, text: Option<&str>, range: Range, delta: Delta) -> Self {
         Self {
             token_kind,
             text: text.map(|s| s.to_string()),
             range,
+            delta,
         }
     }
 
@@ -149,6 +157,7 @@ pub struct SourcepawnLexer<'a> {
     line_number: usize,
     line_span_start: usize,
     in_preprocessor: bool,
+    prev_range: Option<Range>,
     eof: bool,
 }
 
@@ -159,12 +168,26 @@ impl SourcepawnLexer<'_> {
             line_number: 0,
             line_span_start: 0,
             in_preprocessor: false,
+            prev_range: None,
             eof: false,
         }
     }
 
     pub fn in_preprocessor(&self) -> bool {
         self.in_preprocessor
+    }
+
+    fn delta(&mut self, range: &Range) -> Delta {
+        let delta = if let Some(prev_range) = self.prev_range {
+            Delta {
+                line: (range.start_line as i32 - prev_range.end_line as i32),
+                col: (range.start_col as i32 - prev_range.end_col as i32),
+            }
+        } else {
+            Delta::default()
+        };
+        self.prev_range = Some(range.clone());
+        return delta;
     }
 }
 
@@ -182,15 +205,17 @@ impl Iterator for SourcepawnLexer<'_> {
         if token.is_none() && !self.eof {
             // Reached EOF
             self.eof = true;
+            let range = Range {
+                start_line: self.line_number,
+                end_line: self.line_number,
+                start_col: self.lexer.source().len() - self.line_span_start,
+                end_col: self.lexer.source().len() - self.line_span_start,
+            };
             return Some(Symbol {
                 token_kind: TokenKind::Eof,
                 text: None,
-                range: Range {
-                    start_line: self.line_number,
-                    end_line: self.line_number,
-                    start_col: self.lexer.source().len() - self.line_span_start,
-                    end_col: self.lexer.source().len() - self.line_span_start,
-                },
+                range,
+                delta: self.delta(&range),
             });
         }
         let token = token?;
@@ -267,6 +292,7 @@ impl Iterator for SourcepawnLexer<'_> {
             token_kind,
             text,
             range,
+            delta: self.delta(&range),
         })
     }
 }
