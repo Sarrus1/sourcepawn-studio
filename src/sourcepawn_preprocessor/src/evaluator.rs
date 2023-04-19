@@ -22,6 +22,24 @@ impl<'a> IfCondition<'a> {
         val != 0
     }
 
+    fn expand_define(&self, expansion_stack: &mut Vec<&'a Symbol>, symbol: &Symbol) {
+        let mut depth = 0;
+        let mut stack = vec![(symbol, depth)];
+
+        while let Some((sym, d)) = stack.pop() {
+            if d == 5 {
+                continue;
+            }
+            for sub_symbol in self.defines_map.get(&sym.text()).unwrap() {
+                if sub_symbol.token_kind == TokenKind::Identifier {
+                    stack.push((sub_symbol, d + 1));
+                } else {
+                    expansion_stack.push(sub_symbol);
+                }
+            }
+        }
+    }
+
     fn yard(&self) -> i32 {
         let mut output_queue: Vec<i32> = vec![];
         let mut operator_stack: Vec<PreOperator> = vec![];
@@ -48,10 +66,8 @@ impl<'a> IfCondition<'a> {
                         looking_for_defined = false;
                         may_be_unary = false;
                     } else {
-                        // FIXME: Handle infinite recursion.
                         // TODO: Handle function-like macros.
-                        // TODO: Handle mayebe_unary.
-                        expansion_stack.extend(self.defines_map.get(&symbol.text()).unwrap());
+                        self.expand_define(&mut expansion_stack, symbol);
                     }
                 }
                 TokenKind::RParen => {

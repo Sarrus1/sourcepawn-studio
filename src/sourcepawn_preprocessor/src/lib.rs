@@ -277,4 +277,21 @@ mod test {
         let mut preprocessor = SourcepawnPreprocessor::new(input);
         assert_eq!(preprocessor.preprocess_input(), output);
     }
+
+    #[test]
+    fn if_directive_nested_expansion_infinite_loop_1() {
+        let input = r#"#define FOO BAR
+#define BAR FOO
+#if FOO == 1
+    int foo;
+#endif"#;
+        let output = r#"#define FOO BAR
+#define BAR FOO
+
+
+      "#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
 }
