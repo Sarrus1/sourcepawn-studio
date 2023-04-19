@@ -338,6 +338,19 @@ mod test {
     }
 
     #[test]
+    fn define_expansion_1() {
+        let input = r#"#define FOO 1
+int foo = FOO;
+"#;
+        let output = r#"#define FOO 1
+int foo = 1;
+"#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
     fn define_expansion_nested_1() {
         let input = r#"#define FOO BAR + 2
 #define BAR 1

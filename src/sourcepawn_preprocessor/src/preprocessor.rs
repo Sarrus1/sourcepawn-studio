@@ -1,5 +1,5 @@
 use fxhash::FxHashMap;
-use sourcepawn_lexer::{PreprocDir, SourcepawnLexer, Symbol, TokenKind};
+use sourcepawn_lexer::{PreprocDir, Range, SourcepawnLexer, Symbol, TokenKind};
 
 use crate::evaluator::IfCondition;
 
@@ -49,7 +49,6 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 }
                 TokenKind::Identifier => match self.defines_map.get(&symbol.text()) {
                     Some(_) => {
-                        self.push_ws(&symbol);
                         self.expand_define(&mut expansion_stack, &symbol);
                     }
                     None => {
@@ -76,16 +75,27 @@ impl<'a> SourcepawnPreprocessor<'a> {
 
     fn expand_define(&self, expansion_stack: &mut Vec<Symbol>, symbol: &Symbol) {
         let depth = 0;
-        let mut stack = vec![(symbol, depth)];
-        while let Some((symbol, d)) = stack.pop() {
+        let mut stack = vec![(symbol, symbol.range, depth)];
+        while let Some((symbol, offset_range, d)) = stack.pop() {
             match &symbol.token_kind {
                 TokenKind::Identifier => {
                     for child in self.defines_map.get(&symbol.text()).unwrap() {
-                        stack.push((child, d + 1));
+                        stack.push((child, symbol.range, d + 1));
                     }
                 }
                 TokenKind::Newline | TokenKind::LineContinuation => (),
-                _ => expansion_stack.push(symbol.clone()),
+                _ => {
+                    let mut symbol = symbol.clone();
+                    symbol.range = Range {
+                        start_line: offset_range.start_line,
+                        end_line: offset_range.end_line,
+                        start_col: offset_range.start_col,
+                        end_col: symbol.range.end_col - symbol.range.start_col
+                            + offset_range.start_col,
+                    };
+                    eprintln!("Symbol: {:?}, offset {:?}", symbol, offset_range);
+                    expansion_stack.push(symbol);
+                }
             }
         }
     }
