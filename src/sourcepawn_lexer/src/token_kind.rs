@@ -61,8 +61,85 @@ pub enum Literal {
     /// 1.0
     /// 1.0e10
     /// 1.0e-10
+    /// 100_00.000_1e-10
     /// ```
     FloatLiteral,
+}
+
+impl Literal {
+    pub fn to_int(&self, text: &str) -> Option<u32> {
+        let mut buf = String::new();
+        let mut x_reached = false;
+        match self {
+            Self::IntegerLiteral => {
+                for ch in text.chars() {
+                    if ch.is_numeric() {
+                        buf.push(ch)
+                    }
+                }
+                buf.parse().ok()
+            }
+            Self::BinaryLiteral => {
+                for ch in text.chars() {
+                    if !x_reached {
+                        if ch == 'x' {
+                            x_reached = true;
+                        }
+                    } else {
+                        if ch.is_numeric() {
+                            buf.push(ch);
+                        }
+                    }
+                }
+                u32::from_str_radix(&buf, 2).ok()
+            }
+            Self::OctodecimalLiteral => {
+                for ch in text.chars() {
+                    if !x_reached {
+                        if ch == 'x' {
+                            x_reached = true;
+                        }
+                    } else {
+                        if ch.is_numeric() {
+                            buf.push(ch);
+                        }
+                    }
+                }
+                u32::from_str_radix(&buf, 8).ok()
+            }
+            Self::HexLiteral => {
+                for ch in text.chars() {
+                    if !x_reached {
+                        if ch == 'x' {
+                            x_reached = true;
+                        }
+                    } else {
+                        if ch.is_numeric() {
+                            buf.push(ch);
+                        }
+                    }
+                }
+                u32::from_str_radix(&buf, 16).ok()
+            }
+            Self::FloatLiteral => {
+                for ch in text.chars() {
+                    if ch != '_' {
+                        buf.push(ch);
+                    }
+                }
+                let tmp: f32 = buf.parse().ok()?;
+                Some(tmp.trunc() as u32)
+            }
+            Self::CharLiteral => {
+                let mut out = 0;
+                for ch in text.chars() {
+                    out += ch as u32
+                }
+                Some(out)
+            }
+            Self::StringLiteral => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
