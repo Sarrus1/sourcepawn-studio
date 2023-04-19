@@ -24,8 +24,17 @@ impl<'a> SourcepawnPreprocessor<'a> {
             defines_map: FxHashMap::default(),
         }
     }
+
     pub fn preprocess_input(&mut self) -> String {
-        while let Some(symbol) = self.lexer.next() {
+        let mut expansion_stack = vec![];
+        loop {
+            let symbol = if !expansion_stack.is_empty() {
+                expansion_stack.pop().unwrap()
+            } else if let Some(symbol) = self.lexer.next() {
+                symbol
+            } else {
+                break;
+            };
             if !self.conditions_stack.is_empty() && !*self.conditions_stack.last().unwrap() {
                 self.process_negative_condition(&symbol);
                 continue;
@@ -38,6 +47,17 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     self.current_line = "".to_string();
                     self.prev_end = 0;
                 }
+                TokenKind::Identifier => match self.defines_map.get(&symbol.text()) {
+                    Some(_) => {
+                        self.push_ws(&symbol);
+                        self.expand_define(&mut expansion_stack, &symbol, 0);
+                    }
+                    None => {
+                        self.push_ws(&symbol);
+                        self.prev_end = symbol.range.end_col;
+                        self.current_line.push_str(&symbol.text());
+                    }
+                },
                 TokenKind::Eof => {
                     self.push_ws(&symbol);
                     self.push_current_line();
@@ -52,6 +72,18 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }
 
         self.out.join("\n")
+    }
+
+    fn expand_define(&self, expansion_stack: &mut Vec<Symbol>, symbol: &Symbol, depth: u32) {
+        for sub_symbol in self.defines_map.get(&symbol.text()).unwrap() {
+            match &sub_symbol.token_kind {
+                TokenKind::Identifier => {
+                    self.expand_define(expansion_stack, &sub_symbol, depth + 1);
+                }
+                TokenKind::Newline | TokenKind::LineContinuation => (),
+                _ => expansion_stack.push(sub_symbol.clone()),
+            }
+        }
     }
 
     fn process_directive(&mut self, dir: &PreprocDir, symbol: &Symbol) {
@@ -137,8 +169,10 @@ impl<'a> SourcepawnPreprocessor<'a> {
     }
 
     fn push_ws(&mut self, symbol: &Symbol) {
-        let ws_diff = symbol.range.start_col - self.prev_end;
-        self.current_line.push_str(&" ".repeat(ws_diff));
+        if symbol.range.start_col > self.prev_end {
+            self.current_line
+                .push_str(&" ".repeat(symbol.range.start_col - self.prev_end));
+        }
     }
 
     fn push_current_line(&mut self) {
