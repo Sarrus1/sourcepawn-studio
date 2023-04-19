@@ -10,7 +10,13 @@ pub struct SourcepawnPreprocessor<'a> {
     prev_end: usize,
     conditions_stack: Vec<bool>,
     out: Vec<String>,
-    defines_map: FxHashMap<String, Vec<Symbol>>,
+    macros: FxHashMap<String, Macro>,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct Macro {
+    pub(crate) args: Option<Vec<Vec<Symbol>>>,
+    pub(crate) body: Vec<Symbol>,
 }
 
 impl<'a> SourcepawnPreprocessor<'a> {
@@ -21,7 +27,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
             prev_end: 0,
             conditions_stack: vec![],
             out: vec![],
-            defines_map: FxHashMap::default(),
+            macros: FxHashMap::default(),
         }
     }
 
@@ -47,7 +53,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     self.current_line = "".to_string();
                     self.prev_end = 0;
                 }
-                TokenKind::Identifier => match self.defines_map.get(&symbol.text()) {
+                TokenKind::Identifier => match self.macros.get(&symbol.text()) {
                     Some(_) => {
                         self.expand_define(&mut expansion_stack, &symbol);
                     }
@@ -83,9 +89,10 @@ impl<'a> SourcepawnPreprocessor<'a> {
             match &symbol.token_kind {
                 TokenKind::Identifier => {
                     for (i, child) in self
-                        .defines_map
+                        .macros
                         .get(&symbol.text())
                         .unwrap()
+                        .body
                         .iter()
                         .enumerate()
                     {
@@ -125,7 +132,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
         match dir {
             PreprocDir::MIf => {
                 let line_nb = symbol.range.start_line;
-                let mut if_condition = IfCondition::new(&self.defines_map);
+                let mut if_condition = IfCondition::new(&self.macros);
                 while self.lexer.in_preprocessor() {
                     if let Some(symbol) = self.lexer.next() {
                         if_condition.symbols.push(symbol);
@@ -144,8 +151,11 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 self.push_ws(symbol);
                 self.prev_end = symbol.range.end_col;
                 self.current_line.push_str(&symbol.text());
-                let mut define_name = String::new();
-                let mut define_value = vec![];
+                let mut macro_name = String::new();
+                let mut macro_ = Macro {
+                    args: None,
+                    body: vec![],
+                };
                 while self.lexer.in_preprocessor() {
                     if let Some(symbol) = self.lexer.next() {
                         self.push_ws(&symbol);
@@ -153,15 +163,15 @@ impl<'a> SourcepawnPreprocessor<'a> {
                         if symbol.token_kind != TokenKind::Newline {
                             self.current_line.push_str(&symbol.text());
                         }
-                        if define_name.is_empty() {
+                        if macro_name.is_empty() {
                             if TokenKind::Identifier == symbol.token_kind {
-                                define_name = symbol.text();
+                                macro_name = symbol.text();
                             } else {
                                 // We are looking for the define's name.
                                 continue;
                             }
                         } else {
-                            define_value.push(symbol);
+                            macro_.body.push(symbol);
                         }
                     } else {
                         break;
@@ -170,7 +180,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 self.push_current_line();
                 self.current_line = "".to_string();
                 self.prev_end = 0;
-                self.defines_map.insert(define_name, define_value);
+                self.macros.insert(macro_name, macro_);
             }
             PreprocDir::MEndif => {
                 self.conditions_stack.pop();

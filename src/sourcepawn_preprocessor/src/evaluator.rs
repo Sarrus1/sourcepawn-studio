@@ -1,19 +1,19 @@
 use fxhash::FxHashMap;
 use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
 
-use crate::preprocessor_operator::PreOperator;
+use crate::{preprocessor::Macro, preprocessor_operator::PreOperator};
 
 #[derive(Debug)]
 pub struct IfCondition<'a> {
     pub symbols: Vec<Symbol>,
-    defines_map: &'a FxHashMap<String, Vec<Symbol>>,
+    macros: &'a FxHashMap<String, Macro>,
 }
 
 impl<'a> IfCondition<'a> {
-    pub fn new(defines_map: &'a FxHashMap<String, Vec<Symbol>>) -> Self {
+    pub(crate) fn new(macros: &'a FxHashMap<String, Macro>) -> Self {
         Self {
             symbols: vec![],
-            defines_map,
+            macros,
         }
     }
 
@@ -30,7 +30,7 @@ impl<'a> IfCondition<'a> {
                 continue;
             }
             if symbol.token_kind == TokenKind::Identifier {
-                for child in self.defines_map.get(&symbol.text()).unwrap().iter() {
+                for child in self.macros.get(&symbol.text()).unwrap().body.iter() {
                     stack.push((child, d + 1));
                 }
             } else {
@@ -61,7 +61,7 @@ impl<'a> IfCondition<'a> {
                 }
                 TokenKind::Identifier => {
                     if looking_for_defined {
-                        output_queue.push(self.defines_map.contains_key(&symbol.text()).into());
+                        output_queue.push(self.macros.contains_key(&symbol.text()).into());
                         looking_for_defined = false;
                         may_be_unary = false;
                     } else {

@@ -7,9 +7,9 @@ pub use self::preprocessor::SourcepawnPreprocessor;
 #[cfg(test)]
 mod test {
     use fxhash::FxHashMap;
-    use sourcepawn_lexer::{SourcepawnLexer, Symbol, TokenKind};
+    use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
 
-    use crate::{evaluator::IfCondition, SourcepawnPreprocessor};
+    use crate::{evaluator::IfCondition, preprocessor::Macro, SourcepawnPreprocessor};
 
     #[test]
     fn no_preprocessor_directives() {
@@ -24,8 +24,8 @@ mod test {
 
     fn evaluate_if_condition(input: &str) -> bool {
         let mut lexer = SourcepawnLexer::new(input);
-        let defines_map: FxHashMap<String, Vec<Symbol>> = FxHashMap::default();
-        let mut if_condition = IfCondition::new(&defines_map);
+        let macros: FxHashMap<String, Macro> = FxHashMap::default();
+        let mut if_condition = IfCondition::new(&macros);
         if let Some(symbol) = lexer.next() {
             if TokenKind::PreprocDir(sourcepawn_lexer::PreprocDir::MIf) == symbol.token_kind {
                 while lexer.in_preprocessor() {
