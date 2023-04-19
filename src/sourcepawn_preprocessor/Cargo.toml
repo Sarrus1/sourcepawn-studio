@@ -6,3 +6,11 @@ edition = "2021"
 [dependencies]
 fxhash = "0.2.1"
 sourcepawn_lexer = { path = "../sourcepawn_lexer" }
+
+[dev-dependencies]
+criterion = "0.3"
+minreq = { version = "2.7.0", features = ["https"] }
+
+[[bench]]
+name = "bench_main"
+harness = false
