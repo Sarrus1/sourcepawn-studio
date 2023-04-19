@@ -183,7 +183,7 @@ mod test {
         let output = r#"#define FOO
 
     int foo;
-      "#;
+"#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
         assert_eq!(preprocessor.preprocess_input(), output);
@@ -200,7 +200,7 @@ mod test {
 
 
 
-      "#;
+"#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
         assert_eq!(preprocessor.preprocess_input(), output);
@@ -219,7 +219,7 @@ mod test {
 
     int foo;
     int bar;
-      "#;
+"#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
         assert_eq!(preprocessor.preprocess_input(), output);
@@ -241,8 +241,8 @@ mod test {
     int foo;
 
     int bar;
-          
-      "#;
+
+"#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
         assert_eq!(preprocessor.preprocess_input(), output);
@@ -264,10 +264,10 @@ mod test {
     int foo;
 
 
-         
+
     int baz;
-          
-      "#;
+
+"#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
         assert_eq!(preprocessor.preprocess_input(), output);
@@ -282,7 +282,7 @@ mod test {
         let output = r#"#define FOO 1
 
     int foo;
-      "#;
+"#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
         assert_eq!(preprocessor.preprocess_input(), output);
@@ -297,7 +297,7 @@ mod test {
         let output = r#"#define FOO 1
 
     int foo;
-      "#;
+"#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
         assert_eq!(preprocessor.preprocess_input(), output);
@@ -314,7 +314,7 @@ mod test {
 #define BAR 1
 
     int foo;
-      "#;
+"#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
         assert_eq!(preprocessor.preprocess_input(), output);
@@ -331,7 +331,7 @@ mod test {
 #define BAR FOO
 
 
-      "#;
+"#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
         assert_eq!(preprocessor.preprocess_input(), output);
@@ -352,13 +352,13 @@ int foo = 1;
 
     #[test]
     fn define_expansion_nested_1() {
-        let input = r#"#define FOO BAR + 2
+        let input = r#"#define FOO BAR +   2
 #define BAR 1
 int foo = FOO;
 "#;
-        let output = r#"#define FOO BAR + 2
-#define BAR
-int foo = 1 + 2;
+        let output = r#"#define FOO BAR +   2
+#define BAR 1
+int foo = 1 +   2;
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);

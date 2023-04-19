@@ -75,25 +75,19 @@ impl<'a> SourcepawnPreprocessor<'a> {
 
     fn expand_define(&self, expansion_stack: &mut Vec<Symbol>, symbol: &Symbol) {
         let depth = 0;
-        let mut stack = vec![(symbol, symbol.range, depth)];
-        while let Some((symbol, offset_range, d)) = stack.pop() {
+        let mut stack = vec![(symbol, symbol.delta, depth)];
+        while let Some((symbol, delta, d)) = stack.pop() {
             match &symbol.token_kind {
                 TokenKind::Identifier => {
                     for child in self.defines_map.get(&symbol.text()).unwrap() {
-                        stack.push((child, symbol.range, d + 1));
+                        stack.push((child, symbol.delta, d + 1));
                     }
                 }
                 TokenKind::Newline | TokenKind::LineContinuation => (),
                 _ => {
                     let mut symbol = symbol.clone();
-                    symbol.range = Range {
-                        start_line: offset_range.start_line,
-                        end_line: offset_range.end_line,
-                        start_col: offset_range.start_col,
-                        end_col: symbol.range.end_col - symbol.range.start_col
-                            + offset_range.start_col,
-                    };
-                    eprintln!("Symbol: {:?}, offset {:?}", symbol, offset_range);
+                    symbol.delta = delta;
+                    eprintln!("Symbol: {:?}, offset {:?}", symbol, delta);
                     expansion_stack.push(symbol);
                 }
             }
@@ -183,10 +177,8 @@ impl<'a> SourcepawnPreprocessor<'a> {
     }
 
     fn push_ws(&mut self, symbol: &Symbol) {
-        if symbol.range.start_col > self.prev_end {
-            self.current_line
-                .push_str(&" ".repeat(symbol.range.start_col - self.prev_end));
-        }
+        self.current_line
+            .push_str(&" ".repeat(symbol.delta.col.abs() as usize));
     }
 
     fn push_current_line(&mut self) {
