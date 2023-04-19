@@ -339,13 +339,13 @@ mod test {
 
     #[test]
     fn define_expansion_nested_1() {
-        let input = r#"#define FOO BAR + 1
+        let input = r#"#define FOO BAR + 2
 #define BAR 1
 int foo = FOO;
 "#;
-        let output = r#"#define FOO BAR + 1
+        let output = r#"#define FOO BAR + 2
 #define BAR
-int foo = 1 + 1;
+int foo = 1 + 2;
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);

@@ -50,7 +50,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 TokenKind::Identifier => match self.defines_map.get(&symbol.text()) {
                     Some(_) => {
                         self.push_ws(&symbol);
-                        self.expand_define(&mut expansion_stack, &symbol, 0);
+                        self.expand_define(&mut expansion_stack, &symbol);
                     }
                     None => {
                         self.push_ws(&symbol);
@@ -74,14 +74,18 @@ impl<'a> SourcepawnPreprocessor<'a> {
         self.out.join("\n")
     }
 
-    fn expand_define(&self, expansion_stack: &mut Vec<Symbol>, symbol: &Symbol, depth: u32) {
-        for sub_symbol in self.defines_map.get(&symbol.text()).unwrap() {
-            match &sub_symbol.token_kind {
+    fn expand_define(&self, expansion_stack: &mut Vec<Symbol>, symbol: &Symbol) {
+        let depth = 0;
+        let mut stack = vec![(symbol, depth)];
+        while let Some((symbol, d)) = stack.pop() {
+            match &symbol.token_kind {
                 TokenKind::Identifier => {
-                    self.expand_define(expansion_stack, &sub_symbol, depth + 1);
+                    for child in self.defines_map.get(&symbol.text()).unwrap() {
+                        stack.push((child, d + 1));
+                    }
                 }
                 TokenKind::Newline | TokenKind::LineContinuation => (),
-                _ => expansion_stack.push(sub_symbol.clone()),
+                _ => expansion_stack.push(symbol.clone()),
             }
         }
     }
