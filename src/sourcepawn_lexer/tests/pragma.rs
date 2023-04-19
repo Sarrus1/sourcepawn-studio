@@ -16,10 +16,12 @@ fn pragma_simple() {
         0,
         0,
         0,
-        22
+        22,
+        0,
+        1
     );
-    assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 22, 1, 0);
-    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 0, 1, 0);
+    assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 22, 1, 0, 0, 1);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 0, 1, 0, 0, 1);
 }
 
 #[test]
@@ -34,9 +36,11 @@ fn pragma_no_line_break() {
         0,
         0,
         0,
-        22
+        22,
+        0,
+        1
     );
-    assert_token_eq!(lexer, TokenKind::Eof, "\0", 0, 22, 0, 22);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 0, 22, 0, 22, 0, 1);
 }
 
 #[test]
@@ -52,7 +56,9 @@ fn pragma_trailing_line_comment() {
         0,
         0,
         0,
-        23
+        23,
+        0,
+        1
     );
     assert_token_eq!(
         lexer,
@@ -61,10 +67,12 @@ fn pragma_trailing_line_comment() {
         0,
         23,
         0,
-        28
+        28,
+        0,
+        1
     );
-    assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 28, 1, 0);
-    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 0, 1, 0);
+    assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 28, 1, 0, 0, 1);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 0, 1, 0, 0, 1);
 }
 
 #[test]
@@ -80,7 +88,9 @@ fn pragma_trailing_block_comment() {
         0,
         0,
         0,
-        23
+        23,
+        0,
+        1
     );
     assert_token_eq!(
         lexer,
@@ -89,10 +99,12 @@ fn pragma_trailing_block_comment() {
         0,
         23,
         0,
-        28
+        28,
+        0,
+        1
     );
-    assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 28, 1, 0);
-    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 0, 1, 0);
+    assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 28, 1, 0, 0, 1);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 0, 1, 0, 0, 1);
 }
 
 #[test]
@@ -108,10 +120,12 @@ fn pragma_with_block_comment() {
         0,
         0,
         0,
-        32
+        32,
+        0,
+        1
     );
-    assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 32, 1, 0);
-    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 0, 1, 0);
+    assert_token_eq!(lexer, TokenKind::Newline, "\n", 0, 32, 1, 0, 0, 1);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 0, 1, 0, 0, 1);
 }
 
 #[test]
@@ -128,10 +142,12 @@ bar
         0,
         0,
         1,
-        3
+        3,
+        0,
+        1
     );
-    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 3, 2, 0);
-    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 3, 2, 0, 0, 1);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0, 0, 1);
 }
 
 #[test]
@@ -148,7 +164,9 @@ fn pragma_with_trailing_multiline_block_comment() {
         0,
         0,
         0,
-        23
+        23,
+        0,
+        1
     );
     assert_token_eq!(
         lexer,
@@ -157,11 +175,13 @@ fn pragma_with_trailing_multiline_block_comment() {
         0,
         23,
         1,
-        3
+        3,
+        0,
+        1
     );
-    assert_token_eq!(lexer, TokenKind::Identifier, "bar", 1, 4, 1, 7);
-    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 7, 2, 0);
-    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Identifier, "bar", 1, 4, 1, 7, 0, 1);
+    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 7, 2, 0, 0, 1);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0, 0, 1);
 }
 
 #[test]
@@ -178,10 +198,12 @@ fn pragma_with_trailing_line_continuated_multiline_block_comment() {
         0,
         0,
         1,
-        6
+        6,
+        0,
+        1
     );
-    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 6, 2, 0);
-    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 6, 2, 0, 0, 1);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0, 0, 1);
 }
 
 #[test]
@@ -198,10 +220,12 @@ bar
         0,
         0,
         1,
-        3
+        3,
+        0,
+        1
     );
-    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 3, 2, 0);
-    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 3, 2, 0, 0, 1);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0, 0, 1);
 }
 
 #[test]
@@ -216,8 +240,10 @@ fn pragma_line_continuation_carriage_return() {
         0,
         0,
         1,
-        3
+        3,
+        0,
+        1
     );
-    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 3, 2, 0);
-    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0);
+    assert_token_eq!(lexer, TokenKind::Newline, "\n", 1, 3, 2, 0, 0, 1);
+    assert_token_eq!(lexer, TokenKind::Eof, "\0", 2, 0, 2, 0, 0, 1);
 }
