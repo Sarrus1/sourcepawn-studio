@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use logos::{Lexer, Logos};
 use regex::Regex;
 
-use crate::{token::Token, token_kind::TokenKind, PreprocDir};
+use crate::{token::Token, token_kind::TokenKind, Comment, Literal, PreprocDir};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Range {
@@ -112,6 +112,34 @@ impl Symbol {
             TokenKind::Eof => "\0",
         }
         .to_string()
+    }
+
+    pub fn to_int(&self) -> Option<u32> {
+        if let TokenKind::Literal(lit) = &self.token_kind {
+            return lit.to_int(&self.text());
+        }
+
+        None
+    }
+
+    pub fn inline_text(&self) -> String {
+        let text = self.text();
+        match &self.token_kind {
+            TokenKind::Literal(lit) => match lit {
+                Literal::StringLiteral | Literal::CharLiteral => {
+                    return text.replace("\\\n", "").replace("\\\r\n", "")
+                }
+                _ => (),
+            },
+            TokenKind::Comment(com) => {
+                if *com == Comment::BlockComment {
+                    return text.replace("\n", "").replace("\r\n", "");
+                }
+            }
+            _ => (),
+        }
+
+        text
     }
 }
 

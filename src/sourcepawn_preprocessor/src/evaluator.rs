@@ -124,7 +124,7 @@ impl<'a> IfCondition<'a> {
                     | Literal::HexLiteral
                     | Literal::OctodecimalLiteral
                     | Literal::CharLiteral => {
-                        output_queue.push(lit.to_int(&symbol.text()).unwrap_or(0) as i32);
+                        output_queue.push(symbol.to_int().unwrap_or(0) as i32);
                         may_be_unary = false;
                     }
                     _ => {

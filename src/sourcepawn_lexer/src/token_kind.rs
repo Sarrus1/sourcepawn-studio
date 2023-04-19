@@ -67,7 +67,7 @@ pub enum Literal {
 }
 
 impl Literal {
-    pub fn to_int(&self, text: &str) -> Option<u32> {
+    pub(crate) fn to_int(&self, text: &str) -> Option<u32> {
         let mut buf = String::new();
         let mut x_reached = false;
         match self {
