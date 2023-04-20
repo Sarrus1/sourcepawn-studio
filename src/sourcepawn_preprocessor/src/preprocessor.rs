@@ -128,15 +128,23 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                 _ => args[arg_idx].push(sub_symbol),
                             }
                         }
-                        // TODO: Handle escaped.
-                        let mut found_percent = false;
+                        let mut consecutive_percent = 0;
                         for (i, child) in macro_.body.iter().enumerate() {
                             match &child.token_kind {
                                 TokenKind::Operator(Operator::Percent) => {
-                                    found_percent = true;
+                                    // Count consecutive % tokens.
+                                    // Keep every odd number and if a literal is found, pop the stack to remove it
+                                    // and insert the argument instead.
+                                    // This allows to preserve the spacing between the last token and the % when
+                                    // there is an escaped %.
+                                    consecutive_percent += 1;
+                                    if consecutive_percent % 2 == 1 {
+                                        stack.push((child.clone(), child.delta, d + 1))
+                                    }
                                 }
                                 TokenKind::Literal(Literal::IntegerLiteral) => {
-                                    if found_percent {
+                                    if consecutive_percent == 1 {
+                                        stack.pop();
                                         let arg_idx = child.to_int().unwrap() as usize;
                                         for (i, child) in args[arg_idx].iter().enumerate() {
                                             stack.push((
@@ -145,16 +153,19 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                                 d + 1,
                                             ));
                                         }
-                                        found_percent = false;
                                     } else {
                                         stack.push((child.clone(), child.delta, d + 1));
                                     }
+                                    consecutive_percent = 0;
                                 }
-                                _ => stack.push((
-                                    child.clone(),
-                                    if i == 0 { symbol.delta } else { child.delta },
-                                    d + 1,
-                                )),
+                                _ => {
+                                    stack.push((
+                                        child.clone(),
+                                        if i == 0 { symbol.delta } else { child.delta },
+                                        d + 1,
+                                    ));
+                                    consecutive_percent = 0;
+                                }
                             }
                         }
                     }
