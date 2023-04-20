@@ -1,14 +1,16 @@
 use fxhash::FxHashMap;
-use sourcepawn_lexer::{Literal, Operator, Range, SourcepawnLexer, Symbol, TokenKind};
+use sourcepawn_lexer::{Literal, Operator, Range, Symbol, TokenKind};
 
 use crate::preprocessor::Macro;
 
-pub(crate) fn expand_symbol(
-    lexer: &mut SourcepawnLexer,
+pub(crate) fn expand_symbol<T>(
+    lexer: &mut T,
     macros: &FxHashMap<String, Macro>,
     symbol: &Symbol,
     expansion_stack: &mut Vec<Symbol>,
-) {
+) where
+    T: Iterator<Item = Symbol>,
+{
     let depth = 0;
     let mut stack: Vec<(Symbol, sourcepawn_lexer::Delta, i32)> =
         vec![(symbol.clone(), symbol.delta, depth)];
@@ -122,10 +124,10 @@ fn expand_macro(
 /// # Arguments
 ///
 /// * `lexer` - [SourcepawnLexer](sourcepawn_lexer::lexer) to iterate over.
-fn collect_arguments(
-    lexer: &mut SourcepawnLexer,
-    args_stack: &mut Vec<Symbol>,
-) -> Vec<Vec<Symbol>> {
+fn collect_arguments<T>(lexer: &mut T, args_stack: &mut Vec<Symbol>) -> Vec<Vec<Symbol>>
+where
+    T: Iterator<Item = Symbol>,
+{
     let mut paren_depth = 0;
     let mut arg_idx = 0;
     let mut args: Vec<Vec<Symbol>> = vec![];

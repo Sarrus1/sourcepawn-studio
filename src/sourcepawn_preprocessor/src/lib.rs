@@ -305,6 +305,23 @@ mod test {
     }
 
     #[test]
+    fn if_directive_expansion_3() {
+        let input = r#"#define FOO(%0,%1) %0 + %1
+#define BAR(%0,%1) %0 + %1
+#if FOO(1, BAR(2, 3 + 4)) == 10
+#endif
+"#;
+        let output = r#"#define FOO(%0,%1) %0 + %1
+#define BAR(%0,%1) %0 + %1
+
+
+"#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
+
+    #[test]
     fn if_directive_nested_expansion_1() {
         let input = r#"#define FOO BAR
 #define BAR 1

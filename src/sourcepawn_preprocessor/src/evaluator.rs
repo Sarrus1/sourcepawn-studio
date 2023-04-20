@@ -1,12 +1,13 @@
 use fxhash::FxHashMap;
 use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
 
-use crate::{preprocessor::Macro, preprocessor_operator::PreOperator};
+use crate::{macros::expand_symbol, preprocessor::Macro, preprocessor_operator::PreOperator};
 
 #[derive(Debug)]
 pub struct IfCondition<'a> {
     pub symbols: Vec<Symbol>,
     macros: &'a FxHashMap<String, Macro>,
+    expansion_stack: Vec<Symbol>,
 }
 
 impl<'a> IfCondition<'a> {
@@ -14,41 +15,28 @@ impl<'a> IfCondition<'a> {
         Self {
             symbols: vec![],
             macros,
+            expansion_stack: vec![],
         }
     }
 
-    pub fn evaluate(&self) -> bool {
+    pub fn evaluate(&mut self) -> bool {
         let val = self.yard();
         val != 0
     }
 
-    fn expand_define(&self, expansion_stack: &mut Vec<&'a Symbol>, symbol: &'a Symbol) {
-        let depth = 0;
-        let mut stack = vec![(symbol, depth)];
-        while let Some((symbol, d)) = stack.pop() {
-            if d == 5 {
-                continue;
-            }
-            if symbol.token_kind == TokenKind::Identifier {
-                for child in self.macros.get(&symbol.text()).unwrap().body.iter() {
-                    stack.push((child, d + 1));
-                }
-            } else {
-                expansion_stack.push(symbol);
-            }
-        }
-    }
-
-    fn yard(&self) -> i32 {
+    fn yard(&mut self) -> i32 {
         let mut output_queue: Vec<i32> = vec![];
         let mut operator_stack: Vec<PreOperator> = vec![];
         let mut may_be_unary = true;
         let mut looking_for_defined = false;
-        let mut symbol_iter = self.symbols.iter().peekable();
-        let mut expansion_stack = vec![];
-        while symbol_iter.peek().is_some() || !expansion_stack.is_empty() {
-            let symbol = if !expansion_stack.is_empty() {
-                expansion_stack.pop().unwrap()
+        let mut symbol_iter = self
+            .symbols
+            .clone() // FIXME: This is horrible.
+            .into_iter()
+            .peekable();
+        while symbol_iter.peek().is_some() || !self.expansion_stack.is_empty() {
+            let symbol = if !self.expansion_stack.is_empty() {
+                self.expansion_stack.pop().unwrap()
             } else {
                 symbol_iter.next().unwrap()
             };
@@ -66,7 +54,12 @@ impl<'a> IfCondition<'a> {
                         may_be_unary = false;
                     } else {
                         // TODO: Handle function-like macros.
-                        self.expand_define(&mut expansion_stack, symbol);
+                        expand_symbol(
+                            &mut symbol_iter,
+                            &self.macros,
+                            &symbol,
+                            &mut self.expansion_stack,
+                        )
                     }
                 }
                 TokenKind::RParen => {
