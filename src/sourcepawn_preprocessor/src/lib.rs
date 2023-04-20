@@ -1,4 +1,5 @@
 pub(crate) mod evaluator;
+mod macros;
 pub mod preprocessor;
 mod preprocessor_operator;
 
