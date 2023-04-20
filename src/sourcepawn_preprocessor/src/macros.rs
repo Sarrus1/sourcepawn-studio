@@ -7,7 +7,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
         let depth = 0;
         let mut stack: Vec<(Symbol, sourcepawn_lexer::Delta, i32)> =
             vec![(symbol.clone(), symbol.delta, depth)];
-
+        let mut args_stack = vec![];
         while let Some((symbol, delta, d)) = stack.pop() {
             if d == 5 {
                 continue;
@@ -18,7 +18,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     if macro_.args.is_none() {
                         expand_non_macro_define(macro_, &mut stack, &symbol, d);
                     } else {
-                        let args = collect_arguments(&mut self.lexer);
+                        let args = collect_arguments(&mut self.lexer, &mut args_stack);
                         expand_macro(args, macro_, &mut stack, &symbol, d);
                     }
                 }
@@ -118,23 +118,32 @@ fn expand_macro(
 /// # Arguments
 ///
 /// * `lexer` - [SourcepawnLexer](sourcepawn_lexer::lexer) to iterate over.
-fn collect_arguments(lexer: &mut SourcepawnLexer) -> Vec<Vec<Symbol>> {
+fn collect_arguments(
+    lexer: &mut SourcepawnLexer,
+    args_stack: &mut Vec<Symbol>,
+) -> Vec<Vec<Symbol>> {
     let mut paren_depth = 0;
-    let mut entered_args = false;
     let mut arg_idx = 0;
     let mut args: Vec<Vec<Symbol>> = vec![];
     for _ in 0..10 {
         args.push(vec![]);
     }
-    while let Some(sub_symbol) = lexer.next() {
+    let mut new_args_stack = vec![];
+    while let Some(sub_symbol) = if !args_stack.is_empty() {
+        args_stack.pop()
+    } else {
+        lexer.next()
+    } {
         match &sub_symbol.token_kind {
             TokenKind::LParen => {
-                entered_args = true;
                 paren_depth += 1;
             }
             TokenKind::RParen => {
+                if paren_depth > 1 {
+                    new_args_stack.push(sub_symbol.clone());
+                }
                 paren_depth -= 1;
-                if entered_args && paren_depth == 0 {
+                if paren_depth == 0 {
                     break;
                 }
             }
@@ -143,8 +152,18 @@ fn collect_arguments(lexer: &mut SourcepawnLexer) -> Vec<Vec<Symbol>> {
                     arg_idx += 1;
                 }
             }
-            _ => args[arg_idx].push(sub_symbol),
+            _ => {
+                if paren_depth == 1 {
+                    args[arg_idx].push(sub_symbol.clone());
+                }
+            }
+        }
+        if paren_depth > 1 {
+            new_args_stack.push(sub_symbol.clone());
         }
     }
+    new_args_stack.reverse();
+    args_stack.extend(new_args_stack);
+
     args
 }

@@ -549,4 +549,19 @@ int foo = 2 %2;
         let mut preprocessor = SourcepawnPreprocessor::new(input);
         assert_eq!(preprocessor.preprocess_input(), output);
     }
+
+    #[test]
+    fn macro_expansion_3() {
+        let input = r#"#define FOO(%0,%1) %0 + %1
+#define BAR(%0,%1) %0 + %1
+int foo = FOO(1, BAR(2, 3 + 4));
+"#;
+        let output = r#"#define FOO(%0,%1) %0 + %1
+#define BAR(%0,%1) %0 + %1
+int foo = 1 + 2 + 3 + 4;
+"#;
+
+        let mut preprocessor = SourcepawnPreprocessor::new(input);
+        assert_eq!(preprocessor.preprocess_input(), output);
+    }
 }
