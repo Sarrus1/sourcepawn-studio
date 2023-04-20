@@ -1,7 +1,7 @@
 use fxhash::FxHashMap;
 use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
 
-use crate::evaluator::IfCondition;
+use crate::{evaluator::IfCondition, macros::expand_symbol};
 
 #[derive(Debug, Clone)]
 pub struct SourcepawnPreprocessor<'a> {
@@ -56,7 +56,12 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 }
                 TokenKind::Identifier => match self.macros.get(&symbol.text()) {
                     Some(_) => {
-                        self.expand_macro(&symbol);
+                        expand_symbol(
+                            &mut self.lexer,
+                            &mut self.macros,
+                            &symbol,
+                            &mut self.expansion_stack,
+                        );
                     }
                     None => {
                         self.push_ws(&symbol);

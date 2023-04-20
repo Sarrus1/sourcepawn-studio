@@ -1,48 +1,52 @@
+use fxhash::FxHashMap;
 use sourcepawn_lexer::{Literal, Operator, Range, SourcepawnLexer, Symbol, TokenKind};
 
-use crate::{preprocessor::Macro, SourcepawnPreprocessor};
+use crate::preprocessor::Macro;
 
-impl<'a> SourcepawnPreprocessor<'a> {
-    pub(crate) fn expand_macro(&mut self, symbol: &Symbol) {
-        let depth = 0;
-        let mut stack: Vec<(Symbol, sourcepawn_lexer::Delta, i32)> =
-            vec![(symbol.clone(), symbol.delta, depth)];
-        let mut args_stack = vec![];
-        while let Some((symbol, delta, d)) = stack.pop() {
-            if d == 5 {
-                continue;
+pub(crate) fn expand_symbol(
+    lexer: &mut SourcepawnLexer,
+    macros: &FxHashMap<String, Macro>,
+    symbol: &Symbol,
+    expansion_stack: &mut Vec<Symbol>,
+) {
+    let depth = 0;
+    let mut stack: Vec<(Symbol, sourcepawn_lexer::Delta, i32)> =
+        vec![(symbol.clone(), symbol.delta, depth)];
+    let mut args_stack = vec![];
+    while let Some((symbol, delta, d)) = stack.pop() {
+        if d == 5 {
+            continue;
+        }
+        match &symbol.token_kind {
+            TokenKind::Identifier => {
+                let macro_ = macros.get(&symbol.text()).unwrap();
+                if macro_.args.is_none() {
+                    expand_non_macro_define(macro_, &mut stack, &symbol, d);
+                } else {
+                    let args = collect_arguments(lexer, &mut args_stack);
+                    expand_macro(args, macro_, &mut stack, &symbol, d);
+                }
             }
-            match &symbol.token_kind {
-                TokenKind::Identifier => {
-                    let macro_ = self.macros.get(&symbol.text()).unwrap();
-                    if macro_.args.is_none() {
-                        expand_non_macro_define(macro_, &mut stack, &symbol, d);
-                    } else {
-                        let args = collect_arguments(&mut self.lexer, &mut args_stack);
-                        expand_macro(args, macro_, &mut stack, &symbol, d);
-                    }
-                }
-                TokenKind::Literal(Literal::StringLiteral)
-                | TokenKind::Literal(Literal::CharLiteral) => {
-                    let text = symbol.inline_text();
-                    self.expansion_stack.push(Symbol::new(
-                        symbol.token_kind.clone(),
-                        Some(&text),
-                        Range {
-                            start_line: symbol.range.start_line,
-                            end_line: symbol.range.start_line,
-                            start_col: symbol.range.start_col,
-                            end_col: text.len(),
-                        },
-                        symbol.delta,
-                    ));
-                }
-                TokenKind::Newline | TokenKind::LineContinuation | TokenKind::Comment(_) => (),
-                _ => {
-                    let mut symbol = symbol.clone();
-                    symbol.delta = delta;
-                    self.expansion_stack.push(symbol);
-                }
+            TokenKind::Literal(Literal::StringLiteral)
+            | TokenKind::Literal(Literal::CharLiteral) => {
+                let text = symbol.inline_text();
+                expansion_stack.push(Symbol::new(
+                    symbol.token_kind.clone(),
+                    Some(&text),
+                    Range {
+                        start_line: symbol.range.start_line,
+                        end_line: symbol.range.start_line,
+                        start_col: symbol.range.start_col,
+                        end_col: text.len(),
+                    },
+                    symbol.delta,
+                ));
+            }
+            TokenKind::Newline | TokenKind::LineContinuation | TokenKind::Comment(_) => (),
+            _ => {
+                let mut symbol = symbol.clone();
+                symbol.delta = delta;
+                expansion_stack.push(symbol);
             }
         }
     }
