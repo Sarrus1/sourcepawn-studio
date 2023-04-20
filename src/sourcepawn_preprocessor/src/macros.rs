@@ -1,6 +1,6 @@
-use sourcepawn_lexer::{Literal, Operator, Range, Symbol, TokenKind};
+use sourcepawn_lexer::{Literal, Operator, Range, SourcepawnLexer, Symbol, TokenKind};
 
-use crate::SourcepawnPreprocessor;
+use crate::{preprocessor::Macro, SourcepawnPreprocessor};
 
 impl<'a> SourcepawnPreprocessor<'a> {
     pub(crate) fn expand_macro(&mut self, symbol: &Symbol) {
@@ -16,82 +16,10 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 TokenKind::Identifier => {
                     let macro_ = self.macros.get(&symbol.text()).unwrap();
                     if macro_.args.is_none() {
-                        for (i, child) in macro_.body.iter().enumerate() {
-                            stack.push((
-                                child.clone(),
-                                if i == 0 { symbol.delta } else { child.delta },
-                                d + 1,
-                            ));
-                        }
+                        expand_non_macro_define(macro_, &mut stack, &symbol, d);
                     } else {
-                        // Parse the arguments of the macro and prepare to expand them when iterating over the body.
-                        let mut paren_depth = 0;
-                        let mut entered_args = false;
-                        let mut arg_idx = 0;
-                        let mut args: Vec<Vec<Symbol>> = vec![];
-                        for _ in 0..10 {
-                            args.push(vec![]);
-                        }
-                        while let Some(sub_symbol) = self.lexer.next() {
-                            match &sub_symbol.token_kind {
-                                TokenKind::LParen => {
-                                    entered_args = true;
-                                    paren_depth += 1;
-                                }
-                                TokenKind::RParen => {
-                                    paren_depth -= 1;
-                                    if entered_args && paren_depth == 0 {
-                                        break;
-                                    }
-                                }
-                                TokenKind::Comma => {
-                                    if paren_depth == 1 {
-                                        arg_idx += 1;
-                                    }
-                                }
-                                _ => args[arg_idx].push(sub_symbol),
-                            }
-                        }
-                        let mut consecutive_percent = 0;
-                        for (i, child) in macro_.body.iter().enumerate() {
-                            match &child.token_kind {
-                                TokenKind::Operator(Operator::Percent) => {
-                                    // Count consecutive % tokens.
-                                    // Keep every odd number and if a literal is found, pop the stack to remove it
-                                    // and insert the argument instead.
-                                    // This allows to preserve the spacing between the last token and the % when
-                                    // there is an escaped %.
-                                    consecutive_percent += 1;
-                                    if consecutive_percent % 2 == 1 {
-                                        stack.push((child.clone(), child.delta, d + 1))
-                                    }
-                                }
-                                TokenKind::Literal(Literal::IntegerLiteral) => {
-                                    if consecutive_percent == 1 {
-                                        stack.pop();
-                                        let arg_idx = child.to_int().unwrap() as usize;
-                                        for (i, child) in args[arg_idx].iter().enumerate() {
-                                            stack.push((
-                                                child.clone(),
-                                                if i == 0 { symbol.delta } else { child.delta },
-                                                d + 1,
-                                            ));
-                                        }
-                                    } else {
-                                        stack.push((child.clone(), child.delta, d + 1));
-                                    }
-                                    consecutive_percent = 0;
-                                }
-                                _ => {
-                                    stack.push((
-                                        child.clone(),
-                                        if i == 0 { symbol.delta } else { child.delta },
-                                        d + 1,
-                                    ));
-                                    consecutive_percent = 0;
-                                }
-                            }
-                        }
+                        let args = collect_arguments(&mut self.lexer);
+                        expand_macro(args, macro_, &mut stack, &symbol, d);
                     }
                 }
                 TokenKind::Literal(Literal::StringLiteral)
@@ -118,4 +46,105 @@ impl<'a> SourcepawnPreprocessor<'a> {
             }
         }
     }
+}
+
+fn expand_non_macro_define(
+    macro_: &Macro,
+    stack: &mut Vec<(Symbol, sourcepawn_lexer::Delta, i32)>,
+    symbol: &Symbol,
+    d: i32,
+) {
+    for (i, child) in macro_.body.iter().enumerate() {
+        stack.push((
+            child.clone(),
+            if i == 0 { symbol.delta } else { child.delta },
+            d + 1,
+        ));
+    }
+}
+
+fn expand_macro(
+    args: Vec<Vec<Symbol>>,
+    macro_: &Macro,
+    stack: &mut Vec<(Symbol, sourcepawn_lexer::Delta, i32)>,
+    symbol: &Symbol,
+    d: i32,
+) {
+    let mut consecutive_percent = 0;
+    for (i, child) in macro_.body.iter().enumerate() {
+        match &child.token_kind {
+            TokenKind::Operator(Operator::Percent) => {
+                // Count consecutive % tokens.
+                // Keep every odd number and if a literal is found, pop the stack to remove it
+                // and insert the argument instead.
+                // This allows to preserve the spacing between the last token and the % when
+                // there is an escaped %.
+                consecutive_percent += 1;
+                if consecutive_percent % 2 == 1 {
+                    stack.push((child.clone(), child.delta, d + 1))
+                }
+            }
+            TokenKind::Literal(Literal::IntegerLiteral) => {
+                if consecutive_percent == 1 {
+                    stack.pop();
+                    let arg_idx = child.to_int().unwrap() as usize;
+                    for (i, child) in args[arg_idx].iter().enumerate() {
+                        stack.push((
+                            child.clone(),
+                            if i == 0 { symbol.delta } else { child.delta },
+                            d + 1,
+                        ));
+                    }
+                } else {
+                    stack.push((child.clone(), child.delta, d + 1));
+                }
+                consecutive_percent = 0;
+            }
+            _ => {
+                stack.push((
+                    child.clone(),
+                    if i == 0 { symbol.delta } else { child.delta },
+                    d + 1,
+                ));
+                consecutive_percent = 0;
+            }
+        }
+    }
+}
+
+/// Assuming we are right before a macro call in the lexer, collect the arguments
+/// and store them in an array, in the order they appear in.
+///
+/// # Arguments
+///
+/// * `lexer` - [SourcepawnLexer](sourcepawn_lexer::lexer) to iterate over.
+fn collect_arguments(lexer: &mut SourcepawnLexer) -> Vec<Vec<Symbol>> {
+    let mut paren_depth = 0;
+    let mut entered_args = false;
+    let mut arg_idx = 0;
+    let mut args: Vec<Vec<Symbol>> = vec![];
+    for _ in 0..10 {
+        args.push(vec![]);
+    }
+    while let Some(sub_symbol) = lexer.next() {
+        match &sub_symbol.token_kind {
+            TokenKind::LParen => {
+                entered_args = true;
+                paren_depth += 1;
+            }
+            TokenKind::RParen => {
+                paren_depth -= 1;
+                if entered_args && paren_depth == 0 {
+                    break;
+                }
+            }
+            TokenKind::Comma => {
+                if paren_depth == 1 {
+                    arg_idx += 1;
+                }
+            }
+            _ => args[arg_idx].push(sub_symbol),
+        }
+    }
+    args
 }
