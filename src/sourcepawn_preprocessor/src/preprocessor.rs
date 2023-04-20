@@ -1,5 +1,5 @@
 use fxhash::FxHashMap;
-use sourcepawn_lexer::{Literal, PreprocDir, Range, SourcepawnLexer, Symbol, TokenKind};
+use sourcepawn_lexer::{Literal, Operator, PreprocDir, Range, SourcepawnLexer, Symbol, TokenKind};
 
 use crate::evaluator::IfCondition;
 
@@ -15,7 +15,7 @@ pub struct SourcepawnPreprocessor<'a> {
 
 #[derive(Debug, Clone)]
 pub(crate) struct Macro {
-    pub(crate) args: Option<Vec<Vec<Symbol>>>,
+    pub(crate) args: Option<Vec<i8>>,
     pub(crate) body: Vec<Symbol>,
 }
 
@@ -55,7 +55,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 }
                 TokenKind::Identifier => match self.macros.get(&symbol.text()) {
                     Some(_) => {
-                        self.expand_define(&mut expansion_stack, &symbol);
+                        self.expand_macro(&mut expansion_stack, &symbol);
                     }
                     None => {
                         self.push_ws(&symbol);
@@ -79,28 +79,84 @@ impl<'a> SourcepawnPreprocessor<'a> {
         self.out.join("\n")
     }
 
-    fn expand_define(&self, expansion_stack: &mut Vec<Symbol>, symbol: &Symbol) {
+    fn expand_macro(&mut self, expansion_stack: &mut Vec<Symbol>, symbol: &Symbol) {
         let depth = 0;
-        let mut stack = vec![(symbol, symbol.delta, depth)];
+        let mut stack: Vec<(Symbol, sourcepawn_lexer::Delta, i32)> =
+            vec![(symbol.clone(), symbol.delta, depth)];
+
         while let Some((symbol, delta, d)) = stack.pop() {
             if d == 5 {
                 continue;
             }
             match &symbol.token_kind {
                 TokenKind::Identifier => {
-                    for (i, child) in self
-                        .macros
-                        .get(&symbol.text())
-                        .unwrap()
-                        .body
-                        .iter()
-                        .enumerate()
-                    {
-                        stack.push((
-                            child,
-                            if i == 0 { symbol.delta } else { child.delta },
-                            d + 1,
-                        ));
+                    let macro_ = self.macros.get(&symbol.text()).unwrap();
+                    if macro_.args.is_none() {
+                        for (i, child) in macro_.body.iter().enumerate() {
+                            stack.push((
+                                child.clone(),
+                                if i == 0 { symbol.delta } else { child.delta },
+                                d + 1,
+                            ));
+                        }
+                    } else {
+                        // Parse the arguments of the macro and prepare to expand them when iterating over the body.
+                        let mut paren_depth = 0;
+                        let mut entered_args = false;
+                        let mut arg_idx = 0;
+                        let mut args: Vec<Vec<Symbol>> = vec![];
+                        for _ in 0..10 {
+                            args.push(vec![]);
+                        }
+                        while let Some(sub_symbol) = self.lexer.next() {
+                            match &sub_symbol.token_kind {
+                                TokenKind::LParen => {
+                                    entered_args = true;
+                                    paren_depth += 1;
+                                }
+                                TokenKind::RParen => {
+                                    paren_depth -= 1;
+                                    if entered_args && paren_depth == 0 {
+                                        break;
+                                    }
+                                }
+                                TokenKind::Comma => {
+                                    if paren_depth == 1 {
+                                        arg_idx += 1;
+                                    }
+                                }
+                                _ => args[arg_idx].push(sub_symbol),
+                            }
+                        }
+                        // TODO: Handle escaped.
+                        let mut found_percent = false;
+                        for (i, child) in macro_.body.iter().enumerate() {
+                            match &child.token_kind {
+                                TokenKind::Operator(Operator::Percent) => {
+                                    found_percent = true;
+                                }
+                                TokenKind::Literal(Literal::IntegerLiteral) => {
+                                    if found_percent {
+                                        let arg_idx = child.to_int().unwrap() as usize;
+                                        for (i, child) in args[arg_idx].iter().enumerate() {
+                                            stack.push((
+                                                child.clone(),
+                                                if i == 0 { symbol.delta } else { child.delta },
+                                                d + 1,
+                                            ));
+                                        }
+                                        found_percent = false;
+                                    } else {
+                                        stack.push((child.clone(), child.delta, d + 1));
+                                    }
+                                }
+                                _ => stack.push((
+                                    child.clone(),
+                                    if i == 0 { symbol.delta } else { child.delta },
+                                    d + 1,
+                                )),
+                            }
+                        }
                     }
                 }
                 TokenKind::Literal(Literal::StringLiteral)
@@ -156,6 +212,15 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     args: None,
                     body: vec![],
                 };
+                enum State {
+                    Start,
+                    Args,
+                    Body,
+                }
+                let mut args = vec![-1, 10];
+                let mut found_args = false;
+                let mut state = State::Start;
+                let mut args_idx = 0;
                 while self.lexer.in_preprocessor() {
                     if let Some(symbol) = self.lexer.next() {
                         self.push_ws(&symbol);
@@ -163,19 +228,50 @@ impl<'a> SourcepawnPreprocessor<'a> {
                         if symbol.token_kind != TokenKind::Newline {
                             self.current_line.push_str(&symbol.text());
                         }
-                        if macro_name.is_empty() {
-                            if TokenKind::Identifier == symbol.token_kind {
-                                macro_name = symbol.text();
-                            } else {
-                                // We are looking for the define's name.
-                                continue;
+                        match state {
+                            State::Start => {
+                                if macro_name.is_empty()
+                                    && TokenKind::Identifier == symbol.token_kind
+                                {
+                                    macro_name = symbol.text();
+                                } else if symbol.delta.col == 0
+                                    && symbol.token_kind == TokenKind::LParen
+                                {
+                                    state = State::Args;
+                                } else {
+                                    macro_.body.push(symbol);
+                                    state = State::Body;
+                                }
                             }
-                        } else {
-                            macro_.body.push(symbol);
+                            State::Args => {
+                                if symbol.delta.col > 0 {
+                                    macro_.body.push(symbol);
+                                    state = State::Body;
+                                    continue;
+                                }
+                                match &symbol.token_kind {
+                                    TokenKind::RParen => {
+                                        state = State::Body;
+                                    }
+                                    TokenKind::Literal(Literal::IntegerLiteral) => {
+                                        found_args = true;
+                                        args[symbol.to_int().unwrap() as usize] = args_idx;
+                                    }
+                                    TokenKind::Comma => {
+                                        args_idx += 1;
+                                    }
+                                    TokenKind::Operator(Operator::Percent) => (),
+                                    _ => unimplemented!("Unexpected token in macro args"),
+                                }
+                            }
+                            State::Body => {
+                                macro_.body.push(symbol);
+                            }
                         }
-                    } else {
-                        break;
                     }
+                }
+                if found_args {
+                    macro_.args = Some(args);
                 }
                 self.push_current_line();
                 self.current_line = "".to_string();
