@@ -3,11 +3,11 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use derive_new::new;
 use fxhash::{FxHashMap, FxHashSet};
 use lazy_static::lazy_static;
 use lsp_types::Range;
 use lsp_types::Url;
+use sourcepawn_preprocessor::SourcepawnPreprocessor;
 use tree_sitter::{Node, Query, QueryCursor};
 
 use crate::{
@@ -42,26 +42,18 @@ impl Token {
     }
 }
 
-#[derive(Debug, Clone, new)]
+#[derive(Debug, Clone)]
 pub struct Document {
     pub uri: Arc<Url>,
     pub text: String,
     pub preprocessed_text: String,
-    #[new(default)]
     pub sp_items: Vec<Arc<RwLock<SPItem>>>,
-    #[new(default)]
     pub includes: FxHashMap<Url, Token>,
-    #[new(value = "false")]
     pub parsed: bool,
-    #[new(value = "vec![]")]
     pub tokens: Vec<Arc<Token>>,
-    #[new(default)]
     pub missing_includes: FxHashMap<String, Range>,
-    #[new(default)]
     pub unresolved_tokens: FxHashSet<String>,
-    #[new(default)]
     pub declarations: FxHashMap<String, Arc<RwLock<SPItem>>>,
-    #[new(default)]
     pub diagnostics: DocumentDiagnostics,
 }
 
@@ -72,6 +64,22 @@ pub struct Walker {
 }
 
 impl Document {
+    pub fn new(uri: Arc<Url>, text: String) -> Self {
+        Self {
+            uri,
+            preprocessed_text: SourcepawnPreprocessor::new(&text).preprocess_input(),
+            text,
+            sp_items: vec![],
+            includes: FxHashMap::default(),
+            parsed: false,
+            tokens: vec![],
+            missing_includes: FxHashMap::default(),
+            unresolved_tokens: FxHashSet::default(),
+            declarations: FxHashMap::default(),
+            diagnostics: DocumentDiagnostics::default(),
+        }
+    }
+
     pub fn text(&self) -> &str {
         &self.text
     }

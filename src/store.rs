@@ -1,6 +1,5 @@
 use fxhash::{FxHashMap, FxHashSet};
 use lsp_types::Url;
-use sourcepawn_preprocessor::SourcepawnPreprocessor;
 use std::{
     fs, io,
     path::{Path, PathBuf},
@@ -158,11 +157,7 @@ impl Store {
                         continue;
                     }
                 };
-                let document = Document::new(
-                    Arc::new(uri.clone()),
-                    text.clone(),
-                    SourcepawnPreprocessor::new(&text).preprocess_input(),
-                );
+                let document = Document::new(Arc::new(uri.clone()), text.clone());
                 self.documents.insert(Arc::new(uri), document);
             }
         }
@@ -178,11 +173,7 @@ impl Store {
             Some(document) => document.declarations.clone(),
             None => FxHashMap::default(),
         };
-        let mut document = Document::new(
-            uri.clone(),
-            text.clone(),
-            SourcepawnPreprocessor::new(&text).preprocess_input(),
-        );
+        let mut document = Document::new(uri.clone(), text.clone());
         self.parse(&mut document, parser)
             .expect("Couldn't parse document");
         if !self.first_parse {
