@@ -23,6 +23,7 @@ pub enum Token {
     OctodecimalLiteral,
 
     #[regex(r#""([^"\\\n]|(?&es))*""#)]
+    #[regex(r#"<([^>\\\n]|(?&es))*>"#)]
     StringLiteral,
 
     #[regex(r"'([^'\\\n]|(?&es))*'")]

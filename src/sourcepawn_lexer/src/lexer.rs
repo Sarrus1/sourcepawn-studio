@@ -174,7 +174,7 @@ impl SourcepawnLexer<'_> {
     }
 
     pub fn in_preprocessor(&self) -> bool {
-        self.in_preprocessor
+        self.in_preprocessor && !self.eof
     }
 
     fn delta(&mut self, range: &Range) -> Delta {

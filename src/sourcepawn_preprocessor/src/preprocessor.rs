@@ -1,5 +1,5 @@
 use fxhash::FxHashMap;
-use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
+use sourcepawn_lexer::{Literal, Operator, PreprocDir, Range, SourcepawnLexer, Symbol, TokenKind};
 
 use crate::{evaluator::IfCondition, macros::expand_symbol};
 
@@ -34,14 +34,11 @@ impl<'a> SourcepawnPreprocessor<'a> {
     }
 
     pub fn preprocess_input(&mut self) -> String {
-        loop {
-            let symbol = if !self.expansion_stack.is_empty() {
-                self.expansion_stack.pop().unwrap()
-            } else if let Some(symbol) = self.lexer.next() {
-                symbol
-            } else {
-                break;
-            };
+        while let Some(symbol) = if !self.expansion_stack.is_empty() {
+            self.expansion_stack.pop()
+        } else {
+            self.lexer.next()
+        } {
             if !self.conditions_stack.is_empty() && !*self.conditions_stack.last().unwrap() {
                 self.process_negative_condition(&symbol);
                 continue;
@@ -64,9 +61,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                         );
                     }
                     None => {
-                        self.push_ws(&symbol);
-                        self.prev_end = symbol.range.end_col;
-                        self.current_line.push_str(&symbol.text());
+                        self.push_symbol(&symbol);
                     }
                 },
                 TokenKind::Eof => {
@@ -74,11 +69,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     self.push_current_line();
                     break;
                 }
-                _ => {
-                    self.push_ws(&symbol);
-                    self.prev_end = symbol.range.end_col;
-                    self.current_line.push_str(&symbol.text());
-                }
+                _ => self.push_symbol(&symbol),
             }
         }
 
@@ -105,9 +96,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 self.prev_end = 0;
             }
             PreprocDir::MDefine => {
-                self.push_ws(symbol);
-                self.prev_end = symbol.range.end_col;
-                self.current_line.push_str(&symbol.text());
+                self.push_symbol(symbol);
                 let mut macro_name = String::new();
                 let mut macro_ = Macro {
                     args: None,
@@ -182,7 +171,34 @@ impl<'a> SourcepawnPreprocessor<'a> {
             PreprocDir::MEndif => {
                 self.conditions_stack.pop();
             }
-            _ => todo!(),
+            PreprocDir::MInclude => {
+                self.push_symbol(symbol);
+                let mut delta = 0;
+                while self.lexer.in_preprocessor() {
+                    if let Some(mut symbol) = self.lexer.next() {
+                        if symbol.token_kind == TokenKind::Literal(Literal::StringLiteral) {
+                            delta += symbol.range.end_line - symbol.range.start_line;
+                            let text = symbol.inline_text();
+                            symbol = Symbol::new(
+                                symbol.token_kind.clone(),
+                                Some(&text),
+                                Range {
+                                    start_line: symbol.range.start_line,
+                                    end_line: symbol.range.start_line,
+                                    start_col: symbol.range.start_col,
+                                    end_col: text.len(),
+                                },
+                                symbol.delta,
+                            );
+                        }
+                        self.push_symbol(&symbol);
+                    }
+                }
+                for _ in 0..delta {
+                    self.out.push(String::new());
+                }
+            }
+            _ => self.push_symbol(symbol),
         }
     }
 
@@ -217,5 +233,15 @@ impl<'a> SourcepawnPreprocessor<'a> {
 
     fn push_current_line(&mut self) {
         self.out.push(self.current_line.clone());
+    }
+
+    fn push_symbol(&mut self, symbol: &Symbol) {
+        if symbol.token_kind == TokenKind::Eof {
+            self.push_current_line();
+            return;
+        }
+        self.push_ws(&symbol);
+        self.prev_end = symbol.range.end_col;
+        self.current_line.push_str(&symbol.text());
     }
 }

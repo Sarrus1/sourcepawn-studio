@@ -582,3 +582,23 @@ int foo = 1 + 2 + 3 + 4;
         assert_eq!(preprocessor.preprocess_input(), output);
     }
 }
+
+#[test]
+fn include_directive_1() {
+    let input = r#"#include <sourcemod>"#;
+    let output = r#"#include <sourcemod>"#;
+
+    let mut preprocessor = SourcepawnPreprocessor::new(input);
+    assert_eq!(preprocessor.preprocess_input(), output);
+}
+
+#[test]
+fn include_directive_2() {
+    let input = r#"#include <sourcemod\
+>"#;
+    let output = r#"#include <sourcemod>
+"#;
+
+    let mut preprocessor = SourcepawnPreprocessor::new(input);
+    assert_eq!(preprocessor.preprocess_input(), output);
+}
