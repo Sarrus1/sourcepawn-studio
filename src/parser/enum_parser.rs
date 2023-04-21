@@ -17,7 +17,7 @@ use lsp_types::{Position, Range, Url};
 impl Document {
     pub fn parse_enum(&mut self, node: &mut Node, walker: &mut Walker) -> Result<(), Utf8Error> {
         let (name, range) =
-            get_enum_name_and_range(node, &self.text, &mut walker.anon_enum_counter);
+            get_enum_name_and_range(node, &self.preprocessed_text, &mut walker.anon_enum_counter);
         let documentation = walker.find_doc(node.start_position().row, false)?;
 
         let enum_item = EnumItem {
@@ -43,7 +43,7 @@ impl Document {
             read_enum_members(
                 &enum_entries,
                 enum_item.clone(),
-                &self.text.to_string(),
+                &self.preprocessed_text.to_string(),
                 self.uri.clone(),
                 walker,
             );

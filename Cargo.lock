@@ -108,6 +108,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
+name = "beef"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a8241f3ebb85c056b509d4327ad0358fbbba6ffb340bf388f26350aeda225b1"
+
+[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -764,6 +770,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "logos"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bf8b031682c67a8e3d5446840f9573eb7fe26efe7ec8d195c9ac4c0647c502f1"
+dependencies = [
+ "logos-derive",
+]
+
+[[package]]
+name = "logos-derive"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1d849148dbaf9661a6151d1ca82b13bb4c4c128146a88d05253b38d4e2f496c"
+dependencies = [
+ "beef",
+ "fnv",
+ "proc-macro2",
+ "quote",
+ "regex-syntax",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "lsp-server"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1156,6 +1185,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 
 [[package]]
+name = "sourcepawn_lexer"
+version = "0.1.0"
+dependencies = [
+ "lazy_static",
+ "logos",
+ "regex",
+]
+
+[[package]]
 name = "sourcepawn_lsp"
 version = "0.9.10"
 dependencies = [
@@ -1179,12 +1217,21 @@ dependencies = [
  "rowan",
  "serde",
  "serde_json",
+ "sourcepawn_preprocessor",
  "tempfile",
  "threadpool",
  "tree-sitter",
  "tree-sitter-sourcepawn",
  "uuid",
  "walkdir",
+]
+
+[[package]]
+name = "sourcepawn_preprocessor"
+version = "0.1.0"
+dependencies = [
+ "fxhash",
+ "sourcepawn_lexer",
 ]
 
 [[package]]

@@ -22,7 +22,7 @@ impl Document {
             return Ok(());
         }
         let name_node = name_node.unwrap();
-        let name = name_node.utf8_text(self.text.as_bytes())?;
+        let name = name_node.utf8_text(self.preprocessed_text.as_bytes())?;
 
         let description = walker.find_doc(node.start_position().row, false)?;
 
@@ -32,8 +32,8 @@ impl Document {
         let mut counter = -1;
         for child in node.children(&mut cursor) {
             match child.kind() {
-                "comment" => walker.push_comment(child, &self.text),
-                "preproc_pragma" => walker.push_deprecated(child, &self.text),
+                "comment" => walker.push_comment(child, &self.preprocessed_text),
+                "preproc_pragma" => walker.push_deprecated(child, &self.preprocessed_text),
                 "typedef_expression" => {
                     counter += 1;
                     let mut argument_declarations_node = None;
@@ -47,7 +47,7 @@ impl Document {
 
                     let mut type_ = "";
                     if let Some(type_node) = type_node {
-                        type_ = type_node.utf8_text(self.text.as_bytes())?;
+                        type_ = type_node.utf8_text(self.preprocessed_text.as_bytes())?;
                     }
 
                     let description = walker.find_doc(node.start_position().row, false)?;
@@ -59,7 +59,9 @@ impl Document {
                         full_range: ts_range_to_lsp_range(&node.range()),
                         description: description.clone(),
                         uri: self.uri.clone(),
-                        detail: node.utf8_text(self.text.as_bytes())?.to_string(),
+                        detail: node
+                            .utf8_text(self.preprocessed_text.as_bytes())?
+                            .to_string(),
                         references: vec![],
                         params: vec![],
                     };

@@ -50,11 +50,13 @@ impl Document {
             return Ok(());
         }
         let name_node = name_node.unwrap();
-        let name = name_node.utf8_text(self.text.as_bytes())?.to_string();
+        let name = name_node
+            .utf8_text(self.preprocessed_text.as_bytes())?
+            .to_string();
 
         let mut type_ = "";
         if let Some(type_node) = type_node {
-            type_ = type_node.utf8_text(self.text.as_bytes())?;
+            type_ = type_node.utf8_text(self.preprocessed_text.as_bytes())?;
         }
 
         let description = walker.find_doc(node.start_position().row, false)?;
@@ -66,7 +68,9 @@ impl Document {
             full_range: ts_range_to_lsp_range(&node.range()),
             description: description.clone(),
             uri: self.uri.clone(),
-            detail: node.utf8_text(self.text.as_bytes())?.to_string(),
+            detail: node
+                .utf8_text(self.preprocessed_text.as_bytes())?
+                .to_string(),
             references: vec![],
             params: vec![],
         };
@@ -105,14 +109,15 @@ pub(super) fn read_argument_declarations(
                     match sub_child.kind() {
                         "const" => is_const = true,
                         "dimension" | "fixed_dimension" => {
-                            let dimension = sub_child.utf8_text(document.text.as_bytes())?;
+                            let dimension =
+                                sub_child.utf8_text(document.preprocessed_text.as_bytes())?;
                             dimensions.push(dimension.to_string());
                         }
                         _ => {}
                     }
                 }
                 let name_node = name_node.unwrap();
-                let name = name_node.utf8_text(document.text.as_bytes());
+                let name = name_node.utf8_text(document.preprocessed_text.as_bytes());
 
                 let parameter = Parameter {
                     name: name?.to_string(),
@@ -159,7 +164,7 @@ pub(crate) fn parse_argument_type(
             // FIXME: Handle oldtypes.
             "type" => {
                 type_.name = child
-                    .utf8_text(document.text.as_bytes())
+                    .utf8_text(document.preprocessed_text.as_bytes())
                     .unwrap()
                     .to_string();
             }
@@ -167,7 +172,7 @@ pub(crate) fn parse_argument_type(
             "dimension" | "fixed_dimension" => {
                 type_.dimensions.push(
                     child
-                        .utf8_text(document.text.as_bytes())
+                        .utf8_text(document.preprocessed_text.as_bytes())
                         .unwrap()
                         .to_string(),
                 );

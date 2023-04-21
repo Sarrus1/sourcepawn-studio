@@ -18,10 +18,15 @@ impl Document {
         walker: &mut Walker,
     ) -> Result<(), Utf8Error> {
         let name_node = node.child_by_field_name("name").unwrap();
-        let name = name_node.utf8_text(self.text.as_bytes())?.to_string();
+        let name = name_node
+            .utf8_text(self.preprocessed_text.as_bytes())?
+            .to_string();
         let value_node = node.child_by_field_name("value");
         let value = match value_node {
-            Some(value_node) => value_node.utf8_text(self.text.as_bytes()).unwrap().trim(),
+            Some(value_node) => value_node
+                .utf8_text(self.preprocessed_text.as_bytes())
+                .unwrap()
+                .trim(),
             None => "",
         };
 

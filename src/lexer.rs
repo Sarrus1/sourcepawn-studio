@@ -52,7 +52,7 @@ impl Document {
             first_char: true,
             ..Default::default()
         };
-        for char_ in self.text.chars() {
+        for char_ in self.preprocessed_text.chars() {
             state.increment_character_count();
             state.prev = state.cur;
             state.cur = char_;

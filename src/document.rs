@@ -46,6 +46,7 @@ impl Token {
 pub struct Document {
     pub uri: Arc<Url>,
     pub text: String,
+    pub preprocessed_text: String,
     #[new(default)]
     pub sp_items: Vec<Arc<RwLock<SPItem>>>,
     #[new(default)]
@@ -96,17 +97,17 @@ impl Document {
 
     pub fn extract_tokens(&mut self, root_node: Node) {
         let mut cursor = QueryCursor::new();
-        let matches = cursor.captures(&SYMBOL_QUERY, root_node, self.text.as_bytes());
+        let matches = cursor.captures(&SYMBOL_QUERY, root_node, self.preprocessed_text.as_bytes());
         for (match_, _) in matches {
             for capture in match_.captures.iter() {
                 self.tokens
-                    .push(Arc::new(Token::new(capture.node, &self.text)));
+                    .push(Arc::new(Token::new(capture.node, &self.preprocessed_text)));
             }
         }
     }
 
     pub fn line(&self, line_nb: u32) -> Option<&str> {
-        for (i, line) in self.text.lines().enumerate() {
+        for (i, line) in self.preprocessed_text.lines().enumerate() {
             if i == line_nb as usize {
                 return Some(line);
             }

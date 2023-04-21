@@ -1,5 +1,6 @@
 use fxhash::{FxHashMap, FxHashSet};
 use lsp_types::Url;
+use sourcepawn_preprocessor::SourcepawnPreprocessor;
 use std::{
     fs, io,
     path::{Path, PathBuf},
@@ -157,7 +158,11 @@ impl Store {
                         continue;
                     }
                 };
-                let document = Document::new(Arc::new(uri.clone()), text.clone());
+                let document = Document::new(
+                    Arc::new(uri.clone()),
+                    text.clone(),
+                    SourcepawnPreprocessor::new(&text).preprocess_input(),
+                );
                 self.documents.insert(Arc::new(uri), document);
             }
         }
@@ -173,7 +178,11 @@ impl Store {
             Some(document) => document.declarations.clone(),
             None => FxHashMap::default(),
         };
-        let mut document = Document::new(uri.clone(), text);
+        let mut document = Document::new(
+            uri.clone(),
+            text.clone(),
+            SourcepawnPreprocessor::new(&text).preprocess_input(),
+        );
         self.parse(&mut document, parser)
             .expect("Couldn't parse document");
         if !self.first_parse {
@@ -237,7 +246,7 @@ impl Store {
     }
 
     pub fn parse(&mut self, document: &mut Document, parser: &mut Parser) -> Result<(), Utf8Error> {
-        let tree = parser.parse(&document.text, None).unwrap();
+        let tree = parser.parse(&document.preprocessed_text, None).unwrap();
         let root_node = tree.root_node();
         let mut walker = Walker {
             comments: vec![],
@@ -273,10 +282,10 @@ impl Store {
                 "preproc_macro" => {}
                 "enum_struct" => document.parse_enum_struct(&mut node, &mut walker)?,
                 "comment" => {
-                    walker.push_comment(node, &document.text);
+                    walker.push_comment(node, &document.preprocessed_text);
                     walker.push_inline_comment(&document.sp_items);
                 }
-                "preproc_pragma" => walker.push_deprecated(node, &document.text),
+                "preproc_pragma" => walker.push_deprecated(node, &document.preprocessed_text),
                 _ => {
                     continue;
                 }

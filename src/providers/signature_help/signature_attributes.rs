@@ -27,7 +27,7 @@ impl SignatureAttributes {
         // Provide an initial one offset to counter the initial -1 in the while loop.
         let mut line_nb = position.line as usize + 1;
         let lines = document
-            .text
+            .preprocessed_text
             .lines()
             .map(|x| x.to_string())
             .collect::<Vec<String>>();

@@ -22,7 +22,7 @@ impl Store {
         node: &mut Node,
     ) -> Result<(), Utf8Error> {
         let path_node = node.child_by_field_name("path").unwrap();
-        let path = path_node.utf8_text(document.text.as_bytes())?;
+        let path = path_node.utf8_text(document.preprocessed_text.as_bytes())?;
         let range = ts_range_to_lsp_range(&path_node.range());
 
         // Remove leading and trailing "<" and ">" or ".

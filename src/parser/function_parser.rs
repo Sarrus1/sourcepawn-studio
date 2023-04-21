@@ -79,15 +79,19 @@ impl Document {
             return Ok(());
         }
         let name_node = name_node.unwrap();
-        let name = name_node.utf8_text(self.text.as_bytes())?.to_string();
+        let name = name_node
+            .utf8_text(self.preprocessed_text.as_bytes())?
+            .to_string();
 
         let mut type_ = Ok("");
         if let Some(type_node) = type_node {
-            type_ = type_node.utf8_text(self.text.as_bytes());
+            type_ = type_node.utf8_text(self.preprocessed_text.as_bytes());
         }
 
         if visibility_node.is_some() {
-            let visibility_text = visibility_node.unwrap().utf8_text(self.text.as_bytes())?;
+            let visibility_text = visibility_node
+                .unwrap()
+                .utf8_text(self.preprocessed_text.as_bytes())?;
             if visibility_text.contains("stock") {
                 visibility.insert(FunctionVisibility::Stock);
             }
@@ -102,7 +106,7 @@ impl Document {
         if definition_type_node.is_some() {
             definition_type = match definition_type_node
                 .unwrap()
-                .utf8_text(self.text.as_bytes())?
+                .utf8_text(self.preprocessed_text.as_bytes())?
             {
                 "forward" => FunctionDefinitionType::Forward,
                 "native" => FunctionDefinitionType::Native,
@@ -140,7 +144,7 @@ impl Document {
             read_body_variables(
                 self,
                 block_node,
-                self.text.to_string(),
+                self.preprocessed_text.to_string(),
                 function_item.clone(),
             )?
         }
@@ -148,7 +152,7 @@ impl Document {
             self,
             documentation,
             argument_declarations_node,
-            self.text.to_string(),
+            self.preprocessed_text.to_string(),
             function_item.clone(),
         )?;
         if let Some(parent) = &parent {
@@ -173,14 +177,18 @@ fn build_detail(
 ) -> Result<String, Utf8Error> {
     let mut detail = format!("{} {}", type_?, name);
     if let Some(params_node) = params_node {
-        detail.push_str(params_node.utf8_text(document.text.as_bytes()).unwrap());
+        detail.push_str(
+            params_node
+                .utf8_text(document.preprocessed_text.as_bytes())
+                .unwrap(),
+        );
     }
     if visibility_node.is_some() {
         detail = format!(
             "{} {}",
             visibility_node
                 .unwrap()
-                .utf8_text(document.text.as_bytes())?,
+                .utf8_text(document.preprocessed_text.as_bytes())?,
             detail
         )
     }
@@ -190,7 +198,7 @@ fn build_detail(
             "{} {}",
             definition_type_node
                 .unwrap()
-                .utf8_text(document.text.as_bytes())?,
+                .utf8_text(document.preprocessed_text.as_bytes())?,
             detail
         );
     }
@@ -252,10 +260,10 @@ fn read_function_parameters(
             }
         }
         let name_node = name_node.unwrap();
-        let name = name_node.utf8_text(document.text.as_bytes())?;
+        let name = name_node.utf8_text(document.preprocessed_text.as_bytes())?;
 
         let type_ = match type_node {
-            Some(type_node) => type_node.utf8_text(document.text.as_bytes())?,
+            Some(type_node) => type_node.utf8_text(document.preprocessed_text.as_bytes())?,
             None => "",
         };
         let detail = child.utf8_text(text.as_bytes())?;
