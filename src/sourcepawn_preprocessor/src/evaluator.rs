@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Context};
 use fxhash::FxHashMap;
 use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
 
@@ -19,12 +20,7 @@ impl<'a> IfCondition<'a> {
         }
     }
 
-    pub fn evaluate(&mut self) -> bool {
-        let val = self.yard();
-        val != 0
-    }
-
-    fn yard(&mut self) -> i32 {
+    pub fn evaluate(&mut self) -> anyhow::Result<bool> {
         let mut output_queue: Vec<i32> = vec![];
         let mut operator_stack: Vec<PreOperator> = vec![];
         let mut may_be_unary = true;
@@ -34,12 +30,11 @@ impl<'a> IfCondition<'a> {
             .clone() // FIXME: This is horrible.
             .into_iter()
             .peekable();
-        while symbol_iter.peek().is_some() || !self.expansion_stack.is_empty() {
-            let symbol = if !self.expansion_stack.is_empty() {
-                self.expansion_stack.pop().unwrap()
-            } else {
-                symbol_iter.next().unwrap()
-            };
+        while let Some(symbol) = if !self.expansion_stack.is_empty() {
+            self.expansion_stack.pop()
+        } else {
+            symbol_iter.next()
+        } {
             match &symbol.token_kind {
                 TokenKind::LParen => {
                     operator_stack.push(PreOperator::LParen);
@@ -59,7 +54,7 @@ impl<'a> IfCondition<'a> {
                             &self.macros,
                             &symbol,
                             &mut self.expansion_stack,
-                        )
+                        )?
                     }
                 }
                 TokenKind::RParen => {
@@ -69,7 +64,10 @@ impl<'a> IfCondition<'a> {
                             may_be_unary = false;
                             break;
                         } else {
-                            operator_stack.pop().unwrap().process_op(&mut output_queue);
+                            operator_stack
+                                .pop()
+                                .context("Invalid condition, expected an operator before ) token.")?
+                                .process_op(&mut output_queue);
                         }
                     }
                 }
@@ -77,7 +75,7 @@ impl<'a> IfCondition<'a> {
                     looking_for_defined = true;
                 }
                 TokenKind::Operator(op) => {
-                    let mut cur_op = PreOperator::from(op);
+                    let mut cur_op = PreOperator::convert(op)?;
                     if may_be_unary && is_unary(op) {
                         cur_op = match op {
                             Operator::Not => PreOperator::Not,
@@ -94,7 +92,10 @@ impl<'a> IfCondition<'a> {
                         if (!cur_op.is_unary() && top.priority() <= cur_op.priority())
                             || (cur_op.is_unary() && top.priority() < cur_op.priority())
                         {
-                            operator_stack.pop().unwrap().process_op(&mut output_queue);
+                            operator_stack
+                                .pop()
+                                .context("Invalid condition, expected an operator.")?
+                                .process_op(&mut output_queue);
                         } else {
                             break;
                         }
@@ -120,21 +121,25 @@ impl<'a> IfCondition<'a> {
                         may_be_unary = false;
                     }
                     _ => {
-                        unimplemented!(
+                        return Err(anyhow!(
                             "Literal {:?} is not supported in expression evaluation.",
                             lit
-                        )
+                        ))
                     }
                 },
                 TokenKind::Comment(_) | TokenKind::Newline | TokenKind::Eof => (),
                 _ => todo!("TokenKind: {:?}", &symbol.token_kind),
             }
         }
-        while !operator_stack.is_empty() {
-            operator_stack.pop().unwrap().process_op(&mut output_queue);
+        while let Some(op) = operator_stack.pop() {
+            op.process_op(&mut output_queue);
         }
 
-        *output_queue.last().unwrap()
+        let res = *output_queue
+            .last()
+            .context("Invalid condition, expected a result.")?;
+
+        Ok(res != 0)
     }
 }
 

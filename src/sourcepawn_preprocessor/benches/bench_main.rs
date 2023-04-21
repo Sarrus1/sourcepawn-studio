@@ -7,7 +7,11 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     let input = response.as_str().unwrap();
     c.bench_function("surftimer_sql", |b| {
         b.iter(|| {
-            black_box(SourcepawnPreprocessor::new(input).preprocess_input());
+            black_box(
+                SourcepawnPreprocessor::new(input)
+                    .preprocess_input()
+                    .unwrap(),
+            );
         })
     });
 }

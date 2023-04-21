@@ -49,7 +49,7 @@ impl Symbol {
             TokenKind::Operator(op) => return op.text(),
             TokenKind::PreprocDir(dir) => {
                 if self.token_kind == TokenKind::PreprocDir(PreprocDir::MPragma) {
-                    return self.text.clone().unwrap();
+                    return self.text();
                 }
                 return dir.text();
             }
@@ -243,6 +243,7 @@ impl Iterator for SourcepawnLexer<'_> {
                 if token == Token::MPragma {
                     self.in_preprocessor = true;
                 }
+                // Safe unwrap here as those tokens have text.
                 let text = text.clone().unwrap();
                 let line_breaks: Vec<_> = RE1.find_iter(text.as_str()).collect();
                 let line_continuations: Vec<_> = RE2.find_iter(text.as_str()).collect();
@@ -282,7 +283,7 @@ impl Iterator for SourcepawnLexer<'_> {
             }
             _ => {}
         }
-        let token_kind = TokenKind::try_from(token).unwrap();
+        let token_kind = TokenKind::try_from(token).ok()?;
         let range = Range {
             start_line,
             start_col,

@@ -20,7 +20,7 @@ mod test {
         "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), input);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), input);
     }
 
     fn evaluate_if_condition(input: &str) -> bool {
@@ -39,7 +39,7 @@ mod test {
             }
         }
 
-        if_condition.evaluate()
+        if_condition.evaluate().unwrap_or(false)
     }
 
     #[test]
@@ -187,7 +187,7 @@ mod test {
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -204,7 +204,7 @@ mod test {
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -223,7 +223,7 @@ mod test {
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -246,7 +246,7 @@ mod test {
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -271,7 +271,7 @@ mod test {
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -286,7 +286,7 @@ mod test {
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -301,7 +301,7 @@ mod test {
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -318,7 +318,7 @@ mod test {
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -335,7 +335,7 @@ mod test {
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -354,7 +354,7 @@ mod test {
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -371,7 +371,7 @@ mod test {
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -384,7 +384,7 @@ int foo = 1;
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -397,7 +397,7 @@ char foo[64] = "test";
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -410,7 +410,7 @@ int foo = 1;
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -423,7 +423,7 @@ int foo = 1;
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -438,7 +438,7 @@ int foo = 1;
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -455,7 +455,7 @@ int bar;
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -472,7 +472,7 @@ int bar;
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -487,7 +487,7 @@ char foo[64] = "test expansion";
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -506,7 +506,7 @@ char foo[64] = "test expansion also";
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -521,7 +521,7 @@ int foo = 1 +   2;
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -538,7 +538,7 @@ int foo = 1 + 2 + 3;
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -551,7 +551,7 @@ int foo = 1 + 2;
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -564,7 +564,7 @@ int foo = 2 %2;
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 
     #[test]
@@ -579,7 +579,7 @@ int foo = 1 + 2 + 3 + 4;
 "#;
 
         let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input(), output);
+        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
     }
 }
 
@@ -589,7 +589,7 @@ fn include_directive_1() {
     let output = r#"#include <sourcemod>"#;
 
     let mut preprocessor = SourcepawnPreprocessor::new(input);
-    assert_eq!(preprocessor.preprocess_input(), output);
+    assert_eq!(preprocessor.preprocess_input().unwrap(), output);
 }
 
 #[test]
@@ -600,5 +600,5 @@ fn include_directive_2() {
 "#;
 
     let mut preprocessor = SourcepawnPreprocessor::new(input);
-    assert_eq!(preprocessor.preprocess_input(), output);
+    assert_eq!(preprocessor.preprocess_input().unwrap(), output);
 }

@@ -67,7 +67,9 @@ impl Document {
     pub fn new(uri: Arc<Url>, text: String) -> Self {
         Self {
             uri,
-            preprocessed_text: SourcepawnPreprocessor::new(&text).preprocess_input(),
+            preprocessed_text: SourcepawnPreprocessor::new(&text)
+                .preprocess_input()
+                .unwrap_or(text.clone()), // TODO: Report the error range here.
             text,
             sp_items: vec![],
             includes: FxHashMap::default(),

@@ -1,3 +1,4 @@
+use anyhow::Context;
 use fxhash::FxHashMap;
 use sourcepawn_lexer::{Literal, Operator, Range, Symbol, TokenKind};
 
@@ -8,7 +9,8 @@ pub(crate) fn expand_symbol<T>(
     macros: &FxHashMap<String, Macro>,
     symbol: &Symbol,
     expansion_stack: &mut Vec<Symbol>,
-) where
+) -> anyhow::Result<()>
+where
     T: Iterator<Item = Symbol>,
 {
     let depth = 0;
@@ -21,12 +23,14 @@ pub(crate) fn expand_symbol<T>(
         }
         match &symbol.token_kind {
             TokenKind::Identifier => {
-                let macro_ = macros.get(&symbol.text()).unwrap();
+                let macro_ = macros
+                    .get(&symbol.text())
+                    .context(format!("Undefined macro {:?}", symbol.text()))?;
                 if macro_.args.is_none() {
                     expand_non_macro_define(macro_, &mut stack, &symbol, d);
                 } else {
                     let args = collect_arguments(lexer, &mut args_stack);
-                    expand_macro(args, macro_, &mut stack, &symbol, d);
+                    expand_macro(args, macro_, &mut stack, &symbol, d)?;
                 }
             }
             TokenKind::Literal(Literal::StringLiteral)
@@ -52,6 +56,8 @@ pub(crate) fn expand_symbol<T>(
             }
         }
     }
+
+    Ok(())
 }
 
 fn expand_non_macro_define(
@@ -75,7 +81,7 @@ fn expand_macro(
     stack: &mut Vec<(Symbol, sourcepawn_lexer::Delta, i32)>,
     symbol: &Symbol,
     d: i32,
-) {
+) -> anyhow::Result<()> {
     let mut consecutive_percent = 0;
     for (i, child) in macro_.body.iter().enumerate() {
         match &child.token_kind {
@@ -93,7 +99,10 @@ fn expand_macro(
             TokenKind::Literal(Literal::IntegerLiteral) => {
                 if consecutive_percent == 1 {
                     stack.pop();
-                    let arg_idx = child.to_int().unwrap() as usize;
+                    let arg_idx = child.to_int().context(format!(
+                        "Could not convert {:?} to an int value.",
+                        child.text()
+                    ))? as usize;
                     for (i, child) in args[arg_idx].iter().enumerate() {
                         stack.push((
                             child.clone(),
@@ -116,6 +125,8 @@ fn expand_macro(
             }
         }
     }
+
+    Ok(())
 }
 
 /// Assuming we are right before a macro call in the lexer, collect the arguments

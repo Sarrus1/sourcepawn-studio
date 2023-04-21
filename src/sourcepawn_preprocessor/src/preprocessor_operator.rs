@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use sourcepawn_lexer::Operator;
 
 #[allow(dead_code)]
@@ -85,9 +86,9 @@ pub enum PreOperator {
     RParen,
 }
 
-impl From<&Operator> for PreOperator {
-    fn from(op: &Operator) -> Self {
-        match op {
+impl PreOperator {
+    pub fn convert(op: &Operator) -> anyhow::Result<Self> {
+        let res = match op {
             Operator::Not => PreOperator::Not,
             Operator::Tilde => PreOperator::Tilde,
             Operator::Star => PreOperator::Star,
@@ -109,12 +110,12 @@ impl From<&Operator> for PreOperator {
             Operator::NotEquals => PreOperator::NotEquals,
             Operator::And => PreOperator::And,
             Operator::Or => PreOperator::Or,
-            _ => unimplemented!("Operator: {:?}", op),
-        }
-    }
-}
+            _ => return Err(anyhow!("Operator {:?} is not a preprocessor operator.", op)),
+        };
 
-impl PreOperator {
+        Ok(res)
+    }
+
     pub fn is_unary(&self) -> bool {
         matches!(
             self,

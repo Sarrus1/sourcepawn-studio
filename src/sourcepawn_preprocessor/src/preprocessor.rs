@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Context};
 use fxhash::FxHashMap;
 use sourcepawn_lexer::{Literal, Operator, PreprocDir, Range, SourcepawnLexer, Symbol, TokenKind};
 
@@ -33,18 +34,18 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }
     }
 
-    pub fn preprocess_input(&mut self) -> String {
+    pub fn preprocess_input(&mut self) -> anyhow::Result<String> {
         while let Some(symbol) = if !self.expansion_stack.is_empty() {
             self.expansion_stack.pop()
         } else {
             self.lexer.next()
         } {
-            if !self.conditions_stack.is_empty() && !*self.conditions_stack.last().unwrap() {
-                self.process_negative_condition(&symbol);
+            if !self.conditions_stack.last().unwrap_or(&true) {
+                self.process_negative_condition(&symbol)?;
                 continue;
             }
             match &symbol.token_kind {
-                TokenKind::PreprocDir(dir) => self.process_directive(dir, &symbol),
+                TokenKind::PreprocDir(dir) => self.process_directive(dir, &symbol)?,
                 TokenKind::Newline => {
                     self.push_ws(&symbol);
                     self.push_current_line();
@@ -58,7 +59,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                             &mut self.macros,
                             &symbol,
                             &mut self.expansion_stack,
-                        );
+                        )?;
                     }
                     None => {
                         self.push_symbol(&symbol);
@@ -73,10 +74,10 @@ impl<'a> SourcepawnPreprocessor<'a> {
             }
         }
 
-        self.out.join("\n")
+        Ok(self.out.join("\n"))
     }
 
-    fn process_directive(&mut self, dir: &PreprocDir, symbol: &Symbol) {
+    fn process_directive(&mut self, dir: &PreprocDir, symbol: &Symbol) -> anyhow::Result<()> {
         match dir {
             PreprocDir::MIf => {
                 let line_nb = symbol.range.start_line;
@@ -88,11 +89,15 @@ impl<'a> SourcepawnPreprocessor<'a> {
                         break;
                     }
                 }
-                self.conditions_stack.push(if_condition.evaluate());
-                let line_diff = if_condition.symbols.last().unwrap().range.end_line - line_nb;
-                for _ in 0..line_diff {
-                    self.out.push(String::new());
+                self.conditions_stack
+                    .push(if_condition.evaluate().unwrap_or(false));
+                if let Some(last_symbol) = if_condition.symbols.last() {
+                    let line_diff = last_symbol.range.end_line - line_nb;
+                    for _ in 0..line_diff {
+                        self.out.push(String::new());
+                    }
                 }
+
                 self.prev_end = 0;
             }
             PreprocDir::MDefine => {
@@ -145,13 +150,22 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                     }
                                     TokenKind::Literal(Literal::IntegerLiteral) => {
                                         found_args = true;
-                                        args[symbol.to_int().unwrap() as usize] = args_idx;
+                                        args[symbol.to_int().context(format!(
+                                            "Could not convert {:?} to an int value.",
+                                            symbol.text()
+                                        ))?
+                                            as usize] = args_idx;
                                     }
                                     TokenKind::Comma => {
                                         args_idx += 1;
                                     }
                                     TokenKind::Operator(Operator::Percent) => (),
-                                    _ => unimplemented!("Unexpected token in macro args"),
+                                    _ => {
+                                        return Err(anyhow!(
+                                            "Unexpected symbol {} in macro args",
+                                            symbol.text()
+                                        ))
+                                    }
                                 }
                             }
                             State::Body => {
@@ -200,16 +214,21 @@ impl<'a> SourcepawnPreprocessor<'a> {
             }
             _ => self.push_symbol(symbol),
         }
+
+        Ok(())
     }
 
-    fn process_negative_condition(&mut self, symbol: &Symbol) {
+    fn process_negative_condition(&mut self, symbol: &Symbol) -> anyhow::Result<()> {
         match &symbol.token_kind {
             TokenKind::PreprocDir(dir) => match dir {
                 PreprocDir::MEndif => {
                     self.conditions_stack.pop();
                 }
                 PreprocDir::MElse => {
-                    let last = self.conditions_stack.pop().unwrap();
+                    let last = self
+                        .conditions_stack
+                        .pop()
+                        .context("Expect if before else clause.")?;
                     self.conditions_stack.push(!last);
                 }
                 // TODO: Handle #elseif.
@@ -224,6 +243,8 @@ impl<'a> SourcepawnPreprocessor<'a> {
             // Skip any token that is not a directive or a newline.
             _ => (),
         }
+
+        Ok(())
     }
 
     fn push_ws(&mut self, symbol: &Symbol) {
