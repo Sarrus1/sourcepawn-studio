@@ -10,7 +10,7 @@ mod test {
     use fxhash::FxHashMap;
     use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
 
-    use crate::{evaluator::IfCondition, preprocessor::Macro, SourcepawnPreprocessor};
+    use super::{evaluator::IfCondition, preprocessor::Macro, SourcepawnPreprocessor};
 
     #[test]
     fn no_preprocessor_directives() {

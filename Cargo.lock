@@ -1217,22 +1217,13 @@ dependencies = [
  "rowan",
  "serde",
  "serde_json",
- "sourcepawn_preprocessor",
+ "sourcepawn_lexer",
  "tempfile",
  "threadpool",
  "tree-sitter",
  "tree-sitter-sourcepawn",
  "uuid",
  "walkdir",
-]
-
-[[package]]
-name = "sourcepawn_preprocessor"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "fxhash",
- "sourcepawn_lexer",
 ]
 
 [[package]]

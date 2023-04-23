@@ -7,12 +7,12 @@ use fxhash::{FxHashMap, FxHashSet};
 use lazy_static::lazy_static;
 use lsp_types::Range;
 use lsp_types::Url;
-use sourcepawn_preprocessor::SourcepawnPreprocessor;
 use tree_sitter::{Node, Query, QueryCursor};
 
 use crate::{
     linter::document_diagnostics::DocumentDiagnostics,
     parser::comment_parser::{Comment, Deprecated},
+    sourcepawn_preprocessor::SourcepawnPreprocessor,
     spitem::SPItem,
     utils::ts_range_to_lsp_range,
 };

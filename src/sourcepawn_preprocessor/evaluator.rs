@@ -2,7 +2,7 @@ use anyhow::{anyhow, Context};
 use fxhash::FxHashMap;
 use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
 
-use crate::{macros::expand_symbol, preprocessor::Macro, preprocessor_operator::PreOperator};
+use super::{macros::expand_symbol, preprocessor::Macro, preprocessor_operator::PreOperator};
 
 #[derive(Debug)]
 pub struct IfCondition<'a> {

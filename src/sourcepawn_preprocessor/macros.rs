@@ -2,7 +2,7 @@ use anyhow::Context;
 use fxhash::FxHashMap;
 use sourcepawn_lexer::{Literal, Operator, Range, Symbol, TokenKind};
 
-use crate::preprocessor::Macro;
+use super::preprocessor::Macro;
 
 pub(crate) fn expand_symbol<T>(
     lexer: &mut T,

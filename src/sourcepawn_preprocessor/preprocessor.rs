@@ -2,7 +2,7 @@ use anyhow::{anyhow, Context};
 use fxhash::FxHashMap;
 use sourcepawn_lexer::{Literal, Operator, PreprocDir, Range, SourcepawnLexer, Symbol, TokenKind};
 
-use crate::{evaluator::IfCondition, macros::expand_symbol};
+use super::{evaluator::IfCondition, macros::expand_symbol};
 
 #[derive(Debug, Clone)]
 pub struct SourcepawnPreprocessor<'a> {
