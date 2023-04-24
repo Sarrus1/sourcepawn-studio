@@ -153,10 +153,7 @@ fn get_include_folder_completions(
 ) {
     for inc_uri_folder in inc_uri_folders.iter() {
         let inc_folder_path = inc_uri_folder.to_file_path().unwrap();
-        let paths = fs::read_dir(inc_folder_path.clone())
-            .unwrap()
-            .into_iter()
-            .flatten();
+        let paths = fs::read_dir(inc_folder_path.clone()).unwrap().flatten();
 
         for path in paths {
             let path = path.path();

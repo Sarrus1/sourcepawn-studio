@@ -12,7 +12,7 @@ use tree_sitter::{Node, Query, QueryCursor};
 use crate::{
     linter::document_diagnostics::DocumentDiagnostics,
     parser::comment_parser::{Comment, Deprecated},
-    sourcepawn_preprocessor::SourcepawnPreprocessor,
+    sourcepawn_preprocessor::preprocessor::Macro,
     spitem::SPItem,
     utils::ts_range_to_lsp_range,
 };
@@ -55,6 +55,7 @@ pub struct Document {
     pub unresolved_tokens: FxHashSet<String>,
     pub declarations: FxHashMap<String, Arc<RwLock<SPItem>>>,
     pub diagnostics: DocumentDiagnostics,
+    pub(crate) macros: FxHashMap<String, Macro>,
 }
 
 pub struct Walker {
@@ -67,9 +68,7 @@ impl Document {
     pub fn new(uri: Arc<Url>, text: String) -> Self {
         Self {
             uri,
-            preprocessed_text: SourcepawnPreprocessor::new(&text)
-                .preprocess_input()
-                .unwrap_or(text.clone()), // TODO: Report the error range here.
+            preprocessed_text: String::new(),
             text,
             sp_items: vec![],
             includes: FxHashMap::default(),
@@ -79,6 +78,7 @@ impl Document {
             unresolved_tokens: FxHashSet::default(),
             declarations: FxHashMap::default(),
             diagnostics: DocumentDiagnostics::default(),
+            macros: FxHashMap::default(),
         }
     }
 

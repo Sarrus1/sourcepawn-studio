@@ -1,6 +1,11 @@
+use std::sync::Arc;
+
 use anyhow::{anyhow, Context};
 use fxhash::FxHashMap;
+use lsp_types::Url;
 use sourcepawn_lexer::{Literal, Operator, PreprocDir, Range, SourcepawnLexer, Symbol, TokenKind};
+
+use crate::store::Store;
 
 use super::{evaluator::IfCondition, macros::expand_symbol};
 
@@ -9,6 +14,7 @@ pub struct SourcepawnPreprocessor<'a> {
     pub(crate) lexer: SourcepawnLexer<'a>,
     pub(crate) macros: FxHashMap<String, Macro>,
     pub(crate) expansion_stack: Vec<Symbol>,
+    document_uri: Arc<Url>,
     current_line: String,
     prev_end: usize,
     conditions_stack: Vec<bool>,
@@ -22,9 +28,10 @@ pub(crate) struct Macro {
 }
 
 impl<'a> SourcepawnPreprocessor<'a> {
-    pub fn new(input: &'a str) -> Self {
+    pub fn new(document_uri: Arc<Url>, input: &'a str) -> Self {
         Self {
             lexer: SourcepawnLexer::new(input),
+            document_uri,
             current_line: "".to_string(),
             prev_end: 0,
             conditions_stack: vec![],
@@ -34,7 +41,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }
     }
 
-    pub fn preprocess_input(&mut self) -> anyhow::Result<String> {
+    pub fn preprocess_input(&mut self, store: &mut Store) -> anyhow::Result<String> {
         while let Some(symbol) = if !self.expansion_stack.is_empty() {
             self.expansion_stack.pop()
         } else {
@@ -45,7 +52,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 continue;
             }
             match &symbol.token_kind {
-                TokenKind::PreprocDir(dir) => self.process_directive(dir, &symbol)?,
+                TokenKind::PreprocDir(dir) => self.process_directive(store, dir, &symbol)?,
                 TokenKind::Newline => {
                     self.push_ws(&symbol);
                     self.push_current_line();
@@ -56,7 +63,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     Some(_) => {
                         expand_symbol(
                             &mut self.lexer,
-                            &mut self.macros,
+                            &self.macros,
                             &symbol,
                             &mut self.expansion_stack,
                         )?;
@@ -77,7 +84,12 @@ impl<'a> SourcepawnPreprocessor<'a> {
         Ok(self.out.join("\n"))
     }
 
-    fn process_directive(&mut self, dir: &PreprocDir, symbol: &Symbol) -> anyhow::Result<()> {
+    fn process_directive(
+        &mut self,
+        store: &mut Store,
+        dir: &PreprocDir,
+        symbol: &Symbol,
+    ) -> anyhow::Result<()> {
         match dir {
             PreprocDir::MIf => {
                 let line_nb = symbol.range.start_line;
@@ -191,6 +203,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 while self.lexer.in_preprocessor() {
                     if let Some(mut symbol) = self.lexer.next() {
                         if symbol.token_kind == TokenKind::Literal(Literal::StringLiteral) {
+                            // Rewrite the symbol to be a single line.
                             delta += symbol.range.end_line - symbol.range.start_line;
                             let text = symbol.inline_text();
                             symbol = Symbol::new(
@@ -204,6 +217,17 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                 },
                                 symbol.delta,
                             );
+
+                            let mut path = text[1..text.len() - 1].trim().to_string();
+                            if let Some(include_uri) =
+                                store.resolve_import(&mut path, &self.document_uri)
+                            {
+                                if let Some(include_macros) =
+                                    store.preprocess_document_by_uri(Arc::new(include_uri))
+                                {
+                                    self.macros.extend(include_macros);
+                                }
+                            }
                         }
                         self.push_symbol(&symbol);
                     }
@@ -261,7 +285,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
             self.push_current_line();
             return;
         }
-        self.push_ws(&symbol);
+        self.push_ws(symbol);
         self.prev_end = symbol.range.end_col;
         self.current_line.push_str(&symbol.text());
     }

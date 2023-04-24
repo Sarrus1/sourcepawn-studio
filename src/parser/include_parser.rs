@@ -1,10 +1,8 @@
 use std::{
-    path::PathBuf,
     str::Utf8Error,
     sync::{Arc, RwLock},
 };
 
-use fxhash::FxHashSet;
 use lsp_types::{Range, Url};
 use tree_sitter::Node;
 
@@ -31,12 +29,7 @@ impl Store {
             return Ok(());
         }
         let mut path = path[1..path.len() - 1].trim().to_string();
-        let include_uri = self.resolve_import(
-            &self.environment.options.includes_directories,
-            &mut path,
-            &self.documents.keys().cloned().collect(),
-            &document.uri,
-        );
+        let include_uri = self.resolve_import(&mut path, &document.uri);
         if include_uri.is_none() {
             // The include was not found.
             document.missing_includes.insert(path, range);
@@ -57,10 +50,8 @@ impl Store {
     /// * `documents` - Set of known documents.
     /// * `document_uri` - Uri of the document where the include declaration is parsed from.
     pub(crate) fn resolve_import(
-        &self,
-        include_directories: &[PathBuf],
+        &mut self,
         include_text: &mut String,
-        documents: &FxHashSet<Arc<Url>>,
         document_uri: &Arc<Url>,
     ) -> Option<Url> {
         // Add the extension to the file if needed.
@@ -75,15 +66,15 @@ impl Store {
             include_file_path = document_dirpath.join("include").join(include_text);
         }
         let uri = Url::from_file_path(&include_file_path).unwrap();
-        if documents.contains(&uri) {
+        if self.documents.contains_key(&uri) {
             return Some(uri);
         }
 
         // Look for the includes in the include directories.
-        for include_directory in include_directories.iter() {
+        for include_directory in self.environment.options.includes_directories.iter() {
             let path = include_directory.clone().join(include_text);
             let uri = Url::from_file_path(path).unwrap();
-            if documents.contains(&uri) {
+            if self.documents.contains_key(&uri) {
                 return Some(uri);
             }
         }

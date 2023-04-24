@@ -14,6 +14,7 @@ use crate::{
     environment::Environment,
     parser::include_parser::add_include,
     semantic_analyzer::purge_references,
+    sourcepawn_preprocessor::{preprocessor::Macro, SourcepawnPreprocessor},
     spitem::SPItem,
     utils::read_to_string_lossy,
 };
@@ -46,6 +47,14 @@ impl Store {
 
     pub fn get(&self, uri: &Url) -> Option<Document> {
         self.documents.get(uri).cloned()
+    }
+
+    pub fn get_text(&self, uri: &Url) -> Option<String> {
+        if let Some(document) = self.documents.get(uri) {
+            return Some(document.text.clone());
+        }
+
+        None
     }
 
     pub fn remove(&mut self, uri: &Url, parser: &mut Parser) {
@@ -173,7 +182,8 @@ impl Store {
             Some(document) => document.declarations.clone(),
             None => FxHashMap::default(),
         };
-        let mut document = Document::new(uri.clone(), text.clone());
+        let mut document = Document::new(uri.clone(), text);
+        self.preprocess_document(&mut document);
         self.parse(&mut document, parser)
             .expect("Couldn't parse document");
         if !self.first_parse {
@@ -206,17 +216,13 @@ impl Store {
                 }
             }
         }
-        let documents_keys = self.documents.keys().cloned().collect();
         for uri_to_reload in to_reload.iter() {
             // resolve includes
             if let Some(doc_to_reload) = self.documents.get_mut(uri_to_reload) {
                 for (mut missing_inc_path, range) in doc_to_reload.missing_includes.clone() {
-                    if let Some(include_uri) = self.resolve_import(
-                        &self.environment.options.includes_directories,
-                        &mut missing_inc_path,
-                        &documents_keys,
-                        &document.uri,
-                    ) {
+                    if let Some(include_uri) =
+                        self.resolve_import(&mut missing_inc_path, &document.uri)
+                    {
                         add_include(document, include_uri, missing_inc_path, range);
                     }
                 }
@@ -234,6 +240,47 @@ impl Store {
                 }
             }
         }
+    }
+
+    pub(crate) fn preprocess_document(
+        &mut self,
+        document: &mut Document,
+    ) -> Option<FxHashMap<String, Macro>> {
+        if !document.preprocessed_text.is_empty() {
+            return None;
+        }
+        let mut preprocessor = SourcepawnPreprocessor::new(document.uri.clone(), &document.text);
+        let preprocessed_text = preprocessor
+            .preprocess_input(self)
+            .unwrap_or_else(|_| String::new());
+        document.preprocessed_text = preprocessed_text;
+        document.macros = preprocessor.macros.clone();
+
+        Some(preprocessor.macros)
+    }
+
+    pub(crate) fn preprocess_document_by_uri(
+        &mut self,
+        uri: Arc<Url>,
+    ) -> Option<FxHashMap<String, Macro>> {
+        if let Some(document) = self.documents.get(&uri) {
+            if !document.preprocessed_text.is_empty() {
+                return None;
+            }
+        }
+        if let Some(text) = self.get_text(&uri) {
+            let mut preprocessor = SourcepawnPreprocessor::new(uri.clone(), &text);
+            let preprocessed_text = preprocessor
+                .preprocess_input(self)
+                .unwrap_or_else(|_| String::new());
+            if let Some(document) = self.documents.get_mut(&uri) {
+                document.preprocessed_text = preprocessed_text;
+                document.macros = preprocessor.macros.clone();
+            }
+            return Some(preprocessor.macros);
+        }
+
+        None
     }
 
     pub fn parse(&mut self, document: &mut Document, parser: &mut Parser) -> Result<(), Utf8Error> {

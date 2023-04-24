@@ -70,16 +70,14 @@ impl SignatureAttributes {
         }
         // Shift by one character to get the position of the method name token.
         // FIXME: This only works if there is no character between the last ( and the name of the method.
-        if character > 0 {
-            character -= 1;
-        }
+        character = character.saturating_sub(1);
 
         Some(SignatureAttributes {
             position: Position {
                 line: line_nb as u32,
                 character: character as u32,
             },
-            parameter_count: parameter_count as u32,
+            parameter_count,
         })
     }
 }

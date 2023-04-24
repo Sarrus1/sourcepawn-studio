@@ -48,10 +48,9 @@ impl<'a> IfCondition<'a> {
                         looking_for_defined = false;
                         may_be_unary = false;
                     } else {
-                        // TODO: Handle function-like macros.
                         expand_symbol(
                             &mut symbol_iter,
-                            &self.macros,
+                            self.macros,
                             &symbol,
                             &mut self.expansion_stack,
                         )?
