@@ -7,8 +7,13 @@ pub use self::preprocessor::SourcepawnPreprocessor;
 
 #[cfg(test)]
 mod test {
+    use std::sync::Arc;
+
     use fxhash::FxHashMap;
+    use lsp_types::Url;
     use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
+
+    use crate::store::Store;
 
     use super::{evaluator::IfCondition, preprocessor::Macro, SourcepawnPreprocessor};
 
@@ -19,8 +24,15 @@ mod test {
         int bar;
         "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), input);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            input
+        );
     }
 
     fn evaluate_if_condition(input: &str) -> bool {
@@ -186,8 +198,15 @@ mod test {
     int foo;
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -203,8 +222,15 @@ mod test {
 
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -222,8 +248,15 @@ mod test {
     int bar;
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -245,8 +278,15 @@ mod test {
 
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -270,8 +310,63 @@ mod test {
 
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
+    fn define_trailing_comment_1() {
+        let input = r#"#define FOO 1 /* comment */
+int foo = 1;
+"#;
+        let output = r#"#define FOO 1 /* comment */
+int foo = 1;
+"#;
+
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
+    fn define_trailing_comment_2() {
+        let input = r#"#define FOO bar /**< documentation */
+#include "file.sp"
+#if defined BAZ
+int foo;
+
+#endif
+"#;
+        let output = r#"#define FOO bar /**< documentation */
+#include "file.sp"
+
+
+
+
+"#;
+
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -285,8 +380,15 @@ mod test {
     int foo;
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -300,8 +402,15 @@ mod test {
     int foo;
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -317,8 +426,15 @@ mod test {
 
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -334,8 +450,15 @@ mod test {
     int foo;
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -353,8 +476,15 @@ mod test {
     int foo;
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -370,8 +500,15 @@ mod test {
 
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -383,8 +520,15 @@ int foo = FOO;
 int foo = 1;
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -396,8 +540,15 @@ char foo[64] = FOO;
 char foo[64] = "test";
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -409,8 +560,15 @@ int foo = FOO;
 int foo = 1;
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -422,8 +580,15 @@ int foo = FOO;
 int foo = 1;
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -437,8 +602,15 @@ comment */
 int foo = 1;
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -454,8 +626,15 @@ int foo = 1 + 2;
 int bar;
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -471,8 +650,15 @@ int foo = 1 + 2;
 int bar;
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -486,8 +672,15 @@ expansion"
 char foo[64] = "test expansion";
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -505,8 +698,15 @@ also"
 char foo[64] = "test expansion also";
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -520,8 +720,15 @@ int foo = FOO;
 int foo = 1 +   2;
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -537,8 +744,15 @@ int foo = FOO;
 int foo = 1 + 2 + 3;
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -550,8 +764,15 @@ int foo = FOO(1, 2);
 int foo = 1 + 2;
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -563,8 +784,15 @@ int foo = FOO(2);
 int foo = 2 %2;
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
 
     #[test]
@@ -578,27 +806,47 @@ int foo = FOO(1, BAR(2, 3 + 4));
 int foo = 1 + 2 + 3 + 4;
 "#;
 
-        let mut preprocessor = SourcepawnPreprocessor::new(input);
-        assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
     }
-}
 
-#[test]
-fn include_directive_1() {
-    let input = r#"#include <sourcemod>"#;
-    let output = r#"#include <sourcemod>"#;
+    #[test]
+    fn include_directive_1() {
+        let input = r#"#include <sourcemod>"#;
+        let output = r#"#include <sourcemod>"#;
 
-    let mut preprocessor = SourcepawnPreprocessor::new(input);
-    assert_eq!(preprocessor.preprocess_input().unwrap(), output);
-}
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
+    }
 
-#[test]
-fn include_directive_2() {
-    let input = r#"#include <sourcemod\
+    #[test]
+    fn include_directive_2() {
+        let input = r#"#include <sourcemod\
 >"#;
-    let output = r#"#include <sourcemod>
+        let output = r#"#include <sourcemod>
 "#;
-
-    let mut preprocessor = SourcepawnPreprocessor::new(input);
-    assert_eq!(preprocessor.preprocess_input().unwrap(), output);
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
+    }
 }

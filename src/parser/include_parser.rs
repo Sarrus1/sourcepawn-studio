@@ -59,7 +59,7 @@ impl Store {
             utils::add_include_extension(include_text, self.environment.amxxpawn_mode);
 
         // Look for the include in the same directory or the closest include directory.
-        let document_path = document_uri.to_file_path().unwrap();
+        let document_path = document_uri.to_file_path().ok()?;
         let document_dirpath = document_path.parent().unwrap();
         let mut include_file_path = document_dirpath.join(include_text);
         if !include_file_path.exists() {
