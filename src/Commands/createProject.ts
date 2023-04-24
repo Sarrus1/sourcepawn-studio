@@ -6,6 +6,8 @@ import { run as createScriptCommand } from "./createScript";
 import { run as createREADMECommand } from "./createREADME";
 import { run as createMasterCommand } from "./createGitHubActions";
 import { run as createChangelogCommand } from "./createCHANGELOG";
+import { run as createLicenseCommand } from "./createLICENSE";
+import { run as createGitignoreCommand } from "./createGITIGNORE";
 
 export async function run(args: any) {
   // get workspace folder
@@ -40,4 +42,6 @@ export async function run(args: any) {
   createREADMECommand(rootpath);
   createMasterCommand(rootpath);
   createChangelogCommand(rootpath);
+  createLicenseCommand(rootpath);
+  createGitignoreCommand(rootpath);
 }
