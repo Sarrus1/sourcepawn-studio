@@ -264,8 +264,9 @@ impl Store {
         uri: Arc<Url>,
     ) -> Option<FxHashMap<String, Macro>> {
         if let Some(document) = self.documents.get(&uri) {
+            // Don't reprocess the text if it has not changed.
             if !document.preprocessed_text.is_empty() {
-                return None;
+                return Some(document.macros.clone());
             }
         }
         if let Some(text) = self.get_text(&uri) {
