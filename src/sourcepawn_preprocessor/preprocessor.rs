@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, Context};
 use fxhash::FxHashMap;
-use lsp_types::Url;
+use lsp_types::{Diagnostic, Position, Url};
 use sourcepawn_lexer::{Literal, Operator, PreprocDir, Range, SourcepawnLexer, Symbol, TokenKind};
 
 use crate::store::Store;
@@ -21,6 +21,8 @@ pub struct SourcepawnPreprocessor<'a> {
     pub(crate) lexer: SourcepawnLexer<'a>,
     pub(crate) macros: FxHashMap<String, Macro>,
     pub(crate) expansion_stack: Vec<Symbol>,
+    skip_line_start_col: u32,
+    skipped_lines: Vec<lsp_types::Range>,
     document_uri: Arc<Url>,
     current_line: String,
     prev_end: usize,
@@ -40,12 +42,40 @@ impl<'a> SourcepawnPreprocessor<'a> {
             lexer: SourcepawnLexer::new(input),
             document_uri,
             current_line: "".to_string(),
+            skip_line_start_col: 0,
+            skipped_lines: vec![],
             prev_end: 0,
             conditions_stack: vec![],
             out: vec![],
             macros: FxHashMap::default(),
             expansion_stack: vec![],
         }
+    }
+
+    pub fn get_disabled_diagnostics(&self) -> Vec<Diagnostic> {
+        let mut ranges: Vec<lsp_types::Range> = vec![];
+        for range in self.skipped_lines.iter() {
+            if let Some(old_range) = ranges.pop() {
+                if old_range.end.line == range.start.line - 1 {
+                    ranges.push(lsp_types::Range::new(old_range.start, range.end));
+                    continue;
+                } else {
+                    ranges.push(old_range);
+                }
+            } else {
+                ranges.push(*range);
+            }
+        }
+        ranges
+            .iter()
+            .map(|range| Diagnostic {
+                range: *range,
+                message: "Code disabled by the preprocessor.".to_string(),
+                severity: Some(lsp_types::DiagnosticSeverity::HINT),
+                tags: Some(vec![lsp_types::DiagnosticTag::UNNECESSARY]),
+                ..Default::default()
+            })
+            .collect()
     }
 
     pub fn preprocess_input(&mut self, store: &mut Store) -> anyhow::Result<String> {
@@ -109,6 +139,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
         if if_condition.evaluate().unwrap_or(false) {
             self.conditions_stack.push(ConditionState::Active);
         } else {
+            self.skip_line_start_col = symbol.range.end_col as u32;
             self.conditions_stack.push(ConditionState::NotActivated);
         }
         if let Some(last_symbol) = if_condition.symbols.last() {
@@ -119,6 +150,24 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }
 
         self.prev_end = 0;
+    }
+
+    fn process_else_directive(&mut self, symbol: &Symbol) -> anyhow::Result<()> {
+        let last = self
+            .conditions_stack
+            .pop()
+            .context("Expect if before else clause.")?;
+        match last {
+            ConditionState::NotActivated => {
+                self.conditions_stack.push(ConditionState::Active);
+            }
+            ConditionState::Active | ConditionState::Activated => {
+                self.skip_line_start_col = symbol.range.end_col as u32;
+                self.conditions_stack.push(ConditionState::Activated);
+            }
+        }
+
+        Ok(())
     }
 
     fn process_directive(
@@ -214,6 +263,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
             PreprocDir::MEndif => {
                 self.conditions_stack.pop();
             }
+            PreprocDir::MElse => self.process_else_directive(symbol)?,
             PreprocDir::MInclude => {
                 self.push_symbol(symbol);
                 let mut delta = 0;
@@ -272,20 +322,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 PreprocDir::MEndif => {
                     self.conditions_stack.pop();
                 }
-                PreprocDir::MElse => {
-                    let last = self
-                        .conditions_stack
-                        .pop()
-                        .context("Expect if before else clause.")?;
-                    match last {
-                        ConditionState::NotActivated => {
-                            self.conditions_stack.push(ConditionState::Active);
-                        }
-                        ConditionState::Active | ConditionState::Activated => {
-                            self.conditions_stack.push(ConditionState::Activated);
-                        }
-                    }
-                }
+                PreprocDir::MElse => self.process_else_directive(symbol)?,
                 PreprocDir::MElseif => {
                     let last = self
                         .conditions_stack
@@ -303,6 +340,13 @@ impl<'a> SourcepawnPreprocessor<'a> {
             TokenKind::Newline => {
                 // Keep the newline to keep the line numbers in sync.
                 self.push_current_line();
+                self.skipped_lines.push(lsp_types::Range::new(
+                    Position::new(symbol.range.start_line as u32, self.skip_line_start_col),
+                    Position::new(
+                        symbol.range.start_line as u32,
+                        symbol.range.start_col as u32,
+                    ),
+                ));
                 self.current_line = "".to_string();
                 self.prev_end = 0;
             }

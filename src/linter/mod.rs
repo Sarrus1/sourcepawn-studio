@@ -76,7 +76,7 @@ impl Document {
         if disable_syntax_linter {
             return;
         }
-        self.diagnostics.local_diagnostics.clear();
+
         let mut cursor = QueryCursor::new();
         let matches = cursor.captures(&ERROR_QUERY, root_node, self.preprocessed_text.as_bytes());
         for (match_, _) in matches {

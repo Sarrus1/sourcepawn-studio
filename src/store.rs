@@ -247,7 +247,7 @@ impl Store {
         document: &mut Document,
     ) -> Option<FxHashMap<String, Macro>> {
         if !document.preprocessed_text.is_empty() {
-            return None;
+            return Some(document.macros.clone());
         }
         let mut preprocessor = SourcepawnPreprocessor::new(document.uri.clone(), &document.text);
         let preprocessed_text = preprocessor
@@ -255,6 +255,10 @@ impl Store {
             .unwrap_or_else(|_| String::new());
         document.preprocessed_text = preprocessed_text;
         document.macros = preprocessor.macros.clone();
+        document
+            .diagnostics
+            .local_diagnostics
+            .extend(preprocessor.get_disabled_diagnostics());
 
         Some(preprocessor.macros)
     }
@@ -277,6 +281,10 @@ impl Store {
             if let Some(document) = self.documents.get_mut(&uri) {
                 document.preprocessed_text = preprocessed_text;
                 document.macros = preprocessor.macros.clone();
+                document
+                    .diagnostics
+                    .local_diagnostics
+                    .extend(preprocessor.get_disabled_diagnostics());
             }
             return Some(preprocessor.macros);
         }
