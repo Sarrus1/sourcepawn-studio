@@ -195,6 +195,9 @@ pub enum Token {
     #[token("#else")]
     MElse,
 
+    #[token("#elseif")]
+    MElseif,
+
     #[token("#endif")]
     MEndif,
 

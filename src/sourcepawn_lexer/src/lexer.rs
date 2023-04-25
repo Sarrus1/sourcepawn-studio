@@ -262,6 +262,7 @@ impl Iterator for SourcepawnLexer<'_> {
             | Token::MDeprecate
             | Token::MIf
             | Token::MElse
+            | Token::MElseif
             | Token::MEndinput
             | Token::MFile
             | Token::MOptionalNewdecls

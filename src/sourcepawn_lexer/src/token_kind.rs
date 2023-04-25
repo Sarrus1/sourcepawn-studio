@@ -323,6 +323,9 @@ pub enum PreprocDir {
     MElse,
 
     /// `#elseif`
+    MElseif,
+
+    /// `#elseif`
     MEndif,
 
     /// `#endinput`
@@ -371,7 +374,8 @@ impl PreprocDir {
             self::PreprocDir::MDefine => "#define",
             self::PreprocDir::MDeprecate => "#deprecate",
             self::PreprocDir::MElse => "#else",
-            self::PreprocDir::MEndif => "#elseif",
+            self::PreprocDir::MElseif => "#elseif",
+            self::PreprocDir::MEndif => "#endif",
             self::PreprocDir::MEndinput => "#endinput",
             self::PreprocDir::MFile => "#file",
             self::PreprocDir::MIf => "#if",
@@ -529,6 +533,7 @@ impl TryFrom<Token> for TokenKind {
             Token::MDefine => TokenKind::PreprocDir(PreprocDir::MDefine),
             Token::MDeprecate => TokenKind::PreprocDir(PreprocDir::MDeprecate),
             Token::MElse => TokenKind::PreprocDir(PreprocDir::MElse),
+            Token::MElseif => TokenKind::PreprocDir(PreprocDir::MElseif),
             Token::MEndif => TokenKind::PreprocDir(PreprocDir::MEndif),
             Token::MEndinput => TokenKind::PreprocDir(PreprocDir::MEndinput),
             Token::MFile => TokenKind::PreprocDir(PreprocDir::MFile),

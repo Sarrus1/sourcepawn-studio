@@ -528,6 +528,162 @@ int foo;
     }
 
     #[test]
+    fn elseif_directive_expansion_1() {
+        let input = r#"#define FOO 1
+#if FOO == 2
+int foo;
+#elseif FOO == 1
+int bar;
+#endif
+"#;
+        let output = r#"#define FOO 1
+
+
+
+int bar;
+
+"#;
+
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
+    fn elseif_directive_expansion_2() {
+        let input = r#"#define FOO 1
+#if FOO == 1
+int foo;
+#elseif FOO == 2
+int bar;
+#endif
+"#;
+        let output = r#"#define FOO 1
+
+int foo;
+
+
+
+"#;
+
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
+    fn elseif_directive_expansion_3() {
+        let input = r#"#define FOO 1
+#if FOO == 1
+    #if FOO == 1
+    int foo;
+    #endif
+#elseif FOO == 2
+int bar;
+#endif
+"#;
+        let output = r#"#define FOO 1
+
+
+    int foo;
+
+
+
+
+"#;
+
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
+    fn elseif_directive_expansion_4() {
+        let input = r#"#define FOO 3
+#if FOO == 1
+int foo;
+#elseif FOO == 2
+int bar;
+#else
+int baz;
+#endif
+"#;
+        let output = r#"#define FOO 3
+
+
+
+
+
+int baz;
+
+"#;
+
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
+    fn elseif_directive_expansion_5() {
+        let input = r#"#define FOO 3
+#if FOO == 1
+#if FOO == 3
+int foo;
+#endif
+#elseif FOO == 2
+int bar;
+#else
+int baz;
+#endif
+"#;
+        let output = r#"#define FOO 3
+
+
+
+
+
+
+
+int baz;
+
+"#;
+
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
     fn define_expansion_1() {
         let input = r#"#define FOO 1
 int foo = FOO;

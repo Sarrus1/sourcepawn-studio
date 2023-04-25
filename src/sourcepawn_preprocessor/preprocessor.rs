@@ -10,6 +10,13 @@ use crate::store::Store;
 use super::{evaluator::IfCondition, macros::expand_symbol};
 
 #[derive(Debug, Clone)]
+enum ConditionState {
+    NotActivated,
+    Activated,
+    Active,
+}
+
+#[derive(Debug, Clone)]
 pub struct SourcepawnPreprocessor<'a> {
     pub(crate) lexer: SourcepawnLexer<'a>,
     pub(crate) macros: FxHashMap<String, Macro>,
@@ -17,7 +24,7 @@ pub struct SourcepawnPreprocessor<'a> {
     document_uri: Arc<Url>,
     current_line: String,
     prev_end: usize,
-    conditions_stack: Vec<bool>,
+    conditions_stack: Vec<ConditionState>,
     out: Vec<String>,
 }
 
@@ -47,7 +54,12 @@ impl<'a> SourcepawnPreprocessor<'a> {
         } else {
             self.lexer.next()
         } {
-            if !self.conditions_stack.last().unwrap_or(&true) {
+            if matches!(
+                self.conditions_stack
+                    .last()
+                    .unwrap_or(&ConditionState::Active),
+                ConditionState::Activated | ConditionState::NotActivated
+            ) {
                 self.process_negative_condition(&symbol)?;
                 continue;
             }
@@ -84,6 +96,31 @@ impl<'a> SourcepawnPreprocessor<'a> {
         Ok(self.out.join("\n"))
     }
 
+    fn process_if_directive(&mut self, symbol: &Symbol) {
+        let line_nb = symbol.range.start_line;
+        let mut if_condition = IfCondition::new(&self.macros);
+        while self.lexer.in_preprocessor() {
+            if let Some(symbol) = self.lexer.next() {
+                if_condition.symbols.push(symbol);
+            } else {
+                break;
+            }
+        }
+        if if_condition.evaluate().unwrap_or(false) {
+            self.conditions_stack.push(ConditionState::Active);
+        } else {
+            self.conditions_stack.push(ConditionState::NotActivated);
+        }
+        if let Some(last_symbol) = if_condition.symbols.last() {
+            let line_diff = last_symbol.range.end_line - line_nb;
+            for _ in 0..line_diff {
+                self.out.push(String::new());
+            }
+        }
+
+        self.prev_end = 0;
+    }
+
     fn process_directive(
         &mut self,
         store: &mut Store,
@@ -91,27 +128,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
         symbol: &Symbol,
     ) -> anyhow::Result<()> {
         match dir {
-            PreprocDir::MIf => {
-                let line_nb = symbol.range.start_line;
-                let mut if_condition = IfCondition::new(&self.macros);
-                while self.lexer.in_preprocessor() {
-                    if let Some(symbol) = self.lexer.next() {
-                        if_condition.symbols.push(symbol);
-                    } else {
-                        break;
-                    }
-                }
-                self.conditions_stack
-                    .push(if_condition.evaluate().unwrap_or(false));
-                if let Some(last_symbol) = if_condition.symbols.last() {
-                    let line_diff = last_symbol.range.end_line - line_nb;
-                    for _ in 0..line_diff {
-                        self.out.push(String::new());
-                    }
-                }
-
-                self.prev_end = 0;
-            }
+            PreprocDir::MIf | PreprocDir::MElseif => self.process_if_directive(symbol),
             PreprocDir::MDefine => {
                 self.push_symbol(symbol);
                 let mut macro_name = String::new();
@@ -260,10 +277,28 @@ impl<'a> SourcepawnPreprocessor<'a> {
                         .conditions_stack
                         .pop()
                         .context("Expect if before else clause.")?;
-                    self.conditions_stack.push(!last);
+                    match last {
+                        ConditionState::NotActivated => {
+                            self.conditions_stack.push(ConditionState::Active);
+                        }
+                        ConditionState::Active | ConditionState::Activated => {
+                            self.conditions_stack.push(ConditionState::Activated);
+                        }
+                    }
                 }
-                // TODO: Handle #elseif.
-                _ => todo!(),
+                PreprocDir::MElseif => {
+                    let last = self
+                        .conditions_stack
+                        .pop()
+                        .context("Expect if before else clause.")?;
+                    match last {
+                        ConditionState::NotActivated => self.process_if_directive(symbol),
+                        ConditionState::Active | ConditionState::Activated => {
+                            self.conditions_stack.push(ConditionState::Activated);
+                        }
+                    }
+                }
+                _ => (),
             },
             TokenKind::Newline => {
                 // Keep the newline to keep the line numbers in sync.
