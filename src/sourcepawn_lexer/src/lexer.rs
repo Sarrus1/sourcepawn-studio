@@ -31,6 +31,7 @@ impl PartialEq for Symbol {
         self.token_kind == other.token_kind
             && self.text() == other.text()
             && self.range == other.range
+            && self.delta == other.delta
     }
 }
 
@@ -49,7 +50,7 @@ impl Symbol {
             TokenKind::Operator(op) => return op.text(),
             TokenKind::PreprocDir(dir) => {
                 if self.token_kind == TokenKind::PreprocDir(PreprocDir::MPragma) {
-                    return self.text();
+                    return self.text.clone().unwrap();
                 }
                 return dir.text();
             }
