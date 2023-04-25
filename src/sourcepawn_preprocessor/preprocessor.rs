@@ -132,7 +132,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     if let Some(symbol) = self.lexer.next() {
                         self.push_ws(&symbol);
                         self.prev_end = symbol.range.end_col;
-                        if symbol.token_kind != TokenKind::Newline {
+                        if !matches!(symbol.token_kind, TokenKind::Newline | TokenKind::Eof) {
                             self.current_line.push_str(&symbol.text());
                         }
                         match state {
@@ -202,36 +202,43 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 let mut delta = 0;
                 while self.lexer.in_preprocessor() {
                     if let Some(mut symbol) = self.lexer.next() {
-                        if symbol.token_kind == TokenKind::Literal(Literal::StringLiteral) {
-                            // Rewrite the symbol to be a single line.
-                            delta += symbol.range.end_line - symbol.range.start_line;
-                            let text = symbol.inline_text();
-                            symbol = Symbol::new(
-                                symbol.token_kind.clone(),
-                                Some(&text),
-                                Range {
-                                    start_line: symbol.range.start_line,
-                                    end_line: symbol.range.start_line,
-                                    start_col: symbol.range.start_col,
-                                    end_col: text.len(),
-                                },
-                                symbol.delta,
-                            );
+                        match symbol.token_kind {
+                            TokenKind::Literal(Literal::StringLiteral) => {
+                                // Rewrite the symbol to be a single line.
+                                delta += symbol.range.end_line - symbol.range.start_line;
+                                let text = symbol.inline_text();
+                                symbol = Symbol::new(
+                                    symbol.token_kind.clone(),
+                                    Some(&text),
+                                    Range {
+                                        start_line: symbol.range.start_line,
+                                        end_line: symbol.range.start_line,
+                                        start_col: symbol.range.start_col,
+                                        end_col: text.len(),
+                                    },
+                                    symbol.delta,
+                                );
 
-                            let mut path = text[1..text.len() - 1].trim().to_string();
-                            if let Some(include_uri) =
-                                store.resolve_import(&mut path, &self.document_uri)
-                            {
-                                if let Some(include_macros) =
-                                    store.preprocess_document_by_uri(Arc::new(include_uri))
+                                let mut path = text[1..text.len() - 1].trim().to_string();
+                                if let Some(include_uri) =
+                                    store.resolve_import(&mut path, &self.document_uri)
                                 {
-                                    self.macros.extend(include_macros);
+                                    if let Some(include_macros) =
+                                        store.preprocess_document_by_uri(Arc::new(include_uri))
+                                    {
+                                        self.macros.extend(include_macros);
+                                    }
                                 }
                             }
+                            TokenKind::Eof | TokenKind::Newline => continue, // Ignore the EOF here so that it does not duplicate the current line.
+                            _ => (),
                         }
                         self.push_symbol(&symbol);
                     }
                 }
+                self.push_current_line();
+                self.current_line = "".to_string();
+                self.prev_end = 0;
                 for _ in 0..delta {
                     self.out.push(String::new());
                 }

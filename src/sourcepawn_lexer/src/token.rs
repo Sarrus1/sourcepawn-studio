@@ -207,7 +207,6 @@ pub enum Token {
     #[token("#if")]
     MIf,
 
-    // TODO: Handle include strings
     #[token("#include")]
     MInclude,
 

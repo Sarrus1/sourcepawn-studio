@@ -322,6 +322,22 @@ mod test {
     }
 
     #[test]
+    fn define_1() {
+        let input = r#"#define FOO 1"#;
+        let output = r#"#define FOO 1"#;
+
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
     fn define_trailing_comment_1() {
         let input = r#"#define FOO 1 /* comment */
 int foo = 1;
@@ -342,7 +358,7 @@ int foo = 1;
     }
 
     #[test]
-    fn define_trailing_comment_2() {
+    fn define_trailing_comment_3() {
         let input = r#"#define FOO bar /**< documentation */
 #include "file.sp"
 #if defined BAZ
@@ -837,6 +853,23 @@ int foo = 1 + 2 + 3 + 4;
     fn include_directive_2() {
         let input = r#"#include <sourcemod\
 >"#;
+        let output = r#"#include <sourcemod>
+"#;
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
+    fn include_directive_3() {
+        let input = r#"#include <sourcemod>
+"#;
         let output = r#"#include <sourcemod>
 "#;
         assert_eq!(
