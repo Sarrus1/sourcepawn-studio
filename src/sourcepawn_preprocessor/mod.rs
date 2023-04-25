@@ -374,6 +374,46 @@ int bar;
     }
 
     #[test]
+    fn if_directive_defined_complex_7() {
+        let input = r#"#define FOO
+#if defined FOO
+public void OnPluginStart()
+#else
+#if 1==1
+public void OnPluginStart(int args)
+#else
+int bar;
+#endif
+#endif
+{
+    int bar;
+}"#;
+        let output = r#"#define FOO
+
+public void OnPluginStart()
+
+
+
+
+
+
+
+{
+    int bar;
+}"#;
+
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
     fn define_1() {
         let input = r#"#define FOO 1"#;
         let output = r#"#define FOO 1"#;

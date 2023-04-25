@@ -9,7 +9,7 @@ use crate::store::Store;
 
 use super::{evaluator::IfCondition, macros::expand_symbol};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum ConditionState {
     NotActivated,
     Activated,
@@ -170,6 +170,22 @@ impl<'a> SourcepawnPreprocessor<'a> {
         Ok(())
     }
 
+    fn process_endif_directive(&mut self, symbol: &Symbol) -> anyhow::Result<()> {
+        self.conditions_stack
+            .pop()
+            .context("Expect if before endif clause")?;
+        if let Some(last) = self.conditions_stack.pop() {
+            if last != ConditionState::Active {
+                self.skipped_lines.push(lsp_types::Range::new(
+                    Position::new(symbol.range.start.line, self.skip_line_start_col),
+                    Position::new(symbol.range.start.line, symbol.range.end.character),
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
     fn process_directive(
         &mut self,
         store: &mut Store,
@@ -260,9 +276,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 self.prev_end = 0;
                 self.macros.insert(macro_name, macro_);
             }
-            PreprocDir::MEndif => {
-                self.conditions_stack.pop();
-            }
+            PreprocDir::MEndif => self.process_endif_directive(symbol)?,
             PreprocDir::MElse => self.process_else_directive(symbol)?,
             PreprocDir::MInclude => {
                 self.push_symbol(symbol);
@@ -320,9 +334,11 @@ impl<'a> SourcepawnPreprocessor<'a> {
     fn process_negative_condition(&mut self, symbol: &Symbol) -> anyhow::Result<()> {
         match &symbol.token_kind {
             TokenKind::PreprocDir(dir) => match dir {
-                PreprocDir::MEndif => {
-                    self.conditions_stack.pop();
+                PreprocDir::MIf => {
+                    // Keep track of any nested if statements to ensure we properly pop when reaching an endif.
+                    self.conditions_stack.push(ConditionState::Activated);
                 }
+                PreprocDir::MEndif => self.process_endif_directive(symbol)?,
                 PreprocDir::MElse => self.process_else_directive(symbol)?,
                 PreprocDir::MElseif => {
                     let last = self
