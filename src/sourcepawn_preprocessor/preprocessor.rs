@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, Context};
 use fxhash::FxHashMap;
-use lsp_types::{Diagnostic, Position, Url};
-use sourcepawn_lexer::{Literal, Operator, PreprocDir, Range, SourcepawnLexer, Symbol, TokenKind};
+use lsp_types::{Diagnostic, Position, Range, Url};
+use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
 
 use crate::store::Store;
 
@@ -25,7 +25,7 @@ pub struct SourcepawnPreprocessor<'a> {
     skipped_lines: Vec<lsp_types::Range>,
     document_uri: Arc<Url>,
     current_line: String,
-    prev_end: usize,
+    prev_end: u32,
     conditions_stack: Vec<ConditionState>,
     out: Vec<String>,
 }
@@ -127,7 +127,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
     }
 
     fn process_if_directive(&mut self, symbol: &Symbol) {
-        let line_nb = symbol.range.start_line;
+        let line_nb = symbol.range.start.line;
         let mut if_condition = IfCondition::new(&self.macros);
         while self.lexer.in_preprocessor() {
             if let Some(symbol) = self.lexer.next() {
@@ -139,11 +139,11 @@ impl<'a> SourcepawnPreprocessor<'a> {
         if if_condition.evaluate().unwrap_or(false) {
             self.conditions_stack.push(ConditionState::Active);
         } else {
-            self.skip_line_start_col = symbol.range.end_col as u32;
+            self.skip_line_start_col = symbol.range.end.character;
             self.conditions_stack.push(ConditionState::NotActivated);
         }
         if let Some(last_symbol) = if_condition.symbols.last() {
-            let line_diff = last_symbol.range.end_line - line_nb;
+            let line_diff = last_symbol.range.end.line - line_nb;
             for _ in 0..line_diff {
                 self.out.push(String::new());
             }
@@ -162,7 +162,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 self.conditions_stack.push(ConditionState::Active);
             }
             ConditionState::Active | ConditionState::Activated => {
-                self.skip_line_start_col = symbol.range.end_col as u32;
+                self.skip_line_start_col = symbol.range.end.character;
                 self.conditions_stack.push(ConditionState::Activated);
             }
         }
@@ -197,7 +197,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 while self.lexer.in_preprocessor() {
                     if let Some(symbol) = self.lexer.next() {
                         self.push_ws(&symbol);
-                        self.prev_end = symbol.range.end_col;
+                        self.prev_end = symbol.range.end.character;
                         if !matches!(symbol.token_kind, TokenKind::Newline | TokenKind::Eof) {
                             self.current_line.push_str(&symbol.text());
                         }
@@ -272,17 +272,18 @@ impl<'a> SourcepawnPreprocessor<'a> {
                         match symbol.token_kind {
                             TokenKind::Literal(Literal::StringLiteral) => {
                                 // Rewrite the symbol to be a single line.
-                                delta += symbol.range.end_line - symbol.range.start_line;
+                                delta += symbol.range.end.line - symbol.range.start.line;
                                 let text = symbol.inline_text();
                                 symbol = Symbol::new(
                                     symbol.token_kind.clone(),
                                     Some(&text),
-                                    Range {
-                                        start_line: symbol.range.start_line,
-                                        end_line: symbol.range.start_line,
-                                        start_col: symbol.range.start_col,
-                                        end_col: text.len(),
-                                    },
+                                    Range::new(
+                                        Position::new(
+                                            symbol.range.start.line,
+                                            symbol.range.start.character,
+                                        ),
+                                        Position::new(symbol.range.start.line, text.len() as u32),
+                                    ),
                                     symbol.delta,
                                 );
 
@@ -341,11 +342,8 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 // Keep the newline to keep the line numbers in sync.
                 self.push_current_line();
                 self.skipped_lines.push(lsp_types::Range::new(
-                    Position::new(symbol.range.start_line as u32, self.skip_line_start_col),
-                    Position::new(
-                        symbol.range.start_line as u32,
-                        symbol.range.start_col as u32,
-                    ),
+                    Position::new(symbol.range.start.line, self.skip_line_start_col),
+                    Position::new(symbol.range.start.line, symbol.range.start.character),
                 ));
                 self.current_line = "".to_string();
                 self.prev_end = 0;
@@ -372,7 +370,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
             return;
         }
         self.push_ws(symbol);
-        self.prev_end = symbol.range.end_col;
+        self.prev_end = symbol.range.end.character;
         self.current_line.push_str(&symbol.text());
     }
 }

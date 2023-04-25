@@ -6,12 +6,10 @@ macro_rules! assert_token_eq {
             Symbol::new(
                 $token_kind,
                 Some($text),
-                Range {
-                    start_line: $start_line,
-                    start_col: $start_col,
-                    end_line: $end_line,
-                    end_col: $end_col
-                },
+                Range::new(
+                    Position::new($start_line, $start_col),
+                    Position::new($end_line, $end_col)
+                ),
                 Delta {
                     line: $delta_line,
                     col: $delta_col

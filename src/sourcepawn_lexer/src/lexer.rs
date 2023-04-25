@@ -1,16 +1,9 @@
 use lazy_static::lazy_static;
 use logos::{Lexer, Logos};
+use lsp_types::{Position, Range};
 use regex::Regex;
 
 use crate::{token::Token, token_kind::TokenKind, Comment, Literal, PreprocDir};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Range {
-    pub start_line: usize,
-    pub end_line: usize,
-    pub start_col: usize,
-    pub end_col: usize,
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Delta {
@@ -155,8 +148,8 @@ impl Symbol {
 #[derive(Debug, Clone)]
 pub struct SourcepawnLexer<'a> {
     lexer: Lexer<'a, Token>,
-    line_number: usize,
-    line_span_start: usize,
+    line_number: u32,
+    line_span_start: u32,
     in_preprocessor: bool,
     prev_range: Option<Range>,
     eof: bool,
@@ -181,8 +174,8 @@ impl SourcepawnLexer<'_> {
     fn delta(&mut self, range: &Range) -> Delta {
         let delta = if let Some(prev_range) = self.prev_range {
             Delta {
-                line: (range.start_line as i32 - prev_range.end_line as i32),
-                col: (range.start_col as i32 - prev_range.end_col as i32),
+                line: (range.start.line as i32 - prev_range.end.line as i32),
+                col: (range.start.character as i32 - prev_range.end.character as i32),
             }
         } else {
             Delta::default()
@@ -207,12 +200,16 @@ impl Iterator for SourcepawnLexer<'_> {
         if token.is_none() && !self.eof {
             // Reached EOF
             self.eof = true;
-            let range = Range {
-                start_line: self.line_number,
-                end_line: self.line_number,
-                start_col: self.lexer.source().len() - self.line_span_start,
-                end_col: self.lexer.source().len() - self.line_span_start,
-            };
+            let range = Range::new(
+                Position::new(
+                    self.line_number,
+                    self.lexer.source().len() as u32 - self.line_span_start,
+                ),
+                Position::new(
+                    self.line_number,
+                    self.lexer.source().len() as u32 - self.line_span_start,
+                ),
+            );
             return Some(Symbol {
                 token_kind: TokenKind::Eof,
                 text: None,
@@ -223,7 +220,7 @@ impl Iterator for SourcepawnLexer<'_> {
         let token = token?;
 
         let start_line = self.line_number;
-        let start_col = self.lexer.span().start - self.line_span_start;
+        let start_col = self.lexer.span().start as u32 - self.line_span_start;
         let text = match token {
             Token::Identifier
             | Token::IntegerLiteral
@@ -250,12 +247,12 @@ impl Iterator for SourcepawnLexer<'_> {
                 let line_continuations: Vec<_> = RE2.find_iter(text.as_str()).collect();
 
                 if let Some(last) = line_continuations.last() {
-                    self.line_number += line_breaks.len();
-                    self.line_span_start = self.lexer.span().start + last.end();
+                    self.line_number += line_breaks.len() as u32;
+                    self.line_span_start = (self.lexer.span().start + last.end()) as u32;
                 } else if let Some(last) = line_breaks.last() {
                     self.in_preprocessor = false;
-                    self.line_number += line_breaks.len();
-                    self.line_span_start = self.lexer.span().start + last.start();
+                    self.line_number += line_breaks.len() as u32;
+                    self.line_span_start = (self.lexer.span().start + last.start()) as u32;
                 }
             }
             Token::MDefine
@@ -276,22 +273,23 @@ impl Iterator for SourcepawnLexer<'_> {
             | Token::MLeaving => self.in_preprocessor = true,
             Token::LineContinuation => {
                 self.line_number += 1;
-                self.line_span_start = self.lexer.span().end;
+                self.line_span_start = self.lexer.span().end as u32;
             }
             Token::Newline => {
                 self.in_preprocessor = false;
                 self.line_number += 1;
-                self.line_span_start = self.lexer.span().end;
+                self.line_span_start = self.lexer.span().end as u32;
             }
             _ => {}
         }
         let token_kind = TokenKind::try_from(token).ok()?;
-        let range = Range {
-            start_line,
-            start_col,
-            end_line: self.line_number,
-            end_col: self.lexer.span().end - self.line_span_start,
-        };
+        let range = Range::new(
+            Position::new(start_line, start_col),
+            Position::new(
+                self.line_number,
+                self.lexer.span().end as u32 - self.line_span_start,
+            ),
+        );
         Some(Symbol {
             token_kind,
             text,

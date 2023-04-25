@@ -1,6 +1,7 @@
 mod utils;
 
 use crate::utils::assert_token_eq;
+use lsp_types::{Position, Range};
 use sourcepawn_lexer::*;
 
 #[test]

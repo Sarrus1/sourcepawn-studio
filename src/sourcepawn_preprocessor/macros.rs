@@ -1,6 +1,7 @@
 use anyhow::Context;
 use fxhash::FxHashMap;
-use sourcepawn_lexer::{Literal, Operator, Range, Symbol, TokenKind};
+use lsp_types::{Position, Range};
+use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
 
 use super::preprocessor::Macro;
 
@@ -39,12 +40,10 @@ where
                 expansion_stack.push(Symbol::new(
                     symbol.token_kind.clone(),
                     Some(&text),
-                    Range {
-                        start_line: symbol.range.start_line,
-                        end_line: symbol.range.start_line,
-                        start_col: symbol.range.start_col,
-                        end_col: text.len(),
-                    },
+                    Range::new(
+                        Position::new(symbol.range.start.line, symbol.range.start.character),
+                        Position::new(symbol.range.start.line, text.len() as u32),
+                    ),
                     symbol.delta,
                 ));
             }
