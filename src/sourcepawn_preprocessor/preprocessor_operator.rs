@@ -1,5 +1,8 @@
 use anyhow::anyhow;
+use lsp_types::Range;
 use sourcepawn_lexer::Operator;
+
+use super::errors::EvaluationError;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -149,9 +152,15 @@ impl PreOperator {
         }
     }
 
-    pub fn process_op(&self, stack: &mut Vec<i32>) {
+    pub(super) fn process_op(
+        &self,
+        range: &Range,
+        stack: &mut Vec<i32>,
+    ) -> Result<(), EvaluationError> {
         if self.is_unary() {
-            let right = stack.pop().unwrap_or(0);
+            let right = stack
+                .pop()
+                .ok_or_else(|| EvaluationError::new("Expected expression.".to_string(), *range))?;
             let result: i32 = match self {
                 PreOperator::Not => (!to_bool(right)).into(),
                 PreOperator::Tilde => !right,
@@ -160,10 +169,14 @@ impl PreOperator {
                 _ => unreachable!(),
             };
             stack.push(result);
-            return;
+            return Ok(());
         }
-        let right = stack.pop().unwrap_or(0); //TODO: Handle error here
-        let left = stack.pop().unwrap_or(0);
+        let right = stack.pop().ok_or_else(|| {
+            EvaluationError::new("Expected right hand side expression.".to_string(), *range)
+        })?;
+        let left = stack.pop().ok_or_else(|| {
+            EvaluationError::new("Expected left hand side expression.".to_string(), *range)
+        })?;
         let result: i32 = match self {
             PreOperator::Equals => (left == right).into(),
             PreOperator::NotEquals => (left != right).into(),
@@ -194,6 +207,8 @@ impl PreOperator {
             | PreOperator::RParen => unreachable!(),
         };
         stack.push(result);
+
+        Ok(())
     }
 }
 

@@ -31,7 +31,7 @@ impl<'a> IfCondition<'a> {
 
     pub(super) fn evaluate(&mut self) -> Result<bool, EvaluationError> {
         let mut output_queue: Vec<i32> = vec![];
-        let mut operator_stack: Vec<PreOperator> = vec![];
+        let mut operator_stack: Vec<(PreOperator, Range)> = vec![];
         let mut may_be_unary = true;
         let mut looking_for_defined = false;
         let mut current_symbol_range = Range::new(
@@ -48,13 +48,13 @@ impl<'a> IfCondition<'a> {
         } else {
             let symbol = symbol_iter.next();
             if let Some(symbol) = &symbol {
-                current_symbol_range = symbol.range.clone();
+                current_symbol_range = symbol.range;
             }
             symbol
         } {
             match &symbol.token_kind {
                 TokenKind::LParen => {
-                    operator_stack.push(PreOperator::LParen);
+                    operator_stack.push((PreOperator::LParen, symbol.range));
                     if !looking_for_defined {
                         may_be_unary = true;
                     }
@@ -89,13 +89,13 @@ impl<'a> IfCondition<'a> {
                     }
                 }
                 TokenKind::RParen => {
-                    while let Some(top) = operator_stack.last() {
+                    while let Some((top, _)) = operator_stack.last() {
                         if PreOperator::LParen == *top {
                             operator_stack.pop();
                             may_be_unary = false;
                             break;
                         } else {
-                            operator_stack
+                            let (op, range) = operator_stack
                                 .pop()
                                 .ok_or_else(|| {
                                     EvaluationError::new(
@@ -103,8 +103,8 @@ impl<'a> IfCondition<'a> {
                                             .to_string(),
                                         current_symbol_range,
                                     )
-                                })?
-                                .process_op(&mut output_queue);
+                                })?;
+                            op.process_op(&range, &mut output_queue)?;
                         }
                     }
                 }
@@ -127,28 +127,26 @@ impl<'a> IfCondition<'a> {
                             _ => unreachable!(),
                         };
                     }
-                    while let Some(top) = operator_stack.last() {
+                    while let Some((top, _)) = operator_stack.last() {
                         if top == &PreOperator::LParen {
                             break;
                         }
                         if (!cur_op.is_unary() && top.priority() <= cur_op.priority())
                             || (cur_op.is_unary() && top.priority() < cur_op.priority())
                         {
-                            operator_stack
-                                .pop()
-                                .ok_or_else(|| {
-                                    EvaluationError::new(
-                                        "Invalid preprocessor condition, expected an operator."
-                                            .to_string(),
-                                        current_symbol_range,
-                                    )
-                                })?
-                                .process_op(&mut output_queue);
+                            let (op, range) = operator_stack.pop().ok_or_else(|| {
+                                EvaluationError::new(
+                                    "Invalid preprocessor condition, expected an operator."
+                                        .to_string(),
+                                    current_symbol_range,
+                                )
+                            })?;
+                            op.process_op(&range, &mut output_queue)?;
                         } else {
                             break;
                         }
                     }
-                    operator_stack.push(cur_op);
+                    operator_stack.push((cur_op, symbol.range));
                     may_be_unary = true;
                 }
                 TokenKind::True => {
@@ -191,8 +189,8 @@ impl<'a> IfCondition<'a> {
                 }
             }
         }
-        while let Some(op) = operator_stack.pop() {
-            op.process_op(&mut output_queue);
+        while let Some((op, range)) = operator_stack.pop() {
+            op.process_op(&range, &mut output_queue)?;
         }
 
         let res = *output_queue.last().ok_or_else(|| {
