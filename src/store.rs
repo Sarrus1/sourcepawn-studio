@@ -255,10 +255,7 @@ impl Store {
             .unwrap_or_else(|_| String::new());
         document.preprocessed_text = preprocessed_text;
         document.macros = preprocessor.macros.clone();
-        document
-            .diagnostics
-            .local_diagnostics
-            .extend(preprocessor.get_diagnostics());
+        preprocessor.add_diagnostics(&mut document.diagnostics.local_diagnostics);
         preprocessor.add_ignored_tokens(&mut document.tokens);
 
         Some(preprocessor.macros)
@@ -282,10 +279,8 @@ impl Store {
             if let Some(document) = self.documents.get_mut(&uri) {
                 document.preprocessed_text = preprocessed_text;
                 document.macros = preprocessor.macros.clone();
-                document
-                    .diagnostics
-                    .local_diagnostics
-                    .extend(preprocessor.get_diagnostics());
+                preprocessor.add_diagnostics(&mut document.diagnostics.local_diagnostics);
+                preprocessor.add_ignored_tokens(&mut document.tokens);
             }
             return Some(preprocessor.macros);
         }

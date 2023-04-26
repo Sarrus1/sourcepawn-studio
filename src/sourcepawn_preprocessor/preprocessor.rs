@@ -62,16 +62,22 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }
     }
 
-    pub(crate) fn get_diagnostics(&self) -> Vec<Diagnostic> {
-        let mut diagnostics = vec![];
-        diagnostics.extend(self.get_disabled_diagnostics());
-        diagnostics.extend(self.get_macro_not_found_diagnostics());
-        diagnostics.extend(self.get_evaluation_error_diagnostics());
-
-        diagnostics
+    pub(crate) fn add_ignored_tokens(&self, tokens: &mut Vec<Arc<Token>>) {
+        for symbol in self.evaluated_define_symbols.iter() {
+            tokens.push(Arc::new(Token {
+                text: symbol.text(),
+                range: symbol.range,
+            }));
+        }
     }
 
-    fn get_disabled_diagnostics(&self) -> Vec<Diagnostic> {
+    pub(crate) fn add_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
+        self.get_disabled_diagnostics(diagnostics);
+        self.get_macro_not_found_diagnostics(diagnostics);
+        self.get_evaluation_error_diagnostics(diagnostics);
+    }
+
+    fn get_disabled_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
         let mut ranges: Vec<lsp_types::Range> = vec![];
         for range in self.skipped_lines.iter() {
             if let Some(old_range) = ranges.pop() {
@@ -85,49 +91,31 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 ranges.push(*range);
             }
         }
-        ranges
-            .iter()
-            .map(|range| Diagnostic {
-                range: *range,
-                message: "Code disabled by the preprocessor.".to_string(),
-                severity: Some(lsp_types::DiagnosticSeverity::HINT),
-                tags: Some(vec![lsp_types::DiagnosticTag::UNNECESSARY]),
-                ..Default::default()
-            })
-            .collect()
+        diagnostics.extend(ranges.iter().map(|range| Diagnostic {
+            range: *range,
+            message: "Code disabled by the preprocessor.".to_string(),
+            severity: Some(lsp_types::DiagnosticSeverity::HINT),
+            tags: Some(vec![lsp_types::DiagnosticTag::UNNECESSARY]),
+            ..Default::default()
+        }));
     }
 
-    fn get_macro_not_found_diagnostics(&self) -> Vec<Diagnostic> {
-        self.macro_not_found_errors
-            .iter()
-            .map(|err| Diagnostic {
-                range: err.range,
-                message: format!("Macro {} not found.", err.macro_name),
-                severity: Some(lsp_types::DiagnosticSeverity::ERROR),
-                ..Default::default()
-            })
-            .collect()
+    fn get_macro_not_found_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
+        diagnostics.extend(self.macro_not_found_errors.iter().map(|err| Diagnostic {
+            range: err.range,
+            message: format!("Macro {} not found.", err.macro_name),
+            severity: Some(lsp_types::DiagnosticSeverity::ERROR),
+            ..Default::default()
+        }));
     }
 
-    fn get_evaluation_error_diagnostics(&self) -> Vec<Diagnostic> {
-        self.evaluation_errors
-            .iter()
-            .map(|err| Diagnostic {
-                range: err.range,
-                message: format!("Preprocessor condition is invalid: {}", err.text),
-                severity: Some(lsp_types::DiagnosticSeverity::ERROR),
-                ..Default::default()
-            })
-            .collect()
-    }
-
-    pub(crate) fn add_ignored_tokens(&self, tokens: &mut Vec<Arc<Token>>) {
-        for symbol in self.evaluated_define_symbols.iter() {
-            tokens.push(Arc::new(Token {
-                text: symbol.text(),
-                range: symbol.range,
-            }));
-        }
+    fn get_evaluation_error_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
+        diagnostics.extend(self.evaluation_errors.iter().map(|err| Diagnostic {
+            range: err.range,
+            message: format!("Preprocessor condition is invalid: {}", err.text),
+            severity: Some(lsp_types::DiagnosticSeverity::ERROR),
+            ..Default::default()
+        }));
     }
 
     pub fn preprocess_input(&mut self, store: &mut Store) -> anyhow::Result<String> {
