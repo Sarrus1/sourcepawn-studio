@@ -259,6 +259,7 @@ impl Store {
             .diagnostics
             .local_diagnostics
             .extend(preprocessor.get_diagnostics());
+        preprocessor.add_ignored_tokens(&mut document.tokens);
 
         Some(preprocessor.macros)
     }

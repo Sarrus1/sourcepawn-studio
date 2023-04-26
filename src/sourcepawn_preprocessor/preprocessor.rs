@@ -5,7 +5,7 @@ use fxhash::FxHashMap;
 use lsp_types::{Diagnostic, Position, Range, Url};
 use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
 
-use crate::store::Store;
+use crate::{document::Token, store::Store};
 
 use super::{
     errors::{EvaluationError, ExpansionError, MacroNotFoundError},
@@ -29,6 +29,7 @@ pub struct SourcepawnPreprocessor<'a> {
     skipped_lines: Vec<lsp_types::Range>,
     pub(self) macro_not_found_errors: Vec<MacroNotFoundError>,
     pub(self) evaluation_errors: Vec<EvaluationError>,
+    pub(self) evaluated_define_symbols: Vec<Symbol>,
     document_uri: Arc<Url>,
     current_line: String,
     prev_end: u32,
@@ -52,6 +53,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
             skipped_lines: vec![],
             macro_not_found_errors: vec![],
             evaluation_errors: vec![],
+            evaluated_define_symbols: vec![],
             prev_end: 0,
             conditions_stack: vec![],
             out: vec![],
@@ -60,7 +62,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }
     }
 
-    pub fn get_diagnostics(&self) -> Vec<Diagnostic> {
+    pub(crate) fn get_diagnostics(&self) -> Vec<Diagnostic> {
         let mut diagnostics = vec![];
         diagnostics.extend(self.get_disabled_diagnostics());
         diagnostics.extend(self.get_macro_not_found_diagnostics());
@@ -117,6 +119,15 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 ..Default::default()
             })
             .collect()
+    }
+
+    pub(crate) fn add_ignored_tokens(&self, tokens: &mut Vec<Arc<Token>>) {
+        for symbol in self.evaluated_define_symbols.iter() {
+            tokens.push(Arc::new(Token {
+                text: symbol.text(),
+                range: symbol.range,
+            }));
+        }
     }
 
     pub fn preprocess_input(&mut self, store: &mut Store) -> anyhow::Result<String> {
@@ -183,6 +194,9 @@ impl<'a> SourcepawnPreprocessor<'a> {
         let mut if_condition = IfCondition::new(&self.macros, symbol.range.start.line);
         while self.lexer.in_preprocessor() {
             if let Some(symbol) = self.lexer.next() {
+                if symbol.token_kind == TokenKind::Identifier {
+                    self.evaluated_define_symbols.push(symbol.clone());
+                }
                 if_condition.symbols.push(symbol);
             } else {
                 break;
@@ -426,6 +440,10 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 ));
                 self.current_line = "".to_string();
                 self.prev_end = 0;
+            }
+            TokenKind::Identifier => {
+                // Keep track of the identifiers, so that they can be seen by the semantic analyzer.
+                self.evaluated_define_symbols.push(symbol.clone());
             }
             // Skip any token that is not a directive or a newline.
             _ => (),
