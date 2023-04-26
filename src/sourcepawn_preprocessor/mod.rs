@@ -415,6 +415,32 @@ public void OnPluginStart()
     }
 
     #[test]
+    fn if_directive_defined_complex_8() {
+        let input = r#"#define FOO 1
+#if defined FOO
+int foo;
+#elseif FOO == 1
+int bar;
+#endif"#;
+        let output = r#"#define FOO 1
+
+int foo;
+
+
+"#;
+
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
     fn define_1() {
         let input = r#"#define FOO 1"#;
         let output = r#"#define FOO 1"#;

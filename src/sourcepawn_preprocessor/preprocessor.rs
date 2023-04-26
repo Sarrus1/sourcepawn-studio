@@ -239,8 +239,8 @@ impl<'a> SourcepawnPreprocessor<'a> {
         self.conditions_stack
             .pop()
             .context("Expect if before endif clause")?;
-        if let Some(last) = self.conditions_stack.pop() {
-            if last != ConditionState::Active {
+        if let Some(last) = self.conditions_stack.last() {
+            if *last != ConditionState::Active {
                 self.skipped_lines.push(lsp_types::Range::new(
                     Position::new(symbol.range.start.line, self.skip_line_start_col),
                     Position::new(symbol.range.start.line, symbol.range.end.character),
@@ -258,7 +258,19 @@ impl<'a> SourcepawnPreprocessor<'a> {
         symbol: &Symbol,
     ) -> anyhow::Result<()> {
         match dir {
-            PreprocDir::MIf | PreprocDir::MElseif => self.process_if_directive(symbol),
+            PreprocDir::MIf => self.process_if_directive(symbol),
+            PreprocDir::MElseif => {
+                let last = self
+                    .conditions_stack
+                    .pop()
+                    .context("Expect if before elseif clause.")?;
+                match last {
+                    ConditionState::NotActivated => self.process_if_directive(symbol),
+                    ConditionState::Active | ConditionState::Activated => {
+                        self.conditions_stack.push(ConditionState::Activated);
+                    }
+                }
+            }
             PreprocDir::MDefine => {
                 self.push_symbol(symbol);
                 let mut macro_name = String::new();
@@ -409,7 +421,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     let last = self
                         .conditions_stack
                         .pop()
-                        .context("Expect if before else clause.")?;
+                        .context("Expect if before elseif clause.")?;
                     match last {
                         ConditionState::NotActivated => self.process_if_directive(symbol),
                         ConditionState::Active | ConditionState::Activated => {
