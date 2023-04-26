@@ -42,6 +42,10 @@ impl SignatureAttributes {
                 return None;
             }
             line_nb -= 1;
+            if line_nb >= lines.len() {
+                // We have reached the end of the document.
+                return None;
+            }
             let line = &lines[line_nb];
             // Collect the chars of the string to be able to iterate backwards on them
             // by knowing the total length of the vector.
