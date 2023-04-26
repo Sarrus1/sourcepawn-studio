@@ -143,6 +143,8 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     self.prev_end = 0;
                 }
                 TokenKind::Identifier => match self.macros.get(&symbol.text()) {
+                    // TODO: Evaluate the performance dropoff of supporting macrro expansion when overriding reserved keywords.
+                    // This might only be a problem for a very small subset of users.
                     Some(_) => {
                         match expand_symbol(
                             &mut self.lexer,

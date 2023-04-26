@@ -59,35 +59,6 @@ impl<'a> IfCondition<'a> {
                         may_be_unary = true;
                     }
                 }
-                TokenKind::Identifier => {
-                    if looking_for_defined {
-                        output_queue.push(self.macros.contains_key(&symbol.text()).into());
-                        looking_for_defined = false;
-                        may_be_unary = false;
-                    } else {
-                        match expand_symbol(
-                            &mut symbol_iter,
-                            self.macros,
-                            &symbol,
-                            &mut self.expansion_stack,
-                        ) {
-                            Ok(_) => continue,
-                            Err(ExpansionError::MacroNotFound(err)) => {
-                                self.macro_not_found_errors.push(err.clone());
-                                return Err(EvaluationError::new(
-                                    err.to_string(),
-                                    current_symbol_range,
-                                ));
-                            }
-                            Err(ExpansionError::Parse(err)) => {
-                                return Err(EvaluationError::new(
-                                    err.to_string(),
-                                    current_symbol_range,
-                                ));
-                            }
-                        }
-                    }
-                }
                 TokenKind::RParen => {
                     while let Some((top, _)) = operator_stack.last() {
                         if PreOperator::LParen == *top {
@@ -177,15 +148,41 @@ impl<'a> IfCondition<'a> {
                     }
                 },
                 TokenKind::Comment(_) | TokenKind::Newline | TokenKind::Eof => (),
-                _ => {
-                    // TODO: Should keywords be treated as identifiers?
+                TokenKind::PreprocDir(_) => {
                     return Err(EvaluationError::new(
-                        format!(
-                            "Unsupported symbol {:?} in preprocessor condition",
-                            symbol.token_kind
-                        ),
+                        "Preprocessor directives are not supported in preprocessor expression evaluation."
+                            .to_string(),
                         current_symbol_range,
-                    ));
+                    ))
+                }
+                _ => {
+                    if looking_for_defined {
+                        output_queue.push(self.macros.contains_key(&symbol.text()).into());
+                        looking_for_defined = false;
+                        may_be_unary = false;
+                    } else {
+                        match expand_symbol(
+                            &mut symbol_iter,
+                            self.macros,
+                            &symbol,
+                            &mut self.expansion_stack,
+                        ) {
+                            Ok(_) => continue,
+                            Err(ExpansionError::MacroNotFound(err)) => {
+                                self.macro_not_found_errors.push(err.clone());
+                                return Err(EvaluationError::new(
+                                    err.to_string(),
+                                    current_symbol_range,
+                                ));
+                            }
+                            Err(ExpansionError::Parse(err)) => {
+                                return Err(EvaluationError::new(
+                                    err.to_string(),
+                                    current_symbol_range,
+                                ));
+                            }
+                        }
+                    }
                 }
             }
         }
