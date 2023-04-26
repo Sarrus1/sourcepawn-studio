@@ -1,3 +1,4 @@
+mod errors;
 pub(crate) mod evaluator;
 mod macros;
 pub mod preprocessor;
@@ -38,7 +39,7 @@ mod test {
     fn evaluate_if_condition(input: &str) -> bool {
         let mut lexer = SourcepawnLexer::new(input);
         let macros: FxHashMap<String, Macro> = FxHashMap::default();
-        let mut if_condition = IfCondition::new(&macros);
+        let mut if_condition = IfCondition::new(&macros, 0);
         if let Some(symbol) = lexer.next() {
             if TokenKind::PreprocDir(sourcepawn_lexer::PreprocDir::MIf) == symbol.token_kind {
                 while lexer.in_preprocessor() {

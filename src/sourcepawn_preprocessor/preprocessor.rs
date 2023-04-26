@@ -7,7 +7,11 @@ use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, T
 
 use crate::store::Store;
 
-use super::{evaluator::IfCondition, macros::expand_symbol};
+use super::{
+    errors::{EvaluationError, ExpansionError, MacroNotFoundError},
+    evaluator::IfCondition,
+    macros::expand_symbol,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum ConditionState {
@@ -18,11 +22,13 @@ enum ConditionState {
 
 #[derive(Debug, Clone)]
 pub struct SourcepawnPreprocessor<'a> {
-    pub(crate) lexer: SourcepawnLexer<'a>,
+    pub(super) lexer: SourcepawnLexer<'a>,
     pub(crate) macros: FxHashMap<String, Macro>,
-    pub(crate) expansion_stack: Vec<Symbol>,
+    pub(super) expansion_stack: Vec<Symbol>,
     skip_line_start_col: u32,
     skipped_lines: Vec<lsp_types::Range>,
+    pub(self) macro_not_found_errors: Vec<MacroNotFoundError>,
+    pub(self) evaluation_errors: Vec<EvaluationError>,
     document_uri: Arc<Url>,
     current_line: String,
     prev_end: u32,
@@ -44,6 +50,8 @@ impl<'a> SourcepawnPreprocessor<'a> {
             current_line: "".to_string(),
             skip_line_start_col: 0,
             skipped_lines: vec![],
+            macro_not_found_errors: vec![],
+            evaluation_errors: vec![],
             prev_end: 0,
             conditions_stack: vec![],
             out: vec![],
@@ -52,7 +60,16 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }
     }
 
-    pub fn get_disabled_diagnostics(&self) -> Vec<Diagnostic> {
+    pub fn get_diagnostics(&self) -> Vec<Diagnostic> {
+        let mut diagnostics = vec![];
+        diagnostics.extend(self.get_disabled_diagnostics());
+        diagnostics.extend(self.get_macro_not_found_diagnostics());
+        diagnostics.extend(self.get_evaluation_error_diagnostics());
+
+        diagnostics
+    }
+
+    fn get_disabled_diagnostics(&self) -> Vec<Diagnostic> {
         let mut ranges: Vec<lsp_types::Range> = vec![];
         for range in self.skipped_lines.iter() {
             if let Some(old_range) = ranges.pop() {
@@ -73,6 +90,30 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 message: "Code disabled by the preprocessor.".to_string(),
                 severity: Some(lsp_types::DiagnosticSeverity::HINT),
                 tags: Some(vec![lsp_types::DiagnosticTag::UNNECESSARY]),
+                ..Default::default()
+            })
+            .collect()
+    }
+
+    fn get_macro_not_found_diagnostics(&self) -> Vec<Diagnostic> {
+        self.macro_not_found_errors
+            .iter()
+            .map(|err| Diagnostic {
+                range: err.range,
+                message: format!("Macro {} not found.", err.macro_name),
+                severity: Some(lsp_types::DiagnosticSeverity::ERROR),
+                ..Default::default()
+            })
+            .collect()
+    }
+
+    fn get_evaluation_error_diagnostics(&self) -> Vec<Diagnostic> {
+        self.evaluation_errors
+            .iter()
+            .map(|err| Diagnostic {
+                range: err.range,
+                message: format!("Preprocessor condition is invalid: {}", err.text),
+                severity: Some(lsp_types::DiagnosticSeverity::ERROR),
                 ..Default::default()
             })
             .collect()
@@ -103,12 +144,21 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 }
                 TokenKind::Identifier => match self.macros.get(&symbol.text()) {
                     Some(_) => {
-                        expand_symbol(
+                        match expand_symbol(
                             &mut self.lexer,
                             &self.macros,
                             &symbol,
                             &mut self.expansion_stack,
-                        )?;
+                        ) {
+                            Ok(_) => continue,
+                            Err(ExpansionError::MacroNotFound(err)) => {
+                                self.macro_not_found_errors.push(err.clone());
+                                return Err(anyhow!("{}", err));
+                            }
+                            Err(ExpansionError::Parse(err)) => {
+                                return Err(anyhow!("{}", err));
+                            }
+                        }
                     }
                     None => {
                         self.push_symbol(&symbol);
@@ -128,7 +178,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
 
     fn process_if_directive(&mut self, symbol: &Symbol) {
         let line_nb = symbol.range.start.line;
-        let mut if_condition = IfCondition::new(&self.macros);
+        let mut if_condition = IfCondition::new(&self.macros, symbol.range.start.line);
         while self.lexer.in_preprocessor() {
             if let Some(symbol) = self.lexer.next() {
                 if_condition.symbols.push(symbol);
@@ -136,12 +186,23 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 break;
             }
         }
-        if if_condition.evaluate().unwrap_or(false) {
+        let if_condition_eval = match if_condition.evaluate() {
+            Ok(res) => res,
+            Err(err) => {
+                self.evaluation_errors.push(err);
+                // Default to false when we fail to evaluate a condition.
+                false
+            }
+        };
+
+        if if_condition_eval {
             self.conditions_stack.push(ConditionState::Active);
         } else {
             self.skip_line_start_col = symbol.range.end.character;
             self.conditions_stack.push(ConditionState::NotActivated);
         }
+        self.macro_not_found_errors
+            .extend(if_condition.macro_not_found_errors);
         if let Some(last_symbol) = if_condition.symbols.last() {
             let line_diff = last_symbol.range.end.line - line_nb;
             for _ in 0..line_diff {

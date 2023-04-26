@@ -258,7 +258,7 @@ impl Store {
         document
             .diagnostics
             .local_diagnostics
-            .extend(preprocessor.get_disabled_diagnostics());
+            .extend(preprocessor.get_diagnostics());
 
         Some(preprocessor.macros)
     }
@@ -284,7 +284,7 @@ impl Store {
                 document
                     .diagnostics
                     .local_diagnostics
-                    .extend(preprocessor.get_disabled_diagnostics());
+                    .extend(preprocessor.get_diagnostics());
             }
             return Some(preprocessor.macros);
         }

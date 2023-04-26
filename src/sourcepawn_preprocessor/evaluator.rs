@@ -1,30 +1,43 @@
-use anyhow::{anyhow, Context};
 use fxhash::FxHashMap;
+use lsp_types::{Position, Range};
 use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
 
-use super::{macros::expand_symbol, preprocessor::Macro, preprocessor_operator::PreOperator};
+use super::{
+    errors::{EvaluationError, ExpansionError, MacroNotFoundError},
+    macros::expand_symbol,
+    preprocessor::Macro,
+    preprocessor_operator::PreOperator,
+};
 
 #[derive(Debug)]
 pub struct IfCondition<'a> {
     pub symbols: Vec<Symbol>,
+    pub(super) macro_not_found_errors: Vec<MacroNotFoundError>,
     macros: &'a FxHashMap<String, Macro>,
     expansion_stack: Vec<Symbol>,
+    line_nb: u32,
 }
 
 impl<'a> IfCondition<'a> {
-    pub(crate) fn new(macros: &'a FxHashMap<String, Macro>) -> Self {
+    pub(super) fn new(macros: &'a FxHashMap<String, Macro>, line_nb: u32) -> Self {
         Self {
             symbols: vec![],
+            macro_not_found_errors: vec![],
             macros,
             expansion_stack: vec![],
+            line_nb,
         }
     }
 
-    pub fn evaluate(&mut self) -> anyhow::Result<bool> {
+    pub(super) fn evaluate(&mut self) -> Result<bool, EvaluationError> {
         let mut output_queue: Vec<i32> = vec![];
         let mut operator_stack: Vec<PreOperator> = vec![];
         let mut may_be_unary = true;
         let mut looking_for_defined = false;
+        let mut current_symbol_range = Range::new(
+            Position::new(self.line_nb, 0),
+            Position::new(self.line_nb, 1000),
+        );
         let mut symbol_iter = self
             .symbols
             .clone() // FIXME: This is horrible.
@@ -33,7 +46,11 @@ impl<'a> IfCondition<'a> {
         while let Some(symbol) = if !self.expansion_stack.is_empty() {
             self.expansion_stack.pop()
         } else {
-            symbol_iter.next()
+            let symbol = symbol_iter.next();
+            if let Some(symbol) = &symbol {
+                current_symbol_range = symbol.range.clone();
+            }
+            symbol
         } {
             match &symbol.token_kind {
                 TokenKind::LParen => {
@@ -48,12 +65,27 @@ impl<'a> IfCondition<'a> {
                         looking_for_defined = false;
                         may_be_unary = false;
                     } else {
-                        expand_symbol(
+                        match expand_symbol(
                             &mut symbol_iter,
                             self.macros,
                             &symbol,
                             &mut self.expansion_stack,
-                        )?
+                        ) {
+                            Ok(_) => continue,
+                            Err(ExpansionError::MacroNotFound(err)) => {
+                                self.macro_not_found_errors.push(err.clone());
+                                return Err(EvaluationError::new(
+                                    err.to_string(),
+                                    current_symbol_range,
+                                ));
+                            }
+                            Err(ExpansionError::Parse(err)) => {
+                                return Err(EvaluationError::new(
+                                    err.to_string(),
+                                    current_symbol_range,
+                                ));
+                            }
+                        }
                     }
                 }
                 TokenKind::RParen => {
@@ -65,7 +97,13 @@ impl<'a> IfCondition<'a> {
                         } else {
                             operator_stack
                                 .pop()
-                                .context("Invalid condition, expected an operator before ) token.")?
+                                .ok_or_else(|| {
+                                    EvaluationError::new(
+                                        "Invalid preprocessor condition, expected an operator before ) token."
+                                            .to_string(),
+                                        current_symbol_range,
+                                    )
+                                })?
                                 .process_op(&mut output_queue);
                         }
                     }
@@ -74,7 +112,12 @@ impl<'a> IfCondition<'a> {
                     looking_for_defined = true;
                 }
                 TokenKind::Operator(op) => {
-                    let mut cur_op = PreOperator::convert(op)?;
+                    let mut cur_op = PreOperator::convert(op).ok().ok_or_else(|| {
+                        EvaluationError::new(
+                            "Invalid preprocessor condition, expected a result.".to_string(),
+                            current_symbol_range,
+                        )
+                    })?;
                     if may_be_unary && is_unary(op) {
                         cur_op = match op {
                             Operator::Not => PreOperator::Not,
@@ -93,7 +136,13 @@ impl<'a> IfCondition<'a> {
                         {
                             operator_stack
                                 .pop()
-                                .context("Invalid condition, expected an operator.")?
+                                .ok_or_else(|| {
+                                    EvaluationError::new(
+                                        "Invalid preprocessor condition, expected an operator."
+                                            .to_string(),
+                                        current_symbol_range,
+                                    )
+                                })?
                                 .process_op(&mut output_queue);
                         } else {
                             break;
@@ -120,23 +169,38 @@ impl<'a> IfCondition<'a> {
                         may_be_unary = false;
                     }
                     _ => {
-                        return Err(anyhow!(
-                            "Literal {:?} is not supported in expression evaluation.",
+                        return Err(EvaluationError::new(
+                            format!(
+                            "Literal {:?} is not supported in preprocessor expression evaluation.",
                             lit
+                        ),
+                            current_symbol_range,
                         ))
                     }
                 },
                 TokenKind::Comment(_) | TokenKind::Newline | TokenKind::Eof => (),
-                _ => todo!("TokenKind: {:?}", &symbol.token_kind),
+                _ => {
+                    // TODO: Should keywords be treated as identifiers?
+                    return Err(EvaluationError::new(
+                        format!(
+                            "Unsupported symbol {:?} in preprocessor condition",
+                            symbol.token_kind
+                        ),
+                        current_symbol_range,
+                    ));
+                }
             }
         }
         while let Some(op) = operator_stack.pop() {
             op.process_op(&mut output_queue);
         }
 
-        let res = *output_queue
-            .last()
-            .context("Invalid condition, expected a result.")?;
+        let res = *output_queue.last().ok_or_else(|| {
+            EvaluationError::new(
+                "Invalid preprocessor condition, expected a result.".to_string(),
+                current_symbol_range,
+            )
+        })?;
 
         Ok(res != 0)
     }

@@ -1,16 +1,18 @@
-use anyhow::Context;
 use fxhash::FxHashMap;
 use lsp_types::{Position, Range};
 use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
 
-use super::preprocessor::Macro;
+use super::{
+    errors::{ExpansionError, MacroNotFoundError, ParseIntError},
+    preprocessor::Macro,
+};
 
-pub(crate) fn expand_symbol<T>(
+pub(super) fn expand_symbol<T>(
     lexer: &mut T,
     macros: &FxHashMap<String, Macro>,
     symbol: &Symbol,
     expansion_stack: &mut Vec<Symbol>,
-) -> anyhow::Result<()>
+) -> Result<(), ExpansionError>
 where
     T: Iterator<Item = Symbol>,
 {
@@ -26,7 +28,7 @@ where
             TokenKind::Identifier => {
                 let macro_ = macros
                     .get(&symbol.text())
-                    .context(format!("Undefined macro {:?}", symbol.text()))?;
+                    .ok_or_else(|| MacroNotFoundError::new(symbol.text(), symbol.range))?;
                 if macro_.args.is_none() {
                     expand_non_macro_define(macro_, &mut stack, &symbol, d);
                 } else {
@@ -80,7 +82,7 @@ fn expand_macro(
     stack: &mut Vec<(Symbol, sourcepawn_lexer::Delta, i32)>,
     symbol: &Symbol,
     d: i32,
-) -> anyhow::Result<()> {
+) -> Result<(), ParseIntError> {
     let mut consecutive_percent = 0;
     for (i, child) in macro_.body.iter().enumerate() {
         match &child.token_kind {
@@ -98,10 +100,10 @@ fn expand_macro(
             TokenKind::Literal(Literal::IntegerLiteral) => {
                 if consecutive_percent == 1 {
                     stack.pop();
-                    let arg_idx = child.to_int().context(format!(
-                        "Could not convert {:?} to an int value.",
-                        child.text()
-                    ))? as usize;
+                    let arg_idx = child
+                        .to_int()
+                        .ok_or_else(|| ParseIntError::new(child.text(), child.range))?
+                        as usize;
                     for (i, child) in args[arg_idx].iter().enumerate() {
                         stack.push((
                             child.clone(),

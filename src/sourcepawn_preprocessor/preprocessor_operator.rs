@@ -162,7 +162,7 @@ impl PreOperator {
             stack.push(result);
             return;
         }
-        let right = stack.pop().unwrap_or(0);
+        let right = stack.pop().unwrap_or(0); //TODO: Handle error here
         let left = stack.pop().unwrap_or(0);
         let result: i32 = match self {
             PreOperator::Equals => (left == right).into(),
