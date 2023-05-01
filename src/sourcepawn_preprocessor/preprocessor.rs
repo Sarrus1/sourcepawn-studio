@@ -2,7 +2,9 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, Context};
 use fxhash::FxHashMap;
+use lazy_static::lazy_static;
 use lsp_types::{Diagnostic, Position, Range, Url};
+use regex::Regex;
 use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
 
 use crate::{document::Token, store::Store};
@@ -142,7 +144,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     self.prev_end = 0;
                 }
                 TokenKind::Identifier => match self.macros.get(&symbol.text()) {
-                    // TODO: Evaluate the performance dropoff of supporting macrro expansion when overriding reserved keywords.
+                    // TODO: Evaluate the performance dropoff of supporting macro expansion when overriding reserved keywords.
                     // This might only be a problem for a very small subset of users.
                     Some(_) => {
                         match expand_symbol(
@@ -356,50 +358,59 @@ impl<'a> SourcepawnPreprocessor<'a> {
             PreprocDir::MEndif => self.process_endif_directive(symbol)?,
             PreprocDir::MElse => self.process_else_directive(symbol)?,
             PreprocDir::MInclude => {
-                self.push_symbol(symbol);
-                let mut delta = 0;
-                while self.lexer.in_preprocessor() {
-                    if let Some(mut symbol) = self.lexer.next() {
-                        match symbol.token_kind {
-                            TokenKind::Literal(Literal::StringLiteral) => {
-                                // Rewrite the symbol to be a single line.
-                                delta += symbol.range.end.line - symbol.range.start.line;
-                                let text = symbol.inline_text();
-                                symbol = Symbol::new(
-                                    symbol.token_kind.clone(),
-                                    Some(&text),
-                                    Range::new(
-                                        Position::new(
-                                            symbol.range.start.line,
-                                            symbol.range.start.character,
-                                        ),
-                                        Position::new(symbol.range.start.line, text.len() as u32),
-                                    ),
-                                    symbol.delta,
-                                );
-
-                                let mut path = text[1..text.len() - 1].trim().to_string();
-                                if let Some(include_uri) =
-                                    store.resolve_import(&mut path, &self.document_uri)
-                                {
-                                    if let Some(include_macros) =
-                                        store.preprocess_document_by_uri(Arc::new(include_uri))
-                                    {
-                                        self.macros.extend(include_macros);
-                                    }
-                                }
-                            }
-                            TokenKind::Eof | TokenKind::Newline => continue, // Ignore the EOF here so that it does not duplicate the current line.
-                            _ => (),
-                        }
-                        self.push_symbol(&symbol);
-                    }
+                let text = symbol.inline_text().trim().to_string();
+                let delta = symbol.range.end.line - symbol.range.start.line;
+                let symbol = Symbol::new(
+                    symbol.token_kind.clone(),
+                    Some(&text),
+                    Range::new(
+                        Position::new(symbol.range.start.line, symbol.range.start.character),
+                        Position::new(symbol.range.start.line, text.len() as u32),
+                    ),
+                    symbol.delta,
+                );
+                lazy_static! {
+                    static ref RE1: Regex = Regex::new(r"<([^>]+)>").unwrap();
+                    static ref RE2: Regex = Regex::new("\"([^>]+)\"").unwrap();
                 }
-                self.push_current_line();
-                self.current_line = "".to_string();
-                self.prev_end = 0;
-                for _ in 0..delta {
-                    self.out.push(String::new());
+                // TODO: Squash this into one regex.
+                if let Some(caps) = RE1.captures(&text) {
+                    if let Some(path) = caps.get(1) {
+                        let mut path = path.as_str().to_string();
+                        if let Some(include_uri) =
+                            store.resolve_import(&mut path, &self.document_uri)
+                        {
+                            if let Some(include_macros) =
+                                store.preprocess_document_by_uri(Arc::new(include_uri))
+                            {
+                                self.macros.extend(include_macros);
+                            }
+                        }
+                    }
+                };
+                if let Some(caps) = RE2.captures(&text) {
+                    if let Some(path) = caps.get(1) {
+                        let mut path = path.as_str().to_string();
+                        if let Some(include_uri) =
+                            store.resolve_import(&mut path, &self.document_uri)
+                        {
+                            if let Some(include_macros) =
+                                store.preprocess_document_by_uri(Arc::new(include_uri))
+                            {
+                                self.macros.extend(include_macros);
+                            }
+                        }
+                    }
+                };
+
+                self.push_symbol(&symbol);
+                if delta > 0 {
+                    self.push_current_line();
+                    self.current_line = "".to_string();
+                    self.prev_end = 0;
+                    for _ in 0..delta - 1 {
+                        self.out.push(String::new());
+                    }
                 }
             }
             _ => self.push_symbol(symbol),

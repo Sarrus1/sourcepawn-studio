@@ -23,7 +23,6 @@ pub enum Token {
     OctodecimalLiteral,
 
     #[regex(r#""([^"\\\n]|(?&es))*""#)]
-    #[regex(r#"<([^>\\\n]|(?&es))*>"#)]
     StringLiteral,
 
     #[regex(r"'([^'\\\n]|(?&es))*'")]
@@ -210,7 +209,7 @@ pub enum Token {
     #[token("#if")]
     MIf,
 
-    #[token("#include")]
+    #[token("#include", lex_pragma_arguments)]
     MInclude,
 
     #[token("#leaving")]
@@ -234,7 +233,7 @@ pub enum Token {
     #[token("#require_semicolons")]
     MRequireSemi,
 
-    #[token("#tryinclude")]
+    #[token("#tryinclude", lex_pragma_arguments)]
     MTryinclude,
 
     #[token("#undef")]

@@ -42,7 +42,12 @@ impl Symbol {
         match &self.token_kind {
             TokenKind::Operator(op) => return op.text(),
             TokenKind::PreprocDir(dir) => {
-                if self.token_kind == TokenKind::PreprocDir(PreprocDir::MPragma) {
+                if matches!(
+                    self.token_kind,
+                    TokenKind::PreprocDir(PreprocDir::MPragma)
+                        | TokenKind::PreprocDir(PreprocDir::MInclude)
+                        | TokenKind::PreprocDir(PreprocDir::MTryinclude)
+                ) {
                     return self.text.clone().unwrap();
                 }
                 return dir.text();
@@ -136,6 +141,14 @@ impl Symbol {
             TokenKind::Comment(com) => {
                 if *com == Comment::BlockComment {
                     return text.replace('\n', "").replace("\r\n", "");
+                }
+            }
+            TokenKind::PreprocDir(dir) => {
+                if matches!(
+                    *dir,
+                    PreprocDir::MPragma | PreprocDir::MInclude | PreprocDir::MTryinclude
+                ) {
+                    return text.replace("\\\n", "").replace("\\\r\n", "");
                 }
             }
             _ => (),
@@ -232,13 +245,19 @@ impl Iterator for SourcepawnLexer<'_> {
             | Token::FloatLiteral
             | Token::BlockComment
             | Token::LineComment
-            | Token::MPragma => Some(self.lexer.slice().to_string()),
+            | Token::MPragma
+            | Token::MInclude
+            | Token::MTryinclude => Some(self.lexer.slice().to_string()),
             _ => None,
         };
 
         match token {
-            Token::StringLiteral | Token::BlockComment | Token::MPragma => {
-                if token == Token::MPragma {
+            Token::StringLiteral
+            | Token::BlockComment
+            | Token::MPragma
+            | Token::MInclude
+            | Token::MTryinclude => {
+                if matches!(token, Token::MPragma | Token::MInclude | Token::MTryinclude) {
                     self.in_preprocessor = true;
                 }
                 // Safe unwrap here as those tokens have text.
@@ -266,10 +285,8 @@ impl Iterator for SourcepawnLexer<'_> {
             | Token::MOptionalSemi
             | Token::MRequireNewdecls
             | Token::MRequireSemi
-            | Token::MTryinclude
             | Token::MUndef
             | Token::MEndif
-            | Token::MInclude
             | Token::MLeaving => self.in_preprocessor = true,
             Token::LineContinuation => {
                 self.line_number += 1;

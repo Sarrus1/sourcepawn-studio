@@ -5,40 +5,6 @@ use lsp_types::{Position, Range};
 use sourcepawn_lexer::*;
 
 #[test]
-fn include() {
-    let input = r#"#include <sourcemod\
->"#;
-
-    let mut lexer = SourcepawnLexer::new(input);
-    assert!(!lexer.in_preprocessor());
-    assert_token_eq!(
-        lexer,
-        TokenKind::PreprocDir(PreprocDir::MInclude),
-        "#include",
-        0,
-        0,
-        0,
-        8,
-        0,
-        0
-    );
-    assert!(lexer.in_preprocessor());
-    assert_token_eq!(
-        lexer,
-        TokenKind::Literal(Literal::StringLiteral),
-        "<sourcemod\\\n>",
-        0,
-        9,
-        1,
-        1,
-        0,
-        1
-    );
-    assert!(lexer.in_preprocessor());
-    assert_token_eq!(lexer, TokenKind::Eof, "\0", 1, 1, 1, 1, 0, 0);
-}
-
-#[test]
 fn define_simple() {
     let input = r#"#define FOO 1
      "#;
