@@ -56,6 +56,7 @@ pub struct Document {
     pub declarations: FxHashMap<String, Arc<RwLock<SPItem>>>,
     pub diagnostics: DocumentDiagnostics,
     pub(crate) macros: FxHashMap<String, Macro>,
+    pub(crate) macro_symbols: Vec<Arc<Token>>,
 }
 
 pub struct Walker {
@@ -79,6 +80,7 @@ impl Document {
             declarations: FxHashMap::default(),
             diagnostics: DocumentDiagnostics::default(),
             macros: FxHashMap::default(),
+            macro_symbols: vec![],
         }
     }
 
@@ -114,6 +116,10 @@ impl Document {
                     .push(Arc::new(Token::new(capture.node, &self.preprocessed_text)));
             }
         }
+    }
+
+    pub fn add_macro_symbols(&mut self) {
+        self.tokens.extend(self.macro_symbols.clone())
     }
 
     pub fn line(&self, line_nb: u32) -> Option<&str> {

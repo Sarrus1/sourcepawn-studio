@@ -256,7 +256,7 @@ impl Store {
         document.preprocessed_text = preprocessed_text;
         document.macros = preprocessor.macros.clone();
         preprocessor.add_diagnostics(&mut document.diagnostics.local_diagnostics);
-        preprocessor.add_ignored_tokens(&mut document.tokens);
+        preprocessor.add_ignored_tokens(&mut document.macro_symbols);
 
         Some(preprocessor.macros)
     }
@@ -280,7 +280,7 @@ impl Store {
                 document.preprocessed_text = preprocessed_text;
                 document.macros = preprocessor.macros.clone();
                 preprocessor.add_diagnostics(&mut document.diagnostics.local_diagnostics);
-                preprocessor.add_ignored_tokens(&mut document.tokens);
+                preprocessor.add_ignored_tokens(&mut document.macro_symbols);
             }
             return Some(preprocessor.macros);
         }
@@ -336,6 +336,7 @@ impl Store {
         }
         document.parsed = true;
         document.extract_tokens(root_node);
+        document.add_macro_symbols();
         document.get_syntax_error_diagnostics(
             root_node,
             self.environment.options.disable_syntax_linter,
