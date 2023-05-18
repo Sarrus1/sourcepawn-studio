@@ -12,10 +12,11 @@ pub(super) fn expand_symbol<T>(
     macros: &FxHashMap<String, Macro>,
     symbol: &Symbol,
     expansion_stack: &mut Vec<Symbol>,
-) -> Result<(), ExpansionError>
+) -> Result<Vec<Symbol>, ExpansionError>
 where
     T: Iterator<Item = Symbol>,
 {
+    let mut expanded_macros = vec![];
     let depth = 0;
     let mut stack: Vec<(Symbol, sourcepawn_lexer::Delta, i32)> =
         vec![(symbol.clone(), symbol.delta, depth)];
@@ -29,6 +30,10 @@ where
                 let macro_ = macros
                     .get(&symbol.text())
                     .ok_or_else(|| MacroNotFoundError::new(symbol.text(), symbol.range))?;
+                if d == 0 {
+                    // Do not keep track of sub-macros, they will not appear in the final document.
+                    expanded_macros.push(symbol.clone());
+                }
                 if macro_.args.is_none() {
                     expand_non_macro_define(macro_, &mut stack, &symbol, d);
                 } else {
@@ -58,7 +63,7 @@ where
         }
     }
 
-    Ok(())
+    Ok(expanded_macros)
 }
 
 fn expand_non_macro_define(

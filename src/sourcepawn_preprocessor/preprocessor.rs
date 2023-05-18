@@ -153,7 +153,10 @@ impl<'a> SourcepawnPreprocessor<'a> {
                             &symbol,
                             &mut self.expansion_stack,
                         ) {
-                            Ok(_) => continue,
+                            Ok(expanded_macros) => {
+                                self.evaluated_define_symbols.extend(expanded_macros);
+                                continue;
+                            }
                             Err(ExpansionError::MacroNotFound(err)) => {
                                 self.macro_not_found_errors.push(err.clone());
                                 return Err(anyhow!("{}", err));
@@ -307,6 +310,9 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                 {
                                     state = State::Args;
                                 } else {
+                                    if symbol.token_kind == TokenKind::Identifier {
+                                        self.evaluated_define_symbols.push(symbol.clone());
+                                    }
                                     macro_.body.push(symbol);
                                     state = State::Body;
                                 }
@@ -342,6 +348,9 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                 }
                             }
                             State::Body => {
+                                if symbol.token_kind == TokenKind::Identifier {
+                                    self.evaluated_define_symbols.push(symbol.clone());
+                                }
                                 macro_.body.push(symbol);
                             }
                         }
