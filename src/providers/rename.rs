@@ -26,7 +26,7 @@ pub fn provide_rename(request: FeatureRequest<RenameParams>) -> Option<Workspace
     changes.insert(
         (*item.uri()).clone(),
         vec![TextEdit {
-            range: item.range()?,
+            range: item.range(),
             new_text: request.params.new_name.clone(),
         }],
     );

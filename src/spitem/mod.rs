@@ -111,16 +111,9 @@ pub fn get_items_from_position(
     let mut res = vec![];
     for item in all_items.iter() {
         let item_lock = item.read().unwrap();
-        match item_lock.range() {
-            Some(range) => {
-                if range_contains_pos(range, position) && item_lock.uri().as_ref().eq(&uri) {
-                    res.push(item.clone());
-                    continue;
-                }
-            }
-            None => {
-                continue;
-            }
+        if range_contains_pos(item_lock.range(), position) && item_lock.uri().as_ref().eq(&uri) {
+            res.push(item.clone());
+            continue;
         }
         match item_lock.references() {
             Some(references) => {
@@ -140,35 +133,35 @@ pub fn get_items_from_position(
 }
 
 impl SPItem {
-    pub fn range(&self) -> Option<Range> {
+    pub fn range(&self) -> Range {
         match self {
-            SPItem::Variable(item) => Some(item.range),
-            SPItem::Function(item) => Some(item.range),
-            SPItem::Enum(item) => Some(item.range),
-            SPItem::EnumMember(item) => Some(item.range),
-            SPItem::EnumStruct(item) => Some(item.range),
-            SPItem::Define(item) => Some(item.range),
-            SPItem::Methodmap(item) => Some(item.range),
-            SPItem::Property(item) => Some(item.range),
-            SPItem::Typedef(item) => Some(item.range),
-            SPItem::Typeset(item) => Some(item.range),
-            SPItem::Include(item) => Some(item.range),
+            SPItem::Variable(item) => item.range,
+            SPItem::Function(item) => item.range,
+            SPItem::Enum(item) => item.range,
+            SPItem::EnumMember(item) => item.range,
+            SPItem::EnumStruct(item) => item.range,
+            SPItem::Define(item) => item.range,
+            SPItem::Methodmap(item) => item.range,
+            SPItem::Property(item) => item.range,
+            SPItem::Typedef(item) => item.range,
+            SPItem::Typeset(item) => item.range,
+            SPItem::Include(item) => item.range,
         }
     }
 
-    pub fn full_range(&self) -> Option<Range> {
+    pub fn full_range(&self) -> Range {
         match self {
-            SPItem::Variable(item) => Some(item.range),
-            SPItem::Function(item) => Some(item.full_range),
-            SPItem::Enum(item) => Some(item.full_range),
-            SPItem::EnumMember(item) => Some(item.range),
-            SPItem::EnumStruct(item) => Some(item.full_range),
-            SPItem::Define(item) => Some(item.full_range),
-            SPItem::Methodmap(item) => Some(item.full_range),
-            SPItem::Property(item) => Some(item.full_range),
-            SPItem::Typedef(item) => Some(item.full_range),
-            SPItem::Typeset(item) => Some(item.full_range),
-            SPItem::Include(item) => Some(item.range),
+            SPItem::Variable(item) => item.range,
+            SPItem::Function(item) => item.full_range,
+            SPItem::Enum(item) => item.full_range,
+            SPItem::EnumMember(item) => item.range,
+            SPItem::EnumStruct(item) => item.full_range,
+            SPItem::Define(item) => item.full_range,
+            SPItem::Methodmap(item) => item.full_range,
+            SPItem::Property(item) => item.full_range,
+            SPItem::Typedef(item) => item.full_range,
+            SPItem::Typeset(item) => item.full_range,
+            SPItem::Include(item) => item.range,
         }
     }
 
@@ -280,9 +273,7 @@ impl SPItem {
     }
 
     pub fn push_reference(&mut self, reference: Location) {
-        if range_equals_range(&self.range().unwrap(), &reference.range)
-            && self.uri().eq(&reference.uri)
-        {
+        if range_equals_range(&self.range(), &reference.range) && self.uri().eq(&reference.uri) {
             return;
         }
         match self {

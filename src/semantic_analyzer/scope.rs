@@ -11,23 +11,11 @@ pub struct Scope {
 
 impl Scope {
     fn func_full_range(&self) -> Range {
-        self.func
-            .as_ref()
-            .unwrap()
-            .read()
-            .unwrap()
-            .full_range()
-            .unwrap()
+        self.func.as_ref().unwrap().read().unwrap().full_range()
     }
 
     fn mm_es_full_range(&self) -> Range {
-        self.mm_es
-            .as_ref()
-            .unwrap()
-            .read()
-            .unwrap()
-            .full_range()
-            .unwrap()
+        self.mm_es.as_ref().unwrap().read().unwrap().full_range()
     }
 
     pub fn update_func(
@@ -46,12 +34,7 @@ impl Scope {
             return;
         }
 
-        let next_func_range = funcs_in_file[*func_idx]
-            .read()
-            .unwrap()
-            .full_range()
-            .unwrap();
-
+        let next_func_range = funcs_in_file[*func_idx].read().unwrap().full_range();
         if range_contains_range(&next_func_range, &range) {
             self.func = Some(funcs_in_file[*func_idx].clone());
             *func_idx += 1;
@@ -76,12 +59,7 @@ impl Scope {
             return;
         }
 
-        let next_mm_es_range = mm_es_in_file[*mm_es_idx]
-            .read()
-            .unwrap()
-            .full_range()
-            .unwrap();
-
+        let next_mm_es_range = mm_es_in_file[*mm_es_idx].read().unwrap().full_range();
         if range_contains_range(&next_mm_es_range, &range) {
             self.mm_es = Some(mm_es_in_file[*mm_es_idx].clone());
             *mm_es_idx += 1;

@@ -12,7 +12,7 @@ use tree_sitter::{Node, Query, QueryCursor};
 use crate::{
     linter::document_diagnostics::DocumentDiagnostics,
     parser::comment_parser::{Comment, Deprecated},
-    sourcepawn_preprocessor::preprocessor::Macro,
+    sourcepawn_preprocessor::preprocessor::{Macro, Offset},
     spitem::SPItem,
     utils::ts_range_to_lsp_range,
 };
@@ -57,6 +57,7 @@ pub struct Document {
     pub diagnostics: DocumentDiagnostics,
     pub(crate) macros: FxHashMap<String, Macro>,
     pub(crate) macro_symbols: Vec<Arc<Token>>,
+    pub(crate) offsets: FxHashMap<u32, Vec<Offset>>,
 }
 
 pub struct Walker {
@@ -81,6 +82,7 @@ impl Document {
             diagnostics: DocumentDiagnostics::default(),
             macros: FxHashMap::default(),
             macro_symbols: vec![],
+            offsets: FxHashMap::default(),
         }
     }
 

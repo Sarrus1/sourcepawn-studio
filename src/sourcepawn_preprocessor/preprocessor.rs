@@ -23,6 +23,12 @@ enum ConditionState {
 }
 
 #[derive(Debug, Clone)]
+pub(crate) struct Offset {
+    pub(crate) index: u32,
+    pub(crate) diff: i32,
+}
+
+#[derive(Debug, Clone)]
 pub struct SourcepawnPreprocessor<'a> {
     pub(super) lexer: SourcepawnLexer<'a>,
     pub(crate) macros: FxHashMap<String, Macro>,
@@ -37,6 +43,7 @@ pub struct SourcepawnPreprocessor<'a> {
     prev_end: u32,
     conditions_stack: Vec<ConditionState>,
     out: Vec<String>,
+    offsets: FxHashMap<u32, Vec<Offset>>,
 }
 
 #[derive(Debug, Clone)]
@@ -61,6 +68,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
             out: vec![],
             macros: FxHashMap::default(),
             expansion_stack: vec![],
+            offsets: FxHashMap::default(),
         }
     }
 
@@ -121,10 +129,37 @@ impl<'a> SourcepawnPreprocessor<'a> {
     }
 
     pub fn preprocess_input(&mut self, store: &mut Store) -> anyhow::Result<String> {
+        let mut col_start: Option<i32> = None;
+        let mut col_end: Option<i32> = None;
+        let mut expanded_symbol: Option<Symbol> = None;
         while let Some(symbol) = if !self.expansion_stack.is_empty() {
-            self.expansion_stack.pop()
+            let symbol = self.expansion_stack.pop().unwrap();
+            if col_start.is_none() {
+                col_start = Some(symbol.range.start.character as i32);
+                col_end = Some(symbol.range.end.character as i32);
+            } else {
+                col_end = Some(symbol.range.end.character as i32);
+            }
+            Some(symbol)
         } else {
-            self.lexer.next()
+            let symbol = self.lexer.next();
+            if let Some(expanded_symbol) = expanded_symbol.take() {
+                if let Some(symbol) = symbol.clone() {
+                    let col_offset = col_end.unwrap_or(0) - col_start.unwrap_or(0);
+                    self.offsets
+                        .entry(symbol.range.start.line)
+                        .or_insert_with(Vec::new)
+                        .push(Offset {
+                            index: expanded_symbol.range.start.character,
+                            diff: (col_offset
+                                - (expanded_symbol.range.end.character
+                                    - expanded_symbol.range.start.character)
+                                    as i32),
+                        });
+                }
+            }
+
+            symbol
         } {
             if matches!(
                 self.conditions_stack
@@ -154,6 +189,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                             &mut self.expansion_stack,
                         ) {
                             Ok(expanded_macros) => {
+                                expanded_symbol = Some(symbol.clone());
                                 self.evaluated_define_symbols.extend(expanded_macros);
                                 continue;
                             }
@@ -178,7 +214,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 _ => self.push_symbol(&symbol),
             }
         }
-
+        eprintln!("{:#?}", self.offsets);
         Ok(self.out.join("\n"))
     }
 
