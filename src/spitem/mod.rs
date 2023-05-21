@@ -38,7 +38,6 @@ pub struct Location {
     pub range: Range,
 
     // User visible range of the location.
-    // This property is not accurate for define reference, as they are expanded before they are seen by the parser.
     pub v_range: Range,
 }
 
@@ -46,7 +45,7 @@ impl Location {
     pub fn to_lsp_location(&self) -> lsp_types::Location {
         lsp_types::Location {
             uri: self.uri.as_ref().clone(),
-            range: self.range,
+            range: self.v_range,
         }
     }
 }
@@ -118,14 +117,14 @@ pub fn get_items_from_position(
     let mut res = vec![];
     for item in all_items.iter() {
         let item_lock = item.read().unwrap();
-        if range_contains_pos(item_lock.range(), position) && item_lock.uri().as_ref().eq(&uri) {
+        if range_contains_pos(item_lock.v_range(), position) && item_lock.uri().as_ref().eq(&uri) {
             res.push(item.clone());
             continue;
         }
         match item_lock.references() {
             Some(references) => {
                 for reference in references.iter() {
-                    if range_contains_pos(reference.range, position) && reference.uri.eq(&uri) {
+                    if range_contains_pos(reference.v_range, position) && reference.uri.eq(&uri) {
                         res.push(item.clone());
                         break;
                     }

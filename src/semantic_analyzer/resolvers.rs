@@ -77,7 +77,11 @@ impl Analyzer {
             let reference = Location {
                 uri: document.uri.clone(),
                 range: token.range,
-                v_range: document.build_v_range(&token.range),
+                v_range: if let SPItem::Define(_) = &*item.read().unwrap() {
+                    token.range
+                } else {
+                    document.build_v_range(&token.range)
+                },
             };
 
             if let SPItem::Methodmap(mm_item) = &*item.read().unwrap() {

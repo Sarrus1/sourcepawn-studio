@@ -104,9 +104,9 @@ impl PropertyItem {
     /// * `_params` - [GotoDefinitionParams] of the request.
     pub(crate) fn to_definition(&self, _params: &GotoDefinitionParams) -> Option<LocationLink> {
         Some(LocationLink {
-            target_range: self.range,
+            target_range: self.v_range,
             target_uri: self.uri.as_ref().clone(),
-            target_selection_range: self.range,
+            target_selection_range: self.v_range,
             origin_selection_range: None,
         })
     }
@@ -123,9 +123,9 @@ impl PropertyItem {
             detail: None,
             kind: SymbolKind::PROPERTY,
             tags: Some(tags),
-            range: self.full_range,
+            range: self.v_full_range,
             deprecated: None,
-            selection_range: self.range,
+            selection_range: self.v_range,
             children: None,
         })
     }

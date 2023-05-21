@@ -25,9 +25,7 @@ impl SemanticTokensBuilder {
         for ref_ in define_item.references.iter() {
             if ref_.uri.eq(uri) {
                 self.push(
-                    // We do not use the v_range as define references are already expanded before they reach the parser,
-                    // therefore the parser never sees the original define reference.
-                    ref_.range,
+                    ref_.v_range,
                     SemanticTokenType::MACRO,
                     Some(vec![SemanticTokenModifier::READONLY]),
                 )?;
