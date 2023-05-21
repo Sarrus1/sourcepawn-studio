@@ -2,6 +2,12 @@
 
 ## [5.3.9]
 
+### Added
+
+- Added create License command (Thanks [Suza](https://github.com/Zabaniya001)!) (see #300).
+- Added create gitignore command (Thanks [Suza](https://github.com/Zabaniya001)!) (see #300).
+- Added license creation and gitignore creation to the create project command (Thanks [Suza](https://github.com/Zabaniya001)!) (see #300).
+
 ### Fixed
 
 - Fixed server crashing due to wrong invocation (see #296).
