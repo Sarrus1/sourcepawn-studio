@@ -40,7 +40,7 @@ impl ServerFork {
         };
         match self.client.send_request::<WorkspaceConfiguration>(params) {
             Ok(mut json) => {
-                log::info!("Received config {:?}", json);
+                log::info!("Received config {:#?}", json);
                 let value = json.pop().expect("invalid configuration request");
                 let options = self.parse_options(value)?;
                 self.internal_tx
