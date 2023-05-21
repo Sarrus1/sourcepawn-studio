@@ -38,7 +38,7 @@ export async function run(args: any) {
   window.showQuickPick(quickPickItems, quickPickOptions).then(async (item) => {
     const chosenAPI = availableAPIs.find((e) => e.name === item.label);
     await Workspace.getConfiguration("SourcePawnLanguageServer").update(
-      "includeDirectories",
+      "includesDirectories",
       chosenAPI.includeDirectories
     );
     await Workspace.getConfiguration("SourcePawnLanguageServer").update(
