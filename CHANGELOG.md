@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [0.10.0]
+
+### Added
+
+-   Added full preprocessor support. The extension will now preprocess the files, by expanding macros and evaluating if conditions.
+-   Added basic logging and tracing.
+
 ## [0.9.10]
 
 ### Fixed
