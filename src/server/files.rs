@@ -39,6 +39,7 @@ impl Store {
 
 impl Server {
     pub(super) fn reparse_all(&mut self) -> anyhow::Result<()> {
+        log::debug!("Reparsing all the files.");
         self.indexing = true;
         self.send_status(lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,

@@ -22,6 +22,7 @@ mod include;
 mod matchtoken;
 
 pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<CompletionList> {
+    log::debug!("Providing completions with request: {:#?}", request.params);
     let document = request.store.get(&request.uri)?;
     let all_items = get_all_items(&request.store, false);
     let position = request.params.text_document_position.position;

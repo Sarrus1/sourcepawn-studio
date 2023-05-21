@@ -68,6 +68,7 @@ pub enum SPItem {
 }
 
 pub fn get_all_items(store: &Store, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
+    log::debug!("Getting all items from store. flat: {}", flat);
     let mut all_items = vec![];
     if let Ok(Some(main_path_uri)) = store.environment.options.get_main_path_uri() {
         let mut includes = FxHashSet::default();
@@ -84,6 +85,7 @@ pub fn get_all_items(store: &Store, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
                 }
             }
         }
+        log::trace!("Done getting {} item(s)", all_items.len());
         return all_items;
     }
     for document in store.documents.values() {
@@ -92,6 +94,10 @@ pub fn get_all_items(store: &Store, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
         }
     }
 
+    log::trace!(
+        "Done getting {} item(s) without the main path.",
+        all_items.len()
+    );
     all_items
 }
 
@@ -112,6 +118,11 @@ pub fn get_items_from_position(
     position: Position,
     uri: Url,
 ) -> Vec<Arc<RwLock<SPItem>>> {
+    log::debug!(
+        "Getting all items from position {:#?} in file {:#?}.",
+        position,
+        uri
+    );
     let uri = Arc::new(uri);
     let all_items = get_all_items(store, true);
     let mut res = vec![];
@@ -135,6 +146,8 @@ pub fn get_items_from_position(
             }
         }
     }
+    log::trace!("Got {} item(s) from position", res.len());
+
     res
 }
 
