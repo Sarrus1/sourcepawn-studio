@@ -23,6 +23,9 @@ pub struct VariableItem {
     /// Range of the name of the variable.
     pub range: Range,
 
+    /// User visible range of the name of the variable.
+    pub v_range: Range,
+
     /// Description of the variable.
     pub description: Description,
 

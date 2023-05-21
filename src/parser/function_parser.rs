@@ -274,10 +274,13 @@ fn read_function_parameters(
             },
             deprecated: None,
         };
+
+        let range = ts_range_to_lsp_range(&name_node.range());
         let variable_item = VariableItem {
             name: name.to_string(),
             type_: type_.to_string(),
-            range: ts_range_to_lsp_range(&name_node.range()),
+            range,
+            v_range: document.build_v_range(&range),
             description: description.clone(),
             uri: document.uri.clone(),
             detail: detail.to_string(),

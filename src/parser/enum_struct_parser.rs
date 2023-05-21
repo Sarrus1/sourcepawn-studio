@@ -101,10 +101,12 @@ fn parse_enum_struct_field(
         }
     }
 
+    let range = ts_range_to_lsp_range(&name_node.range());
     let enum_struct_field_item = VariableItem {
         name: name.to_string(),
         type_: type_.to_string(),
-        range: ts_range_to_lsp_range(&name_node.range()),
+        range,
+        v_range: document.build_v_range(&range),
         description: Description::default(),
         uri: document.uri.clone(),
         detail: format!("{} {}{}", type_, name, dimensions.join("")),

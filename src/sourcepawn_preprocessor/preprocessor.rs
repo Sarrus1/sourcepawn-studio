@@ -24,7 +24,7 @@ enum ConditionState {
 
 #[derive(Debug, Clone)]
 pub(crate) struct Offset {
-    pub(crate) index: u32,
+    pub(crate) col: u32,
     pub(crate) diff: i32,
 }
 
@@ -43,7 +43,7 @@ pub struct SourcepawnPreprocessor<'a> {
     prev_end: u32,
     conditions_stack: Vec<ConditionState>,
     out: Vec<String>,
-    offsets: FxHashMap<u32, Vec<Offset>>,
+    pub(crate) offsets: FxHashMap<u32, Vec<Offset>>,
 }
 
 #[derive(Debug, Clone)]
@@ -150,7 +150,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                         .entry(symbol.range.start.line)
                         .or_insert_with(Vec::new)
                         .push(Offset {
-                            index: expanded_symbol.range.start.character,
+                            col: expanded_symbol.range.start.character,
                             diff: (col_offset
                                 - (expanded_symbol.range.end.character
                                     - expanded_symbol.range.start.character)
@@ -214,7 +214,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 _ => self.push_symbol(&symbol),
             }
         }
-        eprintln!("{:#?}", self.offsets);
+
         Ok(self.out.join("\n"))
     }
 

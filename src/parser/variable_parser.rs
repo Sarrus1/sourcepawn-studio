@@ -75,10 +75,12 @@ impl Document {
                         None => "",
                     };
                     let name = name_node.utf8_text(self.preprocessed_text.as_bytes())?;
+                    let range = ts_range_to_lsp_range(&name_node.range());
                     let variable_item = VariableItem {
                         name: name.to_string(),
                         type_: type_.to_string(),
-                        range: ts_range_to_lsp_range(&name_node.range()),
+                        range,
+                        v_range: self.build_v_range(&range),
                         description: Description::default(),
                         uri: self.uri.clone(),
                         detail: "".to_string(),

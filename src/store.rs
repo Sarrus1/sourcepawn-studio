@@ -255,6 +255,7 @@ impl Store {
             .unwrap_or_else(|_| String::new());
         document.preprocessed_text = preprocessed_text;
         document.macros = preprocessor.macros.clone();
+        document.offsets = preprocessor.offsets.clone();
         preprocessor.add_diagnostics(&mut document.diagnostics.local_diagnostics);
         preprocessor.add_ignored_tokens(&mut document.macro_symbols);
 

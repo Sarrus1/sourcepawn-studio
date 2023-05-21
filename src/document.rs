@@ -218,4 +218,30 @@ impl Document {
 
         sp_items
     }
+
+    pub fn build_v_range(&self, range: &Range) -> Range {
+        let mut start = range.start;
+        let mut end = range.end;
+
+        if let Some(start_offsets) = self.offsets.get(&start.line) {
+            for offset in start_offsets.iter() {
+                if offset.col <= start.character {
+                    start.character = start
+                        .character
+                        .checked_add_signed(-offset.diff)
+                        .unwrap_or(0);
+                }
+            }
+        }
+
+        if let Some(end_offsets) = self.offsets.get(&end.line) {
+            for offset in end_offsets.iter() {
+                if offset.col <= end.character {
+                    end.character = end.character.checked_add_signed(-offset.diff).unwrap_or(0);
+                }
+            }
+        }
+
+        Range { start, end }
+    }
 }
