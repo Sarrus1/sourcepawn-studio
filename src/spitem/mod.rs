@@ -153,16 +153,16 @@ impl SPItem {
     pub fn v_range(&self) -> Range {
         match self {
             SPItem::Variable(item) => item.v_range,
-            SPItem::Function(item) => item.range,
-            SPItem::Enum(item) => item.range,
-            SPItem::EnumMember(item) => item.range,
-            SPItem::EnumStruct(item) => item.range,
-            SPItem::Define(item) => item.range,
-            SPItem::Methodmap(item) => item.range,
-            SPItem::Property(item) => item.range,
-            SPItem::Typedef(item) => item.range,
-            SPItem::Typeset(item) => item.range,
-            SPItem::Include(item) => item.range,
+            SPItem::Function(item) => item.v_range,
+            SPItem::Enum(item) => item.v_range,
+            SPItem::EnumMember(item) => item.v_range,
+            SPItem::EnumStruct(item) => item.v_range,
+            SPItem::Define(item) => item.v_range,
+            SPItem::Methodmap(item) => item.v_range,
+            SPItem::Property(item) => item.v_range,
+            SPItem::Typedef(item) => item.v_range,
+            SPItem::Typeset(item) => item.v_range,
+            SPItem::Include(item) => item.v_range,
         }
     }
 
@@ -185,16 +185,16 @@ impl SPItem {
     pub fn v_full_range(&self) -> Range {
         match self {
             SPItem::Variable(item) => item.v_range,
-            SPItem::Function(item) => item.full_range,
-            SPItem::Enum(item) => item.full_range,
-            SPItem::EnumMember(item) => item.range,
-            SPItem::EnumStruct(item) => item.full_range,
-            SPItem::Define(item) => item.full_range,
-            SPItem::Methodmap(item) => item.full_range,
-            SPItem::Property(item) => item.full_range,
-            SPItem::Typedef(item) => item.full_range,
-            SPItem::Typeset(item) => item.full_range,
-            SPItem::Include(item) => item.range,
+            SPItem::Function(item) => item.v_full_range,
+            SPItem::Enum(item) => item.v_full_range,
+            SPItem::EnumMember(item) => item.v_range,
+            SPItem::EnumStruct(item) => item.v_full_range,
+            SPItem::Define(item) => item.v_full_range,
+            SPItem::Methodmap(item) => item.v_full_range,
+            SPItem::Property(item) => item.v_full_range,
+            SPItem::Typedef(item) => item.v_full_range,
+            SPItem::Typeset(item) => item.v_full_range,
+            SPItem::Include(item) => item.v_range,
         }
     }
 

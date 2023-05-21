@@ -52,11 +52,15 @@ impl Document {
 
                     let description = walker.find_doc(node.start_position().row, false)?;
 
+                    let range = ts_range_to_lsp_range(&name_node.range());
+                    let full_range = ts_range_to_lsp_range(&node.range());
                     let typedef_item = TypedefItem {
                         name: format!("{}{}", name, counter),
                         type_: type_.to_string(),
-                        range: ts_range_to_lsp_range(&name_node.range()),
-                        full_range: ts_range_to_lsp_range(&node.range()),
+                        range,
+                        v_range: self.build_v_range(&range),
+                        full_range,
+                        v_full_range: self.build_v_range(&full_range),
                         description: description.clone(),
                         uri: self.uri.clone(),
                         detail: node
@@ -79,10 +83,14 @@ impl Document {
             }
         }
 
+        let range = ts_range_to_lsp_range(&name_node.range());
+        let full_range = ts_range_to_lsp_range(&node.range());
         let typeset_item = TypesetItem {
             name: name.to_string(),
-            range: ts_range_to_lsp_range(&name_node.range()),
-            full_range: ts_range_to_lsp_range(&node.range()),
+            range,
+            v_range: self.build_v_range(&range),
+            full_range,
+            v_full_range: self.build_v_range(&full_range),
             description,
             uri: self.uri.clone(),
             references: vec![],

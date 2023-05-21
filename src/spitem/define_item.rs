@@ -19,11 +19,17 @@ pub struct DefineItem {
     /// Range of the name of the define.
     pub range: Range,
 
+    /// User visible range of the name of the define.
+    pub v_range: Range,
+
     /// Value of the define.
     pub value: String,
 
     /// Range of the whole define, including its value.
     pub full_range: Range,
+
+    /// User visible range of the whole define, including its value.
+    pub v_full_range: Range,
 
     /// Description of the define.
     pub description: Description,

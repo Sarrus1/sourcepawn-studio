@@ -20,6 +20,9 @@ pub struct EnumMemberItem {
     /// Range of the name of the enum member.
     pub range: Range,
 
+    /// User visible range of the name of the enum member.
+    pub v_range: Range,
+
     /// Parent of the method. None if it's a first class function.
     pub parent: Weak<RwLock<SPItem>>,
 

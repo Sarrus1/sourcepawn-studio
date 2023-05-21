@@ -97,6 +97,7 @@ pub(crate) fn add_include(document: &mut Document, include_uri: Url, path: Strin
     let include_item = IncludeItem {
         name: path,
         range,
+        v_range: document.build_v_range(&range),
         uri: document.uri.clone(),
         include_uri,
     };

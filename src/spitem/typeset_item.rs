@@ -19,8 +19,14 @@ pub struct TypesetItem {
     /// Range of the name of the typeset.
     pub range: Range,
 
+    /// User visible range of the name of the typeset.
+    pub v_range: Range,
+
     /// Range of the whole typeset.
     pub full_range: Range,
+
+    /// User visible range of the whole typeset.
+    pub v_full_range: Range,
 
     /// Description of the typeset.
     pub description: Description,

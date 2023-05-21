@@ -27,8 +27,14 @@ pub struct PropertyItem {
     /// Range of the name of the property.
     pub range: Range,
 
+    /// User visible range of the name of the property.
+    pub v_range: Range,
+
     /// Range of the whole property, including its block.
     pub full_range: Range,
+
+    /// User visible range of the whole property, including its block.
+    pub v_full_range: Range,
 
     /// Description of the property.
     pub description: Description,

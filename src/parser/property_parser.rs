@@ -27,10 +27,14 @@ impl Document {
             .utf8_text(self.preprocessed_text.as_bytes())
             .unwrap();
 
+        let range = ts_range_to_lsp_range(&name_node.range());
+        let full_range = ts_range_to_lsp_range(&node.range());
         let property_item = PropertyItem {
             name,
-            range: ts_range_to_lsp_range(&name_node.range()),
-            full_range: ts_range_to_lsp_range(&node.range()),
+            range,
+            v_range: self.build_v_range(&range),
+            full_range,
+            v_full_range: self.build_v_range(&full_range),
             type_: type_.to_string(),
             description: walker.find_doc(node.start_position().row, false)?,
             uri: self.uri.clone(),

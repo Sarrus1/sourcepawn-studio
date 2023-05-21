@@ -28,8 +28,14 @@ pub struct FunctionItem {
     /// Range of the name of the function.
     pub range: Range,
 
+    /// User visible range of the name of the function.
+    pub v_range: Range,
+
     /// Range of the whole function, including its block.
     pub full_range: Range,
+
+    /// User visible range of the whole function, including its block.
+    pub v_full_range: Range,
 
     /// Description of the function.
     pub description: Description,

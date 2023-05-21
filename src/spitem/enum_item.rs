@@ -18,8 +18,14 @@ pub struct EnumItem {
     /// Range of the name of the enum.
     pub range: Range,
 
+    /// User visible range of the name of the enum.
+    pub v_range: Range,
+
     /// Range of the whole enum, including its block.
     pub full_range: Range,
+
+    /// User visible range of the whole enum, including its block.
+    pub v_full_range: Range,
 
     /// Description of the enum.
     pub description: Description,

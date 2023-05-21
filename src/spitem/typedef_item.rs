@@ -22,8 +22,14 @@ pub struct TypedefItem {
     /// Range of the name of the typedef.
     pub range: Range,
 
+    /// User visible range of the name of the typedef.
+    pub v_range: Range,
+
     /// Range of the whole typedef.
     pub full_range: Range,
+
+    /// User visible range of the whole typedef.
+    pub v_full_range: Range,
 
     /// Description of the typedef.
     pub description: Description,

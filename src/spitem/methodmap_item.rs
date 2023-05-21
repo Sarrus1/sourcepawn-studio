@@ -26,8 +26,14 @@ pub struct MethodmapItem {
     /// Range of the name of the methodmap.
     pub range: Range,
 
+    /// User visible range of the name of the methodmap.
+    pub v_range: Range,
+
     /// Range of the whole methodmap, including its value.
     pub full_range: Range,
+
+    /// User visible range of the whole methodmap, including its value.
+    pub v_full_range: Range,
 
     /// Description of the methodmap.
     pub description: Description,

@@ -25,10 +25,14 @@ impl Document {
 
         let documentation = walker.find_doc(node.start_position().row, false)?;
 
+        let range = ts_range_to_lsp_range(&name_node.range());
+        let full_range = ts_range_to_lsp_range(&node.range());
         let enum_struct_item = EnumStructItem {
             name,
-            range: ts_range_to_lsp_range(&name_node.range()),
-            full_range: ts_range_to_lsp_range(&node.range()),
+            range,
+            v_range: self.build_v_range(&range),
+            full_range,
+            v_full_range: self.build_v_range(&full_range),
             description: documentation,
             uri: self.uri.clone(),
             references: vec![],

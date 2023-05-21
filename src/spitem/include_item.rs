@@ -14,6 +14,9 @@ pub struct IncludeItem {
     /// Range of the text of the include.
     pub range: Range,
 
+    /// User visible range of the text of the include.
+    pub v_range: Range,
+
     /// Uri of the file where the include is declared.
     pub uri: Arc<Url>,
 
