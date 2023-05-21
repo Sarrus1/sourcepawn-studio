@@ -31,8 +31,14 @@ pub(crate) mod variable_item;
 /// Represents a location inside a resource, such as a line inside a text file.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Location {
+    // Uri of the location.
     pub uri: Arc<Url>,
+
+    // Range of the location.
     pub range: Range,
+
+    // User visible range of the location.
+    // This property is not accurate for define reference, as they are expanded before they are seen by the parser.
     pub v_range: Range,
 }
 
