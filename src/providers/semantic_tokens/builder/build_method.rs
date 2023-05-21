@@ -19,14 +19,14 @@ impl SemanticTokensBuilder {
         }
         if method_item.uri.eq(uri) {
             self.push(
-                method_item.range,
+                method_item.v_range,
                 token_type.clone(),
                 Some(vec![SemanticTokenModifier::DECLARATION]),
             )?;
         }
         for ref_ in method_item.references.iter() {
             if ref_.uri.eq(uri) {
-                self.push(ref_.range, token_type.clone(), Some(vec![]))?;
+                self.push(ref_.v_range, token_type.clone(), Some(vec![]))?;
             }
         }
         method_item.children.iter().for_each(|child| {

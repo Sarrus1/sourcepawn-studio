@@ -14,7 +14,7 @@ impl SemanticTokensBuilder {
     ) -> anyhow::Result<()> {
         if enum_member_item.uri.eq(uri) {
             self.push(
-                enum_member_item.range,
+                enum_member_item.v_range,
                 SemanticTokenType::ENUM_MEMBER,
                 Some(vec![
                     SemanticTokenModifier::READONLY,
@@ -25,7 +25,7 @@ impl SemanticTokensBuilder {
         for ref_ in enum_member_item.references.iter() {
             if ref_.uri.eq(uri) {
                 self.push(
-                    ref_.range,
+                    ref_.v_range,
                     SemanticTokenType::ENUM_MEMBER,
                     Some(vec![SemanticTokenModifier::READONLY]),
                 )?;

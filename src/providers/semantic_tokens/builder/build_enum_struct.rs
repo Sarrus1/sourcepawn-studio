@@ -14,14 +14,14 @@ impl SemanticTokensBuilder {
     ) -> anyhow::Result<()> {
         if es_item.uri.eq(uri) {
             self.push(
-                es_item.range,
+                es_item.v_range,
                 SemanticTokenType::STRUCT,
                 Some(vec![SemanticTokenModifier::DECLARATION]),
             )?;
         }
         for ref_ in es_item.references.iter() {
             if ref_.uri.eq(uri) {
-                self.push(ref_.range, SemanticTokenType::STRUCT, None)?;
+                self.push(ref_.v_range, SemanticTokenType::STRUCT, None)?;
             }
         }
         es_item.children.iter().for_each(|child| {
