@@ -11,6 +11,8 @@ import { run as InsertParametersCommand } from "./insertParameters";
 import { run as setFileAsMainCommand } from "./setFileAsMain";
 import { run as installSMCommand } from "./installSM";
 import { run as createChangelogCommand } from "./createCHANGELOG";
+import { run as createGitignoreCommand } from "./createGITIGNORE";
+import { run as createLicenseCommand } from "./createLICENSE";
 import { run as changeSMApiCommand } from "./changeSMApi";
 import { run as installLanguageServerCommand } from "./installLanguageServer";
 import { CommandFactory } from "../ctx";
@@ -92,6 +94,18 @@ export function registerSMCommands(context: vscode.ExtensionContext): void {
     createChangelogCommand.bind(undefined)
   );
   context.subscriptions.push(createChangelog);
+
+  const createGitignore = vscode.commands.registerCommand(
+    "sourcepawn-vscode.createGitignore",
+    createGitignoreCommand.bind(undefined)
+  );
+  context.subscriptions.push(createGitignore);
+
+  const createLicense = vscode.commands.registerCommand(
+    "sourcepawn-vscode.createLicense",
+    createLicenseCommand.bind(undefined)
+  );
+  context.subscriptions.push(createLicense);
 
   const changeSMApi = vscode.commands.registerCommand(
     "sourcepawn-vscode.changeSMApi",

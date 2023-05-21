@@ -110,12 +110,22 @@
       },
       {
         "command": "sourcepawn-vscode.installSM",
-        "title": "Install sourcemod",
+        "title": "Install Sourcemod",
         "category": "SM"
       },
       {
         "command": "sourcepawn-vscode.createChangelog",
         "title": "Create Changelog",
+        "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.createGitignore",
+        "title": "Create gitignore",
+        "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.createLicense",
+        "title": "Create license",
         "category": "SM"
       },
       {
