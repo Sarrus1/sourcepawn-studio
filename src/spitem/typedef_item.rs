@@ -22,8 +22,14 @@ pub struct TypedefItem {
     /// Range of the name of the typedef.
     pub range: Range,
 
+    /// User visible range of the name of the typedef.
+    pub v_range: Range,
+
     /// Range of the whole typedef.
     pub full_range: Range,
+
+    /// User visible range of the whole typedef.
+    pub v_full_range: Range,
 
     /// Description of the typedef.
     pub description: Description,
@@ -89,9 +95,9 @@ impl TypedefItem {
     /// * `_params` - [GotoDefinitionParams] of the request.
     pub(crate) fn to_definition(&self, _params: &GotoDefinitionParams) -> Option<LocationLink> {
         Some(LocationLink {
-            target_range: self.range,
+            target_range: self.v_range,
             target_uri: self.uri.as_ref().clone(),
-            target_selection_range: self.range,
+            target_selection_range: self.v_range,
             origin_selection_range: None,
         })
     }
@@ -108,9 +114,9 @@ impl TypedefItem {
             detail: Some(self.detail.to_string()),
             kind: SymbolKind::INTERFACE,
             tags: Some(tags),
-            range: self.full_range,
+            range: self.v_full_range,
             deprecated: None,
-            selection_range: self.range,
+            selection_range: self.v_range,
             children: None,
         })
     }

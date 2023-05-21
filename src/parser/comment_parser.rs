@@ -36,10 +36,7 @@ impl Walker {
     pub fn push_inline_comment(&mut self, items: &[Arc<RwLock<SPItem>>]) {
         if let Some(item) = items.last() {
             let description = self
-                .find_doc(
-                    item.read().unwrap().range().unwrap().end.line as usize,
-                    true,
-                )
+                .find_doc(item.read().unwrap().range().end.line as usize, true)
                 .unwrap();
             match &mut *item.write().unwrap() {
                 SPItem::EnumMember(enum_member_item) => {

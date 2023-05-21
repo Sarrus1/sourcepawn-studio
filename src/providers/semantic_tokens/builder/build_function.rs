@@ -21,7 +21,7 @@ impl SemanticTokensBuilder {
         };
         if function_item.uri.eq(uri) {
             self.push(
-                function_item.range,
+                function_item.v_range,
                 type_.clone(),
                 Some(vec![SemanticTokenModifier::DECLARATION]),
             )?;
@@ -29,13 +29,13 @@ impl SemanticTokensBuilder {
         for ref_ in function_item.references.iter() {
             if ref_.uri.eq(uri) {
                 let mut modifiers = vec![];
-                if function_item.range.eq(&ref_.range) {
+                if function_item.v_range.eq(&ref_.v_range) {
                     modifiers.push(SemanticTokenModifier::DECLARATION);
                 }
                 if function_item.description.deprecated.is_some() {
                     modifiers.push(SemanticTokenModifier::DEPRECATED);
                 }
-                self.push(ref_.range, type_.clone(), Some(modifiers))?;
+                self.push(ref_.v_range, type_.clone(), Some(modifiers))?;
             }
         }
         function_item.children.iter().for_each(|child| {

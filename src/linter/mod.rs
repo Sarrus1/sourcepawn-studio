@@ -36,7 +36,7 @@ impl Store {
                 if let Some(deprecated) = description.deprecated {
                     let document = self.documents.get_mut(&item.read().unwrap().uri()).unwrap();
                     document.diagnostics.local_diagnostics.push(Diagnostic {
-                        range: item.read().unwrap().range().unwrap(),
+                        range: item.read().unwrap().range(),
                         message: format!("Deprecated {:?}", deprecated),
                         severity: Some(DiagnosticSeverity::HINT),
                         tags: Some(vec![DiagnosticTag::DEPRECATED]),
@@ -76,9 +76,9 @@ impl Document {
         if disable_syntax_linter {
             return;
         }
-        self.diagnostics.local_diagnostics.clear();
+
         let mut cursor = QueryCursor::new();
-        let matches = cursor.captures(&ERROR_QUERY, root_node, self.text.as_bytes());
+        let matches = cursor.captures(&ERROR_QUERY, root_node, self.preprocessed_text.as_bytes());
         for (match_, _) in matches {
             for capture in match_.captures.iter() {
                 self.diagnostics.local_diagnostics.push(Diagnostic {

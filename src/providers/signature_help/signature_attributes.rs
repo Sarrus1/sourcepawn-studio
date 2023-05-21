@@ -27,7 +27,7 @@ impl SignatureAttributes {
         // Provide an initial one offset to counter the initial -1 in the while loop.
         let mut line_nb = position.line as usize + 1;
         let lines = document
-            .text
+            .preprocessed_text
             .lines()
             .map(|x| x.to_string())
             .collect::<Vec<String>>();
@@ -42,6 +42,10 @@ impl SignatureAttributes {
                 return None;
             }
             line_nb -= 1;
+            if line_nb >= lines.len() {
+                // We have reached the end of the document.
+                return None;
+            }
             let line = &lines[line_nb];
             // Collect the chars of the string to be able to iterate backwards on them
             // by knowing the total length of the vector.
@@ -70,16 +74,14 @@ impl SignatureAttributes {
         }
         // Shift by one character to get the position of the method name token.
         // FIXME: This only works if there is no character between the last ( and the name of the method.
-        if character > 0 {
-            character -= 1;
-        }
+        character = character.saturating_sub(1);
 
         Some(SignatureAttributes {
             position: Position {
                 line: line_nb as u32,
                 character: character as u32,
             },
-            parameter_count: parameter_count as u32,
+            parameter_count,
         })
     }
 }

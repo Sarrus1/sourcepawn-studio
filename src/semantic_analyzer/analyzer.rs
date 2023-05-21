@@ -135,7 +135,7 @@ impl Analyzer {
             funcs_in_file,
             mm_es_in_file,
             lines: document
-                .text
+                .preprocessed_text
                 .lines()
                 .map(|x| x.to_string())
                 .collect::<Vec<String>>(),

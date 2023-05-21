@@ -36,9 +36,9 @@ impl NotificationDispatcher {
     }
 
     pub fn default(self) {
-        if let Some(not) = &self.not {
-            warn!("Unknown notification: {}", not.method);
-        }
+        // if let Some(not) = &self.not {
+        //     warn!("Unknown notification: {}", not.method);
+        // }
     }
 }
 

@@ -19,8 +19,14 @@ pub struct TypesetItem {
     /// Range of the name of the typeset.
     pub range: Range,
 
+    /// User visible range of the name of the typeset.
+    pub v_range: Range,
+
     /// Range of the whole typeset.
     pub full_range: Range,
+
+    /// User visible range of the whole typeset.
+    pub v_full_range: Range,
 
     /// Description of the typeset.
     pub description: Description,
@@ -83,9 +89,9 @@ impl TypesetItem {
     /// * `_params` - [GotoDefinitionParams] of the request.
     pub(crate) fn to_definition(&self, _params: &GotoDefinitionParams) -> Option<LocationLink> {
         Some(LocationLink {
-            target_range: self.range,
+            target_range: self.v_range,
             target_uri: self.uri.as_ref().clone(),
-            target_selection_range: self.range,
+            target_selection_range: self.v_range,
             origin_selection_range: None,
         })
     }
@@ -102,9 +108,9 @@ impl TypesetItem {
             detail: None,
             kind: SymbolKind::NAMESPACE,
             tags: Some(tags),
-            range: self.full_range,
+            range: self.v_full_range,
             deprecated: None,
-            selection_range: self.range,
+            selection_range: self.v_range,
             children: Some(
                 self.children
                     .iter()

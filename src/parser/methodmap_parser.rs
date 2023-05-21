@@ -18,12 +18,14 @@ impl Document {
         walker: &mut Walker,
     ) -> Result<(), Utf8Error> {
         let name_node = node.child_by_field_name("name").unwrap();
-        let name = name_node.utf8_text(self.text.as_bytes())?.to_string();
+        let name = name_node
+            .utf8_text(self.preprocessed_text.as_bytes())?
+            .to_string();
         let inherit_node = node.child_by_field_name("inherits");
         let inherit = match inherit_node {
             Some(inherit_node) => Some(
                 inherit_node
-                    .utf8_text(self.text.as_bytes())
+                    .utf8_text(self.preprocessed_text.as_bytes())
                     .unwrap()
                     .trim()
                     .to_string(),
@@ -31,10 +33,14 @@ impl Document {
             None => None,
         };
 
+        let range = ts_range_to_lsp_range(&name_node.range());
+        let full_range = ts_range_to_lsp_range(&node.range());
         let methodmap_item = MethodmapItem {
             name,
-            range: ts_range_to_lsp_range(&name_node.range()),
-            full_range: ts_range_to_lsp_range(&node.range()),
+            range,
+            v_range: self.build_v_range(&range),
+            full_range,
+            v_full_range: self.build_v_range(&full_range),
             parent: None,
             description: walker.find_doc(node.start_position().row, false)?,
             uri: self.uri.clone(),
@@ -77,8 +83,8 @@ fn read_methodmap_members(
                     .parse_property(&mut child, walker, methodmap_item.clone())
                     .unwrap();
             }
-            "comment" => walker.push_comment(child, &document.text),
-            "preproc_pragma" => walker.push_deprecated(child, &document.text),
+            "comment" => walker.push_comment(child, &document.preprocessed_text),
+            "preproc_pragma" => walker.push_deprecated(child, &document.preprocessed_text),
             _ => {}
         }
     }

@@ -31,15 +31,21 @@ pub(crate) mod variable_item;
 /// Represents a location inside a resource, such as a line inside a text file.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Location {
+    // Uri of the location.
     pub uri: Arc<Url>,
+
+    // Range of the location.
     pub range: Range,
+
+    // User visible range of the location.
+    pub v_range: Range,
 }
 
 impl Location {
     pub fn to_lsp_location(&self) -> lsp_types::Location {
         lsp_types::Location {
             uri: self.uri.as_ref().clone(),
-            range: self.range,
+            range: self.v_range,
         }
     }
 }
@@ -62,6 +68,7 @@ pub enum SPItem {
 }
 
 pub fn get_all_items(store: &Store, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
+    log::debug!("Getting all items from store. flat: {}", flat);
     let mut all_items = vec![];
     if let Ok(Some(main_path_uri)) = store.environment.options.get_main_path_uri() {
         let mut includes = FxHashSet::default();
@@ -78,6 +85,7 @@ pub fn get_all_items(store: &Store, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
                 }
             }
         }
+        log::trace!("Done getting {} item(s)", all_items.len());
         return all_items;
     }
     for document in store.documents.values() {
@@ -86,6 +94,10 @@ pub fn get_all_items(store: &Store, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
         }
     }
 
+    log::trace!(
+        "Done getting {} item(s) without the main path.",
+        all_items.len()
+    );
     all_items
 }
 
@@ -106,26 +118,24 @@ pub fn get_items_from_position(
     position: Position,
     uri: Url,
 ) -> Vec<Arc<RwLock<SPItem>>> {
+    log::debug!(
+        "Getting all items from position {:#?} in file {:#?}.",
+        position,
+        uri
+    );
     let uri = Arc::new(uri);
     let all_items = get_all_items(store, true);
     let mut res = vec![];
     for item in all_items.iter() {
         let item_lock = item.read().unwrap();
-        match item_lock.range() {
-            Some(range) => {
-                if range_contains_pos(range, position) && item_lock.uri().as_ref().eq(&uri) {
-                    res.push(item.clone());
-                    continue;
-                }
-            }
-            None => {
-                continue;
-            }
+        if range_contains_pos(item_lock.v_range(), position) && item_lock.uri().as_ref().eq(&uri) {
+            res.push(item.clone());
+            continue;
         }
         match item_lock.references() {
             Some(references) => {
                 for reference in references.iter() {
-                    if range_contains_pos(reference.range, position) && reference.uri.eq(&uri) {
+                    if range_contains_pos(reference.v_range, position) && reference.uri.eq(&uri) {
                         res.push(item.clone());
                         break;
                     }
@@ -136,39 +146,73 @@ pub fn get_items_from_position(
             }
         }
     }
+    log::trace!("Got {} item(s) from position", res.len());
+
     res
 }
 
 impl SPItem {
-    pub fn range(&self) -> Option<Range> {
+    pub fn range(&self) -> Range {
         match self {
-            SPItem::Variable(item) => Some(item.range),
-            SPItem::Function(item) => Some(item.range),
-            SPItem::Enum(item) => Some(item.range),
-            SPItem::EnumMember(item) => Some(item.range),
-            SPItem::EnumStruct(item) => Some(item.range),
-            SPItem::Define(item) => Some(item.range),
-            SPItem::Methodmap(item) => Some(item.range),
-            SPItem::Property(item) => Some(item.range),
-            SPItem::Typedef(item) => Some(item.range),
-            SPItem::Typeset(item) => Some(item.range),
-            SPItem::Include(item) => Some(item.range),
+            SPItem::Variable(item) => item.range,
+            SPItem::Function(item) => item.range,
+            SPItem::Enum(item) => item.range,
+            SPItem::EnumMember(item) => item.range,
+            SPItem::EnumStruct(item) => item.range,
+            SPItem::Define(item) => item.range,
+            SPItem::Methodmap(item) => item.range,
+            SPItem::Property(item) => item.range,
+            SPItem::Typedef(item) => item.range,
+            SPItem::Typeset(item) => item.range,
+            SPItem::Include(item) => item.range,
         }
     }
 
-    pub fn full_range(&self) -> Option<Range> {
+    pub fn v_range(&self) -> Range {
         match self {
-            SPItem::Variable(item) => Some(item.range),
-            SPItem::Function(item) => Some(item.full_range),
-            SPItem::Enum(item) => Some(item.full_range),
-            SPItem::EnumMember(item) => Some(item.range),
-            SPItem::EnumStruct(item) => Some(item.full_range),
-            SPItem::Define(item) => Some(item.full_range),
-            SPItem::Methodmap(item) => Some(item.full_range),
-            SPItem::Property(item) => Some(item.full_range),
-            SPItem::Typedef(item) => Some(item.full_range),
-            SPItem::Typeset(item) => Some(item.full_range),
-            SPItem::Include(item) => Some(item.range),
+            SPItem::Variable(item) => item.v_range,
+            SPItem::Function(item) => item.v_range,
+            SPItem::Enum(item) => item.v_range,
+            SPItem::EnumMember(item) => item.v_range,
+            SPItem::EnumStruct(item) => item.v_range,
+            SPItem::Define(item) => item.v_range,
+            SPItem::Methodmap(item) => item.v_range,
+            SPItem::Property(item) => item.v_range,
+            SPItem::Typedef(item) => item.v_range,
+            SPItem::Typeset(item) => item.v_range,
+            SPItem::Include(item) => item.v_range,
+        }
+    }
+
+    pub fn full_range(&self) -> Range {
+        match self {
+            SPItem::Variable(item) => item.range,
+            SPItem::Function(item) => item.full_range,
+            SPItem::Enum(item) => item.full_range,
+            SPItem::EnumMember(item) => item.range,
+            SPItem::EnumStruct(item) => item.full_range,
+            SPItem::Define(item) => item.full_range,
+            SPItem::Methodmap(item) => item.full_range,
+            SPItem::Property(item) => item.full_range,
+            SPItem::Typedef(item) => item.full_range,
+            SPItem::Typeset(item) => item.full_range,
+            SPItem::Include(item) => item.range,
+        }
+    }
+
+    pub fn v_full_range(&self) -> Range {
+        match self {
+            SPItem::Variable(item) => item.v_range,
+            SPItem::Function(item) => item.v_full_range,
+            SPItem::Enum(item) => item.v_full_range,
+            SPItem::EnumMember(item) => item.v_range,
+            SPItem::EnumStruct(item) => item.v_full_range,
+            SPItem::Define(item) => item.v_full_range,
+            SPItem::Methodmap(item) => item.v_full_range,
+            SPItem::Property(item) => item.v_full_range,
+            SPItem::Typedef(item) => item.v_full_range,
+            SPItem::Typeset(item) => item.v_full_range,
+            SPItem::Include(item) => item.v_range,
         }
     }
 
@@ -280,9 +324,7 @@ impl SPItem {
     }
 
     pub fn push_reference(&mut self, reference: Location) {
-        if range_equals_range(&self.range().unwrap(), &reference.range)
-            && self.uri().eq(&reference.uri)
-        {
+        if range_equals_range(&self.range(), &reference.range) && self.uri().eq(&reference.uri) {
             return;
         }
         match self {
@@ -348,7 +390,7 @@ impl SPItem {
             SPItem::Typedef(item) => item.params.push(param),
             SPItem::Function(item) => item.params.push(param),
             _ => {
-                eprintln!("Can only push type params to functions and typedefs.")
+                log::warn!("Can only push type params to functions and typedefs.")
             }
         }
     }
@@ -360,7 +402,7 @@ impl SPItem {
                 item.tmp_parent = None
             }
             _ => {
-                eprintln!("Cannot set the methodmap inherits of an item that is not a methodmap.")
+                log::warn!("Cannot set the methodmap inherits of an item that is not a methodmap.")
             }
         }
     }

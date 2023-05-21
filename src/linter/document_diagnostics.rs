@@ -5,13 +5,13 @@ use super::spcomp::SPCompDiagnostic;
 #[derive(Debug, Clone, Default)]
 pub struct DocumentDiagnostics {
     /// Diagnostics provided by spcomp.
-    pub(super) sp_comp_diagnostics: Vec<SPCompDiagnostic>,
+    pub(crate) sp_comp_diagnostics: Vec<SPCompDiagnostic>,
 
     /// Diagnostics that only depend on the document they belong to, such as syntax errors.
-    pub(super) local_diagnostics: Vec<Diagnostic>,
+    pub(crate) local_diagnostics: Vec<Diagnostic>,
 
     /// Diagnostics that depend on the includes of the document, such as unresolved items.
-    pub(super) global_diagnostics: Vec<Diagnostic>,
+    pub(crate) global_diagnostics: Vec<Diagnostic>,
 }
 
 impl DocumentDiagnostics {

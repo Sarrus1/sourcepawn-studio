@@ -19,14 +19,20 @@ impl Document {
         walker: &mut Walker,
     ) -> Result<(), Utf8Error> {
         let name_node = node.child_by_field_name("name").unwrap();
-        let name = name_node.utf8_text(self.text.as_bytes())?.to_string();
+        let name = name_node
+            .utf8_text(self.preprocessed_text.as_bytes())?
+            .to_string();
 
         let documentation = walker.find_doc(node.start_position().row, false)?;
 
+        let range = ts_range_to_lsp_range(&name_node.range());
+        let full_range = ts_range_to_lsp_range(&node.range());
         let enum_struct_item = EnumStructItem {
             name,
-            range: ts_range_to_lsp_range(&name_node.range()),
-            full_range: ts_range_to_lsp_range(&node.range()),
+            range,
+            v_range: self.build_v_range(&range),
+            full_range,
+            v_full_range: self.build_v_range(&full_range),
             description: documentation,
             uri: self.uri.clone(),
             references: vec![],
@@ -58,8 +64,8 @@ fn parse_enum_struct_members(
             "enum_struct_method" => document
                 .parse_function(&child, walker, Some(enum_struct_item.clone()))
                 .unwrap(),
-            "comment" => walker.push_comment(child, &document.text),
-            "preproc_pragma" => walker.push_deprecated(child, &document.text),
+            "comment" => walker.push_comment(child, &document.preprocessed_text),
+            "preproc_pragma" => walker.push_deprecated(child, &document.preprocessed_text),
             _ => {}
         }
     }
@@ -72,10 +78,14 @@ fn parse_enum_struct_field(
 ) {
     // Name of the enum struct field
     let name_node = node.child_by_field_name("name").unwrap();
-    let name = name_node.utf8_text(document.text.as_bytes()).unwrap();
+    let name = name_node
+        .utf8_text(document.preprocessed_text.as_bytes())
+        .unwrap();
 
     let type_node = node.child_by_field_name("type").unwrap();
-    let type_ = type_node.utf8_text(document.text.as_bytes()).unwrap();
+    let type_ = type_node
+        .utf8_text(document.preprocessed_text.as_bytes())
+        .unwrap();
 
     let mut dimensions: Vec<String> = vec![];
 
@@ -84,7 +94,9 @@ fn parse_enum_struct_field(
         let kind = child.kind();
         match kind {
             "fixed_dimension" | "dimension" => {
-                let dimension_text = child.utf8_text(document.text.as_bytes()).unwrap();
+                let dimension_text = child
+                    .utf8_text(document.preprocessed_text.as_bytes())
+                    .unwrap();
                 dimensions.push(dimension_text.to_string());
             }
             _ => {
@@ -93,10 +105,12 @@ fn parse_enum_struct_field(
         }
     }
 
+    let range = ts_range_to_lsp_range(&name_node.range());
     let enum_struct_field_item = VariableItem {
         name: name.to_string(),
         type_: type_.to_string(),
-        range: ts_range_to_lsp_range(&name_node.range()),
+        range,
+        v_range: document.build_v_range(&range),
         description: Description::default(),
         uri: document.uri.clone(),
         detail: format!("{} {}{}", type_, name, dimensions.join("")),

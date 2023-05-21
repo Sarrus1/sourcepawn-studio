@@ -3,7 +3,6 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use derive_new::new;
 use fxhash::{FxHashMap, FxHashSet};
 use lazy_static::lazy_static;
 use lsp_types::Range;
@@ -13,6 +12,7 @@ use tree_sitter::{Node, Query, QueryCursor};
 use crate::{
     linter::document_diagnostics::DocumentDiagnostics,
     parser::comment_parser::{Comment, Deprecated},
+    sourcepawn_preprocessor::preprocessor::{Macro, Offset},
     spitem::SPItem,
     utils::ts_range_to_lsp_range,
 };
@@ -42,26 +42,22 @@ impl Token {
     }
 }
 
-#[derive(Debug, Clone, new)]
+#[derive(Debug, Clone)]
 pub struct Document {
     pub uri: Arc<Url>,
     pub text: String,
-    #[new(default)]
+    pub preprocessed_text: String,
     pub sp_items: Vec<Arc<RwLock<SPItem>>>,
-    #[new(default)]
     pub includes: FxHashMap<Url, Token>,
-    #[new(value = "false")]
     pub parsed: bool,
-    #[new(value = "vec![]")]
     pub tokens: Vec<Arc<Token>>,
-    #[new(default)]
     pub missing_includes: FxHashMap<String, Range>,
-    #[new(default)]
     pub unresolved_tokens: FxHashSet<String>,
-    #[new(default)]
     pub declarations: FxHashMap<String, Arc<RwLock<SPItem>>>,
-    #[new(default)]
     pub diagnostics: DocumentDiagnostics,
+    pub(crate) macros: FxHashMap<String, Macro>,
+    pub(crate) macro_symbols: Vec<Arc<Token>>,
+    pub(crate) offsets: FxHashMap<u32, Vec<Offset>>,
 }
 
 pub struct Walker {
@@ -71,6 +67,25 @@ pub struct Walker {
 }
 
 impl Document {
+    pub fn new(uri: Arc<Url>, text: String) -> Self {
+        Self {
+            uri,
+            preprocessed_text: String::new(),
+            text,
+            sp_items: vec![],
+            includes: FxHashMap::default(),
+            parsed: false,
+            tokens: vec![],
+            missing_includes: FxHashMap::default(),
+            unresolved_tokens: FxHashSet::default(),
+            declarations: FxHashMap::default(),
+            diagnostics: DocumentDiagnostics::default(),
+            macros: FxHashMap::default(),
+            macro_symbols: vec![],
+            offsets: FxHashMap::default(),
+        }
+    }
+
     pub fn text(&self) -> &str {
         &self.text
     }
@@ -96,17 +111,21 @@ impl Document {
 
     pub fn extract_tokens(&mut self, root_node: Node) {
         let mut cursor = QueryCursor::new();
-        let matches = cursor.captures(&SYMBOL_QUERY, root_node, self.text.as_bytes());
+        let matches = cursor.captures(&SYMBOL_QUERY, root_node, self.preprocessed_text.as_bytes());
         for (match_, _) in matches {
             for capture in match_.captures.iter() {
                 self.tokens
-                    .push(Arc::new(Token::new(capture.node, &self.text)));
+                    .push(Arc::new(Token::new(capture.node, &self.preprocessed_text)));
             }
         }
     }
 
+    pub fn add_macro_symbols(&mut self) {
+        self.tokens.extend(self.macro_symbols.clone())
+    }
+
     pub fn line(&self, line_nb: u32) -> Option<&str> {
-        for (i, line) in self.text.lines().enumerate() {
+        for (i, line) in self.preprocessed_text.lines().enumerate() {
             if i == line_nb as usize {
                 return Some(line);
             }
@@ -198,5 +217,31 @@ impl Document {
         }
 
         sp_items
+    }
+
+    pub fn build_v_range(&self, range: &Range) -> Range {
+        let mut start = range.start;
+        let mut end = range.end;
+
+        if let Some(start_offsets) = self.offsets.get(&start.line) {
+            for offset in start_offsets.iter() {
+                if offset.col < start.character {
+                    start.character = start
+                        .character
+                        .checked_add_signed(-offset.diff)
+                        .unwrap_or(0);
+                }
+            }
+        }
+
+        if let Some(end_offsets) = self.offsets.get(&end.line) {
+            for offset in end_offsets.iter() {
+                if offset.col < end.character {
+                    end.character = end.character.checked_add_signed(-offset.diff).unwrap_or(0);
+                }
+            }
+        }
+
+        Range { start, end }
     }
 }

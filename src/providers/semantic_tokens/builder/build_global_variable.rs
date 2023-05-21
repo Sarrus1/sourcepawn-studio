@@ -14,7 +14,7 @@ impl SemanticTokensBuilder {
     ) -> anyhow::Result<()> {
         if variable_item.uri.eq(uri) {
             self.push(
-                variable_item.range,
+                variable_item.v_range,
                 SemanticTokenType::VARIABLE,
                 Some(vec![SemanticTokenModifier::DECLARATION]),
             )?;
@@ -22,7 +22,7 @@ impl SemanticTokensBuilder {
         for ref_ in variable_item.references.iter() {
             if ref_.uri.eq(uri) {
                 self.push(
-                    ref_.range,
+                    ref_.v_range,
                     SemanticTokenType::VARIABLE,
                     Some(vec![SemanticTokenModifier::MODIFICATION]),
                 )?;

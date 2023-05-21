@@ -26,13 +26,13 @@ pub fn provide_rename(request: FeatureRequest<RenameParams>) -> Option<Workspace
     changes.insert(
         (*item.uri()).clone(),
         vec![TextEdit {
-            range: item.range()?,
+            range: item.v_range(),
             new_text: request.params.new_name.clone(),
         }],
     );
     for reference in item.references()? {
         let edit = TextEdit {
-            range: reference.range,
+            range: reference.v_range,
             new_text: request.params.new_name.clone(),
         };
         if let Some(uri_changes) = changes.get_mut(&reference.uri) {

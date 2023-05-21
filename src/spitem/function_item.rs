@@ -28,8 +28,14 @@ pub struct FunctionItem {
     /// Range of the name of the function.
     pub range: Range,
 
+    /// User visible range of the name of the function.
+    pub v_range: Range,
+
     /// Range of the whole function, including its block.
     pub full_range: Range,
+
+    /// User visible range of the whole function, including its block.
+    pub v_full_range: Range,
 
     /// Description of the function.
     pub description: Description,
@@ -131,9 +137,9 @@ impl FunctionItem {
     /// * `_params` - [GotoDefinitionParams] of the request.
     pub(crate) fn to_definition(&self, _params: &GotoDefinitionParams) -> Option<LocationLink> {
         Some(LocationLink {
-            target_range: self.range,
+            target_range: self.v_range,
             target_uri: self.uri.as_ref().clone(),
-            target_selection_range: self.range,
+            target_selection_range: self.v_range,
             origin_selection_range: None,
         })
     }
@@ -172,9 +178,9 @@ impl FunctionItem {
             detail: Some(self.detail.to_string()),
             kind: self.symbol_kind(),
             tags: Some(tags),
-            range: self.full_range,
+            range: self.v_full_range,
             deprecated: None,
-            selection_range: self.range,
+            selection_range: self.v_range,
             children: Some(
                 self.children
                     .iter()
@@ -252,7 +258,7 @@ impl FunctionItem {
         // Getting it directly from the file avoids the problem of dealing with tabs and spaces.
         let indent: String = line
             .chars()
-            .take(self.full_range.start.character as usize)
+            .take(self.v_full_range.start.character as usize)
             .collect();
 
         let max_param_len = self.longest_param();
@@ -294,11 +300,11 @@ impl FunctionItem {
             text_edit: Some(CompletionTextEdit::Edit(TextEdit {
                 range: Range {
                     start: Position {
-                        line: self.full_range.start.line - 1,
+                        line: self.v_full_range.start.line - 1,
                         character: 0,
                     },
                     end: Position {
-                        line: self.full_range.start.line - 1,
+                        line: self.v_full_range.start.line - 1,
                         character: 0,
                     },
                 },

@@ -27,7 +27,9 @@ mod signature_help;
 
 impl Server {
     pub(super) fn handle_request(&mut self, request: Request) -> anyhow::Result<()> {
+        log::trace!("Received request {:#?}", request);
         if self.connection.handle_shutdown(&request)? {
+            log::trace!("Handled shutdown request.");
             return Ok(());
         }
         if let Some(response) = dispatch::RequestDispatcher::new(request)
@@ -50,6 +52,7 @@ impl Server {
         {
             self.connection.sender.send(response.into())?;
         }
+        log::trace!("Handled request.");
 
         Ok(())
     }

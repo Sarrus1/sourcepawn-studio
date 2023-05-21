@@ -23,6 +23,9 @@ pub struct VariableItem {
     /// Range of the name of the variable.
     pub range: Range,
 
+    /// User visible range of the name of the variable.
+    pub v_range: Range,
+
     /// Description of the variable.
     pub description: Description,
 
@@ -73,7 +76,7 @@ impl VariableItem {
                         return None;
                     }
                     if !range_contains_pos(
-                        parent.full_range,
+                        parent.v_full_range,
                         params.text_document_position.position,
                     ) {
                         return None;
@@ -98,7 +101,7 @@ impl VariableItem {
                     })
                 }
                 _ => {
-                    eprintln!("Unhandled case in variable_item to_completion.");
+                    log::warn!("Unhandled case in variable_item to_completion.");
                     None
                 }
             },
@@ -133,9 +136,9 @@ impl VariableItem {
     /// * `_params` - [GotoDefinitionParams] of the request.
     pub(crate) fn to_definition(&self, _params: &GotoDefinitionParams) -> Option<LocationLink> {
         Some(LocationLink {
-            target_range: self.range,
+            target_range: self.v_range,
             target_uri: self.uri.as_ref().clone(),
-            target_selection_range: self.range,
+            target_selection_range: self.v_range,
             origin_selection_range: None,
         })
     }
@@ -158,9 +161,9 @@ impl VariableItem {
             detail: Some(self.detail.to_string()),
             kind,
             tags: Some(tags),
-            range: self.range,
+            range: self.v_range,
             deprecated: None,
-            selection_range: self.range,
+            selection_range: self.v_range,
             children: None,
         })
     }
