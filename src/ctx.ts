@@ -118,12 +118,14 @@ export class Ctx {
           traceServerLevel = 4;
           break;
       }
+      let args = [];
+      if (traceServerLevel > 0) {
+        args.push(`-${"v".repeat(traceServerLevel)}`);
+      }
       const serverOptions: lc.ServerOptions = {
         run: {
           command: this._serverPath,
-          args: [
-            traceServerLevel > 0 ? `-${"v".repeat(traceServerLevel)}` : "",
-          ],
+          args,
         },
         debug: {
           command: join(
