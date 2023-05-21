@@ -90,7 +90,7 @@ impl Server {
         }
         self.store.find_all_references();
         self.store.first_parse = false;
-        eprintln!("Reparsed all the files in {:.2?}", now.elapsed());
+        log::info!("Reparsed all the files in {:.2?}", now.elapsed());
         self.indexing = false;
         self.reload_diagnostics();
         self.send_status(lsp_ext::ServerStatusParams {

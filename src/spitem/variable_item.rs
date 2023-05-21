@@ -101,7 +101,7 @@ impl VariableItem {
                     })
                 }
                 _ => {
-                    eprintln!("Unhandled case in variable_item to_completion.");
+                    log::warn!("Unhandled case in variable_item to_completion.");
                     None
                 }
             },

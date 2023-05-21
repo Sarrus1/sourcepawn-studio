@@ -377,7 +377,7 @@ impl SPItem {
             SPItem::Typedef(item) => item.params.push(param),
             SPItem::Function(item) => item.params.push(param),
             _ => {
-                eprintln!("Can only push type params to functions and typedefs.")
+                log::warn!("Can only push type params to functions and typedefs.")
             }
         }
     }
@@ -389,7 +389,7 @@ impl SPItem {
                 item.tmp_parent = None
             }
             _ => {
-                eprintln!("Cannot set the methodmap inherits of an item that is not a methodmap.")
+                log::warn!("Cannot set the methodmap inherits of an item that is not a methodmap.")
             }
         }
     }

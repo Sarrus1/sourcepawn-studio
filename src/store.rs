@@ -162,7 +162,7 @@ impl Store {
                 let text = match read_to_string_lossy(uri.to_file_path().unwrap()) {
                     Ok(text) => text,
                     Err(_err) => {
-                        eprintln!("Failed to read file {:?} ", uri.to_file_path().unwrap());
+                        log::error!("Failed to read file {:?} ", uri.to_file_path().unwrap());
                         continue;
                     }
                 };
