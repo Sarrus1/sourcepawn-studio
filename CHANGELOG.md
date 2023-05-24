@@ -1,5 +1,16 @@
 ## Release Notes
 
+## [0.10.1]
+
+### Fixed
+
+-   Allow non define identifiers in macro expansions.
+-   Fixed trailing macro comment expansion issue.
+-   Fixed empty preprocessed text on preprocessing failure.
+-   Fixed default completions in includes completions.
+-   Fixed early aggressive propagation in providers.
+-   Fixed some potential unwraps.
+
 ## [0.10.0]
 
 ### Added
