@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionList, CompletionParams, Url};
 use regex::Regex;
 
-use super::{defaults::get_default_completions, FeatureRequest};
+use super::FeatureRequest;
 
 pub(super) struct IncludeStatement {
     /// Text inside of the include statement, excluding the traling quotation marks or chevrons.
@@ -61,7 +61,7 @@ pub(super) fn get_include_completions(
         }
     }
 
-    let mut items = get_default_completions();
+    let mut items = vec![];
     get_include_file_completions(request, &include_st, &inc_uri_folders, &mut items);
     get_include_folder_completions(&include_st, &inc_uri_folders, &mut items);
 

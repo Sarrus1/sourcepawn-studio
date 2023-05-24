@@ -42,7 +42,7 @@ pub(super) fn get_callback_completions(
     all_items: Vec<Arc<RwLock<SPItem>>>,
     position: Position,
 ) -> Option<CompletionList> {
-    let mut items = get_default_completions();
+    let mut items = vec![];
 
     // This range is used to replace the "$" that has been inserted as a trigger for the completion.
     let range = Range::new(
@@ -84,7 +84,7 @@ pub(super) fn get_ctor_completions(
     all_items: Vec<Arc<RwLock<SPItem>>>,
     params: CompletionParams,
 ) -> Option<CompletionList> {
-    let mut items = get_default_completions();
+    let mut items = vec![];
     for ctor in all_items
         .iter()
         .filter_map(|item| item.read().unwrap().ctor())
@@ -144,7 +144,7 @@ pub(super) fn get_method_completions(
                 SPItem::Methodmap(mm_item) => {
                     let mut children = mm_item.children;
                     extend_children(&mut children, &mm_item.parent);
-                    let mut items = get_default_completions();
+                    let mut items = vec![];
                     for child in children.iter() {
                         match &*child.read().unwrap() {
                             SPItem::Function(method_item) => {
@@ -176,7 +176,7 @@ pub(super) fn get_method_completions(
                     });
                 }
                 SPItem::EnumStruct(es_item) => {
-                    let mut items = get_default_completions();
+                    let mut items = vec![];
                     for child in es_item.children.iter() {
                         items.extend(child.read().unwrap().to_completions(&request.params, true));
                     }
