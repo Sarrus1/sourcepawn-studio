@@ -252,7 +252,7 @@ impl Store {
         let mut preprocessor = SourcepawnPreprocessor::new(document.uri.clone(), &document.text);
         let preprocessed_text = preprocessor
             .preprocess_input(self)
-            .unwrap_or_else(|_| String::new());
+            .unwrap_or_else(|_| document.text.clone());
         document.preprocessed_text = preprocessed_text;
         document.macros = preprocessor.macros.clone();
         document.offsets = preprocessor.offsets.clone();
@@ -276,7 +276,7 @@ impl Store {
             let mut preprocessor = SourcepawnPreprocessor::new(uri.clone(), &text);
             let preprocessed_text = preprocessor
                 .preprocess_input(self)
-                .unwrap_or_else(|_| String::new());
+                .unwrap_or_else(|_| text.clone());
             if let Some(document) = self.documents.get_mut(&uri) {
                 document.preprocessed_text = preprocessed_text;
                 document.macros = preprocessor.macros.clone();
