@@ -16,9 +16,10 @@ impl Server {
                 .uri
                 .clone(),
         );
-        self.read_unscanned_document(uri.clone())?;
+        let _ = self.read_unscanned_document(uri.clone());
 
         self.handle_feature_request(id, params, uri, providers::hover::provide_hover)?;
+
         Ok(())
     }
 }

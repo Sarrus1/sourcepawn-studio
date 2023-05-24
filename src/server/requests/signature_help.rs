@@ -20,7 +20,7 @@ impl Server {
                 .uri
                 .clone(),
         );
-        self.read_unscanned_document(uri.clone())?;
+        let _ = self.read_unscanned_document(uri.clone());
 
         self.handle_feature_request(
             id,
@@ -28,6 +28,7 @@ impl Server {
             uri,
             providers::signature_help::provide_signature_help,
         )?;
+
         Ok(())
     }
 }

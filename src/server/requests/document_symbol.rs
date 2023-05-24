@@ -14,7 +14,7 @@ impl Server {
     ) -> anyhow::Result<()> {
         utils::normalize_uri(&mut params.text_document.uri);
         let uri = Arc::new(params.text_document.uri.clone());
-        self.read_unscanned_document(uri.clone())?;
+        let _ = self.read_unscanned_document(uri.clone());
 
         self.handle_feature_request(
             id,
@@ -22,6 +22,7 @@ impl Server {
             uri,
             providers::document_symbol::provide_document_symbol,
         )?;
+
         Ok(())
     }
 }

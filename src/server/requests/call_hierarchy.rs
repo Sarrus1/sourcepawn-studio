@@ -23,7 +23,7 @@ impl Server {
                 .clone(),
         );
 
-        self.read_unscanned_document(uri.clone())?;
+        let _ = self.read_unscanned_document(uri.clone());
 
         self.handle_feature_request(id, params, uri, providers::call_hierarchy::prepare)?;
 
@@ -39,6 +39,7 @@ impl Server {
         let uri = Arc::new(params.item.uri.clone());
 
         self.handle_feature_request(id, params, uri, providers::call_hierarchy::outgoing)?;
+
         Ok(())
     }
 
@@ -51,6 +52,7 @@ impl Server {
         let uri = Arc::new(params.item.uri.clone());
 
         self.handle_feature_request(id, params, uri, providers::call_hierarchy::incoming)?;
+
         Ok(())
     }
 }
