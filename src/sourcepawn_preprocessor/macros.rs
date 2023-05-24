@@ -1,6 +1,6 @@
 use fxhash::FxHashMap;
 use lsp_types::{Position, Range};
-use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
+use sourcepawn_lexer::{Comment, Literal, Operator, Symbol, TokenKind};
 
 use super::{
     errors::{ExpansionError, MacroNotFoundError, ParseIntError},
@@ -12,6 +12,7 @@ pub(super) fn expand_symbol<T>(
     macros: &FxHashMap<String, Macro>,
     symbol: &Symbol,
     expansion_stack: &mut Vec<Symbol>,
+    allow_undefined_macros: bool,
 ) -> Result<Vec<Symbol>, ExpansionError>
 where
     T: Iterator<Item = Symbol>,
@@ -27,9 +28,17 @@ where
         }
         match &symbol.token_kind {
             TokenKind::Identifier => {
-                let macro_ = macros
-                    .get(&symbol.text())
-                    .ok_or_else(|| MacroNotFoundError::new(symbol.text(), symbol.range))?;
+                let macro_ = macros.get(&symbol.text());
+                if macro_.is_none() {
+                    if !allow_undefined_macros {
+                        return Err(MacroNotFoundError::new(symbol.text(), symbol.range).into());
+                    }
+                    let mut symbol = symbol.clone();
+                    symbol.delta = delta;
+                    expansion_stack.push(symbol);
+                    continue;
+                }
+                let macro_ = macro_.unwrap();
                 if d == 0 {
                     // Do not keep track of sub-macros, they will not appear in the final document.
                     expanded_macros.push(symbol.clone());
@@ -48,13 +57,18 @@ where
                     symbol.token_kind.clone(),
                     Some(&text),
                     Range::new(
-                        Position::new(symbol.range.start.line, symbol.range.start.character),
-                        Position::new(symbol.range.start.line, text.len() as u32),
+                        symbol.range.start,
+                        Position::new(
+                            symbol.range.start.line,
+                            symbol.range.start.character + text.len() as u32,
+                        ),
                     ),
                     symbol.delta,
                 ));
             }
-            TokenKind::Newline | TokenKind::LineContinuation | TokenKind::Comment(_) => (),
+            TokenKind::Newline
+            | TokenKind::LineContinuation
+            | TokenKind::Comment(Comment::LineComment) => (),
             _ => {
                 let mut symbol = symbol.clone();
                 symbol.delta = delta;

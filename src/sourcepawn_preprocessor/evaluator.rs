@@ -166,6 +166,7 @@ impl<'a> IfCondition<'a> {
                             self.macros,
                             &symbol,
                             &mut self.expansion_stack,
+                            false
                         ) {
                             Ok(_) => continue, // No need to keep track of expanded macros here, we do that when calling expand_symbol.
                             Err(ExpansionError::MacroNotFound(err)) => {

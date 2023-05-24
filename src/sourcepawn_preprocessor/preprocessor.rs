@@ -145,7 +145,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
             let symbol = self.lexer.next();
             if let Some(expanded_symbol) = expanded_symbol.take() {
                 if let Some(symbol) = symbol.clone() {
-                    let col_offset = col_end.unwrap_or(0) - col_start.unwrap_or(0);
+                    let col_offset = col_end.take().unwrap_or(0) - col_start.take().unwrap_or(0);
                     self.offsets
                         .entry(symbol.range.start.line)
                         .or_insert_with(Vec::new)
@@ -187,6 +187,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                             &self.macros,
                             &symbol,
                             &mut self.expansion_stack,
+                            true,
                         ) {
                             Ok(expanded_macros) => {
                                 expanded_symbol = Some(symbol.clone());
