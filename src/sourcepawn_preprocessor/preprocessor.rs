@@ -325,7 +325,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     Args,
                     Body,
                 }
-                let mut args = vec![-1, 10];
+                let mut args = vec![-1; 10];
                 let mut found_args = false;
                 let mut state = State::Start;
                 let mut args_idx = 0;
@@ -366,11 +366,18 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                     }
                                     TokenKind::Literal(Literal::IntegerLiteral) => {
                                         found_args = true;
-                                        args[symbol.to_int().context(format!(
+                                        let idx = symbol.to_int().context(format!(
                                             "Could not convert {:?} to an int value.",
                                             symbol.text()
                                         ))?
-                                            as usize] = args_idx;
+                                            as usize;
+                                        if idx >= args.len() {
+                                            return Err(anyhow!(
+                                                "Argument index out of bounds for macro {}",
+                                                symbol.text()
+                                            ));
+                                        }
+                                        args[idx] = args_idx;
                                     }
                                     TokenKind::Comma => {
                                         args_idx += 1;
