@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use anyhow::anyhow;
 use fxhash::{FxHashMap, FxHashSet};
 use lazy_static::lazy_static;
 use lsp_types::Range;
@@ -90,19 +91,25 @@ impl Document {
         &self.text
     }
 
-    pub fn extension(&self) -> String {
-        self.uri
-            .to_file_path()
-            .unwrap()
+    pub fn extension(&self) -> anyhow::Result<String> {
+        let extension = self
+            .path()?
             .extension()
-            .unwrap()
+            .ok_or_else(|| anyhow!("Failed to get file extension."))?
             .to_str()
-            .unwrap()
-            .to_string()
+            .ok_or_else(|| anyhow!("Failed to convert extension to string."))?
+            .to_string();
+
+        Ok(extension)
     }
 
-    pub(crate) fn path(&self) -> PathBuf {
-        self.uri().to_file_path().unwrap()
+    pub(crate) fn path(&self) -> anyhow::Result<PathBuf> {
+        let path = self
+            .uri
+            .to_file_path()
+            .map_err(|e| anyhow!("Failed to convert URI to file path: {:?}.", e))?;
+
+        Ok(path)
     }
 
     pub(crate) fn uri(&self) -> Url {

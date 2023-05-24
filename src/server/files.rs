@@ -22,14 +22,14 @@ impl Store {
         if self.environment.amxxpawn_mode {
             return None;
         }
-        let path = document.path();
-        let path = path.to_str().unwrap();
+        let path = document.path().ok()?;
+        let path = path.to_str()?;
         for include_directory in self.environment.options.includes_directories.iter() {
-            if path.contains(include_directory.to_str().unwrap()) {
+            if path.contains(include_directory.to_str()?) {
                 return None;
             }
         }
-        if document.extension() == "sp" && document.text.contains("OnPluginStart()") {
+        if document.extension().ok()? == "sp" && document.text.contains("OnPluginStart()") {
             return Some(document.uri());
         }
 
