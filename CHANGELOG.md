@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [5.3.10]
+
+### Fixed
+
+- Fixed incorrect binary name for x32 installs.
+
 ## [5.3.9]
 
 ### Added
