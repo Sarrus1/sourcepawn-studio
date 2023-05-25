@@ -1,6 +1,6 @@
 use fxhash::FxHashMap;
 use lsp_types::{Position, Range};
-use sourcepawn_lexer::{Comment, Literal, Operator, Symbol, TokenKind};
+use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
 
 use super::{
     errors::{ExpansionError, MacroNotFoundError, ParseIntError},
@@ -66,9 +66,7 @@ where
                     symbol.delta,
                 ));
             }
-            TokenKind::Newline
-            | TokenKind::LineContinuation
-            | TokenKind::Comment(Comment::LineComment) => (),
+            TokenKind::Newline | TokenKind::LineContinuation | TokenKind::Comment(_) => (),
             _ => {
                 let mut symbol = symbol.clone();
                 symbol.delta = delta;
