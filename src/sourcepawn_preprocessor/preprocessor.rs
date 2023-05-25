@@ -408,7 +408,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
             }
             PreprocDir::MEndif => self.process_endif_directive(symbol)?,
             PreprocDir::MElse => self.process_else_directive(symbol)?,
-            PreprocDir::MInclude => {
+            PreprocDir::MInclude | PreprocDir::MTryinclude => {
                 let text = symbol.inline_text().trim().to_string();
                 let delta = symbol.range.end.line - symbol.range.start.line;
                 let symbol = Symbol::new(
