@@ -54,6 +54,12 @@ jobs:
 
         steps:
             - uses: actions/checkout@v3
+            - name: Setup Sentry CLI
+              uses: mathieu-bour/setup-sentry-cli@v1
+              with:
+                  token: ${{ SECRETS.SENTRY_AUTH_TOKEN }}
+                  organization: ${{ secrets.SENTRY_ORG }}
+                  project: sourcepawn-lsp
             - uses: dtolnay/rust-toolchain@stable
               with:
                   targets: ${{ matrix.target }}
@@ -71,6 +77,8 @@ jobs:
             - name: Compress (Linux)
               if: ${{ contains(matrix.os, 'ubuntu') }}
               run: ${{ format('zip -j {1} target/{0}/release/sourcepawn_lsp', matrix.target, matrix.archive) }}
+            - name: Upload debug symbols
+              run: sentry-cli upload-dif --wait target/${{ matrix.target }}/release/
             - name: Upload binary archive
               uses: actions/upload-artifact@v3
               with:

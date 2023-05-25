@@ -35,6 +35,11 @@ pub struct Opts {
 }
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
+    let _guard = sentry::init(("https://621f3ac25899467a92414f0cabd31346@o4505249792262144.ingest.sentry.io/4505249800519680", sentry::ClientOptions {
+        release: sentry::release_name!(),
+        attach_stacktrace: true,
+        ..Default::default()
+    }));
     let opts = Opts::parse();
     setup_logger(opts.clone());
     log::info!("Starting SourcePawn server version {}", VERSION);
