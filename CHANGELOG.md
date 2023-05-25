@@ -1,5 +1,16 @@
 ## Release Notes
 
+## [0.10.2]
+
+### Fixed
+
+-   Fixed support for `#tryinclude`.
+-   Fixed incorrect macro offsetting.
+-   Fixed unknown tokens failing the preprocessor.
+-   Fixed incorrect arguments indexing in macro expansion.
+-   Fixed infinite recursion when resolving includes.
+-   Removed anyhow errors from logs.
+
 ## [0.10.1]
 
 ### Fixed
