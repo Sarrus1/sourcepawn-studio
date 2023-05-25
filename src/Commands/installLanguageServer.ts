@@ -73,7 +73,7 @@ function makeLanguageServerURL(version: string) {
     platform_id = "windows";
     if (arch_ === "x64") {
       arch_id = "x86_64";
-    } else if (arch_ === "x32") {
+    } else if (arch_ === "ia32") {
       arch_id = "i686";
     } else if (arch_ === "arm64") {
       arch_id = "aarch64";
@@ -89,7 +89,7 @@ function makeLanguageServerURL(version: string) {
     platform_id = "linux";
     if (arch_ === "x64") {
       arch_id = "x86_64";
-    } else if (arch_ === "x32") {
+    } else if (arch_ === "ia32") {
       arch_id = "i686";
     } else if (arch_ === "arm64") {
       arch_id = "aarch64";
