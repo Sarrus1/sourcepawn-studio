@@ -129,29 +129,26 @@ impl<'a> SourcepawnPreprocessor<'a> {
     }
 
     pub fn preprocess_input(&mut self, store: &mut Store) -> anyhow::Result<String> {
-        let mut col_start: Option<i32> = None;
-        let mut col_end: Option<i32> = None;
+        let mut col_offset: Option<i32> = None;
         let mut expanded_symbol: Option<Symbol> = None;
         while let Some(symbol) = if !self.expansion_stack.is_empty() {
             let symbol = self.expansion_stack.pop().unwrap();
-            if col_start.is_none() {
-                col_start = Some(symbol.range.start.character as i32);
-                col_end = Some(symbol.range.end.character as i32);
-            } else {
-                col_end = Some(symbol.range.end.character as i32);
-            }
+            col_offset = Some(
+                col_offset.map_or(symbol.inline_text().len() as i32, |offset| {
+                    offset + symbol.delta.col + symbol.inline_text().len() as i32
+                }),
+            );
             Some(symbol)
         } else {
             let symbol = self.lexer.next();
             if let Some(expanded_symbol) = expanded_symbol.take() {
                 if let Some(symbol) = symbol.clone() {
-                    let col_offset = col_end.take().unwrap_or(0) - col_start.take().unwrap_or(0);
                     self.offsets
                         .entry(symbol.range.start.line)
                         .or_insert_with(Vec::new)
                         .push(Offset {
                             col: expanded_symbol.range.start.character,
-                            diff: (col_offset
+                            diff: (col_offset.take().unwrap_or(0)
                                 - (expanded_symbol.range.end.character
                                     - expanded_symbol.range.start.character)
                                     as i32),
