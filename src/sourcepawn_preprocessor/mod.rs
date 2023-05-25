@@ -1109,6 +1109,26 @@ int foo = 1 + 2 + 3 + 4;
     }
 
     #[test]
+    fn macro_expansion_4() {
+        let input = r#"#define FOO(%1,%2) %1 + %2
+int foo = FOO(1, 2);
+"#;
+        let output = r#"#define FOO(%1,%2) %1 + %2
+int foo = 1 + 2;
+"#;
+
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut Store::new(false))
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
     fn include_directive_1() {
         let input = r#"#include <sourcemod>"#;
         let output = r#"#include <sourcemod>"#;

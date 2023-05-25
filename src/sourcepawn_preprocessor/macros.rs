@@ -123,7 +123,15 @@ fn expand_macro(
                         .to_int()
                         .ok_or_else(|| ParseIntError::new(child.text(), child.range))?
                         as usize;
-                    for (i, child) in args[arg_idx].iter().enumerate() {
+                    if arg_idx >= 10 {
+                        return Err(ParseIntError::new(child.text(), child.range));
+                    }
+                    // Safe to unwrap here because we know the macro has arguments.
+                    let arg_idx = macro_.args.as_ref().unwrap()[arg_idx];
+                    if arg_idx >= 10 {
+                        return Err(ParseIntError::new(child.text(), child.range));
+                    }
+                    for (i, child) in args[arg_idx as usize].iter().enumerate() {
                         stack.push((
                             child.clone(),
                             if i == 0 { symbol.delta } else { child.delta },
