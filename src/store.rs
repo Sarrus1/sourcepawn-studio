@@ -16,7 +16,7 @@ use crate::{
     semantic_analyzer::purge_references,
     sourcepawn_preprocessor::{preprocessor::Macro, SourcepawnPreprocessor},
     spitem::SPItem,
-    utils::read_to_string_lossy,
+    utils::{normalize_uri, read_to_string_lossy},
 };
 
 #[derive(Clone, Default)]
@@ -154,20 +154,27 @@ impl Store {
             .into_iter()
             .filter_map(|e| e.ok())
         {
-            if self.is_sourcepawn_file(entry.path()) {
-                let uri = Url::from_file_path(entry.path()).unwrap();
+            if !entry.file_type().is_file() {
+                continue;
+            }
+            if let Ok(mut uri) = Url::from_file_path(entry.path()) {
+                normalize_uri(&mut uri);
                 if self.documents.contains_key(&uri) {
                     continue;
                 }
-                let text = match read_to_string_lossy(uri.to_file_path().unwrap()) {
-                    Ok(text) => text,
-                    Err(_err) => {
-                        log::error!("Failed to read file {:?} ", uri.to_file_path().unwrap());
-                        continue;
-                    }
-                };
-                let document = Document::new(Arc::new(uri.clone()), text.clone());
-                self.documents.insert(Arc::new(uri), document);
+                if let Ok(path) = uri.to_file_path() {
+                    let text = match read_to_string_lossy(path.clone()) {
+                        Ok(text) => text,
+                        Err(_err) => {
+                            log::error!("Failed to read file {:?} ", path);
+                            continue;
+                        }
+                    };
+                    let document = Document::new(Arc::new(uri.clone()), text.clone());
+                    self.documents.insert(Arc::new(uri), document);
+                } else {
+                    log::error!("Failed to convert uri to path {:?}", uri);
+                }
             }
         }
     }
