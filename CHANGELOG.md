@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.10.3]
+
+### Added
+
+-   Added optional crash reports telemetry.
+
 ## [0.10.2]
 
 ### Fixed

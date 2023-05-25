@@ -1,6 +1,6 @@
 [package]
 name = "sourcepawn_lsp"
-version = "0.10.2"
+version = "0.10.3"
 edition = "2021"
 description = "Language Server implemention for the SourcePawn programming language."
 license = "GPL-3.0"
@@ -37,7 +37,7 @@ tempfile = "3.4.0"
 clap = { version = "4.1.13", features = ["derive"] }
 fern = "0.6.2"
 humantime = "2.1.0"
-sourcepawn_lexer = { path = "src/sourcepawn_lexer" }
+sourcepawn_lexer = { path = "src/sourcepawn_lexer", version = "0.1.0" }
 sentry = "0.31.3"
 
 [dependencies.uuid]
