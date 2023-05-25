@@ -47,7 +47,8 @@ impl Token {
 pub struct Document {
     pub uri: Arc<Url>,
     pub text: String,
-    pub preprocessed_text: String,
+    pub(super) preprocessed_text: String,
+    pub(super) being_preprocessed: bool,
     pub sp_items: Vec<Arc<RwLock<SPItem>>>,
     pub includes: FxHashMap<Url, Token>,
     pub parsed: bool,
@@ -72,6 +73,7 @@ impl Document {
         Self {
             uri,
             preprocessed_text: String::new(),
+            being_preprocessed: false,
             text,
             sp_items: vec![],
             includes: FxHashMap::default(),

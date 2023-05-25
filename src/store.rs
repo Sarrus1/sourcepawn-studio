@@ -246,9 +246,10 @@ impl Store {
         &mut self,
         document: &mut Document,
     ) -> Option<FxHashMap<String, Macro>> {
-        if !document.preprocessed_text.is_empty() {
+        if !document.preprocessed_text.is_empty() || document.being_preprocessed {
             return Some(document.macros.clone());
         }
+        document.being_preprocessed = true;
         let mut preprocessor = SourcepawnPreprocessor::new(document.uri.clone(), &document.text);
         let preprocessed_text = preprocessor
             .preprocess_input(self)
@@ -258,6 +259,7 @@ impl Store {
         document.offsets = preprocessor.offsets.clone();
         preprocessor.add_diagnostics(&mut document.diagnostics.local_diagnostics);
         preprocessor.add_ignored_tokens(&mut document.macro_symbols);
+        document.being_preprocessed = false;
 
         Some(preprocessor.macros)
     }
@@ -268,9 +270,12 @@ impl Store {
     ) -> Option<FxHashMap<String, Macro>> {
         if let Some(document) = self.documents.get(&uri) {
             // Don't reprocess the text if it has not changed.
-            if !document.preprocessed_text.is_empty() {
+            if !document.preprocessed_text.is_empty() || document.being_preprocessed {
                 return Some(document.macros.clone());
             }
+        }
+        if let Some(document) = self.documents.get_mut(&uri) {
+            document.being_preprocessed = true;
         }
         if let Some(text) = self.get_text(&uri) {
             let mut preprocessor = SourcepawnPreprocessor::new(uri.clone(), &text);
@@ -284,6 +289,9 @@ impl Store {
                 preprocessor.add_ignored_tokens(&mut document.macro_symbols);
             }
             return Some(preprocessor.macros);
+        }
+        if let Some(document) = self.documents.get_mut(&uri) {
+            document.being_preprocessed = false;
         }
 
         None
