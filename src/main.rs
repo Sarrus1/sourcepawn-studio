@@ -39,6 +39,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     setup_logger(opts.clone());
     log::info!("Starting SourcePawn server version {}", VERSION);
     env::set_var("RUST_BACKTRACE", "1");
+    env::set_var("RUST_LIB_BACKTRACE", "0");
     let (connection, io_threads) = Connection::stdio();
     Server::new(connection, opts.amxxpawn_mode).run()?;
     io_threads.join()?;
