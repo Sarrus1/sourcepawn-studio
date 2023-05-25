@@ -29,19 +29,30 @@ pub struct Opts {
     #[clap(short, long)]
     quiet: bool,
 
+    /// Disable telemetry
+    #[clap(short, long)]
+    disable_telemetry: bool,
+
     /// Write the logging output to FILE
     #[clap(long, name = "FILE", value_parser)]
     log_file: Option<PathBuf>,
 }
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
-    let _guard = sentry::init(("https://621f3ac25899467a92414f0cabd31346@o4505249792262144.ingest.sentry.io/4505249800519680", sentry::ClientOptions {
-        release: sentry::release_name!(),
-        attach_stacktrace: true,
-        ..Default::default()
-    }));
     let opts = Opts::parse();
     setup_logger(opts.clone());
+
+    if !opts.disable_telemetry {
+        log::info!("Telemetry is enabled. To disable it, use the --disable-telemetry flag.");
+        let _guard = sentry::init(("https://621f3ac25899467a92414f0cabd31346@o4505249792262144.ingest.sentry.io/4505249800519680", sentry::ClientOptions {
+            release: sentry::release_name!(),
+            attach_stacktrace: true,
+            ..Default::default()
+        }));
+    } else {
+        log::info!("Telemetry is disabled.");
+    }
+
     log::info!("Starting SourcePawn server version {}", VERSION);
     env::set_var("RUST_BACKTRACE", "1");
     env::set_var("RUST_LIB_BACKTRACE", "0");
