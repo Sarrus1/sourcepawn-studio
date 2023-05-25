@@ -116,6 +116,7 @@ impl Symbol {
             TokenKind::Colon => ":",
             TokenKind::Scope => "::",
             TokenKind::Dot => ".",
+            TokenKind::Unknown => "",
             TokenKind::Eof => "\0",
         }
         .to_string()

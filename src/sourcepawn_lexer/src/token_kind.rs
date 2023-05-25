@@ -463,6 +463,8 @@ pub enum TokenKind {
     Scope,
     Dot,
 
+    Unknown,
+
     /// End of file. This will always be the last token.
     Eof,
 }
@@ -597,7 +599,7 @@ impl TryFrom<Token> for TokenKind {
             Token::Colon => TokenKind::Colon,
             Token::Scope => TokenKind::Scope,
             Token::Dot => TokenKind::Dot,
-            Token::Unknown => return Err("Cannot convert unknown token"),
+            Token::Unknown => TokenKind::Unknown,
         };
 
         Ok(token_kind)
