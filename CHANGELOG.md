@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [0.10.4]
+
+### Fixed
+
+-   Fixed BOM support.
+-   Fixed disabled code diagnostics being skipped by the preprocessor.
+
 ## [0.10.3]
 
 ### Added
