@@ -168,7 +168,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 continue;
             }
             match &symbol.token_kind {
-                TokenKind::Unknown => Err(anyhow!("Unknown token: {}", symbol.text()))?,
+                TokenKind::Unknown => Err(anyhow!("Unknown token: {:#?}", symbol.range))?,
                 TokenKind::PreprocDir(dir) => self.process_directive(store, dir, &symbol)?,
                 TokenKind::Newline => {
                     self.push_ws(&symbol);

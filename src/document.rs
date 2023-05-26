@@ -8,6 +8,7 @@ use fxhash::{FxHashMap, FxHashSet};
 use lazy_static::lazy_static;
 use lsp_types::Range;
 use lsp_types::Url;
+use strip_bom::StripBom;
 use tree_sitter::{Node, Query, QueryCursor};
 
 use crate::{
@@ -74,7 +75,7 @@ impl Document {
             uri,
             preprocessed_text: String::new(),
             being_preprocessed: false,
-            text,
+            text: text.strip_bom().to_string(),
             sp_items: vec![],
             includes: FxHashMap::default(),
             parsed: false,
