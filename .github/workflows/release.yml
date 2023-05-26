@@ -66,6 +66,9 @@ jobs:
             - name: Install cross
               if: ${{ matrix.program == 'cross' }}
               run: cargo install cross
+            - name: Install libssl-dev
+              if: ${{ contains(matrix.os, 'ubuntu') }}
+              run: sudo apt-get install pkg-config libssl-dev
             - name: Compile
               run: ${{ matrix.program }} build --target ${{ matrix.target }} --all-features --release --locked
             - name: Compress (Windows)
@@ -104,6 +107,7 @@ jobs:
         strategy:
             fail-fast: false
         steps:
+            - uses: actions/checkout@v3
             - name: Create Sentry release
               uses: getsentry/action-release@v1
               env:
@@ -112,7 +116,7 @@ jobs:
                   SENTRY_PROJECT: sourcepawn-lsp
               with:
                   environment: production
-                  version: ${{ github.event.release.id }}
+                  version: ${{ github.event.release.name }}
 
     edit-release:
         runs-on: ubuntu-latest

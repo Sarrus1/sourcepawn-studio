@@ -44,6 +44,10 @@ sentry = "0.31.3"
 version = "1.3.0"
 features = ["v4"]
 
+[dependencies.openssl]
+optional = true
+version = "*"
+
 [dev-dependencies]
 assert_unordered = "0.3.5"
 criterion = { version = "0.4.0" }
@@ -60,3 +64,9 @@ opt-level = 3
 
 [profile.release]
 debug = true
+
+[features]
+# If compiling on a system without OpenSSL installed, or cross-compiling for a different
+# architecture, enable this feature to compile OpenSSL as part of the build.
+# See https://docs.rs/openssl/#vendored for more.
+static_ssl = ['openssl/vendored']
