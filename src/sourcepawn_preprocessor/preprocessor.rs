@@ -96,10 +96,14 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     continue;
                 } else {
                     ranges.push(old_range);
+                    ranges.push(*range);
                 }
             } else {
                 ranges.push(*range);
             }
+        }
+        for range in ranges.iter_mut() {
+            range.start.character = 0;
         }
         diagnostics.extend(ranges.iter().map(|range| Diagnostic {
             range: *range,
@@ -279,6 +283,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
         self.conditions_stack
             .pop()
             .context("Expect if before endif clause")?;
+        // Skip the endif if it is in a nested condition.
         if let Some(last) = self.conditions_stack.last() {
             if *last != ConditionState::Active {
                 self.skipped_lines.push(lsp_types::Range::new(
