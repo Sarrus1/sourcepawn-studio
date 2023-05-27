@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.10.5]
+
+### Fixed
+
+-   Fixed Sentry instantiation.
+
 ## [0.10.4]
 
 ### Fixed
