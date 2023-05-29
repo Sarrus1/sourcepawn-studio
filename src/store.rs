@@ -339,7 +339,9 @@ impl Store {
                 "typedef" => document.parse_typedef(&node, &mut walker)?,
                 "typeset" => document.parse_typeset(&node, &mut walker)?,
                 "preproc_macro" => {}
-                "enum_struct" => document.parse_enum_struct(&mut node, &mut walker)?,
+                "enum_struct" => {
+                    let _ = document.parse_enum_struct(&mut node, &mut walker);
+                }
                 "comment" => {
                     walker.push_comment(node, &document.preprocessed_text);
                     walker.push_inline_comment(&document.sp_items);
