@@ -319,7 +319,7 @@ impl Store {
             let kind = node.kind();
             match kind {
                 "function_declaration" | "function_definition" => {
-                    document.parse_function(&node, &mut walker, None)?;
+                    let _ = document.parse_function(&node, &mut walker, None);
                 }
                 "global_variable_declaration" | "old_global_variable_declaration" => {
                     document.parse_variable(&mut node, None)?;

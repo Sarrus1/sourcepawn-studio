@@ -426,9 +426,10 @@ pub enum FunctionVisibility {
 }
 
 /// Definition type of a SourcePawn function.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub enum FunctionDefinitionType {
     Forward,
     Native,
+    #[default]
     None,
 }

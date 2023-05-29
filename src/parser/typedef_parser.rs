@@ -16,7 +16,7 @@ use crate::{
     utils::ts_range_to_lsp_range,
 };
 
-use super::function_parser::extract_param_doc;
+use super::function_parser::extract_param_from_desc;
 
 impl Document {
     pub(crate) fn parse_typedef(
@@ -128,7 +128,7 @@ pub(super) fn read_argument_declarations(
                     is_const,
                     type_: parse_argument_type(document, type_node),
                     description: Description {
-                        text: match extract_param_doc(name?, &description) {
+                        text: match extract_param_from_desc(name?, &description) {
                             Some(text) => text,
                             None => "".to_string(),
                         },
