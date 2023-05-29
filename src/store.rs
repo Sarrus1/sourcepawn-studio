@@ -334,7 +334,7 @@ impl Store {
                     document.parse_define(&mut node, &mut walker)?;
                 }
                 "methodmap" => {
-                    document.parse_methodmap(&mut node, &mut walker)?;
+                    let _ = document.parse_methodmap(&mut node, &mut walker);
                 }
                 "typedef" => document.parse_typedef(&node, &mut walker)?,
                 "typeset" => document.parse_typeset(&node, &mut walker)?,
