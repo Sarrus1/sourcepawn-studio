@@ -48,7 +48,7 @@ impl Server {
         })?;
         self.parse_directories();
         let main_uri = self.store.environment.options.get_main_path_uri();
-        let now = Instant::now();
+        let now_parse = Instant::now();
         if let Ok(main_uri) = main_uri {
             if let Some(main_uri) = main_uri {
                 log::debug!("Main path is set, parsing files.");
@@ -91,9 +91,15 @@ impl Server {
                 })?;
             self.parse_files_for_missing_main_path();
         }
+        let now_references = Instant::now();
         self.store.find_all_references();
         self.store.first_parse = false;
-        log::info!("Reparsed all the files in {:.2?}", now.elapsed());
+        log::info!(
+            "Reparsed all the files in {:.2?}, of which resolving the references took {:.2?}, for {} file(s).",
+            now_parse.elapsed(),
+            now_references.elapsed(),
+            self.store.documents.len()
+        );
         self.indexing = false;
         self.reload_diagnostics();
         self.send_status(lsp_ext::ServerStatusParams {
