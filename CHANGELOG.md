@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [0.10.7]
+
+### Fixed
+
+-   Fixed huge performance dropoffs when iterating through `.git` folders.
+-   Fixed incorrect error handling.
+
 ## [0.10.6]
 
 ### Added
