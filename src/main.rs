@@ -47,6 +47,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
         Some(sentry::init(("https://621f3ac25899467a92414f0cabd31346@o4505249792262144.ingest.sentry.io/4505249800519680", sentry::ClientOptions {
             release: sentry::release_name!(),
             attach_stacktrace: true,
+            server_name: Some("sourcepawn-lsp".into()),
             ..Default::default()
         })))
     } else {
