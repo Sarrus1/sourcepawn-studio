@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.10.8]
+
+### Fixed
+
+-   Fixed reading files if they are not sourcepawn files.
+
 ## [0.10.7]
 
 ### Fixed
