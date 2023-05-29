@@ -158,6 +158,9 @@ impl Store {
             if !entry.file_type().is_file() {
                 continue;
             }
+            if !self.is_sourcepawn_file(entry.path()) {
+                continue;
+            }
             if let Ok(mut uri) = Url::from_file_path(entry.path()) {
                 normalize_uri(&mut uri);
                 if self.documents.contains_key(&uri) {
