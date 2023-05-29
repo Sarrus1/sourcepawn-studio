@@ -19,6 +19,7 @@ impl Store {
     pub fn find_references(&mut self, uri: &Url) {
         log::trace!("Resolving references for document {:?}", uri);
         if !self.documents.contains_key(uri) {
+            log::trace!("Skipped resolving references for document {:?}", uri);
             return;
         }
         let all_items = get_all_items(self, false);
@@ -38,6 +39,7 @@ impl Store {
         resolve_methodmap_inherits(get_all_items(self, false));
         let document = self.documents.get_mut(uri).unwrap();
         document.unresolved_tokens = unresolved_tokens;
+        document.offsets.clear();
         log::trace!("Done resolving references for document {:?}", uri);
     }
 }
