@@ -18,7 +18,7 @@ impl Walker {
         self.comments.push(Comment::new(node, source));
     }
 
-    pub fn push_deprecated(&mut self, node: Node, source: &str) -> Result<(), Utf8Error> {
+    pub fn push_deprecated(&mut self, node: Node, source: &str) -> anyhow::Result<()> {
         lazy_static! {
             static ref RE: Regex = Regex::new(r"#pragma\s+deprecated(.*)").unwrap();
         }

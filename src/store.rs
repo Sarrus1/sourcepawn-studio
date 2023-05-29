@@ -328,46 +328,31 @@ impl Store {
 
         for mut node in root_node.children(&mut cursor) {
             let kind = node.kind();
-            match kind {
+            let _ = match kind {
                 "function_declaration" | "function_definition" => {
-                    let _ = document.parse_function(&node, &mut walker, None);
+                    document.parse_function(&node, &mut walker, None)
                 }
                 "global_variable_declaration" | "old_global_variable_declaration" => {
-                    let _ = document.parse_variable(&mut node, None);
+                    document.parse_variable(&mut node, None)
                 }
-                "preproc_include" | "preproc_tryinclude" => {
-                    let _ = self.parse_include(document, &mut node);
-                }
-                "enum" => {
-                    let _ = document.parse_enum(&mut node, &mut walker);
-                }
-                "preproc_define" => {
-                    let _ = document.parse_define(&mut node, &mut walker);
-                }
-                "methodmap" => {
-                    let _ = document.parse_methodmap(&mut node, &mut walker);
-                }
-                "typedef" => {
-                    let _ = document.parse_typedef(&node, &mut walker);
-                }
-                "typeset" => {
-                    let _ = document.parse_typeset(&node, &mut walker);
-                }
-                "preproc_macro" => {}
-                "enum_struct" => {
-                    let _ = document.parse_enum_struct(&mut node, &mut walker);
-                }
+                "preproc_include" | "preproc_tryinclude" => self.parse_include(document, &mut node),
+                "enum" => document.parse_enum(&mut node, &mut walker),
+                "preproc_define" => document.parse_define(&mut node, &mut walker),
+                "methodmap" => document.parse_methodmap(&mut node, &mut walker),
+                "typedef" => document.parse_typedef(&node, &mut walker),
+                "typeset" => document.parse_typeset(&node, &mut walker),
+                "preproc_macro" => Ok(()),
+                "enum_struct" => document.parse_enum_struct(&mut node, &mut walker),
                 "comment" => {
                     walker.push_comment(node, &document.preprocessed_text);
                     walker.push_inline_comment(&document.sp_items);
+                    Ok(())
                 }
-                "preproc_pragma" => {
-                    let _ = walker.push_deprecated(node, &document.preprocessed_text);
-                }
+                "preproc_pragma" => walker.push_deprecated(node, &document.preprocessed_text),
                 _ => {
                     continue;
                 }
-            }
+            };
         }
         document.parsed = true;
         document.extract_tokens(root_node);
