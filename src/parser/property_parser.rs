@@ -1,8 +1,6 @@
-use std::{
-    str::Utf8Error,
-    sync::{Arc, RwLock},
-};
+use std::sync::{Arc, RwLock};
 
+use anyhow::Context;
 use tree_sitter::Node;
 
 use crate::{
@@ -17,15 +15,19 @@ impl Document {
         node: &mut Node,
         walker: &mut Walker,
         parent: Arc<RwLock<SPItem>>,
-    ) -> Result<(), Utf8Error> {
-        let name_node = node.child_by_field_name("name").unwrap();
+    ) -> anyhow::Result<()> {
+        let name_node = node
+            .child_by_field_name("name")
+            .context("Property name is empty.")?;
         let name = name_node
             .utf8_text(self.preprocessed_text.as_bytes())?
             .to_string();
-        let type_node = node.child_by_field_name("type").unwrap();
+        let type_node = node
+            .child_by_field_name("type")
+            .context("Property type is empty.")?;
         let type_ = type_node
-            .utf8_text(self.preprocessed_text.as_bytes())
-            .unwrap();
+            .utf8_text(self.preprocessed_text.as_bytes())?
+            .to_string();
 
         let range = ts_range_to_lsp_range(&name_node.range());
         let full_range = ts_range_to_lsp_range(&node.range());
@@ -35,8 +37,10 @@ impl Document {
             v_range: self.build_v_range(&range),
             full_range,
             v_full_range: self.build_v_range(&full_range),
-            type_: type_.to_string(),
-            description: walker.find_doc(node.start_position().row, false)?,
+            type_,
+            description: walker
+                .find_doc(node.start_position().row, false)
+                .unwrap_or_default(),
             uri: self.uri.clone(),
             references: vec![],
             parent: Arc::downgrade(&parent),

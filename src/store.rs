@@ -333,10 +333,10 @@ impl Store {
                     let _ = document.parse_function(&node, &mut walker, None);
                 }
                 "global_variable_declaration" | "old_global_variable_declaration" => {
-                    document.parse_variable(&mut node, None)?;
+                    let _ = document.parse_variable(&mut node, None);
                 }
                 "preproc_include" | "preproc_tryinclude" => {
-                    self.parse_include(document, &mut node)?;
+                    let _ = self.parse_include(document, &mut node);
                 }
                 "enum" => {
                     let _ = document.parse_enum(&mut node, &mut walker);
@@ -347,8 +347,12 @@ impl Store {
                 "methodmap" => {
                     let _ = document.parse_methodmap(&mut node, &mut walker);
                 }
-                "typedef" => document.parse_typedef(&node, &mut walker)?,
-                "typeset" => document.parse_typeset(&node, &mut walker)?,
+                "typedef" => {
+                    let _ = document.parse_typedef(&node, &mut walker);
+                }
+                "typeset" => {
+                    let _ = document.parse_typeset(&node, &mut walker);
+                }
                 "preproc_macro" => {}
                 "enum_struct" => {
                     let _ = document.parse_enum_struct(&mut node, &mut walker);

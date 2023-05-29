@@ -20,7 +20,7 @@ use crate::{
     utils::ts_range_to_lsp_range,
 };
 
-use super::{typedef_parser::parse_argument_type, VARIABLE_QUERY};
+use super::VARIABLE_QUERY;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 struct FunctionAttributes<'a> {
@@ -290,7 +290,7 @@ impl Document {
         let parameter = Parameter {
             name: name.to_string(),
             is_const,
-            type_: parse_argument_type(self, type_node),
+            type_: self.parse_argument_type(type_node),
             description,
             dimensions,
         };

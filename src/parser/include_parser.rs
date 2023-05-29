@@ -1,8 +1,6 @@
-use std::{
-    str::Utf8Error,
-    sync::{Arc, RwLock},
-};
+use std::sync::{Arc, RwLock};
 
+use anyhow::Context;
 use lsp_types::{Range, Url};
 use tree_sitter::Node;
 
@@ -18,8 +16,10 @@ impl Store {
         &mut self,
         document: &mut Document,
         node: &mut Node,
-    ) -> Result<(), Utf8Error> {
-        let path_node = node.child_by_field_name("path").unwrap();
+    ) -> anyhow::Result<()> {
+        let path_node = node
+            .child_by_field_name("path")
+            .context("Include path is empty.")?;
         let path = path_node.utf8_text(document.preprocessed_text.as_bytes())?;
         let range = ts_range_to_lsp_range(&path_node.range());
 
@@ -29,14 +29,14 @@ impl Store {
             return Ok(());
         }
         let mut path = path[1..path.len() - 1].trim().to_string();
-        let include_uri = self.resolve_import(&mut path, &document.uri);
-        if include_uri.is_none() {
-            // The include was not found.
-            document.missing_includes.insert(path, range);
-            return Ok(());
+        match self.resolve_import(&mut path, &document.uri) {
+            Some(uri) => {
+                add_include(document, uri, path, range);
+            }
+            None => {
+                document.missing_includes.insert(path, range);
+            }
         }
-
-        add_include(document, include_uri.unwrap(), path, range);
 
         Ok(())
     }
