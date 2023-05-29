@@ -51,7 +51,7 @@ impl Document {
         Ok(())
     }
 
-    fn get_inherit_string(&mut self, inherit_node: Option<Node>) -> Option<String> {
+    fn get_inherit_string(&self, inherit_node: Option<Node>) -> Option<String> {
         Some(
             inherit_node?
                 .utf8_text(self.preprocessed_text.as_bytes())

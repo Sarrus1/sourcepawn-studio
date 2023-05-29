@@ -331,7 +331,7 @@ impl Store {
                     document.parse_enum(&mut node, &mut walker)?;
                 }
                 "preproc_define" => {
-                    document.parse_define(&mut node, &mut walker)?;
+                    let _ = document.parse_define(&mut node, &mut walker);
                 }
                 "methodmap" => {
                     let _ = document.parse_methodmap(&mut node, &mut walker);
