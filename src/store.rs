@@ -328,7 +328,7 @@ impl Store {
                     self.parse_include(document, &mut node)?;
                 }
                 "enum" => {
-                    document.parse_enum(&mut node, &mut walker)?;
+                    let _ = document.parse_enum(&mut node, &mut walker);
                 }
                 "preproc_define" => {
                     let _ = document.parse_define(&mut node, &mut walker);

@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use anyhow::Context;
 use tree_sitter::Node;
 
 use crate::{
@@ -15,10 +16,15 @@ use crate::{
 use lsp_types::{Position, Range};
 
 impl Document {
-    pub fn parse_enum(&mut self, node: &mut Node, walker: &mut Walker) -> Result<(), Utf8Error> {
-        let (name, range) =
-            get_enum_name_and_range(node, &self.preprocessed_text, &mut walker.anon_enum_counter);
-        let documentation = walker.find_doc(node.start_position().row, false)?;
+    pub(crate) fn parse_enum(
+        &mut self,
+        node: &mut Node,
+        walker: &mut Walker,
+    ) -> anyhow::Result<()> {
+        let (name, range) = self.get_enum_name_and_range(node, &mut walker.anon_enum_counter)?;
+        let description = walker
+            .find_doc(node.start_position().row, false)
+            .unwrap_or_default();
 
         let full_range = ts_range_to_lsp_range(&node.range());
         let enum_item = EnumItem {
@@ -27,7 +33,7 @@ impl Document {
             v_range: self.build_v_range(&range),
             full_range,
             v_full_range: self.build_v_range(&full_range),
-            description: documentation,
+            description,
             uri: self.uri.clone(),
             references: vec![],
             children: vec![],
@@ -43,7 +49,7 @@ impl Document {
         }
         let enum_item = Arc::new(RwLock::new(SPItem::Enum(enum_item)));
         if let Some(enum_entries) = enum_entries {
-            read_enum_members(self, &enum_entries, enum_item.clone(), walker);
+            self.read_enum_members(&enum_entries, enum_item.clone(), walker);
         }
         self.sp_items.push(enum_item.clone());
         self.declarations
@@ -51,74 +57,84 @@ impl Document {
 
         Ok(())
     }
-}
 
-fn get_enum_name_and_range(
-    node: &Node,
-    source: &String,
-    anon_enum_counter: &mut u32,
-) -> (String, Range) {
-    let name_node = node.child_by_field_name("name");
-    if let Some(name_node) = name_node {
-        let name_node = name_node;
-        let name = name_node.utf8_text(source.as_bytes()).unwrap();
-        return (name.to_string(), ts_range_to_lsp_range(&name_node.range()));
-    }
-    let mut name = String::from("Enum#");
-    name.push_str(anon_enum_counter.to_string().as_str());
-    let range = Range {
-        start: Position {
-            line: node.start_position().row as u32,
-            character: 0,
-        },
-        end: Position {
-            line: node.start_position().row as u32,
-            character: 0,
-        },
-    };
-    *anon_enum_counter += 1;
+    fn get_enum_name_and_range(
+        &self,
+        node: &Node,
+        anon_enum_counter: &mut u32,
+    ) -> Result<(String, Range), Utf8Error> {
+        match node.child_by_field_name("name") {
+            Some(name_node) => {
+                let name = name_node.utf8_text(self.preprocessed_text.as_bytes())?;
 
-    (name, range)
-}
-
-fn read_enum_members(
-    document: &Document,
-    body_node: &Node,
-    enum_item: Arc<RwLock<SPItem>>,
-    walker: &mut Walker,
-) {
-    let mut cursor = body_node.walk();
-    for child in body_node.children(&mut cursor) {
-        match child.kind() {
-            "enum_entry" => {
-                let name_node = child.child_by_field_name("name").unwrap();
-                let name = name_node
-                    .utf8_text(document.preprocessed_text.as_bytes())
-                    .unwrap()
-                    .to_string();
-                let range = ts_range_to_lsp_range(&name_node.range());
-                let enum_member_item = EnumMemberItem {
-                    name,
-                    uri: document.uri.clone(),
-                    range,
-                    v_range: document.build_v_range(&range),
-                    parent: Arc::downgrade(&enum_item),
-                    description: Description::default(),
-                    references: vec![],
+                Ok((name.to_string(), ts_range_to_lsp_range(&name_node.range())))
+            }
+            None => {
+                let mut name = String::from("Enum#");
+                name.push_str(anon_enum_counter.to_string().as_str());
+                let range = Range {
+                    start: Position {
+                        line: node.start_position().row as u32,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: node.start_position().row as u32,
+                        character: 0,
+                    },
                 };
-                enum_item
-                    .write()
-                    .unwrap()
-                    .push_child(Arc::new(RwLock::new(SPItem::EnumMember(enum_member_item))));
+                *anon_enum_counter += 1;
+
+                Ok((name, range))
             }
-            "comment" => {
-                walker.push_comment(child, &document.preprocessed_text);
-                walker.push_inline_comment(enum_item.read().unwrap().children().unwrap());
-            }
-            "preproc_pragma" => {
-                let _ = walker.push_deprecated(child, &document.preprocessed_text);
-            }
-            _ => {}
         }
+    }
+
+    fn read_enum_members(
+        &self,
+        body_node: &Node,
+        enum_item: Arc<RwLock<SPItem>>,
+        walker: &mut Walker,
+    ) {
+        let mut cursor = body_node.walk();
+        for child in body_node.children(&mut cursor) {
+            match child.kind() {
+                "enum_entry" => {
+                    let _ = self.read_enum_entry(child, &enum_item);
+                }
+                "comment" => {
+                    walker.push_comment(child, &self.preprocessed_text);
+                    walker.push_inline_comment(enum_item.read().unwrap().children().unwrap());
+                }
+                "preproc_pragma" => {
+                    let _ = walker.push_deprecated(child, &self.preprocessed_text);
+                }
+                _ => (),
+            }
+        }
+    }
+
+    fn read_enum_entry(&self, child: Node, enum_item: &Arc<RwLock<SPItem>>) -> anyhow::Result<()> {
+        let name_node = child
+            .child_by_field_name("name")
+            .context("Enum entry has no name.")?;
+        let name = name_node
+            .utf8_text(self.preprocessed_text.as_bytes())?
+            .to_string();
+        let range = ts_range_to_lsp_range(&name_node.range());
+        let enum_member_item = EnumMemberItem {
+            name,
+            uri: self.uri.clone(),
+            range,
+            v_range: self.build_v_range(&range),
+            parent: Arc::downgrade(enum_item),
+            description: Description::default(),
+            references: vec![],
+        };
+        enum_item
+            .write()
+            .unwrap()
+            .push_child(Arc::new(RwLock::new(SPItem::EnumMember(enum_member_item))));
+
+        Ok(())
     }
 }
