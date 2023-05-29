@@ -1,5 +1,16 @@
 ## Release Notes
 
+## [0.10.6]
+
+### Added
+
+-   Added more debugging traces.
+
+### Fixed
+
+-   Fixed Sentry hostname data leak.
+-   Fixed early returns in parser when encountering an error.
+
 ## [0.10.5]
 
 ### Fixed
