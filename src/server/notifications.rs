@@ -112,7 +112,7 @@ impl Server {
             let options = self.fork().parse_options(params.settings)?;
             self.store.environment.options = Arc::new(options);
             self.config_pulled = true;
-            self.reparse_all()?;
+            let _ = self.reparse_all();
         }
 
         Ok(())

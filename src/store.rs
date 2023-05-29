@@ -152,7 +152,8 @@ impl Store {
         for entry in WalkDir::new(base_path)
             .follow_links(true)
             .into_iter()
-            .filter_map(|e| e.ok())
+            .filter_entry(|entry| !is_git_folder(entry.path()))
+            .filter_map(|entry| entry.ok())
         {
             if !entry.file_type().is_file() {
                 continue;
@@ -413,4 +414,9 @@ impl Store {
             f_name.ends_with(".sp") || f_name.ends_with(".inc")
         }
     }
+}
+
+fn is_git_folder(path: &Path) -> bool {
+    let file_name = path.file_name().unwrap_or_default();
+    file_name == ".git"
 }
