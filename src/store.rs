@@ -185,6 +185,7 @@ impl Store {
         text: String,
         parser: &mut Parser,
     ) -> Result<Document, io::Error> {
+        log::trace!("Opening file {:?}", uri);
         let prev_declarations = match self.documents.get(&(*uri).clone()) {
             Some(document) => document.declarations.clone(),
             None => FxHashMap::default(),
@@ -198,6 +199,7 @@ impl Store {
             self.find_references(&(*uri).clone());
             self.sync_references(&mut document, prev_declarations);
         }
+        log::trace!("Done opening file {:?}", uri);
 
         Ok(document)
     }
@@ -207,6 +209,7 @@ impl Store {
         document: &mut Document,
         prev_declarations: FxHashMap<String, Arc<RwLock<SPItem>>>,
     ) {
+        log::trace!("Syncing references for document {:?}", document.uri);
         let mut deleted_declarations = prev_declarations;
         deleted_declarations.retain(|k, _| !document.declarations.contains_key(k));
         let mut added_declarations = document.declarations.clone();
@@ -247,13 +250,16 @@ impl Store {
                 }
             }
         }
+        log::trace!("Done syncing references for document {:?}", document.uri);
     }
 
     pub(crate) fn preprocess_document(
         &mut self,
         document: &mut Document,
     ) -> Option<FxHashMap<String, Macro>> {
+        log::trace!("Preprocessing document {:?}", document.uri);
         if !document.preprocessed_text.is_empty() || document.being_preprocessed {
+            log::trace!("Skipped preprocessing document {:?}", document.uri);
             return Some(document.macros.clone());
         }
         document.being_preprocessed = true;
@@ -267,6 +273,7 @@ impl Store {
         preprocessor.add_diagnostics(&mut document.diagnostics.local_diagnostics);
         preprocessor.add_ignored_tokens(&mut document.macro_symbols);
         document.being_preprocessed = false;
+        log::trace!("Done preprocessing document {:?}", document.uri);
 
         Some(preprocessor.macros)
     }
@@ -275,9 +282,11 @@ impl Store {
         &mut self,
         uri: Arc<Url>,
     ) -> Option<FxHashMap<String, Macro>> {
+        log::trace!("Preprocessing document by uri {:?}", uri);
         if let Some(document) = self.documents.get(&uri) {
             // Don't reprocess the text if it has not changed.
             if !document.preprocessed_text.is_empty() || document.being_preprocessed {
+                log::trace!("Skipped preprocessing document by uri {:?}", uri);
                 return Some(document.macros.clone());
             }
         }
@@ -300,11 +309,13 @@ impl Store {
         if let Some(document) = self.documents.get_mut(&uri) {
             document.being_preprocessed = false;
         }
+        log::trace!("Done preprocessing document by uri {:?}", uri);
 
         None
     }
 
     pub fn parse(&mut self, document: &mut Document, parser: &mut Parser) -> Result<(), Utf8Error> {
+        log::trace!("Parsing document {:?}", document.uri);
         let tree = parser.parse(&document.preprocessed_text, None).unwrap();
         let root_node = tree.root_node();
         let mut walker = Walker {
@@ -364,6 +375,7 @@ impl Store {
         self.documents
             .insert(document.uri.clone(), document.clone());
         self.read_unscanned_imports(&document.includes, parser);
+        log::trace!("Done parsing document {:?}", document.uri);
 
         Ok(())
     }

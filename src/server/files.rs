@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Instant};
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams, Url};
 
 use crate::{document::Document, lsp_ext, store::Store, Server};
@@ -51,19 +51,20 @@ impl Server {
         let now = Instant::now();
         if let Ok(main_uri) = main_uri {
             if let Some(main_uri) = main_uri {
-                self.parse_files_for_main_path(&main_uri);
+                log::debug!("Main path is set, parsing files.");
+                self.parse_files_for_main_path(&main_uri)?;
             } else if let Some(uri) = self
                 .store
                 .documents
                 .values()
                 .find_map(|document| self.store.is_main_heuristic(document))
             {
-                // Assume we found the main path.
+                log::debug!("Main path was not set, and was infered as {:?}", uri);
                 let path = uri.to_file_path().unwrap();
                 let mut old_options = self.store.environment.options.as_ref().clone();
                 old_options.main_path = path.clone();
                 self.store.environment.options = Arc::new(old_options);
-                self.parse_files_for_main_path(&uri);
+                self.parse_files_for_main_path(&uri)?;
                 self.client
                     .send_notification::<ShowMessage>(ShowMessageParams {
                         message: format!(
@@ -73,7 +74,7 @@ impl Server {
                         typ: MessageType::INFO,
                     })?;
             } else {
-                // We haven't found a candidate for the main path.
+                log::debug!("Main path was not set, and could not be infered.");
                 self.client
                     .send_notification::<ShowMessage>(ShowMessageParams {
                         message: "No MainPath setting and none could be infered.".to_string(),
@@ -82,6 +83,7 @@ impl Server {
                 self.parse_files_for_missing_main_path();
             }
         } else if main_uri.is_err() {
+            log::debug!("Main path is invalid.");
             self.client
                 .send_notification::<ShowMessage>(ShowMessageParams {
                     message: "Invalid MainPath setting.".to_string(),
@@ -118,11 +120,16 @@ impl Server {
         }
     }
 
-    fn parse_files_for_main_path(&mut self, main_uri: &Url) {
-        let document = self.store.get(main_uri).expect("Main Path does not exist.");
+    fn parse_files_for_main_path(&mut self, main_uri: &Url) -> anyhow::Result<()> {
+        let document = self
+            .store
+            .get(main_uri)
+            .context(format!("Main Path does not exist at uri {:?}", main_uri))?;
         self.store
             .handle_open_document(&document.uri, document.text, &mut self.parser)
-            .expect("Could not parse file");
+            .context(format!("Could not parse file at uri {:?}", main_uri))?;
+
+        Ok(())
     }
 
     fn parse_directories(&mut self) {
