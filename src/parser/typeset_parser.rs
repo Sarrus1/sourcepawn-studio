@@ -33,7 +33,9 @@ impl Document {
         for child in node.children(&mut cursor) {
             match child.kind() {
                 "comment" => walker.push_comment(child, &self.preprocessed_text),
-                "preproc_pragma" => walker.push_deprecated(child, &self.preprocessed_text),
+                "preproc_pragma" => {
+                    let _ = walker.push_deprecated(child, &self.preprocessed_text);
+                }
                 "typedef_expression" => {
                     counter += 1;
                     let mut argument_declarations_node = None;

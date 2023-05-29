@@ -82,7 +82,9 @@ impl Document {
                     let _ = self.parse_property(&mut child, walker, methodmap_item.clone());
                 }
                 "comment" => walker.push_comment(child, &self.preprocessed_text),
-                "preproc_pragma" => walker.push_deprecated(child, &self.preprocessed_text),
+                "preproc_pragma" => {
+                    let _ = walker.push_deprecated(child, &self.preprocessed_text);
+                }
                 _ => {}
             }
         }

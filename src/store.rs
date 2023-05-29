@@ -344,7 +344,9 @@ impl Store {
                     walker.push_comment(node, &document.preprocessed_text);
                     walker.push_inline_comment(&document.sp_items);
                 }
-                "preproc_pragma" => walker.push_deprecated(node, &document.preprocessed_text),
+                "preproc_pragma" => {
+                    let _ = walker.push_deprecated(node, &document.preprocessed_text);
+                }
                 _ => {
                     continue;
                 }

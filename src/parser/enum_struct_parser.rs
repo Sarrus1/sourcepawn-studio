@@ -65,7 +65,9 @@ fn parse_enum_struct_members(
                 .parse_function(&child, walker, Some(enum_struct_item.clone()))
                 .unwrap(),
             "comment" => walker.push_comment(child, &document.preprocessed_text),
-            "preproc_pragma" => walker.push_deprecated(child, &document.preprocessed_text),
+            "preproc_pragma" => {
+                let _ = walker.push_deprecated(child, &document.preprocessed_text);
+            }
             _ => {}
         }
     }

@@ -18,11 +18,11 @@ impl Walker {
         self.comments.push(Comment::new(node, source));
     }
 
-    pub fn push_deprecated(&mut self, node: Node, source: &str) {
+    pub fn push_deprecated(&mut self, node: Node, source: &str) -> Result<(), Utf8Error> {
         lazy_static! {
             static ref RE: Regex = Regex::new(r"#pragma\s+deprecated(.*)").unwrap();
         }
-        let text = node.utf8_text(source.as_bytes()).unwrap();
+        let text = node.utf8_text(source.as_bytes())?;
         if let Some(caps) = RE.captures(text) {
             if let Some(text) = caps.get(1) {
                 self.deprecated.push(Deprecated {
@@ -31,26 +31,29 @@ impl Walker {
                 })
             }
         };
+
+        Ok(())
     }
 
-    pub fn push_inline_comment(&mut self, items: &[Arc<RwLock<SPItem>>]) {
-        if let Some(item) = items.last() {
-            let description = self
-                .find_doc(item.read().unwrap().range().end.line as usize, true)
-                .unwrap();
-            match &mut *item.write().unwrap() {
-                SPItem::EnumMember(enum_member_item) => {
-                    enum_member_item.description = description;
-                }
-                SPItem::Variable(variable_item) => {
-                    variable_item.description = description;
-                }
-                SPItem::Define(define_item) => {
-                    define_item.description = description;
-                }
-                _ => {}
+    pub fn push_inline_comment(&mut self, items: &[Arc<RwLock<SPItem>>]) -> Option<()> {
+        let item = items.last()?;
+        let description = self
+            .find_doc(item.read().unwrap().range().end.line as usize, true)
+            .ok()?;
+        match &mut *item.write().unwrap() {
+            SPItem::EnumMember(enum_member_item) => {
+                enum_member_item.description = description;
             }
+            SPItem::Variable(variable_item) => {
+                variable_item.description = description;
+            }
+            SPItem::Define(define_item) => {
+                define_item.description = description;
+            }
+            _ => {}
         }
+
+        Some(())
     }
 
     pub fn find_doc(&mut self, end_row: usize, trailing: bool) -> Result<Description, Utf8Error> {
@@ -120,7 +123,10 @@ pub struct Comment {
 impl Comment {
     pub fn new(node: Node, source: &str) -> Self {
         Self {
-            text: node.utf8_text(source.as_bytes()).unwrap().to_string(),
+            text: node
+                .utf8_text(source.as_bytes())
+                .unwrap_or_default()
+                .to_string(),
             range: ts_range_to_lsp_range(&node.range()),
         }
     }

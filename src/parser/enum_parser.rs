@@ -116,7 +116,7 @@ fn read_enum_members(
                 walker.push_inline_comment(enum_item.read().unwrap().children().unwrap());
             }
             "preproc_pragma" => {
-                walker.push_deprecated(child, &document.preprocessed_text);
+                let _ = walker.push_deprecated(child, &document.preprocessed_text);
             }
             _ => {}
         }
