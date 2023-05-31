@@ -159,7 +159,9 @@ impl Analyzer {
     }
 
     pub fn update_line_context(&mut self, token: &Arc<Token>) {
-        if token.range.start.line != self.line_nb || self.token_idx == 0 {
+        if (token.range.start.line != self.line_nb || self.token_idx == 0)
+            && !token.range.start.line >= self.lines.len() as u32
+        {
             self.line_nb = token.range.start.line;
             self.previous_items.clear();
         }
