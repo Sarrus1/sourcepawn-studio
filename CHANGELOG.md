@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [0.10.9]
+
+### Fixed
+
+-   Fixed out of range error when doing semantic analysis.
+-   Removed dangerous unwraps.
+
 ## [0.10.8]
 
 ### Fixed
