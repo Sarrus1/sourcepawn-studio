@@ -60,7 +60,7 @@ impl Store {
 
         // Look for the include in the same directory or the closest include directory.
         let document_path = document_uri.to_file_path().ok()?;
-        let document_dirpath = document_path.parent().unwrap();
+        let document_dirpath = document_path.parent()?;
         let mut include_file_path = document_dirpath.join(include_text);
         if !include_file_path.exists() {
             include_file_path = document_dirpath.join("include").join(include_text);
@@ -73,7 +73,7 @@ impl Store {
         // Look for the includes in the include directories.
         for include_directory in self.environment.options.includes_directories.iter() {
             let path = include_directory.clone().join(include_text);
-            let uri = Url::from_file_path(path).unwrap();
+            let uri = Url::from_file_path(path).ok()?;
             if self.documents.contains_key(&uri) {
                 return Some(uri);
             }

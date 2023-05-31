@@ -19,10 +19,9 @@ impl Server {
             self.spawn(move |mut server| {
                 let _ = server.send_spcomp_status(false);
                 if let Ok(diagnostics_map) = server.store.get_spcomp_diagnostics(main_path_uri) {
-                    server
+                    let _ = server
                         .internal_tx
-                        .send(InternalMessage::Diagnostics(diagnostics_map))
-                        .unwrap();
+                        .send(InternalMessage::Diagnostics(diagnostics_map));
                 } else {
                     // Failed to run spcomp.
                     let _ = server
@@ -49,12 +48,13 @@ impl Server {
     /// been sent to the client.
     pub fn publish_diagnostics(&mut self) -> anyhow::Result<()> {
         for document in self.store.documents.values() {
-            self.client
+            let _ = self
+                .client
                 .send_notification::<PublishDiagnostics>(PublishDiagnosticsParams {
                     uri: document.uri(),
                     diagnostics: document.diagnostics.all(),
                     version: None,
-                })?;
+                });
         }
 
         Ok(())
