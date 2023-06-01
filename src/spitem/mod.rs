@@ -74,7 +74,7 @@ pub fn get_all_items(store: &Store, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
         let mut includes = FxHashSet::default();
         includes.insert(main_path_uri.clone());
         if let Some(document) = store.documents.get(&main_path_uri) {
-            get_included_files(store, document, &mut includes);
+            store.get_included_files(document, &mut includes);
             for include in includes.iter() {
                 if let Some(document) = store.documents.get(include) {
                     if flat {
@@ -101,14 +101,16 @@ pub fn get_all_items(store: &Store, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
     all_items
 }
 
-fn get_included_files(store: &Store, document: &Document, includes: &mut FxHashSet<Url>) {
-    for include_uri in document.includes.keys() {
-        if includes.contains(include_uri) {
-            continue;
-        }
-        includes.insert(include_uri.clone());
-        if let Some(include_document) = store.get(include_uri) {
-            get_included_files(store, &include_document, includes);
+impl Store {
+    pub(crate) fn get_included_files(&self, document: &Document, includes: &mut FxHashSet<Url>) {
+        for include_uri in document.includes.keys() {
+            if includes.contains(include_uri) {
+                continue;
+            }
+            includes.insert(include_uri.clone());
+            if let Some(include_document) = self.get(include_uri) {
+                self.get_included_files(&include_document, includes);
+            }
         }
     }
 }

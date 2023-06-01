@@ -391,10 +391,20 @@ impl Store {
     }
 
     pub fn find_all_references(&mut self) {
-        let uris: Vec<Arc<Url>> = self.documents.keys().map(|uri| (*uri).clone()).collect();
-        for uri in uris {
-            self.find_references(&uri);
-        }
+        let uris: Vec<Url> =
+            if let Ok(Some(main_path_uri)) = self.environment.options.get_main_path_uri() {
+                let mut includes = FxHashSet::default();
+                includes.insert(main_path_uri.clone());
+                if let Some(document) = self.documents.get(&main_path_uri) {
+                    self.get_included_files(document, &mut includes);
+                    includes.iter().map(|uri| (*uri).clone()).collect()
+                } else {
+                    self.documents.values().map(|doc| doc.uri()).collect()
+                }
+            } else {
+                self.documents.values().map(|doc| doc.uri()).collect()
+            };
+        uris.iter().for_each(|uri| self.find_references(uri));
     }
 
     pub fn get_all_files_in_folder(&self, folder_uri: &Url) -> Vec<Url> {
