@@ -1,5 +1,13 @@
 ## Release Notes
 
+## [0.10.10]
+
+### Fixed
+
+-   Fixed resolving references for too many files (this can improve parsing times by 300%).
+-   Improved method resolution to use the AST instead of primitive text parsing.
+-   Removed dangerous unwraps.
+
 ## [0.10.9]
 
 ### Fixed
