@@ -13,14 +13,14 @@ use crate::{document::SPToken, spitem::SPItem, store::Store};
 use self::analyzer::Analyzer;
 
 impl Store {
-    pub(crate) fn find_references(&mut self, uri: &Url) {
+    pub(crate) fn find_references(&mut self, uri: &Url) -> Option<()> {
         log::trace!("Resolving references for document {:?}", uri);
         if !self.documents.contains_key(uri) {
             log::trace!("Skipped resolving references for document {:?}", uri);
-            return;
+            return None;
         }
         let all_items = self.get_all_items(false);
-        let document = self.documents.get_mut(uri).unwrap();
+        let document = self.documents.get_mut(uri)?;
         let mut unresolved_tokens = FxHashSet::default();
         let mut analyzer = Analyzer::new(all_items, document);
         document.tokens.sort_by_key(|sp_token| match sp_token {
@@ -57,11 +57,13 @@ impl Store {
                 }
             }
         }
-        resolve_methodmap_inherits(self.get_all_items(false));
+        resolve_methodmap_inherits(analyzer.all_items);
         let document = self.documents.get_mut(uri).unwrap();
         document.unresolved_tokens = unresolved_tokens;
         document.offsets.clear();
         log::trace!("Done resolving references for document {:?}", uri);
+
+        Some(())
     }
 }
 

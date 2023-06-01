@@ -404,7 +404,9 @@ impl Store {
             } else {
                 self.documents.values().map(|doc| doc.uri()).collect()
             };
-        uris.iter().for_each(|uri| self.find_references(uri));
+        uris.iter().for_each(|uri| {
+            let _ = self.find_references(uri);
+        });
     }
 
     pub fn get_all_files_in_folder(&self, folder_uri: &Url) -> Vec<Url> {
