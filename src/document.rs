@@ -29,10 +29,24 @@ lazy_static! {
     };
 }
 
+lazy_static! {
+    static ref METHOD_QUERY: Query = Query::new(
+        tree_sitter_sourcepawn::language(),
+        "[(field_access) @method] (scope_access) @method (array_scope_access) @method",
+    )
+    .unwrap();
+}
+
 #[derive(Debug, Clone)]
-pub struct Token {
-    pub text: String,
-    pub range: Range,
+pub(crate) enum SPToken {
+    Symbol(Arc<Token>),
+    Method((Arc<Token>, Arc<Token>)),
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct Token {
+    pub(crate) text: String,
+    pub(crate) range: Range,
 }
 
 impl Token {
@@ -51,9 +65,9 @@ pub struct Document {
     pub(super) preprocessed_text: String,
     pub(super) being_preprocessed: bool,
     pub sp_items: Vec<Arc<RwLock<SPItem>>>,
-    pub includes: FxHashMap<Url, Token>,
+    pub(crate) includes: FxHashMap<Url, Token>,
     pub parsed: bool,
-    pub tokens: Vec<Arc<Token>>,
+    pub(crate) tokens: Vec<SPToken>,
     pub missing_includes: FxHashMap<String, Range>,
     pub unresolved_tokens: FxHashSet<String>,
     pub declarations: FxHashMap<String, Arc<RwLock<SPItem>>>,
@@ -119,19 +133,70 @@ impl Document {
         (*self.uri.as_ref()).clone()
     }
 
-    pub fn extract_tokens(&mut self, root_node: Node) {
+    pub(crate) fn extract_tokens(&mut self, root_node: Node) {
+        let mut symbols: FxHashMap<tree_sitter::Range, Arc<Token>> = FxHashMap::default();
         let mut cursor = QueryCursor::new();
         let matches = cursor.captures(&SYMBOL_QUERY, root_node, self.preprocessed_text.as_bytes());
         for (match_, _) in matches {
             for capture in match_.captures.iter() {
-                self.tokens
-                    .push(Arc::new(Token::new(capture.node, &self.preprocessed_text)));
+                symbols.insert(
+                    capture.node.range(),
+                    Arc::new(Token::new(capture.node, &self.preprocessed_text)),
+                );
             }
         }
+        let mut method_symbols: FxHashMap<tree_sitter::Range, (Arc<Token>, Arc<Token>)> =
+            FxHashMap::default();
+        let matches = cursor.captures(&METHOD_QUERY, root_node, self.preprocessed_text.as_bytes());
+        for (match_, _) in matches {
+            for capture in match_.captures.iter() {
+                let mut sub_cursor = QueryCursor::new();
+                let sub_matches = sub_cursor.captures(
+                    &SYMBOL_QUERY,
+                    capture.node,
+                    self.preprocessed_text.as_bytes(),
+                );
+                for (i, (sub_match, _)) in sub_matches.enumerate() {
+                    if i > 0 || sub_match.captures.is_empty() {
+                        // Assume the first symbol is the item we are accessing the field of.
+                        break;
+                    }
+                    if let Some(field) = capture.node.child_by_field_name("field") {
+                        method_symbols.insert(
+                            field.range(),
+                            (
+                                Arc::new(Token::new(
+                                    sub_match.captures[0].node,
+                                    &self.preprocessed_text,
+                                )),
+                                Arc::new(Token::new(field, &self.preprocessed_text)),
+                            ),
+                        );
+                    }
+                }
+            }
+        }
+
+        // Remove methods that are also symbols to avoid overlapping tokens in resolution.
+        for range in method_symbols.keys() {
+            symbols.remove(range);
+        }
+
+        self.tokens
+            .extend(symbols.values().map(|t| SPToken::Symbol(t.clone())));
+        self.tokens.extend(
+            method_symbols
+                .values()
+                .map(|(t1, t2)| SPToken::Method((t1.clone(), t2.clone()))),
+        );
     }
 
     pub fn add_macro_symbols(&mut self) {
-        self.tokens.extend(self.macro_symbols.clone())
+        self.tokens.extend(
+            self.macro_symbols
+                .iter()
+                .map(|t| SPToken::Symbol(t.clone())),
+        );
     }
 
     pub fn line(&self, line_nb: u32) -> Option<&str> {

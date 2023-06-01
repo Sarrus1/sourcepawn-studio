@@ -9,6 +9,7 @@ mod resolvers;
 pub mod scope;
 
 use crate::{
+    document::SPToken,
     spitem::{get_all_items, SPItem},
     store::Store,
 };
@@ -16,25 +17,49 @@ use crate::{
 use self::analyzer::Analyzer;
 
 impl Store {
-    pub fn find_references(&mut self, uri: &Url) {
+    pub(crate) fn find_references(&mut self, uri: &Url) {
         log::trace!("Resolving references for document {:?}", uri);
         if !self.documents.contains_key(uri) {
             log::trace!("Skipped resolving references for document {:?}", uri);
             return;
         }
         let all_items = get_all_items(self, false);
-        let document = self.documents.get(uri).unwrap();
+        let document = self.documents.get_mut(uri).unwrap();
         let mut unresolved_tokens = FxHashSet::default();
         let mut analyzer = Analyzer::new(all_items, document);
+        document.tokens.sort_by_key(|sp_token| match sp_token {
+            SPToken::Symbol(token) => token.range.start.line,
+            SPToken::Method((_, field)) => field.range.start.line,
+        });
         for token in document.tokens.iter() {
-            analyzer.update_scope(token.range);
-            analyzer.update_line_context(token);
-            if analyzer.resolve_item(token, document).is_none() {
-                // Token was not resolved
-                unresolved_tokens.insert(token.text.clone());
+            match token {
+                SPToken::Symbol(token) => {
+                    analyzer.update_scope(token.range);
+                    analyzer.update_line_context(token);
+                    if analyzer.resolve_this(token, document) {
+                        analyzer.token_idx += 1;
+                        continue;
+                    }
+                    if analyzer.resolve_non_method_item(token, document) {
+                        analyzer.token_idx += 1;
+                        continue;
+                    }
+                    // Token was not resolved
+                    unresolved_tokens.insert(token.text.clone());
+                }
+                SPToken::Method((parent, field)) => {
+                    analyzer.update_scope(parent.range);
+                    analyzer.update_line_context(parent);
+                    if analyzer
+                        .resolve_method_item(parent, field, document)
+                        .is_none()
+                    {
+                        // Token was not resolved
+                        unresolved_tokens.insert(field.text.clone());
+                    }
+                    analyzer.token_idx += 1;
+                }
             }
-
-            analyzer.token_idx += 1;
         }
         resolve_methodmap_inherits(get_all_items(self, false));
         let document = self.documents.get_mut(uri).unwrap();

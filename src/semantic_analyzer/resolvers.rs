@@ -17,7 +17,7 @@ impl Analyzer {
     ///
     /// * `token` - [Token] to analyze.
     /// * `document` - [Document](super::document::Document) to analyze.
-    fn resolve_this(&mut self, token: &Arc<Token>, document: &Document) -> bool {
+    pub(super) fn resolve_this(&mut self, token: &Arc<Token>, document: &Document) -> bool {
         if token.text != "this" {
             return false;
         }
@@ -28,7 +28,7 @@ impl Analyzer {
                     if mm_item.uri.eq(&document.uri)
                         && range_contains_range(&mm_item.full_range, &token.range)
                     {
-                        self.previous_items.push(item.clone());
+                        self.previous_items.insert(token.text.clone(), item.clone());
                         return true;
                     }
                 }
@@ -36,7 +36,7 @@ impl Analyzer {
                     if es_item.uri.eq(&document.uri)
                         && range_contains_range(&es_item.full_range, &token.range)
                     {
-                        self.previous_items.push(item.clone());
+                        self.previous_items.insert(token.text.clone(), item.clone());
                         return true;
                     }
                 }
@@ -46,6 +46,7 @@ impl Analyzer {
             }
         }
 
+        // TODO: this keyword outside of its scope but we ignore it for now.
         true
     }
 
@@ -56,7 +57,11 @@ impl Analyzer {
     ///
     /// * `token` - [Token] to analyze.
     /// * `document` - [Document](super::document::Document) to analyze.
-    fn resolve_non_method_item(&mut self, token: &Arc<Token>, document: &Document) -> bool {
+    pub(super) fn resolve_non_method_item(
+        &mut self,
+        token: &Arc<Token>,
+        document: &Document,
+    ) -> bool {
         let full_key = format!(
             "{}-{}-{}",
             self.scope.mm_es_key(),
@@ -96,7 +101,7 @@ impl Analyzer {
                     if is_ctor_call(&pre_line) {
                         if let Some(ctor_item) = mm_item.ctor() {
                             ctor_item.write().unwrap().push_reference(reference);
-                            self.previous_items.push(ctor_item);
+                            self.previous_items.insert(token.text.clone(), ctor_item);
                             return true;
                         }
                     }
@@ -104,80 +109,64 @@ impl Analyzer {
             }
 
             item.write().unwrap().push_reference(reference);
-            self.previous_items.push(item.clone());
+            self.previous_items.insert(token.text.clone(), item.clone());
             return true;
         }
 
         false
     }
 
-    pub(super) fn resolve_item(&mut self, token: &Arc<Token>, document: &Document) -> Option<()> {
-        if self.resolve_this(token, document) {
-            return Some(());
+    pub(super) fn resolve_method_item(
+        &mut self,
+        parent: &Arc<Token>,
+        field: &Arc<Token>,
+        document: &Document,
+    ) -> Option<()> {
+        if self.previous_items.is_empty() {
+            return None;
         }
 
-        if self.resolve_non_method_item(token, document) {
-            return Some(());
-        }
-
-        if token.range.start.character > 0 && !self.previous_items.is_empty() {
-            let char = self
-                .line()
-                .chars()
-                .nth((token.range.start.character - 1) as usize)?;
-
-            if char != ':' && char != '.' {
-                return None;
+        let mut item: Option<Arc<RwLock<SPItem>>> = None;
+        let parent_item = self.previous_items.get(parent.text.as_str())?;
+        let parent = parent_item.read().unwrap().clone();
+        match &parent {
+            SPItem::EnumStruct(es) => {
+                // Enum struct scope operator (::).
+                item = self.get(&format!("{}-{}", es.name, field.text));
             }
-            let mut item: Option<Arc<RwLock<SPItem>>> = None;
-            for parent in self.previous_items.iter().rev() {
-                let parent = parent.read().unwrap().clone();
-                match &parent {
-                    SPItem::EnumStruct(es) => {
-                        // Enum struct scope operator (::).
-                        item = self.get(&format!("{}-{}", es.name, token.text));
-                        if item.is_some() {
-                            break;
-                        }
-                    }
-                    SPItem::Methodmap(mm) => {
-                        // Methodmap static method.
-                        item = self.get(&format!("{}-{}", mm.name, token.text));
-                        if item.is_some() {
-                            break;
-                        }
-                    }
-                    _ => {}
-                }
-                item = self.get(&format!("{}-{}", parent.type_(), token.text));
+            SPItem::Methodmap(mm) => {
+                // Methodmap static method.
+                item = self.get(&format!("{}-{}", mm.name, field.text));
+            }
+            _ => {}
+        }
+        if item.is_none() {
+            item = self.get(&format!("{}-{}", parent.type_(), field.text));
+        }
+        if item.is_none() {
+            for inherit in find_inherit(&self.all_items, &parent) {
+                item = self.get(&format!(
+                    "{}-{}",
+                    inherit.read().unwrap().name(),
+                    field.text
+                ));
                 if item.is_some() {
                     break;
                 }
-                for inherit in find_inherit(&self.all_items, &parent) {
-                    item = self.get(&format!(
-                        "{}-{}",
-                        inherit.read().unwrap().name(),
-                        token.text
-                    ));
-                    if item.is_some() {
-                        break;
-                    }
-                }
             }
-            item.as_ref()?;
-            let item = item.unwrap();
-            let reference = Location {
-                uri: document.uri.clone(),
-                range: token.range,
-                v_range: document.build_v_range(&token.range),
-            };
-            item.write().unwrap().push_reference(reference);
-            self.previous_items.push(item);
-
-            return Some(());
         }
 
-        None
+        item.as_ref()?;
+        let item = item.unwrap();
+        let reference = Location {
+            uri: document.uri.clone(),
+            range: field.range,
+            v_range: document.build_v_range(&field.range),
+        };
+        item.write().unwrap().push_reference(reference);
+        self.previous_items.insert(field.text.clone(), item);
+
         // TODO: Handle positional arguments
+        Some(())
     }
 }

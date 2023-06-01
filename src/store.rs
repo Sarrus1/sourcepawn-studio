@@ -373,7 +373,7 @@ impl Store {
         Ok(())
     }
 
-    pub fn read_unscanned_imports(
+    pub(crate) fn read_unscanned_imports(
         &mut self,
         includes: &FxHashMap<Url, Token>,
         parser: &mut Parser,

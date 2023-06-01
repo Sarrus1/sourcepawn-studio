@@ -14,7 +14,7 @@ use super::{purge_references, scope::Scope};
 pub struct Analyzer {
     pub lines: Vec<String>,
     pub all_items: Vec<Arc<RwLock<SPItem>>>,
-    pub previous_items: Vec<Arc<RwLock<SPItem>>>,
+    pub previous_items: FxHashMap<String, Arc<RwLock<SPItem>>>,
     pub line_nb: u32,
     pub tokens_map: FxHashMap<String, Arc<RwLock<SPItem>>>,
     pub funcs_in_file: Vec<Arc<RwLock<SPItem>>>,
@@ -158,7 +158,7 @@ impl Analyzer {
         self.tokens_map.get(key).cloned()
     }
 
-    pub fn update_line_context(&mut self, token: &Arc<Token>) {
+    pub(crate) fn update_line_context(&mut self, token: &Arc<Token>) {
         if (token.range.start.line != self.line_nb || self.token_idx == 0)
             && !token.range.start.line >= self.lines.len() as u32
         {
