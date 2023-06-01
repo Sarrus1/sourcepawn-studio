@@ -61,7 +61,7 @@ impl Analyzer {
         &mut self,
         token: &Arc<Token>,
         document: &Document,
-    ) -> bool {
+    ) -> anyhow::Result<()> {
         let full_key = format!(
             "{}-{}-{}",
             self.scope.mm_es_key(),
@@ -94,7 +94,7 @@ impl Analyzer {
                     // Don't check the line if there is not enough space for a `new` keyword.
                     // We use 4 instead of 3 to account for at least one space after `new`.
                     let pre_line: String = self
-                        .line()
+                        .line()?
                         .chars()
                         .take(token.range.start.character as usize)
                         .collect();
@@ -102,7 +102,7 @@ impl Analyzer {
                         if let Some(ctor_item) = mm_item.ctor() {
                             ctor_item.write().unwrap().push_reference(reference);
                             self.previous_items.insert(token.text.clone(), ctor_item);
-                            return true;
+                            return Ok(());
                         }
                     }
                 }
@@ -110,10 +110,10 @@ impl Analyzer {
 
             item.write().unwrap().push_reference(reference);
             self.previous_items.insert(token.text.clone(), item.clone());
-            return true;
+            return Ok(());
         }
 
-        false
+        anyhow::bail!("Token not found.");
     }
 
     pub(super) fn resolve_method_item(

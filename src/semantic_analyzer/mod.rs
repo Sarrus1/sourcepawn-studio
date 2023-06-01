@@ -36,7 +36,7 @@ impl Store {
                         analyzer.token_idx += 1;
                         continue;
                     }
-                    if analyzer.resolve_non_method_item(token, document) {
+                    if analyzer.resolve_non_method_item(token, document).is_ok() {
                         analyzer.token_idx += 1;
                         continue;
                     }

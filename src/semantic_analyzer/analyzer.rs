@@ -150,8 +150,11 @@ impl Analyzer {
             .update_mm_es(range, &mut self.mm_es_idx, &self.mm_es_in_file);
     }
 
-    pub fn line(&self) -> &String {
-        &self.lines[self.line_nb as usize]
+    pub fn line(&self) -> anyhow::Result<&String> {
+        if self.line_nb >= self.lines.len() as u32 {
+            anyhow::bail!("Line not found.");
+        }
+        Ok(&self.lines[self.line_nb as usize])
     }
 
     pub fn get(&self, key: &String) -> Option<Arc<RwLock<SPItem>>> {
