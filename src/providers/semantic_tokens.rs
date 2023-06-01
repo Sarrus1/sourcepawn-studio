@@ -3,7 +3,7 @@ use lsp_types::{
     SemanticTokensParams,
 };
 
-use crate::spitem::{get_all_items, SPItem};
+use crate::spitem::SPItem;
 
 use self::builder::SemanticTokensBuilder;
 
@@ -15,7 +15,7 @@ pub fn provide_semantic_tokens(
     request: FeatureRequest<SemanticTokensParams>,
 ) -> Option<SemanticTokens> {
     let uri = request.uri;
-    let all_items = get_all_items(&request.store, false);
+    let all_items = &request.store.get_all_items(false);
     if all_items.is_empty() {
         return None;
     }

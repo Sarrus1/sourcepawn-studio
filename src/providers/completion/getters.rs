@@ -2,10 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use lsp_types::{CompletionList, CompletionParams, Position, Range};
 
-use crate::{
-    providers::FeatureRequest,
-    spitem::{get_items_from_position, SPItem},
-};
+use crate::{providers::FeatureRequest, spitem::SPItem};
 
 use super::{context::get_line_words, defaults::get_default_completions};
 
@@ -118,8 +115,7 @@ pub(super) fn get_method_completions(
             line: word.range.start.line,
             character: ((word.range.start.character + word.range.end.character) / 2),
         };
-        let items = get_items_from_position(
-            &request.store,
+        let items = &request.store.get_items_from_position(
             word_pos,
             request
                 .params

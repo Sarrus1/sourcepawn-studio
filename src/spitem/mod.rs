@@ -67,41 +67,41 @@ pub enum SPItem {
     Typeset(typeset_item::TypesetItem),
 }
 
-pub fn get_all_items(store: &Store, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
-    log::debug!("Getting all items from store. flat: {}", flat);
-    let mut all_items = vec![];
-    if let Ok(Some(main_path_uri)) = store.environment.options.get_main_path_uri() {
-        let mut includes = FxHashSet::default();
-        includes.insert(main_path_uri.clone());
-        if let Some(document) = store.documents.get(&main_path_uri) {
-            store.get_included_files(document, &mut includes);
-            for include in includes.iter() {
-                if let Some(document) = store.documents.get(include) {
-                    if flat {
-                        all_items.extend(document.sp_items_flat());
-                    } else {
-                        all_items.extend(document.sp_items())
+impl Store {
+    pub fn get_all_items(&self, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
+        log::debug!("Getting all items from store. flat: {}", flat);
+        let mut all_items = vec![];
+        if let Ok(Some(main_path_uri)) = self.environment.options.get_main_path_uri() {
+            let mut includes = FxHashSet::default();
+            includes.insert(main_path_uri.clone());
+            if let Some(document) = self.documents.get(&main_path_uri) {
+                self.get_included_files(document, &mut includes);
+                for include in includes.iter() {
+                    if let Some(document) = self.documents.get(include) {
+                        if flat {
+                            all_items.extend(document.sp_items_flat());
+                        } else {
+                            all_items.extend(document.sp_items())
+                        }
                     }
                 }
             }
+            log::trace!("Done getting {} item(s)", all_items.len());
+            return all_items;
         }
-        log::trace!("Done getting {} item(s)", all_items.len());
-        return all_items;
-    }
-    for document in store.documents.values() {
-        for item in document.sp_items.iter() {
-            all_items.push(item.clone());
+        for document in self.documents.values() {
+            for item in document.sp_items.iter() {
+                all_items.push(item.clone());
+            }
         }
+
+        log::trace!(
+            "Done getting {} item(s) without the main path.",
+            all_items.len()
+        );
+        all_items
     }
 
-    log::trace!(
-        "Done getting {} item(s) without the main path.",
-        all_items.len()
-    );
-    all_items
-}
-
-impl Store {
     pub(crate) fn get_included_files(&self, document: &Document, includes: &mut FxHashSet<Url>) {
         for include_uri in document.includes.keys() {
             if includes.contains(include_uri) {
@@ -113,44 +113,47 @@ impl Store {
             }
         }
     }
-}
 
-pub fn get_items_from_position(
-    store: &Store,
-    position: Position,
-    uri: Url,
-) -> Vec<Arc<RwLock<SPItem>>> {
-    log::debug!(
-        "Getting all items from position {:#?} in file {:#?}.",
-        position,
-        uri
-    );
-    let uri = Arc::new(uri);
-    let all_items = get_all_items(store, true);
-    let mut res = vec![];
-    for item in all_items.iter() {
-        let item_lock = item.read().unwrap();
-        if range_contains_pos(item_lock.v_range(), position) && item_lock.uri().as_ref().eq(&uri) {
-            res.push(item.clone());
-            continue;
-        }
-        match item_lock.references() {
-            Some(references) => {
-                for reference in references.iter() {
-                    if range_contains_pos(reference.v_range, position) && reference.uri.eq(&uri) {
-                        res.push(item.clone());
-                        break;
-                    }
-                }
-            }
-            None => {
+    pub(crate) fn get_items_from_position(
+        &self,
+        position: Position,
+        uri: Url,
+    ) -> Vec<Arc<RwLock<SPItem>>> {
+        log::debug!(
+            "Getting all items from position {:#?} in file {:#?}.",
+            position,
+            uri
+        );
+        let uri = Arc::new(uri);
+        let all_items = self.get_all_items(true);
+        let mut res = vec![];
+        for item in all_items.iter() {
+            let item_lock = item.read().unwrap();
+            if range_contains_pos(item_lock.v_range(), position)
+                && item_lock.uri().as_ref().eq(&uri)
+            {
+                res.push(item.clone());
                 continue;
             }
+            match item_lock.references() {
+                Some(references) => {
+                    for reference in references.iter() {
+                        if range_contains_pos(reference.v_range, position) && reference.uri.eq(&uri)
+                        {
+                            res.push(item.clone());
+                            break;
+                        }
+                    }
+                }
+                None => {
+                    continue;
+                }
+            }
         }
-    }
-    log::trace!("Got {} item(s) from position", res.len());
+        log::trace!("Got {} item(s) from position", res.len());
 
-    res
+        res
+    }
 }
 
 impl SPItem {

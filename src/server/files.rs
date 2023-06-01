@@ -1,7 +1,6 @@
 use std::{sync::Arc, time::Instant};
 
 use anyhow::{anyhow, Context};
-use fxhash::FxHashSet;
 use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams, Url};
 
 use crate::{document::Document, lsp_ext, store::Store, Server};

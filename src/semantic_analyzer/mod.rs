@@ -8,11 +8,7 @@ pub mod inherit;
 mod resolvers;
 pub mod scope;
 
-use crate::{
-    document::SPToken,
-    spitem::{get_all_items, SPItem},
-    store::Store,
-};
+use crate::{document::SPToken, spitem::SPItem, store::Store};
 
 use self::analyzer::Analyzer;
 
@@ -23,7 +19,7 @@ impl Store {
             log::trace!("Skipped resolving references for document {:?}", uri);
             return;
         }
-        let all_items = get_all_items(self, false);
+        let all_items = self.get_all_items(false);
         let document = self.documents.get_mut(uri).unwrap();
         let mut unresolved_tokens = FxHashSet::default();
         let mut analyzer = Analyzer::new(all_items, document);
@@ -61,7 +57,7 @@ impl Store {
                 }
             }
         }
-        resolve_methodmap_inherits(get_all_items(self, false));
+        resolve_methodmap_inherits(self.get_all_items(false));
         let document = self.documents.get_mut(uri).unwrap();
         document.unresolved_tokens = unresolved_tokens;
         document.offsets.clear();

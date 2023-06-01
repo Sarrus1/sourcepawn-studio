@@ -1,7 +1,5 @@
 use lsp_types::{SignatureHelp, SignatureHelpParams, SignatureInformation};
 
-use crate::spitem::get_items_from_position;
-
 use self::signature_attributes::SignatureAttributes;
 
 use super::FeatureRequest;
@@ -27,7 +25,9 @@ pub fn provide_signature_help(
         request.params.text_document_position_params.position,
     )?;
 
-    let items = get_items_from_position(&request.store, signature_attributes.position, uri);
+    let items = &request
+        .store
+        .get_items_from_position(signature_attributes.position, uri);
     let mut signatures: Vec<SignatureInformation> = Vec::new();
     for item in items {
         let signature_help = item

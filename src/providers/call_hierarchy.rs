@@ -4,7 +4,7 @@ use lsp_types::{
 };
 
 use crate::{
-    spitem::{get_all_items, get_items_from_position, SPItem},
+    spitem::SPItem,
     utils::{range_contains_range, range_to_position_average},
 };
 
@@ -13,8 +13,7 @@ use super::FeatureRequest;
 pub fn prepare(
     request: FeatureRequest<CallHierarchyPrepareParams>,
 ) -> Option<Vec<CallHierarchyItem>> {
-    let items = get_items_from_position(
-        &request.store,
+    let items = &request.store.get_items_from_position(
         request.params.text_document_position_params.position,
         request
             .params
@@ -38,8 +37,7 @@ pub fn prepare(
 pub fn outgoing(
     request: FeatureRequest<CallHierarchyOutgoingCallsParams>,
 ) -> Option<Vec<CallHierarchyOutgoingCall>> {
-    let items = get_items_from_position(
-        &request.store,
+    let items = &request.store.get_items_from_position(
         range_to_position_average(&request.params.item.selection_range),
         request.params.item.uri.clone(),
     );
@@ -50,7 +48,7 @@ pub fn outgoing(
     let mut outgoing_calls = vec![];
     let origin_item = &*items[0].read().unwrap();
     if let SPItem::Function(function_origin_item) = origin_item {
-        for item in get_all_items(&request.store, true).iter() {
+        for item in request.store.get_all_items(true).iter() {
             if let SPItem::Function(function_item) = &*item.read().unwrap() {
                 let mut from_ranges = vec![];
                 for reference in function_item.references.iter() {
@@ -77,8 +75,7 @@ pub fn outgoing(
 pub fn incoming(
     request: FeatureRequest<CallHierarchyIncomingCallsParams>,
 ) -> Option<Vec<CallHierarchyIncomingCall>> {
-    let items = get_items_from_position(
-        &request.store,
+    let items = &request.store.get_items_from_position(
         range_to_position_average(&request.params.item.selection_range),
         request.params.item.uri.clone(),
     );
@@ -90,7 +87,7 @@ pub fn incoming(
     let mut incoming_calls = vec![];
     let origin_item = &*items[0].read().unwrap();
     if let SPItem::Function(function_origin_item) = origin_item {
-        for item in get_all_items(&request.store, true).iter() {
+        for item in request.store.get_all_items(true).iter() {
             if let SPItem::Function(function_item) = &*item.read().unwrap() {
                 let mut from_ranges = vec![];
                 for reference in function_origin_item.references.iter() {

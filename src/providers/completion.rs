@@ -1,10 +1,7 @@
 use lsp_types::{CompletionList, CompletionParams};
 
-use crate::{
-    providers::completion::{
-        context::is_ctor_call, getters::get_ctor_completions, include::get_include_completions,
-    },
-    spitem::get_all_items,
+use crate::providers::completion::{
+    context::is_ctor_call, getters::get_ctor_completions, include::get_include_completions,
 };
 
 use self::{
@@ -24,7 +21,7 @@ mod matchtoken;
 pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<CompletionList> {
     log::debug!("Providing completions with request: {:#?}", request.params);
     let document = request.store.get(&request.uri)?;
-    let all_items = get_all_items(&request.store, false);
+    let all_items = request.store.get_all_items(false);
     let position = request.params.text_document_position.position;
     let line = document.line(position.line)?;
     let pre_line: String = line.chars().take(position.character as usize).collect();

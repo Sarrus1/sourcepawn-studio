@@ -1,14 +1,11 @@
 use lsp_types::{Hover, HoverParams};
 
-use crate::spitem::get_items_from_position;
-
 use super::FeatureRequest;
 
 pub mod description;
 
 pub fn provide_hover(request: FeatureRequest<HoverParams>) -> Option<Hover> {
-    let items = get_items_from_position(
-        &request.store,
+    let items = &request.store.get_items_from_position(
         request.params.text_document_position_params.position,
         request
             .params

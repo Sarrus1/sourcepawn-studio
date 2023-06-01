@@ -2,13 +2,10 @@ use std::collections::HashMap;
 
 use lsp_types::{RenameParams, TextEdit, WorkspaceEdit};
 
-use crate::spitem::get_items_from_position;
-
 use super::FeatureRequest;
 
 pub fn provide_rename(request: FeatureRequest<RenameParams>) -> Option<WorkspaceEdit> {
-    let items = get_items_from_position(
-        &request.store,
+    let items = &request.store.get_items_from_position(
         request.params.text_document_position.position,
         request
             .params

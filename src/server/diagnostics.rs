@@ -3,7 +3,7 @@ use lsp_types::{
     MessageType, PublishDiagnosticsParams, ShowMessageParams,
 };
 
-use crate::{spitem::get_all_items, Server};
+use crate::Server;
 
 use super::InternalMessage;
 
@@ -39,7 +39,7 @@ impl Server {
     /// Lint all documents with the custom linter.
     pub fn lint_all_documents(&mut self) {
         self.store.clear_all_global_diagnostics();
-        let all_items_flat = get_all_items(&self.store, true);
+        let all_items_flat = self.store.get_all_items(true);
         self.store.get_deprecated_diagnostics(&all_items_flat);
         let _ = self.publish_diagnostics();
     }

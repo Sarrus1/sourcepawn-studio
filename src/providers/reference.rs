@@ -1,7 +1,5 @@
 use lsp_types::{Location, ReferenceParams};
 
-use crate::spitem::get_items_from_position;
-
 use super::FeatureRequest;
 
 /// Build a vector of [Locations](lsp_types::Location) from a [ReferenceParams](lsp_types::ReferenceParams).
@@ -10,8 +8,7 @@ use super::FeatureRequest;
 ///
 /// * `request` - Reference request object [FeatureRequest<ReferenceParams>].
 pub fn provide_reference(request: FeatureRequest<ReferenceParams>) -> Option<Vec<Location>> {
-    let items = get_items_from_position(
-        &request.store,
+    let items = &request.store.get_items_from_position(
         request.params.text_document_position.position,
         request
             .params
