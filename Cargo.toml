@@ -37,7 +37,7 @@ tempfile = "3.4.0"
 clap = { version = "4.1.13", features = ["derive"] }
 fern = "0.6.2"
 humantime = "2.1.0"
-sourcepawn_lexer = { path = "src/sourcepawn_lexer", version = "0.1.0" }
+sourcepawn_lexer = "0.1.0"
 sentry = "0.31.3"
 strip_bom = "1.0.0"
 
