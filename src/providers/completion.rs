@@ -1,7 +1,11 @@
 use lsp_types::{CompletionList, CompletionParams};
+use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
 
-use crate::providers::completion::{
-    context::is_ctor_call, getters::get_ctor_completions, include::get_include_completions,
+use crate::{
+    providers::completion::{
+        context::is_ctor_call, getters::get_ctor_completions, include::get_include_completions,
+    },
+    utils,
 };
 
 use self::{
@@ -26,10 +30,17 @@ pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<
     let line = document.line(position.line)?;
     let pre_line: String = line.chars().take(position.character as usize).collect();
 
-    let lexer_literal = document.get_lexer_state(position);
-    if lexer_literal.is_some() {
-        // TODO: Return only define statements here if in a preprocessor statement.
-        return None;
+    let lexer = SourcepawnLexer::new(&document.text);
+    for token in lexer {
+        if utils::range_contains_pos(token.range, position) {
+            match token.token_kind {
+                TokenKind::Literal(_) | TokenKind::Comment(_) => return None,
+                _ => (),
+            }
+        }
+        if token.range.start.line > position.line {
+            break;
+        }
     }
 
     if let Some(trigger_char) = line.chars().last() {

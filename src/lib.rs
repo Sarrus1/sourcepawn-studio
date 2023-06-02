@@ -3,7 +3,6 @@ mod client;
 mod dispatch;
 mod document;
 mod environment;
-mod lexer;
 mod line_index;
 mod line_index_ext;
 mod linter;
