@@ -7,10 +7,10 @@
     <a href="https://github.com/Sarrus1/sourcepawn-lsp/releases/latest">
         <img src="https://img.shields.io/github/downloads/Sarrus1/sourcepawn-lsp/total"/>
     </a>
-    <a href="https://github.com/Sarrus1/sourcepawn-lsp/actions/workflows/release.yml">
+    <a href="https://github.com/Sarrus1/sourcepawn-lsp/actions/workflows/check_lint.yml">
       <img
-        alt="Github release status"
-        src="https://github.com/Sarrus1/sourcepawn-lsp/actions/workflows/release.yml/badge.svg"
+        alt="CI status"
+        src="https://github.com/Sarrus1/sourcepawn-lsp/actions/workflows/check_lint.yml/badge.svg"
       />
     </a>
     <a href="https://github.com/Sarrus1/sourcepawn-lsp/releases/latest">

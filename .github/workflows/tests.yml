@@ -9,21 +9,9 @@ on:
             - main
 
 jobs:
-    # skip ci if the last commit contains the appropriate tag
-    skip-commit:
-        name: Conditionally skip ci
-        runs-on: ubuntu-latest
-        steps:
-            - if: "contains(github.event.head_commit.message, '[skip-ci]')
-                  || contains(github.event.head_commit.message, '[skip ci]')
-                  || contains(github.event.head_commit.message, '[ci-skip]')
-                  || contains(github.event.head_commit.message, '[ci skip]')"
-              run: exit 78
-
     # verify that Cargo.lock passes audit
     cargo-audit:
         name: Run cargo audit
-        needs: [skip-commit]
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v2
@@ -45,39 +33,3 @@ jobs:
                   args: --root ${{ runner.tool_cache }}/cargo-audit --force cargo-audit
             - run: echo "${{ runner.tool_cache }}/cargo-audit/bin" >> $GITHUB_PATH
             - run: cargo audit
-
-    # verify that project passes clippy lints
-    cargo-clippy:
-        name: Run cargo clippy
-        needs: [skip-commit]
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v2
-            - run: rustup component add clippy
-            - uses: actions-rs/clippy-check@v1
-              with:
-                  token: ${{ secrets.GITHUB_TOKEN }}
-                  args: --all-features
-
-    # verify that code is formatted
-    cargo-fmt:
-        name: Run cargo fmt
-        needs: [skip-commit]
-        runs-on: ubuntu-latest
-        env:
-            RUST_TOOLCHAIN: nightly
-        steps:
-            - uses: actions/checkout@v2
-            - name: Install Rust toolchain
-              uses: actions-rs/toolchain@v1
-              with:
-                  toolchain: ${{ env.RUST_TOOLCHAIN }}
-                  profile: minimal
-                  override: true
-                  components: rustfmt
-            - name: Run cargo fmt
-              uses: actions-rs/cargo@v1
-              with:
-                  toolchain: ${{ env.RUST_TOOLCHAIN }}
-                  command: fmt
-                  args: --all -- --check
