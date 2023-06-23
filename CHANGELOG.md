@@ -1,5 +1,15 @@
 ## Release Notes
 
+## [5.3.11]
+
+### Added
+
+- Switched to a WebAssembly linter and formatter for keyvalues.
+
+### Fixed
+
+- Fixed improper installation of the LSP.
+
 ## [5.3.10]
 
 ### Fixed

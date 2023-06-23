@@ -10,6 +10,7 @@ import {
   getLatestVersionName,
   run as installLanguageServerCommand,
 } from "./Commands/installLanguageServer";
+import { execFileSync } from "child_process";
 
 export type CommandFactory = {
   enabled: (ctx: CtxInit) => Cmd;
@@ -72,11 +73,30 @@ export class Ctx {
   }
 
   private async installLanguageServerIfAbsent() {
-    if (!existsSync(this._serverPath)) {
-      await installLanguageServerCommand(undefined);
-      const version = await getLatestVersionName();
-      this.state.updateServerVersion(version);
+    if (existsSync(this._serverPath)) {
+      try {
+        const version = this.getServerVersionFromBinary();
+        this.state.updateServerVersion(version);
+        return;
+      } catch {
+        // The language server is not properly installed.
+      }
     }
+    // Install the language server.
+    await installLanguageServerCommand(undefined);
+    try {
+      this.state.updateServerVersion(this.getServerVersionFromBinary());
+    } catch {
+      // The language server is not properly installed
+    }
+  }
+
+  private getServerVersionFromBinary() {
+    const versionOutput = execFileSync(this._serverPath, ["--version"]);
+    return versionOutput
+      .toString()
+      .trim()
+      .match(/^sourcepawn_lsp (\d+\.\d+\.\d+)$/)[1];
   }
 
   async checkForLanguageServerUpdate() {
@@ -302,7 +322,7 @@ export class Ctx {
       case "stopped":
         statusBar.tooltip.appendText("Server is stopped");
         statusBar.tooltip.appendMarkdown(
-          "\n\n[Start server](command:rust-analyzer.startServer)"
+          "\n\n[Start server](command:sourcepawn-vscode.startServer)"
         );
         statusBar.command = "sourcepawn-vscode.startServer";
         statusBar.color = undefined;
