@@ -9,5 +9,4 @@ dist/
 coverage/
 venv/
 chromedriver
-kvParser.ts
 languageServer/
