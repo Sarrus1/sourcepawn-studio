@@ -1,5 +1,17 @@
 const fs = require("fs");
+const path = require("path");
+
 const outDir = "./dist";
+
+const wasmPlugin = {
+  name: "wasmPlugin",
+  setup(_) {
+    const wasmPaths = ["./node_modules/valve_kv_tools/valve_kv_tools_bg.wasm"];
+    wasmPaths.forEach((wasmPath) => {
+      fs.copyFileSync(wasmPath, path.join(outDir, path.basename(wasmPath)));
+    });
+  },
+};
 
 const nativeNodeModulesPlugin = {
   name: "native-node-modules",
@@ -53,7 +65,7 @@ require("esbuild")
     external: ["vscode"],
     format: "cjs",
     platform: "node",
-    plugins: [nativeNodeModulesPlugin],
+    plugins: [wasmPlugin, nativeNodeModulesPlugin],
     watch: watch,
   })
   .catch(() => process.exit(1));

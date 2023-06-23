@@ -1,18 +1,22 @@
 ﻿import * as vscode from "vscode";
 
-import { parse, SyntaxError } from "./kvParser";
-import { KeyValue, ParserOutput, ParserRange } from "./kvParserInterfaces";
+import { KvErrorKind, lintKeyvalue, Range } from "valve_kv_tools";
 
 // Register and export the DiagnosticsCollection objects to be used by other modules.
 export const kvDiagnostics = vscode.languages.createDiagnosticCollection("kv");
 
 export function registerKVLinter(context: vscode.ExtensionContext) {
-  context.subscriptions.push(vscode.languages.createDiagnosticCollection("kv"));
+  context.subscriptions.push(kvDiagnostics);
   context.subscriptions.push(
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       if (editor) {
         refreshKVDiagnostics(editor.document);
       }
+    })
+  );
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeTextDocument((event) => {
+      refreshKVDiagnostics(event.document);
     })
   );
   context.subscriptions.push(
@@ -43,70 +47,39 @@ export async function refreshKVDiagnostics(document: vscode.TextDocument) {
   }
   kvDiagnostics.delete(document.uri);
 
-  let parsed: ParserOutput;
-  try {
-    parsed = parse(document.getText());
-  } catch (e) {
-    if (e instanceof SyntaxError) {
-      const range = new vscode.Range(
-        e.location.start.line - 1,
-        e.location.start.column - 1,
-        e.location.end.line - 1,
-        e.location.end.column - 1
-      );
-
-      const msg = e.name + " " + e.message;
-      const diag = new vscode.Diagnostic(range, msg);
-      kvDiagnostics.set(document.uri, [diag]);
+  const diagnostics: vscode.Diagnostic[] = [];
+  lintKeyvalue(document.getText()).forEach((e) => {
+    let severity: vscode.DiagnosticSeverity;
+    switch (e.kind) {
+      case KvErrorKind.SyntaxError:
+        severity = vscode.DiagnosticSeverity.Error;
+        break;
+      case KvErrorKind.DuplicateError:
+        severity = vscode.DiagnosticSeverity.Hint;
     }
-    return;
-  }
-  kvDiagnostics.set(document.uri, lookForDuplicates(parsed.keyvalues));
+    diagnostics.push({
+      range: rangeToVscodeRange(e.range),
+      message: e.message,
+      severity,
+    });
+    if (e.kind === KvErrorKind.DuplicateError) {
+      e.additionalRanges.forEach((range: Range) =>
+        diagnostics.push({
+          range: rangeToVscodeRange(range),
+          message: e.message,
+          severity: vscode.DiagnosticSeverity.Warning,
+        })
+      );
+    }
+  });
+  kvDiagnostics.set(document.uri, diagnostics);
 }
 
-function lookForDuplicates(keyvalues: KeyValue[]): vscode.Diagnostic[] {
-  const map = new Map<string, vscode.Range[]>();
-  let diagnostics: vscode.Diagnostic[] = [];
-  for (let keyvalue of keyvalues) {
-    const range = parserRangeToRange(keyvalue.key.loc);
-    const key = keyvalue.key.txt;
-    if (keyvalue.value.type === "section") {
-      diagnostics = diagnostics.concat(
-        lookForDuplicates(keyvalue.value.keyvalues)
-      );
-    }
-    const prevRanges = map.get(key);
-    if (prevRanges === undefined) {
-      map.set(key, [range]);
-      continue;
-    }
-    if (prevRanges.length === 1) {
-      // Add the first diagnostic.
-      diagnostics.push(
-        new vscode.Diagnostic(
-          prevRanges[0],
-          "Duplicate object key",
-          vscode.DiagnosticSeverity.Warning
-        )
-      );
-    }
-    prevRanges.push(range);
-    diagnostics.push(
-      new vscode.Diagnostic(
-        range,
-        "Duplicate object key",
-        vscode.DiagnosticSeverity.Warning
-      )
-    );
-  }
-  return diagnostics;
-}
-
-function parserRangeToRange(range: ParserRange): vscode.Range {
+function rangeToVscodeRange(range: Range): vscode.Range {
   return new vscode.Range(
-    range.start.line - 1,
-    range.start.column - 1,
-    range.end.line - 1,
-    range.end.column - 1
+    range.start.line,
+    range.start.character,
+    range.end.line,
+    range.end.character
   );
 }
