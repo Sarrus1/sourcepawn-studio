@@ -34,24 +34,26 @@ impl Store {
         for item in all_items_flat.iter() {
             if let Some(description) = item.read().unwrap().description() {
                 if let Some(deprecated) = description.deprecated {
-                    let document = self.documents.get_mut(&item.read().unwrap().uri()).unwrap();
-                    document.diagnostics.local_diagnostics.push(Diagnostic {
-                        range: item.read().unwrap().range(),
-                        message: format!("Deprecated {:?}", deprecated),
-                        severity: Some(DiagnosticSeverity::HINT),
-                        tags: Some(vec![DiagnosticTag::DEPRECATED]),
-                        ..Default::default()
-                    });
+                    if let Some(document) = self.documents.get_mut(&item.read().unwrap().uri()) {
+                        document.diagnostics.local_diagnostics.push(Diagnostic {
+                            range: item.read().unwrap().range(),
+                            message: format!("Deprecated {:?}", deprecated),
+                            severity: Some(DiagnosticSeverity::HINT),
+                            tags: Some(vec![DiagnosticTag::DEPRECATED]),
+                            ..Default::default()
+                        });
+                    }
                     if let Some(references) = item.read().unwrap().references() {
                         for reference in references.iter() {
-                            let document = self.documents.get_mut(&reference.uri).unwrap();
-                            document.diagnostics.local_diagnostics.push(Diagnostic {
-                                range: reference.range,
-                                message: format!("Deprecated {:?}", deprecated),
-                                severity: Some(DiagnosticSeverity::HINT),
-                                tags: Some(vec![DiagnosticTag::DEPRECATED]),
-                                ..Default::default()
-                            });
+                            if let Some(document) = self.documents.get_mut(&reference.uri) {
+                                document.diagnostics.local_diagnostics.push(Diagnostic {
+                                    range: reference.range,
+                                    message: format!("Deprecated {:?}", deprecated),
+                                    severity: Some(DiagnosticSeverity::HINT),
+                                    tags: Some(vec![DiagnosticTag::DEPRECATED]),
+                                    ..Default::default()
+                                });
+                            }
                         }
                     }
                 }

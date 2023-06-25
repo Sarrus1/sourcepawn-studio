@@ -1,9 +1,9 @@
+use anyhow::anyhow;
 use fxhash::{FxHashMap, FxHashSet};
 use lsp_types::Url;
 use std::{
     fs, io,
     path::{Path, PathBuf},
-    str::Utf8Error,
     sync::{Arc, Mutex, RwLock},
 };
 use tree_sitter::Parser;
@@ -93,7 +93,12 @@ impl Store {
     }
 
     pub fn load(&mut self, path: PathBuf, parser: &mut Parser) -> anyhow::Result<Option<Document>> {
-        let uri = Arc::new(Url::from_file_path(path.clone()).unwrap());
+        let uri = Arc::new(Url::from_file_path(&path).map_err(|err| {
+            anyhow!(
+                "Failed to convert path to URI while loading a file: {:?}",
+                err
+            )
+        })?);
 
         if let Some(document) = self.get(&uri) {
             return Ok(Some(document));
@@ -116,7 +121,12 @@ impl Store {
         path: PathBuf,
         parser: &mut Parser,
     ) -> anyhow::Result<Option<Document>> {
-        let uri = Arc::new(Url::from_file_path(path.clone()).unwrap());
+        let uri = Arc::new(Url::from_file_path(&path).map_err(|err| {
+            anyhow!(
+                "Failed to convert path to URI while reloading a file: {:?}",
+                err
+            )
+        })?);
 
         if !self.is_sourcepawn_file(&path) {
             return Ok(None);
@@ -318,9 +328,11 @@ impl Store {
         None
     }
 
-    pub fn parse(&mut self, document: &mut Document, parser: &mut Parser) -> Result<(), Utf8Error> {
+    pub fn parse(&mut self, document: &mut Document, parser: &mut Parser) -> anyhow::Result<()> {
         log::trace!("Parsing document {:?}", document.uri);
-        let tree = parser.parse(&document.preprocessed_text, None).unwrap();
+        let tree = parser
+            .parse(&document.preprocessed_text, None)
+            .ok_or(anyhow!("Failed to parse document {:?}", document.uri))?;
         let root_node = tree.root_node();
         let mut walker = Walker {
             comments: vec![],

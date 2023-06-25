@@ -41,8 +41,10 @@ impl Options {
 
     /// Return the [uri](lsp_types::Url) main path. [None] if it is empty. [Err] otherwise.
     pub fn get_main_path_uri(&self) -> anyhow::Result<Option<Url>> {
-        if self.main_path.to_str().unwrap().is_empty() {
-            return Ok(None);
+        if let Some(main_path_str) = self.main_path.to_str() {
+            if main_path_str.is_empty() {
+                return Ok(None);
+            }
         }
         if !self.main_path.exists() || !self.main_path.is_file() {
             return Err(anyhow::anyhow!("Main path does not exist."));

@@ -119,9 +119,16 @@ impl Server {
         for uri in uris.iter() {
             let document = self.store.get(uri);
             if let Some(document) = document {
-                self.store
-                    .handle_open_document(&document.uri, document.text, &mut self.parser)
-                    .unwrap();
+                match self.store.handle_open_document(
+                    &document.uri,
+                    document.text,
+                    &mut self.parser,
+                ) {
+                    Ok(_) => {}
+                    Err(error) => {
+                        log::error!("Error while parsing file: {}", error);
+                    }
+                }
             }
         }
     }

@@ -1,5 +1,6 @@
 use std::{env, fs, path::PathBuf, process::Command};
 
+use anyhow::{anyhow, Context};
 use fxhash::FxHashMap;
 use lazy_static::lazy_static;
 use lsp_types::{Diagnostic, DiagnosticSeverity, Position, Range, Url};
@@ -91,9 +92,15 @@ impl Store {
         &mut self,
         uri: Url,
     ) -> anyhow::Result<FxHashMap<Url, Vec<SPCompDiagnostic>>> {
-        let output = Command::new(self.environment.options.spcomp_path.to_str().unwrap())
-            .args(self.build_args(&uri))
-            .output();
+        let output = Command::new(
+            self.environment
+                .options
+                .spcomp_path
+                .to_str()
+                .context("Failed to convert spcomp path to string.")?,
+        )
+        .args(self.build_args(&uri)?)
+        .output();
         let out_path = self.get_out_path();
         if out_path.exists() {
             let _ = fs::remove_file(out_path);
@@ -126,26 +133,45 @@ impl Store {
     /// # Arguments
     ///
     /// * `uri` - [Uri](Url) of the file to compile.
-    fn build_args(&mut self, uri: &Url) -> Vec<String> {
-        let file_path = uri.to_file_path().unwrap();
-        let mut args = vec![file_path.to_str().unwrap().to_string()];
-        for includes_directory in self.environment.options.includes_directories.iter() {
-            args.push(format!("-i{}", includes_directory.to_str().unwrap()));
-        }
-        let parent_path = file_path.parent().unwrap();
-        args.push(format!("-i{}", parent_path.to_str().unwrap()));
-        let include_path = parent_path.join("include");
-        if include_path.exists() {
-            args.push(format!("-i{}", include_path.to_str().unwrap()));
+    fn build_args(&mut self, uri: &Url) -> anyhow::Result<Vec<String>> {
+        let file_path = uri.to_file_path().map_err(|_| {
+            anyhow::anyhow!("Failed to convert uri to file path: {}", uri.to_string())
+        })?;
+        let mut args = vec![file_path
+            .to_str()
+            .ok_or_else(|| anyhow!("Failed to get file extension."))?
+            .to_string()];
+        args.extend(
+            self.environment
+                .options
+                .includes_directories
+                .iter()
+                .flat_map(|includes_directory| {
+                    includes_directory
+                        .to_str()
+                        .map(|includes_directory| format!("-i{}", includes_directory))
+                }),
+        );
+        if let Some(parent_path) = file_path.parent() {
+            if let Some(parent_path_str) = parent_path.to_str() {
+                args.push(format!("-i{}", parent_path_str));
+            }
+            let include_path = parent_path.join("include");
+            if include_path.exists() {
+                if let Some(include_path_str) = include_path.to_str() {
+                    args.push(format!("-i{}", include_path_str));
+                }
+            }
         }
 
-        args.push(format!("-o{}", self.get_out_path().to_str().unwrap()));
-
+        if let Some(out_path_str) = self.get_out_path().to_str() {
+            args.push(format!("-o{}", out_path_str));
+        }
         args.push("--syntax-only".to_string());
 
         args.extend(self.environment.options.linter_arguments.clone());
 
-        args
+        Ok(args)
     }
 
     /// Generate a temporary path for the output of spcomp. This is not needed with the `--syntax-only` switch.
@@ -176,7 +202,7 @@ fn parse_spcomp_errors(stdout: &str) -> Vec<SPCompDiagnostic> {
         static ref RE: Regex = Regex::new(
             r"([:/\\A-Za-z\-_0-9. ]*)\((\d+)+\) : ((error|fatal error|warning) ([0-9]*)):\s+(.*)"
         )
-        .unwrap();
+        .expect("Failed to compile spcomp error regex.");
     }
     RE.captures_iter(stdout)
         .flat_map(SPCompDiagnostic::from_spcomp_captures)

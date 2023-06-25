@@ -15,8 +15,9 @@ pub mod variable_parser;
 
 lazy_static! {
     static ref VARIABLE_QUERY: Query = {
-        Query::new(tree_sitter_sourcepawn::language(), "[(variable_declaration_statement) @declaration.variable (old_variable_declaration_statement)  @declaration.variable]").unwrap()
+        Query::new(tree_sitter_sourcepawn::language(), "[(variable_declaration_statement) @declaration.variable (old_variable_declaration_statement)  @declaration.variable]").expect("Could not build variable query.")
     };
     pub(crate) static ref ERROR_QUERY: Query =
-        Query::new(tree_sitter_sourcepawn::language(), "(ERROR) @error").unwrap();
+        Query::new(tree_sitter_sourcepawn::language(), "(ERROR) @error")
+            .expect("Could not build error query.");
 }

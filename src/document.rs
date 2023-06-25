@@ -25,7 +25,7 @@ lazy_static! {
             tree_sitter_sourcepawn::language(),
             "[(symbol) @symbol (this) @symbol]",
         )
-        .unwrap()
+        .expect("Could not build symbols query.")
     };
 }
 
@@ -34,7 +34,7 @@ lazy_static! {
         tree_sitter_sourcepawn::language(),
         "[(field_access) @method] (scope_access) @method (array_scope_access) @method",
     )
-    .unwrap();
+    .expect("Could not build methods query.");
 }
 
 #[derive(Debug, Clone)]
@@ -52,7 +52,10 @@ pub(crate) struct Token {
 impl Token {
     pub fn new(node: Node, source: &String) -> Self {
         Self {
-            text: node.utf8_text(source.as_bytes()).unwrap().to_string(),
+            text: node
+                .utf8_text(source.as_bytes())
+                .unwrap_or_default()
+                .to_string(),
             range: ts_range_to_lsp_range(&node.range()),
         }
     }
