@@ -1,4 +1,4 @@
-use crate::{capabilities::ClientCapabilitiesExt, dispatch, utils};
+use crate::{capabilities::ClientCapabilitiesExt, dispatch, document::Document, utils};
 use std::sync::Arc;
 
 use crate::Server;
@@ -13,16 +13,20 @@ use lsp_types::{
 
 impl Server {
     pub(super) fn did_open(&mut self, mut params: DidOpenTextDocumentParams) -> anyhow::Result<()> {
-        if !self.config_pulled {
-            return Ok(());
-        }
         utils::normalize_uri(&mut params.text_document.uri);
         let uri = Arc::new(params.text_document.uri);
 
+        if !self.config_pulled {
+            log::trace!("File {:?} was opened before the config was pulled.", uri);
+            self.store
+                .documents
+                .insert(uri.clone(), Document::new(uri, params.text_document.text));
+            return Ok(());
+        }
+
         // Don't parse the document if it has already been opened.
         // GoToDefinition request will trigger a new parse.
-        let document = self.store.documents.get(&uri);
-        if let Some(document) = document {
+        if let Some(document) = self.store.documents.get(&uri) {
             if document.parsed {
                 return Ok(());
             }

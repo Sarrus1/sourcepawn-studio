@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.10.11]
+
+### Fixed
+
+-   Fixed a crash when loading files that were not yet saved to disk (see #31).
+
 ## [0.10.10]
 
 ### Fixed
