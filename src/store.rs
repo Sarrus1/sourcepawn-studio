@@ -1,6 +1,7 @@
 use anyhow::anyhow;
 use fxhash::{FxHashMap, FxHashSet};
 use lsp_types::Url;
+use sourcepawn_preprocessor::{preprocessor::Macro, SourcepawnPreprocessor};
 use std::{
     fs, io,
     path::{Path, PathBuf},
@@ -14,7 +15,6 @@ use crate::{
     environment::Environment,
     parser::include_parser::add_include,
     semantic_analyzer::purge_references,
-    sourcepawn_preprocessor::{preprocessor::Macro, SourcepawnPreprocessor},
     spitem::SPItem,
     utils::{normalize_uri, read_to_string_lossy},
 };
@@ -279,13 +279,24 @@ impl Store {
         document.being_preprocessed = true;
         let mut preprocessor = SourcepawnPreprocessor::new(document.uri.clone(), &document.text);
         let preprocessed_text = preprocessor
-            .preprocess_input(self)
+            .preprocess_input(
+                &mut (|macros: &mut FxHashMap<String, Macro>, path: String, document_uri: &Url| {
+                    self.extend_macros(macros, path, document_uri);
+                }),
+            )
             .unwrap_or_else(|_| document.text.clone());
         document.preprocessed_text = preprocessed_text;
         document.macros = preprocessor.macros.clone();
         document.offsets = preprocessor.offsets.clone();
         preprocessor.add_diagnostics(&mut document.diagnostics.local_diagnostics);
-        preprocessor.add_ignored_tokens(&mut document.macro_symbols);
+        document
+            .macro_symbols
+            .extend(preprocessor.evaluated_define_symbols.iter().map(|token| {
+                Arc::new(Token {
+                    text: token.text(),
+                    range: token.range,
+                })
+            }));
         document.being_preprocessed = false;
         log::trace!("Done preprocessing document {:?}", document.uri);
 
@@ -310,13 +321,26 @@ impl Store {
         if let Some(text) = self.get_text(&uri) {
             let mut preprocessor = SourcepawnPreprocessor::new(uri.clone(), &text);
             let preprocessed_text = preprocessor
-                .preprocess_input(self)
+                .preprocess_input(
+                    &mut (|macros: &mut FxHashMap<String, Macro>,
+                           path: String,
+                           document_uri: &Url| {
+                        self.extend_macros(macros, path, document_uri);
+                    }),
+                )
                 .unwrap_or_else(|_| text.clone());
             if let Some(document) = self.documents.get_mut(&uri) {
                 document.preprocessed_text = preprocessed_text;
                 document.macros = preprocessor.macros.clone();
                 preprocessor.add_diagnostics(&mut document.diagnostics.local_diagnostics);
-                preprocessor.add_ignored_tokens(&mut document.macro_symbols);
+                document
+                    .macro_symbols
+                    .extend(preprocessor.evaluated_define_symbols.iter().map(|token| {
+                        Arc::new(Token {
+                            text: token.text(),
+                            range: token.range,
+                        })
+                    }));
             }
             return Some(preprocessor.macros);
         }
@@ -326,6 +350,19 @@ impl Store {
         log::trace!("Done preprocessing document by uri {:?}", uri);
 
         None
+    }
+
+    pub(crate) fn extend_macros(
+        &mut self,
+        macros: &mut FxHashMap<String, Macro>,
+        mut path: String,
+        document_uri: &Url,
+    ) {
+        if let Some(include_uri) = self.resolve_import(&mut path, &Arc::new(document_uri.clone())) {
+            if let Some(include_macros) = self.preprocess_document_by_uri(Arc::new(include_uri)) {
+                macros.extend(include_macros);
+            }
+        }
     }
 
     pub fn parse(&mut self, document: &mut Document, parser: &mut Parser) -> anyhow::Result<()> {

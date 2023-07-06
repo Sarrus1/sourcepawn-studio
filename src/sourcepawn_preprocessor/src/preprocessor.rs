@@ -7,8 +7,6 @@ use lsp_types::{Diagnostic, Position, Range, Url};
 use regex::Regex;
 use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
 
-use crate::{document::Token, store::Store};
-
 use super::{
     errors::{EvaluationError, ExpansionError, MacroNotFoundError},
     evaluator::IfCondition,
@@ -23,31 +21,31 @@ enum ConditionState {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct Offset {
-    pub(crate) col: u32,
-    pub(crate) diff: i32,
+pub struct Offset {
+    pub col: u32,
+    pub diff: i32,
 }
 
 #[derive(Debug, Clone)]
 pub struct SourcepawnPreprocessor<'a> {
     pub(super) lexer: SourcepawnLexer<'a>,
-    pub(crate) macros: FxHashMap<String, Macro>,
+    pub macros: FxHashMap<String, Macro>,
     pub(super) expansion_stack: Vec<Symbol>,
     skip_line_start_col: u32,
     skipped_lines: Vec<lsp_types::Range>,
     pub(self) macro_not_found_errors: Vec<MacroNotFoundError>,
     pub(self) evaluation_errors: Vec<EvaluationError>,
-    pub(self) evaluated_define_symbols: Vec<Symbol>,
+    pub evaluated_define_symbols: Vec<Symbol>,
     document_uri: Arc<Url>,
     current_line: String,
     prev_end: u32,
     conditions_stack: Vec<ConditionState>,
     out: Vec<String>,
-    pub(crate) offsets: FxHashMap<u32, Vec<Offset>>,
+    pub offsets: FxHashMap<u32, Vec<Offset>>,
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct Macro {
+pub struct Macro {
     pub(crate) args: Option<Vec<i8>>,
     pub(crate) body: Vec<Symbol>,
 }
@@ -72,16 +70,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }
     }
 
-    pub(crate) fn add_ignored_tokens(&self, tokens: &mut Vec<Arc<Token>>) {
-        for symbol in self.evaluated_define_symbols.iter() {
-            tokens.push(Arc::new(Token {
-                text: symbol.text(),
-                range: symbol.range,
-            }));
-        }
-    }
-
-    pub(crate) fn add_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
+    pub fn add_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
         self.get_disabled_diagnostics(diagnostics);
         self.get_macro_not_found_diagnostics(diagnostics);
         self.get_evaluation_error_diagnostics(diagnostics);
@@ -132,7 +121,10 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }));
     }
 
-    pub fn preprocess_input(&mut self, store: &mut Store) -> anyhow::Result<String> {
+    pub fn preprocess_input<F>(&mut self, include_file: &mut F) -> anyhow::Result<String>
+    where
+        F: FnMut(&mut FxHashMap<String, Macro>, String, &Url),
+    {
         let mut col_offset: Option<i32> = None;
         let mut expanded_symbol: Option<Symbol> = None;
         while let Some(symbol) = if !self.expansion_stack.is_empty() {
@@ -173,7 +165,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
             }
             match &symbol.token_kind {
                 TokenKind::Unknown => Err(anyhow!("Unknown token: {:#?}", symbol.range))?,
-                TokenKind::PreprocDir(dir) => self.process_directive(store, dir, &symbol)?,
+                TokenKind::PreprocDir(dir) => self.process_directive(include_file, dir, &symbol)?,
                 TokenKind::Newline => {
                     self.push_ws(&symbol);
                     self.push_current_line();
@@ -296,12 +288,15 @@ impl<'a> SourcepawnPreprocessor<'a> {
         Ok(())
     }
 
-    fn process_directive(
+    fn process_directive<F>(
         &mut self,
-        store: &mut Store,
+        include_file: &mut F,
         dir: &PreprocDir,
         symbol: &Symbol,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<()>
+    where
+        F: FnMut(&mut FxHashMap<String, Macro>, String, &Url),
+    {
         match dir {
             PreprocDir::MIf => self.process_if_directive(symbol),
             PreprocDir::MElseif => {
@@ -432,30 +427,20 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 // TODO: Squash this into one regex.
                 if let Some(caps) = RE1.captures(&text) {
                     if let Some(path) = caps.get(1) {
-                        let mut path = path.as_str().to_string();
-                        if let Some(include_uri) =
-                            store.resolve_import(&mut path, &self.document_uri)
-                        {
-                            if let Some(include_macros) =
-                                store.preprocess_document_by_uri(Arc::new(include_uri))
-                            {
-                                self.macros.extend(include_macros);
-                            }
-                        }
+                        include_file(
+                            &mut self.macros,
+                            path.as_str().to_string(),
+                            &self.document_uri,
+                        );
                     }
                 };
                 if let Some(caps) = RE2.captures(&text) {
                     if let Some(path) = caps.get(1) {
-                        let mut path = path.as_str().to_string();
-                        if let Some(include_uri) =
-                            store.resolve_import(&mut path, &self.document_uri)
-                        {
-                            if let Some(include_macros) =
-                                store.preprocess_document_by_uri(Arc::new(include_uri))
-                            {
-                                self.macros.extend(include_macros);
-                            }
-                        }
+                        include_file(
+                            &mut self.macros,
+                            path.as_str().to_string(),
+                            &self.document_uri,
+                        );
                     }
                 };
 

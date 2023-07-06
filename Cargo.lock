@@ -1937,6 +1937,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sourcepawn_lexer",
+ "sourcepawn_preprocessor",
  "strip_bom",
  "tempfile",
  "threadpool",
@@ -1944,6 +1945,18 @@ dependencies = [
  "tree-sitter-sourcepawn",
  "uuid",
  "walkdir",
+]
+
+[[package]]
+name = "sourcepawn_preprocessor"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fxhash",
+ "lazy_static",
+ "lsp-types",
+ "regex",
+ "sourcepawn_lexer",
 ]
 
 [[package]]
