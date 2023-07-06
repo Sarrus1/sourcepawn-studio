@@ -14,7 +14,12 @@ mod test {
     use lsp_types::Url;
     use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
 
-    use crate::store::Store;
+    fn extend_macros(
+        _macros: &mut FxHashMap<String, Macro>,
+        mut _path: String,
+        _document_uri: &Url,
+    ) {
+    }
 
     use super::{evaluator::IfCondition, preprocessor::Macro, SourcepawnPreprocessor};
 
@@ -30,7 +35,7 @@ mod test {
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             input
         );
@@ -204,7 +209,7 @@ mod test {
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -228,7 +233,7 @@ mod test {
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -254,7 +259,7 @@ mod test {
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -284,7 +289,7 @@ mod test {
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -316,7 +321,7 @@ mod test {
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -342,7 +347,7 @@ int foo;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -368,7 +373,7 @@ int bar;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -408,7 +413,7 @@ public void OnPluginStart()
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -434,7 +439,7 @@ int foo;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -450,7 +455,7 @@ int foo;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -470,7 +475,7 @@ int foo = 1;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -498,7 +503,7 @@ int foo;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -520,7 +525,7 @@ int foo;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -542,7 +547,7 @@ int foo;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -566,7 +571,7 @@ int foo;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -590,7 +595,7 @@ int foo;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -616,7 +621,7 @@ int foo;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -640,7 +645,7 @@ int foo;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -668,7 +673,7 @@ int bar;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -696,7 +701,7 @@ int foo;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -728,7 +733,7 @@ int bar;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -760,7 +765,7 @@ int baz;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -796,7 +801,7 @@ int baz;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -816,7 +821,7 @@ int foo = 1;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -836,7 +841,7 @@ char foo[64] = "test";
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -856,7 +861,7 @@ int foo = 1;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -876,7 +881,7 @@ int foo = 1;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -898,7 +903,7 @@ int foo = 1;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -922,7 +927,7 @@ int bar;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -946,7 +951,7 @@ int bar;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -968,7 +973,7 @@ char foo[64] = "test expansion";
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -994,7 +999,7 @@ char foo[64] = "test expansion also";
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -1016,7 +1021,7 @@ int foo = 1 +   2;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -1040,7 +1045,7 @@ int foo = 1 + 2 + 3;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -1060,7 +1065,7 @@ int foo = 1 + 2;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -1080,7 +1085,7 @@ int foo = 2 %2;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -1102,7 +1107,7 @@ int foo = 1 + 2 + 3 + 4;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -1122,7 +1127,7 @@ int foo = 1 + 2;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -1138,7 +1143,7 @@ int foo = 1 + 2;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -1155,7 +1160,7 @@ int foo = 1 + 2;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );
@@ -1172,7 +1177,7 @@ int foo = 1 + 2;
                 Arc::new(Url::parse("https://example.net").unwrap()),
                 input
             )
-            .preprocess_input(&mut Store::new(false))
+            .preprocess_input(&mut extend_macros)
             .unwrap(),
             output
         );

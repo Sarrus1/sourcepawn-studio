@@ -12,7 +12,6 @@ mod parser;
 mod providers;
 mod semantic_analyzer;
 mod server;
-mod sourcepawn_preprocessor;
 mod spitem;
 mod store;
 #[cfg(test)]
