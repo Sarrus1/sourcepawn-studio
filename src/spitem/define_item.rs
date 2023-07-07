@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, DocumentSymbol,
-    GotoDefinitionParams, Hover, HoverContents, HoverParams, LanguageString, LocationLink,
-    MarkedString, Range, SymbolKind, SymbolTag, Url,
+    CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionItemTag,
+    CompletionParams, DocumentSymbol, GotoDefinitionParams, Hover, HoverContents, HoverParams,
+    LanguageString, LocationLink, MarkedString, Range, SymbolKind, SymbolTag, Url,
 };
 
 use crate::{providers::hover::description::Description, utils::uri_to_file_name};
@@ -57,7 +57,11 @@ impl DefineItem {
             label: self.name.to_string(),
             kind: Some(CompletionItemKind::CONSTANT),
             tags: Some(tags),
-            detail: uri_to_file_name(&self.uri),
+            label_details: Some(CompletionItemLabelDetails {
+                detail: None,
+                description: uri_to_file_name(&self.uri),
+            }),
+            data: Some(serde_json::Value::String(self.key())),
             ..Default::default()
         })
     }
@@ -70,7 +74,10 @@ impl DefineItem {
     pub(crate) fn to_hover(&self, _params: &HoverParams) -> Option<Hover> {
         Some(Hover {
             contents: HoverContents::Array(vec![
-                self.formatted_text(),
+                MarkedString::LanguageString(LanguageString {
+                    language: "sourcepawn".to_string(),
+                    value: self.formatted_text(),
+                }),
                 MarkedString::String(self.description.to_md()),
             ]),
             range: None,
@@ -120,12 +127,9 @@ impl DefineItem {
     /// # Exemple
     ///
     /// `#define FOO 1`
-    fn formatted_text(&self) -> MarkedString {
-        MarkedString::LanguageString(LanguageString {
-            language: "sourcepawn".to_string(),
-            value: format!("#define {} {}", self.name, self.value)
-                .trim()
-                .to_string(),
-        })
+    pub(crate) fn formatted_text(&self) -> String {
+        format!("#define {} {}", self.name, self.value)
+            .trim()
+            .to_string()
     }
 }

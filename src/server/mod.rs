@@ -5,11 +5,11 @@ use crossbeam_channel::{Receiver, Sender};
 use fxhash::FxHashMap;
 use lsp_server::{Connection, Message};
 use lsp_types::{
-    CallHierarchyServerCapability, CompletionOptions, HoverProviderCapability, InitializeParams,
-    OneOf, SemanticTokenModifier, SemanticTokenType, SemanticTokensFullOptions,
-    SemanticTokensLegend, SemanticTokensOptions, SemanticTokensServerCapabilities,
-    ServerCapabilities, SignatureHelpOptions, TextDocumentSyncCapability, TextDocumentSyncKind,
-    Url, WorkDoneProgressOptions,
+    CallHierarchyServerCapability, CompletionOptions, CompletionOptionsCompletionItem,
+    HoverProviderCapability, InitializeParams, OneOf, SemanticTokenModifier, SemanticTokenType,
+    SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
+    SemanticTokensServerCapabilities, ServerCapabilities, SignatureHelpOptions,
+    TextDocumentSyncCapability, TextDocumentSyncKind, Url, WorkDoneProgressOptions,
 };
 
 use threadpool::ThreadPool;
@@ -83,6 +83,10 @@ impl Server {
                     "$".to_string(),
                     "*".to_string(),
                 ]),
+                resolve_provider: Some(true),
+                completion_item: Some(CompletionOptionsCompletionItem {
+                    label_details_support: Some(true),
+                }),
                 ..Default::default()
             }),
             hover_provider: Some(HoverProviderCapability::Simple(true)),

@@ -172,6 +172,7 @@ impl Store {
                 continue;
             }
             if let Ok(mut uri) = Url::from_file_path(entry.path()) {
+                log::debug!("URI: {:?} path: {:?}", uri, entry.path());
                 normalize_uri(&mut uri);
                 if self.documents.contains_key(&uri) {
                     continue;

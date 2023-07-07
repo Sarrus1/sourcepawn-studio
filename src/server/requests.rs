@@ -7,7 +7,7 @@ use lsp_types::{
     request::{
         CallHierarchyIncomingCalls, CallHierarchyOutgoingCalls, CallHierarchyPrepare, Completion,
         DocumentSymbolRequest, GotoDefinition, HoverRequest, References, Rename,
-        SemanticTokensFullRequest, SignatureHelpRequest,
+        ResolveCompletionItem, SemanticTokensFullRequest, SignatureHelpRequest,
     },
     Url,
 };
@@ -34,6 +34,7 @@ impl Server {
         }
         if let Some(response) = dispatch::RequestDispatcher::new(request)
             .on::<Completion, _>(|id, params| self.completion(id, params))?
+            .on::<ResolveCompletionItem, _>(|id, params| self.resolve_completion_item(id, params))?
             .on::<HoverRequest, _>(|id, params| self.hover(id, params))?
             .on::<GotoDefinition, _>(|id, params| self.definition(id, params))?
             .on::<SemanticTokensFullRequest, _>(|id, params| self.semantic_tokens(id, params))?

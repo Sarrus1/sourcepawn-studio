@@ -1,4 +1,4 @@
-use lsp_types::{CompletionList, CompletionParams};
+use lsp_types::{CompletionItem, CompletionList, CompletionParams};
 use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
 
 use crate::{
@@ -22,7 +22,9 @@ mod getters;
 mod include;
 mod matchtoken;
 
-pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<CompletionList> {
+pub(crate) fn provide_completions(
+    request: FeatureRequest<CompletionParams>,
+) -> Option<CompletionList> {
     log::debug!("Providing completions with request: {:#?}", request.params);
     let document = request.store.get(&request.uri)?;
     let all_items = request.store.get_all_items(false);
@@ -100,6 +102,24 @@ pub fn provide_completions(request: FeatureRequest<CompletionParams>) -> Option<
                 return get_method_completions(all_items, &pre_line, position, request);
             }
         }
+    }
+
+    None
+}
+
+pub(crate) fn resolve_completion_item(
+    request: FeatureRequest<CompletionItem>,
+) -> Option<CompletionItem> {
+    let mut completion_item = request.params.clone();
+
+    if let Some(sp_item) = request
+        .store
+        .get_item_from_key(request.params.data?.to_string().replace('"', ""))
+    {
+        let sp_item = &*sp_item.read().unwrap();
+        completion_item.detail = Some(sp_item.formatted_text());
+        completion_item.documentation = Some(sp_item.documentation());
+        return Some(completion_item);
     }
 
     None

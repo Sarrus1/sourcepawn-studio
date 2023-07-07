@@ -76,4 +76,8 @@ impl IncludeItem {
             origin_selection_range: None,
         })
     }
+
+    pub(crate) fn formatted_text(&self) -> String {
+        format!("#include <{}>", self.name)
+    }
 }
