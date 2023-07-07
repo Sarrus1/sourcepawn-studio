@@ -2,8 +2,9 @@ use std::sync::{Arc, RwLock};
 
 use fxhash::FxHashSet;
 use lsp_types::{
-    CompletionItem, CompletionList, CompletionParams, DocumentSymbol, GotoDefinitionParams, Hover,
-    HoverParams, LocationLink, Position, Range, SignatureInformation, Url,
+    CompletionItem, CompletionList, CompletionParams, DocumentSymbol, Documentation,
+    GotoDefinitionParams, Hover, HoverParams, LocationLink, MarkupContent, Position, Range,
+    SignatureInformation, Url,
 };
 
 use crate::{
@@ -153,6 +154,38 @@ impl Store {
         log::trace!("Got {} item(s) from position", res.len());
 
         res
+    }
+
+    pub(crate) fn get_item_from_key(&self, key: String) -> Option<Arc<RwLock<SPItem>>> {
+        log::debug!("Getting item from key {:?}.", key);
+        let all_items = self.get_all_items(false);
+        let sub_keys: Vec<&str> = key.split('-').collect();
+        if sub_keys.is_empty() {
+            return None;
+        }
+        let mut current_item: Option<Arc<RwLock<SPItem>>> = None;
+        for key in sub_keys {
+            current_item = match current_item {
+                Some(item) => item.read().unwrap().children().and_then(|children| {
+                    children
+                        .iter()
+                        .find(|child| child.read().unwrap().name() == key)
+                        .cloned()
+                }),
+                None => all_items
+                    .iter()
+                    .find(|item| item.read().unwrap().name() == key)
+                    .cloned(),
+            };
+
+            if current_item.is_none() {
+                log::trace!("Did not find a match from key.");
+                return None;
+            }
+        }
+        log::debug!("Got {:#?} from key.", current_item);
+
+        current_item
     }
 }
 
@@ -441,6 +474,41 @@ impl SPItem {
             SPItem::Typedef(_) => None,
             SPItem::Typeset(_) => None,
             SPItem::Include(_) => None,
+        }
+    }
+
+    pub(crate) fn documentation(&self) -> Documentation {
+        Documentation::MarkupContent(MarkupContent {
+            kind: lsp_types::MarkupKind::Markdown,
+            value: match self {
+                SPItem::Variable(item) => item.description.to_md(),
+                SPItem::Function(item) => item.description.to_md(),
+                SPItem::Enum(item) => item.description.to_md(),
+                SPItem::EnumMember(item) => item.description.to_md(),
+                SPItem::EnumStruct(item) => item.description.to_md(),
+                SPItem::Define(item) => item.description.to_md(),
+                SPItem::Methodmap(item) => item.description.to_md(),
+                SPItem::Property(item) => item.description.to_md(),
+                SPItem::Typedef(item) => item.description.to_md(),
+                SPItem::Typeset(item) => item.description.to_md(),
+                SPItem::Include(_) => "".to_string(),
+            },
+        })
+    }
+
+    pub(crate) fn formatted_text(&self) -> String {
+        match self {
+            SPItem::Variable(item) => item.formatted_text(),
+            SPItem::Function(item) => item.formatted_text(),
+            SPItem::Enum(item) => item.formatted_text(),
+            SPItem::EnumMember(item) => item.formatted_text(),
+            SPItem::EnumStruct(item) => item.formatted_text(),
+            SPItem::Define(item) => item.formatted_text(),
+            SPItem::Methodmap(item) => item.formatted_text(),
+            SPItem::Property(item) => item.formatted_text(),
+            SPItem::Typedef(item) => item.formatted_text(),
+            SPItem::Typeset(item) => item.formatted_text(),
+            SPItem::Include(item) => item.formatted_text(),
         }
     }
 

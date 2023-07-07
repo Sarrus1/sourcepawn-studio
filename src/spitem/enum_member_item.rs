@@ -1,8 +1,9 @@
 use std::sync::{Arc, RwLock, Weak};
 
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, DocumentSymbol, Hover,
-    HoverContents, HoverParams, LanguageString, MarkedString, Range, SymbolKind, SymbolTag, Url,
+    CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionItemTag,
+    CompletionParams, DocumentSymbol, Hover, HoverContents, HoverParams, LanguageString,
+    MarkedString, Range, SymbolKind, SymbolTag, Url,
 };
 use lsp_types::{GotoDefinitionParams, LocationLink};
 
@@ -52,7 +53,22 @@ impl EnumMemberItem {
             label: self.name.clone(),
             kind: Some(CompletionItemKind::ENUM_MEMBER),
             tags: Some(tags),
-            detail: Some(self.parent.upgrade().unwrap().read().unwrap().name()),
+            label_details: Some(CompletionItemLabelDetails {
+                detail: None,
+                description: {
+                    let name = self.parent.upgrade().unwrap().read().unwrap().name();
+                    if name.starts_with("Enum#") {
+                        None
+                    } else {
+                        Some(format!(
+                            "{}::{}",
+                            self.parent.upgrade().unwrap().read().unwrap().name(),
+                            self.name
+                        ))
+                    }
+                },
+            }),
+            data: Some(serde_json::Value::String(self.key())),
             ..Default::default()
         })
     }
@@ -65,7 +81,10 @@ impl EnumMemberItem {
     pub(crate) fn to_hover(&self, _params: &HoverParams) -> Option<Hover> {
         Some(Hover {
             contents: HoverContents::Array(vec![
-                self.formatted_text(),
+                MarkedString::LanguageString(LanguageString {
+                    language: "sourcepawn".to_string(),
+                    value: self.formatted_text(),
+                }),
                 MarkedString::String(self.description.to_md()),
             ]),
             range: None,
@@ -115,7 +134,7 @@ impl EnumMemberItem {
     /// # Exemple
     ///
     /// `Plugin_Continue`
-    fn formatted_text(&self) -> MarkedString {
+    pub(crate) fn formatted_text(&self) -> String {
         let mut value = "".to_string();
         if let SPItem::Enum(parent) = &*self.parent.upgrade().unwrap().read().unwrap() {
             if parent.name.contains('#') {
@@ -124,9 +143,6 @@ impl EnumMemberItem {
                 value = format!("{}::{}", parent.name, self.name);
             }
         }
-        MarkedString::LanguageString(LanguageString {
-            language: "sourcepawn".to_string(),
-            value,
-        })
+        value
     }
 }

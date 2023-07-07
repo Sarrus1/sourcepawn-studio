@@ -2,9 +2,9 @@ use std::sync::{Arc, RwLock};
 
 use super::{Location, SPItem};
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionParams, DocumentSymbol, GotoDefinitionParams,
-    Hover, HoverContents, HoverParams, LanguageString, LocationLink, MarkedString, Range,
-    SymbolKind, SymbolTag, Url,
+    CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionParams,
+    DocumentSymbol, GotoDefinitionParams, Hover, HoverContents, HoverParams, LanguageString,
+    LocationLink, MarkedString, Range, SymbolKind, SymbolTag, Url,
 };
 
 use crate::{providers::hover::description::Description, utils::uri_to_file_name};
@@ -57,7 +57,15 @@ impl EnumStructItem {
         res.push(CompletionItem {
             label: self.name.to_string(),
             kind: Some(CompletionItemKind::STRUCT),
-            detail: uri_to_file_name(&self.uri),
+            label_details: Some(CompletionItemLabelDetails {
+                detail: None,
+                description: if *self.uri != params.text_document_position.text_document.uri {
+                    uri_to_file_name(&self.uri)
+                } else {
+                    None
+                },
+            }),
+            data: Some(serde_json::Value::String(self.key())),
             ..Default::default()
         });
 
@@ -76,7 +84,10 @@ impl EnumStructItem {
     pub(crate) fn to_hover(&self, _params: &HoverParams) -> Option<Hover> {
         Some(Hover {
             contents: HoverContents::Array(vec![
-                self.formatted_text(),
+                MarkedString::LanguageString(LanguageString {
+                    language: "sourcepawn".to_string(),
+                    value: self.formatted_text(),
+                }),
                 MarkedString::String(self.description.to_md()),
             ]),
             range: None,
@@ -131,10 +142,7 @@ impl EnumStructItem {
     /// # Exemple
     ///
     /// `enum struct Action`
-    fn formatted_text(&self) -> MarkedString {
-        MarkedString::LanguageString(LanguageString {
-            language: "sourcepawn".to_string(),
-            value: format!("enum struct {}", self.name),
-        })
+    pub(crate) fn formatted_text(&self) -> String {
+        format!("enum struct {}", self.name)
     }
 }

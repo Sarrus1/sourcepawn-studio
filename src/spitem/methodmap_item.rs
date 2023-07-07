@@ -2,9 +2,9 @@ use std::sync::{Arc, RwLock};
 
 use super::Location;
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionParams, DocumentSymbol, GotoDefinitionParams,
-    Hover, HoverContents, HoverParams, LanguageString, LocationLink, MarkedString, Range,
-    SymbolKind, SymbolTag, Url,
+    CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionParams,
+    DocumentSymbol, GotoDefinitionParams, Hover, HoverContents, HoverParams, LanguageString,
+    LocationLink, MarkedString, Range, SymbolKind, SymbolTag, Url,
 };
 
 use crate::{providers::hover::description::Description, utils::uri_to_file_name};
@@ -66,7 +66,15 @@ impl MethodmapItem {
         res.push(CompletionItem {
             label: self.name.to_string(),
             kind: Some(CompletionItemKind::CLASS),
-            detail: uri_to_file_name(&self.uri),
+            label_details: Some(CompletionItemLabelDetails {
+                detail: None,
+                description: if *self.uri != params.text_document_position.text_document.uri {
+                    uri_to_file_name(&self.uri)
+                } else {
+                    None
+                },
+            }),
+            data: Some(serde_json::Value::String(self.key())),
             ..Default::default()
         });
 
@@ -85,7 +93,10 @@ impl MethodmapItem {
     pub(crate) fn to_hover(&self, _params: &HoverParams) -> Option<Hover> {
         Some(Hover {
             contents: HoverContents::Array(vec![
-                self.formatted_text(),
+                MarkedString::LanguageString(LanguageString {
+                    language: "sourcepawn".to_string(),
+                    value: self.formatted_text(),
+                }),
                 MarkedString::String(self.description.to_md()),
             ]),
             range: None,
@@ -153,7 +164,7 @@ impl MethodmapItem {
     /// # Exemple
     ///
     /// `methodmap Foo < Bar`
-    fn formatted_text(&self) -> MarkedString {
+    pub(crate) fn formatted_text(&self) -> String {
         let mut suffix = "".to_string();
         if self.parent.is_some() {
             suffix = format!(
@@ -161,11 +172,8 @@ impl MethodmapItem {
                 self.parent.as_ref().unwrap().read().unwrap().name()
             );
         }
-        MarkedString::LanguageString(LanguageString {
-            language: "sourcepawn".to_string(),
-            value: format!("methodmap {}{}", self.name, suffix)
-                .trim()
-                .to_string(),
-        })
+        format!("methodmap {}{}", self.name, suffix)
+            .trim()
+            .to_string()
     }
 }

@@ -2,9 +2,9 @@ use std::sync::{Arc, RwLock, Weak};
 
 use super::Location;
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, DocumentSymbol,
-    GotoDefinitionParams, Hover, HoverContents, HoverParams, LanguageString, LocationLink,
-    MarkedString, Range, SymbolKind, SymbolTag, Url,
+    CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionItemTag,
+    CompletionParams, DocumentSymbol, GotoDefinitionParams, Hover, HoverContents, HoverParams,
+    LanguageString, LocationLink, MarkedString, Range, SymbolKind, SymbolTag, Url,
 };
 
 use crate::{providers::hover::description::Description, utils::range_contains_pos};
@@ -85,10 +85,15 @@ impl VariableItem {
                         label: self.name.to_string(),
                         kind: Some(CompletionItemKind::VARIABLE),
                         tags: Some(tags),
+                        label_details: Some(CompletionItemLabelDetails {
+                            detail: Some(self.type_.clone()),
+                            description: Some("local".to_string()),
+                        }),
+                        data: Some(serde_json::Value::String(self.key())),
                         ..Default::default()
                     })
                 }
-                SPItem::EnumStruct(_) => {
+                SPItem::EnumStruct(parent) => {
                     // Don't return a field if non method items are requested.
                     if !request_method {
                         return None;
@@ -97,6 +102,11 @@ impl VariableItem {
                         label: self.name.to_string(),
                         kind: Some(CompletionItemKind::FIELD),
                         tags: Some(tags),
+                        label_details: Some(CompletionItemLabelDetails {
+                            detail: Some(self.type_.clone()),
+                            description: Some(format!("{}::{}", parent.name, self.name)),
+                        }),
+                        data: Some(serde_json::Value::String(self.key())),
                         ..Default::default()
                     })
                 }
@@ -109,6 +119,11 @@ impl VariableItem {
                 label: self.name.to_string(),
                 kind: Some(CompletionItemKind::VARIABLE),
                 tags: Some(tags),
+                label_details: Some(CompletionItemLabelDetails {
+                    detail: Some(self.type_.clone()),
+                    description: Some("global".to_string()),
+                }),
+                data: Some(serde_json::Value::String(self.key())),
                 ..Default::default()
             }),
         }
@@ -122,7 +137,10 @@ impl VariableItem {
     pub(crate) fn to_hover(&self, _params: &HoverParams) -> Option<Hover> {
         Some(Hover {
             contents: HoverContents::Array(vec![
-                self.formatted_text(),
+                MarkedString::LanguageString(LanguageString {
+                    language: "sourcepawn".to_string(),
+                    value: self.formatted_text(),
+                }),
                 MarkedString::String(self.description.to_md()),
             ]),
             range: None,
@@ -185,7 +203,7 @@ impl VariableItem {
     /// # Exemple
     ///
     /// `int foo;`
-    fn formatted_text(&self) -> MarkedString {
+    pub(crate) fn formatted_text(&self) -> String {
         let mut visibility = "".to_string();
         for vis in self.visibility.iter() {
             visibility.push_str(vis.to_string());
@@ -197,12 +215,9 @@ impl VariableItem {
             storage_class.push(' ');
         }
         let prefix = format!("{}{}", visibility, storage_class);
-        MarkedString::LanguageString(LanguageString {
-            language: "sourcepawn".to_string(),
-            value: format!("{} {} {};", prefix.trim(), self.type_, self.name)
-                .trim()
-                .to_string(),
-        })
+        format!("{} {} {};", prefix.trim(), self.type_, self.name)
+            .trim()
+            .to_string()
     }
 }
 

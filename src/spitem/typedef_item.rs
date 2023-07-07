@@ -2,12 +2,13 @@ use std::sync::{Arc, RwLock};
 
 use super::{parameter::Parameter, Location};
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, CompletionTextEdit,
-    DocumentSymbol, GotoDefinitionParams, Hover, HoverContents, HoverParams, InsertTextFormat,
-    LanguageString, LocationLink, MarkedString, Range, SymbolKind, SymbolTag, TextEdit, Url,
+    CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionItemTag,
+    CompletionParams, CompletionTextEdit, DocumentSymbol, GotoDefinitionParams, Hover,
+    HoverContents, HoverParams, InsertTextFormat, LanguageString, LocationLink, MarkedString,
+    Range, SymbolKind, SymbolTag, TextEdit, Url,
 };
 
-use crate::providers::hover::description::Description;
+use crate::{providers::hover::description::Description, utils::uri_to_file_name};
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a SourcePawn typedef/functag, which can be converted to a
@@ -57,7 +58,7 @@ impl TypedefItem {
     /// # Arguments
     ///
     /// * `_params` - [CompletionParams](lsp_types::CompletionParams) of the request.
-    pub(crate) fn to_completion(&self, _params: &CompletionParams) -> Option<CompletionItem> {
+    pub(crate) fn to_completion(&self, params: &CompletionParams) -> Option<CompletionItem> {
         let mut tags = vec![];
         if self.is_deprecated() {
             tags.push(CompletionItemTag::DEPRECATED);
@@ -67,8 +68,16 @@ impl TypedefItem {
             label: self.name.to_string(),
             kind: Some(CompletionItemKind::INTERFACE),
             tags: Some(tags),
-            detail: Some(self.type_.to_string()),
+            label_details: Some(CompletionItemLabelDetails {
+                detail: None,
+                description: if *self.uri != params.text_document_position.text_document.uri {
+                    uri_to_file_name(&self.uri)
+                } else {
+                    None
+                },
+            }),
             deprecated: Some(self.is_deprecated()),
+            data: Some(serde_json::Value::String(self.key())),
             ..Default::default()
         })
     }
@@ -81,7 +90,10 @@ impl TypedefItem {
     pub(crate) fn to_hover(&self, _params: &HoverParams) -> Option<Hover> {
         Some(Hover {
             contents: HoverContents::Array(vec![
-                self.formatted_text(),
+                MarkedString::LanguageString(LanguageString {
+                    language: "sourcepawn".to_string(),
+                    value: self.formatted_text(),
+                }),
                 MarkedString::String(self.description.to_md()),
             ]),
             range: None,
@@ -184,10 +196,7 @@ impl TypedefItem {
     /// # Exemple
     ///
     /// `typedef ConCmd = function Action (int client, int args);`
-    fn formatted_text(&self) -> MarkedString {
-        MarkedString::LanguageString(LanguageString {
-            language: "sourcepawn".to_string(),
-            value: self.detail.to_string(),
-        })
+    pub(crate) fn formatted_text(&self) -> String {
+        self.detail.to_string()
     }
 }

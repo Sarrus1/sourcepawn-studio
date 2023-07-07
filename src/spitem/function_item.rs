@@ -4,14 +4,15 @@ use std::sync::{Arc, RwLock, Weak};
 use super::{parameter::Parameter, Location};
 use fxhash::FxHashSet;
 use lsp_types::{
-    CallHierarchyItem, CompletionItem, CompletionItemKind, CompletionItemTag, CompletionList,
-    CompletionParams, CompletionTextEdit, DocumentSymbol, Documentation, GotoDefinitionParams,
-    Hover, HoverContents, HoverParams, InsertTextFormat, LanguageString, LocationLink,
-    MarkedString, MarkupContent, ParameterInformation, Position, Range, SignatureInformation,
-    SymbolKind, SymbolTag, TextEdit, Url,
+    CallHierarchyItem, CompletionItem, CompletionItemKind, CompletionItemLabelDetails,
+    CompletionItemTag, CompletionList, CompletionParams, CompletionTextEdit, DocumentSymbol,
+    Documentation, GotoDefinitionParams, Hover, HoverContents, HoverParams, InsertTextFormat,
+    LanguageString, LocationLink, MarkedString, MarkupContent, ParameterInformation, Position,
+    Range, SignatureInformation, SymbolKind, SymbolTag, TextEdit, Url,
 };
 
 use crate::providers::hover::description::Description;
+use crate::utils::uri_to_file_name;
 
 use super::SPItem;
 
@@ -107,8 +108,16 @@ impl FunctionItem {
             label: self.name.to_string(),
             kind: Some(self.completion_kind()),
             tags: Some(tags),
-            detail: Some(self.type_.to_string()),
+            label_details: Some(CompletionItemLabelDetails {
+                detail: Some(self.type_.to_string()),
+                description: if *self.uri != params.text_document_position.text_document.uri {
+                    uri_to_file_name(&self.uri)
+                } else {
+                    None
+                },
+            }),
             deprecated: Some(self.is_deprecated()),
+            data: Some(serde_json::Value::String(self.key())),
             ..Default::default()
         });
 
@@ -123,7 +132,10 @@ impl FunctionItem {
     pub(crate) fn to_hover(&self, _params: &HoverParams) -> Option<Hover> {
         Some(Hover {
             contents: HoverContents::Array(vec![
-                self.formatted_text(),
+                MarkedString::LanguageString(LanguageString {
+                    language: "sourcepawn".to_string(),
+                    value: self.formatted_text(),
+                }),
                 MarkedString::String(self.description.to_md()),
             ]),
             range: None,
@@ -395,11 +407,8 @@ impl FunctionItem {
     /// # Exemple
     ///
     /// `void OnPluginStart()`
-    fn formatted_text(&self) -> MarkedString {
-        MarkedString::LanguageString(LanguageString {
-            language: "sourcepawn".to_string(),
-            value: self.detail.to_string(),
-        })
+    pub(crate) fn formatted_text(&self) -> String {
+        self.detail.to_string()
     }
 
     /// Returns a [CompletionItemKind](lsp_types::CompletionItemKind) depending on

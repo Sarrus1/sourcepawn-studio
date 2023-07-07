@@ -2,9 +2,9 @@ use std::sync::{Arc, RwLock, Weak};
 
 use super::Location;
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemTag, CompletionParams, DocumentSymbol,
-    GotoDefinitionParams, Hover, HoverContents, HoverParams, LanguageString, LocationLink,
-    MarkedString, Range, SymbolKind, SymbolTag, Url,
+    CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionItemTag,
+    CompletionParams, DocumentSymbol, GotoDefinitionParams, Hover, HoverContents, HoverParams,
+    LanguageString, LocationLink, MarkedString, Range, SymbolKind, SymbolTag, Url,
 };
 
 use crate::providers::hover::description::Description;
@@ -76,8 +76,16 @@ impl PropertyItem {
             label: self.name.to_string(),
             kind: Some(CompletionItemKind::PROPERTY),
             tags: Some(tags),
-            detail: Some(self.parent.upgrade().unwrap().read().unwrap().name()),
+            label_details: Some(CompletionItemLabelDetails {
+                detail: Some(self.type_.clone()),
+                description: Some(format!(
+                    "{}::{}",
+                    self.parent.upgrade().unwrap().read().unwrap().name(),
+                    self.name
+                )),
+            }),
             deprecated: Some(self.is_deprecated()),
+            data: Some(serde_json::Value::String(self.key())),
             ..Default::default()
         })
     }
@@ -90,7 +98,10 @@ impl PropertyItem {
     pub(crate) fn to_hover(&self, _params: &HoverParams) -> Option<Hover> {
         Some(Hover {
             contents: HoverContents::Array(vec![
-                self.formatted_text(),
+                MarkedString::LanguageString(LanguageString {
+                    language: "sourcepawn".to_string(),
+                    value: self.formatted_text(),
+                }),
                 MarkedString::String(self.description.to_md()),
             ]),
             range: None,
@@ -144,14 +155,11 @@ impl PropertyItem {
     /// # Exemple
     ///
     /// `void OnPluginStart()`
-    fn formatted_text(&self) -> MarkedString {
-        MarkedString::LanguageString(LanguageString {
-            language: "sourcepawn".to_string(),
-            value: format!(
-                "{} {}",
-                self.parent.upgrade().unwrap().read().unwrap().name(),
-                self.name
-            ),
-        })
+    pub(crate) fn formatted_text(&self) -> String {
+        format!(
+            "{} {}",
+            self.parent.upgrade().unwrap().read().unwrap().name(),
+            self.name
+        )
     }
 }
