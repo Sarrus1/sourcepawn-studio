@@ -15,6 +15,7 @@ import { run as createGitignoreCommand } from "./createGITIGNORE";
 import { run as createLicenseCommand } from "./createLICENSE";
 import { run as changeSMApiCommand } from "./changeSMApi";
 import { run as installLanguageServerCommand } from "./installLanguageServer";
+import { run as doctorCommand } from "./doctor";
 import { CommandFactory } from "../ctx";
 
 /**
@@ -118,6 +119,12 @@ export function registerSMCommands(context: vscode.ExtensionContext): void {
     installLanguageServerCommand.bind(undefined)
   );
   context.subscriptions.push(installLanguageServer);
+
+  const doctor = vscode.commands.registerCommand(
+    "sourcepawn-vscode.doctor",
+    doctorCommand.bind(undefined)
+  );
+  context.subscriptions.push(doctor);
 }
 
 /**

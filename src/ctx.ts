@@ -10,7 +10,7 @@ import {
   getLatestVersionName,
   run as installLanguageServerCommand,
 } from "./Commands/installLanguageServer";
-import { execFileSync } from "child_process";
+import { execFileSync, execFile } from "child_process";
 
 export type CommandFactory = {
   enabled: (ctx: CtxInit) => Cmd;
@@ -91,12 +91,28 @@ export class Ctx {
     }
   }
 
-  private getServerVersionFromBinary() {
+  getServerVersionFromBinary() {
     const versionOutput = execFileSync(this._serverPath, ["--version"]);
     return versionOutput
       .toString()
       .trim()
       .match(/^sourcepawn_lsp (\d+\.\d+\.\d+)$/)[1];
+  }
+
+  async getServerVersionFromBinaryAsync(
+    callback: (version: string | undefined) => void
+  ) {
+    execFile(this._serverPath, ["--version"], (error, stdout, stderr) => {
+      if (error) {
+        callback(undefined);
+      }
+      callback(
+        stdout
+          .toString()
+          .trim()
+          .match(/^sourcepawn_lsp (\d+\.\d+\.\d+)$/)[1]
+      );
+    });
   }
 
   async checkForLanguageServerUpdate() {

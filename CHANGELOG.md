@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [5.4.0]
+
+### Added
+
+- Added the Doctor command to help debug issues with the extension.
+
 ## [5.3.11]
 
 ### Added

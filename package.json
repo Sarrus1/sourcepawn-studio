@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "5.3.11",
+  "version": "5.4.0",
   "publisher": "Sarrus",
   "main": "./dist/spIndex.js",
   "icon": "sm.png",
@@ -54,6 +54,11 @@
   ],
   "contributes": {
     "commands": [
+      {
+        "command": "sourcepawn-vscode.doctor",
+        "title": "Doctor",
+        "category": "SM"
+      },
       {
         "command": "sourcepawn-vscode.createTask",
         "title": "Create Task File",

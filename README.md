@@ -75,6 +75,7 @@
 - Linter (error detection) for `.sp` and `.cfg` files.
 
 **Details on how to use the extension available in the [Wiki](https://github.com/Sarrus1/sourcepawn-vscode/wiki)**.
+**If you encounter an issue, press CTRL+SHIFT+P and type "SM: Doctor" to diagnose the problem.**
 
 - [Features](#features)
 - [Screenshots](#screenshots)
