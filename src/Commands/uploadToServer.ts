@@ -1,26 +1,23 @@
-﻿import { workspace as Workspace, window, commands } from "vscode";
+﻿import * as vscode from "vscode";
 import { join } from "path";
+
 import { run as refreshPluginsCommand } from "./refreshPlugins";
 import { findMainPath } from "../spUtils";
-// Keep the include like this,
-// otherwise FTPDeploy is not
-// recognised as a constructor
 const FTPDeploy = require("ftp-deploy");
 
 export async function run(args: any) {
   const ftpDeploy = new FTPDeploy();
   const workspaceFolder =
-    args === undefined ? undefined : Workspace.getWorkspaceFolder(args);
-  const config: object = Workspace.getConfiguration(
-    "sourcepawn",
-    workspaceFolder
-  ).get("UploadOptions");
+    args === undefined ? undefined : vscode.workspace.getWorkspaceFolder(args);
+  const config: object = vscode.workspace
+    .getConfiguration("sourcepawn", workspaceFolder)
+    .get("UploadOptions");
   if (config === undefined) {
-    window
+    vscode.window
       .showErrorMessage("Upload settings are empty.", "Open Settings")
       .then((choice) => {
         if (choice === "Open Settings") {
-          commands.executeCommand(
+          vscode.commands.executeCommand(
             "workbench.action.openSettings",
             "@ext:sarrus.sourcepawn-vscode"
           );
@@ -29,14 +26,14 @@ export async function run(args: any) {
     return 1;
   }
   if (config["user"] == "" || config["host"] == "") {
-    window
+    vscode.window
       .showErrorMessage(
         "Some settings are improperly defined in the upload settings.",
         "Open Settings"
       )
       .then((choice) => {
         if (choice === "Open Settings") {
-          commands.executeCommand(
+          vscode.commands.executeCommand(
             "workbench.action.openSettings",
             "@ext:sarrus.sourcepawn-vscode"
           );
@@ -54,7 +51,7 @@ export async function run(args: any) {
   if (config["isRootRelative"]) {
     // Concat the workspace with it's root if the path is relative.
     if (workspaceFolder === undefined) {
-      window.showWarningMessage(
+      vscode.window.showWarningMessage(
         "No workspace or folder found, with isRootRelative is set to true.\nSet it to false, or open the file from a workspace."
       );
       return 1;
@@ -69,14 +66,15 @@ export async function run(args: any) {
   delete ftpConfig["isRootRelative"];
 
   console.log("Starting the upload");
+  console.log(ftpConfig);
   ftpDeploy
     .deploy(ftpConfig)
     .then(() => {
       console.log("Upload is finished.");
       if (
-        Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
-          "refreshServerPlugins"
-        ) === "afterUpload"
+        vscode.workspace
+          .getConfiguration("sourcepawn", workspaceFolder)
+          .get<string>("refreshServerPlugins") === "afterUpload"
       ) {
         refreshPluginsCommand(undefined);
       }

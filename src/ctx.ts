@@ -135,7 +135,7 @@ export class Ctx {
 
   private async getOrCreateClient() {
     await this.installLanguageServerIfAbsent();
-    if (!this._client) {
+    if (!this._client || !this._client.isRunning()) {
       const traceServer = vscode.workspace
         .getConfiguration("sourcepawn")
         .get<string>("trace.server");

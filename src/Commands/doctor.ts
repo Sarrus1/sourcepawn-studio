@@ -416,6 +416,7 @@ class Doctor {
     if (!mainPath) {
       this.isMainPathSet = DiagnosticState.Warning;
       this.isMainPathValid = DiagnosticState.Warning;
+      this.isMainPathCorrect = DiagnosticState.Warning;
       return;
     }
     this.isMainPathSet = DiagnosticState.OK;

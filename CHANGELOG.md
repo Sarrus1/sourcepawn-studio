@@ -1,5 +1,16 @@
 ## Release Notes
 
+## [5.4.1]
+
+### Added
+
+- Added a debug log in the FTP upload command for easier configuration.
+
+### Fixed
+
+- Fixed a bug where the server could not be force restarted.
+- Fixed a UI glitch in the doctor command.
+
 ## [5.4.0]
 
 ### Added

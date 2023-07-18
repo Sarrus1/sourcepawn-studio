@@ -1,5 +1,5 @@
 /**
- * This file mirrors `srcs/lsp_ext.rs` declarations.
+ * This file mirrors `src/lsp_ext.rs` declarations.
  */
 
 import * as lc from "vscode-languageclient";

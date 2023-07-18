@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "5.4.0",
+  "version": "5.4.1",
   "publisher": "Sarrus",
   "main": "./dist/spIndex.js",
   "icon": "sm.png",
@@ -579,7 +579,7 @@
     "rcon-srcds": "^2.0.1",
     "unzipper": "^0.10.11",
     "valve_kv_tools": "^0.3.0",
-    "vscode-languageclient": "^8.0.2",
+    "vscode-languageclient": "^8.1.0",
     "vscode-uri": "^3.0.3",
     "wget-improved": "^3.2.1"
   },
