@@ -7,6 +7,8 @@ use lsp_types::{Diagnostic, Position, Range, Url};
 use regex::Regex;
 use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
 
+use crate::errors::IncludeNotFoundError;
+
 use super::{
     errors::{EvaluationError, ExpansionError, MacroNotFoundError},
     evaluator::IfCondition,
@@ -35,6 +37,7 @@ pub struct SourcepawnPreprocessor<'a> {
     skipped_lines: Vec<lsp_types::Range>,
     pub(self) macro_not_found_errors: Vec<MacroNotFoundError>,
     pub(self) evaluation_errors: Vec<EvaluationError>,
+    pub(self) include_not_found_errors: Vec<IncludeNotFoundError>,
     pub evaluated_define_symbols: Vec<Symbol>,
     document_uri: Arc<Url>,
     current_line: String,
@@ -59,6 +62,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
             skip_line_start_col: 0,
             skipped_lines: vec![],
             macro_not_found_errors: vec![],
+            include_not_found_errors: vec![],
             evaluation_errors: vec![],
             evaluated_define_symbols: vec![],
             prev_end: 0,
@@ -74,6 +78,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
         self.get_disabled_diagnostics(diagnostics);
         self.get_macro_not_found_diagnostics(diagnostics);
         self.get_evaluation_error_diagnostics(diagnostics);
+        self.get_include_not_found_diagnostics(diagnostics);
     }
 
     fn get_disabled_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
@@ -112,6 +117,15 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }));
     }
 
+    fn get_include_not_found_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
+        diagnostics.extend(self.include_not_found_errors.iter().map(|err| Diagnostic {
+            range: err.range,
+            message: format!("Include \"{}\" not found.", err.include_text),
+            severity: Some(lsp_types::DiagnosticSeverity::ERROR),
+            ..Default::default()
+        }));
+    }
+
     fn get_evaluation_error_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
         diagnostics.extend(self.evaluation_errors.iter().map(|err| Diagnostic {
             range: err.range,
@@ -123,7 +137,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
 
     pub fn preprocess_input<F>(&mut self, include_file: &mut F) -> anyhow::Result<String>
     where
-        F: FnMut(&mut FxHashMap<String, Macro>, String, &Url),
+        F: FnMut(&mut FxHashMap<String, Macro>, String, &Url, bool) -> anyhow::Result<()>,
     {
         let mut col_offset: Option<i32> = None;
         let mut expanded_symbol: Option<Symbol> = None;
@@ -295,7 +309,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
         symbol: &Symbol,
     ) -> anyhow::Result<()>
     where
-        F: FnMut(&mut FxHashMap<String, Macro>, String, &Url),
+        F: FnMut(&mut FxHashMap<String, Macro>, String, &Url, bool) -> anyhow::Result<()>,
     {
         match dir {
             PreprocDir::MIf => self.process_if_directive(symbol),
@@ -427,20 +441,40 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 // TODO: Squash this into one regex.
                 if let Some(caps) = RE1.captures(&text) {
                     if let Some(path) = caps.get(1) {
-                        include_file(
+                        match include_file(
                             &mut self.macros,
                             path.as_str().to_string(),
                             &self.document_uri,
-                        );
+                            false,
+                        ) {
+                            Ok(_) => (),
+                            Err(_) => {
+                                self.include_not_found_errors
+                                    .push(IncludeNotFoundError::new(
+                                        path.as_str().to_string(),
+                                        symbol.range,
+                                    ))
+                            }
+                        }
                     }
                 };
                 if let Some(caps) = RE2.captures(&text) {
                     if let Some(path) = caps.get(1) {
-                        include_file(
+                        match include_file(
                             &mut self.macros,
                             path.as_str().to_string(),
                             &self.document_uri,
-                        );
+                            true,
+                        ) {
+                            Ok(_) => (),
+                            Err(_) => {
+                                self.include_not_found_errors
+                                    .push(IncludeNotFoundError::new(
+                                        path.as_str().to_string(),
+                                        symbol.range,
+                                    ))
+                            }
+                        }
                     }
                 };
 

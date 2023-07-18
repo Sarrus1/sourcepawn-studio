@@ -51,6 +51,33 @@ impl fmt::Display for MacroNotFoundError {
 impl error::Error for MacroNotFoundError {}
 
 #[derive(Debug, Clone)]
+pub(super) struct IncludeNotFoundError {
+    pub(super) include_text: String,
+    pub(super) range: Range,
+}
+
+impl IncludeNotFoundError {
+    pub(super) fn new(include_text: String, range: Range) -> IncludeNotFoundError {
+        IncludeNotFoundError {
+            include_text,
+            range,
+        }
+    }
+}
+
+impl fmt::Display for IncludeNotFoundError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Include {} not found at {:?}",
+            self.include_text, self.range
+        )
+    }
+}
+
+impl error::Error for IncludeNotFoundError {}
+
+#[derive(Debug, Clone)]
 pub(super) struct ParseIntError {
     pub(super) text: String,
     pub(super) range: Range,

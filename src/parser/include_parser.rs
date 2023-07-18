@@ -28,8 +28,9 @@ impl Store {
             // The include path is empty.
             return Ok(());
         }
+        let quoted = path.starts_with('"');
         let mut path = path[1..path.len() - 1].trim().to_string();
-        match self.resolve_import(&mut path, &document.uri) {
+        match self.resolve_import(&mut path, &document.uri, quoted) {
             Some(uri) => {
                 add_include(document, uri, path, range);
             }
@@ -53,17 +54,56 @@ impl Store {
         &mut self,
         include_text: &mut String,
         document_uri: &Arc<Url>,
+        quoted: bool,
     ) -> Option<Url> {
         // Add the extension to the file if needed.
         let include_text =
             utils::add_include_extension(include_text, self.environment.amxxpawn_mode);
 
+        if quoted {
+            if let Ok(Some(main_path_uri)) = self.environment.options.get_main_path_uri() {
+                let main_path = main_path_uri.to_file_path().ok()?;
+                let scripting_dirpath = main_path.parent()?;
+                let mut include_file_path = scripting_dirpath.join(include_text);
+                log::trace!(
+                    "Looking for {:#?} in {:#?}",
+                    include_text,
+                    include_file_path
+                );
+                if !include_file_path.exists() {
+                    log::trace!("{:#?} not found", include_text);
+                    include_file_path = scripting_dirpath.join("include").join(include_text);
+                    log::trace!(
+                        "Looking for {:#?} in {:#?}",
+                        include_text,
+                        include_file_path
+                    );
+                }
+                let uri = Url::from_file_path(&include_file_path).unwrap();
+                if self.documents.contains_key(&uri) {
+                    return Some(uri);
+                }
+                return None;
+            }
+        }
+
         // Look for the include in the same directory or the closest include directory.
         let document_path = document_uri.to_file_path().ok()?;
         let document_dirpath = document_path.parent()?;
         let mut include_file_path = document_dirpath.join(include_text);
+        log::trace!(
+            "Looking for {:#?} in {:#?}",
+            include_text,
+            include_file_path
+        );
         if !include_file_path.exists() {
+            log::trace!("{:#?} not found", include_text);
             include_file_path = document_dirpath.join("include").join(include_text);
+            log::trace!(
+                "Looking for {:#?} in {:#?}",
+                include_text,
+                include_file_path
+            );
         }
         let uri = Url::from_file_path(&include_file_path).unwrap();
         if self.documents.contains_key(&uri) {

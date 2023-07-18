@@ -245,8 +245,9 @@ impl Store {
             // resolve includes
             if let Some(doc_to_reload) = self.documents.get_mut(uri_to_reload) {
                 for (mut missing_inc_path, range) in doc_to_reload.missing_includes.clone() {
+                    // FIXME: The false in this method call may be problematic.
                     if let Some(include_uri) =
-                        self.resolve_import(&mut missing_inc_path, &document.uri)
+                        self.resolve_import(&mut missing_inc_path, &document.uri, false)
                     {
                         add_include(document, include_uri, missing_inc_path, range);
                     }
@@ -281,8 +282,11 @@ impl Store {
         let mut preprocessor = SourcepawnPreprocessor::new(document.uri.clone(), &document.text);
         let preprocessed_text = preprocessor
             .preprocess_input(
-                &mut (|macros: &mut FxHashMap<String, Macro>, path: String, document_uri: &Url| {
-                    self.extend_macros(macros, path, document_uri);
+                &mut (|macros: &mut FxHashMap<String, Macro>,
+                       path: String,
+                       document_uri: &Url,
+                       quoted: bool| {
+                    self.extend_macros(macros, path, document_uri, quoted)
                 }),
             )
             .unwrap_or_else(|_| document.text.clone());
@@ -325,8 +329,9 @@ impl Store {
                 .preprocess_input(
                     &mut (|macros: &mut FxHashMap<String, Macro>,
                            path: String,
-                           document_uri: &Url| {
-                        self.extend_macros(macros, path, document_uri);
+                           document_uri: &Url,
+                           quoted: bool| {
+                        self.extend_macros(macros, path, document_uri, quoted)
                     }),
                 )
                 .unwrap_or_else(|_| text.clone());
@@ -356,14 +361,23 @@ impl Store {
     pub(crate) fn extend_macros(
         &mut self,
         macros: &mut FxHashMap<String, Macro>,
-        mut path: String,
+        mut include_text: String,
         document_uri: &Url,
-    ) {
-        if let Some(include_uri) = self.resolve_import(&mut path, &Arc::new(document_uri.clone())) {
+        quoted: bool,
+    ) -> anyhow::Result<()> {
+        if let Some(include_uri) =
+            self.resolve_import(&mut include_text, &Arc::new(document_uri.clone()), quoted)
+        {
             if let Some(include_macros) = self.preprocess_document_by_uri(Arc::new(include_uri)) {
                 macros.extend(include_macros);
             }
+            return Ok(());
         }
+
+        return Err(anyhow!(
+            "Could not resolve include \"{}\" from path.",
+            include_text
+        ));
     }
 
     pub fn parse(&mut self, document: &mut Document, parser: &mut Parser) -> anyhow::Result<()> {
