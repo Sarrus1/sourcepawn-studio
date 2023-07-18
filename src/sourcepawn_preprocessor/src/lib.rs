@@ -18,7 +18,9 @@ mod test {
         _macros: &mut FxHashMap<String, Macro>,
         mut _path: String,
         _document_uri: &Url,
-    ) {
+        _quoted: bool,
+    ) -> anyhow::Result<()> {
+        Ok(())
     }
 
     use super::{evaluator::IfCondition, preprocessor::Macro, SourcepawnPreprocessor};

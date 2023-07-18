@@ -129,10 +129,10 @@ fn expand_macro(
                     if arg_idx >= 10 {
                         return Err(ParseIntError::new(child.text(), child.range));
                     }
-                    for (i, child) in args[arg_idx as usize].iter().enumerate() {
+                    for (j, sub_child) in args[arg_idx as usize].iter().enumerate() {
                         stack.push((
-                            child.clone(),
-                            if i == 0 { symbol.delta } else { child.delta },
+                            sub_child.clone(),
+                            if j == 0 { child.delta } else { sub_child.delta },
                             d + 1,
                         ));
                     }
