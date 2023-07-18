@@ -178,6 +178,11 @@ impl Server {
                 recv(&self.connection.receiver) -> msg => {
                         match msg? {
                             Message::Request(request) => {
+                                log::trace!("Received request {:#?}", request);
+                                if self.connection.handle_shutdown(&request)? {
+                                    log::trace!("Handled shutdown request.");
+                                    return Ok(());
+                                }
                                 if let Err(error) = self.handle_request(request) {
                                     self.send_status(lsp_ext::ServerStatusParams {
                                         health: crate::lsp_ext::Health::Error,

@@ -27,11 +27,6 @@ mod signature_help;
 
 impl Server {
     pub(super) fn handle_request(&mut self, request: Request) -> anyhow::Result<()> {
-        log::trace!("Received request {:#?}", request);
-        if self.connection.handle_shutdown(&request)? {
-            log::trace!("Handled shutdown request.");
-            return Ok(());
-        }
         if let Some(response) = dispatch::RequestDispatcher::new(request)
             .on::<Completion, _>(|id, params| self.completion(id, params))?
             .on::<ResolveCompletionItem, _>(|id, params| self.resolve_completion_item(id, params))?

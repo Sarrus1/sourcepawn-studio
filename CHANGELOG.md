@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.10.12]
+
+### Fixed
+
+-   Fixed "receiving on an empty or disconnected channel" bug when stopping the server.
+
 ## [0.10.11]
 
 ### Fixed
