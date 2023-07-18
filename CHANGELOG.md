@@ -10,6 +10,7 @@
 
 - Fixed a bug where the server could not be force restarted.
 - Fixed a UI glitch in the doctor command.
+- Fixed a race condition when creating a new release for the Sourcepawn Language Server.
 
 ## [5.4.0]
 

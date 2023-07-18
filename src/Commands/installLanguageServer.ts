@@ -38,18 +38,24 @@ export async function run(args: any) {
     );
     return 1;
   }
-
-  await window.withProgress(
-    {
-      location: ProgressLocation.Notification,
-      title: "SourcePawn LanguageServer",
-      cancellable: true,
-    },
-    async (progress, token) => {
-      return downloadLanguageServer(version, progress, token);
-    }
-  );
-  ctx?.start();
+  try {
+    await window.withProgress(
+      {
+        location: ProgressLocation.Notification,
+        title: "SourcePawn LanguageServer",
+        cancellable: true,
+      },
+      async (progress, token) => {
+        return downloadLanguageServer(version, progress, token);
+      }
+    );
+    ctx?.start();
+  } catch (err) {
+    console.error(
+      `Could not download version ${version} of the Sourcepawn Language Server. Try again in a few minutes.`
+    );
+    return 2;
+  }
 
   return 0;
 }
