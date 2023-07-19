@@ -417,7 +417,7 @@ impl Store {
                 "methodmap" => document.parse_methodmap(&mut node, &mut walker),
                 "typedef" => document.parse_typedef(&node, &mut walker),
                 "typeset" => document.parse_typeset(&node, &mut walker),
-                "preproc_macro" => Ok(()),
+                "preproc_macro" => document.parse_macro(&mut node, &mut walker),
                 "enum_struct" => document.parse_enum_struct(&mut node, &mut walker),
                 "comment" => {
                     walker.push_comment(node, &document.preprocessed_text);

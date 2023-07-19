@@ -810,6 +810,26 @@ int baz;
     }
 
     #[test]
+    fn define_undef_1() {
+        let input = r#"#define FOO 1
+#undef FOO
+"#;
+        let output = r#"#define FOO 1
+#undef FOO
+"#;
+
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut extend_macros)
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
     fn define_expansion_1() {
         let input = r#"#define FOO 1
 int foo = FOO;

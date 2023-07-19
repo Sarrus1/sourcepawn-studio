@@ -419,6 +419,22 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 self.prev_end = 0;
                 self.macros.insert(macro_name, macro_);
             }
+            PreprocDir::MUndef => {
+                self.push_symbol(symbol);
+                while self.lexer.in_preprocessor() {
+                    if let Some(symbol) = self.lexer.next() {
+                        self.push_ws(&symbol);
+                        self.prev_end = symbol.range.end.character;
+                        if !matches!(symbol.token_kind, TokenKind::Newline | TokenKind::Eof) {
+                            self.current_line.push_str(&symbol.text());
+                        }
+                        if symbol.token_kind == TokenKind::Identifier {
+                            self.macros.remove(&symbol.text());
+                            break;
+                        }
+                    }
+                }
+            }
             PreprocDir::MEndif => self.process_endif_directive(symbol)?,
             PreprocDir::MElse => self.process_else_directive(symbol)?,
             PreprocDir::MInclude | PreprocDir::MTryinclude => {

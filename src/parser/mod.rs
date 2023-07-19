@@ -7,6 +7,7 @@ pub mod enum_parser;
 pub mod enum_struct_parser;
 pub mod function_parser;
 pub mod include_parser;
+pub mod macro_parser;
 pub mod methodmap_parser;
 pub mod property_parser;
 pub mod typedef_parser;
