@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{dispatch, providers::FeatureRequest};
+use crate::{dispatch, lsp_ext, providers::FeatureRequest};
 
 use lsp_server::{Request, RequestId};
 use lsp_types::{
@@ -20,6 +20,7 @@ mod completion;
 mod definition;
 mod document_symbol;
 mod hover;
+mod preprocessed_document;
 mod reference;
 mod rename;
 mod semantic_tokens;
@@ -44,6 +45,9 @@ impl Server {
                 self.call_hierarchy_incoming(id, params)
             })?
             .on::<CallHierarchyPrepare, _>(|id, params| self.call_hierarchy_prepare(id, params))?
+            .on::<lsp_ext::PreprocessedDocument, _>(|id, params| {
+                self.preprocessed_document(id, params)
+            })?
             .default()
         {
             self.connection.sender.send(response.into())?;
