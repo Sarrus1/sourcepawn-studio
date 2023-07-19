@@ -4,8 +4,18 @@
 
 import * as lc from "vscode-languageclient";
 
+export const preprocessedDocument = new lc.RequestType<
+  PreprocessedDocumentParams,
+  string,
+  void
+>("sourcepawn-lsp/preprocessedDocument");
+
+export type PreprocessedDocumentParams = {
+  textDocument?: lc.TextDocumentIdentifier;
+};
+
 export const serverStatus = new lc.NotificationType<ServerStatusParams>(
-  "experimental/serverStatus"
+  "sourcepawn-lsp/serverStatus"
 );
 export type ServerStatusParams = {
   health: "ok" | "warning" | "error";
@@ -14,7 +24,7 @@ export type ServerStatusParams = {
 };
 
 export const spcompStatus = new lc.NotificationType<ServerStatusParams>(
-  "experimental/spcompStatus"
+  "sourcepawn-lsp/spcompStatus"
 );
 export type SpcompStatusParams = {
   quiescent: boolean;

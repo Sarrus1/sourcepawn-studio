@@ -139,6 +139,11 @@
         "category": "SM"
       },
       {
+        "command": "sourcepawn-vscode.preprocessedDocument",
+        "title": "Reveal preprocessed document (as seen by the server)",
+        "category": "sourcepawn-lsp (debug command)"
+      },
+      {
         "command": "sourcepawn-vscode.installLanguageServer",
         "title": "Install SourcePawn Language Server"
       },

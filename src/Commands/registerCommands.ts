@@ -16,6 +16,7 @@ import { run as createLicenseCommand } from "./createLICENSE";
 import { run as changeSMApiCommand } from "./changeSMApi";
 import { run as installLanguageServerCommand } from "./installLanguageServer";
 import { run as doctorCommand } from "./doctor";
+import { preprocessedDocumentCommand } from "./preprocessedDocument";
 import { CommandFactory } from "../ctx";
 
 /**
@@ -157,6 +158,9 @@ export function createServerCommands(): Record<string, CommandFactory> {
         }
       },
       disabled: (_) => async () => {},
+    },
+    preprocessedDocument: {
+      enabled: preprocessedDocumentCommand,
     },
   };
 }
