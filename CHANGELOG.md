@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [5.4.2]
+
+### Added
+
+- Added a debug command to reveal a preprocessed file.
+
 ## [5.4.1]
 
 ### Added
