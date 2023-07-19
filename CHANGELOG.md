@@ -1,5 +1,15 @@
 ## Release Notes
 
+## [0.10.14]
+
+### Fixed
+
+-   Fixed tree-sitter bugs.
+
+### Removed
+
+-   Removed deprecated diagnostics in `.inc` files.
+
 ## [0.10.13]
 
 ### Added
