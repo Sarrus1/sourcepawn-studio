@@ -285,7 +285,7 @@
         },
         "SourcePawnLanguageServer.disableSyntaxLinter": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Disable the language server's syntax linter. This is independant from spcomp.",
           "scope": "resource"
         },
