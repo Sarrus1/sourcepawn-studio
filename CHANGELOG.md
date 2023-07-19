@@ -5,6 +5,7 @@
 ### Fixed
 
 -   Fixed tree-sitter bugs.
+-   Fixed `sourcemod.inc` not being included automatically.
 
 ### Removed
 
