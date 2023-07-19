@@ -34,17 +34,23 @@ impl Store {
         for item in all_items_flat.iter() {
             if let Some(description) = item.read().unwrap().description() {
                 if let Some(deprecated) = description.deprecated {
-                    if let Some(document) = self.documents.get_mut(&item.read().unwrap().uri()) {
-                        document.diagnostics.local_diagnostics.push(Diagnostic {
-                            range: item.read().unwrap().range(),
-                            message: format!("Deprecated {:?}", deprecated),
-                            severity: Some(DiagnosticSeverity::HINT),
-                            tags: Some(vec![DiagnosticTag::DEPRECATED]),
-                            ..Default::default()
-                        });
+                    if !&item.read().unwrap().uri().as_str().ends_with(".inc") {
+                        if let Some(document) = self.documents.get_mut(&item.read().unwrap().uri())
+                        {
+                            document.diagnostics.local_diagnostics.push(Diagnostic {
+                                range: item.read().unwrap().range(),
+                                message: format!("Deprecated {:?}", deprecated),
+                                severity: Some(DiagnosticSeverity::HINT),
+                                tags: Some(vec![DiagnosticTag::DEPRECATED]),
+                                ..Default::default()
+                            });
+                        }
                     }
                     if let Some(references) = item.read().unwrap().references() {
                         for reference in references.iter() {
+                            if reference.uri.as_str().ends_with(".inc") {
+                                continue;
+                            }
                             if let Some(document) = self.documents.get_mut(&reference.uri) {
                                 document.diagnostics.local_diagnostics.push(Diagnostic {
                                     range: reference.range,
