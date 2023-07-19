@@ -289,7 +289,11 @@ impl Store {
                     self.extend_macros(macros, path, document_uri, quoted)
                 }),
             )
-            .unwrap_or_else(|_| document.text.clone());
+            .unwrap_or_else(|err| {
+                log::error!("{:?}", err);
+                document.text.clone()
+            });
+
         document.preprocessed_text = preprocessed_text;
         document.macros = preprocessor.macros.clone();
         document.offsets = preprocessor.offsets.clone();
@@ -334,7 +338,11 @@ impl Store {
                         self.extend_macros(macros, path, document_uri, quoted)
                     }),
                 )
-                .unwrap_or_else(|_| text.clone());
+                .unwrap_or_else(|err| {
+                    log::error!("{:?}", err);
+                    text.clone()
+                });
+
             if let Some(document) = self.documents.get_mut(&uri) {
                 document.preprocessed_text = preprocessed_text;
                 document.macros = preprocessor.macros.clone();

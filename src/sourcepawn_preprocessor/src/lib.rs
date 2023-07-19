@@ -1136,6 +1136,34 @@ int foo = 1 + 2;
     }
 
     #[test]
+    fn macro_expansion_5() {
+        let input = r#"#define GET_VALUE(%1,%2) \
+    public %1 Get%2(){ \
+        %1 i; \
+        this.GetValue("m_" ... #%2, i); \
+        return i;}
+        
+        GET_VALUE(void, Foo)"#;
+        let output = r#"#define GET_VALUE(%1,%2) \
+    public %1 Get%2(){ \
+        %1 i; \
+        this.GetValue("m_" ... #%2, i); \
+        return i;}
+        
+    public void GetFoo(){        void i;        this.GetValue("m_" ... "Foo", i);        return i;}"#;
+
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut extend_macros)
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
     fn include_directive_1() {
         let input = r#"#include <sourcemod>"#;
         let output = r#"#include <sourcemod>"#;
@@ -1181,6 +1209,70 @@ int foo = 1 + 2;
             )
             .preprocess_input(&mut extend_macros)
             .unwrap(),
+            output
+        );
+    }
+
+    #[test]
+    fn stringizing_1() {
+        let input = r#"#define FOO(%0) #%0
+char foo[8] = FOO(foo);"#;
+        let output = r#"#define FOO(%0) #%0
+char foo[8] = "foo";"#;
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut extend_macros)
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
+    fn stringizing_2() {
+        let input = r#"#define FOO(%0,%1) #%0 ... #%1
+char foo[8] = FOO(foo, bar);"#;
+        let output = r#"#define FOO(%0,%1) #%0 ... #%1
+char foo[8] = "foo" ... "bar";"#;
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut extend_macros)
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
+    fn stringizing_3() {
+        let input = r#"#define DISPOSE_MEMBER(%1) \
+    Handle m_h%1; \
+    if(this.GetValue("m_" ... #%1, m_h%1)){ \
+        delete m_h%1;}
+void foo(){
+    DISPOSE_MEMBER(Foo)
+}"#;
+        let output = r#"#define DISPOSE_MEMBER(%1) \
+    Handle m_h%1; \
+    if(this.GetValue("m_" ... #%1, m_h%1)){ \
+        delete m_h%1;}
+void foo(){
+    Handle m_hFoo;    if(this.GetValue("m_" ... "Foo", m_hFoo)){        delete m_hFoo;}
+}"#;
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut extend_macros)
+            .unwrap_or_else(|err| {
+                eprintln!("{:?}", err);
+                "".to_string()
+            }),
             output
         );
     }

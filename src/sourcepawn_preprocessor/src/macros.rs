@@ -101,6 +101,7 @@ fn expand_macro(
     d: i32,
 ) -> Result<(), ParseIntError> {
     let mut consecutive_percent = 0;
+    let mut stringize_delta = None;
     for (i, child) in macro_.body.iter().enumerate() {
         match &child.token_kind {
             TokenKind::Operator(Operator::Percent) => {
@@ -114,9 +115,13 @@ fn expand_macro(
                     stack.push((child.clone(), child.delta, d + 1))
                 }
             }
+            TokenKind::Operator(Operator::Stringize) => {
+                stringize_delta = Some(child.delta);
+                stack.push((child.clone(), child.delta, d + 1))
+            }
             TokenKind::Literal(Literal::IntegerLiteral) => {
                 if consecutive_percent == 1 {
-                    stack.pop();
+                    let percent_symbol = stack.pop().unwrap(); // Safe unwrap.
                     let arg_idx = child
                         .to_int()
                         .ok_or_else(|| ParseIntError::new(child.text(), child.range))?
@@ -129,12 +134,45 @@ fn expand_macro(
                     if arg_idx >= 10 {
                         return Err(ParseIntError::new(child.text(), child.range));
                     }
-                    for (j, sub_child) in args[arg_idx as usize].iter().enumerate() {
-                        stack.push((
-                            sub_child.clone(),
-                            if j == 0 { child.delta } else { sub_child.delta },
-                            d + 1,
-                        ));
+                    if let Some(stringize_delta) = stringize_delta.take() {
+                        stack.pop();
+                        let mut stringized = '"'.to_string();
+                        for sub_child in args[arg_idx as usize].iter() {
+                            stringized.push_str(&sub_child.inline_text());
+                        }
+                        stringized.push('"');
+                        let delta = if i == 2 {
+                            symbol.delta
+                        } else {
+                            stringize_delta
+                        };
+                        let symbol = Symbol::new(
+                            TokenKind::Literal(Literal::StringLiteral),
+                            Some(&stringized),
+                            Range::new(
+                                symbol.range.start,
+                                Position::new(
+                                    symbol.range.start.line,
+                                    symbol.range.start.character + stringized.len() as u32,
+                                ),
+                            ),
+                            delta,
+                        );
+                        stack.push((symbol, delta, d + 1));
+                    } else {
+                        for (j, sub_child) in args[arg_idx as usize].iter().enumerate() {
+                            stack.push((
+                                sub_child.clone(),
+                                if i == 1 {
+                                    symbol.delta
+                                } else if j == 0 {
+                                    percent_symbol.1
+                                } else {
+                                    sub_child.delta
+                                },
+                                d + 1,
+                            ));
+                        }
                     }
                 } else {
                     stack.push((child.clone(), child.delta, d + 1));
@@ -148,6 +186,7 @@ fn expand_macro(
                     d + 1,
                 ));
                 consecutive_percent = 0;
+                stringize_delta = None;
             }
         }
     }

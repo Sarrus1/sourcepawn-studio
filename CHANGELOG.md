@@ -2,6 +2,10 @@
 
 ## [0.10.12]
 
+### Added
+
+-   Added support for stringizing in preprocessor.
+
 ### Fixed
 
 -   Fixed "receiving on an empty or disconnected channel" bug when stopping the server.
