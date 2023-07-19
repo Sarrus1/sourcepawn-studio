@@ -47,9 +47,10 @@ pub struct SourcepawnPreprocessor<'a> {
     pub offsets: FxHashMap<u32, Vec<Offset>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Macro {
-    pub(crate) args: Option<Vec<i8>>,
+    pub(crate) params: Option<Vec<i8>>,
+    pub(crate) nb_params: i8,
     pub(crate) body: Vec<Symbol>,
 }
 
@@ -328,17 +329,14 @@ impl<'a> SourcepawnPreprocessor<'a> {
             PreprocDir::MDefine => {
                 self.push_symbol(symbol);
                 let mut macro_name = String::new();
-                let mut macro_ = Macro {
-                    args: None,
-                    body: vec![],
-                };
+                let mut macro_ = Macro::default();
                 enum State {
                     Start,
-                    Args,
+                    Params,
                     Body,
                 }
                 let mut args = vec![-1; 10];
-                let mut found_args = false;
+                let mut found_params = false;
                 let mut state = State::Start;
                 let mut args_idx = 0;
                 while self.lexer.in_preprocessor() {
@@ -357,7 +355,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                 } else if symbol.delta.col == 0
                                     && symbol.token_kind == TokenKind::LParen
                                 {
-                                    state = State::Args;
+                                    state = State::Params;
                                 } else {
                                     if symbol.token_kind == TokenKind::Identifier {
                                         self.evaluated_define_symbols.push(symbol.clone());
@@ -366,7 +364,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                     state = State::Body;
                                 }
                             }
-                            State::Args => {
+                            State::Params => {
                                 if symbol.delta.col > 0 {
                                     macro_.body.push(symbol);
                                     state = State::Body;
@@ -377,7 +375,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                         state = State::Body;
                                     }
                                     TokenKind::Literal(Literal::IntegerLiteral) => {
-                                        found_args = true;
+                                        found_params = true;
                                         let idx = symbol.to_int().context(format!(
                                             "Could not convert {:?} to an int value.",
                                             symbol.text()
@@ -412,8 +410,9 @@ impl<'a> SourcepawnPreprocessor<'a> {
                         }
                     }
                 }
-                if found_args {
-                    macro_.args = Some(args);
+                if found_params {
+                    macro_.nb_params = args.iter().filter(|&n| *n != -1).count() as i8;
+                    macro_.params = Some(args);
                 }
                 self.push_current_line();
                 self.current_line = "".to_string();

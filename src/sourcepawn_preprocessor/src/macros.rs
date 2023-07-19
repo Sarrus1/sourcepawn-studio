@@ -43,10 +43,10 @@ where
                     // Do not keep track of sub-macros, they will not appear in the final document.
                     expanded_macros.push(symbol.clone());
                 }
-                if macro_.args.is_none() {
+                if macro_.params.is_none() {
                     expand_non_macro_define(macro_, &mut stack, &symbol, d);
                 } else {
-                    let args = collect_arguments(lexer, &mut args_stack);
+                    let args = collect_arguments(lexer, &mut args_stack, macro_.nb_params as usize);
                     expand_macro(args, macro_, &mut stack, &symbol, d)?;
                 }
             }
@@ -130,14 +130,17 @@ fn expand_macro(
                         return Err(ParseIntError::new(child.text(), child.range));
                     }
                     // Safe to unwrap here because we know the macro has arguments.
-                    let arg_idx = macro_.args.as_ref().unwrap()[arg_idx];
+                    let arg_idx = macro_.params.as_ref().unwrap()[arg_idx];
                     if arg_idx >= 10 {
                         return Err(ParseIntError::new(child.text(), child.range));
                     }
                     if let Some(stringize_delta) = stringize_delta.take() {
                         stack.pop();
                         let mut stringized = '"'.to_string();
-                        for sub_child in args[arg_idx as usize].iter() {
+                        for (j, sub_child) in args[arg_idx as usize].iter().enumerate() {
+                            if j > 0 && sub_child.delta.col > 0 {
+                                stringized.push_str(&" ".repeat(sub_child.delta.col as usize));
+                            }
                             stringized.push_str(&sub_child.inline_text());
                         }
                         stringized.push('"');
@@ -200,12 +203,19 @@ fn expand_macro(
 /// # Arguments
 ///
 /// * `lexer` - [SourcepawnLexer](sourcepawn_lexer::lexer) to iterate over.
-fn collect_arguments<T>(lexer: &mut T, args_stack: &mut Vec<Symbol>) -> Vec<Vec<Symbol>>
+/// * `args_stack` - [Vec](Vec) of [Symbols](sourcepawn_lexer::Symbol) that represent the
+/// stack of arguments that are being processed.
+/// * `nb_params` - Number of parameters in the current macro.
+fn collect_arguments<T>(
+    lexer: &mut T,
+    args_stack: &mut Vec<Symbol>,
+    nb_params: usize,
+) -> Vec<Vec<Symbol>>
 where
     T: Iterator<Item = Symbol>,
 {
     let mut paren_depth = 0;
-    let mut arg_idx = 0;
+    let mut arg_idx: usize = 0;
     let mut args: Vec<Vec<Symbol>> = vec![];
     for _ in 0..10 {
         args.push(vec![]);
@@ -231,7 +241,13 @@ where
             }
             TokenKind::Comma => {
                 if paren_depth == 1 {
-                    arg_idx += 1;
+                    if arg_idx + 1 < nb_params {
+                        arg_idx += 1;
+                    } else {
+                        // The stack of arguments is overflowed, store the rest in the last argument,
+                        // including the comma.
+                        args[arg_idx].push(sub_symbol.clone())
+                    }
                 }
             }
             _ => {

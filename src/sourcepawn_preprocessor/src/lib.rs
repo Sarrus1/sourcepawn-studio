@@ -1137,6 +1137,26 @@ int foo = 1 + 2;
 
     #[test]
     fn macro_expansion_5() {
+        let input = r#"#define FOO(%1) int %1
+FOO(foo, bar);
+"#;
+        let output = r#"#define FOO(%1) int %1
+int foo, bar;
+"#;
+
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut extend_macros)
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
+    fn macro_expansion_6() {
         let input = r#"#define GET_VALUE(%1,%2) \
     public %1 Get%2(){ \
         %1 i; \
@@ -1249,6 +1269,23 @@ char foo[8] = "foo" ... "bar";"#;
 
     #[test]
     fn stringizing_3() {
+        let input = r#"#define FOO(%0) #%0
+char foo[8] = FOO(foo , bar);"#;
+        let output = r#"#define FOO(%0) #%0
+char foo[8] = "foo , bar";"#;
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                input
+            )
+            .preprocess_input(&mut extend_macros)
+            .unwrap(),
+            output
+        );
+    }
+
+    #[test]
+    fn stringizing_10() {
         let input = r#"#define DISPOSE_MEMBER(%1) \
     Handle m_h%1; \
     if(this.GetValue("m_" ... #%1, m_h%1)){ \
