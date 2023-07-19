@@ -1,5 +1,18 @@
 ## Release Notes
 
+## [0.10.13]
+
+### Added
+
+-   Added support for arguments overflow in preprocessor macros.
+-   Added #undef support in preprocessor.
+-   Added semantic resolution for macros.
+-   Added a debug request to get the preprocessed text for a document.
+
+### Fixed
+
+-   Fixed disable syntax linter not being respected.
+
 ## [0.10.12]
 
 ### Added
