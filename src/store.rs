@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use fxhash::{FxHashMap, FxHashSet};
-use lsp_types::Url;
+use lsp_types::{Range, Url};
 use sourcepawn_preprocessor::{preprocessor::Macro, SourcepawnPreprocessor};
 use std::{
     fs, io,
@@ -207,6 +207,7 @@ impl Store {
         };
         let mut document = Document::new(uri.clone(), text);
         self.preprocess_document(&mut document);
+        self.add_sourcemod_include(&mut document);
         self.parse(&mut document, parser)
             .expect("Couldn't parse document");
         if !self.first_parse {
@@ -217,6 +218,13 @@ impl Store {
         log::trace!("Done opening file {:?}", uri);
 
         Ok(document)
+    }
+
+    fn add_sourcemod_include(&mut self, document: &mut Document) {
+        let mut sourcemod_path = "sourcemod".to_string();
+        if let Some(uri) = self.resolve_import(&mut sourcemod_path, &document.uri, false) {
+            add_include(document, uri, sourcemod_path, Range::default());
+        }
     }
 
     fn sync_references(
@@ -382,10 +390,10 @@ impl Store {
             return Ok(());
         }
 
-        return Err(anyhow!(
+        Err(anyhow!(
             "Could not resolve include \"{}\" from path.",
             include_text
-        ));
+        ))
     }
 
     pub fn parse(&mut self, document: &mut Document, parser: &mut Parser) -> anyhow::Result<()> {
@@ -425,9 +433,7 @@ impl Store {
                     Ok(())
                 }
                 "preproc_pragma" => walker.push_deprecated(node, &document.preprocessed_text),
-                _ => {
-                    continue;
-                }
+                _ => continue,
             };
         }
         document.parsed = true;

@@ -29,6 +29,6 @@ impl Server {
             return Err(anyhow!("No document found for URI {:?}", text_document.uri));
         }
 
-        return Err(anyhow!("No text_document passed to command"));
+        Err(anyhow!("No TextDocument passed to command"))
     }
 }

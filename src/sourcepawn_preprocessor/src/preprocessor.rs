@@ -140,6 +140,12 @@ impl<'a> SourcepawnPreprocessor<'a> {
     where
         F: FnMut(&mut FxHashMap<String, Macro>, String, &Url, bool) -> anyhow::Result<()>,
     {
+        let _ = include_file(
+            &mut self.macros,
+            "sourcemod".to_string(),
+            &self.document_uri,
+            false,
+        );
         let mut col_offset: Option<i32> = None;
         let mut expanded_symbol: Option<Symbol> = None;
         while let Some(symbol) = if !self.expansion_stack.is_empty() {
@@ -453,7 +459,6 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     static ref RE1: Regex = Regex::new(r"<([^>]+)>").unwrap();
                     static ref RE2: Regex = Regex::new("\"([^>]+)\"").unwrap();
                 }
-                // TODO: Squash this into one regex.
                 if let Some(caps) = RE1.captures(&text) {
                     if let Some(path) = caps.get(1) {
                         match include_file(
