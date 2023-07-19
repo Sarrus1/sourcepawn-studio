@@ -16,14 +16,16 @@ pub struct DocumentDiagnostics {
 
 impl DocumentDiagnostics {
     /// Return a concatenation of all the [Diagnostics](lsp_types::Diagnostic).
-    pub(crate) fn all(&self) -> Vec<Diagnostic> {
+    pub(crate) fn all(&self, disable_local_diagnostics: bool) -> Vec<Diagnostic> {
         let mut lsp_diagnostics: Vec<Diagnostic> = self
             .sp_comp_diagnostics
             .iter()
             .map(|diagnostic| diagnostic.to_lsp_diagnostic())
             .collect();
         lsp_diagnostics.extend(self.global_diagnostics.clone());
-        lsp_diagnostics.extend(self.local_diagnostics.clone());
+        if !disable_local_diagnostics {
+            lsp_diagnostics.extend(self.local_diagnostics.clone());
+        }
 
         lsp_diagnostics
     }

@@ -52,7 +52,9 @@ impl Server {
                 .client
                 .send_notification::<PublishDiagnostics>(PublishDiagnosticsParams {
                     uri: document.uri(),
-                    diagnostics: document.diagnostics.all(),
+                    diagnostics: document
+                        .diagnostics
+                        .all(self.store.environment.options.disable_syntax_linter),
                     version: None,
                 });
         }
