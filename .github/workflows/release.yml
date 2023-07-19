@@ -119,18 +119,18 @@ jobs:
                   body: ${{ steps.changelog.outputs.changes }}
                   replacebody: true
 
-    cargo-release:
-        runs-on: ubuntu-latest
-        needs: [build]
-        strategy:
-            fail-fast: false
-        steps:
-            - uses: actions/checkout@v3
-            - uses: actions-rs/toolchain@v1
-              with:
-                  toolchain: stable
-                  override: true
-            - uses: katyo/publish-crates@v2
-              with:
-                  registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-                  args: --allow-dirty
+    # cargo-release:
+    #     runs-on: ubuntu-latest
+    #     needs: [build]
+    #     strategy:
+    #         fail-fast: false
+    #     steps:
+    #         - uses: actions/checkout@v3
+    #         - uses: actions-rs/toolchain@v1
+    #           with:
+    #               toolchain: stable
+    #               override: true
+    #         - uses: katyo/publish-crates@v2
+    #           with:
+    #               registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+    #               args: --allow-dirty
