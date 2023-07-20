@@ -1,5 +1,15 @@
 ## Release Notes
 
+## [0.10.15]
+
+### Added
+
+-   Added performance information in the logs.
+
+### Fixed
+
+-   Fixed a major performance issue.
+
 ## [0.10.14]
 
 ### Fixed
