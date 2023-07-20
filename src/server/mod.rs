@@ -6,9 +6,9 @@ use fxhash::FxHashMap;
 use lsp_server::{Connection, Message};
 use lsp_types::{
     CallHierarchyServerCapability, CompletionOptions, CompletionOptionsCompletionItem,
-    HoverProviderCapability, InitializeParams, OneOf, SemanticTokenModifier, SemanticTokenType,
-    SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
-    SemanticTokensServerCapabilities, ServerCapabilities, SignatureHelpOptions,
+    HoverProviderCapability, InitializeParams, InitializeResult, OneOf, SemanticTokenModifier,
+    SemanticTokenType, SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
+    SemanticTokensServerCapabilities, ServerCapabilities, ServerInfo, SignatureHelpOptions,
     TextDocumentSyncCapability, TextDocumentSyncKind, Url, WorkDoneProgressOptions,
 };
 
@@ -66,7 +66,10 @@ impl Server {
     }
 
     fn initialize(&mut self) -> anyhow::Result<()> {
-        let server_capabilities = serde_json::to_value(&ServerCapabilities {
+        let (id, params) = self.connection.initialize_start()?;
+        let params: InitializeParams = serde_json::from_value(params)?;
+
+        let capabilities = ServerCapabilities {
             text_document_sync: Some(TextDocumentSyncCapability::Kind(
                 TextDocumentSyncKind::INCREMENTAL,
             )),
@@ -129,9 +132,17 @@ impl Server {
             ),
             call_hierarchy_provider: Some(CallHierarchyServerCapability::Simple(true)),
             ..Default::default()
-        })?;
-        let initialization_params = self.connection.initialize(server_capabilities)?;
-        let params: InitializeParams = serde_json::from_value(initialization_params)?;
+        };
+        let result = InitializeResult {
+            capabilities,
+            server_info: Some(ServerInfo {
+                name: "sourcepawn-lsp".to_owned(),
+                version: Some(env!("CARGO_PKG_VERSION").to_owned()),
+            }),
+        };
+        self.connection
+            .initialize_finish(id, serde_json::to_value(result)?)?;
+
         self.store.environment.client_capabilities = Arc::new(params.capabilities);
         self.store.environment.client_info = params.client_info.map(Arc::new);
         self.store.environment.root_uri = params.root_uri;
@@ -233,6 +244,10 @@ impl Server {
     }
 
     pub fn run(mut self) -> anyhow::Result<()> {
+        log::debug!(
+            "sourcepawn-lsp will use a maximum of {} threads.",
+            self.pool.max_count()
+        );
         self.initialize()?;
         self.process_messages()?;
         Ok(())

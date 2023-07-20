@@ -55,13 +55,13 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
         None
     };
 
-    log::info!("Starting SourcePawn server version {}", VERSION);
+    log::info!("Starting sourcepawn-lsp version {}", VERSION);
     env::set_var("RUST_BACKTRACE", "1");
     env::set_var("RUST_LIB_BACKTRACE", "0");
-    let (connection, io_threads) = Connection::stdio();
+    let (connection, threads) = Connection::stdio();
     Server::new(connection, opts.amxxpawn_mode).run()?;
-    io_threads.join()?;
-    log::info!("Shutting down SourcePawn server");
+    threads.join()?;
+    log::info!("Shutting down sourcepawn-lsp");
 
     Ok(())
 }
