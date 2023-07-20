@@ -212,7 +212,7 @@ impl Document {
         None
     }
 
-    pub fn sp_items(&self) -> Vec<Arc<RwLock<SPItem>>> {
+    pub fn get_sp_items(&self) -> Vec<Arc<RwLock<SPItem>>> {
         let mut sp_items = vec![];
         for item in self.sp_items.iter() {
             sp_items.push(item.clone());
@@ -221,7 +221,7 @@ impl Document {
         sp_items
     }
 
-    pub fn sp_items_flat(&self) -> Vec<Arc<RwLock<SPItem>>> {
+    pub fn get_sp_items_flat(&self) -> Vec<Arc<RwLock<SPItem>>> {
         let mut sp_items = vec![];
         for item in self.sp_items.iter() {
             sp_items.push(item.clone());

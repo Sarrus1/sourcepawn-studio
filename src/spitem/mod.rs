@@ -80,9 +80,9 @@ impl Store {
                 for include in includes.iter() {
                     if let Some(document) = self.documents.get(include) {
                         if flat {
-                            all_items.extend(document.sp_items_flat());
+                            all_items.extend(document.get_sp_items_flat());
                         } else {
-                            all_items.extend(document.sp_items())
+                            all_items.extend(document.get_sp_items())
                         }
                     }
                 }
