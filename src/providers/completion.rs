@@ -56,22 +56,22 @@ pub(crate) fn provide_completions(
                 return None;
             }
             '.' | ':' => {
-                return get_method_completions(all_items, &pre_line, position, request);
+                return get_method_completions(all_items.0, &pre_line, position, request);
             }
             ' ' => {
                 if is_ctor_call(&pre_line) {
-                    return get_ctor_completions(all_items, request.params);
+                    return get_ctor_completions(all_items.0, request.params);
                 }
                 return None;
             }
             '$' => {
                 if is_callback_completion_request(request.params.context) {
-                    return get_callback_completions(all_items, position);
+                    return get_callback_completions(all_items.0, position);
                 }
                 return None;
             }
             '*' => {
-                if let Some(item) = is_doc_completion(&pre_line, &position, &all_items) {
+                if let Some(item) = is_doc_completion(&pre_line, &position, &all_items.0) {
                     return item
                         .read()
                         .unwrap()
@@ -89,17 +89,17 @@ pub(crate) fn provide_completions(
                 }
 
                 if is_callback_completion_request(request.params.context.clone()) {
-                    return get_callback_completions(all_items, position);
+                    return get_callback_completions(all_items.0, position);
                 }
 
                 if !is_method_call(&pre_line) {
                     if is_ctor_call(&pre_line) {
-                        return get_ctor_completions(all_items, request.params);
+                        return get_ctor_completions(all_items.0, request.params);
                     }
-                    return get_non_method_completions(all_items, request.params);
+                    return get_non_method_completions(all_items.0, request.params);
                 }
 
-                return get_method_completions(all_items, &pre_line, position, request);
+                return get_method_completions(all_items.0, &pre_line, position, request);
             }
         }
     }

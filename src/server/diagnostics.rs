@@ -39,7 +39,7 @@ impl Server {
     /// Lint all documents with the custom linter.
     pub fn lint_all_documents(&mut self) {
         self.store.clear_all_global_diagnostics();
-        let all_items_flat = self.store.get_all_items(true);
+        let all_items_flat = self.store.get_all_items(true).0;
         self.store.get_deprecated_diagnostics(&all_items_flat);
         let _ = self.publish_diagnostics();
     }

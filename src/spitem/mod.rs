@@ -1,4 +1,7 @@
-use std::sync::{Arc, RwLock};
+use std::{
+    sync::{Arc, RwLock},
+    time::{Duration, Instant},
+};
 
 use fxhash::FxHashSet;
 use lsp_types::{
@@ -69,14 +72,17 @@ pub enum SPItem {
 }
 
 impl Store {
-    pub fn get_all_items(&self, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
+    pub fn get_all_items(&self, flat: bool) -> (Vec<Arc<RwLock<SPItem>>>, Duration) {
         log::debug!("Getting all items from store. flat: {}", flat);
+        let mut include_duration = Instant::now().elapsed();
         let mut all_items = vec![];
         if let Ok(Some(main_path_uri)) = self.environment.options.get_main_path_uri() {
             let mut includes = FxHashSet::default();
             includes.insert(main_path_uri.clone());
             if let Some(document) = self.documents.get(&main_path_uri) {
+                let now = Instant::now();
                 self.get_included_files(document, &mut includes);
+                include_duration = now.elapsed();
                 for include in includes.iter() {
                     if let Some(document) = self.documents.get(include) {
                         if flat {
@@ -88,7 +94,7 @@ impl Store {
                 }
             }
             log::trace!("Done getting {} item(s)", all_items.len());
-            return all_items;
+            return (all_items, include_duration);
         }
         for document in self.documents.values() {
             for item in document.sp_items.iter() {
@@ -100,7 +106,7 @@ impl Store {
             "Done getting {} item(s) without the main path.",
             all_items.len()
         );
-        all_items
+        (all_items, include_duration)
     }
 
     pub(crate) fn get_included_files(&self, document: &Document, includes: &mut FxHashSet<Url>) {
@@ -128,7 +134,7 @@ impl Store {
         let uri = Arc::new(uri);
         let all_items = self.get_all_items(true);
         let mut res = vec![];
-        for item in all_items.iter() {
+        for item in all_items.0.iter() {
             let item_lock = item.read().unwrap();
             if range_contains_pos(item_lock.v_range(), position)
                 && item_lock.uri().as_ref().eq(&uri)
@@ -173,6 +179,7 @@ impl Store {
                         .cloned()
                 }),
                 None => all_items
+                    .0
                     .iter()
                     .find(|item| item.read().unwrap().name() == key)
                     .cloned(),

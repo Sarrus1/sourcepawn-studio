@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Instant};
+use std::{sync::Arc, time::Duration, time::Instant};
 
 use anyhow::{anyhow, Context};
 use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams, Url};
@@ -39,7 +39,9 @@ impl Store {
 
 impl Server {
     pub(super) fn reparse_all(&mut self) -> anyhow::Result<()> {
-        log::debug!("Reparsing all the files.");
+        log::debug!("Scanning all the files.");
+        self.store.get_all_items_time.clear();
+        self.store.get_includes_time.clear();
         self.indexing = true;
         self.send_status(lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,
@@ -91,14 +93,31 @@ impl Server {
                 })?;
             self.parse_files_for_missing_main_path();
         }
-        let now_references = Instant::now();
+        let now_analysis = Instant::now();
         self.store.find_all_references();
         self.store.first_parse = false;
+        let parse_duration = now_parse.elapsed();
+        let analysis_duration = now_analysis.elapsed();
+        let analysis_get_items_duration = self.store.get_all_items_time.iter().sum::<Duration>();
+        let get_includes_duration = self.store.get_includes_time.iter().sum::<Duration>();
         log::info!(
-            "Reparsed all the files in {:.2?}, of which resolving the references took {:.2?}, for {} file(s).",
-            now_parse.elapsed(),
-            now_references.elapsed(),
-            self.store.documents.len()
+            r#"Scanned all the files in {:.2?}:
+    - {} file(s) were scanned.
+    - Parsing took {:.2?}.
+    - Analysis took {:.2?}.
+        - Analysis took {:.2?}.
+        - Getting all items {:.2?}.
+            - Getting includes took {:.2?}.
+            - Cloning items took {:.2?}.
+        "#,
+            parse_duration,
+            self.store.documents.len(),
+            parse_duration - analysis_duration,
+            analysis_duration,
+            analysis_duration - analysis_get_items_duration,
+            analysis_get_items_duration,
+            get_includes_duration,
+            analysis_get_items_duration - get_includes_duration
         );
         self.indexing = false;
         self.reload_diagnostics();

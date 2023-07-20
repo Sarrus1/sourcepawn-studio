@@ -15,7 +15,7 @@ pub fn provide_semantic_tokens(
     request: FeatureRequest<SemanticTokensParams>,
 ) -> Option<SemanticTokens> {
     let uri = request.uri;
-    let all_items = &request.store.get_all_items(false);
+    let all_items = &request.store.get_all_items(false).0;
     if all_items.is_empty() {
         return None;
     }

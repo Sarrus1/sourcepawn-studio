@@ -6,6 +6,7 @@ use std::{
     fs, io,
     path::{Path, PathBuf},
     sync::{Arc, Mutex, RwLock},
+    time::Duration,
 };
 use tree_sitter::Parser;
 use walkdir::WalkDir;
@@ -30,6 +31,10 @@ pub struct Store {
     pub first_parse: bool,
 
     pub watcher: Option<Arc<Mutex<notify::RecommendedWatcher>>>,
+
+    pub get_all_items_time: Vec<Duration>,
+
+    pub get_includes_time: Vec<Duration>,
 }
 
 impl Store {

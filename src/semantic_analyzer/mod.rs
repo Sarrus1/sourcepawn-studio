@@ -1,4 +1,7 @@
-use std::sync::{Arc, RwLock};
+use std::{
+    sync::{Arc, RwLock},
+    time::Instant,
+};
 
 use fxhash::{FxHashMap, FxHashSet};
 use lsp_types::Url;
@@ -19,7 +22,10 @@ impl Store {
             log::trace!("Skipped resolving references for document {:?}", uri);
             return None;
         }
-        let all_items = self.get_all_items(false);
+        let now = Instant::now();
+        let (all_items, include_duration) = self.get_all_items(false);
+        self.get_all_items_time.push(now.elapsed());
+        self.get_includes_time.push(include_duration);
         let document = self.documents.get_mut(uri)?;
         let mut unresolved_tokens = FxHashSet::default();
         let mut analyzer = Analyzer::new(all_items, document);
