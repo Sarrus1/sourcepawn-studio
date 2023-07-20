@@ -115,7 +115,7 @@ impl Store {
                 continue;
             }
             includes.insert(include_uri.clone());
-            if let Some(include_document) = self.get(include_uri) {
+            if let Some(include_document) = self.documents.get(include_uri) {
                 self.get_included_files(&include_document, includes);
             }
         }

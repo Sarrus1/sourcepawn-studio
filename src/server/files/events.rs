@@ -68,15 +68,12 @@ impl Server {
                             }
                         }
                         for uri in uris.iter() {
-                            match self.store.get(uri) {
-                                Some(_) => {
-                                    self.store.remove(uri, &mut self.parser);
-                                }
-                                None => {
-                                    let _ = self
-                                        .store
-                                        .load(uri.to_file_path().unwrap(), &mut self.parser);
-                                }
+                            if self.store.documents.contains_key(uri) {
+                                self.store.remove(uri, &mut self.parser);
+                            } else {
+                                let _ = self
+                                    .store
+                                    .load(uri.to_file_path().unwrap(), &mut self.parser);
                             }
                         }
                     }

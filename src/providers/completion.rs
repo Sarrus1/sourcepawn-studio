@@ -26,7 +26,7 @@ pub(crate) fn provide_completions(
     request: FeatureRequest<CompletionParams>,
 ) -> Option<CompletionList> {
     log::debug!("Providing completions with request: {:#?}", request.params);
-    let document = request.store.get(&request.uri)?;
+    let document = request.store.documents.get(&request.uri)?;
     let all_items = request.store.get_all_items(false);
     let position = request.params.text_document_position.position;
     let line = document.line(position.line)?;

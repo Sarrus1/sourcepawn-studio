@@ -20,7 +20,7 @@ impl SignatureAttributes {
     /// * `document` - [Document] the request was made from.
     /// * `position` - Original [Position] of the trigger character.
     pub(crate) fn get_signature_attributes(
-        document: Document,
+        document: &Document,
         position: Position,
     ) -> Option<SignatureAttributes> {
         let lexer = SourcepawnLexer::new(&document.text);

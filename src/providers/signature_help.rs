@@ -19,7 +19,7 @@ pub fn provide_signature_help(
         .text_document_position_params
         .text_document
         .uri;
-    let document = request.store.get(&uri)?;
+    let document = request.store.documents.get(&uri)?;
     let signature_attributes = SignatureAttributes::get_signature_attributes(
         document,
         request.params.text_document_position_params.position,
