@@ -1,5 +1,14 @@
 {
+  "prettier.tabWidth": 4,
+  "editor.tabSize": 4,
+  "editor.useTabStops": true,
   "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
-  "[sourcepawn]":{"editor.formatOnSave": false}
+  "rust-analyzer.linkedProjects": [
+    "Cargo.toml",
+    "src/sourcepawn_preprocessor/Cargo.toml"
+  ],
+  "[sourcepawn]": {
+    "editor.formatOnSave": false
+  }
 }

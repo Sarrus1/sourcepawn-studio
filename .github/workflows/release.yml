@@ -1,0 +1,136 @@
+name: release
+
+on:
+    release:
+        types: [created]
+
+jobs:
+    build:
+        name: Build ${{ matrix.target }}
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - os: windows-latest
+                      target: x86_64-pc-windows-msvc
+                      program: cargo
+                      archive: sourcepawn_lsp-x86_64-windows.zip
+
+                    - os: windows-latest
+                      target: i686-pc-windows-msvc
+                      program: cargo
+                      archive: sourcepawn_lsp-i686-windows.zip
+
+                    - os: windows-latest
+                      target: aarch64-pc-windows-msvc
+                      program: cargo
+                      archive: sourcepawn_lsp-aarch64-windows.zip
+
+                    - os: macos-latest
+                      target: x86_64-apple-darwin
+                      program: cargo
+                      archive: sourcepawn_lsp-x86_64-macos.zip
+
+                    - os: macos-latest
+                      target: aarch64-apple-darwin
+                      program: cargo
+                      archive: sourcepawn_lsp-aarch64-macos.zip
+
+                    - os: ubuntu-20.04
+                      target: x86_64-unknown-linux-gnu
+                      program: cargo
+                      archive: sourcepawn_lsp-x86_64-linux.zip
+
+                    - os: ubuntu-20.04
+                      target: aarch64-unknown-linux-gnu
+                      program: cross
+                      archive: sourcepawn_lsp-aarch64-linux.zip
+
+                    - os: ubuntu-20.04
+                      target: armv7-unknown-linux-gnueabihf
+                      program: cross
+                      archive: sourcepawn_lsp-armv7hf-linux.zip
+
+        steps:
+            - uses: actions/checkout@v3
+            - name: Setup Sentry CLI
+              uses: mathieu-bour/setup-sentry-cli@v1
+              with:
+                  token: ${{ SECRETS.SENTRY_AUTH_TOKEN }}
+                  organization: ${{ secrets.SENTRY_ORG }}
+                  project: sourcepawn-lsp
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  targets: ${{ matrix.target }}
+            - name: Install cross
+              if: ${{ matrix.program == 'cross' }}
+              run: cargo install cross
+            - name: Install libssl-dev
+              if: ${{ contains(matrix.os, 'ubuntu') }}
+              run: sudo apt-get install pkg-config libssl-dev
+            - name: Compile
+              run: ${{ matrix.program }} build --target ${{ matrix.target }} --all-features --release --locked
+            - name: Compress (Windows)
+              if: ${{ contains(matrix.os, 'windows') }}
+              run: ${{ format('Compress-Archive target/{0}/release/sourcepawn_lsp.exe {1}', matrix.target, matrix.archive) }}
+            - name: Compress (macOS)
+              if: ${{ contains(matrix.os, 'macos') }}
+              run: ${{ format('zip -j {1} target/{0}/release/sourcepawn_lsp', matrix.target, matrix.archive) }}
+            - name: Compress (Linux)
+              if: ${{ contains(matrix.os, 'ubuntu') }}
+              run: ${{ format('zip -j {1} target/{0}/release/sourcepawn_lsp', matrix.target, matrix.archive) }}
+            - name: Upload debug symbols
+              run: sentry-cli upload-dif --wait target/${{ matrix.target }}/release/
+            - name: Upload binary archive
+              uses: actions/upload-artifact@v3
+              with:
+                  name: ${{ matrix.target }}
+                  path: ${{ matrix.archive }}
+
+    github:
+        name: Publish releases
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+            - uses: actions/download-artifact@v3
+            - name: Publish binaries
+              run: |
+                  gh release upload ${{ github.ref_name }} $(find . -iname sourcepawn_lsp*.zip)
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    edit-release:
+        runs-on: ubuntu-latest
+        needs: [build]
+        strategy:
+            fail-fast: false
+        steps:
+            - uses: actions/checkout@v3
+            - name: Add changelog
+              id: changelog
+              uses: mindsers/changelog-reader-action@v2.0.0
+            - name: Edit Release
+              uses: irongut/EditRelease@v1.2.0
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  id: ${{ github.event.release.id }}
+                  body: ${{ steps.changelog.outputs.changes }}
+                  replacebody: true
+
+    # cargo-release:
+    #     runs-on: ubuntu-latest
+    #     needs: [build]
+    #     strategy:
+    #         fail-fast: false
+    #     steps:
+    #         - uses: actions/checkout@v3
+    #         - uses: actions-rs/toolchain@v1
+    #           with:
+    #               toolchain: stable
+    #               override: true
+    #         - uses: katyo/publish-crates@v2
+    #           with:
+    #               registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+    #               args: --allow-dirty

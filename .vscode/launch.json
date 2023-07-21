@@ -11,7 +11,9 @@
         "--disable-extensions",
         "--extensionDevelopmentPath=${workspaceRoot}"
       ],
-      "outFiles": ["${workspaceRoot}/dist/**/*.js"],
+      "outFiles": [
+        "${workspaceRoot}/dist/**/*.js"
+      ],
       "preLaunchTask": "Build Server and Extension"
     },
     {
@@ -24,7 +26,9 @@
         "--disable-extensions",
         "--extensionDevelopmentPath=${workspaceRoot}"
       ],
-      "outFiles": ["${workspaceRoot}/dist/**/*.js"],
+      "outFiles": [
+        "${workspaceRoot}/dist/**/*.js"
+      ],
       "preLaunchTask": "Build Server (Release) and Extension"
     },
     {
@@ -37,8 +41,32 @@
         "--extensionDevelopmentPath=${workspaceRoot}",
         "--extensionTestsPath=${workspaceRoot}/dist/test/suite/index"
       ],
-      "outFiles": ["${workspaceRoot}/dist/**/*.js"],
+      "outFiles": [
+        "${workspaceRoot}/dist/**/*.js"
+      ],
       "preLaunchTask": "npm: pretest"
+    },
+    {
+      // Used to attach LLDB to a running LSP server.
+      // NOTE: Might require root permissions. For this run:
+      //
+      // `echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope`
+      //
+      // Don't forget to set `debug = 2` in `Cargo.toml` before building the server
+      "name": "Attach To Server",
+      "type": "lldb",
+      "request": "attach",
+      "program": "${workspaceFolder}/target/debug/rust-analyzer",
+      "pid": "${command:pickMyProcess}",
+      "sourceLanguages": [
+        "rust"
+      ]
+    },
+    {
+      "name": "Win Attach to Server",
+      "type": "cppvsdbg",
+      "processId": "${command:pickProcess}",
+      "request": "attach"
     }
   ]
 }
