@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [5.5.0]
+
+### Added
+
+- sourcepawn-lsp is now bundled with the extension.
+
 ## [5.4.2]
 
 ### Added
