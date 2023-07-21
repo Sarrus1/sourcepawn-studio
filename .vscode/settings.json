@@ -1,14 +1,29 @@
 {
-  "prettier.tabWidth": 4,
-  "editor.tabSize": 4,
-  "editor.useTabStops": true,
-  "editor.formatOnPaste": true,
-  "editor.formatOnSave": true,
-  "rust-analyzer.linkedProjects": [
-    "Cargo.toml",
-    "src/sourcepawn_preprocessor/Cargo.toml"
-  ],
-  "[sourcepawn]": {
-    "editor.formatOnSave": false
-  }
+    "prettier.tabWidth": 4,
+    "editor.tabSize": 4,
+    "editor.useTabStops": true,
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "rust-analyzer.linkedProjects": [
+        "Cargo.toml",
+        "src/sourcepawn_preprocessor/Cargo.toml"
+    ],
+    "[sourcepawn]": {
+        "editor.formatOnSave": false
+    },
+    "[yaml]": {
+        "editor.insertSpaces": true,
+        "editor.tabSize": 2,
+        "editor.autoIndent": "advanced",
+        "diffEditor.ignoreTrimWhitespace": false
+    },
+    "[json]": {
+        "editor.quickSuggestions": {
+            "strings": true
+        },
+        "editor.suggest.insertMode": "replace",
+        "editor.insertSpaces": true,
+        "editor.tabSize": 2,
+        "editor.formatOnSave": false
+    }
 }

@@ -6,7 +6,7 @@
       "group": "build",
       "type": "npm",
       "script": "watch",
-      "path": "${workspaceFolder}",
+      "path": "./editors/code/",
       "problemMatcher": {
         "base": "$tsc-watch"
       },
@@ -17,6 +17,7 @@
       "group": "build",
       "type": "npm",
       "script": "build",
+      "path": "./editors/code/",
       "problemMatcher": {
         "base": "$tsc"
       }
@@ -37,12 +38,18 @@
     },
     {
       "label": "Build Server and Extension",
-      "dependsOn": ["Build Server", "Build Extension"],
+      "dependsOn": [
+        "Build Server",
+        "Build Extension"
+      ],
       "problemMatcher": "$rustc"
     },
     {
       "label": "Build Server (Release) and Extension",
-      "dependsOn": ["Build Server (Release)", "Build Extension"],
+      "dependsOn": [
+        "Build Server (Release)",
+        "Build Extension"
+      ],
       "problemMatcher": "$rustc"
     }
   ]

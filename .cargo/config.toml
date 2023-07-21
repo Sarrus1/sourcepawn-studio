@@ -1,0 +1,5 @@
+[alias]
+lint = "clippy --all-targets -- -Aclippy::collapsible_if -Aclippy::needless_pass_by_value -Aclippy::nonminimal_bool -Aclippy::redundant_pattern_matching --cap-lints warn"
+
+[env]
+CARGO_WORKSPACE_DIR = { value = "", relative = true }

@@ -9,12 +9,18 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "--disable-extensions",
-        "--extensionDevelopmentPath=${workspaceRoot}"
+        "--extensionDevelopmentPath=${workspaceFolder}/editors/code"
       ],
       "outFiles": [
-        "${workspaceRoot}/dist/**/*.js"
+        "${workspaceFolder}/editors/code/dist/**/*.js"
       ],
-      "preLaunchTask": "Build Server and Extension"
+      "preLaunchTask": "Build Server and Extension",
+      "skipFiles": [
+        "<node_internals>/**/*.js"
+      ],
+      "env": {
+        "__SOURCEPAWN_LSP_SERVER_DEBUG": "${workspaceFolder}/target/debug/sourcepawn_lsp"
+      }
     },
     {
       // Used for testing the extension with a release build of the LSP server (in `target/release`).
@@ -24,12 +30,15 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "--disable-extensions",
-        "--extensionDevelopmentPath=${workspaceRoot}"
+        "--extensionDevelopmentPath=${workspaceFolder}/editors/code"
       ],
       "outFiles": [
-        "${workspaceRoot}/dist/**/*.js"
+        "${workspaceFolder}/editors/code/dist/**/*.js"
       ],
-      "preLaunchTask": "Build Server (Release) and Extension"
+      "preLaunchTask": "Build Server (Release) and Extension",
+      "env": {
+        "__SOURCEPAWN_LSP_SERVER_DEBUG": "${workspaceFolder}/target/release/sourcepawn_lsp"
+      }
     },
     {
       "name": "Extension Tests",
@@ -38,11 +47,11 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "--disable-extensions",
-        "--extensionDevelopmentPath=${workspaceRoot}",
-        "--extensionTestsPath=${workspaceRoot}/dist/test/suite/index"
+        "--extensionDevelopmentPath=${workspaceFolder}/editors/code",
+        "--extensionTestsPath=${workspaceFolder}/editors/code/dist/test/suite/index"
       ],
       "outFiles": [
-        "${workspaceRoot}/dist/**/*.js"
+        "./editors/code/dist/**/*.js"
       ],
       "preLaunchTask": "npm: pretest"
     },

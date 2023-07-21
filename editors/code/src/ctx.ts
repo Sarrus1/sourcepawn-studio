@@ -1,16 +1,10 @@
-import { existsSync } from "fs";
-import { homedir, platform } from "os";
-import { join } from "path";
+import { platform } from "os";
+import { join, resolve } from "path";
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient/node";
 
 import * as lsp_ext from "./lsp_ext";
-import { PersistentState } from "./persistent_state";
-import {
-  getLatestVersionName,
-  run as installLanguageServerCommand,
-} from "./Commands/installLanguageServer";
-import { execFileSync, execFile } from "child_process";
+import { execFile } from "child_process";
 
 export type CommandFactory = {
   enabled: (ctx: CtxInit) => Cmd;
@@ -28,7 +22,6 @@ export class Ctx {
   private _client: lc.LanguageClient | undefined;
   private _serverPath: string | undefined;
   private clientSubscriptions: Disposable[];
-  private state: PersistentState;
   private commandFactories: Record<string, CommandFactory>;
   private commandDisposables: Disposable[];
 
@@ -53,7 +46,6 @@ export class Ctx {
     );
     this.spcompStatusBar.show();
 
-    this.state = new PersistentState(extCtx.globalState);
     this.clientSubscriptions = [];
     this.commandDisposables = [];
     this.commandFactories = commandFactories;
@@ -72,33 +64,6 @@ export class Ctx {
     this.commandDisposables.forEach((disposable) => disposable.dispose());
   }
 
-  private async installLanguageServerIfAbsent() {
-    if (existsSync(this._serverPath)) {
-      try {
-        const version = this.getServerVersionFromBinary();
-        this.state.updateServerVersion(version);
-        return;
-      } catch {
-        // The language server is not properly installed.
-      }
-    }
-    // Install the language server.
-    await installLanguageServerCommand(undefined);
-    try {
-      this.state.updateServerVersion(this.getServerVersionFromBinary());
-    } catch {
-      // The language server is not properly installed
-    }
-  }
-
-  getServerVersionFromBinary() {
-    const versionOutput = execFileSync(this._serverPath, ["--version"]);
-    return versionOutput
-      .toString()
-      .trim()
-      .match(/^sourcepawn_lsp (\d+\.\d+\.\d+)$/)[1];
-  }
-
   async getServerVersionFromBinaryAsync(
     callback: (version: string | undefined) => void
   ) {
@@ -115,26 +80,7 @@ export class Ctx {
     });
   }
 
-  async checkForLanguageServerUpdate() {
-    if (this.extCtx.extensionMode === vscode.ExtensionMode.Development) {
-      return;
-    }
-    const latestVersion = await getLatestVersionName();
-    const installedVersion = this.state.serverVersion;
-    if (
-      latestVersion === undefined ||
-      installedVersion === undefined ||
-      latestVersion === installedVersion
-    ) {
-      return;
-    }
-    await installLanguageServerCommand(undefined);
-    this.state.updateServerVersion(latestVersion);
-    this.start();
-  }
-
-  private async getOrCreateClient() {
-    await this.installLanguageServerIfAbsent();
+  private getOrCreateClient() {
     if (!this._client || !this._client.isRunning()) {
       const traceServer = vscode.workspace
         .getConfiguration("sourcepawn")
@@ -164,9 +110,8 @@ export class Ctx {
           args,
         },
         debug: {
-          command: join(
-            homedir(),
-            "dev/sourcepawn-lsp/target/debug/sourcepawn_lsp" +
+          command: resolve(
+            process.env["__SOURCEPAWN_LSP_SERVER_DEBUG"] +
               (platform() == "win32" ? ".exe" : "")
           ),
           args: ["-vvv"],

@@ -49,7 +49,6 @@
     "onCommand:sourcepawn-vscode.setFileAsMain",
     "onCommand:sourcepawn-vscode.createChangelog",
     "onCommand:sourcepawn-vscode.changeSMApi",
-    "onCommand:sourcepawn-vscode.installLanguageServer",
     "onCommand:sourcepawn-vscode.startServer"
   ],
   "contributes": {
@@ -577,23 +576,21 @@
     ]
   },
   "dependencies": {
-    "axios": "^1.2.6",
+    "axios": "^1.4.0",
     "decompress": "^4.2.1",
     "ftp-deploy": "^2.4.2",
     "glob": "^7.2.0",
     "rcon-srcds": "^2.0.1",
-    "unzipper": "^0.10.11",
     "valve_kv_tools": "^0.3.0",
     "vscode-languageclient": "^8.1.0",
-    "vscode-uri": "^3.0.3",
-    "wget-improved": "^3.2.1"
+    "vscode-uri": "^3.0.3"
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
+    "@types/decompress": "^4.2.4",
     "@types/glob": "^7.2.0",
     "@types/mocha": "^9.1.1",
     "@types/node": "^14.14.0",
-    "@types/unzipper": "^0.10.5",
     "@types/vscode": "^1.63.0",
     "@vscode/test-electron": "^1.6.1",
     "@vscode/vsce": "^2.19.0",

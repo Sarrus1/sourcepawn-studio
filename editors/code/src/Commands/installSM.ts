@@ -8,9 +8,9 @@ import {
 } from "vscode";
 import { join } from "path";
 import { platform, homedir } from "os";
-import { existsSync, mkdirSync } from "fs";
-const wget = require("wget-improved");
-const decompress = require("decompress");
+import { createWriteStream, existsSync, mkdirSync, rmSync } from "fs";
+import axios from "axios";
+import decompress from "decompress";
 
 const outputDir = join(homedir(), "sourcemodAPI/");
 
@@ -80,15 +80,27 @@ async function getSourceModVersion(
   progress: Progress<{ message?: string; increment?: number }>,
   token: CancellationToken
 ): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    window
-      .showQuickPick(buildQuickPickSMVersion(), {
-        title: "Pick a version of Sourcemod to install",
-      })
-      .then((value) => {
-        resolve(downloadSM(value.label, progress, token));
-      });
+  let oldStatus = 0;
+  const value = await window.showQuickPick(buildQuickPickSMVersion(), {
+    title: "Pick a version of Sourcemod to install",
   });
+  await downloadAndDecompressFile(
+    await getSourcemodUrl(value.label),
+    join(outputDir, "sm.gz"),
+    (newStatus: number) => {
+      if (newStatus === 100) {
+        progress.report({ message: "Unzipping..." });
+        return;
+      }
+      let inc = newStatus - oldStatus;
+      oldStatus = newStatus;
+      progress.report({
+        message: "Downloading...",
+        increment: inc,
+      });
+    }
+  );
+  return;
 }
 
 function buildQuickPickSMVersion(): QuickPickItem[] {
@@ -102,89 +114,67 @@ function buildQuickPickSMVersion(): QuickPickItem[] {
   ];
 }
 
-async function downloadSM(
-  smVersion: string,
-  progress: Progress<{ message?: string; increment?: number }>,
-  token: CancellationToken
-): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    const options = {
-      protocol: "https",
-      host: "sm.alliedmods.net",
-      path: "",
+async function getSourcemodUrl(smVersion: string) {
+  let url = `https://sm.alliedmods.net/smdrop/${smVersion}/sourcemod-latest-`;
+  switch (platform()) {
+    case "win32":
+      url += "windows";
+      break;
+    case "darwin":
+      url += "mac";
+      break;
+    default:
+      url += "linux";
+      break;
+  }
+  const res = await axios.get(url);
+  return `https://sm.alliedmods.net/smdrop/${smVersion}/${res.data}`;
+}
+
+async function downloadAndDecompressFile(
+  url: string,
+  outputFilePath: string,
+  progressCallback: (progress: number) => void
+) {
+  try {
+    const { data, headers } = await axios({
+      url,
       method: "GET",
-    };
+      responseType: "stream",
+    });
 
-    if (Platform === "win32") {
-      options.path = "/smdrop/" + smVersion + "/sourcemod-latest-windows";
-    } else if (Platform === "darwin") {
-      options.path = "/smdrop/" + smVersion + "/sourcemod-latest-mac";
-    } else {
-      options.path = "/smdrop/" + smVersion + "/sourcemod-latest-linux";
-    }
+    return new Promise<void>((resolve, reject) => {
+      const writer = createWriteStream(outputFilePath);
 
-    let request = wget.request(options, function (response) {
-      let oldStatus: number = 0;
-      let content = "";
-      if (response.statusCode === 200) {
-        response.on("error", function (err) {
-          console.log(err);
+      if (progressCallback) {
+        // Get the content length from the response headers for progress reporting
+        const totalBytes = parseInt(headers["content-length"], 10);
+        let downloadedBytes = 0;
+
+        // Register the download progress event
+        data.on("data", (chunk) => {
+          downloadedBytes += chunk.length;
+          const progress = (downloadedBytes / totalBytes) * 100;
+          progressCallback(progress);
         });
-        response.on("data", function (chunk) {
-          content += chunk;
-        });
-        response.on("end", function () {
-          progress.report({ message: "Downloading Sourcemod: " + content });
-          console.log(content);
-
-          const output = join(outputDir, "sm.gz");
-
-          const download = wget.download(
-            "https://sm.alliedmods.net/smdrop/" + smVersion + "/" + content,
-            output,
-            options
-          );
-          download.on("error", function (err) {
-            console.error(err);
-            reject(err);
-          });
-          download.on("start", function (fileSize: number) {
-            console.log(
-              "filesize: ",
-              Math.ceil(fileSize / Math.pow(10, 6)),
-              "Mo"
-            );
-          });
-          download.on("end", async function (endStatus) {
-            console.log(endStatus);
-            progress.report({ message: "Unzipping..." });
-            await decompress(output, outputDir);
-            resolve(endStatus);
-          });
-          download.on("progress", function (status) {
-            if (typeof status === "number") {
-              status = Math.floor(status * 100);
-              const inc = status - oldStatus;
-              oldStatus = status;
-              progress.report({
-                message: "Downloading Sourcemod " + content,
-                increment: inc,
-              });
-            }
-          });
-          token.onCancellationRequested(() => {
-            console.log("Sourcemod download was cancelled by the user.");
-            //TODO: Actually stop the download here. Might need a better NPM package...
-          });
-        });
-      } else {
-        console.log("Response: " + response.statusCode);
       }
-    });
+      data.pipe(writer);
 
-    request.end();
-    request.on("error", function (err) {
-      console.log(err);
+      writer.on("finish", () => {
+        if (progressCallback) {
+          // Ensure the progress reaches 100% after download completion
+          progressCallback(100.0);
+          console.log("File downloaded.");
+        }
+        decompress(outputFilePath, outputDir).then(() => {
+          console.log("File decompressed.");
+          rmSync(outputFilePath, { force: true, recursive: true });
+          console.log("Temporary files deleted.");
+          resolve();
+        });
+      });
     });
-  });
+  } catch (error) {
+    console.error("Error during download and decompression:", error.message);
+  }
 }

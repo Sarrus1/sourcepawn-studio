@@ -17,13 +17,7 @@ export let ctx: Ctx | undefined;
 export async function activate(context: vscode.ExtensionContext) {
   migrateSettings();
   ctx = new Ctx(context, createServerCommands());
-  ctx.start().then(() => {
-    try {
-      ctx.checkForLanguageServerUpdate();
-    } catch (error) {
-      console.error("Couldn't update the language server.", error);
-    }
-  });
+  ctx.start();
 
   registerSMCommands(context);
   buildDoctorStatusBar();
