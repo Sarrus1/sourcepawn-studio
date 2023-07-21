@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import { ctx } from "../spIndex";
 import * as fs from "fs";
-import { getLatestVersionName } from "./installLanguageServer";
 import { execFile } from "child_process";
 
 export async function run(args: any) {
@@ -38,7 +37,6 @@ class Doctor {
   lspVersion: string | undefined = undefined;
   isLSPInstalled = DiagnosticState.None;
   isLSPExecutable = DiagnosticState.None;
-  isLSPUpToDate = DiagnosticState.None;
 
   // Settings
   spCompPath: string | undefined = undefined;
@@ -125,26 +123,6 @@ class Doctor {
         diagnostics.push("🩺 Checking if the Language Server is executable.");
         break;
     }
-    switch (this.isLSPUpToDate) {
-      case DiagnosticState.OK:
-        diagnostics.push(
-          `✅ Language Server is up to date (installed: ${this.lspVersion}).`
-        );
-        break;
-      case DiagnosticState.Warning:
-        diagnostics.push(
-          `⚠️ Language Server is not up to date (installed: ${this.lspVersion}).`
-        );
-        break;
-      case DiagnosticState.Error:
-        diagnostics.push(
-          "❌ An error occured while fetching the latest version of the Language Server."
-        );
-        break;
-      case DiagnosticState.None:
-        diagnostics.push("🩺 Checking if the Language Server is up to date.");
-        break;
-    }
 
     return diagnostics.map((d) => `<li>${d}</li>`).join("\n");
   }
@@ -161,25 +139,13 @@ class Doctor {
       }
       this.isLSPInstalled = DiagnosticState.OK;
     });
-    ctx?.getServerVersionFromBinaryAsync((v) => {
-      if (v === undefined) {
-        this.isLSPExecutable = DiagnosticState.Error;
-        return;
-      }
-      this.isLSPExecutable = DiagnosticState.OK;
-      this.lspVersion = v;
-      getLatestVersionName()
-        .then((latestVersion) => {
-          if (latestVersion !== this.lspVersion) {
-            this.isLSPUpToDate = DiagnosticState.Warning;
-            return;
-          }
-          this.isLSPUpToDate = DiagnosticState.OK;
-        })
-        .catch(() => {
-          this.isLSPUpToDate = DiagnosticState.Error;
-        });
-    });
+    const version = await ctx?.getServerVersionFromBinaryAsync();
+    if (version === undefined) {
+      this.isLSPExecutable = DiagnosticState.Error;
+      return;
+    }
+    this.isLSPExecutable = DiagnosticState.OK;
+    this.lspVersion = version;
   }
 
   spCompToWebView(): string {

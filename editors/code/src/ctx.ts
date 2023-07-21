@@ -64,20 +64,15 @@ export class Ctx {
     this.commandDisposables.forEach((disposable) => disposable.dispose());
   }
 
-  async getServerVersionFromBinaryAsync(
-    callback: (version: string | undefined) => void
-  ) {
-    execFile(this._serverPath, ["--version"], (error, stdout, stderr) => {
-      if (error) {
-        callback(undefined);
-      }
-      callback(
-        stdout
-          .toString()
-          .trim()
-          .match(/^sourcepawn_lsp (\d+\.\d+\.\d+)$/)[1]
-      );
-    });
+  async getServerVersionFromBinaryAsync(): Promise<string | undefined> {
+    const childProcess = await execFile(this._serverPath, ["--version"]);
+    if (childProcess.stderr) {
+      return undefined;
+    }
+    return childProcess.stdout
+      .toString()
+      .trim()
+      .match(/^sourcepawn_lsp (\d+\.\d+\.\d+)$/)[1];
   }
 
   private getOrCreateClient() {
