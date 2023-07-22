@@ -132,7 +132,7 @@ jobs:
         run: |
           mkdir -p editors/code/languageServer
           cp target/${{ matrix.target }}/release/sourcepawn_lsp editors/code/languageServer/
-      - name: Build VSCode extension
+      - name: Package VSCode extension
         working-directory: ./editors/code
         run: npx vsce package --target ${{ env.target }}
 

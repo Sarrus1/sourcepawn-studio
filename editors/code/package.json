@@ -578,7 +578,7 @@
   "dependencies": {
     "axios": "^1.4.0",
     "decompress": "^4.2.1",
-    "ftp-deploy": "^2.4.2",
+    "ftp-deploy": "git+https://github.com/Sarrus1/ftp-deploy.git",
     "glob": "^7.2.0",
     "rcon-srcds": "^2.0.1",
     "valve_kv_tools": "^0.3.0",
@@ -594,7 +594,7 @@
     "@types/vscode": "^1.63.0",
     "@vscode/test-electron": "^1.6.1",
     "@vscode/vsce": "^2.19.0",
-    "esbuild": "^0.14.43",
+    "esbuild": "^0.18.15",
     "mocha": "^10.0.0",
     "node-loader": "2.0.0",
     "nyc": "^15.1.0",
@@ -606,9 +606,9 @@
     "vscode:prepublish": "npm run build",
     "pretest": "npm run compile",
     "test": "node ./dist/test/runTest.js",
-    "build": "node esbuild.js prod",
+    "build": "node esbuild.mjs prod",
     "compile": "npm run build && tsc -b tsconfig.json",
-    "watch": "node esbuild.js watch"
+    "watch": "node esbuild.mjs watch"
   },
   "__metadata": {
     "id": "217597eb-5e7a-45ee-a236-5456c0f90948",

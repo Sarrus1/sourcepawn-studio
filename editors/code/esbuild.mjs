@@ -1,5 +1,6 @@
-const fs = require("fs");
-const path = require("path");
+import * as fs from "fs";
+import * as path from "path";
+import * as esbuild from "esbuild";
 
 const outDir = "./dist";
 
@@ -52,20 +53,24 @@ const nativeNodeModulesPlugin = {
 if (!fs.existsSync(outDir)) {
   fs.mkdirSync(outDir);
 }
+
 const watch = process.argv[2] === "watch";
 
-require("esbuild")
-  .build({
-    entryPoints: ["./src/spIndex.ts"],
-    bundle: true,
-    sourcemap: true,
-    minify: !watch,
-    outfile: `${outDir}/spIndex.js`,
-    logLevel: "info",
-    external: ["vscode"],
-    format: "cjs",
-    platform: "node",
-    plugins: [wasmPlugin, nativeNodeModulesPlugin],
-    watch: watch,
-  })
-  .catch(() => process.exit(1));
+let ctx = await esbuild.build({
+  entryPoints: ["./src/spIndex.ts"],
+  bundle: true,
+  sourcemap: true,
+  sourceRoot: "./src",
+  minify: !watch,
+  outfile: `${outDir}/spIndex.js`,
+  logLevel: "info",
+  external: ["vscode", "ssh2"],
+  format: "cjs",
+  platform: "node",
+  plugins: [wasmPlugin, nativeNodeModulesPlugin],
+});
+
+if (watch) {
+  await ctx.watch();
+  console.log("watching...");
+}
