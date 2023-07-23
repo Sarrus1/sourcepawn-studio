@@ -17,7 +17,6 @@ jobs:
             program: cargo
             platform: win32
             arch: x64
-            npm_config_arch: x64
             archive: sourcepawn_lsp-x86_64-windows.zip
 
           - os: windows-latest
@@ -25,7 +24,6 @@ jobs:
             program: cargo
             platform: win32
             arch: ia32
-            npm_config_arch: ia32
             archive: sourcepawn_lsp-i686-windows.zip
 
           - os: windows-latest
@@ -33,7 +31,6 @@ jobs:
             program: cargo
             platform: win32
             arch: arm64
-            npm_config_arch: arm
             archive: sourcepawn_lsp-aarch64-windows.zip
 
           - os: macos-latest
@@ -41,7 +38,6 @@ jobs:
             program: cargo
             platform: darwin
             arch: x64
-            npm_config_arch: x64
             archive: sourcepawn_lsp-x86_64-macos.zip
 
           - os: macos-latest
@@ -49,15 +45,13 @@ jobs:
             program: cargo
             platform: darwin
             arch: arm64
-            npm_config_arch: arm64
             archive: sourcepawn_lsp-aarch64-macos.zip
 
           - os: ubuntu-20.04
             target: x86_64-unknown-linux-gnu
             program: cargo
             platform: linux
-            arch: arm64
-            npm_config_arch: arm64
+            arch: x64
             archive: sourcepawn_lsp-x86_64-linux.zip
 
           - os: ubuntu-20.04
@@ -65,7 +59,6 @@ jobs:
             program: cross
             platform: linux
             arch: arm64
-            npm_config_arch: arm
             archive: sourcepawn_lsp-aarch64-linux.zip
 
           - os: ubuntu-20.04
@@ -73,14 +66,13 @@ jobs:
             program: cross
             platform: linux
             arch: armhf
-            npm_config_arch: arm
             archive: sourcepawn_lsp-armv7hf-linux.zip
 
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v2
         with:
-          node-version: 18.x
+          node-version: 16.x
 
       - name: Setup Sentry CLI
         uses: mathieu-bour/setup-sentry-cli@v1
@@ -119,7 +111,6 @@ jobs:
         run: npm install
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          npm_config_arch: ${{ matrix.npm_config_arch }}
       - name: Bundle sourcepawn-lsp (Windows)
         if: ${{ contains(matrix.os, 'windows') }}
         shell: pwsh

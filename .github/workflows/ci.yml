@@ -87,48 +87,40 @@ jobs:
           - os: windows-latest
             platform: win32
             arch: x64
-            npm_config_arch: x64
 
           - os: windows-latest
             platform: win32
             arch: ia32
-            npm_config_arch: ia32
 
           - os: windows-latest
             platform: win32
             arch: arm64
-            npm_config_arch: arm
 
           - os: macos-latest
             platform: darwin
             arch: x64
-            npm_config_arch: x64
 
           - os: macos-latest
             platform: darwin
             arch: arm64
-            npm_config_arch: arm64
+
+          - os: ubuntu-20.04
+            platform: linux
+            arch: x64
 
           - os: ubuntu-20.04
             platform: linux
             arch: arm64
-            npm_config_arch: arm64
-
-          - os: ubuntu-20.04
-            platform: linux
-            arch: arm64
-            npm_config_arch: arm
 
           - os: ubuntu-20.04
             platform: linux
             arch: armhf
-            npm_config_arch: arm
 
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v2
         with:
-          node-version: 18.x
+          node-version: 16.x
       - shell: pwsh
         run: echo "target=${{ matrix.platform }}-${{ matrix.arch }}" >> $env:GITHUB_ENV
       - name: Install npm dependencies
@@ -136,7 +128,6 @@ jobs:
         run: npm install
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          npm_config_arch: ${{ matrix.npm_config_arch }}
       - name: Package VSCode extension
         working-directory: ./editors/code
         run: npx vsce package --target ${{ env.target }}
