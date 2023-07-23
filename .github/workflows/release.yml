@@ -155,9 +155,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
-      - run: npx vsce publish --packagePath $(find . -iname *.vsix)
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
       - name: Publish binaries
         run: |
           gh release upload ${{ github.ref_name }} $(find . -iname sourcepawn_lsp*.zip)
@@ -165,41 +162,41 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # marketplace:
-  #   name: Publish to VSCode marketplace
-  #   needs: [build]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: actions/download-artifact@v3
-  #     - name: Publish VSIX package (Release)
-  #       if: ${{ !github.event.prerelease }}
-  #       run: npx vsce publish --packagePath $(find . -iname *.vsix)
-  #       env:
-  #         VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
-  #     - name: Publish VSIX package (Prerelease)
-  #       if: ${{ github.event.prerelease }}
-  #       run: npx vsce publish --packagePath $(find . -iname *.vsix) --pre-release
-  #       env:
-  #         VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
+  marketplace:
+    name: Publish to VSCode marketplace
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+      - name: Publish VSIX package (Release)
+        if: ${{ !github.event.prerelease }}
+        run: npx vsce publish --packagePath $(find . -iname *.vsix)
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
+      - name: Publish VSIX package (Prerelease)
+        if: ${{ github.event.prerelease }}
+        run: npx vsce publish --packagePath $(find . -iname *.vsix) --pre-release
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
 
-  # ovsx:
-  #   name: Publish to Open VSX
-  #   needs: [build]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: actions/download-artifact@v3
-  #     - name: Publish VSIX package (Release)
-  #       if: ${{ !github.event.prerelease }}
-  #       run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname *.vsix)
-  #       env:
-  #         OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
-  #     - name: Publish VSIX package (Prerelease)
-  #       if: ${{ github.event.prerelease }}
-  #       run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname *.vsix) --pre-release
-  #       env:
-  #         OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
+  ovsx:
+    name: Publish to Open VSX
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+      - name: Publish VSIX package (Release)
+        if: ${{ !github.event.prerelease }}
+        run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname *.vsix)
+        env:
+          OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
+      - name: Publish VSIX package (Prerelease)
+        if: ${{ github.event.prerelease }}
+        run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname *.vsix) --pre-release
+        env:
+          OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
 
   edit-release:
     runs-on: ubuntu-latest

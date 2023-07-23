@@ -1,6 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as esbuild from "esbuild";
+import { createRequire } from "module";
+const require = createRequire(path.resolve("./"));
 
 const outDir = "./dist";
 
@@ -64,9 +66,10 @@ let ctx = await esbuild.build({
   minify: !watch,
   outfile: `${outDir}/spIndex.js`,
   logLevel: "info",
-  external: ["vscode", "ssh2"],
+  external: ["vscode"],
   format: "cjs",
   platform: "node",
+  loader: { ".node": "file" },
   plugins: [wasmPlugin, nativeNodeModulesPlugin],
 });
 
