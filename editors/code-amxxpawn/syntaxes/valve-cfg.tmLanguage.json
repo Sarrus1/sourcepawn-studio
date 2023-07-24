@@ -1,0 +1,124 @@
+{
+  "scopeName": "text.valve-cfg",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#function"
+    },
+    {
+      "include": "#cvar"
+    },
+    {
+      "include": "#value"
+    }
+  ],
+
+  "repository": {
+    "function": {
+      "patterns": [
+        {
+          "name": "support.function.valve-cfg",
+          "match": "^\\s*\\b(alias|bind_osx|bind|clear|echo|execifexists|execwithwhitelist|exec|host_writeconfig_ss|host_writeconfig|key_updatelayout|playvol|say_team|say|unbindalljoystick|unbindallmousekeyboard|unbindall)",
+          "captures": { "1": { "name": "support.function.valve-cfg" } }
+        }
+      ]
+    },
+
+    "cvar": {
+      "patterns": [
+        {
+          "match": "^\\s*(\"[A-Za-z0-9_-]*\")",
+          "captures": {
+            "1": { "name": "support.type.property-name.valve-cfg" }
+          }
+        },
+        {
+          "match": "^\\s*('[A-Za-z0-9_-]*')",
+          "captures": {
+            "1": { "name": "support.type.property-name.valve-cfg" }
+          }
+        },
+        {
+          "match": "^\\s*([A-Za-z0-9_-]*)",
+          "captures": {
+            "1": { "name": "support.type.property-name.valve-cfg" }
+          }
+        }
+      ]
+    },
+
+    "value": {
+      "begin": ".",
+      "end": "\\n",
+      "patterns": [{ "include": "#numeric-literal" }, { "include": "#strings" }]
+    },
+
+    "numeric-literal": {
+      "patterns": [
+        {
+          "comment": "Float literal",
+          "match": "[0-9]+\\.[0-9]+",
+          "name": "constant.numeric.float.valve-cfg"
+        },
+        {
+          "comment": "Binary literal",
+          "match": "\\b0b[0-1]+\\b",
+          "name": "constant.numeric.valve-cfg"
+        },
+        {
+          "comment": "Octodecimal literal",
+          "match": "\\b0o[0-7]+\\b",
+          "name": "constant.numeric.valve-cfg"
+        },
+        {
+          "comment": "Hexadecimal literal",
+          "match": "\\b0x[0-9a-fA-F]+\\b",
+          "name": "constant.numeric.valve-cfg"
+        },
+        {
+          "comment": "Integer literal",
+          "match": "\\b\\d+\\b",
+          "name": "constant.numeric.integer.valve-cfg"
+        },
+        {
+          "comment": "Invalid literal",
+          "match": "\\b\\d+\\w+\\b",
+          "name": "invalid.illegal.constant.valve-cfg"
+        }
+      ]
+    },
+
+    "strings": {
+      "name": "string.quoted.double.valve-cfg",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "variable",
+          "match": "\\\\."
+        }
+      ]
+    },
+
+    "comments": {
+      "patterns": [
+        {
+          "match": "\\/\\/.*",
+          "name": "comment.valve-cfg"
+        },
+        {
+          "begin": "/\\*",
+          "captures": {
+            "0": {
+              "name": "comment.valve-cfg"
+            }
+          },
+          "end": "\\*/",
+          "name": "comment.block.valve-cfg"
+        }
+      ]
+    }
+  }
+}

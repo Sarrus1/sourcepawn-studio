@@ -104,6 +104,7 @@ jobs:
       - name: Upload debug symbols
         run: sentry-cli upload-dif --wait target/${{ matrix.target }}/release/
 
+      # Code extension
       - shell: pwsh
         run: echo "target=${{ matrix.platform }}-${{ matrix.arch }}" >> $env:GITHUB_ENV
       - name: Install npm dependencies
@@ -127,6 +128,30 @@ jobs:
         working-directory: ./editors/code
         run: npx vsce package --target ${{ env.target }}
 
+      # AMXXPawn Code extension
+      - shell: pwsh
+        run: echo "target=${{ matrix.platform }}-${{ matrix.arch }}" >> $env:GITHUB_ENV
+      - name: Install npm dependencies
+        working-directory: ./editors/code-amxxpawn
+        run: npm install
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Bundle sourcepawn-lsp (Windows)
+        if: ${{ contains(matrix.os, 'windows') }}
+        shell: pwsh
+        run: |
+          mkdir -p editors/code-amxxpawn/languageServer
+          cp target/${{ matrix.target }}/release/sourcepawn_lsp.exe editors/code-amxxpawn/languageServer/
+      - name: Bundle sourcepawn-lsp
+        if: ${{ !contains(matrix.os, 'windows') }}
+        shell: pwsh
+        run: |
+          mkdir -p editors/code-amxxpawn/languageServer
+          cp target/${{ matrix.target }}/release/sourcepawn_lsp editors/code-amxxpawn/languageServer/
+      - name: Package VSCode extension
+        working-directory: ./editors/code-amxxpawn
+        run: npx vsce package --target ${{ env.target }}
+
       - name: Upload sourcepawn-lsp binary
         uses: actions/upload-artifact@v3
         with:
@@ -137,7 +162,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.target }}
-          path: "editors/code/*.vsix"
+          path: "editors/code*/*.vsix"
 
   github:
     name: Publish releases
@@ -162,12 +187,30 @@ jobs:
       - uses: actions/download-artifact@v3
       - name: Publish VSIX package (Release)
         if: ${{ !github.event.prerelease }}
-        run: npx vsce publish --packagePath $(find . -iname *.vsix)
+        run: npx vsce publish --packagePath $(find . -iname sourcepawn*.vsix)
         env:
           VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
       - name: Publish VSIX package (Prerelease)
         if: ${{ github.event.prerelease }}
-        run: npx vsce publish --packagePath $(find . -iname *.vsix) --pre-release
+        run: npx vsce publish --packagePath $(find . -iname sourcepawn*.vsix) --pre-release
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
+
+  amxxpawn-marketplace:
+    name: Publish to VSCode marketplace (AMXXPawn)
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+      - name: Publish VSIX package (Release)
+        if: ${{ !github.event.prerelease }}
+        run: npx vsce publish --packagePath $(find . -iname amxxpawn*.vsix)
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
+      - name: Publish VSIX package (Prerelease)
+        if: ${{ github.event.prerelease }}
+        run: npx vsce publish --packagePath $(find . -iname amxxpawn*.vsix) --pre-release
         env:
           VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
 
@@ -180,12 +223,30 @@ jobs:
       - uses: actions/download-artifact@v3
       - name: Publish VSIX package (Release)
         if: ${{ !github.event.prerelease }}
-        run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname *.vsix)
+        run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname sourcepawn*.vsix)
         env:
           OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
       - name: Publish VSIX package (Prerelease)
         if: ${{ github.event.prerelease }}
-        run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname *.vsix) --pre-release
+        run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname sourcepawn*.vsix) --pre-release
+        env:
+          OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
+
+  amxxpawn-ovsx:
+    name: Publish to Open VSX (AMXXPawn)
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+      - name: Publish VSIX package (Release)
+        if: ${{ !github.event.prerelease }}
+        run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname amxxpawn*.vsix)
+        env:
+          OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
+      - name: Publish VSIX package (Prerelease)
+        if: ${{ github.event.prerelease }}
+        run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname amxxpawn*.vsix) --pre-release
         env:
           OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
 

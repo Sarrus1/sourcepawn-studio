@@ -1,0 +1,168 @@
+{
+  "scopeName": "text.valve-kv",
+  "patterns": [
+    { "include": "#value" },
+    {
+      "include": "#key"
+    },
+    {
+      "include": "#comments"
+    }
+  ],
+
+  "repository": {
+    "key": {
+      "patterns": [
+        {
+          "match": "(\"[^\"]*\")",
+          "name": "support.type.property-name.double.valve-kv"
+        },
+        {
+          "match": "('[^']*')",
+          "name": "support.type.property-name.single.valve-kv"
+        }
+      ]
+    },
+
+    "value": {
+      "patterns": [
+        {
+          "comment": "bracket value",
+          "begin": "{",
+          "end": "}",
+          "name": "meta.structure.dictionnary.valve-kv",
+          "patterns": [
+            {
+              "include": "#source"
+            }
+          ]
+        },
+        {
+          "comment": "Double quote string",
+          "begin": "(\"[^\"]*\")([^{\"]*)(\")",
+          "beginCaptures": {
+            "1": { "name": "support.type.property-name.double.valve-kv" },
+            "2": {
+              "patterns": [{ "include": "#comments" }]
+            },
+            "3": {
+              "name": "string.quoted.double.valve-kv"
+            }
+          },
+          "end": "\"",
+          "endCaptures": {
+            "0": {
+              "name": "string.quoted.double.valve-kv"
+            }
+          },
+          "patterns": [
+            {
+              "match": "\\\\\"",
+              "name": "constant.character.escape.valve-kv"
+            },
+            { "include": "#placeholder" }
+          ],
+          "name": "string.quoted.double.valve-kv"
+        },
+        {
+          "comment": "Single quote string",
+          "begin": "('[^']*')([^{']*)(')",
+          "beginCaptures": {
+            "1": { "name": "support.type.property-name.single.valve-kv" },
+            "2": {
+              "patterns": [{ "include": "#comments" }]
+            },
+            "3": {
+              "name": "string.quoted.single.valve-kv"
+            }
+          },
+          "end": "'",
+          "endCaptures": {
+            "0": {
+              "name": "string.quoted.single.valve-kv"
+            }
+          },
+          "patterns": [
+            {
+              "match": "\\\\'",
+              "name": "constant.character.escape.valve-kv"
+            },
+            { "include": "#placeholder" }
+          ],
+          "name": "string.quoted.single.valve-kv"
+        }
+      ]
+    },
+
+    "placeholder": {
+      "match": "({)([^\\}]*)(})",
+      "captures": {
+        "1": {
+          "name:": "constant.character.valve-kv"
+        },
+        "3": {
+          "name:": "constant.character.valve-kv"
+        },
+        "2": {
+          "patterns": [
+            {
+              "match": "\\d+",
+              "name": "constant.numeric.valve-kv"
+            },
+            {
+              "name": "constant.character.escape.valve-kv",
+              "match": "\\w+"
+            },
+            {
+              "match": "([\\d]+):([A-Za-z]+)",
+              "captures": {
+                "1": {
+                  "name": "constant.numeric.valve-kv"
+                },
+                "2": {
+                  "name": "string.regexp.valve-kv"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+
+    "string_escaped_char": {
+      "patterns": [
+        {
+          "match": "\\\\(?:[abefnrt'\"\\\\]|(?:x[a-zA-Z0-9]{0,2}|\\d+);?)",
+          "name": "constant.character.escape.valve-kv"
+        },
+        {
+          "match": "\\\\.",
+          "name": "invalid.illegal.unknown-escape.valve-kv"
+        }
+      ]
+    },
+
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.valve-kv",
+          "match": "//(.*)$"
+        },
+        {
+          "name": "comment.line.number-sign",
+          "match": "#(.*)$"
+        },
+        {
+          "begin": "/\\*",
+          "captures": {
+            "0": {
+              "name": "comment.block.valve-kv"
+            }
+          },
+          "end": "\\*/",
+          "name": "comment.block.valve-kv"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,305 @@
+{
+  "name": "amxxpawn-vscode",
+  "displayName": "AMXXPawn vscode",
+  "description": "AMXXPawn highlighting, autocompletion and much more",
+  "version": "0.2.0",
+  "publisher": "Sarrus",
+  "main": "./dist/index.js",
+  "icon": "amxmodx.png",
+  "homepage": "https://github.com/Sarrus1/sourcepawn-vscode/wiki",
+  "bugs": {
+    "url": "https://github.com/Sarrus1/sourcepawn-vscode/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sarrus1/sourcepawn-vscode.git"
+  },
+  "sponsor": {
+    "url": "https://www.buymeacoffee.com/sarrus"
+  },
+  "engines": {
+    "vscode": "^1.63.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Linters",
+    "Formatters"
+  ],
+  "keywords": [
+    "AMXXPawn",
+    "AMXModx",
+    "AlliedMods",
+    "AlliedModders",
+    "multi-root ready"
+  ],
+  "activationEvents": [
+    "onLanguage:amxxpawn",
+    "onLanguage:valve-kv",
+    "onLanguage:valve-cfg"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "amxxpawn-vscode.setFileAsMain",
+        "title": "Set current file as main"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceLangId == amxxpawn",
+          "command": "amxxpawn-vscode.setFileAsMain"
+        }
+      ],
+      "explorer/context": [
+        {
+          "when": "resourceLangId == amxxpawn",
+          "command": "amxxpawn-vscode.setFileAsMain"
+        }
+      ]
+    },
+    "configuration": {
+      "type": "object",
+      "title": "AMXXPawn configuration",
+      "properties": {
+        "AMXXPawnLanguageServer.mainPath": {
+          "type": "string",
+          "description": "The location of the main .sma file, which allows the linter and the compiler to work correctly. You should use this setting per workspace.",
+          "scope": "resource"
+        },
+        "AMXXPawnLanguageServer.includesDirectories": {
+          "type": "array",
+          "default": [],
+          "description": "Include folders paths for the compiler and the linter.",
+          "scope": "resource"
+        },
+        "AMXXPawnLanguageServer.disableSyntaxLinter": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disable the language server's syntax linter.",
+          "scope": "resource"
+        },
+        "amxxpawn.enableLinter": {
+          "type": "boolean",
+          "default": true,
+          "description": "Toggle the linter on or off.",
+          "scope": "resource"
+        },
+        "amxxpawn.formatterSettings": {
+          "type": "array",
+          "default": [
+            "AlignAfterOpenBracket: Align",
+            "AlignArrayOfStructures: Left",
+            "AlignConsecutiveAssignments: AcrossEmptyLinesAndComments",
+            "AlignConsecutiveBitFields: AcrossEmptyLinesAndComments",
+            "AlignConsecutiveDeclarations: AcrossEmptyLinesAndComments",
+            "AlignConsecutiveMacros: AcrossEmptyLinesAndComments",
+            "AlignEscapedNewlines: Left",
+            "AlignOperands: AlignAfterOperator",
+            "AlignTrailingComments: true",
+            "AllowAllArgumentsOnNextLine: true",
+            "AllowAllConstructorInitializersOnNextLine: true",
+            "AllowAllParametersOfDeclarationOnNextLine: true",
+            "AllowShortBlocksOnASingleLine: Always",
+            "AllowShortCaseLabelsOnASingleLine: true",
+            "AllowShortEnumsOnASingleLine: true",
+            "AllowShortFunctionsOnASingleLine: All",
+            "AllowShortIfStatementsOnASingleLine: AllIfsAndElse",
+            "AllowShortLambdasOnASingleLine: All",
+            "AllowShortLoopsOnASingleLine: false",
+            "AlwaysBreakAfterDefinitionReturnType: None",
+            "AlwaysBreakAfterReturnType: None",
+            "AlwaysBreakBeforeMultilineStrings: false",
+            "AlwaysBreakTemplateDeclarations: No",
+            "BasedOnStyle: Google",
+            "BinPackArguments: true",
+            "BinPackParameters: true",
+            "BreakBeforeBinaryOperators: NonAssignment",
+            "BreakBeforeBraces: Custom",
+            "BraceWrapping: { AfterCaseLabel: true",
+            "AfterClass: true",
+            "AfterControlStatement: Always",
+            "AfterEnum: true",
+            "AfterExternBlock: true",
+            "AfterFunction: true",
+            "AfterNamespace: true",
+            "AfterObjCDeclaration: false",
+            "AfterStruct: true",
+            "AfterUnion: true",
+            "BeforeCatch: true",
+            "BeforeElse: true",
+            "BeforeLambdaBody: true",
+            "BeforeWhile: true",
+            "IndentBraces: false",
+            "SplitEmptyFunction: false",
+            "SplitEmptyNamespace: false",
+            "SplitEmptyRecord: false }",
+            "BreakBeforeConceptDeclarations: false",
+            "BreakBeforeTernaryOperators: true",
+            "BreakConstructorInitializers: AfterColon",
+            "BreakInheritanceList: AfterComma",
+            "BreakStringLiterals: false",
+            "ColumnLimit: 0",
+            "CompactNamespaces: true",
+            "ConstructorInitializerAllOnOneLineOrOnePerLine: true",
+            "ConstructorInitializerIndentWidth: ${TabSize}",
+            "ContinuationIndentWidth: ${TabSize}",
+            "Cpp11BracedListStyle: false",
+            "EmptyLineBeforeAccessModifier: LogicalBlock",
+            "FixNamespaceComments: true",
+            "IncludeBlocks: Preserve",
+            "IndentAccessModifiers: false",
+            "IndentCaseBlocks: false",
+            "IndentCaseLabels: true",
+            "IndentExternBlock: Indent",
+            "IndentGotoLabels: false",
+            "IndentPPDirectives: BeforeHash",
+            "IndentRequires: true",
+            "IndentWidth: ${TabSize}",
+            "IndentWrappedFunctionNames: true",
+            "LambdaBodyIndentation: OuterScope",
+            "Language: Cpp",
+            "MaxEmptyLinesToKeep: 1",
+            "NamespaceIndentation: All",
+            "ObjCBinPackProtocolList: Always",
+            "ObjCBreakBeforeNestedBlockParam: false",
+            "ObjCSpaceBeforeProtocolList: false",
+            "ReflowComments: true",
+            "SortIncludes: Never",
+            "SpaceAfterCStyleCast: false",
+            "SpaceAfterLogicalNot: false",
+            "SpaceBeforeAssignmentOperators: true",
+            "SpaceBeforeCaseColon: false",
+            "SpaceBeforeCpp11BracedList: false",
+            "SpaceBeforeCtorInitializerColon: true",
+            "SpaceBeforeInheritanceColon: true",
+            "SpaceBeforeParens: ControlStatementsExceptControlMacros",
+            "SpaceBeforeRangeBasedForLoopColon: true",
+            "SpaceBeforeSquareBrackets: false",
+            "SpaceInEmptyBlock: false",
+            "SpaceInEmptyParentheses: false",
+            "SpacesBeforeTrailingComments: ${TabSize}",
+            "SpacesInConditionalStatement: false",
+            "SpacesInContainerLiterals: true",
+            "SpacesInCStyleCastParentheses: false",
+            "SpacesInParentheses: false",
+            "SpacesInSquareBrackets: false",
+            "Standard: Auto",
+            "TabWidth: ${TabSize}",
+            "UseTab: Always",
+            "CommentPragmas: '^#define|#tryinclude'"
+          ],
+          "description": "Settings for the formatter. Any setting supported by Clang Format can be used here.",
+          "scope": "resource"
+        }
+      }
+    },
+    "configurationDefaults": {
+      "editor.semanticHighlighting.enabled": true
+    },
+    "iconThemes": [
+      {
+        "id": "amxxpawn",
+        "label": "AMXXPpawn",
+        "path": "./fileicons/amxxpawn-icon-theme.json"
+      }
+    ],
+    "languages": [
+      {
+        "id": "amxxpawn",
+        "aliases": [
+          "AMXXPpawn",
+          "amxxpawn"
+        ],
+        "extensions": [
+          ".sma",
+          ".inc"
+        ],
+        "configuration": "./LanguageConfigurations/AMXXPawnConfiguration.language-configuration.json"
+      },
+      {
+        "id": "valve-kv",
+        "aliases": [
+          "Valve KeyValue"
+        ],
+        "extensions": [
+          ".phrases.txt",
+          ".games.txt",
+          ".kv"
+        ],
+        "configuration": "./LanguageConfigurations/ValveKVConfiguration.language-configuration.json"
+      },
+      {
+        "id": "valve-cfg",
+        "aliases": [
+          "Valve CFG",
+          "CFG"
+        ],
+        "extensions": [
+          ".cfg"
+        ],
+        "configuration": "./LanguageConfigurations/ValveCFGConfiguration.language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "amxxpawn",
+        "scopeName": "source.amxxpawn",
+        "path": "./syntaxes/amxxpawn.tmLanguage.json"
+      },
+      {
+        "scopeName": "amxxpawn-jsdoc.injection",
+        "injectTo": [
+          "source.amxxpawn"
+        ],
+        "path": "./syntaxes/amxxpawn-jsdoc.json"
+      },
+      {
+        "language": "valve-kv",
+        "scopeName": "text.valve-kv",
+        "path": "./syntaxes/valve-kv.tmLanguage.json"
+      },
+      {
+        "language": "valve-cfg",
+        "scopeName": "text.valve-cfg",
+        "path": "./syntaxes/valve-cfg.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "amxxpawn",
+        "path": "./snippets/snippets.json"
+      }
+    ]
+  },
+  "dependencies": {
+    "valve_kv_tools": "^0.3.0",
+    "vscode-languageclient": "^8.1.0",
+    "vscode-uri": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^16.13.2",
+    "@types/vscode": "^1.63.0",
+    "@vscode/test-electron": "^1.6.1",
+    "esbuild": "^0.18.16",
+    "node-loader": "2.0.0",
+    "ovsx": "^0.8.2",
+    "ts-loader": "^9.2.6",
+    "typescript": "^4.5.4",
+    "@vscode/vsce": "^2.19.0"
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "pretest": "npm run compile",
+    "build": "node esbuild.mjs prod",
+    "compile": "npm run build && tsc -b tsconfig.json",
+    "watch": "node esbuild.mjs watch"
+  },
+  "__metadata": {
+    "id": "217597eb-5e7a-45ee-a236-5456c0f90948",
+    "publisherDisplayName": "Sarrus",
+    "publisherId": "ace08d21-1e01-422f-822b-c4f6145e6d5f",
+    "isPreReleaseVersion": false
+  }
+}

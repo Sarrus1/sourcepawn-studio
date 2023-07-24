@@ -1,0 +1,13 @@
+node_modules/
+out/
+*.vsix
+.vscode-test
+.DS_Store
+dist/
+.vscode/settings.json
+.nyc_output/
+coverage/
+venv/
+chromedriver
+kvParser.ts
+languageServer/

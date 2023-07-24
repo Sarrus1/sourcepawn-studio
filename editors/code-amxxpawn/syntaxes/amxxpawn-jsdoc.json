@@ -1,0 +1,38 @@
+{
+  "scopeName": "sp-jsdoc.injection",
+  "injectionSelector": "L:comment",
+  "patterns": [
+    {
+      "include": "#spdoc-keyword"
+    }
+  ],
+  "repository": {
+    "spdoc-keyword": {
+      "patterns": [
+        {
+          "match": "(@param)\\s+([\\w\\.]+)",
+          "captures": {
+            "1": {
+              "name": "storage.type.class.spdoc"
+            },
+            "2": {
+              "name": "support.variable.spdoc"
+            }
+          }
+        },
+        {
+          "match": "@return|@noreturn",
+          "name": "keyword.control.spdoc"
+        },
+        {
+          "match": "@error",
+          "name": "string.regexp.spdoc"
+        },
+        {
+          "match": "@(note|deprecated)",
+          "name": "support.function.spdoc"
+        }
+      ]
+    }
+  }
+}

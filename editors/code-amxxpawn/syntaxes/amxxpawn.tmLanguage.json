@@ -1,0 +1,736 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "AMXXPawn",
+  "scopeName": "source.amxxpawn",
+  "patterns": [
+    {
+      "include": "#line_continuation_character"
+    },
+    {
+      "include": "#literals"
+    },
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#preproc"
+    },
+    {
+      "comment": "type cast",
+      "match": "(\\w+)\\:\\s*(\\w+)",
+      "captures": {
+        "1": {
+          "patterns": [
+            {
+              "include": "#type"
+            }
+          ]
+        },
+        "2": {
+          "patterns": [
+            {
+              "include": "#literals"
+            },
+            {
+              "include": "#variable_name"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "comment": "Scope access",
+      "match": "(\\w+)\\:\\:(\\w*)",
+      "captures": {
+        "1": {
+          "patterns": [
+            {
+              "include": "#type_name"
+            }
+          ]
+        },
+        "2": {
+          "patterns": [
+            {
+              "include": "#variable_name"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "comment": "Control statements",
+      "name": "keyword.control.statement.amxxpawn",
+      "match": "\\b(?:if|else|for|while|do|switch|case|default|return|break|goto|continue)\\b"
+    },
+    {
+      "include": "#function-declaration"
+    },
+    {
+      "include": "#other-keywords"
+    },
+
+    {
+      "include": "#enum"
+    },
+
+    {
+      "include": "#variable-declaration"
+    },
+    {
+      "include": "#function-call"
+    },
+    {
+      "match": "\\b(\\w+)\\b",
+      "captures": {
+        "1": {
+          "patterns": [
+            {
+              "include": "#variable_name"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "repository": {
+    "enum": {
+      "begin": "(enum)\\s+(?:(\\w+(?:\\:)?)?(?:\\s*(\\([^\\(]*\\)))?)?",
+      "beginCaptures": {
+        "1": {
+          "patterns": [
+            {
+              "include": "#keywords"
+            }
+          ]
+        },
+        "2": {
+          "patterns": [
+            {
+              "include": "#type_name"
+            }
+          ]
+        },
+        "3": {
+          "patterns": [
+            {
+              "include": "#literals"
+            }
+          ]
+        }
+      },
+      "end": "(?<=\\})",
+      "patterns": [
+        {
+          "include": "#literals"
+        },
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#preproc"
+        },
+        {
+          "match": "(\\w+)",
+          "captures": {
+            "1": {
+              "patterns": [
+                {
+                  "include": "#variable_name"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "function-call": {
+      "comment": "Function call",
+      "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*\\(",
+      "captures": {
+        "1": {
+          "name": "entity.name.function.function_call.amxxpawn"
+        }
+      }
+    },
+    "other-keywords": {
+      "comment": "other-keywords",
+      "name": "keyword.amxxpawn",
+      "match": "\\b(?:forward|native|public|const|stock|sizeof|tagof|operator|static)\\b"
+    },
+
+    "parameters": {
+      "patterns": [
+        {
+          "include": "#keywords"
+        },
+        {
+          "include": "#literals"
+        },
+        {
+          "include": "#parameter-declaration"
+        }
+      ]
+    },
+    "array-indexed-access": {
+      "patterns": [
+        {
+          "match": "\\[([^\\]]+)\\]",
+          "captures": {
+            "1": {
+              "patterns": [
+                {
+                  "include": "#literals"
+                },
+                {
+                  "include": "#other-keywords"
+                },
+                {
+                  "include": "#function-call"
+                },
+                {
+                  "include": "#variable_name"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "parameter-declaration": {
+      "patterns": [
+        {
+          "match": "(?:(\\w+)\\s*\\:\\s*)?(\\w+|\\.{3})\\s*((?:\\[[^\\]]*\\]\\s*)+)?",
+          "captures": {
+            "1": {
+              "patterns": [
+                {
+                  "include": "#type"
+                }
+              ]
+            },
+            "2": {
+              "patterns": [
+                {
+                  "include": "#variable_name"
+                }
+              ]
+            },
+            "3": {
+              "patterns": [
+                {
+                  "include": "#array-indexed-access"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "type": {
+      "patterns": [
+        {
+          "match": "(_|bool|any|Float)|(\\w+)",
+          "captures": {
+            "1": {
+              "name": "storage.type.built-in.primitive.amxxpawn"
+            },
+            "2": {
+              "patterns": [
+                {
+                  "include": "#type_name"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "function-declaration": {
+      "patterns": [
+        {
+          "begin": "(?:(stock|public|static)\\s+)?(?:(native|forward)\\s+)?(?:(\\w+)\\:)?\\s*([a-zA-Z_]\\w*)\\(",
+          "beginCaptures": {
+            "1": {
+              "patterns": [
+                {
+                  "include": "#keywords"
+                }
+              ]
+            },
+            "2": {
+              "patterns": [
+                {
+                  "include": "#keywords"
+                }
+              ]
+            },
+            "3": {
+              "patterns": [
+                {
+                  "include": "#type"
+                }
+              ]
+            },
+            "4": {
+              "name": "entity.name.function.amxxpawn"
+            }
+          },
+          "end": "\\)",
+          "patterns": [
+            {
+              "include": "#parameters"
+            },
+            {
+              "include": "#comments"
+            },
+            {
+              "include": "#preproc"
+            }
+          ]
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.amxxpawn",
+          "match": "%|&|\\*|/(?!\\*|/)|\\+|\\-|~|=|<|>|!|\\||\\?|:|\\^"
+        }
+      ]
+    },
+    "variable-declaration": {
+      "patterns": [
+        {
+          "match": "(?:(stock|public)\\s+)?((?:(?:const|static)\\s+)*)(new)\\s+(?:(\\w+)\\:\\s*)?(\\w+)(\\s*(?:\\[[^\\]]*\\]\\s*)*)",
+          "captures": {
+            "1": {
+              "patterns": [
+                {
+                  "include": "#keywords"
+                }
+              ]
+            },
+            "2": {
+              "patterns": [
+                {
+                  "include": "#keywords"
+                }
+              ]
+            },
+            "3": {
+              "patterns": [
+                {
+                  "include": "#keywords"
+                }
+              ]
+            },
+            "4": {
+              "patterns": [
+                {
+                  "include": "#type"
+                }
+              ]
+            },
+            "5": {
+              "patterns": [
+                {
+                  "include": "#variable_name"
+                }
+              ]
+            },
+            "6": {
+              "patterns": [
+                {
+                  "include": "#array-indexed-access"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "match": "\\b(public|stock)\\b",
+          "name": "keyword.visibility.amxxpawn"
+        },
+        {
+          "match": "\\b(const|static|native|forward)\\b",
+          "name": "keyword.storage_class.amxxpawn"
+        },
+        {
+          "match": "\\b(new)\\b",
+          "name": "keyword.variable_declarator.amxxpawn"
+        },
+        {
+          "match": "\\b(enum)\\b",
+          "name": "keyword.enum.amxxpawn"
+        }
+      ]
+    },
+    "literals": {
+      "patterns": [
+        {
+          "include": "#boolean-literal"
+        },
+        {
+          "include": "#null-literal"
+        },
+        {
+          "include": "#numeric-literal"
+        },
+        {
+          "include": "#string-literal"
+        },
+        {
+          "include": "#other-literal"
+        }
+      ]
+    },
+    "boolean-literal": {
+      "patterns": [
+        {
+          "match": "\\b(?:true|false)\\b",
+          "name": "constant.language.boolean.amxxpawn"
+        }
+      ]
+    },
+    "null-literal": {
+      "patterns": [
+        {
+          "match": "\\bnull\\b",
+          "name": "constant.language.amxxpawn"
+        }
+      ]
+    },
+    "other-literal": {
+      "patterns": [
+        {
+          "match": "\\b(?:EOS,cellbits,cellmin,cellmax,charmin,charmax,ucharmax,__Pawn,__LINE__,debug)\\b",
+          "name": "constant.language.amxxpawn"
+        }
+      ]
+    },
+    "numeric-literal": {
+      "patterns": [
+        {
+          "comment": "Float literal",
+          "match": "[0-9]+\\.[0-9]+",
+          "name": "constant.numeric.float.amxxpawn"
+        },
+        {
+          "comment": "Binary literal",
+          "match": "\\b0b[0-1]+\\b",
+          "name": "constant.numeric.amxxpawn"
+        },
+        {
+          "comment": "Octodecimal literal",
+          "match": "\\b0o[0-7]+\\b",
+          "name": "constant.numeric.amxxpawn"
+        },
+        {
+          "comment": "Hexadecimal literal",
+          "match": "\\b(0x(?:(?:(?:[0-9a-fA-F]{2}_?)+)|(?:[0-9a-fA-F]+)))\\b",
+          "name": "constant.numeric.amxxpawn"
+        },
+        {
+          "comment": "Integer literal",
+          "match": "\\b((?:\\d|_)+)\\b",
+          "name": "constant.numeric.integer.amxxpawn"
+        },
+        {
+          "comment": "Invalid literal",
+          "match": "\\b\\d+\\w+\\b",
+          "name": "invalid.illegal.constant.amxxpawn"
+        }
+      ]
+    },
+    "string-literal": {
+      "patterns": [
+        {
+          "begin": "\"",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.begin.amxxpawn"
+            }
+          },
+          "end": "(\")|((?:[^\\\\\\n])$)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.string.end.amxxpawn"
+            },
+            "2": {
+              "name": "invalid.illegal.newline.amxxpawn"
+            }
+          },
+          "name": "string.quoted.double.amxxpawn",
+          "patterns": [
+            {
+              "include": "#string_escaped_char"
+            },
+            {
+              "include": "#string_format_char"
+            },
+            {
+              "include": "#string_placeholder"
+            },
+            {
+              "include": "#line_continuation_character"
+            }
+          ]
+        },
+        {
+          "begin": "'",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.begin.amxxpawn"
+            }
+          },
+          "end": "(\\')|((?:[^\\\\\\n])$)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.string.end.amxxpawn"
+            },
+            "2": {
+              "name": "invalid.illegal.newline.amxxpawn"
+            }
+          },
+          "name": "string.quoted.single.c",
+          "patterns": [
+            {
+              "include": "#string_escaped_char"
+            },
+            {
+              "include": "#string_format_char"
+            },
+            {
+              "include": "#string_placeholder"
+            },
+            {
+              "include": "#line_continuation_character"
+            }
+          ]
+        }
+      ]
+    },
+    "line_continuation_character": {
+      "patterns": [
+        {
+          "match": "(\\\\)\\n",
+          "captures": {
+            "1": {
+              "name": "constant.character.escape.line-continuation.amxxpawn"
+            }
+          }
+        }
+      ]
+    },
+    "string_escaped_char": {
+      "patterns": [
+        {
+          "match": "\\\\(?:[abefnrt'\"\\\\]|(?:x[a-zA-Z0-9]{0,2}|\\d+);?)",
+          "name": "constant.character.escape.amxxpawn"
+        },
+        {
+          "match": "\\\\.",
+          "name": "invalid.illegal.unknown-escape.amxxpawn"
+        }
+      ]
+    },
+    "string_format_char": {
+      "name": "constant.character.format.amxxpawn",
+      "match": "%(?:a|A|b|B|c|C|d|D|e|F|g|G|h|H|I|j|m|M|n|i|p|r|R|S|t|T|u|U|V|u|w|W|x|X|y|Y|z|Z|f|L|N|s|T|t|%|(?:\\d+)?\\.?\\d*(?:b|d|i|u|f|s|X|x))"
+    },
+    "type_name": {
+      "patterns": [
+        {
+          "match": "\\b\\d\\b",
+          "name": "constant.numeric.integer.amxxpawn"
+        },
+        {
+          "match": "[a-zA-Z_]\\w*",
+          "name": "support.type.core.amxxpawn"
+        },
+        {
+          "match": "([0-9])(\\w*)",
+          "captures": {
+            "1": {
+              "name": "invalid.illegal.constant.amxxpawn"
+            },
+            "2": {
+              "name": "support.type.core.amxxpawn"
+            }
+          }
+        }
+      ]
+    },
+    "variable_name": {
+      "patterns": [
+        {
+          "match": "\\b\\d\\b",
+          "name": "constant.numeric.integer.amxxpawn"
+        },
+        {
+          "match": "[a-zA-Z_]\\w*",
+          "name": "variable.amxxpawn"
+        },
+        {
+          "match": "([0-9])(\\w*)",
+          "captures": {
+            "1": {
+              "name": "invalid.illegal.constant.amxxpawn"
+            },
+            "2": {
+              "name": "variable.amxxpawn"
+            }
+          }
+        }
+      ]
+    },
+    "preproc": {
+      "patterns": [
+        {
+          "match": "(\\#include|\\#tryinclude)\\s*((?:\\<|\").+(?:\\>|\"))",
+          "name": "meta.include.amxxpawn",
+          "captures": {
+            "1": {
+              "name": "keyword.control.amxxpawn"
+            },
+            "2": {
+              "name": "string.amxxpawn"
+            }
+          }
+        },
+        {
+          "match": "(\\#pragma)\\s+(.+?(?=//))",
+          "name": "meta.pragma.line-comment.amxxpawn",
+          "captures": {
+            "1": {
+              "name": "keyword.control.pragma.amxxpawn"
+            },
+            "2": {
+              "name": "entity.other.attribute-name.amxxpawn"
+            }
+          }
+        },
+        {
+          "match": "(\\#pragma)\\s+(deprecated)(.*)",
+          "name": "meta.pragma.deprecated.amxxpawn",
+          "captures": {
+            "1": {
+              "name": "keyword.control.pragma.amxxpawn"
+            },
+            "2": {
+              "name": "entity.other.attribute-name.amxxpawn"
+            },
+            "3": {
+              "name": "string.deprecated.amxxpawn"
+            }
+          }
+        },
+        {
+          "match": "(\\#pragma)\\s+([A-Za-z _0-9]+)",
+          "name": "meta.pragma.block-comment.amxxpawn",
+          "captures": {
+            "1": {
+              "name": "keyword.control.pragma.amxxpawn"
+            },
+            "2": {
+              "name": "entity.other.attribute-name.amxxpawn"
+            }
+          }
+        },
+        {
+          "match": "(\\#define)\\s*(\\w*)",
+          "name": "meta.define.amxxpawn",
+          "captures": {
+            "1": {
+              "name": "keyword.control.define.amxxpawn"
+            },
+            "2": {
+              "name": "meta.preprocessor.macro.amxxpawn"
+            }
+          }
+        },
+        {
+          "match": "(\\#undef)\\s*(\\w*)",
+          "name": "meta.undef.amxxpawn",
+          "captures": {
+            "1": {
+              "name": "keyword.control.undef.amxxpawn"
+            },
+            "2": {
+              "name": "meta.preprocessor.macro.amxxpawn"
+            }
+          }
+        },
+        {
+          "comment": "Preprocessor warning and error with trailing comment",
+          "match": "(#\\b(?:warning|error)\\b)\\s*(.+?)(?=/(?:/|\\*))",
+          "name": "meta.undef.amxxpawn",
+          "captures": {
+            "1": {
+              "name": "keyword.control.misc.amxxpawn"
+            },
+            "2": {
+              "name": "string.warning.amxxpawn"
+            }
+          }
+        },
+        {
+          "comment": "Preprocessor warning and error",
+          "match": "(#\\b(?:warning|error)\\b)\\s*(.*)",
+          "name": "meta.undef.amxxpawn",
+          "captures": {
+            "1": {
+              "name": "keyword.control.misc.amxxpawn"
+            },
+            "2": {
+              "name": "string.warning.amxxpawn"
+            }
+          }
+        },
+        {
+          "comment": "Preprocessor keywords",
+          "match": "#\\b(if|else|endif|emit|deprecated|undef|endinput|endscript|assert|define|file)\\b\\s*",
+          "name": "keyword.control.misc.amxxpawn"
+        },
+        {
+          "comment": "Preprocessor defined",
+          "match": "(defined)\\s+([A-Za-z_]\\w*)",
+          "captures": {
+            "1": {
+              "name": "meta.preprocessor.conditional.amxxpawn"
+            },
+            "2": {
+              "name": "meta.preprocessor.macro.amxxpawn"
+            }
+          }
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "match": "\\/\\/.*",
+          "name": "comment.amxxpawn"
+        },
+        {
+          "begin": "/\\*",
+          "captures": {
+            "0": {
+              "name": "comment.amxxpawn"
+            }
+          },
+          "end": "\\*/",
+          "name": "comment.block.amxxpawn"
+        }
+      ]
+    }
+  }
+}

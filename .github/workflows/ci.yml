@@ -77,7 +77,7 @@ jobs:
       - run: echo "${{ runner.tool_cache }}/cargo-audit/bin" >> $GITHUB_PATH
       - run: cargo audit
 
-  package-extension:
+  package-code-extension:
     name: Package extension (${{ matrix.platform }}-${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -130,4 +130,59 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Package VSCode extension
         working-directory: ./editors/code
+        run: npx vsce package --target ${{ env.target }}
+
+  package-code-amxxpawn-extension:
+    name: Package extension AMXXPawn (${{ matrix.platform }}-${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win32
+            arch: x64
+
+          - os: windows-latest
+            platform: win32
+            arch: ia32
+
+          - os: windows-latest
+            platform: win32
+            arch: arm64
+
+          - os: macos-latest
+            platform: darwin
+            arch: x64
+
+          - os: macos-latest
+            platform: darwin
+            arch: arm64
+
+          - os: ubuntu-20.04
+            platform: linux
+            arch: x64
+
+          - os: ubuntu-20.04
+            platform: linux
+            arch: arm64
+
+          - os: ubuntu-20.04
+            platform: linux
+            arch: armhf
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16.x
+      - shell: pwsh
+        run: echo "target=${{ matrix.platform }}-${{ matrix.arch }}" >> $env:GITHUB_ENV
+      - name: Install npm dependencies
+        working-directory: ./editors/code-amxxpawn
+        run: npm install
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Package VSCode extension
+        working-directory: ./editors/code-amxxpawn
         run: npx vsce package --target ${{ env.target }}

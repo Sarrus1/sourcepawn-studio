@@ -1,0 +1,92 @@
+{
+  "comments": {
+    "lineComment": "//",
+    "blockComment": ["/*", "*/"]
+  },
+  "brackets": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"],
+    ["#if", "#endif"]
+  ],
+  "autoClosingPairs": [
+    { "open": "{", "close": "}" },
+    { "open": "[", "close": "]" },
+    { "open": "(", "close": ")" },
+    { "open": "'", "close": "'", "notIn": ["string", "comment"] },
+    { "open": "\"", "close": "\"", "notIn": ["string"] },
+    { "open": "/**", "close": " */", "notIn": ["string"] }
+  ],
+  "autoCloseBefore": ";:.,=}])>` \n\t",
+  "surroundingPairs": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"],
+    ["\"", "\""],
+    ["'", "'"]
+  ],
+  "onEnterRules": [
+    {
+      // e.g. /** | */
+      "beforeText": {
+        "pattern": "^\\s*/\\*\\*(?!/)([^\\*]|\\*(?!/))*$"
+      },
+      "afterText": {
+        "pattern": "^\\s*\\*/$"
+      },
+      "action": {
+        "indent": "indentOutdent",
+        "appendText": " * "
+      }
+    },
+    {
+      // e.g. /** ...|
+      "beforeText": {
+        "pattern": "^\\s*/\\*\\*(?!/)([^\\*]|\\*(?!/))*$"
+      },
+      "action": {
+        "indent": "none",
+        "appendText": " * "
+      }
+    },
+    {
+      // e.g.  * ...|
+      "beforeText": {
+        "pattern": "^(\\t|[ ])*[ ]\\*([ ]([^\\*]|\\*(?!/))*)?$"
+      },
+      "previousLineText": {
+        "pattern": "(?=^(\\s*(/\\*\\*|\\*)).*)(?=(?!(\\s*\\*/)))"
+      },
+      "action": {
+        "indent": "none",
+        "appendText": "* "
+      }
+    },
+    {
+      // e.g.  */|
+      "beforeText": {
+        "pattern": "^(\\t|[ ])*[ ]\\*/\\s*$"
+      },
+      "action": {
+        "indent": "none",
+        "removeText": 1
+      }
+    },
+    {
+      // e.g.  *-----*/|
+      "beforeText": {
+        "pattern": "^(\\t|[ ])*[ ]\\*[^/]*\\*/\\s*$"
+      },
+      "action": {
+        "indent": "none",
+        "removeText": 1
+      }
+    }
+  ],
+  "folding": {
+    "markers": {
+      "start": "^\\s*//\\s*#?region\\b",
+      "end": "^\\s*//\\s*#?endregion\\b"
+    }
+  }
+}
