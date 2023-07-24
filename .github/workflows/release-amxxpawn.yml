@@ -1,12 +1,14 @@
-name: release
+name: release (AMXXPawn)
 
 on:
-  release:
-    types: [created]
+  push:
+    branches:
+      - main
 
 jobs:
   build:
     name: Build ${{ matrix.target }}
+    if: "contains(github.event.head_commit.message, 'trigger-ci: amxxpawn')"
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -107,7 +109,7 @@ jobs:
       - shell: pwsh
         run: echo "target=${{ matrix.platform }}-${{ matrix.arch }}" >> $env:GITHUB_ENV
       - name: Install npm dependencies
-        working-directory: ./editors/code
+        working-directory: ./editors/code-amxxpawn
         run: npm install
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -115,16 +117,16 @@ jobs:
         if: ${{ contains(matrix.os, 'windows') }}
         shell: pwsh
         run: |
-          mkdir -p editors/code/languageServer
-          cp target/${{ matrix.target }}/release/sourcepawn_lsp.exe editors/code/languageServer/
+          mkdir -p editors/code-amxxpawn/languageServer
+          cp target/${{ matrix.target }}/release/sourcepawn_lsp.exe editors/code-amxxpawn/languageServer/
       - name: Bundle sourcepawn-lsp
         if: ${{ !contains(matrix.os, 'windows') }}
         shell: pwsh
         run: |
-          mkdir -p editors/code/languageServer
-          cp target/${{ matrix.target }}/release/sourcepawn_lsp editors/code/languageServer/
+          mkdir -p editors/code-amxxpawn/languageServer
+          cp target/${{ matrix.target }}/release/sourcepawn_lsp editors/code-amxxpawn/languageServer/
       - name: Package VSCode extension
-        working-directory: ./editors/code
+        working-directory: ./editors/code-amxxpawn
         run: npx vsce package --target ${{ env.target }}
 
       - name: Upload sourcepawn-lsp binary
@@ -137,21 +139,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.target }}
-          path: "editors/code/*.vsix"
-
-  github:
-    name: Publish releases
-    needs: [build]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
-      - name: Publish binaries
-        run: |
-          gh release upload ${{ github.ref_name }} $(find . -iname sourcepawn_lsp*.zip)
-          gh release upload ${{ github.ref_name }} $(find . -iname *.vsix)
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          path: "editors/code-amxxpawn/*.vsix"
 
   marketplace:
     name: Publish to VSCode marketplace
@@ -162,30 +150,12 @@ jobs:
       - uses: actions/download-artifact@v3
       - name: Publish VSIX package (Release)
         if: ${{ !github.event.prerelease }}
-        run: npx vsce publish --packagePath $(find . -iname sourcepawn*.vsix)
+        run: npx vsce publish --packagePath $(find . -iname *.vsix)
         env:
           VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
       - name: Publish VSIX package (Prerelease)
         if: ${{ github.event.prerelease }}
-        run: npx vsce publish --packagePath $(find . -iname sourcepawn*.vsix) --pre-release
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
-
-  amxxpawn-marketplace:
-    name: Publish to VSCode marketplace (AMXXPawn)
-    needs: [build]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
-      - name: Publish VSIX package (Release)
-        if: ${{ !github.event.prerelease }}
-        run: npx vsce publish --packagePath $(find . -iname amxxpawn*.vsix)
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
-      - name: Publish VSIX package (Prerelease)
-        if: ${{ github.event.prerelease }}
-        run: npx vsce publish --packagePath $(find . -iname amxxpawn*.vsix) --pre-release
+        run: npx vsce publish --packagePath $(find . -iname *.vsix) --pre-release
         env:
           VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
 
@@ -198,54 +168,11 @@ jobs:
       - uses: actions/download-artifact@v3
       - name: Publish VSIX package (Release)
         if: ${{ !github.event.prerelease }}
-        run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname sourcepawn*.vsix)
+        run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname *.vsix)
         env:
           OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
       - name: Publish VSIX package (Prerelease)
         if: ${{ github.event.prerelease }}
-        run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname sourcepawn*.vsix) --pre-release
+        run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname *.vsix) --pre-release
         env:
           OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
-
-  amxxpawn-ovsx:
-    name: Publish to Open VSX (AMXXPawn)
-    needs: [build]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
-      - name: Publish VSIX package (Release)
-        if: ${{ !github.event.prerelease }}
-        run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname amxxpawn*.vsix)
-        env:
-          OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
-      - name: Publish VSIX package (Prerelease)
-        if: ${{ github.event.prerelease }}
-        run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname amxxpawn*.vsix) --pre-release
-        env:
-          OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
-
-  edit-release:
-    runs-on: ubuntu-latest
-    needs: [github]
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: Get Changelog Entry
-        id: changelog_sourcepawn_lsp
-        uses: mindsers/changelog-reader-action@v2
-        with:
-          path: ./CHANGELOG.md
-      - name: Get Changelog Entry
-        id: changelog_vscode_extension
-        uses: mindsers/changelog-reader-action@v2
-        with:
-          path: ./editors/code/CHANGELOG.md
-      - name: Edit Release
-        uses: irongut/EditRelease@v1.2.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          id: ${{ github.event.release.id }}
-          body: "# sourcepawn-lsp\n\n${{ steps.changelog_sourcepawn_lsp.outputs.changes }}\n\n# sourcepawn-vscode\n\n${{ steps.changelog_vscode_extension.outputs.changes }}"
-          replacebody: true
