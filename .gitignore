@@ -1,2 +1,9 @@
-/target
+/target/
+/dist/
+crates/*/target
+**/*.rs.bk
+**/*.rs.pending-snap
+.idea/*
+*.log
+*.iml
 .DS_Store

@@ -1,10 +1,11 @@
 [package]
 name = "sourcepawn_preprocessor"
 version = "0.1.0"
-edition = "2021"
 description = "SourcePawn preprocessor written in Rust"
-license = "GPL-3.0"
 include = ["Cargo.toml", "src/"]
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
 
 [lib]
 doctest = false
