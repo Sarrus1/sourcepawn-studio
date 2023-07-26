@@ -1,6 +1,9 @@
-use std::sync::{
-    atomic::{AtomicI32, Ordering},
-    Arc,
+use std::{
+    sync::{
+        atomic::{AtomicI32, Ordering},
+        Arc,
+    },
+    time::Duration,
 };
 
 use anyhow::{bail, Ok, Result};
@@ -58,7 +61,7 @@ impl LspClient {
             .sender
             .send(Request::new(id, R::METHOD.to_string(), params).into())?;
 
-        let response = rx.recv()?;
+        let response = rx.recv_timeout(Duration::from_secs(5))?;
         let result = match response.error {
             Some(error) => bail!(error.message),
             None => response.result.unwrap_or_default(),

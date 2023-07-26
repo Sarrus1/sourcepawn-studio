@@ -130,14 +130,15 @@ impl FunctionItem {
     ///
     /// * `_params` - [HoverParams] of the request.
     pub(crate) fn to_hover(&self, _params: &HoverParams) -> Option<Hover> {
+        let mut contents = vec![MarkedString::LanguageString(LanguageString {
+            language: "sourcepawn".to_string(),
+            value: self.formatted_text(),
+        })];
+        if let Some(md_text) = self.description.to_md() {
+            contents.push(MarkedString::String(md_text))
+        }
         Some(Hover {
-            contents: HoverContents::Array(vec![
-                MarkedString::LanguageString(LanguageString {
-                    language: "sourcepawn".to_string(),
-                    value: self.formatted_text(),
-                }),
-                MarkedString::String(self.description.to_md()),
-            ]),
+            contents: HoverContents::Array(contents),
             range: None,
         })
     }
@@ -166,12 +167,15 @@ impl FunctionItem {
                 documentation: Some(Documentation::String(param.description.text.to_string())),
             })
         }
+
         Some(SignatureInformation {
             label: self.detail.clone(),
-            documentation: Some(Documentation::MarkupContent(MarkupContent {
-                kind: lsp_types::MarkupKind::Markdown,
-                value: self.description.to_md(),
-            })),
+            documentation: self.description.to_md().map(|description| {
+                Documentation::MarkupContent(MarkupContent {
+                    kind: lsp_types::MarkupKind::Markdown,
+                    value: description,
+                })
+            }),
             parameters: Some(parameters),
             active_parameter: Some(parameter_count),
         })

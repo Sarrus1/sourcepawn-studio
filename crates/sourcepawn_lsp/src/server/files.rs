@@ -43,11 +43,11 @@ impl Server {
         self.store.get_all_items_time.clear();
         self.store.get_includes_time.clear();
         self.indexing = true;
-        self.send_status(lsp_ext::ServerStatusParams {
+        let _ = self.send_status(lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,
             quiescent: !self.indexing,
             message: None,
-        })?;
+        });
         self.parse_directories();
         let main_uri = self.store.environment.options.get_main_path_uri();
         let now_parse = Instant::now();
@@ -67,30 +67,33 @@ impl Server {
                 old_options.main_path = path.clone();
                 self.store.environment.options = Arc::new(old_options);
                 self.parse_files_for_main_path(&uri)?;
-                self.client
+                let _ = self
+                    .client
                     .send_notification::<ShowMessage>(ShowMessageParams {
                         message: format!(
                             "MainPath was not set and was automatically infered as {}.",
                             path.file_name().unwrap().to_str().unwrap()
                         ),
                         typ: MessageType::INFO,
-                    })?;
+                    });
             } else {
                 log::debug!("Main path was not set, and could not be infered.");
-                self.client
+                let _ = self
+                    .client
                     .send_notification::<ShowMessage>(ShowMessageParams {
                         message: "No MainPath setting and none could be infered.".to_string(),
                         typ: MessageType::WARNING,
-                    })?;
+                    });
                 self.parse_files_for_missing_main_path();
             }
         } else if main_uri.is_err() {
             log::debug!("Main path is invalid.");
-            self.client
+            let _ = self
+                .client
                 .send_notification::<ShowMessage>(ShowMessageParams {
                     message: "Invalid MainPath setting.".to_string(),
                     typ: MessageType::WARNING,
-                })?;
+                });
             self.parse_files_for_missing_main_path();
         }
         let now_analysis = Instant::now();
@@ -121,11 +124,11 @@ impl Server {
         );
         self.indexing = false;
         self.reload_diagnostics();
-        self.send_status(lsp_ext::ServerStatusParams {
+        let _ = self.send_status(lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,
             quiescent: !self.indexing,
             message: None,
-        })?;
+        });
 
         Ok(())
     }

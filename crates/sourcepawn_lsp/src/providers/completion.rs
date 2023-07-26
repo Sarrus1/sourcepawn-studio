@@ -104,7 +104,7 @@ pub(crate) fn provide_completions(
         }
     }
 
-    None
+    get_non_method_completions(all_items.0, request.params)
 }
 
 pub(crate) fn resolve_completion_item(
@@ -118,7 +118,7 @@ pub(crate) fn resolve_completion_item(
     {
         let sp_item = &*sp_item.read().unwrap();
         completion_item.detail = Some(sp_item.formatted_text());
-        completion_item.documentation = Some(sp_item.documentation());
+        completion_item.documentation = sp_item.documentation();
         return Some(completion_item);
     }
 

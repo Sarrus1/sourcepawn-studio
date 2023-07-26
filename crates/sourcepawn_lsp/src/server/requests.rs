@@ -52,7 +52,6 @@ impl Server {
         {
             self.connection.sender.send(response.into())?;
         }
-        log::trace!("Handled request.");
 
         Ok(())
     }
@@ -88,7 +87,9 @@ impl Server {
                     .sender
                     .send(lsp_server::Response::new_ok(id, result).into())
                 {
-                    Ok(_) => {}
+                    Ok(_) => {
+                        log::trace!("Response sent.");
+                    }
                     Err(error) => {
                         log::error!("Failed to send response: {}", error);
                     }

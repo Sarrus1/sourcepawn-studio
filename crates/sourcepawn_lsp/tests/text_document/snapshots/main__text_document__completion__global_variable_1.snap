@@ -1,0 +1,155 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/completion.rs
+assertion_line: 72
+expression: "complete(r#\"\n%! main.sp\nint foo;\n\n|\n^\"#)"
+---
+[
+  {
+    "label": "EOS",
+    "kind": 21,
+    "detail": "Hardcoded constant"
+  },
+  {
+    "label": "Float",
+    "kind": 14
+  },
+  {
+    "label": "INVALID_FUNCTION",
+    "kind": 21,
+    "detail": "Hardcoded constant"
+  },
+  {
+    "label": "String",
+    "kind": 14
+  },
+  {
+    "label": "__BINARY_NAME__",
+    "kind": 21,
+    "detail": "Hardcoded constant"
+  },
+  {
+    "label": "__BINARY_PATH__",
+    "kind": 21,
+    "detail": "Hardcoded constant"
+  },
+  {
+    "label": "__DATE__",
+    "kind": 21,
+    "detail": "Hardcoded constant"
+  },
+  {
+    "label": "__LINE__",
+    "kind": 21,
+    "detail": "Hardcoded constant"
+  },
+  {
+    "label": "__Pawn",
+    "kind": 21,
+    "detail": "Hardcoded constant"
+  },
+  {
+    "label": "__TIME__",
+    "kind": 21,
+    "detail": "Hardcoded constant"
+  },
+  {
+    "label": "any",
+    "kind": 14
+  },
+  {
+    "label": "bool",
+    "kind": 14
+  },
+  {
+    "label": "break",
+    "kind": 14
+  },
+  {
+    "label": "case",
+    "kind": 14
+  },
+  {
+    "label": "cellmax",
+    "kind": 21,
+    "detail": "Hardcoded constant"
+  },
+  {
+    "label": "cellmin",
+    "kind": 21,
+    "detail": "Hardcoded constant"
+  },
+  {
+    "label": "char",
+    "kind": 14
+  },
+  {
+    "label": "continue",
+    "kind": 14
+  },
+  {
+    "label": "false",
+    "kind": 21
+  },
+  {
+    "label": "float",
+    "kind": 14
+  },
+  {
+    "label": "foo",
+    "labelDetails": {
+      "detail": "int",
+      "description": "global"
+    },
+    "kind": 6,
+    "detail": "int foo;",
+    "tags": []
+  },
+  {
+    "label": "forward",
+    "kind": 14
+  },
+  {
+    "label": "int",
+    "kind": 14
+  },
+  {
+    "label": "native",
+    "kind": 14
+  },
+  {
+    "label": "null",
+    "kind": 21
+  },
+  {
+    "label": "public",
+    "kind": 14
+  },
+  {
+    "label": "return",
+    "kind": 14
+  },
+  {
+    "label": "sizeof",
+    "kind": 14
+  },
+  {
+    "label": "stock",
+    "kind": 14
+  },
+  {
+    "label": "switch",
+    "kind": 14
+  },
+  {
+    "label": "true",
+    "kind": 21
+  },
+  {
+    "label": "view_as",
+    "kind": 14
+  },
+  {
+    "label": "void",
+    "kind": 14
+  }
+]

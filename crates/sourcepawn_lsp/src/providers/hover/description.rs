@@ -8,7 +8,10 @@ pub struct Description {
 }
 
 impl Description {
-    pub fn to_md(&self) -> String {
+    pub fn to_md(&self) -> Option<String> {
+        if self.text.is_empty() {
+            return None;
+        }
         lazy_static! {
             static ref RE1: Regex = Regex::new(r"^\*<").unwrap();
             static ref RE2: Regex = Regex::new(r"\*\s*\r?\n\s*\*").unwrap();
@@ -30,6 +33,6 @@ impl Description {
         let text = RE7.replace_all(&text, "\n\n_${1}_ ").into_owned();
         let text = RE8.replace_all(&text, "${1} `${2}` — >").into_owned();
         let text = RE9.replace_all(&text, "`${1}`").into_owned();
-        text.replace("DEPRECATED", "\n\n**DEPRECATED**")
+        Some(text.replace("DEPRECATED", "\n\n**DEPRECATED**"))
     }
 }

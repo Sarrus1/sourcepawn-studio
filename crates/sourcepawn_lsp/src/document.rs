@@ -203,10 +203,15 @@ impl Document {
     }
 
     pub fn line(&self, line_nb: u32) -> Option<&str> {
+        let mut len = 0;
         for (i, line) in self.preprocessed_text.lines().enumerate() {
+            len += 1;
             if i == line_nb as usize {
                 return Some(line);
             }
+        }
+        if len == line_nb && self.preprocessed_text.ends_with('\n') {
+            return Some("");
         }
 
         None

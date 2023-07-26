@@ -29,6 +29,7 @@ impl ServerFork {
             .client_capabilities
             .has_pull_configuration_support()
         {
+            log::trace!("Client does not have pull configuration support.");
             return Ok(());
         }
 

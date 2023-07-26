@@ -1,6 +1,6 @@
 use lsp_types::{CompletionItem, CompletionItemKind};
 
-const DEFAULT_CONSTANT_ITEMS: &[&str] = &["true", "false", "null", "INVALID_FUNCTION"];
+const DEFAULT_CONSTANT_ITEMS: &[&str] = &["true", "false", "null"];
 
 const DEFAULT_KEYWORD_ITEMS: &[&str] = &[
     "any", "bool", "break", "case", "char", "continue", "float", "Float", "forward", "int",

@@ -116,7 +116,7 @@ impl Store {
             }
             includes.insert(include_uri.clone());
             if let Some(include_document) = self.documents.get(include_uri) {
-                self.get_included_files(&include_document, includes);
+                self.get_included_files(include_document, includes);
             }
         }
     }
@@ -484,23 +484,23 @@ impl SPItem {
         }
     }
 
-    pub(crate) fn documentation(&self) -> Documentation {
-        Documentation::MarkupContent(MarkupContent {
+    pub(crate) fn documentation(&self) -> Option<Documentation> {
+        Some(Documentation::MarkupContent(MarkupContent {
             kind: lsp_types::MarkupKind::Markdown,
             value: match self {
-                SPItem::Variable(item) => item.description.to_md(),
-                SPItem::Function(item) => item.description.to_md(),
-                SPItem::Enum(item) => item.description.to_md(),
-                SPItem::EnumMember(item) => item.description.to_md(),
-                SPItem::EnumStruct(item) => item.description.to_md(),
-                SPItem::Define(item) => item.description.to_md(),
-                SPItem::Methodmap(item) => item.description.to_md(),
-                SPItem::Property(item) => item.description.to_md(),
-                SPItem::Typedef(item) => item.description.to_md(),
-                SPItem::Typeset(item) => item.description.to_md(),
-                SPItem::Include(_) => "".to_string(),
+                SPItem::Variable(item) => item.description.to_md()?,
+                SPItem::Function(item) => item.description.to_md()?,
+                SPItem::Enum(item) => item.description.to_md()?,
+                SPItem::EnumMember(item) => item.description.to_md()?,
+                SPItem::EnumStruct(item) => item.description.to_md()?,
+                SPItem::Define(item) => item.description.to_md()?,
+                SPItem::Methodmap(item) => item.description.to_md()?,
+                SPItem::Property(item) => item.description.to_md()?,
+                SPItem::Typedef(item) => item.description.to_md()?,
+                SPItem::Typeset(item) => item.description.to_md()?,
+                SPItem::Include(_) => return None,
             },
-        })
+        }))
     }
 
     pub(crate) fn formatted_text(&self) -> String {
