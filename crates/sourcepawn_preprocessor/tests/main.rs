@@ -12,6 +12,21 @@ fn extend_macros(
     Ok(())
 }
 
+#[allow(unused_macros)]
+macro_rules! assert_preproc_eq {
+    ($input:expr, $output:expr) => {
+        assert_eq!(
+            SourcepawnPreprocessor::new(
+                Arc::new(Url::parse("https://example.net").unwrap()),
+                $input
+            )
+            .preprocess_input(&mut extend_macros)
+            .unwrap(),
+            $output
+        );
+    };
+}
+
 use sourcepawn_preprocessor::{preprocessor::Macro, SourcepawnPreprocessor};
 #[test]
 fn no_preprocessor_directives() {
@@ -20,12 +35,7 @@ fn no_preprocessor_directives() {
         int bar;
         "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        input
-    );
+    assert_preproc_eq!(input, input);
 }
 
 #[test]
@@ -39,12 +49,7 @@ fn if_directive_defined() {
     int foo;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -60,12 +65,7 @@ fn if_directive_defined_complex_1() {
 
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -83,12 +83,7 @@ fn if_directive_defined_complex_2() {
     int bar;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -110,12 +105,7 @@ fn if_directive_defined_complex_3() {
 
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -139,12 +129,7 @@ fn if_directive_defined_complex_4() {
 
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -162,12 +147,7 @@ int foo;
 
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -185,12 +165,7 @@ int bar;
 int bar;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -222,12 +197,7 @@ public void OnPluginStart()
     int bar;
 }"#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -245,12 +215,7 @@ int foo;
 
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -258,12 +223,7 @@ fn define_1() {
     let input = r#"#define FOO 1"#;
     let output = r#"#define FOO 1"#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -275,12 +235,7 @@ int foo = 1;
 int foo = 1;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -300,12 +255,7 @@ int foo;
 
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -319,12 +269,7 @@ fn if_directive_expansion_1() {
     int foo;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -338,12 +283,7 @@ fn if_directive_expansion_2() {
     int foo;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -359,12 +299,7 @@ fn if_directive_expansion_3() {
 
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -380,12 +315,7 @@ fn if_directive_nested_expansion_1() {
     int foo;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -403,12 +333,7 @@ fn if_directive_nested_expansion_2() {
     int foo;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -424,12 +349,7 @@ fn if_directive_nested_expansion_infinite_loop_1() {
 
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -449,12 +369,7 @@ int bar;
 
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -474,12 +389,7 @@ int foo;
 
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -503,12 +413,7 @@ int bar;
 
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -532,12 +437,7 @@ int baz;
 
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -565,12 +465,7 @@ int baz;
 
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -582,12 +477,7 @@ fn define_undef_1() {
 #undef FOO
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -599,12 +489,7 @@ int foo = FOO;
 int foo = 1;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -616,12 +501,7 @@ char foo[64] = FOO;
 char foo[64] = "test";
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -633,12 +513,7 @@ int foo = FOO;
 int foo = 1;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -650,12 +525,7 @@ int foo = FOO;
 int foo = 1;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -669,12 +539,7 @@ comment */
 int foo = 1;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -690,12 +555,7 @@ int foo = 1 + 2;
 int bar;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -711,12 +571,7 @@ int foo = 1 + 2;
 int bar;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -730,12 +585,7 @@ expansion"
 char foo[64] = "test expansion";
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -753,12 +603,7 @@ also"
 char foo[64] = "test expansion also";
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -772,12 +617,7 @@ int foo = FOO;
 int foo = 1 +   2;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -793,12 +633,7 @@ int foo = FOO;
 int foo = 1 + 2 + 3;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -810,12 +645,7 @@ int foo = FOO(1, 2);
 int foo = 1 + 2;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -827,12 +657,7 @@ int foo = FOO(2);
 int foo = 2 %2;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -846,12 +671,7 @@ int foo = FOO(1, BAR(2, 3 + 4));
 int foo = 1 + 2 + 3 + 4;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -863,12 +683,7 @@ int foo = FOO(1, 2);
 int foo = 1 + 2;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -880,12 +695,7 @@ FOO(foo, bar);
 int foo, bar;
 "#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -905,12 +715,7 @@ fn macro_expansion_6() {
         
     public void GetFoo(){        void i;        this.GetValue("m_" ... "Foo", i);        return i;}"#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -918,12 +723,7 @@ fn include_directive_1() {
     let input = r#"#include <sourcemod>"#;
     let output = r#"#include <sourcemod>"#;
 
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -932,12 +732,7 @@ fn include_directive_2() {
 >"#;
     let output = r#"#include <sourcemod>
 "#;
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -946,12 +741,7 @@ fn include_directive_3() {
 "#;
     let output = r#"#include <sourcemod>
 "#;
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -960,12 +750,7 @@ fn stringizing_1() {
 char foo[8] = FOO(foo);"#;
     let output = r#"#define FOO(%0) #%0
 char foo[8] = "foo";"#;
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -974,12 +759,7 @@ fn stringizing_2() {
 char foo[8] = FOO(foo, bar);"#;
     let output = r#"#define FOO(%0,%1) #%0 ... #%1
 char foo[8] = "foo" ... "bar";"#;
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
@@ -988,16 +768,11 @@ fn stringizing_3() {
 char foo[8] = FOO(foo , bar);"#;
     let output = r#"#define FOO(%0) #%0
 char foo[8] = "foo , bar";"#;
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }
 
 #[test]
-fn stringizing_10() {
+fn stringizing_4() {
     let input = r#"#define DISPOSE_MEMBER(%1) \
     Handle m_h%1; \
     if(this.GetValue("m_" ... #%1, m_h%1)){ \
