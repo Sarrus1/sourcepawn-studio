@@ -347,6 +347,9 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 let mut args_idx = 0;
                 while self.lexer.in_preprocessor() {
                     if let Some(symbol) = self.lexer.next() {
+                        if symbol.token_kind == TokenKind::Eof {
+                            break;
+                        }
                         self.push_ws(&symbol);
                         self.prev_end = symbol.range.end.character;
                         if !matches!(symbol.token_kind, TokenKind::Newline | TokenKind::Eof) {
