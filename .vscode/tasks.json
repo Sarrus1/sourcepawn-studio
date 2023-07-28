@@ -26,30 +26,24 @@
       "label": "Build Server",
       "group": "build",
       "type": "shell",
-      "command": "cargo build --manifest-path=../sourcepawn-lsp/Cargo.toml",
+      "command": "cargo build",
       "problemMatcher": "$rustc"
     },
     {
       "label": "Build Server (Release)",
       "group": "build",
       "type": "shell",
-      "command": "cargo build --release --manifest-path=../sourcepawn-lsp/Cargo.toml",
+      "command": "cargo build --release",
       "problemMatcher": "$rustc"
     },
     {
       "label": "Build Server and Extension",
-      "dependsOn": [
-        "Build Server",
-        "Build Extension"
-      ],
+      "dependsOn": ["Build Server", "Build Extension"],
       "problemMatcher": "$rustc"
     },
     {
       "label": "Build Server (Release) and Extension",
-      "dependsOn": [
-        "Build Server (Release)",
-        "Build Extension"
-      ],
+      "dependsOn": ["Build Server (Release)", "Build Extension"],
       "problemMatcher": "$rustc"
     }
   ]
