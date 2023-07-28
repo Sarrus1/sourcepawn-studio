@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [5.5.2]
+
+### Fixed
+
+- LSP version bump.
+
 ## [5.5.1]
 
 ### Added
