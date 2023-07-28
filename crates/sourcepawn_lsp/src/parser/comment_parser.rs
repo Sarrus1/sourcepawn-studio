@@ -92,6 +92,7 @@ impl Walker {
         if !trailing {
             self.comments.clear();
         }
+        text.reverse();
         let doc = Description {
             text: text.join(""),
             deprecated: dep,
