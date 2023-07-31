@@ -1,6 +1,6 @@
 [package]
 name = "sourcepawn_lsp"
-version = "0.10.16"
+version = "0.10.17"
 description = "Language Server implemention for the SourcePawn programming language."
 include = ["Cargo.toml", "src/"]
 edition.workspace = true

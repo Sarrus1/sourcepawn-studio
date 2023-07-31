@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.10.17]
+
+### Fixed
+
+- Fixed dependencies versions.
+
 ## [0.10.16]
 
 ### Fixed
