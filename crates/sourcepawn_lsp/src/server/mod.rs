@@ -5,10 +5,11 @@ use crossbeam_channel::{Receiver, Sender};
 use fxhash::FxHashMap;
 use lsp_server::{Connection, Message};
 use lsp_types::{
-    CallHierarchyServerCapability, CompletionOptions, CompletionOptionsCompletionItem,
-    HoverProviderCapability, InitializeParams, InitializeResult, OneOf, SemanticTokenModifier,
-    SemanticTokenType, SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
-    SemanticTokensServerCapabilities, ServerCapabilities, ServerInfo, SignatureHelpOptions,
+    notification::ShowMessage, CallHierarchyServerCapability, CompletionOptions,
+    CompletionOptionsCompletionItem, HoverProviderCapability, InitializeParams, InitializeResult,
+    MessageType, OneOf, SemanticTokenModifier, SemanticTokenType, SemanticTokensFullOptions,
+    SemanticTokensLegend, SemanticTokensOptions, SemanticTokensServerCapabilities,
+    ServerCapabilities, ServerInfo, ShowMessageParams, SignatureHelpOptions,
     TextDocumentSyncCapability, TextDocumentSyncKind, Url, WorkDoneProgressOptions,
 };
 
@@ -230,7 +231,13 @@ impl Server {
                                 self.config_pulled = true;
                                 self.store.environment.options = options;
                                 self.register_file_watching()?;
-                                self.reparse_all().expect("Failed to reparse all files.");
+                                if let Err(err) = self.reparse_all() {
+                                    let _ = self.client
+                                        .send_notification::<ShowMessage>(ShowMessageParams {
+                                            message: format!("Failed to reparse all files: {:?}", err),
+                                            typ: MessageType::ERROR,
+                                        });
+                                }
                             }
                             InternalMessage::FileEvent(event) => {
                                 self.handle_file_event(event);
