@@ -70,7 +70,11 @@ impl SemanticTokensBuilder {
 
         let line = range.start.line;
         let char = range.start.character;
-        let length = range.end.character - range.start.character;
+        let length = range
+            .end
+            .character
+            .checked_sub(range.start.character)
+            .unwrap_or_default();
         let n_token_type = self.token_type_str_to_int.get(&token_type).unwrap();
         let mut n_token_modifiers = 0;
         if let Some(token_modifiers) = token_modifiers {
