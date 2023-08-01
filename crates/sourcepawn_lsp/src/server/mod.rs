@@ -151,10 +151,15 @@ impl Server {
         self.spawn(move |server| {
             let _ = server.pull_config();
         });
-        for folder in params.workspace_folders.unwrap_or_default() {
-            self.store
-                .find_documents(&folder.uri.to_file_path().unwrap())
-        }
+        params
+            .workspace_folders
+            .unwrap_or_default()
+            .iter()
+            .for_each(|folder| {
+                if let Ok(folder_path) = folder.uri.to_file_path() {
+                    self.store.find_documents(&folder_path)
+                }
+            });
 
         let _ = self.send_status(lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,
