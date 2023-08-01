@@ -40,9 +40,9 @@ impl LspClient {
         N: lsp_types::notification::Notification,
         N::Params: Serialize,
     {
-        self.raw
-            .sender
-            .send(lsp_server::Notification::new(N::METHOD.to_string(), params).into())?;
+        let notification = lsp_server::Notification::new(N::METHOD.to_string(), params);
+        log::trace!("Sending notification {:?}", notification);
+        self.raw.sender.send(notification.into())?;
         Ok(())
     }
 
@@ -57,11 +57,12 @@ impl LspClient {
         let (tx, rx) = crossbeam_channel::bounded(1);
         self.raw.pending.insert(id.clone(), tx);
 
-        self.raw
-            .sender
-            .send(Request::new(id, R::METHOD.to_string(), params).into())?;
+        let request = Request::new(id, R::METHOD.to_string(), params);
+        log::trace!("Sending request {:?}", request);
+        self.raw.sender.send(request.into())?;
 
         let response = rx.recv_timeout(Duration::from_secs(5))?;
+        log::trace!("Received response {:?}", response);
         let result = match response.error {
             Some(error) => bail!(error.message),
             None => response.result.unwrap_or_default(),
@@ -76,17 +77,19 @@ impl LspClient {
             .pending
             .remove(&response.id)
             .expect("response with known request id received");
-
+        log::trace!("Sending received response {:?}", response);
         tx.send(response)?;
         Ok(())
     }
 
     pub fn send_response(&self, response: lsp_server::Response) -> Result<()> {
+        log::trace!("Sending response {:?}", response);
         self.raw.sender.send(response.into())?;
         Ok(())
     }
 
     pub fn send_error(&self, id: RequestId, code: ErrorCode, message: String) -> Result<()> {
+        log::trace!("Sending error {:?}", message);
         self.send_response(lsp_server::Response::new_err(id, code as i32, message))?;
         Ok(())
     }

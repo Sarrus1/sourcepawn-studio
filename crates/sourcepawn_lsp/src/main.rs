@@ -56,8 +56,8 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     };
 
     log::info!("Starting sourcepawn-lsp version {}", VERSION);
-    env::set_var("RUST_BACKTRACE", "1");
-    env::set_var("RUST_LIB_BACKTRACE", "0");
+    env::set_var("RUST_BACKTRACE", "full");
+    env::set_var("RUST_LIB_BACKTRACE", "full");
     let (connection, threads) = Connection::stdio();
     Server::new(connection, opts.amxxpawn_mode).run()?;
     threads.join()?;
