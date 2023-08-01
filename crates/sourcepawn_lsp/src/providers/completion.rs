@@ -71,12 +71,13 @@ pub(crate) fn provide_completions(
                 return None;
             }
             '*' => {
-                if let Some(item) = is_doc_completion(&pre_line, &position, &all_items.0) {
-                    return item
-                        .read()
-                        .unwrap()
-                        .doc_completion(document.line(position.line + 1).unwrap());
+                if let (Some(item), Some(line)) = (
+                    is_doc_completion(&pre_line, &position, &all_items.0),
+                    document.line(position.line + 1),
+                ) {
+                    return item.read().unwrap().doc_completion(line);
                 }
+                return None;
             }
             _ => {
                 // In the last case, the user might be picking on an unfinished completion:
