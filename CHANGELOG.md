@@ -1,5 +1,15 @@
 ## Release Notes
 
+## [0.10.18]
+
+### Added
+
+- Added fuller backtrace and more logs.
+
+### Fixed
+
+- Fixed some crashes (see #315, #316, #317, #318).
+
 ## [0.10.17]
 
 ### Fixed

@@ -1,14 +1,20 @@
 ## Release Notes
 
+## [5.5.4]
+
+### Chore
+
+- LSP version bump.
+
 ## [5.5.3]
 
-### Fixed
+### Chore
 
 - LSP version bump.
 
 ## [5.5.2]
 
-### Fixed
+### Chore
 
 - LSP version bump.
 
