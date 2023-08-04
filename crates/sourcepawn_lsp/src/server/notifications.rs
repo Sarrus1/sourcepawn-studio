@@ -2,6 +2,7 @@ use crate::{capabilities::ClientCapabilitiesExt, dispatch, document::Document, u
 use std::sync::Arc;
 
 use crate::Server;
+use anyhow::bail;
 use lsp_server::Notification;
 use lsp_types::{
     notification::{
@@ -46,21 +47,19 @@ impl Server {
         utils::normalize_uri(&mut params.text_document.uri);
 
         let uri = Arc::new(params.text_document.uri.clone());
-
-        match self.store.get(&uri) {
-            Some(old_document) => {
-                let mut text = old_document.text().to_string();
-                utils::apply_document_edit(&mut text, params.content_changes);
-                self.store
-                    .handle_open_document(&uri, text, &mut self.parser)?;
-            }
-            None => match uri.to_file_path() {
-                Ok(path) => {
-                    self.store.load(path, &mut self.parser)?;
-                }
-                Err(_) => return Ok(()),
-            },
+        let Some(document) = self.store.get(&uri).or_else(|| {
+            // If the document was not known, read its content first.
+            self.store
+                .load(uri.to_file_path().ok()?, &mut self.parser)
+                .ok()?
+        }) else {
+            bail!("Failed to apply document edit on {}", params.text_document.uri);
         };
+
+        let mut text = document.text().to_string();
+        utils::apply_document_edit(&mut text, params.content_changes);
+        self.store
+            .handle_open_document(&uri, text, &mut self.parser)?;
 
         self.lint_all_documents();
 

@@ -182,19 +182,12 @@ impl Store {
                 if self.documents.contains_key(&uri) {
                     continue;
                 }
-                if let Ok(path) = uri.to_file_path() {
-                    let text = match read_to_string_lossy(path.clone()) {
-                        Ok(text) => text,
-                        Err(_err) => {
-                            log::error!("Failed to read file {:?} ", path);
-                            continue;
-                        }
+                let Ok(text) = read_to_string_lossy(entry.path().to_path_buf()) else {
+                        log::error!("Failed to read file {:?} ", entry.path());
+                        continue;
                     };
-                    let document = Document::new(Arc::new(uri.clone()), text.clone());
-                    self.documents.insert(Arc::new(uri), document);
-                } else {
-                    log::error!("Failed to convert uri to path {:?}", uri);
-                }
+                let document = Document::new(Arc::new(uri.clone()), text.clone());
+                self.documents.insert(Arc::new(uri), document);
             }
         }
     }
