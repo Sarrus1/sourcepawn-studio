@@ -130,14 +130,14 @@ fn expand_macro(
                         return Err(ParseIntError::new(child.text(), child.range));
                     }
                     // Safe to unwrap here because we know the macro has arguments.
-                    let arg_idx = macro_.params.as_ref().unwrap()[arg_idx];
+                    let arg_idx = macro_.params.as_ref().unwrap()[arg_idx] as usize;
                     if arg_idx >= 10 {
                         return Err(ParseIntError::new(child.text(), child.range));
                     }
                     if let Some(stringize_delta) = stringize_delta.take() {
                         stack.pop();
                         let mut stringized = '"'.to_string();
-                        for (j, sub_child) in args[arg_idx as usize].iter().enumerate() {
+                        for (j, sub_child) in args[arg_idx].iter().enumerate() {
                             if j > 0 && sub_child.delta.col > 0 {
                                 stringized.push_str(&" ".repeat(sub_child.delta.col as usize));
                             }
@@ -163,7 +163,7 @@ fn expand_macro(
                         );
                         stack.push((symbol, delta, d + 1));
                     } else {
-                        for (j, sub_child) in args[arg_idx as usize].iter().enumerate() {
+                        for (j, sub_child) in args[arg_idx].iter().enumerate() {
                             stack.push((
                                 sub_child.clone(),
                                 if i == 1 {
