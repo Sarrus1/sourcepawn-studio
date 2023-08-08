@@ -4,20 +4,26 @@
     <strong>Language Server Protocol implementation for the SourcePawn programming language written in Rust</strong>
   </p>
   <p style="margin-bottom: 0.5ex;">
-    <a href="https://github.com/Sarrus1/sourcepawn-lsp/releases/latest">
-        <img src="https://img.shields.io/github/downloads/Sarrus1/sourcepawn-lsp/total"/>
+    <a href="https://github.com/Sarrus1/sourcepawn-vscode/releases/">
+      <img
+        src="https://img.shields.io/visual-studio-marketplace/v/Sarrus.sourcepawn-vscode?include_prereleases"
+        />
     </a>
-    <a href="https://github.com/Sarrus1/sourcepawn-lsp/actions/workflows/check_lint.yml">
+    <a href="https://github.com/Sarrus1/sourcepawn-vscode/releases/latest">
+      <img
+        src="https://img.shields.io/visual-studio-marketplace/i/Sarrus.sourcepawn-vscode"
+        />
+    </a>
+    <a href="https://github.com/Sarrus1/sourcepawn-vscode/releases/latest">
+      <img
+        src="https://img.shields.io/visual-studio-marketplace/d/Sarrus.sourcepawn-vscode"
+        />
+    </a>
+    <a href="https://github.com/Sarrus1/sourcepawn-vscode/actions/workflows/ci.yml">
       <img
         alt="CI status"
-        src="https://github.com/Sarrus1/sourcepawn-lsp/actions/workflows/check_lint.yml/badge.svg"
+        src="https://github.com/Sarrus1/sourcepawn-vscode/actions/workflows/ci.yml/badge.svg"
       />
-    </a>
-    <a href="https://github.com/Sarrus1/sourcepawn-lsp/releases/latest">
-      <img alt="Crates.io" src="https://img.shields.io/crates/d/sourcepawn-lsp">
-    </a>
-    <a href="https://github.com/Sarrus1/sourcepawn-lsp/releases/latest">
-      <img alt="Crates.io" src="https://img.shields.io/crates/v/sourcepawn-lsp">
     </a>
     <img alt="GitHub" src="https://img.shields.io/github/license/Sarrus1/sourcepawn-lsp">
   </p>
