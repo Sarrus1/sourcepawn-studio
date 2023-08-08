@@ -73,7 +73,7 @@ impl IncludeItem {
             target_range: zero_range,
             target_uri: self.include_uri.as_ref().clone(),
             target_selection_range: zero_range,
-            origin_selection_range: None,
+            origin_selection_range: Some(self.v_range),
         })
     }
 
