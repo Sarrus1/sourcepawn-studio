@@ -1,0 +1,11 @@
+name = "lapce-sourcepawn"
+version = "0.1.0"
+author = "Sarrus"
+display-name = "SourcePawn"
+description = "SourcePawn language support for Lapce."
+icon = "assets/icon.png"
+repository = "https://github.com/abreumatheus/lapce-pyright"
+
+[activation]
+language = ["sourcepawn"]
+workspace-contains = ["*/*.sp", "*/*.inc"]

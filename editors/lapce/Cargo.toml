@@ -1,0 +1,9 @@
+[package]
+name = "lapce-sourcepawn"
+version = "0.1.0"
+edition = "2021"
+description = "Lapce extension for SourcePawn development."
+license = "MIT"
+
+[dependencies]
+lapce-plugin = "0.1.1"
