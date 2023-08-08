@@ -1,5 +1,16 @@
 ## Release Notes
 
+## [0.10.19]
+
+### Added
+
+- Added signatures and documentation for typedef, typeset and callback snippet completions (see #324).
+
+### Fixed
+
+- Fixed nested relative include paths not being resolved by the linter (see #311).
+- Fixed GoToDefinition on includes only highlighting partial words (see #323).
+
 ## [0.10.18]
 
 ### Added

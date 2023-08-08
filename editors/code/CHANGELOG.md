@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [5.5.5]
+
+### Chore
+
+- LSP version bump.
+
 ## [5.5.4]
 
 ### Chore
