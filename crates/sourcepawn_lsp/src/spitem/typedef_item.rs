@@ -1,6 +1,6 @@
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, Weak};
 
-use super::{parameter::Parameter, Location};
+use super::{parameter::Parameter, Location, SPItem};
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionItemTag,
     CompletionParams, CompletionTextEdit, DocumentSymbol, GotoDefinitionParams, Hover,
@@ -46,6 +46,9 @@ pub struct TypedefItem {
 
     /// Parameters of the typedef.
     pub params: Vec<Arc<RwLock<Parameter>>>,
+
+    /// Parent of the typedef, if it belongs to a typeset.
+    pub parent: Option<Weak<RwLock<SPItem>>>,
 }
 
 impl TypedefItem {
@@ -176,20 +179,31 @@ impl TypedefItem {
             filter_text: Some(format!("${}", self.name)),
             kind: Some(CompletionItemKind::FUNCTION),
             tags: Some(tags),
-            detail: Some(self.type_.to_string()),
+            label_details: Some(CompletionItemLabelDetails {
+                detail: Some(self.type_.to_string()),
+                description: uri_to_file_name(&self.uri),
+            }),
             text_edit: Some(CompletionTextEdit::Edit(TextEdit {
                 range,
                 new_text: snippet_text,
             })),
             deprecated: Some(self.is_deprecated()),
             insert_text_format: Some(InsertTextFormat::SNIPPET),
+            data: Some(serde_json::Value::String(self.key())),
             ..Default::default()
         })
     }
 
     /// Return a key to be used as a unique identifier in a map containing all the items.
     pub(crate) fn key(&self) -> String {
-        self.name.clone()
+        match &self.parent {
+            Some(parent) => format!(
+                "{}-{}",
+                parent.upgrade().unwrap().read().unwrap().key(),
+                self.name
+            ),
+            None => self.name.clone(),
+        }
     }
 
     /// Formatted representation of a [TypedefItem].

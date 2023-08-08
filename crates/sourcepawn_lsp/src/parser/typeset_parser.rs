@@ -22,29 +22,6 @@ impl Document {
             .find_doc(node.start_position().row, false)
             .unwrap_or_default();
 
-        let mut children = vec![];
-        let mut cursor = node.walk();
-        let mut counter = -1;
-        for child in node.children(&mut cursor) {
-            match child.kind() {
-                "comment" => walker.push_comment(child, &self.preprocessed_text),
-                "preproc_pragma" => {
-                    let _ = walker.push_deprecated(child, &self.preprocessed_text);
-                }
-                "typedef_expression" => {
-                    let _ = self.parse_typeset_expression(
-                        &mut counter,
-                        child,
-                        walker,
-                        node,
-                        name_node,
-                        &mut children,
-                    );
-                }
-                _ => {}
-            }
-        }
-
         let range = ts_range_to_lsp_range(&name_node.range());
         let full_range = ts_range_to_lsp_range(&node.range());
         let typeset_item = TypesetItem {
@@ -56,10 +33,30 @@ impl Document {
             description,
             uri: self.uri.clone(),
             references: vec![],
-            children,
+            children: vec![],
         };
 
-        let typeset_item = Arc::new(RwLock::new(SPItem::Typeset(typeset_item)));
+        let mut typeset_item = Arc::new(RwLock::new(SPItem::Typeset(typeset_item)));
+
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            match child.kind() {
+                "comment" => walker.push_comment(child, &self.preprocessed_text),
+                "preproc_pragma" => {
+                    let _ = walker.push_deprecated(child, &self.preprocessed_text);
+                }
+                "typedef_expression" => {
+                    let _ = self.parse_typeset_expression(
+                        child,
+                        walker,
+                        node,
+                        name_node,
+                        &mut typeset_item,
+                    );
+                }
+                _ => {}
+            }
+        }
         self.sp_items.push(typeset_item.clone());
         self.declarations
             .insert(typeset_item.clone().read().unwrap().key(), typeset_item);
@@ -69,17 +66,15 @@ impl Document {
 
     fn parse_typeset_expression(
         &mut self,
-        counter: &mut i32,
         child: Node,
         walker: &mut Walker,
         node: &Node,
         name_node: Node,
-        children: &mut Vec<Arc<RwLock<SPItem>>>,
+        parent: &mut Arc<RwLock<SPItem>>,
     ) -> Result<(), anyhow::Error> {
         let name = name_node
             .utf8_text(self.preprocessed_text.as_bytes())?
             .to_string();
-        *counter += 1;
         let mut argument_declarations_node = None;
         let type_node = child.child_by_field_name("returnType");
         let mut sub_cursor = child.walk();
@@ -97,12 +92,16 @@ impl Document {
             None => None,
         };
         let description = walker
-            .find_doc(node.start_position().row, false)
+            .find_doc(child.start_position().row, false)
             .unwrap_or_default();
         let range = ts_range_to_lsp_range(&name_node.range());
         let full_range = ts_range_to_lsp_range(&node.range());
         let typedef_item = TypedefItem {
-            name: format!("{}{}", name, counter),
+            name: format!(
+                "{}{}",
+                name,
+                parent.read().unwrap().children().unwrap().len() // Safe unwrap, a typeset has a vector of children.
+            ),
             type_: type_.unwrap_or_default(),
             range,
             v_range: self.build_v_range(&range),
@@ -110,12 +109,13 @@ impl Document {
             v_full_range: self.build_v_range(&full_range),
             description: description.clone(),
             uri: self.uri.clone(),
-            detail: node
+            detail: child
                 .utf8_text(self.preprocessed_text.as_bytes())
                 .unwrap_or_default()
                 .to_string(),
             references: vec![],
             params: vec![],
+            parent: Some(Arc::downgrade(parent)),
         };
         let typedef_item = Arc::new(RwLock::new(SPItem::Typedef(typedef_item)));
         let _ = self.read_argument_declarations(
@@ -123,7 +123,7 @@ impl Document {
             typedef_item.clone(),
             description,
         );
-        children.push(typedef_item);
+        parent.write().unwrap().push_child(typedef_item);
 
         Ok(())
     }

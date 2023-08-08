@@ -78,6 +78,7 @@ impl Document {
                 .to_string(),
             references: vec![],
             params: vec![],
+            parent: None,
         };
 
         let typedef_item = Arc::new(RwLock::new(SPItem::Typedef(typedef_item)));

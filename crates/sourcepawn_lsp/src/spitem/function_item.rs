@@ -253,13 +253,17 @@ impl FunctionItem {
             filter_text: Some(format!("${}", self.name)),
             kind: Some(CompletionItemKind::FUNCTION),
             tags: Some(tags),
-            detail: Some(self.type_.to_string()),
+            label_details: Some(CompletionItemLabelDetails {
+                detail: Some(self.type_.to_string()),
+                description: uri_to_file_name(&self.uri),
+            }),
             text_edit: Some(CompletionTextEdit::Edit(TextEdit {
                 range,
                 new_text: snippet_text,
             })),
             deprecated: Some(self.is_deprecated()),
             insert_text_format: Some(InsertTextFormat::SNIPPET),
+            data: Some(serde_json::Value::String(self.key())),
             ..Default::default()
         })
     }
