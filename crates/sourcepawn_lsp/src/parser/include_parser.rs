@@ -61,25 +61,30 @@ impl Store {
             utils::add_include_extension(include_text, self.environment.amxxpawn_mode);
 
         if quoted {
+            // Search for the relative path.
+            let document_path = document_uri.to_file_path().ok()?;
+            let parent_path = document_path.parent()?;
+            let mut include_file_path = parent_path.join(include_text);
+            let mut uri = Url::from_file_path(&include_file_path).ok()?;
+            if self.documents.contains_key(&uri) {
+                return Some(uri);
+            }
             if let Ok(Some(main_path_uri)) = self.environment.options.get_main_path_uri() {
                 let main_path = main_path_uri.to_file_path().ok()?;
-                let scripting_dirpath = main_path.parent()?;
-                let mut include_file_path = scripting_dirpath.join(include_text);
+                let main_path_parent = main_path.parent()?;
+                if parent_path != main_path_parent {
+                    // Don't look for includes in the include folder if we are not at the root
+                    // of the project.
+                    return None;
+                }
+                include_file_path = main_path_parent.join("include").join(include_text);
                 log::trace!(
                     "Looking for {:#?} in {:#?}",
                     include_text,
                     include_file_path
                 );
-                if !include_file_path.exists() {
-                    log::trace!("{:#?} not found", include_text);
-                    include_file_path = scripting_dirpath.join("include").join(include_text);
-                    log::trace!(
-                        "Looking for {:#?} in {:#?}",
-                        include_text,
-                        include_file_path
-                    );
-                }
-                let uri = Url::from_file_path(&include_file_path).unwrap();
+
+                uri = Url::from_file_path(&include_file_path).unwrap();
                 if self.documents.contains_key(&uri) {
                     return Some(uri);
                 }
