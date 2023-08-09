@@ -84,6 +84,7 @@ impl Server {
         });
     }
 
+    #[allow(unused)]
     fn run_fallible<R, Q>(&self, id: RequestId, query: Q)
     where
         R: Serialize,

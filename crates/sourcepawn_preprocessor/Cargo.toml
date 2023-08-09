@@ -11,9 +11,9 @@ authors.workspace = true
 doctest = false
 
 [dependencies]
-lsp-types = "0.94.0"
-anyhow = "1.0.66"
-lazy_static = "1.4.0"
-regex = "1.7.0"
-fxhash = "0.2.1"
-sourcepawn_lexer = "0.1.1"
+lsp-types.workspace = true
+anyhow.workspace = true
+lazy_static.workspace = true
+regex.workspace = true
+fxhash.workspace = true
+sourcepawn_lexer.workspace = true

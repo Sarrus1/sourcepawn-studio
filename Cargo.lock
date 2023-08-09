@@ -2006,17 +2006,11 @@ dependencies = [
  "lazy_static",
  "log",
  "lsp-types",
- "notify",
  "parking_lot",
  "regex",
  "serde",
  "serde_json",
- "sourcepawn_preprocessor",
- "strip_bom",
  "tree-sitter",
- "tree-sitter-sourcepawn",
- "uuid",
- "walkdir",
 ]
 
 [[package]]
