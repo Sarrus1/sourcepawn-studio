@@ -1,6 +1,5 @@
 use lsp_types::{DocumentSymbol, DocumentSymbolParams};
-
-use crate::store::Store;
+use store::Store;
 
 pub fn provide_document_symbol(
     store: &Store,

@@ -1,3 +1,9 @@
+use anyhow::{bail, Result};
+use crossbeam_channel::Sender;
+use dashmap::DashMap;
+use lsp_server::{ErrorCode, Message, Request, RequestId, Response};
+use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams};
+use serde::{de::DeserializeOwned, Serialize};
 use std::{
     sync::{
         atomic::{AtomicI32, Ordering},
@@ -5,15 +11,7 @@ use std::{
     },
     time::Duration,
 };
-
-use anyhow::{bail, Result};
-use crossbeam_channel::Sender;
-use dashmap::DashMap;
-use lsp_server::{ErrorCode, Message, Request, RequestId, Response};
-use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams};
-use serde::{de::DeserializeOwned, Serialize};
-
-use crate::Options;
+use store::options::Options;
 
 #[derive(Debug)]
 struct RawClient {

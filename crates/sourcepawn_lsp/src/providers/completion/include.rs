@@ -1,10 +1,8 @@
-use std::fs;
-
 use lazy_static::lazy_static;
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionList, Url};
 use regex::Regex;
-
-use crate::store::Store;
+use std::fs;
+use store::Store;
 
 pub(super) struct IncludeStatement {
     /// Text inside of the include statement, excluding the traling quotation marks or chevrons.
@@ -72,7 +70,7 @@ pub(super) fn get_include_completions(
 ///
 /// # Arguments
 ///
-/// * `request` - Associated [FeatureRequest<CompletionParams>](FeatureRequest<CompletionParams>).
+/// * `store` -
 /// * `include_st` - [IncludeStatement] to base the request off of.
 /// * `inc_uri_folders` - Vector of folder [uris](lsp_types::Url) into which to look for includes.
 /// * `items` - Vector of [CompletionItem](lsp_types::CompletionItem) to mutate.

@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-
 use lsp_types::{RenameParams, TextEdit, WorkspaceEdit};
-
-use crate::store::Store;
+use std::collections::HashMap;
+use store::Store;
 
 pub fn provide_rename(store: &Store, params: RenameParams) -> Option<WorkspaceEdit> {
     let items = &store.get_items_from_position(

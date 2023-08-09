@@ -1,6 +1,5 @@
 use lsp_types::{Location, ReferenceParams};
-
-use crate::store::Store;
+use store::Store;
 
 pub fn provide_reference(store: &Store, params: ReferenceParams) -> Option<Vec<Location>> {
     let items = &store.get_items_from_position(

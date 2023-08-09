@@ -1,8 +1,6 @@
-use lsp_types::{SignatureHelp, SignatureHelpParams, SignatureInformation};
-
-use crate::store::Store;
-
 use self::signature_attributes::SignatureAttributes;
+use lsp_types::{SignatureHelp, SignatureHelpParams, SignatureInformation};
+use store::Store;
 
 mod signature_attributes;
 

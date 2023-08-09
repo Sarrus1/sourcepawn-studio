@@ -1,9 +1,10 @@
 use self::builder::SemanticTokensBuilder;
-use crate::{spitem::SPItem, store::Store};
 use lsp_types::{
     SemanticTokenModifier, SemanticTokenType, SemanticTokens, SemanticTokensLegend,
     SemanticTokensParams,
 };
+use store::Store;
+use syntax::SPItem;
 
 mod builder;
 

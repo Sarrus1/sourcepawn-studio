@@ -1,6 +1,5 @@
 use lsp_types::{SemanticTokenModifier, SemanticTokenType, Url};
-
-use crate::spitem::define_item::DefineItem;
+use syntax::define_item::DefineItem;
 
 use super::SemanticTokensBuilder;
 

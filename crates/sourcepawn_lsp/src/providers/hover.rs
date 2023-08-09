@@ -1,8 +1,5 @@
 use lsp_types::{Hover, HoverParams};
-
-use crate::store::Store;
-
-pub mod description;
+use store::Store;
 
 pub fn provide_hover(store: &Store, params: HoverParams) -> Option<Hover> {
     let items = &store.get_items_from_position(

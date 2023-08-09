@@ -1,8 +1,7 @@
-use crate::utils;
-use std::sync::Arc;
-
 use lsp_server::RequestId;
 use lsp_types::GotoDefinitionParams;
+use std::sync::Arc;
+use store::normalize_uri;
 
 use crate::{providers, Server};
 
@@ -12,7 +11,7 @@ impl Server {
         id: RequestId,
         mut params: GotoDefinitionParams,
     ) -> anyhow::Result<()> {
-        utils::normalize_uri(&mut params.text_document_position_params.text_document.uri);
+        normalize_uri(&mut params.text_document_position_params.text_document.uri);
         let uri = Arc::new(
             params
                 .text_document_position_params

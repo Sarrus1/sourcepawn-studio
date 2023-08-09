@@ -1,9 +1,3 @@
-use crate::{
-    capabilities::ClientCapabilitiesExt, linter::spcomp::SPCompDiagnostic, lsp_ext,
-    options::Options, store::Store,
-};
-use std::sync::Arc;
-
 use crossbeam_channel::{Receiver, Sender};
 use fxhash::FxHashMap;
 use lsp_server::{Connection, ErrorCode, Message, RequestId};
@@ -19,10 +13,12 @@ use lsp_types::{
 };
 use parking_lot::RwLock;
 use serde::Serialize;
+use std::sync::Arc;
+use store::{linter::spcomp::SPCompDiagnostic, options::Options, Store};
 use threadpool::ThreadPool;
 use tree_sitter::Parser;
 
-use crate::client::LspClient;
+use crate::{capabilities::ClientCapabilitiesExt, client::LspClient, lsp_ext};
 
 mod diagnostics;
 mod files;

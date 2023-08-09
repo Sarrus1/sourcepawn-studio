@@ -1,6 +1,5 @@
 use lsp_types::{GotoDefinitionParams, GotoDefinitionResponse};
-
-use crate::store::Store;
+use store::Store;
 
 pub fn provide_definition(
     store: &Store,

@@ -1,7 +1,5 @@
-use crate::{capabilities::ClientCapabilitiesExt, dispatch, document::Document, utils};
 use std::sync::Arc;
 
-use crate::Server;
 use anyhow::bail;
 use lsp_server::Notification;
 use lsp_types::{
@@ -11,10 +9,13 @@ use lsp_types::{
     DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
     DidOpenTextDocumentParams, FileChangeType,
 };
+use store::{document::Document, normalize_uri};
+
+use crate::{capabilities::ClientCapabilitiesExt, dispatch, utils, Server};
 
 impl Server {
     pub(super) fn did_open(&mut self, mut params: DidOpenTextDocumentParams) -> anyhow::Result<()> {
-        utils::normalize_uri(&mut params.text_document.uri);
+        normalize_uri(&mut params.text_document.uri);
         let uri = Arc::new(params.text_document.uri);
 
         if !self.config_pulled {
@@ -46,7 +47,7 @@ impl Server {
         &mut self,
         mut params: DidChangeTextDocumentParams,
     ) -> anyhow::Result<()> {
-        utils::normalize_uri(&mut params.text_document.uri);
+        normalize_uri(&mut params.text_document.uri);
 
         let uri = Arc::new(params.text_document.uri.clone());
         let Some(document) = self.store.read().get(&uri).or_else(|| {
@@ -74,7 +75,7 @@ impl Server {
         params: DidChangeWatchedFilesParams,
     ) -> anyhow::Result<()> {
         for mut change in params.changes {
-            utils::normalize_uri(&mut change.uri);
+            normalize_uri(&mut change.uri);
             match change.typ {
                 FileChangeType::CHANGED => {
                     let _ = self

@@ -1,6 +1,5 @@
 use lsp_types::{SemanticTokenModifier, SemanticTokenType, Url};
-
-use crate::spitem::enum_member_item::EnumMemberItem;
+use syntax::enum_member_item::EnumMemberItem;
 
 use super::SemanticTokensBuilder;
 

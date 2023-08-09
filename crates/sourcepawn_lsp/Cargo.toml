@@ -39,8 +39,9 @@ fern = "0.6.2"
 humantime = "2.1.0"
 sourcepawn_lexer = "0.1.1"
 sentry = "0.31.3"
-strip_bom = "1.0.0"
 sourcepawn_preprocessor.workspace = true
+store.workspace = true
+syntax.workspace = true
 parking_lot = "0.12.1"
 
 [dependencies.uuid]

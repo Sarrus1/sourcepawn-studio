@@ -22,3 +22,5 @@ debug = true
 [workspace.dependencies]
 sourcepawn_preprocessor = { path = "./crates/sourcepawn_preprocessor" }
 sourcepawn_lsp = { path = "./crates/sourcepawn_lsp" }
+store = { path = "./crates/store" }
+syntax = { path = "./crates/syntax" }

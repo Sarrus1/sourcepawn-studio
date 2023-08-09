@@ -1,8 +1,9 @@
 use lsp_types::Url;
 use notify::Watcher;
+use store::normalize_uri;
 use walkdir::WalkDir;
 
-use crate::{utils, Server};
+use crate::Server;
 
 impl Server {
     pub(crate) fn handle_file_event(&mut self, event: notify::Event) {
@@ -19,7 +20,7 @@ impl Server {
                     return;
                 }
                 let mut uri = uri.unwrap();
-                utils::normalize_uri(&mut uri);
+                normalize_uri(&mut uri);
                 match modify_event {
                     notify::event::ModifyKind::Name(_) => {
                         if event.paths[0].is_dir()
@@ -45,7 +46,7 @@ impl Server {
                             return;
                         }
                         let mut uri = uri.unwrap();
-                        utils::normalize_uri(&mut uri);
+                        normalize_uri(&mut uri);
                         let mut uris = self.store.write().get_all_files_in_folder(&uri);
                         if uris.is_empty() {
                             if event.paths[0].is_dir() {
@@ -92,7 +93,7 @@ impl Server {
             }
             notify::EventKind::Remove(_) => {
                 for mut uri in event.paths.iter().flat_map(Url::from_file_path) {
-                    utils::normalize_uri(&mut uri);
+                    normalize_uri(&mut uri);
                     self.store.write().remove(&uri, &mut self.parser);
                 }
                 self.reload_diagnostics();

@@ -2,12 +2,10 @@ use lsp_types::{
     CallHierarchyIncomingCall, CallHierarchyIncomingCallsParams, CallHierarchyItem,
     CallHierarchyOutgoingCall, CallHierarchyOutgoingCallsParams, CallHierarchyPrepareParams,
 };
+use store::{range_contains_range, Store};
+use syntax::SPItem;
 
-use crate::{
-    spitem::SPItem,
-    store::Store,
-    utils::{range_contains_range, range_to_position_average},
-};
+use crate::utils::range_to_position_average;
 
 pub fn prepare(
     store: &Store,

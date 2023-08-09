@@ -1,12 +1,10 @@
 use lsp_types::{CompletionItem, CompletionList, CompletionParams};
 use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
+use store::{semantic_analyzer::is_ctor_call, Store};
+use syntax::range_contains_pos;
 
-use crate::{
-    providers::completion::{
-        context::is_ctor_call, getters::get_ctor_completions, include::get_include_completions,
-    },
-    store::Store,
-    utils,
+use crate::providers::completion::{
+    getters::get_ctor_completions, include::get_include_completions,
 };
 
 use self::{
@@ -36,7 +34,7 @@ pub(crate) fn provide_completions(
 
     let lexer = SourcepawnLexer::new(&document.text);
     for token in lexer {
-        if utils::range_contains_pos(&token.range, position) {
+        if range_contains_pos(&token.range, position) {
             match token.token_kind {
                 TokenKind::Literal(_) | TokenKind::Comment(_) => return None,
                 _ => (),

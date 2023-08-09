@@ -1,8 +1,8 @@
 use lsp_server::RequestId;
 use lsp_types::SemanticTokensParams;
 use std::sync::Arc;
+use store::normalize_uri;
 
-use crate::utils;
 use crate::{providers, Server};
 
 impl Server {
@@ -11,7 +11,7 @@ impl Server {
         id: RequestId,
         mut params: SemanticTokensParams,
     ) -> anyhow::Result<()> {
-        utils::normalize_uri(&mut params.text_document.uri);
+        normalize_uri(&mut params.text_document.uri);
         let uri = Arc::new(params.text_document.uri.clone());
         let _ = self.read_unscanned_document(uri);
 

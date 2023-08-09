@@ -1,10 +1,3 @@
-use std::{
-    path::{Path, PathBuf},
-    sync::Once,
-    thread::JoinHandle,
-    time::Duration,
-};
-
 use anyhow::Result;
 use crossbeam_channel::Receiver;
 use lsp_server::{Connection, Response};
@@ -15,8 +8,16 @@ use lsp_types::{
     Position, Range, TextDocumentIdentifier, TextDocumentItem, TextDocumentPositionParams, Url,
     WorkspaceFolder,
 };
-use sourcepawn_lsp::{LspClient, Options, Server};
+use std::{
+    path::{Path, PathBuf},
+    sync::Once,
+    thread::JoinHandle,
+    time::Duration,
+};
 use tempfile::{tempdir, TempDir};
+
+use sourcepawn_lsp::{LspClient, Server};
+use store::options::Options;
 
 #[derive(Debug)]
 pub enum InternalMessage {

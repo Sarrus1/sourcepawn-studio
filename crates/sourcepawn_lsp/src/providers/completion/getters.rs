@@ -1,9 +1,8 @@
+use lsp_types::{CompletionList, CompletionParams, Position, Range};
 use parking_lot::RwLock;
 use std::sync::Arc;
-
-use lsp_types::{CompletionList, CompletionParams, Position, Range};
-
-use crate::{spitem::SPItem, store::Store};
+use store::Store;
+use syntax::SPItem;
 
 use super::{context::get_line_words, defaults::get_default_completions};
 

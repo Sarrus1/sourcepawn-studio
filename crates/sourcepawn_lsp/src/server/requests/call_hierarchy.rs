@@ -3,8 +3,8 @@ use lsp_types::{
     CallHierarchyIncomingCallsParams, CallHierarchyOutgoingCallsParams, CallHierarchyPrepareParams,
 };
 use std::sync::Arc;
+use store::normalize_uri;
 
-use crate::utils;
 use crate::{providers, Server};
 
 impl Server {
@@ -13,7 +13,7 @@ impl Server {
         id: RequestId,
         mut params: CallHierarchyPrepareParams,
     ) -> anyhow::Result<()> {
-        utils::normalize_uri(&mut params.text_document_position_params.text_document.uri);
+        normalize_uri(&mut params.text_document_position_params.text_document.uri);
         let uri = Arc::new(
             params
                 .text_document_position_params
@@ -35,7 +35,7 @@ impl Server {
         id: RequestId,
         mut params: CallHierarchyOutgoingCallsParams,
     ) -> anyhow::Result<()> {
-        utils::normalize_uri(&mut params.item.uri);
+        normalize_uri(&mut params.item.uri);
 
         self.run_query(id, move |store| {
             providers::call_hierarchy::outgoing(store, params)
@@ -49,7 +49,7 @@ impl Server {
         id: RequestId,
         mut params: CallHierarchyIncomingCallsParams,
     ) -> anyhow::Result<()> {
-        utils::normalize_uri(&mut params.item.uri);
+        normalize_uri(&mut params.item.uri);
 
         self.run_query(id, move |store| {
             providers::call_hierarchy::incoming(store, params)
