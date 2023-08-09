@@ -24,6 +24,7 @@ preprocessor = { path = "./crates/preprocessor" }
 sourcepawn_lsp = { path = "./crates/sourcepawn_lsp" }
 store = { path = "./crates/store" }
 syntax = { path = "./crates/syntax" }
+parser = { path = "./crates/parser" }
 lsp-server = "0.6.0"
 derive-new = "0.5"
 crossbeam-channel = "0.5.6"

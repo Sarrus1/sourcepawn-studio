@@ -6,18 +6,16 @@ use syntax::{
 };
 use tree_sitter::Node;
 
-use crate::document::{Document, Walker};
+use crate::Parser;
 
-impl Document {
-    pub fn parse_typeset(&mut self, node: &Node, walker: &mut Walker) -> anyhow::Result<()> {
+impl<'a> Parser<'a> {
+    pub fn parse_typeset(&mut self, node: &Node) -> anyhow::Result<()> {
         let name_node = node
             .child_by_field_name("name")
             .context("Typeset name is empty.")?;
-        let name = name_node
-            .utf8_text(self.preprocessed_text.as_bytes())?
-            .to_string();
+        let name = name_node.utf8_text(self.source.as_bytes())?.to_string();
 
-        let description = walker
+        let description = self
             .find_doc(node.start_position().row, false)
             .unwrap_or_default();
 
@@ -40,18 +38,13 @@ impl Document {
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
             match child.kind() {
-                "comment" => walker.push_comment(child, &self.preprocessed_text),
+                "comment" => self.push_comment(child),
                 "preproc_pragma" => {
-                    let _ = walker.push_deprecated(child, &self.preprocessed_text);
+                    let _ = self.push_deprecated(child);
                 }
                 "typedef_expression" => {
-                    let _ = self.parse_typeset_expression(
-                        child,
-                        walker,
-                        node,
-                        name_node,
-                        &mut typeset_item,
-                    );
+                    let _ =
+                        self.parse_typeset_expression(child, node, name_node, &mut typeset_item);
                 }
                 _ => {}
             }
@@ -66,14 +59,11 @@ impl Document {
     fn parse_typeset_expression(
         &mut self,
         child: Node,
-        walker: &mut Walker,
         node: &Node,
         name_node: Node,
         parent: &mut Arc<RwLock<SPItem>>,
     ) -> Result<(), anyhow::Error> {
-        let name = name_node
-            .utf8_text(self.preprocessed_text.as_bytes())?
-            .to_string();
+        let name = name_node.utf8_text(self.source.as_bytes())?.to_string();
         let mut argument_declarations_node = None;
         let type_node = child.child_by_field_name("returnType");
         let mut sub_cursor = child.walk();
@@ -83,14 +73,10 @@ impl Document {
             }
         }
         let type_ = match type_node {
-            Some(type_node) => Some(
-                type_node
-                    .utf8_text(self.preprocessed_text.as_bytes())?
-                    .to_string(),
-            ),
+            Some(type_node) => Some(type_node.utf8_text(self.source.as_bytes())?.to_string()),
             None => None,
         };
-        let description = walker
+        let description = self
             .find_doc(child.start_position().row, false)
             .unwrap_or_default();
         let range = ts_range_to_lsp_range(&name_node.range());
@@ -109,7 +95,7 @@ impl Document {
             description: description.clone(),
             uri: self.uri.clone(),
             detail: child
-                .utf8_text(self.preprocessed_text.as_bytes())
+                .utf8_text(self.source.as_bytes())
                 .unwrap_or_default()
                 .to_string(),
             references: vec![],

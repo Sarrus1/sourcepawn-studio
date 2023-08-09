@@ -9,10 +9,10 @@ use syntax::{
 };
 use tree_sitter::Node;
 
-use crate::document::Document;
+use crate::Parser;
 
-impl Document {
-    pub(crate) fn parse_variable(
+impl<'a> Parser<'a> {
+    pub fn parse_variable(
         &mut self,
         node: &mut Node,
         parent: Option<Arc<RwLock<SPItem>>>,
@@ -55,7 +55,7 @@ impl Document {
         child: Node,
         visibility: &mut Vec<VariableVisibility>,
     ) -> Result<(), anyhow::Error> {
-        let visibility_text = child.utf8_text(self.preprocessed_text.as_bytes())?;
+        let visibility_text = child.utf8_text(self.source.as_bytes())?;
         if visibility_text.contains("stock") {
             visibility.push(VariableVisibility::Stock);
         }
@@ -71,7 +71,7 @@ impl Document {
         child: Node,
         storage_class: &mut Vec<VariableStorageClass>,
     ) -> Result<(), anyhow::Error> {
-        let storage_class_text = child.utf8_text(self.preprocessed_text.as_bytes())?;
+        let storage_class_text = child.utf8_text(self.source.as_bytes())?;
         if storage_class_text.contains("const") {
             storage_class.push(VariableStorageClass::Const);
         }
@@ -93,16 +93,14 @@ impl Document {
         let name_node = child
             .child_by_field_name("name")
             .context("Variable declaration does not have a name.")?;
-        let name = name_node
-            .utf8_text(self.preprocessed_text.as_bytes())?
-            .to_string();
+        let name = name_node.utf8_text(self.source.as_bytes())?.to_string();
         let mut dimensions: Vec<String> = vec![];
         let mut cursor = child.walk();
         for sub_child in child.children(&mut cursor) {
             let kind = sub_child.kind();
             match kind {
                 "fixed_dimension" | "dimension" => {
-                    let dimension_text = sub_child.utf8_text(self.preprocessed_text.as_bytes())?;
+                    let dimension_text = sub_child.utf8_text(self.source.as_bytes())?;
                     dimensions.push(dimension_text.to_string());
                 }
                 _ => {
@@ -111,11 +109,7 @@ impl Document {
             }
         }
         let type_ = match type_node {
-            Some(type_node) => Some(
-                type_node
-                    .utf8_text(self.preprocessed_text.as_bytes())?
-                    .to_string(),
-            ),
+            Some(type_node) => Some(type_node.utf8_text(self.source.as_bytes())?.to_string()),
             None => None,
         };
         let range = ts_range_to_lsp_range(&name_node.range());

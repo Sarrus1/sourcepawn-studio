@@ -7,22 +7,16 @@ use syntax::{
 };
 use tree_sitter::Node;
 
-use crate::document::{Document, Walker};
+use crate::Parser;
 
-impl Document {
-    pub(crate) fn parse_enum_struct(
-        &mut self,
-        node: &mut Node,
-        walker: &mut Walker,
-    ) -> anyhow::Result<()> {
+impl<'a> Parser<'a> {
+    pub fn parse_enum_struct(&mut self, node: &mut Node) -> anyhow::Result<()> {
         let name_node = node
             .child_by_field_name("name")
             .context("Enum struct does not have a name field.")?;
-        let name = name_node
-            .utf8_text(self.preprocessed_text.as_bytes())?
-            .to_string();
+        let name = name_node.utf8_text(self.source.as_bytes())?.to_string();
 
-        let description = walker
+        let description = self
             .find_doc(node.start_position().row, false)
             .unwrap_or_default();
 
@@ -41,7 +35,7 @@ impl Document {
         };
 
         let enum_struct_item = Arc::new(RwLock::new(SPItem::EnumStruct(enum_struct_item)));
-        self.parse_enum_struct_members(node, enum_struct_item.clone(), walker);
+        self.parse_enum_struct_members(node, enum_struct_item.clone());
         self.sp_items.push(enum_struct_item.clone());
         self.declarations
             .insert(enum_struct_item.clone().read().key(), enum_struct_item);
@@ -49,12 +43,7 @@ impl Document {
         Ok(())
     }
 
-    fn parse_enum_struct_members(
-        &mut self,
-        node: &Node,
-        enum_struct_item: Arc<RwLock<SPItem>>,
-        walker: &mut Walker,
-    ) {
+    fn parse_enum_struct_members(&mut self, node: &Node, enum_struct_item: Arc<RwLock<SPItem>>) {
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
             match child.kind() {
@@ -62,11 +51,11 @@ impl Document {
                     let _ = self.parse_enum_struct_field(&child, &enum_struct_item);
                 }
                 "enum_struct_method" => {
-                    let _ = self.parse_function(&child, walker, Some(enum_struct_item.clone()));
+                    let _ = self.parse_function(&child, Some(enum_struct_item.clone()));
                 }
-                "comment" => walker.push_comment(child, &self.preprocessed_text),
+                "comment" => self.push_comment(child),
                 "preproc_pragma" => {
-                    let _ = walker.push_deprecated(child, &self.preprocessed_text);
+                    let _ = self.push_deprecated(child);
                 }
                 _ => {}
             }
@@ -82,12 +71,12 @@ impl Document {
         let name_node = node
             .child_by_field_name("name")
             .context("Enum struct field does not have a name field.")?;
-        let name = name_node.utf8_text(self.preprocessed_text.as_bytes())?;
+        let name = name_node.utf8_text(self.source.as_bytes())?;
 
         let type_node = node
             .child_by_field_name("type")
             .context("Enum struct field does not have a type field.")?;
-        let type_ = type_node.utf8_text(self.preprocessed_text.as_bytes())?;
+        let type_ = type_node.utf8_text(self.source.as_bytes())?;
 
         let mut dimensions = vec![];
         let mut cursor = node.walk();
@@ -95,7 +84,7 @@ impl Document {
             let kind = child.kind();
             match kind {
                 "fixed_dimension" | "dimension" => {
-                    let dimension_text = child.utf8_text(self.preprocessed_text.as_bytes())?;
+                    let dimension_text = child.utf8_text(self.source.as_bytes())?;
                     dimensions.push(dimension_text.to_string());
                 }
                 _ => {

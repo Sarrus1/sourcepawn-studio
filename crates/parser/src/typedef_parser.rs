@@ -10,19 +10,16 @@ use syntax::{
 };
 use tree_sitter::Node;
 
-use crate::document::{Document, Walker};
-
 use super::function_parser::extract_param_from_desc;
+use crate::Parser;
 
-impl Document {
-    pub(crate) fn parse_typedef(&mut self, node: &Node, walker: &mut Walker) -> anyhow::Result<()> {
+impl<'a> Parser<'a> {
+    pub fn parse_typedef(&mut self, node: &Node) -> anyhow::Result<()> {
         // Name of the typedef
         let name_node = node
             .child_by_field_name("name")
             .context("Typedef name is empty.")?;
-        let name = name_node
-            .utf8_text(self.preprocessed_text.as_bytes())?
-            .to_string();
+        let name = name_node.utf8_text(self.source.as_bytes())?.to_string();
 
         // Return type of the typedef
         let mut type_node = None;
@@ -46,13 +43,13 @@ impl Document {
         let type_ = match type_node {
             Some(type_node) => Some(
                 type_node
-                    .utf8_text(self.preprocessed_text.as_bytes())
+                    .utf8_text(self.source.as_bytes())
                     .unwrap_or_default()
                     .to_string(),
             ),
             None => None,
         };
-        let description = walker
+        let description = self
             .find_doc(node.start_position().row, false)
             .unwrap_or_default();
 
@@ -68,7 +65,7 @@ impl Document {
             description: description.clone(),
             uri: self.uri.clone(),
             detail: node
-                .utf8_text(self.preprocessed_text.as_bytes())
+                .utf8_text(self.source.as_bytes())
                 .unwrap_or_default()
                 .to_string(),
             references: vec![],
@@ -129,13 +126,13 @@ impl Document {
             match sub_child.kind() {
                 "const" => is_const = true,
                 "dimension" | "fixed_dimension" => {
-                    let dimension = sub_child.utf8_text(self.preprocessed_text.as_bytes())?;
+                    let dimension = sub_child.utf8_text(self.source.as_bytes())?;
                     dimensions.push(dimension.to_string());
                 }
                 _ => {}
             }
         }
-        let name = name_node.utf8_text(self.preprocessed_text.as_bytes())?;
+        let name = name_node.utf8_text(self.source.as_bytes())?;
         let parameter = Parameter {
             name: name.to_string(),
             is_const,
@@ -164,19 +161,13 @@ impl Document {
             match child.kind() {
                 // FIXME: Handle oldtypes.
                 "type" => {
-                    type_.name = child
-                        .utf8_text(self.preprocessed_text.as_bytes())
-                        .ok()?
-                        .to_string();
+                    type_.name = child.utf8_text(self.source.as_bytes()).ok()?.to_string();
                 }
                 "&" => type_.is_pointer = true,
                 "dimension" | "fixed_dimension" => {
-                    type_.dimensions.push(
-                        child
-                            .utf8_text(self.preprocessed_text.as_bytes())
-                            .ok()?
-                            .to_string(),
-                    );
+                    type_
+                        .dimensions
+                        .push(child.utf8_text(self.source.as_bytes()).ok()?.to_string());
                 }
                 _ => {}
             }

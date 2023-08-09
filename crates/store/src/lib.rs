@@ -4,6 +4,7 @@ use fxhash::{FxHashMap, FxHashSet};
 use include::add_include;
 use lsp_types::{Range, Url};
 use parking_lot::RwLock;
+use parser::Parser;
 use preprocessor::{Macro, SourcepawnPreprocessor};
 use std::{
     fs::{self, File},
@@ -12,7 +13,6 @@ use std::{
     sync::{Arc, Mutex},
     time::Duration,
 };
-use tree_sitter::Parser;
 use walkdir::WalkDir;
 
 pub mod document;
@@ -21,12 +21,11 @@ pub mod include;
 pub mod linter;
 pub mod main_heuristic;
 pub mod options;
-mod parser;
 pub mod semantic_analyzer;
 pub mod syntax;
 
 use crate::{
-    document::{Document, Token, Walker},
+    document::{Document, Token},
     environment::Environment,
     semantic_analyzer::purge_references,
 };
@@ -73,7 +72,7 @@ impl Store {
         None
     }
 
-    pub fn remove(&mut self, uri: &Url, parser: &mut Parser) {
+    pub fn remove(&mut self, uri: &Url, parser: &mut tree_sitter::Parser) {
         // Open the document as empty to delete the references.
         let _ = self.handle_open_document(&Arc::new((*uri).clone()), "".to_string(), parser);
         self.documents.remove(uri);
@@ -108,7 +107,11 @@ impl Store {
         self.watcher = Some(Arc::new(Mutex::new(watcher)));
     }
 
-    pub fn load(&mut self, path: PathBuf, parser: &mut Parser) -> anyhow::Result<Option<Document>> {
+    pub fn load(
+        &mut self,
+        path: PathBuf,
+        parser: &mut tree_sitter::Parser,
+    ) -> anyhow::Result<Option<Document>> {
         let uri = Arc::new(Url::from_file_path(&path).map_err(|err| {
             anyhow!(
                 "Failed to convert path to URI while loading a file: {:?}",
@@ -135,7 +138,7 @@ impl Store {
     pub fn reload(
         &mut self,
         path: PathBuf,
-        parser: &mut Parser,
+        parser: &mut tree_sitter::Parser,
     ) -> anyhow::Result<Option<Document>> {
         let uri = Arc::new(Url::from_file_path(&path).map_err(|err| {
             anyhow!(
@@ -156,7 +159,7 @@ impl Store {
         Ok(Some(document))
     }
 
-    fn resolve_missing_includes(&mut self, parser: &mut Parser) {
+    fn resolve_missing_includes(&mut self, parser: &mut tree_sitter::Parser) {
         let mut to_reload = FxHashSet::default();
         for document in self.documents.values() {
             for missing_include in document.missing_includes.keys() {
@@ -207,7 +210,7 @@ impl Store {
         &mut self,
         uri: &Arc<Url>,
         text: String,
-        parser: &mut Parser,
+        parser: &mut tree_sitter::Parser,
     ) -> Result<Document, io::Error> {
         log::trace!("Opening file {:?}", uri);
         let prev_declarations = match self.documents.get(&(*uri).clone()) {
@@ -402,46 +405,66 @@ impl Store {
         ))
     }
 
-    pub fn parse(&mut self, document: &mut Document, parser: &mut Parser) -> anyhow::Result<()> {
+    pub fn parse(
+        &mut self,
+        document: &mut Document,
+        parser: &mut tree_sitter::Parser,
+    ) -> anyhow::Result<()> {
         log::trace!("Parsing document {:?}", document.uri);
         let tree = parser
             .parse(&document.preprocessed_text, None)
             .ok_or(anyhow!("Failed to parse document {:?}", document.uri))?;
         let root_node = tree.root_node();
-        let mut walker = Walker {
+        let mut walker = Parser {
             comments: vec![],
             deprecated: vec![],
             anon_enum_counter: 0,
+            sp_items: &mut document.sp_items,
+            declarations: &mut document.declarations,
+            offsets: &document.offsets,
+            source: &document.preprocessed_text,
+            uri: document.uri.clone(),
         };
 
         let mut cursor = root_node.walk();
+
+        let mut includes_to_add = Vec::new();
 
         for mut node in root_node.children(&mut cursor) {
             let kind = node.kind();
             let _ = match kind {
                 "function_declaration" | "function_definition" => {
-                    document.parse_function(&node, &mut walker, None)
+                    walker.parse_function(&node, None)
                 }
                 "global_variable_declaration" | "old_global_variable_declaration" => {
-                    document.parse_variable(&mut node, None)
+                    walker.parse_variable(&mut node, None)
                 }
-                "preproc_include" | "preproc_tryinclude" => self.parse_include(document, &mut node),
-                "enum" => document.parse_enum(&mut node, &mut walker),
-                "preproc_define" => document.parse_define(&mut node, &mut walker),
-                "methodmap" => document.parse_methodmap(&mut node, &mut walker),
-                "typedef" => document.parse_typedef(&node, &mut walker),
-                "typeset" => document.parse_typeset(&node, &mut walker),
-                "preproc_macro" => document.parse_macro(&mut node, &mut walker),
-                "enum_struct" => document.parse_enum_struct(&mut node, &mut walker),
+                "preproc_include" | "preproc_tryinclude" => match walker.parse_include(&mut node) {
+                    Ok(include) => {
+                        includes_to_add.push(include);
+                        Ok(())
+                    }
+                    Err(err) => Err(err),
+                },
+                "enum" => walker.parse_enum(&mut node),
+                "preproc_define" => walker.parse_define(&mut node),
+                "methodmap" => walker.parse_methodmap(&mut node),
+                "typedef" => walker.parse_typedef(&node),
+                "typeset" => walker.parse_typeset(&node),
+                "preproc_macro" => walker.parse_macro(&mut node),
+                "enum_struct" => walker.parse_enum_struct(&mut node),
                 "comment" => {
-                    walker.push_comment(node, &document.preprocessed_text);
-                    walker.push_inline_comment(&document.sp_items);
+                    walker.push_comment(node);
+                    let Some(item) = walker.sp_items.pop() else {continue;};
+                    walker.push_inline_comment(&item);
+                    walker.sp_items.push(item);
                     Ok(())
                 }
-                "preproc_pragma" => walker.push_deprecated(node, &document.preprocessed_text),
+                "preproc_pragma" => walker.push_deprecated(node),
                 _ => continue,
             };
         }
+        self.add_includes(includes_to_add, document);
         document.parsed = true;
         document.extract_tokens(root_node);
         document.add_macro_symbols();
@@ -457,10 +480,29 @@ impl Store {
         Ok(())
     }
 
+    fn add_includes(
+        &mut self,
+        includes_to_add: Vec<parser::include_parser::Include>,
+        document: &mut Document,
+    ) {
+        for mut include in includes_to_add {
+            match self.resolve_import(&mut include.path, &document.uri, include.quoted) {
+                Some(uri) => {
+                    add_include(document, uri, include.path, include.range);
+                }
+                None => {
+                    document
+                        .missing_includes
+                        .insert(include.path, include.range);
+                }
+            };
+        }
+    }
+
     pub(crate) fn read_unscanned_imports(
         &mut self,
         includes: &FxHashMap<Url, Token>,
-        parser: &mut Parser,
+        parser: &mut tree_sitter::Parser,
     ) {
         for include_uri in includes.keys() {
             let document = self.get(include_uri).expect("Include does not exist.");

@@ -1,24 +1,17 @@
+use anyhow::Context;
 use parking_lot::RwLock;
 use std::sync::Arc;
 use syntax::{define_item::DefineItem, utils::ts_range_to_lsp_range, SPItem};
-
-use anyhow::Context;
 use tree_sitter::Node;
 
-use crate::document::{Document, Walker};
+use crate::Parser;
 
-impl Document {
-    pub(crate) fn parse_macro(
-        &mut self,
-        node: &mut Node,
-        walker: &mut Walker,
-    ) -> anyhow::Result<()> {
+impl<'a> Parser<'a> {
+    pub fn parse_macro(&mut self, node: &mut Node) -> anyhow::Result<()> {
         let name_node = node
             .child_by_field_name("name")
             .context("Define does not have a name field.")?;
-        let name = name_node
-            .utf8_text(self.preprocessed_text.as_bytes())?
-            .to_string();
+        let name = name_node.utf8_text(self.source.as_bytes())?.to_string();
         let range = ts_range_to_lsp_range(&name_node.range());
         let full_range = ts_range_to_lsp_range(&node.range());
         let define_item = DefineItem {
@@ -28,7 +21,7 @@ impl Document {
             full_range,
             v_full_range: self.build_v_range(&full_range),
             value: "".to_string(),
-            description: walker.find_doc(node.start_position().row, true)?,
+            description: self.find_doc(node.start_position().row, true)?,
             uri: self.uri.clone(),
             references: vec![],
         };

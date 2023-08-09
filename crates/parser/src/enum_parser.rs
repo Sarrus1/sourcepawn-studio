@@ -8,16 +8,12 @@ use syntax::{
 };
 use tree_sitter::Node;
 
-use crate::document::{Document, Walker};
+use crate::Parser;
 
-impl Document {
-    pub(crate) fn parse_enum(
-        &mut self,
-        node: &mut Node,
-        walker: &mut Walker,
-    ) -> anyhow::Result<()> {
-        let (name, range) = self.get_enum_name_and_range(node, &mut walker.anon_enum_counter)?;
-        let description = walker
+impl<'a> Parser<'a> {
+    pub fn parse_enum(&mut self, node: &mut Node) -> anyhow::Result<()> {
+        let (name, range) = self.get_enum_name_and_range(node)?;
+        let description = self
             .find_doc(node.start_position().row, false)
             .unwrap_or_default();
 
@@ -44,7 +40,7 @@ impl Document {
         }
         let enum_item = Arc::new(RwLock::new(SPItem::Enum(enum_item)));
         if let Some(enum_entries) = enum_entries {
-            self.read_enum_members(&enum_entries, enum_item.clone(), walker);
+            self.read_enum_members(&enum_entries, enum_item.clone());
         }
         self.sp_items.push(enum_item.clone());
         self.declarations
@@ -53,20 +49,16 @@ impl Document {
         Ok(())
     }
 
-    fn get_enum_name_and_range(
-        &self,
-        node: &Node,
-        anon_enum_counter: &mut u32,
-    ) -> Result<(String, Range), Utf8Error> {
+    fn get_enum_name_and_range(&mut self, node: &Node) -> Result<(String, Range), Utf8Error> {
         match node.child_by_field_name("name") {
             Some(name_node) => {
-                let name = name_node.utf8_text(self.preprocessed_text.as_bytes())?;
+                let name = name_node.utf8_text(self.source.as_bytes())?;
 
                 Ok((name.to_string(), ts_range_to_lsp_range(&name_node.range())))
             }
             None => {
                 let mut name = String::from("Enum#");
-                name.push_str(anon_enum_counter.to_string().as_str());
+                name.push_str(self.anon_enum_counter.to_string().as_str());
                 let range = Range {
                     start: Position {
                         line: node.start_position().row as u32,
@@ -77,19 +69,14 @@ impl Document {
                         character: 0,
                     },
                 };
-                *anon_enum_counter += 1;
+                self.anon_enum_counter += 1;
 
                 Ok((name, range))
             }
         }
     }
 
-    fn read_enum_members(
-        &self,
-        body_node: &Node,
-        enum_item: Arc<RwLock<SPItem>>,
-        walker: &mut Walker,
-    ) {
+    fn read_enum_members(&mut self, body_node: &Node, enum_item: Arc<RwLock<SPItem>>) {
         let mut cursor = body_node.walk();
         for child in body_node.children(&mut cursor) {
             match child.kind() {
@@ -97,11 +84,14 @@ impl Document {
                     let _ = self.read_enum_entry(child, &enum_item);
                 }
                 "comment" => {
-                    walker.push_comment(child, &self.preprocessed_text);
-                    walker.push_inline_comment(enum_item.read().children().unwrap());
+                    self.push_comment(child);
+                    if let Some(items) = enum_item.read().children() {
+                        let Some(item) = items.last()else{continue;};
+                        self.push_inline_comment(item);
+                    }
                 }
                 "preproc_pragma" => {
-                    let _ = walker.push_deprecated(child, &self.preprocessed_text);
+                    let _ = self.push_deprecated(child);
                 }
                 _ => (),
             }
@@ -112,9 +102,7 @@ impl Document {
         let name_node = child
             .child_by_field_name("name")
             .context("Enum entry has no name.")?;
-        let name = name_node
-            .utf8_text(self.preprocessed_text.as_bytes())?
-            .to_string();
+        let name = name_node.utf8_text(self.source.as_bytes())?.to_string();
         let range = ts_range_to_lsp_range(&name_node.range());
         let enum_member_item = EnumMemberItem {
             name,

@@ -13,9 +13,8 @@ use syntax::{
 };
 use tree_sitter::{Node, QueryCursor};
 
-use crate::document::{Document, Walker};
-
 use super::VARIABLE_QUERY;
+use crate::Parser;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 struct FunctionAttributes<'a> {
@@ -34,15 +33,11 @@ struct FunctionAttributes<'a> {
 }
 
 impl<'a> FunctionAttributes<'a> {
-    fn populate(&mut self, node: &'a Node, document: &Document) -> Result<(), Utf8Error> {
+    fn populate(&mut self, node: &'a Node, source: &str) -> Result<(), Utf8Error> {
         // Return type of the function
         let type_node = node.child_by_field_name("returnType");
         self.type_ = match type_node {
-            Some(type_node) => Some(
-                type_node
-                    .utf8_text(document.preprocessed_text.as_bytes())?
-                    .to_string(),
-            ),
+            Some(type_node) => Some(type_node.utf8_text(source.as_bytes())?.to_string()),
             None => None,
         };
 
@@ -76,8 +71,7 @@ impl<'a> FunctionAttributes<'a> {
         }
 
         if let Some(visibility_node) = self.visibility_node {
-            let visibility_text =
-                visibility_node.utf8_text(document.preprocessed_text.as_bytes())?;
+            let visibility_text = visibility_node.utf8_text(source.as_bytes())?;
             if visibility_text.contains("stock") {
                 self.visibility.insert(FunctionVisibility::Stock);
             }
@@ -90,30 +84,25 @@ impl<'a> FunctionAttributes<'a> {
         }
 
         if let Some(definition_type_node) = self.definition_type_node {
-            self.definition_type =
-                match definition_type_node.utf8_text(document.preprocessed_text.as_bytes())? {
-                    "forward" => FunctionDefinitionType::Forward,
-                    "native" => FunctionDefinitionType::Native,
-                    _ => FunctionDefinitionType::None,
-                }
+            self.definition_type = match definition_type_node.utf8_text(source.as_bytes())? {
+                "forward" => FunctionDefinitionType::Forward,
+                "native" => FunctionDefinitionType::Native,
+                _ => FunctionDefinitionType::None,
+            }
         }
 
         Ok(())
     }
 
-    fn build_detail(&self, document: &Document) -> Result<String, Utf8Error> {
+    fn build_detail(&self, source: &str) -> Result<String, Utf8Error> {
         let mut detail = format!("{} {}", self.type_(), self.name);
         if let Some(params_node) = self.argument_declarations_node {
-            detail.push_str(
-                params_node
-                    .utf8_text(document.preprocessed_text.as_bytes())
-                    .unwrap(),
-            );
+            detail.push_str(params_node.utf8_text(source.as_bytes()).unwrap());
         }
         if let Some(visibility_node) = self.visibility_node {
             detail = format!(
                 "{} {}",
-                visibility_node.utf8_text(document.preprocessed_text.as_bytes())?,
+                visibility_node.utf8_text(source.as_bytes())?,
                 detail
             );
         }
@@ -121,7 +110,7 @@ impl<'a> FunctionAttributes<'a> {
         if let Some(definition_type_node) = self.definition_type_node {
             detail = format!(
                 "{} {}",
-                definition_type_node.utf8_text(document.preprocessed_text.as_bytes())?,
+                definition_type_node.utf8_text(source.as_bytes())?,
                 detail
             );
         }
@@ -134,29 +123,26 @@ impl<'a> FunctionAttributes<'a> {
     }
 }
 
-impl Document {
-    pub(crate) fn parse_function(
+impl<'a> Parser<'a> {
+    pub fn parse_function(
         &mut self,
         node: &Node,
-        walker: &mut Walker,
         parent: Option<Arc<RwLock<SPItem>>>,
     ) -> anyhow::Result<()> {
         // Name of the function
         let name_node = node
             .child_by_field_name("name")
             .context("Function does not have a name field.")?;
-        let name = name_node
-            .utf8_text(self.preprocessed_text.as_bytes())?
-            .to_string();
+        let name = name_node.utf8_text(self.source.as_bytes())?.to_string();
 
         let mut attributes = FunctionAttributes {
             name,
             ..Default::default()
         };
 
-        let _ = attributes.populate(node, self);
+        let _ = attributes.populate(node, self.source);
 
-        let description = walker
+        let description = self
             .find_doc(node.start_position().row, false)
             .unwrap_or_default();
 
@@ -171,7 +157,7 @@ impl Document {
             v_full_range: self.build_v_range(&full_range),
             description: description.clone(),
             uri: self.uri.clone(),
-            detail: attributes.build_detail(self).unwrap_or_default(),
+            detail: attributes.build_detail(self.source).unwrap_or_default(),
             visibility: attributes.visibility,
             definition_type: attributes.definition_type,
             references: vec![],
@@ -244,19 +230,19 @@ impl Document {
                     storage_class.push(VariableStorageClass::Const);
                 }
                 "dimension" | "fixed_dimension" => {
-                    let dimension = sub_child.utf8_text(self.preprocessed_text.as_bytes())?;
+                    let dimension = sub_child.utf8_text(self.source.as_bytes())?;
                     dimensions.push(dimension.to_string());
                 }
                 _ => {}
             }
         }
-        let name = name_node.utf8_text(self.preprocessed_text.as_bytes())?;
+        let name = name_node.utf8_text(self.source.as_bytes())?;
 
         let type_ = match type_node {
-            Some(type_node) => type_node.utf8_text(self.preprocessed_text.as_bytes())?,
+            Some(type_node) => type_node.utf8_text(self.source.as_bytes())?,
             None => "",
         };
-        let detail = child.utf8_text(self.preprocessed_text.as_bytes())?;
+        let detail = child.utf8_text(self.source.as_bytes())?;
         let description = Description {
             text: match extract_param_from_desc(name, description) {
                 Some(text) => text,
@@ -302,11 +288,7 @@ impl Document {
         function_item: Arc<RwLock<SPItem>>,
     ) -> Result<(), Utf8Error> {
         let mut cursor = QueryCursor::new();
-        let matches = cursor.captures(
-            &VARIABLE_QUERY,
-            block_node,
-            self.preprocessed_text.as_bytes(),
-        );
+        let matches = cursor.captures(&VARIABLE_QUERY, block_node, self.source.as_bytes());
         let nodes: Vec<_> = matches
             .flat_map(|(match_, _)| match_.captures.iter().map(|capture| capture.node))
             .collect();

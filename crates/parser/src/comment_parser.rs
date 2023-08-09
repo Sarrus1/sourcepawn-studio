@@ -8,18 +8,18 @@ use syntax::{
 };
 use tree_sitter::Node;
 
-use crate::document::Walker;
+use crate::Parser;
 
-impl Walker {
-    pub fn push_comment(&mut self, node: Node, source: &str) {
-        self.comments.push(Comment::new(node, source));
+impl<'a> Parser<'a> {
+    pub fn push_comment(&mut self, node: Node) {
+        self.comments.push(Comment::new(node, self.source));
     }
 
-    pub fn push_deprecated(&mut self, node: Node, source: &str) -> anyhow::Result<()> {
+    pub fn push_deprecated(&mut self, node: Node) -> anyhow::Result<()> {
         lazy_static! {
             static ref RE: Regex = Regex::new(r"#pragma\s+deprecated(.*)").unwrap();
         }
-        let text = node.utf8_text(source.as_bytes())?;
+        let text = node.utf8_text(self.source.as_bytes())?;
         if let Some(caps) = RE.captures(text) {
             if let Some(text) = caps.get(1) {
                 self.deprecated.push(Deprecated {
@@ -32,11 +32,8 @@ impl Walker {
         Ok(())
     }
 
-    pub fn push_inline_comment(&mut self, items: &[Arc<RwLock<SPItem>>]) -> Option<()> {
-        let item = items.last()?;
-        let description = self
-            .find_doc(item.read().range().end.line as usize, true)
-            .ok()?;
+    pub fn push_inline_comment(&mut self, item: &Arc<RwLock<SPItem>>) {
+        let Ok(description) = self.find_doc(item.read().range().end.line as usize, true) else {return};
         match &mut *item.write() {
             SPItem::EnumMember(enum_member_item) => {
                 enum_member_item.description = description;
@@ -49,8 +46,6 @@ impl Walker {
             }
             _ => {}
         }
-
-        Some(())
     }
 
     pub fn find_doc(&mut self, end_row: usize, trailing: bool) -> Result<Description, Utf8Error> {

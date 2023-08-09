@@ -4,20 +4,14 @@ use std::sync::Arc;
 use syntax::{define_item::DefineItem, utils::ts_range_to_lsp_range, SPItem};
 use tree_sitter::Node;
 
-use crate::document::{Document, Walker};
+use crate::Parser;
 
-impl Document {
-    pub(crate) fn parse_define(
-        &mut self,
-        node: &mut Node,
-        walker: &mut Walker,
-    ) -> anyhow::Result<()> {
+impl<'a> Parser<'a> {
+    pub fn parse_define(&mut self, node: &mut Node) -> anyhow::Result<()> {
         let name_node = node
             .child_by_field_name("name")
             .context("Define does not have a name field.")?;
-        let name = name_node
-            .utf8_text(self.preprocessed_text.as_bytes())?
-            .to_string();
+        let name = name_node.utf8_text(self.source.as_bytes())?.to_string();
         let value = self.get_define_value(node.child_by_field_name("value"));
 
         let range = ts_range_to_lsp_range(&name_node.range());
@@ -29,7 +23,7 @@ impl Document {
             full_range,
             v_full_range: self.build_v_range(&full_range),
             value: value.unwrap_or_default().to_string(),
-            description: walker.find_doc(node.start_position().row, true)?,
+            description: self.find_doc(node.start_position().row, true)?,
             uri: self.uri.clone(),
             references: vec![],
         };
@@ -43,11 +37,6 @@ impl Document {
     }
 
     fn get_define_value(&self, value_node: Option<Node>) -> Option<&str> {
-        Some(
-            value_node?
-                .utf8_text(self.preprocessed_text.as_bytes())
-                .ok()?
-                .trim(),
-        )
+        Some(value_node?.utf8_text(self.source.as_bytes()).ok()?.trim())
     }
 }

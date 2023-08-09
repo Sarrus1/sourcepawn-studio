@@ -4,11 +4,10 @@ use lazy_static::lazy_static;
 use lsp_types::Range;
 use lsp_types::Url;
 use parking_lot::RwLock;
+use parser::build_v_range;
 use preprocessor::{Macro, Offset};
 use std::{path::PathBuf, sync::Arc};
 use strip_bom::StripBom;
-use syntax::comment::Comment;
-use syntax::deprecated::Deprecated;
 use syntax::utils::ts_range_to_lsp_range;
 use syntax::SPItem;
 use tree_sitter::{Node, Query, QueryCursor};
@@ -71,12 +70,6 @@ pub struct Document {
     pub(crate) macros: FxHashMap<String, Macro>,
     pub(crate) macro_symbols: Vec<Arc<Token>>,
     pub(crate) offsets: FxHashMap<u32, Vec<Offset>>,
-}
-
-pub struct Walker {
-    pub comments: Vec<Comment>,
-    pub deprecated: Vec<Deprecated>,
-    pub anon_enum_counter: u32,
 }
 
 impl Document {
@@ -296,28 +289,6 @@ impl Document {
     }
 
     pub fn build_v_range(&self, range: &Range) -> Range {
-        let mut start = range.start;
-        let mut end = range.end;
-
-        if let Some(start_offsets) = self.offsets.get(&start.line) {
-            for offset in start_offsets.iter() {
-                if offset.col < start.character {
-                    start.character = start
-                        .character
-                        .checked_add_signed(-offset.diff)
-                        .unwrap_or(0);
-                }
-            }
-        }
-
-        if let Some(end_offsets) = self.offsets.get(&end.line) {
-            for offset in end_offsets.iter() {
-                if offset.col < end.character {
-                    end.character = end.character.checked_add_signed(-offset.diff).unwrap_or(0);
-                }
-            }
-        }
-
-        Range { start, end }
+        build_v_range(&self.offsets, range)
     }
 }
