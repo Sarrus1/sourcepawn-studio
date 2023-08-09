@@ -2,10 +2,8 @@ use fxhash::FxHashMap;
 use lsp_types::{Position, Range};
 use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
 
-use super::{
-    errors::{ExpansionError, MacroNotFoundError, ParseIntError},
-    preprocessor::Macro,
-};
+use super::errors::{ExpansionError, MacroNotFoundError, ParseIntError};
+use crate::Macro;
 
 pub(super) fn expand_symbol<T>(
     lexer: &mut T,

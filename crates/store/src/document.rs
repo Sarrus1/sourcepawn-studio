@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use lsp_types::Range;
 use lsp_types::Url;
 use parking_lot::RwLock;
-use sourcepawn_preprocessor::preprocessor::{Macro, Offset};
+use preprocessor::{Macro, Offset};
 use std::{path::PathBuf, sync::Arc};
 use strip_bom::StripBom;
 use syntax::comment::Comment;

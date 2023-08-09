@@ -1424,6 +1424,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 
 [[package]]
+name = "preprocessor"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fxhash",
+ "lazy_static",
+ "lsp-types",
+ "regex",
+ "sourcepawn_lexer",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1911,13 +1923,13 @@ dependencies = [
  "notify",
  "openssl",
  "parking_lot",
+ "preprocessor",
  "regex",
  "rowan",
  "sentry",
  "serde",
  "serde_json",
  "sourcepawn_lexer",
- "sourcepawn_preprocessor",
  "store",
  "syntax",
  "tempfile",
@@ -1926,18 +1938,6 @@ dependencies = [
  "tree-sitter-sourcepawn",
  "uuid",
  "walkdir",
-]
-
-[[package]]
-name = "sourcepawn_preprocessor"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "fxhash",
- "lazy_static",
- "lsp-types",
- "regex",
- "sourcepawn_lexer",
 ]
 
 [[package]]
@@ -1951,10 +1951,10 @@ dependencies = [
  "lsp-types",
  "notify",
  "parking_lot",
+ "preprocessor",
  "regex",
  "serde",
  "serde_json",
- "sourcepawn_preprocessor",
  "strip_bom",
  "syntax",
  "tree-sitter",

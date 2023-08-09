@@ -20,7 +20,7 @@ opt-level = 3
 debug = true
 
 [workspace.dependencies]
-sourcepawn_preprocessor = { path = "./crates/sourcepawn_preprocessor" }
+preprocessor = { path = "./crates/preprocessor" }
 sourcepawn_lsp = { path = "./crates/sourcepawn_lsp" }
 store = { path = "./crates/store" }
 syntax = { path = "./crates/syntax" }

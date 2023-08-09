@@ -4,7 +4,7 @@ use fxhash::{FxHashMap, FxHashSet};
 use include::add_include;
 use lsp_types::{Range, Url};
 use parking_lot::RwLock;
-use sourcepawn_preprocessor::{preprocessor::Macro, SourcepawnPreprocessor};
+use preprocessor::{Macro, SourcepawnPreprocessor};
 use std::{
     fs::{self, File},
     io::{self, Read},

@@ -1,19 +1,22 @@
-use std::sync::Arc;
-
 use anyhow::{anyhow, Context};
 use fxhash::FxHashMap;
 use lazy_static::lazy_static;
 use lsp_types::{Diagnostic, Position, Range, Url};
 use regex::Regex;
 use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
+use std::sync::Arc;
 
-use crate::errors::IncludeNotFoundError;
+use errors::{EvaluationError, ExpansionError, IncludeNotFoundError, MacroNotFoundError};
+use evaluator::IfCondition;
+use macros::expand_symbol;
 
-use super::{
-    errors::{EvaluationError, ExpansionError, MacroNotFoundError},
-    evaluator::IfCondition,
-    macros::expand_symbol,
-};
+mod errors;
+pub(crate) mod evaluator;
+mod macros;
+mod preprocessor_operator;
+
+#[cfg(test)]
+mod test;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum ConditionState {
@@ -30,9 +33,9 @@ pub struct Offset {
 
 #[derive(Debug, Clone)]
 pub struct SourcepawnPreprocessor<'a> {
-    pub(super) lexer: SourcepawnLexer<'a>,
+    pub lexer: SourcepawnLexer<'a>,
     pub macros: FxHashMap<String, Macro>,
-    pub(super) expansion_stack: Vec<Symbol>,
+    pub expansion_stack: Vec<Symbol>,
     skip_line_start_col: u32,
     skipped_lines: Vec<lsp_types::Range>,
     pub(self) macro_not_found_errors: Vec<MacroNotFoundError>,

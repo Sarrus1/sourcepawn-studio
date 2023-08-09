@@ -5,9 +5,9 @@ use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
 use super::{
     errors::{EvaluationError, ExpansionError, MacroNotFoundError},
     macros::expand_symbol,
-    preprocessor::Macro,
     preprocessor_operator::PreOperator,
 };
+use crate::Macro;
 
 #[derive(Debug)]
 pub struct IfCondition<'a> {

@@ -27,7 +27,7 @@ macro_rules! assert_preproc_eq {
     };
 }
 
-use sourcepawn_preprocessor::{preprocessor::Macro, SourcepawnPreprocessor};
+use preprocessor::{Macro, SourcepawnPreprocessor};
 #[test]
 fn no_preprocessor_directives() {
     let input = r#"

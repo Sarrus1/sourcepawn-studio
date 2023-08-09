@@ -1,5 +1,5 @@
 [package]
-name = "sourcepawn_preprocessor"
+name = "preprocessor"
 version = "0.1.0"
 description = "SourcePawn preprocessor written in Rust"
 include = ["Cargo.toml", "src/"]
