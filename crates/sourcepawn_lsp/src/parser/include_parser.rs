@@ -85,7 +85,7 @@ impl Store {
                     include_file_path
                 );
 
-                uri = Url::from_file_path(&include_file_path).unwrap();
+                uri = Url::from_file_path(&include_file_path).ok()?;
                 if self.documents.contains_key(&uri) {
                     return Some(uri);
                 }
@@ -111,7 +111,7 @@ impl Store {
                 include_file_path
             );
         }
-        let uri = Url::from_file_path(&include_file_path).unwrap();
+        let uri = Url::from_file_path(&include_file_path).ok()?;
         if self.documents.contains_key(&uri) {
             return Some(uri);
         }
