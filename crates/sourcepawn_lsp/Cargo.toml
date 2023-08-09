@@ -41,6 +41,7 @@ sourcepawn_lexer = "0.1.1"
 sentry = "0.31.3"
 strip_bom = "1.0.0"
 sourcepawn_preprocessor.workspace = true
+parking_lot = "0.12.1"
 
 [dependencies.uuid]
 version = "1.3.0"

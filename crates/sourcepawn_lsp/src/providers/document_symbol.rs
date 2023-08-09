@@ -1,12 +1,13 @@
 use lsp_types::{DocumentSymbol, DocumentSymbolParams};
 
-use super::FeatureRequest;
+use crate::store::Store;
 
 pub fn provide_document_symbol(
-    request: FeatureRequest<DocumentSymbolParams>,
+    store: &Store,
+    params: DocumentSymbolParams,
 ) -> Option<Vec<DocumentSymbol>> {
-    let uri = request.params.text_document.uri;
-    let document = request.store.documents.get(&uri)?;
+    let uri = params.text_document.uri;
+    let document = store.documents.get(&uri)?;
     let mut symbols: Vec<DocumentSymbol> = vec![];
     for item in document.sp_items.clone() {
         let symbol = item.read().unwrap().to_document_symbol();

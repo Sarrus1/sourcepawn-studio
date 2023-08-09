@@ -20,14 +20,11 @@ impl Server {
                 .uri
                 .clone(),
         );
-        let _ = self.read_unscanned_document(uri.clone());
+        let _ = self.read_unscanned_document(uri);
 
-        self.handle_feature_request(
-            id,
-            params,
-            uri,
-            providers::signature_help::provide_signature_help,
-        )?;
+        self.run_query(id, move |store| {
+            providers::signature_help::provide_signature_help(store, params)
+        });
 
         Ok(())
     }

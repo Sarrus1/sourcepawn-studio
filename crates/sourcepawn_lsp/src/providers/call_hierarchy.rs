@@ -5,22 +5,17 @@ use lsp_types::{
 
 use crate::{
     spitem::SPItem,
+    store::Store,
     utils::{range_contains_range, range_to_position_average},
 };
 
-use super::FeatureRequest;
-
 pub fn prepare(
-    request: FeatureRequest<CallHierarchyPrepareParams>,
+    store: &Store,
+    params: CallHierarchyPrepareParams,
 ) -> Option<Vec<CallHierarchyItem>> {
-    let items = &request.store.get_items_from_position(
-        request.params.text_document_position_params.position,
-        request
-            .params
-            .text_document_position_params
-            .text_document
-            .uri
-            .clone(),
+    let items = &store.get_items_from_position(
+        params.text_document_position_params.position,
+        &params.text_document_position_params.text_document.uri,
     );
     if items.is_empty() {
         return None;
@@ -35,11 +30,12 @@ pub fn prepare(
 }
 
 pub fn outgoing(
-    request: FeatureRequest<CallHierarchyOutgoingCallsParams>,
+    store: &Store,
+    params: CallHierarchyOutgoingCallsParams,
 ) -> Option<Vec<CallHierarchyOutgoingCall>> {
-    let items = &request.store.get_items_from_position(
-        range_to_position_average(&request.params.item.selection_range),
-        request.params.item.uri.clone(),
+    let items = &store.get_items_from_position(
+        range_to_position_average(&params.item.selection_range),
+        &params.item.uri,
     );
     if items.is_empty() {
         return None;
@@ -48,7 +44,7 @@ pub fn outgoing(
     let mut outgoing_calls = vec![];
     let origin_item = &*items[0].read().unwrap();
     if let SPItem::Function(function_origin_item) = origin_item {
-        for item in request.store.get_all_items(true).0.iter() {
+        for item in store.get_all_items(true).0.iter() {
             if let SPItem::Function(function_item) = &*item.read().unwrap() {
                 let mut from_ranges = vec![];
                 for reference in function_item.references.iter() {
@@ -73,11 +69,12 @@ pub fn outgoing(
 }
 
 pub fn incoming(
-    request: FeatureRequest<CallHierarchyIncomingCallsParams>,
+    store: &Store,
+    params: CallHierarchyIncomingCallsParams,
 ) -> Option<Vec<CallHierarchyIncomingCall>> {
-    let items = &request.store.get_items_from_position(
-        range_to_position_average(&request.params.item.selection_range),
-        request.params.item.uri.clone(),
+    let items = &store.get_items_from_position(
+        range_to_position_average(&params.item.selection_range),
+        &params.item.uri,
     );
 
     if items.is_empty() {
@@ -87,7 +84,7 @@ pub fn incoming(
     let mut incoming_calls = vec![];
     let origin_item = &*items[0].read().unwrap();
     if let SPItem::Function(function_origin_item) = origin_item {
-        for item in request.store.get_all_items(true).0.iter() {
+        for item in store.get_all_items(true).0.iter() {
             if let SPItem::Function(function_item) = &*item.read().unwrap() {
                 let mut from_ranges = vec![];
                 for reference in function_origin_item.references.iter() {

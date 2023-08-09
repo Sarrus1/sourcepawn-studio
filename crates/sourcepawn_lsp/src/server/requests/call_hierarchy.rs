@@ -1,11 +1,10 @@
-use crate::utils;
-use std::sync::Arc;
-
 use lsp_server::RequestId;
 use lsp_types::{
     CallHierarchyIncomingCallsParams, CallHierarchyOutgoingCallsParams, CallHierarchyPrepareParams,
 };
+use std::sync::Arc;
 
+use crate::utils;
 use crate::{providers, Server};
 
 impl Server {
@@ -23,9 +22,10 @@ impl Server {
                 .clone(),
         );
 
-        let _ = self.read_unscanned_document(uri.clone());
-
-        self.handle_feature_request(id, params, uri, providers::call_hierarchy::prepare)?;
+        let _ = self.read_unscanned_document(uri);
+        self.run_query(id, move |store| {
+            providers::call_hierarchy::prepare(store, params)
+        });
 
         Ok(())
     }
@@ -36,9 +36,10 @@ impl Server {
         mut params: CallHierarchyOutgoingCallsParams,
     ) -> anyhow::Result<()> {
         utils::normalize_uri(&mut params.item.uri);
-        let uri = Arc::new(params.item.uri.clone());
 
-        self.handle_feature_request(id, params, uri, providers::call_hierarchy::outgoing)?;
+        self.run_query(id, move |store| {
+            providers::call_hierarchy::outgoing(store, params)
+        });
 
         Ok(())
     }
@@ -49,9 +50,10 @@ impl Server {
         mut params: CallHierarchyIncomingCallsParams,
     ) -> anyhow::Result<()> {
         utils::normalize_uri(&mut params.item.uri);
-        let uri = Arc::new(params.item.uri.clone());
 
-        self.handle_feature_request(id, params, uri, providers::call_hierarchy::incoming)?;
+        self.run_query(id, move |store| {
+            providers::call_hierarchy::incoming(store, params)
+        });
 
         Ok(())
     }

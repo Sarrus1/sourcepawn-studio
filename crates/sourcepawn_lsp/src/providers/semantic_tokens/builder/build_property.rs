@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use lsp_types::{SemanticTokenModifier, SemanticTokenType, Url};
 
 use crate::spitem::property_item::PropertyItem;
@@ -10,9 +8,9 @@ impl SemanticTokensBuilder {
     pub(crate) fn build_property(
         &mut self,
         property_item: &PropertyItem,
-        uri: &Arc<Url>,
+        uri: &Url,
     ) -> anyhow::Result<()> {
-        if property_item.uri.eq(uri) {
+        if *property_item.uri == *uri {
             self.push(
                 property_item.v_range,
                 SemanticTokenType::PROPERTY,
@@ -20,7 +18,7 @@ impl SemanticTokensBuilder {
             )?;
         }
         for ref_ in property_item.references.iter() {
-            if ref_.uri.eq(uri) {
+            if *ref_.uri == *uri {
                 self.push(ref_.v_range, SemanticTokenType::PROPERTY, Some(vec![]))?;
             }
         }

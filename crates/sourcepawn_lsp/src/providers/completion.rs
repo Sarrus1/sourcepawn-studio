@@ -5,6 +5,7 @@ use crate::{
     providers::completion::{
         context::is_ctor_call, getters::get_ctor_completions, include::get_include_completions,
     },
+    store::Store,
     utils,
 };
 
@@ -14,8 +15,6 @@ use self::{
     include::is_include_statement,
 };
 
-use super::FeatureRequest;
-
 pub(crate) mod context;
 mod defaults;
 mod getters;
@@ -23,18 +22,21 @@ mod include;
 mod matchtoken;
 
 pub(crate) fn provide_completions(
-    request: FeatureRequest<CompletionParams>,
+    store: &Store,
+    params: CompletionParams,
 ) -> Option<CompletionList> {
-    log::debug!("Providing completions with request: {:#?}", request.params);
-    let document = request.store.documents.get(&request.uri)?;
-    let all_items = request.store.get_all_items(false);
-    let position = request.params.text_document_position.position;
+    log::debug!("Providing completions.");
+    let document = store
+        .documents
+        .get(&params.text_document_position.text_document.uri)?;
+    let all_items = store.get_all_items(false);
+    let position = &params.text_document_position.position;
     let line = document.line(position.line)?;
     let pre_line: String = line.chars().take(position.character as usize).collect();
 
     let lexer = SourcepawnLexer::new(&document.text);
     for token in lexer {
-        if utils::range_contains_pos(token.range, position) {
+        if utils::range_contains_pos(&token.range, position) {
             match token.token_kind {
                 TokenKind::Literal(_) | TokenKind::Comment(_) => return None,
                 _ => (),
@@ -51,28 +53,31 @@ pub(crate) fn provide_completions(
             '<' | '"' | '\'' | '/' | '\\' => {
                 let include_st = is_include_statement(&pre_line);
                 if let Some(include_st) = include_st {
-                    return get_include_completions(request, include_st);
+                    return get_include_completions(store, include_st);
                 }
                 return None;
             }
             '.' | ':' => {
-                return get_method_completions(all_items.0, &pre_line, position, request);
+                return get_method_completions(store, &params, all_items.0, &pre_line);
             }
             ' ' => {
                 if is_ctor_call(&pre_line) {
-                    return get_ctor_completions(all_items.0, request.params);
+                    return get_ctor_completions(all_items.0, params);
                 }
                 return None;
             }
             '$' => {
-                if is_callback_completion_request(request.params.context) {
-                    return get_callback_completions(all_items.0, position);
+                if is_callback_completion_request(params.context) {
+                    return get_callback_completions(
+                        all_items.0,
+                        params.text_document_position.position,
+                    );
                 }
                 return None;
             }
             '*' => {
                 if let (Some(item), Some(line)) = (
-                    is_doc_completion(&pre_line, &position, &all_items.0),
+                    is_doc_completion(&pre_line, position, &all_items.0),
                     document.line(position.line + 1),
                 ) {
                     return item.read().unwrap().doc_completion(line);
@@ -86,37 +91,38 @@ pub(crate) fn provide_completions(
                 // Therefore, this block must cover all possibilities.
                 let include_st = is_include_statement(&pre_line);
                 if let Some(include_st) = include_st {
-                    return get_include_completions(request, include_st);
+                    return get_include_completions(store, include_st);
                 }
 
-                if is_callback_completion_request(request.params.context.clone()) {
-                    return get_callback_completions(all_items.0, position);
+                if is_callback_completion_request(params.context.clone()) {
+                    return get_callback_completions(
+                        all_items.0,
+                        params.text_document_position.position,
+                    );
                 }
 
                 if !is_method_call(&pre_line) {
                     if is_ctor_call(&pre_line) {
-                        return get_ctor_completions(all_items.0, request.params);
+                        return get_ctor_completions(all_items.0, params);
                     }
-                    return get_non_method_completions(all_items.0, request.params);
+                    return get_non_method_completions(all_items.0, params);
                 }
 
-                return get_method_completions(all_items.0, &pre_line, position, request);
+                return get_method_completions(store, &params, all_items.0, &pre_line);
             }
         }
     }
 
-    get_non_method_completions(all_items.0, request.params)
+    get_non_method_completions(all_items.0, params)
 }
 
 pub(crate) fn resolve_completion_item(
-    request: FeatureRequest<CompletionItem>,
+    store: &Store,
+    completion_item: CompletionItem,
 ) -> Option<CompletionItem> {
-    let mut completion_item = request.params.clone();
-
-    if let Some(sp_item) = request
-        .store
-        .get_item_from_key(request.params.data?.to_string().replace('"', ""))
-    {
+    let mut completion_item = completion_item;
+    let key = completion_item.data.clone()?;
+    if let Some(sp_item) = store.get_item_from_key(key.to_string().replace('"', "")) {
         let sp_item = &*sp_item.read().unwrap();
         completion_item.detail = Some(sp_item.formatted_text());
         completion_item.documentation = sp_item.documentation();

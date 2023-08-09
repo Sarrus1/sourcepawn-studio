@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use lsp_types::{SemanticTokenModifier, SemanticTokenType, Url};
 
 use crate::spitem::{function_item::FunctionItem, SPItem};
@@ -10,14 +8,14 @@ impl SemanticTokensBuilder {
     pub(crate) fn build_method(
         &mut self,
         method_item: &FunctionItem,
-        uri: &Arc<Url>,
+        uri: &Url,
         methodmap_name: &str,
     ) -> anyhow::Result<()> {
         let mut token_type = SemanticTokenType::METHOD;
         if methodmap_name == method_item.name {
             token_type = SemanticTokenType::CLASS
         }
-        if method_item.uri.eq(uri) {
+        if *method_item.uri == *uri {
             self.push(
                 method_item.v_range,
                 token_type.clone(),
@@ -25,7 +23,7 @@ impl SemanticTokensBuilder {
             )?;
         }
         for ref_ in method_item.references.iter() {
-            if ref_.uri.eq(uri) {
+            if *ref_.uri == *uri {
                 self.push(ref_.v_range, token_type.clone(), Some(vec![]))?;
             }
         }

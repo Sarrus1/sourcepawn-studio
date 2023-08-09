@@ -6,11 +6,14 @@ use std::{
     time::Duration,
 };
 
-use anyhow::{bail, Ok, Result};
+use anyhow::{bail, Result};
 use crossbeam_channel::Sender;
 use dashmap::DashMap;
 use lsp_server::{ErrorCode, Message, Request, RequestId, Response};
+use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams};
 use serde::{de::DeserializeOwned, Serialize};
+
+use crate::Options;
 
 #[derive(Debug)]
 struct RawClient {
@@ -92,5 +95,21 @@ impl LspClient {
         log::trace!("Sending error {:?}", message);
         self.send_response(lsp_server::Response::new_err(id, code as i32, message))?;
         Ok(())
+    }
+
+    pub fn parse_options(&self, value: serde_json::Value) -> Result<Options> {
+        let options = match serde_json::from_value(value) {
+            Ok(new_options) => new_options,
+            Err(why) => {
+                let message = format!(
+                    "The texlab configuration is invalid; using the default settings instead.\nDetails: {why}"
+                );
+                let typ = MessageType::WARNING;
+                self.send_notification::<ShowMessage>(ShowMessageParams { message, typ })?;
+                None
+            }
+        };
+
+        Ok(options.unwrap_or_default())
     }
 }

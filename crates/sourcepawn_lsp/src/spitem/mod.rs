@@ -124,7 +124,7 @@ impl Store {
     pub(crate) fn get_items_from_position(
         &self,
         position: Position,
-        uri: Url,
+        uri: &Url,
     ) -> Vec<Arc<RwLock<SPItem>>> {
         log::debug!(
             "Getting all items from position {:#?} in file {:#?}.",
@@ -136,7 +136,7 @@ impl Store {
         let mut res = vec![];
         for item in all_items.0.iter() {
             let item_lock = item.read().unwrap();
-            if range_contains_pos(item_lock.v_range(), position)
+            if range_contains_pos(&item_lock.v_range(), &position)
                 && item_lock.uri().as_ref().eq(&uri)
             {
                 res.push(item.clone());
@@ -145,7 +145,8 @@ impl Store {
             match item_lock.references() {
                 Some(references) => {
                     for reference in references.iter() {
-                        if range_contains_pos(reference.v_range, position) && reference.uri.eq(&uri)
+                        if range_contains_pos(&reference.v_range, &position)
+                            && (*reference.uri).eq(*uri)
                         {
                             res.push(item.clone());
                             break;

@@ -3,7 +3,7 @@ use std::{sync::Arc, time::Duration, time::Instant};
 use anyhow::{anyhow, Context};
 use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams, Url};
 
-use crate::{document::Document, lsp_ext, store::Store, Server};
+use crate::{document::Document, lsp_ext, server::InternalMessage, store::Store, Server};
 
 mod events;
 mod watching;
@@ -35,13 +35,19 @@ impl Store {
 
         None
     }
+
+    fn find_main_with_heuristic(&self) -> Option<Url> {
+        self.documents
+            .values()
+            .find_map(|document| self.is_main_heuristic(document))
+    }
 }
 
 impl Server {
     pub(super) fn reparse_all(&mut self) -> anyhow::Result<()> {
         log::debug!("Scanning all the files.");
-        self.store.get_all_items_time.clear();
-        self.store.get_includes_time.clear();
+        self.store.write().get_all_items_time.clear();
+        self.store.write().get_includes_time.clear();
         self.indexing = true;
         let _ = self.send_status(lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,
@@ -49,34 +55,32 @@ impl Server {
             message: None,
         });
         self.parse_directories();
-        let main_uri = self.store.environment.options.get_main_path_uri();
+        let main_uri = self.store.read().environment.options.get_main_path_uri();
         let now_parse = Instant::now();
         if let Ok(main_uri) = main_uri {
             if let Some(main_uri) = main_uri {
                 log::debug!("Main path is set, parsing files.");
                 self.parse_files_for_main_path(&main_uri)?;
-            } else if let Some(uri) = self
-                .store
-                .documents
-                .values()
-                .find_map(|document| self.store.is_main_heuristic(document))
-            {
-                log::debug!("Main path was not set, and was infered as {:?}", uri);
-                let path = uri.to_file_path().unwrap();
-                let mut old_options = self.store.environment.options.as_ref().clone();
-                old_options.main_path = path.clone();
-                self.store.environment.options = Arc::new(old_options);
-                self.parse_files_for_main_path(&uri)?;
-                let _ = self
-                    .client
-                    .send_notification::<ShowMessage>(ShowMessageParams {
-                        message: format!(
-                            "MainPath was not set and was automatically infered as {}.",
-                            path.file_name().unwrap().to_str().unwrap()
-                        ),
-                        typ: MessageType::INFO,
-                    });
             } else {
+                if let Some(uri) = self.store.read().find_main_with_heuristic() {
+                    log::debug!("Main path was not set, and was infered as {:?}", uri);
+                    let path = uri.to_file_path().unwrap();
+                    let mut options = self.store.read().environment.options.as_ref().clone();
+                    options.main_path = path.clone();
+                    self.internal_tx
+                        .send(InternalMessage::SetOptions(Arc::new(options)))
+                        .unwrap();
+                    let _ = self
+                        .client
+                        .send_notification::<ShowMessage>(ShowMessageParams {
+                            message: format!(
+                                "MainPath was not set and was automatically infered as {}.",
+                                path.file_name().unwrap().to_str().unwrap()
+                            ),
+                            typ: MessageType::INFO,
+                        });
+                    return Ok(());
+                }
                 log::debug!("Main path was not set, and could not be infered.");
                 let _ = self
                     .client
@@ -97,12 +101,17 @@ impl Server {
             self.parse_files_for_missing_main_path();
         }
         let now_analysis = Instant::now();
-        self.store.find_all_references();
-        self.store.first_parse = false;
+        self.store.write().find_all_references();
+        self.store.write().first_parse = false;
         let parse_duration = now_parse.elapsed();
         let analysis_duration = now_analysis.elapsed();
-        let analysis_get_items_duration = self.store.get_all_items_time.iter().sum::<Duration>();
-        let get_includes_duration = self.store.get_includes_time.iter().sum::<Duration>();
+        let analysis_get_items_duration = self
+            .store
+            .read()
+            .get_all_items_time
+            .iter()
+            .sum::<Duration>();
+        let get_includes_duration = self.store.read().get_includes_time.iter().sum::<Duration>();
         log::info!(
             r#"Scanned all the files in {:.2?}:
     - {} file(s) were scanned.
@@ -114,7 +123,7 @@ impl Server {
             - Cloning items took {:.2?}.
         "#,
             parse_duration,
-            self.store.documents.len(),
+            self.store.read().documents.len(),
             parse_duration - analysis_duration,
             analysis_duration,
             analysis_duration - analysis_get_items_duration,
@@ -135,13 +144,13 @@ impl Server {
 
     fn parse_files_for_missing_main_path(&mut self) {
         let mut uris: Vec<Url> = vec![];
-        for uri in self.store.documents.keys() {
+        for uri in self.store.read().documents.keys() {
             uris.push(uri.as_ref().clone());
         }
         for uri in uris.iter() {
-            let document = self.store.get(uri);
+            let document = self.store.read().get(uri);
             if let Some(document) = document {
-                match self.store.handle_open_document(
+                match self.store.write().handle_open_document(
                     &document.uri,
                     document.text,
                     &mut self.parser,
@@ -158,9 +167,11 @@ impl Server {
     fn parse_files_for_main_path(&mut self, main_uri: &Url) -> anyhow::Result<()> {
         let document = self
             .store
+            .read()
             .get(main_uri)
             .context(format!("Main Path does not exist at uri {:?}", main_uri))?;
         self.store
+            .write()
             .handle_open_document(&document.uri, document.text, &mut self.parser)
             .context(format!("Could not parse file at uri {:?}", main_uri))?;
 
@@ -168,7 +179,13 @@ impl Server {
     }
 
     fn parse_directories(&mut self) {
-        let directories = self.store.environment.options.includes_directories.clone();
+        let directories = self
+            .store
+            .read()
+            .environment
+            .options
+            .includes_directories
+            .clone();
         for path in directories {
             if !path.exists() {
                 self.client
@@ -182,7 +199,7 @@ impl Server {
                     .unwrap_or_default();
                 continue;
             }
-            self.store.find_documents(&path);
+            self.store.write().find_documents(&path);
         }
     }
 
@@ -193,7 +210,7 @@ impl Server {
     ///
     /// * `uri` - [Uri](Url) of the document to test for.
     pub(super) fn read_unscanned_document(&mut self, uri: Arc<Url>) -> anyhow::Result<()> {
-        if self.store.documents.get(&uri).is_some() {
+        if self.store.read().documents.get(&uri).is_some() {
             return Ok(());
         }
         if uri.to_file_path().is_err() {
@@ -201,18 +218,19 @@ impl Server {
         }
         let path = uri.to_file_path().unwrap();
         let parent_dir = path.parent().unwrap().to_path_buf();
-        self.store.find_documents(&parent_dir);
+        self.store.write().find_documents(&parent_dir);
         let uris: Vec<Url> = self
             .store
+            .read()
             .documents
             .keys()
             .map(|uri| uri.as_ref().clone())
             .collect();
         for uri in uris {
-            let document = self.store.documents.get(&uri);
-            if let Some(document) = document {
+            if let Some(document) = self.store.read().documents.get(&uri) {
                 if !document.parsed {
                     self.store
+                        .write()
                         .handle_open_document(
                             &document.uri.clone(),
                             document.text.clone(),

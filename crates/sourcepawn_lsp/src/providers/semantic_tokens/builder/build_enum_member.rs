@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use lsp_types::{SemanticTokenModifier, SemanticTokenType, Url};
 
 use crate::spitem::enum_member_item::EnumMemberItem;
@@ -10,9 +8,9 @@ impl SemanticTokensBuilder {
     pub(crate) fn build_enum_member(
         &mut self,
         enum_member_item: &EnumMemberItem,
-        uri: &Arc<Url>,
+        uri: &Url,
     ) -> anyhow::Result<()> {
-        if enum_member_item.uri.eq(uri) {
+        if *enum_member_item.uri == *uri {
             self.push(
                 enum_member_item.v_range,
                 SemanticTokenType::ENUM_MEMBER,
@@ -23,7 +21,7 @@ impl SemanticTokensBuilder {
             )?;
         }
         for ref_ in enum_member_item.references.iter() {
-            if ref_.uri.eq(uri) {
+            if *ref_.uri == *uri {
                 self.push(
                     ref_.v_range,
                     SemanticTokenType::ENUM_MEMBER,

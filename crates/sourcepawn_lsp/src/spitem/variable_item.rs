@@ -70,14 +70,12 @@ impl VariableItem {
         match &self.parent {
             Some(parent) => match &*parent.upgrade().unwrap().read().unwrap() {
                 SPItem::Function(parent) => {
-                    if self.uri.to_string()
-                        != params.text_document_position.text_document.uri.to_string()
-                    {
+                    if *self.uri != params.text_document_position.text_document.uri {
                         return None;
                     }
                     if !range_contains_pos(
-                        parent.v_full_range,
-                        params.text_document_position.position,
+                        &parent.v_full_range,
+                        &params.text_document_position.position,
                     ) {
                         return None;
                     }

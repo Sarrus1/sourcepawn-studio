@@ -1,9 +1,8 @@
-use crate::utils;
-use std::sync::Arc;
-
 use lsp_server::RequestId;
 use lsp_types::SemanticTokensParams;
+use std::sync::Arc;
 
+use crate::utils;
 use crate::{providers, Server};
 
 impl Server {
@@ -14,14 +13,11 @@ impl Server {
     ) -> anyhow::Result<()> {
         utils::normalize_uri(&mut params.text_document.uri);
         let uri = Arc::new(params.text_document.uri.clone());
-        let _ = self.read_unscanned_document(uri.clone());
+        let _ = self.read_unscanned_document(uri);
 
-        self.handle_feature_request(
-            id,
-            params,
-            uri,
-            providers::semantic_tokens::provide_semantic_tokens,
-        )?;
+        self.run_query(id, move |store| {
+            providers::semantic_tokens::provide_semantic_tokens(store, params)
+        });
 
         Ok(())
     }

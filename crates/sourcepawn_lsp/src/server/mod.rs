@@ -1,28 +1,31 @@
-use crate::{linter::spcomp::SPCompDiagnostic, lsp_ext, options::Options, store::Store};
+use crate::{
+    capabilities::ClientCapabilitiesExt, linter::spcomp::SPCompDiagnostic, lsp_ext,
+    options::Options, store::Store,
+};
 use std::sync::Arc;
 
 use crossbeam_channel::{Receiver, Sender};
 use fxhash::FxHashMap;
-use lsp_server::{Connection, Message};
+use lsp_server::{Connection, ErrorCode, Message, RequestId};
 use lsp_types::{
-    notification::ShowMessage, CallHierarchyServerCapability, CompletionOptions,
-    CompletionOptionsCompletionItem, HoverProviderCapability, InitializeParams, InitializeResult,
-    MessageType, OneOf, SemanticTokenModifier, SemanticTokenType, SemanticTokensFullOptions,
-    SemanticTokensLegend, SemanticTokensOptions, SemanticTokensServerCapabilities,
-    ServerCapabilities, ServerInfo, ShowMessageParams, SignatureHelpOptions,
-    TextDocumentSyncCapability, TextDocumentSyncKind, Url, WorkDoneProgressOptions,
+    notification::ShowMessage, request::WorkspaceConfiguration, CallHierarchyServerCapability,
+    ClientCapabilities, ClientInfo, CompletionOptions, CompletionOptionsCompletionItem,
+    ConfigurationItem, ConfigurationParams, HoverProviderCapability, InitializeParams,
+    InitializeResult, MessageType, OneOf, SemanticTokenModifier, SemanticTokenType,
+    SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
+    SemanticTokensServerCapabilities, ServerCapabilities, ServerInfo, ShowMessageParams,
+    SignatureHelpOptions, TextDocumentSyncCapability, TextDocumentSyncKind, Url,
+    WorkDoneProgressOptions,
 };
-
+use parking_lot::RwLock;
+use serde::Serialize;
 use threadpool::ThreadPool;
 use tree_sitter::Parser;
 
 use crate::client::LspClient;
 
-use self::fork::ServerFork;
-
 mod diagnostics;
 mod files;
-mod fork;
 mod notifications;
 mod requests;
 
@@ -35,14 +38,17 @@ enum InternalMessage {
 
 pub struct Server {
     connection: Arc<Connection>,
-    client: LspClient,
-    pub store: Store,
+    pub store: Arc<RwLock<Store>>,
     internal_tx: Sender<InternalMessage>,
     internal_rx: Receiver<InternalMessage>,
+    client: LspClient,
+    client_capabilities: Arc<ClientCapabilities>,
+    client_info: Option<Arc<ClientInfo>>,
     pool: ThreadPool,
     parser: Parser,
     config_pulled: bool,
     indexing: bool,
+    amxxpawn_mode: bool,
 }
 
 impl Server {
@@ -58,12 +64,96 @@ impl Server {
             client,
             internal_rx,
             internal_tx,
-            store: Store::new(amxxpawn_mode),
+            store: Arc::new(RwLock::new(Store::new(amxxpawn_mode))),
+            client_capabilities: Default::default(),
+            client_info: Default::default(),
             pool: threadpool::Builder::new().build(),
             parser,
             config_pulled: false,
             indexing: false,
+            amxxpawn_mode,
         }
+    }
+
+    fn run_query<R, Q>(&self, id: RequestId, query: Q)
+    where
+        R: Serialize,
+        Q: FnOnce(&Store) -> R + Send + 'static,
+    {
+        let client = self.client.clone();
+        let store = Arc::clone(&self.store);
+        self.pool.execute(move || {
+            let response = lsp_server::Response::new_ok(id, query(&store.read()));
+            client.send_response(response).unwrap();
+        });
+    }
+
+    fn run_fallible<R, Q>(&self, id: RequestId, query: Q)
+    where
+        R: Serialize,
+        Q: FnOnce() -> anyhow::Result<R> + Send + 'static,
+    {
+        let client = self.client.clone();
+        self.pool.execute(move || match query() {
+            Ok(result) => {
+                let response = lsp_server::Response::new_ok(id, result);
+                client.send_response(response).unwrap();
+            }
+            Err(why) => {
+                client
+                    .send_error(id, ErrorCode::InternalError, why.to_string())
+                    .unwrap();
+            }
+        });
+    }
+
+    pub fn pull_config(&self) {
+        if !self.client_capabilities.has_push_configuration_support() {
+            log::trace!("Client does not have pull configuration support.");
+            return;
+        }
+
+        let params = ConfigurationParams {
+            items: vec![ConfigurationItem {
+                section: Some(
+                    if self.amxxpawn_mode {
+                        "AMXXPawnLanguageServer"
+                    } else {
+                        "SourcePawnLanguageServer"
+                    }
+                    .to_string(),
+                ),
+                scope_uri: None,
+            }],
+        };
+        let client = self.client.clone();
+        let sender = self.internal_tx.clone();
+        let root_uri = self.store.read().environment.root_uri.clone();
+        self.pool.execute(move || {
+            match client.send_request::<WorkspaceConfiguration>(params) {
+                Ok(mut json) => {
+                    log::info!("Received config {:#?}", json);
+                    let mut options = client
+                        .parse_options(json.pop().expect("invalid configuration request"))
+                        .unwrap();
+                    if !(options.main_path.is_absolute()
+                        || options.main_path.to_str().unwrap().is_empty())
+                    {
+                        if let Some(root_uri) = root_uri {
+                            // Try to resolve the main path as relative.
+                            options.main_path =
+                                root_uri.to_file_path().unwrap().join(options.main_path);
+                        }
+                    }
+                    sender
+                        .send(InternalMessage::SetOptions(Arc::new(options)))
+                        .unwrap();
+                }
+                Err(why) => {
+                    log::error!("Retrieving configuration failed: {}", why);
+                }
+            };
+        });
     }
 
     fn initialize(&mut self) -> anyhow::Result<()> {
@@ -144,20 +234,19 @@ impl Server {
         self.connection
             .initialize_finish(id, serde_json::to_value(result)?)?;
 
-        self.store.environment.client_capabilities = Arc::new(params.capabilities);
-        self.store.environment.client_info = params.client_info.map(Arc::new);
-        self.store.environment.root_uri = params.root_uri;
+        self.client_capabilities = Arc::new(params.capabilities);
+        self.client_info = params.client_info.map(Arc::new);
+        self.store.write().environment.root_uri = params.root_uri;
 
-        self.spawn(move |server| {
-            let _ = server.pull_config();
-        });
+        self.pull_config();
+
         params
             .workspace_folders
             .unwrap_or_default()
             .iter()
             .for_each(|folder| {
                 if let Ok(folder_path) = folder.uri.to_file_path() {
-                    self.store.find_documents(&folder_path)
+                    self.store.write().find_documents(&folder_path)
                 }
             });
 
@@ -175,20 +264,6 @@ impl Server {
         self.client
             .send_notification::<lsp_ext::ServerStatusNotification>(status)?;
         Ok(())
-    }
-
-    fn spawn(&self, job: impl FnOnce(ServerFork) + Send + 'static) {
-        let fork = self.fork();
-        self.pool.execute(move || job(fork));
-    }
-
-    fn fork(&self) -> ServerFork {
-        ServerFork {
-            connection: self.connection.clone(),
-            client: self.client.clone(),
-            internal_tx: self.internal_tx.clone(),
-            store: self.store.clone(),
-        }
     }
 
     fn process_messages(&mut self) -> anyhow::Result<()> {
@@ -234,7 +309,7 @@ impl Server {
                         match msg? {
                             InternalMessage::SetOptions(options) => {
                                 self.config_pulled = true;
-                                self.store.environment.options = options;
+                                self.store.write().environment.options = options;
                                 self.register_file_watching()?;
                                 if let Err(err) = self.reparse_all() {
                                     let _ = self.client
@@ -248,7 +323,7 @@ impl Server {
                                 self.handle_file_event(event);
                             }
                             InternalMessage::Diagnostics(diagnostics) => {
-                                self.store.ingest_spcomp_diagnostics(diagnostics);
+                                self.store.write().ingest_spcomp_diagnostics(diagnostics);
                                 self.publish_diagnostics()?;
                             }
                         }

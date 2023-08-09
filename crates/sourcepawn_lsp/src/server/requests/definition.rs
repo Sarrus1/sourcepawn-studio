@@ -20,9 +20,11 @@ impl Server {
                 .uri
                 .clone(),
         );
-        let _ = self.read_unscanned_document(uri.clone());
+        let _ = self.read_unscanned_document(uri);
 
-        self.handle_feature_request(id, params, uri, providers::definition::provide_definition)?;
+        self.run_query(id, move |store| {
+            providers::definition::provide_definition(store, params)
+        });
 
         Ok(())
     }

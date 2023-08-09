@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use lsp_types::{CompletionList, CompletionParams, Position, Range};
 
-use crate::{providers::FeatureRequest, spitem::SPItem};
+use crate::{spitem::SPItem, store::Store};
 
 use super::{context::get_line_words, defaults::get_default_completions};
 
@@ -104,26 +104,19 @@ pub(super) fn get_ctor_completions(
 /// * `position` - [Position](lsp_types::Position) of the request.
 /// * `params` - [Parameters](lsp_types::completion::CompletionParams) of the completion request.
 pub(super) fn get_method_completions(
+    store: &Store,
+    params: &CompletionParams,
     all_items: Vec<Arc<RwLock<SPItem>>>,
     pre_line: &str,
-    position: Position,
-    request: FeatureRequest<CompletionParams>,
 ) -> Option<CompletionList> {
-    let words = get_line_words(pre_line, position);
+    let words = get_line_words(pre_line, params.text_document_position.position);
     for word in words.into_iter().flatten().rev() {
         let word_pos = Position {
             line: word.range.start.line,
             character: ((word.range.start.character + word.range.end.character) / 2),
         };
-        let items = &request.store.get_items_from_position(
-            word_pos,
-            request
-                .params
-                .text_document_position
-                .text_document
-                .uri
-                .clone(),
-        );
+        let items = &store
+            .get_items_from_position(word_pos, &params.text_document_position.text_document.uri);
         if items.is_empty() {
             continue;
         }
@@ -151,17 +144,15 @@ pub(super) fn get_method_completions(
                                 if is_static_call(item, type_item) {
                                     // We are trying to call static methods.
                                     if method_item.is_static() {
-                                        items.extend(
-                                            method_item.to_completions(&request.params, true),
-                                        );
+                                        items.extend(method_item.to_completions(params, true));
                                     }
                                 } else if !method_item.is_static() {
                                     // We are trying to call non static methods.
-                                    items.extend(method_item.to_completions(&request.params, true));
+                                    items.extend(method_item.to_completions(params, true));
                                 }
                             }
                             SPItem::Property(property_item) => {
-                                items.extend(property_item.to_completion(&request.params, true))
+                                items.extend(property_item.to_completion(params, true))
                             }
                             _ => {}
                         }
@@ -174,7 +165,7 @@ pub(super) fn get_method_completions(
                 SPItem::EnumStruct(es_item) => {
                     let mut items = vec![];
                     for child in es_item.children.iter() {
-                        items.extend(child.read().unwrap().to_completions(&request.params, true));
+                        items.extend(child.read().unwrap().to_completions(params, true));
                     }
                     return Some(CompletionList {
                         items,
