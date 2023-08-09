@@ -1,15 +1,14 @@
-use std::sync::{Arc, RwLock, Weak};
-
 use super::Location;
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionItemTag,
     CompletionParams, DocumentSymbol, GotoDefinitionParams, Hover, HoverContents, HoverParams,
     LanguageString, LocationLink, MarkedString, Range, SymbolKind, SymbolTag, Url,
 };
-
-use crate::{providers::hover::description::Description, utils::range_contains_pos};
+use parking_lot::RwLock;
+use std::sync::{Arc, Weak};
 
 use super::SPItem;
+use crate::{providers::hover::description::Description, utils::range_contains_pos};
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a SourcePawn variable.
@@ -68,7 +67,7 @@ impl VariableItem {
         }
 
         match &self.parent {
-            Some(parent) => match &*parent.upgrade().unwrap().read().unwrap() {
+            Some(parent) => match &*parent.upgrade().unwrap().read() {
                 SPItem::Function(parent) => {
                     if *self.uri != params.text_document_position.text_document.uri {
                         return None;
@@ -168,7 +167,7 @@ impl VariableItem {
         }
         let mut kind = SymbolKind::VARIABLE;
         if let Some(parent) = &self.parent {
-            if let SPItem::EnumStruct(_) = &*parent.upgrade().unwrap().read().unwrap() {
+            if let SPItem::EnumStruct(_) = &*parent.upgrade().unwrap().read() {
                 kind = SymbolKind::FIELD;
             }
         }
@@ -188,11 +187,7 @@ impl VariableItem {
     /// Return a key to be used as a unique identifier in a map containing all the items.
     pub(crate) fn key(&self) -> String {
         match &self.parent {
-            Some(parent) => format!(
-                "{}-{}",
-                parent.upgrade().unwrap().read().unwrap().key(),
-                self.name
-            ),
+            Some(parent) => format!("{}-{}", parent.upgrade().unwrap().read().key(), self.name),
             None => self.name.clone(),
         }
     }

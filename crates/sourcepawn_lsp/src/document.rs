@@ -1,14 +1,11 @@
-use std::{
-    path::PathBuf,
-    sync::{Arc, RwLock},
-};
-
 use anyhow::anyhow;
 use fxhash::{FxHashMap, FxHashSet};
 use lazy_static::lazy_static;
 use lsp_types::Range;
 use lsp_types::Url;
+use parking_lot::RwLock;
 use sourcepawn_preprocessor::preprocessor::{Macro, Offset};
+use std::{path::PathBuf, sync::Arc};
 use strip_bom::StripBom;
 use tree_sitter::{Node, Query, QueryCursor};
 
@@ -230,7 +227,7 @@ impl Document {
         let mut sp_items = vec![];
         for item in self.sp_items.iter() {
             sp_items.push(item.clone());
-            match &*item.read().unwrap() {
+            match &*item.read() {
                 SPItem::Function(function_item) => {
                     for child_item in function_item.children.iter() {
                         sp_items.push(child_item.clone())
@@ -244,7 +241,7 @@ impl Document {
                 SPItem::EnumStruct(es_item) => {
                     for child_item in es_item.children.iter() {
                         sp_items.push(child_item.clone());
-                        match &*child_item.read().unwrap() {
+                        match &*child_item.read() {
                             SPItem::Function(method_item) => {
                                 for sub_child_item in method_item.children.iter() {
                                     sp_items.push(sub_child_item.clone());
@@ -266,7 +263,7 @@ impl Document {
                 SPItem::Methodmap(mm_item) => {
                     for child_item in mm_item.children.iter() {
                         sp_items.push(child_item.clone());
-                        match &*child_item.read().unwrap() {
+                        match &*child_item.read() {
                             SPItem::Function(method_item) => {
                                 for sub_child_item in method_item.children.iter() {
                                     sp_items.push(sub_child_item.clone());

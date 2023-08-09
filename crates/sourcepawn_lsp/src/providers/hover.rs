@@ -12,7 +12,7 @@ pub fn provide_hover(store: &Store, params: HoverParams) -> Option<Hover> {
     if items.is_empty() {
         return None;
     }
-    let hover = items[0].read().unwrap().to_hover(&params);
+    let hover = items[0].read().to_hover(&params);
 
     hover
 }

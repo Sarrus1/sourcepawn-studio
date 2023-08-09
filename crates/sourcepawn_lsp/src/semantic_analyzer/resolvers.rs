@@ -1,4 +1,5 @@
-use std::sync::{Arc, RwLock};
+use parking_lot::RwLock;
+use std::sync::Arc;
 
 use crate::{
     document::{Document, Token},
@@ -22,7 +23,7 @@ impl Analyzer {
             return false;
         }
         for item in self.all_items.iter() {
-            let item_lock = item.read().unwrap();
+            let item_lock = item.read();
             match &*item_lock {
                 SPItem::Methodmap(mm_item) => {
                     if mm_item.uri.eq(&document.uri)
@@ -82,14 +83,14 @@ impl Analyzer {
             let reference = Location {
                 uri: document.uri.clone(),
                 range: token.range,
-                v_range: if let SPItem::Define(_) = &*item.read().unwrap() {
+                v_range: if let SPItem::Define(_) = &*item.read() {
                     token.range
                 } else {
                     document.build_v_range(&token.range)
                 },
             };
 
-            if let SPItem::Methodmap(mm_item) = &*item.read().unwrap() {
+            if let SPItem::Methodmap(mm_item) = &*item.read() {
                 if token.range.start.character >= 4 {
                     // Don't check the line if there is not enough space for a `new` keyword.
                     // We use 4 instead of 3 to account for at least one space after `new`.
@@ -100,7 +101,7 @@ impl Analyzer {
                         .collect();
                     if is_ctor_call(&pre_line) {
                         if let Some(ctor_item) = mm_item.ctor() {
-                            ctor_item.write().unwrap().push_reference(reference);
+                            ctor_item.write().push_reference(reference);
                             self.previous_items.insert(token.text.clone(), ctor_item);
                             return Ok(());
                         }
@@ -108,7 +109,7 @@ impl Analyzer {
                 }
             }
 
-            item.write().unwrap().push_reference(reference);
+            item.write().push_reference(reference);
             self.previous_items.insert(token.text.clone(), item.clone());
             return Ok(());
         }
@@ -128,7 +129,7 @@ impl Analyzer {
 
         let mut item: Option<Arc<RwLock<SPItem>>> = None;
         let parent_item = self.previous_items.get(parent.text.as_str())?;
-        let parent = parent_item.read().unwrap().clone();
+        let parent = parent_item.read().clone();
         match &parent {
             SPItem::EnumStruct(es) => {
                 // Enum struct scope operator (::).
@@ -145,11 +146,7 @@ impl Analyzer {
         }
         if item.is_none() {
             for inherit in find_inherit(&self.all_items, &parent) {
-                item = self.get(&format!(
-                    "{}-{}",
-                    inherit.read().unwrap().name(),
-                    field.text
-                ));
+                item = self.get(&format!("{}-{}", inherit.read().name(), field.text));
                 if item.is_some() {
                     break;
                 }
@@ -163,7 +160,7 @@ impl Analyzer {
             range: field.range,
             v_range: document.build_v_range(&field.range),
         };
-        item.write().unwrap().push_reference(reference);
+        item.write().push_reference(reference);
         self.previous_items.insert(field.text.clone(), item);
 
         // TODO: Handle positional arguments

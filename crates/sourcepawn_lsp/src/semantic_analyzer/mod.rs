@@ -1,19 +1,15 @@
-use std::{
-    sync::{Arc, RwLock},
-    time::Instant,
-};
-
 use fxhash::{FxHashMap, FxHashSet};
 use lsp_types::Url;
+use parking_lot::RwLock;
+use std::{sync::Arc, time::Instant};
+
+use self::analyzer::Analyzer;
+use crate::{document::SPToken, spitem::SPItem, store::Store};
 
 pub mod analyzer;
 pub mod inherit;
 mod resolvers;
 pub mod scope;
-
-use crate::{document::SPToken, spitem::SPItem, store::Store};
-
-use self::analyzer::Analyzer;
 
 impl Store {
     pub(crate) fn find_references(&mut self, uri: &Url) -> Option<()> {
@@ -75,7 +71,7 @@ impl Store {
 
 pub fn purge_references(item: &Arc<RwLock<SPItem>>, uri: &Arc<Url>) {
     let mut new_references = vec![];
-    let mut item_lock = item.write().unwrap();
+    let mut item_lock = item.write();
     let old_references = item_lock.references();
     if old_references.is_none() {
         return;
@@ -98,7 +94,7 @@ pub fn resolve_methodmap_inherits(all_items: Vec<Arc<RwLock<SPItem>>>) {
     let mut methodmaps = FxHashMap::default();
     let mut methodmaps_to_resolve = vec![];
     all_items.iter().for_each(|item| {
-        if let SPItem::Methodmap(mm_item) = &*item.read().unwrap() {
+        if let SPItem::Methodmap(mm_item) = &*item.read() {
             methodmaps.insert(mm_item.name.to_string(), item.clone());
             if mm_item.tmp_parent.is_some() {
                 methodmaps_to_resolve.push(item.clone());
@@ -107,7 +103,7 @@ pub fn resolve_methodmap_inherits(all_items: Vec<Arc<RwLock<SPItem>>>) {
     });
 
     for mm in methodmaps_to_resolve.iter() {
-        let mut mm = mm.write().unwrap();
+        let mut mm = mm.write();
         if let SPItem::Methodmap(mm_item) = &*mm {
             if let Some(tmp_parent) = &mm_item.tmp_parent {
                 if let Some(parent) = methodmaps.get(tmp_parent) {

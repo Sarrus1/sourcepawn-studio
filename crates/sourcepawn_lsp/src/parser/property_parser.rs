@@ -1,4 +1,5 @@
-use std::sync::{Arc, RwLock};
+use parking_lot::RwLock;
+use std::sync::Arc;
 
 use anyhow::Context;
 use tree_sitter::Node;
@@ -47,9 +48,9 @@ impl Document {
         };
 
         let property_item = Arc::new(RwLock::new(SPItem::Property(property_item)));
-        parent.write().unwrap().push_child(property_item.clone());
+        parent.write().push_child(property_item.clone());
         self.declarations
-            .insert(property_item.clone().read().unwrap().key(), property_item);
+            .insert(property_item.clone().read().key(), property_item);
 
         // TODO: Add getter and setter parsing.
         Ok(())

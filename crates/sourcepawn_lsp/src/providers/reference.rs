@@ -9,7 +9,7 @@ pub fn provide_reference(store: &Store, params: ReferenceParams) -> Option<Vec<L
     );
     let mut locations = vec![];
     for item in items {
-        let item = item.read().unwrap();
+        let item = item.read();
         let references = item.references();
         if let Some(references) = references {
             locations.extend(references.clone());

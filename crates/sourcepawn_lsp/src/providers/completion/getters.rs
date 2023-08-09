@@ -1,4 +1,5 @@
-use std::sync::{Arc, RwLock};
+use parking_lot::RwLock;
+use std::sync::Arc;
 
 use lsp_types::{CompletionList, CompletionParams, Position, Range};
 
@@ -19,7 +20,7 @@ pub(super) fn get_non_method_completions(
 ) -> Option<CompletionList> {
     let mut items = get_default_completions();
     for sp_item in all_items.iter() {
-        let res = sp_item.read().unwrap().to_completions(&params, false);
+        let res = sp_item.read().to_completions(&params, false);
         items.extend(res);
     }
 
@@ -47,7 +48,7 @@ pub(super) fn get_callback_completions(
         Position::new(position.line, position.character + 1),
     );
     for item in all_items.iter() {
-        match &*item.read().unwrap() {
+        match &*item.read() {
             SPItem::Typedef(typedef_item) => {
                 if let Some(completion) = typedef_item.to_snippet_completion(range) {
                     items.push(completion);
@@ -82,11 +83,8 @@ pub(super) fn get_ctor_completions(
     params: CompletionParams,
 ) -> Option<CompletionList> {
     let mut items = vec![];
-    for ctor in all_items
-        .iter()
-        .filter_map(|item| item.read().unwrap().ctor())
-    {
-        items.extend(ctor.read().unwrap().to_completions(&params, true))
+    for ctor in all_items.iter().filter_map(|item| item.read().ctor()) {
+        items.extend(ctor.read().to_completions(&params, true))
     }
     Some(CompletionList {
         items,
@@ -121,21 +119,21 @@ pub(super) fn get_method_completions(
             continue;
         }
         for item in items.iter() {
-            let type_ = item.read().unwrap().type_();
+            let type_ = item.read().type_();
             let type_item = all_items
                 .iter()
-                .find(|type_item| type_item.read().unwrap().name() == type_);
+                .find(|type_item| type_item.read().name() == type_);
             if type_item.is_none() {
                 continue;
             }
             let type_item = type_item.unwrap();
-            match type_item.read().unwrap().clone() {
+            match type_item.read().clone() {
                 SPItem::Methodmap(mm_item) => {
                     let mut children = mm_item.children;
                     extend_children(&mut children, &mm_item.parent);
                     let mut items = vec![];
                     for child in children.iter() {
-                        match &*child.read().unwrap() {
+                        match &*child.read() {
                             SPItem::Function(method_item) => {
                                 if method_item.is_ctor() {
                                     // We don't want constructors here.
@@ -165,7 +163,7 @@ pub(super) fn get_method_completions(
                 SPItem::EnumStruct(es_item) => {
                     let mut items = vec![];
                     for child in es_item.children.iter() {
-                        items.extend(child.read().unwrap().to_completions(params, true));
+                        items.extend(child.read().to_completions(params, true));
                     }
                     return Some(CompletionList {
                         items,
@@ -182,7 +180,7 @@ pub(super) fn get_method_completions(
 
 fn extend_children(children: &mut Vec<Arc<RwLock<SPItem>>>, mm_item: &Option<Arc<RwLock<SPItem>>>) {
     if let Some(mm_item) = mm_item {
-        if let SPItem::Methodmap(mm_item) = &*mm_item.read().unwrap() {
+        if let SPItem::Methodmap(mm_item) = &*mm_item.read() {
             children.extend(mm_item.children.clone());
             extend_children(children, &mm_item.parent);
         }
@@ -205,5 +203,5 @@ fn extend_children(children: &mut Vec<Arc<RwLock<SPItem>>>, mm_item: &Option<Arc
 /// * `item` - [SPItem](crate::spitem::SPItem) of the call origin.
 /// * `type_item` - [SPItem](crate::spitem::SPItem) associated with the type.
 fn is_static_call(item: &Arc<RwLock<SPItem>>, type_item: &Arc<RwLock<SPItem>>) -> bool {
-    item.read().unwrap().name() == type_item.read().unwrap().name()
+    item.read().name() == type_item.read().name()
 }

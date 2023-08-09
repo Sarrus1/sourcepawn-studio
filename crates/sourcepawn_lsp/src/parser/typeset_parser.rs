@@ -1,4 +1,5 @@
-use std::sync::{Arc, RwLock};
+use parking_lot::RwLock;
+use std::sync::Arc;
 
 use anyhow::Context;
 use tree_sitter::Node;
@@ -59,7 +60,7 @@ impl Document {
         }
         self.sp_items.push(typeset_item.clone());
         self.declarations
-            .insert(typeset_item.clone().read().unwrap().key(), typeset_item);
+            .insert(typeset_item.clone().read().key(), typeset_item);
 
         Ok(())
     }
@@ -100,7 +101,7 @@ impl Document {
             name: format!(
                 "{}{}",
                 name,
-                parent.read().unwrap().children().unwrap().len() // Safe unwrap, a typeset has a vector of children.
+                parent.read().children().unwrap().len() // Safe unwrap, a typeset has a vector of children.
             ),
             type_: type_.unwrap_or_default(),
             range,
@@ -123,7 +124,7 @@ impl Document {
             typedef_item.clone(),
             description,
         );
-        parent.write().unwrap().push_child(typedef_item);
+        parent.write().push_child(typedef_item);
 
         Ok(())
     }

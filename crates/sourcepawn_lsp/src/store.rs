@@ -1,11 +1,12 @@
 use anyhow::anyhow;
 use fxhash::{FxHashMap, FxHashSet};
 use lsp_types::{Range, Url};
+use parking_lot::RwLock;
 use sourcepawn_preprocessor::{preprocessor::Macro, SourcepawnPreprocessor};
 use std::{
     fs, io,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex, RwLock},
+    sync::{Arc, Mutex},
     time::Duration,
 };
 use tree_sitter::Parser;
@@ -80,7 +81,7 @@ impl Store {
             for item in document.sp_items.iter() {
                 purge_references(item, &uri_arc);
                 // Delete Include items.
-                match &*item.read().unwrap() {
+                match &*item.read() {
                     SPItem::Include(include_item) => {
                         if uri.ne(&*include_item.include_uri) {
                             sp_items.push(item.clone());
@@ -238,10 +239,7 @@ impl Store {
         let mut to_reload = vec![];
         for sub_doc in self.documents.values() {
             for item in added_declarations.values() {
-                if sub_doc
-                    .unresolved_tokens
-                    .contains(&item.read().unwrap().name())
-                {
+                if sub_doc.unresolved_tokens.contains(&item.read().name()) {
                     to_reload.push(sub_doc.uri.clone());
                     break;
                 }
@@ -262,7 +260,7 @@ impl Store {
             self.find_references(uri_to_reload);
         }
         for item in deleted_declarations.values() {
-            let item = item.read().unwrap();
+            let item = item.read();
             let references = item.references();
             if let Some(references) = references {
                 for ref_ in references.iter() {

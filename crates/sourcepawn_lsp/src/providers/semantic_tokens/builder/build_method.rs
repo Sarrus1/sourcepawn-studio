@@ -28,7 +28,7 @@ impl SemanticTokensBuilder {
             }
         }
         method_item.children.iter().for_each(|child| {
-            if let SPItem::Variable(variable_item) = &*child.read().unwrap() {
+            if let SPItem::Variable(variable_item) = &*child.read() {
                 self.build_local_variable(variable_item, uri)
                     .unwrap_or_default();
             }

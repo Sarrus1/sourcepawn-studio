@@ -1,4 +1,5 @@
-use std::sync::{Arc, RwLock};
+use parking_lot::RwLock;
+use std::sync::Arc;
 
 use super::{Location, SPItem};
 use lsp_types::{
@@ -126,7 +127,7 @@ impl TypesetItem {
             children: Some(
                 self.children
                     .iter()
-                    .filter_map(|child| child.read().unwrap().to_document_symbol())
+                    .filter_map(|child| child.read().to_document_symbol())
                     .collect(),
             ),
         })
@@ -141,7 +142,7 @@ impl TypesetItem {
     pub(crate) fn to_snippet_completion(&self, range: Range) -> Vec<CompletionItem> {
         let mut res = vec![];
         for child in self.children.iter() {
-            if let SPItem::Typedef(typedef_item) = &*child.read().unwrap() {
+            if let SPItem::Typedef(typedef_item) = &*child.read() {
                 if let Some(completion) = typedef_item.to_snippet_completion(range) {
                     res.push(completion);
                 }

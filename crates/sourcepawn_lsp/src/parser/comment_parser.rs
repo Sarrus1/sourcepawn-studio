@@ -1,11 +1,8 @@
-use std::{
-    str::Utf8Error,
-    sync::{Arc, RwLock},
-};
-
 use lazy_static::lazy_static;
 use lsp_types::Range;
+use parking_lot::RwLock;
 use regex::Regex;
+use std::{str::Utf8Error, sync::Arc};
 use tree_sitter::Node;
 
 use crate::{
@@ -38,9 +35,9 @@ impl Walker {
     pub fn push_inline_comment(&mut self, items: &[Arc<RwLock<SPItem>>]) -> Option<()> {
         let item = items.last()?;
         let description = self
-            .find_doc(item.read().unwrap().range().end.line as usize, true)
+            .find_doc(item.read().range().end.line as usize, true)
             .ok()?;
-        match &mut *item.write().unwrap() {
+        match &mut *item.write() {
             SPItem::EnumMember(enum_member_item) => {
                 enum_member_item.description = description;
             }

@@ -1,11 +1,9 @@
-use std::{
-    str::Utf8Error,
-    sync::{Arc, RwLock},
-};
-
 use anyhow::Context;
+use parking_lot::RwLock;
+use std::{str::Utf8Error, sync::Arc};
 use tree_sitter::Node;
 
+use super::function_parser::extract_param_from_desc;
 use crate::{
     document::{Document, Walker},
     providers::hover::description::Description,
@@ -16,8 +14,6 @@ use crate::{
     },
     utils::ts_range_to_lsp_range,
 };
-
-use super::function_parser::extract_param_from_desc;
 
 impl Document {
     pub(crate) fn parse_typedef(&mut self, node: &Node, walker: &mut Walker) -> anyhow::Result<()> {
@@ -89,7 +85,7 @@ impl Document {
         );
         self.sp_items.push(typedef_item.clone());
         self.declarations
-            .insert(typedef_item.clone().read().unwrap().key(), typedef_item);
+            .insert(typedef_item.clone().read().key(), typedef_item);
 
         Ok(())
     }
@@ -151,10 +147,7 @@ impl Document {
             },
             dimensions,
         };
-        parent
-            .write()
-            .unwrap()
-            .push_param(Arc::new(RwLock::new(parameter)));
+        parent.write().push_param(Arc::new(RwLock::new(parameter)));
         Ok(())
     }
 

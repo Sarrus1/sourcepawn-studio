@@ -1,4 +1,5 @@
-use std::sync::{Arc, RwLock};
+use parking_lot::RwLock;
+use std::sync::Arc;
 
 use lazy_static::lazy_static;
 use lsp_types::{CompletionContext, Position};
@@ -54,7 +55,7 @@ pub(crate) fn is_doc_completion(
     all_items
         .iter()
         .find(|&item| {
-            let item = &*item.read().unwrap();
+            let item = &*item.read();
             if let SPItem::Function(function_item) = item {
                 if position.line == function_item.full_range.start.line - 1 {
                     return true;

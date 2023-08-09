@@ -1,23 +1,22 @@
-use std::{
-    sync::{Arc, RwLock},
-    time::{Duration, Instant},
-};
-
 use fxhash::FxHashSet;
 use lsp_types::{
     CompletionItem, CompletionList, CompletionParams, DocumentSymbol, Documentation,
     GotoDefinitionParams, Hover, HoverParams, LocationLink, MarkupContent, Position, Range,
     SignatureInformation, Url,
 };
+use parking_lot::RwLock;
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
+use self::parameter::Parameter;
 use crate::{
     document::Document,
     providers::hover::description::Description,
     store::Store,
     utils::{range_contains_pos, range_equals_range},
 };
-
-use self::parameter::Parameter;
 
 pub(crate) mod define_item;
 pub(crate) mod enum_item;
@@ -135,7 +134,7 @@ impl Store {
         let all_items = self.get_all_items(true);
         let mut res = vec![];
         for item in all_items.0.iter() {
-            let item_lock = item.read().unwrap();
+            let item_lock = item.read();
             if range_contains_pos(&item_lock.v_range(), &position)
                 && item_lock.uri().as_ref().eq(&uri)
             {
@@ -173,16 +172,16 @@ impl Store {
         let mut current_item: Option<Arc<RwLock<SPItem>>> = None;
         for key in sub_keys {
             current_item = match current_item {
-                Some(item) => item.read().unwrap().children().and_then(|children| {
+                Some(item) => item.read().children().and_then(|children| {
                     children
                         .iter()
-                        .find(|child| child.read().unwrap().name() == key)
+                        .find(|child| child.read().name() == key)
                         .cloned()
                 }),
                 None => all_items
                     .0
                     .iter()
-                    .find(|item| item.read().unwrap().name() == key)
+                    .find(|item| item.read().name() == key)
                     .cloned(),
             };
 
@@ -299,7 +298,7 @@ impl SPItem {
             SPItem::Variable(item) => item.type_.clone(),
             SPItem::Function(item) => item.type_.clone(),
             SPItem::Enum(item) => item.name.clone(),
-            SPItem::EnumMember(item) => item.parent.upgrade().unwrap().read().unwrap().name(),
+            SPItem::EnumMember(item) => item.parent.upgrade().unwrap().read().name(),
             SPItem::EnumStruct(item) => item.name.clone(),
             SPItem::Define(_) => "".to_string(),
             SPItem::Methodmap(item) => item.name.clone(),

@@ -1,4 +1,5 @@
-use std::sync::{Arc, RwLock};
+use parking_lot::RwLock;
+use std::sync::Arc;
 
 use super::Location;
 use lsp_types::{
@@ -79,7 +80,7 @@ impl MethodmapItem {
         });
 
         for child in &self.children {
-            res.extend(child.read().unwrap().to_completions(params, request_method));
+            res.extend(child.read().to_completions(params, request_method));
         }
 
         res
@@ -136,7 +137,7 @@ impl MethodmapItem {
             children: Some(
                 self.children
                     .iter()
-                    .filter_map(|child| child.read().unwrap().to_document_symbol())
+                    .filter_map(|child| child.read().to_document_symbol())
                     .collect(),
             ),
         })
@@ -152,7 +153,7 @@ impl MethodmapItem {
         self.children
             .iter()
             .find(|child| {
-                if let SPItem::Function(method_item) = &*child.read().unwrap() {
+                if let SPItem::Function(method_item) = &*child.read() {
                     return method_item.is_ctor();
                 }
                 false
@@ -168,10 +169,7 @@ impl MethodmapItem {
     pub(crate) fn formatted_text(&self) -> String {
         let mut suffix = "".to_string();
         if self.parent.is_some() {
-            suffix = format!(
-                " < {}",
-                self.parent.as_ref().unwrap().read().unwrap().name()
-            );
+            suffix = format!(" < {}", self.parent.as_ref().unwrap().read().name());
         }
         format!("methodmap {}{}", self.name, suffix)
             .trim()

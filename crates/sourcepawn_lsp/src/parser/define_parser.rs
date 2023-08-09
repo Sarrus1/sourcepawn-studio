@@ -1,4 +1,5 @@
-use std::sync::{Arc, RwLock};
+use parking_lot::RwLock;
+use std::sync::Arc;
 
 use anyhow::Context;
 use tree_sitter::Node;
@@ -40,7 +41,7 @@ impl Document {
         let define_item = Arc::new(RwLock::new(SPItem::Define(define_item)));
         self.sp_items.push(define_item.clone());
         self.declarations
-            .insert(define_item.clone().read().unwrap().key(), define_item);
+            .insert(define_item.clone().read().key(), define_item);
 
         Ok(())
     }

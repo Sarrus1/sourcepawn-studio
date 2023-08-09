@@ -1,4 +1,5 @@
-use std::sync::{Arc, RwLock};
+use parking_lot::RwLock;
+use std::sync::Arc;
 
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag};
 use tree_sitter::{Node, QueryCursor};
@@ -32,13 +33,12 @@ impl Store {
     /// * `all_items_flat` - Vector of all the [SPItems](SPItem) that are in the mainpath's scope.
     pub(super) fn get_deprecated_diagnostics(&mut self, all_items_flat: &[Arc<RwLock<SPItem>>]) {
         for item in all_items_flat.iter() {
-            if let Some(description) = item.read().unwrap().description() {
+            if let Some(description) = item.read().description() {
                 if let Some(deprecated) = description.deprecated {
-                    if !&item.read().unwrap().uri().as_str().ends_with(".inc") {
-                        if let Some(document) = self.documents.get_mut(&item.read().unwrap().uri())
-                        {
+                    if !&item.read().uri().as_str().ends_with(".inc") {
+                        if let Some(document) = self.documents.get_mut(&item.read().uri()) {
                             document.diagnostics.local_diagnostics.push(Diagnostic {
-                                range: item.read().unwrap().range(),
+                                range: item.read().range(),
                                 message: format!("Deprecated {:?}", deprecated),
                                 severity: Some(DiagnosticSeverity::HINT),
                                 tags: Some(vec![DiagnosticTag::DEPRECATED]),
@@ -46,7 +46,7 @@ impl Store {
                             });
                         }
                     }
-                    if let Some(references) = item.read().unwrap().references() {
+                    if let Some(references) = item.read().references() {
                         for reference in references.iter() {
                             if reference.uri.as_str().ends_with(".inc") {
                                 continue;

@@ -80,7 +80,7 @@ pub(crate) fn provide_completions(
                     is_doc_completion(&pre_line, position, &all_items.0),
                     document.line(position.line + 1),
                 ) {
-                    return item.read().unwrap().doc_completion(line);
+                    return item.read().doc_completion(line);
                 }
                 return None;
             }
@@ -123,7 +123,7 @@ pub(crate) fn resolve_completion_item(
     let mut completion_item = completion_item;
     let key = completion_item.data.clone()?;
     if let Some(sp_item) = store.get_item_from_key(key.to_string().replace('"', "")) {
-        let sp_item = &*sp_item.read().unwrap();
+        let sp_item = &*sp_item.read();
         completion_item.detail = Some(sp_item.formatted_text());
         completion_item.documentation = sp_item.documentation();
         return Some(completion_item);

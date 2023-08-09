@@ -1,13 +1,11 @@
-use std::{
-    str::Utf8Error,
-    sync::{Arc, RwLock},
-};
-
 use anyhow::Context;
 use fxhash::FxHashSet;
+use parking_lot::RwLock;
 use regex::Regex;
+use std::{str::Utf8Error, sync::Arc};
 use tree_sitter::{Node, QueryCursor};
 
+use super::VARIABLE_QUERY;
 use crate::{
     document::{Document, Walker},
     providers::hover::description::Description,
@@ -19,8 +17,6 @@ use crate::{
     },
     utils::ts_range_to_lsp_range,
 };
-
-use super::VARIABLE_QUERY;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 struct FunctionAttributes<'a> {
@@ -195,12 +191,12 @@ impl Document {
             function_item.clone(),
         );
         if let Some(parent) = &parent {
-            parent.write().unwrap().push_child(function_item.clone());
+            parent.write().push_child(function_item.clone());
         } else {
             self.sp_items.push(function_item.clone());
         }
         self.declarations
-            .insert(function_item.clone().read().unwrap().key(), function_item);
+            .insert(function_item.clone().read().key(), function_item);
 
         Ok(())
     }
@@ -285,7 +281,7 @@ impl Document {
             references: vec![],
         };
         let variable_item = Arc::new(RwLock::new(SPItem::Variable(variable_item)));
-        function_item.write().unwrap().push_child(variable_item);
+        function_item.write().push_child(variable_item);
 
         let parameter = Parameter {
             name: name.to_string(),
@@ -296,7 +292,6 @@ impl Document {
         };
         function_item
             .write()
-            .unwrap()
             .push_param(Arc::new(RwLock::new(parameter)));
 
         Ok(())

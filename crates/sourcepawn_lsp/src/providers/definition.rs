@@ -15,7 +15,7 @@ pub fn provide_definition(
     }
     let mut definitions = vec![];
     for item in items.iter() {
-        match item.read().unwrap().to_definition(&params) {
+        match item.read().to_definition(&params) {
             Some(definition) => definitions.push(definition),
             None => {
                 continue;

@@ -21,7 +21,7 @@ pub fn prepare(
         return None;
     }
 
-    let item = items[0].read().unwrap();
+    let item = items[0].read();
     if let SPItem::Function(function_item) = &*item {
         Some(vec![function_item.to_call_hierarchy()])
     } else {
@@ -42,10 +42,10 @@ pub fn outgoing(
     }
 
     let mut outgoing_calls = vec![];
-    let origin_item = &*items[0].read().unwrap();
+    let origin_item = &*items[0].read();
     if let SPItem::Function(function_origin_item) = origin_item {
         for item in store.get_all_items(true).0.iter() {
-            if let SPItem::Function(function_item) = &*item.read().unwrap() {
+            if let SPItem::Function(function_item) = &*item.read() {
                 let mut from_ranges = vec![];
                 for reference in function_item.references.iter() {
                     if range_contains_range(&function_origin_item.full_range, &reference.range)
@@ -82,10 +82,10 @@ pub fn incoming(
     }
 
     let mut incoming_calls = vec![];
-    let origin_item = &*items[0].read().unwrap();
+    let origin_item = &*items[0].read();
     if let SPItem::Function(function_origin_item) = origin_item {
         for item in store.get_all_items(true).0.iter() {
-            if let SPItem::Function(function_item) = &*item.read().unwrap() {
+            if let SPItem::Function(function_item) = &*item.read() {
                 let mut from_ranges = vec![];
                 for reference in function_origin_item.references.iter() {
                     if range_contains_range(&function_item.full_range, &reference.range)

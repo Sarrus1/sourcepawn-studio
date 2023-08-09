@@ -19,7 +19,6 @@ pub fn provide_signature_help(store: &Store, params: SignatureHelpParams) -> Opt
     for item in items {
         let signature_help = item
             .read()
-            .unwrap()
             .to_signature_help(signature_attributes.parameter_count);
         if let Some(signature_help) = signature_help {
             signatures.push(signature_help);

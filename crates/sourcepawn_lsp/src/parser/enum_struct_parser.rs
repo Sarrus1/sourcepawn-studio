@@ -1,4 +1,5 @@
-use std::sync::{Arc, RwLock};
+use parking_lot::RwLock;
+use std::sync::Arc;
 
 use anyhow::Context;
 use tree_sitter::Node;
@@ -44,10 +45,8 @@ impl Document {
         let enum_struct_item = Arc::new(RwLock::new(SPItem::EnumStruct(enum_struct_item)));
         self.parse_enum_struct_members(node, enum_struct_item.clone(), walker);
         self.sp_items.push(enum_struct_item.clone());
-        self.declarations.insert(
-            enum_struct_item.clone().read().unwrap().key(),
-            enum_struct_item,
-        );
+        self.declarations
+            .insert(enum_struct_item.clone().read().key(), enum_struct_item);
 
         Ok(())
     }
@@ -125,10 +124,7 @@ impl Document {
         let enum_struct_field_item =
             Arc::new(RwLock::new(SPItem::Variable(enum_struct_field_item)));
 
-        enum_struct_item
-            .write()
-            .unwrap()
-            .push_child(enum_struct_field_item);
+        enum_struct_item.write().push_child(enum_struct_field_item);
 
         Ok(())
     }

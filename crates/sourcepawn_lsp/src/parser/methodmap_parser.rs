@@ -1,4 +1,5 @@
-use std::sync::{Arc, RwLock};
+use parking_lot::RwLock;
+use std::sync::Arc;
 
 use anyhow::Context;
 use tree_sitter::Node;
@@ -46,7 +47,7 @@ impl Document {
         let _ = self.read_methodmap_members(node, methodmap_item.clone(), walker);
         self.sp_items.push(methodmap_item.clone());
         self.declarations
-            .insert(methodmap_item.clone().read().unwrap().key(), methodmap_item);
+            .insert(methodmap_item.clone().read().key(), methodmap_item);
 
         Ok(())
     }

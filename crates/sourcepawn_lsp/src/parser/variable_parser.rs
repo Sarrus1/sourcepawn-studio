@@ -1,4 +1,5 @@
-use std::sync::{Arc, RwLock};
+use parking_lot::RwLock;
+use std::sync::Arc;
 
 use anyhow::Context;
 use tree_sitter::Node;
@@ -137,11 +138,11 @@ impl Document {
         let variable_item = Arc::new(RwLock::new(SPItem::Variable(variable_item)));
         if let Some(parent) = parent {
             // Don't add the variable item as a declaration if it's a local variable.
-            parent.write().unwrap().push_child(variable_item);
+            parent.write().push_child(variable_item);
         } else {
             self.sp_items.push(variable_item.clone());
             self.declarations
-                .insert(variable_item.clone().read().unwrap().key(), variable_item);
+                .insert(variable_item.clone().read().key(), variable_item);
         }
 
         Ok(())

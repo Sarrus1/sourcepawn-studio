@@ -1,9 +1,7 @@
-use std::{
-    str::Utf8Error,
-    sync::{Arc, RwLock},
-};
-
 use anyhow::Context;
+use lsp_types::{Position, Range};
+use parking_lot::RwLock;
+use std::{str::Utf8Error, sync::Arc};
 use tree_sitter::Node;
 
 use crate::{
@@ -12,8 +10,6 @@ use crate::{
     spitem::{enum_item::EnumItem, enum_member_item::EnumMemberItem, SPItem},
     utils::ts_range_to_lsp_range,
 };
-
-use lsp_types::{Position, Range};
 
 impl Document {
     pub(crate) fn parse_enum(
@@ -53,7 +49,7 @@ impl Document {
         }
         self.sp_items.push(enum_item.clone());
         self.declarations
-            .insert(enum_item.clone().read().unwrap().key(), enum_item);
+            .insert(enum_item.clone().read().key(), enum_item);
 
         Ok(())
     }
@@ -103,7 +99,7 @@ impl Document {
                 }
                 "comment" => {
                     walker.push_comment(child, &self.preprocessed_text);
-                    walker.push_inline_comment(enum_item.read().unwrap().children().unwrap());
+                    walker.push_inline_comment(enum_item.read().children().unwrap());
                 }
                 "preproc_pragma" => {
                     let _ = walker.push_deprecated(child, &self.preprocessed_text);
@@ -132,7 +128,6 @@ impl Document {
         };
         enum_item
             .write()
-            .unwrap()
             .push_child(Arc::new(RwLock::new(SPItem::EnumMember(enum_member_item))));
 
         Ok(())

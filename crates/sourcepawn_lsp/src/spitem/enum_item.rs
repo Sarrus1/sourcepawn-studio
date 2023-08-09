@@ -1,4 +1,5 @@
-use std::sync::{Arc, RwLock};
+use parking_lot::RwLock;
+use std::sync::Arc;
 
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionParams,
@@ -71,7 +72,7 @@ impl EnumItem {
         }
 
         for child in &self.children {
-            res.extend(child.read().unwrap().to_completions(params, request_method));
+            res.extend(child.read().to_completions(params, request_method));
         }
 
         res
@@ -128,7 +129,7 @@ impl EnumItem {
             children: Some(
                 self.children
                     .iter()
-                    .filter_map(|child| child.read().unwrap().to_document_symbol())
+                    .filter_map(|child| child.read().to_document_symbol())
                     .collect(),
             ),
         })

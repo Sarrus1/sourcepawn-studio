@@ -12,7 +12,7 @@ pub fn provide_rename(store: &Store, params: RenameParams) -> Option<WorkspaceEd
     if items.len() != 1 {
         return None;
     }
-    let item = items[0].read().unwrap();
+    let item = items[0].read();
 
     let mut changes = HashMap::new();
     changes.insert(

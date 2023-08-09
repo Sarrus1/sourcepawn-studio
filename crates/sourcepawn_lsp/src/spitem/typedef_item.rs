@@ -1,13 +1,13 @@
-use std::sync::{Arc, RwLock, Weak};
-
-use super::{parameter::Parameter, Location, SPItem};
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionItemTag,
     CompletionParams, CompletionTextEdit, DocumentSymbol, GotoDefinitionParams, Hover,
     HoverContents, HoverParams, InsertTextFormat, LanguageString, LocationLink, MarkedString,
     Range, SymbolKind, SymbolTag, TextEdit, Url,
 };
+use parking_lot::RwLock;
+use std::sync::{Arc, Weak};
 
+use super::{parameter::Parameter, Location, SPItem};
 use crate::{providers::hover::description::Description, utils::uri_to_file_name};
 
 #[derive(Debug, Clone)]
@@ -150,7 +150,7 @@ impl TypedefItem {
 
         let mut snippet_text = format!("{} ${{1:name}}(", self.type_);
         for (i, parameter) in self.params.iter().enumerate() {
-            let parameter = parameter.read().unwrap();
+            let parameter = parameter.read();
             if parameter.is_const {
                 snippet_text.push_str("const ");
             }
@@ -197,11 +197,7 @@ impl TypedefItem {
     /// Return a key to be used as a unique identifier in a map containing all the items.
     pub(crate) fn key(&self) -> String {
         match &self.parent {
-            Some(parent) => format!(
-                "{}-{}",
-                parent.upgrade().unwrap().read().unwrap().key(),
-                self.name
-            ),
+            Some(parent) => format!("{}-{}", parent.upgrade().unwrap().read().key(), self.name),
             None => self.name.clone(),
         }
     }

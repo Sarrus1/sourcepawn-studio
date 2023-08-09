@@ -1,4 +1,5 @@
-use std::sync::{Arc, RwLock};
+use parking_lot::RwLock;
+use std::sync::Arc;
 
 use crate::spitem::SPItem;
 
@@ -11,7 +12,7 @@ impl Iterator for Inherit {
 
     fn next(&mut self) -> Option<Self::Item> {
         let item = self.item.clone()?;
-        let item = item.read().unwrap();
+        let item = item.read();
         match &*item {
             SPItem::Methodmap(inherit) => match &inherit.parent {
                 Some(parent) => {
@@ -28,7 +29,7 @@ impl Iterator for Inherit {
 pub(super) fn find_inherit(all_items: &[Arc<RwLock<SPItem>>], parent: &SPItem) -> Inherit {
     let mut inherit = None;
     for item_ in all_items.iter() {
-        let item_lock = item_.read().unwrap();
+        let item_lock = item_.read();
         if let SPItem::Methodmap(mm_item) = &*item_lock {
             if mm_item.name == parent.type_() {
                 inherit = Some(item_.clone());

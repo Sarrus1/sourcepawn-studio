@@ -1,7 +1,3 @@
-use std::cmp;
-use std::sync::{Arc, RwLock, Weak};
-
-use super::{parameter::Parameter, Location};
 use fxhash::FxHashSet;
 use lsp_types::{
     CallHierarchyItem, CompletionItem, CompletionItemKind, CompletionItemLabelDetails,
@@ -10,11 +6,14 @@ use lsp_types::{
     LanguageString, LocationLink, MarkedString, MarkupContent, ParameterInformation, Position,
     Range, SignatureInformation, SymbolKind, SymbolTag, TextEdit, Url,
 };
-
-use crate::providers::hover::description::Description;
-use crate::utils::uri_to_file_name;
+use parking_lot::RwLock;
+use std::cmp;
+use std::sync::{Arc, Weak};
 
 use super::SPItem;
+use super::{parameter::Parameter, Location};
+use crate::providers::hover::description::Description;
+use crate::utils::uri_to_file_name;
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a first order SourcePawn function, which can be converted to a
@@ -91,7 +90,7 @@ impl FunctionItem {
         let mut res = vec![];
 
         for child in &self.children {
-            res.extend(child.read().unwrap().to_completions(params, request_method));
+            res.extend(child.read().to_completions(params, request_method));
         }
 
         // Don't return a method if non method items are requested.
@@ -161,7 +160,7 @@ impl FunctionItem {
     pub(crate) fn to_signature_help(&self, parameter_count: u32) -> Option<SignatureInformation> {
         let mut parameters: Vec<ParameterInformation> = vec![];
         for param in self.params.iter() {
-            let param = param.read().unwrap();
+            let param = param.read();
             parameters.push(ParameterInformation {
                 label: lsp_types::ParameterLabel::Simple(param.name.to_string()),
                 documentation: Some(Documentation::String(param.description.text.to_string())),
@@ -200,7 +199,7 @@ impl FunctionItem {
             children: Some(
                 self.children
                     .iter()
-                    .filter_map(|child| child.read().unwrap().to_document_symbol())
+                    .filter_map(|child| child.read().to_document_symbol())
                     .collect(),
             ),
         })
@@ -224,7 +223,7 @@ impl FunctionItem {
 
         let mut snippet_text = format!("public {} {}(", self.type_, self.name);
         for (i, parameter) in self.params.iter().enumerate() {
-            let parameter = parameter.read().unwrap();
+            let parameter = parameter.read();
             if parameter.is_const {
                 snippet_text.push_str("const ");
             }
@@ -289,7 +288,7 @@ impl FunctionItem {
             snippet_text.push_str(format!("{} *\n", indent).as_str());
         }
         for (i, param) in self.params.iter().enumerate() {
-            let name = param.read().unwrap().name.clone();
+            let name = param.read().name.clone();
             snippet_text.push_str(
                 format!(
                     "{} * @param {}{}    ${{{}:Param description}}\n",
@@ -344,7 +343,7 @@ impl FunctionItem {
     pub(crate) fn symbol_kind(&self) -> SymbolKind {
         let mut kind = SymbolKind::FUNCTION;
         if let Some(parent) = &self.parent {
-            match &*parent.upgrade().unwrap().read().unwrap() {
+            match &*parent.upgrade().unwrap().read() {
                 SPItem::EnumStruct(_) => kind = SymbolKind::METHOD,
                 SPItem::Methodmap(mm_item) => {
                     if mm_item.name == self.name {
@@ -381,11 +380,7 @@ impl FunctionItem {
     /// Return a key to be used as a unique identifier in a map containing all the items.
     pub(crate) fn key(&self) -> String {
         match &self.parent {
-            Some(parent) => format!(
-                "{}-{}",
-                parent.upgrade().unwrap().read().unwrap().key(),
-                self.name
-            ),
+            Some(parent) => format!("{}-{}", parent.upgrade().unwrap().read().key(), self.name),
             None => self.name.clone(),
         }
     }
@@ -393,7 +388,7 @@ impl FunctionItem {
     /// Return whether or not the method is a methodmap constructor.
     pub(crate) fn is_ctor(&self) -> bool {
         if let Some(parent) = &self.parent {
-            if let SPItem::Methodmap(mm_item) = &*parent.upgrade().unwrap().read().unwrap() {
+            if let SPItem::Methodmap(mm_item) = &*parent.upgrade().unwrap().read() {
                 return mm_item.name == self.name;
             }
         }
@@ -404,7 +399,7 @@ impl FunctionItem {
     pub(crate) fn longest_param(&self) -> usize {
         let mut max = 0;
         for param in self.params.iter() {
-            max = cmp::max(max, param.read().unwrap().name.len());
+            max = cmp::max(max, param.read().name.len());
         }
 
         max

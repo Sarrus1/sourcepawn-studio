@@ -19,7 +19,7 @@ impl SemanticTokensBuilder {
             }
         }
         enum_item.children.iter().for_each(|child| {
-            if let SPItem::EnumMember(enum_member_item) = &*child.read().unwrap() {
+            if let SPItem::EnumMember(enum_member_item) = &*child.read() {
                 self.build_enum_member(enum_member_item, uri)
                     .unwrap_or_default();
             }

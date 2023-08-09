@@ -1,15 +1,14 @@
-use std::sync::{Arc, RwLock, Weak};
-
-use super::Location;
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionItemTag,
     CompletionParams, DocumentSymbol, GotoDefinitionParams, Hover, HoverContents, HoverParams,
     LanguageString, LocationLink, MarkedString, Range, SymbolKind, SymbolTag, Url,
 };
+use parking_lot::RwLock;
+use std::sync::{Arc, Weak};
 
-use crate::providers::hover::description::Description;
-
+use super::Location;
 use super::SPItem;
+use crate::providers::hover::description::Description;
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a SourcePawn property, which can be converted to a
@@ -80,7 +79,7 @@ impl PropertyItem {
                 detail: Some(self.type_.clone()),
                 description: Some(format!(
                     "{}::{}",
-                    self.parent.upgrade().unwrap().read().unwrap().name(),
+                    self.parent.upgrade().unwrap().read().name(),
                     self.name
                 )),
             }),
@@ -146,7 +145,7 @@ impl PropertyItem {
     pub(crate) fn key(&self) -> String {
         format!(
             "{}-{}",
-            self.parent.upgrade().unwrap().read().unwrap().key(),
+            self.parent.upgrade().unwrap().read().key(),
             self.name
         )
     }
@@ -159,7 +158,7 @@ impl PropertyItem {
     pub(crate) fn formatted_text(&self) -> String {
         format!(
             "{} {}",
-            self.parent.upgrade().unwrap().read().unwrap().name(),
+            self.parent.upgrade().unwrap().read().name(),
             self.name
         )
     }

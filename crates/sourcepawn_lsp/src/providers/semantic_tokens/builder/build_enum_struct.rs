@@ -23,7 +23,7 @@ impl SemanticTokensBuilder {
             }
         }
         es_item.children.iter().for_each(|child| {
-            match &*child.read().unwrap() {
+            match &*child.read() {
                 SPItem::Function(method_item) => self.build_method(method_item, uri, ""),
                 SPItem::Variable(es_field) => self.build_es_field(es_field, uri),
                 _ => Ok(()),

@@ -1,16 +1,15 @@
-use std::sync::{Arc, RwLock, Weak};
-
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionItemTag,
     CompletionParams, DocumentSymbol, Hover, HoverContents, HoverParams, LanguageString,
     MarkedString, Range, SymbolKind, SymbolTag, Url,
 };
 use lsp_types::{GotoDefinitionParams, LocationLink};
-
-use crate::providers::hover::description::Description;
+use parking_lot::RwLock;
+use std::sync::{Arc, Weak};
 
 use super::Location;
 use super::SPItem;
+use crate::providers::hover::description::Description;
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a SourcePawn enum member.
@@ -56,13 +55,13 @@ impl EnumMemberItem {
             label_details: Some(CompletionItemLabelDetails {
                 detail: None,
                 description: {
-                    let name = self.parent.upgrade().unwrap().read().unwrap().name();
+                    let name = self.parent.upgrade().unwrap().read().name();
                     if name.starts_with("Enum#") {
                         None
                     } else {
                         Some(format!(
                             "{}::{}",
-                            self.parent.upgrade().unwrap().read().unwrap().name(),
+                            self.parent.upgrade().unwrap().read().name(),
                             self.name
                         ))
                     }
@@ -137,7 +136,7 @@ impl EnumMemberItem {
     /// `Plugin_Continue`
     pub(crate) fn formatted_text(&self) -> String {
         let mut value = "".to_string();
-        if let SPItem::Enum(parent) = &*self.parent.upgrade().unwrap().read().unwrap() {
+        if let SPItem::Enum(parent) = &*self.parent.upgrade().unwrap().read() {
             if parent.name.contains('#') {
                 value = self.name.clone()
             } else {

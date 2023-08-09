@@ -37,7 +37,7 @@ pub fn provide_semantic_tokens(
     }));
 
     for item in all_items.iter() {
-        let item_lock = item.read().unwrap();
+        let item_lock = item.read();
         match &*item_lock {
             SPItem::Enum(enum_item) => builder.build_enum(enum_item, &params.text_document.uri),
             SPItem::Variable(variable_item) => {
