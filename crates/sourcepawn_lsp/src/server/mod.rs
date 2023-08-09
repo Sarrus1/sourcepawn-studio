@@ -108,7 +108,7 @@ impl Server {
     }
 
     pub fn pull_config(&self) {
-        if !self.client_capabilities.has_push_configuration_support() {
+        if !self.client_capabilities.has_pull_configuration_support() {
             log::trace!("Client does not have pull configuration support.");
             return;
         }
