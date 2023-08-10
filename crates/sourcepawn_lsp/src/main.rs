@@ -89,7 +89,6 @@ fn setup_logger(opts: Opts) {
             ))
         })
         .level(verbosity_level)
-        .filter(|metadata| metadata.target().contains("sourcepawn_lsp"))
         .chain(io::stderr());
 
     let logger = match opts.log_file {

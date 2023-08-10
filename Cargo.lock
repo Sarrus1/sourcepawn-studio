@@ -1031,6 +1031,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0717cef1bc8b636c6e1c1bbdefc09e6322da8a9321966e8928ef80d20f7f770f"
 
 [[package]]
+name = "linter"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fxhash",
+ "lazy_static",
+ "log",
+ "lsp-types",
+ "parking_lot",
+ "regex",
+ "serde",
+ "serde_json",
+ "syntax",
+ "tree-sitter",
+ "tree-sitter-sourcepawn",
+ "uuid",
+]
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1299,6 +1318,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ceedf44fb00f2d1984b0bc98102627ce622e083e49a5bacdb3e514fa4238e267"
 
 [[package]]
+name = "parking_lot"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3742b2c103b9f06bc9fff0a37ff4912935851bee6d36f3c02bcc755bcfec228f"
+dependencies = [
+ "lock_api",
+ "parking_lot_core",
+]
+
+[[package]]
 name = "parking_lot_core"
 version = "0.9.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1309,6 +1338,23 @@ dependencies = [
  "redox_syscall 0.2.16",
  "smallvec",
  "windows-sys 0.45.0",
+]
+
+[[package]]
+name = "parser"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fxhash",
+ "lazy_static",
+ "log",
+ "lsp-types",
+ "parking_lot",
+ "preprocessor",
+ "regex",
+ "syntax",
+ "tree-sitter",
+ "tree-sitter-sourcepawn",
 ]
 
 [[package]]
@@ -1412,6 +1458,18 @@ name = "ppv-lite86"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
+
+[[package]]
+name = "preprocessor"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fxhash",
+ "lazy_static",
+ "lsp-types",
+ "regex",
+ "sourcepawn_lexer",
+]
 
 [[package]]
 name = "proc-macro2"
@@ -1657,6 +1715,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "semantic_analyzer"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fxhash",
+ "lazy_static",
+ "log",
+ "lsp-types",
+ "parking_lot",
+ "parser",
+ "preprocessor",
+ "regex",
+ "syntax",
+ "tree-sitter",
+]
+
+[[package]]
 name = "semver"
 version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1895,19 +1970,23 @@ dependencies = [
  "insta",
  "itertools 0.11.0",
  "lazy_static",
+ "linter",
  "log",
  "lsp-server",
  "lsp-types",
  "notify",
  "openssl",
+ "parking_lot",
+ "preprocessor",
  "regex",
  "rowan",
+ "semantic_analyzer",
  "sentry",
  "serde",
  "serde_json",
  "sourcepawn_lexer",
- "sourcepawn_preprocessor",
- "strip_bom",
+ "store",
+ "syntax",
  "tempfile",
  "threadpool",
  "tree-sitter",
@@ -1917,15 +1996,28 @@ dependencies = [
 ]
 
 [[package]]
-name = "sourcepawn_preprocessor"
+name = "store"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "fxhash",
  "lazy_static",
+ "linter",
+ "log",
  "lsp-types",
+ "notify",
+ "parking_lot",
+ "parser",
+ "preprocessor",
  "regex",
- "sourcepawn_lexer",
+ "semantic_analyzer",
+ "serde",
+ "serde_json",
+ "strip_bom",
+ "syntax",
+ "tree-sitter",
+ "tree-sitter-sourcepawn",
+ "walkdir",
 ]
 
 [[package]]
@@ -1960,6 +2052,22 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "syntax"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fxhash",
+ "lazy_static",
+ "log",
+ "lsp-types",
+ "parking_lot",
+ "regex",
+ "serde",
+ "serde_json",
+ "tree-sitter",
 ]
 
 [[package]]

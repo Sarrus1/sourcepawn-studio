@@ -1,19 +1,12 @@
-use std::sync::Arc;
-
-use crate::{dispatch, lsp_ext, providers::FeatureRequest};
-
-use lsp_server::{Request, RequestId};
-use lsp_types::{
-    request::{
-        CallHierarchyIncomingCalls, CallHierarchyOutgoingCalls, CallHierarchyPrepare, Completion,
-        DocumentSymbolRequest, GotoDefinition, HoverRequest, References, Rename,
-        ResolveCompletionItem, SemanticTokensFullRequest, SignatureHelpRequest,
-    },
-    Url,
+use lsp_server::Request;
+use lsp_types::request::{
+    CallHierarchyIncomingCalls, CallHierarchyOutgoingCalls, CallHierarchyPrepare, Completion,
+    DocumentSymbolRequest, GotoDefinition, HoverRequest, References, Rename, ResolveCompletionItem,
+    SemanticTokensFullRequest, SignatureHelpRequest,
 };
-use serde::Serialize;
 
 use crate::Server;
+use crate::{dispatch, lsp_ext};
 
 mod call_hierarchy;
 mod completion;
@@ -52,50 +45,6 @@ impl Server {
         {
             self.connection.sender.send(response.into())?;
         }
-
-        Ok(())
-    }
-
-    pub(super) fn handle_feature_request<P, R, H>(
-        &self,
-        id: RequestId,
-        params: P,
-        uri: Arc<Url>,
-        handler: H,
-    ) -> anyhow::Result<()>
-    where
-        P: Send + 'static,
-        R: Serialize,
-        H: FnOnce(FeatureRequest<P>) -> R + Send + 'static,
-    {
-        self.spawn(move |server| {
-            let request = server.feature_request(uri, params);
-            if request.store.iter().next().is_none() {
-                let code = lsp_server::ErrorCode::InvalidRequest as i32;
-                let message = "unknown document".to_string();
-                let response = lsp_server::Response::new_err(id, code, message);
-                match server.connection.sender.send(response.into()) {
-                    Ok(_) => {}
-                    Err(error) => {
-                        log::error!("Failed to send response: {}", error);
-                    }
-                }
-            } else {
-                let result = handler(request);
-                match server
-                    .connection
-                    .sender
-                    .send(lsp_server::Response::new_ok(id, result).into())
-                {
-                    Ok(_) => {
-                        log::trace!("Response sent.");
-                    }
-                    Err(error) => {
-                        log::error!("Failed to send response: {}", error);
-                    }
-                }
-            }
-        });
 
         Ok(())
     }

@@ -1,15 +1,16 @@
 use lsp_types::Url;
 use notify::Watcher;
+use store::normalize_uri;
 use walkdir::WalkDir;
 
-use crate::{utils, Server};
+use crate::Server;
 
 impl Server {
     pub(crate) fn handle_file_event(&mut self, event: notify::Event) {
         match event.kind {
             notify::EventKind::Create(_) => {
                 for path in event.paths {
-                    let _ = self.store.load(path, &mut self.parser);
+                    let _ = self.store.write().load(path, &mut self.parser);
                 }
                 self.reload_diagnostics();
             }
@@ -19,18 +20,19 @@ impl Server {
                     return;
                 }
                 let mut uri = uri.unwrap();
-                utils::normalize_uri(&mut uri);
+                normalize_uri(&mut uri);
                 match modify_event {
                     notify::event::ModifyKind::Name(_) => {
                         if event.paths[0].is_dir()
                             && self
                                 .store
+                                .read()
                                 .environment
                                 .options
                                 .is_parent_of_include_dir(&event.paths[0])
                         {
                             // The path of one of the watched directory has changed. We must unwatch it.
-                            if let Some(watcher) = &self.store.watcher {
+                            if let Some(watcher) = &self.store.read().watcher {
                                 watcher
                                     .lock()
                                     .unwrap()
@@ -44,8 +46,8 @@ impl Server {
                             return;
                         }
                         let mut uri = uri.unwrap();
-                        utils::normalize_uri(&mut uri);
-                        let mut uris = self.store.get_all_files_in_folder(&uri);
+                        normalize_uri(&mut uri);
+                        let mut uris = self.store.write().get_all_files_in_folder(&uri);
                         if uris.is_empty() {
                             if event.paths[0].is_dir() {
                                 // The second notification of a folder rename causes an empty vector.
@@ -68,19 +70,21 @@ impl Server {
                             }
                         }
                         for uri in uris.iter() {
-                            if self.store.documents.contains_key(uri) {
-                                self.store.remove(uri, &mut self.parser);
+                            if self.store.read().documents.contains_key(uri) {
+                                self.store.write().remove(uri, &mut self.parser);
                             } else {
                                 let _ = self
                                     .store
+                                    .write()
                                     .load(uri.to_file_path().unwrap(), &mut self.parser);
                             }
                         }
                     }
                     _ => {
-                        if self.store.documents.contains_key(&uri) {
+                        if self.store.read().documents.contains_key(&uri) {
                             let _ = self
                                 .store
+                                .write()
                                 .reload(uri.to_file_path().unwrap(), &mut self.parser);
                         }
                     }
@@ -89,8 +93,8 @@ impl Server {
             }
             notify::EventKind::Remove(_) => {
                 for mut uri in event.paths.iter().flat_map(Url::from_file_path) {
-                    utils::normalize_uri(&mut uri);
-                    self.store.remove(&uri, &mut self.parser);
+                    normalize_uri(&mut uri);
+                    self.store.write().remove(&uri, &mut self.parser);
                 }
                 self.reload_diagnostics();
             }

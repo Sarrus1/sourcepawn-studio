@@ -1,10 +1,8 @@
-use std::fs;
-
 use lazy_static::lazy_static;
-use lsp_types::{CompletionItem, CompletionItemKind, CompletionList, CompletionParams, Url};
+use lsp_types::{CompletionItem, CompletionItemKind, CompletionList, Url};
 use regex::Regex;
-
-use super::FeatureRequest;
+use std::fs;
+use store::Store;
 
 pub(super) struct IncludeStatement {
     /// Text inside of the include statement, excluding the traling quotation marks or chevrons.
@@ -45,14 +43,10 @@ pub(super) fn is_include_statement(pre_line: &str) -> Option<IncludeStatement> {
 ///
 /// * `sub_line` - Sub line to process.
 pub(super) fn get_include_completions(
-    request: FeatureRequest<CompletionParams>,
+    store: &Store,
     include_st: IncludeStatement,
 ) -> Option<CompletionList> {
-    let include_paths = request
-        .store
-        .environment
-        .options
-        .get_all_possible_include_folders();
+    let include_paths = store.environment.options.get_all_possible_include_folders();
 
     let mut inc_uri_folders: Vec<Url> = vec![];
     for inc_path in include_paths {
@@ -62,7 +56,7 @@ pub(super) fn get_include_completions(
     }
 
     let mut items = vec![];
-    get_include_file_completions(request, &include_st, &inc_uri_folders, &mut items);
+    get_include_file_completions(store, &include_st, &inc_uri_folders, &mut items);
     get_include_folder_completions(&include_st, &inc_uri_folders, &mut items);
 
     Some(CompletionList {
@@ -76,12 +70,12 @@ pub(super) fn get_include_completions(
 ///
 /// # Arguments
 ///
-/// * `request` - Associated [FeatureRequest<CompletionParams>](FeatureRequest<CompletionParams>).
+/// * `store` -
 /// * `include_st` - [IncludeStatement] to base the request off of.
 /// * `inc_uri_folders` - Vector of folder [uris](lsp_types::Url) into which to look for includes.
 /// * `items` - Vector of [CompletionItem](lsp_types::CompletionItem) to mutate.
 fn get_include_file_completions(
-    request: FeatureRequest<CompletionParams>,
+    store: &Store,
     include_st: &IncludeStatement,
     inc_uri_folders: &[Url],
     items: &mut Vec<CompletionItem>,
@@ -93,7 +87,7 @@ fn get_include_file_completions(
     // Extract everything that has already been typed in the statement.
     let typed_path = RE1.replace(&include_st.text, "$a").to_string();
 
-    for inc_uri in request.store.documents.keys() {
+    for inc_uri in store.documents.keys() {
         for inc_uri_folder in inc_uri_folders.iter() {
             if !inc_uri
                 .to_string()

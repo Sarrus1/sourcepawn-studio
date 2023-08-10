@@ -1,25 +1,14 @@
 use lsp_types::{Location, ReferenceParams};
+use store::Store;
 
-use super::FeatureRequest;
-
-/// Build a vector of [Locations](lsp_types::Location) from a [ReferenceParams](lsp_types::ReferenceParams).
-///
-/// # Arguments
-///
-/// * `request` - Reference request object [FeatureRequest<ReferenceParams>].
-pub fn provide_reference(request: FeatureRequest<ReferenceParams>) -> Option<Vec<Location>> {
-    let items = &request.store.get_items_from_position(
-        request.params.text_document_position.position,
-        request
-            .params
-            .text_document_position
-            .text_document
-            .uri
-            .clone(),
+pub fn provide_reference(store: &Store, params: ReferenceParams) -> Option<Vec<Location>> {
+    let items = &store.get_items_from_position(
+        params.text_document_position.position,
+        &params.text_document_position.text_document.uri,
     );
     let mut locations = vec![];
     for item in items {
-        let item = item.read().unwrap();
+        let item = item.read();
         let references = item.references();
         if let Some(references) = references {
             locations.extend(references.clone());

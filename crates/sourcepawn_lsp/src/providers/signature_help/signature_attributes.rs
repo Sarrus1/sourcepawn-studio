@@ -1,7 +1,8 @@
 use lsp_types::Position;
 use sourcepawn_lexer::{SourcepawnLexer, Symbol, TokenKind};
+use store::document::Document;
 
-use crate::{document::Document, utils::range_to_position_average};
+use crate::utils::range_to_position_average;
 
 #[derive(Debug, Default)]
 pub(crate) struct SignatureAttributes {

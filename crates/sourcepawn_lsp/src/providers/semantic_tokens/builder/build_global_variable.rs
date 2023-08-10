@@ -1,8 +1,5 @@
-use std::sync::Arc;
-
 use lsp_types::{SemanticTokenModifier, SemanticTokenType, Url};
-
-use crate::spitem::variable_item::VariableItem;
+use syntax::variable_item::VariableItem;
 
 use super::SemanticTokensBuilder;
 
@@ -10,9 +7,9 @@ impl SemanticTokensBuilder {
     pub(crate) fn build_global_variable(
         &mut self,
         variable_item: &VariableItem,
-        uri: &Arc<Url>,
+        uri: &Url,
     ) -> anyhow::Result<()> {
-        if variable_item.uri.eq(uri) {
+        if *variable_item.uri == *uri {
             self.push(
                 variable_item.v_range,
                 SemanticTokenType::VARIABLE,
@@ -20,7 +17,7 @@ impl SemanticTokensBuilder {
             )?;
         }
         for ref_ in variable_item.references.iter() {
-            if ref_.uri.eq(uri) {
+            if *ref_.uri == *uri {
                 self.push(
                     ref_.v_range,
                     SemanticTokenType::VARIABLE,

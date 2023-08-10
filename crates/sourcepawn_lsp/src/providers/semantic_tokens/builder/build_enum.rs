@@ -1,18 +1,11 @@
-use std::sync::Arc;
-
 use lsp_types::{SemanticTokenModifier, SemanticTokenType, Url};
-
-use crate::spitem::{enum_item::EnumItem, SPItem};
+use syntax::{enum_item::EnumItem, SPItem};
 
 use super::SemanticTokensBuilder;
 
 impl SemanticTokensBuilder {
-    pub(crate) fn build_enum(
-        &mut self,
-        enum_item: &EnumItem,
-        uri: &Arc<Url>,
-    ) -> anyhow::Result<()> {
-        if enum_item.uri.eq(uri) {
+    pub(crate) fn build_enum(&mut self, enum_item: &EnumItem, uri: &Url) -> anyhow::Result<()> {
+        if *enum_item.uri == *uri {
             self.push(
                 enum_item.v_range,
                 SemanticTokenType::ENUM,
@@ -20,12 +13,12 @@ impl SemanticTokensBuilder {
             )?;
         }
         for ref_ in enum_item.references.iter() {
-            if ref_.uri.eq(uri) {
+            if *ref_.uri == *uri {
                 self.push(ref_.v_range, SemanticTokenType::ENUM, None)?;
             }
         }
         enum_item.children.iter().for_each(|child| {
-            if let SPItem::EnumMember(enum_member_item) = &*child.read().unwrap() {
+            if let SPItem::EnumMember(enum_member_item) = &*child.read() {
                 self.build_enum_member(enum_member_item, uri)
                     .unwrap_or_default();
             }

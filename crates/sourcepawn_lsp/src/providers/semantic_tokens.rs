@@ -1,21 +1,18 @@
+use self::builder::SemanticTokensBuilder;
 use lsp_types::{
     SemanticTokenModifier, SemanticTokenType, SemanticTokens, SemanticTokensLegend,
     SemanticTokensParams,
 };
-
-use crate::spitem::SPItem;
-
-use self::builder::SemanticTokensBuilder;
-
-use super::FeatureRequest;
+use store::Store;
+use syntax::SPItem;
 
 mod builder;
 
 pub fn provide_semantic_tokens(
-    request: FeatureRequest<SemanticTokensParams>,
+    store: &Store,
+    params: SemanticTokensParams,
 ) -> Option<SemanticTokens> {
-    let uri = request.uri;
-    let all_items = &request.store.get_all_items(false).0;
+    let all_items = &store.get_all_items(false);
     if all_items.is_empty() {
         return None;
     }
@@ -41,14 +38,24 @@ pub fn provide_semantic_tokens(
     }));
 
     for item in all_items.iter() {
-        let item_lock = item.read().unwrap();
+        let item_lock = item.read();
         match &*item_lock {
-            SPItem::Enum(enum_item) => builder.build_enum(enum_item, &uri),
-            SPItem::Variable(variable_item) => builder.build_global_variable(variable_item, &uri),
-            SPItem::Define(define_item) => builder.build_define(define_item, &uri),
-            SPItem::Function(function_item) => builder.build_function(function_item, &uri),
-            SPItem::Methodmap(mm_item) => builder.build_methodmap(mm_item, &uri),
-            SPItem::EnumStruct(es_item) => builder.build_enum_struct(es_item, &uri),
+            SPItem::Enum(enum_item) => builder.build_enum(enum_item, &params.text_document.uri),
+            SPItem::Variable(variable_item) => {
+                builder.build_global_variable(variable_item, &params.text_document.uri)
+            }
+            SPItem::Define(define_item) => {
+                builder.build_define(define_item, &params.text_document.uri)
+            }
+            SPItem::Function(function_item) => {
+                builder.build_function(function_item, &params.text_document.uri)
+            }
+            SPItem::Methodmap(mm_item) => {
+                builder.build_methodmap(mm_item, &params.text_document.uri)
+            }
+            SPItem::EnumStruct(es_item) => {
+                builder.build_enum_struct(es_item, &params.text_document.uri)
+            }
             _ => Ok(()),
         }
         .unwrap_or_default();

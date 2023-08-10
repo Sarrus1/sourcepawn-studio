@@ -1,23 +1,15 @@
 use lsp_types::{Hover, HoverParams};
+use store::Store;
 
-use super::FeatureRequest;
-
-pub mod description;
-
-pub fn provide_hover(request: FeatureRequest<HoverParams>) -> Option<Hover> {
-    let items = &request.store.get_items_from_position(
-        request.params.text_document_position_params.position,
-        request
-            .params
-            .text_document_position_params
-            .text_document
-            .uri
-            .clone(),
+pub fn provide_hover(store: &Store, params: HoverParams) -> Option<Hover> {
+    let items = &store.get_items_from_position(
+        params.text_document_position_params.position,
+        &params.text_document_position_params.text_document.uri,
     );
     if items.is_empty() {
         return None;
     }
-    let hover = items[0].read().unwrap().to_hover(&request.params);
+    let hover = items[0].read().to_hover(&params);
 
     hover
 }

@@ -1,10 +1,9 @@
-use crate::utils;
-use std::sync::Arc;
-
 use lsp_server::RequestId;
 use lsp_types::{
     CallHierarchyIncomingCallsParams, CallHierarchyOutgoingCallsParams, CallHierarchyPrepareParams,
 };
+use std::sync::Arc;
+use store::normalize_uri;
 
 use crate::{providers, Server};
 
@@ -14,7 +13,7 @@ impl Server {
         id: RequestId,
         mut params: CallHierarchyPrepareParams,
     ) -> anyhow::Result<()> {
-        utils::normalize_uri(&mut params.text_document_position_params.text_document.uri);
+        normalize_uri(&mut params.text_document_position_params.text_document.uri);
         let uri = Arc::new(
             params
                 .text_document_position_params
@@ -23,9 +22,10 @@ impl Server {
                 .clone(),
         );
 
-        let _ = self.read_unscanned_document(uri.clone());
-
-        self.handle_feature_request(id, params, uri, providers::call_hierarchy::prepare)?;
+        let _ = self.read_unscanned_document(uri);
+        self.run_query(id, move |store| {
+            providers::call_hierarchy::prepare(store, params)
+        });
 
         Ok(())
     }
@@ -35,10 +35,11 @@ impl Server {
         id: RequestId,
         mut params: CallHierarchyOutgoingCallsParams,
     ) -> anyhow::Result<()> {
-        utils::normalize_uri(&mut params.item.uri);
-        let uri = Arc::new(params.item.uri.clone());
+        normalize_uri(&mut params.item.uri);
 
-        self.handle_feature_request(id, params, uri, providers::call_hierarchy::outgoing)?;
+        self.run_query(id, move |store| {
+            providers::call_hierarchy::outgoing(store, params)
+        });
 
         Ok(())
     }
@@ -48,10 +49,11 @@ impl Server {
         id: RequestId,
         mut params: CallHierarchyIncomingCallsParams,
     ) -> anyhow::Result<()> {
-        utils::normalize_uri(&mut params.item.uri);
-        let uri = Arc::new(params.item.uri.clone());
+        normalize_uri(&mut params.item.uri);
 
-        self.handle_feature_request(id, params, uri, providers::call_hierarchy::incoming)?;
+        self.run_query(id, move |store| {
+            providers::call_hierarchy::incoming(store, params)
+        });
 
         Ok(())
     }

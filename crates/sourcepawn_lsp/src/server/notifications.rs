@@ -1,7 +1,5 @@
-use crate::{capabilities::ClientCapabilitiesExt, dispatch, document::Document, utils};
 use std::sync::Arc;
 
-use crate::Server;
 use anyhow::bail;
 use lsp_server::Notification;
 use lsp_types::{
@@ -11,15 +9,19 @@ use lsp_types::{
     DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
     DidOpenTextDocumentParams, FileChangeType,
 };
+use store::{document::Document, normalize_uri};
+
+use crate::{capabilities::ClientCapabilitiesExt, dispatch, utils, Server};
 
 impl Server {
     pub(super) fn did_open(&mut self, mut params: DidOpenTextDocumentParams) -> anyhow::Result<()> {
-        utils::normalize_uri(&mut params.text_document.uri);
+        normalize_uri(&mut params.text_document.uri);
         let uri = Arc::new(params.text_document.uri);
 
         if !self.config_pulled {
             log::trace!("File {:?} was opened before the config was pulled.", uri);
             self.store
+                .write()
                 .documents
                 .insert(uri.clone(), Document::new(uri, params.text_document.text));
             return Ok(());
@@ -27,13 +29,14 @@ impl Server {
 
         // Don't parse the document if it has already been opened.
         // GoToDefinition request will trigger a new parse.
-        if let Some(document) = self.store.documents.get(&uri) {
+        if let Some(document) = self.store.read().documents.get(&uri) {
             if document.parsed {
                 return Ok(());
             }
         }
         let text = params.text_document.text;
         self.store
+            .write()
             .handle_open_document(&uri, text, &mut self.parser)
             .expect("Couldn't parse file");
 
@@ -44,13 +47,13 @@ impl Server {
         &mut self,
         mut params: DidChangeTextDocumentParams,
     ) -> anyhow::Result<()> {
-        utils::normalize_uri(&mut params.text_document.uri);
+        normalize_uri(&mut params.text_document.uri);
 
         let uri = Arc::new(params.text_document.uri.clone());
-        let Some(document) = self.store.get(&uri).or_else(|| {
+        let Some(document) = self.store.read().get(&uri).or_else(|| {
             // If the document was not known, read its content first.
             self.store
-                .load(uri.to_file_path().ok()?, &mut self.parser)
+                .write().load(uri.to_file_path().ok()?, &mut self.parser)
                 .ok()?
         }) else {
             bail!("Failed to apply document edit on {}", params.text_document.uri);
@@ -59,6 +62,7 @@ impl Server {
         let mut text = document.text().to_string();
         utils::apply_document_edit(&mut text, params.content_changes);
         self.store
+            .write()
             .handle_open_document(&uri, text, &mut self.parser)?;
 
         self.lint_all_documents();
@@ -71,22 +75,24 @@ impl Server {
         params: DidChangeWatchedFilesParams,
     ) -> anyhow::Result<()> {
         for mut change in params.changes {
-            utils::normalize_uri(&mut change.uri);
+            normalize_uri(&mut change.uri);
             match change.typ {
                 FileChangeType::CHANGED => {
                     let _ = self
                         .store
+                        .write()
                         .reload(change.uri.to_file_path().unwrap(), &mut self.parser);
                     self.reload_diagnostics();
                 }
                 FileChangeType::DELETED => {
-                    self.store.remove(&change.uri, &mut self.parser);
+                    self.store.write().remove(&change.uri, &mut self.parser);
                     self.reload_diagnostics();
                 }
                 FileChangeType::CREATED => {
                     if let Ok(path) = change.uri.to_file_path() {
                         let _ = self
                             .store
+                            .write()
                             .load(path.as_path().to_path_buf(), &mut self.parser);
                         self.reload_diagnostics();
                     }
@@ -102,18 +108,11 @@ impl Server {
         &mut self,
         params: DidChangeConfigurationParams,
     ) -> anyhow::Result<()> {
-        if self
-            .store
-            .environment
-            .client_capabilities
-            .has_pull_configuration_support()
-        {
-            self.spawn(move |server| {
-                let _ = server.pull_config();
-            });
+        if self.client_capabilities.has_pull_configuration_support() {
+            self.pull_config();
         } else {
-            let options = self.fork().parse_options(params.settings)?;
-            self.store.environment.options = Arc::new(options);
+            let options = self.client.parse_options(params.settings)?;
+            self.store.write().environment.options = Arc::new(options);
             self.config_pulled = true;
             let _ = self.reparse_all();
         }

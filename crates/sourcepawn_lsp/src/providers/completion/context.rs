@@ -1,10 +1,9 @@
-use std::sync::{Arc, RwLock};
-
 use lazy_static::lazy_static;
 use lsp_types::{CompletionContext, Position};
+use parking_lot::RwLock;
 use regex::Regex;
-
-use crate::spitem::SPItem;
+use std::sync::Arc;
+use syntax::SPItem;
 
 use super::matchtoken::MatchToken;
 
@@ -17,19 +16,6 @@ use super::matchtoken::MatchToken;
 pub(super) fn is_method_call(pre_line: &str) -> bool {
     lazy_static! {
         static ref RE: Regex = Regex::new(r"(?:\.|::)\w*$").unwrap();
-    }
-    RE.is_match(pre_line)
-}
-
-/// Given a prefix line of a document, return whether or not the end of the prefix line is right after
-/// a constructor call i.e after a `new`.
-///
-/// # Arguments
-///
-/// * `pre_line` - Prefix line to check against.
-pub(crate) fn is_ctor_call(pre_line: &str) -> bool {
-    lazy_static! {
-        static ref RE: Regex = Regex::new(r"new\s+\w*$").unwrap();
     }
     RE.is_match(pre_line)
 }
@@ -54,7 +40,7 @@ pub(crate) fn is_doc_completion(
     all_items
         .iter()
         .find(|&item| {
-            let item = &*item.read().unwrap();
+            let item = &*item.read();
             if let SPItem::Function(function_item) = item {
                 if position.line == function_item.full_range.start.line - 1 {
                     return true;

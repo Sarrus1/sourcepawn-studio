@@ -1,8 +1,5 @@
-use std::sync::Arc;
-
 use lsp_types::{SemanticTokenModifier, SemanticTokenType, Url};
-
-use crate::spitem::define_item::DefineItem;
+use syntax::define_item::DefineItem;
 
 use super::SemanticTokensBuilder;
 
@@ -10,9 +7,9 @@ impl SemanticTokensBuilder {
     pub(crate) fn build_define(
         &mut self,
         define_item: &DefineItem,
-        uri: &Arc<Url>,
+        uri: &Url,
     ) -> anyhow::Result<()> {
-        if define_item.uri.eq(uri) {
+        if *define_item.uri == *uri {
             self.push(
                 define_item.v_range,
                 SemanticTokenType::MACRO,
@@ -23,7 +20,7 @@ impl SemanticTokensBuilder {
             )?;
         }
         for ref_ in define_item.references.iter() {
-            if ref_.uri.eq(uri) {
+            if *ref_.uri == *uri {
                 self.push(
                     ref_.v_range,
                     SemanticTokenType::MACRO,
