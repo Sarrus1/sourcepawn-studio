@@ -12,8 +12,6 @@ use strip_bom::StripBom;
 use syntax::SPItem;
 use tree_sitter::{Node, Query, QueryCursor};
 
-use crate::linter::document_diagnostics::DocumentDiagnostics;
-
 lazy_static! {
     static ref METHOD_QUERY: Query = Query::new(
         tree_sitter_sourcepawn::language(),
@@ -42,7 +40,6 @@ pub struct Document {
     pub missing_includes: FxHashMap<String, Range>,
     pub unresolved_tokens: FxHashSet<String>,
     pub declarations: FxHashMap<String, Arc<RwLock<SPItem>>>,
-    pub diagnostics: DocumentDiagnostics,
     pub(crate) macros: FxHashMap<String, Macro>,
     pub(crate) macro_symbols: Vec<Arc<Token>>,
     pub(crate) offsets: FxHashMap<u32, Vec<Offset>>,
@@ -62,7 +59,6 @@ impl Document {
             missing_includes: FxHashMap::default(),
             unresolved_tokens: FxHashSet::default(),
             declarations: FxHashMap::default(),
-            diagnostics: DocumentDiagnostics::default(),
             macros: FxHashMap::default(),
             macro_symbols: vec![],
             offsets: FxHashMap::default(),

@@ -1031,6 +1031,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0717cef1bc8b636c6e1c1bbdefc09e6322da8a9321966e8928ef80d20f7f770f"
 
 [[package]]
+name = "linter"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fxhash",
+ "lazy_static",
+ "log",
+ "lsp-types",
+ "parking_lot",
+ "regex",
+ "serde",
+ "serde_json",
+ "syntax",
+ "tree-sitter",
+ "tree-sitter-sourcepawn",
+ "uuid",
+]
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1951,6 +1970,7 @@ dependencies = [
  "insta",
  "itertools 0.11.0",
  "lazy_static",
+ "linter",
  "log",
  "lsp-server",
  "lsp-types",
@@ -1982,6 +2002,7 @@ dependencies = [
  "anyhow",
  "fxhash",
  "lazy_static",
+ "linter",
  "log",
  "lsp-types",
  "notify",
@@ -1996,7 +2017,6 @@ dependencies = [
  "syntax",
  "tree-sitter",
  "tree-sitter-sourcepawn",
- "uuid",
  "walkdir",
 ]
 

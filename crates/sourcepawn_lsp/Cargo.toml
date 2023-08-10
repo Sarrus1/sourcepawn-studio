@@ -15,6 +15,7 @@ test = false
 doctest = false
 
 [dependencies]
+linter.workspace = true
 lsp-server.workspace = true
 lsp-types.workspace = true
 semantic_analyzer.workspace = true

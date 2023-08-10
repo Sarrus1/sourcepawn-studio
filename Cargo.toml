@@ -26,6 +26,7 @@ store = { path = "./crates/store" }
 syntax = { path = "./crates/syntax" }
 parser = { path = "./crates/parser" }
 semantic_analyzer = { path = "./crates/semantic_analyzer" }
+linter = { path = "./crates/linter" }
 lsp-server = "0.6.0"
 derive-new = "0.5"
 crossbeam-channel = "0.5.6"

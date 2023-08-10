@@ -2,6 +2,7 @@ use ::syntax::SPItem;
 use anyhow::anyhow;
 use fxhash::{FxHashMap, FxHashSet};
 use include::add_include;
+use linter::DiagnosticsManager;
 use lsp_types::{Range, Url};
 use parking_lot::RwLock;
 use parser::Parser;
@@ -18,7 +19,6 @@ use walkdir::WalkDir;
 pub mod document;
 pub mod environment;
 pub mod include;
-pub mod linter;
 pub mod main_heuristic;
 pub mod options;
 mod semantics;
@@ -37,6 +37,8 @@ pub struct Store {
     pub first_parse: bool,
 
     pub watcher: Option<Arc<Mutex<notify::RecommendedWatcher>>>,
+
+    pub diagnostics: DiagnosticsManager,
 }
 
 impl Store {
@@ -205,6 +207,7 @@ impl Store {
         parser: &mut tree_sitter::Parser,
     ) -> Result<Document, io::Error> {
         log::trace!("Opening file {:?}", uri);
+        self.diagnostics.reset(uri);
         let prev_declarations = match self.documents.get(&(*uri).clone()) {
             Some(document) => document.declarations.clone(),
             None => FxHashMap::default(),
@@ -306,7 +309,8 @@ impl Store {
         document.preprocessed_text = preprocessed_text;
         document.macros = preprocessor.macros.clone();
         document.offsets = preprocessor.offsets.clone();
-        preprocessor.add_diagnostics(&mut document.diagnostics.local_diagnostics);
+        preprocessor
+            .add_diagnostics(&mut self.diagnostics.get_mut(&document.uri).local_diagnostics);
         document
             .macro_symbols
             .extend(preprocessor.evaluated_define_symbols.iter().map(|token| {
@@ -355,7 +359,9 @@ impl Store {
             if let Some(document) = self.documents.get_mut(&uri) {
                 document.preprocessed_text = preprocessed_text;
                 document.macros = preprocessor.macros.clone();
-                preprocessor.add_diagnostics(&mut document.diagnostics.local_diagnostics);
+                preprocessor.add_diagnostics(
+                    &mut self.diagnostics.get_mut(&document.uri).local_diagnostics,
+                );
                 document
                     .macro_symbols
                     .extend(preprocessor.evaluated_define_symbols.iter().map(|token| {
@@ -460,7 +466,9 @@ impl Store {
         document.parsed = true;
         document.extract_tokens(root_node);
         document.add_macro_symbols();
-        document.get_syntax_error_diagnostics(
+        self.diagnostics.get_syntax_error_diagnostics(
+            &document.uri,
+            &document.preprocessed_text,
             root_node,
             self.environment.options.disable_syntax_linter,
         );

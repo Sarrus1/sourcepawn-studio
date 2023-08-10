@@ -1,5 +1,6 @@
 use crossbeam_channel::{Receiver, Sender};
 use fxhash::FxHashMap;
+use linter::spcomp::SPCompDiagnostic;
 use lsp_server::{Connection, ErrorCode, Message, RequestId};
 use lsp_types::{
     notification::ShowMessage, request::WorkspaceConfiguration, CallHierarchyServerCapability,
@@ -14,7 +15,7 @@ use lsp_types::{
 use parking_lot::RwLock;
 use serde::Serialize;
 use std::sync::Arc;
-use store::{linter::spcomp::SPCompDiagnostic, options::Options, Store};
+use store::{options::Options, Store};
 use threadpool::ThreadPool;
 use tree_sitter::Parser;
 
@@ -320,8 +321,8 @@ impl Server {
                                 self.handle_file_event(event);
                             }
                             InternalMessage::Diagnostics(diagnostics) => {
-                                self.store.write().ingest_spcomp_diagnostics(diagnostics);
-                                self.publish_diagnostics()?;
+                                self.store.write().diagnostics.ingest_spcomp_diagnostics(diagnostics);
+                                self.publish_diagnostics();
                             }
                         }
                 }
