@@ -2,12 +2,10 @@ use std::sync::Arc;
 
 use lsp_types::{Range, Url};
 use parking_lot::RwLock;
+use semantic_analyzer::Token;
 use syntax::{include_item::IncludeItem, SPItem};
 
-use crate::{
-    document::{Document, Token},
-    Store,
-};
+use crate::{document::Document, Store};
 
 /// Add `.inc` to a trimmed include text if it does not have an extension (.sp or .inc).
 ///

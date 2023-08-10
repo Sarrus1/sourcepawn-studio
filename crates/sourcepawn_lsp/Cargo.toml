@@ -17,6 +17,7 @@ doctest = false
 [dependencies]
 lsp-server.workspace = true
 lsp-types.workspace = true
+semantic_analyzer.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 derive-new.workspace = true

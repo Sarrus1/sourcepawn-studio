@@ -12,7 +12,7 @@ pub fn provide_semantic_tokens(
     store: &Store,
     params: SemanticTokensParams,
 ) -> Option<SemanticTokens> {
-    let all_items = &store.get_all_items(false).0;
+    let all_items = &store.get_all_items(false);
     if all_items.is_empty() {
         return None;
     }

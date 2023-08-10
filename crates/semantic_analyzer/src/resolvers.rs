@@ -1,25 +1,22 @@
 use lazy_static::lazy_static;
+use lsp_types::Url;
 use parking_lot::RwLock;
 use regex::Regex;
 use std::sync::Arc;
 use syntax::{Location, SPItem};
 
-use crate::{
-    document::{Document, Token},
-    range_contains_range,
-};
+use crate::{range_contains_range, token::Token};
 
 use super::{analyzer::Analyzer, inherit::find_inherit};
 
-impl Analyzer {
+impl<'a> Analyzer<'a> {
     /// Try to solve for the `this` token. Returns `false` only if the token's text is not
     /// `this`. Otherwise, will return `true` when it matches of when it ends.
     ///
     /// # Arguments
     ///
     /// * `token` - [Token] to analyze.
-    /// * `document` - [Document](super::document::Document) to analyze.
-    pub(super) fn resolve_this(&mut self, token: &Arc<Token>, document: &Document) -> bool {
+    pub(super) fn resolve_this(&mut self, token: &Arc<Token>, uri: &Url) -> bool {
         if token.text != "this" {
             return false;
         }
@@ -27,7 +24,7 @@ impl Analyzer {
             let item_lock = item.read();
             match &*item_lock {
                 SPItem::Methodmap(mm_item) => {
-                    if mm_item.uri.eq(&document.uri)
+                    if *mm_item.uri == *uri
                         && range_contains_range(&mm_item.full_range, &token.range)
                     {
                         self.previous_items.insert(token.text.clone(), item.clone());
@@ -35,7 +32,7 @@ impl Analyzer {
                     }
                 }
                 SPItem::EnumStruct(es_item) => {
-                    if es_item.uri.eq(&document.uri)
+                    if *es_item.uri == *uri
                         && range_contains_range(&es_item.full_range, &token.range)
                     {
                         self.previous_items.insert(token.text.clone(), item.clone());
@@ -58,11 +55,10 @@ impl Analyzer {
     /// # Arguments
     ///
     /// * `token` - [Token] to analyze.
-    /// * `document` - [Document](super::document::Document) to analyze.
     pub(super) fn resolve_non_method_item(
         &mut self,
         token: &Arc<Token>,
-        document: &Document,
+        uri: &Arc<Url>,
     ) -> anyhow::Result<()> {
         let full_key = format!(
             "{}-{}-{}",
@@ -82,12 +78,12 @@ impl Analyzer {
 
         if let Some(item) = item {
             let reference = Location {
-                uri: document.uri.clone(),
+                uri: uri.clone(),
                 range: token.range,
                 v_range: if let SPItem::Define(_) = &*item.read() {
                     token.range
                 } else {
-                    document.build_v_range(&token.range)
+                    self.build_v_range(&token.range)
                 },
             };
 
@@ -122,7 +118,7 @@ impl Analyzer {
         &mut self,
         parent: &Arc<Token>,
         field: &Arc<Token>,
-        document: &Document,
+        uri: &Arc<Url>,
     ) -> Option<()> {
         if self.previous_items.is_empty() {
             return None;
@@ -157,9 +153,9 @@ impl Analyzer {
         item.as_ref()?;
         let item = item.unwrap();
         let reference = Location {
-            uri: document.uri.clone(),
+            uri: uri.clone(),
             range: field.range,
-            v_range: document.build_v_range(&field.range),
+            v_range: self.build_v_range(&field.range),
         };
         item.write().push_reference(reference);
         self.previous_items.insert(field.text.clone(), item);

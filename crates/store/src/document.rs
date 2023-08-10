@@ -6,9 +6,9 @@ use lsp_types::Url;
 use parking_lot::RwLock;
 use parser::build_v_range;
 use preprocessor::{Macro, Offset};
+use semantic_analyzer::{SPToken, Token};
 use std::{path::PathBuf, sync::Arc};
 use strip_bom::StripBom;
-use syntax::utils::ts_range_to_lsp_range;
 use syntax::SPItem;
 use tree_sitter::{Node, Query, QueryCursor};
 
@@ -27,30 +27,6 @@ lazy_static! {
         )
         .expect("Could not build symbols query.")
     };
-}
-
-#[derive(Debug, Clone)]
-pub(crate) enum SPToken {
-    Symbol(Arc<Token>),
-    Method((Arc<Token>, Arc<Token>)),
-}
-
-#[derive(Debug, Clone)]
-pub(crate) struct Token {
-    pub(crate) text: String,
-    pub(crate) range: Range,
-}
-
-impl Token {
-    pub fn new(node: Node, source: &String) -> Self {
-        Self {
-            text: node
-                .utf8_text(source.as_bytes())
-                .unwrap_or_default()
-                .to_string(),
-            range: ts_range_to_lsp_range(&node.range()),
-        }
-    }
 }
 
 #[derive(Debug, Clone)]

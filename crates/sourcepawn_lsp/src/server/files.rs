@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context};
 use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams, Url};
-use std::{sync::Arc, time::Duration, time::Instant};
+use std::{sync::Arc, time::Instant};
 
 use crate::{lsp_ext, server::InternalMessage, Server};
 
@@ -10,8 +10,6 @@ mod watching;
 impl Server {
     pub(super) fn reparse_all(&mut self) -> anyhow::Result<()> {
         log::debug!("Scanning all the files.");
-        self.store.write().get_all_items_time.clear();
-        self.store.write().get_includes_time.clear();
         self.indexing = true;
         let _ = self.send_status(lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,
@@ -69,31 +67,16 @@ impl Server {
         self.store.write().first_parse = false;
         let parse_duration = now_parse.elapsed();
         let analysis_duration = now_analysis.elapsed();
-        let analysis_get_items_duration = self
-            .store
-            .read()
-            .get_all_items_time
-            .iter()
-            .sum::<Duration>();
-        let get_includes_duration = self.store.read().get_includes_time.iter().sum::<Duration>();
         log::info!(
             r#"Scanned all the files in {:.2?}:
     - {} file(s) were scanned.
     - Parsing took {:.2?}.
     - Analysis took {:.2?}.
-        - Analysis took {:.2?}.
-        - Getting all items {:.2?}.
-            - Getting includes took {:.2?}.
-            - Cloning items took {:.2?}.
         "#,
             parse_duration,
             self.store.read().documents.len(),
             parse_duration - analysis_duration,
             analysis_duration,
-            analysis_duration - analysis_get_items_duration,
-            analysis_get_items_duration,
-            get_includes_duration,
-            analysis_get_items_duration - get_includes_duration
         );
         self.indexing = false;
         self.reload_diagnostics();

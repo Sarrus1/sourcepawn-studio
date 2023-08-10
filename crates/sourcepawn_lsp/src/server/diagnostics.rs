@@ -40,7 +40,7 @@ impl Server {
     /// Lint all documents with the custom linter.
     pub fn lint_all_documents(&mut self) {
         self.store.write().clear_all_global_diagnostics();
-        let all_items_flat = self.store.read().get_all_items(true).0;
+        let all_items_flat = self.store.read().get_all_items(true);
         // TODO: Make diagnostics an external crate to avoid having to pass the store as writable.
         self.store
             .write()

@@ -1,11 +1,11 @@
-use lsp_types::{CompletionItem, CompletionList, CompletionParams};
-use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
-use store::{semantic_analyzer::is_ctor_call, Store};
-use syntax::range_contains_pos;
-
 use crate::providers::completion::{
     getters::get_ctor_completions, include::get_include_completions,
 };
+use lsp_types::{CompletionItem, CompletionList, CompletionParams};
+use semantic_analyzer::is_ctor_call;
+use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
+use store::Store;
+use syntax::range_contains_pos;
 
 use self::{
     context::{is_callback_completion_request, is_doc_completion, is_method_call},
@@ -56,18 +56,18 @@ pub(crate) fn provide_completions(
                 return None;
             }
             '.' | ':' => {
-                return get_method_completions(store, &params, all_items.0, &pre_line);
+                return get_method_completions(store, &params, all_items, &pre_line);
             }
             ' ' => {
                 if is_ctor_call(&pre_line) {
-                    return get_ctor_completions(all_items.0, params);
+                    return get_ctor_completions(all_items, params);
                 }
                 return None;
             }
             '$' => {
                 if is_callback_completion_request(params.context) {
                     return get_callback_completions(
-                        all_items.0,
+                        all_items,
                         params.text_document_position.position,
                     );
                 }
@@ -75,7 +75,7 @@ pub(crate) fn provide_completions(
             }
             '*' => {
                 if let (Some(item), Some(line)) = (
-                    is_doc_completion(&pre_line, position, &all_items.0),
+                    is_doc_completion(&pre_line, position, &all_items),
                     document.line(position.line + 1),
                 ) {
                     return item.read().doc_completion(line);
@@ -94,24 +94,24 @@ pub(crate) fn provide_completions(
 
                 if is_callback_completion_request(params.context.clone()) {
                     return get_callback_completions(
-                        all_items.0,
+                        all_items,
                         params.text_document_position.position,
                     );
                 }
 
                 if !is_method_call(&pre_line) {
                     if is_ctor_call(&pre_line) {
-                        return get_ctor_completions(all_items.0, params);
+                        return get_ctor_completions(all_items, params);
                     }
-                    return get_non_method_completions(all_items.0, params);
+                    return get_non_method_completions(all_items, params);
                 }
 
-                return get_method_completions(store, &params, all_items.0, &pre_line);
+                return get_method_completions(store, &params, all_items, &pre_line);
             }
         }
     }
 
-    get_non_method_completions(all_items.0, params)
+    get_non_method_completions(all_items, params)
 }
 
 pub(crate) fn resolve_completion_item(

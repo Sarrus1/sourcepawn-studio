@@ -6,12 +6,12 @@ use lsp_types::{Range, Url};
 use parking_lot::RwLock;
 use parser::Parser;
 use preprocessor::{Macro, SourcepawnPreprocessor};
+use semantic_analyzer::{purge_references, Token};
 use std::{
     fs::{self, File},
     io::{self, Read},
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
-    time::Duration,
 };
 use walkdir::WalkDir;
 
@@ -21,14 +21,10 @@ pub mod include;
 pub mod linter;
 pub mod main_heuristic;
 pub mod options;
-pub mod semantic_analyzer;
+mod semantics;
 pub mod syntax;
 
-use crate::{
-    document::{Document, Token},
-    environment::Environment,
-    semantic_analyzer::purge_references,
-};
+use crate::{document::Document, environment::Environment};
 
 #[derive(Clone, Default)]
 pub struct Store {
@@ -41,10 +37,6 @@ pub struct Store {
     pub first_parse: bool,
 
     pub watcher: Option<Arc<Mutex<notify::RecommendedWatcher>>>,
-
-    pub get_all_items_time: Vec<Duration>,
-
-    pub get_includes_time: Vec<Duration>,
 }
 
 impl Store {
@@ -224,7 +216,7 @@ impl Store {
             .expect("Couldn't parse document");
         if !self.first_parse {
             // Don't try to find references yet, all the tokens might not be referenced.
-            self.find_references(&(*uri).clone());
+            self.find_references(uri);
             self.sync_references(&mut document, prev_declarations);
         }
         log::trace!("Done opening file {:?}", uri);
@@ -531,7 +523,7 @@ impl Store {
                 self.documents.values().map(|doc| doc.uri()).collect()
             };
         uris.iter().for_each(|uri| {
-            let _ = self.find_references(uri);
+            self.find_references(uri);
         });
     }
 
@@ -601,24 +593,4 @@ pub fn read_to_string_lossy(path: PathBuf) -> anyhow::Result<String> {
     file.read_to_end(&mut buf)?;
 
     Ok(String::from_utf8_lossy(&buf).to_string())
-}
-
-/// Returns true if [Range] a contains [Range] b.
-///
-/// # Arguments
-///
-/// * `a` - [Range] to check against.
-/// * `b` - [Range] to check against.
-pub fn range_contains_range(a: &Range, b: &Range) -> bool {
-    if b.start.line < a.start.line || b.end.line > a.end.line {
-        return false;
-    }
-    if b.start.line == a.start.line && b.start.character < a.start.character {
-        return false;
-    }
-    if b.end.line == a.end.line && b.end.character > a.end.character {
-        return false;
-    }
-
-    true
 }

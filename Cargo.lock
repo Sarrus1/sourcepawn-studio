@@ -1696,6 +1696,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "semantic_analyzer"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fxhash",
+ "lazy_static",
+ "log",
+ "lsp-types",
+ "parking_lot",
+ "parser",
+ "preprocessor",
+ "regex",
+ "syntax",
+ "tree-sitter",
+]
+
+[[package]]
 name = "semver"
 version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1943,6 +1960,7 @@ dependencies = [
  "preprocessor",
  "regex",
  "rowan",
+ "semantic_analyzer",
  "sentry",
  "serde",
  "serde_json",
@@ -1971,6 +1989,7 @@ dependencies = [
  "parser",
  "preprocessor",
  "regex",
+ "semantic_analyzer",
  "serde",
  "serde_json",
  "strip_bom",
