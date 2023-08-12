@@ -143,6 +143,11 @@
         "category": "sourcepawn-lsp (debug command)"
       },
       {
+        "command": "sourcepawn-vscode.projectsGraphviz",
+        "title": "Generate Graphviz file for projects in the workspace",
+        "category": "sourcepawn-lsp (debug command)"
+      },
+      {
         "command": "sourcepawn-vscode.installLanguageServer",
         "title": "Install SourcePawn Language Server"
       },

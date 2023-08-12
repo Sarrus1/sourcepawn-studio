@@ -238,15 +238,12 @@ impl Server {
 
         self.pull_config();
 
-        params
+        self.store.write().folders = params
             .workspace_folders
             .unwrap_or_default()
             .iter()
-            .for_each(|folder| {
-                if let Ok(folder_path) = folder.uri.to_file_path() {
-                    self.store.write().find_documents(&folder_path)
-                }
-            });
+            .filter_map(|folder| folder.uri.to_file_path().ok())
+            .collect();
 
         let _ = self.send_status(lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,

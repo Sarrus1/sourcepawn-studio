@@ -15,6 +15,20 @@ pub struct PreprocessedDocumentParams {
     pub text_document: Option<TextDocumentIdentifier>,
 }
 
+pub enum ProjectsGraphviz {}
+
+impl Request for ProjectsGraphviz {
+    type Params = ProjectsGraphvizParams;
+    type Result = String;
+    const METHOD: &'static str = "sourcepawn-lsp/projectsGraphviz";
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectsGraphvizParams {
+    pub text_document: Option<TextDocumentIdentifier>,
+}
+
 pub enum ServerStatusNotification {}
 
 impl Notification for ServerStatusNotification {

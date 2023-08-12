@@ -33,8 +33,8 @@ impl Store {
     /// * `include_text` - Text of the include such as `"file.sp"` or `<file>`.
     /// * `documents` - Set of known documents.
     /// * `document_uri` - Uri of the document where the include declaration is parsed from.
-    pub(crate) fn resolve_import(
-        &mut self,
+    pub fn resolve_import(
+        &self,
         include_text: &mut String,
         document_uri: &Arc<Url>,
         quoted: bool,

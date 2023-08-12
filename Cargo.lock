@@ -2013,6 +2013,7 @@ dependencies = [
  "semantic_analyzer",
  "serde",
  "serde_json",
+ "sourcepawn_lexer",
  "strip_bom",
  "syntax",
  "tree-sitter",

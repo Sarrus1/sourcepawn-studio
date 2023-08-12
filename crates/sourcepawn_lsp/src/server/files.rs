@@ -17,6 +17,7 @@ impl Server {
             message: None,
         });
         self.parse_directories();
+
         let main_uri = self.store.read().environment.options.get_main_path_uri();
         let now_parse = Instant::now();
         if let Ok(main_uri) = main_uri {
@@ -126,14 +127,10 @@ impl Server {
     }
 
     fn parse_directories(&mut self) {
-        let directories = self
-            .store
-            .read()
-            .environment
-            .options
-            .includes_directories
-            .clone();
-        for path in directories {
+        let store = self.store.read();
+        let folders = store.folders();
+        drop(store);
+        for path in folders {
             if !path.exists() {
                 self.client
                     .send_notification::<ShowMessage>(ShowMessageParams {

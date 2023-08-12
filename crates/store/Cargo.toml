@@ -11,6 +11,7 @@ doctest = false
 
 [dependencies]
 semantic_analyzer.workspace = true
+sourcepawn_lexer.workspace = true
 linter.workspace = true
 lsp-types.workspace = true
 anyhow.workspace = true

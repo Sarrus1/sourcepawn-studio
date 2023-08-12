@@ -1,13 +1,17 @@
 use ::syntax::SPItem;
 use anyhow::anyhow;
 use fxhash::{FxHashMap, FxHashSet};
+use graph::Graph;
 use include::add_include;
+use lazy_static::lazy_static;
 use linter::DiagnosticsManager;
 use lsp_types::{Range, Url};
 use parking_lot::RwLock;
 use parser::Parser;
 use preprocessor::{Macro, SourcepawnPreprocessor};
+use regex::Regex;
 use semantic_analyzer::{purge_references, Token};
+use sourcepawn_lexer::{PreprocDir, SourcepawnLexer, TokenKind};
 use std::{
     fs::{self, File},
     io::{self, Read},
@@ -18,15 +22,20 @@ use walkdir::WalkDir;
 
 pub mod document;
 pub mod environment;
+pub mod graph;
 pub mod include;
 pub mod main_heuristic;
 pub mod options;
 mod semantics;
 pub mod syntax;
 
-use crate::{document::Document, environment::Environment};
+use crate::{
+    document::Document,
+    environment::Environment,
+    graph::{Edge, Node},
+};
 
-#[derive(Clone, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct Store {
     /// Any documents the server has handled, indexed by their URL.
     pub documents: FxHashMap<Arc<Url>, Document>,
@@ -39,6 +48,8 @@ pub struct Store {
     pub watcher: Option<Arc<Mutex<notify::RecommendedWatcher>>>,
 
     pub diagnostics: DiagnosticsManager,
+
+    pub folders: Vec<PathBuf>,
 }
 
 impl Store {
@@ -64,6 +75,19 @@ impl Store {
         }
 
         None
+    }
+
+    pub fn folders(&self) -> Vec<PathBuf> {
+        let mut res = self.folders.clone();
+        res.extend(
+            self.environment
+                .options
+                .includes_directories
+                .iter()
+                .cloned(),
+        );
+
+        res
     }
 
     pub fn remove(&mut self, uri: &Url, parser: &mut tree_sitter::Parser) {
@@ -172,6 +196,7 @@ impl Store {
     }
 
     pub fn find_documents(&mut self, base_path: &PathBuf) {
+        eprintln!("Finding documents in {:?}", base_path);
         for entry in WalkDir::new(base_path)
             .follow_links(true)
             .into_iter()
@@ -554,6 +579,57 @@ impl Store {
         } else {
             f_name.ends_with(".sp") || f_name.ends_with(".inc")
         }
+    }
+
+    pub fn load_projects_graph(&mut self) -> Graph {
+        let mut graph = Graph::default();
+
+        for document in self.documents.values() {
+            let lexer = SourcepawnLexer::new(&document.text);
+            for symbol in lexer {
+                if symbol.token_kind != TokenKind::PreprocDir(PreprocDir::MInclude) {
+                    continue;
+                }
+                let text = symbol.text();
+                lazy_static! {
+                    static ref RE1: Regex = Regex::new(r"<([^>]+)>").unwrap();
+                    static ref RE2: Regex = Regex::new("\"([^>]+)\"").unwrap();
+                }
+                let mut uri = None;
+                if let Some(caps) = RE1.captures(&text) {
+                    if let Some(path) = caps.get(1) {
+                        uri = self.resolve_import(
+                            &mut path.as_str().to_string(),
+                            &document.uri,
+                            false,
+                        );
+                    }
+                } else if let Some(caps) = RE2.captures(&text) {
+                    if let Some(path) = caps.get(1) {
+                        uri = self.resolve_import(
+                            &mut path.as_str().to_string(),
+                            &document.uri,
+                            true,
+                        );
+                    }
+                }
+                let Some(uri) = uri else {
+                    continue;
+                };
+                let source = Node {
+                    uri: document.uri.as_ref().clone(),
+                };
+                let target = Node { uri };
+                graph.edges.insert(Edge {
+                    source: source.clone(),
+                    target: target.clone(),
+                });
+                graph.nodes.insert(source);
+                graph.nodes.insert(target);
+            }
+        }
+
+        graph
     }
 }
 
