@@ -104,59 +104,59 @@
 
 ### .sp and .inc file highlighting
 
-![.sp highlighting example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/highlighting-example-1.png)
+![.sp highlighting example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/images/highlighting-example-1.png)
 
 ### .cfg file highlighting
 
-![Highlighting example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/highlighting-example-2.png)
+![Highlighting example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/images/highlighting-example-2.png)
 
 ### Code auto-completion
 
-![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/completion-example-1.png)
+![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/images/completion-example-1.png)
 
 ### Event auto-completion
 
-![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/completion-example-2.png)
+![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/images/completion-example-2.png)
 
 ### Include auto-completion
 
-![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/completion-example-3.png)
+![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/images/completion-example-3.png)
 
 ### Callback auto-completion
 
-![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/completion-example-4.gif)
+![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/images/completion-example-4.gif)
 
 ### Code outline
 
-![Outline example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/outline-example-1.png)
+![Outline example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/images/outline-example-1.png)
 
 ### Call Hierarchy
 
-![Hierarchy example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/hierarchy-example-1.gif)
+![Hierarchy example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/images/hierarchy-example-1.gif)
 
 ### Symbol references
 
-![References example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/references-example-1.png)
+![References example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/images/references-example-1.png)
 
 ### Symbol renaming
 
-![Renaming example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/rename-example-1.png)
+![Renaming example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/images/rename-example-1.png)
 
 ### Functions signature help
 
-![Signature example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/signature-example-1.png)
+![Signature example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/images/signature-example-1.png)
 
 ### Hover help
 
-![Hover example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/hover-example-1.png)
+![Hover example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/images/hover-example-1.png)
 
 ### Go To Definition
 
-![Go to definition example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/go-to-definition-example-1.png)
+![Go to definition example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/images/go-to-definition-example-1.png)
 
 ### Linter
 
-![Linter example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/linter-example-1.png)
+![Linter example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/images/linter-example-1.png)
 
 ## Credits
 
@@ -182,7 +182,7 @@ If you prefer to make a donation to me for this project, you can [buy me a coffe
 2. In the search bar, type `SourcePawn` and select the extension.
 3. Click on `Switch to Pre-Release` (see screenshot below).
 
-![Pre-release](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/dev/images/pre-release.png)
+![Pre-release](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/images/pre-release.png)
 
 This will install the latest development build of the extension.
 
