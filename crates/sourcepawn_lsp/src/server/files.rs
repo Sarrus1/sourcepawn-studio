@@ -18,69 +18,95 @@ impl Server {
         });
         self.parse_directories();
 
-        let main_uri = self.store.read().environment.options.get_main_path_uri();
-        let now_parse = Instant::now();
-        if let Ok(main_uri) = main_uri {
-            if let Some(main_uri) = main_uri {
-                log::debug!("Main path is set, parsing files.");
-                self.parse_files_for_main_path(&main_uri)?;
-            } else {
-                if let Some(uri) = self.store.read().find_main_with_heuristic() {
-                    log::debug!("Main path was not set, and was infered as {:?}", uri);
-                    let path = uri.to_file_path().unwrap();
-                    let mut options = self.store.read().environment.options.as_ref().clone();
-                    options.main_path = path.clone();
-                    self.internal_tx
-                        .send(InternalMessage::SetOptions(Arc::new(options)))
-                        .unwrap();
-                    let _ = self
-                        .client
-                        .send_notification::<ShowMessage>(ShowMessageParams {
-                            message: format!(
-                                "MainPath was not set and was automatically infered as {}.",
-                                path.file_name().unwrap().to_str().unwrap()
-                            ),
-                            typ: MessageType::INFO,
-                        });
-                    return Ok(());
-                }
-                log::debug!("Main path was not set, and could not be infered.");
-                let _ = self
-                    .client
-                    .send_notification::<ShowMessage>(ShowMessageParams {
-                        message: "No MainPath setting and none could be infered.".to_string(),
-                        typ: MessageType::WARNING,
-                    });
-                self.parse_files_for_missing_main_path();
-            }
-        } else if main_uri.is_err() {
-            log::debug!("Main path is invalid.");
-            let _ = self
-                .client
-                .send_notification::<ShowMessage>(ShowMessageParams {
-                    message: "Invalid MainPath setting.".to_string(),
-                    typ: MessageType::WARNING,
-                });
-            self.parse_files_for_missing_main_path();
+        // 1. Get all the mainpaths.
+        // 2. Parse all the files for each mainpath.
+        // 3. Resolve names in each file by getting the mainpath from the graph.
+        let projects = self.store.write().load_projects_graph();
+        for node in projects.find_roots() {
+            let main_uri = &node.uri;
+            let Ok(main_path) = main_uri.to_file_path() else {
+                continue;
+            };
+            let mut options = self.store.read().environment.options.as_ref().clone();
+            options.main_path = main_path.clone();
+            self.store.write().environment.options = Arc::new(options);
+            let _ = self.parse_project(main_uri);
+            // self.store.write().find_all_references();
         }
-        let now_analysis = Instant::now();
-        self.store.write().find_all_references();
-        self.store.write().first_parse = false;
-        let parse_duration = now_parse.elapsed();
-        let analysis_duration = now_analysis.elapsed();
-        log::info!(
-            r#"Scanned all the files in {:.2?}:
-    - {} file(s) were scanned.
-    - Parsing took {:.2?}.
-    - Analysis took {:.2?}.
-        "#,
-            parse_duration,
-            self.store.read().documents.len(),
-            parse_duration - analysis_duration,
-            analysis_duration,
-        );
+        self.store.write().projects = projects;
+
+        // let main_uri = self.store.read().environment.options.get_main_path_uri();
+        // if let Ok(main_uri) = main_uri {
+        //     if let Some(main_uri) = main_uri {
+        //         log::debug!("Main path is set, parsing files.");
+        //         self.parse_files_for_main_path(&main_uri)?;
+        //     } else {
+        //         if let Some(uri) = self.store.read().find_main_with_heuristic() {
+        //             log::debug!("Main path was not set, and was infered as {:?}", uri);
+        //             let path = uri.to_file_path().unwrap();
+        //             let mut options = self.store.read().environment.options.as_ref().clone();
+        //             options.main_path = path.clone();
+        //             self.internal_tx
+        //                 .send(InternalMessage::SetOptions(Arc::new(options)))
+        //                 .unwrap();
+        //             let _ = self
+        //                 .client
+        //                 .send_notification::<ShowMessage>(ShowMessageParams {
+        //                     message: format!(
+        //                         "MainPath was not set and was automatically infered as {}.",
+        //                         path.file_name().unwrap().to_str().unwrap()
+        //                     ),
+        //                     typ: MessageType::INFO,
+        //                 });
+        //             return Ok(());
+        //         }
+        //         log::debug!("Main path was not set, and could not be infered.");
+        //         let _ = self
+        //             .client
+        //             .send_notification::<ShowMessage>(ShowMessageParams {
+        //                 message: "No MainPath setting and none could be infered.".to_string(),
+        //                 typ: MessageType::WARNING,
+        //             });
+        //         self.parse_files_for_missing_main_path();
+        //     }
+        // } else if main_uri.is_err() {
+        //     log::debug!("Main path is invalid.");
+        //     let _ = self
+        //         .client
+        //         .send_notification::<ShowMessage>(ShowMessageParams {
+        //             message: "Invalid MainPath setting.".to_string(),
+        //             typ: MessageType::WARNING,
+        //         });
+        //     self.parse_files_for_missing_main_path();
+        // }
+        //     let now_analysis = Instant::now();
+        //     self.store.write().find_all_references();
+        //     self.store.write().first_parse = false;
+        //     let parse_duration = now_parse.elapsed();
+        //     let analysis_duration = now_analysis.elapsed();
+        //     log::info!(
+        //         r#"Scanned all the files in {:.2?}:
+        // - {} file(s) were scanned.
+        // - Parsing took {:.2?}.
+        // - Analysis took {:.2?}.
+        //     "#,
+        //         parse_duration,
+        //         self.store.read().documents.len(),
+        //         parse_duration - analysis_duration,
+        //         analysis_duration,
+        //     );
         self.indexing = false;
-        self.reload_diagnostics();
+        let store = self.store.read();
+        let uris: Vec<Url> = store
+            .projects
+            .find_roots()
+            .iter()
+            .map(|node| node.uri.clone())
+            .collect();
+        drop(store);
+        for uri in uris {
+            self.reload_diagnostics(&uri);
+        }
         let _ = self.send_status(lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,
             quiescent: !self.indexing,
@@ -112,7 +138,7 @@ impl Server {
         }
     }
 
-    fn parse_files_for_main_path(&mut self, main_uri: &Url) -> anyhow::Result<()> {
+    fn parse_project(&mut self, main_uri: &Url) -> anyhow::Result<()> {
         let document = self
             .store
             .read()

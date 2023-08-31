@@ -24,10 +24,9 @@ pub(crate) fn provide_completions(
     params: CompletionParams,
 ) -> Option<CompletionList> {
     log::debug!("Providing completions.");
-    let document = store
-        .documents
-        .get(&params.text_document_position.text_document.uri)?;
-    let all_items = store.get_all_items(false);
+    let uri = &params.text_document_position.text_document.uri;
+    let document = store.documents.get(uri)?;
+    let all_items = store.get_all_items(uri, false);
     let position = &params.text_document_position.position;
     let line = document.line(position.line)?;
     let pre_line: String = line.chars().take(position.character as usize).collect();
@@ -119,13 +118,14 @@ pub(crate) fn resolve_completion_item(
     completion_item: CompletionItem,
 ) -> Option<CompletionItem> {
     let mut completion_item = completion_item;
-    let key = completion_item.data.clone()?;
-    if let Some(sp_item) = store.get_item_from_key(key.to_string().replace('"', "")) {
-        let sp_item = &*sp_item.read();
-        completion_item.detail = Some(sp_item.formatted_text());
-        completion_item.documentation = sp_item.documentation();
-        return Some(completion_item);
-    }
+    // TODO: Fix with a path interner, that is passed with the key.
+    // let key = completion_item.data.clone()?;
+    // if let Some(sp_item) = store.get_item_from_key(key.to_string().replace('"', "")) {
+    //     let sp_item = &*sp_item.read();
+    //     completion_item.detail = Some(sp_item.formatted_text());
+    //     completion_item.documentation = sp_item.documentation();
+    //     return Some(completion_item);
+    // }
 
     None
 }

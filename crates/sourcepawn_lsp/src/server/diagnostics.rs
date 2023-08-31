@@ -1,7 +1,7 @@
 use linter::spcomp::get_spcomp_diagnostics;
 use lsp_types::{
     notification::{PublishDiagnostics, ShowMessage},
-    MessageType, PublishDiagnosticsParams, ShowMessageParams,
+    MessageType, PublishDiagnosticsParams, ShowMessageParams, Url,
 };
 use std::sync::Arc;
 
@@ -10,10 +10,10 @@ use crate::{lsp_ext, LspClient, Server};
 
 impl Server {
     /// Reload the diagnostics of the workspace, by running spcomp.
-    pub(crate) fn reload_diagnostics(&mut self) {
+    pub(crate) fn reload_diagnostics(&mut self, uri: &Url) {
         self.store.write().diagnostics.clear_all_diagnostics();
 
-        self.lint_all_documents();
+        self.lint_project(uri);
 
         let client = self.client.clone();
         let sender = self.internal_tx.clone();
@@ -41,13 +41,13 @@ impl Server {
         }
     }
 
-    /// Lint all documents with the custom linter.
-    pub fn lint_all_documents(&mut self) {
+    /// Lint all documents in the project with the custom linter.
+    pub fn lint_project(&mut self, uri: &Url) {
         self.store
             .write()
             .diagnostics
             .clear_all_global_diagnostics();
-        let all_items_flat = self.store.read().get_all_items(true);
+        let all_items_flat = self.store.read().get_all_items(uri, true);
         // TODO: Make diagnostics an external crate to avoid having to pass the store as writable.
         self.store
             .write()

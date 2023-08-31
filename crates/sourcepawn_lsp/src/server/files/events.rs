@@ -10,16 +10,17 @@ impl Server {
         match event.kind {
             notify::EventKind::Create(_) => {
                 for path in event.paths {
+                    let Ok(mut uri) = Url::from_file_path(path.clone()) else {
+                        continue;
+                    };
                     let _ = self.store.write().load(path, &mut self.parser);
+                    self.reload_diagnostics(&uri);
                 }
-                self.reload_diagnostics();
             }
             notify::EventKind::Modify(modify_event) => {
-                let uri = Url::from_file_path(event.paths[0].clone());
-                if uri.is_err() {
+                let Ok(mut uri) = Url::from_file_path(event.paths[0].clone()) else {
                     return;
-                }
-                let mut uri = uri.unwrap();
+                };
                 normalize_uri(&mut uri);
                 match modify_event {
                     notify::event::ModifyKind::Name(_) => {
@@ -41,11 +42,9 @@ impl Server {
                                 return;
                             }
                         }
-                        let uri = Url::from_file_path(&event.paths[0]);
-                        if uri.is_err() {
+                        let Ok(mut uri) = Url::from_file_path(&event.paths[0]) else {
                             return;
-                        }
-                        let mut uri = uri.unwrap();
+                        };
                         normalize_uri(&mut uri);
                         let mut uris = self.store.write().get_all_files_in_folder(&uri);
                         if uris.is_empty() {
@@ -89,14 +88,14 @@ impl Server {
                         }
                     }
                 }
-                self.reload_diagnostics();
+                self.reload_diagnostics(&uri);
             }
             notify::EventKind::Remove(_) => {
                 for mut uri in event.paths.iter().flat_map(Url::from_file_path) {
                     normalize_uri(&mut uri);
                     self.store.write().remove(&uri, &mut self.parser);
+                    self.reload_diagnostics(&uri);
                 }
-                self.reload_diagnostics();
             }
             notify::EventKind::Any | notify::EventKind::Access(_) | notify::EventKind::Other => {}
         };

@@ -10,7 +10,7 @@ impl Store {
             log::trace!("Skipped resolving references for document {:?}", uri);
             return;
         }
-        let all_items = self.get_all_items(false);
+        let all_items = self.get_all_items(uri, false);
         let Some(document) = self.documents.get_mut(uri) else{return;};
 
         if let Some(unresolved_tokens) = find_references(

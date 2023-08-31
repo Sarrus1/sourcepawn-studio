@@ -50,6 +50,8 @@ pub struct Store {
     pub diagnostics: DiagnosticsManager,
 
     pub folders: Vec<PathBuf>,
+
+    pub projects: Graph,
 }
 
 impl Store {
@@ -119,6 +121,8 @@ impl Store {
             }
             document.sp_items = sp_items;
         }
+
+        self.remove_uri_from_projects(uri);
     }
 
     pub fn register_watcher(&mut self, watcher: notify::RecommendedWatcher) {
@@ -144,6 +148,7 @@ impl Store {
         if !self.is_sourcepawn_file(&path) {
             return Ok(None);
         }
+        self.add_uri_to_projects(&uri);
 
         let data = fs::read(&path)?;
         let text = String::from_utf8_lossy(&data).into_owned();
@@ -173,6 +178,9 @@ impl Store {
         let text = String::from_utf8_lossy(&data).into_owned();
         let document = self.handle_open_document(&uri, text, parser)?;
         self.resolve_missing_includes(parser);
+
+        self.remove_uri_from_projects(&uri);
+        self.add_uri_to_projects(&uri);
 
         Ok(Some(document))
     }
@@ -579,57 +587,6 @@ impl Store {
         } else {
             f_name.ends_with(".sp") || f_name.ends_with(".inc")
         }
-    }
-
-    pub fn load_projects_graph(&mut self) -> Graph {
-        let mut graph = Graph::default();
-
-        for document in self.documents.values() {
-            let lexer = SourcepawnLexer::new(&document.text);
-            for symbol in lexer {
-                if symbol.token_kind != TokenKind::PreprocDir(PreprocDir::MInclude) {
-                    continue;
-                }
-                let text = symbol.text();
-                lazy_static! {
-                    static ref RE1: Regex = Regex::new(r"<([^>]+)>").unwrap();
-                    static ref RE2: Regex = Regex::new("\"([^>]+)\"").unwrap();
-                }
-                let mut uri = None;
-                if let Some(caps) = RE1.captures(&text) {
-                    if let Some(path) = caps.get(1) {
-                        uri = self.resolve_import(
-                            &mut path.as_str().to_string(),
-                            &document.uri,
-                            false,
-                        );
-                    }
-                } else if let Some(caps) = RE2.captures(&text) {
-                    if let Some(path) = caps.get(1) {
-                        uri = self.resolve_import(
-                            &mut path.as_str().to_string(),
-                            &document.uri,
-                            true,
-                        );
-                    }
-                }
-                let Some(uri) = uri else {
-                    continue;
-                };
-                let source = Node {
-                    uri: document.uri.as_ref().clone(),
-                };
-                let target = Node { uri };
-                graph.edges.insert(Edge {
-                    source: source.clone(),
-                    target: target.clone(),
-                });
-                graph.nodes.insert(source);
-                graph.nodes.insert(target);
-            }
-        }
-
-        graph
     }
 }
 

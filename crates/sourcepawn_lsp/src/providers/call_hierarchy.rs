@@ -43,7 +43,7 @@ pub fn outgoing(
     let mut outgoing_calls = vec![];
     let origin_item = &*items[0].read();
     if let SPItem::Function(function_origin_item) = origin_item {
-        for item in store.get_all_items(true).iter() {
+        for item in store.get_all_items(&params.item.uri, true).iter() {
             if let SPItem::Function(function_item) = &*item.read() {
                 let mut from_ranges = vec![];
                 for reference in function_item.references.iter() {
@@ -83,7 +83,7 @@ pub fn incoming(
     let mut incoming_calls = vec![];
     let origin_item = &*items[0].read();
     if let SPItem::Function(function_origin_item) = origin_item {
-        for item in store.get_all_items(true).iter() {
+        for item in store.get_all_items(&params.item.uri, true).iter() {
             if let SPItem::Function(function_item) = &*item.read() {
                 let mut from_ranges = vec![];
                 for reference in function_origin_item.references.iter() {
