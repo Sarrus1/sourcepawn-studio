@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, bail, Context};
 use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams, Url};
 use std::sync::Arc;
 use syntax::FileId;
@@ -162,7 +162,7 @@ impl Server {
             return Ok(());
         }
         if uri.to_file_path().is_err() {
-            return Err(anyhow!("Couldn't extract a path from {}", uri));
+            bail!("Couldn't extract a path from {}", uri);
         }
         let path = uri.to_file_path().unwrap();
         let parent_dir = path.parent().unwrap().to_path_buf();

@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::bail;
 use lsp_types::Range;
 use sourcepawn_lexer::Operator;
 
@@ -113,7 +113,7 @@ impl PreOperator {
             Operator::NotEquals => PreOperator::NotEquals,
             Operator::And => PreOperator::And,
             Operator::Or => PreOperator::Or,
-            _ => return Err(anyhow!("Operator {:?} is not a preprocessor operator.", op)),
+            _ => bail!("Operator {:?} is not a preprocessor operator.", op),
         };
 
         Ok(res)

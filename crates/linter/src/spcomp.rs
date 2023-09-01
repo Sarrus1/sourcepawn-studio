@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, bail, Context};
 use fxhash::FxHashMap;
 use lazy_static::lazy_static;
 use lsp_types::{Diagnostic, DiagnosticSeverity, Position, Range, Url};
@@ -114,10 +114,7 @@ pub fn get_spcomp_diagnostics(
     let output = output?;
     let stderr = String::from_utf8_lossy(&output.stderr);
     if !stderr.is_empty() {
-        return Err(anyhow::anyhow!(
-            "Failed to run spcomp with error: {}",
-            stderr
-        ));
+        bail!("Failed to run spcomp with error: {}", stderr);
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
