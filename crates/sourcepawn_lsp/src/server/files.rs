@@ -1,9 +1,9 @@
 use anyhow::{anyhow, bail, Context};
 use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams, Url};
 use std::sync::Arc;
-use syntax::FileId;
+use syntax::{uri_to_file_name, FileId};
 
-use crate::{lsp_ext, Server};
+use crate::{lsp_ext, server::progress::Progress, Server};
 
 mod events;
 mod watching;
@@ -17,12 +17,32 @@ impl Server {
             quiescent: !self.indexing,
             message: None,
         });
+        self.report_progress("Indexing", Progress::Begin, None, None, None);
         self.parse_directories();
+        self.report_progress("Indexing", Progress::End, None, None, None);
 
+        self.report_progress("Resolving roots", Progress::Begin, None, None, None);
         let projects = self.store.write().load_projects_graph();
-        for node in projects.find_roots() {
+        let roots = projects.find_roots();
+        self.report_progress("Resolving roots", Progress::End, None, None, None);
+
+        self.report_progress("Parsing", Progress::Begin, None, None, None);
+        for node in roots {
+            let main_file_name =
+                uri_to_file_name(self.store.read().path_interner.lookup(node.file_id));
+            if let Some(main_file_name) = main_file_name {
+                self.report_progress(
+                    "Parsing",
+                    Progress::Report,
+                    Some(format!("({})", main_file_name)),
+                    None,
+                    None,
+                );
+            }
             let _ = self.parse_project(node.file_id);
         }
+        self.report_progress("Parsing", Progress::End, None, None, None);
+
         self.store.write().projects = projects;
 
         self.indexing = false;
@@ -53,7 +73,7 @@ impl Server {
         let store = self.store.read();
         let folders = store.folders();
         drop(store);
-        for path in folders {
+        for (i, path) in folders.iter().enumerate() {
             if !path.exists() {
                 self.client
                     .send_notification::<ShowMessage>(ShowMessageParams {
@@ -66,7 +86,14 @@ impl Server {
                     .unwrap_or_default();
                 continue;
             }
-            self.store.write().discover_documents(&path);
+            self.report_progress(
+                "Indexing",
+                Progress::Report,
+                Some(format!("{}/{} folders", i + 1, folders.len())),
+                None,
+                None,
+            );
+            self.store.write().discover_documents(path);
         }
     }
 

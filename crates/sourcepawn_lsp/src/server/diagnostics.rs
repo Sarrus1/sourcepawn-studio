@@ -84,9 +84,8 @@ impl Server {
     /// Publish all the diagnostics of the store. This will override all diagnostics that have already
     /// been sent to the client.
     pub fn publish_diagnostics(&mut self) {
-        eprintln!("publishing {:#?}", self.store.read().diagnostics);
+        log::debug!("publishing {:#?}", self.store.read().diagnostics);
         for (uri, diagnostics) in self.store.read().diagnostics.iter() {
-            eprintln!("{:#?}", diagnostics);
             let _ = self
                 .client
                 .send_notification::<PublishDiagnostics>(PublishDiagnosticsParams {

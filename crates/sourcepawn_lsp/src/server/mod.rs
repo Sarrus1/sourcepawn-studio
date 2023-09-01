@@ -24,6 +24,7 @@ use crate::{capabilities::ClientCapabilitiesExt, client::LspClient, lsp_ext};
 mod diagnostics;
 mod files;
 mod notifications;
+mod progress;
 mod requests;
 
 #[derive(Debug)]
