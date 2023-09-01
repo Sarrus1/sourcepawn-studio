@@ -27,14 +27,16 @@ impl Server {
         let token = lsp_types::ProgressToken::String(
             cancel_token.unwrap_or_else(|| format!("sourcepawnLsp/{title}")),
         );
-        let client = self.client.clone();
+
         let work_done_progress = match state {
             Progress::Begin => {
-                let _ = client.send_request::<lsp_types::request::WorkDoneProgressCreate>(
-                    lsp_types::WorkDoneProgressCreateParams {
-                        token: token.clone(),
-                    },
-                );
+                let _ = self
+                    .client
+                    .send_request_without_response::<lsp_types::request::WorkDoneProgressCreate>(
+                        lsp_types::WorkDoneProgressCreateParams {
+                            token: token.clone(),
+                        },
+                    );
 
                 lsp_types::WorkDoneProgress::Begin(lsp_types::WorkDoneProgressBegin {
                     title: title.into(),
@@ -54,11 +56,11 @@ impl Server {
                 lsp_types::WorkDoneProgress::End(lsp_types::WorkDoneProgressEnd { message })
             }
         };
-        let _ = client.send_notification::<lsp_types::notification::Progress>(
-            lsp_types::ProgressParams {
+        let _ = self
+            .client
+            .send_notification::<lsp_types::notification::Progress>(lsp_types::ProgressParams {
                 token,
                 value: lsp_types::ProgressParamsValue::WorkDone(work_done_progress),
-            },
-        );
+            });
     }
 }
