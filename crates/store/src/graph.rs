@@ -220,6 +220,21 @@ impl Graph {
         Some(child.clone())
     }
 
+    pub fn get_subgraph_ids_from_root(&self, root_id: FileId) -> FxHashSet<FileId> {
+        let adj_targets = self.get_adjacent_targets();
+        let mut visited = FxHashSet::default();
+        let mut nodes = vec![];
+        let mut edges = vec![];
+        let root = Node {
+            file_id: root_id,
+            extension: FileExtension::Sp,
+        };
+        dfs(&root, &adj_targets, &mut visited, &mut nodes, &mut edges);
+        visited.insert(root.clone());
+
+        nodes.iter().map(|node| node.file_id).collect()
+    }
+
     pub fn find_subgraphs(&self) -> Vec<SubGraph> {
         let adj_targets = self.get_adjacent_targets();
         let mut subgraphs = vec![];

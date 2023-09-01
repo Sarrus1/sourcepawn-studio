@@ -270,7 +270,7 @@ impl Store {
             .expect("Couldn't parse document");
         if !self.first_parse {
             // Don't try to find references yet, all the tokens might not be referenced.
-            self.find_references(&file_id);
+            self.resolve_file_references(&file_id);
             self.sync_references(&mut document, prev_declarations);
         }
         log::trace!("Done opening file {:?}", uri);
@@ -316,7 +316,7 @@ impl Store {
                     }
                 }
             }
-            self.find_references(&file_id);
+            self.resolve_file_references(&file_id);
         }
         for item in deleted_declarations.values() {
             let item = item.read();
@@ -573,8 +573,11 @@ impl Store {
     /// Resolve all the references in a project, given the [file_id](FileId) of a file in the project.
     ///
     /// # Arguments
-    /// * `file_id` - The [file_id](FileId) of a file in the project. Does not have to be the root.
-    pub fn resolve_project_references(&mut self, file_id: FileId) {
+    /// * `uri` - The [uri](Url) of a file in the project. Does not have to be the root.
+    pub fn resolve_project_references(&mut self, uri: &Url) {
+        let Some(file_id) = self.path_interner.get(uri) else {
+            return;
+        };
         let Some(main_node) = self.projects.find_root_from_id(file_id) else {
             return;
         };
@@ -583,6 +586,10 @@ impl Store {
             let mut includes = FxHashSet::default();
             includes.insert(main_id);
             if let Some(document) = self.documents.get(&main_id) {
+                if document.is_resolved() {
+                    // Main file has already been resolved, assume the rest of the project has been too.
+                    return;
+                }
                 self.get_included_files(document, &mut includes);
                 includes.iter().cloned().collect()
             } else {
@@ -590,7 +597,7 @@ impl Store {
             }
         };
         file_ids.iter().for_each(|file_id: &FileId| {
-            self.find_references(file_id);
+            self.resolve_file_references(file_id);
         });
     }
 

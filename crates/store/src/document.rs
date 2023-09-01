@@ -56,6 +56,7 @@ pub struct Document {
     pub sp_items: Vec<Arc<RwLock<SPItem>>>,
     pub(crate) includes: FxHashMap<FileId, Token>,
     pub parsed: bool,
+    resolved: bool,
     pub(crate) tokens: Vec<SPToken>,
     pub missing_includes: FxHashMap<String, Range>,
     pub unresolved_tokens: FxHashSet<String>,
@@ -90,7 +91,18 @@ impl Document {
             macros: FxHashMap::default(),
             macro_symbols: vec![],
             offsets: FxHashMap::default(),
+            resolved: false,
         }
+    }
+
+    /// Return `true` if the document tokens have been resolved at least once, `false` otherwise.
+    pub fn is_resolved(&self) -> bool {
+        self.resolved
+    }
+
+    /// Mark the document tokens as resolved at least once.
+    pub fn mark_as_resolved(&mut self) {
+        self.resolved = true;
     }
 
     pub fn text(&self) -> &str {

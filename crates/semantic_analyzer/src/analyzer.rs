@@ -30,6 +30,10 @@ pub struct Analyzer<'a> {
 }
 
 impl<'a> Analyzer<'a> {
+    /// Create a new [Analyzer] for a document.
+    ///
+    /// This constructor makes sure to remove all references of items that point to this document.
+    /// This avoids creating duplicate references.
     pub fn new(
         all_items: Vec<Arc<RwLock<SPItem>>>,
         uri: &Arc<Url>,

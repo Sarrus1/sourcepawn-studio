@@ -15,7 +15,7 @@ pub use {resolvers::is_ctor_call, token::*};
 
 use crate::analyzer::Analyzer;
 
-pub fn find_references(
+pub fn resolve_references(
     all_items: Vec<Arc<RwLock<SPItem>>>,
     uri: &Arc<Url>,
     file_id: FileId,
@@ -63,6 +63,11 @@ pub fn find_references(
     Some(unresolved_tokens)
 }
 
+/// Purge the references of an [item](SPItem) from a file.
+///
+/// # Arguments
+/// * `item` - [Item](SPItem) to purge the references from.
+/// * `file_id` - [Id](FileId) of the file from which we want to remove the references.
 pub fn purge_references(item: &Arc<RwLock<SPItem>>, file_id: FileId) {
     let mut new_references = vec![];
     let mut item_lock = item.write();
