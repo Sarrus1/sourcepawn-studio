@@ -45,8 +45,13 @@ pub(super) fn is_include_statement(pre_line: &str) -> Option<IncludeStatement> {
 pub(super) fn get_include_completions(
     store: &Store,
     include_st: IncludeStatement,
+    uri: &Url,
 ) -> Option<CompletionList> {
-    let include_paths = store.environment.options.get_all_possible_include_folders();
+    let main_path = store.get_project_main_path_from_id(&store.path_interner.get(uri)?)?;
+    let include_paths = store
+        .environment
+        .options
+        .get_all_possible_include_folders(main_path);
 
     let mut inc_uri_folders: Vec<Url> = vec![];
     for inc_path in include_paths {

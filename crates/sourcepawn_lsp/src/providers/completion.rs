@@ -51,7 +51,7 @@ pub(crate) fn provide_completions(
             '<' | '"' | '\'' | '/' | '\\' => {
                 let include_st = is_include_statement(&pre_line);
                 if let Some(include_st) = include_st {
-                    return get_include_completions(store, include_st);
+                    return get_include_completions(store, include_st, uri);
                 }
                 return None;
             }
@@ -89,7 +89,7 @@ pub(crate) fn provide_completions(
                 // Therefore, this block must cover all possibilities.
                 let include_st = is_include_statement(&pre_line);
                 if let Some(include_st) = include_st {
-                    return get_include_completions(store, include_st);
+                    return get_include_completions(store, include_st, uri);
                 }
 
                 if is_callback_completion_request(params.context.clone()) {

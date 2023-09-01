@@ -9,36 +9,58 @@ use super::InternalMessage;
 use crate::{lsp_ext, LspClient, Server};
 
 impl Server {
-    /// Reload the diagnostics of the workspace, by running spcomp.
-    pub(crate) fn reload_diagnostics(&mut self, uri: &Url) {
+    /// Runs [`Server::reload_project_diagnostics()`](#method.reload_project_diagnostics) by getting the main path
+    /// from the uri provided.
+    ///
+    /// # Arguments
+    /// * `uri` - [Url] of a file in the project to reload the diagnostics of.
+    pub(crate) fn reload_diagnostics(&mut self, uri: Url) {
+        let Some(file_id) = self.store.read().path_interner.get(&uri) else {
+            return;
+        };
+        let Some(main_node) = self.store.read().projects.find_root_from_id(file_id) else {
+            return;
+        };
+        let main_path_uri = self
+            .store
+            .read()
+            .path_interner
+            .lookup(main_node.file_id)
+            .clone();
+        self.reload_project_diagnostics(main_path_uri);
+    }
+
+    /// Reload the diagnostics of a project, by running spcomp and the server's linter.
+    ///
+    /// # Arguments
+    /// * `main_path_uri` - [Url] of the main file of the project.
+    pub(crate) fn reload_project_diagnostics(&mut self, main_path_uri: Url) {
         self.store.write().diagnostics.clear_all_diagnostics();
 
-        self.lint_project(uri);
+        self.lint_project(&main_path_uri);
 
         let client = self.client.clone();
         let sender = self.internal_tx.clone();
         let store = Arc::clone(&self.store);
-        if let Ok(Some(main_path_uri)) = self.store.read().environment.options.get_main_path_uri() {
-            // Only reload the diagnostics if the main path is defined.
-            self.pool.execute(move || {
-                let _ = client.send_spcomp_status(false);
-                if let Ok(diagnostics_map) = get_spcomp_diagnostics(
-                    main_path_uri,
-                    &store.read().environment.options.spcomp_path,
-                    &store.read().environment.options.includes_directories,
-                    &store.read().environment.options.linter_arguments,
-                ) {
-                    let _ = sender.send(InternalMessage::Diagnostics(diagnostics_map));
-                } else {
-                    // Failed to run spcomp.
-                    let _ = client.send_notification::<ShowMessage>(ShowMessageParams {
-                        message: "Failed to run spcomp.\nIs the path valid?".to_string(),
-                        typ: MessageType::ERROR,
-                    });
-                }
-                let _ = client.send_spcomp_status(true);
-            });
-        }
+        // Only reload the diagnostics if the main path is defined.
+        self.pool.execute(move || {
+            let _ = client.send_spcomp_status(false);
+            if let Ok(diagnostics_map) = get_spcomp_diagnostics(
+                main_path_uri,
+                &store.read().environment.options.spcomp_path,
+                &store.read().environment.options.includes_directories,
+                &store.read().environment.options.linter_arguments,
+            ) {
+                let _ = sender.send(InternalMessage::Diagnostics(diagnostics_map));
+            } else {
+                // Failed to run spcomp.
+                let _ = client.send_notification::<ShowMessage>(ShowMessageParams {
+                    message: "Failed to run spcomp.\nIs the path valid?".to_string(),
+                    typ: MessageType::ERROR,
+                });
+            }
+            let _ = client.send_spcomp_status(true);
+        });
     }
 
     /// Lint all documents in the project with the custom linter.

@@ -14,7 +14,7 @@ impl Server {
                         continue;
                     };
                     let _ = self.store.write().load(path, &mut self.parser);
-                    self.reload_diagnostics(&uri);
+                    self.reload_diagnostics(uri);
                 }
             }
             notify::EventKind::Modify(modify_event) => {
@@ -88,13 +88,13 @@ impl Server {
                         }
                     }
                 }
-                self.reload_diagnostics(&uri);
+                self.reload_diagnostics(uri);
             }
             notify::EventKind::Remove(_) => {
                 for mut uri in event.paths.iter().flat_map(Url::from_file_path) {
                     normalize_uri(&mut uri);
                     self.store.write().remove(&uri, &mut self.parser);
-                    self.reload_diagnostics(&uri);
+                    self.reload_diagnostics(uri);
                 }
             }
             notify::EventKind::Any | notify::EventKind::Access(_) | notify::EventKind::Other => {}

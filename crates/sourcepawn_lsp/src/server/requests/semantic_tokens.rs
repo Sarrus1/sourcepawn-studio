@@ -13,7 +13,8 @@ impl Server {
     ) -> anyhow::Result<()> {
         normalize_uri(&mut params.text_document.uri);
         let uri = Arc::new(params.text_document.uri.clone());
-        self.store.write().resolve_project_references(&uri);
+
+        self.initialize_project_resolution(&uri);
         let _ = self.read_unscanned_document(uri);
 
         self.run_query(id, move |store| {

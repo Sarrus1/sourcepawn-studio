@@ -46,31 +46,10 @@ impl Store {
             // Search for the relative path.
             let document_path = document_uri.to_file_path().ok()?;
             let parent_path = document_path.parent()?;
-            let mut include_file_path = parent_path.join(include_text);
-            let mut uri = Url::from_file_path(&include_file_path).ok()?;
+            let include_file_path = parent_path.join(include_text);
+            let uri = Url::from_file_path(&include_file_path).ok()?;
             if self.contains_uri(&uri) {
                 return self.path_interner.get(&uri);
-            }
-            if let Ok(Some(main_path_uri)) = self.environment.options.get_main_path_uri() {
-                let main_path = main_path_uri.to_file_path().ok()?;
-                let main_path_parent = main_path.parent()?;
-                if parent_path != main_path_parent {
-                    // Don't look for includes in the include folder if we are not at the root
-                    // of the project.
-                    return None;
-                }
-                include_file_path = main_path_parent.join("include").join(include_text);
-                log::trace!(
-                    "Looking for {:#?} in {:#?}",
-                    include_text,
-                    include_file_path
-                );
-
-                uri = Url::from_file_path(&include_file_path).ok()?;
-                if self.contains_uri(&uri) {
-                    return self.path_interner.get(&uri);
-                }
-                return None;
             }
         }
 

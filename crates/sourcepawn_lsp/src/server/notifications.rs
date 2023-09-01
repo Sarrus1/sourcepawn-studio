@@ -87,11 +87,11 @@ impl Server {
                         .store
                         .write()
                         .reload(change.uri.to_file_path().unwrap(), &mut self.parser);
-                    self.reload_diagnostics(&change.uri);
+                    self.reload_diagnostics(change.uri);
                 }
                 FileChangeType::DELETED => {
                     self.store.write().remove(&change.uri, &mut self.parser);
-                    self.reload_diagnostics(&change.uri);
+                    self.reload_diagnostics(change.uri);
                 }
                 FileChangeType::CREATED => {
                     if let Ok(path) = change.uri.to_file_path() {
@@ -99,7 +99,7 @@ impl Server {
                             .store
                             .write()
                             .load(path.as_path().to_path_buf(), &mut self.parser);
-                        self.reload_diagnostics(&change.uri);
+                        self.reload_diagnostics(change.uri);
                     }
                 }
                 _ => {}

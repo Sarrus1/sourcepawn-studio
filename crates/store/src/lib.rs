@@ -63,6 +63,15 @@ impl Store {
         self.documents.values().cloned()
     }
 
+    /// Returns the [MainPath](PathBuf) of a project given a the [FileId](FileId) of a file in the project.
+    pub fn get_project_main_path_from_id(&self, file_id: &FileId) -> Option<PathBuf> {
+        if let Some(node) = self.projects.find_root_from_id(*file_id) {
+            return self.path_interner.lookup(node.file_id).to_file_path().ok();
+        }
+
+        None
+    }
+
     pub fn contains_uri(&self, uri: &Url) -> bool {
         let Some(file_id) = self.path_interner.get(uri) else {
             return false;
@@ -571,24 +580,22 @@ impl Store {
     }
 
     /// Resolve all the references in a project, given the [file_id](FileId) of a file in the project.
+    /// Will not run if the main file has already been resolved at least once.
+    /// Returns [None] if it did not run and [Some(file_id)] if it did, with [file_id](FileId) being the id of the
+    /// main file.
     ///
     /// # Arguments
     /// * `uri` - The [uri](Url) of a file in the project. Does not have to be the root.
-    pub fn resolve_project_references(&mut self, uri: &Url) {
-        let Some(file_id) = self.path_interner.get(uri) else {
-            return;
-        };
-        let Some(main_node) = self.projects.find_root_from_id(file_id) else {
-            return;
-        };
-        let main_id = main_node.file_id;
+    pub fn resolve_project_references(&mut self, uri: &Url) -> Option<FileId> {
+        let file_id = self.path_interner.get(uri)?;
+        let main_id = self.projects.find_root_from_id(file_id)?.file_id;
         let file_ids: Vec<FileId> = {
             let mut includes = FxHashSet::default();
             includes.insert(main_id);
             if let Some(document) = self.documents.get(&main_id) {
                 if document.is_resolved() {
                     // Main file has already been resolved, assume the rest of the project has been too.
-                    return;
+                    return None;
                 }
                 self.get_included_files(document, &mut includes);
                 includes.iter().cloned().collect()
@@ -599,6 +606,8 @@ impl Store {
         file_ids.iter().for_each(|file_id: &FileId| {
             self.resolve_file_references(file_id);
         });
+
+        Some(main_id)
     }
 
     pub fn get_all_files_in_folder(&self, folder_uri: &Url) -> Vec<Url> {

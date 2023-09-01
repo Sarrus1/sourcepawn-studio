@@ -26,18 +26,6 @@ impl Server {
         self.store.write().projects = projects;
 
         self.indexing = false;
-        let store = self.store.read();
-        let file_ids: Vec<FileId> = store
-            .projects
-            .find_roots()
-            .iter()
-            .map(|node| node.file_id)
-            .collect();
-        drop(store);
-        for file_id in file_ids {
-            let uri = self.store.read().path_interner.lookup(file_id).clone();
-            self.reload_diagnostics(&uri);
-        }
         let _ = self.send_status(lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,
             quiescent: !self.indexing,
