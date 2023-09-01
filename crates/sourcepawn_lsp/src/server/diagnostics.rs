@@ -43,11 +43,14 @@ impl Server {
 
     /// Lint all documents in the project with the custom linter.
     pub fn lint_project(&mut self, uri: &Url) {
+        let Some(file_id) = self.store.read().path_interner.get(uri) else {
+            return;
+        };
         self.store
             .write()
             .diagnostics
             .clear_all_global_diagnostics();
-        let all_items_flat = self.store.read().get_all_items(uri, true);
+        let all_items_flat = self.store.read().get_all_items(&file_id, true);
         // TODO: Make diagnostics an external crate to avoid having to pass the store as writable.
         self.store
             .write()

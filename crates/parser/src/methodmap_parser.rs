@@ -28,6 +28,7 @@ impl<'a> Parser<'a> {
                 .find_doc(node.start_position().row, false)
                 .unwrap_or_default(),
             uri: self.uri.clone(),
+            file_id: self.file_id,
             references: vec![],
             tmp_parent: inherit,
             children: vec![],

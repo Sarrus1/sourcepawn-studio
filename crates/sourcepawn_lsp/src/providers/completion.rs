@@ -5,7 +5,7 @@ use lsp_types::{CompletionItem, CompletionList, CompletionParams};
 use semantic_analyzer::is_ctor_call;
 use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
 use store::Store;
-use syntax::range_contains_pos;
+use syntax::{range_contains_pos, FileId};
 
 use self::{
     context::{is_callback_completion_request, is_doc_completion, is_method_call},
@@ -25,8 +25,9 @@ pub(crate) fn provide_completions(
 ) -> Option<CompletionList> {
     log::debug!("Providing completions.");
     let uri = &params.text_document_position.text_document.uri;
-    let document = store.documents.get(uri)?;
-    let all_items = store.get_all_items(uri, false);
+    let file_id = store.path_interner.get(uri)?;
+    let document = store.documents.get(&file_id)?;
+    let all_items = store.get_all_items(&file_id, false);
     let position = &params.text_document_position.position;
     let line = document.line(position.line)?;
     let pre_line: String = line.chars().take(position.character as usize).collect();
@@ -118,14 +119,26 @@ pub(crate) fn resolve_completion_item(
     completion_item: CompletionItem,
 ) -> Option<CompletionItem> {
     let mut completion_item = completion_item;
-    // TODO: Fix with a path interner, that is passed with the key.
-    // let key = completion_item.data.clone()?;
-    // if let Some(sp_item) = store.get_item_from_key(key.to_string().replace('"', "")) {
-    //     let sp_item = &*sp_item.read();
-    //     completion_item.detail = Some(sp_item.formatted_text());
-    //     completion_item.documentation = sp_item.documentation();
-    //     return Some(completion_item);
-    // }
+    let mut data: Vec<String> = completion_item
+        .data
+        .clone()?
+        .to_string()
+        .replace('"', "")
+        .split('$')
+        .map(|s| s.to_string())
+        .collect();
+    if data.len() != 2 {
+        return None;
+    }
+    let key = data.remove(0);
+    let file_id: FileId = data[1].parse::<u32>().ok()?.into();
+
+    if let Some(sp_item) = store.get_item_from_key(key, file_id) {
+        let sp_item = &*sp_item.read();
+        completion_item.detail = Some(sp_item.formatted_text());
+        completion_item.documentation = sp_item.documentation();
+        return Some(completion_item);
+    }
 
     None
 }

@@ -1,16 +1,36 @@
+use std::hash::{Hash, Hasher};
+
 use anyhow::bail;
 use fxhash::{FxHashMap, FxHashSet};
 use lazy_static::lazy_static;
 use lsp_types::Url;
 use regex::Regex;
 use sourcepawn_lexer::{PreprocDir, SourcepawnLexer, TokenKind};
-use syntax::uri_to_file_name;
+use syntax::{uri_to_file_name, FileId};
 
-use crate::{document::Document, Store};
+use crate::{
+    document::{uri_to_file_extension, Document, FileExtension},
+    Store,
+};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Node {
-    pub uri: Url,
+    pub file_id: FileId,
+    pub extension: FileExtension,
+}
+
+impl PartialEq<Node> for Node {
+    fn eq(&self, other: &Node) -> bool {
+        self.file_id == other.file_id
+    }
+}
+
+impl Eq for Node {}
+
+impl Hash for Node {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.file_id.hash(state);
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -35,8 +55,8 @@ pub struct SubGraph {
 
 impl Store {
     /// Get all the files that are included in the given document.
-    fn get_include_uris_from_document(&self, document: &Document) -> Vec<Url> {
-        let mut uris = vec![];
+    fn get_include_ids_from_document(&self, document: &Document) -> Vec<(FileId, FileExtension)> {
+        let mut file_ids = vec![];
         let lexer = SourcepawnLexer::new(&document.text);
         for symbol in lexer {
             if symbol.token_kind != TokenKind::PreprocDir(PreprocDir::MInclude) {
@@ -47,33 +67,39 @@ impl Store {
                 static ref RE1: Regex = Regex::new(r"<([^>]+)>").unwrap();
                 static ref RE2: Regex = Regex::new("\"([^>]+)\"").unwrap();
             }
-            let mut uri = None;
+            let mut file_id = None;
             if let Some(caps) = RE1.captures(&text) {
                 if let Some(path) = caps.get(1) {
-                    uri = self.resolve_import(&mut path.as_str().to_string(), &document.uri, false);
+                    file_id =
+                        self.resolve_import(&mut path.as_str().to_string(), &document.uri, false);
                 }
             } else if let Some(caps) = RE2.captures(&text) {
                 if let Some(path) = caps.get(1) {
-                    uri = self.resolve_import(&mut path.as_str().to_string(), &document.uri, true);
+                    file_id =
+                        self.resolve_import(&mut path.as_str().to_string(), &document.uri, true);
                 }
             }
-            if let Some(uri) = uri {
-                uris.push(uri);
+            if let Some(file_id) = file_id {
+                file_ids.push((
+                    file_id,
+                    uri_to_file_extension(self.path_interner.lookup(file_id)).unwrap_or_default(),
+                ));
             }
         }
 
-        uris
+        file_ids
     }
 
     pub fn load_projects_graph(&mut self) -> Graph {
         let mut graph = Graph::default();
 
         for document in self.documents.values() {
-            for uri in self.get_include_uris_from_document(document) {
+            for (file_id, extension) in self.get_include_ids_from_document(document) {
                 let source = Node {
-                    uri: document.uri.as_ref().clone(),
+                    file_id: document.file_id,
+                    extension: document.extension(),
                 };
-                let target = Node { uri };
+                let target = Node { file_id, extension };
                 graph.edges.insert(Edge {
                     source: source.clone(),
                     target: target.clone(),
@@ -86,35 +112,53 @@ impl Store {
         graph
     }
 
-    pub fn add_uri_to_projects(&mut self, uri: &Url) -> anyhow::Result<()> {
-        let Some(document) = self.documents.get(uri) else {
-            bail!("Could not find document to insert from uri {:?}", uri);
+    pub fn add_file_to_projects(&mut self, file_id: &FileId) -> anyhow::Result<()> {
+        let Some(document) = self.documents.get(file_id) else {
+            bail!("Could not find document to insert from uri {:?}", self.path_interner.lookup(*file_id));
         };
-        for uri in self.get_include_uris_from_document(document) {
-            let source = Node {
-                uri: document.uri.as_ref().clone(),
-            };
-            let target = Node { uri };
-            self.projects.edges.insert(Edge {
-                source: source.clone(),
-                target: target.clone(),
-            });
-            self.projects.nodes.insert(source);
-            self.projects.nodes.insert(target);
+        for (file_id, extension) in self.get_include_ids_from_document(document) {
+            self.projects
+                .add_file_id(document.file_id, document.extension(), file_id, extension)
         }
 
         Ok(())
     }
 
-    pub fn remove_uri_from_projects(&mut self, uri: &Url) {
+    pub fn remove_file_from_projects(&mut self, file_id: &FileId) {
         self.projects
             .edges
-            .retain(|edge| &edge.source.uri != uri || &edge.target.uri != uri);
-        self.projects.nodes.remove(&Node { uri: uri.clone() });
+            .retain(|edge| &edge.source.file_id != file_id || &edge.target.file_id != file_id);
+        self.projects.nodes.remove(&Node {
+            file_id: *file_id,
+            extension: FileExtension::Sp, // We don't care about the extension here.
+        });
     }
 }
 
 impl Graph {
+    pub fn add_file_id(
+        &mut self,
+        source_id: FileId,
+        source_extension: FileExtension,
+        target_id: FileId,
+        target_extension: FileExtension,
+    ) {
+        let source = Node {
+            file_id: source_id,
+            extension: source_extension,
+        };
+        let target = Node {
+            file_id: target_id,
+            extension: target_extension,
+        };
+        self.edges.insert(Edge {
+            source: source.clone(),
+            target: target.clone(),
+        });
+        self.nodes.insert(source);
+        self.nodes.insert(target);
+    }
+
     fn get_adjacent_targets(&self) -> FxHashMap<Node, FxHashSet<Node>> {
         let mut adj_targets: FxHashMap<Node, FxHashSet<Node>> = FxHashMap::default();
         for edge in self.edges.iter() {
@@ -141,12 +185,12 @@ impl Graph {
             .collect::<Vec<&Node>>()
     }
 
-    /// Get the root of the [subgraph](SubGraph) from a given [uri](Url).
+    /// Get the root of the [subgraph](SubGraph) from a given [file_id](FileId).
     ///
-    /// - If the [uri](Url) is not in the graph, return [None].
-    /// - If the [uri](Url) or one of its parent has more than one parent, return [None].
-    /// - If the [uri](Url) or one of its parent is an include file, return [uri](Url) of the include file.
-    pub fn find_root_from_uri(&self, uri: &Url) -> Option<Node> {
+    /// - If the [file_id](FileId) is not in the graph, return [None].
+    /// - If the [file_id](FileId) or one of its parent has more than one parent, return [None].
+    /// - If the [file_id](FileId) or one of its parent is an include file, return the [file_id](FileId) of the include file.
+    pub fn find_root_from_id(&self, file_id: FileId) -> Option<Node> {
         let mut adj_sources: FxHashMap<Node, FxHashSet<Node>> = FxHashMap::default();
         for edge in self.edges.iter() {
             adj_sources
@@ -154,16 +198,17 @@ impl Graph {
                 .or_insert_with(FxHashSet::default)
                 .insert(edge.source.clone());
         }
-        let mut child = &Node { uri: uri.clone() };
-        while let Some(parents) = adj_sources.get(&child) {
+        let mut child = &Node {
+            file_id,
+            extension: FileExtension::Sp,
+        };
+        while let Some(parents) = adj_sources.get(child) {
             if parents.len() == 1 {
                 let parent = parents.iter().next().unwrap();
 
                 // If the parent is an include file, we don't want to go further.
                 // Include files can be included in multiple files.
-                if child.uri.to_file_path().ok()?.ends_with(".inc")
-                    && parent.uri.to_file_path().ok()?.ends_with(".sp")
-                {
+                if child.extension == FileExtension::Inc && parent.extension == FileExtension::Sp {
                     return Some(child.clone());
                 }
                 child = parent;
@@ -193,12 +238,14 @@ impl Graph {
 
         subgraphs
     }
+}
 
+impl Store {
     pub fn represent_graphs(&self) -> Option<String> {
         let mut out = vec!["digraph G {".to_string()];
-        let subgraphs = self.find_subgraphs();
+        let subgraphs = self.projects.find_subgraphs();
         for (i, sub_graph) in subgraphs.iter().enumerate() {
-            if uri_to_file_name(&sub_graph.root.uri)?.ends_with(".inc") {
+            if sub_graph.root.extension == FileExtension::Inc {
                 continue;
             }
             out.push(format!(
@@ -214,22 +261,19 @@ impl Graph {
             for edge in sub_graph.edges.iter() {
                 out.push(format!(
                     "\"{}\" -> \"{}\";",
-                    uri_to_file_name(&edge.source.uri)?,
-                    uri_to_file_name(&edge.target.uri)?
+                    uri_to_file_name(self.path_interner.lookup(edge.source.file_id))?,
+                    uri_to_file_name(self.path_interner.lookup(edge.target.file_id))?
                 ));
             }
             out.push("}".to_string());
         }
         for sub_graph in subgraphs.iter() {
-            if uri_to_file_name(&sub_graph.root.uri)
-                .unwrap()
-                .ends_with(".inc")
-            {
+            if sub_graph.root.extension == FileExtension::Inc {
                 continue;
             }
             out.push(format!(
                 "\"{}\" [shape=Mdiamond];",
-                uri_to_file_name(&sub_graph.root.uri)?
+                uri_to_file_name(self.path_interner.lookup(sub_graph.root.file_id))?
             ))
         }
         out.push("}".to_string());

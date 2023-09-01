@@ -29,6 +29,7 @@ impl<'a> Parser<'a> {
             v_full_range: self.build_v_range(&full_range),
             description,
             uri: self.uri.clone(),
+            file_id: self.file_id,
             references: vec![],
             children: vec![],
         };
@@ -94,6 +95,7 @@ impl<'a> Parser<'a> {
             v_full_range: self.build_v_range(&full_range),
             description: description.clone(),
             uri: self.uri.clone(),
+            file_id: self.file_id,
             detail: child
                 .utf8_text(self.source.as_bytes())
                 .unwrap_or_default()

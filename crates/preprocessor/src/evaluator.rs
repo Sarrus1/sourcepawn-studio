@@ -40,7 +40,7 @@ impl<'a> IfCondition<'a> {
         );
         let mut symbol_iter = self
             .symbols
-            .clone() // FIXME: This is horrible.
+            .clone() // TODO: This is horrible.
             .into_iter()
             .peekable();
         while let Some(symbol) = if !self.expansion_stack.is_empty() {

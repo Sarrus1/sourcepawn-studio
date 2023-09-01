@@ -10,7 +10,7 @@ impl Server {
         match event.kind {
             notify::EventKind::Create(_) => {
                 for path in event.paths {
-                    let Ok(mut uri) = Url::from_file_path(path.clone()) else {
+                    let Ok(uri) = Url::from_file_path(path.clone()) else {
                         continue;
                     };
                     let _ = self.store.write().load(path, &mut self.parser);
@@ -69,7 +69,7 @@ impl Server {
                             }
                         }
                         for uri in uris.iter() {
-                            if self.store.read().documents.contains_key(uri) {
+                            if self.store.read().contains_uri(uri) {
                                 self.store.write().remove(uri, &mut self.parser);
                             } else {
                                 let _ = self
@@ -80,7 +80,7 @@ impl Server {
                         }
                     }
                     _ => {
-                        if self.store.read().documents.contains_key(&uri) {
+                        if self.store.read().contains_uri(&uri) {
                             let _ = self
                                 .store
                                 .write()

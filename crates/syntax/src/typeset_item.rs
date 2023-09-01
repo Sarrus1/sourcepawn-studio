@@ -7,7 +7,7 @@ use parking_lot::RwLock;
 use std::sync::Arc;
 
 use crate::description::Description;
-use crate::{uri_to_file_name, Location, SPItem};
+use crate::{uri_to_file_name, FileId, Reference, SPItem};
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a SourcePawn typeset/funcenum, which can be converted to a
@@ -34,8 +34,11 @@ pub struct TypesetItem {
     /// Uri of the file where the typeset is declared.
     pub uri: Arc<Url>,
 
+    /// [FileId](FileId) of the file where the typeset is declared.
+    pub file_id: FileId,
+
     /// References to this typeset.
-    pub references: Vec<Location>,
+    pub references: Vec<Reference>,
 
     /// Parameters of the typeset.
     pub children: Vec<Arc<RwLock<SPItem>>>,
@@ -70,7 +73,7 @@ impl TypesetItem {
                 },
             }),
             deprecated: Some(self.is_deprecated()),
-            data: Some(serde_json::Value::String(self.key())),
+            data: Some(serde_json::Value::String(self.completion_data())),
             ..Default::default()
         })
     }
@@ -154,6 +157,10 @@ impl TypesetItem {
     /// Return a key to be used as a unique identifier in a map containing all the items.
     pub fn key(&self) -> String {
         self.name.clone()
+    }
+
+    pub fn completion_data(&self) -> String {
+        format!("{}${}", self.key(), self.file_id)
     }
 
     /// Formatted representation of a [TypesetItem].

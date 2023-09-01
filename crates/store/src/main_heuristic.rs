@@ -1,6 +1,9 @@
 use lsp_types::Url;
 
-use crate::{document::Document, Store};
+use crate::{
+    document::{Document, FileExtension},
+    Store,
+};
 
 impl Store {
     /// Check if a document is a potential main file.
@@ -23,7 +26,7 @@ impl Store {
                 return None;
             }
         }
-        if document.extension().ok()? == "sp" && document.text.contains("OnPluginStart()") {
+        if document.extension() == FileExtension::Sp && document.text.contains("OnPluginStart()") {
             return Some(document.uri());
         }
 

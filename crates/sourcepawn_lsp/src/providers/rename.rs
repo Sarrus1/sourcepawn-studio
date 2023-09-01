@@ -25,10 +25,13 @@ pub fn provide_rename(store: &Store, params: RenameParams) -> Option<WorkspaceEd
             range: reference.v_range,
             new_text: params.new_name.clone(),
         };
-        if let Some(uri_changes) = changes.get_mut(&reference.uri) {
+        if let Some(uri_changes) = changes.get_mut(store.path_interner.lookup(reference.file_id)) {
             uri_changes.push(edit)
         } else {
-            changes.insert((*reference.uri).clone(), vec![edit]);
+            changes.insert(
+                store.path_interner.lookup(reference.file_id).clone(),
+                vec![edit],
+            );
         }
     }
 

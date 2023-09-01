@@ -9,8 +9,7 @@ impl Server {
         id: RequestId,
         _params: ProjectsGraphvizParams,
     ) -> anyhow::Result<()> {
-        let projects = self.store.write().load_projects_graph();
-        if let Some(graphviz) = projects.represent_graphs() {
+        if let Some(graphviz) = self.store.read().represent_graphs() {
             self.run_query(id, move |_store| graphviz);
             return Ok(());
         }

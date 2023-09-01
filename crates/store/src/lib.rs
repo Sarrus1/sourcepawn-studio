@@ -1,17 +1,14 @@
-use ::syntax::SPItem;
+use ::syntax::{FileId, SPItem};
 use anyhow::anyhow;
 use fxhash::{FxHashMap, FxHashSet};
 use graph::Graph;
-use include::add_include;
-use lazy_static::lazy_static;
 use linter::DiagnosticsManager;
 use lsp_types::{Range, Url};
 use parking_lot::RwLock;
 use parser::Parser;
+use path_interner::PathInterner;
 use preprocessor::{Macro, SourcepawnPreprocessor};
-use regex::Regex;
 use semantic_analyzer::{purge_references, Token};
-use sourcepawn_lexer::{PreprocDir, SourcepawnLexer, TokenKind};
 use std::{
     fs::{self, File},
     io::{self, Read},
@@ -26,19 +23,18 @@ pub mod graph;
 pub mod include;
 pub mod main_heuristic;
 pub mod options;
+mod path_interner;
 mod semantics;
 pub mod syntax;
 
-use crate::{
-    document::Document,
-    environment::Environment,
-    graph::{Edge, Node},
-};
+use crate::{document::Document, environment::Environment};
 
 #[derive(Debug, Clone, Default)]
 pub struct Store {
     /// Any documents the server has handled, indexed by their URL.
-    pub documents: FxHashMap<Arc<Url>, Document>,
+    pub documents: FxHashMap<FileId, Document>,
+
+    pub path_interner: PathInterner,
 
     pub environment: Environment,
 
@@ -67,12 +63,27 @@ impl Store {
         self.documents.values().cloned()
     }
 
-    pub fn get(&self, uri: &Url) -> Option<Document> {
-        self.documents.get(uri).cloned()
+    pub fn contains_uri(&self, uri: &Url) -> bool {
+        let Some(file_id) = self.path_interner.get(uri) else {
+            return false;
+        };
+        self.documents.contains_key(&file_id)
     }
 
-    pub fn get_text(&self, uri: &Url) -> Option<String> {
-        if let Some(document) = self.documents.get(uri) {
+    pub fn get_from_uri(&self, uri: &Url) -> Option<&Document> {
+        self.documents.get(&self.path_interner.get(uri)?)
+    }
+
+    pub fn get_cloned_from_uri(&self, uri: &Url) -> Option<Document> {
+        self.documents.get(&self.path_interner.get(uri)?).cloned()
+    }
+
+    pub fn get_cloned(&self, file_id: &FileId) -> Option<Document> {
+        self.documents.get(file_id).cloned()
+    }
+
+    pub fn get_text(&self, file_id: &FileId) -> Option<String> {
+        if let Some(document) = self.documents.get(file_id) {
             return Some(document.text.clone());
         }
 
@@ -93,22 +104,24 @@ impl Store {
     }
 
     pub fn remove(&mut self, uri: &Url, parser: &mut tree_sitter::Parser) {
+        let Some(file_id) = self.path_interner.get(uri) else {
+            return;
+        };
         // Open the document as empty to delete the references.
         let _ = self.handle_open_document(&Arc::new((*uri).clone()), "".to_string(), parser);
-        self.documents.remove(uri);
-        let uri_arc = Arc::new(uri.clone());
+        self.documents.remove(&file_id);
         for document in self.documents.values_mut() {
-            if let Some(include) = document.includes.get(uri) {
+            if let Some(include) = document.includes.get(&file_id) {
                 // Consider the include to be missing.
                 document
                     .missing_includes
                     .insert(include.text.clone(), include.range);
             }
-            document.includes.remove(uri);
+            document.includes.remove(&file_id);
             let mut sp_items = vec![];
             // Purge references to the deleted file.
             for item in document.sp_items.iter() {
-                purge_references(item, &uri_arc);
+                purge_references(item, file_id);
                 // Delete Include items.
                 match &*item.read() {
                     SPItem::Include(include_item) => {
@@ -122,7 +135,7 @@ impl Store {
             document.sp_items = sp_items;
         }
 
-        self.remove_uri_from_projects(uri);
+        self.remove_file_from_projects(&file_id);
     }
 
     pub fn register_watcher(&mut self, watcher: notify::RecommendedWatcher) {
@@ -134,25 +147,26 @@ impl Store {
         path: PathBuf,
         parser: &mut tree_sitter::Parser,
     ) -> anyhow::Result<Option<Document>> {
-        let uri = Arc::new(Url::from_file_path(&path).map_err(|err| {
+        let mut uri = Url::from_file_path(&path).map_err(|err| {
             anyhow!(
                 "Failed to convert path to URI while loading a file: {:?}",
                 err
             )
-        })?);
-
-        if let Some(document) = self.get(&uri) {
-            return Ok(Some(document));
-        }
-
+        })?;
+        normalize_uri(&mut uri);
         if !self.is_sourcepawn_file(&path) {
             return Ok(None);
         }
-        self.add_uri_to_projects(&uri);
+        let file_id = self.path_interner.intern(uri.clone());
+        if let Some(document) = self.get_cloned(&file_id) {
+            return Ok(Some(document));
+        }
+
+        self.add_file_to_projects(&file_id)?;
 
         let data = fs::read(&path)?;
         let text = String::from_utf8_lossy(&data).into_owned();
-        let document = self.handle_open_document(&uri, text, parser)?;
+        let document = self.handle_open_document(&Arc::new(uri), text, parser)?;
         self.resolve_missing_includes(parser);
 
         Ok(Some(document))
@@ -163,24 +177,25 @@ impl Store {
         path: PathBuf,
         parser: &mut tree_sitter::Parser,
     ) -> anyhow::Result<Option<Document>> {
-        let uri = Arc::new(Url::from_file_path(&path).map_err(|err| {
+        let mut uri = Url::from_file_path(&path).map_err(|err| {
             anyhow!(
-                "Failed to convert path to URI while reloading a file: {:?}",
+                "Failed to convert path to URI while loading a file: {:?}",
                 err
             )
-        })?);
-
+        })?;
+        normalize_uri(&mut uri);
         if !self.is_sourcepawn_file(&path) {
             return Ok(None);
         }
+        let file_id = self.path_interner.intern(uri.clone());
 
         let data = fs::read(&path)?;
         let text = String::from_utf8_lossy(&data).into_owned();
-        let document = self.handle_open_document(&uri, text, parser)?;
+        let document = self.handle_open_document(&Arc::new(uri), text, parser)?;
         self.resolve_missing_includes(parser);
 
-        self.remove_uri_from_projects(&uri);
-        self.add_uri_to_projects(&uri);
+        self.remove_file_from_projects(&file_id);
+        self.add_file_to_projects(&file_id)?;
 
         Ok(Some(document))
     }
@@ -189,21 +204,22 @@ impl Store {
         let mut to_reload = FxHashSet::default();
         for document in self.documents.values() {
             for missing_include in document.missing_includes.keys() {
-                for uri in self.documents.keys() {
-                    if uri.as_str().contains(missing_include) {
-                        to_reload.insert(document.uri.clone());
+                for document_ in self.documents.values() {
+                    if document_.uri.as_str().contains(missing_include) {
+                        to_reload.insert(document.file_id);
                     }
                 }
             }
         }
-        for uri in to_reload {
-            if let Some(document) = self.documents.get(&uri) {
-                let _ = self.handle_open_document(&uri, document.text.clone(), parser);
+        for file_id in to_reload {
+            if let Some(document) = self.documents.get(&file_id) {
+                let _ =
+                    self.handle_open_document(&document.uri.clone(), document.text.clone(), parser);
             }
         }
     }
 
-    pub fn find_documents(&mut self, base_path: &PathBuf) {
+    pub fn discover_documents(&mut self, base_path: &PathBuf) {
         eprintln!("Finding documents in {:?}", base_path);
         for entry in WalkDir::new(base_path)
             .follow_links(true)
@@ -220,15 +236,16 @@ impl Store {
             if let Ok(mut uri) = Url::from_file_path(entry.path()) {
                 log::debug!("URI: {:?} path: {:?}", uri, entry.path());
                 normalize_uri(&mut uri);
-                if self.documents.contains_key(&uri) {
+                let file_id = self.path_interner.intern(uri.clone());
+                if self.documents.contains_key(&file_id) {
                     continue;
                 }
                 let Ok(text) = read_to_string_lossy(entry.path().to_path_buf()) else {
                         log::error!("Failed to read file {:?} ", entry.path());
                         continue;
                     };
-                let document = Document::new(Arc::new(uri.clone()), text.clone());
-                self.documents.insert(Arc::new(uri), document);
+                let document = Document::new(Arc::new(uri.clone()), file_id, text.clone());
+                self.documents.insert(file_id, document);
             }
         }
     }
@@ -240,19 +257,20 @@ impl Store {
         parser: &mut tree_sitter::Parser,
     ) -> Result<Document, io::Error> {
         log::trace!("Opening file {:?}", uri);
+        let file_id = self.path_interner.intern(uri.as_ref().clone());
         self.diagnostics.reset(uri);
-        let prev_declarations = match self.documents.get(&(*uri).clone()) {
+        let prev_declarations = match self.documents.get(&file_id) {
             Some(document) => document.declarations.clone(),
             None => FxHashMap::default(),
         };
-        let mut document = Document::new(uri.clone(), text);
+        let mut document = Document::new(uri.clone(), file_id, text);
         self.preprocess_document(&mut document);
         self.add_sourcemod_include(&mut document);
         self.parse(&mut document, parser)
             .expect("Couldn't parse document");
         if !self.first_parse {
             // Don't try to find references yet, all the tokens might not be referenced.
-            self.find_references(uri);
+            self.find_references(&file_id);
             self.sync_references(&mut document, prev_declarations);
         }
         log::trace!("Done opening file {:?}", uri);
@@ -262,8 +280,8 @@ impl Store {
 
     fn add_sourcemod_include(&mut self, document: &mut Document) {
         let mut sourcemod_path = "sourcemod".to_string();
-        if let Some(uri) = self.resolve_import(&mut sourcemod_path, &document.uri, false) {
-            add_include(document, uri, sourcemod_path, Range::default());
+        if let Some(include_id) = self.resolve_import(&mut sourcemod_path, &document.uri, false) {
+            self.add_include(document, include_id, sourcemod_path, Range::default());
         }
     }
 
@@ -281,31 +299,31 @@ impl Store {
         for sub_doc in self.documents.values() {
             for item in added_declarations.values() {
                 if sub_doc.unresolved_tokens.contains(&item.read().name()) {
-                    to_reload.push(sub_doc.uri.clone());
+                    to_reload.push(sub_doc.file_id);
                     break;
                 }
             }
         }
-        for uri_to_reload in to_reload.iter() {
+        for file_id in to_reload {
             // resolve includes
-            if let Some(doc_to_reload) = self.documents.get_mut(uri_to_reload) {
+            if let Some(doc_to_reload) = self.documents.get_mut(&file_id) {
                 for (mut missing_inc_path, range) in doc_to_reload.missing_includes.clone() {
-                    // FIXME: The false in this method call may be problematic.
+                    // TODO: The false in this method call may be problematic.
                     if let Some(include_uri) =
                         self.resolve_import(&mut missing_inc_path, &document.uri, false)
                     {
-                        add_include(document, include_uri, missing_inc_path, range);
+                        self.add_include(document, include_uri, missing_inc_path, range);
                     }
                 }
             }
-            self.find_references(uri_to_reload);
+            self.find_references(&file_id);
         }
         for item in deleted_declarations.values() {
             let item = item.read();
             let references = item.references();
             if let Some(references) = references {
                 for ref_ in references.iter() {
-                    if let Some(ref_document) = self.documents.get_mut(&ref_.uri) {
+                    if let Some(ref_document) = self.documents.get_mut(&ref_.file_id) {
                         ref_document.unresolved_tokens.insert(item.name());
                     }
                 }
@@ -358,23 +376,24 @@ impl Store {
         Some(preprocessor.macros)
     }
 
-    pub(crate) fn preprocess_document_by_uri(
+    pub(crate) fn preprocess_document_by_id(
         &mut self,
-        uri: Arc<Url>,
+        file_id: &FileId,
     ) -> Option<FxHashMap<String, Macro>> {
-        log::trace!("Preprocessing document by uri {:?}", uri);
-        if let Some(document) = self.documents.get(&uri) {
+        let document_uri = Arc::new(self.path_interner.lookup(*file_id).clone());
+        log::trace!("Preprocessing document by uri {:?}", document_uri);
+        if let Some(document) = self.documents.get(file_id) {
             // Don't reprocess the text if it has not changed.
             if !document.preprocessed_text.is_empty() || document.being_preprocessed {
-                log::trace!("Skipped preprocessing document by uri {:?}", uri);
+                log::trace!("Skipped preprocessing document by uri {:?}", document_uri);
                 return Some(document.macros.clone());
             }
         }
-        if let Some(document) = self.documents.get_mut(&uri) {
+        if let Some(document) = self.documents.get_mut(file_id) {
             document.being_preprocessed = true;
         }
-        if let Some(text) = self.get_text(&uri) {
-            let mut preprocessor = SourcepawnPreprocessor::new(uri.clone(), &text);
+        if let Some(text) = self.get_text(file_id) {
+            let mut preprocessor = SourcepawnPreprocessor::new(document_uri, &text);
             let preprocessed_text = preprocessor
                 .preprocess_input(
                     &mut (|macros: &mut FxHashMap<String, Macro>,
@@ -389,7 +408,7 @@ impl Store {
                     text.clone()
                 });
 
-            if let Some(document) = self.documents.get_mut(&uri) {
+            if let Some(document) = self.documents.get_mut(file_id) {
                 document.preprocessed_text = preprocessed_text;
                 document.macros = preprocessor.macros.clone();
                 preprocessor.add_diagnostics(
@@ -406,10 +425,10 @@ impl Store {
             }
             return Some(preprocessor.macros);
         }
-        if let Some(document) = self.documents.get_mut(&uri) {
+        if let Some(document) = self.documents.get_mut(file_id) {
             document.being_preprocessed = false;
         }
-        log::trace!("Done preprocessing document by uri {:?}", uri);
+        log::trace!("Done preprocessing document by uri {:?}", document_uri);
 
         None
     }
@@ -421,10 +440,10 @@ impl Store {
         document_uri: &Url,
         quoted: bool,
     ) -> anyhow::Result<()> {
-        if let Some(include_uri) =
+        if let Some(file_id) =
             self.resolve_import(&mut include_text, &Arc::new(document_uri.clone()), quoted)
         {
-            if let Some(include_macros) = self.preprocess_document_by_uri(Arc::new(include_uri)) {
+            if let Some(include_macros) = self.preprocess_document_by_id(&file_id) {
                 macros.extend(include_macros);
             }
             return Ok(());
@@ -455,6 +474,7 @@ impl Store {
             offsets: &document.offsets,
             source: &document.preprocessed_text,
             uri: document.uri.clone(),
+            file_id: document.file_id,
         };
 
         let mut cursor = root_node.walk();
@@ -505,8 +525,7 @@ impl Store {
             root_node,
             self.environment.options.disable_syntax_linter,
         );
-        self.documents
-            .insert(document.uri.clone(), document.clone());
+        self.documents.insert(document.file_id, document.clone());
         self.read_unscanned_imports(&document.includes, parser);
         log::trace!("Done parsing document {:?}", document.uri);
 
@@ -521,7 +540,7 @@ impl Store {
         for mut include in includes_to_add {
             match self.resolve_import(&mut include.path, &document.uri, include.quoted) {
                 Some(uri) => {
-                    add_include(document, uri, include.path, include.range);
+                    self.add_include(document, uri, include.path, include.range);
                 }
                 None => {
                     document
@@ -534,11 +553,13 @@ impl Store {
 
     pub(crate) fn read_unscanned_imports(
         &mut self,
-        includes: &FxHashMap<Url, Token>,
+        includes: &FxHashMap<FileId, Token>,
         parser: &mut tree_sitter::Parser,
     ) {
         for include_uri in includes.keys() {
-            let document = self.get(include_uri).expect("Include does not exist.");
+            let document = self
+                .get_cloned(include_uri)
+                .expect("Include does not exist.");
             if document.parsed {
                 continue;
             }
@@ -549,30 +570,35 @@ impl Store {
         }
     }
 
-    pub fn find_all_references(&mut self) {
-        let uris: Vec<Url> =
-            if let Ok(Some(main_path_uri)) = self.environment.options.get_main_path_uri() {
-                let mut includes = FxHashSet::default();
-                includes.insert(main_path_uri.clone());
-                if let Some(document) = self.documents.get(&main_path_uri) {
-                    self.get_included_files(document, &mut includes);
-                    includes.iter().map(|uri| (*uri).clone()).collect()
-                } else {
-                    self.documents.values().map(|doc| doc.uri()).collect()
-                }
+    /// Resolve all the references in a project, given the [file_id](FileId) of a file in the project.
+    ///
+    /// # Arguments
+    /// * `file_id` - The [file_id](FileId) of a file in the project. Does not have to be the root.
+    pub fn resolve_project_references(&mut self, file_id: FileId) {
+        let Some(main_node) = self.projects.find_root_from_id(file_id) else {
+            return;
+        };
+        let main_id = main_node.file_id;
+        let file_ids: Vec<FileId> = {
+            let mut includes = FxHashSet::default();
+            includes.insert(main_id);
+            if let Some(document) = self.documents.get(&main_id) {
+                self.get_included_files(document, &mut includes);
+                includes.iter().cloned().collect()
             } else {
-                self.documents.values().map(|doc| doc.uri()).collect()
-            };
-        uris.iter().for_each(|uri| {
-            self.find_references(uri);
+                self.documents.values().map(|doc| doc.file_id).collect()
+            }
+        };
+        file_ids.iter().for_each(|file_id: &FileId| {
+            self.find_references(file_id);
         });
     }
 
     pub fn get_all_files_in_folder(&self, folder_uri: &Url) -> Vec<Url> {
         let mut children = vec![];
-        for uri in self.documents.keys() {
-            if uri.as_str().contains(folder_uri.as_str()) {
-                children.push((**uri).clone());
+        for document in self.documents.values() {
+            if document.uri.as_str().contains(folder_uri.as_str()) {
+                children.push(document.uri.as_ref().clone());
             }
         }
 

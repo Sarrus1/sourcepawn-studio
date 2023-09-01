@@ -12,7 +12,7 @@ use std::sync::{Arc, Weak};
 
 use crate::description::Description;
 use crate::parameter::Parameter;
-use crate::{uri_to_file_name, Location, SPItem};
+use crate::{uri_to_file_name, FileId, Reference, SPItem};
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a first order SourcePawn function, which can be converted to a
@@ -42,6 +42,9 @@ pub struct FunctionItem {
     /// Uri of the file where the function is declared.
     pub uri: Arc<Url>,
 
+    /// [FileId](FileId) of the file where the function is declared.
+    pub file_id: FileId,
+
     /// Full function signature.
     pub detail: String,
 
@@ -52,7 +55,7 @@ pub struct FunctionItem {
     pub definition_type: FunctionDefinitionType,
 
     /// References to this function.
-    pub references: Vec<Location>,
+    pub references: Vec<Reference>,
 
     /// Parameters of the function.
     pub params: Vec<Arc<RwLock<Parameter>>>,
@@ -115,7 +118,7 @@ impl FunctionItem {
                 },
             }),
             deprecated: Some(self.is_deprecated()),
-            data: Some(serde_json::Value::String(self.key())),
+            data: Some(serde_json::Value::String(self.completion_data())),
             ..Default::default()
         });
 
@@ -261,7 +264,7 @@ impl FunctionItem {
             })),
             deprecated: Some(self.is_deprecated()),
             insert_text_format: Some(InsertTextFormat::SNIPPET),
-            data: Some(serde_json::Value::String(self.key())),
+            data: Some(serde_json::Value::String(self.completion_data())),
             ..Default::default()
         })
     }
@@ -382,6 +385,10 @@ impl FunctionItem {
             Some(parent) => format!("{}-{}", parent.upgrade().unwrap().read().key(), self.name),
             None => self.name.clone(),
         }
+    }
+
+    pub fn completion_data(&self) -> String {
+        format!("{}${}", self.key(), self.file_id)
     }
 
     /// Return whether or not the method is a methodmap constructor.

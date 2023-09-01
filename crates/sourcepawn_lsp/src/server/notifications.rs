@@ -20,16 +20,21 @@ impl Server {
 
         if !self.config_pulled {
             log::trace!("File {:?} was opened before the config was pulled.", uri);
-            self.store
+            let file_id = self
+                .store
                 .write()
-                .documents
-                .insert(uri.clone(), Document::new(uri, params.text_document.text));
+                .path_interner
+                .intern(uri.as_ref().clone());
+            self.store.write().documents.insert(
+                file_id,
+                Document::new(uri, file_id, params.text_document.text),
+            );
             return Ok(());
         }
 
         // Don't parse the document if it has already been opened.
         // GoToDefinition request will trigger a new parse.
-        if let Some(document) = self.store.read().documents.get(&uri) {
+        if let Some(document) = self.store.read().get_from_uri(&uri) {
             if document.parsed {
                 return Ok(());
             }
@@ -50,7 +55,7 @@ impl Server {
         normalize_uri(&mut params.text_document.uri);
 
         let uri = Arc::new(params.text_document.uri.clone());
-        let Some(document) = self.store.read().get(&uri).or_else(|| {
+        let Some(document) = self.store.read().get_cloned_from_uri(&uri).or_else(|| {
             // If the document was not known, read its content first.
             self.store
                 .write().load(uri.to_file_path().ok()?, &mut self.parser)

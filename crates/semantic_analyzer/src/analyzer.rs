@@ -2,7 +2,7 @@ use parking_lot::RwLock;
 use parser::build_v_range;
 use preprocessor::Offset;
 use std::sync::Arc;
-use syntax::SPItem;
+use syntax::{FileId, SPItem};
 
 use fxhash::FxHashMap;
 use lsp_types::{Range, Url};
@@ -25,12 +25,15 @@ pub struct Analyzer<'a> {
     pub mm_es_idx: usize,
     pub token_idx: u32,
     pub offsets: &'a FxHashMap<u32, Vec<Offset>>,
+    pub file_id: FileId,
+    pub uri: Arc<Url>,
 }
 
 impl<'a> Analyzer<'a> {
     pub fn new(
         all_items: Vec<Arc<RwLock<SPItem>>>,
-        uri: Arc<Url>,
+        uri: &Arc<Url>,
+        file_id: FileId,
         source: &str,
         offsets: &'a FxHashMap<u32, Vec<Offset>>,
     ) -> Self {
@@ -39,7 +42,7 @@ impl<'a> Analyzer<'a> {
         let mut mm_es_in_file = vec![];
 
         for item in all_items.iter() {
-            purge_references(item, &uri);
+            purge_references(item, file_id);
             match &*item.read() {
                 // Match variables
                 SPItem::Variable(variable_item) => {
@@ -48,53 +51,53 @@ impl<'a> Analyzer<'a> {
                 }
                 SPItem::Function(function_item) => {
                     // First level function.
-                    if *function_item.uri == *uri {
+                    if function_item.file_id == file_id {
                         funcs_in_file.push(item.clone());
                     }
                     tokens_map.insert(function_item.key(), item.clone());
                     // All variables of the function.
                     for child in &function_item.children {
-                        purge_references(child, &uri);
+                        purge_references(child, file_id);
                         tokens_map.insert(child.read().key(), child.clone());
                     }
                 }
                 SPItem::Methodmap(methodmap_item) => {
-                    if *methodmap_item.uri == *uri {
+                    if methodmap_item.file_id == file_id {
                         mm_es_in_file.push(item.clone());
                     }
                     tokens_map.insert(methodmap_item.key(), item.clone());
                     // All properties and methods of the enum struct.
                     for child in &methodmap_item.children {
-                        purge_references(child, &uri);
+                        purge_references(child, file_id);
                         tokens_map.insert(child.read().key(), child.clone());
                         if let SPItem::Function(method_item) = &*child.read() {
-                            if *method_item.uri == *uri {
+                            if method_item.file_id == file_id {
                                 funcs_in_file.push(child.clone());
                             }
                             // All variables of the method.
                             for sub_child in &method_item.children {
-                                purge_references(sub_child, &uri);
+                                purge_references(sub_child, file_id);
                                 tokens_map.insert(sub_child.read().key(), sub_child.clone());
                             }
                         }
                     }
                 }
                 SPItem::EnumStruct(enum_struct_item) => {
-                    if *enum_struct_item.uri == *uri {
+                    if enum_struct_item.file_id == file_id {
                         mm_es_in_file.push(item.clone());
                     }
                     tokens_map.insert(enum_struct_item.key(), item.clone());
                     // All fields and methods of the enum struct.
                     for child in &enum_struct_item.children {
-                        purge_references(child, &uri);
+                        purge_references(child, file_id);
                         tokens_map.insert(child.read().key(), child.clone());
                         if let SPItem::Function(method_item) = &*child.read() {
-                            if *method_item.uri == *uri {
+                            if method_item.file_id == file_id {
                                 funcs_in_file.push(child.clone());
                             }
                             // All variables of the method.
                             for sub_child in &method_item.children {
-                                purge_references(sub_child, &uri);
+                                purge_references(sub_child, file_id);
                                 tokens_map.insert(sub_child.read().key(), sub_child.clone());
                             }
                         }
@@ -104,7 +107,7 @@ impl<'a> Analyzer<'a> {
                     tokens_map.insert(enum_item.key(), item.clone());
                     // All enum members of the enum.
                     for child in &enum_item.children {
-                        purge_references(child, &uri);
+                        purge_references(child, file_id);
                         tokens_map.insert(child.read().key(), child.clone());
                     }
                 }
@@ -123,7 +126,7 @@ impl<'a> Analyzer<'a> {
                     tokens_map.insert(typeset_item.key(), item.clone());
                     // All typedef members of the typeset.
                     for child in &typeset_item.children {
-                        purge_references(child, &uri);
+                        purge_references(child, file_id);
                         tokens_map.insert(child.read().key(), child.clone());
                     }
                 }
@@ -148,6 +151,8 @@ impl<'a> Analyzer<'a> {
             mm_es_idx: 0,
             token_idx: 0,
             offsets,
+            file_id,
+            uri: uri.clone(),
         }
     }
 

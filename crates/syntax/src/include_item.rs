@@ -5,6 +5,8 @@ use lsp_types::{
     LocationLink, MarkedString, Position, Range, Url,
 };
 
+use crate::FileId;
+
 #[derive(Debug, Clone)]
 /// SPItem representation of a SourcePawn include.
 pub struct IncludeItem {
@@ -20,8 +22,14 @@ pub struct IncludeItem {
     /// Uri of the file where the include is declared.
     pub uri: Arc<Url>,
 
-    /// Uri of the file which the include points to.
+    /// [FileId](FileId) of the file where the include is declared.
+    pub file_id: FileId,
+
+    /// [Uri](Url) of the file which the include points to.
     pub include_uri: Arc<Url>,
+
+    /// [FileId](FileId) of the file which the include points to.
+    pub include_id: FileId,
 }
 
 impl IncludeItem {

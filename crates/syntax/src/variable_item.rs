@@ -7,7 +7,7 @@ use parking_lot::RwLock;
 use std::sync::{Arc, Weak};
 
 use crate::description::Description;
-use crate::{range_contains_pos, Location, SPItem};
+use crate::{range_contains_pos, FileId, Reference, SPItem};
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a SourcePawn variable.
@@ -30,6 +30,9 @@ pub struct VariableItem {
     /// Uri of the file where the variable is declared.
     pub uri: Arc<Url>,
 
+    /// [FileId](FileId) of the file where the variable is declared.
+    pub file_id: FileId,
+
     /// Full variable signature.
     pub detail: String,
 
@@ -40,7 +43,7 @@ pub struct VariableItem {
     pub storage_class: Vec<VariableStorageClass>,
 
     /// References to this variable.
-    pub references: Vec<Location>,
+    pub references: Vec<Reference>,
 
     /// Parent of this variable, if it is not global.
     pub parent: Option<Weak<RwLock<SPItem>>>,
@@ -85,7 +88,7 @@ impl VariableItem {
                             detail: Some(self.type_.clone()),
                             description: Some("local".to_string()),
                         }),
-                        data: Some(serde_json::Value::String(self.key())),
+                        data: Some(serde_json::Value::String(self.completion_data())),
                         ..Default::default()
                     })
                 }
@@ -102,7 +105,7 @@ impl VariableItem {
                             detail: Some(self.type_.clone()),
                             description: Some(format!("{}::{}", parent.name, self.name)),
                         }),
-                        data: Some(serde_json::Value::String(self.key())),
+                        data: Some(serde_json::Value::String(self.completion_data())),
                         ..Default::default()
                     })
                 }
@@ -119,7 +122,7 @@ impl VariableItem {
                     detail: Some(self.type_.clone()),
                     description: Some("global".to_string()),
                 }),
-                data: Some(serde_json::Value::String(self.key())),
+                data: Some(serde_json::Value::String(self.completion_data())),
                 ..Default::default()
             }),
         }
@@ -189,6 +192,10 @@ impl VariableItem {
             Some(parent) => format!("{}-{}", parent.upgrade().unwrap().read().key(), self.name),
             None => self.name.clone(),
         }
+    }
+
+    pub fn completion_data(&self) -> String {
+        format!("{}${}", self.key(), self.file_id)
     }
 
     /// Formatted representation of a [VariableItem].

@@ -7,7 +7,7 @@ use parking_lot::RwLock;
 use std::sync::Arc;
 
 use crate::description::Description;
-use crate::{uri_to_file_name, Location, SPItem};
+use crate::{uri_to_file_name, FileId, Reference, SPItem};
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a SourcePawn methodmap.
@@ -39,8 +39,11 @@ pub struct MethodmapItem {
     /// Uri of the file where the methodmap is declared.
     pub uri: Arc<Url>,
 
+    /// [FileId](FileId) of the file where the methodmap is declared.
+    pub file_id: FileId,
+
     /// References to this methodmap.
-    pub references: Vec<Location>,
+    pub references: Vec<Reference>,
 
     /// Children ([FunctionItem](super::function_item::FunctionItem),
     /// [PropertyItem](super::property_item::PropertyItem)) of this methodmap.
@@ -72,7 +75,7 @@ impl MethodmapItem {
                     None
                 },
             }),
-            data: Some(serde_json::Value::String(self.key())),
+            data: Some(serde_json::Value::String(self.completion_data())),
             ..Default::default()
         });
 
@@ -143,6 +146,10 @@ impl MethodmapItem {
     /// Return a key to be used as a unique identifier in a map containing all the items.
     pub fn key(&self) -> String {
         self.name.clone()
+    }
+
+    pub fn completion_data(&self) -> String {
+        format!("{}${}", self.key(), self.file_id)
     }
 
     /// Returns the constructor of the methodmap if it exists.

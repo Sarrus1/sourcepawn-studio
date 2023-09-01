@@ -5,7 +5,7 @@ use lsp_types::{
     SignatureInformation, Url,
 };
 use parking_lot::RwLock;
-use std::sync::Arc;
+use std::{fmt::Display, sync::Arc};
 
 use self::parameter::Parameter;
 
@@ -26,26 +26,39 @@ pub mod typeset_item;
 pub mod utils;
 pub mod variable_item;
 
-/// Represents a location inside a resource, such as a line inside a text file.
-#[derive(Debug, Eq, PartialEq, Clone)]
-pub struct Location {
-    // Uri of the location.
-    pub uri: Arc<Url>,
+/// Handle to a file.
+#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub struct FileId(pub u32);
 
-    // Range of the location.
-    pub range: Range,
+/// safe because `FileId` is a newtype of `u32`
+impl nohash_hasher::IsEnabled for FileId {}
 
-    // User visible range of the location.
-    pub v_range: Range,
+impl From<u32> for FileId {
+    fn from(id: u32) -> Self {
+        Self(id)
+    }
 }
 
-impl Location {
-    pub fn to_lsp_location(&self) -> lsp_types::Location {
-        lsp_types::Location {
-            uri: self.uri.as_ref().clone(),
-            range: self.v_range,
-        }
+impl Display for FileId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
+}
+
+/// Represents a location inside a resource, such as a line inside a text file.
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct Reference {
+    /// [FileId](FileId) of the location.
+    pub file_id: FileId,
+
+    /// [Uri](Url) of the location.
+    pub uri: Arc<Url>,
+
+    /// Range of the location.
+    pub range: Range,
+
+    /// User visible range of the location.
+    pub v_range: Range,
 }
 
 #[derive(Debug, Clone)]
@@ -210,7 +223,23 @@ impl SPItem {
         }
     }
 
-    pub fn references(&self) -> Option<&Vec<Location>> {
+    pub fn file_id(&self) -> FileId {
+        match self {
+            SPItem::Variable(item) => item.file_id,
+            SPItem::Function(item) => item.file_id,
+            SPItem::Enum(item) => item.file_id,
+            SPItem::EnumMember(item) => item.file_id,
+            SPItem::EnumStruct(item) => item.file_id,
+            SPItem::Define(item) => item.file_id,
+            SPItem::Methodmap(item) => item.file_id,
+            SPItem::Property(item) => item.file_id,
+            SPItem::Typedef(item) => item.file_id,
+            SPItem::Typeset(item) => item.file_id,
+            SPItem::Include(item) => item.file_id,
+        }
+    }
+
+    pub fn references(&self) -> Option<&Vec<Reference>> {
         match self {
             SPItem::Variable(item) => Some(&item.references),
             SPItem::Function(item) => Some(&item.references),
@@ -237,8 +266,10 @@ impl SPItem {
         }
     }
 
-    pub fn push_reference(&mut self, reference: Location) {
-        if range_equals_range(&self.range(), &reference.range) && self.uri().eq(&reference.uri) {
+    pub fn push_reference(&mut self, reference: Reference) {
+        if range_equals_range(&self.range(), &reference.range)
+            && self.file_id() == reference.file_id
+        {
             return;
         }
         match self {
@@ -267,7 +298,7 @@ impl SPItem {
         }
     }
 
-    pub fn set_new_references(&mut self, references: Vec<Location>) {
+    pub fn set_new_references(&mut self, references: Vec<Reference>) {
         match self {
             SPItem::Variable(item) => item.references = references,
             SPItem::Function(item) => item.references = references,

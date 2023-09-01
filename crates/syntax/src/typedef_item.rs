@@ -9,7 +9,7 @@ use std::sync::{Arc, Weak};
 
 use crate::description::Description;
 use crate::parameter::Parameter;
-use crate::{uri_to_file_name, Location, SPItem};
+use crate::{uri_to_file_name, FileId, Reference, SPItem};
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a SourcePawn typedef/functag, which can be converted to a
@@ -39,11 +39,14 @@ pub struct TypedefItem {
     /// Uri of the file where the typedef is declared.
     pub uri: Arc<Url>,
 
+    /// [FileId](FileId) of the file where the typedef is declared.
+    pub file_id: FileId,
+
     /// Full typedef text.
     pub detail: String,
 
     /// References to this typedef.
-    pub references: Vec<Location>,
+    pub references: Vec<Reference>,
 
     /// Parameters of the typedef.
     pub params: Vec<Arc<RwLock<Parameter>>>,
@@ -81,7 +84,7 @@ impl TypedefItem {
                 },
             }),
             deprecated: Some(self.is_deprecated()),
-            data: Some(serde_json::Value::String(self.key())),
+            data: Some(serde_json::Value::String(self.completion_data())),
             ..Default::default()
         })
     }
@@ -190,7 +193,7 @@ impl TypedefItem {
             })),
             deprecated: Some(self.is_deprecated()),
             insert_text_format: Some(InsertTextFormat::SNIPPET),
-            data: Some(serde_json::Value::String(self.key())),
+            data: Some(serde_json::Value::String(self.completion_data())),
             ..Default::default()
         })
     }
@@ -201,6 +204,10 @@ impl TypedefItem {
             Some(parent) => format!("{}-{}", parent.upgrade().unwrap().read().key(), self.name),
             None => self.name.clone(),
         }
+    }
+
+    pub fn completion_data(&self) -> String {
+        format!("{}${}", self.key(), self.file_id)
     }
 
     /// Formatted representation of a [TypedefItem].
