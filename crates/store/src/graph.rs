@@ -212,6 +212,8 @@ impl Graph {
                     return Some(child.clone());
                 }
                 child = parent;
+            } else if child.extension == FileExtension::Inc {
+                return Some(child.clone());
             } else {
                 return None;
             }

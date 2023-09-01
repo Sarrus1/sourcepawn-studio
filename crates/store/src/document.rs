@@ -70,10 +70,15 @@ impl Document {
     pub fn new(uri: Arc<Url>, file_id: FileId, text: String) -> Self {
         Self {
             extension: {
-                if uri.to_file_path().unwrap().ends_with(".sp") {
-                    FileExtension::Sp
+                if let Ok(file_path) = uri.to_file_path() {
+                    if file_path.ends_with(".sp") {
+                        FileExtension::Sp
+                    } else {
+                        FileExtension::Inc
+                    }
                 } else {
-                    FileExtension::Inc
+                    // This happens when using the debug preprocessed_text command in VSCode.
+                    FileExtension::Sp
                 }
             },
             file_id,
