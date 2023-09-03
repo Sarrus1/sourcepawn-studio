@@ -10,9 +10,9 @@ import { existsSync, mkdirSync } from "fs";
 import { execFile } from "child_process";
 
 import { run as uploadToServerCommand } from "./uploadToServer";
-import { findMainPath } from "../spUtils";
 import { run as refreshPluginsCommand } from "./refreshPlugins";
 import { ctx } from "../spIndex";
+import { ProjectMainPathParams, projectMainPath } from "../lsp_ext";
 
 // Create an OutputChannel variable here but do not initialize yet.
 let output: OutputChannel;
@@ -26,7 +26,6 @@ export async function run(args: URI): Promise<void> {
   const uri = args === undefined ? window.activeTextEditor.document.uri : args;
   const workspaceFolder = Workspace.getWorkspaceFolder(uri);
 
-  const mainPath = findMainPath(uri);
   const alwaysCompileMainPath: boolean = Workspace.getConfiguration(
     "sourcepawn",
     workspaceFolder
@@ -34,8 +33,14 @@ export async function run(args: URI): Promise<void> {
 
   // Decide which file to compile here.
   let fileToCompilePath: string;
-  if (alwaysCompileMainPath && mainPath !== undefined && mainPath !== "") {
-    fileToCompilePath = mainPath;
+  if (alwaysCompileMainPath) {
+    const params: ProjectMainPathParams = { uri: uri.toString() };
+    const mainUri = await ctx?.client.sendRequest(projectMainPath, params);
+    if (mainUri === undefined) {
+      fileToCompilePath = uri.fsPath;
+    } else {
+      fileToCompilePath = URI.parse(mainUri).fsPath;
+    }
   } else {
     fileToCompilePath = uri.fsPath;
   }

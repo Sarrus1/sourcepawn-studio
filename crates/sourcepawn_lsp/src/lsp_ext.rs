@@ -1,4 +1,4 @@
-use lsp_types::{notification::Notification, request::Request, TextDocumentIdentifier};
+use lsp_types::{notification::Notification, request::Request, TextDocumentIdentifier, Url};
 use serde::{Deserialize, Serialize};
 
 pub enum PreprocessedDocument {}
@@ -13,6 +13,20 @@ impl Request for PreprocessedDocument {
 #[serde(rename_all = "camelCase")]
 pub struct PreprocessedDocumentParams {
     pub text_document: Option<TextDocumentIdentifier>,
+}
+
+pub enum ProjectMainPath {}
+
+impl Request for ProjectMainPath {
+    type Params = ProjectMainPathParams;
+    type Result = Url;
+    const METHOD: &'static str = "sourcepawn-lsp/projectMainPath";
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectMainPathParams {
+    pub uri: Option<Url>,
 }
 
 pub enum ProjectsGraphviz {}
