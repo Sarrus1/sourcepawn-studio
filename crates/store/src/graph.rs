@@ -265,15 +265,12 @@ impl Store {
         let mut out = vec!["digraph G {".to_string()];
         let subgraphs = self.projects.find_subgraphs();
         for (i, sub_graph) in subgraphs.iter().enumerate() {
-            if sub_graph.root.extension == FileExtension::Inc {
-                continue;
-            }
             out.push(format!(
                 r#"  subgraph cluster_{} {{
     style=filled;
     color={};
     node [style=filled,color=white];
-    label = "process {}";"#,
+    label = "Project n°{}";"#,
                 i,
                 COLORS[i % COLORS.len()],
                 i

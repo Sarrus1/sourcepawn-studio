@@ -15,8 +15,8 @@ import { run as createGitignoreCommand } from "./createGITIGNORE";
 import { run as createLicenseCommand } from "./createLICENSE";
 import { run as changeSMApiCommand } from "./changeSMApi";
 import { run as doctorCommand } from "./doctor";
+import { run as projectsGraphvizCommand } from "./projectsGraphviz";
 import { preprocessedDocumentCommand } from "./preprocessedDocument";
-import { projectsGraphvizCommand } from "./projectsGraphviz";
 import { CommandFactory } from "../ctx";
 
 /**
@@ -115,6 +115,12 @@ export function registerSMCommands(context: vscode.ExtensionContext): void {
   );
   context.subscriptions.push(changeSMApi);
 
+  const projectsGraphviz = vscode.commands.registerCommand(
+    "sourcepawn-vscode.projectsGraphviz",
+    projectsGraphvizCommand.bind(undefined)
+  );
+  context.subscriptions.push(projectsGraphviz);
+
   const doctor = vscode.commands.registerCommand(
     "sourcepawn-vscode.doctor",
     doctorCommand.bind(undefined)
@@ -155,9 +161,6 @@ export function createServerCommands(): Record<string, CommandFactory> {
     },
     preprocessedDocument: {
       enabled: preprocessedDocumentCommand,
-    },
-    projectsGraphviz: {
-      enabled: projectsGraphvizCommand,
     },
   };
 }
