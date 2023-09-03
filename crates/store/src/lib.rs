@@ -250,9 +250,9 @@ impl Store {
                     continue;
                 }
                 let Ok(text) = read_to_string_lossy(entry.path().to_path_buf()) else {
-                        log::error!("Failed to read file {:?} ", entry.path());
-                        continue;
-                    };
+                    log::error!("Failed to read file {:?} ", entry.path());
+                    continue;
+                };
                 let document = Document::new(Arc::new(uri.clone()), file_id, text.clone());
                 self.documents.insert(file_id, document);
             }
@@ -515,7 +515,9 @@ impl Store {
                 "enum_struct" => walker.parse_enum_struct(&mut node),
                 "comment" => {
                     walker.push_comment(node);
-                    let Some(item) = walker.sp_items.pop() else {continue;};
+                    let Some(item) = walker.sp_items.pop() else {
+                        continue;
+                    };
                     walker.push_inline_comment(&item);
                     walker.sp_items.push(item);
                     Ok(())

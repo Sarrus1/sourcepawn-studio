@@ -87,7 +87,9 @@ impl<'a> Parser<'a> {
                 "comment" => {
                     self.push_comment(child);
                     if let Some(items) = enum_item.read().children() {
-                        let Some(item) = items.last()else{continue;};
+                        let Some(item) = items.last() else {
+                            continue;
+                        };
                         self.push_inline_comment(item);
                     }
                 }

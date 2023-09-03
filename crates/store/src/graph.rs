@@ -114,7 +114,10 @@ impl Store {
 
     pub fn add_file_to_projects(&mut self, file_id: &FileId) -> anyhow::Result<()> {
         let Some(document) = self.documents.get(file_id) else {
-            bail!("Could not find document to insert from uri {:?}", self.path_interner.lookup(*file_id));
+            bail!(
+                "Could not find document to insert from uri {:?}",
+                self.path_interner.lookup(*file_id)
+            );
         };
         for (file_id, extension) in self.get_include_ids_from_document(document) {
             self.projects

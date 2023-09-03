@@ -131,7 +131,7 @@ pub(crate) fn resolve_completion_item(
         return None;
     }
     let key = data.remove(0);
-    let file_id: FileId = data[1].parse::<u32>().ok()?.into();
+    let file_id: FileId = data[0].parse::<u32>().ok()?.into();
 
     if let Some(sp_item) = store.get_item_from_key(key, file_id) {
         let sp_item = &*sp_item.read();

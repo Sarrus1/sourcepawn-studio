@@ -58,10 +58,14 @@ impl Server {
         let Some(document) = self.store.read().get_cloned_from_uri(&uri).or_else(|| {
             // If the document was not known, read its content first.
             self.store
-                .write().load(uri.to_file_path().ok()?, &mut self.parser)
+                .write()
+                .load(uri.to_file_path().ok()?, &mut self.parser)
                 .ok()?
         }) else {
-            bail!("Failed to apply document edit on {}", params.text_document.uri);
+            bail!(
+                "Failed to apply document edit on {}",
+                params.text_document.uri
+            );
         };
 
         let mut text = document.text().to_string();
