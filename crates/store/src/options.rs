@@ -37,7 +37,7 @@ impl Options {
         res
     }
 
-    /// Returns true if the given path is a parent or one of the IncludeDirectories.
+    /// Returns true if the given path is a parent or one of the IncludesDirectories.
     ///
     /// # Arguments
     ///

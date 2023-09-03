@@ -291,7 +291,7 @@
 ### Added
 
 - Added status notifications.
-- Added support for folder rename in includeDirectories.
+- Added support for folder rename in includesDirectories.
 
 ## [0.6.0]
 
@@ -299,7 +299,7 @@
 
 - Added `typedef` and `typeset` support.
 - Added callback completions.
-- Added file rename/deletion support in includeDirectories.
+- Added file rename/deletion support in includesDirectories.
 
 ## [0.5.1]
 
@@ -309,7 +309,7 @@
 
 ### Fixed
 
-- Fixed changes in IncludeDirectories not being detected.
+- Fixed changes in IncludesDirectories not being detected.
 - Fixed some references not being resolved on the initial parse.
 
 ## [0.5.0]
