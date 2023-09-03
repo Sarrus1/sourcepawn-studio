@@ -98,7 +98,11 @@ impl LspClient {
             .raw
             .pending
             .remove(&response.id)
-            .expect("response with known request id received");
+            .expect("response with unknown request id received");
+        if response.result.is_none() {
+            // Ignore null responses, as they will be sent on a disconnected channel.
+            return Ok(());
+        }
         log::trace!("Sending received response {:?}", response);
         tx.send(response)?;
         Ok(())
