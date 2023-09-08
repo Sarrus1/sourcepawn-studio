@@ -17,9 +17,8 @@ impl Server {
             quiescent: !self.indexing,
             message: None,
         });
-        self.report_progress("Indexing", Progress::Begin, None, None, None);
+
         self.parse_directories();
-        self.report_progress("Indexing", Progress::End, None, None, None);
 
         self.report_progress("Resolving roots", Progress::Begin, None, None, None);
         let projects = self.store.write().load_projects_graph();
@@ -69,7 +68,8 @@ impl Server {
         Ok(())
     }
 
-    fn parse_directories(&mut self) {
+    pub(crate) fn parse_directories(&mut self) {
+        self.report_progress("Indexing", Progress::Begin, None, None, None);
         let store = self.store.read();
         let folders = store.folders();
         drop(store);
@@ -95,6 +95,7 @@ impl Server {
             );
             self.store.write().discover_documents(path);
         }
+        self.report_progress("Indexing", Progress::End, None, None, None);
     }
 
     /// Check if a [uri](Url) is know or not. If it is not, scan its parent folder and analyze all the documents that

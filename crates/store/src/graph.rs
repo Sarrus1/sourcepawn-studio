@@ -94,17 +94,17 @@ impl Store {
         let mut graph = Graph::default();
 
         for document in self.documents.values() {
+            let source = Node {
+                file_id: document.file_id,
+                extension: document.extension(),
+            };
+            graph.nodes.insert(source.clone());
             for (file_id, extension) in self.get_include_ids_from_document(document) {
-                let source = Node {
-                    file_id: document.file_id,
-                    extension: document.extension(),
-                };
                 let target = Node { file_id, extension };
                 graph.edges.insert(Edge {
                     source: source.clone(),
                     target: target.clone(),
                 });
-                graph.nodes.insert(source);
                 graph.nodes.insert(target);
             }
         }
@@ -174,18 +174,31 @@ impl Graph {
         adj_targets
     }
 
-    pub fn find_roots(&self) -> Vec<&Node> {
-        let mut adj_sources: FxHashMap<Node, FxHashSet<Node>> = FxHashMap::default();
+    pub fn find_roots(&self) -> Vec<Node> {
+        let mut adj_map: FxHashMap<Node, (u32, u32)> = FxHashMap::default();
         for edge in self.edges.iter() {
-            adj_sources
+            adj_map
+                .entry(edge.source.clone())
+                .or_insert_with(|| (0, 0))
+                .1 += 1;
+            adj_map
                 .entry(edge.target.clone())
-                .or_insert_with(FxHashSet::default)
-                .insert(edge.source.clone());
+                .or_insert_with(|| (0, 0))
+                .0 += 1;
         }
-        self.nodes
+        for node in self.nodes.iter() {
+            adj_map.entry(node.clone()).or_insert_with(|| (0, 0));
+        }
+        adj_map
             .iter()
-            .filter(|node| !adj_sources.contains_key(node))
-            .collect::<Vec<&Node>>()
+            .filter_map(|(node, (nb_source, nb_target))| {
+                if *nb_target != 0 || *nb_source == 0 {
+                    Some(node.clone())
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<Node>>()
     }
 
     /// Get the root of the [subgraph](SubGraph) from a given [file_id](FileId).
@@ -247,7 +260,7 @@ impl Graph {
             let mut visited = FxHashSet::default();
             let mut nodes = vec![];
             let mut edges = vec![];
-            dfs(root, &adj_targets, &mut visited, &mut nodes, &mut edges);
+            dfs(&root, &adj_targets, &mut visited, &mut nodes, &mut edges);
             visited.insert(root.clone());
             subgraphs.push(SubGraph {
                 root: root.clone(),
