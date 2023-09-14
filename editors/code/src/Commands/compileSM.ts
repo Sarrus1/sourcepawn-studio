@@ -151,7 +151,12 @@ export async function run(args: URI): Promise<void> {
   try {
     ctx?.setSpcompStatus({ quiescent: false });
     // Compile in child process.
-    let command = spcomp + "\n";
+    let spcompCommand = spcomp + "\n";
+    if (process.platform === "darwin" && process.arch === "arm64") {
+      spcompCommand = "arch";
+      compilerArgs.unshift("-x86_64", spcomp);
+    }
+    let command = spcompCommand;
     compilerArgs.forEach((e) => {
       command += e + " ";
       if (e.length > 10) {
@@ -159,7 +164,10 @@ export async function run(args: URI): Promise<void> {
       }
     });
     output.appendLine(`${command}\n`);
-    execFile(spcomp, compilerArgs, async (error, stdout) => {
+    execFile(spcompCommand, compilerArgs, async (error, stdout) => {
+      if (error) {
+        console.error(error);
+      }
       ctx?.setSpcompStatus({ quiescent: true });
       output.append(stdout.toString().trim());
       if (
