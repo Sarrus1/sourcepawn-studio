@@ -45,19 +45,23 @@ impl Server {
         // Only reload the diagnostics if the main path is defined.
         self.pool.execute(move || {
             let _ = client.send_spcomp_status(false);
-            if let Ok(diagnostics_map) = get_spcomp_diagnostics(
+            let result = get_spcomp_diagnostics(
                 main_path_uri,
                 &store.read().environment.options.spcomp_path,
                 &store.read().environment.options.includes_directories,
                 &store.read().environment.options.linter_arguments,
-            ) {
-                let _ = sender.send(InternalMessage::Diagnostics(diagnostics_map));
-            } else {
-                // Failed to run spcomp.
-                let _ = client.send_notification::<ShowMessage>(ShowMessageParams {
-                    message: "Failed to run spcomp.\nIs the path valid?".to_string(),
-                    typ: MessageType::ERROR,
-                });
+            );
+            match result {
+                Ok(diagnostics_map) => {
+                    let _ = sender.send(InternalMessage::Diagnostics(diagnostics_map));
+                }
+                Err(err) => {
+                    // Failed to run spcomp.
+                    let _ = client.send_notification::<ShowMessage>(ShowMessageParams {
+                        message: format!("Failed to run spcomp.\n{:?}", err),
+                        typ: MessageType::ERROR,
+                    });
+                }
             }
             let _ = client.send_spcomp_status(true);
         });
