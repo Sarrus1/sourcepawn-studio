@@ -209,7 +209,7 @@ impl Store {
         Ok(Some(document))
     }
 
-    fn resolve_missing_includes(&mut self, parser: &mut tree_sitter::Parser) {
+    pub fn resolve_missing_includes(&mut self, parser: &mut tree_sitter::Parser) {
         let mut to_reload = FxHashSet::default();
         for document in self.documents.values() {
             for missing_include in document.missing_includes.keys() {

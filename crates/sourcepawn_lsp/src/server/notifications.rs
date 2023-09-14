@@ -45,6 +45,13 @@ impl Server {
             .handle_open_document(&uri, text, &mut self.parser)
             .expect("Couldn't parse file");
 
+        // In the first parse, it is expected that includes are missing.
+        if !self.store.read().first_parse {
+            self.store
+                .write()
+                .resolve_missing_includes(&mut self.parser);
+        }
+
         Ok(())
     }
 
