@@ -7,7 +7,6 @@ import {
 import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { KVDocumentFormattingEditProvider } from "./Formatters/kvFormat";
 
-import { migrateSettings } from "./spUtils";
 import { Ctx } from "./ctx";
 import { registerKVLinter } from "./Keyvalues/registerKVLinter";
 import { buildDoctorStatusBar } from "./Commands/doctor";
@@ -15,7 +14,6 @@ import { buildDoctorStatusBar } from "./Commands/doctor";
 export let ctx: Ctx | undefined;
 
 export async function activate(context: vscode.ExtensionContext) {
-  migrateSettings();
   ctx = new Ctx(context, createServerCommands());
   ctx.start();
 

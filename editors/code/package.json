@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "5.5.5",
+  "version": "6.0.0",
   "publisher": "Sarrus",
   "main": "./dist/spIndex.js",
   "icon": "sm.png",
@@ -46,7 +46,6 @@
     "onCommand:sourcepawn-vscode.uploadToServer",
     "onCommand:sourcepawn-vscode.refreshPlugins",
     "onCommand:sourcepawn-vscode.insertParameters",
-    "onCommand:sourcepawn-vscode.setFileAsMain",
     "onCommand:sourcepawn-vscode.createChangelog",
     "onCommand:sourcepawn-vscode.changeSMApi",
     "onCommand:sourcepawn-vscode.startServer"
@@ -108,11 +107,6 @@
         "category": "SM"
       },
       {
-        "command": "sourcepawn-vscode.setFileAsMain",
-        "title": "Set current file as main",
-        "category": "SM"
-      },
-      {
         "command": "sourcepawn-vscode.installSM",
         "title": "Install Sourcemod",
         "category": "SM"
@@ -169,20 +163,12 @@
         {
           "when": "resourceLangId == sourcepawn",
           "command": "sourcepawn-vscode.compileSM"
-        },
-        {
-          "when": "resourceLangId == sourcepawn",
-          "command": "sourcepawn-vscode.setFileAsMain"
         }
       ],
       "explorer/context": [
         {
           "when": "resourceLangId == sourcepawn",
           "command": "sourcepawn-vscode.compileSM"
-        },
-        {
-          "when": "resourceLangId == sourcepawn",
-          "command": "sourcepawn-vscode.setFileAsMain"
         }
       ],
       "editor/title": [
@@ -234,17 +220,6 @@
         "SourcePawnLanguageServer.spcompPath": {
           "type": "string",
           "description": "Location of the SourceMod compiler (spcomp)",
-          "scope": "resource"
-        },
-        "sourcepawn.MainPath": {
-          "type": "string",
-          "description": "The location of the main.sp file, which allows the linter and the compiler to work correctly. You should use this setting per workspace.",
-          "scope": "resource",
-          "deprecationMessage": "Use `sourcepawn.mainPath` instead."
-        },
-        "SourcePawnLanguageServer.mainPath": {
-          "type": "string",
-          "description": "The location of the main.sp file, which allows the linter and the compiler to work correctly. You should use this setting per workspace.",
           "scope": "resource"
         },
         "sourcepawn.MainPathCompilation": {

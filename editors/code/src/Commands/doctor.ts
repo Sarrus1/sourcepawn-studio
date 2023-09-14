@@ -39,9 +39,6 @@ class Doctor {
   isSPCompRunnable = DiagnosticState.None;
 
   isSMInstalled = DiagnosticState.None;
-  isMainPathSet = DiagnosticState.None;
-  isMainPathValid = DiagnosticState.None;
-  isMainPathCorrect = DiagnosticState.None;
 
   constructor() {}
 
@@ -246,40 +243,6 @@ class Doctor {
   async checkSettings() {
     this.checkSpComp();
     this.checkIncludesDirectories();
-    const mainPath: string = vscode.workspace
-      .getConfiguration("SourcePawnLanguageServer")
-      .get("mainPath");
-    if (!mainPath) {
-      this.isMainPathSet = DiagnosticState.Warning;
-      this.isMainPathValid = DiagnosticState.Warning;
-      this.isMainPathCorrect = DiagnosticState.Warning;
-      return;
-    }
-    this.isMainPathSet = DiagnosticState.OK;
-    fs.stat(mainPath, (err, _stats) => {
-      if (err) {
-        this.isMainPathValid = DiagnosticState.Error;
-        this.isMainPathCorrect = DiagnosticState.Error;
-        return;
-      }
-      if (!_stats?.isFile()) {
-        this.isMainPathValid = DiagnosticState.Error;
-        this.isMainPathCorrect = DiagnosticState.Error;
-        return;
-      }
-      this.isMainPathValid = DiagnosticState.OK;
-      fs.readFile(mainPath, (err, files) => {
-        if (err) {
-          this.isMainPathCorrect = DiagnosticState.Error;
-          return;
-        }
-        if (!files.toString().includes("OnPluginStart")) {
-          this.isMainPathCorrect = DiagnosticState.Warning;
-          return;
-        }
-        this.isMainPathCorrect = DiagnosticState.OK;
-      });
-    });
   }
 }
 

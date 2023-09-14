@@ -8,7 +8,6 @@ import { run as CompileSMCommand } from "./compileSM";
 import { run as UploadToServerCommand } from "./uploadToServer";
 import { run as RefreshPluginsCommand } from "./refreshPlugins";
 import { run as InsertParametersCommand } from "./insertParameters";
-import { run as setFileAsMainCommand } from "./setFileAsMain";
 import { run as installSMCommand } from "./installSM";
 import { run as createChangelogCommand } from "./createCHANGELOG";
 import { run as createGitignoreCommand } from "./createGITIGNORE";
@@ -78,12 +77,6 @@ export function registerSMCommands(context: vscode.ExtensionContext): void {
     InsertParametersCommand.bind(undefined)
   );
   context.subscriptions.push(insertParameters);
-
-  const setFileAsMain = vscode.commands.registerCommand(
-    "sourcepawn-vscode.setFileAsMain",
-    setFileAsMainCommand.bind(undefined)
-  );
-  context.subscriptions.push(setFileAsMain);
 
   const installSM = vscode.commands.registerCommand(
     "sourcepawn-vscode.installSM",
