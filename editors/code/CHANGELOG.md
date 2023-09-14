@@ -1,5 +1,16 @@
 ## Release Notes
 
+## [6.0.0]
+
+### Added
+
+- Added automatic mainPath detection. The mainPath setting does not exist anymore!
+- Added support for Apple Silicon.
+
+### Chore
+
+- LSP version bump.
+
 ## [5.5.5]
 
 ### Chore

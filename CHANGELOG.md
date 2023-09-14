@@ -1,5 +1,14 @@
 ## Release Notes
 
+## [0.11.0]
+
+### Added
+
+- Added automatic mainPath detection. The mainPath setting does not exist anymore!
+- Added support for Apple Silicon.
+- Switched to a path interner for better performance when resolving references (no longer using URIs).
+- Added better progress report.
+
 ## [0.10.19]
 
 ### Added
