@@ -151,7 +151,7 @@ export async function run(args: URI): Promise<void> {
   try {
     ctx?.setSpcompStatus({ quiescent: false });
     // Compile in child process.
-    let spcompCommand = spcomp + "\n";
+    let spcompCommand = spcomp;
     if (process.platform === "darwin" && process.arch === "arm64") {
       spcompCommand = "arch";
       compilerArgs.unshift("-x86_64", spcomp);
