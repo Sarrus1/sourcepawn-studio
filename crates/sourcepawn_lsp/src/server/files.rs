@@ -1,8 +1,9 @@
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, bail, Context};
 use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams, Url};
-use std::{sync::Arc, time::Instant};
+use std::sync::Arc;
+use syntax::{uri_to_file_name, FileId};
 
-use crate::{lsp_ext, server::InternalMessage, Server};
+use crate::{lsp_ext, server::progress::Progress, Server};
 
 mod events;
 mod watching;
@@ -11,75 +12,41 @@ impl Server {
     pub(super) fn reparse_all(&mut self) -> anyhow::Result<()> {
         log::debug!("Scanning all the files.");
         self.indexing = true;
+        self.store.write().first_parse = true;
         let _ = self.send_status(lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,
             quiescent: !self.indexing,
             message: None,
         });
+
         self.parse_directories();
-        let main_uri = self.store.read().environment.options.get_main_path_uri();
-        let now_parse = Instant::now();
-        if let Ok(main_uri) = main_uri {
-            if let Some(main_uri) = main_uri {
-                log::debug!("Main path is set, parsing files.");
-                self.parse_files_for_main_path(&main_uri)?;
-            } else {
-                if let Some(uri) = self.store.read().find_main_with_heuristic() {
-                    log::debug!("Main path was not set, and was infered as {:?}", uri);
-                    let path = uri.to_file_path().unwrap();
-                    let mut options = self.store.read().environment.options.as_ref().clone();
-                    options.main_path = path.clone();
-                    self.internal_tx
-                        .send(InternalMessage::SetOptions(Arc::new(options)))
-                        .unwrap();
-                    let _ = self
-                        .client
-                        .send_notification::<ShowMessage>(ShowMessageParams {
-                            message: format!(
-                                "MainPath was not set and was automatically infered as {}.",
-                                path.file_name().unwrap().to_str().unwrap()
-                            ),
-                            typ: MessageType::INFO,
-                        });
-                    return Ok(());
-                }
-                log::debug!("Main path was not set, and could not be infered.");
-                let _ = self
-                    .client
-                    .send_notification::<ShowMessage>(ShowMessageParams {
-                        message: "No MainPath setting and none could be infered.".to_string(),
-                        typ: MessageType::WARNING,
-                    });
-                self.parse_files_for_missing_main_path();
+
+        self.report_progress("Resolving roots", Progress::Begin, None, None, None);
+        let projects = self.store.write().load_projects_graph();
+        let roots = projects.find_roots();
+        self.report_progress("Resolving roots", Progress::End, None, None, None);
+
+        self.report_progress("Parsing", Progress::Begin, None, None, None);
+        for node in roots {
+            let main_file_name =
+                uri_to_file_name(self.store.read().path_interner.lookup(node.file_id));
+            if let Some(main_file_name) = main_file_name {
+                self.report_progress(
+                    "Parsing",
+                    Progress::Report,
+                    Some(format!("({})", main_file_name)),
+                    None,
+                    None,
+                );
             }
-        } else if main_uri.is_err() {
-            log::debug!("Main path is invalid.");
-            let _ = self
-                .client
-                .send_notification::<ShowMessage>(ShowMessageParams {
-                    message: "Invalid MainPath setting.".to_string(),
-                    typ: MessageType::WARNING,
-                });
-            self.parse_files_for_missing_main_path();
+            let _ = self.parse_project(node.file_id);
         }
-        let now_analysis = Instant::now();
-        self.store.write().find_all_references();
-        self.store.write().first_parse = false;
-        let parse_duration = now_parse.elapsed();
-        let analysis_duration = now_analysis.elapsed();
-        log::info!(
-            r#"Scanned all the files in {:.2?}:
-    - {} file(s) were scanned.
-    - Parsing took {:.2?}.
-    - Analysis took {:.2?}.
-        "#,
-            parse_duration,
-            self.store.read().documents.len(),
-            parse_duration - analysis_duration,
-            analysis_duration,
-        );
+        self.report_progress("Parsing", Progress::End, None, None, None);
+
+        self.store.write().projects = projects;
+
         self.indexing = false;
-        self.reload_diagnostics();
+        self.store.write().first_parse = false;
         let _ = self.send_status(lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,
             quiescent: !self.indexing,
@@ -89,51 +56,26 @@ impl Server {
         Ok(())
     }
 
-    fn parse_files_for_missing_main_path(&mut self) {
-        let mut uris: Vec<Url> = vec![];
-        for uri in self.store.read().documents.keys() {
-            uris.push(uri.as_ref().clone());
-        }
-        for uri in uris.iter() {
-            let document = self.store.read().get(uri);
-            if let Some(document) = document {
-                match self.store.write().handle_open_document(
-                    &document.uri,
-                    document.text,
-                    &mut self.parser,
-                ) {
-                    Ok(_) => {}
-                    Err(error) => {
-                        log::error!("Error while parsing file: {}", error);
-                    }
-                }
-            }
-        }
-    }
-
-    fn parse_files_for_main_path(&mut self, main_uri: &Url) -> anyhow::Result<()> {
+    fn parse_project(&mut self, main_id: FileId) -> anyhow::Result<()> {
         let document = self
             .store
             .read()
-            .get(main_uri)
-            .context(format!("Main Path does not exist at uri {:?}", main_uri))?;
+            .get_cloned(&main_id)
+            .context(format!("Main Path does not exist for id {:?}", main_id))?;
         self.store
             .write()
             .handle_open_document(&document.uri, document.text, &mut self.parser)
-            .context(format!("Could not parse file at uri {:?}", main_uri))?;
+            .context(format!("Could not parse file at id {:?}", main_id))?;
 
         Ok(())
     }
 
-    fn parse_directories(&mut self) {
-        let directories = self
-            .store
-            .read()
-            .environment
-            .options
-            .includes_directories
-            .clone();
-        for path in directories {
+    pub(crate) fn parse_directories(&mut self) {
+        self.report_progress("Indexing", Progress::Begin, None, None, None);
+        let store = self.store.read();
+        let folders = store.folders();
+        drop(store);
+        for (i, path) in folders.iter().enumerate() {
             if !path.exists() {
                 self.client
                     .send_notification::<ShowMessage>(ShowMessageParams {
@@ -146,8 +88,16 @@ impl Server {
                     .unwrap_or_default();
                 continue;
             }
-            self.store.write().find_documents(&path);
+            self.report_progress(
+                "Indexing",
+                Progress::Report,
+                Some(format!("{}/{} folders", i + 1, folders.len())),
+                None,
+                None,
+            );
+            self.store.write().discover_documents(path);
         }
+        self.report_progress("Indexing", Progress::End, None, None, None);
     }
 
     /// Check if a [uri](Url) is know or not. If it is not, scan its parent folder and analyze all the documents that
@@ -157,24 +107,21 @@ impl Server {
     ///
     /// * `uri` - [Uri](Url) of the document to test for.
     pub(super) fn read_unscanned_document(&mut self, uri: Arc<Url>) -> anyhow::Result<()> {
-        if self.store.read().documents.get(&uri).is_some() {
+        let file_id = self.store.read().path_interner.get(&uri).ok_or(anyhow!(
+            "Couldn't get a file id from the path interner for {}",
+            uri
+        ))?;
+        if self.store.read().documents.get(&file_id).is_some() {
             return Ok(());
         }
         if uri.to_file_path().is_err() {
-            return Err(anyhow!("Couldn't extract a path from {}", uri));
+            bail!("Couldn't extract a path from {}", uri);
         }
         let path = uri.to_file_path().unwrap();
         let parent_dir = path.parent().unwrap().to_path_buf();
-        self.store.write().find_documents(&parent_dir);
-        let uris: Vec<Url> = self
-            .store
-            .read()
-            .documents
-            .keys()
-            .map(|uri| uri.as_ref().clone())
-            .collect();
-        for uri in uris {
-            if let Some(document) = self.store.read().documents.get(&uri) {
+        self.store.write().discover_documents(&parent_dir);
+        for file_id in self.store.read().documents.keys() {
+            if let Some(document) = self.store.read().documents.get(file_id) {
                 if !document.parsed {
                     self.store
                         .write()

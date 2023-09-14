@@ -14,6 +14,8 @@ mod definition;
 mod document_symbol;
 mod hover;
 mod preprocessed_document;
+mod project_main_path;
+mod projects_graphviz;
 mod reference;
 mod rename;
 mod semantic_tokens;
@@ -41,6 +43,8 @@ impl Server {
             .on::<lsp_ext::PreprocessedDocument, _>(|id, params| {
                 self.preprocessed_document(id, params)
             })?
+            .on::<lsp_ext::ProjectsGraphviz, _>(|id, params| self.projects_graphviz(id, params))?
+            .on::<lsp_ext::ProjectMainPath, _>(|id, params| self.project_main_path(id, params))?
             .default()
         {
             self.connection.sender.send(response.into())?;

@@ -120,6 +120,7 @@ impl<'a> Parser<'a> {
             v_range: self.build_v_range(&range),
             description: Description::default(),
             uri: self.uri.clone(),
+            file_id: self.file_id,
             detail: "".to_string(),
             visibility: visibility.to_vec(),
             storage_class: storage_class.to_vec(),

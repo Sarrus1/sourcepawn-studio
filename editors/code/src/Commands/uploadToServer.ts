@@ -2,7 +2,9 @@
 import { join } from "path";
 
 import { run as refreshPluginsCommand } from "./refreshPlugins";
-import { findMainPath } from "../spUtils";
+import { ctx } from "../spIndex";
+import { ProjectMainPathParams, projectMainPath } from "../lsp_ext";
+import { URI } from "vscode-uri";
 const FTPDeploy = require("ftp-deploy");
 
 export async function run(args: any) {
@@ -45,7 +47,11 @@ export async function run(args: any) {
   config["deleteRemote"] = false;
 
   if (config["localRoot"] === "${mainPath}") {
-    config["localRoot"] = findMainPath();
+    const params: ProjectMainPathParams = {
+      uri: vscode.window.activeTextEditor.document.uri.toString(),
+    };
+    const mainUri = await ctx?.client.sendRequest(projectMainPath, params);
+    config["localRoot"] = URI.parse(mainUri).fsPath;
   }
 
   if (config["isRootRelative"]) {

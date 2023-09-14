@@ -1,7 +1,7 @@
 use linter::spcomp::get_spcomp_diagnostics;
 use lsp_types::{
     notification::{PublishDiagnostics, ShowMessage},
-    MessageType, PublishDiagnosticsParams, ShowMessageParams,
+    MessageType, PublishDiagnosticsParams, ShowMessageParams, Url,
 };
 use std::sync::Arc;
 
@@ -9,45 +9,74 @@ use super::InternalMessage;
 use crate::{lsp_ext, LspClient, Server};
 
 impl Server {
-    /// Reload the diagnostics of the workspace, by running spcomp.
-    pub(crate) fn reload_diagnostics(&mut self) {
+    /// Runs [`Server::reload_project_diagnostics()`](#method.reload_project_diagnostics) by getting the main path
+    /// from the uri provided.
+    ///
+    /// # Arguments
+    /// * `uri` - [Url] of a file in the project to reload the diagnostics of.
+    pub(crate) fn reload_diagnostics(&mut self, uri: Url) {
+        let Some(file_id) = self.store.read().path_interner.get(&uri) else {
+            return;
+        };
+        let Some(main_node) = self.store.read().projects.find_root_from_id(file_id) else {
+            return;
+        };
+        let main_path_uri = self
+            .store
+            .read()
+            .path_interner
+            .lookup(main_node.file_id)
+            .clone();
+        self.reload_project_diagnostics(main_path_uri);
+    }
+
+    /// Reload the diagnostics of a project, by running spcomp and the server's linter.
+    ///
+    /// # Arguments
+    /// * `main_path_uri` - [Url] of the main file of the project.
+    pub(crate) fn reload_project_diagnostics(&mut self, main_path_uri: Url) {
         self.store.write().diagnostics.clear_all_diagnostics();
 
-        self.lint_all_documents();
+        self.lint_project(&main_path_uri);
 
         let client = self.client.clone();
         let sender = self.internal_tx.clone();
         let store = Arc::clone(&self.store);
-        if let Ok(Some(main_path_uri)) = self.store.read().environment.options.get_main_path_uri() {
-            // Only reload the diagnostics if the main path is defined.
-            self.pool.execute(move || {
-                let _ = client.send_spcomp_status(false);
-                if let Ok(diagnostics_map) = get_spcomp_diagnostics(
-                    main_path_uri,
-                    &store.read().environment.options.spcomp_path,
-                    &store.read().environment.options.includes_directories,
-                    &store.read().environment.options.linter_arguments,
-                ) {
+        // Only reload the diagnostics if the main path is defined.
+        self.pool.execute(move || {
+            let _ = client.send_spcomp_status(false);
+            let result = get_spcomp_diagnostics(
+                main_path_uri,
+                &store.read().environment.options.spcomp_path,
+                &store.read().environment.options.includes_directories,
+                &store.read().environment.options.linter_arguments,
+            );
+            match result {
+                Ok(diagnostics_map) => {
                     let _ = sender.send(InternalMessage::Diagnostics(diagnostics_map));
-                } else {
+                }
+                Err(err) => {
                     // Failed to run spcomp.
                     let _ = client.send_notification::<ShowMessage>(ShowMessageParams {
-                        message: "Failed to run spcomp.\nIs the path valid?".to_string(),
+                        message: format!("Failed to run spcomp.\n{:?}", err),
                         typ: MessageType::ERROR,
                     });
                 }
-                let _ = client.send_spcomp_status(true);
-            });
-        }
+            }
+            let _ = client.send_spcomp_status(true);
+        });
     }
 
-    /// Lint all documents with the custom linter.
-    pub fn lint_all_documents(&mut self) {
+    /// Lint all documents in the project with the custom linter.
+    pub fn lint_project(&mut self, uri: &Url) {
+        let Some(file_id) = self.store.read().path_interner.get(uri) else {
+            return;
+        };
         self.store
             .write()
             .diagnostics
             .clear_all_global_diagnostics();
-        let all_items_flat = self.store.read().get_all_items(true);
+        let all_items_flat = self.store.read().get_all_items(&file_id, true);
         // TODO: Make diagnostics an external crate to avoid having to pass the store as writable.
         self.store
             .write()
@@ -59,9 +88,8 @@ impl Server {
     /// Publish all the diagnostics of the store. This will override all diagnostics that have already
     /// been sent to the client.
     pub fn publish_diagnostics(&mut self) {
-        eprintln!("publishing {:#?}", self.store.read().diagnostics);
+        log::debug!("publishing {:#?}", self.store.read().diagnostics);
         for (uri, diagnostics) in self.store.read().diagnostics.iter() {
-            eprintln!("{:#?}", diagnostics);
             let _ = self
                 .client
                 .send_notification::<PublishDiagnostics>(PublishDiagnosticsParams {

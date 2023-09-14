@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, bail, Context};
 use fxhash::FxHashMap;
 use lazy_static::lazy_static;
 use lsp_types::{Diagnostic, Position, Range, Url};
@@ -214,10 +214,10 @@ impl<'a> SourcepawnPreprocessor<'a> {
                             }
                             Err(ExpansionError::MacroNotFound(err)) => {
                                 self.macro_not_found_errors.push(err.clone());
-                                return Err(anyhow!("{}", err));
+                                bail!("{}", err);
                             }
                             Err(ExpansionError::Parse(err)) => {
-                                return Err(anyhow!("{}", err));
+                                bail!("{}", err);
                             }
                         }
                     }
@@ -394,10 +394,10 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                         ))?
                                             as usize;
                                         if idx >= args.len() {
-                                            return Err(anyhow!(
+                                            bail!(
                                                 "Argument index out of bounds for macro {}",
                                                 symbol.text()
-                                            ));
+                                            );
                                         }
                                         args[idx] = args_idx;
                                     }
@@ -406,10 +406,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                     }
                                     TokenKind::Operator(Operator::Percent) => (),
                                     _ => {
-                                        return Err(anyhow!(
-                                            "Unexpected symbol {} in macro args",
-                                            symbol.text()
-                                        ))
+                                        bail!("Unexpected symbol {} in macro args", symbol.text())
                                     }
                                 }
                             }

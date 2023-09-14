@@ -47,6 +47,27 @@ impl LspClient {
         Ok(())
     }
 
+    pub fn send_request_without_response<R>(&self, params: R::Params) -> anyhow::Result<()>
+    where
+        R: lsp_types::request::Request,
+        R::Params: Serialize,
+        R::Result: DeserializeOwned,
+    {
+        let id = RequestId::from(self.raw.next_id.fetch_add(1, Ordering::SeqCst));
+
+        let (tx, _) = crossbeam_channel::bounded(1);
+        self.raw.pending.insert(id.clone(), tx);
+
+        let request = Request::new(id, R::METHOD.to_string(), params);
+        log::trace!(
+            "Sending request without waiting for a response {:?}",
+            request
+        );
+        self.raw.sender.send(request.into())?;
+
+        Ok(())
+    }
+
     pub fn send_request<R>(&self, params: R::Params) -> Result<R::Result>
     where
         R: lsp_types::request::Request,
@@ -77,7 +98,11 @@ impl LspClient {
             .raw
             .pending
             .remove(&response.id)
-            .expect("response with known request id received");
+            .expect("response with unknown request id received");
+        if response.result.is_none() {
+            // Ignore null responses, as they will be sent on a disconnected channel.
+            return Ok(());
+        }
         log::trace!("Sending received response {:?}", response);
         tx.send(response)?;
         Ok(())

@@ -14,6 +14,26 @@ export type PreprocessedDocumentParams = {
   textDocument?: lc.TextDocumentIdentifier;
 };
 
+export const projectMainPath = new lc.RequestType<
+  ProjectMainPathParams,
+  lc.URI,
+  void
+>("sourcepawn-lsp/projectMainPath");
+
+export type ProjectMainPathParams = {
+  uri?: lc.URI;
+};
+
+export const projectsGraphviz = new lc.RequestType<
+  ProjectsGraphvizParams,
+  string,
+  void
+>("sourcepawn-lsp/projectsGraphviz");
+
+export type ProjectsGraphvizParams = {
+  textDocument?: lc.TextDocumentIdentifier;
+};
+
 export const serverStatus = new lc.NotificationType<ServerStatusParams>(
   "sourcepawn-lsp/serverStatus"
 );

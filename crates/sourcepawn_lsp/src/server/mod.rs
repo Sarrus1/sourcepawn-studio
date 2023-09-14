@@ -24,6 +24,7 @@ use crate::{capabilities::ClientCapabilitiesExt, client::LspClient, lsp_ext};
 mod diagnostics;
 mod files;
 mod notifications;
+mod progress;
 mod requests;
 
 #[derive(Debug)]
@@ -126,23 +127,13 @@ impl Server {
         };
         let client = self.client.clone();
         let sender = self.internal_tx.clone();
-        let root_uri = self.store.read().environment.root_uri.clone();
         self.pool.execute(move || {
             match client.send_request::<WorkspaceConfiguration>(params) {
                 Ok(mut json) => {
                     log::info!("Received config {:#?}", json);
-                    let mut options = client
+                    let options = client
                         .parse_options(json.pop().expect("invalid configuration request"))
                         .unwrap();
-                    if !(options.main_path.is_absolute()
-                        || options.main_path.to_str().unwrap().is_empty())
-                    {
-                        if let Some(root_uri) = root_uri {
-                            // Try to resolve the main path as relative.
-                            options.main_path =
-                                root_uri.to_file_path().unwrap().join(options.main_path);
-                        }
-                    }
                     sender
                         .send(InternalMessage::SetOptions(Arc::new(options)))
                         .unwrap();
@@ -152,6 +143,21 @@ impl Server {
                 }
             };
         });
+    }
+
+    /// Resolve the references in a project if they have not been resolved yet. Will return early if the project
+    /// has been resolved at least once.
+    ///
+    /// This should be called before every feature request.
+    ///
+    /// # Arguments
+    /// * `uri` - [Url] of a file in the project.
+    fn initialize_project_resolution(&mut self, uri: &Url) {
+        let main_id = self.store.write().resolve_project_references(uri);
+        if let Some(main_id) = main_id {
+            let main_path_uri = self.store.read().path_interner.lookup(main_id).clone();
+            self.reload_project_diagnostics(main_path_uri);
+        }
     }
 
     fn initialize(&mut self) -> anyhow::Result<()> {
@@ -238,15 +244,12 @@ impl Server {
 
         self.pull_config();
 
-        params
+        self.store.write().folders = params
             .workspace_folders
             .unwrap_or_default()
             .iter()
-            .for_each(|folder| {
-                if let Ok(folder_path) = folder.uri.to_file_path() {
-                    self.store.write().find_documents(&folder_path)
-                }
-            });
+            .filter_map(|folder| folder.uri.to_file_path().ok())
+            .collect();
 
         let _ = self.send_status(lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,

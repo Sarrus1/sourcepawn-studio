@@ -26,6 +26,7 @@ impl<'a> Parser<'a> {
             v_full_range: self.build_v_range(&full_range),
             description,
             uri: self.uri.clone(),
+            file_id: self.file_id,
             references: vec![],
             children: vec![],
         };
@@ -86,7 +87,9 @@ impl<'a> Parser<'a> {
                 "comment" => {
                     self.push_comment(child);
                     if let Some(items) = enum_item.read().children() {
-                        let Some(item) = items.last()else{continue;};
+                        let Some(item) = items.last() else {
+                            continue;
+                        };
                         self.push_inline_comment(item);
                     }
                 }
@@ -107,6 +110,7 @@ impl<'a> Parser<'a> {
         let enum_member_item = EnumMemberItem {
             name,
             uri: self.uri.clone(),
+            file_id: self.file_id,
             range,
             v_range: self.build_v_range(&range),
             parent: Arc::downgrade(enum_item),

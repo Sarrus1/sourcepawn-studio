@@ -2,51 +2,43 @@ use fxhash::FxHashSet;
 use lsp_types::{Position, Url};
 use parking_lot::RwLock;
 use std::sync::Arc;
-use syntax::{range_contains_pos, SPItem};
+use syntax::{range_contains_pos, FileId, SPItem};
 
 use crate::{document::Document, Store};
 
 impl Store {
-    pub fn get_all_items(&self, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
+    pub fn get_all_items(&self, file_id: &FileId, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
         log::debug!("Getting all items from store. flat: {}", flat);
         let mut all_items = vec![];
-        if let Ok(Some(main_path_uri)) = self.environment.options.get_main_path_uri() {
-            let mut includes = FxHashSet::default();
-            includes.insert(main_path_uri.clone());
-            if let Some(document) = self.documents.get(&main_path_uri) {
-                self.get_included_files(document, &mut includes);
-                for include in includes.iter() {
-                    if let Some(document) = self.documents.get(include) {
-                        if flat {
-                            all_items.extend(document.get_sp_items_flat());
-                        } else {
-                            all_items.extend(document.get_sp_items())
-                        }
+        let Some(main_node) = self.projects.find_root_from_id(*file_id) else {
+            return all_items;
+        };
+        let main_file_id = main_node.file_id;
+        let mut includes = FxHashSet::default();
+        includes.insert(main_file_id);
+        if let Some(document) = self.documents.get(&main_file_id) {
+            self.get_included_files(document, &mut includes);
+            for include in includes.iter() {
+                if let Some(document) = self.documents.get(include) {
+                    if flat {
+                        all_items.extend(document.get_sp_items_flat());
+                    } else {
+                        all_items.extend(document.get_sp_items())
                     }
                 }
             }
-            log::trace!("Done getting {} item(s)", all_items.len());
-            return all_items;
         }
-        for document in self.documents.values() {
-            for item in document.sp_items.iter() {
-                all_items.push(item.clone());
-            }
-        }
+        log::trace!("Done getting {} item(s)", all_items.len());
 
-        log::trace!(
-            "Done getting {} item(s) without the main path.",
-            all_items.len()
-        );
         all_items
     }
 
-    pub(crate) fn get_included_files(&self, document: &Document, includes: &mut FxHashSet<Url>) {
+    pub(crate) fn get_included_files(&self, document: &Document, includes: &mut FxHashSet<FileId>) {
         for include_uri in document.includes.keys() {
             if includes.contains(include_uri) {
                 continue;
             }
-            includes.insert(include_uri.clone());
+            includes.insert(*include_uri);
             if let Some(include_document) = self.documents.get(include_uri) {
                 self.get_included_files(include_document, includes);
             }
@@ -63,8 +55,11 @@ impl Store {
             position,
             uri
         );
+        let Some(file_id) = self.path_interner.get(uri) else {
+            return vec![];
+        };
+        let all_items = self.get_all_items(&file_id, true);
         let uri = Arc::new(uri);
-        let all_items = self.get_all_items(true);
         let mut res = vec![];
         for item in all_items.iter() {
             let item_lock = item.read();
@@ -78,7 +73,7 @@ impl Store {
                 Some(references) => {
                     for reference in references.iter() {
                         if range_contains_pos(&reference.v_range, &position)
-                            && (*reference.uri).eq(*uri)
+                            && reference.file_id == file_id
                         {
                             res.push(item.clone());
                             break;
@@ -95,9 +90,9 @@ impl Store {
         res
     }
 
-    pub fn get_item_from_key(&self, key: String) -> Option<Arc<RwLock<SPItem>>> {
+    pub fn get_item_from_key(&self, key: String, file_id: FileId) -> Option<Arc<RwLock<SPItem>>> {
         log::debug!("Getting item from key {:?}.", key);
-        let all_items = self.get_all_items(false);
+        let all_items = self.get_all_items(&file_id, false);
         let sub_keys: Vec<&str> = key.split('-').collect();
         if sub_keys.is_empty() {
             return None;

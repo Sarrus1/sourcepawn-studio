@@ -184,14 +184,6 @@ impl TestBed {
             })
             .collect();
 
-        let main_path = locations
-            .iter()
-            .find(|e| e.uri.as_str().contains("main.sp"))
-            .unwrap()
-            .uri
-            .to_file_path()
-            .unwrap();
-
         let (server_conn, client_conn) = Connection::memory();
         let (internal_tx, internal_rx) = crossbeam_channel::unbounded();
 
@@ -206,10 +198,7 @@ impl TestBed {
                     match message {
                         lsp_server::Message::Request(request) => {
                             if request.method == "workspace/configuration" {
-                                let options = Options {
-                                    main_path: main_path.clone(),
-                                    ..Default::default()
-                                };
+                                let options = Options::default();
                                 client
                                     .send_response(Response::new_ok(request.id, vec![options]))
                                     .unwrap();

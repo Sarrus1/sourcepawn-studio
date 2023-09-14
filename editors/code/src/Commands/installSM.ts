@@ -60,13 +60,13 @@ export async function run(args: any) {
 }
 
 function updatePath(smDir: string, spComp: string): void {
-  const includeDirectories = Workspace.getConfiguration(
+  const includesDirectories = Workspace.getConfiguration(
     "SourcePawnLanguageServer"
   ).get<string[]>("includesDirectories");
-  includeDirectories.push(smDir);
+  includesDirectories.push(smDir);
   Workspace.getConfiguration("SourcePawnLanguageServer").update(
     "includesDirectories",
-    Array.from(new Set(includeDirectories)), // avoid duplicates
+    Array.from(new Set(includesDirectories)), // avoid duplicates
     true
   );
   Workspace.getConfiguration("SourcePawnLanguageServer").update(

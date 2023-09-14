@@ -19,6 +19,8 @@ impl Server {
                 .uri
                 .clone(),
         );
+
+        self.initialize_project_resolution(&uri);
         let _ = self.read_unscanned_document(uri);
 
         self.run_query(id, move |store| {

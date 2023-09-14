@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::bail;
 use fxhash::FxHashMap;
 use lsp_types::{
     Range, SemanticToken, SemanticTokenModifier, SemanticTokenType, SemanticTokens,
@@ -59,13 +59,13 @@ impl SemanticTokensBuilder {
         token_modifiers: Option<Vec<SemanticTokenModifier>>,
     ) -> anyhow::Result<()> {
         if !self.has_legend {
-            return Err(anyhow!("Legend must be provided in constructor"));
+            bail!("Legend must be provided in constructor");
         }
         if range.start.line != range.end.line {
-            return Err(anyhow!("{:?} cannot span multiple lines", range));
+            bail!("{:?} cannot span multiple lines", range);
         }
         if !self.token_type_str_to_int.contains_key(&token_type) {
-            return Err(anyhow!("{:?} is not in the provided legend", token_type));
+            bail!("{:?} is not in the provided legend", token_type);
         }
 
         let line = range.start.line;
@@ -88,10 +88,7 @@ impl SemanticTokensBuilder {
                     };
                     n_token_modifiers |= (1 << n_token_modifier) >> c_as_u32;
                 } else {
-                    return Err(anyhow!(
-                        "{:?} is not in the provided legend",
-                        token_modifier
-                    ));
+                    bail!("{:?} is not in the provided legend", token_modifier);
                 }
             }
         }

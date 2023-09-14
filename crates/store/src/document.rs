@@ -9,6 +9,7 @@ use preprocessor::{Macro, Offset};
 use semantic_analyzer::{SPToken, Token};
 use std::{path::PathBuf, sync::Arc};
 use strip_bom::StripBom;
+use syntax::FileId;
 use syntax::SPItem;
 use tree_sitter::{Node, Query, QueryCursor};
 
@@ -27,15 +28,35 @@ lazy_static! {
     };
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum FileExtension {
+    #[default]
+    Sp,
+    Inc,
+}
+
+pub fn uri_to_file_extension(uri: &Url) -> Option<FileExtension> {
+    let path = uri.to_file_path().ok()?;
+    let extension = path.extension()?;
+    match extension.to_str()? {
+        "sp" => Some(FileExtension::Sp),
+        "inc" => Some(FileExtension::Inc),
+        _ => None,
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Document {
     pub uri: Arc<Url>,
+    pub file_id: FileId,
+    extension: FileExtension,
     pub text: String,
     pub preprocessed_text: String,
     pub(super) being_preprocessed: bool,
     pub sp_items: Vec<Arc<RwLock<SPItem>>>,
-    pub(crate) includes: FxHashMap<Url, Token>,
+    pub(crate) includes: FxHashMap<FileId, Token>,
     pub parsed: bool,
+    resolved: bool,
     pub(crate) tokens: Vec<SPToken>,
     pub missing_includes: FxHashMap<String, Range>,
     pub unresolved_tokens: FxHashSet<String>,
@@ -46,8 +67,21 @@ pub struct Document {
 }
 
 impl Document {
-    pub fn new(uri: Arc<Url>, text: String) -> Self {
+    pub fn new(uri: Arc<Url>, file_id: FileId, text: String) -> Self {
         Self {
+            extension: {
+                if let Ok(file_path) = uri.to_file_path() {
+                    if file_path.ends_with(".sp") {
+                        FileExtension::Sp
+                    } else {
+                        FileExtension::Inc
+                    }
+                } else {
+                    // This happens when using the debug preprocessed_text command in VSCode.
+                    FileExtension::Sp
+                }
+            },
+            file_id,
             uri,
             preprocessed_text: String::new(),
             being_preprocessed: false,
@@ -62,23 +96,26 @@ impl Document {
             macros: FxHashMap::default(),
             macro_symbols: vec![],
             offsets: FxHashMap::default(),
+            resolved: false,
         }
+    }
+
+    /// Return `true` if the document tokens have been resolved at least once, `false` otherwise.
+    pub fn is_resolved(&self) -> bool {
+        self.resolved
+    }
+
+    /// Mark the document tokens as resolved at least once.
+    pub fn mark_as_resolved(&mut self) {
+        self.resolved = true;
     }
 
     pub fn text(&self) -> &str {
         &self.text
     }
 
-    pub fn extension(&self) -> anyhow::Result<String> {
-        let extension = self
-            .path()?
-            .extension()
-            .ok_or_else(|| anyhow!("Failed to get file extension."))?
-            .to_str()
-            .ok_or_else(|| anyhow!("Failed to convert extension to string."))?
-            .to_string();
-
-        Ok(extension)
+    pub fn extension(&self) -> FileExtension {
+        self.extension
     }
 
     pub(crate) fn path(&self) -> anyhow::Result<PathBuf> {

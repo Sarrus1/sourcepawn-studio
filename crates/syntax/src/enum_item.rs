@@ -6,7 +6,7 @@ use lsp_types::{
 use parking_lot::RwLock;
 use std::sync::Arc;
 
-use crate::{description::Description, uri_to_file_name, Location, SPItem};
+use crate::{description::Description, uri_to_file_name, FileId, Reference, SPItem};
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a SourcePawn enum.
@@ -32,8 +32,11 @@ pub struct EnumItem {
     /// Uri of the file where the enum is declared.
     pub uri: Arc<Url>,
 
+    /// [FileId](FileId) of the file where the enum is declared.
+    pub file_id: FileId,
+
     /// References to this enum.
-    pub references: Vec<Location>,
+    pub references: Vec<Reference>,
 
     /// Children ([EnumMemberItem](super::enum_member_item::EnumMemberItem)) of this enum.
     pub children: Vec<Arc<RwLock<SPItem>>>,
@@ -64,7 +67,7 @@ impl EnumItem {
                         None
                     },
                 }),
-                data: Some(serde_json::Value::String(self.key())),
+                data: Some(serde_json::Value::String(self.completion_data())),
                 ..Default::default()
             })
         }
@@ -136,6 +139,10 @@ impl EnumItem {
     /// Return a key to be used as a unique identifier in a map containing all the items.
     pub fn key(&self) -> String {
         self.name.clone()
+    }
+
+    pub fn completion_data(&self) -> String {
+        format!("{}${}", self.key(), self.file_id)
     }
 
     /// Formatted representation of the enum.

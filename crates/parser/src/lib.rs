@@ -4,7 +4,7 @@ use lsp_types::{Range, Url};
 use parking_lot::RwLock;
 use preprocessor::Offset;
 use std::sync::Arc;
-use syntax::{comment::Comment, deprecated::Deprecated, SPItem};
+use syntax::{comment::Comment, deprecated::Deprecated, FileId, SPItem};
 use tree_sitter::Query;
 
 pub mod comment_parser;
@@ -38,6 +38,7 @@ pub struct Parser<'a> {
     pub offsets: &'a FxHashMap<u32, Vec<Offset>>,
     pub source: &'a String,
     pub uri: Arc<Url>,
+    pub file_id: FileId,
 }
 
 pub fn build_v_range(offsets: &FxHashMap<u32, Vec<Offset>>, range: &Range) -> Range {

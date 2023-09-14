@@ -45,8 +45,13 @@ pub(super) fn is_include_statement(pre_line: &str) -> Option<IncludeStatement> {
 pub(super) fn get_include_completions(
     store: &Store,
     include_st: IncludeStatement,
+    uri: &Url,
 ) -> Option<CompletionList> {
-    let include_paths = store.environment.options.get_all_possible_include_folders();
+    let main_path = store.get_project_main_path_from_id(&store.path_interner.get(uri)?)?;
+    let include_paths = store
+        .environment
+        .options
+        .get_all_possible_include_folders(main_path);
 
     let mut inc_uri_folders: Vec<Url> = vec![];
     for inc_path in include_paths {
@@ -87,15 +92,16 @@ fn get_include_file_completions(
     // Extract everything that has already been typed in the statement.
     let typed_path = RE1.replace(&include_st.text, "$a").to_string();
 
-    for inc_uri in store.documents.keys() {
+    for document in store.documents.values() {
         for inc_uri_folder in inc_uri_folders.iter() {
-            if !inc_uri
+            if !document
+                .uri
                 .to_string()
                 .contains(&format!("{}/{}", inc_uri_folder, typed_path))
             {
                 continue;
             }
-            if let Ok(inc_path) = inc_uri.to_file_path() {
+            if let Ok(inc_path) = document.uri.to_file_path() {
                 let parent_folder = inc_uri_folder
                     .to_file_path()
                     .unwrap()
@@ -114,7 +120,7 @@ fn get_include_file_completions(
                 let mut trail = ">";
                 if !include_st.use_chevron {
                     // Don't insert anything as VSCode already autocompletes the second ".
-                    // FIXME: This could be fixed programmatically to account for other editors.
+                    // TODO: This could be fixed programmatically to account for other editors.
                     trail = "";
                 }
                 items.push(CompletionItem {

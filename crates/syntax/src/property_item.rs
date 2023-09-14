@@ -7,7 +7,7 @@ use parking_lot::RwLock;
 use std::sync::{Arc, Weak};
 
 use crate::description::Description;
-use crate::{Location, SPItem};
+use crate::{FileId, Reference, SPItem};
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a SourcePawn property, which can be converted to a
@@ -40,8 +40,11 @@ pub struct PropertyItem {
     /// Uri of the file where the property is declared.
     pub uri: Arc<Url>,
 
+    /// [FileId](FileId) of the file where the property is declared.
+    pub file_id: FileId,
+
     /// References to this property.
-    pub references: Vec<Location>,
+    pub references: Vec<Reference>,
 }
 
 impl PropertyItem {
@@ -83,7 +86,7 @@ impl PropertyItem {
                 )),
             }),
             deprecated: Some(self.is_deprecated()),
-            data: Some(serde_json::Value::String(self.key())),
+            data: Some(serde_json::Value::String(self.completion_data())),
             ..Default::default()
         })
     }
@@ -147,6 +150,10 @@ impl PropertyItem {
             self.parent.upgrade().unwrap().read().key(),
             self.name
         )
+    }
+
+    pub fn completion_data(&self) -> String {
+        format!("{}${}", self.key(), self.file_id)
     }
 
     /// Formatted representation of a [PropertyItem].

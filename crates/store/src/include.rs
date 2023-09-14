@@ -3,7 +3,7 @@ use std::sync::Arc;
 use lsp_types::{Range, Url};
 use parking_lot::RwLock;
 use semantic_analyzer::Token;
-use syntax::{include_item::IncludeItem, SPItem};
+use syntax::{include_item::IncludeItem, FileId, SPItem};
 
 use crate::{document::Document, Store};
 
@@ -33,12 +33,12 @@ impl Store {
     /// * `include_text` - Text of the include such as `"file.sp"` or `<file>`.
     /// * `documents` - Set of known documents.
     /// * `document_uri` - Uri of the document where the include declaration is parsed from.
-    pub(crate) fn resolve_import(
-        &mut self,
+    pub fn resolve_import(
+        &self,
         include_text: &mut String,
         document_uri: &Arc<Url>,
         quoted: bool,
-    ) -> Option<Url> {
+    ) -> Option<FileId> {
         // Add the extension to the file if needed.
         let include_text = add_include_extension(include_text, self.environment.amxxpawn_mode);
 
@@ -46,31 +46,10 @@ impl Store {
             // Search for the relative path.
             let document_path = document_uri.to_file_path().ok()?;
             let parent_path = document_path.parent()?;
-            let mut include_file_path = parent_path.join(include_text);
-            let mut uri = Url::from_file_path(&include_file_path).ok()?;
-            if self.documents.contains_key(&uri) {
-                return Some(uri);
-            }
-            if let Ok(Some(main_path_uri)) = self.environment.options.get_main_path_uri() {
-                let main_path = main_path_uri.to_file_path().ok()?;
-                let main_path_parent = main_path.parent()?;
-                if parent_path != main_path_parent {
-                    // Don't look for includes in the include folder if we are not at the root
-                    // of the project.
-                    return None;
-                }
-                include_file_path = main_path_parent.join("include").join(include_text);
-                log::trace!(
-                    "Looking for {:#?} in {:#?}",
-                    include_text,
-                    include_file_path
-                );
-
-                uri = Url::from_file_path(&include_file_path).ok()?;
-                if self.documents.contains_key(&uri) {
-                    return Some(uri);
-                }
-                return None;
+            let include_file_path = parent_path.join(include_text);
+            let uri = Url::from_file_path(&include_file_path).ok()?;
+            if self.contains_uri(&uri) {
+                return self.path_interner.get(&uri);
             }
         }
 
@@ -93,41 +72,48 @@ impl Store {
             );
         }
         let uri = Url::from_file_path(&include_file_path).ok()?;
-        if self.documents.contains_key(&uri) {
-            return Some(uri);
+        if self.contains_uri(&uri) {
+            return self.path_interner.get(&uri);
         }
 
         // Look for the includes in the include directories.
         for include_directory in self.environment.options.includes_directories.iter() {
             let path = include_directory.clone().join(include_text);
             let uri = Url::from_file_path(path).ok()?;
-            if self.documents.contains_key(&uri) {
-                return Some(uri);
+            if self.contains_uri(&uri) {
+                return self.path_interner.get(&uri);
             }
         }
 
         None
     }
-}
 
-pub fn add_include(document: &mut Document, include_uri: Url, path: String, range: Range) {
-    document.includes.insert(
-        include_uri.clone(),
-        Token {
-            text: path.clone(),
+    pub fn add_include(
+        &self,
+        document: &mut Document,
+        include_id: FileId,
+        path: String,
+        range: Range,
+    ) {
+        let include_uri = Arc::new(self.path_interner.lookup(include_id).clone());
+        document.includes.insert(
+            include_id,
+            Token {
+                text: path.clone(),
+                range,
+            },
+        );
+
+        let include_item = IncludeItem {
+            name: path,
             range,
-        },
-    );
-
-    let include_uri = Arc::new(include_uri);
-
-    let include_item = IncludeItem {
-        name: path,
-        range,
-        v_range: document.build_v_range(&range),
-        uri: document.uri.clone(),
-        include_uri,
-    };
-    let include_item = Arc::new(RwLock::new(SPItem::Include(include_item)));
-    document.sp_items.push(include_item);
+            v_range: document.build_v_range(&range),
+            uri: document.uri.clone(),
+            file_id: document.file_id,
+            include_uri,
+            include_id,
+        };
+        let include_item = Arc::new(RwLock::new(SPItem::Include(include_item)));
+        document.sp_items.push(include_item);
+    }
 }

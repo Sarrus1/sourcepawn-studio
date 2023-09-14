@@ -8,7 +8,7 @@ use parking_lot::RwLock;
 use std::sync::{Arc, Weak};
 
 use crate::description::Description;
-use crate::{Location, SPItem};
+use crate::{FileId, Reference, SPItem};
 
 #[derive(Debug, Clone)]
 /// SPItem representation of a SourcePawn enum member.
@@ -31,8 +31,11 @@ pub struct EnumMemberItem {
     /// Uri of the file where the enum member is declared.
     pub uri: Arc<Url>,
 
+    /// [FileId](FileId) of the file where the enum member is declared.
+    pub file_id: FileId,
+
     /// References to this enum.
-    pub references: Vec<Location>,
+    pub references: Vec<Reference>,
 }
 
 impl EnumMemberItem {
@@ -66,7 +69,7 @@ impl EnumMemberItem {
                     }
                 },
             }),
-            data: Some(serde_json::Value::String(self.key())),
+            data: Some(serde_json::Value::String(self.completion_data())),
             ..Default::default()
         })
     }
@@ -126,6 +129,10 @@ impl EnumMemberItem {
     /// Return a key to be used as a unique identifier in a map containing all the items.
     pub fn key(&self) -> String {
         self.name.clone()
+    }
+
+    pub fn completion_data(&self) -> String {
+        format!("{}${}", self.key(), self.file_id)
     }
 
     /// Formatted representation of the enum member.

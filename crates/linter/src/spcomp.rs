@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, bail};
 use fxhash::FxHashMap;
 use lazy_static::lazy_static;
 use lsp_types::{Diagnostic, DiagnosticSeverity, Position, Range, Url};
@@ -93,31 +93,37 @@ impl SPCompDiagnostic {
 /// # Arguments
 ///
 /// * `uri` - [Uri](Url) of the file to compile.
+/// * `spcomp_path` - [Path](Path) of the spcomp executable.
+/// * `includes_directories` - [Paths](PathBuf) of include directories to pass to spcomp.
+/// * `linter_arguments` - Additional arguments to pass to spcomp.
 pub fn get_spcomp_diagnostics(
     uri: Url,
     spcomp_path: &Path,
     includes_directories: &[PathBuf],
     linter_arguments: &[String],
 ) -> anyhow::Result<FxHashMap<Url, Vec<SPCompDiagnostic>>> {
-    let output = Command::new(
-        spcomp_path
-            .to_str()
-            .context("Failed to convert spcomp path to string.")?,
-    )
-    .args(build_args(&uri, includes_directories, linter_arguments)?)
-    .output();
+    // Handle Apple Silicon
+    let output = if std::env::consts::OS == "macos" && std::env::consts::ARCH == "aarch64" {
+        Command::new("arch")
+            .arg("-x86_64")
+            .arg(spcomp_path)
+            .args(build_args(&uri, includes_directories, linter_arguments)?)
+            .output()
+    } else {
+        Command::new(spcomp_path)
+            .args(build_args(&uri, includes_directories, linter_arguments)?)
+            .output()
+    };
+
     let out_path = get_out_path();
     if out_path.exists() {
         let _ = fs::remove_file(out_path);
     }
 
-    let output = output?;
+    let output = output?; // Unwrap output here to allow removing the existing file first.
     let stderr = String::from_utf8_lossy(&output.stderr);
     if !stderr.is_empty() {
-        return Err(anyhow::anyhow!(
-            "Failed to run spcomp with error: {}",
-            stderr
-        ));
+        bail!("Failed to run spcomp with error: {}", stderr);
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);

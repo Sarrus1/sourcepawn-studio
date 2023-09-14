@@ -23,6 +23,7 @@ impl<'a> Parser<'a> {
             value: "".to_string(),
             description: self.find_doc(node.start_position().row, true)?,
             uri: self.uri.clone(),
+            file_id: self.file_id,
             references: vec![],
         };
 

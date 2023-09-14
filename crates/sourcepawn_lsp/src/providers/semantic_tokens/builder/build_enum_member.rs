@@ -1,5 +1,5 @@
-use lsp_types::{SemanticTokenModifier, SemanticTokenType, Url};
-use syntax::enum_member_item::EnumMemberItem;
+use lsp_types::{SemanticTokenModifier, SemanticTokenType};
+use syntax::{enum_member_item::EnumMemberItem, FileId};
 
 use super::SemanticTokensBuilder;
 
@@ -7,9 +7,9 @@ impl SemanticTokensBuilder {
     pub(crate) fn build_enum_member(
         &mut self,
         enum_member_item: &EnumMemberItem,
-        uri: &Url,
+        file_id: FileId,
     ) -> anyhow::Result<()> {
-        if *enum_member_item.uri == *uri {
+        if enum_member_item.file_id == file_id {
             self.push(
                 enum_member_item.v_range,
                 SemanticTokenType::ENUM_MEMBER,
@@ -19,10 +19,10 @@ impl SemanticTokensBuilder {
                 ]),
             )?;
         }
-        for ref_ in enum_member_item.references.iter() {
-            if *ref_.uri == *uri {
+        for reference in enum_member_item.references.iter() {
+            if reference.file_id == file_id {
                 self.push(
-                    ref_.v_range,
+                    reference.v_range,
                     SemanticTokenType::ENUM_MEMBER,
                     Some(vec![SemanticTokenModifier::READONLY]),
                 )?;

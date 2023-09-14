@@ -33,7 +33,9 @@ impl<'a> Parser<'a> {
     }
 
     pub fn push_inline_comment(&mut self, item: &Arc<RwLock<SPItem>>) {
-        let Ok(description) = self.find_doc(item.read().range().end.line as usize, true) else {return};
+        let Ok(description) = self.find_doc(item.read().range().end.line as usize, true) else {
+            return;
+        };
         match &mut *item.write() {
             SPItem::EnumMember(enum_member_item) => {
                 enum_member_item.description = description;

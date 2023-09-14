@@ -1,9 +1,8 @@
 use lazy_static::lazy_static;
-use lsp_types::Url;
 use parking_lot::RwLock;
 use regex::Regex;
 use std::sync::Arc;
-use syntax::{Location, SPItem};
+use syntax::{Reference, SPItem};
 
 use crate::{range_contains_range, token::Token};
 
@@ -16,7 +15,7 @@ impl<'a> Analyzer<'a> {
     /// # Arguments
     ///
     /// * `token` - [Token] to analyze.
-    pub(super) fn resolve_this(&mut self, token: &Arc<Token>, uri: &Url) -> bool {
+    pub(super) fn resolve_this(&mut self, token: &Arc<Token>) -> bool {
         if token.text != "this" {
             return false;
         }
@@ -24,7 +23,7 @@ impl<'a> Analyzer<'a> {
             let item_lock = item.read();
             match &*item_lock {
                 SPItem::Methodmap(mm_item) => {
-                    if *mm_item.uri == *uri
+                    if mm_item.file_id == self.file_id
                         && range_contains_range(&mm_item.full_range, &token.range)
                     {
                         self.previous_items.insert(token.text.clone(), item.clone());
@@ -32,7 +31,7 @@ impl<'a> Analyzer<'a> {
                     }
                 }
                 SPItem::EnumStruct(es_item) => {
-                    if *es_item.uri == *uri
+                    if es_item.file_id == self.file_id
                         && range_contains_range(&es_item.full_range, &token.range)
                     {
                         self.previous_items.insert(token.text.clone(), item.clone());
@@ -55,11 +54,7 @@ impl<'a> Analyzer<'a> {
     /// # Arguments
     ///
     /// * `token` - [Token] to analyze.
-    pub(super) fn resolve_non_method_item(
-        &mut self,
-        token: &Arc<Token>,
-        uri: &Arc<Url>,
-    ) -> anyhow::Result<()> {
+    pub(super) fn resolve_non_method_item(&mut self, token: &Arc<Token>) -> anyhow::Result<()> {
         let full_key = format!(
             "{}-{}-{}",
             self.scope.mm_es_key(),
@@ -77,8 +72,9 @@ impl<'a> Analyzer<'a> {
             .or_else(|| self.tokens_map.get(&token.text));
 
         if let Some(item) = item {
-            let reference = Location {
-                uri: uri.clone(),
+            let reference = Reference {
+                file_id: self.file_id,
+                uri: self.uri.clone(),
                 range: token.range,
                 v_range: if let SPItem::Define(_) = &*item.read() {
                     token.range
@@ -118,7 +114,6 @@ impl<'a> Analyzer<'a> {
         &mut self,
         parent: &Arc<Token>,
         field: &Arc<Token>,
-        uri: &Arc<Url>,
     ) -> Option<()> {
         if self.previous_items.is_empty() {
             return None;
@@ -152,8 +147,9 @@ impl<'a> Analyzer<'a> {
 
         item.as_ref()?;
         let item = item.unwrap();
-        let reference = Location {
-            uri: uri.clone(),
+        let reference = Reference {
+            file_id: self.file_id,
+            uri: self.uri.clone(),
             range: field.range,
             v_range: self.build_v_range(&field.range),
         };

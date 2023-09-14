@@ -1,5 +1,5 @@
-use lsp_types::{SemanticTokenModifier, SemanticTokenType, Url};
-use syntax::variable_item::VariableItem;
+use lsp_types::{SemanticTokenModifier, SemanticTokenType};
+use syntax::{variable_item::VariableItem, FileId};
 
 use super::SemanticTokensBuilder;
 
@@ -7,19 +7,19 @@ impl SemanticTokensBuilder {
     pub(crate) fn build_global_variable(
         &mut self,
         variable_item: &VariableItem,
-        uri: &Url,
+        file_id: FileId,
     ) -> anyhow::Result<()> {
-        if *variable_item.uri == *uri {
+        if variable_item.file_id == file_id {
             self.push(
                 variable_item.v_range,
                 SemanticTokenType::VARIABLE,
                 Some(vec![SemanticTokenModifier::DECLARATION]),
             )?;
         }
-        for ref_ in variable_item.references.iter() {
-            if *ref_.uri == *uri {
+        for reference in variable_item.references.iter() {
+            if reference.file_id == file_id {
                 self.push(
-                    ref_.v_range,
+                    reference.v_range,
                     SemanticTokenType::VARIABLE,
                     Some(vec![SemanticTokenModifier::MODIFICATION]),
                 )?;

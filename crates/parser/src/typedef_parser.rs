@@ -64,6 +64,7 @@ impl<'a> Parser<'a> {
             v_full_range: self.build_v_range(&full_range),
             description: description.clone(),
             uri: self.uri.clone(),
+            file_id: self.file_id,
             detail: node
                 .utf8_text(self.source.as_bytes())
                 .unwrap_or_default()
@@ -159,7 +160,7 @@ impl<'a> Parser<'a> {
 
         for child in argument_type_node.children(&mut cursor) {
             match child.kind() {
-                // FIXME: Handle oldtypes.
+                // TODO: Handle oldtypes.
                 "type" => {
                     type_.name = child.utf8_text(self.source.as_bytes()).ok()?.to_string();
                 }

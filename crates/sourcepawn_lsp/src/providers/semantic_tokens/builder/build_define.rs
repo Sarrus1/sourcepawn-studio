@@ -1,5 +1,5 @@
-use lsp_types::{SemanticTokenModifier, SemanticTokenType, Url};
-use syntax::define_item::DefineItem;
+use lsp_types::{SemanticTokenModifier, SemanticTokenType};
+use syntax::{define_item::DefineItem, FileId};
 
 use super::SemanticTokensBuilder;
 
@@ -7,9 +7,9 @@ impl SemanticTokensBuilder {
     pub(crate) fn build_define(
         &mut self,
         define_item: &DefineItem,
-        uri: &Url,
+        file_id: FileId,
     ) -> anyhow::Result<()> {
-        if *define_item.uri == *uri {
+        if define_item.file_id == file_id {
             self.push(
                 define_item.v_range,
                 SemanticTokenType::MACRO,
@@ -19,10 +19,10 @@ impl SemanticTokensBuilder {
                 ]),
             )?;
         }
-        for ref_ in define_item.references.iter() {
-            if *ref_.uri == *uri {
+        for reference in define_item.references.iter() {
+            if reference.file_id == file_id {
                 self.push(
-                    ref_.v_range,
+                    reference.v_range,
                     SemanticTokenType::MACRO,
                     Some(vec![SemanticTokenModifier::READONLY]),
                 )?;

@@ -25,6 +25,7 @@ impl<'a> Parser<'a> {
             value: value.unwrap_or_default().to_string(),
             description: self.find_doc(node.start_position().row, true)?,
             uri: self.uri.clone(),
+            file_id: self.file_id,
             references: vec![],
         };
 

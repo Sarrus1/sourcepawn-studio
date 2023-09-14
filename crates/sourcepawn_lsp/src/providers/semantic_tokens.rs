@@ -12,7 +12,8 @@ pub fn provide_semantic_tokens(
     store: &Store,
     params: SemanticTokensParams,
 ) -> Option<SemanticTokens> {
-    let all_items = &store.get_all_items(false);
+    let file_id = store.path_interner.get(&params.text_document.uri)?;
+    let all_items = &store.get_all_items(&file_id, false);
     if all_items.is_empty() {
         return None;
     }
@@ -40,22 +41,14 @@ pub fn provide_semantic_tokens(
     for item in all_items.iter() {
         let item_lock = item.read();
         match &*item_lock {
-            SPItem::Enum(enum_item) => builder.build_enum(enum_item, &params.text_document.uri),
+            SPItem::Enum(enum_item) => builder.build_enum(enum_item, file_id),
             SPItem::Variable(variable_item) => {
-                builder.build_global_variable(variable_item, &params.text_document.uri)
+                builder.build_global_variable(variable_item, file_id)
             }
-            SPItem::Define(define_item) => {
-                builder.build_define(define_item, &params.text_document.uri)
-            }
-            SPItem::Function(function_item) => {
-                builder.build_function(function_item, &params.text_document.uri)
-            }
-            SPItem::Methodmap(mm_item) => {
-                builder.build_methodmap(mm_item, &params.text_document.uri)
-            }
-            SPItem::EnumStruct(es_item) => {
-                builder.build_enum_struct(es_item, &params.text_document.uri)
-            }
+            SPItem::Define(define_item) => builder.build_define(define_item, file_id),
+            SPItem::Function(function_item) => builder.build_function(function_item, file_id),
+            SPItem::Methodmap(mm_item) => builder.build_methodmap(mm_item, file_id),
+            SPItem::EnumStruct(es_item) => builder.build_enum_struct(es_item, file_id),
             _ => Ok(()),
         }
         .unwrap_or_default();

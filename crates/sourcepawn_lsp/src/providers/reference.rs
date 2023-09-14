@@ -15,5 +15,16 @@ pub fn provide_reference(store: &Store, params: ReferenceParams) -> Option<Vec<L
         }
     }
 
-    Some(locations.iter().map(|loc| loc.to_lsp_location()).collect())
+    Some(
+        locations
+            .iter()
+            .map(|reference| {
+                let uri = store.path_interner.lookup(reference.file_id);
+                Location {
+                    uri: uri.clone(),
+                    range: reference.v_range,
+                }
+            })
+            .collect(),
+    )
 }

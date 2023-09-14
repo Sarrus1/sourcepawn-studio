@@ -20,16 +20,21 @@ impl Server {
 
         if !self.config_pulled {
             log::trace!("File {:?} was opened before the config was pulled.", uri);
-            self.store
+            let file_id = self
+                .store
                 .write()
-                .documents
-                .insert(uri.clone(), Document::new(uri, params.text_document.text));
+                .path_interner
+                .intern(uri.as_ref().clone());
+            self.store.write().documents.insert(
+                file_id,
+                Document::new(uri, file_id, params.text_document.text),
+            );
             return Ok(());
         }
 
         // Don't parse the document if it has already been opened.
         // GoToDefinition request will trigger a new parse.
-        if let Some(document) = self.store.read().documents.get(&uri) {
+        if let Some(document) = self.store.read().get_from_uri(&uri) {
             if document.parsed {
                 return Ok(());
             }
@@ -39,6 +44,13 @@ impl Server {
             .write()
             .handle_open_document(&uri, text, &mut self.parser)
             .expect("Couldn't parse file");
+
+        // In the first parse, it is expected that includes are missing.
+        if !self.store.read().first_parse {
+            self.store
+                .write()
+                .resolve_missing_includes(&mut self.parser);
+        }
 
         Ok(())
     }
@@ -50,13 +62,17 @@ impl Server {
         normalize_uri(&mut params.text_document.uri);
 
         let uri = Arc::new(params.text_document.uri.clone());
-        let Some(document) = self.store.read().get(&uri).or_else(|| {
+        let Some(document) = self.store.read().get_cloned_from_uri(&uri).or_else(|| {
             // If the document was not known, read its content first.
             self.store
-                .write().load(uri.to_file_path().ok()?, &mut self.parser)
+                .write()
+                .load(uri.to_file_path().ok()?, &mut self.parser)
                 .ok()?
         }) else {
-            bail!("Failed to apply document edit on {}", params.text_document.uri);
+            bail!(
+                "Failed to apply document edit on {}",
+                params.text_document.uri
+            );
         };
 
         let mut text = document.text().to_string();
@@ -65,7 +81,7 @@ impl Server {
             .write()
             .handle_open_document(&uri, text, &mut self.parser)?;
 
-        self.lint_all_documents();
+        self.lint_project(&params.text_document.uri);
 
         Ok(())
     }
@@ -82,11 +98,11 @@ impl Server {
                         .store
                         .write()
                         .reload(change.uri.to_file_path().unwrap(), &mut self.parser);
-                    self.reload_diagnostics();
+                    self.reload_diagnostics(change.uri);
                 }
                 FileChangeType::DELETED => {
                     self.store.write().remove(&change.uri, &mut self.parser);
-                    self.reload_diagnostics();
+                    self.reload_diagnostics(change.uri);
                 }
                 FileChangeType::CREATED => {
                     if let Ok(path) = change.uri.to_file_path() {
@@ -94,7 +110,7 @@ impl Server {
                             .store
                             .write()
                             .load(path.as_path().to_path_buf(), &mut self.parser);
-                        self.reload_diagnostics();
+                        self.reload_diagnostics(change.uri);
                     }
                 }
                 _ => {}

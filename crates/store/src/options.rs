@@ -1,15 +1,11 @@
-use lsp_types::Url;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-
-use crate::normalize_uri;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(default)]
 pub struct Options {
     pub includes_directories: Vec<PathBuf>,
-    pub main_path: PathBuf,
     pub spcomp_path: PathBuf,
     pub linter_arguments: Vec<String>,
     pub disable_syntax_linter: bool,
@@ -17,7 +13,10 @@ pub struct Options {
 
 impl Options {
     /// Return all possible include folder paths.
-    pub fn get_all_possible_include_folders(&self) -> Vec<PathBuf> {
+    ///
+    /// # Arguments
+    /// * `main_path` - [Path](PathBuf) of the main file.
+    pub fn get_all_possible_include_folders(&self, main_path: PathBuf) -> Vec<PathBuf> {
         let mut res: Vec<PathBuf> = vec![];
         for path in self.includes_directories.iter() {
             if path.exists() {
@@ -25,7 +24,7 @@ impl Options {
             }
         }
 
-        if let Some(scripting_folder) = self.main_path.parent() {
+        if let Some(scripting_folder) = main_path.parent() {
             if scripting_folder.exists() {
                 res.push(scripting_folder.to_path_buf());
             }
@@ -38,28 +37,7 @@ impl Options {
         res
     }
 
-    /// Return the [uri](lsp_types::Url) main path. [None] if it is empty. [Err] otherwise.
-    pub fn get_main_path_uri(&self) -> anyhow::Result<Option<Url>> {
-        if let Some(main_path_str) = self.main_path.to_str() {
-            if main_path_str.is_empty() {
-                return Ok(None);
-            }
-        }
-        if !self.main_path.exists() || !self.main_path.is_file() {
-            return Err(anyhow::anyhow!("Main path does not exist."));
-        }
-        let main_uri = Url::from_file_path(&self.main_path);
-        if let Ok(mut main_uri) = main_uri {
-            normalize_uri(&mut main_uri);
-            return Ok(Some(main_uri));
-        }
-
-        Err(anyhow::anyhow!(
-            "Main path could not be converted to a Uri."
-        ))
-    }
-
-    /// Returns true if the given path is a parent or one of the IncludeDirectories.
+    /// Returns true if the given path is a parent or one of the IncludesDirectories.
     ///
     /// # Arguments
     ///

@@ -10,9 +10,11 @@ impl Server {
         id: RequestId,
         params: PreprocessedDocumentParams,
     ) -> anyhow::Result<()> {
-        let Some(mut text_document) = params.text_document else { bail!("No TextDocument passed to command");};
+        let Some(mut text_document) = params.text_document else {
+            bail!("No TextDocument passed to command");
+        };
         normalize_uri(&mut text_document.uri);
-        if let Some(document) = self.store.read().documents.get(&text_document.uri) {
+        if let Some(document) = self.store.read().get_from_uri(&text_document.uri) {
             let text = document.preprocessed_text.clone();
             self.run_query(id, move |_store| text);
 
