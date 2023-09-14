@@ -12,6 +12,7 @@ impl Server {
     pub(super) fn reparse_all(&mut self) -> anyhow::Result<()> {
         log::debug!("Scanning all the files.");
         self.indexing = true;
+        self.store.write().first_parse = true;
         let _ = self.send_status(lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,
             quiescent: !self.indexing,
@@ -45,6 +46,7 @@ impl Server {
         self.store.write().projects = projects;
 
         self.indexing = false;
+        self.store.write().first_parse = false;
         let _ = self.send_status(lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,
             quiescent: !self.indexing,
