@@ -2046,6 +2046,7 @@ dependencies = [
  "sourcepawn_lexer",
  "strip_bom",
  "syntax",
+ "tempfile",
  "tree-sitter",
  "tree-sitter-sourcepawn",
  "walkdir",

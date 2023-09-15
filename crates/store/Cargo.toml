@@ -32,3 +32,4 @@ serde.workspace = true
 serde_json.workspace = true
 nohash-hasher.workspace = true
 indexmap.workspace = true
+tempfile.workspace = true

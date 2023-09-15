@@ -31,7 +31,6 @@ impl Store {
     ///
     /// * `include_directories` - List of directories to look for includes files.
     /// * `include_text` - Text of the include such as `"file.sp"` or `<file>`.
-    /// * `documents` - Set of known documents.
     /// * `document_uri` - Uri of the document where the include declaration is parsed from.
     pub fn resolve_import(
         &self,
@@ -53,23 +52,40 @@ impl Store {
             }
         }
 
-        // Look for the include in the same directory or the closest include directory.
-        let document_path = document_uri.to_file_path().ok()?;
-        let document_dirpath = document_path.parent()?;
-        let mut include_file_path = document_dirpath.join(include_text);
-        log::trace!(
-            "Looking for {:#?} in {:#?}",
-            include_text,
-            include_file_path
-        );
-        if !include_file_path.exists() {
-            log::trace!("{:#?} not found", include_text);
-            include_file_path = document_dirpath.join("include").join(include_text);
+        // Walk backwards in the parents directory to find the include.
+        // Look both in the parent and in a directory called `include`.
+        // Limit the search to 5 levels.
+        // This approach fixes the egg and chicken issue where the main file has to be known in
+        // order to resolve the includes, and the includes have to be resolved in order to know
+        // the main file.
+        let mut document_path = document_uri.to_file_path().ok()?;
+        let mut include_file_path = document_path.parent()?.join(include_text);
+        let mut i = 0u8;
+        while let Some(parent) = document_path.parent().map(|p| p.to_path_buf()) {
+            document_path = parent.clone();
+            if i > 5 {
+                return None;
+            }
+            i += 1;
+            include_file_path = parent.join(include_text);
             log::trace!(
                 "Looking for {:#?} in {:#?}",
                 include_text,
                 include_file_path
             );
+            if include_file_path.exists() {
+                break;
+            }
+            log::trace!("{:#?} not found", include_text);
+            include_file_path = parent.join("include").join(include_text);
+            log::trace!(
+                "Looking for {:#?} in {:#?}",
+                include_text,
+                include_file_path
+            );
+            if include_file_path.exists() {
+                break;
+            }
         }
         let uri = Url::from_file_path(&include_file_path).ok()?;
         if self.contains_uri(&uri) {
@@ -115,5 +131,114 @@ impl Store {
         };
         let include_item = Arc::new(RwLock::new(SPItem::Include(include_item)));
         document.sp_items.push(include_item);
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::path::PathBuf;
+
+    use super::*;
+    use tempfile::tempdir;
+
+    fn add_file(store: &mut Store, path: &PathBuf, text: &str) -> Arc<Url> {
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, text).unwrap();
+        let uri = Arc::new(Url::from_file_path(path).unwrap());
+        let file_id = store.path_interner.intern(uri.as_ref().clone());
+        store.documents.insert(
+            file_id,
+            Document::new(uri.clone(), file_id, text.to_string()),
+        );
+        uri
+    }
+
+    #[test]
+    fn test_resolve_include() {
+        let temp_dir = tempdir().unwrap();
+        let temp_dir_path = temp_dir.path().to_owned();
+
+        let mut store = Store::default();
+
+        let path_0 = temp_dir_path.join("main.sp");
+        let uri_0 = add_file(&mut store, &path_0, "");
+
+        let path_1 = temp_dir_path.join("include/a.sp");
+        let uri_1 = add_file(&mut store, &path_1, "");
+
+        let path_2 = temp_dir_path.join("include/b.inc");
+        let uri_2 = add_file(&mut store, &path_2, "");
+
+        let path_3 = temp_dir_path.join("include/others/c.inc");
+        let uri_3 = add_file(&mut store, &path_3, "");
+
+        // from main.sp:
+        // #include <third>
+        assert_eq!(
+            store.resolve_import(&mut "b".to_string(), &uri_0, false),
+            store.path_interner.get(&uri_2)
+        );
+
+        // from main.sp:
+        // #include "third"
+        assert_eq!(
+            store.resolve_import(&mut "b".to_string(), &uri_0, true),
+            store.path_interner.get(&uri_2)
+        );
+
+        // from main.sp:
+        // #include <a.sp>
+        assert_eq!(
+            store.resolve_import(&mut "a.sp".to_string(), &uri_0, false),
+            store.path_interner.get(&uri_1)
+        );
+
+        // from main.sp:
+        // #include "a.sp"
+        assert_eq!(
+            store.resolve_import(&mut "a.sp".to_string(), &uri_0, true),
+            store.path_interner.get(&uri_1)
+        );
+
+        // from a.sp:
+        // #include <b>
+        assert_eq!(
+            store.resolve_import(&mut "b".to_string(), &uri_1, false),
+            store.path_interner.get(&uri_2)
+        );
+
+        // from c.sp:
+        // #include <b>
+        assert_eq!(
+            store.resolve_import(&mut "b".to_string(), &uri_3, false),
+            store.path_interner.get(&uri_2)
+        );
+    }
+
+    #[test]
+    fn test_add_include_extension() {
+        let mut include_text = String::from("file");
+        add_include_extension(&mut include_text, false);
+        assert_eq!(include_text, "file.inc");
+
+        let mut include_text = String::from("file.inc");
+        add_include_extension(&mut include_text, false);
+        assert_eq!(include_text, "file.inc");
+
+        let mut include_text = String::from("file.sp");
+        add_include_extension(&mut include_text, false);
+        assert_eq!(include_text, "file.sp");
+
+        let mut include_text = String::from("file");
+        add_include_extension(&mut include_text, true);
+        assert_eq!(include_text, "file.inc");
+
+        let mut include_text = String::from("file.inc");
+        add_include_extension(&mut include_text, true);
+        assert_eq!(include_text, "file.inc");
+
+        let mut include_text = String::from("file.sma");
+        add_include_extension(&mut include_text, true);
+        assert_eq!(include_text, "file.sma");
     }
 }
