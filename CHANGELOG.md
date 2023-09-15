@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.11.1]
+
+### Fixed
+
+- Fixed includes not being resolved.
+
 ## [0.11.0]
 
 ### Added

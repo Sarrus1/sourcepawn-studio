@@ -1,5 +1,16 @@
 ## Release Notes
 
+## [6.0.1]
+
+### Fixed
+
+- Fixed compile SM command hanging on x86.
+- Fixed images link in readme.
+
+### Chore
+
+- LSP version bump.
+
 ## [6.0.0]
 
 ### Added
