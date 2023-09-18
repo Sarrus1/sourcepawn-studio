@@ -719,6 +719,21 @@ fn macro_expansion_6() {
 }
 
 #[test]
+fn macro_expansion_7() {
+    let input = r#"#define FOO(%0,%1) %0 + %1
+#define BAR(%0,%1) %0 + FOO(%0, %1)
+int foo = BAR(1, 2)
+"#;
+    let output = r#"#define FOO(%0,%1) %0 + %1
+#define BAR(%0,%1) %0 + FOO(%0, %1)
+int foo = 1 + 1 + 2
+int bar;
+"#;
+
+    assert_preproc_eq!(input, output);
+}
+
+#[test]
 fn include_directive_1() {
     let input = r#"#include <sourcemod>"#;
     let output = r#"#include <sourcemod>"#;
