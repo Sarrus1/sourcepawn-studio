@@ -54,7 +54,7 @@ impl Store {
 
         // Walk backwards in the parents directory to find the include.
         // Look both in the parent and in a directory called `include`.
-        // Limit the search to 5 levels.
+        // Limit the search to 3 levels.
         // This approach fixes the egg and chicken issue where the main file has to be known in
         // order to resolve the includes, and the includes have to be resolved in order to know
         // the main file.
@@ -63,8 +63,8 @@ impl Store {
         let mut i = 0u8;
         while let Some(parent) = document_path.parent().map(|p| p.to_path_buf()) {
             document_path = parent.clone();
-            if i > 5 {
-                return None;
+            if i > 3 {
+                break;
             }
             i += 1;
             include_file_path = parent.join(include_text);
@@ -138,6 +138,8 @@ impl Store {
 mod test {
     use std::path::PathBuf;
 
+    use crate::options::Options;
+
     use super::*;
     use tempfile::tempdir;
 
@@ -158,7 +160,13 @@ mod test {
         let temp_dir = tempdir().unwrap();
         let temp_dir_path = temp_dir.path().to_owned();
 
+        let include_dir = tempdir().unwrap();
+        let include_dir_path = include_dir.path().to_owned();
+
         let mut store = Store::default();
+        let mut options = Options::default();
+        options.includes_directories.push(include_dir_path.clone());
+        store.environment.options = Arc::new(options);
 
         let path_0 = temp_dir_path.join("main.sp");
         let uri_0 = add_file(&mut store, &path_0, "");
@@ -171,6 +179,9 @@ mod test {
 
         let path_3 = temp_dir_path.join("include/others/c.inc");
         let uri_3 = add_file(&mut store, &path_3, "");
+
+        let path_4 = include_dir_path.join("sourcemod.inc");
+        let uri_4 = add_file(&mut store, &path_4, "");
 
         // from main.sp:
         // #include <third>
@@ -212,6 +223,20 @@ mod test {
         assert_eq!(
             store.resolve_import(&mut "b".to_string(), &uri_3, false),
             store.path_interner.get(&uri_2)
+        );
+
+        // from a.sp:
+        // #include <sourcemod>
+        assert_eq!(
+            store.resolve_import(&mut "sourcemod".to_string(), &uri_1, false),
+            store.path_interner.get(&uri_4)
+        );
+
+        // from c.sp:
+        // #include <sourcemod>
+        assert_eq!(
+            store.resolve_import(&mut "sourcemod".to_string(), &uri_2, false),
+            store.path_interner.get(&uri_4)
         );
     }
 
