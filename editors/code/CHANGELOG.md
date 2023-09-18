@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [6.0.2]
+
+### Chore
+
+- LSP version bump.
+
 ## [6.0.1]
 
 ### Fixed

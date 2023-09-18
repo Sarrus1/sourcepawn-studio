@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.11.2]
+
+### Fixed
+
+- Fixed an include resolution breakage for `<>` type includes.
+
 ## [0.11.1]
 
 ### Fixed
