@@ -55,6 +55,7 @@ pub struct Macro {
     pub(crate) params: Option<Vec<i8>>,
     pub(crate) nb_params: i8,
     pub(crate) body: Vec<Symbol>,
+    pub(crate) disabled: bool,
 }
 
 impl<'a> SourcepawnPreprocessor<'a> {
@@ -196,13 +197,19 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     self.current_line = "".to_string();
                     self.prev_end = 0;
                 }
-                TokenKind::Identifier => match self.macros.get(&symbol.text()) {
+                TokenKind::Identifier => match self.macros.get_mut(&symbol.text()) {
                     // TODO: Evaluate the performance dropoff of supporting macro expansion when overriding reserved keywords.
                     // This might only be a problem for a very small subset of users.
-                    Some(_) => {
+                    Some(macro_) => {
+                        // Skip the macro if it is disabled and reenable it.
+                        if macro_.disabled {
+                            macro_.disabled = false;
+                            self.push_symbol(&symbol);
+                            continue;
+                        }
                         match expand_identifier(
                             &mut self.lexer,
-                            &self.macros,
+                            &mut self.macros,
                             &symbol,
                             &mut self.expansion_stack,
                             true,
@@ -239,7 +246,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
 
     fn process_if_directive(&mut self, symbol: &Symbol) {
         let line_nb = symbol.range.start.line;
-        let mut if_condition = IfCondition::new(&self.macros, symbol.range.start.line);
+        let mut if_condition = IfCondition::new(&mut self.macros, symbol.range.start.line);
         while self.lexer.in_preprocessor() {
             if let Some(symbol) = self.lexer.next() {
                 if symbol.token_kind == TokenKind::Identifier {

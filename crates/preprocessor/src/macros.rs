@@ -32,6 +32,130 @@ impl QueuedSymbol {
     }
 }
 
+/// Handler for the collection of arguments in a macro call.
+///
+/// When a function like macro is found, but arguments are not provided, eg:
+/// ```cpp
+/// #define FOO(%1) %1
+/// int FOO;
+/// ```
+/// We should not expand the macro and keep the symbol as is.
+/// However, when looking for the opening parenthesis, we pop symbols in the lexer.
+/// They need to be collected and handled, so that in case we do not expand the symbol,
+/// they can still be processed.
+#[derive(Debug, Clone, Default)]
+struct ArgumentsCollector {
+    /// Stack that stores the [symbols](Symbol) we popped while looking for the opening parenthesis
+    /// of the macro call.
+    popped_symbols_stack: Vec<Symbol>,
+}
+
+impl ArgumentsCollector {
+    /// Extend the expansion stack with the popped [symbols](Symbol).
+    /// # Arguments
+    ///
+    /// * `expansion_stack` - Expansion stack of the main loop.
+    fn extend_expansion_stack(self, expansion_stack: &mut Vec<Symbol>) {
+        expansion_stack.extend(self.popped_symbols_stack.into_iter().rev());
+    }
+
+    /// Assuming we are right before a macro call in the lexer, collect the arguments
+    /// and store them in an array, in the order they appear in.
+    ///
+    /// # Arguments
+    ///
+    /// * `lexer` - [SourcepawnLexer](sourcepawn_lexer::lexer) to iterate over.
+    /// * `args_stack` - [Vec](Vec) of [Symbols](sourcepawn_lexer::Symbol) that represent the
+    /// stack of arguments that are being processed.
+    /// * `nb_params` - Number of parameters in the current macro.
+    fn collect_arguments<T>(
+        &mut self,
+        lexer: &mut T,
+        symbol: &Symbol,
+        context: &mut MacroContext,
+        nb_params: usize,
+    ) -> Option<MacroArguments>
+    where
+        T: Iterator<Item = Symbol>,
+    {
+        let mut temp_expanded_stack = vec![];
+        let mut paren_depth = 0;
+        let mut arg_idx: usize = 0;
+        let mut args: MacroArguments = Default::default();
+        let mut found_first_paren = false;
+        while let Some(sub_symbol) = if !context.is_empty() {
+            Some(context.pop_front().unwrap().symbol)
+        } else if !self.popped_symbols_stack.is_empty() {
+            self.popped_symbols_stack.pop()
+        } else {
+            lexer.next()
+        } {
+            if !found_first_paren {
+                if !matches!(
+                    &sub_symbol.token_kind,
+                    TokenKind::LParen | TokenKind::Comment(sourcepawn_lexer::Comment::BlockComment)
+                ) {
+                    temp_expanded_stack.push(sub_symbol);
+                    self.popped_symbols_stack
+                        .extend(temp_expanded_stack.into_iter().rev());
+                    return None;
+                }
+                if sub_symbol.token_kind == TokenKind::LParen {
+                    if sub_symbol.range.start.line != symbol.range.end.line {
+                        temp_expanded_stack.push(sub_symbol);
+                        self.popped_symbols_stack
+                            .extend(temp_expanded_stack.into_iter().rev());
+                        return None;
+                    }
+                    found_first_paren = true;
+                } else {
+                    temp_expanded_stack.push(sub_symbol);
+                    continue;
+                }
+            }
+            match &sub_symbol.token_kind {
+                TokenKind::LParen => {
+                    paren_depth += 1;
+                    if paren_depth > 1 {
+                        args[arg_idx].push(sub_symbol.clone())
+                    }
+                }
+                TokenKind::RParen => {
+                    if paren_depth > 1 {
+                        args[arg_idx].push(sub_symbol.clone())
+                    }
+                    paren_depth -= 1;
+                    if paren_depth == 0 {
+                        break;
+                    }
+                }
+                TokenKind::Comma => {
+                    match paren_depth.cmp(&1) {
+                        Ordering::Equal => {
+                            if arg_idx + 1 < nb_params {
+                                arg_idx += 1;
+                            } else {
+                                // The stack of arguments is overflowed, store the rest in the last argument,
+                                // including the comma.
+                                args[arg_idx].push(sub_symbol.clone())
+                            }
+                        }
+                        Ordering::Greater => args[arg_idx].push(sub_symbol.clone()),
+                        Ordering::Less => (),
+                    }
+                }
+                _ => {
+                    if paren_depth > 0 {
+                        args[arg_idx].push(sub_symbol.clone());
+                    }
+                }
+            }
+        }
+
+        Some(args)
+    }
+}
+
 /// Try to expand an identifier and return a [vector][Vec] of expanded [symbols](Symbol).
 ///
 /// We use a [context](MacroContext) stack to keep track of the expanded macros.
@@ -54,7 +178,7 @@ impl QueuedSymbol {
 /// * `allow_undefined_macros` - Should not found macros throw an error.
 pub(super) fn expand_identifier<T>(
     lexer: &mut T,
-    macros: &FxHashMap<String, Macro>,
+    macros: &mut FxHashMap<String, Macro>,
     symbol: &Symbol,
     expansion_stack: &mut Vec<Symbol>,
     allow_undefined_macros: bool,
@@ -64,6 +188,7 @@ where
 {
     let mut expanded_macros = Vec::new();
     let mut reversed_expansion_stack = Vec::new();
+    let mut args_collector = ArgumentsCollector::default();
     let mut context_stack = vec![VecDeque::from([QueuedSymbol::new(
         symbol.clone(),
         symbol.delta,
@@ -75,7 +200,7 @@ where
         };
         match &queued_symbol.symbol.token_kind {
             TokenKind::Identifier => {
-                let macro_ = match macros.get(&queued_symbol.symbol.text()) {
+                let macro_ = match macros.get_mut(&queued_symbol.symbol.text()) {
                     Some(m) => m,
                     None => {
                         if !allow_undefined_macros {
@@ -99,8 +224,19 @@ where
                 let new_context = if macro_.params.is_none() {
                     expand_non_macro_define(macro_, &queued_symbol.symbol.delta)
                 } else {
-                    let args =
-                        collect_arguments(lexer, &mut current_context, macro_.nb_params as usize);
+                    let Some(args) = args_collector.collect_arguments(
+                        lexer,
+                        &queued_symbol.symbol,
+                        &mut current_context,
+                        macro_.nb_params as usize,
+                    ) else {
+                        // The macro was not expanded, put it back on the expansion stack
+                        // and disable it to avoid an infinite loop.
+                        reversed_expansion_stack.push(queued_symbol.symbol);
+                        macro_.disabled = true;
+                        context_stack.push(current_context);
+                        continue;
+                    };
                     expand_macro(args, macro_, &queued_symbol.symbol)?
                 };
                 context_stack.push(current_context);
@@ -135,6 +271,8 @@ where
         }
     }
 
+    args_collector.extend_expansion_stack(expansion_stack);
+
     // The expansion stack expects [symbols](Symbol) to be in reverse order and this algorithm
     // produces them in the correct order, therefore we have to reverse them.
     expansion_stack.extend(reversed_expansion_stack.into_iter().rev());
@@ -151,7 +289,7 @@ where
 /// * `delta` - [Delta](sourcepawn_lexer::Delta) of the [symbols](Symbol) we are expanding
 /// to use for the first symbol in the [macro's](Macro) body.
 fn expand_non_macro_define(macro_: &Macro, delta: &sourcepawn_lexer::Delta) -> MacroContext {
-    let macro_context = macro_
+    let mut macro_context = macro_
         .body
         .iter()
         .enumerate()
@@ -159,7 +297,16 @@ fn expand_non_macro_define(macro_: &Macro, delta: &sourcepawn_lexer::Delta) -> M
             symbol: child.clone(),
             delta: if i == 0 { *delta } else { child.delta },
         })
-        .collect();
+        .collect::<MacroContext>();
+
+    // Adding the final line break of the define in the context causes an issue
+    // when cancelling macro expansion for macro that are not called with their
+    // parameters. So we skip it.
+    if let Some(back) = macro_context.back() {
+        if back.symbol.token_kind == TokenKind::Newline {
+            macro_context.pop_back();
+        }
+    };
 
     macro_context
 }
@@ -260,6 +407,12 @@ fn expand_macro(
                 consecutive_percent = 0;
             }
             _ => {
+                // Adding the final line break of the macro in the context causes an issue
+                // when cancelling macro expansion for macro that are not called with their
+                // parameters. So we skip it.
+                if child.token_kind == TokenKind::Newline && i == macro_.body.len() - 1 {
+                    continue;
+                }
                 new_context.push_back(QueuedSymbol::new(
                     child.clone(),
                     if i == 0 { symbol.delta } else { child.delta },
@@ -271,71 +424,4 @@ fn expand_macro(
     }
 
     Ok(new_context)
-}
-
-/// Assuming we are right before a macro call in the lexer, collect the arguments
-/// and store them in an array, in the order they appear in.
-///
-/// # Arguments
-///
-/// * `lexer` - [SourcepawnLexer](sourcepawn_lexer::lexer) to iterate over.
-/// * `args_stack` - [Vec](Vec) of [Symbols](sourcepawn_lexer::Symbol) that represent the
-/// stack of arguments that are being processed.
-/// * `nb_params` - Number of parameters in the current macro.
-fn collect_arguments<T>(
-    lexer: &mut T,
-    context: &mut MacroContext,
-    nb_params: usize,
-) -> MacroArguments
-where
-    T: Iterator<Item = Symbol>,
-{
-    let mut paren_depth = 0;
-    let mut arg_idx: usize = 0;
-    let mut args: MacroArguments = Default::default();
-    while let Some(sub_symbol) = if !context.is_empty() {
-        Some(context.pop_front().unwrap().symbol)
-    } else {
-        lexer.next()
-    } {
-        match &sub_symbol.token_kind {
-            TokenKind::LParen => {
-                paren_depth += 1;
-                if paren_depth > 1 {
-                    args[arg_idx].push(sub_symbol.clone())
-                }
-            }
-            TokenKind::RParen => {
-                if paren_depth > 1 {
-                    args[arg_idx].push(sub_symbol.clone())
-                }
-                paren_depth -= 1;
-                if paren_depth == 0 {
-                    break;
-                }
-            }
-            TokenKind::Comma => {
-                match paren_depth.cmp(&1) {
-                    Ordering::Equal => {
-                        if arg_idx + 1 < nb_params {
-                            arg_idx += 1;
-                        } else {
-                            // The stack of arguments is overflowed, store the rest in the last argument,
-                            // including the comma.
-                            args[arg_idx].push(sub_symbol.clone())
-                        }
-                    }
-                    Ordering::Greater => args[arg_idx].push(sub_symbol.clone()),
-                    Ordering::Less => (),
-                }
-            }
-            _ => {
-                if paren_depth > 0 {
-                    args[arg_idx].push(sub_symbol.clone());
-                }
-            }
-        }
-    }
-
-    args
 }

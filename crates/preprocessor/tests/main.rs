@@ -761,6 +761,61 @@ int foo = 1 + 2 + 3
 }
 
 #[test]
+fn macro_no_expansion_1() {
+    let input = r#"#define FOO(%1) #%1
+public void OnPluginStart() {
+    PrintToServer(FOO /*foo*/ (foo));
+}
+"#;
+
+    let output = r#"#define FOO(%1) #%1
+public void OnPluginStart() {
+    PrintToServer("foo");
+}
+"#;
+    assert_preproc_eq!(input, output);
+}
+
+#[test]
+fn macro_no_expansion_2() {
+    let input = r#"#define FOO(%1) #%1
+public void OnPluginStart() {
+    PrintToServer(FOO
+        (foo));
+}
+"#;
+    assert_preproc_eq!(input, input);
+}
+
+#[test]
+fn macro_no_expansion_3() {
+    let input = r#"#define FOO(%1) #%1
+public void OnPluginStart() {
+    PrintToServer(FOO);
+}
+"#;
+    assert_preproc_eq!(input, input);
+}
+
+#[test]
+fn macro_no_expansion_4() {
+    let input = r#"#define FOO(%1) %1
+#define BAR(%1) %1
+public void OnPluginStart() {
+    PrintToServer(BAR(FOO));
+}
+"#;
+
+    let output = r#"#define FOO(%1) %1
+#define BAR(%1) %1
+public void OnPluginStart() {
+    PrintToServer(FOO);
+}
+"#;
+    assert_preproc_eq!(input, output);
+}
+
+#[test]
 fn include_directive_1() {
     let input = r#"#include <sourcemod>"#;
     let output = r#"#include <sourcemod>"#;

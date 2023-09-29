@@ -5,8 +5,8 @@ use crate::{evaluator::IfCondition, Macro};
 
 fn evaluate_if_condition(input: &str) -> bool {
     let mut lexer = SourcepawnLexer::new(input);
-    let macros: FxHashMap<String, Macro> = FxHashMap::default();
-    let mut if_condition = IfCondition::new(&macros, 0);
+    let mut macros: FxHashMap<String, Macro> = FxHashMap::default();
+    let mut if_condition = IfCondition::new(&mut macros, 0);
     if let Some(symbol) = lexer.next() {
         if TokenKind::PreprocDir(sourcepawn_lexer::PreprocDir::MIf) == symbol.token_kind {
             while lexer.in_preprocessor() {
