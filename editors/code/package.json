@@ -480,13 +480,6 @@
     "configurationDefaults": {
       "editor.semanticHighlighting.enabled": true
     },
-    "iconThemes": [
-      {
-        "id": "sourcepawn",
-        "label": "SourcePawn",
-        "path": "./fileicons/sourcepawn-icon-theme.json"
-      }
-    ],
     "languages": [
       {
         "id": "sourcepawn",
@@ -498,7 +491,11 @@
           ".sp",
           ".inc"
         ],
-        "configuration": "./LanguageConfigurations/SPConfiguration.language-configuration.json"
+        "configuration": "./LanguageConfigurations/SPConfiguration.language-configuration.json",
+        "icon": {
+          "light": "./icons/SP.png",
+          "dark": "./icons/SP.png"
+        }
       },
       {
         "id": "valve-kv",
@@ -521,6 +518,10 @@
         "extensions": [
           ".cfg"
         ],
+        "icon": {
+          "light": "./icons/cfg.svg",
+          "dark": "./icons/cfg.svg"
+        },
         "configuration": "./LanguageConfigurations/ValveCFGConfiguration.language-configuration.json"
       }
     ],
