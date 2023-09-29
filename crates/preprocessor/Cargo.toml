@@ -17,3 +17,12 @@ lazy_static.workspace = true
 regex.workspace = true
 fxhash.workspace = true
 sourcepawn_lexer.workspace = true
+
+[dev-dependencies]
+criterion = "0.3"
+minreq = { version = "2.7.0", features = ["https"] }
+
+[[bench]]
+name = "bench_main"
+harness = false
+path = "benches/bench_main.rs"
