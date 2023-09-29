@@ -637,6 +637,34 @@ int foo = 1 + 2 + 3;
 }
 
 #[test]
+fn define_expansion_nested_3() {
+    let input = r#"#define FOO BAR + 3
+#define BAR 1 + 2
+int foo = FOO;
+"#;
+    let output = r#"#define FOO BAR + 3
+#define BAR 1 + 2
+int foo = 1 + 2 + 3;
+"#;
+
+    assert_preproc_eq!(input, output);
+}
+
+#[test]
+fn define_expansion_nested_4() {
+    let input = r#"#define FOO 1 + 2
+#define BAR FOO + 3 + 4
+int bar = BAR;
+"#;
+    let output = r#"#define FOO 1 + 2
+#define BAR FOO + 3 + 4
+int bar = 1 + 2 + 3 + 4;
+"#;
+
+    assert_preproc_eq!(input, output);
+}
+
+#[test]
 fn macro_expansion_1() {
     let input = r#"#define FOO(%0,%1) %0 + %1
 int foo = FOO(1, 2);
@@ -721,13 +749,12 @@ fn macro_expansion_6() {
 #[test]
 fn macro_expansion_7() {
     let input = r#"#define FOO(%0,%1) %0 + %1
-#define BAR(%0,%1) %0 + FOO(%0, %1)
-int foo = BAR(1, 2)
+#define BAR(%0,%1) 1 + FOO(%0, %1)
+int foo = BAR(2, 3)
 "#;
     let output = r#"#define FOO(%0,%1) %0 + %1
-#define BAR(%0,%1) %0 + FOO(%0, %1)
-int foo = 1 + 1 + 2
-int bar;
+#define BAR(%0,%1) 1 + FOO(%0, %1)
+int foo = 1 + 2 + 3
 "#;
 
     assert_preproc_eq!(input, output);

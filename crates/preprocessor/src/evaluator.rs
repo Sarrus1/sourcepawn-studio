@@ -4,7 +4,7 @@ use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
 
 use super::{
     errors::{EvaluationError, ExpansionError, MacroNotFoundError},
-    macros::expand_symbol,
+    macros::expand_identifier,
     preprocessor_operator::PreOperator,
 };
 use crate::Macro;
@@ -161,7 +161,7 @@ impl<'a> IfCondition<'a> {
                         looking_for_defined = false;
                         may_be_unary = false;
                     } else {
-                        match expand_symbol(
+                        match expand_identifier(
                             &mut symbol_iter,
                             self.macros,
                             &symbol,

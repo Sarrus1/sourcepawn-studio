@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use errors::{EvaluationError, ExpansionError, IncludeNotFoundError, MacroNotFoundError};
 use evaluator::IfCondition;
-use macros::expand_symbol;
+use macros::expand_identifier;
 
 mod errors;
 pub(crate) mod evaluator;
@@ -200,7 +200,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     // TODO: Evaluate the performance dropoff of supporting macro expansion when overriding reserved keywords.
                     // This might only be a problem for a very small subset of users.
                     Some(_) => {
-                        match expand_symbol(
+                        match expand_identifier(
                             &mut self.lexer,
                             &self.macros,
                             &symbol,
