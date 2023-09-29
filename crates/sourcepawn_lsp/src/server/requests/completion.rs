@@ -29,8 +29,8 @@ impl Server {
         id: RequestId,
         params: CompletionItem,
     ) -> anyhow::Result<()> {
-        self.run_query(id, move |store| {
-            providers::completion::resolve_completion_item(store, params)
+        self.run_query(id, move |store: &store::Store| {
+            providers::completion::resolve_completion_item(store, params.clone()).unwrap_or(params)
         });
 
         Ok(())

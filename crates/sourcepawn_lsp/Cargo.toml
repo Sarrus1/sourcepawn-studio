@@ -46,6 +46,8 @@ store.workspace = true
 syntax.workspace = true
 parking_lot.workspace = true
 uuid.workspace = true
+# This is only used in the fixture module for benchmarks and tests.
+itertools = "0.11.0"
 
 [dependencies.openssl]
 optional = true
@@ -54,11 +56,17 @@ version = "0.10.55"
 [dev-dependencies]
 assert_unordered = "0.3.5"
 criterion = { version = "0.4.0" }
-itertools = "0.11.0"
 insta = { version = "1.28.0", features = ["glob", "redactions", "json"] }
+minreq = { version = "2.7.0", features = ["https"] }
+zip = "0.6.6"
 
 [features]
 # If compiling on a system without OpenSSL installed, or cross-compiling for a different
 # architecture, enable this feature to compile OpenSSL as part of the build.
 # See https://docs.rs/openssl/#vendored for more.
 static_ssl = ['openssl/vendored']
+
+[[bench]]
+name = "bench_main"
+harness = false
+path = "benches/bench_main.rs"

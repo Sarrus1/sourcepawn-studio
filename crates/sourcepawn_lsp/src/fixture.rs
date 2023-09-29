@@ -1,12 +1,14 @@
 use anyhow::Result;
 use crossbeam_channel::Receiver;
+use itertools::Itertools;
 use lsp_server::{Connection, Response};
 use lsp_types::{
     notification::{DidOpenTextDocument, Exit, Initialized},
-    request::{Initialize, Shutdown},
-    ClientCapabilities, DidOpenTextDocumentParams, InitializeParams, InitializedParams, Location,
-    Position, Range, TextDocumentIdentifier, TextDocumentItem, TextDocumentPositionParams, Url,
-    WorkspaceFolder,
+    request::ResolveCompletionItem,
+    request::{Completion, Initialize, Shutdown},
+    ClientCapabilities, CompletionItem, CompletionParams, CompletionResponse,
+    DidOpenTextDocumentParams, InitializeParams, InitializedParams, Location, Position, Range,
+    TextDocumentIdentifier, TextDocumentItem, TextDocumentPositionParams, Url, WorkspaceFolder,
 };
 use std::{
     path::{Path, PathBuf},
@@ -16,7 +18,7 @@ use std::{
 };
 use tempfile::{tempdir, TempDir};
 
-use sourcepawn_lsp::{LspClient, Server};
+use super::{LspClient, Server};
 use store::options::Options;
 
 #[derive(Debug)]
@@ -285,4 +287,62 @@ impl TestBed {
     pub fn documents(&self) -> &[Document] {
         &self.fixture.documents
     }
+}
+
+pub fn complete(fixture: &str) -> Vec<CompletionItem> {
+    let test_bed = TestBed::new(fixture).unwrap();
+    test_bed
+        .initialize(
+            serde_json::from_value(serde_json::json!({
+                "textDocument": {
+                    "completion": {
+                        "completionItem": {
+                            "documentationFormat": ["plaintext", "markdown"]
+                        }
+                    }
+                },
+                "workspace": {
+                    "configuration": true,
+                    "workspace_folders": true
+                }
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+    let text_document_position = test_bed.cursor().unwrap();
+    test_bed
+        .internal_rx
+        .recv_timeout(Duration::from_secs(10))
+        .unwrap();
+    let items = match test_bed
+        .client()
+        .send_request::<Completion>(CompletionParams {
+            text_document_position,
+            partial_result_params: Default::default(),
+            work_done_progress_params: Default::default(),
+            context: None,
+        })
+        .unwrap()
+    {
+        Some(CompletionResponse::Array(items)) => items,
+        Some(CompletionResponse::List(list)) => list.items,
+        None => Vec::new(),
+    };
+
+    items
+        .into_iter()
+        .map(|item| match item.data {
+            Some(_) => {
+                let mut item = test_bed
+                    .client()
+                    .send_request::<ResolveCompletionItem>(item)
+                    .unwrap();
+
+                item.data = None;
+                item
+            }
+            None => item,
+        })
+        .sorted_by(|item1, item2| item1.label.cmp(&item2.label))
+        .collect()
 }
