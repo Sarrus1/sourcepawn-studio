@@ -218,7 +218,14 @@ impl Graph {
             file_id,
             extension: FileExtension::Sp,
         };
+
+        // Keep track of the nodes we visited to avoid infinite loops.
+        let mut visited: FxHashSet<&Node> = FxHashSet::default();
         while let Some(parents) = adj_sources.get(child) {
+            if visited.contains(child) {
+                return Some(child.clone());
+            }
+            visited.insert(child);
             if parents.len() == 1 {
                 let parent = parents.iter().next().unwrap();
 

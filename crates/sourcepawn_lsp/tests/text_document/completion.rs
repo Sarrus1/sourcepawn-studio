@@ -92,3 +92,19 @@ int foo;
 ^"#
     ));
 }
+
+#[test]
+fn global_variable_circular_include_1() {
+    assert_json_snapshot!(complete(
+        r#"
+%! foo.sp
+#include "bar.sp"
+int foo;
+%! bar.sp
+#include "foo.sp"
+int bar;
+
+|
+^"#
+    ));
+}
