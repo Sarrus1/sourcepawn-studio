@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use crossbeam_channel::Sender;
+use crossbeam::channel::Sender;
 use dashmap::DashMap;
 use lsp_server::{ErrorCode, Message, Request, RequestId, Response};
 use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams};
@@ -55,7 +55,7 @@ impl LspClient {
     {
         let id = RequestId::from(self.raw.next_id.fetch_add(1, Ordering::SeqCst));
 
-        let (tx, _) = crossbeam_channel::bounded(1);
+        let (tx, _) = crossbeam::channel::bounded(1);
         self.raw.pending.insert(id.clone(), tx);
 
         let request = Request::new(id, R::METHOD.to_string(), params);
@@ -76,7 +76,7 @@ impl LspClient {
     {
         let id = RequestId::from(self.raw.next_id.fetch_add(1, Ordering::SeqCst));
 
-        let (tx, rx) = crossbeam_channel::bounded(1);
+        let (tx, rx) = crossbeam::channel::bounded(1);
         self.raw.pending.insert(id.clone(), tx);
 
         let request = Request::new(id, R::METHOD.to_string(), params);

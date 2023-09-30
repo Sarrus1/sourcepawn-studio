@@ -229,7 +229,7 @@ impl Store {
     }
 
     pub fn discover_documents(&mut self, base_path: &PathBuf) {
-        eprintln!("Finding documents in {:?}", base_path);
+        log::debug!("Finding documents in {:?}", base_path);
         for entry in WalkDir::new(base_path)
             .follow_links(true)
             .into_iter()
@@ -589,6 +589,7 @@ impl Store {
     /// # Arguments
     /// * `uri` - The [uri](Url) of a file in the project. Does not have to be the root.
     pub fn resolve_project_references(&mut self, uri: &Url) -> Option<FileId> {
+        log::trace!("Resolving project references.");
         let file_id = self.path_interner.get(uri)?;
         let main_id = self.projects.find_root_from_id(file_id)?.file_id;
         let file_ids: Vec<FileId> = {
@@ -608,6 +609,7 @@ impl Store {
         file_ids.iter().for_each(|file_id: &FileId| {
             self.resolve_file_references(file_id);
         });
+        log::trace!("Done resolving project references.");
 
         Some(main_id)
     }

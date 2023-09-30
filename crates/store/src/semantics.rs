@@ -10,7 +10,7 @@ impl Store {
     /// * `file_id` - The [file_id](FileId) of the document to resolve.
     pub fn resolve_file_references(&mut self, file_id: &FileId) {
         log::trace!(
-            "Resolving references for document {:?}",
+            "Resolving references for file {:?}",
             self.path_interner.lookup(*file_id)
         );
         if !self.documents.contains_key(file_id) {
@@ -35,5 +35,9 @@ impl Store {
             document.unresolved_tokens = unresolved_tokens;
         }
         document.mark_as_resolved();
+        log::trace!(
+            "Done resolving references for file {:?}",
+            self.path_interner.lookup(*file_id)
+        );
     }
 }

@@ -103,6 +103,7 @@ pub fn get_spcomp_diagnostics(
     linter_arguments: &[String],
 ) -> anyhow::Result<FxHashMap<Url, Vec<SPCompDiagnostic>>> {
     // Handle Apple Silicon
+    log::trace!("Running spcomp diagnostics");
     let output = if std::env::consts::OS == "macos" && std::env::consts::ARCH == "aarch64" {
         Command::new("arch")
             .arg("-x86_64")

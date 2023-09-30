@@ -1,5 +1,5 @@
 use anyhow::Result;
-use crossbeam_channel::Receiver;
+use crossbeam::channel::Receiver;
 use itertools::Itertools;
 use lsp_server::{Connection, Response};
 use lsp_types::{
@@ -11,12 +11,16 @@ use lsp_types::{
     TextDocumentIdentifier, TextDocumentItem, TextDocumentPositionParams, Url, WorkspaceFolder,
 };
 use std::{
+    env,
+    fs::File,
+    io,
     path::{Path, PathBuf},
     sync::Once,
     thread::JoinHandle,
     time::Duration,
 };
 use tempfile::{tempdir, TempDir};
+use zip::ZipArchive;
 
 use super::{LspClient, Server};
 use store::options::Options;
@@ -158,7 +162,7 @@ impl Drop for TestBed {
 }
 
 impl TestBed {
-    pub fn new(fixture: &str) -> Result<Self> {
+    pub fn new(fixture: &str, add_sourcemod: bool) -> Result<Self> {
         LOGGER.call_once(|| {
             if option_env!("TEST_LOG") == Some("1") {
                 fern::Dispatch::new()
@@ -174,6 +178,9 @@ impl TestBed {
         let temp_dir = tempdir()?;
         let temp_dir_path = temp_dir.path().canonicalize()?;
 
+        let temp_sm_dir = tempdir()?;
+        let temp_sm_dir_path = temp_sm_dir.path().canonicalize()?;
+
         let locations: Vec<Location> = fixture
             .documents
             .iter()
@@ -187,7 +194,7 @@ impl TestBed {
             .collect();
 
         let (server_conn, client_conn) = Connection::memory();
-        let (internal_tx, internal_rx) = crossbeam_channel::unbounded();
+        let (internal_tx, internal_rx) = crossbeam::channel::unbounded();
 
         let client = LspClient::new(client_conn.sender);
 
@@ -196,11 +203,22 @@ impl TestBed {
         let client_thread = {
             let client = client.clone();
             std::thread::spawn(move || {
+                let destination = temp_sm_dir_path.clone();
                 for message in &client_conn.receiver {
                     match message {
                         lsp_server::Message::Request(request) => {
                             if request.method == "workspace/configuration" {
-                                let options = Options::default();
+                                let mut options = Options::default();
+                                if add_sourcemod {
+                                    let current_dir = env::current_dir().unwrap();
+                                    let sourcemod_path =
+                                        current_dir.join("test_data/sourcemod.zip");
+                                    unzip_file(&sourcemod_path, destination.to_str().unwrap())
+                                        .unwrap();
+                                    options
+                                        .includes_directories
+                                        .push(destination.clone().join("include/"));
+                                }
                                 client
                                     .send_response(Response::new_ok(request.id, vec![options]))
                                     .unwrap();
@@ -290,7 +308,7 @@ impl TestBed {
 }
 
 pub fn complete(fixture: &str) -> Vec<CompletionItem> {
-    let test_bed = TestBed::new(fixture).unwrap();
+    let test_bed = TestBed::new(fixture, true).unwrap();
     test_bed
         .initialize(
             serde_json::from_value(serde_json::json!({
@@ -345,4 +363,26 @@ pub fn complete(fixture: &str) -> Vec<CompletionItem> {
         })
         .sorted_by(|item1, item2| item1.label.cmp(&item2.label))
         .collect()
+}
+
+pub fn unzip_file(zip_file_path: &PathBuf, destination: &str) -> Result<(), io::Error> {
+    let file = File::open(zip_file_path)?;
+    let mut archive = ZipArchive::new(file)?;
+
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i)?;
+        let dest_path = format!("{}/{}", destination, file.name());
+
+        if file.is_dir() {
+            std::fs::create_dir_all(&dest_path)?;
+        } else {
+            if let Some(parent_dir) = std::path::Path::new(&dest_path).parent() {
+                std::fs::create_dir_all(parent_dir)?;
+            }
+            let mut dest_file = File::create(&dest_path)?;
+            io::copy(&mut file, &mut dest_file)?;
+        }
+    }
+
+    Ok(())
 }

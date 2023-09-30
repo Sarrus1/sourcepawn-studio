@@ -45,11 +45,12 @@ impl Server {
         // Only reload the diagnostics if the main path is defined.
         self.pool.execute(move || {
             let _ = client.send_spcomp_status(false);
+            let options = store.read().environment.options.clone();
             let result = get_spcomp_diagnostics(
                 main_path_uri,
-                &store.read().environment.options.spcomp_path,
-                &store.read().environment.options.includes_directories,
-                &store.read().environment.options.linter_arguments,
+                &options.spcomp_path,
+                &options.includes_directories,
+                &options.linter_arguments,
             );
             match result {
                 Ok(diagnostics_map) => {

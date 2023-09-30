@@ -1,4 +1,4 @@
-use crossbeam_channel::{Receiver, Sender};
+use crossbeam::channel::{Receiver, Sender};
 use fxhash::FxHashMap;
 use linter::spcomp::SPCompDiagnostic;
 use lsp_server::{Connection, ErrorCode, Message, RequestId};
@@ -52,7 +52,7 @@ pub struct Server {
 impl Server {
     pub fn new(connection: Connection, amxxpawn_mode: bool) -> Self {
         let client = LspClient::new(connection.sender.clone());
-        let (internal_tx, internal_rx) = crossbeam_channel::unbounded();
+        let (internal_tx, internal_rx) = crossbeam::channel::unbounded();
         let mut parser = Parser::new();
         parser
             .set_language(tree_sitter_sourcepawn::language())
@@ -153,11 +153,13 @@ impl Server {
     /// # Arguments
     /// * `uri` - [Url] of a file in the project.
     fn initialize_project_resolution(&mut self, uri: &Url) {
+        log::trace!("Resolving project {:?}", uri);
         let main_id = self.store.write().resolve_project_references(uri);
         if let Some(main_id) = main_id {
             let main_path_uri = self.store.read().path_interner.lookup(main_id).clone();
             self.reload_project_diagnostics(main_path_uri);
         }
+        log::trace!("Done resolving project {:?}", uri);
     }
 
     fn initialize(&mut self) -> anyhow::Result<()> {
@@ -269,7 +271,7 @@ impl Server {
 
     fn process_messages(&mut self) -> anyhow::Result<()> {
         loop {
-            crossbeam_channel::select! {
+            crossbeam::channel::select! {
                 recv(&self.connection.receiver) -> msg => {
                         match msg? {
                             Message::Request(request) => {

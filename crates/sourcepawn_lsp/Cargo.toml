@@ -25,7 +25,7 @@ derive-new.workspace = true
 tree-sitter.workspace = true
 tree-sitter-sourcepawn.workspace = true
 anyhow.workspace = true
-crossbeam-channel.workspace = true
+crossbeam.workspace = true
 dashmap.workspace = true
 threadpool.workspace = true
 walkdir.workspace = true
@@ -48,6 +48,7 @@ parking_lot.workspace = true
 uuid.workspace = true
 # This is only used in the fixture module for benchmarks and tests.
 itertools = "0.11.0"
+zip = "0.6.6"
 
 [dependencies.openssl]
 optional = true
@@ -58,7 +59,6 @@ assert_unordered = "0.3.5"
 criterion = { version = "0.4.0" }
 insta = { version = "1.28.0", features = ["glob", "redactions", "json"] }
 minreq = { version = "2.7.0", features = ["https"] }
-zip = "0.6.6"
 
 [features]
 # If compiling on a system without OpenSSL installed, or cross-compiling for a different
