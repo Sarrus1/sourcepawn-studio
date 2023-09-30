@@ -6,7 +6,7 @@ use lsp_types::{
     notification::{DidOpenTextDocument, Exit, Initialized},
     request::ResolveCompletionItem,
     request::{Completion, Initialize, Shutdown},
-    ClientCapabilities, CompletionItem, CompletionParams, CompletionResponse,
+    ClientCapabilities, CompletionItem, CompletionItemKind, CompletionParams, CompletionResponse,
     DidOpenTextDocumentParams, InitializeParams, InitializedParams, Location, Position, Range,
     TextDocumentIdentifier, TextDocumentItem, TextDocumentPositionParams, Url, WorkspaceFolder,
 };
@@ -145,6 +145,7 @@ pub struct TestBed {
     locations: Vec<Location>,
     _temp_dir: TempDir,
     temp_dir_path: PathBuf,
+    temp_sm_dir_path: PathBuf,
     pub internal_rx: Receiver<InternalMessage>,
     client: LspClient,
     client_thread: Option<JoinHandle<()>>,
@@ -180,6 +181,7 @@ impl TestBed {
 
         let temp_sm_dir = tempdir()?;
         let temp_sm_dir_path = temp_sm_dir.path().canonicalize()?;
+        let temp_sm_dir_path_ = temp_sm_dir_path.clone(); // Copy the value to be able to move it into the closure
 
         let locations: Vec<Location> = fixture
             .documents
@@ -203,7 +205,7 @@ impl TestBed {
         let client_thread = {
             let client = client.clone();
             std::thread::spawn(move || {
-                let destination = temp_sm_dir_path.clone();
+                let destination = temp_sm_dir_path_;
                 for message in &client_conn.receiver {
                     match message {
                         lsp_server::Message::Request(request) => {
@@ -249,6 +251,7 @@ impl TestBed {
             locations,
             _temp_dir: temp_dir,
             temp_dir_path,
+            temp_sm_dir_path,
             client,
             internal_rx,
             client_thread: Some(client_thread),
@@ -332,7 +335,7 @@ pub fn complete(fixture: &str) -> Vec<CompletionItem> {
         .internal_rx
         .recv_timeout(Duration::from_secs(10))
         .unwrap();
-    let items = match test_bed
+    let mut items = match test_bed
         .client()
         .send_request::<Completion>(CompletionParams {
             text_document_position,
@@ -347,7 +350,7 @@ pub fn complete(fixture: &str) -> Vec<CompletionItem> {
         None => Vec::new(),
     };
 
-    items
+    items = items
         .into_iter()
         .map(|item| match item.data {
             Some(_) => {
@@ -362,7 +365,25 @@ pub fn complete(fixture: &str) -> Vec<CompletionItem> {
             None => item,
         })
         .sorted_by(|item1, item2| item1.label.cmp(&item2.label))
-        .collect()
+        .collect();
+
+    // The results of include completions will always change because the paths of tempdir changes.
+    let tmp_dir_path_str = test_bed.temp_dir_path.to_str().unwrap();
+    let tmp_sm_dir_path_str = test_bed.temp_sm_dir_path.to_str().unwrap();
+    for item in &mut items {
+        if matches!(
+            item.kind,
+            Some(CompletionItemKind::FILE) | Some(CompletionItemKind::FOLDER)
+        ) {
+            item.detail = item.detail.as_mut().map(|detail| {
+                detail
+                    .replace(tmp_dir_path_str, "")
+                    .replace(tmp_sm_dir_path_str, "")
+            });
+        }
+    }
+
+    items
 }
 
 pub fn unzip_file(zip_file_path: &PathBuf, destination: &str) -> Result<(), io::Error> {

@@ -1,3 +1,4 @@
+use fxhash::FxHashSet;
 use lazy_static::lazy_static;
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionList, Url};
 use regex::Regex;
@@ -38,26 +39,25 @@ pub(super) fn is_include_statement(pre_line: &str) -> Option<IncludeStatement> {
 }
 
 /// Generate a [CompletionList](lsp_types::CompletionList) from an [IncludeStatement](IncludeStatement).
-///
-/// # Arguments
-///
-/// * `sub_line` - Sub line to process.
 pub(super) fn get_include_completions(
     store: &Store,
     include_st: IncludeStatement,
     uri: &Url,
 ) -> Option<CompletionList> {
     let main_path = store.get_project_main_path_from_id(&store.path_interner.get(uri)?)?;
-    let include_paths = store
-        .environment
-        .options
-        .get_all_possible_include_folders(main_path);
-
-    let mut inc_uri_folders: Vec<Url> = vec![];
-    for inc_path in include_paths {
-        if let Ok(inc_uri) = Url::from_file_path(inc_path) {
-            inc_uri_folders.push(inc_uri);
-        }
+    let parent_folder_uri = Url::from_file_path(uri.to_file_path().ok()?.parent()?).ok()?;
+    let mut inc_uri_folders = FxHashSet::default();
+    inc_uri_folders.insert(parent_folder_uri);
+    if include_st.use_chevron {
+        let include_paths = store
+            .environment
+            .options
+            .get_all_possible_include_folders(main_path);
+        inc_uri_folders.extend(
+            include_paths
+                .into_iter()
+                .filter_map(|inc_path| Url::from_file_path(inc_path).ok()),
+        );
     }
 
     let mut items = vec![];
@@ -70,7 +70,7 @@ pub(super) fn get_include_completions(
     })
 }
 
-/// Mutates a vector of [CompletionItem](lsp_types::CompletionItem) to push include file completions
+/// Mutates a set of [CompletionItem](lsp_types::CompletionItem) to push include file completions
 /// to it.
 ///
 /// # Arguments
@@ -82,7 +82,7 @@ pub(super) fn get_include_completions(
 fn get_include_file_completions(
     store: &Store,
     include_st: &IncludeStatement,
-    inc_uri_folders: &[Url],
+    inc_uri_folders: &FxHashSet<Url>,
     items: &mut Vec<CompletionItem>,
 ) -> Option<()> {
     lazy_static! {
@@ -138,7 +138,7 @@ fn get_include_file_completions(
     Some(())
 }
 
-/// Mutates a vector of [CompletionItem](lsp_types::CompletionItem) to push include folder completions
+/// Mutates a set of [CompletionItem](lsp_types::CompletionItem) to push include folder completions
 /// to it.
 ///
 /// # Arguments
@@ -148,7 +148,7 @@ fn get_include_file_completions(
 /// * `items` - Vector of [CompletionItem](lsp_types::CompletionItem) to mutate.
 fn get_include_folder_completions(
     include_st: &IncludeStatement,
-    inc_uri_folders: &[Url],
+    inc_uri_folders: &FxHashSet<Url>,
     items: &mut Vec<CompletionItem>,
 ) {
     for inc_uri_folder in inc_uri_folders.iter() {

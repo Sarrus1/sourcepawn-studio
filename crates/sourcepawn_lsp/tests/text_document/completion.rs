@@ -43,3 +43,48 @@ int bar;
 ^"#
     ));
 }
+
+#[test]
+fn include_1() {
+    assert_json_snapshot!(complete(
+        r#"
+%! bar.sp
+int bar;
+%! include/baz.inc
+int baz;
+%! foo.sp
+#include ""
+          |
+          ^"#
+    ));
+}
+
+#[test]
+fn include_2() {
+    assert_json_snapshot!(complete(
+        r#"
+%! bar.sp
+int bar;
+%! include/baz.inc
+int baz;
+%! foo.sp
+#include <>
+          |
+          ^"#
+    ));
+}
+
+#[test]
+fn include_3() {
+    assert_json_snapshot!(complete(
+        r#"
+%! bar.sp
+int bar;
+%! include/baz.inc
+#include <>
+          |
+          ^
+%! foo.sp
+int foo;"#
+    ));
+}

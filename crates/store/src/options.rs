@@ -14,6 +14,9 @@ pub struct Options {
 impl Options {
     /// Return all possible include folder paths.
     ///
+    /// i.e: All paths in the includes_directories attributes of the [options](Options), as well as the parent
+    /// directory of the main path, and the include directory of the main path.
+    ///
     /// # Arguments
     /// * `main_path` - [Path](PathBuf) of the main file.
     pub fn get_all_possible_include_folders(&self, main_path: PathBuf) -> Vec<PathBuf> {
