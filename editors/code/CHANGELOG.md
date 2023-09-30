@@ -1,5 +1,15 @@
 ## Release Notes
 
+## [6.0.3]
+
+### Fixed
+
+- Switched to icons contribution points instead of a standalone theme (see #335 for more details).
+
+### Chore
+
+- LSP version bump.
+
 ## [6.0.2]
 
 ### Chore

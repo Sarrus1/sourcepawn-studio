@@ -1,5 +1,14 @@
 ## Release Notes
 
+## [0.12.0]
+
+### Fixed
+
+- Fixed incorrect includes completion (see #332 for more details).
+- Fixed infinite loops when resolving circular imports (see #342 for more details).
+- Fixed macro parsing errors (see #313 and #340).
+- Fixed a deadlock issue (see #327 for more details).
+
 ## [0.11.2]
 
 ### Fixed
