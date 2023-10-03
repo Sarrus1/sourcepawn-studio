@@ -1,444 +1,444 @@
 ---
 source: crates/sourcepawn_lsp/tests/text_document/completion.rs
-assertion_line: 64
-expression: "complete(r#\"\n%! bar.sp\nint bar;\n%! include/baz.inc\nint baz;\n%! foo.sp\n#include <>\n          |\n          ^\"#)"
+assertion_line: 68
+expression: "complete(r#\"\n%! bar.sp\nint bar;\n%! include/baz.inc\nint baz;\n%! foo.sp\n#include <>\n          |\n          ^\"#,\n    Some('<'.to_string()))"
 ---
 [
   {
     "label": "admin",
     "kind": 17,
-    "detail": "/include/admin.inc",
+    "detail": "include/admin.inc",
     "insertText": "admin>"
   },
   {
     "label": "adminmenu",
     "kind": 17,
-    "detail": "/include/adminmenu.inc",
+    "detail": "include/adminmenu.inc",
     "insertText": "adminmenu>"
   },
   {
     "label": "adt",
     "kind": 17,
-    "detail": "/include/adt.inc",
+    "detail": "include/adt.inc",
     "insertText": "adt>"
   },
   {
     "label": "adt_array",
     "kind": 17,
-    "detail": "/include/adt_array.inc",
+    "detail": "include/adt_array.inc",
     "insertText": "adt_array>"
   },
   {
     "label": "adt_stack",
     "kind": 17,
-    "detail": "/include/adt_stack.inc",
+    "detail": "include/adt_stack.inc",
     "insertText": "adt_stack>"
   },
   {
     "label": "adt_trie",
     "kind": 17,
-    "detail": "/include/adt_trie.inc",
+    "detail": "include/adt_trie.inc",
     "insertText": "adt_trie>"
   },
   {
     "label": "banning",
     "kind": 17,
-    "detail": "/include/banning.inc",
+    "detail": "include/banning.inc",
     "insertText": "banning>"
   },
   {
     "label": "bar.sp",
     "kind": 17,
-    "detail": "/bar.sp",
+    "detail": "bar.sp",
     "insertText": "bar.sp>"
   },
   {
     "label": "basecomm",
     "kind": 17,
-    "detail": "/include/basecomm.inc",
+    "detail": "include/basecomm.inc",
     "insertText": "basecomm>"
   },
   {
     "label": "baz",
     "kind": 17,
-    "detail": "/include/baz.inc",
+    "detail": "include/baz.inc",
     "insertText": "baz>"
   },
   {
     "label": "bitbuffer",
     "kind": 17,
-    "detail": "/include/bitbuffer.inc",
+    "detail": "include/bitbuffer.inc",
     "insertText": "bitbuffer>"
   },
   {
     "label": "clientprefs",
     "kind": 17,
-    "detail": "/include/clientprefs.inc",
+    "detail": "include/clientprefs.inc",
     "insertText": "clientprefs>"
   },
   {
     "label": "clients",
     "kind": 17,
-    "detail": "/include/clients.inc",
+    "detail": "include/clients.inc",
     "insertText": "clients>"
   },
   {
     "label": "commandfilters",
     "kind": 17,
-    "detail": "/include/commandfilters.inc",
+    "detail": "include/commandfilters.inc",
     "insertText": "commandfilters>"
   },
   {
     "label": "commandline",
     "kind": 17,
-    "detail": "/include/commandline.inc",
+    "detail": "include/commandline.inc",
     "insertText": "commandline>"
   },
   {
     "label": "console",
     "kind": 17,
-    "detail": "/include/console.inc",
+    "detail": "include/console.inc",
     "insertText": "console>"
   },
   {
     "label": "convars",
     "kind": 17,
-    "detail": "/include/convars.inc",
+    "detail": "include/convars.inc",
     "insertText": "convars>"
   },
   {
     "label": "core",
     "kind": 17,
-    "detail": "/include/core.inc",
+    "detail": "include/core.inc",
     "insertText": "core>"
   },
   {
     "label": "cstrike",
     "kind": 17,
-    "detail": "/include/cstrike.inc",
+    "detail": "include/cstrike.inc",
     "insertText": "cstrike>"
   },
   {
     "label": "datapack",
     "kind": 17,
-    "detail": "/include/datapack.inc",
+    "detail": "include/datapack.inc",
     "insertText": "datapack>"
   },
   {
     "label": "dbi",
     "kind": 17,
-    "detail": "/include/dbi.inc",
+    "detail": "include/dbi.inc",
     "insertText": "dbi>"
   },
   {
     "label": "dhooks",
     "kind": 17,
-    "detail": "/include/dhooks.inc",
+    "detail": "include/dhooks.inc",
     "insertText": "dhooks>"
   },
   {
     "label": "entity",
     "kind": 17,
-    "detail": "/include/entity.inc",
+    "detail": "include/entity.inc",
     "insertText": "entity>"
   },
   {
     "label": "entity_prop_stocks",
     "kind": 17,
-    "detail": "/include/entity_prop_stocks.inc",
+    "detail": "include/entity_prop_stocks.inc",
     "insertText": "entity_prop_stocks>"
   },
   {
     "label": "events",
     "kind": 17,
-    "detail": "/include/events.inc",
+    "detail": "include/events.inc",
     "insertText": "events>"
   },
   {
     "label": "files",
     "kind": 17,
-    "detail": "/include/files.inc",
+    "detail": "include/files.inc",
     "insertText": "files>"
   },
   {
     "label": "float",
     "kind": 17,
-    "detail": "/include/float.inc",
+    "detail": "include/float.inc",
     "insertText": "float>"
   },
   {
     "label": "foo.sp",
     "kind": 17,
-    "detail": "/foo.sp",
+    "detail": "foo.sp",
     "insertText": "foo.sp>"
   },
   {
     "label": "functions",
     "kind": 17,
-    "detail": "/include/functions.inc",
+    "detail": "include/functions.inc",
     "insertText": "functions>"
   },
   {
     "label": "geoip",
     "kind": 17,
-    "detail": "/include/geoip.inc",
+    "detail": "include/geoip.inc",
     "insertText": "geoip>"
   },
   {
     "label": "halflife",
     "kind": 17,
-    "detail": "/include/halflife.inc",
+    "detail": "include/halflife.inc",
     "insertText": "halflife>"
   },
   {
     "label": "handles",
     "kind": 17,
-    "detail": "/include/handles.inc",
+    "detail": "include/handles.inc",
     "insertText": "handles>"
   },
   {
     "label": "helpers",
     "kind": 17,
-    "detail": "/include/helpers.inc",
+    "detail": "include/helpers.inc",
     "insertText": "helpers>"
   },
   {
     "label": "include",
     "kind": 19,
-    "detail": "/include"
+    "detail": "include"
   },
   {
     "label": "keyvalues",
     "kind": 17,
-    "detail": "/include/keyvalues.inc",
+    "detail": "include/keyvalues.inc",
     "insertText": "keyvalues>"
   },
   {
     "label": "lang",
     "kind": 17,
-    "detail": "/include/lang.inc",
+    "detail": "include/lang.inc",
     "insertText": "lang>"
   },
   {
     "label": "logging",
     "kind": 17,
-    "detail": "/include/logging.inc",
+    "detail": "include/logging.inc",
     "insertText": "logging>"
   },
   {
     "label": "mapchooser",
     "kind": 17,
-    "detail": "/include/mapchooser.inc",
+    "detail": "include/mapchooser.inc",
     "insertText": "mapchooser>"
   },
   {
     "label": "menus",
     "kind": 17,
-    "detail": "/include/menus.inc",
+    "detail": "include/menus.inc",
     "insertText": "menus>"
   },
   {
     "label": "nextmap",
     "kind": 17,
-    "detail": "/include/nextmap.inc",
+    "detail": "include/nextmap.inc",
     "insertText": "nextmap>"
   },
   {
     "label": "profiler",
     "kind": 17,
-    "detail": "/include/profiler.inc",
+    "detail": "include/profiler.inc",
     "insertText": "profiler>"
   },
   {
     "label": "protobuf",
     "kind": 17,
-    "detail": "/include/protobuf.inc",
+    "detail": "include/protobuf.inc",
     "insertText": "protobuf>"
   },
   {
     "label": "regex",
     "kind": 17,
-    "detail": "/include/regex.inc",
+    "detail": "include/regex.inc",
     "insertText": "regex>"
   },
   {
     "label": "sdkhooks",
     "kind": 17,
-    "detail": "/include/sdkhooks.inc",
+    "detail": "include/sdkhooks.inc",
     "insertText": "sdkhooks>"
   },
   {
     "label": "sdktools",
     "kind": 17,
-    "detail": "/include/sdktools.inc",
+    "detail": "include/sdktools.inc",
     "insertText": "sdktools>"
   },
   {
     "label": "sdktools_client",
     "kind": 17,
-    "detail": "/include/sdktools_client.inc",
+    "detail": "include/sdktools_client.inc",
     "insertText": "sdktools_client>"
   },
   {
     "label": "sdktools_engine",
     "kind": 17,
-    "detail": "/include/sdktools_engine.inc",
+    "detail": "include/sdktools_engine.inc",
     "insertText": "sdktools_engine>"
   },
   {
     "label": "sdktools_entinput",
     "kind": 17,
-    "detail": "/include/sdktools_entinput.inc",
+    "detail": "include/sdktools_entinput.inc",
     "insertText": "sdktools_entinput>"
   },
   {
     "label": "sdktools_entoutput",
     "kind": 17,
-    "detail": "/include/sdktools_entoutput.inc",
+    "detail": "include/sdktools_entoutput.inc",
     "insertText": "sdktools_entoutput>"
   },
   {
     "label": "sdktools_functions",
     "kind": 17,
-    "detail": "/include/sdktools_functions.inc",
+    "detail": "include/sdktools_functions.inc",
     "insertText": "sdktools_functions>"
   },
   {
     "label": "sdktools_gamerules",
     "kind": 17,
-    "detail": "/include/sdktools_gamerules.inc",
+    "detail": "include/sdktools_gamerules.inc",
     "insertText": "sdktools_gamerules>"
   },
   {
     "label": "sdktools_hooks",
     "kind": 17,
-    "detail": "/include/sdktools_hooks.inc",
+    "detail": "include/sdktools_hooks.inc",
     "insertText": "sdktools_hooks>"
   },
   {
     "label": "sdktools_sound",
     "kind": 17,
-    "detail": "/include/sdktools_sound.inc",
+    "detail": "include/sdktools_sound.inc",
     "insertText": "sdktools_sound>"
   },
   {
     "label": "sdktools_stocks",
     "kind": 17,
-    "detail": "/include/sdktools_stocks.inc",
+    "detail": "include/sdktools_stocks.inc",
     "insertText": "sdktools_stocks>"
   },
   {
     "label": "sdktools_stringtables",
     "kind": 17,
-    "detail": "/include/sdktools_stringtables.inc",
+    "detail": "include/sdktools_stringtables.inc",
     "insertText": "sdktools_stringtables>"
   },
   {
     "label": "sdktools_tempents",
     "kind": 17,
-    "detail": "/include/sdktools_tempents.inc",
+    "detail": "include/sdktools_tempents.inc",
     "insertText": "sdktools_tempents>"
   },
   {
     "label": "sdktools_tempents_stocks",
     "kind": 17,
-    "detail": "/include/sdktools_tempents_stocks.inc",
+    "detail": "include/sdktools_tempents_stocks.inc",
     "insertText": "sdktools_tempents_stocks>"
   },
   {
     "label": "sdktools_trace",
     "kind": 17,
-    "detail": "/include/sdktools_trace.inc",
+    "detail": "include/sdktools_trace.inc",
     "insertText": "sdktools_trace>"
   },
   {
     "label": "sdktools_variant_t",
     "kind": 17,
-    "detail": "/include/sdktools_variant_t.inc",
+    "detail": "include/sdktools_variant_t.inc",
     "insertText": "sdktools_variant_t>"
   },
   {
     "label": "sdktools_voice",
     "kind": 17,
-    "detail": "/include/sdktools_voice.inc",
+    "detail": "include/sdktools_voice.inc",
     "insertText": "sdktools_voice>"
   },
   {
     "label": "sorting",
     "kind": 17,
-    "detail": "/include/sorting.inc",
+    "detail": "include/sorting.inc",
     "insertText": "sorting>"
   },
   {
     "label": "sourcemod",
     "kind": 17,
-    "detail": "/include/sourcemod.inc",
+    "detail": "include/sourcemod.inc",
     "insertText": "sourcemod>"
   },
   {
     "label": "string",
     "kind": 17,
-    "detail": "/include/string.inc",
+    "detail": "include/string.inc",
     "insertText": "string>"
   },
   {
     "label": "testing",
     "kind": 17,
-    "detail": "/include/testing.inc",
+    "detail": "include/testing.inc",
     "insertText": "testing>"
   },
   {
     "label": "textparse",
     "kind": 17,
-    "detail": "/include/textparse.inc",
+    "detail": "include/textparse.inc",
     "insertText": "textparse>"
   },
   {
     "label": "tf2",
     "kind": 17,
-    "detail": "/include/tf2.inc",
+    "detail": "include/tf2.inc",
     "insertText": "tf2>"
   },
   {
     "label": "tf2_stocks",
     "kind": 17,
-    "detail": "/include/tf2_stocks.inc",
+    "detail": "include/tf2_stocks.inc",
     "insertText": "tf2_stocks>"
   },
   {
     "label": "timers",
     "kind": 17,
-    "detail": "/include/timers.inc",
+    "detail": "include/timers.inc",
     "insertText": "timers>"
   },
   {
     "label": "topmenus",
     "kind": 17,
-    "detail": "/include/topmenus.inc",
+    "detail": "include/topmenus.inc",
     "insertText": "topmenus>"
   },
   {
     "label": "usermessages",
     "kind": 17,
-    "detail": "/include/usermessages.inc",
+    "detail": "include/usermessages.inc",
     "insertText": "usermessages>"
   },
   {
     "label": "vector",
     "kind": 17,
-    "detail": "/include/vector.inc",
+    "detail": "include/vector.inc",
     "insertText": "vector>"
   },
   {
     "label": "version",
     "kind": 17,
-    "detail": "/include/version.inc",
+    "detail": "include/version.inc",
     "insertText": "version>"
   },
   {
     "label": "version_auto",
     "kind": 17,
-    "detail": "/include/version_auto.inc",
+    "detail": "include/version_auto.inc",
     "insertText": "version_auto>"
   }
 ]

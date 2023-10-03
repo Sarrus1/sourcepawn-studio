@@ -44,14 +44,14 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     let tmp_dir_path = tmp_dir.path().canonicalize().unwrap();
     let current_dir = env::current_dir().unwrap();
     let surtimer_path = current_dir.join("test_data/surftimer.zip");
-    fixture::unzip_file(&surtimer_path, tmp_dir_path.to_str().unwrap()).unwrap();
+    fixture::unzip_file(&surtimer_path, &tmp_dir_path).unwrap();
 
     let mut fixture = create_fixture(tmp_dir_path.to_str().unwrap()).unwrap();
     fixture.push_str("\n\n|\n^");
 
     c.bench_function("surftimer_end2end", |b| {
         b.iter(|| {
-            let _res = black_box(complete(&fixture));
+            let _res = black_box(complete(&fixture, None));
         })
     });
 }

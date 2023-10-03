@@ -6,9 +6,10 @@ use lsp_types::{
     notification::{DidOpenTextDocument, Exit, Initialized},
     request::ResolveCompletionItem,
     request::{Completion, Initialize, Shutdown},
-    ClientCapabilities, CompletionItem, CompletionItemKind, CompletionParams, CompletionResponse,
-    DidOpenTextDocumentParams, InitializeParams, InitializedParams, Location, Position, Range,
-    TextDocumentIdentifier, TextDocumentItem, TextDocumentPositionParams, Url, WorkspaceFolder,
+    ClientCapabilities, CompletionContext, CompletionItem, CompletionItemKind, CompletionParams,
+    CompletionResponse, CompletionTriggerKind, DidOpenTextDocumentParams, InitializeParams,
+    InitializedParams, Location, Position, Range, TextDocumentIdentifier, TextDocumentItem,
+    TextDocumentPositionParams, Url, WorkspaceFolder,
 };
 use std::{
     env,
@@ -212,11 +213,14 @@ impl TestBed {
                             if request.method == "workspace/configuration" {
                                 let mut options = Options::default();
                                 if add_sourcemod {
-                                    let current_dir = env::current_dir().unwrap();
+                                    let mut current_dir = env::current_dir().unwrap();
+                                    // The env depends on if we use the debugger or not.
+                                    if current_dir.ends_with("sourcepawn-vscode") {
+                                        current_dir = current_dir.join("crates/sourcepawn_lsp/");
+                                    }
                                     let sourcemod_path =
                                         current_dir.join("test_data/sourcemod.zip");
-                                    unzip_file(&sourcemod_path, destination.to_str().unwrap())
-                                        .unwrap();
+                                    unzip_file(&sourcemod_path, &destination).unwrap();
                                     options
                                         .includes_directories
                                         .push(destination.clone().join("include/"));
@@ -310,7 +314,7 @@ impl TestBed {
     }
 }
 
-pub fn complete(fixture: &str) -> Vec<CompletionItem> {
+pub fn complete(fixture: &str, trigger_character: Option<String>) -> Vec<CompletionItem> {
     let test_bed = TestBed::new(fixture, true).unwrap();
     test_bed
         .initialize(
@@ -341,7 +345,10 @@ pub fn complete(fixture: &str) -> Vec<CompletionItem> {
             text_document_position,
             partial_result_params: Default::default(),
             work_done_progress_params: Default::default(),
-            context: None,
+            context: Some(CompletionContext {
+                trigger_kind: CompletionTriggerKind::TRIGGER_CHARACTER,
+                trigger_character,
+            }),
         })
         .unwrap()
     {
@@ -368,17 +375,24 @@ pub fn complete(fixture: &str) -> Vec<CompletionItem> {
         .collect();
 
     // The results of include completions will always change because the paths of tempdir changes.
-    let tmp_dir_path_str = test_bed.temp_dir_path.to_str().unwrap();
-    let tmp_sm_dir_path_str = test_bed.temp_sm_dir_path.to_str().unwrap();
     for item in &mut items {
         if matches!(
             item.kind,
             Some(CompletionItemKind::FILE) | Some(CompletionItemKind::FOLDER)
         ) {
             item.detail = item.detail.as_mut().map(|detail| {
-                detail
-                    .replace(tmp_dir_path_str, "")
-                    .replace(tmp_sm_dir_path_str, "")
+                let detail_path = PathBuf::from(&detail).canonicalize().unwrap();
+                match detail_path.strip_prefix(&test_bed.temp_dir_path) {
+                    Ok(path) => path,
+                    Err(_) => detail_path
+                        .strip_prefix(&test_bed.temp_sm_dir_path)
+                        .unwrap(),
+                }
+                .to_str()
+                .unwrap()
+                .to_string()
+                // Account for windows paths
+                .replace(r"\\", "/")
             });
         }
     }
@@ -386,13 +400,13 @@ pub fn complete(fixture: &str) -> Vec<CompletionItem> {
     items
 }
 
-pub fn unzip_file(zip_file_path: &PathBuf, destination: &str) -> Result<(), io::Error> {
+pub fn unzip_file(zip_file_path: &Path, destination: &Path) -> Result<(), io::Error> {
     let file = File::open(zip_file_path)?;
     let mut archive = ZipArchive::new(file)?;
 
     for i in 0..archive.len() {
         let mut file = archive.by_index(i)?;
-        let dest_path = format!("{}/{}", destination, file.name());
+        let dest_path = destination.join(file.name());
 
         if file.is_dir() {
             std::fs::create_dir_all(&dest_path)?;

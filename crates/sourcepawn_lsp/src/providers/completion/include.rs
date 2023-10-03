@@ -5,6 +5,7 @@ use regex::Regex;
 use std::fs;
 use store::Store;
 
+#[derive(Debug, Clone)]
 pub(super) struct IncludeStatement {
     /// Text inside of the include statement, excluding the traling quotation marks or chevrons.
     text: String,

@@ -1,0 +1,19 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/completion.rs
+assertion_line: 116
+expression: "complete(r#\"\n%! bar.sp\nint bar;\n%! include/baz.inc\n#include \"\"\n          |\n          ^\n%! include/foo.inc\nint foo;\"#,\n    Some('\"'.to_string()))"
+---
+[
+  {
+    "label": "baz",
+    "kind": 17,
+    "detail": "include/baz.inc",
+    "insertText": "baz"
+  },
+  {
+    "label": "foo",
+    "kind": 17,
+    "detail": "include/foo.inc",
+    "insertText": "foo"
+  }
+]

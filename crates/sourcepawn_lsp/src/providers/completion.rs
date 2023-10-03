@@ -45,7 +45,15 @@ pub(crate) fn provide_completions(
         }
     }
 
-    if let Some(trigger_char) = line.chars().last() {
+    let trigger_char = match &params.context {
+        Some(context) => match &context.trigger_character {
+            Some(trigger_character) => trigger_character.chars().last(),
+            None => pre_line.chars().last(),
+        },
+        None => pre_line.chars().last(),
+    };
+
+    if let Some(trigger_char) = trigger_char {
         // The trigger character allows us to fine control which completion to trigger.
         match trigger_char {
             '<' | '"' | '\'' | '/' | '\\' => {

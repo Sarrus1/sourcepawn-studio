@@ -83,7 +83,7 @@ impl LspClient {
         log::trace!("Sending request {:?}", request);
         self.raw.sender.send(request.into())?;
 
-        let response = rx.recv_timeout(Duration::from_secs(5))?;
+        let response = rx.recv_timeout(Duration::from_secs(15))?;
         log::trace!("Received response {:?}", response);
         let result = match response.error {
             Some(error) => bail!(error.message),
