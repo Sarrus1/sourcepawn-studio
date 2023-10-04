@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [6.0.4]
+
+### Fixed
+
+- Fixed compiled button disappearing (see #344 for more details).
+
 ## [6.0.3]
 
 ### Fixed
