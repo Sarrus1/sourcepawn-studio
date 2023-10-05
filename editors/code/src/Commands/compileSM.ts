@@ -11,7 +11,7 @@ import { execFile } from "child_process";
 
 import { run as uploadToServerCommand } from "./uploadToServer";
 import { run as refreshPluginsCommand } from "./refreshPlugins";
-import { ctx } from "../spIndex";
+import { getCtxFromUri } from "../spIndex";
 import { ProjectMainPathParams, projectMainPath } from "../lsp_ext";
 
 // Create an OutputChannel variable here but do not initialize yet.
@@ -35,7 +35,10 @@ export async function run(args: URI): Promise<void> {
   let fileToCompilePath: string;
   if (alwaysCompileMainPath) {
     const params: ProjectMainPathParams = { uri: uri.toString() };
-    const mainUri = await ctx?.client.sendRequest(projectMainPath, params);
+    const mainUri = await getCtxFromUri(uri)?.client.sendRequest(
+      projectMainPath,
+      params
+    );
     if (mainUri === undefined) {
       fileToCompilePath = uri.fsPath;
     } else {
@@ -149,6 +152,7 @@ export async function run(args: URI): Promise<void> {
   output.show();
 
   try {
+    const ctx = getCtxFromUri(uri);
     ctx?.setSpcompStatus({ quiescent: false });
     // Compile in child process.
     let spcompCommand = spcomp;

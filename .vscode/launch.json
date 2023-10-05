@@ -7,16 +7,10 @@
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
-      "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}/editors/code"
-      ],
-      "outFiles": [
-        "${workspaceFolder}/editors/code/dist/**/*.js"
-      ],
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}/editors/code"],
+      "outFiles": ["${workspaceFolder}/editors/code/dist/**/*.js"],
       "preLaunchTask": "Build Server and Extension",
-      "skipFiles": [
-        "<node_internals>/**/*.js"
-      ],
+      "skipFiles": ["<node_internals>/**/*.js"],
       "env": {
         "__SOURCEPAWN_LSP_SERVER_DEBUG": "${workspaceFolder}/target/debug/sourcepawn_lsp"
       }
@@ -27,12 +21,8 @@
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
-      "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}/editors/code"
-      ],
-      "outFiles": [
-        "${workspaceFolder}/editors/code/dist/**/*.js"
-      ],
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}/editors/code"],
+      "outFiles": ["${workspaceFolder}/editors/code/dist/**/*.js"],
       "preLaunchTask": "Build Server (Release) and Extension",
       "env": {
         "__SOURCEPAWN_LSP_SERVER_DEBUG": "${workspaceFolder}/target/release/sourcepawn_lsp"
@@ -48,9 +38,7 @@
         "--extensionDevelopmentPath=${workspaceFolder}/editors/code",
         "--extensionTestsPath=${workspaceFolder}/editors/code/dist/test/suite/index"
       ],
-      "outFiles": [
-        "./editors/code/dist/**/*.js"
-      ],
+      "outFiles": ["./editors/code/dist/**/*.js"],
       "preLaunchTask": "npm: pretest"
     },
     {
@@ -65,9 +53,7 @@
       "request": "attach",
       "program": "${workspaceFolder}/target/debug/rust-analyzer",
       "pid": "${command:pickMyProcess}",
-      "sourceLanguages": [
-        "rust"
-      ]
+      "sourceLanguages": ["rust"]
     },
     {
       "name": "Win Attach to Server",

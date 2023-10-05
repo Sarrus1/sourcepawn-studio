@@ -62,7 +62,6 @@ let ctx = await esbuild.build({
   entryPoints: ["./src/spIndex.ts"],
   bundle: true,
   sourcemap: true,
-  sourceRoot: "./src",
   minify: !watch,
   outfile: `${outDir}/spIndex.js`,
   logLevel: "info",

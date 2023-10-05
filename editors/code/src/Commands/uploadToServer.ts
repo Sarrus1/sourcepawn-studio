@@ -2,7 +2,7 @@
 import { join } from "path";
 
 import { run as refreshPluginsCommand } from "./refreshPlugins";
-import { ctx } from "../spIndex";
+import { getCtxFromUri } from "../spIndex";
 import { ProjectMainPathParams, projectMainPath } from "../lsp_ext";
 import { URI } from "vscode-uri";
 const FTPDeploy = require("ftp-deploy");
@@ -47,10 +47,14 @@ export async function run(args: any) {
   config["deleteRemote"] = false;
 
   if (config["localRoot"] === "${mainPath}") {
+    const uri = vscode.window.activeTextEditor.document.uri;
     const params: ProjectMainPathParams = {
-      uri: vscode.window.activeTextEditor.document.uri.toString(),
+      uri: uri.toString(),
     };
-    const mainUri = await ctx?.client.sendRequest(projectMainPath, params);
+    const mainUri = await getCtxFromUri(uri)?.client.sendRequest(
+      projectMainPath,
+      params
+    );
     config["localRoot"] = URI.parse(mainUri).fsPath;
   }
 

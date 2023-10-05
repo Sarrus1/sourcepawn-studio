@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { projectsGraphviz, ProjectsGraphvizParams } from "../lsp_ext";
-import { ctx } from "../spIndex";
+import { getCtxFromUri } from "../spIndex";
 
 export async function run(args: any) {
   if (!vscode.extensions.getExtension("graphviz-interactive-preview.preview")) {
@@ -21,10 +21,13 @@ export async function run(args: any) {
   }
   const params: ProjectsGraphvizParams = {};
   const doc = vscode.window.activeTextEditor?.document;
-  if (doc !== undefined) {
-    params.textDocument =
-      ctx?.client.code2ProtocolConverter.asTextDocumentIdentifier(doc);
+  if (doc === undefined) {
+    vscode.window.showErrorMessage("Open a document to use this command.");
+    return;
   }
+  const ctx = getCtxFromUri(doc.uri);
+  params.textDocument =
+    ctx?.client.code2ProtocolConverter.asTextDocumentIdentifier(doc);
   let content = await ctx?.client.sendRequest(projectsGraphviz, params);
   if (content === undefined) {
     content = "";

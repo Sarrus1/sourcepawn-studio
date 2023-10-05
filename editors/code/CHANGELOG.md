@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [6.1.0]
+
+### Added
+
+- Added proper support for workspace folders (see #299 for more details)
+
 ## [6.0.4]
 
 ### Fixed

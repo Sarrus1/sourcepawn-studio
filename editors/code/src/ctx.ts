@@ -24,10 +24,13 @@ export class Ctx {
   private clientSubscriptions: Disposable[];
   private commandFactories: Record<string, CommandFactory>;
   private commandDisposables: Disposable[];
+  private clientOptions: lc.LanguageClientOptions;
 
   constructor(
+    readonly folder: string,
     readonly extCtx: vscode.ExtensionContext,
-    commandFactories: Record<string, CommandFactory>
+    commandFactories: Record<string, CommandFactory>,
+    clientOptions: lc.LanguageClientOptions
   ) {
     extCtx.subscriptions.push(this);
     this._serverPath = join(
@@ -35,6 +38,7 @@ export class Ctx {
       "languageServer",
       platform() == "win32" ? "sourcepawn_lsp.exe" : "sourcepawn_lsp"
     );
+    this.clientOptions = clientOptions;
 
     this.serverStatusBar = vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Left
@@ -49,13 +53,32 @@ export class Ctx {
     this.clientSubscriptions = [];
     this.commandDisposables = [];
     this.commandFactories = commandFactories;
-    this.updateCommands("disable");
+    try {
+      this.updateCommands("disable");
+    } catch {
+      console.error(
+        "Commands are already registered and will be handled later..."
+      );
+    }
     this.setServerStatus({
       health: "stopped",
     });
     this.setSpcompStatus({
       quiescent: true,
     });
+  }
+
+  public hideServer() {
+    this.serverStatusBar.hide();
+    this.spcompStatusBar.hide();
+    this.commandDisposables.forEach((disposable) => disposable.dispose());
+    this.commandDisposables = [];
+  }
+
+  public showServer() {
+    this.serverStatusBar.show();
+    this.spcompStatusBar.show();
+    this.updateCommands();
   }
 
   dispose() {
@@ -113,17 +136,10 @@ export class Ctx {
         },
       };
 
-      const clientOptions: lc.LanguageClientOptions = {
-        documentSelector: [{ language: "sourcepawn" }],
-        synchronize: {
-          fileEvents: vscode.workspace.createFileSystemWatcher("**/*.{inc,sp}"),
-        },
-      };
-
       this._client = new lc.LanguageClient(
         "SourcePawn Language Server",
         serverOptions,
-        clientOptions
+        this.clientOptions
       );
 
       this.pushClientCleanup(
