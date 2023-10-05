@@ -392,7 +392,7 @@ pub fn complete(fixture: &str, trigger_character: Option<String>) -> Vec<Complet
                 .unwrap()
                 .to_string()
                 // Account for windows paths
-                .replace(r"\\", "/")
+                .replace('\\', "/")
             });
         }
     }
