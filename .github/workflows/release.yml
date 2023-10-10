@@ -17,56 +17,56 @@ jobs:
             program: cargo
             platform: win32
             arch: x64
-            archive: sourcepawn_lsp-x86_64-windows.zip
+            archive: sourcepawn_lsp-${{ github.event.release.tag_name }}-windows-amd64.zip
 
           - os: windows-latest
             target: i686-pc-windows-msvc
             program: cargo
             platform: win32
             arch: ia32
-            archive: sourcepawn_lsp-i686-windows.zip
+            archive: sourcepawn_lsp-${{ github.event.release.tag_name }}-windows-i686.zip
 
           - os: windows-latest
             target: aarch64-pc-windows-msvc
             program: cargo
             platform: win32
             arch: arm64
-            archive: sourcepawn_lsp-aarch64-windows.zip
+            archive: sourcepawn_lsp-${{ github.event.release.tag_name }}-windows-arm64.zip
 
           - os: macos-latest
             target: x86_64-apple-darwin
             program: cargo
             platform: darwin
             arch: x64
-            archive: sourcepawn_lsp-x86_64-macos.zip
+            archive: sourcepawn_lsp-${{ github.event.release.tag_name }}-darwin-amd64.tar.gz
 
           - os: macos-latest
             target: aarch64-apple-darwin
             program: cargo
             platform: darwin
             arch: arm64
-            archive: sourcepawn_lsp-aarch64-macos.zip
+            archive: sourcepawn_lsp-${{ github.event.release.tag_name }}-darwin-arm64.tar.gz
 
           - os: ubuntu-20.04
             target: x86_64-unknown-linux-gnu
             program: cargo
             platform: linux
             arch: x64
-            archive: sourcepawn_lsp-x86_64-linux.zip
+            archive: sourcepawn_lsp-${{ github.event.release.tag_name }}-linux-amd64.tar.gz
 
           - os: ubuntu-20.04
             target: aarch64-unknown-linux-gnu
             program: cross
             platform: linux
             arch: arm64
-            archive: sourcepawn_lsp-aarch64-linux.zip
+            archive: sourcepawn_lsp-${{ github.event.release.tag_name }}-linux-arm64.tar.gz
 
           - os: ubuntu-20.04
             target: armv7-unknown-linux-gnueabihf
             program: cross
             platform: linux
             arch: armhf
-            archive: sourcepawn_lsp-armv7hf-linux.zip
+            archive: sourcepawn_lsp-${{ github.event.release.tag_name }}-linux-armv7.tar.gz
 
     steps:
       - uses: actions/checkout@v3
@@ -97,10 +97,10 @@ jobs:
         run: ${{ format('Compress-Archive target/{0}/release/sourcepawn_lsp.exe {1}', matrix.target, matrix.archive) }}
       - name: Compress (macOS)
         if: ${{ contains(matrix.os, 'macos') }}
-        run: ${{ format('zip -j {1} target/{0}/release/sourcepawn_lsp', matrix.target, matrix.archive) }}
+        run: ${{ format('gtar -czvf {1} -C target/{0}/release sourcepawn_lsp', matrix.target, matrix.archive) }}
       - name: Compress (Linux)
         if: ${{ contains(matrix.os, 'ubuntu') }}
-        run: ${{ format('zip -j {1} target/{0}/release/sourcepawn_lsp', matrix.target, matrix.archive) }}
+        run: ${{ format('tar -czvf {1} -C target/{0}/release sourcepawn_lsp', matrix.target, matrix.archive) }}
       - name: Upload debug symbols
         run: sentry-cli upload-dif --wait target/${{ matrix.target }}/release/
 
@@ -149,6 +149,7 @@ jobs:
       - name: Publish binaries
         run: |
           gh release upload ${{ github.ref_name }} $(find . -iname sourcepawn_lsp*.zip)
+          gh release upload ${{ github.ref_name }} $(find . -iname sourcepawn_lsp*.tar.gz)
           gh release upload ${{ github.ref_name }} $(find . -iname *.vsix)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -192,8 +193,6 @@ jobs:
   edit-release:
     runs-on: ubuntu-latest
     needs: [github]
-    strategy:
-      fail-fast: false
     steps:
       - uses: actions/checkout@v3
       - name: Get Changelog Entry
@@ -213,3 +212,26 @@ jobs:
           id: ${{ github.event.release.id }}
           body: "# sourcepawn-lsp\n\n${{ steps.changelog_sourcepawn_lsp.outputs.changes }}\n\n# sourcepawn-vscode\n\n${{ steps.changelog_vscode_extension.outputs.changes }}"
           replacebody: true
+
+  homebrew:
+    name: Release on Homebrew
+    runs-on: ubuntu-latest
+    needs: [build, github]
+    steps:
+      - name: Release to Homebrew tap
+        uses: Justintime50/homebrew-releaser@v1
+        with:
+          homebrew_owner: Sarrus1
+          homebrew_tap: homebrew-formulas
+          formula_folder: formula
+          github_token: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          commit_owner: Sarrus1
+          commit_email: 63302440+Sarrus1@users.noreply.github.com
+          install: 'bin.install "sourcepawn_lsp" => "sourcepawn_lsp"'
+          target_darwin_amd64: true
+          target_darwin_arm64: true
+          target_linux_amd64: true
+          target_linux_arm64: true
+          update_readme_table: true
+          skip_commit: false
+          debug: true
