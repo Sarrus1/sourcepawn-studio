@@ -21,5 +21,8 @@
     "editor.insertSpaces": true,
     "editor.tabSize": 2,
     "editor.formatOnSave": false
-  }
+  },
+  "rust-analyzer.linkedProjects": [
+    "./crates/syntax/Cargo.toml"
+  ]
 }

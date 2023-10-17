@@ -554,7 +554,7 @@ dependencies = [
  "autocfg",
  "cfg-if",
  "crossbeam-utils",
- "memoffset",
+ "memoffset 0.8.0",
  "scopeguard",
 ]
 
@@ -1368,6 +1368,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "memoffset"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a634b1c61a95585bd15607c6ab0c4e5b226e695ff2800ba0cdccddf208c406c"
+dependencies = [
+ "autocfg",
+]
+
+[[package]]
 name = "mime"
 version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1908,13 +1917,13 @@ dependencies = [
 
 [[package]]
 name = "rowan"
-version = "0.15.11"
+version = "0.15.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64449cfef9483a475ed56ae30e2da5ee96448789fb2aa240a04beb6a055078bf"
+checksum = "906057e449592587bf6724f00155bf82a6752c868d78a8fb3aa41f4e6357cfe8"
 dependencies = [
  "countme",
  "hashbrown 0.12.3",
- "memoffset",
+ "memoffset 0.9.0",
  "rustc-hash",
  "text-size",
 ]
@@ -2290,8 +2299,6 @@ dependencies = [
 [[package]]
 name = "sourcepawn_lexer"
 version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ff77b46edd95cc86b4969ede038cd07e668e3868b139c96eab5ac5b283f1e25"
 dependencies = [
  "lazy_static",
  "logos",
@@ -2430,6 +2437,7 @@ dependencies = [
  "nohash-hasher",
  "parking_lot",
  "regex",
+ "rowan",
  "serde",
  "serde_json",
  "tree-sitter",

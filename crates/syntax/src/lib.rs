@@ -9,6 +9,7 @@ use std::{fmt::Display, sync::Arc};
 
 use self::parameter::Parameter;
 
+mod ast;
 pub mod comment;
 pub mod define_item;
 pub mod deprecated;
@@ -21,6 +22,7 @@ pub mod include_item;
 pub mod methodmap_item;
 pub mod parameter;
 pub mod property_item;
+mod syntax_node;
 pub mod typedef_item;
 pub mod typeset_item;
 pub mod utils;
