@@ -22,6 +22,7 @@ pub mod include_item;
 pub mod methodmap_item;
 pub mod parameter;
 pub mod property_item;
+mod syntax_error;
 mod syntax_node;
 pub mod typedef_item;
 pub mod typeset_item;

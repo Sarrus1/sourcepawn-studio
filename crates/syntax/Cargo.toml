@@ -22,3 +22,4 @@ serde.workspace = true
 serde_json.workspace = true
 nohash-hasher.workspace = true
 rowan.workspace = true
+text-size.workspace = true

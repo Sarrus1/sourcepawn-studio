@@ -9,8 +9,9 @@
 use rowan::{GreenNodeBuilder, Language};
 
 pub(crate) use rowan::{GreenNode, GreenToken, NodeOrToken};
+use text_size::TextSize;
 
-use crate::ast::SyntaxKind;
+use crate::{ast::SyntaxKind, syntax_error::SyntaxError};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SourcepawnLanguage {}
@@ -45,16 +46,17 @@ impl SyntaxTreeBuilder {
         (green, self.errors)
     }
 
-    pub fn finish(self) -> Parse<SyntaxNode> {
-        let (green, errors) = self.finish_raw();
-        // Disable block validation, see https://github.com/rust-lang/rust-analyzer/pull/10357
-        #[allow(clippy::overly_complex_bool_expr)]
-        if cfg!(debug_assertions) && false {
-            let node = SyntaxNode::new_root(green.clone());
-            crate::validation::validate_block_structure(&node);
-        }
-        Parse::new(green, errors)
-    }
+    // TODO:
+    // pub fn finish(self) -> Parse<SyntaxNode> {
+    //     let (green, errors) = self.finish_raw();
+    //     // Disable block validation, see https://github.com/rust-lang/rust-analyzer/pull/10357
+    //     #[allow(clippy::overly_complex_bool_expr)]
+    //     if cfg!(debug_assertions) && false {
+    //         let node = SyntaxNode::new_root(green.clone());
+    //         crate::validation::validate_block_structure(&node);
+    //     }
+    //     Parse::new(green, errors)
+    // }
 
     pub fn token(&mut self, kind: SyntaxKind, text: &str) {
         let kind = SourcepawnLanguage::kind_to_raw(kind);

@@ -47,12 +47,15 @@ def generate_kinds():
     output.append("pub enum SyntaxKind {")
 
     for k, v in grammar["rules"].items():
-        if (type_ := v.get("type", None)) == "STRING":
-            value: str
+        value: str
+        if v.get("type", None) == "STRING":
             if (value := v.get("value", None)) is not None:
-                key = escape_kw(k)
                 output.append(f"    /// {value}")
-                output.append(f"    {key.upper()},")
+        key = escape_kw(k)
+        output.append(f"    {key.upper()},")
+        output.append("")
+    output.append("    #[doc(hidden)]")
+    output.append("    __LAST,")
     output.append("}")
 
     with open("src/ast/generated/syntax_kind.rs", "w") as f:
@@ -60,13 +63,16 @@ def generate_kinds():
 
 
 def generate_nodes():
-    rules = get_rules(grammar)
+    # rules = get_rules(grammar)
 
     output = []
     output.append("use crate::syntax_node::SyntaxNode;")
-    for rule in rules:
+    for k, v in grammar["rules"].items():
+        if v["type"] == "STRING":
+            continue
+
         output.append("#[derive(Debug, Clone, PartialEq, Eq, Hash)]")
-        output.append(f"pub struct {rule} {{")
+        output.append(f"pub struct {snake_to_pascal(k)} {{")
         output.append(f"  pub(crate) syntax: SyntaxNode,")
         output.append(f"}}")
         output.append("")
