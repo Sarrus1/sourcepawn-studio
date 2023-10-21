@@ -530,46 +530,46 @@ int foo = 1;
 
 #[test]
 fn define_expansion_comment_3() {
-    let input = r#"#define FOO 1 /* long\
+    let input = r"#define FOO 1 /* long\
 comment */
 int foo = FOO;
-"#;
-    let output = r#"#define FOO 1 /* long\
+";
+    let output = r"#define FOO 1 /* long\
 comment */
 int foo = 1;
-"#;
+";
 
     assert_preproc_eq!(input, output);
 }
 
 #[test]
 fn define_expansion_comment_4() {
-    let input = r#"#define FOO 1 /* long\
+    let input = r"#define FOO 1 /* long\
 comment */ + 2
 int foo = FOO;
 int bar;
-"#;
-    let output = r#"#define FOO 1 /* long\
+";
+    let output = r"#define FOO 1 /* long\
 comment */ + 2
 int foo = 1 + 2;
 int bar;
-"#;
+";
 
     assert_preproc_eq!(input, output);
 }
 
 #[test]
 fn define_expansion_comment_5() {
-    let input = r#"#define FOO 1 /* long\
+    let input = r"#define FOO 1 /* long\
 comment */ + 2 // Line comment
 int foo = FOO;
 int bar;
-"#;
-    let output = r#"#define FOO 1 /* long\
+";
+    let output = r"#define FOO 1 /* long\
 comment */ + 2 // Line comment
 int foo = 1 + 2;
 int bar;
-"#;
+";
 
     assert_preproc_eq!(input, output);
 }
@@ -825,8 +825,8 @@ fn include_directive_1() {
 
 #[test]
 fn include_directive_2() {
-    let input = r#"#include <sourcemod\
->"#;
+    let input = r"#include <sourcemod\
+>";
     let output = r#"#include <sourcemod>
 "#;
     assert_preproc_eq!(input, output);

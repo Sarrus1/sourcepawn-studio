@@ -11,7 +11,7 @@ use rowan::{GreenNodeBuilder, Language};
 pub(crate) use rowan::{GreenNode, GreenToken, NodeOrToken};
 use text_size::TextSize;
 
-use crate::{ast::SyntaxKind, syntax_error::SyntaxError};
+use crate::{ast::syntax_kind::generated::SyntaxKind, syntax_error::SyntaxError};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SourcepawnLanguage {}

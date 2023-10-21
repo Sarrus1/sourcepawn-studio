@@ -24,11 +24,13 @@ pub mod parameter;
 pub mod property_item;
 mod syntax_error;
 mod syntax_node;
-mod traits;
 pub mod typedef_item;
 pub mod typeset_item;
 pub mod utils;
 pub mod variable_item;
+
+use ast::syntax_kind::generated::SyntaxKind;
+use syntax_node::{SyntaxElement, SyntaxNode, SyntaxToken};
 
 /// Handle to a file.
 #[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]

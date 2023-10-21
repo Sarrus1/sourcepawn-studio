@@ -457,7 +457,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 let text = symbol.inline_text().trim().to_string();
                 let delta = symbol.range.end.line - symbol.range.start.line;
                 let symbol = Symbol::new(
-                    symbol.token_kind.clone(),
+                    symbol.token_kind,
                     Some(&text),
                     Range::new(
                         Position::new(symbol.range.start.line, symbol.range.start.character),

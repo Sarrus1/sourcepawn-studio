@@ -1,39 +1,18 @@
-mod generated;
+pub mod syntax_kind;
 
 use std::marker::PhantomData;
 
 use either::Either;
-#[allow(unreachable_pub)]
-pub use generated::syntax_kind::SyntaxKind;
 
 use crate::syntax_node::{SyntaxNode, SyntaxNodeChildren, SyntaxToken};
 
-impl From<u16> for SyntaxKind {
-    #[inline]
-    fn from(d: u16) -> SyntaxKind {
-        assert!(d <= (SyntaxKind::__LAST as u16));
-        unsafe { std::mem::transmute::<u16, SyntaxKind>(d) }
-    }
-}
+use self::syntax_kind::generated::SyntaxKind;
 
-impl From<SyntaxKind> for u16 {
-    #[inline]
-    fn from(k: SyntaxKind) -> u16 {
-        k as u16
-    }
-}
+// ! Abstract Syntax Tree, layered on top of untyped `SyntaxNode`s
 
-impl SyntaxKind {
-    #[inline]
-    pub fn is_trivia(self) -> bool {
-        self == SyntaxKind::COMMENT
-    }
-}
-
-// //! Abstract Syntax Tree, layered on top of untyped `SyntaxNode`s
-
-// mod generated;
-// mod traits;
+mod nodes;
+mod tokens;
+mod traits;
 // mod token_ext;
 // mod node_ext;
 // mod expr_ext;
@@ -68,7 +47,16 @@ impl SyntaxKind {
 //     },
 // };
 
-/// The main trait to go from untyped `SyntaxNode`  to a typed ast. The
+pub use self::{
+    nodes::generated::*,
+    tokens::generated::*,
+    traits::{
+        AttrDocCommentIter, DocCommentIter, HasArgList, HasAttrs, HasDocComments, HasGenericParams,
+        HasLoopBody, HasModuleItem, HasName, HasTypeBounds, HasVisibility,
+    },
+};
+
+/// The main trait to go from untyped `SyntaxNode` to a typed ast. The
 /// conversion itself has zero runtime cost: ast and syntax nodes have exactly
 /// the same representation: a pointer to the tree root and a pointer to the
 /// node itself.
@@ -164,12 +152,13 @@ where
     }
 }
 
-impl<L, R> HasAttrs for Either<L, R>
-where
-    L: HasAttrs,
-    R: HasAttrs,
-{
-}
+// TODO:
+// impl<L, R> HasAttrs for Either<L, R>
+// where
+//     L: HasAttrs,
+//     R: HasAttrs,
+// {
+// }
 
 mod support {
     use super::{AstChildren, AstNode, SyntaxKind, SyntaxNode, SyntaxToken};
