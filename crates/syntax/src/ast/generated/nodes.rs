@@ -5,6 +5,16 @@ pub struct SourceFile {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ManualSemicolon {
+  pub(crate) syntax: SyntaxNode,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Semicolon {
+  pub(crate) syntax: SyntaxNode,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PreprocExpression {
   pub(crate) syntax: SyntaxNode,
 }
@@ -481,16 +491,6 @@ pub struct ReturnStatement {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DeleteStatement {
-  pub(crate) syntax: SyntaxNode,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ManualSemicolon {
-  pub(crate) syntax: SyntaxNode,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Semicolon {
   pub(crate) syntax: SyntaxNode,
 }
 

@@ -24,6 +24,7 @@ pub mod parameter;
 pub mod property_item;
 mod syntax_error;
 mod syntax_node;
+mod traits;
 pub mod typedef_item;
 pub mod typeset_item;
 pub mod utils;

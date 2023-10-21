@@ -1,6 +1,6 @@
 import json
 from pprint import pprint
-from typing import Any, Dict
+from typing import Any, Dict, List, Tuple
 
 with open("/Users/charles/Developer/tree-sitter-sourcepawn/src/grammar.json", "r") as f:
     grammar: Dict[str, Any] = json.load(f)
@@ -45,21 +45,43 @@ def generate_kinds():
     output.append("#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]")
     output.append("#[repr(u16)]")
     output.append("pub enum SyntaxKind {")
-
+    keys_list = []
     for k, v in grammar["rules"].items():
         value: str
+        key = escape_kw(k)
+        key_upper = key.upper()
         if v.get("type", None) == "STRING":
             if (value := v.get("value", None)) is not None:
                 output.append(f"    /// {value}")
-        key = escape_kw(k)
+                keys_list.append((value, key_upper))
         output.append(f"    {key.upper()},")
         output.append("")
     output.append("    #[doc(hidden)]")
     output.append("    __LAST,")
     output.append("}")
 
+    make_macro_export(keys_list, output)
+
     with open("src/ast/generated/syntax_kind.rs", "w") as f:
         f.write("\n".join(output))
+
+
+def escape_token(input_: str) -> str:
+    static_set = {"{", "}", "[", "]", "(", ")"}
+    if input_ in static_set:
+        return f"'{input_}'"
+    return input_
+
+
+def make_macro_export(keys_list: List[Tuple[str, str]], output: List[str]):
+    output.append("#[macro_export]")
+    buffer = []
+    for value, key_upper in keys_list:
+        buffer.append(
+            f"[{escape_token(value)}] => {{ $ crate::SyntaxKind::{key_upper} }}"
+        )
+    output.append("macro_rules ! T {" + " ; ".join(buffer) + "}")
+    output.append("pub use T;")
 
 
 def generate_nodes():

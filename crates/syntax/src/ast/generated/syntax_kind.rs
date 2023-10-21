@@ -38,12 +38,6 @@ pub enum SyntaxKind {
     /// .
     DOT,
 
-    /// '
-    SQUOTE,
-
-    /// "
-    DQUOTE,
-
     /// !
     BANG,
 
@@ -347,6 +341,10 @@ pub enum SyntaxKind {
     /// static_assert
     STATIC_ASSERT,
 
+    MANUAL_SEMICOLON,
+
+    SEMICOLON,
+
     PREPROC_EXPRESSION,
 
     PREPROC_PARENTHESIZED_EXPRESSION,
@@ -539,10 +537,6 @@ pub enum SyntaxKind {
 
     DELETE_STATEMENT,
 
-    MANUAL_SEMICOLON,
-
-    SEMICOLON,
-
     EXPRESSION,
 
     ASSIGNMENT_EXPRESSION,
@@ -606,3 +600,6 @@ pub enum SyntaxKind {
     #[doc(hidden)]
     __LAST,
 }
+#[macro_export]
+macro_rules ! T {['('] => { $ crate::SyntaxKind::LPAREN } ; [')'] => { $ crate::SyntaxKind::RPAREN } ; ['{'] => { $ crate::SyntaxKind::LBRACE } ; ['}'] => { $ crate::SyntaxKind::RBRACE } ; ['['] => { $ crate::SyntaxKind::LBRACK } ; [']'] => { $ crate::SyntaxKind::RBRACK } ; [;] => { $ crate::SyntaxKind::SEMI } ; [:] => { $ crate::SyntaxKind::COLON } ; [,] => { $ crate::SyntaxKind::COMMA } ; [_] => { $ crate::SyntaxKind::UNDERSCORE } ; [.] => { $ crate::SyntaxKind::DOT } ; [!] => { $ crate::SyntaxKind::BANG } ; [~] => { $ crate::SyntaxKind::TILDE } ; [-] => { $ crate::SyntaxKind::DASH } ; [+] => { $ crate::SyntaxKind::PLUS } ; [*] => { $ crate::SyntaxKind::STAR } ; [/] => { $ crate::SyntaxKind::SLASH } ; [=] => { $ crate::SyntaxKind::EQ } ; [&] => { $ crate::SyntaxKind::AMP } ; [|] => { $ crate::SyntaxKind::PIPE } ; [^] => { $ crate::SyntaxKind::CARET } ; [%] => { $ crate::SyntaxKind::PERCENT } ; [?] => { $ crate::SyntaxKind::QMARK } ; [>] => { $ crate::SyntaxKind::GT } ; [<] => { $ crate::SyntaxKind::LT } ; [||] => { $ crate::SyntaxKind::PIPE_PIPE } ; [&&] => { $ crate::SyntaxKind::AMP_AMP } ; [==] => { $ crate::SyntaxKind::EQ_EQ } ; [!=] => { $ crate::SyntaxKind::BANG_EQ } ; [>=] => { $ crate::SyntaxKind::GT_EQ } ; [<=] => { $ crate::SyntaxKind::LT_EQ } ; [<<] => { $ crate::SyntaxKind::LT_LT } ; [>>] => { $ crate::SyntaxKind::GT_GT } ; [::] => { $ crate::SyntaxKind::COLON_COLON } ; [--] => { $ crate::SyntaxKind::DASH_DASH } ; [++] => { $ crate::SyntaxKind::PLUS_PLUS } ; [+=] => { $ crate::SyntaxKind::PLUS_EQ } ; [-=] => { $ crate::SyntaxKind::DASH_EQ } ; [*=] => { $ crate::SyntaxKind::STAR_EQ } ; [/=] => { $ crate::SyntaxKind::SLASH_EQ } ; [|=] => { $ crate::SyntaxKind::PIPE_EQ } ; [&=] => { $ crate::SyntaxKind::AMP_EQ } ; [^=] => { $ crate::SyntaxKind::CARET_EQ } ; [~=] => { $ crate::SyntaxKind::TILDE_EQ } ; [<<=] => { $ crate::SyntaxKind::LT_LT_EQ } ; [>>=] => { $ crate::SyntaxKind::GT_GT_EQ } ; [...] => { $ crate::SyntaxKind::REST } ; [>>>] => { $ crate::SyntaxKind::GT_GT_GT } ; [public] => { $ crate::SyntaxKind::PUBLIC_KW } ; [stock] => { $ crate::SyntaxKind::STOCK_KW } ; [static] => { $ crate::SyntaxKind::STATIC_KW } ; [forward] => { $ crate::SyntaxKind::FORWARD_KW } ; [native] => { $ crate::SyntaxKind::NATIVE_KW } ; [const] => { $ crate::SyntaxKind::CONST_KW } ; [null] => { $ crate::SyntaxKind::NULL_KW } ; [this] => { $ crate::SyntaxKind::THIS_KW } ; [operator] => { $ crate::SyntaxKind::OPERATOR_KW } ; [new] => { $ crate::SyntaxKind::NEW_KW } ; [decl] => { $ crate::SyntaxKind::DECL_KW } ; [true] => { $ crate::SyntaxKind::TRUE_KW } ; [false] => { $ crate::SyntaxKind::FALSE_KW } ; [enum] => { $ crate::SyntaxKind::ENUM_KW } ; [struct] => { $ crate::SyntaxKind::STRUCT_KW } ; [typedef] => { $ crate::SyntaxKind::TYPEDEF_KW } ; [typeset] => { $ crate::SyntaxKind::TYPESET_KW } ; [funcenum] => { $ crate::SyntaxKind::FUNCENUM_KW } ; [functag] => { $ crate::SyntaxKind::FUNCTAG_KW } ; [methodmap] => { $ crate::SyntaxKind::METHODMAP_KW } ; [__nullable__] => { $ crate::SyntaxKind::NULLABLE_KW } ; [property] => { $ crate::SyntaxKind::PROPERTY_KW } ; [get] => { $ crate::SyntaxKind::GET_KW } ; [set] => { $ crate::SyntaxKind::SET_KW } ; [any] => { $ crate::SyntaxKind::ANY_KW } ; [void] => { $ crate::SyntaxKind::VOID_KW } ; [bool] => { $ crate::SyntaxKind::BOOL_KW } ; [int] => { $ crate::SyntaxKind::INT_KW } ; [float] => { $ crate::SyntaxKind::FLOAT_KW } ; [char] => { $ crate::SyntaxKind::CHAR_KW } ; [Float] => { $ crate::SyntaxKind::OLD_FLOAT_KW } ; [String] => { $ crate::SyntaxKind::OLD_STRING_KW } ; [for] => { $ crate::SyntaxKind::FOR_KW } ; [while] => { $ crate::SyntaxKind::WHILE_KW } ; [do] => { $ crate::SyntaxKind::DO_KW } ; [break] => { $ crate::SyntaxKind::BREAK_KW } ; [continue] => { $ crate::SyntaxKind::CONTINUE_KW } ; [if] => { $ crate::SyntaxKind::IF_KW } ; [else] => { $ crate::SyntaxKind::ELSE_KW } ; [function] => { $ crate::SyntaxKind::FUNCTION_KW } ; [switch] => { $ crate::SyntaxKind::SWITCH_KW } ; [case] => { $ crate::SyntaxKind::CASE_KW } ; [default] => { $ crate::SyntaxKind::DEFAULT_KW } ; [return] => { $ crate::SyntaxKind::RETURN_KW } ; [delete] => { $ crate::SyntaxKind::DELETE_KW } ; [sizeof] => { $ crate::SyntaxKind::SIZEOF_KW } ; [view_as] => { $ crate::SyntaxKind::VIEW_AS_KW } ; [#include] => { $ crate::SyntaxKind::POUNDINCLUDE } ; [#tryinclude] => { $ crate::SyntaxKind::POUNDTRYINCLUDE } ; [#define] => { $ crate::SyntaxKind::POUNDDEFINE } ; [#undef] => { $ crate::SyntaxKind::POUNDUNDEF } ; [#if] => { $ crate::SyntaxKind::POUNDIF } ; [#else] => { $ crate::SyntaxKind::POUNDELSE } ; [#elseif] => { $ crate::SyntaxKind::POUNDELSEIF } ; [#endif] => { $ crate::SyntaxKind::POUNDENDIF } ; [#endinput] => { $ crate::SyntaxKind::POUNDENDINPUT } ; [#assert] => { $ crate::SyntaxKind::POUNDASSERT } ; [defined] => { $ crate::SyntaxKind::DEFINED } ; [#pragma] => { $ crate::SyntaxKind::POUNDPRAGMA } ; [#error] => { $ crate::SyntaxKind::POUNDERROR } ; [#warning] => { $ crate::SyntaxKind::POUNDWARNING } ; [using __intrinsics__.Handle] => { $ crate::SyntaxKind::USING__INTRINSICS__DOTHANDLE } ; [assert] => { $ crate::SyntaxKind::ASSERT } ; [static_assert] => { $ crate::SyntaxKind::STATIC_ASSERT }}
+pub use T;
