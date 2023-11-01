@@ -17,7 +17,6 @@ use serde::Serialize;
 use std::sync::Arc;
 use store::{options::Options, Store};
 use threadpool::ThreadPool;
-use tree_sitter::Parser;
 
 use crate::{capabilities::ClientCapabilitiesExt, client::LspClient, lsp_ext};
 
@@ -43,7 +42,6 @@ pub struct Server {
     client_capabilities: Arc<ClientCapabilities>,
     client_info: Option<Arc<ClientInfo>>,
     pool: ThreadPool,
-    parser: Parser,
     config_pulled: bool,
     indexing: bool,
     amxxpawn_mode: bool,
@@ -53,10 +51,6 @@ impl Server {
     pub fn new(connection: Connection, amxxpawn_mode: bool) -> Self {
         let client = LspClient::new(connection.sender.clone());
         let (internal_tx, internal_rx) = crossbeam::channel::unbounded();
-        let mut parser = Parser::new();
-        parser
-            .set_language(tree_sitter_sourcepawn::language())
-            .expect("Error loading SourcePawn grammar");
         Self {
             connection: Arc::new(connection),
             client,
@@ -66,7 +60,6 @@ impl Server {
             client_capabilities: Default::default(),
             client_info: Default::default(),
             pool: threadpool::Builder::new().build(),
-            parser,
             config_pulled: false,
             indexing: false,
             amxxpawn_mode,

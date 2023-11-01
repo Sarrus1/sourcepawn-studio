@@ -29,6 +29,14 @@ pub mod syntax;
 
 use crate::{document::Document, environment::Environment};
 
+fn spawn_parser() -> tree_sitter::Parser {
+    let mut parser = tree_sitter::Parser::new();
+    parser
+        .set_language(tree_sitter_sourcepawn::language())
+        .expect("Error loading SourcePawn grammar");
+    parser
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct Store {
     /// Any documents the server has handled, indexed by their URL.
@@ -112,12 +120,12 @@ impl Store {
         res
     }
 
-    pub fn remove(&mut self, uri: &Url, parser: &mut tree_sitter::Parser) {
+    pub fn remove(&mut self, uri: &Url) {
         let Some(file_id) = self.path_interner.get(uri) else {
             return;
         };
         // Open the document as empty to delete the references.
-        let _ = self.handle_open_document(&Arc::new((*uri).clone()), "".to_string(), parser);
+        let _ = self.handle_open_document(&Arc::new((*uri).clone()), "".to_string());
         self.documents.remove(&file_id);
         for document in self.documents.values_mut() {
             if let Some(include) = document.includes.get(&file_id) {
@@ -151,11 +159,7 @@ impl Store {
         self.watcher = Some(Arc::new(Mutex::new(watcher)));
     }
 
-    pub fn load(
-        &mut self,
-        path: PathBuf,
-        parser: &mut tree_sitter::Parser,
-    ) -> anyhow::Result<Option<Document>> {
+    pub fn load(&mut self, path: PathBuf) -> anyhow::Result<Option<Document>> {
         let mut uri = Url::from_file_path(&path).map_err(|err| {
             anyhow!(
                 "Failed to convert path to URI while loading a file: {:?}",
@@ -175,17 +179,13 @@ impl Store {
 
         let data = fs::read(&path)?;
         let text = String::from_utf8_lossy(&data).into_owned();
-        let document = self.handle_open_document(&Arc::new(uri), text, parser)?;
-        self.resolve_missing_includes(parser);
+        let document = self.handle_open_document(&Arc::new(uri), text)?;
+        self.resolve_missing_includes();
 
         Ok(Some(document))
     }
 
-    pub fn reload(
-        &mut self,
-        path: PathBuf,
-        parser: &mut tree_sitter::Parser,
-    ) -> anyhow::Result<Option<Document>> {
+    pub fn reload(&mut self, path: PathBuf) -> anyhow::Result<Option<Document>> {
         let mut uri = Url::from_file_path(&path).map_err(|err| {
             anyhow!(
                 "Failed to convert path to URI while loading a file: {:?}",
@@ -200,8 +200,8 @@ impl Store {
 
         let data = fs::read(&path)?;
         let text = String::from_utf8_lossy(&data).into_owned();
-        let document = self.handle_open_document(&Arc::new(uri), text, parser)?;
-        self.resolve_missing_includes(parser);
+        let document = self.handle_open_document(&Arc::new(uri), text)?;
+        self.resolve_missing_includes();
 
         self.remove_file_from_projects(&file_id);
         self.add_file_to_projects(&file_id)?;
@@ -209,7 +209,7 @@ impl Store {
         Ok(Some(document))
     }
 
-    pub fn resolve_missing_includes(&mut self, parser: &mut tree_sitter::Parser) {
+    pub fn resolve_missing_includes(&mut self) {
         let mut to_reload = FxHashSet::default();
         for document in self.documents.values() {
             for missing_include in document.missing_includes.keys() {
@@ -222,8 +222,7 @@ impl Store {
         }
         for file_id in to_reload {
             if let Some(document) = self.documents.get(&file_id) {
-                let _ =
-                    self.handle_open_document(&document.uri.clone(), document.text.clone(), parser);
+                let _ = self.handle_open_document(&document.uri.clone(), document.text.clone());
             }
         }
     }
@@ -263,7 +262,6 @@ impl Store {
         &mut self,
         uri: &Arc<Url>,
         text: String,
-        parser: &mut tree_sitter::Parser,
     ) -> Result<Document, io::Error> {
         log::trace!("Opening file {:?}", uri);
         let file_id = self.path_interner.intern(uri.as_ref().clone());
@@ -275,8 +273,7 @@ impl Store {
         let mut document = Document::new(uri.clone(), file_id, text);
         self.preprocess_document(&mut document);
         self.add_sourcemod_include(&mut document);
-        self.parse(&mut document, parser)
-            .expect("Couldn't parse document");
+        self.parse(&mut document).expect("Couldn't parse document");
         if !self.first_parse {
             // Don't try to find references yet, all the tokens might not be referenced.
             self.resolve_file_references(&file_id);
@@ -464,12 +461,9 @@ impl Store {
         ))
     }
 
-    pub fn parse(
-        &mut self,
-        document: &mut Document,
-        parser: &mut tree_sitter::Parser,
-    ) -> anyhow::Result<()> {
+    pub fn parse(&mut self, document: &mut Document) -> anyhow::Result<()> {
         log::trace!("Parsing document {:?}", document.uri);
+        let mut parser = spawn_parser();
         let tree = parser
             .parse(&document.preprocessed_text, None)
             .ok_or(anyhow!("Failed to parse document {:?}", document.uri))?;
@@ -537,7 +531,7 @@ impl Store {
             self.environment.options.disable_syntax_linter,
         );
         self.documents.insert(document.file_id, document.clone());
-        self.read_unscanned_imports(&document.includes, parser);
+        self.read_unscanned_imports(&document.includes, &mut parser);
         log::trace!("Done parsing document {:?}", document.uri);
 
         Ok(())
@@ -575,7 +569,7 @@ impl Store {
                 continue;
             }
             let document = self
-                .handle_open_document(&document.uri, document.text, parser)
+                .handle_open_document(&document.uri, document.text)
                 .expect("Couldn't parse file");
             self.read_unscanned_imports(&document.includes, parser)
         }

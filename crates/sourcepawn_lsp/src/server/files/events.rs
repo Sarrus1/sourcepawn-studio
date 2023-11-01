@@ -13,7 +13,7 @@ impl Server {
                     let Ok(uri) = Url::from_file_path(path.clone()) else {
                         continue;
                     };
-                    let _ = self.store.write().load(path, &mut self.parser);
+                    let _ = self.store.write().load(path);
                     self.reload_diagnostics(uri);
                 }
             }
@@ -70,21 +70,15 @@ impl Server {
                         }
                         for uri in uris.iter() {
                             if self.store.read().contains_uri(uri) {
-                                self.store.write().remove(uri, &mut self.parser);
+                                self.store.write().remove(uri);
                             } else {
-                                let _ = self
-                                    .store
-                                    .write()
-                                    .load(uri.to_file_path().unwrap(), &mut self.parser);
+                                let _ = self.store.write().load(uri.to_file_path().unwrap());
                             }
                         }
                     }
                     _ => {
                         if self.store.read().contains_uri(&uri) {
-                            let _ = self
-                                .store
-                                .write()
-                                .reload(uri.to_file_path().unwrap(), &mut self.parser);
+                            let _ = self.store.write().reload(uri.to_file_path().unwrap());
                         }
                     }
                 }
@@ -93,7 +87,7 @@ impl Server {
             notify::EventKind::Remove(_) => {
                 for mut uri in event.paths.iter().flat_map(Url::from_file_path) {
                     normalize_uri(&mut uri);
-                    self.store.write().remove(&uri, &mut self.parser);
+                    self.store.write().remove(&uri);
                     self.reload_diagnostics(uri);
                 }
             }

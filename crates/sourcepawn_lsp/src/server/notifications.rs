@@ -42,14 +42,12 @@ impl Server {
         let text = params.text_document.text;
         self.store
             .write()
-            .handle_open_document(&uri, text, &mut self.parser)
+            .handle_open_document(&uri, text)
             .expect("Couldn't parse file");
 
         // In the first parse, it is expected that includes are missing.
         if !self.store.read().first_parse {
-            self.store
-                .write()
-                .resolve_missing_includes(&mut self.parser);
+            self.store.write().resolve_missing_includes();
         }
 
         Ok(())
@@ -64,10 +62,7 @@ impl Server {
         let uri = Arc::new(params.text_document.uri.clone());
         let Some(document) = self.store.read().get_cloned_from_uri(&uri).or_else(|| {
             // If the document was not known, read its content first.
-            self.store
-                .write()
-                .load(uri.to_file_path().ok()?, &mut self.parser)
-                .ok()?
+            self.store.write().load(uri.to_file_path().ok()?).ok()?
         }) else {
             bail!(
                 "Failed to apply document edit on {}",
@@ -77,9 +72,7 @@ impl Server {
 
         let mut text = document.text().to_string();
         utils::apply_document_edit(&mut text, params.content_changes);
-        self.store
-            .write()
-            .handle_open_document(&uri, text, &mut self.parser)?;
+        self.store.write().handle_open_document(&uri, text)?;
 
         self.lint_project(&params.text_document.uri);
 
@@ -97,19 +90,16 @@ impl Server {
                     let _ = self
                         .store
                         .write()
-                        .reload(change.uri.to_file_path().unwrap(), &mut self.parser);
+                        .reload(change.uri.to_file_path().unwrap());
                     self.reload_diagnostics(change.uri);
                 }
                 FileChangeType::DELETED => {
-                    self.store.write().remove(&change.uri, &mut self.parser);
+                    self.store.write().remove(&change.uri);
                     self.reload_diagnostics(change.uri);
                 }
                 FileChangeType::CREATED => {
                     if let Ok(path) = change.uri.to_file_path() {
-                        let _ = self
-                            .store
-                            .write()
-                            .load(path.as_path().to_path_buf(), &mut self.parser);
+                        let _ = self.store.write().load(path.as_path().to_path_buf());
                         self.reload_diagnostics(change.uri);
                     }
                 }

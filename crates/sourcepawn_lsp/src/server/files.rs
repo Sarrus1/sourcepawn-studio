@@ -64,7 +64,7 @@ impl Server {
             .context(format!("Main Path does not exist for id {:?}", main_id))?;
         self.store
             .write()
-            .handle_open_document(&document.uri, document.text, &mut self.parser)
+            .handle_open_document(&document.uri, document.text)
             .context(format!("Could not parse file at id {:?}", main_id))?;
 
         Ok(())
@@ -125,11 +125,7 @@ impl Server {
                 if !document.parsed {
                     self.store
                         .write()
-                        .handle_open_document(
-                            &document.uri.clone(),
-                            document.text.clone(),
-                            &mut self.parser,
-                        )
+                        .handle_open_document(&document.uri.clone(), document.text.clone())
                         .unwrap();
                 }
             }
