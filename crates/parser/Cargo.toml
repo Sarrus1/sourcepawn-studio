@@ -21,3 +21,4 @@ tree-sitter-sourcepawn.workspace = true
 log.workspace = true
 preprocessor.workspace = true
 syntax.workspace = true
+path_interner.workspace = true

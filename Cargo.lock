@@ -353,7 +353,7 @@ version = "4.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9644cd56d6b87dbe899ef8b053e331c0637664e9e21a33dfcdc36093f5c5c4"
 dependencies = [
- "heck",
+ "heck 0.4.1",
  "proc-macro2",
  "quote",
  "syn 2.0.15",
@@ -618,7 +618,7 @@ dependencies = [
  "hashbrown 0.12.3",
  "lock_api",
  "once_cell",
- "parking_lot_core",
+ "parking_lot_core 0.9.7",
 ]
 
 [[package]]
@@ -925,6 +925,15 @@ name = "hashbrown"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c6201b9ff9fd90a5a3bac2e56a830d0caa509576f0e503818ee82c181b3437a"
+
+[[package]]
+name = "heck"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d621efb26863f0e9924c6ac577e8275e5e6b77455db64ffa6c65c904e9e132c"
+dependencies = [
+ "unicode-segmentation",
+]
 
 [[package]]
 name = "heck"
@@ -1263,7 +1272,7 @@ dependencies = [
  "lazy_static",
  "log",
  "lsp-types",
- "parking_lot",
+ "parking_lot 0.12.1",
  "regex",
  "serde",
  "serde_json",
@@ -1572,12 +1581,37 @@ checksum = "ceedf44fb00f2d1984b0bc98102627ce622e083e49a5bacdb3e514fa4238e267"
 
 [[package]]
 name = "parking_lot"
+version = "0.11.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d17b78036a60663b797adeaee46f5c9dfebb86948d1255007a1d6be0271ff99"
+dependencies = [
+ "instant",
+ "lock_api",
+ "parking_lot_core 0.8.6",
+]
+
+[[package]]
+name = "parking_lot"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3742b2c103b9f06bc9fff0a37ff4912935851bee6d36f3c02bcc755bcfec228f"
 dependencies = [
  "lock_api",
- "parking_lot_core",
+ "parking_lot_core 0.9.7",
+]
+
+[[package]]
+name = "parking_lot_core"
+version = "0.8.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "60a2cfe6f0ad2bfc16aefa463b497d5c7a5ecd44a23efa72aa342d90177356dc"
+dependencies = [
+ "cfg-if",
+ "instant",
+ "libc",
+ "redox_syscall 0.2.16",
+ "smallvec",
+ "winapi",
 ]
 
 [[package]]
@@ -1602,7 +1636,8 @@ dependencies = [
  "lazy_static",
  "log",
  "lsp-types",
- "parking_lot",
+ "parking_lot 0.12.1",
+ "path_interner",
  "preprocessor",
  "regex",
  "syntax",
@@ -1619,6 +1654,17 @@ dependencies = [
  "base64ct",
  "rand_core",
  "subtle",
+]
+
+[[package]]
+name = "path_interner"
+version = "0.1.0"
+dependencies = [
+ "fxhash",
+ "indexmap 2.0.0",
+ "lazy_static",
+ "lsp-types",
+ "nohash-hasher",
 ]
 
 [[package]]
@@ -1983,6 +2029,35 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f91339c0467de62360649f8d3e185ca8de4224ff281f66000de5eb2a77a79041"
 
 [[package]]
+name = "salsa"
+version = "0.17.0-pre.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b223dccb46c32753144d0b51290da7230bb4aedcd8379d6b4c9a474c18bf17a"
+dependencies = [
+ "crossbeam-utils",
+ "indexmap 1.9.3",
+ "lock_api",
+ "log",
+ "oorandom",
+ "parking_lot 0.11.2",
+ "rustc-hash",
+ "salsa-macros",
+ "smallvec",
+]
+
+[[package]]
+name = "salsa-macros"
+version = "0.17.0-pre.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac6c2e352df550bf019da7b16164ed2f7fa107c39653d1311d1bba42d1582ff7"
+dependencies = [
+ "heck 0.3.3",
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "same-file"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2048,8 +2123,9 @@ dependencies = [
  "lazy_static",
  "log",
  "lsp-types",
- "parking_lot",
+ "parking_lot 0.12.1",
  "parser",
+ "path_interner",
  "preprocessor",
  "regex",
  "syntax",
@@ -2323,7 +2399,8 @@ dependencies = [
  "minreq",
  "notify",
  "openssl",
- "parking_lot",
+ "parking_lot 0.12.1",
+ "path_interner",
  "preprocessor",
  "regex",
  "rowan",
@@ -2362,10 +2439,12 @@ dependencies = [
  "lsp-types",
  "nohash-hasher",
  "notify",
- "parking_lot",
+ "parking_lot 0.12.1",
  "parser",
+ "path_interner",
  "preprocessor",
  "regex",
+ "salsa",
  "semantic_analyzer",
  "serde",
  "serde_json",
@@ -2427,8 +2506,8 @@ dependencies = [
  "lazy_static",
  "log",
  "lsp-types",
- "nohash-hasher",
- "parking_lot",
+ "parking_lot 0.12.1",
+ "path_interner",
  "regex",
  "serde",
  "serde_json",
@@ -2692,6 +2771,12 @@ checksum = "5c5713f0fc4b5db668a2ac63cdb7bb4469d8c9fed047b1d0292cc7b0ce2ba921"
 dependencies = [
  "tinyvec",
 ]
+
+[[package]]
+name = "unicode-segmentation"
+version = "1.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1dd624098567895118886609431a7c3b8f516e41d30e0643f03d94592a147e36"
 
 [[package]]
 name = "unicode-width"

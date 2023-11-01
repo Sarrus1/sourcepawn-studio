@@ -2,8 +2,9 @@ use std::sync::Arc;
 
 use lsp_types::{Range, Url};
 use parking_lot::RwLock;
+use path_interner::FileId;
 use semantic_analyzer::Token;
-use syntax::{include_item::IncludeItem, FileId, SPItem};
+use syntax::{include_item::IncludeItem, SPItem};
 
 use crate::{document::Document, Store};
 

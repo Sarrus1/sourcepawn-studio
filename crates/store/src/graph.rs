@@ -4,9 +4,10 @@ use anyhow::bail;
 use fxhash::{FxHashMap, FxHashSet};
 use lazy_static::lazy_static;
 use lsp_types::Url;
+use path_interner::FileId;
 use regex::Regex;
 use sourcepawn_lexer::{PreprocDir, SourcepawnLexer, TokenKind};
-use syntax::{uri_to_file_name, FileId};
+use syntax::uri_to_file_name;
 
 use crate::{
     document::{uri_to_file_extension, Document, FileExtension},

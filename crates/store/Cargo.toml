@@ -11,6 +11,7 @@ doctest = false
 
 [dependencies]
 semantic_analyzer.workspace = true
+path_interner.workspace = true
 sourcepawn_lexer.workspace = true
 linter.workspace = true
 lsp-types.workspace = true
@@ -33,3 +34,4 @@ serde_json.workspace = true
 nohash-hasher.workspace = true
 indexmap.workspace = true
 tempfile.workspace = true
+salsa.workspace = true

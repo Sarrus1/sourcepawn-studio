@@ -1,5 +1,5 @@
 [package]
-name = "syntax"
+name = "path_interner"
 version = "0.1.0"
 include = ["Cargo.toml", "src/"]
 edition.workspace = true
@@ -11,13 +11,7 @@ doctest = false
 
 [dependencies]
 lsp-types.workspace = true
-anyhow.workspace = true
 lazy_static.workspace = true
-regex.workspace = true
 fxhash.workspace = true
-parking_lot.workspace = true
-tree-sitter.workspace = true
-log.workspace = true
-serde.workspace = true
-serde_json.workspace = true
-path_interner.workspace = true
+nohash-hasher.workspace = true
+indexmap.workspace = true

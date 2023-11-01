@@ -1,5 +1,6 @@
 use lsp_types::{SemanticTokenModifier, SemanticTokenType};
-use syntax::{methodmap_item::MethodmapItem, FileId, SPItem};
+use path_interner::FileId;
+use syntax::{methodmap_item::MethodmapItem, SPItem};
 
 use super::SemanticTokensBuilder;
 

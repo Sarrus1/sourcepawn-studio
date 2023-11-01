@@ -1,5 +1,7 @@
-use ::syntax::{FileId, SPItem};
+use ::path_interner::FileId;
+use ::syntax::SPItem;
 use anyhow::anyhow;
+use core::fmt;
 use fxhash::{FxHashMap, FxHashSet};
 use graph::Graph;
 use linter::DiagnosticsManager;
@@ -12,6 +14,7 @@ use semantic_analyzer::{purge_references, Token};
 use std::{
     fs::{self, File},
     io::{self, Read},
+    mem::ManuallyDrop,
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
 };
@@ -23,7 +26,6 @@ pub mod graph;
 pub mod include;
 pub mod main_heuristic;
 pub mod options;
-mod path_interner;
 mod semantics;
 pub mod syntax;
 
@@ -35,6 +37,106 @@ fn spawn_parser() -> tree_sitter::Parser {
         .set_language(tree_sitter_sourcepawn::language())
         .expect("Error loading SourcePawn grammar");
     parser
+}
+
+pub trait FileLoader {
+    /// Text of the file.
+    fn file_text(&self, file_id: FileId) -> Arc<str>;
+}
+
+#[derive(Debug, Clone)]
+pub struct Tree {
+    tree: tree_sitter::Tree,
+}
+
+impl PartialEq for Tree {
+    fn eq(&self, other: &Self) -> bool {
+        self.tree.root_node() == other.tree.root_node()
+    }
+}
+
+impl Eq for Tree {}
+
+impl From<tree_sitter::Tree> for Tree {
+    fn from(tree: tree_sitter::Tree) -> Self {
+        Self { tree }
+    }
+}
+
+/// Database which stores all significant input facts: source code and project
+/// model. Everything else in rust-analyzer is derived from these queries.
+#[salsa::query_group(SourceDatabaseStorage)]
+pub trait SourceDatabase: FileLoader + std::fmt::Debug {
+    // Parses the file into the syntax tree.
+    #[salsa::invoke(parse_query)]
+    fn parse(&self, file_id: FileId) -> Tree;
+}
+
+fn parse_query(db: &dyn SourceDatabase, file_id: FileId) -> Tree {
+    let mut parser = tree_sitter::Parser::new();
+    parser
+        .set_language(tree_sitter_sourcepawn::language())
+        .expect("Failed to set language");
+    let text = db.file_text(file_id);
+    parser
+        .parse(text.as_ref(), None)
+        .expect("Failed to parse a file.")
+        .into()
+}
+
+/// We don't want to give HIR knowledge of source roots, hence we extract these
+/// methods into a separate DB.
+#[salsa::query_group(SourceDatabaseExtStorage)]
+pub trait SourceDatabaseExt: SourceDatabase {
+    #[salsa::input]
+    fn file_text(&self, file_id: FileId) -> Arc<str>;
+}
+
+/// Silly workaround for cyclic deps between the traits
+pub struct FileLoaderDelegate<T>(pub T);
+
+impl<T: SourceDatabaseExt> FileLoader for FileLoaderDelegate<&'_ T> {
+    fn file_text(&self, file_id: FileId) -> Arc<str> {
+        SourceDatabaseExt::file_text(self.0, file_id)
+    }
+}
+
+#[salsa::database(SourceDatabaseExtStorage, SourceDatabaseStorage)]
+pub struct RootDatabase {
+    // We use `ManuallyDrop` here because every codegen unit that contains a
+    // `&RootDatabase -> &dyn OtherDatabase` cast will instantiate its drop glue in the vtable,
+    // which duplicates `Weak::drop` and `Arc::drop` tens of thousands of times, which makes
+    // compile times of all `ide_*` and downstream crates suffer greatly.
+    storage: ManuallyDrop<salsa::Storage<RootDatabase>>,
+}
+
+impl Drop for RootDatabase {
+    fn drop(&mut self) {
+        unsafe { ManuallyDrop::drop(&mut self.storage) };
+    }
+}
+
+impl fmt::Debug for RootDatabase {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RootDatabase").finish()
+    }
+}
+
+impl FileLoader for RootDatabase {
+    fn file_text(&self, file_id: FileId) -> Arc<str> {
+        FileLoaderDelegate(self).file_text(file_id)
+    }
+}
+
+impl salsa::Database for RootDatabase {}
+
+impl Default for RootDatabase {
+    fn default() -> Self {
+        let mut db = Self {
+            storage: ManuallyDrop::new(salsa::Storage::default()),
+        };
+        db
+    }
 }
 
 #[derive(Debug, Clone, Default)]
@@ -531,7 +633,7 @@ impl Store {
             self.environment.options.disable_syntax_linter,
         );
         self.documents.insert(document.file_id, document.clone());
-        self.read_unscanned_imports(&document.includes, &mut parser);
+        self.read_unscanned_imports(&document.includes);
         log::trace!("Done parsing document {:?}", document.uri);
 
         Ok(())
@@ -556,11 +658,7 @@ impl Store {
         }
     }
 
-    pub(crate) fn read_unscanned_imports(
-        &mut self,
-        includes: &FxHashMap<FileId, Token>,
-        parser: &mut tree_sitter::Parser,
-    ) {
+    pub(crate) fn read_unscanned_imports(&mut self, includes: &FxHashMap<FileId, Token>) {
         for include_uri in includes.keys() {
             let document = self
                 .get_cloned(include_uri)
@@ -571,7 +669,7 @@ impl Store {
             let document = self
                 .handle_open_document(&document.uri, document.text)
                 .expect("Couldn't parse file");
-            self.read_unscanned_imports(&document.includes, parser)
+            self.read_unscanned_imports(&document.includes)
         }
     }
 

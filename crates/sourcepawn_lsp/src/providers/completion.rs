@@ -2,10 +2,11 @@ use crate::providers::completion::{
     getters::get_ctor_completions, include::get_include_completions,
 };
 use lsp_types::{CompletionItem, CompletionList, CompletionParams};
+use path_interner::FileId;
 use semantic_analyzer::is_ctor_call;
 use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
 use store::Store;
-use syntax::{range_contains_pos, FileId};
+use syntax::range_contains_pos;
 
 use self::{
     context::{is_callback_completion_request, is_doc_completion, is_method_call},

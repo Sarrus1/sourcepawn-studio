@@ -21,3 +21,4 @@ fxhash.workspace = true
 parking_lot.workspace = true
 tree-sitter.workspace = true
 log.workspace = true
+path_interner.workspace = true

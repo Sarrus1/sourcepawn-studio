@@ -1,8 +1,9 @@
 use fxhash::FxHashSet;
 use lsp_types::{Position, Url};
 use parking_lot::RwLock;
+use path_interner::FileId;
 use std::sync::Arc;
-use syntax::{range_contains_pos, FileId, SPItem};
+use syntax::{range_contains_pos, SPItem};
 
 use crate::{document::Document, Store};
 

@@ -1,5 +1,5 @@
+use path_interner::FileId;
 use semantic_analyzer::resolve_references;
-use syntax::FileId;
 
 use crate::Store;
 

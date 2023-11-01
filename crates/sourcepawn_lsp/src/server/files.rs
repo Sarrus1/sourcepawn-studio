@@ -1,7 +1,8 @@
 use anyhow::{anyhow, bail, Context};
 use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams, Url};
+use path_interner::FileId;
 use std::sync::Arc;
-use syntax::{uri_to_file_name, FileId};
+use syntax::uri_to_file_name;
 
 use crate::{lsp_ext, server::progress::Progress, Server};
 

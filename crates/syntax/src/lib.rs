@@ -5,7 +5,8 @@ use lsp_types::{
     SignatureInformation, Url,
 };
 use parking_lot::RwLock;
-use std::{fmt::Display, sync::Arc};
+use path_interner::FileId;
+use std::sync::Arc;
 
 use self::parameter::Parameter;
 
@@ -25,25 +26,6 @@ pub mod typedef_item;
 pub mod typeset_item;
 pub mod utils;
 pub mod variable_item;
-
-/// Handle to a file.
-#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct FileId(pub u32);
-
-/// safe because `FileId` is a newtype of `u32`
-impl nohash_hasher::IsEnabled for FileId {}
-
-impl From<u32> for FileId {
-    fn from(id: u32) -> Self {
-        Self(id)
-    }
-}
-
-impl Display for FileId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
 
 /// Represents a location inside a resource, such as a line inside a text file.
 #[derive(Debug, Eq, PartialEq, Clone)]
