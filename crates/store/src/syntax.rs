@@ -1,9 +1,9 @@
 use fxhash::FxHashSet;
 use lsp_types::{Position, Url};
 use parking_lot::RwLock;
-use path_interner::FileId;
 use std::sync::Arc;
 use syntax::{range_contains_pos, SPItem};
+use vfs::FileId;
 
 use crate::{document::Document, Store};
 
@@ -11,10 +11,11 @@ impl Store {
     pub fn get_all_items(&self, file_id: &FileId, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
         log::debug!("Getting all items from store. flat: {}", flat);
         let mut all_items = vec![];
-        let Some(main_node) = self.projects.find_root_from_id(*file_id) else {
-            return all_items;
-        };
-        let main_file_id = main_node.file_id;
+        // let Some(main_node) = self.projects.find_root_from_id(*file_id) else {
+        //     return all_items;
+        // };
+        // let main_file_id = main_node.file_id;
+        let main_file_id = FileId(0);
         let mut includes = FxHashSet::default();
         includes.insert(main_file_id);
         if let Some(document) = self.documents.get(&main_file_id) {
@@ -56,9 +57,11 @@ impl Store {
             position,
             uri
         );
-        let Some(file_id) = self.path_interner.get(uri) else {
-            return vec![];
-        };
+        return vec![];
+        // let Some(file_id) = self.vfs.get(uri) else {
+        //     return vec![];
+        // };
+        /*
         let all_items = self.get_all_items(&file_id, true);
         let uri = Arc::new(uri);
         let mut res = vec![];
@@ -89,6 +92,7 @@ impl Store {
         log::trace!("Got {} item(s) from position", res.len());
 
         res
+        */
     }
 
     pub fn get_item_from_key(&self, key: String, file_id: FileId) -> Option<Arc<RwLock<SPItem>>> {

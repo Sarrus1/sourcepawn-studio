@@ -2,11 +2,11 @@ use fxhash::FxHashMap;
 use lazy_static::lazy_static;
 use lsp_types::{Range, Url};
 use parking_lot::RwLock;
-use path_interner::FileId;
 use preprocessor::Offset;
 use std::sync::Arc;
 use syntax::{comment::Comment, deprecated::Deprecated, SPItem};
 use tree_sitter::Query;
+use vfs::FileId;
 
 pub mod comment_parser;
 pub mod define_parser;

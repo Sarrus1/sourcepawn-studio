@@ -1,5 +1,6 @@
 use crossbeam::channel::{Receiver, Sender};
 use fxhash::FxHashMap;
+use ide::AnalysisHost;
 use linter::spcomp::SPCompDiagnostic;
 use lsp_server::{Connection, ErrorCode, Message, RequestId};
 use lsp_types::{
@@ -17,6 +18,7 @@ use serde::Serialize;
 use std::sync::Arc;
 use store::{options::Options, Store};
 use threadpool::ThreadPool;
+use vfs::Vfs;
 
 use crate::{capabilities::ClientCapabilitiesExt, client::LspClient, lsp_ext};
 
@@ -35,7 +37,6 @@ enum InternalMessage {
 
 pub struct Server {
     connection: Arc<Connection>,
-    pub store: Arc<RwLock<Store>>,
     internal_tx: Sender<InternalMessage>,
     internal_rx: Receiver<InternalMessage>,
     client: LspClient,
@@ -45,6 +46,11 @@ pub struct Server {
     config_pulled: bool,
     indexing: bool,
     amxxpawn_mode: bool,
+
+    pub(crate) analysis_host: AnalysisHost,
+
+    // VFS
+    pub(crate) vfs: Arc<RwLock<Vfs>>,
 }
 
 impl Server {
@@ -56,13 +62,14 @@ impl Server {
             client,
             internal_rx,
             internal_tx,
-            store: Arc::new(RwLock::new(Store::new(amxxpawn_mode))),
             client_capabilities: Default::default(),
             client_info: Default::default(),
             pool: threadpool::Builder::new().build(),
             config_pulled: false,
             indexing: false,
             amxxpawn_mode,
+            analysis_host: AnalysisHost::default(),
+            vfs: Arc::new(RwLock::new(Vfs::default())),
         }
     }
 
@@ -149,7 +156,7 @@ impl Server {
         log::trace!("Resolving project {:?}", uri);
         let main_id = self.store.write().resolve_project_references(uri);
         if let Some(main_id) = main_id {
-            let main_path_uri = self.store.read().path_interner.lookup(main_id).clone();
+            let main_path_uri = self.store.read().vfs.lookup(main_id).clone();
             self.reload_project_diagnostics(main_path_uri);
         }
         log::trace!("Done resolving project {:?}", uri);

@@ -45,7 +45,7 @@ pub(super) fn get_include_completions(
     include_st: IncludeStatement,
     uri: &Url,
 ) -> Option<CompletionList> {
-    let main_path = store.get_project_main_path_from_id(&store.path_interner.get(uri)?)?;
+    let main_path = store.get_project_main_path_from_id(&store.vfs.get(uri)?)?;
     let parent_folder_uri = Url::from_file_path(uri.to_file_path().ok()?.parent()?).ok()?;
     let mut inc_uri_folders = FxHashSet::default();
     inc_uri_folders.insert(parent_folder_uri);

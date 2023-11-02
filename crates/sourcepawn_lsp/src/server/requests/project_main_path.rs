@@ -14,18 +14,13 @@ impl Server {
             bail!("No uri passed to command");
         };
         normalize_uri(&mut uri);
-        let Some(file_id) = self.store.read().path_interner.get(&uri) else {
+        let Some(file_id) = self.store.read().vfs.get(&uri) else {
             bail!("No file ID found for URI {:?}", uri);
         };
         let Some(root_node) = self.store.read().projects.find_root_from_id(file_id) else {
             bail!("No project root found for file ID {:?}", file_id);
         };
-        let main_uri = self
-            .store
-            .read()
-            .path_interner
-            .lookup(root_node.file_id)
-            .clone();
+        let main_uri = self.store.read().vfs.lookup(root_node.file_id).clone();
         self.run_query(id, move |_store| main_uri);
 
         Ok(())

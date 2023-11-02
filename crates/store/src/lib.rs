@@ -1,30 +1,25 @@
-use ::path_interner::FileId;
 use ::syntax::SPItem;
+use ::vfs::FileId;
 use anyhow::anyhow;
-use core::fmt;
 use fxhash::{FxHashMap, FxHashSet};
-use graph::Graph;
 use linter::DiagnosticsManager;
 use lsp_types::{Range, Url};
 use parking_lot::RwLock;
 use parser::Parser;
-use path_interner::PathInterner;
 use preprocessor::{Macro, SourcepawnPreprocessor};
 use semantic_analyzer::{purge_references, Token};
 use std::{
     fs::{self, File},
     io::{self, Read},
-    mem::ManuallyDrop,
     path::{Path, PathBuf},
+    str::FromStr,
     sync::{Arc, Mutex},
 };
 use walkdir::WalkDir;
 
 pub mod document;
 pub mod environment;
-pub mod graph;
 pub mod include;
-pub mod main_heuristic;
 pub mod options;
 mod semantics;
 pub mod syntax;
@@ -39,112 +34,10 @@ fn spawn_parser() -> tree_sitter::Parser {
     parser
 }
 
-pub trait FileLoader {
-    /// Text of the file.
-    fn file_text(&self, file_id: FileId) -> Arc<str>;
-}
-
-#[derive(Debug, Clone)]
-pub struct Tree {
-    tree: tree_sitter::Tree,
-}
-
-impl PartialEq for Tree {
-    fn eq(&self, other: &Self) -> bool {
-        self.tree.root_node() == other.tree.root_node()
-    }
-}
-
-impl Eq for Tree {}
-
-impl From<tree_sitter::Tree> for Tree {
-    fn from(tree: tree_sitter::Tree) -> Self {
-        Self { tree }
-    }
-}
-
-/// Database which stores all significant input facts: source code and project
-/// model. Everything else in rust-analyzer is derived from these queries.
-#[salsa::query_group(SourceDatabaseStorage)]
-pub trait SourceDatabase: FileLoader + std::fmt::Debug {
-    // Parses the file into the syntax tree.
-    #[salsa::invoke(parse_query)]
-    fn parse(&self, file_id: FileId) -> Tree;
-}
-
-fn parse_query(db: &dyn SourceDatabase, file_id: FileId) -> Tree {
-    let mut parser = tree_sitter::Parser::new();
-    parser
-        .set_language(tree_sitter_sourcepawn::language())
-        .expect("Failed to set language");
-    let text = db.file_text(file_id);
-    parser
-        .parse(text.as_ref(), None)
-        .expect("Failed to parse a file.")
-        .into()
-}
-
-/// We don't want to give HIR knowledge of source roots, hence we extract these
-/// methods into a separate DB.
-#[salsa::query_group(SourceDatabaseExtStorage)]
-pub trait SourceDatabaseExt: SourceDatabase {
-    #[salsa::input]
-    fn file_text(&self, file_id: FileId) -> Arc<str>;
-}
-
-/// Silly workaround for cyclic deps between the traits
-pub struct FileLoaderDelegate<T>(pub T);
-
-impl<T: SourceDatabaseExt> FileLoader for FileLoaderDelegate<&'_ T> {
-    fn file_text(&self, file_id: FileId) -> Arc<str> {
-        SourceDatabaseExt::file_text(self.0, file_id)
-    }
-}
-
-#[salsa::database(SourceDatabaseExtStorage, SourceDatabaseStorage)]
-pub struct RootDatabase {
-    // We use `ManuallyDrop` here because every codegen unit that contains a
-    // `&RootDatabase -> &dyn OtherDatabase` cast will instantiate its drop glue in the vtable,
-    // which duplicates `Weak::drop` and `Arc::drop` tens of thousands of times, which makes
-    // compile times of all `ide_*` and downstream crates suffer greatly.
-    storage: ManuallyDrop<salsa::Storage<RootDatabase>>,
-}
-
-impl Drop for RootDatabase {
-    fn drop(&mut self) {
-        unsafe { ManuallyDrop::drop(&mut self.storage) };
-    }
-}
-
-impl fmt::Debug for RootDatabase {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("RootDatabase").finish()
-    }
-}
-
-impl FileLoader for RootDatabase {
-    fn file_text(&self, file_id: FileId) -> Arc<str> {
-        FileLoaderDelegate(self).file_text(file_id)
-    }
-}
-
-impl salsa::Database for RootDatabase {}
-
-impl Default for RootDatabase {
-    fn default() -> Self {
-        let mut db = Self {
-            storage: ManuallyDrop::new(salsa::Storage::default()),
-        };
-        db
-    }
-}
-
 #[derive(Debug, Clone, Default)]
 pub struct Store {
     /// Any documents the server has handled, indexed by their URL.
     pub documents: FxHashMap<FileId, Document>,
-
-    pub path_interner: PathInterner,
 
     pub environment: Environment,
 
@@ -156,8 +49,6 @@ pub struct Store {
     pub diagnostics: DiagnosticsManager,
 
     pub folders: Vec<PathBuf>,
-
-    pub projects: Graph,
 }
 
 impl Store {
@@ -175,26 +66,29 @@ impl Store {
 
     /// Returns the [MainPath](PathBuf) of a project given a the [FileId](FileId) of a file in the project.
     pub fn get_project_main_path_from_id(&self, file_id: &FileId) -> Option<PathBuf> {
-        if let Some(node) = self.projects.find_root_from_id(*file_id) {
-            return self.path_interner.lookup(node.file_id).to_file_path().ok();
-        }
+        // if let Some(node) = self.projects.find_root_from_id(*file_id) {
+        //     return self.vfs.lookup(node.file_id).to_file_path().ok();
+        // }
 
         None
     }
 
     pub fn contains_uri(&self, uri: &Url) -> bool {
-        let Some(file_id) = self.path_interner.get(uri) else {
-            return false;
-        };
-        self.documents.contains_key(&file_id)
+        // let Some(file_id) = self.vfs.get(uri) else {
+        //     return false;
+        // };
+        // self.documents.contains_key(&file_id)
+        false
     }
 
     pub fn get_from_uri(&self, uri: &Url) -> Option<&Document> {
-        self.documents.get(&self.path_interner.get(uri)?)
+        // self.documents.get(&self.vfs.get(uri)?)
+        None
     }
 
     pub fn get_cloned_from_uri(&self, uri: &Url) -> Option<Document> {
-        self.documents.get(&self.path_interner.get(uri)?).cloned()
+        // self.documents.get(&self.vfs.get(uri)?).cloned()
+        None
     }
 
     pub fn get_cloned(&self, file_id: &FileId) -> Option<Document> {
@@ -223,9 +117,10 @@ impl Store {
     }
 
     pub fn remove(&mut self, uri: &Url) {
-        let Some(file_id) = self.path_interner.get(uri) else {
-            return;
-        };
+        // let Some(file_id) = self.vfs.get(uri) else {
+        //     return;
+        // };
+        let file_id = FileId(0);
         // Open the document as empty to delete the references.
         let _ = self.handle_open_document(&Arc::new((*uri).clone()), "".to_string());
         self.documents.remove(&file_id);
@@ -254,7 +149,7 @@ impl Store {
             document.sp_items = sp_items;
         }
 
-        self.remove_file_from_projects(&file_id);
+        // self.remove_file_from_projects(&file_id);
     }
 
     pub fn register_watcher(&mut self, watcher: notify::RecommendedWatcher) {
@@ -272,12 +167,13 @@ impl Store {
         if !self.is_sourcepawn_file(&path) {
             return Ok(None);
         }
-        let file_id = self.path_interner.intern(uri.clone());
+        let file_id = FileId(0);
+
         if let Some(document) = self.get_cloned(&file_id) {
             return Ok(Some(document));
         }
 
-        self.add_file_to_projects(&file_id)?;
+        // self.add_file_to_projects(&file_id)?;
 
         let data = fs::read(&path)?;
         let text = String::from_utf8_lossy(&data).into_owned();
@@ -298,15 +194,15 @@ impl Store {
         if !self.is_sourcepawn_file(&path) {
             return Ok(None);
         }
-        let file_id = self.path_interner.intern(uri.clone());
+        let file_id = FileId(0);
 
         let data = fs::read(&path)?;
         let text = String::from_utf8_lossy(&data).into_owned();
         let document = self.handle_open_document(&Arc::new(uri), text)?;
         self.resolve_missing_includes();
 
-        self.remove_file_from_projects(&file_id);
-        self.add_file_to_projects(&file_id)?;
+        // self.remove_file_from_projects(&file_id);
+        // self.add_file_to_projects(&file_id)?;
 
         Ok(Some(document))
     }
@@ -346,7 +242,8 @@ impl Store {
             if let Ok(mut uri) = Url::from_file_path(entry.path()) {
                 log::debug!("URI: {:?} path: {:?}", uri, entry.path());
                 normalize_uri(&mut uri);
-                let file_id = self.path_interner.intern(uri.clone());
+                let file_id = FileId(0);
+
                 if self.documents.contains_key(&file_id) {
                     continue;
                 }
@@ -366,7 +263,8 @@ impl Store {
         text: String,
     ) -> Result<Document, io::Error> {
         log::trace!("Opening file {:?}", uri);
-        let file_id = self.path_interner.intern(uri.as_ref().clone());
+        let file_id = FileId(0);
+
         self.diagnostics.reset(uri);
         let prev_declarations = match self.documents.get(&file_id) {
             Some(document) => document.declarations.clone(),
@@ -488,7 +386,8 @@ impl Store {
         &mut self,
         file_id: &FileId,
     ) -> Option<FxHashMap<String, Macro>> {
-        let document_uri = Arc::new(self.path_interner.lookup(*file_id).clone());
+        // let document_uri = Arc::new(self.vfs.lookup(*file_id).clone());
+        let document_uri = Arc::new(Url::from_str("http://example.com").unwrap());
         log::trace!("Preprocessing document by uri {:?}", document_uri);
         if let Some(document) = self.documents.get(file_id) {
             // Don't reprocess the text if it has not changed.
@@ -682,8 +581,9 @@ impl Store {
     /// * `uri` - The [uri](Url) of a file in the project. Does not have to be the root.
     pub fn resolve_project_references(&mut self, uri: &Url) -> Option<FileId> {
         log::trace!("Resolving project references.");
-        let file_id = self.path_interner.get(uri)?;
-        let main_id = self.projects.find_root_from_id(file_id)?.file_id;
+        let file_id = FileId(0);
+        let main_id = FileId(0);
+        // let main_id = self.projects.find_root_from_id(file_id)?.file_id;
         let file_ids: Vec<FileId> = {
             let mut includes = FxHashSet::default();
             includes.insert(main_id);

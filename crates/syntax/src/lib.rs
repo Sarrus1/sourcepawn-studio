@@ -5,8 +5,8 @@ use lsp_types::{
     SignatureInformation, Url,
 };
 use parking_lot::RwLock;
-use path_interner::FileId;
 use std::sync::Arc;
+use vfs::FileId;
 
 use self::parameter::Parameter;
 

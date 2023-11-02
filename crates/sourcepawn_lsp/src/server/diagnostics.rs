@@ -15,18 +15,13 @@ impl Server {
     /// # Arguments
     /// * `uri` - [Url] of a file in the project to reload the diagnostics of.
     pub(crate) fn reload_diagnostics(&mut self, uri: Url) {
-        let Some(file_id) = self.store.read().path_interner.get(&uri) else {
+        let Some(file_id) = self.store.read().vfs.get(&uri) else {
             return;
         };
         let Some(main_node) = self.store.read().projects.find_root_from_id(file_id) else {
             return;
         };
-        let main_path_uri = self
-            .store
-            .read()
-            .path_interner
-            .lookup(main_node.file_id)
-            .clone();
+        let main_path_uri = self.store.read().vfs.lookup(main_node.file_id).clone();
         self.reload_project_diagnostics(main_path_uri);
     }
 
@@ -70,7 +65,7 @@ impl Server {
 
     /// Lint all documents in the project with the custom linter.
     pub fn lint_project(&mut self, uri: &Url) {
-        let Some(file_id) = self.store.read().path_interner.get(uri) else {
+        let Some(file_id) = self.store.read().vfs.get(uri) else {
             return;
         };
         self.store

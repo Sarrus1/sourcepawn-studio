@@ -1,5 +1,5 @@
-use path_interner::FileId;
 use semantic_analyzer::resolve_references;
+use vfs::FileId;
 
 use crate::Store;
 
@@ -9,14 +9,15 @@ impl Store {
     /// # Arguments
     /// * `file_id` - The [file_id](FileId) of the document to resolve.
     pub fn resolve_file_references(&mut self, file_id: &FileId) {
+        /*
         log::trace!(
             "Resolving references for file {:?}",
-            self.path_interner.lookup(*file_id)
+            self.vfs.lookup(*file_id)
         );
         if !self.documents.contains_key(file_id) {
             log::trace!(
                 "Skipped resolving references for document {:?}",
-                self.path_interner.lookup(*file_id)
+                self.vfs.lookup(*file_id)
             );
             return;
         }
@@ -37,7 +38,8 @@ impl Store {
         document.mark_as_resolved();
         log::trace!(
             "Done resolving references for file {:?}",
-            self.path_interner.lookup(*file_id)
+            self.vfs.lookup(*file_id)
         );
+        */
     }
 }

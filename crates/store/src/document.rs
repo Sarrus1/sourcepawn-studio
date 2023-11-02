@@ -5,13 +5,13 @@ use lsp_types::Range;
 use lsp_types::Url;
 use parking_lot::RwLock;
 use parser::build_v_range;
-use path_interner::FileId;
 use preprocessor::{Macro, Offset};
 use semantic_analyzer::{SPToken, Token};
 use std::{path::PathBuf, sync::Arc};
 use strip_bom::StripBom;
 use syntax::SPItem;
 use tree_sitter::{Node, Query, QueryCursor};
+use vfs::FileId;
 
 lazy_static! {
     static ref METHOD_QUERY: Query = Query::new(

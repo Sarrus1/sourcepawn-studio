@@ -1069,6 +1069,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "ide"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fxhash",
+ "lazy_static",
+ "lsp-types",
+ "regex",
+ "salsa",
+ "sourcepawn_lexer",
+ "syntax",
+ "tree-sitter",
+ "tree-sitter-sourcepawn",
+ "vfs",
+]
+
+[[package]]
 name = "idna"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1637,12 +1654,12 @@ dependencies = [
  "log",
  "lsp-types",
  "parking_lot 0.12.1",
- "path_interner",
  "preprocessor",
  "regex",
  "syntax",
  "tree-sitter",
  "tree-sitter-sourcepawn",
+ "vfs",
 ]
 
 [[package]]
@@ -1654,17 +1671,6 @@ dependencies = [
  "base64ct",
  "rand_core",
  "subtle",
-]
-
-[[package]]
-name = "path_interner"
-version = "0.1.0"
-dependencies = [
- "fxhash",
- "indexmap 2.0.0",
- "lazy_static",
- "lsp-types",
- "nohash-hasher",
 ]
 
 [[package]]
@@ -2125,11 +2131,11 @@ dependencies = [
  "lsp-types",
  "parking_lot 0.12.1",
  "parser",
- "path_interner",
  "preprocessor",
  "regex",
  "syntax",
  "tree-sitter",
+ "vfs",
 ]
 
 [[package]]
@@ -2389,6 +2395,7 @@ dependencies = [
  "fern",
  "fxhash",
  "humantime",
+ "ide",
  "insta",
  "itertools 0.11.0",
  "lazy_static",
@@ -2400,7 +2407,6 @@ dependencies = [
  "notify",
  "openssl",
  "parking_lot 0.12.1",
- "path_interner",
  "preprocessor",
  "regex",
  "rowan",
@@ -2416,6 +2422,7 @@ dependencies = [
  "tree-sitter",
  "tree-sitter-sourcepawn",
  "uuid",
+ "vfs",
  "walkdir",
  "zip",
 ]
@@ -2441,7 +2448,6 @@ dependencies = [
  "notify",
  "parking_lot 0.12.1",
  "parser",
- "path_interner",
  "preprocessor",
  "regex",
  "salsa",
@@ -2454,6 +2460,7 @@ dependencies = [
  "tempfile",
  "tree-sitter",
  "tree-sitter-sourcepawn",
+ "vfs",
  "walkdir",
 ]
 
@@ -2507,11 +2514,11 @@ dependencies = [
  "log",
  "lsp-types",
  "parking_lot 0.12.1",
- "path_interner",
  "regex",
  "serde",
  "serde_json",
  "tree-sitter",
+ "vfs",
 ]
 
 [[package]]
@@ -2848,6 +2855,17 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
+
+[[package]]
+name = "vfs"
+version = "0.1.0"
+dependencies = [
+ "fxhash",
+ "indexmap 2.0.0",
+ "lazy_static",
+ "lsp-types",
+ "nohash-hasher",
+]
 
 [[package]]
 name = "walkdir"

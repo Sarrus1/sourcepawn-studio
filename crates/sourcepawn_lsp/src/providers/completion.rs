@@ -2,11 +2,11 @@ use crate::providers::completion::{
     getters::get_ctor_completions, include::get_include_completions,
 };
 use lsp_types::{CompletionItem, CompletionList, CompletionParams};
-use path_interner::FileId;
 use semantic_analyzer::is_ctor_call;
 use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
 use store::Store;
 use syntax::range_contains_pos;
+use vfs::FileId;
 
 use self::{
     context::{is_callback_completion_request, is_doc_completion, is_method_call},
@@ -26,7 +26,7 @@ pub(crate) fn provide_completions(
 ) -> Option<CompletionList> {
     log::debug!("Providing completions.");
     let uri = &params.text_document_position.text_document.uri;
-    let file_id = store.path_interner.get(uri)?;
+    let file_id = store.vfs.get(uri)?;
     let document = store.documents.get(&file_id)?;
     let all_items = store.get_all_items(&file_id, false);
     let position = &params.text_document_position.position;

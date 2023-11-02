@@ -1,9 +1,9 @@
 use parking_lot::RwLock;
 use parser::build_v_range;
-use path_interner::FileId;
 use preprocessor::Offset;
 use std::sync::Arc;
 use syntax::SPItem;
+use vfs::FileId;
 
 use fxhash::FxHashMap;
 use lsp_types::{Range, Url};

@@ -15,8 +15,6 @@ test = false
 doctest = false
 
 [dependencies]
-linter.workspace = true
-path_interner.workspace = true
 lsp-server.workspace = true
 lsp-types.workspace = true
 semantic_analyzer.workspace = true
@@ -50,6 +48,11 @@ uuid.workspace = true
 # This is only used in the fixture module for benchmarks and tests.
 itertools = "0.11.0"
 zip = "0.6.6"
+
+# Local crates
+linter.workspace = true
+vfs.workspace = true
+ide.workspace = true
 
 [dependencies.openssl]
 optional = true

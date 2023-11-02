@@ -27,7 +27,8 @@ syntax = { path = "./crates/syntax" }
 parser = { path = "./crates/parser" }
 semantic_analyzer = { path = "./crates/semantic_analyzer" }
 linter = { path = "./crates/linter" }
-path_interner = { path = "./crates/path_interner" }
+vfs = { path = "./crates/vfs" }
+ide = { path = "./crates/ide" }
 lsp-server = "0.6.0"
 derive-new = "0.5"
 crossbeam = "0.8.2"

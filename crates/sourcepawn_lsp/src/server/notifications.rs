@@ -20,11 +20,7 @@ impl Server {
 
         if !self.config_pulled {
             log::trace!("File {:?} was opened before the config was pulled.", uri);
-            let file_id = self
-                .store
-                .write()
-                .path_interner
-                .intern(uri.as_ref().clone());
+            let file_id = self.store.write().vfs.intern(uri.as_ref().clone());
             self.store.write().documents.insert(
                 file_id,
                 Document::new(uri, file_id, params.text_document.text),

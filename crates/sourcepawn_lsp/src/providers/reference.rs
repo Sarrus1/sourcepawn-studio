@@ -19,7 +19,7 @@ pub fn provide_reference(store: &Store, params: ReferenceParams) -> Option<Vec<L
         locations
             .iter()
             .map(|reference| {
-                let uri = store.path_interner.lookup(reference.file_id);
+                let uri = store.vfs.lookup(reference.file_id);
                 Location {
                     uri: uri.clone(),
                     range: reference.v_range,

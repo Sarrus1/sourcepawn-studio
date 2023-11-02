@@ -1,5 +1,5 @@
 [package]
-name = "path_interner"
+name = "vfs"
 version = "0.1.0"
 include = ["Cargo.toml", "src/"]
 edition.workspace = true

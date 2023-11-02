@@ -1,10 +1,10 @@
 use fxhash::{FxHashMap, FxHashSet};
 use lsp_types::{Range, Url};
 use parking_lot::RwLock;
-use path_interner::FileId;
 use preprocessor::Offset;
 use std::sync::Arc;
 use syntax::SPItem;
+use vfs::FileId;
 
 mod analyzer;
 mod inherit;

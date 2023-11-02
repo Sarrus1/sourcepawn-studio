@@ -1,8 +1,8 @@
 use anyhow::{anyhow, bail, Context};
 use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams, Url};
-use path_interner::FileId;
 use std::sync::Arc;
 use syntax::uri_to_file_name;
+use vfs::FileId;
 
 use crate::{lsp_ext, server::progress::Progress, Server};
 
@@ -29,8 +29,7 @@ impl Server {
 
         self.report_progress("Parsing", Progress::Begin, None, None, None);
         for node in roots {
-            let main_file_name =
-                uri_to_file_name(self.store.read().path_interner.lookup(node.file_id));
+            let main_file_name = uri_to_file_name(self.store.read().vfs.lookup(node.file_id));
             if let Some(main_file_name) = main_file_name {
                 self.report_progress(
                     "Parsing",
@@ -108,7 +107,7 @@ impl Server {
     ///
     /// * `uri` - [Uri](Url) of the document to test for.
     pub(super) fn read_unscanned_document(&mut self, uri: Arc<Url>) -> anyhow::Result<()> {
-        let file_id = self.store.read().path_interner.get(&uri).ok_or(anyhow!(
+        let file_id = self.store.read().vfs.get(&uri).ok_or(anyhow!(
             "Couldn't get a file id from the path interner for {}",
             uri
         ))?;

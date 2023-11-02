@@ -1,6 +1,6 @@
 use lsp_types::{SemanticTokenModifier, SemanticTokenType};
-use path_interner::FileId;
 use syntax::define_item::DefineItem;
+use vfs::FileId;
 
 use super::SemanticTokensBuilder;
 

@@ -12,7 +12,7 @@ pub fn provide_semantic_tokens(
     store: &Store,
     params: SemanticTokensParams,
 ) -> Option<SemanticTokens> {
-    let file_id = store.path_interner.get(&params.text_document.uri)?;
+    let file_id = store.vfs.get(&params.text_document.uri)?;
     let all_items = &store.get_all_items(&file_id, false);
     if all_items.is_empty() {
         return None;

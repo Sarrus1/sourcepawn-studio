@@ -5,7 +5,7 @@ pub fn provide_document_symbol(
     store: &Store,
     params: DocumentSymbolParams,
 ) -> Option<Vec<DocumentSymbol>> {
-    let file_id = store.path_interner.get(&params.text_document.uri)?;
+    let file_id = store.vfs.get(&params.text_document.uri)?;
     let document = store.documents.get(&file_id)?;
     let mut symbols: Vec<DocumentSymbol> = vec![];
     for item in document.sp_items.clone() {

@@ -6,7 +6,7 @@ mod signature_attributes;
 
 pub fn provide_signature_help(store: &Store, params: SignatureHelpParams) -> Option<SignatureHelp> {
     let uri = params.text_document_position_params.text_document.uri;
-    let file_id = store.path_interner.get(&uri)?;
+    let file_id = store.vfs.get(&uri)?;
     let document = store.documents.get(&file_id)?;
     let signature_attributes = SignatureAttributes::get_signature_attributes(
         document,
