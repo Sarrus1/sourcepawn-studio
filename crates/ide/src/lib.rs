@@ -1,77 +1,15 @@
+//! base_db defines basic database traits. The concrete DB is defined by ide.
+
 use std::{fmt, mem::ManuallyDrop, sync::Arc};
 
-use graph::Graph;
+use base_db::{
+    FileLoader, FileLoaderDelegate, SourceDatabase, SourceDatabaseExtStorage,
+    SourceDatabaseStorage, Tree,
+};
+use salsa::{Cancelled, ParallelDatabase};
 use vfs::FileId;
 
-mod graph;
-
-pub trait FileLoader {
-    /// Text of the file.
-    fn file_text(&self, file_id: FileId) -> Arc<str>;
-}
-
-#[derive(Debug, Clone)]
-pub struct Tree {
-    tree: tree_sitter::Tree,
-}
-
-impl PartialEq for Tree {
-    fn eq(&self, other: &Self) -> bool {
-        self.tree.root_node() == other.tree.root_node()
-    }
-}
-
-impl Eq for Tree {}
-
-impl From<tree_sitter::Tree> for Tree {
-    fn from(tree: tree_sitter::Tree) -> Self {
-        Self { tree }
-    }
-}
-
-/// Database which stores all significant input facts: source code and project
-/// model. Everything else in rust-analyzer is derived from these queries.
-#[salsa::query_group(SourceDatabaseStorage)]
-pub trait SourceDatabase: FileLoader + std::fmt::Debug {
-    // Parses the file into the syntax tree.
-    #[salsa::invoke(parse_query)]
-    fn parse(&self, file_id: FileId) -> Tree;
-
-    #[salsa::input]
-    fn projects_graph(&self) -> Graph;
-
-    #[salsa::invoke(Graph::projet_root_query)]
-    fn projet_root(&self, file_id: FileId) -> Option<FileId>;
-}
-
-fn parse_query(db: &dyn SourceDatabase, file_id: FileId) -> Tree {
-    let mut parser = tree_sitter::Parser::new();
-    parser
-        .set_language(tree_sitter_sourcepawn::language())
-        .expect("Failed to set language");
-    let text = db.file_text(file_id);
-    parser
-        .parse(text.as_ref(), None)
-        .expect("Failed to parse a file.")
-        .into()
-}
-
-/// We don't want to give HIR knowledge of source roots, hence we extract these
-/// methods into a separate DB.
-#[salsa::query_group(SourceDatabaseExtStorage)]
-pub trait SourceDatabaseExt: SourceDatabase {
-    #[salsa::input]
-    fn file_text(&self, file_id: FileId) -> Arc<str>;
-}
-
-/// Silly workaround for cyclic deps between the traits
-pub struct FileLoaderDelegate<T>(pub T);
-
-impl<T: SourceDatabaseExt> FileLoader for FileLoaderDelegate<&'_ T> {
-    fn file_text(&self, file_id: FileId) -> Arc<str> {
-        SourceDatabaseExt::file_text(self.0, file_id)
-    }
-}
+pub type Cancellable<T> = Result<T, Cancelled>;
 
 #[salsa::database(SourceDatabaseExtStorage, SourceDatabaseStorage)]
 pub struct RootDatabase {
@@ -116,6 +54,14 @@ impl RootDatabase {
     }
 }
 
+impl salsa::ParallelDatabase for RootDatabase {
+    fn snapshot(&self) -> salsa::Snapshot<RootDatabase> {
+        salsa::Snapshot::new(RootDatabase {
+            storage: ManuallyDrop::new(self.storage.snapshot()),
+        })
+    }
+}
+
 /// `AnalysisHost` stores the current state of the world.
 #[derive(Debug, Default)]
 pub struct AnalysisHost {
@@ -127,5 +73,54 @@ impl AnalysisHost {
         AnalysisHost {
             db: RootDatabase::new(),
         }
+    }
+
+    /// Returns a snapshot of the current state, which you can query for
+    /// semantic information.
+    pub fn analysis(&self) -> Analysis {
+        Analysis {
+            db: self.db.snapshot(),
+        }
+    }
+}
+
+/// Analysis is a snapshot of a server state at a moment in time. It is the main
+/// entry point for asking semantic information about the server. When the server
+/// state is advanced using the [`AnalysisHost::apply_change`] method, all
+/// existing [`Analysis`] are canceled (most method return [`Err(Canceled)`]).
+#[derive(Debug)]
+pub struct Analysis {
+    db: salsa::Snapshot<RootDatabase>,
+}
+
+impl Analysis {
+    /// Gets the text of the source file.
+    pub fn file_text(&self, file_id: FileId) -> Cancellable<Arc<str>> {
+        self.with_db(|db| db.file_text(file_id))
+    }
+
+    /// Gets the syntax tree of the file.
+    pub fn parse(&self, file_id: FileId) -> Cancellable<Tree> {
+        self.with_db(|db| db.parse(file_id))
+    }
+
+    /// Performs an operation on the database that may be canceled.
+    ///
+    /// sourcepawn-lsp needs to be able to answer semantic questions about the
+    /// code while the code is being modified. A common problem is that a
+    /// long-running query is being calculated when a new change arrives.
+    ///
+    /// We can't just apply the change immediately: this will cause the pending
+    /// query to see inconsistent state (it will observe an absence of
+    /// repeatable read). So what we do is we **cancel** all pending queries
+    /// before applying the change.
+    ///
+    /// Salsa implements cancellation by unwinding with a special value and
+    /// catching it on the API boundary.
+    fn with_db<F, T>(&self, f: F) -> Cancellable<T>
+    where
+        F: FnOnce(&RootDatabase) -> T + std::panic::UnwindSafe,
+    {
+        Cancelled::catch(|| f(&self.db))
     }
 }

@@ -29,6 +29,7 @@ semantic_analyzer = { path = "./crates/semantic_analyzer" }
 linter = { path = "./crates/linter" }
 vfs = { path = "./crates/vfs" }
 ide = { path = "./crates/ide" }
+base_db = { path = "./crates/base_db" }
 lsp-server = "0.6.0"
 derive-new = "0.5"
 crossbeam = "0.8.2"

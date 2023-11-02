@@ -1,5 +1,5 @@
 [package]
-name = "ide"
+name = "base_db"
 version = "0.1.0"
 include = ["Cargo.toml", "src/"]
 edition.workspace = true
@@ -23,4 +23,3 @@ regex.workspace = true
 # Local crates
 syntax.workspace = true
 vfs.workspace = true
-base_db.workspace = true
