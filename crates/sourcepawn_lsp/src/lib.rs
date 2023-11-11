@@ -3,10 +3,32 @@ mod client;
 mod dispatch;
 pub mod fixture;
 mod line_index;
-mod line_index_ext;
 mod lsp_ext;
-mod providers;
+// mod providers;
+mod reload;
 mod server;
+mod task_pool;
 mod utils;
+mod version;
 
-pub use self::{client::LspClient, server::Server};
+mod config;
+pub mod lsp;
+
+use serde::de::DeserializeOwned;
+
+pub use self::{client::LspClient, server::GlobalState};
+
+pub fn from_json<T: DeserializeOwned>(
+    what: &'static str,
+    json: &serde_json::Value,
+) -> anyhow::Result<T> {
+    serde_json::from_value(json.clone())
+        .map_err(|e| anyhow::format_err!("Failed to deserialize {what}: {e}; {json}"))
+}
+
+#[derive(Debug)]
+pub(crate) enum Task {
+    Response(lsp_server::Response),
+    Retry(lsp_server::Request),
+    // Diagnostics(Vec<(FileId, Vec<lsp_types::Diagnostic>)>),
+}

@@ -38,6 +38,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "always-assert"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4436e0292ab1bb631b42973c61205e704475fe8126af845c8d923c0996328127"
+dependencies = [
+ "log",
+]
+
+[[package]]
 name = "anes"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -649,17 +658,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "derive-new"
-version = "0.5.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3418329ca0ad70234b9735dc4ceed10af4df60eff9c8e7b06cb5e520d92c3535"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "digest"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -969,15 +967,6 @@ dependencies = [
 
 [[package]]
 name = "hermit-abi"
-version = "0.2.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee512640fe35acbfb4bb779db6f0d80704c2cacfa2e39b601ef3e3f47d1ae4c7"
-dependencies = [
- "libc",
-]
-
-[[package]]
-name = "hermit-abi"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fed44880c466736ef9a5c5b5facefb5ed0785676d0c02d612db14e54f0d84286"
@@ -1093,6 +1082,7 @@ dependencies = [
  "base_db",
  "fxhash",
  "lazy_static",
+ "line-index",
  "lsp-types",
  "regex",
  "salsa",
@@ -1252,6 +1242,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "jod-thread"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b23360e99b8717f20aaa4598f5a6541efbe30630039fbc7706cf954a87947ae"
+
+[[package]]
 name = "js-sys"
 version = "0.3.61"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1291,6 +1287,16 @@ name = "libc"
 version = "0.2.142"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a987beff54b60ffa6d51982e1aa1146bc42f19bd26be28b0586f252fccf5317"
+
+[[package]]
+name = "line-index"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ee59ea2e50e61bae4f09eee6416820f2ba9796d6e924c86f6e4f699dcb1a7ac"
+dependencies = [
+ "nohash-hasher",
+ "text-size",
+]
 
 [[package]]
 name = "linked-hash-map"
@@ -1367,9 +1373,9 @@ dependencies = [
 
 [[package]]
 name = "lsp-server"
-version = "0.6.0"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f70570c1c29cf6654029b8fe201a5507c153f0d85be6f234d471d756bc36775a"
+checksum = "b52dccdf3302eefab8c8a1273047f0a3c3dca4b527c8458d00c09484c8371928"
 dependencies = [
  "crossbeam-channel",
  "log",
@@ -1379,9 +1385,9 @@ dependencies = [
 
 [[package]]
 name = "lsp-types"
-version = "0.94.0"
+version = "0.94.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b63735a13a1f9cd4f4835223d828ed9c2e35c8c5e61837774399f558b6a1237"
+checksum = "c66bfd44a06ae10647fe3f8214762e9369fd4248df1350924b4ef9e770a85ea1"
 dependencies = [
  "bitflags 1.3.2",
  "serde",
@@ -1461,6 +1467,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "miow"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52ffbca2f655e33c08be35d87278e5b18b89550a37dbd598c20db92f6a471123"
+dependencies = [
+ "windows-sys 0.42.0",
+]
+
+[[package]]
 name = "native-tls"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1514,11 +1529,11 @@ dependencies = [
 
 [[package]]
 name = "num_cpus"
-version = "1.15.0"
+version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fac9e2da13b5eb447a6ce3d392f23a29d8694bff781bf03a16cd9ac8697593b"
+checksum = "4161fcb6d602d4d2081af7c3a45852d875a03dd337a6bfdd6e06407b61342a43"
 dependencies = [
- "hermit-abi 0.2.6",
+ "hermit-abi 0.3.1",
  "libc",
 ]
 
@@ -1821,9 +1836,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.56"
+version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b63bdb0cd06f1f4dedf69b254734f9b45af66e4a031e42a7480257d9898b435"
+checksum = "134c189feb4956b20f6f547d2cf727d4c0fe06722b20a0eec87ed445a97f92da"
 dependencies = [
  "unicode-ident",
 ]
@@ -2405,11 +2420,11 @@ version = "0.12.0"
 dependencies = [
  "anyhow",
  "assert_unordered",
+ "base_db",
  "clap 4.2.4",
  "criterion 0.4.0",
  "crossbeam",
  "dashmap",
- "derive-new",
  "fern",
  "fxhash",
  "humantime",
@@ -2422,21 +2437,26 @@ dependencies = [
  "lsp-server",
  "lsp-types",
  "minreq",
+ "nohash-hasher",
  "notify",
+ "num_cpus",
  "openssl",
  "parking_lot 0.12.1",
  "preprocessor",
  "regex",
  "rowan",
+ "salsa",
  "semantic_analyzer",
  "sentry",
  "serde",
  "serde_json",
  "sourcepawn_lexer",
+ "stdx",
  "store",
  "syntax",
  "tempfile",
  "threadpool",
+ "tracing",
  "tree-sitter",
  "tree-sitter-sourcepawn",
  "uuid",
@@ -2450,6 +2470,19 @@ name = "spin"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
+
+[[package]]
+name = "stdx"
+version = "0.1.0"
+dependencies = [
+ "always-assert",
+ "backtrace",
+ "crossbeam-channel",
+ "jod-thread",
+ "libc",
+ "miow",
+ "winapi",
+]
 
 [[package]]
 name = "store"
@@ -2702,20 +2735,31 @@ checksum = "b6bc1c9ce2b5135ac7f93c72918fc37feb872bdc6a5533a8b85eb4b86bfdae52"
 
 [[package]]
 name = "tracing"
-version = "0.1.37"
+version = "0.1.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ce8c33a8d48bd45d624a6e523445fd21ec13d3653cd51f681abf67418f54eb8"
+checksum = "c3523ab5a71916ccf420eebdf5521fcef02141234bbc0b8a49f2fdc4544364ef"
 dependencies = [
- "cfg-if",
  "pin-project-lite",
+ "tracing-attributes",
  "tracing-core",
 ]
 
 [[package]]
-name = "tracing-core"
-version = "0.1.31"
+name = "tracing-attributes"
+version = "0.1.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0955b8137a1df6f1a2e9a37d8a6656291ff0297c1a97c24e0d8425fe2312f79a"
+checksum = "34704c8d6ebcbc939824180af020566b01a7c01f80641264eba0999f6c2b6be7"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.15",
+]
+
+[[package]]
+name = "tracing-core"
+version = "0.1.32"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c06d3da6113f116aaee68e4d601191614c9053067f9ab7f6edbcb161237daa54"
 dependencies = [
  "once_cell",
  "valuable",

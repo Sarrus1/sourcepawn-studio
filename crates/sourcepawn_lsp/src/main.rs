@@ -9,7 +9,7 @@ use std::io;
 use std::path::PathBuf;
 use std::time::SystemTime;
 
-use sourcepawn_lsp::Server;
+use sourcepawn_lsp::GlobalState;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -59,7 +59,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     env::set_var("RUST_BACKTRACE", "full");
     env::set_var("RUST_LIB_BACKTRACE", "full");
     let (connection, threads) = Connection::stdio();
-    Server::new(connection, opts.amxxpawn_mode).run()?;
+    GlobalState::new(connection, opts.amxxpawn_mode).run()?;
     threads.join()?;
     log::info!("Shutting down sourcepawn-lsp");
 

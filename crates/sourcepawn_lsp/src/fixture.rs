@@ -23,7 +23,7 @@ use std::{
 use tempfile::{tempdir, TempDir};
 use zip::ZipArchive;
 
-use super::{LspClient, Server};
+use super::{GlobalState, LspClient};
 use store::options::Options;
 
 #[derive(Debug)]
@@ -202,7 +202,7 @@ impl TestBed {
         let client = LspClient::new(client_conn.sender);
 
         let server_thread =
-            std::thread::spawn(move || Server::new(server_conn, false).run().unwrap());
+            std::thread::spawn(move || GlobalState::new(server_conn, false).run().unwrap());
         let client_thread = {
             let client = client.clone();
             std::thread::spawn(move || {

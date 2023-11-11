@@ -19,6 +19,7 @@ fxhash.workspace = true
 lazy_static.workspace = true
 sourcepawn_lexer.workspace = true
 regex.workspace = true
+line-index = "0.1.0-pre.1"
 
 # Local crates
 syntax.workspace = true

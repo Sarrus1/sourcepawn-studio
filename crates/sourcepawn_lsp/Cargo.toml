@@ -15,12 +15,12 @@ test = false
 doctest = false
 
 [dependencies]
+stdx.workspace = true
 lsp-server.workspace = true
 lsp-types.workspace = true
 semantic_analyzer.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-derive-new.workspace = true
 tree-sitter.workspace = true
 tree-sitter-sourcepawn.workspace = true
 anyhow.workspace = true
@@ -42,9 +42,14 @@ sourcepawn_lexer.workspace = true
 sentry.workspace = true
 preprocessor.workspace = true
 store.workspace = true
+base_db.workspace = true
 syntax.workspace = true
 parking_lot.workspace = true
 uuid.workspace = true
+tracing.workspace = true
+salsa.workspace = true
+nohash-hasher = "0.2.0"
+num_cpus = "1.16.0"
 # This is only used in the fixture module for benchmarks and tests.
 itertools = "0.11.0"
 zip = "0.6.6"

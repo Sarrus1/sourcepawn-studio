@@ -3,7 +3,10 @@ use std::sync::Arc;
 use graph::Graph;
 use vfs::FileId;
 
+mod change;
 mod graph;
+
+pub use change::Change;
 
 pub trait FileLoader {
     /// Text of the file.
@@ -11,13 +14,11 @@ pub trait FileLoader {
 }
 
 #[derive(Debug, Clone)]
-pub struct Tree {
-    tree: tree_sitter::Tree,
-}
+pub struct Tree(tree_sitter::Tree);
 
 impl PartialEq for Tree {
     fn eq(&self, other: &Self) -> bool {
-        self.tree.root_node() == other.tree.root_node()
+        self.tree().root_node() == other.tree().root_node()
     }
 }
 
@@ -25,7 +26,13 @@ impl Eq for Tree {}
 
 impl From<tree_sitter::Tree> for Tree {
     fn from(tree: tree_sitter::Tree) -> Self {
-        Self { tree }
+        Self(tree)
+    }
+}
+
+impl Tree {
+    pub fn tree(&self) -> &tree_sitter::Tree {
+        &self.0
     }
 }
 
@@ -71,4 +78,10 @@ impl<T: SourceDatabaseExt> FileLoader for FileLoaderDelegate<&'_ T> {
     fn file_text(&self, file_id: FileId) -> Arc<str> {
         SourceDatabaseExt::file_text(self.0, file_id)
     }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct FilePosition {
+    pub file_id: FileId,
+    pub position: lsp_types::Position,
 }

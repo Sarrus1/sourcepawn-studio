@@ -1,4 +1,4 @@
-use crate::{capabilities::ClientCapabilitiesExt, Server};
+use crate::{capabilities::ClientCapabilitiesExt, GlobalState};
 
 #[derive(Debug, Eq, PartialEq)]
 pub(crate) enum Progress {
@@ -7,7 +7,7 @@ pub(crate) enum Progress {
     End,
 }
 
-impl Server {
+impl GlobalState {
     pub(crate) fn report_progress(
         &mut self,
         title: &str,
@@ -16,7 +16,7 @@ impl Server {
         fraction: Option<f64>,
         cancel_token: Option<String>,
     ) {
-        if !self.client_capabilities.has_work_done_progress_support() {
+        if !self.config.caps().has_work_done_progress_support() {
             return;
         }
         let percentage = fraction.map(|f| {

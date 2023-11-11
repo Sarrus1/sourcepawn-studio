@@ -1,4 +1,89 @@
-use lsp_types::{ClientCapabilities, MarkupKind};
+use ide::WideEncoding;
+use lsp_types::{
+    CallHierarchyServerCapability, ClientCapabilities, CompletionOptions,
+    CompletionOptionsCompletionItem, HoverProviderCapability, MarkupKind, OneOf,
+    PositionEncodingKind, SemanticTokenModifier, SemanticTokenType, SemanticTokensFullOptions,
+    SemanticTokensLegend, SemanticTokensOptions, SemanticTokensServerCapabilities,
+    ServerCapabilities, SignatureHelpOptions, TextDocumentSyncCapability, TextDocumentSyncKind,
+    WorkDoneProgressOptions,
+};
+
+use crate::{config::Config, line_index::PositionEncoding, lsp::ext::negotiated_encoding};
+
+pub fn server_capabilities(config: &Config) -> ServerCapabilities {
+    ServerCapabilities {
+        position_encoding: match negotiated_encoding(config.caps()) {
+            PositionEncoding::Utf8 => Some(PositionEncodingKind::UTF8),
+            PositionEncoding::Wide(wide) => match wide {
+                WideEncoding::Utf16 => Some(PositionEncodingKind::UTF16),
+                WideEncoding::Utf32 => Some(PositionEncodingKind::UTF32),
+                _ => None,
+            },
+        },
+        text_document_sync: Some(TextDocumentSyncCapability::Kind(
+            TextDocumentSyncKind::INCREMENTAL,
+        )),
+        completion_provider: Some(CompletionOptions {
+            trigger_characters: Some(vec![
+                "<".to_string(),
+                '"'.to_string(),
+                "'".to_string(),
+                "/".to_string(),
+                "\\".to_string(),
+                ".".to_string(),
+                ":".to_string(),
+                " ".to_string(),
+                "$".to_string(),
+                "*".to_string(),
+            ]),
+            resolve_provider: Some(true),
+            completion_item: Some(CompletionOptionsCompletionItem {
+                label_details_support: Some(true),
+            }),
+            ..Default::default()
+        }),
+        hover_provider: Some(HoverProviderCapability::Simple(true)),
+        definition_provider: Some(OneOf::Left(true)),
+        signature_help_provider: Some(SignatureHelpOptions {
+            trigger_characters: Some(vec![",".to_string(), "(".to_string()]),
+            retrigger_characters: Some(vec![",".to_string(), "(".to_string()]),
+            ..Default::default()
+        }),
+        references_provider: Some(OneOf::Left(true)),
+        document_symbol_provider: Some(OneOf::Left(true)),
+        rename_provider: Some(OneOf::Left(true)),
+        semantic_tokens_provider: Some(SemanticTokensServerCapabilities::SemanticTokensOptions(
+            SemanticTokensOptions {
+                work_done_progress_options: WorkDoneProgressOptions {
+                    work_done_progress: None,
+                },
+                legend: SemanticTokensLegend {
+                    token_types: vec![
+                        SemanticTokenType::VARIABLE,
+                        SemanticTokenType::ENUM_MEMBER,
+                        SemanticTokenType::FUNCTION,
+                        SemanticTokenType::CLASS,
+                        SemanticTokenType::METHOD,
+                        SemanticTokenType::MACRO,
+                        SemanticTokenType::PROPERTY,
+                        SemanticTokenType::STRUCT,
+                        SemanticTokenType::ENUM,
+                    ],
+                    token_modifiers: vec![
+                        SemanticTokenModifier::READONLY,
+                        SemanticTokenModifier::DECLARATION,
+                        SemanticTokenModifier::DEPRECATED,
+                        SemanticTokenModifier::MODIFICATION,
+                    ],
+                },
+                range: Some(false),
+                full: Some(SemanticTokensFullOptions::Delta { delta: Some(false) }),
+            },
+        )),
+        call_hierarchy_provider: Some(CallHierarchyServerCapability::Simple(true)),
+        ..Default::default()
+    }
+}
 
 pub trait ClientCapabilitiesExt {
     fn has_definition_link_support(&self) -> bool;

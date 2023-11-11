@@ -1,13 +1,17 @@
 //! base_db defines basic database traits. The concrete DB is defined by ide.
 
+mod goto_definition;
+
 use std::{fmt, mem::ManuallyDrop, sync::Arc};
 
 use base_db::{
-    FileLoader, FileLoaderDelegate, SourceDatabase, SourceDatabaseExtStorage,
+    Change, FileLoader, FileLoaderDelegate, FilePosition, SourceDatabase, SourceDatabaseExtStorage,
     SourceDatabaseStorage, Tree,
 };
 use salsa::{Cancelled, ParallelDatabase};
 use vfs::FileId;
+
+pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};
 
 pub type Cancellable<T> = Result<T, Cancelled>;
 
@@ -52,6 +56,10 @@ impl RootDatabase {
             storage: ManuallyDrop::new(salsa::Storage::default()),
         }
     }
+
+    pub fn apply_change(&mut self, change: Change) {
+        change.apply(self);
+    }
 }
 
 impl salsa::ParallelDatabase for RootDatabase {
@@ -81,6 +89,11 @@ impl AnalysisHost {
         Analysis {
             db: self.db.snapshot(),
         }
+    }
+
+    /// Applies changes to the current state of the world.
+    pub fn apply_change(&mut self, change: Change) {
+        self.db.apply_change(change)
     }
 }
 
@@ -122,5 +135,13 @@ impl Analysis {
         F: FnOnce(&RootDatabase) -> T + std::panic::UnwindSafe,
     {
         Cancelled::catch(|| f(&self.db))
+    }
+
+    /// Returns the definitions from the symbol at `position`.
+    pub fn goto_definition(
+        &self,
+        pos: FilePosition,
+    ) -> Cancellable<Option<Vec<lsp_types::LocationLink>>> {
+        self.with_db(|db| goto_definition::goto_definition(db, pos))
     }
 }
