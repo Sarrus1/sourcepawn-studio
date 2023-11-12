@@ -30,9 +30,22 @@ impl From<tree_sitter::Tree> for Tree {
     }
 }
 
+fn pos_to_point(pos: lsp_types::Position) -> tree_sitter::Point {
+    tree_sitter::Point {
+        row: pos.line as usize,
+        column: pos.character as usize,
+    }
+}
+
 impl Tree {
     pub fn tree(&self) -> &tree_sitter::Tree {
         &self.0
+    }
+
+    pub fn node_from_pos(&self, pos: lsp_types::Position) -> Option<tree_sitter::Node> {
+        self.tree()
+            .root_node()
+            .descendant_for_point_range(pos_to_point(pos), pos_to_point(pos))
     }
 }
 
@@ -52,6 +65,7 @@ pub trait SourceDatabase: FileLoader + std::fmt::Debug {
 }
 
 fn parse_query(db: &dyn SourceDatabase, file_id: FileId) -> Tree {
+    tracing::info!("Parsing {}", file_id);
     let mut parser = tree_sitter::Parser::new();
     parser
         .set_language(tree_sitter_sourcepawn::language())

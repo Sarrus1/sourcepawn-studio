@@ -23,6 +23,8 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
         text_document_sync: Some(TextDocumentSyncCapability::Kind(
             TextDocumentSyncKind::INCREMENTAL,
         )),
+        definition_provider: Some(OneOf::Left(true)),
+        /*
         completion_provider: Some(CompletionOptions {
             trigger_characters: Some(vec![
                 "<".to_string(),
@@ -43,7 +45,6 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
             ..Default::default()
         }),
         hover_provider: Some(HoverProviderCapability::Simple(true)),
-        definition_provider: Some(OneOf::Left(true)),
         signature_help_provider: Some(SignatureHelpOptions {
             trigger_characters: Some(vec![",".to_string(), "(".to_string()]),
             retrigger_characters: Some(vec![",".to_string(), "(".to_string()]),
@@ -81,6 +82,7 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
             },
         )),
         call_hierarchy_provider: Some(CallHierarchyServerCapability::Simple(true)),
+        */
         ..Default::default()
     }
 }
