@@ -158,6 +158,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "base-db"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fxhash",
+ "lazy_static",
+ "lsp-types",
+ "regex",
+ "salsa",
+ "sourcepawn_lexer",
+ "syntax",
+ "tracing",
+ "tree-sitter",
+ "tree-sitter-sourcepawn",
+ "vfs",
+]
+
+[[package]]
 name = "base64"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -174,24 +192,6 @@ name = "base64ct"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c3c1a368f70d6cf7302d78f8f7093da241fb8e8807c05cc9e51a125895a6d5b"
-
-[[package]]
-name = "base_db"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "fxhash",
- "lazy_static",
- "lsp-types",
- "regex",
- "salsa",
- "sourcepawn_lexer",
- "syntax",
- "tracing",
- "tree-sitter",
- "tree-sitter-sourcepawn",
- "vfs",
-]
 
 [[package]]
 name = "beef"
@@ -979,6 +979,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
+name = "hir-def"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base-db",
+ "fxhash",
+ "la-arena",
+ "log",
+ "lsp-types",
+ "salsa",
+ "smallvec",
+ "smol_str",
+ "syntax",
+ "tracing",
+ "tree-sitter",
+ "tree-sitter-sourcepawn",
+ "vfs",
+]
+
+[[package]]
 name = "hmac"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1080,7 +1100,7 @@ name = "ide"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "base_db",
+ "base-db",
  "fxhash",
  "lazy_static",
  "line-index",
@@ -1278,6 +1298,12 @@ dependencies = [
  "bitflags 1.3.2",
  "libc",
 ]
+
+[[package]]
+name = "la-arena"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3752f229dcc5a481d60f385fa479ff46818033d881d2d801aa27dffcfb5e8306"
 
 [[package]]
 name = "lazy_static"
@@ -2396,6 +2422,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 
 [[package]]
+name = "smol_str"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "74212e6bbe9a4352329b2f68ba3130c15a3f26fe88ff22dbdc6cdd58fa85e99c"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "socket2"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2423,7 +2458,7 @@ version = "0.12.0"
 dependencies = [
  "anyhow",
  "assert_unordered",
- "base_db",
+ "base-db",
  "clap 4.2.4",
  "criterion 0.4.0",
  "crossbeam",
