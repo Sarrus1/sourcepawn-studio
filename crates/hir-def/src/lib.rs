@@ -1,6 +1,5 @@
 use core::{fmt, hash::Hash};
 use db::DefDatabase;
-use fxhash::FxHashMap;
 use la_arena::{Arena, Idx};
 use smallvec::SmallVec;
 use smol_str::SmolStr;
@@ -36,7 +35,7 @@ macro_rules! impl_intern {
     ($id:ident, $loc:ident, $intern:ident, $lookup:ident) => {
         impl_intern_key!($id);
 
-        impl<'tree> Intern for $loc<'tree> {
+        impl Intern for $loc {
             type ID = $id;
             fn intern(self, db: &dyn db::DefDatabase) -> $id {
                 db.$intern(self)
@@ -44,7 +43,7 @@ macro_rules! impl_intern {
         }
 
         // impl Lookup for $id {
-        //     type Data<'tree> = $loc<'tree>;
+        //     type Data = $loc;
         //     fn lookup(&self, db: &dyn db::DefDatabase) -> $loc {
         //         db.$lookup(*self)
         //     }
@@ -54,7 +53,7 @@ macro_rules! impl_intern {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FunctionId(salsa::InternId);
-type FunctionLoc<'tree> = ItemTreeId<'tree, Function<'tree>>;
+type FunctionLoc = ItemTreeId<Function>;
 impl_intern!(
     FunctionId,
     FunctionLoc,
@@ -83,12 +82,12 @@ impl TreeId {
 }
 
 #[derive(Debug)]
-pub struct ItemTreeId<'tree, N: ItemTreeNode<'tree>> {
+pub struct ItemTreeId<N: ItemTreeNode> {
     tree: TreeId,
-    pub value: FileItemTreeId<'tree, N>,
+    pub value: FileItemTreeId<N>,
 }
 
-impl<'tree, N: ItemTreeNode<'tree>> ItemTreeId<'tree, N> {
+impl<N: ItemTreeNode> ItemTreeId<N> {
     // pub fn new(tree: TreeId, idx: FileItemTreeId<N>) -> Self {
     //     Self { tree, value: idx }
     // }
@@ -106,21 +105,22 @@ impl<'tree, N: ItemTreeNode<'tree>> ItemTreeId<'tree, N> {
     }
 }
 
-impl<'tree, N: ItemTreeNode<'tree>> Clone for ItemTreeId<'tree, N> {
+impl<N: ItemTreeNode> Copy for ItemTreeId<N> {}
+impl<N: ItemTreeNode> Clone for ItemTreeId<N> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<'tree, N: ItemTreeNode<'tree>> PartialEq for ItemTreeId<'tree, N> {
+impl<N: ItemTreeNode> PartialEq for ItemTreeId<N> {
     fn eq(&self, other: &Self) -> bool {
         self.tree == other.tree && self.value == other.value
     }
 }
 
-impl<'tree, N: ItemTreeNode<'tree>> Eq for ItemTreeId<'tree, N> {}
+impl<N: ItemTreeNode> Eq for ItemTreeId<N> {}
 
-impl<'tree, N: ItemTreeNode<'tree>> Hash for ItemTreeId<'tree, N> {
+impl<N: ItemTreeNode> Hash for ItemTreeId<N> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.tree.hash(state);
         self.value.hash(state);
@@ -129,13 +129,13 @@ impl<'tree, N: ItemTreeNode<'tree>> Hash for ItemTreeId<'tree, N> {
 
 /// The item tree of a source file.
 #[derive(Debug, Default, Eq, PartialEq)]
-pub struct ItemTree<'tree> {
+pub struct ItemTree {
     // attrs: FxHashMap<AttrOwner, RawAttrs>,
-    top_level: SmallVec<[FileItem<'tree>; 1]>,
-    data: Option<Box<ItemTreeData<'tree>>>,
+    top_level: SmallVec<[FileItem; 1]>,
+    data: Option<Box<ItemTreeData>>,
 }
 
-impl<'tree> ItemTree<'tree> {
+impl ItemTree {
     fn file_item_tree_query(db: &dyn DefDatabase, file_id: FileId) -> Arc<Self> {
         Arc::default()
     }
@@ -146,15 +146,15 @@ impl<'tree> ItemTree<'tree> {
             .expect("attempted to access data of empty ItemTree")
     }
 
-    fn data_mut(&'tree mut self) -> &mut ItemTreeData {
+    fn data_mut(&mut self) -> &mut ItemTreeData {
         self.data.get_or_insert_with(Box::default)
     }
 }
 
 #[derive(Default, Debug, Eq, PartialEq)]
-struct ItemTreeData<'tree> {
-    functions: Arena<Function<'tree>>,
-    variables: Arena<Variable<'tree>>,
+struct ItemTreeData {
+    functions: Arena<Function>,
+    variables: Arena<Variable>,
     // params: Arena<Param>,
 }
 
@@ -164,24 +164,24 @@ struct ItemTreeData<'tree> {
 pub struct Name(SmolStr);
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Variable<'tree> {
+pub struct Variable {
     pub name: Name,
     // pub visibility: RawVisibilityId,
     // pub type_ref: Interned<TypeRef>,
-    pub ts_node: &'tree tree_sitter::Node<'tree>,
+    pub ts_node_id: usize,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Function<'tree> {
+pub struct Function {
     pub name: Name,
     // pub visibility: RawVisibilityId,
     // pub params: IdxRange<Param>,
     // pub ret_type: Interned<TypeRef>,
-    pub ts_node: &'tree tree_sitter::Node<'tree>,
+    pub ts_node_id: usize,
 }
 
 /// Trait implemented by all item nodes in the item tree.
-pub trait ItemTreeNode<'tree>: Clone {
+pub trait ItemTreeNode: Clone {
     // fn ast_id(&self) -> FileAstId<tree_sitter::Node>;
 
     /// Looks up an instance of `Self` in an item tree.
@@ -191,15 +191,15 @@ pub trait ItemTreeNode<'tree>: Clone {
     // fn id_from_mod_item(mod_item: ModItem) -> Option<FileItemTreeId<Self>>;
 
     /// Upcasts a `FileItemTreeId` to a generic `ModItem`.
-    fn id_to_mod_item(id: FileItemTreeId<'tree, Self>) -> FileItem<'tree>;
+    fn id_to_mod_item(id: FileItemTreeId<Self>) -> FileItem;
 }
 
-pub struct FileItemTreeId<'tree, N: ItemTreeNode<'tree>> {
+pub struct FileItemTreeId<N: ItemTreeNode> {
     index: Idx<N>,
-    _p: PhantomData<&'tree N>,
+    _p: PhantomData<N>,
 }
 
-impl<'tree, N: ItemTreeNode<'tree>> Clone for FileItemTreeId<'tree, N> {
+impl<N: ItemTreeNode> Clone for FileItemTreeId<N> {
     fn clone(&self) -> Self {
         Self {
             index: self.index,
@@ -207,41 +207,41 @@ impl<'tree, N: ItemTreeNode<'tree>> Clone for FileItemTreeId<'tree, N> {
         }
     }
 }
-impl<'tree, N: ItemTreeNode<'tree>> Copy for FileItemTreeId<'tree, N> {}
+impl<N: ItemTreeNode> Copy for FileItemTreeId<N> {}
 
-impl<'tree, N: ItemTreeNode<'tree>> PartialEq for FileItemTreeId<'tree, N> {
-    fn eq(&self, other: &FileItemTreeId<'tree, N>) -> bool {
+impl<N: ItemTreeNode> PartialEq for FileItemTreeId<N> {
+    fn eq(&self, other: &FileItemTreeId<N>) -> bool {
         self.index == other.index
     }
 }
-impl<'tree, N: ItemTreeNode<'tree>> Eq for FileItemTreeId<'tree, N> {}
+impl<N: ItemTreeNode> Eq for FileItemTreeId<N> {}
 
-impl<'tree, N: ItemTreeNode<'tree>> Hash for FileItemTreeId<'tree, N> {
+impl<N: ItemTreeNode> Hash for FileItemTreeId<N> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.index.hash(state)
     }
 }
 
-impl<'tree, N: ItemTreeNode<'tree>> fmt::Debug for FileItemTreeId<'tree, N> {
+impl<N: ItemTreeNode> fmt::Debug for FileItemTreeId<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.index.fmt(f)
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum FileItem<'tree> {
-    Function(FileItemTreeId<'tree, Function<'tree>>),
+pub enum FileItem {
+    Function(FileItemTreeId<Function>),
 }
 
-impl<'tree> ItemTreeNode<'tree> for Function<'tree> {
-    fn id_to_mod_item(id: FileItemTreeId<'tree, Self>) -> FileItem<'tree> {
+impl ItemTreeNode for Function {
+    fn id_to_mod_item(id: FileItemTreeId<Self>) -> FileItem {
         FileItem::Function(id)
     }
 }
 
 /*
-impl<'tree> From<FileItemTreeId<'tree, Function<'tree>>> for FileItem<'tree> {
-    fn from(id: FileItemTreeId<'tree, Function>) -> FileItem<'tree> {
+impl From<FileItemTreeId< Function>> for FileItem {
+    fn from(id: FileItemTreeId< Function>) -> FileItem {
         FileItem::Function(id)
     }
 }

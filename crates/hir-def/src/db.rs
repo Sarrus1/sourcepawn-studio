@@ -9,7 +9,7 @@ use crate::{FunctionId, FunctionLoc, ItemTree};
 pub trait InternDatabase: SourceDatabase {
     // region: items
     #[salsa::interned]
-    fn intern_function<'tree>(&'tree self, loc: FunctionLoc<'tree>) -> FunctionId;
+    fn intern_function(&'tree self, loc: FunctionLoc) -> FunctionId;
     // endregion: items
 
     /*
@@ -23,7 +23,7 @@ pub trait InternDatabase: SourceDatabase {
 }
 
 #[salsa::query_group(DefDatabaseStorage)]
-pub trait DefDatabase<'tree>: InternDatabase {
+pub trait DefDatabase: InternDatabase {
     #[salsa::invoke(ItemTree::file_item_tree_query)]
-    fn file_item_tree(&'tree self, file_id: FileId) -> Arc<ItemTree<'tree>>;
+    fn file_item_tree(&self, file_id: FileId) -> Arc<ItemTree>;
 }
