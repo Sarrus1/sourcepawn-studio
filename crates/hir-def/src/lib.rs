@@ -8,6 +8,7 @@ pub mod db;
 mod item_tree;
 
 pub use db::DefDatabase;
+pub use item_tree::FileItem;
 
 trait Intern {
     type ID;

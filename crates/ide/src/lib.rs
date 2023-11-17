@@ -6,8 +6,10 @@ use std::{fmt, mem::ManuallyDrop, sync::Arc};
 
 use base_db::{
     Change, FileLoader, FileLoaderDelegate, FilePosition, SourceDatabase, SourceDatabaseExtStorage,
-    SourceDatabaseStorage, Tree,
+    SourceDatabaseStorage, Tree, Upcast,
 };
+use hir::db::HirDatabase;
+use hir_def::DefDatabase;
 use salsa::{Cancelled, ParallelDatabase};
 use vfs::FileId;
 
@@ -19,7 +21,8 @@ pub type Cancellable<T> = Result<T, Cancelled>;
     SourceDatabaseExtStorage,
     SourceDatabaseStorage,
     hir_def::db::InternDatabaseStorage,
-    hir_def::db::DefDatabaseStorage
+    hir_def::db::DefDatabaseStorage,
+    hir::db::HirDatabaseStorage
 )]
 pub struct RootDatabase {
     // We use `ManuallyDrop` here because every codegen unit that contains a
@@ -38,6 +41,20 @@ impl Drop for RootDatabase {
 impl fmt::Debug for RootDatabase {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("RootDatabase").finish()
+    }
+}
+
+impl Upcast<dyn DefDatabase> for RootDatabase {
+    #[inline]
+    fn upcast(&self) -> &(dyn DefDatabase + 'static) {
+        self
+    }
+}
+
+impl Upcast<dyn HirDatabase> for RootDatabase {
+    #[inline]
+    fn upcast(&self) -> &(dyn HirDatabase + 'static) {
+        self
     }
 }
 

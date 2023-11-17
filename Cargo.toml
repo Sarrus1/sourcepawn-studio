@@ -30,6 +30,7 @@ linter = { path = "./crates/linter" }
 vfs = { path = "./crates/vfs" }
 ide = { path = "./crates/ide" }
 base-db = { path = "./crates/base-db" }
+hir = { path = "./crates/hir" }
 hir-def = { path = "./crates/hir-def" }
 stdx = { path = "./crates/stdx" }
 lsp-server = "0.7.4"

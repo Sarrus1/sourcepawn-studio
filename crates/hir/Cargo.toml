@@ -1,5 +1,5 @@
 [package]
-name = "ide"
+name = "hir"
 version = "0.1.0"
 include = ["Cargo.toml", "src/"]
 edition.workspace = true
@@ -14,19 +14,17 @@ lsp-types.workspace = true
 tree-sitter.workspace = true
 tree-sitter-sourcepawn.workspace = true
 salsa.workspace = true
-anyhow.workspace = true
 fxhash.workspace = true
-lazy_static.workspace = true
-sourcepawn_lexer.workspace = true
-regex.workspace = true
-line-index = "0.1.0-pre.1"
+anyhow.workspace = true
 tracing.workspace = true
+smol_str.workspace = true
 log.workspace = true
+la-arena.workspace = true
+smallvec.workspace = true
 
 
 # Local crates
-hir-def.workspace = true
-hir.workspace = true
 syntax.workspace = true
 vfs.workspace = true
 base-db.workspace = true
+hir-def.workspace = true

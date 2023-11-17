@@ -979,6 +979,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
+name = "hir"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base-db",
+ "fxhash",
+ "hir-def",
+ "la-arena",
+ "log",
+ "lsp-types",
+ "salsa",
+ "smallvec",
+ "smol_str",
+ "syntax",
+ "tracing",
+ "tree-sitter",
+ "tree-sitter-sourcepawn",
+ "vfs",
+]
+
+[[package]]
 name = "hir-def"
 version = "0.1.0"
 dependencies = [
@@ -1102,6 +1123,7 @@ dependencies = [
  "anyhow",
  "base-db",
  "fxhash",
+ "hir",
  "hir-def",
  "lazy_static",
  "line-index",

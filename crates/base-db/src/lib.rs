@@ -99,3 +99,7 @@ pub struct FilePosition {
     pub file_id: FileId,
     pub position: lsp_types::Position,
 }
+
+pub trait Upcast<T: ?Sized> {
+    fn upcast(&self) -> &T;
+}
