@@ -3,13 +3,15 @@ use std::sync::Arc;
 use base_db::SourceDatabase;
 use vfs::FileId;
 
-use crate::{FunctionId, FunctionLoc, ItemTree};
+use crate::{item_tree::ItemTree, FunctionId, FunctionLoc, VariableId, VariableLoc};
 
 #[salsa::query_group(InternDatabaseStorage)]
 pub trait InternDatabase: SourceDatabase {
     // region: items
     #[salsa::interned]
     fn intern_function(&'tree self, loc: FunctionLoc) -> FunctionId;
+    #[salsa::interned]
+    fn intern_variable(&'tree self, loc: VariableLoc) -> VariableId;
     // endregion: items
 
     /*

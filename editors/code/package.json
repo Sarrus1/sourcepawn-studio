@@ -137,6 +137,11 @@
         "category": "sourcepawn-lsp (debug command)"
       },
       {
+        "command": "sourcepawn-vscode.syntaxTree",
+        "title": "Reveal document's syntax tree",
+        "category": "sourcepawn-lsp (debug command)"
+      },
+      {
         "command": "sourcepawn-vscode.projectsGraphviz",
         "title": "Generate Graphviz file for projects in the workspace",
         "category": "sourcepawn-lsp (debug command)"

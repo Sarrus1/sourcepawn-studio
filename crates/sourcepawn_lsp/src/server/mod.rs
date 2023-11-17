@@ -1,36 +1,26 @@
 use base_db::Change;
 use crossbeam::channel::{unbounded, Receiver, Sender};
 use fxhash::FxHashMap;
-use ide::{Analysis, AnalysisHost, WideEncoding};
+use ide::{Analysis, AnalysisHost};
 use linter::spcomp::SPCompDiagnostic;
-use lsp_server::{Connection, ErrorCode, Message, Notification, Request, RequestId};
+use lsp_server::{Connection, ErrorCode, Request, RequestId};
 use lsp_types::{
-    notification::ShowMessage, request::WorkspaceConfiguration, CallHierarchyServerCapability,
-    ClientCapabilities, ClientInfo, CompletionOptions, CompletionOptionsCompletionItem,
-    ConfigurationItem, ConfigurationParams, HoverProviderCapability, InitializeParams,
-    InitializeResult, MessageType, OneOf, PositionEncodingKind, SemanticTokenModifier,
-    SemanticTokenType, SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
-    SemanticTokensServerCapabilities, ServerCapabilities, ServerInfo, ShowMessageParams,
-    SignatureHelpOptions, TextDocumentSyncCapability, TextDocumentSyncKind, Url,
-    WorkDoneProgressOptions,
+    notification::{Notification, ShowMessage},
+    InitializeResult, MessageType, ServerInfo, ShowMessageParams, Url,
 };
-use parking_lot::{
-    MappedRwLockReadGuard, RwLock, RwLockReadGuard, RwLockUpgradableReadGuard, RwLockWriteGuard,
-};
+use parking_lot::{RwLock, RwLockUpgradableReadGuard, RwLockWriteGuard};
 use serde::Serialize;
-use std::{env, path::PathBuf, sync::Arc, time::Instant};
-use store::{options::Options, Store};
+use std::{env, sync::Arc, time::Instant};
 use threadpool::ThreadPool;
 use vfs::{FileId, Vfs};
 
 use crate::{
-    capabilities::{server_capabilities, ClientCapabilitiesExt},
+    capabilities::server_capabilities,
     client::LspClient,
     config::Config,
-    dispatch::{self, NotificationDispatcher, RequestDispatcher},
+    dispatch::{NotificationDispatcher, RequestDispatcher},
     from_json,
-    line_index::{LineEndings, PositionEncoding},
-    lsp::ext::negotiated_encoding,
+    line_index::LineEndings,
     lsp_ext,
     task_pool::TaskPool,
     version::version,
@@ -46,12 +36,6 @@ mod handlers {
     pub(crate) mod request;
 }
 // mod requests;
-
-#[derive(Debug)]
-enum InternalMessage {
-    FileEvent(notify::Event),
-    Diagnostics(FxHashMap<Url, Vec<SPCompDiagnostic>>),
-}
 
 // Enforces drop order
 pub(crate) struct Handle<H, C> {
@@ -76,8 +60,6 @@ pub struct GlobalState {
     pub(crate) task_pool: Handle<TaskPool<Task>, Receiver<Task>>,
 
     connection: Arc<Connection>,
-    internal_tx: Sender<InternalMessage>,
-    internal_rx: Receiver<InternalMessage>,
     client: LspClient,
     pub(crate) pool: ThreadPool,
     indexing: bool,
@@ -96,7 +78,6 @@ pub struct GlobalState {
 impl GlobalState {
     pub fn new(connection: Connection, amxxpawn_mode: bool) -> Self {
         let client = LspClient::new(connection.sender.clone());
-        let (internal_tx, internal_rx) = crossbeam::channel::unbounded();
         let task_pool = {
             let (sender, receiver) = unbounded();
             let handle = TaskPool::new_with_threads(
@@ -107,8 +88,6 @@ impl GlobalState {
         };
         Self {
             client,
-            internal_rx,
-            internal_tx,
             pool: threadpool::Builder::new().build(),
             indexing: false,
             amxxpawn_mode,
@@ -236,7 +215,6 @@ impl GlobalState {
 
         if let Some(json) = initialization_options {
             if let Err(e) = config.update(json) {
-                use lsp_types::notification::Notification;
                 let not = lsp_server::Notification::new(
                     ShowMessage::METHOD.to_string(),
                     ShowMessageParams {
@@ -319,7 +297,7 @@ impl GlobalState {
     pub(crate) fn respond(&mut self, response: lsp_server::Response) {
         if let Some((method, start)) = self.req_queue.incoming.complete(response.id.clone()) {
             let duration = start.elapsed();
-            tracing::debug!(
+            log::debug!(
                 "handled {} - ({}) in {:0.2?}",
                 method,
                 response.id,
@@ -360,10 +338,11 @@ impl GlobalState {
 
         dispatcher
             .on::<lsp_request::GotoDefinition>(handlers::handle_goto_definition)
+            .on::<lsp_ext::SyntaxTree>(handlers::handle_syntax_tree)
             .finish();
     }
 
-    pub(super) fn on_notification(&mut self, not: Notification) -> anyhow::Result<()> {
+    pub(super) fn on_notification(&mut self, not: lsp_server::Notification) -> anyhow::Result<()> {
         use self::handlers::notification as handlers;
         use lsp_types::notification as notifs;
 
@@ -380,48 +359,53 @@ impl GlobalState {
         Ok(())
     }
 
-    fn process_messages(&mut self) -> anyhow::Result<()> {
-        loop {
-            crossbeam::channel::select! {
-                recv(&self.connection.receiver) -> msg => {
-                        match msg? {
-                            Message::Request(request) => {
-                                log::trace!("Received request {:#?}", request);
-                                if self.connection.handle_shutdown(&request)? {
-                                    log::trace!("Handled shutdown request.");
-                                    return Ok(());
-                                }
-                                self.on_request(request);
-                            }
-                            Message::Response(resp) => {
-                                self.complete_request(resp);
-                            }
-                            Message::Notification(notification) => {
-                                if let Err(error) = self.on_notification(notification) {
-                                    let _ = self.send_status(lsp_ext::ServerStatusParams {
-                                        health: crate::lsp_ext::Health::Error,
-                                        quiescent: !self.indexing,
-                                        message: Some(error.to_string()),
-                                    });
-                                }
-                            }
-                        }
-                    }
-                    // TODO: Implement these
-                    // recv(&self.internal_rx) -> msg => {
-                    //     match msg? {
-                    //         InternalMessage::FileEvent(event) => {
-                    //             self.handle_file_event(event);
-                    //         }
-                    //         InternalMessage::Diagnostics(diagnostics) => {
-                    //             self.store.write().diagnostics.ingest_spcomp_diagnostics(diagnostics);
-                    //             self.publish_diagnostics();
-                    //         }
-                    //     }
-                    // }
-            }
-            self.process_changes();
+    fn next_event(&self, inbox: &Receiver<lsp_server::Message>) -> Option<Event> {
+        crossbeam::channel::select! {
+            recv(inbox) -> msg =>
+                msg.ok().map(Event::Lsp),
+
+            recv(self.task_pool.receiver) -> task =>
+                Some(Event::Task(task.unwrap())),
         }
+    }
+
+    pub(crate) fn register_request(
+        &mut self,
+        request: &lsp_server::Request,
+        request_received: Instant,
+    ) {
+        self.req_queue.incoming.register(
+            request.id.clone(),
+            (request.method.clone(), request_received),
+        );
+    }
+
+    /// Registers and handles a request. This should only be called once per incoming request.
+    fn on_new_request(&mut self, request_received: Instant, req: Request) {
+        self.register_request(&req, request_received);
+        self.on_request(req);
+    }
+
+    pub(crate) fn is_completed(&self, request: &lsp_server::Request) -> bool {
+        self.req_queue.incoming.is_completed(&request.id)
+    }
+
+    fn handle_event(&mut self, event: Event) -> anyhow::Result<()> {
+        let loop_start = Instant::now();
+        match event {
+            Event::Lsp(msg) => match msg {
+                lsp_server::Message::Request(req) => self.on_new_request(loop_start, req),
+                lsp_server::Message::Notification(not) => self.on_notification(not)?,
+                lsp_server::Message::Response(resp) => self.complete_request(resp),
+            },
+            Event::Task(task) => match task {
+                Task::Response(response) => self.respond(response),
+                Task::Retry(req) if !self.is_completed(&req) => self.on_request(req),
+                Task::Retry(_) => (),
+            },
+        }
+        self.process_changes();
+        Ok(())
     }
 
     pub(crate) fn process_changes(&mut self) -> bool {
@@ -548,9 +532,24 @@ impl GlobalState {
             self.pool.max_count()
         );
         self.initialize()?;
-        self.process_messages()?;
+        while let Some(event) = self.next_event(&self.connection.receiver) {
+            if matches!(
+                &event,
+                Event::Lsp(lsp_server::Message::Notification(lsp_server::Notification { method, .. }))
+                if method == lsp_types::notification::Exit::METHOD
+            ) {
+                return Ok(());
+            }
+            self.handle_event(event)?;
+        }
         Ok(())
     }
+}
+
+enum Event {
+    Lsp(lsp_server::Message),
+    Task(Task),
+    // Vfs(vfs::loader::Message),
 }
 
 /// An immutable snapshot of the world's state at a point in time.

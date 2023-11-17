@@ -15,7 +15,12 @@ pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};
 
 pub type Cancellable<T> = Result<T, Cancelled>;
 
-#[salsa::database(SourceDatabaseExtStorage, SourceDatabaseStorage)]
+#[salsa::database(
+    SourceDatabaseExtStorage,
+    SourceDatabaseStorage,
+    hir_def::db::InternDatabaseStorage,
+    hir_def::db::DefDatabaseStorage
+)]
 pub struct RootDatabase {
     // We use `ManuallyDrop` here because every codegen unit that contains a
     // `&RootDatabase -> &dyn OtherDatabase` cast will instantiate its drop glue in the vtable,

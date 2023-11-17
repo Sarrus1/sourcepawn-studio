@@ -11,3 +11,35 @@ pub fn range_to_position_average(range: &Range) -> Position {
         character: (range.start.character + range.end.character) / 2,
     }
 }
+
+pub fn prettify_s_expression(s_expr: &str) -> String {
+    let mut result = String::new();
+    let mut indent_level = 0;
+
+    for c in s_expr.chars() {
+        match c {
+            '(' => {
+                if !result.is_empty() {
+                    result.push('\n');
+                }
+                result.push_str(&" ".repeat(indent_level));
+                result.push(c);
+                indent_level += 2;
+            }
+            ')' => {
+                indent_level -= 2;
+                result.push('\n');
+                result.push_str(&" ".repeat(indent_level));
+                result.push(c);
+            }
+            ' ' => {
+                result.push(' ');
+            }
+            _ => {
+                result.push(c);
+            }
+        }
+    }
+
+    result
+}

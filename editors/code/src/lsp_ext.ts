@@ -14,6 +14,14 @@ export type PreprocessedDocumentParams = {
   textDocument?: lc.TextDocumentIdentifier;
 };
 
+export const syntaxTree = new lc.RequestType<SyntaxTreeParams, string, void>(
+  "sourcepawn-lsp/syntaxTree"
+);
+
+export type SyntaxTreeParams = {
+  textDocument?: lc.TextDocumentIdentifier;
+};
+
 export const projectMainPath = new lc.RequestType<
   ProjectMainPathParams,
   lc.URI,

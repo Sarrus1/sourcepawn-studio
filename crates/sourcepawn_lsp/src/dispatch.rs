@@ -80,7 +80,7 @@ impl RequestDispatcher<'_> {
         };
 
         let world = self.global_state.snapshot();
-        &mut self.global_state.task_pool.handle.spawn(intent, move || {
+        self.global_state.task_pool.handle.spawn(intent, move || {
             let result = panic::catch_unwind(move || {
                 let _pctx = stdx::panic_context::enter(panic_context);
                 f(world, params)

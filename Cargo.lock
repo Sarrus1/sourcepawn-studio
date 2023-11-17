@@ -1102,6 +1102,7 @@ dependencies = [
  "anyhow",
  "base-db",
  "fxhash",
+ "hir-def",
  "lazy_static",
  "line-index",
  "log",

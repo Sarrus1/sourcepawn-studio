@@ -15,6 +15,20 @@ pub struct PreprocessedDocumentParams {
     pub text_document: Option<TextDocumentIdentifier>,
 }
 
+pub enum SyntaxTree {}
+
+impl Request for SyntaxTree {
+    type Params = SyntaxTreeParams;
+    type Result = String;
+    const METHOD: &'static str = "sourcepawn-lsp/syntaxTree";
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SyntaxTreeParams {
+    pub text_document: Option<TextDocumentIdentifier>,
+}
+
 pub enum ProjectMainPath {}
 
 impl Request for ProjectMainPath {
