@@ -13,6 +13,7 @@ use hir_def::DefDatabase;
 use salsa::{Cancelled, ParallelDatabase};
 use vfs::FileId;
 
+pub use goto_definition::NavigationTarget;
 pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};
 
 pub type Cancellable<T> = Result<T, Cancelled>;
@@ -160,10 +161,7 @@ impl Analysis {
     }
 
     /// Returns the definitions from the symbol at `position`.
-    pub fn goto_definition(
-        &self,
-        pos: FilePosition,
-    ) -> Cancellable<Option<Vec<lsp_types::LocationLink>>> {
+    pub fn goto_definition(&self, pos: FilePosition) -> Cancellable<Option<Vec<NavigationTarget>>> {
         self.with_db(|db| goto_definition::goto_definition(db, pos))
     }
 }

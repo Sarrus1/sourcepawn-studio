@@ -1,7 +1,9 @@
 use anyhow::Context;
 
 use crate::{
-    lsp::from_proto, lsp_ext::SyntaxTreeParams, server::GlobalStateSnapshot,
+    lsp::{from_proto, to_proto},
+    lsp_ext::SyntaxTreeParams,
+    server::GlobalStateSnapshot,
     utils::prettify_s_expression,
 };
 
@@ -11,12 +13,12 @@ pub(crate) fn handle_goto_definition(
 ) -> anyhow::Result<Option<lsp_types::GotoDefinitionResponse>> {
     let pos = from_proto::file_position(&snap, params.text_document_position_params.clone())?;
 
-    let links = match snap.analysis.goto_definition(pos)? {
+    let targets = match snap.analysis.goto_definition(pos)? {
         None => return Ok(None),
         Some(it) => it,
     };
 
-    Ok(Some(lsp_types::GotoDefinitionResponse::Link(links)))
+    Ok(Some(to_proto::goto_definition_response(&snap, targets)?))
 }
 
 pub(crate) fn handle_syntax_tree(
