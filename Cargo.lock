@@ -163,8 +163,10 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "fxhash",
+ "la-arena",
  "lazy_static",
  "lsp-types",
+ "parking_lot 0.12.1",
  "regex",
  "salsa",
  "sourcepawn_lexer",

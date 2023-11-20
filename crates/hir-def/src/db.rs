@@ -3,7 +3,9 @@ use std::sync::Arc;
 use base_db::SourceDatabase;
 use vfs::FileId;
 
-use crate::{item_tree::ItemTree, FunctionId, FunctionLoc, VariableId, VariableLoc};
+use crate::{
+    ast_id_map::AstIdMap, item_tree::ItemTree, FunctionId, FunctionLoc, VariableId, VariableLoc,
+};
 
 #[salsa::query_group(InternDatabaseStorage)]
 pub trait InternDatabase: SourceDatabase {
@@ -28,4 +30,7 @@ pub trait InternDatabase: SourceDatabase {
 pub trait DefDatabase: InternDatabase {
     #[salsa::invoke(ItemTree::file_item_tree_query)]
     fn file_item_tree(&self, file_id: FileId) -> Arc<ItemTree>;
+
+    #[salsa::invoke(AstIdMap::from_tree)]
+    fn ast_id_map(&self, file_id: FileId) -> Arc<AstIdMap>;
 }

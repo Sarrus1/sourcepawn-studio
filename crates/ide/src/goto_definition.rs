@@ -51,24 +51,24 @@ pub(crate) fn goto_definition(
     log::info!("Going to def.");
     let sema = &Semantics::new(db);
     let file = sema.parse(pos.file_id);
-    let node = file.node_from_pos(pos.position)?;
-    let node_id = sema.find_def(pos.file_id, node)?;
-    let root_node = file.tree().root_node();
-    let def_node = find_sub_node_by_id(root_node, node_id)?;
+    let node = &file[file.node_from_pos(pos.position)?];
+    let def_ptr = sema.find_def(pos.file_id, node)?;
+    let def_node = def_ptr.to_node(&file);
+    // let def_node = find_sub_node_by_id(root_node, ast_id)?;
     log::info!(
         "{:?}",
         node.utf8_text(db.file_text(pos.file_id).as_ref().as_bytes())
     );
     log::info!("{:?}", db.file_item_tree(pos.file_id));
     let mut name_range = def_node.range();
-    if let Some(name_node) = def_node.child_by_field_name("name") {
+    if let Some(name_node) = def_node.child_by_field_name("name", &file) {
         name_range = name_node.range();
     }
     Some(vec![NavigationTarget {
         file_id: pos.file_id,
-        origin_selection_range: range_from_ts_range(node.range()),
-        target_range: range_from_ts_range(def_node.range()),
-        target_selection_range: range_from_ts_range(name_range),
+        origin_selection_range: node.range(),
+        target_range: def_node.range(),
+        target_selection_range: name_range,
     }])
 }
 

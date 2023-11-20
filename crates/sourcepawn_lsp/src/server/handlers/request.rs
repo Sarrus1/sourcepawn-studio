@@ -33,5 +33,6 @@ pub(crate) fn handle_syntax_tree(
             .uri,
     )?)?;
 
-    Ok(prettify_s_expression(&tree.tree().root_node().to_sexp()))
+    // Ok(prettify_s_expression(&tree.root_node().to_sexp()))
+    Ok("".to_string())
 }

@@ -6,6 +6,7 @@ use std::ops::Index;
 use std::sync::Arc;
 use vfs::FileId;
 
+pub use crate::ast_id_map::{AstId, NodePtr};
 use crate::db::DefDatabase;
 
 use self::pretty::print_item_tree;
@@ -23,31 +24,30 @@ pub struct ItemTree {
 impl ItemTree {
     pub fn file_item_tree_query(db: &dyn DefDatabase, file_id: FileId) -> Arc<Self> {
         let mut item_tree = ItemTree::default();
-        let file = db.parse(file_id);
+        let tree = db.parse(file_id);
+        let root_node = tree.root_node();
         let source = db.file_text(file_id);
         let source = source.as_bytes();
-        let root_node = file.tree().root_node();
-        let mut cursor = root_node.walk();
-        for child in root_node.children(&mut cursor) {
+        let ast_id_map = db.ast_id_map(file_id);
+        for child in root_node.children().iter().map(|idx| &tree[*idx]) {
             match child.kind() {
                 "function_declaration" => {
-                    if let Some(name_node) = child.child_by_field_name("name") {
+                    if let Some(name_node) = child.child_by_field_name("name", &tree) {
                         let res = Function {
                             name: Name::from(name_node.utf8_text(source).unwrap()),
-                            ts_node_id: child.id(),
+                            ast_id: ast_id_map.ast_id_of(child),
                         };
                         let id = item_tree.data_mut().functions.alloc(res);
                         item_tree.top_level.push(FileItem::Function(id));
                     }
                 }
                 "global_variable_declaration" => {
-                    let mut cursor = child.walk();
-                    for sub_child in child.children(&mut cursor) {
+                    for sub_child in child.children().iter().map(|idx| &tree[*idx]) {
                         if sub_child.kind() == "variable_declaration" {
-                            if let Some(name_node) = sub_child.child_by_field_name("name") {
+                            if let Some(name_node) = sub_child.child_by_field_name("name", &tree) {
                                 let res = Variable {
                                     name: Name::from(name_node.utf8_text(source).unwrap()),
-                                    ts_node_id: sub_child.id(),
+                                    ast_id: ast_id_map.ast_id_of(child),
                                 };
                                 let id = item_tree.data_mut().variables.alloc(res);
                                 item_tree.top_level.push(FileItem::Variable(id));
@@ -102,7 +102,7 @@ pub struct Variable {
     pub name: Name,
     // pub visibility: RawVisibilityId,
     // pub type_ref: Interned<TypeRef>,
-    pub ts_node_id: usize,
+    pub ast_id: AstId,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -111,7 +111,7 @@ pub struct Function {
     // pub visibility: RawVisibilityId,
     // pub params: IdxRange<Param>,
     // pub ret_type: Interned<TypeRef>,
-    pub ts_node_id: usize,
+    pub ast_id: AstId,
 }
 
 /// Trait implemented by all item nodes in the item tree.

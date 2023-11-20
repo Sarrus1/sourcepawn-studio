@@ -4,9 +4,11 @@ use la_arena::Idx;
 use std::{hash::Hasher, sync::Arc};
 use vfs::FileId;
 
+mod ast_id_map;
 pub mod db;
 mod item_tree;
 
+pub use ast_id_map::NodePtr;
 pub use db::DefDatabase;
 pub use item_tree::FileItem;
 
@@ -19,6 +21,7 @@ pub trait Lookup {
     type Data;
     fn lookup(&self, db: &dyn db::DefDatabase) -> Self::Data;
 }
+
 macro_rules! impl_intern_key {
     ($name:ident) => {
         impl salsa::InternKey for $name {
