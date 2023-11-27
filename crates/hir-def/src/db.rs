@@ -33,4 +33,8 @@ pub trait DefDatabase: InternDatabase {
 
     #[salsa::invoke(AstIdMap::from_tree)]
     fn ast_id_map(&self, file_id: FileId) -> Arc<AstIdMap>;
+
+    // #[salsa::invoke(crate_def_map_wait)]
+    // // #[salsa::transparent]
+    // fn file_def_map(&self, file_id: FileId) -> Arc<DefMap>;
 }

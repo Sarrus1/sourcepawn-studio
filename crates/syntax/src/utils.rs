@@ -11,6 +11,18 @@ pub fn ts_range_to_lsp_range(range: &tree_sitter::Range) -> lsp_types::Range {
     lsp_types::Range { start, end }
 }
 
+/// Convert an LSP [Position](lsp_types::Position) to a Tree-sitter [Point](tree_sitter::Point).
+///
+/// # Arguments
+///
+/// * `pos` - LSP [Position](lsp_types::Position) to convert.
+pub fn lsp_position_to_ts_point(pos: &lsp_types::Position) -> tree_sitter::Point {
+    tree_sitter::Point {
+        row: pos.line as usize,
+        column: pos.character as usize,
+    }
+}
+
 /// Convert a Tree-sitter [Point](tree_sitter::Point) to an LSP [Position](lsp_types::Position).
 ///
 /// # Arguments

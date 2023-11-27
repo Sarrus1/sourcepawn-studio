@@ -1,4 +1,4 @@
-use base_db::{Node, Tree};
+use base_db::Tree;
 use db::HirDatabase;
 use hir_def::{FileItem, NodePtr};
 use std::{fmt, ops};
@@ -43,10 +43,10 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         self.db.parse(file_id)
     }
 
-    pub fn find_def(&self, file_id: FileId, node: &Node) -> Option<NodePtr> {
+    pub fn find_def(&self, file_id: FileId, node: &tree_sitter::Node) -> Option<NodePtr> {
         let source = self.db.file_text(file_id);
         let ast_id_map = self.db.ast_id_map(file_id);
-        let text = node.utf8_text(source.as_ref().as_bytes())?;
+        let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
         let item_tree = self.db.file_item_tree(file_id);
         for item in item_tree.top_level_items() {
             match item {

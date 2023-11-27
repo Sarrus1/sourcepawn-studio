@@ -1,7 +1,7 @@
 use std::ops::Index;
 use std::sync::Arc;
 
-use base_db::{Node, Tree};
+use base_db::Tree;
 use fxhash::FxHashMap;
 use la_arena::{Arena, Idx};
 use vfs::FileId;
@@ -14,8 +14,8 @@ pub struct NodePtr {
     end_byte: usize,
 }
 
-impl From<&Node> for NodePtr {
-    fn from(node: &Node) -> Self {
+impl From<&tree_sitter::Node<'_>> for NodePtr {
+    fn from(node: &tree_sitter::Node<'_>) -> Self {
         NodePtr {
             start_byte: node.start_byte(),
             end_byte: node.end_byte(),
@@ -24,14 +24,15 @@ impl From<&Node> for NodePtr {
 }
 
 impl NodePtr {
-    pub fn to_node<'a>(&'a self, tree: &'a Tree) -> &Node {
+    pub fn to_node<'a>(&'a self, tree: &'a Tree) -> tree_sitter::Node {
         let mut node = tree.root_node();
         loop {
             if node.start_byte() == self.start_byte && node.end_byte() == self.end_byte {
                 return node;
             }
             let mut found = false;
-            for child in node.children().iter().map(|idx| &tree[*idx]) {
+            let mut cursor = node.walk();
+            for child in node.children(&mut cursor) {
                 if child.start_byte() <= self.start_byte && child.end_byte() >= self.end_byte {
                     node = child;
                     found = true;
@@ -57,7 +58,7 @@ pub struct AstIdMap {
 }
 
 impl AstIdMap {
-    pub fn ast_id_of(&self, node: &Node) -> AstId {
+    pub fn ast_id_of(&self, node: &tree_sitter::Node) -> AstId {
         for (k, v) in self.map.iter() {
             log::info!("k: {:?}, v: {:?}", k, v)
         }
@@ -71,14 +72,15 @@ impl AstIdMap {
         let mut arena = Arena::default();
         let mut map = FxHashMap::default();
         let tree = db.parse(file_id);
-        for node in tree.root_node().children().iter().map(|idx| &tree[*idx]) {
+        let mut cursor = tree.root_node().walk();
+        for node in tree.root_node().children(&mut cursor) {
             if !matches!(
                 node.kind(),
                 "function_declaration" | "global_variable_declaration"
             ) {
                 continue;
             }
-            let node_ptr = NodePtr::from(node);
+            let node_ptr = NodePtr::from(&node);
             let ast_id = arena.alloc(node_ptr);
             map.insert(node_ptr, AstId { raw: ast_id });
         }

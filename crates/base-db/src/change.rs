@@ -3,7 +3,6 @@
 
 use std::{fmt, sync::Arc};
 
-use salsa::Durability;
 use vfs::FileId;
 
 use crate::SourceDatabaseExt;

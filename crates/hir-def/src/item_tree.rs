@@ -29,25 +29,27 @@ impl ItemTree {
         let source = db.file_text(file_id);
         let source = source.as_bytes();
         let ast_id_map = db.ast_id_map(file_id);
-        for child in root_node.children().iter().map(|idx| &tree[*idx]) {
+        let mut cursor = root_node.walk();
+        for child in root_node.children(&mut cursor) {
             match child.kind() {
                 "function_declaration" => {
-                    if let Some(name_node) = child.child_by_field_name("name", &tree) {
+                    if let Some(name_node) = child.child_by_field_name("name") {
                         let res = Function {
                             name: Name::from(name_node.utf8_text(source).unwrap()),
-                            ast_id: ast_id_map.ast_id_of(child),
+                            ast_id: ast_id_map.ast_id_of(&child),
                         };
                         let id = item_tree.data_mut().functions.alloc(res);
                         item_tree.top_level.push(FileItem::Function(id));
                     }
                 }
                 "global_variable_declaration" => {
-                    for sub_child in child.children().iter().map(|idx| &tree[*idx]) {
+                    let mut cursor = child.walk();
+                    for sub_child in child.children(&mut cursor) {
                         if sub_child.kind() == "variable_declaration" {
-                            if let Some(name_node) = sub_child.child_by_field_name("name", &tree) {
+                            if let Some(name_node) = sub_child.child_by_field_name("name") {
                                 let res = Variable {
                                     name: Name::from(name_node.utf8_text(source).unwrap()),
-                                    ast_id: ast_id_map.ast_id_of(child),
+                                    ast_id: ast_id_map.ast_id_of(&sub_child),
                                 };
                                 let id = item_tree.data_mut().variables.alloc(res);
                                 item_tree.top_level.push(FileItem::Variable(id));
