@@ -52,7 +52,7 @@ zip = "0.6.6"
 
 [dependencies.openssl]
 optional = true
-version = "0.10.55"
+version = "0.10.60"
 
 [dev-dependencies]
 assert_unordered = "0.3.5"
