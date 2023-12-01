@@ -1,5 +1,5 @@
 use core::hash::Hash;
-use item_tree::{Function, ItemTree, ItemTreeNode, Variable};
+use item_tree::{AstId, Function, ItemTree, ItemTreeNode, Variable};
 use la_arena::Idx;
 use std::{hash::Hasher, sync::Arc};
 use vfs::FileId;
@@ -65,6 +65,15 @@ impl_intern!(
     lookup_intern_function
 );
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
+pub struct BlockId(salsa::InternId);
+#[derive(Debug, Hash, PartialEq, Eq, Clone)]
+pub struct BlockLoc {
+    ast_id: AstId,
+    file_id: FileId,
+}
+impl_intern!(BlockId, BlockLoc, intern_block, lookup_intern_block);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct VariableId(salsa::InternId);
 type VariableLoc = ItemTreeId<Variable>;
@@ -74,6 +83,19 @@ impl_intern!(
     intern_variable,
     lookup_intern_variable
 );
+
+/// Defs which can be visible at the global scope.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FileDefId {
+    FunctionId(FunctionId),
+    VariableId(VariableId),
+}
+
+impl From<FunctionId> for FileDefId {
+    fn from(it: FunctionId) -> FileDefId {
+        FileDefId::FunctionId(it)
+    }
+}
 
 /// Identifies a particular [`ItemTree`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]

@@ -1,6 +1,6 @@
 use base_db::Tree;
 use db::HirDatabase;
-use hir_def::{FileItem, NodePtr};
+use hir_def::{FileItem, FunctionId, Lookup, NodePtr};
 use std::{fmt, ops};
 use vfs::FileId;
 
@@ -48,17 +48,14 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         let ast_id_map = self.db.ast_id_map(file_id);
         let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
         let item_tree = self.db.file_item_tree(file_id);
-        for item in item_tree.top_level_items() {
-            match item {
-                FileItem::Variable(variable) => {
-                    if item_tree[*variable].name == text.into() {
-                        return Some(ast_id_map[item_tree[*variable].ast_id]);
-                    }
+        let def_map = self.db.file_def_map(file_id);
+        if let Some(def) = def_map.get(text) {
+            match def {
+                hir_def::FileDefId::FunctionId(id) => {
+                    return Some(ast_id_map[item_tree[id.lookup(self.db).value].ast_id]);
                 }
-                FileItem::Function(function) => {
-                    if item_tree[*function].name == text.into() {
-                        return Some(ast_id_map[item_tree[*function].ast_id]);
-                    }
+                hir_def::FileDefId::VariableId(id) => {
+                    return Some(ast_id_map[item_tree[id.lookup(self.db).value].ast_id]);
                 }
             }
         }

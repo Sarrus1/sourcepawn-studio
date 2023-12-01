@@ -18,6 +18,7 @@ pub mod enum_item;
 pub mod enum_member_item;
 pub mod enum_struct_item;
 pub mod function_item;
+mod generated;
 pub mod include_item;
 pub mod methodmap_item;
 pub mod parameter;
@@ -26,6 +27,8 @@ pub mod typedef_item;
 pub mod typeset_item;
 pub mod utils;
 pub mod variable_item;
+
+pub use generated::TSKind;
 
 /// Represents a location inside a resource, such as a line inside a text file.
 #[derive(Debug, Eq, PartialEq, Clone)]

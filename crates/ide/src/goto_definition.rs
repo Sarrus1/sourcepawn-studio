@@ -1,7 +1,10 @@
 use base_db::{FileLoader, FilePosition};
 use hir::Semantics;
 use hir_def::DefDatabase;
-use syntax::utils::{lsp_position_to_ts_point, ts_range_to_lsp_range};
+use syntax::{
+    utils::{lsp_position_to_ts_point, ts_range_to_lsp_range},
+    TSKind,
+};
 use vfs::FileId;
 
 use crate::RootDatabase;
@@ -33,6 +36,20 @@ pub(crate) fn goto_definition(
     );
     log::info!("{:?}", db.file_item_tree(pos.file_id));
     let mut name_range = def_node.range();
+
+    match TSKind::from(def_node) {
+        TSKind::sym_function_declaration => {
+            if let Some(name_node) = def_node.child_by_field_name("name") {
+                name_range = name_node.range();
+            }
+        }
+        TSKind::sym_variable_declaration => {
+            if let Some(name_node) = def_node.child_by_field_name("name") {
+                name_range = name_node.range();
+            }
+        }
+        _ => todo!(),
+    }
     if let Some(name_node) = def_node.child_by_field_name("name") {
         name_range = name_node.range();
     }
@@ -43,5 +60,3 @@ pub(crate) fn goto_definition(
         target_selection_range: ts_range_to_lsp_range(&name_range),
     }])
 }
-
-// We have an item tree and queries for each item that compute their data.

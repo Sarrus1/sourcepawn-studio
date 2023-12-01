@@ -4,6 +4,7 @@ use smallvec::SmallVec;
 use smol_str::SmolStr;
 use std::ops::Index;
 use std::sync::Arc;
+use syntax::TSKind;
 use vfs::FileId;
 
 pub use crate::ast_id_map::{AstId, NodePtr};
@@ -31,8 +32,8 @@ impl ItemTree {
         let ast_id_map = db.ast_id_map(file_id);
         let mut cursor = root_node.walk();
         for child in root_node.children(&mut cursor) {
-            match child.kind() {
-                "function_declaration" => {
+            match TSKind::from(child) {
+                TSKind::sym_function_declaration => {
                     if let Some(name_node) = child.child_by_field_name("name") {
                         let res = Function {
                             name: Name::from(name_node.utf8_text(source).unwrap()),
@@ -42,10 +43,10 @@ impl ItemTree {
                         item_tree.top_level.push(FileItem::Function(id));
                     }
                 }
-                "global_variable_declaration" => {
+                TSKind::sym_global_variable_declaration => {
                     let mut cursor = child.walk();
                     for sub_child in child.children(&mut cursor) {
-                        if sub_child.kind() == "variable_declaration" {
+                        if TSKind::from(sub_child) == TSKind::sym_variable_declaration {
                             if let Some(name_node) = sub_child.child_by_field_name("name") {
                                 let res = Variable {
                                     name: Name::from(name_node.utf8_text(source).unwrap()),

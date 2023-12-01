@@ -4,6 +4,7 @@ use std::sync::Arc;
 use base_db::Tree;
 use fxhash::FxHashMap;
 use la_arena::{Arena, Idx};
+use syntax::TSKind;
 use vfs::FileId;
 
 use crate::DefDatabase;
@@ -69,22 +70,47 @@ impl AstIdMap {
 
 impl AstIdMap {
     pub fn from_tree(db: &dyn DefDatabase, file_id: FileId) -> Arc<Self> {
+        let tree = db.parse(file_id);
+        Arc::new(AstIdMap::from_source(&tree.root_node()))
+    }
+
+    fn from_source(root_node: &tree_sitter::Node) -> Self {
+        assert!(root_node.parent().is_none());
         let mut arena = Arena::default();
         let mut map = FxHashMap::default();
-        let tree = db.parse(file_id);
-        let mut cursor = tree.root_node().walk();
-        for node in tree.root_node().children(&mut cursor) {
-            if !matches!(
-                node.kind(),
-                "function_declaration" | "global_variable_declaration"
-            ) {
-                continue;
+        bdfs(root_node, &mut |node: tree_sitter::Node<'_>| {
+            if TSKind::from(node) == TSKind::sym_global_variable_declaration {
+                for child in node.children(&mut node.walk()) {
+                    if TSKind::from(child) == TSKind::sym_variable_declaration {
+                        let node_ptr = NodePtr::from(&child);
+                        let ast_id = arena.alloc(node_ptr);
+                        map.insert(node_ptr, AstId { raw: ast_id });
+                    }
+                }
+            } else {
+                let node_ptr = NodePtr::from(&node);
+                let ast_id = arena.alloc(node_ptr);
+                map.insert(node_ptr, AstId { raw: ast_id });
             }
-            let node_ptr = NodePtr::from(&node);
-            let ast_id = arena.alloc(node_ptr);
-            map.insert(node_ptr, AstId { raw: ast_id });
+            matches!(
+                TSKind::from(node),
+                TSKind::sym_function_declaration | TSKind::sym_block | TSKind::sym_for_statement
+            )
+        });
+        AstIdMap { arena, map }
+    }
+}
+
+fn bdfs(node: &tree_sitter::Node, f: &mut impl FnMut(tree_sitter::Node) -> bool) {
+    let cursor = &mut node.walk();
+    let mut nodes = vec![];
+    for child in node.children(cursor) {
+        if f(child) {
+            nodes.push(child);
         }
-        Arc::new(AstIdMap { arena, map })
+    }
+    for child in nodes {
+        bdfs(&child, f);
     }
 }
 
