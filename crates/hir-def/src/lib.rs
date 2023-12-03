@@ -5,8 +5,10 @@ use std::{hash::Hasher, sync::Arc};
 use vfs::FileId;
 
 mod ast_id_map;
+mod body;
 pub mod db;
 mod item_tree;
+mod src;
 
 pub use ast_id_map::NodePtr;
 pub use db::DefDatabase;
@@ -101,15 +103,19 @@ impl From<FunctionId> for FileDefId {
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct TreeId {
     file: FileId,
+    block: Option<BlockId>,
 }
 
 impl TreeId {
-    pub(crate) fn new(file: FileId) -> Self {
-        Self { file }
+    pub(crate) fn new(file: FileId, block: Option<BlockId>) -> Self {
+        Self { file, block }
     }
 
     pub(crate) fn item_tree(&self, db: &dyn DefDatabase) -> Arc<ItemTree> {
-        db.file_item_tree(self.file)
+        match self.block {
+            Some(block) => db.block_item_tree(block),
+            None => db.file_item_tree(self.file),
+        }
     }
 
     pub(crate) fn file_id(self) -> FileId {
@@ -160,5 +166,55 @@ impl<N: ItemTreeNode> Hash for ItemTreeId<N> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.tree.hash(state);
         self.value.hash(state);
+    }
+}
+
+/// The defs which have a body.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum DefWithBodyId {
+    FunctionId(FunctionId),
+}
+
+/// `InFile<T>` stores a value of `T` inside a particular file/syntax tree.
+///
+/// Typical usages are:
+///
+/// * `InFile<SyntaxNode>` -- syntax node in a file
+/// * `InFile<ast::FnDef>` -- ast node in a file
+/// * `InFile<TextSize>` -- offset in a file
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+pub struct InFile<T> {
+    pub file_id: FileId,
+    pub value: T,
+}
+
+impl<T> InFile<T> {
+    pub fn new(file_id: FileId, value: T) -> InFile<T> {
+        InFile { file_id, value }
+    }
+
+    pub fn with_value<U>(&self, value: U) -> InFile<U> {
+        InFile::new(self.file_id, value)
+    }
+
+    pub fn map<F: FnOnce(T) -> U, U>(self, f: F) -> InFile<U> {
+        InFile::new(self.file_id, f(self.value))
+    }
+
+    pub fn as_ref(&self) -> InFile<&T> {
+        self.with_value(&self.value)
+    }
+}
+
+impl<T: Clone> InFile<&T> {
+    pub fn cloned(&self) -> InFile<T> {
+        self.with_value(self.value.clone())
+    }
+}
+
+impl<T> InFile<Option<T>> {
+    pub fn transpose(self) -> Option<InFile<T>> {
+        let value = self.value?;
+        Some(InFile::new(self.file_id, value))
     }
 }

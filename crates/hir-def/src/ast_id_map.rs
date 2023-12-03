@@ -25,7 +25,7 @@ impl From<&tree_sitter::Node<'_>> for NodePtr {
 }
 
 impl NodePtr {
-    pub fn to_node<'a>(&'a self, tree: &'a Tree) -> tree_sitter::Node {
+    pub fn to_node(self, tree: &'_ Tree) -> tree_sitter::Node<'_> {
         let mut node = tree.root_node();
         loop {
             if node.start_byte() == self.start_byte && node.end_byte() == self.end_byte {
@@ -79,25 +79,36 @@ impl AstIdMap {
         let mut arena = Arena::default();
         let mut map = FxHashMap::default();
         bdfs(root_node, &mut |node: tree_sitter::Node<'_>| {
-            if TSKind::from(node) == TSKind::sym_global_variable_declaration {
-                for child in node.children(&mut node.walk()) {
-                    if TSKind::from(child) == TSKind::sym_variable_declaration {
-                        let node_ptr = NodePtr::from(&child);
-                        let ast_id = arena.alloc(node_ptr);
-                        map.insert(node_ptr, AstId { raw: ast_id });
+            match TSKind::from(node) {
+                TSKind::sym_global_variable_declaration
+                | TSKind::sym_variable_declaration_statement => {
+                    for child in node.children(&mut node.walk()) {
+                        if TSKind::from(child) == TSKind::sym_variable_declaration {
+                            let node_ptr = NodePtr::from(&child);
+                            let ast_id = arena.alloc(node_ptr);
+                            map.insert(node_ptr, AstId { raw: ast_id });
+                        }
                     }
                 }
-            } else {
-                let node_ptr = NodePtr::from(&node);
-                let ast_id = arena.alloc(node_ptr);
-                map.insert(node_ptr, AstId { raw: ast_id });
+                _ => {
+                    let node_ptr = NodePtr::from(&node);
+                    let ast_id = arena.alloc(node_ptr);
+                    map.insert(node_ptr, AstId { raw: ast_id });
+                }
             }
             matches!(
                 TSKind::from(node),
-                TSKind::sym_function_declaration | TSKind::sym_block | TSKind::sym_for_statement
+                TSKind::sym_function_declaration
+                    | TSKind::sym_block
+                    | TSKind::sym_for_statement
+                    | TSKind::sym_while_statement
             )
         });
         AstIdMap { arena, map }
+    }
+
+    pub(crate) fn get_raw(&self, id: AstId) -> NodePtr {
+        self.arena[id.raw]
     }
 }
 

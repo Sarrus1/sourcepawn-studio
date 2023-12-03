@@ -8,8 +8,8 @@ use lsp_types::{
     request::{Completion, Initialize, Shutdown},
     ClientCapabilities, CompletionContext, CompletionItem, CompletionItemKind, CompletionParams,
     CompletionResponse, CompletionTriggerKind, DidOpenTextDocumentParams, InitializeParams,
-    InitializedParams, Location, Position, Range, TextDocumentIdentifier, TextDocumentItem,
-    TextDocumentPositionParams, Url, WorkspaceFolder,
+    InitializedParams, Location, LocationLink, Position, Range, TextDocumentIdentifier,
+    TextDocumentItem, TextDocumentPositionParams, Url, WorkspaceFolder,
 };
 use std::{
     env,
@@ -312,6 +312,57 @@ impl TestBed {
     pub fn documents(&self) -> &[Document] {
         &self.fixture.documents
     }
+
+    /// Remove the tempdir path from the uri, so that the tests are not dependent
+    /// on the tempdir.
+    pub fn anonymize_uri(&self, uri: &mut Url) {
+        let mut target_path = PathBuf::from(uri.path());
+        target_path = target_path
+            .strip_prefix(&self.temp_dir_path)
+            .unwrap()
+            .to_path_buf();
+        uri.set_path(&target_path.to_string_lossy());
+    }
+}
+
+pub fn goto_definition(fixture: &str) -> Vec<LocationLink> {
+    let test_bed = TestBed::new(fixture, true).unwrap();
+    test_bed
+        .initialize(
+            serde_json::from_value(serde_json::json!({
+                "textDocument": {
+                    "definition": {
+                        "linkSupport": true
+                    }
+                },
+                "workspace": {
+                    "configuration": true,
+                    "workspace_folders": true
+                }
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+    let text_document_position = test_bed.cursor().unwrap();
+    let params = lsp_types::request::GotoTypeDefinitionParams {
+        text_document_position_params: text_document_position,
+        work_done_progress_params: Default::default(),
+        partial_result_params: Default::default(),
+    };
+    let mut locations = match test_bed
+        .client()
+        .send_request::<lsp_types::request::GotoDefinition>(params)
+        .unwrap()
+    {
+        Some(lsp_types::GotoDefinitionResponse::Link(locations)) => locations,
+        _ => unreachable!("Expected a link response."),
+    };
+
+    locations.iter_mut().for_each(|location| {
+        test_bed.anonymize_uri(&mut location.target_uri);
+    });
+
+    locations
 }
 
 pub fn complete(fixture: &str, trigger_character: Option<String>) -> Vec<CompletionItem> {
@@ -335,10 +386,6 @@ pub fn complete(fixture: &str, trigger_character: Option<String>) -> Vec<Complet
         )
         .unwrap();
     let text_document_position = test_bed.cursor().unwrap();
-    test_bed
-        .internal_rx
-        .recv_timeout(Duration::from_secs(10))
-        .unwrap();
     let mut items = match test_bed
         .client()
         .send_request::<Completion>(CompletionParams {

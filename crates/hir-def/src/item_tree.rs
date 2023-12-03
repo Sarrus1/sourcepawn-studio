@@ -8,7 +8,7 @@ use syntax::TSKind;
 use vfs::FileId;
 
 pub use crate::ast_id_map::{AstId, NodePtr};
-use crate::db::DefDatabase;
+use crate::{db::DefDatabase, src::HasSource, BlockId, ItemTreeId, Lookup};
 
 use self::pretty::print_item_tree;
 
@@ -30,8 +30,7 @@ impl ItemTree {
         let source = db.file_text(file_id);
         let source = source.as_bytes();
         let ast_id_map = db.ast_id_map(file_id);
-        let mut cursor = root_node.walk();
-        for child in root_node.children(&mut cursor) {
+        for child in root_node.children(&mut root_node.walk()) {
             match TSKind::from(child) {
                 TSKind::sym_function_declaration => {
                     if let Some(name_node) = child.child_by_field_name("name") {
@@ -62,6 +61,37 @@ impl ItemTree {
             }
         }
         print_item_tree(db, &item_tree);
+        Arc::new(item_tree)
+    }
+
+    pub fn block_item_tree_query(db: &dyn DefDatabase, block: BlockId) -> Arc<Self> {
+        let loc = block.lookup(db);
+        let tree = db.parse(loc.file_id);
+        let block_node = loc.source(db, &tree);
+        let source = db.file_text(loc.file_id);
+        let ast_id_map = db.ast_id_map(loc.file_id);
+        let mut item_tree = ItemTree::default();
+        for child in block_node.value.children(&mut block_node.value.walk()) {
+            match TSKind::from(child) {
+                TSKind::sym_variable_declaration_statement => {
+                    for sub_child in child.children(&mut child.walk()) {
+                        if TSKind::from(sub_child) == TSKind::sym_variable_declaration {
+                            if let Some(name_node) = sub_child.child_by_field_name("name") {
+                                let res = Variable {
+                                    name: Name::from(
+                                        name_node.utf8_text(source.as_bytes()).unwrap(),
+                                    ),
+                                    ast_id: ast_id_map.ast_id_of(&sub_child),
+                                };
+                                let id = item_tree.data_mut().variables.alloc(res);
+                                item_tree.top_level.push(FileItem::Variable(id));
+                            }
+                        }
+                    }
+                }
+                _ => eprintln!("Unexpected child of block: {:?}", child),
+            }
+        }
         Arc::new(item_tree)
     }
 
@@ -117,9 +147,14 @@ pub struct Function {
     pub ast_id: AstId,
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Block {
+    pub ast_id: AstId,
+}
+
 /// Trait implemented by all item nodes in the item tree.
 pub trait ItemTreeNode: Clone {
-    // fn ast_id(&self) -> FileAstId<tree_sitter::Node>;
+    fn ast_id(&self) -> AstId;
 
     /// Looks up an instance of `Self` in an item tree.
     fn lookup(tree: &ItemTree, index: Idx<Self>) -> &Self;
@@ -150,11 +185,9 @@ macro_rules! mod_items {
 
         $(
             impl ItemTreeNode for $typ {
-                // type Source = $ast;
-
-                // fn ast_id(&self) -> FileAstId<Self::Source> {
-                //     self.ast_id
-                // }
+                fn ast_id(&self) -> AstId {
+                    self.ast_id
+                }
 
                 fn lookup(tree: &ItemTree, index: Idx<Self>) -> &Self {
                     &tree.data().$fld[index]
@@ -186,4 +219,11 @@ macro_rules! mod_items {
 mod_items! {
     Function functions,
     Variable variables,
+}
+
+impl<N: ItemTreeNode> Index<ItemTreeId<N>> for ItemTree {
+    type Output = N;
+    fn index(&self, id: ItemTreeId<N>) -> &N {
+        N::lookup(self, id.value)
+    }
 }
