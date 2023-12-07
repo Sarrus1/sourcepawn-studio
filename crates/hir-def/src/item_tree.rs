@@ -130,6 +130,15 @@ impl From<&str> for Name {
     }
 }
 
+impl Name {
+    pub fn from_node(node: &tree_sitter::Node, source: &str) -> Self {
+        Self::from(
+            node.utf8_text(source.as_bytes())
+                .expect("Failed to get utf8 text"),
+        )
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Variable {
     pub name: Name,

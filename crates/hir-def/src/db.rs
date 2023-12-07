@@ -6,7 +6,7 @@ use vfs::FileId;
 
 use crate::{
     ast_id_map::AstIdMap,
-    body::Body,
+    body::{scope::ExprScopes, Body, BodySourceMap},
     item_tree::{ItemTree, Name},
     BlockId, BlockLoc, DefWithBodyId, FileDefId, FileItem, FunctionId, FunctionLoc, Intern, Lookup,
     TreeId, VariableId, VariableLoc,
@@ -51,13 +51,31 @@ pub trait DefDatabase: InternDatabase {
     #[salsa::invoke(DefMap::block_def_map_query)]
     fn block_def_map(&self, block_id: BlockId) -> Arc<DefMap>;
 
+    #[salsa::invoke(Body::body_with_source_map_query)]
+    fn body_with_source_map(&self, def: DefWithBodyId) -> (Arc<Body>, Arc<BodySourceMap>);
+
     #[salsa::invoke(Body::body_query)]
     fn body(&self, def: DefWithBodyId) -> Arc<Body>;
+
+    #[salsa::invoke(ExprScopes::expr_scopes_query)]
+    fn expr_scopes(&self, def: DefWithBodyId, file_id: FileId) -> Arc<ExprScopes>;
+}
+
+/// For `DefMap`s computed for a block expression, this stores its location in the parent map.
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+struct BlockInfo {
+    /// The `BlockId` this `DefMap` was created from.
+    block: BlockId,
+    /// The containing file.
+    parent: FileId,
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct DefMap {
     values: FxHashMap<Name, FileDefId>,
+    /// When this is a block def map, this will hold the block id of the block and module that
+    /// contains this block.
+    block: Option<BlockInfo>,
 }
 
 impl DefMap {
@@ -118,5 +136,9 @@ impl DefMap {
         }
 
         Arc::new(res)
+    }
+
+    pub(crate) fn block_id(&self) -> Option<BlockId> {
+        self.block.map(|block| block.block)
     }
 }

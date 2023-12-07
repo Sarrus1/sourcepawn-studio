@@ -59,16 +59,6 @@ pub struct AstIdMap {
 }
 
 impl AstIdMap {
-    pub fn ast_id_of(&self, node: &tree_sitter::Node) -> AstId {
-        for (k, v) in self.map.iter() {
-            log::info!("k: {:?}, v: {:?}", k, v)
-        }
-        log::info!("Looking for: {:?}", NodePtr::from(node));
-        self.map[&NodePtr::from(node)]
-    }
-}
-
-impl AstIdMap {
     pub fn from_tree(db: &dyn DefDatabase, file_id: FileId) -> Arc<Self> {
         let tree = db.parse(file_id);
         Arc::new(AstIdMap::from_source(&tree.root_node()))
@@ -105,6 +95,18 @@ impl AstIdMap {
             )
         });
         AstIdMap { arena, map }
+    }
+
+    pub fn ast_id_of(&self, node: &tree_sitter::Node) -> AstId {
+        match self.map.get(&NodePtr::from(node)) {
+            Some(id) => *id,
+            None => {
+                for (k, v) in self.map.iter() {
+                    log::info!("k: {:?}, v: {:?}", k, v)
+                }
+                panic!("Failed to find: {:?}", NodePtr::from(node))
+            }
+        }
     }
 
     pub(crate) fn get_raw(&self, id: AstId) -> NodePtr {

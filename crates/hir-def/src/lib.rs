@@ -5,13 +5,16 @@ use std::{hash::Hasher, sync::Arc};
 use vfs::FileId;
 
 mod ast_id_map;
-mod body;
+pub mod body;
 pub mod db;
+mod hir;
 mod item_tree;
+pub mod resolver;
 mod src;
 
 pub use ast_id_map::NodePtr;
 pub use db::DefDatabase;
+pub use hir::ExprId;
 pub use item_tree::FileItem;
 
 trait Intern {
