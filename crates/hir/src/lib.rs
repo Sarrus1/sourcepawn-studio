@@ -49,53 +49,20 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         self.db.parse(file_id)
     }
 
-    fn find_def_inner(
-        &self,
-        file_id: FileId,
-        node: &tree_sitter::Node,
-        parent: Option<tree_sitter::Node>,
-    ) -> Option<NodePtr> {
-        let Some(mut parent) = parent else {
-            return None;
-        };
-        let source = self.db.file_text(file_id);
-        let ast_id_map = self.db.ast_id_map(file_id);
-        let def_map = self.db.file_def_map(file_id);
-        let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
-        while !matches!(TSKind::from(parent), TSKind::sym_block) {
-            parent = parent.parent()?;
-        }
-        // Find the parent function.
-        // Compute all the scopes for the function, and the global scope.
-        // Each scope is mapped from the block id to the scope.
-        // Climb up the tree from the node, and filter the ancestors which can be scopes.
-        // For each scope, try to find the def in the scope.
-        let ast_id = ast_id_map.ast_id_of(&parent);
-        // let (body, source_map) = self.db.body(def);
-        // TODO: get function def here
-        // let scopes = db.expr_scopes(def);
-        // let scope = match offset {
-        //     None => scope_for(&scopes, &source_map, node),
-        //     Some(offset) => scope_for_offset(db, &scopes, &source_map, node.file_id, offset),
-        // };
-        // let resolver = resolver_for_scope(db.upcast(), def, scope);
-        // let block_id = BlockLoc::new(ast_id, file_id).intern(self.db);
-
-        None
-    }
-
     pub fn find_def(&self, file_id: FileId, node: &tree_sitter::Node) -> Option<NodePtr> {
         let source = self.db.file_text(file_id);
         let ast_id_map = self.db.ast_id_map(file_id);
         let def_map = self.db.file_def_map(file_id);
         let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
-        // TODO: Clean the ? flow up
+
         let mut parent = node.parent()?;
+        // If the node does not have a parent we are at the root, nothing to resolve.
+
         while !matches!(TSKind::from(parent), TSKind::sym_function_declaration) {
             if let Some(candidate) = parent.parent() {
                 parent = candidate;
             } else {
-                return None;
+                break;
             }
         }
         match TSKind::from(parent) {
@@ -104,11 +71,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                     .child_by_field_name("name")?
                     .utf8_text(source.as_ref().as_bytes())
                     .ok()?;
-                let body_node = parent
-                    .children(&mut parent.walk())
-                    .find(|node| TSKind::from(*node) == TSKind::sym_block)?;
-                if let Some(def) = def_map.get(parent_name) {
-                    match def {
+                let body_node = parent.child_by_field_name("body")?;
+                match TSKind::from(body_node) {
+                    TSKind::sym_block => match def_map.get(parent_name)? {
                         hir_def::FileDefId::FunctionId(id) => {
                             let def = hir_def::DefWithBodyId::FunctionId(id);
                             let offset = node.start_position();
@@ -125,22 +90,25 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                                 return source_map.expr_source(expr);
                             }
                         }
-                        hir_def::FileDefId::VariableId(_) => todo!(),
+                        hir_def::FileDefId::VariableId(_) => (),
+                    },
+                    _ => todo!("Handle non block body"),
+                }
+            }
+            TSKind::sym_source_file => {
+                let item_tree = self.db.file_item_tree(file_id);
+                if let Some(def) = def_map.get(text) {
+                    match def {
+                        hir_def::FileDefId::FunctionId(id) => {
+                            return Some(ast_id_map[item_tree[id.lookup(self.db).value].ast_id]);
+                        }
+                        hir_def::FileDefId::VariableId(id) => {
+                            return Some(ast_id_map[item_tree[id.lookup(self.db).value].ast_id]);
+                        }
                     }
                 }
             }
             _ => todo!(),
-        }
-        let item_tree = self.db.file_item_tree(file_id);
-        if let Some(def) = def_map.get(text) {
-            match def {
-                hir_def::FileDefId::FunctionId(id) => {
-                    return Some(ast_id_map[item_tree[id.lookup(self.db).value].ast_id]);
-                }
-                hir_def::FileDefId::VariableId(id) => {
-                    return Some(ast_id_map[item_tree[id.lookup(self.db).value].ast_id]);
-                }
-            }
         }
         None
     }

@@ -19,6 +19,7 @@ pub type ExprId = Idx<Expr>;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Expr {
+    Missing,
     Ident(Ident),
     Block {
         id: Option<BlockId>,

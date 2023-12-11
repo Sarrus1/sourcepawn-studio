@@ -5,10 +5,9 @@ use vfs::FileId;
 
 use crate::{
     ast_id_map::AstIdMap,
-    db::DefMap,
-    hir::{Expr, ExprId, Ident},
+    hir::{Expr, ExprId},
     item_tree::Name,
-    BlockLoc, DefDatabase, DefWithBodyId, InFile, NodePtr,
+    BlockLoc, DefDatabase, DefWithBodyId, NodePtr,
 };
 
 use super::{Body, BodySourceMap};
@@ -54,6 +53,7 @@ impl ExprCollector<'_> {
         // param_list: Option<(ast::ParamList, impl Iterator<Item = bool>)>,
         body: Option<tree_sitter::Node>,
     ) -> (Body, BodySourceMap) {
+        eprintln!("collecting body {:?}", body);
         if let Some(body) = body {
             self.body.body_expr = self.collect_expr(body);
         }
@@ -79,6 +79,11 @@ impl ExprCollector<'_> {
     }
 
     fn collect_expr(&mut self, expr: tree_sitter::Node) -> ExprId {
+        self.maybe_collect_expr(expr)
+            .unwrap_or_else(|| self.missing_expr())
+    }
+
+    fn maybe_collect_expr(&mut self, expr: tree_sitter::Node) -> Option<ExprId> {
         match TSKind::from(expr) {
             TSKind::sym_block => {
                 let ast_id = self.ast_id_map.ast_id_of(&expr);
@@ -98,19 +103,29 @@ impl ExprCollector<'_> {
                     id: Some(block_id),
                     statements: statements.into_boxed_slice(),
                 };
-                self.alloc_expr(block, NodePtr::from(&expr))
+                Some(self.alloc_expr(block, NodePtr::from(&expr)))
             }
             TSKind::sym_expression_statement => {
                 let mut cursor = expr.walk();
                 let child = expr.children(&mut cursor).next().unwrap(); // FIXME: This is bad, use Options
-                self.collect_expr(child)
+                Some(self.collect_expr(child))
             }
-            TSKind::sym_variable_declaration_statement => self.collect_variable_declaration(expr),
+            TSKind::sym_variable_declaration_statement => {
+                Some(self.collect_variable_declaration(expr))
+            }
             _ => todo!(
                 "Expression collector for {:?} is not implemented",
                 TSKind::from(expr)
             ),
         }
+    }
+
+    fn alloc_expr_desugared(&mut self, expr: Expr) -> ExprId {
+        self.body.exprs.alloc(expr)
+    }
+
+    fn missing_expr(&mut self) -> ExprId {
+        self.alloc_expr_desugared(Expr::Missing)
     }
 
     fn alloc_expr(&mut self, expr: Expr, ptr: NodePtr) -> ExprId {

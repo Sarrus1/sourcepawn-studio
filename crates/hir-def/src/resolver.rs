@@ -7,7 +7,6 @@ use crate::{
     item_tree::Name,
     DefDatabase, DefWithBodyId, FileDefId, FunctionId, InFile, Lookup, NodePtr, TreeId, VariableId,
 };
-use la_arena::{Arena, ArenaMap, Idx};
 use vfs::FileId;
 
 #[derive(Debug, Clone)]

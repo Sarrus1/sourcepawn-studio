@@ -9,15 +9,28 @@ use vfs::FileId;
 
 use crate::DefDatabase;
 
+/// Not a _pointer_ in the memory sense, rather a location in a [Tree-Sitter](tree_sitter) syntax tree.
+/// [NodePtr] is used by the [AstIdMap] to provide an incremental computation barrier for Salsa.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct NodePtr {
+    /// Kind of the [node](tree_sitter::Node).
+    ///
+    /// Sometimes two nodes are exactly overlapping (same start and end), for instance a single function
+    /// in a source file will have the same start and end positions as the `source_file` node.
+    /// `kind` allows to disambiguate between two overlapping nodes.
+    kind: TSKind,
+
+    /// Start byte of the [node](tree_sitter::Node).
     start_byte: usize,
+
+    /// End byte of the [node](tree_sitter::Node).
     end_byte: usize,
 }
 
 impl From<&tree_sitter::Node<'_>> for NodePtr {
     fn from(node: &tree_sitter::Node<'_>) -> Self {
         NodePtr {
+            kind: TSKind::from(*node),
             start_byte: node.start_byte(),
             end_byte: node.end_byte(),
         }
@@ -28,7 +41,10 @@ impl NodePtr {
     pub fn to_node(self, tree: &'_ Tree) -> tree_sitter::Node<'_> {
         let mut node = tree.root_node();
         loop {
-            if node.start_byte() == self.start_byte && node.end_byte() == self.end_byte {
+            if node.start_byte() == self.start_byte
+                && node.end_byte() == self.end_byte
+                && TSKind::from(node) == self.kind
+            {
                 return node;
             }
             let mut found = false;
@@ -70,6 +86,7 @@ impl AstIdMap {
         let mut map = FxHashMap::default();
         bdfs(root_node, &mut |node: tree_sitter::Node<'_>| {
             match TSKind::from(node) {
+                TSKind::sym_source_file => (),
                 TSKind::sym_global_variable_declaration
                 | TSKind::sym_variable_declaration_statement => {
                     for child in node.children(&mut node.walk()) {

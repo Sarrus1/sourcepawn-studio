@@ -14,6 +14,7 @@ impl<'tree, N: ItemTreeNode> HasSource<'tree> for ItemTreeId<N> {
         let ast_id_map = db.ast_id_map(self.file_id());
         let item = &item_tree[*self];
         let node_ptr = ast_id_map.get_raw(item.ast_id());
+        eprintln!("node_ptr: {:?}", node_ptr);
         let node: tree_sitter::Node<'tree> = node_ptr.to_node(tree);
         InFile::new(self.file_id(), node)
     }
