@@ -91,3 +91,75 @@ void bar() {
 "#,
     ));
 }
+
+#[test]
+fn local_variable_3() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+int foo;
+void bar() {
+    int foo;
+    {
+        int foo;
+        foo = 1;
+         |
+         ^
+    }
+}
+"#,
+    ));
+}
+
+#[test]
+fn function_parameter_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+void bar(int foo) {
+              |
+              ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn function_parameter_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+void bar(int foo) {
+    foo = 1;
+     |
+     ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn function_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+void bar() {}
+     |
+     ^
+"#,
+    ));
+}
+
+#[test]
+fn function_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+void bar() {
+    bar();
+     |
+     ^
+}
+"#,
+    ));
+}

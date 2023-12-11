@@ -20,7 +20,7 @@ pub struct Body {
     pub exprs: Arena<Expr>,
     pub body_expr: ExprId,
     pub idents: Arena<Ident>,
-    pub params: Vec<IdentId>,
+    pub params: Vec<(IdentId, ExprId)>,
     /// Block expressions in this body that may contain inner items.
     block_scopes: Vec<BlockId>,
 }
@@ -59,9 +59,18 @@ impl Body {
                     file_id,
                     value: func_node,
                 } = func.source(db, &tree);
-                let body_node = func_node.child_by_field_name("body"); // FIXME: This is bad.
-                let (body, sourcemap) =
-                    Body::new(db, def, file_id, &db.file_text(file_id), body_node);
+                let body_node = func_node.child_by_field_name("body");
+                let params_list = func_node
+                    .children(&mut func_node.walk())
+                    .find(|child| TSKind::from(child) == TSKind::sym_argument_declarations);
+                let (body, sourcemap) = Body::new(
+                    db,
+                    def,
+                    file_id,
+                    &db.file_text(file_id),
+                    params_list,
+                    body_node,
+                );
                 (Arc::new(body), Arc::new(sourcemap))
             }
         }
@@ -88,10 +97,10 @@ impl Body {
         file_id: FileId,
         source: &str,
         // expander: Expander,
-        // params: Option<(ast::ParamList, impl Iterator<Item = bool>)>,
+        params_list: Option<tree_sitter::Node>,
         body: Option<tree_sitter::Node>,
     ) -> (Body, BodySourceMap) {
-        lower::lower(db, owner, file_id, source, body)
+        lower::lower(db, owner, params_list, file_id, source, body)
     }
 }
 

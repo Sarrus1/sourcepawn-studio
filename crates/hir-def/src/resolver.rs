@@ -5,7 +5,7 @@ use crate::{
     db::DefMap,
     hir::ExprId,
     item_tree::Name,
-    DefDatabase, DefWithBodyId, FunctionId, InFile, Lookup, VariableId,
+    DefDatabase, DefWithBodyId, FileDefId, FunctionId, InFile, Lookup, VariableId,
 };
 use vfs::FileId;
 
@@ -94,7 +94,17 @@ impl Resolver {
                         return Some(ValueNs::LocalVariable(entry));
                     }
                 }
-                _ => todo!(),
+                Scope::GlobalScope(def_map) => {
+                    let entry = def_map.get(&name)?;
+                    match entry {
+                        FileDefId::FunctionId(it) => {
+                            return Some(ValueNs::FunctionId(InFile::new(self.file_id, it)));
+                        }
+                        FileDefId::VariableId(it) => {
+                            return Some(ValueNs::GlobalVariable(InFile::new(self.file_id, it)));
+                        }
+                    }
+                }
             }
         }
         None

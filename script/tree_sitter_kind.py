@@ -34,6 +34,12 @@ impl From<tree_sitter::Node<'_>> for TSKind {
         unsafe { ::std::mem::transmute(v.kind_id()) }
     }
 }
+
+impl From<&tree_sitter::Node<'_>> for TSKind {
+    fn from(v: &tree_sitter::Node<'_>) -> Self {
+        Self::from(*v)
+    }
+}
 """
         )
 

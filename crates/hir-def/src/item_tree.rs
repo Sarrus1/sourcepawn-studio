@@ -130,6 +130,12 @@ impl From<&str> for Name {
     }
 }
 
+impl Into<String> for Name {
+    fn into(self) -> String {
+        self.0.into()
+    }
+}
+
 impl Name {
     pub fn from_node(node: &tree_sitter::Node, source: &str) -> Self {
         Self::from(

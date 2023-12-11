@@ -111,8 +111,12 @@ impl DefMap {
         Arc::new(res)
     }
 
-    pub fn get(&self, name: &str) -> Option<FileDefId> {
-        self.values.get(&Name::from(name)).copied()
+    pub fn get(&self, name: &Name) -> Option<FileDefId> {
+        self.values.get(name).copied()
+    }
+
+    pub fn get_from_str(&self, name: &str) -> Option<FileDefId> {
+        self.get(&Name::from(name))
     }
 
     pub(crate) fn block_def_map_query(db: &dyn DefDatabase, block_id: BlockId) -> Arc<DefMap> {

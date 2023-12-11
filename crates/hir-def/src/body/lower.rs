@@ -15,7 +15,7 @@ use super::{Body, BodySourceMap};
 pub(super) fn lower(
     db: &dyn DefDatabase,
     owner: DefWithBodyId,
-    // params: Option<(ast::ParamList, impl Iterator<Item = bool>)>,
+    params_list: Option<tree_sitter::Node>,
     file_id: FileId,
     source: &str,
     body: Option<tree_sitter::Node>,
@@ -30,10 +30,7 @@ pub(super) fn lower(
         ast_id_map: db.ast_id_map(file_id),
         body: Body::default(),
     }
-    .collect(
-        // params,
-        body,
-    )
+    .collect(params_list, body)
 }
 
 struct ExprCollector<'a> {
@@ -50,9 +47,29 @@ struct ExprCollector<'a> {
 impl ExprCollector<'_> {
     fn collect(
         mut self,
-        // param_list: Option<(ast::ParamList, impl Iterator<Item = bool>)>,
+        params_list: Option<tree_sitter::Node>,
         body: Option<tree_sitter::Node>,
     ) -> (Body, BodySourceMap) {
+        if let Some(params_list) = params_list {
+            match TSKind::from(params_list) {
+                TSKind::sym_argument_declarations => {
+                    for child in params_list.children(&mut params_list.walk()) {
+                        if TSKind::from(child) == TSKind::sym_argument_declaration {
+                            if let Some(name_node) = child.child_by_field_name("name") {
+                                let ident_id = self
+                                    .body
+                                    .idents
+                                    .alloc(Name::from_node(&name_node, self.source));
+                                let binding_id =
+                                    self.alloc_expr(Expr::Binding, NodePtr::from(&child));
+                                self.body.params.push((ident_id, binding_id));
+                            }
+                        }
+                    }
+                }
+                _ => todo!("Handle non argument declarations"),
+            }
+        }
         if let Some(body) = body {
             self.body.body_expr = self.collect_expr(body);
         }

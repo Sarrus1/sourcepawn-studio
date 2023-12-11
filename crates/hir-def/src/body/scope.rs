@@ -82,9 +82,18 @@ impl ExprScopes {
             scope_by_expr: ArenaMap::with_capacity(body.exprs.len()),
         };
         let mut root = scopes.root_scope(file_id);
-        // scopes.add_params_bindings(body, root, &body.params);
+        scopes.add_params_bindings(body, root);
         compute_expr_scopes(body.body_expr, body, &mut scopes, &mut root);
         scopes
+    }
+
+    fn add_params_bindings(&mut self, body: &Body, scope: ScopeId) {
+        for (ident_id, binding_id) in body.params.iter() {
+            let binding = self.scope_entries.alloc(*binding_id);
+            self.scopes[scope]
+                .entries
+                .insert(body.idents[*ident_id].clone(), binding);
+        }
     }
 
     fn root_scope(&mut self, file_id: FileId) -> ScopeId {

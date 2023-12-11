@@ -73,21 +73,46 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                     .ok()?;
                 let body_node = parent.child_by_field_name("body")?;
                 match TSKind::from(body_node) {
-                    TSKind::sym_block => match def_map.get(parent_name)? {
+                    TSKind::sym_block => match def_map.get_from_str(parent_name)? {
                         hir_def::FileDefId::FunctionId(id) => {
                             let def = hir_def::DefWithBodyId::FunctionId(id);
                             let offset = node.start_position();
+                            // TODO: The part below seems hacky...
                             let analyzer = SourceAnalyzer::new_for_body(
                                 self.db,
                                 def,
                                 InFile::new(file_id, &body_node),
                                 Some(offset),
                             );
-                            if let Some(ValueNs::LocalVariable(expr)) =
+                            let value_ns = analyzer.resolver.resolve_ident(text).or_else(|| {
+                                let analyzer = SourceAnalyzer::new_for_body(
+                                    self.db,
+                                    def,
+                                    InFile::new(file_id, &body_node),
+                                    None,
+                                );
                                 analyzer.resolver.resolve_ident(text)
-                            {
-                                let (_, source_map) = self.db.body_with_source_map(def);
-                                return source_map.expr_source(expr);
+                            });
+                            match value_ns? {
+                                ValueNs::LocalVariable(expr) => {
+                                    let (_, source_map) = self.db.body_with_source_map(def);
+                                    return source_map.expr_source(expr);
+                                }
+                                ValueNs::FunctionId(id) => {
+                                    let item_tree = self.db.file_item_tree(file_id);
+                                    return Some(
+                                        ast_id_map
+                                            [item_tree[id.value.lookup(self.db).value].ast_id],
+                                    );
+                                }
+                                ValueNs::GlobalVariable(id) => {
+                                    let item_tree = self.db.file_item_tree(file_id);
+                                    return Some(
+                                        ast_id_map
+                                            [item_tree[id.value.lookup(self.db).value].ast_id],
+                                    );
+                                }
+                                _ => todo!("Handle non local variable"),
                             }
                         }
                         hir_def::FileDefId::VariableId(_) => (),
@@ -97,7 +122,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             }
             TSKind::sym_source_file => {
                 let item_tree = self.db.file_item_tree(file_id);
-                if let Some(def) = def_map.get(text) {
+                if let Some(def) = def_map.get_from_str(text) {
                     match def {
                         hir_def::FileDefId::FunctionId(id) => {
                             return Some(ast_id_map[item_tree[id.lookup(self.db).value].ast_id]);
