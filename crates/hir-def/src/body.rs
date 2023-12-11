@@ -59,7 +59,6 @@ impl Body {
                     file_id,
                     value: func_node,
                 } = func.source(db, &tree);
-                eprintln!("body_with_source_map_query: {:?}", func_node.to_sexp());
                 let body_node = func_node.child_by_field_name("body"); // FIXME: This is bad.
                 let (body, sourcemap) =
                     Body::new(db, def, file_id, &db.file_text(file_id), body_node);

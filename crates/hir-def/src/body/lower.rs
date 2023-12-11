@@ -53,7 +53,6 @@ impl ExprCollector<'_> {
         // param_list: Option<(ast::ParamList, impl Iterator<Item = bool>)>,
         body: Option<tree_sitter::Node>,
     ) -> (Body, BodySourceMap) {
-        eprintln!("collecting body {:?}", body);
         if let Some(body) = body {
             self.body.body_expr = self.collect_expr(body);
         }
@@ -113,10 +112,10 @@ impl ExprCollector<'_> {
             TSKind::sym_variable_declaration_statement => {
                 Some(self.collect_variable_declaration(expr))
             }
-            _ => todo!(
-                "Expression collector for {:?} is not implemented",
-                TSKind::from(expr)
-            ),
+            _ => {
+                log::warn!("Unhandled expression: {:?}", expr);
+                None
+            }
         }
     }
 

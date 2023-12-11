@@ -137,7 +137,6 @@ impl ScopeData {
 
 fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope: &mut ScopeId) {
     scopes.set_scope(expr, *scope);
-    eprintln!("compute_expr_scopes({:?})", expr);
     match &body[expr] {
         Expr::Missing | Expr::Ident(_) => (),
         Expr::Decl(decl) => {

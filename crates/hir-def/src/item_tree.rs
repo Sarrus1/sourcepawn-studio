@@ -89,7 +89,7 @@ impl ItemTree {
                         }
                     }
                 }
-                _ => eprintln!("Unexpected child of block: {:?}", child),
+                _ => log::error!("Unexpected child of block: {:?}", child),
             }
         }
         Arc::new(item_tree)

@@ -1,11 +1,11 @@
 use std::{fmt, sync::Arc};
 
 use crate::{
-    body::scope::{ExprScopes, ScopeData, ScopeEntry, ScopeId},
+    body::scope::{ExprScopes, ScopeId},
     db::DefMap,
     hir::ExprId,
     item_tree::Name,
-    DefDatabase, DefWithBodyId, FileDefId, FunctionId, InFile, Lookup, NodePtr, TreeId, VariableId,
+    DefDatabase, DefWithBodyId, FunctionId, InFile, Lookup, VariableId,
 };
 use vfs::FileId;
 
