@@ -105,9 +105,13 @@ impl AstIdMap {
             }
             matches!(
                 TSKind::from(node),
-                TSKind::sym_function_declaration
+                TSKind::sym_function_definition
                     | TSKind::sym_block
                     | TSKind::sym_for_statement
+                    | TSKind::sym_condition_statement
+                    | TSKind::sym_do_while_statement
+                    | TSKind::sym_switch_statement
+                    | TSKind::sym_switch_case
                     | TSKind::sym_while_statement
             )
         });
@@ -119,7 +123,7 @@ impl AstIdMap {
             Some(id) => *id,
             None => {
                 for (k, v) in self.map.iter() {
-                    log::info!("k: {:?}, v: {:?}", k, v)
+                    log::error!("k: {:?}, v: {:?}", k, v)
                 }
                 panic!("Failed to find: {:?}", NodePtr::from(node))
             }

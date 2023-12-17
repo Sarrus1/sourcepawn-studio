@@ -58,7 +58,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         let mut parent = node.parent()?;
         // If the node does not have a parent we are at the root, nothing to resolve.
 
-        while !matches!(TSKind::from(parent), TSKind::sym_function_declaration) {
+        while !matches!(TSKind::from(parent), TSKind::sym_function_definition) {
             if let Some(candidate) = parent.parent() {
                 parent = candidate;
             } else {
@@ -66,7 +66,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             }
         }
         match TSKind::from(parent) {
-            TSKind::sym_function_declaration => {
+            TSKind::sym_function_definition => {
                 let parent_name = parent
                     .child_by_field_name("name")?
                     .utf8_text(source.as_ref().as_bytes())

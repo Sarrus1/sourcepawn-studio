@@ -32,7 +32,7 @@ impl ItemTree {
         let ast_id_map = db.ast_id_map(file_id);
         for child in root_node.children(&mut root_node.walk()) {
             match TSKind::from(child) {
-                TSKind::sym_function_declaration => {
+                TSKind::sym_function_definition => {
                     if let Some(name_node) = child.child_by_field_name("name") {
                         let res = Function {
                             name: Name::from(name_node.utf8_text(source).unwrap()),

@@ -52,9 +52,9 @@ impl ExprCollector<'_> {
     ) -> (Body, BodySourceMap) {
         if let Some(params_list) = params_list {
             match TSKind::from(params_list) {
-                TSKind::sym_argument_declarations => {
+                TSKind::sym_parameter_declarations => {
                     for child in params_list.children(&mut params_list.walk()) {
-                        if TSKind::from(child) == TSKind::sym_argument_declaration {
+                        if TSKind::from(child) == TSKind::sym_parameter_declaration {
                             if let Some(name_node) = child.child_by_field_name("name") {
                                 let ident_id = self
                                     .body

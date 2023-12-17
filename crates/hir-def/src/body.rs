@@ -62,7 +62,7 @@ impl Body {
                 let body_node = func_node.child_by_field_name("body");
                 let params_list = func_node
                     .children(&mut func_node.walk())
-                    .find(|child| TSKind::from(child) == TSKind::sym_argument_declarations);
+                    .find(|child| TSKind::from(child) == TSKind::sym_parameter_declarations);
                 let (body, sourcemap) = Body::new(
                     db,
                     def,
