@@ -8,8 +8,8 @@ use crate::{
     ast_id_map::AstIdMap,
     body::{scope::ExprScopes, Body, BodySourceMap},
     item_tree::{ItemTree, Name},
-    BlockId, BlockLoc, DefWithBodyId, FileDefId, FileItem, FunctionId, FunctionLoc, Intern, Lookup,
-    TreeId, VariableId, VariableLoc,
+    BlockId, BlockLoc, DefWithBodyId, EnumStructId, EnumStructLoc, FileDefId, FileItem, FunctionId,
+    FunctionLoc, Intern, Lookup, TreeId, VariableId, VariableLoc,
 };
 
 #[salsa::query_group(InternDatabaseStorage)]
@@ -17,6 +17,8 @@ pub trait InternDatabase: SourceDatabase {
     // region: items
     #[salsa::interned]
     fn intern_function(&'tree self, loc: FunctionLoc) -> FunctionId;
+    #[salsa::interned]
+    fn intern_enum_struct(&'tree self, loc: EnumStructLoc) -> EnumStructId;
     #[salsa::interned]
     fn intern_variable(&'tree self, loc: VariableLoc) -> VariableId;
     #[salsa::interned]
@@ -104,6 +106,18 @@ impl DefMap {
                     .intern(db);
                     res.values
                         .insert(var.name.clone(), FileDefId::VariableId(var_id));
+                }
+                FileItem::EnumStruct(id) => {
+                    let enum_struct = &item_tree[*id];
+                    let enum_struct_id = EnumStructLoc {
+                        tree: TreeId::new(file_id, None), // TODO: Reuse the file_id with "into" ?
+                        value: *id,
+                    }
+                    .intern(db);
+                    res.values.insert(
+                        enum_struct.name.clone(),
+                        FileDefId::EnumStructId(enum_struct_id),
+                    );
                 }
             }
         }

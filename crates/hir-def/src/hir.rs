@@ -25,6 +25,10 @@ pub enum Expr {
         id: Option<BlockId>,
         statements: Box<[ExprId]>,
     },
+    FieldAccess {
+        target: ExprId,
+        field: Name,
+    },
     Binding,
     Decl(Vec<(IdentId, ExprId, Option<ExprId>)>), // (IdentId, Option<ExprId>)>), // type_ref: Option<Interned<TypeRef>>,
 }

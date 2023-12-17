@@ -122,9 +122,15 @@ impl ExprCollector<'_> {
                 Some(self.alloc_expr(block, NodePtr::from(&expr)))
             }
             TSKind::sym_expression_statement => {
-                let mut cursor = expr.walk();
-                let child = expr.children(&mut cursor).next().unwrap(); // FIXME: This is bad, use Options
+                let child = expr.children(&mut expr.walk()).next()?;
                 Some(self.collect_expr(child))
+            }
+            TSKind::sym_field_access => {
+                let field_access = Expr::FieldAccess {
+                    target: self.collect_expr(expr.child_by_field_name("target")?),
+                    field: Name::from_node(&expr.child_by_field_name("field")?, self.source),
+                };
+                Some(self.alloc_expr(field_access, NodePtr::from(&expr)))
             }
             TSKind::sym_variable_declaration_statement => {
                 Some(self.collect_variable_declaration(expr))

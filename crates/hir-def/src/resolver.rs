@@ -5,7 +5,7 @@ use crate::{
     db::DefMap,
     hir::ExprId,
     item_tree::Name,
-    DefDatabase, DefWithBodyId, FileDefId, FunctionId, InFile, Lookup, VariableId,
+    DefDatabase, DefWithBodyId, EnumStructId, FileDefId, FunctionId, InFile, Lookup, VariableId,
 };
 use vfs::FileId;
 
@@ -103,6 +103,9 @@ impl Resolver {
                         FileDefId::VariableId(it) => {
                             return Some(ValueNs::GlobalVariable(InFile::new(self.file_id, it)));
                         }
+                        FileDefId::EnumStructId(it) => {
+                            return Some(ValueNs::EnumStructId(InFile::new(self.file_id, it)));
+                        }
                     }
                 }
             }
@@ -116,6 +119,7 @@ pub enum ValueNs {
     LocalVariable(ExprId),
     GlobalVariable(InFile<VariableId>),
     FunctionId(InFile<FunctionId>),
+    EnumStructId(InFile<EnumStructId>),
 }
 
 pub trait HasResolver: Copy {

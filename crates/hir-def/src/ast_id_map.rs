@@ -113,6 +113,8 @@ impl AstIdMap {
                     | TSKind::sym_switch_statement
                     | TSKind::sym_switch_case
                     | TSKind::sym_while_statement
+                    | TSKind::sym_enum_struct
+                    | TSKind::sym_enum_struct_method
             )
         });
         AstIdMap { arena, map }

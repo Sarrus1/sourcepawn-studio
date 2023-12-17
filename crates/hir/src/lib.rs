@@ -112,10 +112,16 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                                             [item_tree[id.value.lookup(self.db).value].ast_id],
                                     );
                                 }
-                                _ => todo!("Handle non local variable"),
+                                ValueNs::EnumStructId(id) => {
+                                    let item_tree = self.db.file_item_tree(file_id);
+                                    return Some(
+                                        ast_id_map
+                                            [item_tree[id.value.lookup(self.db).value].ast_id],
+                                    );
+                                }
                             }
                         }
-                        hir_def::FileDefId::VariableId(_) => (),
+                        _ => unreachable!("Expected a function"),
                     },
                     _ => todo!("Handle non block body"),
                 }
@@ -128,6 +134,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                             return Some(ast_id_map[item_tree[id.lookup(self.db).value].ast_id]);
                         }
                         hir_def::FileDefId::VariableId(id) => {
+                            return Some(ast_id_map[item_tree[id.lookup(self.db).value].ast_id]);
+                        }
+                        hir_def::FileDefId::EnumStructId(id) => {
                             return Some(ast_id_map[item_tree[id.lookup(self.db).value].ast_id]);
                         }
                     }

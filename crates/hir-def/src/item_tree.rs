@@ -30,6 +30,7 @@ impl ItemTree {
         let source = db.file_text(file_id);
         let source = source.as_bytes();
         let ast_id_map = db.ast_id_map(file_id);
+        eprintln!("root_node: {:?}", root_node.to_sexp());
         for child in root_node.children(&mut root_node.walk()) {
             match TSKind::from(child) {
                 TSKind::sym_function_definition => {
@@ -55,6 +56,16 @@ impl ItemTree {
                                 item_tree.top_level.push(FileItem::Variable(id));
                             }
                         }
+                    }
+                }
+                TSKind::sym_enum_struct => {
+                    if let Some(name_node) = child.child_by_field_name("name") {
+                        let res = EnumStruct {
+                            name: Name::from(name_node.utf8_text(source).unwrap()),
+                            ast_id: ast_id_map.ast_id_of(&child),
+                        };
+                        let id = item_tree.data_mut().enum_structs.alloc(res);
+                        item_tree.top_level.push(FileItem::EnumStruct(id));
                     }
                 }
                 _ => (),
@@ -116,6 +127,7 @@ impl ItemTree {
 struct ItemTreeData {
     functions: Arena<Function>,
     variables: Arena<Variable>,
+    enum_structs: Arena<EnumStruct>,
     // params: Arena<Param>,
 }
 
@@ -159,6 +171,12 @@ pub struct Function {
     // pub visibility: RawVisibilityId,
     // pub params: IdxRange<Param>,
     // pub ret_type: Interned<TypeRef>,
+    pub ast_id: AstId,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct EnumStruct {
+    pub name: Name,
     pub ast_id: AstId,
 }
 
@@ -234,6 +252,7 @@ macro_rules! mod_items {
 mod_items! {
     Function functions,
     Variable variables,
+    EnumStruct enum_structs,
 }
 
 impl<N: ItemTreeNode> Index<ItemTreeId<N>> for ItemTree {

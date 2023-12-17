@@ -1,5 +1,5 @@
 use core::hash::Hash;
-use item_tree::{AstId, Function, ItemTree, ItemTreeNode, Variable};
+use item_tree::{AstId, EnumStruct, Function, ItemTree, ItemTreeNode, Variable};
 use la_arena::Idx;
 use std::{hash::Hasher, sync::Arc};
 use vfs::FileId;
@@ -70,6 +70,16 @@ impl_intern!(
     lookup_intern_function
 );
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct EnumStructId(salsa::InternId);
+type EnumStructLoc = ItemTreeId<EnumStruct>;
+impl_intern!(
+    EnumStructId,
+    EnumStructLoc,
+    intern_enum_struct,
+    lookup_intern_enum_struct
+);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct BlockId(salsa::InternId);
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
@@ -94,6 +104,7 @@ impl_intern!(
 pub enum FileDefId {
     FunctionId(FunctionId),
     VariableId(VariableId),
+    EnumStructId(EnumStructId),
 }
 
 impl From<FunctionId> for FileDefId {

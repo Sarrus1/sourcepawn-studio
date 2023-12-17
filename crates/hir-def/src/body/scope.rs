@@ -147,7 +147,7 @@ impl ScopeData {
 fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope: &mut ScopeId) {
     scopes.set_scope(expr, *scope);
     match &body[expr] {
-        Expr::Missing | Expr::Ident(_) => (),
+        Expr::Missing | Expr::Ident(_) | Expr::FieldAccess { .. } => (),
         Expr::Decl(decl) => {
             for (ident, binding, init) in decl.iter() {
                 let binding = scopes.scope_entries.alloc(*binding);

@@ -163,3 +163,16 @@ void bar() {
 "#,
     ));
 }
+
+#[test]
+fn enum_struct_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum struct Foo {
+             |
+             ^
+}
+"#,
+    ));
+}
