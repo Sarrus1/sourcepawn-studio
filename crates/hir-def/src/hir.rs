@@ -3,6 +3,8 @@ use smallvec::SmallVec;
 
 use crate::{item_tree::Name, BlockId};
 
+pub mod type_ref;
+
 pub type Ident = Name;
 
 pub type IdentId = Idx<Ident>;

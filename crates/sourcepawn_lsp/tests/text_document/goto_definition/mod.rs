@@ -172,6 +172,7 @@ fn enum_struct_1() {
 enum struct Foo {
              |
              ^
+    int foo;
 }
 "#,
     ));

@@ -1,5 +1,5 @@
 use core::hash::Hash;
-use la_arena::{Arena, Idx};
+use la_arena::{Arena, Idx, IdxRange, RawIdx};
 use smallvec::SmallVec;
 use smol_str::SmolStr;
 use std::ops::Index;
@@ -8,7 +8,7 @@ use syntax::TSKind;
 use vfs::FileId;
 
 pub use crate::ast_id_map::{AstId, NodePtr};
-use crate::{db::DefDatabase, src::HasSource, BlockId, ItemTreeId, Lookup};
+use crate::{db::DefDatabase, hir::type_ref::TypeRef, src::HasSource, BlockId, ItemTreeId, Lookup};
 
 use self::pretty::print_item_tree;
 
@@ -22,21 +22,49 @@ pub struct ItemTree {
     data: Option<Box<ItemTreeData>>,
 }
 
+fn function_return_type(node: &tree_sitter::Node, source: &str) -> Option<TypeRef> {
+    let ret_type_node = node.child_by_field_name("returnType")?;
+    for child in ret_type_node.children(&mut ret_type_node.walk()) {
+        match TSKind::from(child) {
+            TSKind::sym_type => return TypeRef::from_node(&child, source),
+            TSKind::sym_old_type => {
+                for sub_child in child.children(&mut child.walk()) {
+                    match TSKind::from(sub_child) {
+                        TSKind::sym_old_builtin_type
+                        | TSKind::sym_symbol
+                        | TSKind::sym_any_type => return Some(TypeRef::OldString),
+                        _ => (),
+                    }
+                }
+                return TypeRef::from_node(&child, source);
+            }
+            _ => (),
+        }
+    }
+    None
+}
+
 impl ItemTree {
+    fn next_field_idx(&self) -> Idx<Field> {
+        Idx::from_raw(RawIdx::from(
+            self.data
+                .as_ref()
+                .map_or(0, |data| data.fields.len() as u32),
+        ))
+    }
     pub fn file_item_tree_query(db: &dyn DefDatabase, file_id: FileId) -> Arc<Self> {
         let mut item_tree = ItemTree::default();
         let tree = db.parse(file_id);
         let root_node = tree.root_node();
         let source = db.file_text(file_id);
-        let source = source.as_bytes();
         let ast_id_map = db.ast_id_map(file_id);
-        eprintln!("root_node: {:?}", root_node.to_sexp());
         for child in root_node.children(&mut root_node.walk()) {
             match TSKind::from(child) {
                 TSKind::sym_function_definition => {
                     if let Some(name_node) = child.child_by_field_name("name") {
                         let res = Function {
-                            name: Name::from(name_node.utf8_text(source).unwrap()),
+                            name: Name::from(name_node.utf8_text(source.as_bytes()).unwrap()),
+                            ret_type: Arc::new(function_return_type(&child, &source)),
                             ast_id: ast_id_map.ast_id_of(&child),
                         };
                         let id = item_tree.data_mut().functions.alloc(res);
@@ -49,7 +77,9 @@ impl ItemTree {
                         if TSKind::from(sub_child) == TSKind::sym_variable_declaration {
                             if let Some(name_node) = sub_child.child_by_field_name("name") {
                                 let res = Variable {
-                                    name: Name::from(name_node.utf8_text(source).unwrap()),
+                                    name: Name::from(
+                                        name_node.utf8_text(source.as_bytes()).unwrap(),
+                                    ),
                                     ast_id: ast_id_map.ast_id_of(&sub_child),
                                 };
                                 let id = item_tree.data_mut().variables.alloc(res);
@@ -60,8 +90,32 @@ impl ItemTree {
                 }
                 TSKind::sym_enum_struct => {
                     if let Some(name_node) = child.child_by_field_name("name") {
+                        let start = item_tree.next_field_idx();
+                        child
+                            .children(&mut child.walk())
+                            .filter(|e| TSKind::from(e) == TSKind::sym_enum_struct_field)
+                            .for_each(|e| {
+                                let Some(field_name_node) = e.child_by_field_name("name") else {
+                                    return;
+                                };
+                                let Some(field_type_node) = e.child_by_field_name("type") else {
+                                    return;
+                                };
+                                let res = Field {
+                                    name: Name::from(
+                                        field_name_node.utf8_text(source.as_bytes()).unwrap(),
+                                    ),
+                                    type_ref: Arc::new(
+                                        TypeRef::from_node(&field_type_node, &source).unwrap(),
+                                    ),
+                                    ast_id: ast_id_map.ast_id_of(&e),
+                                };
+                                item_tree.data_mut().fields.alloc(res);
+                            });
+                        let end = item_tree.next_field_idx();
                         let res = EnumStruct {
-                            name: Name::from(name_node.utf8_text(source).unwrap()),
+                            name: Name::from(name_node.utf8_text(source.as_bytes()).unwrap()),
+                            fields: IdxRange::new(start..end),
                             ast_id: ast_id_map.ast_id_of(&child),
                         };
                         let id = item_tree.data_mut().enum_structs.alloc(res);
@@ -71,7 +125,7 @@ impl ItemTree {
                 _ => (),
             }
         }
-        print_item_tree(db, &item_tree);
+        eprintln!("{}", print_item_tree(db, &item_tree));
         Arc::new(item_tree)
     }
 
@@ -128,6 +182,7 @@ struct ItemTreeData {
     functions: Arena<Function>,
     variables: Arena<Variable>,
     enum_structs: Arena<EnumStruct>,
+    fields: Arena<Field>,
     // params: Arena<Param>,
 }
 
@@ -142,9 +197,9 @@ impl From<&str> for Name {
     }
 }
 
-impl Into<String> for Name {
-    fn into(self) -> String {
-        self.0.into()
+impl From<Name> for String {
+    fn from(val: Name) -> Self {
+        val.0.into()
     }
 }
 
@@ -170,13 +225,23 @@ pub struct Function {
     pub name: Name,
     // pub visibility: RawVisibilityId,
     // pub params: IdxRange<Param>,
-    // pub ret_type: Interned<TypeRef>,
+    pub ret_type: Arc<Option<TypeRef>>,
     pub ast_id: AstId,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct EnumStruct {
     pub name: Name,
+    pub fields: IdxRange<Field>,
+    pub ast_id: AstId,
+}
+
+/// A single field of an enum variant or struct
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Field {
+    pub name: Name,
+    pub type_ref: Arc<TypeRef>,
+    // pub visibility: RawVisibilityId,
     pub ast_id: AstId,
 }
 
@@ -253,6 +318,24 @@ mod_items! {
     Function functions,
     Variable variables,
     EnumStruct enum_structs,
+}
+
+macro_rules! impl_index {
+    ( $($fld:ident: $t:ty),+ $(,)? ) => {
+        $(
+            impl Index<Idx<$t>> for ItemTree {
+                type Output = $t;
+
+                fn index(&self, index: Idx<$t>) -> &Self::Output {
+                    &self.data().$fld[index]
+                }
+            }
+        )+
+    };
+}
+
+impl_index! {
+    fields: Field,
 }
 
 impl<N: ItemTreeNode> Index<ItemTreeId<N>> for ItemTree {
