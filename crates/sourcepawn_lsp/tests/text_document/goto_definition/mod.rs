@@ -177,3 +177,91 @@ enum struct Foo {
 "#,
     ));
 }
+
+#[test]
+fn enum_struct_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum struct Foo {
+    int foo;
+         |
+         ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn enum_struct_3() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum struct Foo {
+    int foo;
+}
+
+Foo foo;
+     |
+     ^
+
+"#,
+    ));
+}
+
+#[test]
+fn enum_struct_4() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum struct Bar {
+    int bar;
+}
+
+enum struct Foo {
+    Bar bar;
+     |
+     ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn enum_struct_5() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum struct Foo {
+    int foo;
+}
+
+Foo foo;
+
+void bar() {
+    foo.foo = 1;
+         |
+         ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn enum_struct_6() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum struct Foo {
+    int foo;
+}
+
+void bar() {
+    Foo foo;
+    foo.foo = 1;
+         |
+         ^
+}
+"#,
+    ));
+}

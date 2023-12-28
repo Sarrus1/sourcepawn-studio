@@ -5,7 +5,7 @@ use crate::item_tree::Name;
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum TypeRef {
     /// Reference to a type definition (e.g. enum struct, enum, methodmap, etc.)
-    Name(Name),
+    Name(Name), // TODO: Disambiguate between new types and old types.
 
     /// int
     Int,

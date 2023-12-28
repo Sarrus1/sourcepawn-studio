@@ -64,7 +64,7 @@ impl ItemTree {
                     if let Some(name_node) = child.child_by_field_name("name") {
                         let res = Function {
                             name: Name::from(name_node.utf8_text(source.as_bytes()).unwrap()),
-                            ret_type: Arc::new(function_return_type(&child, &source)),
+                            ret_type: function_return_type(&child, &source),
                             ast_id: ast_id_map.ast_id_of(&child),
                         };
                         let id = item_tree.data_mut().functions.alloc(res);
@@ -72,14 +72,19 @@ impl ItemTree {
                     }
                 }
                 TSKind::sym_global_variable_declaration => {
-                    let mut cursor = child.walk();
-                    for sub_child in child.children(&mut cursor) {
+                    let type_ref = if let Some(type_node) = child.child_by_field_name("type") {
+                        TypeRef::from_node(&type_node, &source)
+                    } else {
+                        None
+                    };
+                    for sub_child in child.children(&mut child.walk()) {
                         if TSKind::from(sub_child) == TSKind::sym_variable_declaration {
                             if let Some(name_node) = sub_child.child_by_field_name("name") {
                                 let res = Variable {
                                     name: Name::from(
                                         name_node.utf8_text(source.as_bytes()).unwrap(),
                                     ),
+                                    type_ref: type_ref.clone(),
                                     ast_id: ast_id_map.ast_id_of(&sub_child),
                                 };
                                 let id = item_tree.data_mut().variables.alloc(res);
@@ -105,9 +110,8 @@ impl ItemTree {
                                     name: Name::from(
                                         field_name_node.utf8_text(source.as_bytes()).unwrap(),
                                     ),
-                                    type_ref: Arc::new(
-                                        TypeRef::from_node(&field_type_node, &source).unwrap(),
-                                    ),
+                                    type_ref: TypeRef::from_node(&field_type_node, &source)
+                                        .unwrap(),
                                     ast_id: ast_id_map.ast_id_of(&e),
                                 };
                                 item_tree.data_mut().fields.alloc(res);
@@ -125,7 +129,6 @@ impl ItemTree {
                 _ => (),
             }
         }
-        eprintln!("{}", print_item_tree(db, &item_tree));
         Arc::new(item_tree)
     }
 
@@ -139,6 +142,11 @@ impl ItemTree {
         for child in block_node.value.children(&mut block_node.value.walk()) {
             match TSKind::from(child) {
                 TSKind::sym_variable_declaration_statement => {
+                    let type_ref = if let Some(type_node) = child.child_by_field_name("type") {
+                        TypeRef::from_node(&type_node, &source)
+                    } else {
+                        None
+                    };
                     for sub_child in child.children(&mut child.walk()) {
                         if TSKind::from(sub_child) == TSKind::sym_variable_declaration {
                             if let Some(name_node) = sub_child.child_by_field_name("name") {
@@ -146,6 +154,7 @@ impl ItemTree {
                                     name: Name::from(
                                         name_node.utf8_text(source.as_bytes()).unwrap(),
                                     ),
+                                    type_ref: type_ref.clone(),
                                     ast_id: ast_id_map.ast_id_of(&sub_child),
                                 };
                                 let id = item_tree.data_mut().variables.alloc(res);
@@ -216,16 +225,16 @@ impl Name {
 pub struct Variable {
     pub name: Name,
     // pub visibility: RawVisibilityId,
-    // pub type_ref: Interned<TypeRef>,
+    pub type_ref: Option<TypeRef>,
     pub ast_id: AstId,
-}
+} // TODO: Each variable decl is stored as a separate item, but we should probably group them up ?
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Function {
     pub name: Name,
     // pub visibility: RawVisibilityId,
     // pub params: IdxRange<Param>,
-    pub ret_type: Arc<Option<TypeRef>>,
+    pub ret_type: Option<TypeRef>,
     pub ast_id: AstId,
 }
 
@@ -240,7 +249,7 @@ pub struct EnumStruct {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Field {
     pub name: Name,
-    pub type_ref: Arc<TypeRef>,
+    pub type_ref: TypeRef,
     // pub visibility: RawVisibilityId,
     pub ast_id: AstId,
 }

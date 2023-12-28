@@ -7,9 +7,11 @@ use vfs::FileId;
 use crate::{
     ast_id_map::AstIdMap,
     body::{scope::ExprScopes, Body, BodySourceMap},
+    data::{EnumStructData, FunctionData},
+    infer,
     item_tree::{ItemTree, Name},
     BlockId, BlockLoc, DefWithBodyId, EnumStructId, EnumStructLoc, FileDefId, FileItem, FunctionId,
-    FunctionLoc, Intern, Lookup, TreeId, VariableId, VariableLoc,
+    FunctionLoc, GlobalId, GlobalLoc, InferenceResult, Intern, Lookup, TreeId,
 };
 
 #[salsa::query_group(InternDatabaseStorage)]
@@ -20,7 +22,7 @@ pub trait InternDatabase: SourceDatabase {
     #[salsa::interned]
     fn intern_enum_struct(&'tree self, loc: EnumStructLoc) -> EnumStructId;
     #[salsa::interned]
-    fn intern_variable(&'tree self, loc: VariableLoc) -> VariableId;
+    fn intern_variable(&'tree self, loc: GlobalLoc) -> GlobalId;
     #[salsa::interned]
     fn intern_block(&'tree self, loc: BlockLoc) -> BlockId;
     // endregion: items
@@ -61,6 +63,19 @@ pub trait DefDatabase: InternDatabase {
 
     #[salsa::invoke(ExprScopes::expr_scopes_query)]
     fn expr_scopes(&self, def: DefWithBodyId, file_id: FileId) -> Arc<ExprScopes>;
+
+    // region: data
+    #[salsa::invoke(FunctionData::function_data_query)]
+    fn function_data(&self, id: FunctionId) -> Arc<FunctionData>;
+
+    #[salsa::invoke(EnumStructData::enum_struct_data_query)]
+    fn enum_struct_data(&self, id: EnumStructId) -> Arc<EnumStructData>;
+    // endregion: data
+
+    // region: infer
+    #[salsa::invoke(infer::infer_query)]
+    fn infer(&self, def: DefWithBodyId) -> Arc<InferenceResult>;
+    // endregion: infer
 }
 
 /// For `DefMap`s computed for a block expression, this stores its location in the parent map.
@@ -72,6 +87,8 @@ struct BlockInfo {
     parent: FileId,
 }
 
+// FIXME: DefMap should not be used as a scope. It should be used to map ids to defs.
+// It should be useless to have a DefMap for a block, as they do not define functions etc.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct DefMap {
     values: FxHashMap<Name, FileDefId>,
@@ -99,7 +116,7 @@ impl DefMap {
                 }
                 FileItem::Variable(id) => {
                     let var = &item_tree[*id];
-                    let var_id = VariableLoc {
+                    let var_id = GlobalLoc {
                         tree: TreeId::new(file_id, None), // TODO: Reuse the file_id with "into" ?
                         value: *id,
                     }
@@ -141,7 +158,7 @@ impl DefMap {
             match item {
                 FileItem::Variable(id) => {
                     let var = &item_tree[*id];
-                    let var_id = VariableLoc {
+                    let var_id = GlobalLoc {
                         tree: TreeId::new(file_id, Some(block_id)),
                         value: *id,
                     }

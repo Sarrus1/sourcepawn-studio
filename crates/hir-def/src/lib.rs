@@ -6,15 +6,20 @@ use vfs::FileId;
 
 mod ast_id_map;
 pub mod body;
+pub mod child_by_source;
+mod data;
 pub mod db;
+pub mod dyn_map;
 mod hir;
+mod infer;
 mod item_tree;
 pub mod resolver;
-mod src;
+pub mod src;
 
 pub use ast_id_map::NodePtr;
 pub use db::DefDatabase;
 pub use hir::ExprId;
+pub use infer::InferenceResult;
 pub use item_tree::FileItem;
 
 trait Intern {
@@ -80,6 +85,14 @@ impl_intern!(
     lookup_intern_enum_struct
 );
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FieldId {
+    pub parent: EnumStructId,
+    pub local_id: LocalFieldId,
+}
+
+pub type LocalFieldId = Idx<data::FieldData>;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct BlockId(salsa::InternId);
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
@@ -90,20 +103,15 @@ pub struct BlockLoc {
 impl_intern!(BlockId, BlockLoc, intern_block, lookup_intern_block);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct VariableId(salsa::InternId);
-type VariableLoc = ItemTreeId<Variable>;
-impl_intern!(
-    VariableId,
-    VariableLoc,
-    intern_variable,
-    lookup_intern_variable
-);
+pub struct GlobalId(salsa::InternId);
+type GlobalLoc = ItemTreeId<Variable>;
+impl_intern!(GlobalId, GlobalLoc, intern_variable, lookup_intern_variable);
 
 /// Defs which can be visible at the global scope.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FileDefId {
     FunctionId(FunctionId),
-    VariableId(VariableId),
+    VariableId(GlobalId),
     EnumStructId(EnumStructId),
 }
 
@@ -189,13 +197,15 @@ pub enum DefWithBodyId {
     FunctionId(FunctionId),
 }
 
+impl DefWithBodyId {
+    pub fn file_id(&self, db: &dyn DefDatabase) -> FileId {
+        match self {
+            DefWithBodyId::FunctionId(it) => it.lookup(db).file_id(),
+        }
+    }
+}
+
 /// `InFile<T>` stores a value of `T` inside a particular file/syntax tree.
-///
-/// Typical usages are:
-///
-/// * `InFile<SyntaxNode>` -- syntax node in a file
-/// * `InFile<ast::FnDef>` -- ast node in a file
-/// * `InFile<TextSize>` -- offset in a file
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct InFile<T> {
     pub file_id: FileId,

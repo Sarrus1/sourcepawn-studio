@@ -147,16 +147,22 @@ impl ScopeData {
 fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope: &mut ScopeId) {
     scopes.set_scope(expr, *scope);
     match &body[expr] {
-        Expr::Missing | Expr::Ident(_) | Expr::FieldAccess { .. } => (),
+        Expr::Missing | Expr::Ident(_) | Expr::FieldAccess { .. } | Expr::BinaryOp { .. } => (),
         Expr::Decl(decl) => {
-            for (ident, binding, init) in decl.iter() {
-                let binding = scopes.scope_entries.alloc(*binding);
-                scopes.scopes[*scope]
-                    .entries
-                    .insert(body.idents[*ident].clone(), binding);
+            for binding in decl.iter() {
+                compute_expr_scopes(*binding, body, scopes, scope);
             }
         }
-        Expr::Binding => (/* Handled by Decl */),
+        Expr::Binding {
+            ident_id,
+            type_ref,
+            initializer,
+        } => {
+            let binding = scopes.scope_entries.alloc(expr);
+            scopes.scopes[*scope]
+                .entries
+                .insert(body.idents[*ident_id].clone(), binding);
+        }
         Expr::Block { id, statements } => {
             let mut scope = scopes.new_block_scope(*scope);
             // Overwrite the old scope for the block expr, so that every block scope can be found

@@ -5,7 +5,7 @@ use crate::{
     db::DefMap,
     hir::ExprId,
     item_tree::Name,
-    DefDatabase, DefWithBodyId, EnumStructId, FileDefId, FunctionId, InFile, Lookup, VariableId,
+    DefDatabase, DefWithBodyId, EnumStructId, FileDefId, FunctionId, GlobalId, InFile, Lookup,
 };
 use vfs::FileId;
 
@@ -88,10 +88,12 @@ impl Resolver {
     pub fn resolve_ident(&self, name: &str) -> Option<ValueNs> {
         let name = Name::from(name);
         for scope in self.scopes() {
+            eprintln!("scope: {:?}", scope);
             match scope {
                 Scope::ExprScope(scope) => {
                     if let Some(entry) = scope.resolve_name_in_scope(&name) {
-                        return Some(ValueNs::LocalVariable(entry));
+                        eprintln!("found entry: {:?} for name: {:?}", entry, name);
+                        return Some(ValueNs::LocalId((scope.owner, entry)));
                     }
                 }
                 Scope::GlobalScope(def_map) => {
@@ -101,7 +103,7 @@ impl Resolver {
                             return Some(ValueNs::FunctionId(InFile::new(self.file_id, it)));
                         }
                         FileDefId::VariableId(it) => {
-                            return Some(ValueNs::GlobalVariable(InFile::new(self.file_id, it)));
+                            return Some(ValueNs::GlobalId(InFile::new(self.file_id, it)));
                         }
                         FileDefId::EnumStructId(it) => {
                             return Some(ValueNs::EnumStructId(InFile::new(self.file_id, it)));
@@ -112,12 +114,71 @@ impl Resolver {
         }
         None
     }
+
+    /// `expr_id` is required to be an expression id that comes after the top level expression scope in the given resolver
+    #[must_use]
+    pub fn update_to_inner_scope(
+        &mut self,
+        db: &dyn DefDatabase,
+        owner: DefWithBodyId,
+        expr_id: ExprId,
+    ) -> UpdateGuard {
+        #[inline(always)]
+        fn append_expr_scope(
+            db: &dyn DefDatabase,
+            resolver: &mut Resolver,
+            owner: DefWithBodyId,
+            expr_scopes: &Arc<ExprScopes>,
+            scope_id: ScopeId,
+        ) {
+            resolver.scopes.push(Scope::ExprScope(ExprScope {
+                owner,
+                expr_scopes: expr_scopes.clone(),
+                scope_id,
+            }));
+        }
+
+        let start = self.scopes.len();
+        let innermost_scope = self.scopes().next();
+        match innermost_scope {
+            Some(&Scope::ExprScope(ExprScope {
+                scope_id,
+                ref expr_scopes,
+                owner,
+            })) => {
+                let expr_scopes = expr_scopes.clone();
+                let scope_chain = expr_scopes
+                    .scope_chain(expr_scopes.scope_for(expr_id))
+                    .take_while(|&it| it != scope_id);
+                for scope_id in scope_chain {
+                    append_expr_scope(db, self, owner, &expr_scopes, scope_id);
+                }
+            }
+            _ => {
+                let expr_scopes = db.expr_scopes(owner, self.file_id);
+                let scope_chain = expr_scopes.scope_chain(expr_scopes.scope_for(expr_id));
+
+                for scope_id in scope_chain {
+                    append_expr_scope(db, self, owner, &expr_scopes, scope_id);
+                }
+            }
+        }
+        self.scopes[start..].reverse();
+        eprintln!("scopes after: {:?}", self.scopes);
+        UpdateGuard(start)
+    }
+
+    pub fn reset_to_guard(&mut self, UpdateGuard(start): UpdateGuard) {
+        self.scopes.truncate(start);
+    }
 }
+
+pub struct UpdateGuard(usize);
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum ValueNs {
-    LocalVariable(ExprId),
-    GlobalVariable(InFile<VariableId>),
+    LocalId((DefWithBodyId, ExprId)),
+    GlobalId(InFile<GlobalId>),
     FunctionId(InFile<FunctionId>),
     EnumStructId(InFile<EnumStructId>),
 }

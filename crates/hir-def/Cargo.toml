@@ -22,8 +22,8 @@ log.workspace = true
 la-arena.workspace = true
 smallvec.workspace = true
 
-
 # Local crates
 syntax.workspace = true
 vfs.workspace = true
 base-db.workspace = true
+stdx.workspace = true

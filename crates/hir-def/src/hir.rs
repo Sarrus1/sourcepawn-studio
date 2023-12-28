@@ -1,7 +1,10 @@
 use la_arena::Idx;
 use smallvec::SmallVec;
+use syntax::TSKind;
 
 use crate::{item_tree::Name, BlockId};
+
+use self::type_ref::TypeRef;
 
 pub mod type_ref;
 
@@ -29,8 +32,22 @@ pub enum Expr {
     },
     FieldAccess {
         target: ExprId,
-        field: Name,
+        name: Name,
     },
-    Binding,
-    Decl(Vec<(IdentId, ExprId, Option<ExprId>)>), // (IdentId, Option<ExprId>)>), // type_ref: Option<Interned<TypeRef>>,
+    BinaryOp {
+        lhs: ExprId,
+        rhs: ExprId,
+        op: Option<BinaryOp>,
+    },
+    Decl(Box<[ExprId]>),
+    Binding {
+        ident_id: IdentId,
+        type_ref: Option<TypeRef>,
+        initializer: Option<ExprId>,
+    },
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum BinaryOp {
+    Assignment { op: Option<TSKind> },
 }

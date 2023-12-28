@@ -1,5 +1,5 @@
 use base_db::{FileLoader, FilePosition};
-use hir::Semantics;
+use hir::{HasSource, Semantics};
 use hir_def::DefDatabase;
 use syntax::{
     utils::{lsp_position_to_ts_point, ts_range_to_lsp_range},
@@ -28,13 +28,8 @@ pub(crate) fn goto_definition(
         lsp_position_to_ts_point(&pos.position),
         lsp_position_to_ts_point(&pos.position),
     )?;
-    let def_ptr = sema.find_def(pos.file_id, &node)?;
-    let def_node = def_ptr.to_node(&tree);
-    log::info!(
-        "{:?}",
-        node.utf8_text(db.file_text(pos.file_id).as_ref().as_bytes())
-    );
-    log::info!("{:?}", db.file_item_tree(pos.file_id));
+    let def_node = sema.find_def(pos.file_id, &node)?.source(db, &tree)?.value;
+
     let mut name_range = def_node.range();
     if let Some(name_node) = def_node.child_by_field_name("name") {
         name_range = name_node.range();

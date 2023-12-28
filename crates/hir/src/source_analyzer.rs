@@ -8,13 +8,13 @@ use hir_def::{
     },
     resolver::resolver_for_scope,
     resolver::Resolver,
-    DefWithBodyId, InFile,
+    DefWithBodyId, ExprId, InFile, InferenceResult,
 };
 use syntax::TSKind;
 use tree_sitter::Point;
 use vfs::FileId;
 
-use crate::db::HirDatabase;
+use crate::{db::HirDatabase, Field};
 
 /// `SourceAnalyzer` is a convenience wrapper which exposes HIR API in terms of
 /// original source files. It should not be used inside the HIR itself.
@@ -23,9 +23,11 @@ pub(crate) struct SourceAnalyzer {
     pub(crate) file_id: FileId,
     pub(crate) resolver: Resolver,
     def: Option<(DefWithBodyId, Arc<Body>, Arc<BodySourceMap>)>,
+    infer: Option<Arc<InferenceResult>>,
 }
 
 impl SourceAnalyzer {
+    // TODO: Add a no infer method for non field/method references.
     pub(crate) fn new_for_body(
         db: &dyn HirDatabase,
         def: DefWithBodyId,
@@ -39,11 +41,39 @@ impl SourceAnalyzer {
             Some(offset) => scope_for_offset(db, &scopes, &source_map, file_id, offset),
         };
         let resolver = resolver_for_scope(db.upcast(), def, scope);
+        let infer = db.infer(def);
         SourceAnalyzer {
             resolver,
             def: Some((def, body, source_map)),
             file_id,
+            infer: Some(infer),
         }
+    }
+
+    fn body_source_map(&self) -> Option<&BodySourceMap> {
+        self.def.as_ref().map(|(.., source_map)| &**source_map)
+    }
+
+    fn body(&self) -> Option<&Body> {
+        self.def.as_ref().map(|(_, body, _)| &**body)
+    }
+
+    fn expr_id(&self, db: &dyn HirDatabase, src: &tree_sitter::Node) -> Option<ExprId> {
+        let sm = self.body_source_map()?;
+        sm.node_expr(src)
+    }
+
+    pub(crate) fn resolve_field(
+        &self,
+        db: &dyn HirDatabase,
+        node: &tree_sitter::Node,
+    ) -> Option<Field> {
+        assert!(matches!(TSKind::from(*node), TSKind::sym_field_access));
+        let expr_id = self.expr_id(db, node)?;
+        self.infer
+            .as_ref()?
+            .field_resolution(expr_id)
+            .map(|it| it.into())
     }
 }
 

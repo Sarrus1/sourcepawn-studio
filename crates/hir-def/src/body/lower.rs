@@ -5,7 +5,10 @@ use vfs::FileId;
 
 use crate::{
     ast_id_map::AstIdMap,
-    hir::{Expr, ExprId},
+    hir::{
+        type_ref::{self, TypeRef},
+        BinaryOp, Expr, ExprId,
+    },
     item_tree::Name,
     BlockLoc, DefDatabase, DefWithBodyId, NodePtr,
 };
@@ -60,9 +63,13 @@ impl ExprCollector<'_> {
                                     .body
                                     .idents
                                     .alloc(Name::from_node(&name_node, self.source));
-                                let binding_id =
-                                    self.alloc_expr(Expr::Binding, NodePtr::from(&child));
-                                self.body.params.push((ident_id, binding_id));
+                                let binding = Expr::Binding {
+                                    ident_id,
+                                    type_ref: None,
+                                    initializer: None,
+                                }; //FIXME: This needs to be implemented.
+                                let decl_id = self.alloc_expr(binding, NodePtr::from(&child));
+                                self.body.params.push((ident_id, decl_id));
                             }
                         }
                     }
@@ -78,6 +85,10 @@ impl ExprCollector<'_> {
 
     fn collect_variable_declaration(&mut self, expr: tree_sitter::Node) -> ExprId {
         let mut decl = vec![];
+        let type_ref = expr
+            .child_by_field_name("type")
+            .map(|type_node| TypeRef::from_node(&type_node, self.source))
+            .flatten();
         for child in expr.children(&mut expr.walk()) {
             if TSKind::from(child) == TSKind::sym_variable_declaration {
                 if let Some(name_node) = child.child_by_field_name("name") {
@@ -85,12 +96,17 @@ impl ExprCollector<'_> {
                         .body
                         .idents
                         .alloc(Name::from_node(&name_node, self.source));
-                    let binding_id = self.alloc_expr(Expr::Binding, NodePtr::from(&child));
-                    decl.push((ident_id, binding_id, None));
+                    let binding = Expr::Binding {
+                        ident_id,
+                        type_ref: type_ref.clone(),
+                        initializer: None,
+                    }; //FIXME: This needs to be implemented.
+                    let binding_id = self.alloc_expr(binding, NodePtr::from(&child));
+                    decl.push(binding_id);
                 }
             }
         }
-        let decl = Expr::Decl(decl);
+        let decl = Expr::Decl(decl.into_boxed_slice());
         self.alloc_expr(decl, NodePtr::from(&expr))
     }
 
@@ -125,15 +141,31 @@ impl ExprCollector<'_> {
                 let child = expr.children(&mut expr.walk()).next()?;
                 Some(self.collect_expr(child))
             }
+            TSKind::sym_assignment_expression => {
+                let lhs = self.collect_expr(expr.child_by_field_name("left")?);
+                let rhs = self.collect_expr(expr.child_by_field_name("right")?);
+                let op = expr.child_by_field_name("operator").map(TSKind::from);
+                let assign = Expr::BinaryOp {
+                    lhs,
+                    rhs,
+                    op: Some(BinaryOp::Assignment { op }),
+                };
+                Some(self.alloc_expr(assign, NodePtr::from(&expr)))
+            }
             TSKind::sym_field_access => {
+                eprintln!("field_access: {:?}", expr.to_sexp());
                 let field_access = Expr::FieldAccess {
                     target: self.collect_expr(expr.child_by_field_name("target")?),
-                    field: Name::from_node(&expr.child_by_field_name("field")?, self.source),
+                    name: Name::from_node(&expr.child_by_field_name("field")?, self.source),
                 };
                 Some(self.alloc_expr(field_access, NodePtr::from(&expr)))
             }
             TSKind::sym_variable_declaration_statement => {
                 Some(self.collect_variable_declaration(expr))
+            }
+            TSKind::sym_symbol => {
+                let name = Name::from_node(&expr, self.source);
+                Some(self.alloc_expr(Expr::Ident(name), NodePtr::from(&expr)))
             }
             _ => {
                 log::warn!("Unhandled expression: {:?}", expr);

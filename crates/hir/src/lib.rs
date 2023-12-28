@@ -1,16 +1,21 @@
 use base_db::Tree;
 use db::HirDatabase;
 use hir_def::{
-    resolver::ValueNs, BlockLoc, DefWithBodyId, ExprId, FileItem, FunctionId, InFile, Lookup,
-    NodePtr, VariableId,
+    resolver::ValueNs, DefWithBodyId, EnumStructId, ExprId, FunctionId, GlobalId, InFile,
+    LocalFieldId,
 };
 use source_analyzer::SourceAnalyzer;
-use std::{fmt, ops};
+use std::{collections::HashMap, fmt, ops};
 use syntax::TSKind;
 use vfs::FileId;
 
 pub mod db;
+mod from_id;
+mod has_source;
 mod source_analyzer;
+mod source_to_def;
+
+pub use crate::has_source::HasSource;
 
 /// Primary API to get semantic information, like types, from syntax trees.
 pub struct Semantics<'db, DB> {
@@ -49,34 +54,49 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         self.db.parse(file_id)
     }
 
-    pub fn find_def(&self, file_id: FileId, node: &tree_sitter::Node) -> Option<NodePtr> {
+    pub fn find_def(&self, file_id: FileId, node: &tree_sitter::Node) -> Option<DefResolution> {
         let source = self.db.file_text(file_id);
-        let ast_id_map = self.db.ast_id_map(file_id);
         let def_map = self.db.file_def_map(file_id);
         let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
+        let parent = node.parent()?;
+        // match TSKind::from(parent) {
+        //     TSKind::sym_function_declaration => Some(DefResolution::Function(Function::from(
+        //         FunctionId::from(def_map.get_from_str(text)?),
+        //     ))),
+        // };
 
-        let mut parent = node.parent()?;
+        let mut container = node.parent()?;
         // If the node does not have a parent we are at the root, nothing to resolve.
-
-        while !matches!(TSKind::from(parent), TSKind::sym_function_definition) {
-            if let Some(candidate) = parent.parent() {
-                parent = candidate;
+        while !matches!(TSKind::from(container), TSKind::sym_function_definition) {
+            if let Some(candidate) = container.parent() {
+                container = candidate;
             } else {
                 break;
             }
         }
-        match TSKind::from(parent) {
+        match TSKind::from(container) {
             TSKind::sym_function_definition => {
-                let parent_name = parent
+                let parent_name = container
                     .child_by_field_name("name")?
                     .utf8_text(source.as_ref().as_bytes())
                     .ok()?;
-                let body_node = parent.child_by_field_name("body")?;
+                let body_node = container.child_by_field_name("body")?;
                 match TSKind::from(body_node) {
                     TSKind::sym_block => match def_map.get_from_str(parent_name)? {
                         hir_def::FileDefId::FunctionId(id) => {
                             let def = hir_def::DefWithBodyId::FunctionId(id);
                             let offset = node.start_position();
+                            if TSKind::sym_field_access == TSKind::from(parent) {
+                                let analyzer = SourceAnalyzer::new_for_body(
+                                    self.db,
+                                    def,
+                                    InFile::new(file_id, &body_node),
+                                    Some(offset),
+                                );
+                                let field = analyzer.resolve_field(self.db, &parent)?;
+                                return Some(DefResolution::Field(field));
+                            }
+
                             // TODO: The part below seems hacky...
                             let analyzer = SourceAnalyzer::new_for_body(
                                 self.db,
@@ -93,31 +113,22 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                                 );
                                 analyzer.resolver.resolve_ident(text)
                             });
+
                             match value_ns? {
-                                ValueNs::LocalVariable(expr) => {
-                                    let (_, source_map) = self.db.body_with_source_map(def);
-                                    return source_map.expr_source(expr);
+                                // TODO: Maybe hide the match logic in a function/macro?
+                                ValueNs::LocalId(expr) => {
+                                    return Some(DefResolution::Local(Local::from(expr)));
                                 }
                                 ValueNs::FunctionId(id) => {
-                                    let item_tree = self.db.file_item_tree(file_id);
-                                    return Some(
-                                        ast_id_map
-                                            [item_tree[id.value.lookup(self.db).value].ast_id],
-                                    );
+                                    return Some(DefResolution::Function(Function::from(id.value)));
                                 }
-                                ValueNs::GlobalVariable(id) => {
-                                    let item_tree = self.db.file_item_tree(file_id);
-                                    return Some(
-                                        ast_id_map
-                                            [item_tree[id.value.lookup(self.db).value].ast_id],
-                                    );
+                                ValueNs::GlobalId(id) => {
+                                    return Some(DefResolution::Global(Global::from(id.value)));
                                 }
                                 ValueNs::EnumStructId(id) => {
-                                    let item_tree = self.db.file_item_tree(file_id);
-                                    return Some(
-                                        ast_id_map
-                                            [item_tree[id.value.lookup(self.db).value].ast_id],
-                                    );
+                                    return Some(DefResolution::EnumStruct(EnumStruct::from(
+                                        id.value,
+                                    )));
                                 }
                             }
                         }
@@ -127,17 +138,16 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 }
             }
             TSKind::sym_source_file => {
-                let item_tree = self.db.file_item_tree(file_id);
                 if let Some(def) = def_map.get_from_str(text) {
                     match def {
                         hir_def::FileDefId::FunctionId(id) => {
-                            return Some(ast_id_map[item_tree[id.lookup(self.db).value].ast_id]);
+                            return Some(DefResolution::Function(Function::from(id)));
                         }
                         hir_def::FileDefId::VariableId(id) => {
-                            return Some(ast_id_map[item_tree[id.lookup(self.db).value].ast_id]);
+                            return Some(DefResolution::Global(Global::from(id)));
                         }
                         hir_def::FileDefId::EnumStructId(id) => {
-                            return Some(ast_id_map[item_tree[id.lookup(self.db).value].ast_id]);
+                            return Some(DefResolution::EnumStruct(EnumStruct::from(id)));
                         }
                     }
                 }
@@ -155,23 +165,79 @@ impl<'db> SemanticsImpl<'db> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PathResolution {
-    /// An item
-    Def(ModuleDef),
-    /// A local binding (only value namespace)
+pub enum DefResolution {
+    Function(Function),
+    EnumStruct(EnumStruct),
+    Field(Field),
+    Global(Global),
     Local(Local),
 }
 
-/// The defs which can be visible in the module.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ModuleDef {
-    Function(FunctionId),
-    Variable(VariableId),
+impl<'tree> HasSource<'tree> for DefResolution {
+    fn source(
+        self,
+        db: &dyn HirDatabase,
+        tree: &'tree Tree,
+    ) -> Option<InFile<tree_sitter::Node<'tree>>> {
+        match self {
+            DefResolution::Function(func) => func.source(db, tree),
+            DefResolution::EnumStruct(enum_struct) => enum_struct.source(db, tree),
+            DefResolution::Field(field) => field.source(db, tree),
+            DefResolution::Field(field) => field.source(db, tree),
+            DefResolution::Global(global) => global.source(db, tree),
+            DefResolution::Local(local) => local.source(db, tree)?.source(db, tree),
+        }
+    }
 }
 
-/// A single local definition.
+/// The defs which can be visible in the file.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FileDef {
+    Function(Function),
+    EnumStruct(EnumStruct),
+    Global(Global),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Function {
+    pub(crate) id: FunctionId,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct EnumStruct {
+    pub(crate) id: EnumStructId,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Global {
+    pub(crate) id: GlobalId,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Field {
+    pub(crate) parent: EnumStruct,
+    pub(crate) id: LocalFieldId,
+}
+
+/// A single local variable definition.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Local {
     pub(crate) parent: DefWithBodyId,
     pub(crate) expr_id: ExprId,
+}
+
+impl<'tree> Local {
+    fn source(self, db: &dyn HirDatabase, tree: &'tree Tree) -> Option<LocalSource<'tree>> {
+        let (body, source_map) = db.body_with_source_map(self.parent.into());
+        let node_ptr = source_map.expr_source(self.expr_id)?;
+        Some(LocalSource {
+            local: self,
+            source: InFile::new(self.parent.file_id(db.upcast()), node_ptr.to_node(tree)),
+        })
+    }
+}
+
+pub struct LocalSource<'tree> {
+    pub local: Local,
+    pub source: InFile<tree_sitter::Node<'tree>>,
 }
