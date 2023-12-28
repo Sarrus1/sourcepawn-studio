@@ -10,6 +10,7 @@ use crate::{
     data::{EnumStructData, FunctionData},
     infer,
     item_tree::{ItemTree, Name},
+    src::HasSource,
     BlockId, BlockLoc, DefWithBodyId, EnumStructId, EnumStructLoc, FileDefId, FileItem, FunctionId,
     FunctionLoc, GlobalId, GlobalLoc, InferenceResult, Intern, Lookup, TreeId,
 };
@@ -92,6 +93,7 @@ struct BlockInfo {
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct DefMap {
     values: FxHashMap<Name, FileDefId>,
+    declarations: Vec<FileDefId>,
     /// When this is a block def map, this will hold the block id of the block and module that
     /// contains this block.
     block: Option<BlockInfo>,
@@ -110,9 +112,7 @@ impl DefMap {
                         value: *id,
                     }
                     .intern(db);
-
-                    res.values
-                        .insert(func.name.clone(), FileDefId::FunctionId(fn_id));
+                    res.declare(func.name.clone(), FileDefId::FunctionId(fn_id));
                 }
                 FileItem::Variable(id) => {
                     let var = &item_tree[*id];
@@ -121,8 +121,7 @@ impl DefMap {
                         value: *id,
                     }
                     .intern(db);
-                    res.values
-                        .insert(var.name.clone(), FileDefId::VariableId(var_id));
+                    res.declare(var.name.clone(), FileDefId::VariableId(var_id));
                 }
                 FileItem::EnumStruct(id) => {
                     let enum_struct = &item_tree[*id];
@@ -131,7 +130,7 @@ impl DefMap {
                         value: *id,
                     }
                     .intern(db);
-                    res.values.insert(
+                    res.declare(
                         enum_struct.name.clone(),
                         FileDefId::EnumStructId(enum_struct_id),
                     );
@@ -163,8 +162,7 @@ impl DefMap {
                         value: *id,
                     }
                     .intern(db);
-                    res.values
-                        .insert(var.name.clone(), FileDefId::VariableId(var_id));
+                    res.declare(var.name.clone(), FileDefId::VariableId(var_id));
                 }
                 _ => unreachable!("Only variables can be defined in a block"),
             }
@@ -173,7 +171,16 @@ impl DefMap {
         Arc::new(res)
     }
 
+    fn declare(&mut self, name: Name, def: FileDefId) {
+        self.values.insert(name, def);
+        self.declarations.push(def);
+    }
+
     pub(crate) fn block_id(&self) -> Option<BlockId> {
         self.block.map(|block| block.block)
+    }
+
+    pub fn declarations(&self) -> &[FileDefId] {
+        &self.declarations
     }
 }
