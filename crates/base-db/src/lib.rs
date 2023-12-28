@@ -16,6 +16,22 @@ pub trait FileLoader {
 #[derive(Debug, Clone)]
 pub struct Tree(tree_sitter::Tree);
 
+/// Helper function to get the name of the field a node is in.
+///
+/// # Arguments
+///
+/// * `node` - The node to get the field name of.
+///
+/// # Notes
+///
+/// This has O(n) time complexity try not to use it for large nodes.
+pub fn field_name(node: &tree_sitter::Node) -> Option<&'static str> {
+    let parent = node.parent()?;
+    let mut cursor = parent.walk();
+    parent.children(&mut cursor).find(|child| child == node)?;
+    cursor.field_name()
+}
+
 impl Tree {
     pub fn tree(&self) -> &tree_sitter::Tree {
         &self.0

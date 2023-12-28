@@ -1,8 +1,8 @@
 use std::{cell::RefCell, fmt, ops};
 
-use base_db::Tree;
+use base_db::{field_name, Tree};
 use fxhash::FxHashMap;
-use hir_def::{resolver::ValueNs, FunctionId, InFile, NodePtr};
+use hir_def::{resolver::ValueNs, InFile, NodePtr};
 use syntax::TSKind;
 use vfs::FileId;
 
@@ -49,13 +49,14 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         self.db.parse(file_id)
     }
 
-    pub fn find_def(&self, file_id: FileId, node: &tree_sitter::Node) -> Option<DefResolution> {
-        let source = self.db.file_text(file_id);
-        let def_map = self.db.file_def_map(file_id);
-        let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
+    fn find_name_def(&self, file_id: FileId, node: &tree_sitter::Node) -> Option<DefResolution> {
+        if field_name(node)? != "name" {
+            return None;
+        }
         let parent = node.parent()?;
         let src = InFile::new(file_id, NodePtr::from(&parent));
-        let res = match TSKind::from(parent) {
+
+        match TSKind::from(parent) {
             TSKind::sym_function_definition => self
                 .fn_to_def(src)
                 .map(Function::from)
@@ -64,31 +65,35 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 .enum_struct_to_def(src)
                 .map(EnumStruct::from)
                 .map(DefResolution::EnumStruct),
+            TSKind::sym_parameter_declaration => self
+                .local_to_def(src)
+                .map(Local::from)
+                .map(DefResolution::Local),
             TSKind::sym_variable_declaration => {
-                if let Some(grand_parent) = parent.parent() {
-                    if TSKind::from(&grand_parent) == TSKind::sym_global_variable_declaration {
-                        if let Some(sub_node) = parent.child_by_field_name("name") {
-                            if sub_node == *node {
-                                self.global_to_def(src)
-                                    .map(Global::from)
-                                    .map(DefResolution::Global)
-                            } else {
-                                None
-                            }
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
-                    }
-                } else {
-                    None
+                let grand_parent = parent.parent()?;
+                match TSKind::from(&grand_parent) {
+                    TSKind::sym_global_variable_declaration => self
+                        .global_to_def(src)
+                        .map(Global::from)
+                        .map(DefResolution::Global),
+                    TSKind::sym_variable_declaration_statement => self
+                        .local_to_def(src)
+                        .map(Local::from)
+                        .map(DefResolution::Local),
+                    _ => todo!(),
                 }
             }
-            _ => None,
-        };
-        if res.is_some() {
-            return res;
+            _ => todo!(),
+        }
+    }
+
+    pub fn find_def(&self, file_id: FileId, node: &tree_sitter::Node) -> Option<DefResolution> {
+        let source = self.db.file_text(file_id);
+        let def_map = self.db.file_def_map(file_id);
+        let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
+        let parent = node.parent()?;
+        if let Some(res) = self.find_name_def(file_id, node) {
+            return res.into();
         }
 
         let mut container = node.parent()?;
@@ -123,23 +128,13 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                                 return Some(DefResolution::Field(field));
                             }
 
-                            // TODO: The part below seems hacky...
                             let analyzer = SourceAnalyzer::new_for_body(
                                 self.db,
                                 def,
                                 InFile::new(file_id, &body_node),
                                 Some(offset),
                             );
-                            let value_ns = analyzer.resolver.resolve_ident(text).or_else(|| {
-                                let analyzer = SourceAnalyzer::new_for_body(
-                                    self.db,
-                                    def,
-                                    InFile::new(file_id, &body_node),
-                                    None,
-                                );
-                                analyzer.resolver.resolve_ident(text)
-                            });
-
+                            let value_ns = analyzer.resolver.resolve_ident(text);
                             match value_ns? {
                                 // TODO: Maybe hide the match logic in a function/macro?
                                 ValueNs::LocalId(expr) => {
@@ -188,7 +183,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
 macro_rules! to_def_methods {
     ($(($def:path, $meth:ident)),* ,) => {$(
         pub fn $meth(&self, src: InFile<NodePtr>) -> Option<$def> {
-            self.with_ctx(|ctx| ctx.$meth(src))
+            self.with_ctx(|ctx| ctx.$meth(src)).map(<$def>::from)
         }
     )*}
 }
@@ -215,5 +210,6 @@ impl<'db> SemanticsImpl<'db> {
         (crate::FunctionId, fn_to_def),
         (crate::EnumStructId, enum_struct_to_def),
         (crate::GlobalId, global_to_def),
+        (crate::Local, local_to_def),
     ];
 }

@@ -2,7 +2,7 @@ use fxhash::FxHashMap;
 use hir_def::{
     child_by_source::ChildBySource,
     dyn_map::{keys, DynMap, Key},
-    DefWithBodyId, EnumStructId, FunctionId, GlobalId, InFile, NodePtr,
+    DefWithBodyId, EnumStructId, ExprId, FunctionId, GlobalId, InFile, Lookup, NodePtr,
 };
 use stdx::impl_from;
 use syntax::TSKind;
@@ -26,6 +26,17 @@ impl SourceToDefCtx<'_, '_> {
     }
     pub(super) fn global_to_def(&mut self, src: InFile<NodePtr>) -> Option<GlobalId> {
         self.to_def(src, keys::GLOBAL)
+    }
+
+    pub(super) fn local_to_def(&mut self, src: InFile<NodePtr>) -> Option<(DefWithBodyId, ExprId)> {
+        let container = self.find_container(src.as_ref())?;
+        match container {
+            ChildContainer::DefWithBodyId(def) => {
+                let (_, source_map) = self.db.body_with_source_map(def);
+                source_map.node_ptr_expr(src.value).map(|expr| (def, expr))
+            }
+            _ => todo!(),
+        }
     }
 
     fn to_def<ID: Copy + 'static>(
@@ -52,19 +63,27 @@ impl SourceToDefCtx<'_, '_> {
         let tree = self.db.parse(src.file_id);
         let node = src.value.to_node(&tree);
         let mut container = node.parent()?;
-        while !matches!(
-            TSKind::from(container),
-            TSKind::sym_function_definition | TSKind::sym_enum_struct | TSKind::sym_source_file
-        ) {
-            if let Some(candidate) = container.parent() {
-                container = candidate;
-            } else {
-                break;
+        loop {
+            match TSKind::from(container) {
+                TSKind::sym_source_file => return Some(ChildContainer::FileId(src.file_id)),
+                TSKind::sym_function_definition => {
+                    let func =
+                        self.fn_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
+                    return Some(ChildContainer::DefWithBodyId(DefWithBodyId::from(func)));
+                }
+                TSKind::sym_enum_struct => {
+                    let enum_struct = self
+                        .enum_struct_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
+                    return Some(ChildContainer::EnumStructId(enum_struct));
+                }
+                _ => {
+                    if let Some(candidate) = container.parent() {
+                        container = candidate;
+                    } else {
+                        return None;
+                    }
+                }
             }
-        }
-        match TSKind::from(container) {
-            TSKind::sym_source_file => Some(ChildContainer::FileId(src.file_id)),
-            _ => todo!(),
         }
     }
 }

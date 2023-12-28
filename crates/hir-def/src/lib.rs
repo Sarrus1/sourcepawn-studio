@@ -2,6 +2,7 @@ use core::hash::Hash;
 use item_tree::{AstId, EnumStruct, Function, ItemTree, ItemTreeNode, Variable};
 use la_arena::Idx;
 use std::{hash::Hasher, sync::Arc};
+use stdx::impl_from;
 use vfs::FileId;
 
 mod ast_id_map;
@@ -196,6 +197,8 @@ impl<N: ItemTreeNode> Hash for ItemTreeId<N> {
 pub enum DefWithBodyId {
     FunctionId(FunctionId),
 }
+
+impl_from!(FunctionId for DefWithBodyId);
 
 impl DefWithBodyId {
     pub fn file_id(&self, db: &dyn DefDatabase) -> FileId {

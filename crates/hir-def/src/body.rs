@@ -2,7 +2,7 @@ use crate::{
     db::DefMap,
     hir::{Expr, ExprId, Ident, IdentId},
     src::HasSource,
-    BlockId, BlockLoc, DefDatabase, DefWithBodyId, InFile, Intern, Lookup, NodePtr,
+    BlockId, DefDatabase, DefWithBodyId, InFile, Lookup, NodePtr,
 };
 use fxhash::FxHashMap;
 use la_arena::{Arena, ArenaMap, RawIdx};
@@ -41,7 +41,15 @@ impl BodySourceMap {
 
     pub fn node_expr(&self, node: &tree_sitter::Node) -> Option<ExprId> {
         let ptr = NodePtr::from(node);
-        self.expr_map.get(&ptr).cloned()
+        self.node_ptr_expr(ptr)
+    }
+
+    pub fn node_ptr_expr(&self, node: NodePtr) -> Option<ExprId> {
+        self.expr_map.get(&node).cloned()
+    }
+
+    pub fn node_ident(&self, node: InFile<&NodePtr>) -> Option<IdentId> {
+        self.ident_map.get(node.value).cloned()
     }
 }
 
