@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use la_arena::{Arena, ArenaMap};
+use fxhash::FxHashMap;
+use la_arena::{Arena, ArenaMap, Idx};
 use syntax::TSKind;
 
 use crate::{
@@ -34,6 +35,7 @@ impl FunctionData {
 pub struct EnumStructData {
     pub name: Name,
     pub fields: Arc<Arena<FieldData>>,
+    pub fields_map: Arc<FxHashMap<Name, Idx<FieldData>>>,
     // pub visibility: RawVisibility,
 }
 
@@ -53,27 +55,27 @@ impl EnumStructData {
         let item_tree = loc.tree_id().item_tree(db);
         let enum_struct = &item_tree[loc.value];
         let mut fields = Arena::new();
+        let mut fields_map = FxHashMap::default();
         // FIXME: Do we need to clone here?
         enum_struct.fields.clone().for_each(|e| {
             let field = &item_tree[e];
-            fields.alloc(FieldData {
+            let field_id = fields.alloc(FieldData {
                 name: field.name.clone(),
                 type_ref: field.type_ref.clone(),
             });
+            fields_map.insert(field.name.clone(), field_id);
         });
         let enum_struct_data = EnumStructData {
             name: enum_struct.name.clone(),
             fields: Arc::new(fields),
+            fields_map: Arc::new(fields_map),
         };
 
         Arc::new(enum_struct_data)
     }
 
     pub fn field(&self, name: &Name) -> Option<LocalFieldId> {
-        // FIXME: linear search
-        self.fields
-            .iter()
-            .find_map(|(id, data)| if data.name == *name { Some(id) } else { None })
+        self.fields_map.get(name).cloned()
     }
 
     pub fn field_type(&self, field: LocalFieldId) -> &TypeRef {

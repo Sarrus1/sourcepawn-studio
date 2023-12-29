@@ -62,9 +62,15 @@ impl ExprCollector<'_> {
                                     .alloc(Name::from_node(&name_node, self.source));
                                 let binding = Expr::Binding {
                                     ident_id,
-                                    type_ref: None,
-                                    initializer: None,
-                                }; //FIXME: This needs to be implemented.
+                                    type_ref: child.child_by_field_name("type").and_then(
+                                        |type_node| TypeRef::from_node(&type_node, self.source),
+                                    ),
+                                    initializer: child
+                                        .child_by_field_name("defaultValue")
+                                        .and_then(|default_node| {
+                                            self.maybe_collect_expr(default_node)
+                                        }),
+                                };
                                 let decl_id = self.alloc_expr(binding, NodePtr::from(&child));
                                 self.body.params.push((ident_id, decl_id));
                             }
@@ -95,8 +101,10 @@ impl ExprCollector<'_> {
                     let binding = Expr::Binding {
                         ident_id,
                         type_ref: type_ref.clone(),
-                        initializer: None,
-                    }; //FIXME: This needs to be implemented.
+                        initializer: child
+                            .child_by_field_name("initialValue")
+                            .and_then(|default_node| self.maybe_collect_expr(default_node)),
+                    };
                     let binding_id = self.alloc_expr(binding, NodePtr::from(&child));
                     decl.push(binding_id);
                 }
@@ -149,7 +157,6 @@ impl ExprCollector<'_> {
                 Some(self.alloc_expr(assign, NodePtr::from(&expr)))
             }
             TSKind::field_access => {
-                eprintln!("field_access: {:?}", expr.to_sexp());
                 let field_access = Expr::FieldAccess {
                     target: self.collect_expr(expr.child_by_field_name("target")?),
                     name: Name::from_node(&expr.child_by_field_name("field")?, self.source),

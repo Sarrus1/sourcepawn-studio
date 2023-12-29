@@ -26,15 +26,6 @@ pub trait InternDatabase: SourceDatabase {
     #[salsa::interned]
     fn intern_block(&'tree self, loc: BlockLoc) -> BlockId;
     // endregion: items
-
-    /*
-    #[salsa::interned]
-    fn intern_block(&self, loc: BlockLoc) -> BlockId;
-    #[salsa::interned]
-    fn intern_anonymous_const(&self, id: ConstBlockLoc) -> ConstBlockId;
-    #[salsa::interned]
-    fn intern_in_type_const(&self, id: InTypeConstLoc) -> InTypeConstId;
-    */
 }
 
 #[salsa::query_group(DefDatabaseStorage)]
@@ -116,7 +107,7 @@ impl DefMap {
                 FileItem::Variable(id) => {
                     let var = &item_tree[*id];
                     let var_id = GlobalLoc {
-                        tree: TreeId::new(file_id, None), // TODO: Reuse the file_id with "into" ?
+                        tree: TreeId::new(file_id, None),
                         value: *id,
                     }
                     .intern(db);
@@ -125,7 +116,7 @@ impl DefMap {
                 FileItem::EnumStruct(id) => {
                     let enum_struct = &item_tree[*id];
                     let enum_struct_id = EnumStructLoc {
-                        tree: TreeId::new(file_id, None), // TODO: Reuse the file_id with "into" ?
+                        tree: TreeId::new(file_id, None),
                         value: *id,
                     }
                     .intern(db);

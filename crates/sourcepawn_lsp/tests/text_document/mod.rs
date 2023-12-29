@@ -1,2 +1,3 @@
-mod completion;
+// mod completion;
+
 mod goto_definition;

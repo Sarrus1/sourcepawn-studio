@@ -2873,7 +2873,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-sourcepawn"
 version = "0.7.0"
-source = "git+https://github.com/Sarrus1/tree-sitter-sourcepawn#3b9e74abc2b68aa0daf59cd54a28955e19310e04"
+source = "git+https://github.com/Sarrus1/tree-sitter-sourcepawn#372eba9ea977640c7f874ec9081821571de658e3"
 dependencies = [
  "cc",
  "tree-sitter",

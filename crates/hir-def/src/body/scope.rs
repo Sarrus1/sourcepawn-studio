@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use fxhash::FxHashMap;
-use la_arena::{Arena, ArenaMap, Idx, IdxRange, RawIdx};
+use la_arena::{Arena, ArenaMap, Idx};
 use vfs::FileId;
 
 use crate::{

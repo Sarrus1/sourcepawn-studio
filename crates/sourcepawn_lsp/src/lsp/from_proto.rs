@@ -42,9 +42,10 @@ pub(crate) fn text_range(
 ) -> anyhow::Result<TextRange> {
     let start = offset(line_index, range.start)?;
     let end = offset(line_index, range.end)?;
-    match end < start {
-        true => Err(format_err!("Invalid Range").into()),
-        false => Ok(TextRange::new(start, end)),
+    if end < start {
+        Err(format_err!("Invalid Range"))
+    } else {
+        Ok(TextRange::new(start, end))
     }
 }
 

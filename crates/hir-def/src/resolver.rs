@@ -88,11 +88,9 @@ impl Resolver {
     pub fn resolve_ident(&self, name: &str) -> Option<ValueNs> {
         let name = Name::from(name);
         for scope in self.scopes() {
-            eprintln!("scope: {:?}", scope);
             match scope {
                 Scope::ExprScope(scope) => {
                     if let Some(entry) = scope.resolve_name_in_scope(&name) {
-                        eprintln!("found entry: {:?} for name: {:?}", entry, name);
                         return Some(ValueNs::LocalId((scope.owner, entry)));
                     }
                 }
@@ -164,7 +162,6 @@ impl Resolver {
             }
         }
         self.scopes[start..].reverse();
-        eprintln!("scopes after: {:?}", self.scopes);
         UpdateGuard(start)
     }
 

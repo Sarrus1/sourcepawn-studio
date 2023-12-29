@@ -1,4 +1,6 @@
-use std::{cell::RefCell, fmt, ops};
+//! Defines the [`Semantics`](Semantics) struct.
+
+use std::{cell::RefCell, fmt, ops, sync::Arc};
 
 use base_db::{is_name_node, Tree};
 use fxhash::FxHashMap;
@@ -14,6 +16,8 @@ use crate::{
 };
 
 /// Primary API to get semantic information, like types, from syntax trees.
+///
+/// For now, it only allows to get from a node in a tree-sitter CST, to a definition.
 pub struct Semantics<'db, DB> {
     pub db: &'db DB,
     imp: SemanticsImpl<'db>,
@@ -93,8 +97,6 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
 
     pub fn find_def(&self, file_id: FileId, node: &tree_sitter::Node) -> Option<DefResolution> {
         let source = self.db.file_text(file_id);
-        let def_map = self.db.file_def_map(file_id);
-        let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
         let parent = node.parent()?;
         if let Some(res) = self.find_name_def(file_id, node) {
             return res.into();
@@ -111,75 +113,89 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         }
         match TSKind::from(container) {
             TSKind::function_definition => {
-                let parent_name = container
-                    .child_by_field_name("name")?
-                    .utf8_text(source.as_ref().as_bytes())
-                    .ok()?;
-                let body_node = container.child_by_field_name("body")?;
-                match TSKind::from(body_node) {
-                    TSKind::block => match def_map.get_from_str(parent_name)? {
-                        hir_def::FileDefId::FunctionId(id) => {
-                            let def = hir_def::DefWithBodyId::FunctionId(id);
-                            let offset = node.start_position();
-                            if TSKind::field_access == TSKind::from(parent) {
-                                let analyzer = SourceAnalyzer::new_for_body(
-                                    self.db,
-                                    def,
-                                    InFile::new(file_id, &body_node),
-                                    Some(offset),
-                                );
-                                let field = analyzer.resolve_field(self.db, &parent)?;
-                                return Some(DefResolution::Field(field));
-                            }
-
-                            let analyzer = SourceAnalyzer::new_for_body(
-                                self.db,
-                                def,
-                                InFile::new(file_id, &body_node),
-                                Some(offset),
-                            );
-                            let value_ns = analyzer.resolver.resolve_ident(text);
-                            match value_ns? {
-                                // TODO: Maybe hide the match logic in a function/macro?
-                                ValueNs::LocalId(expr) => {
-                                    return Some(DefResolution::Local(Local::from(expr)));
-                                }
-                                ValueNs::FunctionId(id) => {
-                                    return Some(DefResolution::Function(Function::from(id.value)));
-                                }
-                                ValueNs::GlobalId(id) => {
-                                    return Some(DefResolution::Global(Global::from(id.value)));
-                                }
-                                ValueNs::EnumStructId(id) => {
-                                    return Some(DefResolution::EnumStruct(EnumStruct::from(
-                                        id.value,
-                                    )));
-                                }
-                            }
-                        }
-                        _ => unreachable!("Expected a function"),
-                    },
-                    _ => todo!("Handle non block body"),
-                }
+                self.function_node_to_def(file_id, container, parent, *node, source)
             }
-            TSKind::source_file => {
-                if let Some(def) = def_map.get_from_str(text) {
-                    match def {
-                        hir_def::FileDefId::FunctionId(id) => {
-                            return Some(DefResolution::Function(Function::from(id)));
+            TSKind::source_file => self.source_node_to_def(file_id, *node, source),
+            _ => todo!(),
+        }
+    }
+
+    fn source_node_to_def(
+        &self,
+        file_id: FileId,
+        node: tree_sitter::Node,
+        source: Arc<str>,
+    ) -> Option<DefResolution> {
+        let def_map = self.db.file_def_map(file_id);
+        let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
+        match def_map.get_from_str(text)? {
+            hir_def::FileDefId::FunctionId(id) => {
+                DefResolution::Function(Function::from(id)).into()
+            }
+            hir_def::FileDefId::VariableId(id) => DefResolution::Global(Global::from(id)).into(),
+            hir_def::FileDefId::EnumStructId(id) => {
+                DefResolution::EnumStruct(EnumStruct::from(id)).into()
+            }
+        }
+    }
+
+    fn function_node_to_def(
+        &self,
+        file_id: FileId,
+        container: tree_sitter::Node,
+        parent: tree_sitter::Node,
+        node: tree_sitter::Node,
+        source: Arc<str>,
+    ) -> Option<DefResolution> {
+        let def_map = self.db.file_def_map(file_id);
+        let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
+
+        let parent_name = container
+            .child_by_field_name("name")?
+            .utf8_text(source.as_ref().as_bytes())
+            .ok()?;
+        let body_node = container.child_by_field_name("body")?;
+        match TSKind::from(body_node) {
+            TSKind::block => match def_map.get_from_str(parent_name)? {
+                hir_def::FileDefId::FunctionId(id) => {
+                    let def = hir_def::DefWithBodyId::FunctionId(id);
+                    let offset = node.start_position();
+                    if TSKind::field_access == TSKind::from(parent) {
+                        let analyzer = SourceAnalyzer::new_for_body(
+                            self.db,
+                            def,
+                            InFile::new(file_id, &body_node),
+                            Some(offset),
+                        );
+                        let field = analyzer.resolve_field(self.db, &parent)?;
+                        return Some(DefResolution::Field(field));
+                    }
+
+                    let analyzer = SourceAnalyzer::new_for_body_no_infer(
+                        self.db,
+                        def,
+                        InFile::new(file_id, &body_node),
+                        Some(offset),
+                    );
+                    let value_ns = analyzer.resolver.resolve_ident(text);
+                    match value_ns? {
+                        // TODO: Maybe hide the match logic in a function/macro?
+                        ValueNs::LocalId(expr) => DefResolution::Local(Local::from(expr)).into(),
+                        ValueNs::FunctionId(id) => {
+                            DefResolution::Function(Function::from(id.value)).into()
                         }
-                        hir_def::FileDefId::VariableId(id) => {
-                            return Some(DefResolution::Global(Global::from(id)));
+                        ValueNs::GlobalId(id) => {
+                            DefResolution::Global(Global::from(id.value)).into()
                         }
-                        hir_def::FileDefId::EnumStructId(id) => {
-                            return Some(DefResolution::EnumStruct(EnumStruct::from(id)));
+                        ValueNs::EnumStructId(id) => {
+                            DefResolution::EnumStruct(EnumStruct::from(id.value)).into()
                         }
                     }
                 }
-            }
-            _ => todo!(),
+                _ => unreachable!("Expected a function"),
+            },
+            _ => todo!("Handle non block body"),
         }
-        None
     }
 }
 

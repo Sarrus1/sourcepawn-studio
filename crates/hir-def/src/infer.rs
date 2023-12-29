@@ -64,7 +64,6 @@ impl<'a> InferenceContext<'a> {
 
 impl InferenceContext<'_> {
     pub(crate) fn infer_expr(&mut self, expr: &ExprId) -> Option<TypeRef> {
-        eprintln!("expr_id: {:?}", &self.body[*expr]);
         match &self.body[*expr] {
             Expr::Block { id: _, statements } => {
                 let g = self

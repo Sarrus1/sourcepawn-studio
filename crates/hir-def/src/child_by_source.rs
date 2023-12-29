@@ -26,7 +26,6 @@ impl ChildBySource for FileId {
         for id in def_map.declarations() {
             match id {
                 FileDefId::FunctionId(id) => {
-                    // FIXME: Maybe the lookup can be removed and we can just use the id directly?
                     let item = &item_tree[id.lookup(db)];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
                     res[FUNCTION].insert(node_ptr, *id);
