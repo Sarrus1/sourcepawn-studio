@@ -119,7 +119,6 @@ impl InferenceContext<'_> {
                         else {
                             return None;
                         };
-                        eprintln!("expr: {:?}", expr);
                         type_ref.as_ref().cloned()
                     }
                     _ => todo!(),

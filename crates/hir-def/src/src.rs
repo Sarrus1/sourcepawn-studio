@@ -1,6 +1,7 @@
 //! Utilities for mapping between hir IDs and the surface syntax.
 
 use base_db::Tree;
+use la_arena::ArenaMap;
 
 use crate::{item_tree::ItemTreeNode, BlockLoc, DefDatabase, InFile, ItemTreeId};
 
@@ -26,4 +27,9 @@ impl<'tree> HasSource<'tree> for BlockLoc {
         let node = node_ptr.to_node(tree);
         InFile::new(self.file_id, node)
     }
+}
+
+pub trait HasChildSource<ChildId> {
+    type Value;
+    fn child_source(&self, db: &dyn DefDatabase) -> InFile<ArenaMap<ChildId, Self::Value>>;
 }

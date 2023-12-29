@@ -1,14 +1,12 @@
 use vfs::FileId;
 
 use crate::{
-    db::DefMap,
     dyn_map::{
-        keys::{ENUM_STRUCT, FUNCTION, GLOBAL},
+        keys::{ENUM_STRUCT, FIELD, FUNCTION, GLOBAL},
         DynMap,
     },
-    hir::Expr,
-    src::HasSource,
-    DefDatabase, DefWithBodyId, FieldId, FileDefId, FileItem, Lookup,
+    src::HasChildSource,
+    DefDatabase, EnumStructId, FieldId, FileDefId, Lookup,
 };
 
 pub trait ChildBySource {
@@ -44,6 +42,19 @@ impl ChildBySource for FileId {
                     res[ENUM_STRUCT].insert(node_ptr, *id);
                 }
             }
+        }
+    }
+}
+
+impl ChildBySource for EnumStructId {
+    fn child_by_source_to(&self, db: &dyn DefDatabase, map: &mut DynMap, _file_id: FileId) {
+        let arena_map = self.child_source(db);
+        for (local_id, source) in arena_map.value.iter() {
+            let field_id = FieldId {
+                parent: *self,
+                local_id,
+            };
+            map[FIELD].insert(*source, field_id);
         }
     }
 }

@@ -1,6 +1,6 @@
 use std::{cell::RefCell, fmt, ops};
 
-use base_db::{field_name, Tree};
+use base_db::{is_name_node, Tree};
 use fxhash::FxHashMap;
 use hir_def::{resolver::ValueNs, InFile, NodePtr};
 use syntax::TSKind;
@@ -10,7 +10,7 @@ use crate::{
     db::HirDatabase,
     source_analyzer::SourceAnalyzer,
     source_to_def::{SourceToDefCache, SourceToDefCtx},
-    DefResolution, EnumStruct, Function, Global, Local,
+    DefResolution, EnumStruct, Field, Function, Global, Local,
 };
 
 /// Primary API to get semantic information, like types, from syntax trees.
@@ -50,7 +50,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
     }
 
     fn find_name_def(&self, file_id: FileId, node: &tree_sitter::Node) -> Option<DefResolution> {
-        if field_name(node)? != "name" {
+        if !is_name_node(node) {
             return None;
         }
         let parent = node.parent()?;
@@ -65,6 +65,10 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 .enum_struct_to_def(src)
                 .map(EnumStruct::from)
                 .map(DefResolution::EnumStruct),
+            TSKind::sym_enum_struct_field => self
+                .field_to_def(src)
+                .map(Field::from)
+                .map(DefResolution::Field),
             TSKind::sym_parameter_declaration => self
                 .local_to_def(src)
                 .map(Local::from)
@@ -209,6 +213,7 @@ impl<'db> SemanticsImpl<'db> {
     to_def_methods![
         (crate::FunctionId, fn_to_def),
         (crate::EnumStructId, enum_struct_to_def),
+        (hir_def::FieldId, field_to_def),
         (crate::GlobalId, global_to_def),
         (crate::Local, local_to_def),
     ];

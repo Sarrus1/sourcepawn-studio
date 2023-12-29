@@ -16,20 +16,16 @@ pub trait FileLoader {
 #[derive(Debug, Clone)]
 pub struct Tree(tree_sitter::Tree);
 
-/// Helper function to get the name of the field a node is in.
+/// Helper function to check if a node is a name node.
 ///
 /// # Arguments
 ///
-/// * `node` - The node to get the field name of.
-///
-/// # Notes
-///
-/// This has O(n) time complexity try not to use it for large nodes.
-pub fn field_name(node: &tree_sitter::Node) -> Option<&'static str> {
-    let parent = node.parent()?;
-    let mut cursor = parent.walk();
-    parent.children(&mut cursor).find(|child| child == node)?;
-    cursor.field_name()
+/// * `node` - The node to check for.
+pub fn is_name_node(node: &tree_sitter::Node) -> bool {
+    node.parent()
+        .and_then(|parent| parent.child_by_field_name("name"))
+        .map(|child| child == *node)
+        .unwrap_or(false)
 }
 
 impl Tree {

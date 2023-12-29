@@ -1,5 +1,5 @@
 use base_db::Tree;
-use hir_def::{EnumStructId, InFile, Lookup};
+use hir_def::{src::HasChildSource, EnumStructId, InFile, Lookup};
 
 use crate::{db::HirDatabase, EnumStruct, Function, Global, LocalSource};
 use hir_def::src::HasSource as _;
@@ -59,15 +59,10 @@ impl<'tree> HasSource<'tree> for crate::Field {
         tree: &'tree Tree,
     ) -> Option<InFile<tree_sitter::Node<'tree>>> {
         let enum_struct_id = EnumStructId::from(self.parent);
-        let lookup = enum_struct_id.lookup(db.upcast());
-        let item_tree = lookup.item_tree(db.upcast());
-        let tree_id = db.enum_struct_data(enum_struct_id).fields[self.id].tree_id;
-        let field = &item_tree[tree_id];
-        let ast_id_map = db.ast_id_map(lookup.file_id());
-
+        let src = enum_struct_id.child_source(db.upcast());
         Some(InFile {
-            file_id: lookup.file_id(),
-            value: ast_id_map[field.ast_id].to_node(tree),
+            file_id: enum_struct_id.lookup(db.upcast()).file_id(),
+            value: src.value[self.id].to_node(tree),
         })
     }
 }

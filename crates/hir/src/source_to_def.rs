@@ -2,7 +2,7 @@ use fxhash::FxHashMap;
 use hir_def::{
     child_by_source::ChildBySource,
     dyn_map::{keys, DynMap, Key},
-    DefWithBodyId, EnumStructId, ExprId, FunctionId, GlobalId, InFile, Lookup, NodePtr,
+    DefWithBodyId, EnumStructId, ExprId, FieldId, FunctionId, GlobalId, InFile, Lookup, NodePtr,
 };
 use stdx::impl_from;
 use syntax::TSKind;
@@ -23,6 +23,9 @@ impl SourceToDefCtx<'_, '_> {
     }
     pub(super) fn enum_struct_to_def(&mut self, src: InFile<NodePtr>) -> Option<EnumStructId> {
         self.to_def(src, keys::ENUM_STRUCT)
+    }
+    pub(super) fn field_to_def(&mut self, src: InFile<NodePtr>) -> Option<FieldId> {
+        self.to_def(src, keys::FIELD)
     }
     pub(super) fn global_to_def(&mut self, src: InFile<NodePtr>) -> Option<GlobalId> {
         self.to_def(src, keys::GLOBAL)
@@ -107,6 +110,7 @@ impl ChildContainer {
         let db = db.upcast();
         match self {
             ChildContainer::FileId(id) => id.child_by_source(db, file_id),
+            ChildContainer::EnumStructId(id) => id.child_by_source(db, file_id),
             _ => todo!(),
         }
     }
