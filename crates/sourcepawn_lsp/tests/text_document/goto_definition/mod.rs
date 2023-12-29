@@ -228,7 +228,7 @@ enum struct Foo {
 }
 
 #[test]
-fn enum_struct_5() {
+fn field_access_1() {
     assert_json_snapshot!(goto_definition(
         r#"
 %! main.sp
@@ -248,7 +248,7 @@ void bar() {
 }
 
 #[test]
-fn enum_struct_6() {
+fn field_access_2() {
     assert_json_snapshot!(goto_definition(
         r#"
 %! main.sp
@@ -262,6 +262,27 @@ void bar() {
          |
          ^
 }
+"#,
+    ));
+}
+
+#[test]
+fn field_access_3() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum struct Foo {
+    int foo;
+}
+
+void bar() {
+    Foo foo;
+    baz(foo.foo);
+             |
+             ^
+}
+
+void baz(int foo) {}
 "#,
     ));
 }

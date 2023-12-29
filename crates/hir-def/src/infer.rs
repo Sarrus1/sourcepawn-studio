@@ -103,7 +103,7 @@ impl InferenceContext<'_> {
             }
             Expr::Ident(name) => {
                 let name: String = name.clone().into();
-                let res = self.resolver.resolve_ident(name.as_str())?;
+                let res = self.resolver.resolve_ident(&name)?; // TODO: Should we emit a diagnostic here?
                 match res {
                     ValueNs::GlobalId(it) => {
                         let item_tree = self.db.file_item_tree(it.file_id);
@@ -119,6 +119,27 @@ impl InferenceContext<'_> {
                             return None;
                         };
                         type_ref.as_ref().cloned()
+                    }
+                    _ => todo!(),
+                }
+            }
+            Expr::MethodCall {
+                receiver,
+                method_name,
+                args,
+            } => todo!(),
+            Expr::Call { callee, args } => {
+                for arg in args.iter() {
+                    self.infer_expr(arg);
+                }
+                let Expr::Ident(callee) = &self.body[*callee] else {
+                    panic!("Callees are identifiers.")
+                };
+                let name: String = callee.clone().into();
+                match self.resolver.resolve_ident(&name)? {
+                    ValueNs::FunctionId(it) => {
+                        let item_tree = self.db.file_item_tree(it.file_id);
+                        item_tree[it.value.lookup(self.db).value].ret_type.clone()
                     }
                     _ => todo!(),
                 }

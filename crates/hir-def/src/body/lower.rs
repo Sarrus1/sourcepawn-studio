@@ -145,7 +145,7 @@ impl ExprCollector<'_> {
                 let child = expr.children(&mut expr.walk()).next()?;
                 Some(self.collect_expr(child))
             }
-            TSKind::assignment_expression => {
+            TSKind::assignment_expression | TSKind::binary_expression => {
                 let lhs = self.collect_expr(expr.child_by_field_name("left")?);
                 let rhs = self.collect_expr(expr.child_by_field_name("right")?);
                 let op = expr.child_by_field_name("operator").map(TSKind::from);
@@ -155,6 +155,29 @@ impl ExprCollector<'_> {
                     op: Some(BinaryOp::Assignment { op }),
                 };
                 Some(self.alloc_expr(assign, NodePtr::from(&expr)))
+            }
+            TSKind::call_expression => {
+                let function = expr.child_by_field_name("function")?;
+                let arguments = expr.child_by_field_name("arguments")?;
+                match TSKind::from(&function) {
+                    // Function call
+                    TSKind::identifier => {
+                        eprintln!("{}", expr.to_sexp());
+                        let callee = self.collect_expr(function);
+                        let args = arguments
+                            .children(&mut arguments.walk())
+                            .filter_map(|arg| self.maybe_collect_expr(arg))
+                            .collect::<Vec<_>>();
+                        let call = Expr::Call {
+                            callee,
+                            args: args.into_boxed_slice(),
+                        };
+                        Some(self.alloc_expr(call, NodePtr::from(&expr)))
+                    }
+                    // Method call
+                    TSKind::field_access => todo!(),
+                    _ => unreachable!(),
+                }
             }
             TSKind::field_access => {
                 let field_access = Expr::FieldAccess {

@@ -39,6 +39,15 @@ pub enum Expr {
         rhs: ExprId,
         op: Option<BinaryOp>,
     },
+    Call {
+        callee: ExprId,
+        args: Box<[ExprId]>,
+    },
+    MethodCall {
+        receiver: ExprId,
+        method_name: Name,
+        args: Box<[ExprId]>,
+    },
     Decl(Box<[ExprId]>),
     Binding {
         ident_id: IdentId,

@@ -140,10 +140,13 @@ impl ScopeData {
     }
 }
 
+/// Compute the [`ExprScopes`](ExprScopes) from the [`exprs`](Expr) of the [`body`](Body), by populating each scope
+/// with the declarations that were made in that scope.
+///
+/// For SourcePawn, this is only variable declarations, as the language does not have closures, etc (yet).
 fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope: &mut ScopeId) {
     scopes.set_scope(expr, *scope);
     match &body[expr] {
-        Expr::Missing | Expr::Ident(_) | Expr::FieldAccess { .. } | Expr::BinaryOp { .. } => (),
         Expr::Decl(decl) => {
             for binding in decl.iter() {
                 compute_expr_scopes(*binding, body, scopes, scope);
@@ -168,5 +171,12 @@ fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope
                 compute_expr_scopes(stmt, body, scopes, &mut scope);
             }
         }
+        // These expressions do not introduce any declarations.
+        Expr::Missing
+        | Expr::Ident(_)
+        | Expr::FieldAccess { .. }
+        | Expr::BinaryOp { .. }
+        | Expr::Call { .. }
+        | Expr::MethodCall { .. } => (),
     };
 }
