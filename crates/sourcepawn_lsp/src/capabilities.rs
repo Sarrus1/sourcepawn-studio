@@ -1,11 +1,8 @@
 use ide::WideEncoding;
 use lsp_types::{
-    CallHierarchyServerCapability, ClientCapabilities, CompletionOptions,
-    CompletionOptionsCompletionItem, HoverProviderCapability, MarkupKind, OneOf,
-    PositionEncodingKind, SemanticTokenModifier, SemanticTokenType, SemanticTokensFullOptions,
-    SemanticTokensLegend, SemanticTokensOptions, SemanticTokensServerCapabilities,
-    ServerCapabilities, SignatureHelpOptions, TextDocumentSyncCapability, TextDocumentSyncKind,
-    WorkDoneProgressOptions,
+    ClientCapabilities, MarkupKind, OneOf,
+    PositionEncodingKind,
+    ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind,
 };
 
 use crate::{config::Config, line_index::PositionEncoding, lsp::ext::negotiated_encoding};

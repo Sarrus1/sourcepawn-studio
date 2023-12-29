@@ -1,5 +1,5 @@
 use anyhow::Result;
-use lsp_server::{ErrorCode, ExtractError, Request, RequestId, Response};
+use lsp_server::{ExtractError};
 use salsa::Cancelled;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{fmt, panic, thread};
@@ -39,7 +39,7 @@ impl RequestDispatcher<'_> {
         R::Params: DeserializeOwned + panic::UnwindSafe + fmt::Debug,
         R::Result: Serialize,
     {
-        let (req, params, panic_context) = match self.parse::<R>() {
+        let (req, params, _panic_context) = match self.parse::<R>() {
             Some(it) => it,
             None => return self,
         };

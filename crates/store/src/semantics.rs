@@ -1,4 +1,4 @@
-use semantic_analyzer::resolve_references;
+
 use vfs::FileId;
 
 use crate::Store;
@@ -8,7 +8,7 @@ impl Store {
     ///
     /// # Arguments
     /// * `file_id` - The [file_id](FileId) of the document to resolve.
-    pub fn resolve_file_references(&mut self, file_id: &FileId) {
+    pub fn resolve_file_references(&mut self, _file_id: &FileId) {
         /*
         log::trace!(
             "Resolving references for file {:?}",

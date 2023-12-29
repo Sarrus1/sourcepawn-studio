@@ -2,13 +2,13 @@ use fxhash::FxHashSet;
 use lsp_types::{Position, Url};
 use parking_lot::RwLock;
 use std::sync::Arc;
-use syntax::{range_contains_pos, SPItem};
+use syntax::SPItem;
 use vfs::FileId;
 
 use crate::{document::Document, Store};
 
 impl Store {
-    pub fn get_all_items(&self, file_id: &FileId, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
+    pub fn get_all_items(&self, _file_id: &FileId, flat: bool) -> Vec<Arc<RwLock<SPItem>>> {
         log::debug!("Getting all items from store. flat: {}", flat);
         let mut all_items = vec![];
         // let Some(main_node) = self.projects.find_root_from_id(*file_id) else {
@@ -57,7 +57,7 @@ impl Store {
             position,
             uri
         );
-        return vec![];
+        vec![]
         // let Some(file_id) = self.vfs.get(uri) else {
         //     return vec![];
         // };

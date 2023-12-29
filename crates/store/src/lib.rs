@@ -65,7 +65,7 @@ impl Store {
     }
 
     /// Returns the [MainPath](PathBuf) of a project given a the [FileId](FileId) of a file in the project.
-    pub fn get_project_main_path_from_id(&self, file_id: &FileId) -> Option<PathBuf> {
+    pub fn get_project_main_path_from_id(&self, _file_id: &FileId) -> Option<PathBuf> {
         // if let Some(node) = self.projects.find_root_from_id(*file_id) {
         //     return self.vfs.lookup(node.file_id).to_file_path().ok();
         // }
@@ -73,7 +73,7 @@ impl Store {
         None
     }
 
-    pub fn contains_uri(&self, uri: &Url) -> bool {
+    pub fn contains_uri(&self, _uri: &Url) -> bool {
         // let Some(file_id) = self.vfs.get(uri) else {
         //     return false;
         // };
@@ -81,12 +81,12 @@ impl Store {
         false
     }
 
-    pub fn get_from_uri(&self, uri: &Url) -> Option<&Document> {
+    pub fn get_from_uri(&self, _uri: &Url) -> Option<&Document> {
         // self.documents.get(&self.vfs.get(uri)?)
         None
     }
 
-    pub fn get_cloned_from_uri(&self, uri: &Url) -> Option<Document> {
+    pub fn get_cloned_from_uri(&self, _uri: &Url) -> Option<Document> {
         // self.documents.get(&self.vfs.get(uri)?).cloned()
         None
     }
@@ -194,7 +194,7 @@ impl Store {
         if !self.is_sourcepawn_file(&path) {
             return Ok(None);
         }
-        let file_id = FileId(0);
+        let _file_id = FileId(0);
 
         let data = fs::read(&path)?;
         let text = String::from_utf8_lossy(&data).into_owned();
@@ -579,9 +579,9 @@ impl Store {
     ///
     /// # Arguments
     /// * `uri` - The [uri](Url) of a file in the project. Does not have to be the root.
-    pub fn resolve_project_references(&mut self, uri: &Url) -> Option<FileId> {
+    pub fn resolve_project_references(&mut self, _uri: &Url) -> Option<FileId> {
         log::trace!("Resolving project references.");
-        let file_id = FileId(0);
+        let _file_id = FileId(0);
         let main_id = FileId(0);
         // let main_id = self.projects.find_root_from_id(file_id)?.file_id;
         let file_ids: Vec<FileId> = {

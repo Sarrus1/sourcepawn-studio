@@ -86,11 +86,10 @@ impl AstIdMap {
         let mut map = FxHashMap::default();
         bdfs(root_node, &mut |node: tree_sitter::Node<'_>| {
             match TSKind::from(node) {
-                TSKind::sym_source_file => (),
-                TSKind::sym_global_variable_declaration
-                | TSKind::sym_variable_declaration_statement => {
+                TSKind::source_file => (),
+                TSKind::global_variable_declaration | TSKind::variable_declaration_statement => {
                     for child in node.children(&mut node.walk()) {
-                        if TSKind::from(child) == TSKind::sym_variable_declaration {
+                        if TSKind::from(child) == TSKind::variable_declaration {
                             let node_ptr = NodePtr::from(&child);
                             let ast_id = arena.alloc(node_ptr);
                             map.insert(node_ptr, AstId { raw: ast_id });
@@ -105,16 +104,16 @@ impl AstIdMap {
             }
             matches!(
                 TSKind::from(node),
-                TSKind::sym_function_definition
-                    | TSKind::sym_block
-                    | TSKind::sym_for_statement
-                    | TSKind::sym_condition_statement
-                    | TSKind::sym_do_while_statement
-                    | TSKind::sym_switch_statement
-                    | TSKind::sym_switch_case
-                    | TSKind::sym_while_statement
-                    | TSKind::sym_enum_struct
-                    | TSKind::sym_enum_struct_method
+                TSKind::function_definition
+                    | TSKind::block
+                    | TSKind::for_statement
+                    | TSKind::condition_statement
+                    | TSKind::do_while_statement
+                    | TSKind::switch_statement
+                    | TSKind::switch_case
+                    | TSKind::while_statement
+                    | TSKind::enum_struct
+                    | TSKind::enum_struct_method
             )
         });
         AstIdMap { arena, map }

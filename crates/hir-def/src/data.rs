@@ -95,7 +95,7 @@ impl HasChildSource<LocalFieldId> for EnumStructId {
         let mut fields = Arena::new();
         let enum_struct_node = loc.source(db, &tree).value;
         for child in enum_struct_node.children(&mut enum_struct_node.walk()) {
-            if TSKind::from(child) == TSKind::sym_enum_struct_field {
+            if TSKind::from(child) == TSKind::enum_struct_field {
                 let name_node = child.child_by_field_name("name").unwrap();
                 let name = Name::from_node(&name_node, &db.file_text(loc.file_id()));
                 let type_ref_node = child.child_by_field_name("type").unwrap();

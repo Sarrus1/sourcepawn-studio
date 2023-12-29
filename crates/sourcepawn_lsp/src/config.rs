@@ -5,7 +5,7 @@
 
 use lsp_types::ClientCapabilities;
 use serde::{Deserialize, Serialize};
-use std::{f32::consts::E, path::PathBuf};
+use std::{path::PathBuf};
 
 use crate::{line_index::PositionEncoding, lsp::ext::negotiated_encoding};
 
@@ -59,7 +59,7 @@ impl Config {
         }
     }
 
-    pub fn update(&mut self, mut json: serde_json::Value) -> Result<(), serde_json::Error> {
+    pub fn update(&mut self, json: serde_json::Value) -> Result<(), serde_json::Error> {
         tracing::info!("updating config from JSON: {:#}", json);
         if json.is_null() || json.as_object().map_or(false, |it| it.is_empty()) {
             return Ok(());

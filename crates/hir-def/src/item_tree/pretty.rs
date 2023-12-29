@@ -2,7 +2,7 @@ use crate::db::DefDatabase;
 
 use super::{EnumStruct, Field, FileItem, Function, ItemTree, Variable};
 
-pub(super) fn print_item_tree(db: &dyn DefDatabase, tree: &ItemTree) -> String {
+pub(super) fn print_item_tree(_db: &dyn DefDatabase, tree: &ItemTree) -> String {
     let mut buf: Vec<String> = vec![];
     for item in tree.top_level_items() {
         match item {

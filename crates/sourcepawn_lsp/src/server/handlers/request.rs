@@ -4,7 +4,6 @@ use crate::{
     lsp::{from_proto, to_proto},
     lsp_ext::SyntaxTreeParams,
     server::GlobalStateSnapshot,
-    utils::prettify_s_expression,
 };
 
 pub(crate) fn handle_goto_definition(
@@ -25,7 +24,7 @@ pub(crate) fn handle_syntax_tree(
     snap: GlobalStateSnapshot,
     params: SyntaxTreeParams,
 ) -> anyhow::Result<String> {
-    let tree = snap.analysis.parse(from_proto::file_id(
+    let _tree = snap.analysis.parse(from_proto::file_id(
         &snap,
         &params
             .text_document

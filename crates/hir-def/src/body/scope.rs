@@ -70,10 +70,6 @@ impl ExprScopes {
     }
 }
 
-fn empty_entries(idx: usize) -> IdxRange<Name> {
-    IdxRange::new(Idx::from_raw(RawIdx::from(idx as u32))..Idx::from_raw(RawIdx::from(idx as u32)))
-}
-
 impl ExprScopes {
     fn new(body: &Body, file_id: FileId) -> Self {
         let mut scopes = ExprScopes {
@@ -155,15 +151,15 @@ fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope
         }
         Expr::Binding {
             ident_id,
-            type_ref,
-            initializer,
+            type_ref: _,
+            initializer: _,
         } => {
             let binding = scopes.scope_entries.alloc(expr);
             scopes.scopes[*scope]
                 .entries
                 .insert(body.idents[*ident_id].clone(), binding);
         }
-        Expr::Block { id, statements } => {
+        Expr::Block { id: _, statements } => {
             let mut scope = scopes.new_block_scope(*scope);
             // Overwrite the old scope for the block expr, so that every block scope can be found
             // via the block itself (important for blocks that only contain items, no expressions).

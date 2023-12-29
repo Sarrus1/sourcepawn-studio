@@ -17,7 +17,17 @@ regex.workspace = true
 fxhash.workspace = true
 parking_lot.workspace = true
 tree-sitter.workspace = true
+tree-sitter-sourcepawn.workspace = true
 log.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+
+# Local crates
 vfs.workspace = true
+
+[dev-dependencies]
+quote = "1.0.20"
+proc-macro2 = "1.0.71"
+xshell = "0.2.5"
+convert_case = "0.6.0"
+syn = "2.0.43"

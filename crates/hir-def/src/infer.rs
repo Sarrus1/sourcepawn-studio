@@ -4,7 +4,7 @@ use fxhash::FxHashMap;
 
 use crate::{
     body::Body,
-    hir::{type_ref::TypeRef, BinaryOp, Binding, Expr},
+    hir::{type_ref::TypeRef, BinaryOp, Expr},
     resolver::{HasResolver, Resolver, ValueNs},
     DefDatabase, DefWithBodyId, ExprId, FieldId, FileDefId, FunctionId, Lookup,
 };
@@ -66,7 +66,7 @@ impl InferenceContext<'_> {
     pub(crate) fn infer_expr(&mut self, expr: &ExprId) -> Option<TypeRef> {
         eprintln!("expr_id: {:?}", &self.body[*expr]);
         match &self.body[*expr] {
-            Expr::Block { id, statements } => {
+            Expr::Block { id: _, statements } => {
                 let g = self
                     .resolver
                     .update_to_inner_scope(self.db, self.owner, *expr);
@@ -96,10 +96,10 @@ impl InferenceContext<'_> {
                 return Some(data.field_type(field).clone());
             }
             Expr::BinaryOp { lhs, rhs, op } => {
-                let lhs_ty = self.infer_expr(lhs);
-                let rhs_ty = self.infer_expr(rhs);
+                let _lhs_ty = self.infer_expr(lhs);
+                let _rhs_ty = self.infer_expr(rhs);
                 match op.as_ref()? {
-                    BinaryOp::Assignment { op } => None,
+                    BinaryOp::Assignment { op: _ } => None,
                 }
             }
             Expr::Ident(name) => {
@@ -112,9 +112,9 @@ impl InferenceContext<'_> {
                     }
                     ValueNs::LocalId((_, expr_id)) => {
                         let Expr::Binding {
-                            ident_id,
+                            ident_id: _,
                             type_ref,
-                            initializer,
+                            initializer: _,
                         } = &self.body[expr_id]
                         else {
                             return None;
@@ -128,7 +128,7 @@ impl InferenceContext<'_> {
         }
     }
 
-    pub(crate) fn collect_fn(&mut self, func: FunctionId) {
+    pub(crate) fn collect_fn(&mut self, _func: FunctionId) {
         self.infer_expr(&self.body.body_expr);
     }
 }

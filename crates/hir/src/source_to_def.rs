@@ -2,7 +2,7 @@ use fxhash::FxHashMap;
 use hir_def::{
     child_by_source::ChildBySource,
     dyn_map::{keys, DynMap, Key},
-    DefWithBodyId, EnumStructId, ExprId, FieldId, FunctionId, GlobalId, InFile, Lookup, NodePtr,
+    DefWithBodyId, EnumStructId, ExprId, FieldId, FunctionId, GlobalId, InFile, NodePtr,
 };
 use stdx::impl_from;
 use syntax::TSKind;
@@ -68,13 +68,13 @@ impl SourceToDefCtx<'_, '_> {
         let mut container = node.parent()?;
         loop {
             match TSKind::from(container) {
-                TSKind::sym_source_file => return Some(ChildContainer::FileId(src.file_id)),
-                TSKind::sym_function_definition => {
+                TSKind::source_file => return Some(ChildContainer::FileId(src.file_id)),
+                TSKind::function_definition => {
                     let func =
                         self.fn_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
                     return Some(ChildContainer::DefWithBodyId(DefWithBodyId::from(func)));
                 }
-                TSKind::sym_enum_struct => {
+                TSKind::enum_struct => {
                     let enum_struct = self
                         .enum_struct_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
                     return Some(ChildContainer::EnumStructId(enum_struct));

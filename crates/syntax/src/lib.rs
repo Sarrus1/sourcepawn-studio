@@ -23,6 +23,7 @@ pub mod include_item;
 pub mod methodmap_item;
 pub mod parameter;
 pub mod property_item;
+mod tests;
 pub mod typedef_item;
 pub mod typeset_item;
 pub mod utils;

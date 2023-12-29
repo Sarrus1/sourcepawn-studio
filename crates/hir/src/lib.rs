@@ -1,13 +1,6 @@
 use base_db::Tree;
 use db::HirDatabase;
-use hir_def::{
-    resolver::ValueNs, DefWithBodyId, EnumStructId, ExprId, FunctionId, GlobalId, InFile,
-    LocalFieldId,
-};
-use source_analyzer::SourceAnalyzer;
-use std::{collections::HashMap, fmt, ops};
-use syntax::TSKind;
-use vfs::FileId;
+use hir_def::{DefWithBodyId, EnumStructId, ExprId, FunctionId, GlobalId, InFile, LocalFieldId};
 
 pub mod db;
 mod from_id;
@@ -37,7 +30,6 @@ impl<'tree> HasSource<'tree> for DefResolution {
         match self {
             DefResolution::Function(func) => func.source(db, tree),
             DefResolution::EnumStruct(enum_struct) => enum_struct.source(db, tree),
-            DefResolution::Field(field) => field.source(db, tree),
             DefResolution::Field(field) => field.source(db, tree),
             DefResolution::Global(global) => global.source(db, tree),
             DefResolution::Local(local) => local.source(db, tree)?.source(db, tree),
@@ -83,7 +75,7 @@ pub struct Local {
 
 impl<'tree> Local {
     fn source(self, db: &dyn HirDatabase, tree: &'tree Tree) -> Option<LocalSource<'tree>> {
-        let (body, source_map) = db.body_with_source_map(self.parent.into());
+        let (_, source_map) = db.body_with_source_map(self.parent);
         let node_ptr = source_map.expr_source(self.expr_id)?;
         Some(LocalSource {
             local: self,

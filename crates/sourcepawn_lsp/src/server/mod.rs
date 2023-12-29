@@ -2,7 +2,7 @@ use base_db::Change;
 use crossbeam::channel::{unbounded, Receiver, Sender};
 use fxhash::FxHashMap;
 use ide::{Analysis, AnalysisHost};
-use linter::spcomp::SPCompDiagnostic;
+
 use lsp_server::{Connection, ErrorCode, Request, RequestId};
 use lsp_types::{
     notification::{Notification, ShowMessage},
@@ -410,7 +410,7 @@ impl GlobalState {
 
     pub(crate) fn process_changes(&mut self) -> bool {
         let mut file_changes = FxHashMap::default();
-        let (change, changed_files) = {
+        let (change, _changed_files) = {
             let mut change = Change::new();
             let mut guard = self.vfs.write();
             let changed_files = guard.take_changes();
@@ -473,10 +473,10 @@ impl GlobalState {
 
             // let mut workspace_structure_change = None;
             // A file was added or deleted
-            let mut has_structure_changes = false;
+            let _has_structure_changes = false;
             let mut bytes = vec![];
             for file in &changed_files {
-                let vfs_path = &vfs.file_path(file.file_id);
+                let _vfs_path = &vfs.file_path(file.file_id);
                 // if let Some(path) = vfs_path.as_path() {
                 //     let path = path.to_path_buf();
                 //     if file.is_created_or_deleted() {
@@ -507,10 +507,10 @@ impl GlobalState {
                 // this allows delaying the re-acquisition of the write lock
                 bytes.push((file.file_id, text));
             }
-            let vfs = &mut *RwLockUpgradableReadGuard::upgrade(guard);
+            let _vfs = &mut *RwLockUpgradableReadGuard::upgrade(guard);
             bytes.into_iter().for_each(|(file_id, text)| match text {
                 None => change.change_file(file_id, None),
-                Some((text, line_endings)) => {
+                Some((text, _line_endings)) => {
                     change.change_file(file_id, Some(text));
                 }
             });

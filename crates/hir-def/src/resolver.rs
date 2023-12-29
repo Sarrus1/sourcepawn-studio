@@ -66,7 +66,7 @@ impl Resolver {
         self
     }
 
-    fn push_global_scope(self, def_map: Arc<DefMap>, file_id: FileId) -> Self {
+    fn push_global_scope(self, def_map: Arc<DefMap>, _file_id: FileId) -> Self {
         self.push_scope(Scope::GlobalScope(def_map))
     }
 
@@ -125,7 +125,7 @@ impl Resolver {
     ) -> UpdateGuard {
         #[inline(always)]
         fn append_expr_scope(
-            db: &dyn DefDatabase,
+            _db: &dyn DefDatabase,
             resolver: &mut Resolver,
             owner: DefWithBodyId,
             expr_scopes: &Arc<ExprScopes>,

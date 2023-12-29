@@ -10,8 +10,6 @@ use vfs::FileId;
 pub use crate::ast_id_map::{AstId, NodePtr};
 use crate::{db::DefDatabase, hir::type_ref::TypeRef, src::HasSource, BlockId, ItemTreeId, Lookup};
 
-use self::pretty::print_item_tree;
-
 mod pretty;
 
 /// The item tree of a source file.
@@ -26,13 +24,13 @@ fn function_return_type(node: &tree_sitter::Node, source: &str) -> Option<TypeRe
     let ret_type_node = node.child_by_field_name("returnType")?;
     for child in ret_type_node.children(&mut ret_type_node.walk()) {
         match TSKind::from(child) {
-            TSKind::sym_type => return TypeRef::from_node(&child, source),
-            TSKind::sym_old_type => {
+            TSKind::r#type => return TypeRef::from_node(&child, source),
+            TSKind::old_type => {
                 for sub_child in child.children(&mut child.walk()) {
                     match TSKind::from(sub_child) {
-                        TSKind::sym_old_builtin_type
-                        | TSKind::sym_symbol
-                        | TSKind::sym_any_type => return Some(TypeRef::OldString),
+                        TSKind::old_builtin_type | TSKind::identifier | TSKind::any_type => {
+                            return Some(TypeRef::OldString)
+                        }
                         _ => (),
                     }
                 }
@@ -60,7 +58,7 @@ impl ItemTree {
         let ast_id_map = db.ast_id_map(file_id);
         for child in root_node.children(&mut root_node.walk()) {
             match TSKind::from(child) {
-                TSKind::sym_function_definition => {
+                TSKind::function_definition => {
                     if let Some(name_node) = child.child_by_field_name("name") {
                         let res = Function {
                             name: Name::from(name_node.utf8_text(source.as_bytes()).unwrap()),
@@ -71,14 +69,14 @@ impl ItemTree {
                         item_tree.top_level.push(FileItem::Function(id));
                     }
                 }
-                TSKind::sym_global_variable_declaration => {
+                TSKind::global_variable_declaration => {
                     let type_ref = if let Some(type_node) = child.child_by_field_name("type") {
                         TypeRef::from_node(&type_node, &source)
                     } else {
                         None
                     };
                     for sub_child in child.children(&mut child.walk()) {
-                        if TSKind::from(sub_child) == TSKind::sym_variable_declaration {
+                        if TSKind::from(sub_child) == TSKind::variable_declaration {
                             if let Some(name_node) = sub_child.child_by_field_name("name") {
                                 let res = Variable {
                                     name: Name::from(
@@ -93,12 +91,12 @@ impl ItemTree {
                         }
                     }
                 }
-                TSKind::sym_enum_struct => {
+                TSKind::enum_struct => {
                     if let Some(name_node) = child.child_by_field_name("name") {
                         let start = item_tree.next_field_idx();
                         child
                             .children(&mut child.walk())
-                            .filter(|e| TSKind::from(e) == TSKind::sym_enum_struct_field)
+                            .filter(|e| TSKind::from(e) == TSKind::enum_struct_field)
                             .for_each(|e| {
                                 let Some(field_name_node) = e.child_by_field_name("name") else {
                                     return;
@@ -141,14 +139,14 @@ impl ItemTree {
         let mut item_tree = ItemTree::default();
         for child in block_node.value.children(&mut block_node.value.walk()) {
             match TSKind::from(child) {
-                TSKind::sym_variable_declaration_statement => {
+                TSKind::variable_declaration_statement => {
                     let type_ref = if let Some(type_node) = child.child_by_field_name("type") {
                         TypeRef::from_node(&type_node, &source)
                     } else {
                         None
                     };
                     for sub_child in child.children(&mut child.walk()) {
-                        if TSKind::from(sub_child) == TSKind::sym_variable_declaration {
+                        if TSKind::from(sub_child) == TSKind::variable_declaration {
                             if let Some(name_node) = sub_child.child_by_field_name("name") {
                                 let res = Variable {
                                     name: Name::from(

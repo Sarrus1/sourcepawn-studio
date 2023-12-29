@@ -58,7 +58,7 @@ impl SourceAnalyzer {
         self.def.as_ref().map(|(_, body, _)| &**body)
     }
 
-    fn expr_id(&self, db: &dyn HirDatabase, src: &tree_sitter::Node) -> Option<ExprId> {
+    fn expr_id(&self, _db: &dyn HirDatabase, src: &tree_sitter::Node) -> Option<ExprId> {
         let sm = self.body_source_map()?;
         sm.node_expr(src)
     }
@@ -68,7 +68,7 @@ impl SourceAnalyzer {
         db: &dyn HirDatabase,
         node: &tree_sitter::Node,
     ) -> Option<Field> {
-        assert!(matches!(TSKind::from(*node), TSKind::sym_field_access));
+        assert!(matches!(TSKind::from(*node), TSKind::field_access));
         let expr_id = self.expr_id(db, node)?;
         self.infer
             .as_ref()?
@@ -84,7 +84,7 @@ fn scope_for(
 ) -> Option<ScopeId> {
     let node_ancestors = iter::successors(Some(*node.value), |it| it.parent());
     node_ancestors
-        .filter(|it| matches!(TSKind::from(*it), TSKind::sym_block))
+        .filter(|it| matches!(TSKind::from(*it), TSKind::block))
         .filter_map(|it| source_map.node_expr(&it))
         .find_map(|it| scopes.scope_for(it))
 }

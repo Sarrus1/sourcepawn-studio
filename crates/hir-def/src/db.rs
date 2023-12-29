@@ -10,7 +10,6 @@ use crate::{
     data::{EnumStructData, FunctionData},
     infer,
     item_tree::{ItemTree, Name},
-    src::HasSource,
     BlockId, BlockLoc, DefWithBodyId, EnumStructId, EnumStructLoc, FileDefId, FileItem, FunctionId,
     FunctionLoc, GlobalId, GlobalLoc, InferenceResult, Intern, Lookup, TreeId,
 };

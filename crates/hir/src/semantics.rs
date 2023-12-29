@@ -57,30 +57,30 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         let src = InFile::new(file_id, NodePtr::from(&parent));
 
         match TSKind::from(parent) {
-            TSKind::sym_function_definition => self
+            TSKind::function_definition => self
                 .fn_to_def(src)
                 .map(Function::from)
                 .map(DefResolution::Function),
-            TSKind::sym_enum_struct => self
+            TSKind::enum_struct => self
                 .enum_struct_to_def(src)
                 .map(EnumStruct::from)
                 .map(DefResolution::EnumStruct),
-            TSKind::sym_enum_struct_field => self
+            TSKind::enum_struct_field => self
                 .field_to_def(src)
                 .map(Field::from)
                 .map(DefResolution::Field),
-            TSKind::sym_parameter_declaration => self
+            TSKind::parameter_declaration => self
                 .local_to_def(src)
                 .map(Local::from)
                 .map(DefResolution::Local),
-            TSKind::sym_variable_declaration => {
+            TSKind::variable_declaration => {
                 let grand_parent = parent.parent()?;
                 match TSKind::from(&grand_parent) {
-                    TSKind::sym_global_variable_declaration => self
+                    TSKind::global_variable_declaration => self
                         .global_to_def(src)
                         .map(Global::from)
                         .map(DefResolution::Global),
-                    TSKind::sym_variable_declaration_statement => self
+                    TSKind::variable_declaration_statement => self
                         .local_to_def(src)
                         .map(Local::from)
                         .map(DefResolution::Local),
@@ -102,7 +102,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
 
         let mut container = node.parent()?;
         // If the node does not have a parent we are at the root, nothing to resolve.
-        while !matches!(TSKind::from(container), TSKind::sym_function_definition) {
+        while !matches!(TSKind::from(container), TSKind::function_definition) {
             if let Some(candidate) = container.parent() {
                 container = candidate;
             } else {
@@ -110,18 +110,18 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             }
         }
         match TSKind::from(container) {
-            TSKind::sym_function_definition => {
+            TSKind::function_definition => {
                 let parent_name = container
                     .child_by_field_name("name")?
                     .utf8_text(source.as_ref().as_bytes())
                     .ok()?;
                 let body_node = container.child_by_field_name("body")?;
                 match TSKind::from(body_node) {
-                    TSKind::sym_block => match def_map.get_from_str(parent_name)? {
+                    TSKind::block => match def_map.get_from_str(parent_name)? {
                         hir_def::FileDefId::FunctionId(id) => {
                             let def = hir_def::DefWithBodyId::FunctionId(id);
                             let offset = node.start_position();
-                            if TSKind::sym_field_access == TSKind::from(parent) {
+                            if TSKind::field_access == TSKind::from(parent) {
                                 let analyzer = SourceAnalyzer::new_for_body(
                                     self.db,
                                     def,
@@ -162,7 +162,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                     _ => todo!("Handle non block body"),
                 }
             }
-            TSKind::sym_source_file => {
+            TSKind::source_file => {
                 if let Some(def) = def_map.get_from_str(text) {
                     match def {
                         hir_def::FileDefId::FunctionId(id) => {

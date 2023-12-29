@@ -1,9 +1,8 @@
-use base_db::{FileLoader, FilePosition};
+use base_db::{FilePosition};
 use hir::{HasSource, Semantics};
-use hir_def::DefDatabase;
+
 use syntax::{
     utils::{lsp_position_to_ts_point, ts_range_to_lsp_range},
-    TSKind,
 };
 use vfs::FileId;
 
