@@ -1,5 +1,5 @@
 [package]
-name = "ide"
+name = "ide-db"
 version = "0.1.0"
 include = ["Cargo.toml", "src/"]
 edition.workspace = true
@@ -30,5 +30,3 @@ hir.workspace = true
 syntax.workspace = true
 vfs.workspace = true
 base-db.workspace = true
-ide-db.workspace = true
-ide-diagnostics.workspace = true

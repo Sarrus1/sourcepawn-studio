@@ -2,96 +2,17 @@
 
 mod goto_definition;
 
-use std::{fmt, mem::ManuallyDrop, sync::Arc};
+use std::sync::Arc;
 
-use base_db::{
-    Change, FileLoader, FileLoaderDelegate, FilePosition, SourceDatabase, SourceDatabaseExtStorage,
-    SourceDatabaseStorage, Tree, Upcast,
-};
-use hir::db::HirDatabase;
-use hir_def::DefDatabase;
+use base_db::{Change, FileLoader, FilePosition, SourceDatabase, Tree};
+use ide_db::RootDatabase;
 use salsa::{Cancelled, ParallelDatabase};
 use vfs::FileId;
 
 pub use goto_definition::NavigationTarget;
+pub use ide_db::Cancellable;
+pub use ide_diagnostics::{Diagnostic, DiagnosticsConfig, Severity};
 pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};
-
-pub type Cancellable<T> = Result<T, Cancelled>;
-
-#[salsa::database(
-    SourceDatabaseExtStorage,
-    SourceDatabaseStorage,
-    hir_def::db::InternDatabaseStorage,
-    hir_def::db::DefDatabaseStorage,
-    hir::db::HirDatabaseStorage
-)]
-pub struct RootDatabase {
-    // We use `ManuallyDrop` here because every codegen unit that contains a
-    // `&RootDatabase -> &dyn OtherDatabase` cast will instantiate its drop glue in the vtable,
-    // which duplicates `Weak::drop` and `Arc::drop` tens of thousands of times, which makes
-    // compile times of all `ide_*` and downstream crates suffer greatly.
-    storage: ManuallyDrop<salsa::Storage<RootDatabase>>,
-}
-
-impl Drop for RootDatabase {
-    fn drop(&mut self) {
-        unsafe { ManuallyDrop::drop(&mut self.storage) };
-    }
-}
-
-impl fmt::Debug for RootDatabase {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("RootDatabase").finish()
-    }
-}
-
-impl Upcast<dyn DefDatabase> for RootDatabase {
-    #[inline]
-    fn upcast(&self) -> &(dyn DefDatabase + 'static) {
-        self
-    }
-}
-
-impl Upcast<dyn HirDatabase> for RootDatabase {
-    #[inline]
-    fn upcast(&self) -> &(dyn HirDatabase + 'static) {
-        self
-    }
-}
-
-impl FileLoader for RootDatabase {
-    fn file_text(&self, file_id: FileId) -> Arc<str> {
-        FileLoaderDelegate(self).file_text(file_id)
-    }
-}
-
-impl salsa::Database for RootDatabase {}
-
-impl Default for RootDatabase {
-    fn default() -> Self {
-        RootDatabase::new()
-    }
-}
-
-impl RootDatabase {
-    pub fn new() -> Self {
-        RootDatabase {
-            storage: ManuallyDrop::new(salsa::Storage::default()),
-        }
-    }
-
-    pub fn apply_change(&mut self, change: Change) {
-        change.apply(self);
-    }
-}
-
-impl salsa::ParallelDatabase for RootDatabase {
-    fn snapshot(&self) -> salsa::Snapshot<RootDatabase> {
-        salsa::Snapshot::new(RootDatabase {
-            storage: ManuallyDrop::new(self.storage.snapshot()),
-        })
-    }
-}
 
 /// `AnalysisHost` stores the current state of the world.
 #[derive(Debug, Default)]
@@ -112,6 +33,10 @@ impl AnalysisHost {
         Analysis {
             db: self.db.snapshot(),
         }
+    }
+
+    pub fn raw_database(&self) -> &RootDatabase {
+        &self.db
     }
 
     /// Applies changes to the current state of the world.
@@ -158,6 +83,15 @@ impl Analysis {
         F: FnOnce(&RootDatabase) -> T + std::panic::UnwindSafe,
     {
         Cancelled::catch(|| f(&self.db))
+    }
+
+    /// Computes the set of diagnostics for the given file.
+    pub fn diagnostics(
+        &self,
+        config: &DiagnosticsConfig,
+        file_id: FileId,
+    ) -> Cancellable<Vec<Diagnostic>> {
+        self.with_db(|db| ide_diagnostics::diagnostics(db, config, file_id))
     }
 
     /// Returns the definitions from the symbol at `position`.

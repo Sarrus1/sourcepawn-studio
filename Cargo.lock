@@ -1124,6 +1124,55 @@ dependencies = [
  "fxhash",
  "hir",
  "hir-def",
+ "ide-db",
+ "ide-diagnostics",
+ "lazy_static",
+ "line-index",
+ "log",
+ "lsp-types",
+ "regex",
+ "salsa",
+ "sourcepawn_lexer",
+ "syntax",
+ "tracing",
+ "tree-sitter",
+ "tree-sitter-sourcepawn",
+ "vfs",
+]
+
+[[package]]
+name = "ide-db"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base-db",
+ "fxhash",
+ "hir",
+ "hir-def",
+ "lazy_static",
+ "line-index",
+ "log",
+ "lsp-types",
+ "regex",
+ "salsa",
+ "sourcepawn_lexer",
+ "syntax",
+ "tracing",
+ "tree-sitter",
+ "tree-sitter-sourcepawn",
+ "vfs",
+]
+
+[[package]]
+name = "ide-diagnostics"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base-db",
+ "fxhash",
+ "hir",
+ "hir-def",
+ "ide-db",
  "lazy_static",
  "line-index",
  "log",

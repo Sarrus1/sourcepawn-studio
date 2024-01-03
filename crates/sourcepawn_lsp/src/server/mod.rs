@@ -11,6 +11,7 @@ use lsp_types::{
 use parking_lot::{RwLock, RwLockUpgradableReadGuard, RwLockWriteGuard};
 use serde::Serialize;
 use std::{env, sync::Arc, time::Instant};
+use stdx::thread::ThreadIntent;
 use threadpool::ThreadPool;
 use vfs::{FileId, Vfs};
 
@@ -18,10 +19,13 @@ use crate::{
     capabilities::server_capabilities,
     client::LspClient,
     config::Config,
+    diagnostics::{fetch_native_diagnostics, DiagnosticCollection},
     dispatch::{NotificationDispatcher, RequestDispatcher},
     from_json,
     line_index::LineEndings,
+    lsp::from_proto,
     lsp_ext,
+    mem_docs::MemDocs,
     task_pool::TaskPool,
     version::version,
     Task,
@@ -58,6 +62,8 @@ pub struct GlobalState {
     sender: Sender<lsp_server::Message>,
 
     pub(crate) task_pool: Handle<TaskPool<Task>, Receiver<Task>>,
+    pub(crate) diagnostics: DiagnosticCollection,
+    pub(crate) mem_docs: MemDocs,
 
     connection: Arc<Connection>,
     client: LspClient,
@@ -80,10 +86,7 @@ impl GlobalState {
         let client = LspClient::new(connection.sender.clone());
         let task_pool = {
             let (sender, receiver) = unbounded();
-            let handle = TaskPool::new_with_threads(
-                sender,
-                num_cpus::get_physical().try_into().unwrap_or(1),
-            );
+            let handle = TaskPool::new_with_threads(sender, num_cpus::get_physical());
             Handle { handle, receiver }
         };
         Self {
@@ -95,6 +98,8 @@ impl GlobalState {
             req_queue: ReqQueue::default(),
             sender: connection.sender.clone(),
             task_pool,
+            mem_docs: MemDocs::default(),
+            diagnostics: DiagnosticCollection::default(),
             shutdown_requested: false,
             config: Arc::default(),
             config_errors: Default::default(),
@@ -109,6 +114,7 @@ impl GlobalState {
         GlobalStateSnapshot {
             config: Arc::clone(&self.config),
             analysis: self.analysis_host.analysis(),
+            mem_docs: self.mem_docs.clone(),
             vfs: Arc::clone(&self.vfs),
         }
     }
@@ -290,6 +296,14 @@ impl GlobalState {
         handler(self, response)
     }
 
+    pub(crate) fn send_notification<N: lsp_types::notification::Notification>(
+        &self,
+        params: N::Params,
+    ) {
+        let not = lsp_server::Notification::new(N::METHOD.to_string(), params);
+        self.send(not.into());
+    }
+
     fn send(&self, message: lsp_server::Message) {
         self.sender.send(message).unwrap()
     }
@@ -353,6 +367,7 @@ impl GlobalState {
         .on_sync_mut::<notifs::DidOpenTextDocument>(handlers::handle_did_open_text_document)?
         .on_sync_mut::<notifs::DidChangeTextDocument>(handlers::handle_did_change_text_document)?
         .on_sync_mut::<notifs::DidChangeConfiguration>(handlers::handle_did_change_configuration)?
+        .on_sync_mut::<notifs::DidCloseTextDocument>(handlers::handle_did_close_text_document)?
         // .on_sync_mut::<notifs::DidChangeWatchedFiles>(handlers::did_open)? // TODO: Implement this.
         .finish();
 
@@ -402,10 +417,90 @@ impl GlobalState {
                 Task::Response(response) => self.respond(response),
                 Task::Retry(req) if !self.is_completed(&req) => self.on_request(req),
                 Task::Retry(_) => (),
+                Task::Diagnostics(diagnostics_per_file) => {
+                    for (file_id, diagnostics) in diagnostics_per_file {
+                        self.diagnostics
+                            .set_native_diagnostics(file_id, diagnostics)
+                    }
+                }
             },
         }
         self.process_changes();
+
+        self.update_diagnostics();
+        if let Some(diagnostic_changes) = self.diagnostics.take_changes() {
+            for file_id in diagnostic_changes {
+                let uri = file_id_to_url(&self.vfs.read(), file_id);
+                let mut diagnostics = self
+                    .diagnostics
+                    .diagnostics_for(file_id)
+                    .cloned()
+                    .collect::<Vec<_>>();
+
+                // VSCode assumes diagnostic messages to be non-empty strings, so we need to patch
+                // empty diagnostics. Neither the docs of VSCode nor the LSP spec say whether
+                // diagnostic messages are actually allowed to be empty or not and patching this
+                // in the VSCode client does not work as the assertion happens in the protocol
+                // conversion. So this hack is here to stay, and will be considered a hack
+                // until the LSP decides to state that empty messages are allowed.
+
+                // See https://github.com/rust-lang/rust-analyzer/issues/11404
+                // See https://github.com/rust-lang/rust-analyzer/issues/13130
+                let patch_empty = |message: &mut String| {
+                    if message.is_empty() {
+                        *message = " ".to_string();
+                    }
+                };
+
+                for d in &mut diagnostics {
+                    patch_empty(&mut d.message);
+                    if let Some(dri) = &mut d.related_information {
+                        for dri in dri {
+                            patch_empty(&mut dri.message);
+                        }
+                    }
+                }
+
+                let version = self.mem_docs.get(&uri).map(|it| it.version);
+
+                self.send_notification::<lsp_types::notification::PublishDiagnostics>(
+                    lsp_types::PublishDiagnosticsParams {
+                        uri,
+                        diagnostics,
+                        version,
+                    },
+                );
+            }
+        }
         Ok(())
+    }
+
+    fn update_diagnostics(&mut self) {
+        let db = self.analysis_host.raw_database();
+        let subscriptions = self
+            .mem_docs
+            .iter()
+            .map(|path| self.vfs.read().file_id(path).unwrap())
+            // .filter(|&file_id| {
+            //     let source_root = db.file_source_root(file_id);
+            //     // Only publish diagnostics for files in the workspace, not from crates.io deps
+            //     // or the sysroot.
+            //     // While theoretically these should never have errors, we have quite a few false
+            //     // positives particularly in the stdlib, and those diagnostics would stay around
+            //     // forever if we emitted them here.
+            //     !db.source_root(source_root).is_library
+            // })
+            .collect::<Vec<_>>();
+        tracing::trace!("updating notifications for {:?}", subscriptions);
+
+        // Diagnostics are triggered by the user typing
+        // so we run them on a latency sensitive thread.
+        self.task_pool
+            .handle
+            .spawn(ThreadIntent::LatencySensitive, {
+                let snapshot = self.snapshot();
+                move || Task::Diagnostics(fetch_native_diagnostics(snapshot, subscriptions))
+            });
     }
 
     pub(crate) fn process_changes(&mut self) -> bool {
@@ -477,6 +572,7 @@ impl GlobalState {
             let mut bytes = vec![];
             for file in &changed_files {
                 let _vfs_path = &vfs.file_path(file.file_id);
+                // TODO: below
                 // if let Some(path) = vfs_path.as_path() {
                 //     let path = path.to_path_buf();
                 //     if file.is_created_or_deleted() {
@@ -556,7 +652,8 @@ enum Event {
 pub(crate) struct GlobalStateSnapshot {
     pub(crate) config: Arc<Config>,
     pub(crate) analysis: Analysis,
-    vfs: Arc<RwLock<Vfs>>,
+    pub(crate) mem_docs: MemDocs,
+    vfs: Arc<RwLock<vfs::Vfs>>,
 }
 
 impl std::panic::UnwindSafe for GlobalStateSnapshot {}
@@ -572,6 +669,10 @@ impl GlobalStateSnapshot {
 
     pub(crate) fn file_id_to_url(&self, id: FileId) -> Url {
         file_id_to_url(&self.vfs_read(), id)
+    }
+
+    pub(crate) fn url_file_version(&self, uri: &Url) -> Option<i32> {
+        self.mem_docs.get(&uri)?.version.into()
     }
 }
 

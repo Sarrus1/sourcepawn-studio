@@ -1,4 +1,4 @@
-use ide::{Cancellable, NavigationTarget};
+use ide::{Cancellable, NavigationTarget, Severity};
 
 use crate::server::GlobalStateSnapshot;
 
@@ -17,4 +17,11 @@ pub(crate) fn goto_definition_response(
             })
             .collect(),
     ))
+}
+
+pub(crate) fn diagnostic_severity(severity: Severity) -> lsp_types::DiagnosticSeverity {
+    match severity {
+        Severity::Error => lsp_types::DiagnosticSeverity::ERROR,
+        Severity::Warning => lsp_types::DiagnosticSeverity::WARNING,
+    }
 }

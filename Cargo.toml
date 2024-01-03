@@ -28,8 +28,10 @@ parser = { path = "./crates/parser" }
 semantic_analyzer = { path = "./crates/semantic_analyzer" }
 linter = { path = "./crates/linter" }
 vfs = { path = "./crates/vfs" }
-ide = { path = "./crates/ide" }
 base-db = { path = "./crates/base-db" }
+ide = { path = "./crates/ide" }
+ide-diagnostics = { path = "./crates/ide-diagnostics" }
+ide-db = { path = "./crates/ide-db" }
 hir = { path = "./crates/hir" }
 hir-def = { path = "./crates/hir-def" }
 stdx = { path = "./crates/stdx" }

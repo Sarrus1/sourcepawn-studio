@@ -5,6 +5,8 @@ pub mod fixture;
 mod line_index;
 mod lsp_ext;
 // mod providers;
+mod diagnostics;
+mod mem_docs;
 mod reload;
 mod server;
 mod task_pool;
@@ -15,6 +17,7 @@ mod config;
 pub mod lsp;
 
 use serde::de::DeserializeOwned;
+use vfs::FileId;
 
 pub use self::{client::LspClient, server::GlobalState};
 
@@ -30,5 +33,5 @@ pub fn from_json<T: DeserializeOwned>(
 pub(crate) enum Task {
     Response(lsp_server::Response),
     Retry(lsp_server::Request),
-    // Diagnostics(Vec<(FileId, Vec<lsp_types::Diagnostic>)>),
+    Diagnostics(Vec<(FileId, Vec<lsp_types::Diagnostic>)>),
 }

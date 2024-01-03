@@ -1,10 +1,11 @@
 use lsp_types::{
-    DidChangeConfigurationParams, DidChangeTextDocumentParams, DidOpenTextDocumentParams,
+    DidChangeConfigurationParams, DidChangeTextDocumentParams, DidCloseTextDocumentParams,
+    DidOpenTextDocumentParams,
 };
 
 use crate::{
     capabilities::ClientCapabilitiesExt, config::Config, lsp::utils::apply_document_changes,
-    GlobalState,
+    mem_docs::DocumentData, GlobalState,
 };
 
 pub(crate) fn handle_did_change_text_document(
@@ -12,6 +13,18 @@ pub(crate) fn handle_did_change_text_document(
     params: DidChangeTextDocumentParams,
 ) -> anyhow::Result<()> {
     let uri = params.text_document.uri;
+
+    match state.mem_docs.get_mut(&uri) {
+        Some(doc) => {
+            // The version passed in DidChangeTextDocument is the version after all edits are applied
+            // so we should apply it before the vfs is notified.
+            doc.version = params.text_document.version;
+        }
+        None => {
+            log::error!("unexpected DidChangeTextDocument: {}", uri);
+            return Ok(());
+        }
+    };
 
     let text = apply_document_changes(
         state.config.position_encoding(),
@@ -37,12 +50,44 @@ pub(crate) fn handle_did_open_text_document(
     params: DidOpenTextDocumentParams,
 ) -> anyhow::Result<()> {
     let uri = params.text_document.uri;
-
+    let already_exists = state
+        .mem_docs
+        .insert(uri.clone(), DocumentData::new(params.text_document.version))
+        .is_err();
+    if already_exists {
+        log::error!("duplicate DidOpenTextDocument: {}", uri);
+    }
     state
         .vfs
         .write()
         .set_file_contents(uri, Some(params.text_document.text.into_bytes()));
 
+    Ok(())
+}
+
+pub(crate) fn handle_did_close_text_document(
+    state: &mut GlobalState,
+    params: DidCloseTextDocumentParams,
+) -> anyhow::Result<()> {
+    let uri = params.text_document.uri;
+
+    if state.mem_docs.remove(&uri).is_err() {
+        tracing::error!("orphan DidCloseTextDocument: {}", uri);
+    }
+
+    // TODO: Implement this
+    // if let Some(file_id) = state.vfs.read().file_id(&uri) {
+    //     state.diagnostics.clear_native_for(file_id);
+    // }
+
+    // state
+    //     .semantic_tokens_cache
+    //     .lock()
+    //     .remove(&params.text_document.uri);
+
+    // if let Some(path) = path.as_path() {
+    //     state.loader.handle.invalidate(path.to_path_buf());
+    // }
     Ok(())
 }
 

@@ -3,9 +3,10 @@
 //! We currently get this config from `initialize` LSP request, which is not the
 //! best way to do it, but was the simplest thing we could implement.
 
+use ide::DiagnosticsConfig;
 use lsp_types::ClientCapabilities;
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf};
+use std::{collections::HashSet, path::PathBuf};
 
 use crate::{line_index::PositionEncoding, lsp::ext::negotiated_encoding};
 
@@ -93,5 +94,17 @@ impl Config {
 
     pub fn caps(&self) -> &lsp_types::ClientCapabilities {
         &self.caps
+    }
+
+    // pub fn publish_diagnostics(&self) -> bool {
+    //     self.data.diagnostics_enable
+    // }
+
+    pub fn diagnostics(&self) -> DiagnosticsConfig {
+        DiagnosticsConfig {
+            enabled: true,
+            disable_experimental: false,
+            disabled: HashSet::default(),
+        }
     }
 }
