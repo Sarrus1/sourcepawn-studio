@@ -7,7 +7,7 @@ use crate::{
     ast_id_map::AstIdMap,
     hir::{type_ref::TypeRef, BinaryOp, Expr, ExprId},
     item_tree::Name,
-    BlockLoc, DefDatabase, DefWithBodyId, NodePtr,
+    BlockLoc, DefDatabase, DefWithBodyId, InFile, NodePtr,
 };
 
 use super::{Body, BodySourceMap};
@@ -180,9 +180,11 @@ impl ExprCollector<'_> {
                 }
             }
             TSKind::field_access => {
+                let receiver = expr.child_by_field_name("field")?;
                 let field_access = Expr::FieldAccess {
                     target: self.collect_expr(expr.child_by_field_name("target")?),
-                    name: Name::from_node(&expr.child_by_field_name("field")?, self.source),
+                    name: Name::from_node(&receiver, self.source),
+                    receiver: self.collect_expr(receiver),
                 };
                 Some(self.alloc_expr(field_access, NodePtr::from(&expr)))
             }
@@ -208,6 +210,7 @@ impl ExprCollector<'_> {
 
     fn alloc_expr(&mut self, expr: Expr, ptr: NodePtr) -> ExprId {
         let id = self.body.exprs.alloc(expr);
+        let ptr = InFile::new(self.file_id, ptr);
         self.source_map.expr_map_back.insert(id, ptr);
         self.source_map.expr_map.insert(ptr, id);
         id

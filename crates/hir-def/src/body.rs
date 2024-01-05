@@ -27,29 +27,29 @@ pub struct Body {
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct BodySourceMap {
-    expr_map: FxHashMap<NodePtr, ExprId>,
-    expr_map_back: ArenaMap<ExprId, NodePtr>,
+    expr_map: FxHashMap<InFile<NodePtr>, ExprId>,
+    expr_map_back: ArenaMap<ExprId, InFile<NodePtr>>,
 
-    ident_map: FxHashMap<NodePtr, IdentId>,
-    ident_map_back: ArenaMap<IdentId, NodePtr>,
+    ident_map: FxHashMap<InFile<NodePtr>, IdentId>,
+    ident_map_back: ArenaMap<IdentId, InFile<NodePtr>>,
 }
 
 impl BodySourceMap {
-    pub fn expr_source(&self, expr: ExprId) -> Option<NodePtr> {
+    pub fn expr_source(&self, expr: ExprId) -> Option<InFile<NodePtr>> {
         self.expr_map_back.get(expr).cloned()
     }
 
-    pub fn node_expr(&self, node: &tree_sitter::Node) -> Option<ExprId> {
-        let ptr = NodePtr::from(node);
+    pub fn node_expr(&self, node: InFile<&tree_sitter::Node>) -> Option<ExprId> {
+        let ptr = node.map(NodePtr::from);
         self.node_ptr_expr(ptr)
     }
 
-    pub fn node_ptr_expr(&self, node: NodePtr) -> Option<ExprId> {
+    pub fn node_ptr_expr(&self, node: InFile<NodePtr>) -> Option<ExprId> {
         self.expr_map.get(&node).cloned()
     }
 
-    pub fn node_ident(&self, node: InFile<&NodePtr>) -> Option<IdentId> {
-        self.ident_map.get(node.value).cloned()
+    pub fn node_ident(&self, node: &InFile<NodePtr>) -> Option<IdentId> {
+        self.ident_map.get(node).cloned()
     }
 }
 

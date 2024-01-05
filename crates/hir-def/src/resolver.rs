@@ -100,7 +100,7 @@ impl Resolver {
                         FileDefId::FunctionId(it) => {
                             return Some(ValueNs::FunctionId(InFile::new(self.file_id, it)));
                         }
-                        FileDefId::VariableId(it) => {
+                        FileDefId::GlobalId(it) => {
                             return Some(ValueNs::GlobalId(InFile::new(self.file_id, it)));
                         }
                         FileDefId::EnumStructId(it) => {

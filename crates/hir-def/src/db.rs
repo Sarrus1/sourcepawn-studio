@@ -111,7 +111,7 @@ impl DefMap {
                         value: *id,
                     }
                     .intern(db);
-                    res.declare(var.name.clone(), FileDefId::VariableId(var_id));
+                    res.declare(var.name.clone(), FileDefId::GlobalId(var_id));
                 }
                 FileItem::EnumStruct(id) => {
                     let enum_struct = &item_tree[*id];
@@ -152,7 +152,7 @@ impl DefMap {
                         value: *id,
                     }
                     .intern(db);
-                    res.declare(var.name.clone(), FileDefId::VariableId(var_id));
+                    res.declare(var.name.clone(), FileDefId::GlobalId(var_id));
                 }
                 _ => unreachable!("Only variables can be defined in a block"),
             }

@@ -28,6 +28,18 @@ pub fn is_name_node(node: &tree_sitter::Node) -> bool {
         .unwrap_or(false)
 }
 
+/// Helper function to check if a node is a field receiver node.
+///
+/// # Arguments
+///
+/// * `node` - The node to check for.
+pub fn is_field_receiver_node(node: &tree_sitter::Node) -> bool {
+    node.parent()
+        .and_then(|parent| parent.child_by_field_name("field"))
+        .map(|child| child == *node)
+        .unwrap_or(false)
+}
+
 impl Tree {
     pub fn tree(&self) -> &tree_sitter::Tree {
         &self.0

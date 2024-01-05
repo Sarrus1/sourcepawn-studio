@@ -2,7 +2,7 @@
 
 use std::{cell::RefCell, fmt, ops, sync::Arc};
 
-use base_db::{is_name_node, Tree};
+use base_db::{is_field_receiver_node, is_name_node, Tree};
 use fxhash::FxHashMap;
 use hir_def::{resolver::ValueNs, InFile, NodePtr};
 use syntax::TSKind;
@@ -12,7 +12,7 @@ use crate::{
     db::HirDatabase,
     source_analyzer::SourceAnalyzer,
     source_to_def::{SourceToDefCache, SourceToDefCtx},
-    DefResolution, EnumStruct, Field, Function, Global, Local,
+    DefResolution, EnumStruct, Field, File, FileDef, Function, Global, Local,
 };
 
 /// Primary API to get semantic information, like types, from syntax trees.
@@ -132,7 +132,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             hir_def::FileDefId::FunctionId(id) => {
                 DefResolution::Function(Function::from(id)).into()
             }
-            hir_def::FileDefId::VariableId(id) => DefResolution::Global(Global::from(id)).into(),
+            hir_def::FileDefId::GlobalId(id) => DefResolution::Global(Global::from(id)).into(),
             hir_def::FileDefId::EnumStructId(id) => {
                 DefResolution::EnumStruct(EnumStruct::from(id)).into()
             }
@@ -160,21 +160,22 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 hir_def::FileDefId::FunctionId(id) => {
                     let def = hir_def::DefWithBodyId::FunctionId(id);
                     let offset = node.start_position();
-                    if TSKind::field_access == TSKind::from(parent) {
+                    if TSKind::field_access == TSKind::from(parent) && is_field_receiver_node(&node)
+                    {
                         let analyzer = SourceAnalyzer::new_for_body(
                             self.db,
                             def,
-                            InFile::new(file_id, &body_node),
+                            InFile::new(file_id, body_node),
                             Some(offset),
                         );
-                        let field = analyzer.resolve_field(self.db, &parent)?;
+                        let field = analyzer.resolve_field(self.db, &node, &parent)?;
                         return Some(DefResolution::Field(field));
                     }
 
                     let analyzer = SourceAnalyzer::new_for_body_no_infer(
                         self.db,
                         def,
-                        InFile::new(file_id, &body_node),
+                        InFile::new(file_id, body_node),
                         Some(offset),
                     );
                     let value_ns = analyzer.resolver.resolve_ident(text);
@@ -196,6 +197,10 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             },
             _ => todo!("Handle non block body"),
         }
+    }
+
+    pub fn to_file_def(&self, file_id: FileId) -> File {
+        self.imp.file_to_def(file_id)
     }
 }
 
@@ -224,6 +229,10 @@ impl<'db> SemanticsImpl<'db> {
             cache: &mut cache,
         };
         f(&mut ctx)
+    }
+
+    pub fn file_to_def(&self, file_id: FileId) -> File {
+        self.with_ctx(|ctx: &mut SourceToDefCtx<'_, '_>| ctx.file_to_def(file_id))
     }
 
     to_def_methods![

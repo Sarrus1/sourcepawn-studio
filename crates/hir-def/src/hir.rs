@@ -32,6 +32,7 @@ pub enum Expr {
     },
     FieldAccess {
         target: ExprId,
+        receiver: ExprId,
         name: Name,
     },
     BinaryOp {

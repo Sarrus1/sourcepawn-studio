@@ -5,6 +5,7 @@ use fxhash::FxHashMap;
 use crate::{
     body::Body,
     hir::{type_ref::TypeRef, BinaryOp, Expr},
+    item_tree::Name,
     resolver::{HasResolver, Resolver, ValueNs},
     DefDatabase, DefWithBodyId, ExprId, FieldId, FileDefId, FunctionId, Lookup,
 };
@@ -22,11 +23,22 @@ pub(crate) fn infer_query(db: &dyn DefDatabase, def: DefWithBodyId) -> Arc<Infer
     Arc::new(ctx.result)
 }
 
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum InferenceDiagnostic {
+    UnresolvedField {
+        expr: ExprId,
+        receiver: Name,
+        name: Name,
+        method_with_same_name_exists: bool,
+    },
+}
+
 /// The result of type inference: A mapping from expressions and patterns to types.
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
 pub struct InferenceResult {
     /// For each field access expr, records the field it resolves to.
     field_resolutions: FxHashMap<ExprId, FieldId>,
+    pub diagnostics: Vec<InferenceDiagnostic>,
 }
 
 impl InferenceResult {
@@ -75,25 +87,11 @@ impl InferenceContext<'_> {
                 self.resolver.reset_to_guard(g);
                 None
             }
-            Expr::FieldAccess { target, name } => {
-                let target_ty = self.infer_expr(target);
-                let Some(TypeRef::Name(type_name)) = target_ty else {
-                    return None;
-                };
-                let def_map = self.db.file_def_map(self.owner.file_id(self.db));
-                let res = def_map.get(&type_name)?;
-                let FileDefId::EnumStructId(it) = res else {
-                    return None;
-                };
-                let data = self.db.enum_struct_data(it);
-                let field = data.field(name)?;
-                let field_id = FieldId {
-                    parent: it,
-                    local_id: field,
-                };
-                self.result.field_resolutions.insert(*expr, field_id);
-                return Some(data.field_type(field).clone());
-            }
+            Expr::FieldAccess {
+                target,
+                receiver,
+                name,
+            } => self.infer_field_access(target, name, receiver),
             Expr::BinaryOp { lhs, rhs, op } => {
                 let _lhs_ty = self.infer_expr(lhs);
                 let _rhs_ty = self.infer_expr(rhs);
@@ -150,5 +148,41 @@ impl InferenceContext<'_> {
 
     pub(crate) fn collect_fn(&mut self, _func: FunctionId) {
         self.infer_expr(&self.body.body_expr);
+    }
+
+    fn infer_field_access(
+        &mut self,
+        target: &ExprId,
+        name: &Name,
+        receiver: &ExprId,
+    ) -> Option<TypeRef> {
+        let target_ty = self.infer_expr(target);
+        let Some(TypeRef::Name(type_name)) = target_ty else {
+            return None;
+        };
+        let def_map = self.db.file_def_map(self.owner.file_id(self.db));
+        let res = def_map.get(&type_name)?;
+        let FileDefId::EnumStructId(it) = res else {
+            return None;
+        };
+        let data = self.db.enum_struct_data(it);
+        if let Some(field) = data.field(name) {
+            let field_id = FieldId {
+                parent: it,
+                local_id: field,
+            };
+            self.result.field_resolutions.insert(*receiver, field_id);
+            return Some(data.field_type(field).clone());
+        }
+        self.result
+            .diagnostics
+            .push(InferenceDiagnostic::UnresolvedField {
+                expr: *receiver,
+                receiver: type_name,
+                name: name.clone(),
+                method_with_same_name_exists: false,
+            });
+
+        None
     }
 }

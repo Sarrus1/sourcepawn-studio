@@ -1,6 +1,6 @@
-use hir_def::{DefWithBodyId, ExprId, FieldId};
+use hir_def::{DefWithBodyId, ExprId, FieldId, FileDefId};
 
-use crate::Field;
+use crate::{DefWithBody, Field, FileDef};
 
 macro_rules! from_id {
     ($(($id:path, $ty:path)),* $(,)?) => {$(
@@ -43,6 +43,42 @@ impl From<FieldId> for Field {
         Field {
             parent: def.parent.into(),
             id: def.local_id,
+        }
+    }
+}
+
+impl From<DefWithBody> for DefWithBodyId {
+    fn from(def: DefWithBody) -> Self {
+        match def {
+            DefWithBody::Function(it) => DefWithBodyId::FunctionId(it.id),
+        }
+    }
+}
+
+impl From<DefWithBodyId> for DefWithBody {
+    fn from(def: DefWithBodyId) -> Self {
+        match def {
+            DefWithBodyId::FunctionId(it) => DefWithBody::Function(it.into()),
+        }
+    }
+}
+
+impl From<FileDefId> for FileDef {
+    fn from(id: FileDefId) -> Self {
+        match id {
+            FileDefId::FunctionId(it) => FileDef::Function(it.into()),
+            FileDefId::EnumStructId(it) => FileDef::EnumStruct(it.into()),
+            FileDefId::GlobalId(it) => FileDef::Global(it.into()),
+        }
+    }
+}
+
+impl From<FileDef> for FileDefId {
+    fn from(id: FileDef) -> Self {
+        match id {
+            FileDef::Function(it) => FileDefId::FunctionId(it.into()),
+            FileDef::EnumStruct(it) => FileDefId::EnumStructId(it.into()),
+            FileDef::Global(it) => FileDefId::GlobalId(it.into()),
         }
     }
 }

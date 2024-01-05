@@ -2,6 +2,7 @@ use core::hash::Hash;
 use la_arena::{Arena, Idx, IdxRange, RawIdx};
 use smallvec::SmallVec;
 use smol_str::SmolStr;
+use std::fmt;
 use std::ops::Index;
 use std::sync::Arc;
 use syntax::TSKind;
@@ -216,6 +217,12 @@ impl Name {
             node.utf8_text(source.as_bytes())
                 .expect("Failed to get utf8 text"),
         )
+    }
+}
+
+impl fmt::Display for Name {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.0, f)
     }
 }
 

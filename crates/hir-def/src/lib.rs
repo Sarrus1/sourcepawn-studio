@@ -20,8 +20,8 @@ pub mod src;
 pub use ast_id_map::NodePtr;
 pub use db::DefDatabase;
 pub use hir::ExprId;
-pub use infer::InferenceResult;
-pub use item_tree::FileItem;
+pub use infer::{InferenceDiagnostic, InferenceResult};
+pub use item_tree::{FileItem, Name};
 
 trait Intern {
     type ID;
@@ -112,15 +112,13 @@ impl_intern!(GlobalId, GlobalLoc, intern_variable, lookup_intern_variable);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FileDefId {
     FunctionId(FunctionId),
-    VariableId(GlobalId),
+    GlobalId(GlobalId),
     EnumStructId(EnumStructId),
 }
 
-impl From<FunctionId> for FileDefId {
-    fn from(it: FunctionId) -> FileDefId {
-        FileDefId::FunctionId(it)
-    }
-}
+impl_from!(
+    FunctionId, GlobalId, EnumStructId for FileDefId
+);
 
 /// Identifies a particular [`ItemTree`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]

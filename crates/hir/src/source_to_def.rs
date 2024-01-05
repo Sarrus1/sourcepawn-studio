@@ -8,7 +8,7 @@ use stdx::impl_from;
 use syntax::TSKind;
 use vfs::FileId;
 
-use crate::db::HirDatabase;
+use crate::{db::HirDatabase, File};
 
 pub(super) type SourceToDefCache = FxHashMap<(ChildContainer, FileId), DynMap>;
 
@@ -18,6 +18,9 @@ pub(super) struct SourceToDefCtx<'a, 'b> {
 }
 
 impl SourceToDefCtx<'_, '_> {
+    pub(super) fn file_to_def(&self, file_id: FileId) -> File {
+        File::from(file_id).into()
+    }
     pub(super) fn fn_to_def(&mut self, src: InFile<NodePtr>) -> Option<FunctionId> {
         self.to_def(src, keys::FUNCTION)
     }
@@ -36,7 +39,7 @@ impl SourceToDefCtx<'_, '_> {
         match container {
             ChildContainer::DefWithBodyId(def) => {
                 let (_, source_map) = self.db.body_with_source_map(def);
-                source_map.node_ptr_expr(src.value).map(|expr| (def, expr))
+                source_map.node_ptr_expr(src).map(|expr| (def, expr))
             }
             _ => todo!(),
         }

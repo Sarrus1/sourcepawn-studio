@@ -31,7 +31,7 @@ impl SourceAnalyzer {
     pub(crate) fn new_for_body(
         db: &dyn HirDatabase,
         def: DefWithBodyId,
-        node @ InFile { file_id, .. }: InFile<&tree_sitter::Node>,
+        node @ InFile { file_id, .. }: InFile<tree_sitter::Node>,
         offset: Option<Point>,
     ) -> SourceAnalyzer {
         let (body, source_map) = db.body_with_source_map(def);
@@ -53,7 +53,7 @@ impl SourceAnalyzer {
     pub(crate) fn new_for_body_no_infer(
         db: &dyn HirDatabase,
         def: DefWithBodyId,
-        node @ InFile { file_id, .. }: InFile<&tree_sitter::Node>,
+        node @ InFile { file_id, .. }: InFile<tree_sitter::Node>,
         offset: Option<Point>,
     ) -> SourceAnalyzer {
         let (body, source_map) = db.body_with_source_map(def);
@@ -79,7 +79,7 @@ impl SourceAnalyzer {
         self.def.as_ref().map(|(_, body, _)| &**body)
     }
 
-    fn expr_id(&self, _db: &dyn HirDatabase, src: &tree_sitter::Node) -> Option<ExprId> {
+    fn expr_id(&self, _db: &dyn HirDatabase, src: InFile<&tree_sitter::Node>) -> Option<ExprId> {
         let sm = self.body_source_map()?;
         sm.node_expr(src)
     }
@@ -88,9 +88,11 @@ impl SourceAnalyzer {
         &self,
         db: &dyn HirDatabase,
         node: &tree_sitter::Node,
+        parent: &tree_sitter::Node,
     ) -> Option<Field> {
-        assert!(matches!(TSKind::from(*node), TSKind::field_access));
-        let expr_id = self.expr_id(db, node)?;
+        assert!(matches!(TSKind::from(*parent), TSKind::field_access));
+        let src = InFile::new(self.file_id, node);
+        let expr_id = self.expr_id(db, src)?;
         self.infer
             .as_ref()?
             .field_resolution(expr_id)
@@ -101,12 +103,18 @@ impl SourceAnalyzer {
 fn scope_for(
     scopes: &ExprScopes,
     source_map: &BodySourceMap,
-    node: InFile<&tree_sitter::Node>,
+    node: InFile<tree_sitter::Node>,
 ) -> Option<ScopeId> {
-    let node_ancestors = iter::successors(Some(*node.value), |it| it.parent());
+    let node_ancestors = iter::successors(Some(node), |it| {
+        if let Some(parent) = it.value.parent() {
+            Some(it.with_value(parent))
+        } else {
+            None
+        }
+    });
     node_ancestors
-        .filter(|it| matches!(TSKind::from(*it), TSKind::block))
-        .filter_map(|it| source_map.node_expr(&it))
+        .filter(|it| matches!(TSKind::from(it.value), TSKind::block))
+        .filter_map(|it| source_map.node_expr(it.as_ref()))
         .find_map(|it| scopes.scope_for(it))
 }
 
@@ -123,7 +131,7 @@ fn scope_for_offset(
         .iter()
         .filter_map(|(id, scope)| {
             let ptr = source_map.expr_source(id)?;
-            Some((ptr.to_node(&tree), scope))
+            Some((ptr.value.to_node(&tree), scope))
         })
         .filter(|(node, _scope)| node.start_position() <= point && point <= node.end_position())
         .min_by_key(|(node, _)| node.end_byte() - node.start_byte())

@@ -30,7 +30,7 @@ impl ChildBySource for FileId {
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
                     res[FUNCTION].insert(node_ptr, *id);
                 }
-                FileDefId::VariableId(id) => {
+                FileDefId::GlobalId(id) => {
                     let item = &item_tree[id.lookup(db)];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
                     res[GLOBAL].insert(node_ptr, *id);

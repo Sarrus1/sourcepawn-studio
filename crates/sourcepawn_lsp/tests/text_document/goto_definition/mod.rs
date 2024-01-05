@@ -112,6 +112,25 @@ void bar() {
 }
 
 #[test]
+fn local_variable_4() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum struct Foo {
+    int foo;
+}
+
+void bar() {
+    Foo foo;
+    foo.foo = 1;
+      |
+      ^
+}
+"#,
+    ));
+}
+
+#[test]
 fn function_parameter_1() {
     assert_json_snapshot!(goto_definition(
         r#"

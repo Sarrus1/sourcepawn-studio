@@ -1,6 +1,6 @@
 use base_db::{SourceDatabase, SourceDatabaseExt, Tree};
 use fxhash::FxHashSet;
-use hir::Semantics;
+use hir::{AnyDiagnostic, Semantics};
 use hir_def::{InFile, NodePtr};
 use ide_db::RootDatabase;
 use queries::ERROR_QUERY;
@@ -8,6 +8,7 @@ use syntax::utils::ts_range_to_lsp_range;
 use tree_sitter::QueryCursor;
 use vfs::FileId;
 
+mod handlers;
 mod queries;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -111,18 +112,24 @@ pub fn diagnostics(
     config: &DiagnosticsConfig,
     file_id: FileId,
 ) -> Vec<Diagnostic> {
+    let sema = Semantics::new(db);
     let tree = db.parse(file_id);
     let source = db.file_text(file_id);
     let mut res = Vec::new();
 
-    // [#34344] Only take first 128 errors to prevent slowing down editor/ide, the number 128 is chosen arbitrarily.
     res.extend(syntax_error_diagnostics(&source, &tree));
 
-    // for node in parse.syntax().descendants() {
-    //     handlers::useless_braces::useless_braces(&mut res, file_id, &node);
-    //     handlers::field_shorthand::field_shorthand(&mut res, file_id, &node);
-    //     handlers::json_is_not_rust::json_in_items(&sema, &mut res, file_id, &node, config);
-    // }
+    let file = sema.file_to_def(file_id);
+    let ctx = DiagnosticsContext { config, sema };
+
+    let mut diags = Vec::new();
+    file.diagnostics(db, &mut diags);
+    for diag in diags {
+        let d = match diag {
+            AnyDiagnostic::UnresolvedField(d) => handlers::unresolved_field::f(&ctx, &d),
+        };
+        res.push(d);
+    }
 
     res
 }
