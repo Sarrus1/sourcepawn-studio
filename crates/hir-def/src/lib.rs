@@ -67,8 +67,15 @@ macro_rules! impl_intern {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ItemContainerId {
+    FileId(FileId),
+    EnumStructId(EnumStructId),
+}
+impl_from!(FileId, EnumStructId for ItemContainerId);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FunctionId(salsa::InternId);
-type FunctionLoc = ItemTreeId<Function>;
+type FunctionLoc = AssocItemLoc<Function>;
 impl_intern!(
     FunctionId,
     FunctionLoc,
@@ -78,7 +85,7 @@ impl_intern!(
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct EnumStructId(salsa::InternId);
-type EnumStructLoc = ItemTreeId<EnumStruct>;
+type EnumStructLoc = AssocItemLoc<EnumStruct>;
 impl_intern!(
     EnumStructId,
     EnumStructLoc,
@@ -92,7 +99,7 @@ pub struct FieldId {
     pub local_id: LocalFieldId,
 }
 
-pub type LocalFieldId = Idx<data::FieldData>;
+pub type LocalFieldId = Idx<data::EnumStructItemData>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct BlockId(salsa::InternId);
@@ -141,6 +148,38 @@ impl TreeId {
 
     pub(crate) fn file_id(self) -> FileId {
         self.file
+    }
+}
+
+#[derive(Debug)]
+pub struct AssocItemLoc<N: ItemTreeNode> {
+    pub container: ItemContainerId,
+    pub id: ItemTreeId<N>,
+}
+
+impl<N: ItemTreeNode> Clone for AssocItemLoc<N> {
+    fn clone(&self) -> Self {
+        Self {
+            container: self.container,
+            id: self.id,
+        }
+    }
+}
+
+impl<N: ItemTreeNode> Copy for AssocItemLoc<N> {}
+
+impl<N: ItemTreeNode> PartialEq for AssocItemLoc<N> {
+    fn eq(&self, other: &Self) -> bool {
+        self.container == other.container && self.id == other.id
+    }
+}
+
+impl<N: ItemTreeNode> Eq for AssocItemLoc<N> {}
+
+impl<N: ItemTreeNode> Hash for AssocItemLoc<N> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.container.hash(state);
+        self.id.hash(state);
     }
 }
 
@@ -201,7 +240,7 @@ impl_from!(FunctionId for DefWithBodyId);
 impl DefWithBodyId {
     pub fn file_id(&self, db: &dyn DefDatabase) -> FileId {
         match self {
-            DefWithBodyId::FunctionId(it) => it.lookup(db).file_id(),
+            DefWithBodyId::FunctionId(it) => it.lookup(db).id.file_id(),
         }
     }
 }

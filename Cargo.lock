@@ -681,6 +681,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dunce"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56ce8c6da7551ec6c462cbaf3bfbc75131ebbfa1c944aeaa9dab51ca1c5f0c3b"
+
+[[package]]
 name = "either"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2531,6 +2537,7 @@ dependencies = [
  "criterion 0.4.0",
  "crossbeam",
  "dashmap",
+ "dunce",
  "fern",
  "fxhash",
  "humantime",
@@ -2922,7 +2929,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-sourcepawn"
 version = "0.7.0"
-source = "git+https://github.com/Sarrus1/tree-sitter-sourcepawn#372eba9ea977640c7f874ec9081821571de658e3"
+source = "git+https://github.com/Sarrus1/tree-sitter-sourcepawn#84afc61879deff07f593c7b8d79ac6b705c247c4"
 dependencies = [
  "cc",
  "tree-sitter",

@@ -168,6 +168,12 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                             InFile::new(file_id, body_node),
                             Some(offset),
                         );
+                        if let Some(grand_parent) = parent.parent() {
+                            if TSKind::call_expression == TSKind::from(&grand_parent) {
+                                let method = analyzer.resolve_method(self.db, &node, &parent)?;
+                                return Some(DefResolution::Function(method));
+                            }
+                        }
                         let field = analyzer.resolve_field(self.db, &node, &parent)?;
                         return Some(DefResolution::Field(field));
                     }

@@ -195,7 +195,7 @@ impl HasResolver for DefWithBodyId {
 
 impl HasResolver for FunctionId {
     fn resolver(self, db: &dyn DefDatabase) -> Resolver {
-        self.lookup(db).file_id().resolver(db)
+        self.lookup(db).id.file_id().resolver(db)
         // .push_generic_params_scope(db, self.into())
     }
 }

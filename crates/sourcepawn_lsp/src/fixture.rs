@@ -178,10 +178,10 @@ impl TestBed {
         let fixture = Fixture::parse(fixture);
 
         let temp_dir = tempdir()?;
-        let temp_dir_path = temp_dir.path().canonicalize()?;
+        let temp_dir_path = dunce::canonicalize(temp_dir.path())?;
 
         let temp_sm_dir = tempdir()?;
-        let temp_sm_dir_path = temp_sm_dir.path().canonicalize()?;
+        let temp_sm_dir_path = dunce::canonicalize(temp_sm_dir.path())?;
         let temp_sm_dir_path_ = temp_sm_dir_path.clone(); // Copy the value to be able to move it into the closure
 
         let locations: Vec<Location> = fixture
@@ -316,7 +316,7 @@ impl TestBed {
     /// Remove the tempdir path from the uri, so that the tests are not dependent
     /// on the tempdir.
     pub fn anonymize_uri(&self, uri: &mut Url) {
-        let mut target_path = PathBuf::from(uri.path());
+        let mut target_path = uri.to_file_path().unwrap();
         target_path = target_path
             .strip_prefix(&self.temp_dir_path)
             .unwrap()

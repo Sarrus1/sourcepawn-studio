@@ -23,7 +23,7 @@ macro_rules! diagnostics {
     };
 }
 
-diagnostics![UnresolvedField,];
+diagnostics![UnresolvedField, UnresolvedMethodCall,];
 
 #[derive(Debug)]
 pub struct UnresolvedField {
@@ -31,4 +31,12 @@ pub struct UnresolvedField {
     pub receiver: Name,
     pub name: Name,
     pub method_with_same_name_exists: bool,
+}
+
+#[derive(Debug)]
+pub struct UnresolvedMethodCall {
+    pub expr: InFile<NodePtr>,
+    pub receiver: Name,
+    pub name: Name,
+    pub field_with_same_name_exists: bool,
 }

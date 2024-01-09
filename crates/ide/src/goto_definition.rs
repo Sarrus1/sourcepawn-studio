@@ -1,9 +1,7 @@
-use base_db::{FilePosition};
+use base_db::FilePosition;
 use hir::{HasSource, Semantics};
 
-use syntax::{
-    utils::{lsp_position_to_ts_point, ts_range_to_lsp_range},
-};
+use syntax::utils::{lsp_position_to_ts_point, ts_range_to_lsp_range};
 use vfs::FileId;
 
 use crate::RootDatabase;

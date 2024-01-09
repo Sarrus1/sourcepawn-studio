@@ -152,6 +152,24 @@ impl DefWithBody {
                         .into(),
                     )
                 }
+                InferenceDiagnostic::UnresolvedMethodCall {
+                    expr,
+                    receiver,
+                    name,
+                    field_with_same_name_exists,
+                } => {
+                    let expr = expr_syntax(*expr);
+
+                    acc.push(
+                        UnresolvedMethodCall {
+                            expr,
+                            name: name.clone(),
+                            receiver: receiver.clone(),
+                            field_with_same_name_exists: *field_with_same_name_exists,
+                        }
+                        .into(),
+                    )
+                }
             }
         }
     }

@@ -162,7 +162,6 @@ impl ExprCollector<'_> {
                 match TSKind::from(&function) {
                     // Function call
                     TSKind::identifier => {
-                        eprintln!("{}", expr.to_sexp());
                         let callee = self.collect_expr(function);
                         let args = arguments
                             .children(&mut arguments.walk())
@@ -175,18 +174,30 @@ impl ExprCollector<'_> {
                         Some(self.alloc_expr(call, NodePtr::from(&expr)))
                     }
                     // Method call
-                    TSKind::field_access => todo!(),
+                    TSKind::field_access => {
+                        let target = function.child_by_field_name("target")?;
+                        let method = function.child_by_field_name("field")?;
+                        let args = arguments
+                            .children(&mut arguments.walk())
+                            .filter_map(|arg| self.maybe_collect_expr(arg))
+                            .collect::<Vec<_>>();
+                        let call = Expr::MethodCall {
+                            target: self.collect_expr(target),
+                            method_name: Name::from_node(&method, self.source),
+                            args: args.into_boxed_slice(),
+                        };
+                        Some(self.alloc_expr(call, NodePtr::from(&method)))
+                    }
                     _ => unreachable!(),
                 }
             }
             TSKind::field_access => {
-                let receiver = expr.child_by_field_name("field")?;
+                let field = expr.child_by_field_name("field")?;
                 let field_access = Expr::FieldAccess {
                     target: self.collect_expr(expr.child_by_field_name("target")?),
-                    name: Name::from_node(&receiver, self.source),
-                    receiver: self.collect_expr(receiver),
+                    name: Name::from_node(&field, self.source),
                 };
-                Some(self.alloc_expr(field_access, NodePtr::from(&expr)))
+                Some(self.alloc_expr(field_access, NodePtr::from(&field)))
             }
             TSKind::variable_declaration_statement => Some(self.collect_variable_declaration(expr)),
             TSKind::identifier => {

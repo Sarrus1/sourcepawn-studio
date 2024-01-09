@@ -4,6 +4,7 @@ use fxhash::FxHashMap;
 
 use crate::{
     body::Body,
+    data::EnumStructItemData,
     hir::{type_ref::TypeRef, BinaryOp, Expr},
     item_tree::Name,
     resolver::{HasResolver, Resolver, ValueNs},
@@ -31,6 +32,12 @@ pub enum InferenceDiagnostic {
         name: Name,
         method_with_same_name_exists: bool,
     },
+    UnresolvedMethodCall {
+        expr: ExprId,
+        receiver: Name,
+        name: Name,
+        field_with_same_name_exists: bool,
+    },
 }
 
 /// The result of type inference: A mapping from expressions and patterns to types.
@@ -38,12 +45,19 @@ pub enum InferenceDiagnostic {
 pub struct InferenceResult {
     /// For each field access expr, records the field it resolves to.
     field_resolutions: FxHashMap<ExprId, FieldId>,
+    /// For each method call expr, records the function it resolves to.
+    method_resolutions: FxHashMap<ExprId, FunctionId>,
+
     pub diagnostics: Vec<InferenceDiagnostic>,
 }
 
 impl InferenceResult {
     pub fn field_resolution(&self, expr: ExprId) -> Option<FieldId> {
         self.field_resolutions.get(&expr).copied()
+    }
+
+    pub fn method_resolution(&self, expr: ExprId) -> Option<FunctionId> {
+        self.method_resolutions.get(&expr).copied()
     }
 }
 
@@ -87,11 +101,7 @@ impl InferenceContext<'_> {
                 self.resolver.reset_to_guard(g);
                 None
             }
-            Expr::FieldAccess {
-                target,
-                receiver,
-                name,
-            } => self.infer_field_access(target, name, receiver),
+            Expr::FieldAccess { target, name } => self.infer_field_access(expr, target, name),
             Expr::BinaryOp { lhs, rhs, op } => {
                 let _lhs_ty = self.infer_expr(lhs);
                 let _rhs_ty = self.infer_expr(rhs);
@@ -122,10 +132,10 @@ impl InferenceContext<'_> {
                 }
             }
             Expr::MethodCall {
-                receiver,
+                target,
                 method_name,
                 args,
-            } => todo!(),
+            } => self.infer_method_call(expr, target, method_name, args),
             Expr::Call { callee, args } => {
                 for arg in args.iter() {
                     self.infer_expr(arg);
@@ -137,7 +147,9 @@ impl InferenceContext<'_> {
                 match self.resolver.resolve_ident(&name)? {
                     ValueNs::FunctionId(it) => {
                         let item_tree = self.db.file_item_tree(it.file_id);
-                        item_tree[it.value.lookup(self.db).value].ret_type.clone()
+                        item_tree[it.value.lookup(self.db).id.value]
+                            .ret_type
+                            .clone()
                     }
                     _ => todo!(),
                 }
@@ -152,9 +164,9 @@ impl InferenceContext<'_> {
 
     fn infer_field_access(
         &mut self,
+        receiver: &ExprId,
         target: &ExprId,
         name: &Name,
-        receiver: &ExprId,
     ) -> Option<TypeRef> {
         let target_ty = self.infer_expr(target);
         let Some(TypeRef::Name(type_name)) = target_ty else {
@@ -166,13 +178,28 @@ impl InferenceContext<'_> {
             return None;
         };
         let data = self.db.enum_struct_data(it);
-        if let Some(field) = data.field(name) {
-            let field_id = FieldId {
-                parent: it,
-                local_id: field,
-            };
-            self.result.field_resolutions.insert(*receiver, field_id);
-            return Some(data.field_type(field).clone());
+        if let Some(item) = data.items(name) {
+            match data.item(item) {
+                EnumStructItemData::Field(_) => {
+                    let field_id = FieldId {
+                        parent: it,
+                        local_id: item,
+                    };
+                    self.result.field_resolutions.insert(*receiver, field_id);
+                    return Some(data.field_type(item)?.clone());
+                }
+                EnumStructItemData::Method(_) => {
+                    self.result
+                        .diagnostics
+                        .push(InferenceDiagnostic::UnresolvedField {
+                            expr: *receiver,
+                            receiver: type_name,
+                            name: name.clone(),
+                            method_with_same_name_exists: true,
+                        });
+                    return None;
+                }
+            }
         }
         self.result
             .diagnostics
@@ -181,6 +208,60 @@ impl InferenceContext<'_> {
                 receiver: type_name,
                 name: name.clone(),
                 method_with_same_name_exists: false,
+            });
+
+        None
+    }
+
+    fn infer_method_call(
+        &mut self,
+        receiver: &ExprId,
+        target: &ExprId,
+        method_name: &Name,
+        args: &Box<[ExprId]>,
+    ) -> Option<TypeRef> {
+        for arg in args.iter() {
+            self.infer_expr(arg);
+        }
+
+        let target_ty = self.infer_expr(target);
+        let Some(TypeRef::Name(type_name)) = target_ty else {
+            return None;
+        };
+        let def_map = self.db.file_def_map(self.owner.file_id(self.db));
+        let res = def_map.get(&type_name)?;
+        let FileDefId::EnumStructId(it) = res else {
+            return None;
+        };
+        let data = self.db.enum_struct_data(it);
+        if let Some(item) = data.items(method_name) {
+            match data.item(item) {
+                EnumStructItemData::Field(_) => {
+                    self.result
+                        .diagnostics
+                        .push(InferenceDiagnostic::UnresolvedMethodCall {
+                            expr: *receiver,
+                            receiver: type_name,
+                            name: method_name.clone(),
+                            field_with_same_name_exists: true,
+                        });
+                    return None;
+                }
+                EnumStructItemData::Method(method) => {
+                    self.result.method_resolutions.insert(*receiver, *method);
+                    let function = method.lookup(self.db);
+                    let item_tree = function.id.item_tree(self.db);
+                    return item_tree[function.id.value].ret_type.clone();
+                }
+            }
+        }
+        self.result
+            .diagnostics
+            .push(InferenceDiagnostic::UnresolvedMethodCall {
+                expr: *receiver,
+                receiver: type_name,
+                name: method_name.clone(),
+                field_with_same_name_exists: false,
             });
 
         None

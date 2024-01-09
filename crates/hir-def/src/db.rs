@@ -11,7 +11,7 @@ use crate::{
     infer,
     item_tree::{ItemTree, Name},
     BlockId, BlockLoc, DefWithBodyId, EnumStructId, EnumStructLoc, FileDefId, FileItem, FunctionId,
-    FunctionLoc, GlobalId, GlobalLoc, InferenceResult, Intern, Lookup, TreeId,
+    FunctionLoc, GlobalId, GlobalLoc, InferenceResult, Intern, ItemTreeId, Lookup, TreeId,
 };
 
 #[salsa::query_group(InternDatabaseStorage)]
@@ -93,13 +93,17 @@ impl DefMap {
     pub fn file_def_map_query(db: &dyn DefDatabase, file_id: FileId) -> Arc<Self> {
         let item_tree = db.file_item_tree(file_id);
         let mut res = DefMap::default();
+        let tree_id = TreeId::new(file_id, None);
         for item in item_tree.top_level_items() {
             match item {
                 FileItem::Function(id) => {
                     let func = &item_tree[*id];
                     let fn_id = FunctionLoc {
-                        tree: TreeId::new(file_id, None), // TODO: Reuse the file_id with "into" ?
-                        value: *id,
+                        container: file_id.into(),
+                        id: ItemTreeId {
+                            tree: tree_id,
+                            value: *id,
+                        },
                     }
                     .intern(db);
                     res.declare(func.name.clone(), FileDefId::FunctionId(fn_id));
@@ -116,8 +120,11 @@ impl DefMap {
                 FileItem::EnumStruct(id) => {
                     let enum_struct = &item_tree[*id];
                     let enum_struct_id = EnumStructLoc {
-                        tree: TreeId::new(file_id, None),
-                        value: *id,
+                        container: file_id.into(),
+                        id: ItemTreeId {
+                            tree: tree_id,
+                            value: *id,
+                        },
                     }
                     .intern(db);
                     res.declare(

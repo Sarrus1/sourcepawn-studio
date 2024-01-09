@@ -14,7 +14,7 @@ use syntax::TSKind;
 use tree_sitter::Point;
 use vfs::FileId;
 
-use crate::{db::HirDatabase, Field};
+use crate::{db::HirDatabase, Field, Function};
 
 /// `SourceAnalyzer` is a convenience wrapper which exposes HIR API in terms of
 /// original source files. It should not be used inside the HIR itself.
@@ -96,6 +96,21 @@ impl SourceAnalyzer {
         self.infer
             .as_ref()?
             .field_resolution(expr_id)
+            .map(|it| it.into())
+    }
+
+    pub(crate) fn resolve_method(
+        &self,
+        db: &dyn HirDatabase,
+        node: &tree_sitter::Node,
+        parent: &tree_sitter::Node,
+    ) -> Option<Function> {
+        assert!(matches!(TSKind::from(*parent), TSKind::field_access));
+        let src = InFile::new(self.file_id, node);
+        let expr_id = self.expr_id(db, src)?;
+        self.infer
+            .as_ref()?
+            .method_resolution(expr_id)
             .map(|it| it.into())
     }
 }

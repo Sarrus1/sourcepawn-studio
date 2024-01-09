@@ -32,7 +32,6 @@ pub enum Expr {
     },
     FieldAccess {
         target: ExprId,
-        receiver: ExprId,
         name: Name,
     },
     BinaryOp {
@@ -45,7 +44,7 @@ pub enum Expr {
         args: Box<[ExprId]>,
     },
     MethodCall {
-        receiver: ExprId,
+        target: ExprId,
         method_name: Name,
         args: Box<[ExprId]>,
     },

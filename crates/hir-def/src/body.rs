@@ -61,7 +61,7 @@ impl Body {
         match def {
             DefWithBodyId::FunctionId(id) => {
                 let func = id.lookup(db);
-                let file_id = func.file_id();
+                let file_id = func.id.file_id();
                 let tree = db.parse(file_id);
                 let InFile {
                     file_id,

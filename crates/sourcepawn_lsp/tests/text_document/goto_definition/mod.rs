@@ -305,3 +305,23 @@ void baz(int foo) {}
 "#,
     ));
 }
+
+#[test]
+fn method_call_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum struct Foo {
+    void foo() {};
+}
+
+Foo foo;
+
+void bar() {
+    foo.foo();
+         |
+         ^
+}
+"#,
+    ));
+}
