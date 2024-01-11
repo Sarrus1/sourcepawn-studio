@@ -325,3 +325,33 @@ void bar() {
 "#,
     ));
 }
+
+#[test]
+fn enum_struct_method_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum struct Foo {
+    void foo() {};
+          |
+          ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn enum_struct_method_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum struct Foo {
+    void foo() {
+        int bar;
+             |
+             ^
+    };
+}
+"#,
+    ));
+}

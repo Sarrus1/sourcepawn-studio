@@ -4,7 +4,7 @@ use std::{cell::RefCell, fmt, ops, sync::Arc};
 
 use base_db::{is_field_receiver_node, is_name_node, Tree};
 use fxhash::FxHashMap;
-use hir_def::{resolver::ValueNs, InFile, NodePtr};
+use hir_def::{resolver::ValueNs, InFile, Name, NodePtr};
 use syntax::TSKind;
 use vfs::FileId;
 
@@ -12,7 +12,7 @@ use crate::{
     db::HirDatabase,
     source_analyzer::SourceAnalyzer,
     source_to_def::{SourceToDefCache, SourceToDefCtx},
-    DefResolution, EnumStruct, Field, File, FileDef, Function, Global, Local,
+    DefResolution, EnumStruct, Field, File, Function, Global, Local,
 };
 
 /// Primary API to get semantic information, like types, from syntax trees.
@@ -65,6 +65,10 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 .fn_to_def(src)
                 .map(Function::from)
                 .map(DefResolution::Function),
+            TSKind::enum_struct_method => self
+                .fn_to_def(src)
+                .map(Function::from)
+                .map(DefResolution::Function),
             TSKind::enum_struct => self
                 .enum_struct_to_def(src)
                 .map(EnumStruct::from)
@@ -97,14 +101,16 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
 
     pub fn find_def(&self, file_id: FileId, node: &tree_sitter::Node) -> Option<DefResolution> {
         let source = self.db.file_text(file_id);
-        let parent = node.parent()?;
         if let Some(res) = self.find_name_def(file_id, node) {
             return res.into();
         }
 
         let mut container = node.parent()?;
         // If the node does not have a parent we are at the root, nothing to resolve.
-        while !matches!(TSKind::from(container), TSKind::function_definition) {
+        while !matches!(
+            TSKind::from(container),
+            TSKind::function_definition | TSKind::enum_struct_method
+        ) {
             if let Some(candidate) = container.parent() {
                 container = candidate;
             } else {
@@ -113,7 +119,10 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         }
         match TSKind::from(container) {
             TSKind::function_definition => {
-                self.function_node_to_def(file_id, container, parent, *node, source)
+                self.function_node_to_def(file_id, container, *node, source)
+            }
+            TSKind::enum_struct_method => {
+                self.method_node_to_def(file_id, container, *node, source)
             }
             TSKind::source_file => self.source_node_to_def(file_id, *node, source),
             _ => todo!(),
@@ -139,16 +148,83 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         }
     }
 
-    fn function_node_to_def(
+    fn method_node_to_def(
         &self,
         file_id: FileId,
         container: tree_sitter::Node,
-        parent: tree_sitter::Node,
         node: tree_sitter::Node,
         source: Arc<str>,
     ) -> Option<DefResolution> {
         let def_map = self.db.file_def_map(file_id);
         let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
+        let parent = node.parent()?;
+
+        let method_name = container
+            .child_by_field_name("name")?
+            .utf8_text(source.as_ref().as_bytes())
+            .ok()?;
+
+        let enum_struct_name = container
+            .parent()?
+            .child_by_field_name("name")?
+            .utf8_text(source.as_ref().as_bytes())
+            .ok()?;
+        let body_node = container.child_by_field_name("body")?;
+        assert!(TSKind::from(body_node) == TSKind::block);
+        let hir_def::FileDefId::EnumStructId(es_id) = def_map.get_from_str(enum_struct_name)?
+        else {
+            return None;
+        };
+        let data = self.db.enum_struct_data(es_id);
+        let method_idx = data.items(&Name::from(method_name))?;
+        let id = data.method(method_idx)?;
+        let def = hir_def::DefWithBodyId::FunctionId(*id);
+        let offset = node.start_position();
+        if TSKind::field_access == TSKind::from(parent) && is_field_receiver_node(&node) {
+            let analyzer = SourceAnalyzer::new_for_body(
+                self.db,
+                def,
+                InFile::new(file_id, body_node),
+                Some(offset),
+            );
+            if let Some(grand_parent) = parent.parent() {
+                if TSKind::call_expression == TSKind::from(&grand_parent) {
+                    let method = analyzer.resolve_method(self.db, &node, &parent)?;
+                    return Some(DefResolution::Function(method));
+                }
+            }
+            let field = analyzer.resolve_field(self.db, &node, &parent)?;
+            return Some(DefResolution::Field(field));
+        }
+
+        let analyzer = SourceAnalyzer::new_for_body_no_infer(
+            self.db,
+            def,
+            InFile::new(file_id, body_node),
+            Some(offset),
+        );
+        let value_ns = analyzer.resolver.resolve_ident(text);
+        match value_ns? {
+            // TODO: Maybe hide the match logic in a function/macro?
+            ValueNs::LocalId(expr) => DefResolution::Local(Local::from(expr)).into(),
+            ValueNs::FunctionId(id) => DefResolution::Function(Function::from(id.value)).into(),
+            ValueNs::GlobalId(id) => DefResolution::Global(Global::from(id.value)).into(),
+            ValueNs::EnumStructId(id) => {
+                DefResolution::EnumStruct(EnumStruct::from(id.value)).into()
+            }
+        }
+    }
+
+    fn function_node_to_def(
+        &self,
+        file_id: FileId,
+        container: tree_sitter::Node,
+        node: tree_sitter::Node,
+        source: Arc<str>,
+    ) -> Option<DefResolution> {
+        let def_map = self.db.file_def_map(file_id);
+        let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
+        let parent = node.parent()?;
 
         let parent_name = container
             .child_by_field_name("name")?

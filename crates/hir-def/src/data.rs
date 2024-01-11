@@ -102,6 +102,13 @@ impl EnumStructData {
         &self.items[item]
     }
 
+    pub fn method(&self, item: Idx<EnumStructItemData>) -> Option<&FunctionId> {
+        match &self.items[item] {
+            EnumStructItemData::Field(_) => None,
+            EnumStructItemData::Method(function_id) => Some(function_id),
+        }
+    }
+
     pub fn items(&self, name: &Name) -> Option<Idx<EnumStructItemData>> {
         self.items_map.get(name).cloned()
     }
@@ -109,7 +116,7 @@ impl EnumStructData {
     pub fn field_type(&self, field: Idx<EnumStructItemData>) -> Option<&TypeRef> {
         match &self.items[field] {
             EnumStructItemData::Field(field_data) => Some(&field_data.type_ref),
-            EnumStructItemData::Method(function_id) => None,
+            EnumStructItemData::Method(_) => None,
         }
     }
 }

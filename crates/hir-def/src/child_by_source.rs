@@ -1,6 +1,7 @@
 use vfs::FileId;
 
 use crate::{
+    data::EnumStructItemData,
     dyn_map::{
         keys::{ENUM_STRUCT, FIELD, FUNCTION, GLOBAL},
         DynMap,
@@ -46,8 +47,25 @@ impl ChildBySource for FileId {
 }
 
 impl ChildBySource for EnumStructId {
-    fn child_by_source_to(&self, db: &dyn DefDatabase, map: &mut DynMap, _file_id: FileId) {
+    fn child_by_source_to(&self, db: &dyn DefDatabase, map: &mut DynMap, file_id: FileId) {
         let arena_map = self.child_source(db);
+        let data = db.enum_struct_data(*self);
+        let item_tree = db.file_item_tree(file_id);
+        let ast_id_map = db.ast_id_map(file_id);
+        data.items.iter().for_each(|(idx, item)| match item {
+            EnumStructItemData::Field(_) => {
+                let field_id = FieldId {
+                    parent: *self,
+                    local_id: idx,
+                };
+                map[FIELD].insert(arena_map.value[idx], field_id);
+            }
+            EnumStructItemData::Method(id) => {
+                let item = &item_tree[id.lookup(db).id];
+                let node_ptr = ast_id_map.get_raw(item.ast_id);
+                map[FUNCTION].insert(node_ptr, *id);
+            }
+        });
         for (local_id, source) in arena_map.value.iter() {
             let field_id = FieldId {
                 parent: *self,
