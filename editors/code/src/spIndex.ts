@@ -58,7 +58,7 @@ export async function activate(context: vscode.ExtensionContext) {
       ].concat(
         vscode.workspace
           .getConfiguration("SourcePawnLanguageServer")
-          .get<string[]>("includesDirectories", [])
+          .get<string[]>("includeDirectories", [])
           .map((e) => {
             return {
               scheme: "file",
@@ -161,16 +161,16 @@ function sortedWorkspaceFolders(): string[] {
   if (_sortedWorkspaceFolders === void 0) {
     _sortedWorkspaceFolders = vscode.workspace.workspaceFolders
       ? vscode.workspace.workspaceFolders
-          .map((folder) => {
-            let result = folder.uri.toString();
-            if (result.charAt(result.length - 1) !== "/") {
-              result = result + "/";
-            }
-            return result;
-          })
-          .sort((a, b) => {
-            return a.length - b.length;
-          })
+        .map((folder) => {
+          let result = folder.uri.toString();
+          if (result.charAt(result.length - 1) !== "/") {
+            result = result + "/";
+          }
+          return result;
+        })
+        .sort((a, b) => {
+          return a.length - b.length;
+        })
       : [];
   }
   return _sortedWorkspaceFolders;

@@ -14,7 +14,7 @@ use crate::{line_index::PositionEncoding, lsp::ext::negotiated_encoding};
 #[serde(rename_all = "camelCase")]
 #[serde(default)]
 pub struct ConfigData {
-    pub includes_directories: Vec<PathBuf>,
+    pub include_directories: Vec<PathBuf>,
     pub spcomp_path: PathBuf,
     pub linter_arguments: Vec<String>,
     pub disable_syntax_linter: bool,
@@ -106,5 +106,9 @@ impl Config {
             disable_experimental: false,
             disabled: HashSet::default(),
         }
+    }
+
+    pub fn include_directories(&self) -> &[PathBuf] {
+        &self.data.include_directories
     }
 }

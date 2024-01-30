@@ -1,12 +1,14 @@
 use std::sync::Arc;
 
-use graph::Graph;
+use graph::{file_includes_query, Graph, Include};
+use input::{SourceRoot, SourceRootId};
 use vfs::FileId;
 
 mod change;
 mod graph;
+mod input;
 
-pub use change::Change;
+pub use {change::Change, input::SourceRootConfig};
 
 pub trait FileLoader {
     /// Text of the file.
@@ -80,9 +82,12 @@ impl Eq for Tree {}
 /// model. Everything else in rust-analyzer is derived from these queries.
 #[salsa::query_group(SourceDatabaseStorage)]
 pub trait SourceDatabase: FileLoader + std::fmt::Debug {
-    // Parses the file into the syntax tree.
+    /// Parses the file into the syntax tree.
     #[salsa::invoke(parse_query)]
     fn parse(&self, file_id: FileId) -> Tree;
+
+    #[salsa::invoke(file_includes_query)]
+    fn file_includes(&self, file_id: FileId) -> Arc<Vec<Include>>;
 
     #[salsa::input]
     fn projects_graph(&self) -> Graph;
@@ -108,8 +113,17 @@ fn parse_query(db: &dyn SourceDatabase, file_id: FileId) -> Tree {
 /// methods into a separate DB.
 #[salsa::query_group(SourceDatabaseExtStorage)]
 pub trait SourceDatabaseExt: SourceDatabase {
+    /// Contents of the file.
     #[salsa::input]
     fn file_text(&self, file_id: FileId) -> Arc<str>;
+
+    /// Source root of the file.
+    #[salsa::input]
+    fn file_source_root(&self, file_id: FileId) -> SourceRootId;
+
+    /// Contents of the source root.
+    #[salsa::input]
+    fn source_root(&self, id: SourceRootId) -> Arc<SourceRoot>;
 }
 
 /// Silly workaround for cyclic deps between the traits

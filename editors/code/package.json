@@ -206,7 +206,7 @@
           "type": "string",
           "description": "The location of the SourceMod API include files found in addons/sourcemod/scripting/include",
           "scope": "resource",
-          "deprecationMessage": "Use `SourcePawnLanguageServer.includesDirectories` instead."
+          "deprecationMessage": "Use `SourcePawnLanguageServer.includeDirectories` instead."
         },
         "sourcepawn.AuthorName": {
           "type": "string",
@@ -273,10 +273,10 @@
           "description": "Disable the language server's syntax linter. This is independant from spcomp.",
           "scope": "resource"
         },
-        "SourcePawnLanguageServer.includesDirectories": {
+        "SourcePawnLanguageServer.includeDirectories": {
           "type": "array",
           "default": [],
-          "description": "Include folders paths for the compiler and the linter.",
+          "description": "Include directories paths for the compiler and the linter.",
           "scope": "resource"
         },
         "sourcepawn.compilerArguments": {
@@ -306,7 +306,7 @@
           "default": [
             {
               "name": "",
-              "includesDirectories": [],
+              "includeDirectories": [],
               "spcompPath": "",
               "compilerArguments": [],
               "linterArguments": []

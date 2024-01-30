@@ -23,6 +23,8 @@ use std::{
 use tempfile::{tempdir, TempDir};
 use zip::ZipArchive;
 
+use crate::config::Config;
+
 use super::{GlobalState, LspClient};
 use store::options::Options;
 
@@ -271,6 +273,7 @@ impl TestBed {
                     uri: Url::from_file_path(self.temp_dir_path.clone()).unwrap(),
                     name: "test".to_string(),
                 }]),
+                root_uri: Some(Url::from_file_path(self.temp_dir_path.clone()).unwrap()),
                 ..Default::default()
             })
             .unwrap();

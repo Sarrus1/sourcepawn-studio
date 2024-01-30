@@ -21,9 +21,13 @@ use lsp_types::Url;
 use path_interner::PathInterner;
 
 mod file_id;
+mod file_set;
 mod path_interner;
 
-pub use file_id::FileId;
+pub use {
+    file_id::FileId,
+    file_set::{FileSet, FileSetConfig},
+};
 
 /// Storage for all files read by rust-analyzer.
 ///

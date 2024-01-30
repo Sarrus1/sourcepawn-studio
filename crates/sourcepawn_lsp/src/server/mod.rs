@@ -1,4 +1,4 @@
-use base_db::Change;
+use base_db::{Change, SourceRootConfig, SourceRootQuery};
 use crossbeam::channel::{unbounded, Receiver, Sender};
 use fxhash::FxHashMap;
 use ide::{Analysis, AnalysisHost};
@@ -13,7 +13,7 @@ use serde::Serialize;
 use std::{env, sync::Arc, time::Instant};
 use stdx::thread::ThreadIntent;
 use threadpool::ThreadPool;
-use vfs::{FileId, Vfs};
+use vfs::{FileId, FileSetConfig, Vfs};
 
 use crate::{
     capabilities::server_capabilities,
@@ -64,6 +64,7 @@ pub struct GlobalState {
     pub(crate) task_pool: Handle<TaskPool<Task>, Receiver<Task>>,
     pub(crate) diagnostics: DiagnosticCollection,
     pub(crate) mem_docs: MemDocs,
+    pub(crate) source_root_config: SourceRootConfig,
 
     connection: Arc<Connection>,
     client: LspClient,
@@ -99,6 +100,7 @@ impl GlobalState {
             sender: connection.sender.clone(),
             task_pool,
             mem_docs: MemDocs::default(),
+            source_root_config: SourceRootConfig::default(),
             diagnostics: DiagnosticCollection::default(),
             shutdown_requested: false,
             config: Arc::default(),
@@ -265,6 +267,8 @@ impl GlobalState {
             message: None,
         });
         log::trace!("Server is initialized.");
+
+        self.update_configuration(config);
 
         Ok(())
     }
@@ -566,26 +570,25 @@ impl GlobalState {
                 })
                 .collect();
 
-            // let mut workspace_structure_change = None;
             // A file was added or deleted
-            let _has_structure_changes = false;
+            // let mut workspace_structure_change = None;
+            let mut has_structure_changes = false;
             let mut bytes = vec![];
             for file in &changed_files {
-                let _vfs_path = &vfs.file_path(file.file_id);
-                // TODO: below
-                // if let Some(path) = vfs_path.as_path() {
-                //     let path = path.to_path_buf();
-                //     if file.is_created_or_deleted() {
-                //         has_structure_changes = true;
-                //         workspace_structure_change =
-                //             Some((path, self.crate_graph_file_dependencies.contains(vfs_path)));
-                //     }
-                // }
+                let vfs_path = &vfs.file_path(file.file_id);
+                if let Ok(path) = vfs_path.to_file_path() {
+                    let _path = path.to_path_buf();
+                    if file.is_created_or_deleted() {
+                        has_structure_changes = true;
+                        // workspace_structure_change =
+                        //     Some((path, self.crate_graph_file_dependencies.contains(vfs_path)));
+                    }
+                }
 
                 // Clear native diagnostics when their file gets deleted
-                // if !file.exists() {
-                //     self.diagnostics.clear_native_for(file.file_id);
-                // }
+                if !file.exists() {
+                    self.diagnostics.clear_native_for(file.file_id);
+                }
 
                 let text = if file.exists() {
                     let bytes = vfs.file_contents(file.file_id).to_vec();
@@ -603,17 +606,17 @@ impl GlobalState {
                 // this allows delaying the re-acquisition of the write lock
                 bytes.push((file.file_id, text));
             }
-            let _vfs = &mut *RwLockUpgradableReadGuard::upgrade(guard);
+            let vfs = &mut *RwLockUpgradableReadGuard::upgrade(guard);
             bytes.into_iter().for_each(|(file_id, text)| match text {
                 None => change.change_file(file_id, None),
                 Some((text, _line_endings)) => {
                     change.change_file(file_id, Some(text));
                 }
             });
-            // if has_structure_changes {
-            //     let roots = self.source_root_config.partition(vfs);
-            //     change.set_roots(roots);
-            // }
+            if has_structure_changes {
+                let roots = self.source_root_config.partition(vfs);
+                change.set_roots(roots);
+            }
             (change, changed_files)
         };
 
@@ -624,7 +627,7 @@ impl GlobalState {
 
     pub fn run(mut self) -> anyhow::Result<()> {
         log::debug!(
-            "sourcepawn-lsp will use a maximum of {} threads.",
+            "sourcepawn_lsp will use a maximum of {} threads.",
             self.pool.max_count()
         );
         self.initialize()?;

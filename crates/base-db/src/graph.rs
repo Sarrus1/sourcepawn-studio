@@ -1,7 +1,14 @@
-use std::hash::{Hash, Hasher};
+use std::{
+    hash::{Hash, Hasher},
+    sync::Arc,
+};
 
 use fxhash::{FxHashMap, FxHashSet};
+use lazy_static::lazy_static;
 use lsp_types::Url;
+use regex::Regex;
+use syntax::TSKind;
+use tree_sitter::QueryCursor;
 use vfs::FileId;
 
 use crate::SourceDatabase;
@@ -304,6 +311,81 @@ impl Graph {
 
         subgraphs
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum IncludeType {
+    /// #include <foo>
+    Include,
+
+    /// #tryinclude <foo>
+    TryInclude,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum IncludeKind {
+    /// #include <foo>
+    Chevrons,
+
+    /// #include "foo"
+    Quotes,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Include {
+    text: String,
+    kind: IncludeKind,
+    type_: IncludeType,
+}
+
+pub(crate) fn file_includes_query(db: &dyn SourceDatabase, file_id: FileId) -> Arc<Vec<Include>> {
+    let tree = db.parse(file_id);
+    // FIXME: We should use the preprocessed text here. Some includes might be removed by the preprocessor.
+    let source = db.file_text(file_id);
+
+    lazy_static! {
+        static ref INCLUDE_QUERY: tree_sitter::Query = tree_sitter::Query::new(
+            tree_sitter_sourcepawn::language(),
+            "(preproc_include) @include
+             (preproc_tryinclude) @tryinclude"
+        )
+        .expect("Could not build includes query.");
+    }
+
+    let mut res = vec![];
+    let mut cursor = QueryCursor::new();
+    let matches = cursor.captures(&INCLUDE_QUERY, tree.root_node(), source.as_bytes());
+    for (match_, _) in matches {
+        res.extend(match_.captures.iter().filter_map(|c| {
+            let node = c.node.child_by_field_name("path")?;
+            let text = node.utf8_text(source.as_bytes()).ok()?;
+            lazy_static! {
+                static ref RE_CHEVRON: Regex = Regex::new(r"<([^>]+)>").unwrap();
+                static ref RE_QUOTE: Regex = Regex::new("\"([^>]+)\"").unwrap();
+            }
+            let (kind, text) = if let Some(caps) = RE_CHEVRON.captures(&text) {
+                caps.get(1)
+                    .map(|cap| (IncludeKind::Chevrons, cap.as_str().to_string()))
+            } else if let Some(caps) = RE_QUOTE.captures(text) {
+                caps.get(1)
+                    .map(|cap| (IncludeKind::Quotes, cap.as_str().to_string()))
+            } else {
+                None
+            }?;
+            Include {
+                text,
+                kind,
+                type_: match TSKind::from(&c.node) {
+                    TSKind::preproc_include => IncludeType::Include,
+                    TSKind::preproc_tryinclude => IncludeType::TryInclude,
+                    _ => unreachable!(),
+                },
+            }
+            .into()
+        }));
+    }
+
+    Arc::new(res)
 }
 
 /*

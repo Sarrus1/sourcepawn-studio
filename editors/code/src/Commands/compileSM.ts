@@ -127,7 +127,7 @@ export async function run(args: URI): Promise<void> {
   ];
 
   Workspace.getConfiguration("SourcePawnLanguageServer", workspaceFolder)
-    .get<string[]>("includesDirectories")
+    .get<string[]>("includeDirectories")
     .map((e) =>
       resolve(
         workspaceFolder === undefined ? "" : workspaceFolder.uri.fsPath,
