@@ -21,6 +21,8 @@ smol_str.workspace = true
 log.workspace = true
 la-arena.workspace = true
 smallvec.workspace = true
+lazy_static.workspace = true
+regex.workspace = true
 
 
 # Local crates

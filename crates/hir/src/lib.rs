@@ -2,7 +2,7 @@ use base_db::Tree;
 use db::HirDatabase;
 use hir_def::{
     DefWithBodyId, EnumStructId, ExprId, FileDefId, FunctionId, GlobalId, InFile,
-    InferenceDiagnostic, LocalFieldId, Name,
+    InferenceDiagnostic, LocalFieldId, Lookup, Name,
 };
 use stdx::impl_from;
 use vfs::FileId;
@@ -24,6 +24,7 @@ pub enum DefResolution {
     Field(Field),
     Global(Global),
     Local(Local),
+    File(File),
 }
 
 impl<'tree> HasSource<'tree> for DefResolution {
@@ -38,10 +39,25 @@ impl<'tree> HasSource<'tree> for DefResolution {
             DefResolution::Field(field) => field.source(db, tree),
             DefResolution::Global(global) => global.source(db, tree),
             DefResolution::Local(local) => local.source(db, tree)?.source(db, tree),
+            DefResolution::File(file) => file.source(db, tree),
         }
     }
 }
 
+impl DefResolution {
+    pub fn file_id(&self, db: &dyn HirDatabase) -> FileId {
+        match self {
+            DefResolution::Function(it) => it.id.lookup(db.upcast()).id.file_id(),
+            DefResolution::EnumStruct(it) => it.id.lookup(db.upcast()).id.file_id(),
+            DefResolution::Field(it) => it.parent.id.lookup(db.upcast()).id.file_id(),
+            DefResolution::Global(it) => it.id.lookup(db.upcast()).file_id(),
+            DefResolution::Local(it) => it.parent.file_id(db.upcast()),
+            DefResolution::File(it) => it.id,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct File {
     pub(crate) id: FileId,
 }
@@ -67,6 +83,16 @@ impl File {
         self.declarations(db)
             .iter()
             .for_each(|it| acc.extend(it.diagnostics(db)));
+    }
+}
+
+impl<'tree> File {
+    fn source(
+        self,
+        _db: &dyn HirDatabase,
+        tree: &'tree Tree,
+    ) -> Option<InFile<tree_sitter::Node<'tree>>> {
+        InFile::new(self.id, tree.root_node()).into()
     }
 }
 

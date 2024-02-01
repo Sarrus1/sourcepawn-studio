@@ -4,11 +4,11 @@
 //! the default `FileSet`.
 use std::fmt;
 
-use fxhash::{FxHashMap, FxHashSet};
+use fxhash::FxHashMap;
 use lsp_types::Url;
 use nohash_hasher::IntMap;
 
-use crate::{FileId, Vfs};
+use crate::{anchored_path::AnchoredUrl, FileId, Vfs};
 
 /// A set of [`VfsPath`]s identified by [`FileId`]s.
 #[derive(Default, Clone, Eq, PartialEq)]
@@ -23,16 +23,16 @@ impl FileSet {
         self.files.len()
     }
 
-    // /// Get the id of the file corresponding to `path`.
-    // ///
-    // /// If either `path`'s [`anchor`](AnchoredPath::anchor) or the resolved path is not in
-    // /// the set, returns [`None`].
-    // pub fn resolve_path(&self, path: AnchoredPath<'_>) -> Option<FileId> {
-    //     let mut base = self.uris[&path.anchor].clone();
-    //     base.pop();
-    //     let path = base.join(path.path)?;
-    //     self.files.get(&path).copied()
-    // }
+    /// Get the id of the file corresponding to `path`.
+    ///
+    /// If either `uri`'s [`anchor`](AnchoredUrl::anchor) or the resolved path is not in
+    /// the set, returns [`None`].
+    pub fn resolve_path(&self, uri: AnchoredUrl<'_>) -> Option<FileId> {
+        let mut base = self.uris[&uri.anchor].clone().to_file_path().ok()?;
+        base.pop();
+        let path = base.join(uri.uri).canonicalize().ok()?;
+        self.files.get(&Url::from_file_path(path).ok()?).copied()
+    }
 
     /// Get the id corresponding to `uri` if it exists in the set.
     pub fn file_for_uri(&self, uri: &Url) -> Option<&FileId> {

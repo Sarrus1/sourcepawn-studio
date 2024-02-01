@@ -25,14 +25,17 @@ pub(crate) fn goto_definition(
         lsp_position_to_ts_point(&pos.position),
         lsp_position_to_ts_point(&pos.position),
     )?;
-    let def_node = sema.find_def(pos.file_id, &node)?.source(db, &tree)?.value;
+    let def = sema.find_def(pos.file_id, &node)?;
+    let file_id = def.file_id(db);
+    let source_tree = sema.parse(file_id);
+    let def_node = def.source(db, &source_tree)?.value;
 
     let mut name_range = def_node.range();
     if let Some(name_node) = def_node.child_by_field_name("name") {
         name_range = name_node.range();
     }
     Some(vec![NavigationTarget {
-        file_id: pos.file_id,
+        file_id,
         origin_selection_range: ts_range_to_lsp_range(&node.range()),
         target_range: ts_range_to_lsp_range(&def_node.range()),
         target_selection_range: ts_range_to_lsp_range(&name_range),

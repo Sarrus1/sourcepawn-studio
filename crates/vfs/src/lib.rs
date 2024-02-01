@@ -20,11 +20,13 @@ use std::{
 use lsp_types::Url;
 use path_interner::PathInterner;
 
+mod anchored_path;
 mod file_id;
 mod file_set;
 mod path_interner;
 
 pub use {
+    anchored_path::{AnchoredUrl, AnchoredUrlBuf},
     file_id::FileId,
     file_set::{FileSet, FileSetConfig},
 };

@@ -386,3 +386,19 @@ enum struct Foo {
 "#,
     ));
 }
+
+#[test]
+fn include_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#include "foo.sp"
+           |
+           ^
+
+%! foo.sp
+int foo;
+int bar;
+"#,
+    ));
+}

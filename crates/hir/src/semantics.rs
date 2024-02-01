@@ -5,8 +5,10 @@ use std::{cell::RefCell, fmt, ops, sync::Arc};
 use base_db::{is_field_receiver_node, is_name_node, Tree};
 use fxhash::FxHashMap;
 use hir_def::{resolver::ValueNs, InFile, Name, NodePtr};
+use lazy_static::lazy_static;
+use regex::Regex;
 use syntax::TSKind;
-use vfs::FileId;
+use vfs::{AnchoredUrl, FileId};
 
 use crate::{
     db::HirDatabase,
@@ -116,6 +118,22 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             } else {
                 break;
             }
+        }
+        let parent_kind = TSKind::from(node.parent()?);
+        if parent_kind == TSKind::preproc_include || parent_kind == TSKind::preproc_tryinclude {
+            let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
+            // FIXME: Dup of graph.rs
+            lazy_static! {
+                static ref RE_CHEVRON: Regex = Regex::new(r"^<([^>]+)>$").unwrap();
+                static ref RE_QUOTE: Regex = Regex::new("^\"([^>]+)\"$").unwrap();
+            }
+            let text = match TSKind::from(node) {
+                TSKind::system_lib_string => RE_CHEVRON.captures(&text)?.get(1)?.as_str(),
+                TSKind::string_literal => RE_QUOTE.captures(&text)?.get(1)?.as_str(),
+                _ => unreachable!(),
+            };
+            let file_id = self.db.resolve_path(AnchoredUrl::new(file_id, text))?;
+            return Some(DefResolution::File(file_id.into())).into();
         }
         match TSKind::from(container) {
             TSKind::function_definition => {

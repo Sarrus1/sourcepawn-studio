@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use graph::{file_includes_query, Graph, Include};
 use input::{SourceRoot, SourceRootId};
-use vfs::FileId;
+use vfs::{AnchoredUrl, FileId};
 
 mod change;
 mod graph;
@@ -13,6 +13,9 @@ pub use {change::Change, input::SourceRootConfig};
 pub trait FileLoader {
     /// Text of the file.
     fn file_text(&self, file_id: FileId) -> Arc<str>;
+
+    /// Resolve a path to a file.
+    fn resolve_path(&self, uri: AnchoredUrl<'_>) -> Option<FileId>;
 }
 
 #[derive(Debug, Clone)]
@@ -132,6 +135,12 @@ pub struct FileLoaderDelegate<T>(pub T);
 impl<T: SourceDatabaseExt> FileLoader for FileLoaderDelegate<&'_ T> {
     fn file_text(&self, file_id: FileId) -> Arc<str> {
         SourceDatabaseExt::file_text(self.0, file_id)
+    }
+    fn resolve_path(&self, uri: AnchoredUrl<'_>) -> Option<FileId> {
+        // FIXME: this *somehow* should be platform agnostic...
+        let source_root = self.0.file_source_root(uri.anchor);
+        let source_root = self.0.source_root(source_root);
+        source_root.resolve_path(&uri)
     }
 }
 
