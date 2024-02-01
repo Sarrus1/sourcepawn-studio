@@ -119,6 +119,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 break;
             }
         }
+
         let parent_kind = TSKind::from(node.parent()?);
         if parent_kind == TSKind::preproc_include || parent_kind == TSKind::preproc_tryinclude {
             let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
@@ -129,10 +130,23 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             }
             let text = match TSKind::from(node) {
                 TSKind::system_lib_string => RE_CHEVRON.captures(&text)?.get(1)?.as_str(),
-                TSKind::string_literal => RE_QUOTE.captures(&text)?.get(1)?.as_str(),
+                TSKind::string_literal => {
+                    let text = RE_QUOTE.captures(&text)?.get(1)?.as_str();
+                    // try to resolve path relative to the referencing file.
+                    if let Some(file_id) = self
+                        .db
+                        .resolve_path(AnchoredUrl::new(file_id, infer_include_ext(text).as_str()))
+                    {
+                        return Some(DefResolution::File(file_id.into())).into();
+                    }
+                    text
+                }
                 _ => unreachable!(),
             };
-            let file_id = self.db.resolve_path(AnchoredUrl::new(file_id, text))?;
+            let text = infer_include_ext(text);
+            let file_id = self
+                .db
+                .resolve_path(AnchoredUrl::new(file_id, text.as_str()))?;
             return Some(DefResolution::File(file_id.into())).into();
         }
         match TSKind::from(container) {
@@ -342,4 +356,12 @@ impl<'db> SemanticsImpl<'db> {
         (crate::GlobalId, global_to_def),
         (crate::Local, local_to_def),
     ];
+}
+
+pub fn infer_include_ext(path: &str) -> String {
+    if path.ends_with(".sp") {
+        path.to_string()
+    } else {
+        format!("{}.inc", path)
+    }
 }

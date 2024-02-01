@@ -2,6 +2,7 @@ use lsp_types::{
     DidChangeConfigurationParams, DidChangeTextDocumentParams, DidCloseTextDocumentParams,
     DidOpenTextDocumentParams,
 };
+use store::normalize_uri;
 
 use crate::{
     capabilities::ClientCapabilitiesExt, config::Config, lsp::utils::apply_document_changes,
@@ -12,7 +13,12 @@ pub(crate) fn handle_did_change_text_document(
     state: &mut GlobalState,
     params: DidChangeTextDocumentParams,
 ) -> anyhow::Result<()> {
-    let uri = params.text_document.uri;
+    log::debug!(
+        "Handling did change text document {}",
+        params.text_document.uri
+    );
+    let mut uri = params.text_document.uri;
+    normalize_uri(&mut uri);
 
     match state.mem_docs.get_mut(&uri) {
         Some(doc) => {
@@ -49,7 +55,13 @@ pub(crate) fn handle_did_open_text_document(
     state: &mut GlobalState,
     params: DidOpenTextDocumentParams,
 ) -> anyhow::Result<()> {
-    let uri = params.text_document.uri;
+    log::debug!(
+        "Handling did open text document {}",
+        params.text_document.uri
+    );
+    let mut uri = params.text_document.uri;
+    normalize_uri(&mut uri);
+
     let already_exists = state
         .mem_docs
         .insert(uri.clone(), DocumentData::new(params.text_document.version))
@@ -62,6 +74,7 @@ pub(crate) fn handle_did_open_text_document(
         .write()
         .set_file_contents(uri, Some(params.text_document.text.into_bytes()));
 
+    log::debug!("Handled did open text document",);
     Ok(())
 }
 
@@ -69,7 +82,13 @@ pub(crate) fn handle_did_close_text_document(
     state: &mut GlobalState,
     params: DidCloseTextDocumentParams,
 ) -> anyhow::Result<()> {
-    let uri = params.text_document.uri;
+    log::debug!(
+        "Handling did change text document {}",
+        params.text_document.uri
+    );
+
+    let mut uri = params.text_document.uri;
+    normalize_uri(&mut uri);
 
     if state.mem_docs.remove(&uri).is_err() {
         tracing::error!("orphan DidCloseTextDocument: {}", uri);
@@ -95,6 +114,8 @@ pub(crate) fn handle_did_change_configuration(
     state: &mut GlobalState,
     _params: DidChangeConfigurationParams,
 ) -> anyhow::Result<()> {
+    log::debug!("Handling did change configuration",);
+
     // As stated in https://github.com/microsoft/language-server-protocol/issues/676,
     // this notification's parameters should be ignored and the actual config queried separately.
     if !state.config.caps().has_pull_configuration_support() {

@@ -48,12 +48,13 @@ parking_lot.workspace = true
 uuid.workspace = true
 tracing.workspace = true
 salsa.workspace = true
+dunce.workspace = true
 nohash-hasher = "0.2.0"
 num_cpus = "1.16.0"
 # This is only used in the fixture module for benchmarks and tests.
 itertools = "0.11.0"
 zip = "0.6.6"
-dunce = "1.0.4"      # FIXME: Move this to dev dependencies if we remove Fixtures from the sourcepawn_lsp crate.
+
 
 # Local crates
 linter.workspace = true

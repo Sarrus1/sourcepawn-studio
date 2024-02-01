@@ -1,4 +1,5 @@
 use anyhow::Context;
+use store::normalize_uri;
 
 use crate::{
     lsp::{from_proto, to_proto},
@@ -8,8 +9,10 @@ use crate::{
 
 pub(crate) fn handle_goto_definition(
     snap: GlobalStateSnapshot,
-    params: lsp_types::GotoDefinitionParams,
+    mut params: lsp_types::GotoDefinitionParams,
 ) -> anyhow::Result<Option<lsp_types::GotoDefinitionResponse>> {
+    log::debug!("goto def: {:?}", params);
+    normalize_uri(&mut params.text_document_position_params.text_document.uri);
     let pos = from_proto::file_position(&snap, params.text_document_position_params.clone())?;
 
     let targets = match snap.analysis.goto_definition(pos)? {

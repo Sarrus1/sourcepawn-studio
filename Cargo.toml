@@ -71,6 +71,7 @@ smallvec = { version = "1.10.0", features = [
     "union",
     "const_generics",
 ] }
+dunce = "1.0.4"
 
 
 [workspace.dependencies.uuid]

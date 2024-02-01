@@ -1,4 +1,4 @@
-use base_db::{Change, SourceRootConfig, SourceRootQuery};
+use base_db::{Change, SourceRootConfig};
 use crossbeam::channel::{unbounded, Receiver, Sender};
 use fxhash::FxHashMap;
 use ide::{Analysis, AnalysisHost};
@@ -12,8 +12,9 @@ use parking_lot::{RwLock, RwLockUpgradableReadGuard, RwLockWriteGuard};
 use serde::Serialize;
 use std::{env, sync::Arc, time::Instant};
 use stdx::thread::ThreadIntent;
+use store::normalize_uri;
 use threadpool::ThreadPool;
-use vfs::{FileId, FileSetConfig, Vfs};
+use vfs::{FileId, Vfs};
 
 use crate::{
     capabilities::server_capabilities,
@@ -23,7 +24,6 @@ use crate::{
     dispatch::{NotificationDispatcher, RequestDispatcher},
     from_json,
     line_index::LineEndings,
-    lsp::from_proto,
     lsp_ext,
     mem_docs::MemDocs,
     task_pool::TaskPool,
@@ -180,6 +180,7 @@ impl GlobalState {
     // }
 
     fn initialize(&mut self) -> anyhow::Result<()> {
+        log::debug!("Initializing server...");
         let (id, initialize_params) = self.connection.initialize_start()?;
         let lsp_types::InitializeParams {
             root_uri,
@@ -266,9 +267,9 @@ impl GlobalState {
             quiescent: !self.indexing,
             message: None,
         });
-        log::trace!("Server is initialized.");
 
         self.update_configuration(config);
+        log::debug!("Server is initialized.");
 
         Ok(())
     }
@@ -327,6 +328,8 @@ impl GlobalState {
 
     /// Handles a request.
     fn on_request(&mut self, req: Request) {
+        log::debug!("received request: {:?}", req);
+        let req_id = req.id.clone();
         let mut dispatcher = RequestDispatcher {
             req: Some(req),
             global_state: self,
@@ -358,6 +361,7 @@ impl GlobalState {
             .on::<lsp_request::GotoDefinition>(handlers::handle_goto_definition)
             .on::<lsp_ext::SyntaxTree>(handlers::handle_syntax_tree)
             .finish();
+        log::debug!("Handled request id: {:?}", req_id);
     }
 
     pub(super) fn on_notification(&mut self, not: lsp_server::Notification) -> anyhow::Result<()> {
@@ -410,6 +414,7 @@ impl GlobalState {
     }
 
     fn handle_event(&mut self, event: Event) -> anyhow::Result<()> {
+        log::debug!("handle_event: {:?}", event);
         let loop_start = Instant::now();
         match event {
             Event::Lsp(msg) => match msg {
@@ -431,10 +436,12 @@ impl GlobalState {
         }
         self.process_changes();
 
-        self.update_diagnostics();
+        // self.update_diagnostics();
         if let Some(diagnostic_changes) = self.diagnostics.take_changes() {
             for file_id in diagnostic_changes {
-                let uri = file_id_to_url(&self.vfs.read(), file_id);
+                let mut uri = file_id_to_url(&self.vfs.read(), file_id);
+                normalize_uri(&mut uri);
+
                 let mut diagnostics = self
                     .diagnostics
                     .diagnostics_for(file_id)
@@ -484,7 +491,7 @@ impl GlobalState {
         let subscriptions = self
             .mem_docs
             .iter()
-            .map(|path| self.vfs.read().file_id(path).unwrap())
+            .map(|uri| self.vfs.read().file_id(uri).unwrap())
             // .filter(|&file_id| {
             //     let source_root = db.file_source_root(file_id);
             //     // Only publish diagnostics for files in the workspace, not from crates.io deps
@@ -614,6 +621,7 @@ impl GlobalState {
                 }
             });
             if has_structure_changes {
+                eprintln!("source_root_config: {:?}", self.source_root_config);
                 let roots = self.source_root_config.partition(vfs);
                 change.set_roots(roots);
             }
@@ -645,6 +653,7 @@ impl GlobalState {
     }
 }
 
+#[derive(Debug)]
 enum Event {
     Lsp(lsp_server::Message),
     Task(Task),

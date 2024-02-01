@@ -88,7 +88,8 @@ fn setup_logger(opts: Opts) {
                 message
             ))
         })
-        .level(verbosity_level)
+        .level(LevelFilter::Error)
+        .level_for("sourcepawn_lsp", verbosity_level)
         .chain(io::stderr());
 
     let logger = match opts.log_file {

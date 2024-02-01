@@ -2,13 +2,13 @@
 //!
 //! Files which do not belong to any explicitly configured `FileSet` belong to
 //! the default `FileSet`.
-use std::fmt;
+use std::{fmt, path::PathBuf};
 
 use fxhash::FxHashMap;
 use lsp_types::Url;
 use nohash_hasher::IntMap;
 
-use crate::{anchored_path::AnchoredUrl, FileId, Vfs};
+use crate::{anchored_path::AnchoredUrl, normalize_uri, FileId, Vfs};
 
 /// A set of [`VfsPath`]s identified by [`FileId`]s.
 #[derive(Default, Clone, Eq, PartialEq)]
@@ -28,10 +28,25 @@ impl FileSet {
     /// If either `uri`'s [`anchor`](AnchoredUrl::anchor) or the resolved path is not in
     /// the set, returns [`None`].
     pub fn resolve_path(&self, uri: AnchoredUrl<'_>) -> Option<FileId> {
+        // FIXME: Account for case insensitive filesystems.
+        let path = PathBuf::from(uri.uri);
+        // For absolute paths, we can just canonicalize and look it up.
+        if path.is_absolute() {
+            return self.files.get(&Url::from_file_path(path).ok()?).copied();
+        }
+        // Try relative to the anchor.
         let mut base = self.uris[&uri.anchor].clone().to_file_path().ok()?;
         base.pop();
-        let path = base.join(uri.uri).canonicalize().ok()?;
-        self.files.get(&Url::from_file_path(path).ok()?).copied()
+        let path = match dunce::canonicalize(base.join(uri.uri)) {
+            Ok(path) => path,
+            Err(err) => {
+                eprintln!("failed to canonicalize {:?} {:?}", uri, err);
+                return None;
+            }
+        };
+        let mut uri = Url::from_file_path(path).ok()?;
+        normalize_uri(&mut uri);
+        self.files.get(&uri).copied()
     }
 
     /// Get the id corresponding to `uri` if it exists in the set.
@@ -74,7 +89,8 @@ pub struct FileSetConfig {
 }
 
 impl FileSetConfig {
-    pub fn set_roots(&mut self, roots: Vec<Url>) {
+    pub fn set_roots(&mut self, mut roots: Vec<Url>) {
+        roots.iter_mut().for_each(normalize_uri);
         self.roots = roots;
     }
 
@@ -87,6 +103,7 @@ impl FileSetConfig {
         for (file_id, uri) in vfs.iter() {
             for (root, root_uri) in self.roots.iter().enumerate() {
                 // FIXME: This breaks for nested roots.
+                eprintln!("checking if {:?} starts with {:?}", uri, root_uri);
                 if uri.as_str().starts_with(root_uri.as_str()) {
                     res[root].insert(file_id, uri.clone());
                     break;

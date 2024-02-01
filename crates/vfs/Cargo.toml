@@ -15,3 +15,4 @@ lazy_static.workspace = true
 fxhash.workspace = true
 nohash-hasher.workspace = true
 indexmap.workspace = true
+dunce.workspace = true
