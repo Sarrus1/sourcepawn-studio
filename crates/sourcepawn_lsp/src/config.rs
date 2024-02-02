@@ -96,9 +96,11 @@ impl Config {
         &self.caps
     }
 
-    // pub fn publish_diagnostics(&self) -> bool {
-    //     self.data.diagnostics_enable
-    // }
+    pub fn publish_diagnostics(&self) -> bool {
+        // TODO: Implement this config
+        // self.data.diagnostics_enable
+        true
+    }
 
     pub fn diagnostics(&self) -> DiagnosticsConfig {
         DiagnosticsConfig {

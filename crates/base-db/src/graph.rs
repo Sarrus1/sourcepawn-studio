@@ -9,7 +9,7 @@ use lsp_types::Url;
 use regex::Regex;
 use syntax::TSKind;
 use tree_sitter::QueryCursor;
-use vfs::FileId;
+use vfs::{AnchoredUrl, FileId};
 
 use crate::SourceDatabase;
 
@@ -333,9 +333,23 @@ pub enum IncludeKind {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Include {
-    text: String,
+    id: FileId,
     kind: IncludeKind,
     type_: IncludeType,
+}
+
+impl Include {
+    pub fn file_id(&self) -> FileId {
+        self.id
+    }
+
+    pub fn kind(&self) -> IncludeKind {
+        self.kind
+    }
+
+    pub fn type_(&self) -> IncludeType {
+        self.type_
+    }
 }
 
 pub(crate) fn file_includes_query(db: &dyn SourceDatabase, file_id: FileId) -> Arc<Vec<Include>> {
@@ -363,29 +377,45 @@ pub(crate) fn file_includes_query(db: &dyn SourceDatabase, file_id: FileId) -> A
                 static ref RE_CHEVRON: Regex = Regex::new(r"<([^>]+)>").unwrap();
                 static ref RE_QUOTE: Regex = Regex::new("\"([^>]+)\"").unwrap();
             }
-            let (kind, text) = if let Some(caps) = RE_CHEVRON.captures(&text) {
-                caps.get(1)
-                    .map(|cap| (IncludeKind::Chevrons, cap.as_str().to_string()))
-            } else if let Some(caps) = RE_QUOTE.captures(text) {
-                caps.get(1)
-                    .map(|cap| (IncludeKind::Quotes, cap.as_str().to_string()))
-            } else {
-                None
-            }?;
-            Include {
-                text,
-                kind,
-                type_: match TSKind::from(&c.node) {
-                    TSKind::preproc_include => IncludeType::Include,
-                    TSKind::preproc_tryinclude => IncludeType::TryInclude,
-                    _ => unreachable!(),
-                },
-            }
-            .into()
+            let type_ = match TSKind::from(&c.node) {
+                TSKind::preproc_include => IncludeType::Include,
+                TSKind::preproc_tryinclude => IncludeType::TryInclude,
+                _ => unreachable!(),
+            };
+            let text = match TSKind::from(node) {
+                TSKind::system_lib_string => RE_CHEVRON.captures(&text)?.get(1)?.as_str(),
+                TSKind::string_literal => {
+                    let text = RE_QUOTE.captures(&text)?.get(1)?.as_str();
+                    // try to resolve path relative to the referencing file.
+                    if let Some(file_id) =
+                        db.resolve_path(AnchoredUrl::new(file_id, infer_include_ext(text).as_str()))
+                    {
+                        return Some(
+                            Include {
+                                id: file_id,
+                                kind: IncludeKind::Quotes,
+                                type_,
+                            }
+                            .into(),
+                        );
+                    }
+                    text
+                }
+                _ => unreachable!(),
+            };
+            None
         }));
     }
 
     Arc::new(res)
+}
+
+pub fn infer_include_ext(path: &str) -> String {
+    if path.ends_with(".sp") || path.ends_with(".inc") {
+        path.to_string()
+    } else {
+        format!("{}.inc", path)
+    }
 }
 
 /*

@@ -91,46 +91,52 @@ pub struct DefMap {
 
 impl DefMap {
     pub fn file_def_map_query(db: &dyn DefDatabase, file_id: FileId) -> Arc<Self> {
-        let item_tree = db.file_item_tree(file_id);
+        let includes = db.file_includes(file_id);
+        let mut include_ids = vec![file_id];
+        include_ids.extend(includes.iter().map(|it| it.file_id()));
+
         let mut res = DefMap::default();
-        let tree_id = TreeId::new(file_id, None);
-        for item in item_tree.top_level_items() {
-            match item {
-                FileItem::Function(id) => {
-                    let func = &item_tree[*id];
-                    let fn_id = FunctionLoc {
-                        container: file_id.into(),
-                        id: ItemTreeId {
-                            tree: tree_id,
+        for file_id in include_ids {
+            let item_tree = db.file_item_tree(file_id);
+            let tree_id = TreeId::new(file_id, None);
+            for item in item_tree.top_level_items() {
+                match item {
+                    FileItem::Function(id) => {
+                        let func = &item_tree[*id];
+                        let fn_id = FunctionLoc {
+                            container: file_id.into(),
+                            id: ItemTreeId {
+                                tree: tree_id,
+                                value: *id,
+                            },
+                        }
+                        .intern(db);
+                        res.declare(func.name.clone(), FileDefId::FunctionId(fn_id));
+                    }
+                    FileItem::Variable(id) => {
+                        let var = &item_tree[*id];
+                        let var_id = GlobalLoc {
+                            tree: TreeId::new(file_id, None),
                             value: *id,
-                        },
+                        }
+                        .intern(db);
+                        res.declare(var.name.clone(), FileDefId::GlobalId(var_id));
                     }
-                    .intern(db);
-                    res.declare(func.name.clone(), FileDefId::FunctionId(fn_id));
-                }
-                FileItem::Variable(id) => {
-                    let var = &item_tree[*id];
-                    let var_id = GlobalLoc {
-                        tree: TreeId::new(file_id, None),
-                        value: *id,
+                    FileItem::EnumStruct(id) => {
+                        let enum_struct = &item_tree[*id];
+                        let enum_struct_id = EnumStructLoc {
+                            container: file_id.into(),
+                            id: ItemTreeId {
+                                tree: tree_id,
+                                value: *id,
+                            },
+                        }
+                        .intern(db);
+                        res.declare(
+                            enum_struct.name.clone(),
+                            FileDefId::EnumStructId(enum_struct_id),
+                        );
                     }
-                    .intern(db);
-                    res.declare(var.name.clone(), FileDefId::GlobalId(var_id));
-                }
-                FileItem::EnumStruct(id) => {
-                    let enum_struct = &item_tree[*id];
-                    let enum_struct_id = EnumStructLoc {
-                        container: file_id.into(),
-                        id: ItemTreeId {
-                            tree: tree_id,
-                            value: *id,
-                        },
-                    }
-                    .intern(db);
-                    res.declare(
-                        enum_struct.name.clone(),
-                        FileDefId::EnumStructId(enum_struct_id),
-                    );
                 }
             }
         }

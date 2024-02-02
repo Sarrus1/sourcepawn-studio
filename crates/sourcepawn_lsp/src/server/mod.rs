@@ -39,6 +39,7 @@ mod handlers {
     pub(crate) mod notification;
     pub(crate) mod request;
 }
+mod reload;
 // mod requests;
 
 // Enforces drop order
@@ -72,7 +73,10 @@ pub struct GlobalState {
     indexing: bool,
     amxxpawn_mode: bool,
 
+    // status
     pub(crate) shutdown_requested: bool,
+    pub(crate) last_reported_status: Option<lsp_ext::ServerStatusParams>,
+
     pub(crate) config: Arc<Config>,
     pub(crate) config_errors: Option<serde_json::Error>,
 
@@ -102,7 +106,10 @@ impl GlobalState {
             mem_docs: MemDocs::default(),
             source_root_config: SourceRootConfig::default(),
             diagnostics: DiagnosticCollection::default(),
+
             shutdown_requested: false,
+            last_reported_status: None,
+
             config: Arc::default(),
             config_errors: Default::default(),
             analysis_host: AnalysisHost::default(),
@@ -415,6 +422,9 @@ impl GlobalState {
 
     fn handle_event(&mut self, event: Event) -> anyhow::Result<()> {
         log::debug!("handle_event: {:?}", event);
+
+        let was_quiescent = self.is_quiescent();
+
         let loop_start = Instant::now();
         match event {
             Event::Lsp(msg) => match msg {
@@ -434,8 +444,42 @@ impl GlobalState {
                 }
             },
         }
-        self.process_changes();
+        let state_changed = self.process_changes();
+        let memdocs_added_or_removed = self.mem_docs.take_changes();
 
+        if self.is_quiescent() {
+            let became_quiescent = !(was_quiescent);
+
+            // let client_refresh = !was_quiescent || state_changed;
+            // if client_refresh {
+            // Refresh semantic tokens if the client supports it.
+            // if self.config.semantic_tokens_refresh() {
+            //     self.semantic_tokens_cache.lock().clear();
+            //     self.send_request::<lsp_types::request::SemanticTokensRefresh>((), |_, _| ());
+            // }
+
+            // Refresh code lens if the client supports it.
+            // if self.config.code_lens_refresh() {
+            //     self.send_request::<lsp_types::request::CodeLensRefresh>((), |_, _| ());
+            // }
+
+            // Refresh inlay hints if the client supports it.
+            // if (self.send_hint_refresh_query || self.proc_macro_changed)
+            //     && self.config.inlay_hints_refresh()
+            // {
+            //     self.send_request::<lsp_types::request::InlayHintRefreshRequest>((), |_, _| ());
+            //     self.send_hint_refresh_query = false;
+            // }
+            // }
+
+            let update_diagnostics = (!was_quiescent || state_changed || memdocs_added_or_removed)
+                && self.config.publish_diagnostics();
+            if update_diagnostics {
+                self.update_diagnostics()
+            }
+        }
+
+        // FIXME: Infinite loop
         // self.update_diagnostics();
         if let Some(diagnostic_changes) = self.diagnostics.take_changes() {
             for file_id in diagnostic_changes {
@@ -483,6 +527,9 @@ impl GlobalState {
                 );
             }
         }
+
+        self.update_status_or_notify();
+
         Ok(())
     }
 
@@ -512,6 +559,35 @@ impl GlobalState {
                 let snapshot = self.snapshot();
                 move || Task::Diagnostics(fetch_native_diagnostics(snapshot, subscriptions))
             });
+    }
+
+    fn update_status_or_notify(&mut self) {
+        let status = self.current_status();
+        if self.last_reported_status.as_ref() != Some(&status) {
+            self.last_reported_status = Some(status.clone());
+
+            // TODO: Handle this config eventually.
+            // if self.config.server_status_notification() {
+            //     self.send_notification::<lsp_ext::ServerStatusNotification>(status);
+            // } else
+            if let (health @ (lsp_ext::Health::Warning | lsp_ext::Health::Error), Some(message)) =
+                (status.health, &status.message)
+            {
+                // let open_log_button = tracing::enabled!(tracing::Level::ERROR)
+                //     && (self.fetch_build_data_error().is_err()
+                //         || self.fetch_workspace_error().is_err());
+                let open_log_button = false;
+                self.show_message(
+                    match health {
+                        lsp_ext::Health::Ok => lsp_types::MessageType::INFO,
+                        lsp_ext::Health::Warning => lsp_types::MessageType::WARNING,
+                        lsp_ext::Health::Error => lsp_types::MessageType::ERROR,
+                    },
+                    message.clone(),
+                    open_log_button,
+                );
+            }
+        }
     }
 
     pub(crate) fn process_changes(&mut self) -> bool {
@@ -638,6 +714,8 @@ impl GlobalState {
             "sourcepawn_lsp will use a maximum of {} threads.",
             self.pool.max_count()
         );
+        self.update_status_or_notify();
+
         self.initialize()?;
         while let Some(event) = self.next_event(&self.connection.receiver) {
             if matches!(
