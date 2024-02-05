@@ -128,6 +128,7 @@ pub fn diagnostics(
         let d = match diag {
             AnyDiagnostic::UnresolvedField(d) => handlers::unresolved_field::f(&ctx, &d),
             AnyDiagnostic::UnresolvedMethodCall(d) => handlers::unresolved_method_call::f(&ctx, &d),
+            AnyDiagnostic::UnresolvedInclude(d) => handlers::unresolved_include::f(&ctx, &d),
         };
         res.push(d);
     }

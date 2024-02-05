@@ -2,7 +2,11 @@ use std::sync::Arc;
 
 use base_db::SourceDatabase;
 use fxhash::FxHashMap;
-use vfs::FileId;
+use lazy_static::lazy_static;
+use regex::Regex;
+use syntax::TSKind;
+use tree_sitter::QueryCursor;
+use vfs::{AnchoredUrl, FileId};
 
 use crate::{
     ast_id_map::AstIdMap,
@@ -11,7 +15,8 @@ use crate::{
     infer,
     item_tree::{ItemTree, Name},
     BlockId, BlockLoc, DefWithBodyId, EnumStructId, EnumStructLoc, FileDefId, FileItem, FunctionId,
-    FunctionLoc, GlobalId, GlobalLoc, InferenceResult, Intern, ItemTreeId, Lookup, TreeId,
+    FunctionLoc, GlobalId, GlobalLoc, InFile, InferenceResult, Intern, ItemTreeId, Lookup, NodePtr,
+    TreeId,
 };
 
 #[salsa::query_group(InternDatabaseStorage)]
@@ -63,10 +68,129 @@ pub trait DefDatabase: InternDatabase {
     fn enum_struct_data(&self, id: EnumStructId) -> Arc<EnumStructData>;
     // endregion: data
 
+    #[salsa::invoke(file_includes_query)]
+    fn file_includes(&self, file_id: FileId) -> (Arc<Vec<Include>>, Arc<Vec<UnresolvedInclude>>);
+
     // region: infer
     #[salsa::invoke(infer::infer_query)]
     fn infer(&self, def: DefWithBodyId) -> Arc<InferenceResult>;
     // endregion: infer
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum IncludeType {
+    /// #include <foo>
+    Include,
+
+    /// #tryinclude <foo>
+    TryInclude,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum IncludeKind {
+    /// #include <foo>
+    Chevrons,
+
+    /// #include "foo"
+    Quotes,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Include {
+    id: FileId,
+    kind: IncludeKind,
+    type_: IncludeType,
+}
+
+impl Include {
+    pub fn file_id(&self) -> FileId {
+        self.id
+    }
+
+    pub fn kind(&self) -> IncludeKind {
+        self.kind
+    }
+
+    pub fn type_(&self) -> IncludeType {
+        self.type_
+    }
+}
+
+pub(crate) fn file_includes_query(
+    db: &dyn DefDatabase,
+    file_id: FileId,
+) -> (Arc<Vec<Include>>, Arc<Vec<UnresolvedInclude>>) {
+    let tree = db.parse(file_id);
+    // FIXME: We should use the preprocessed text here. Some includes might be removed by the preprocessor.
+    let source = db.file_text(file_id);
+
+    lazy_static! {
+        static ref INCLUDE_QUERY: tree_sitter::Query = tree_sitter::Query::new(
+            tree_sitter_sourcepawn::language(),
+            "(preproc_include) @include
+             (preproc_tryinclude) @tryinclude"
+        )
+        .expect("Could not build includes query.");
+    }
+
+    let mut res = vec![];
+    let mut cursor = QueryCursor::new();
+    let matches = cursor.captures(&INCLUDE_QUERY, tree.root_node(), source.as_bytes());
+
+    let mut unresolved = vec![];
+    for (match_, _) in matches {
+        res.extend(match_.captures.iter().filter_map(|c| {
+            let node = c.node.child_by_field_name("path")?;
+            let text = node.utf8_text(source.as_bytes()).ok()?;
+            lazy_static! {
+                static ref RE_CHEVRON: Regex = Regex::new(r"<([^>]+)>").unwrap();
+                static ref RE_QUOTE: Regex = Regex::new("\"([^>]+)\"").unwrap();
+            }
+            let type_ = match TSKind::from(&c.node) {
+                TSKind::preproc_include => IncludeType::Include,
+                TSKind::preproc_tryinclude => IncludeType::TryInclude,
+                _ => unreachable!(),
+            };
+            let text = match TSKind::from(node) {
+                TSKind::system_lib_string => RE_CHEVRON.captures(text)?.get(1)?.as_str(),
+                TSKind::string_literal => {
+                    let text = RE_QUOTE.captures(text)?.get(1)?.as_str();
+                    // try to resolve path relative to the referencing file.
+                    if let Some(file_id) = db.resolve_path(AnchoredUrl::new(file_id, text)) {
+                        return Some(Include {
+                            id: file_id,
+                            kind: IncludeKind::Quotes,
+                            type_,
+                        });
+                    }
+                    text
+                }
+                _ => unreachable!(),
+            };
+            // TODO: resolve the include
+            unresolved.push(UnresolvedInclude {
+                expr: InFile::new(file_id, NodePtr::from(&node)),
+                path: text.to_string(),
+            });
+            None
+        }));
+    }
+
+    (Arc::new(res), Arc::new(unresolved))
+}
+
+pub fn infer_include_ext(path: &str) -> String {
+    if path.ends_with(".sp") || path.ends_with(".inc") {
+        path.to_string()
+    } else {
+        format!("{}.inc", path)
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct UnresolvedInclude {
+    pub expr: InFile<NodePtr>,
+    pub path: String,
 }
 
 /// For `DefMap`s computed for a block expression, this stores its location in the parent map.
@@ -91,7 +215,7 @@ pub struct DefMap {
 
 impl DefMap {
     pub fn file_def_map_query(db: &dyn DefDatabase, file_id: FileId) -> Arc<Self> {
-        let includes = db.file_includes(file_id);
+        let includes = db.file_includes(file_id).0;
         let mut include_ids = vec![file_id];
         include_ids.extend(includes.iter().map(|it| it.file_id()));
 

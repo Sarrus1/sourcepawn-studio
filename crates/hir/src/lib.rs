@@ -80,6 +80,15 @@ impl File {
     }
 
     pub fn diagnostics(self, db: &dyn HirDatabase, acc: &mut Vec<AnyDiagnostic>) {
+        db.file_includes(self.id).1.iter().for_each(|it| {
+            acc.push(AnyDiagnostic::UnresolvedInclude(
+                UnresolvedInclude {
+                    expr: it.expr,
+                    path: it.path.clone(),
+                }
+                .into(),
+            ))
+        });
         self.declarations(db)
             .iter()
             .for_each(|it| acc.extend(it.diagnostics(db)));

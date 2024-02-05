@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use graph::{file_includes_query, Graph, Include};
+use graph::Graph;
 use input::{SourceRoot, SourceRootId};
 use vfs::{AnchoredUrl, FileId};
 
@@ -88,9 +88,6 @@ pub trait SourceDatabase: FileLoader + std::fmt::Debug {
     /// Parses the file into the syntax tree.
     #[salsa::invoke(parse_query)]
     fn parse(&self, file_id: FileId) -> Tree;
-
-    #[salsa::invoke(file_includes_query)]
-    fn file_includes(&self, file_id: FileId) -> Arc<Vec<Include>>;
 
     #[salsa::input]
     fn projects_graph(&self) -> Graph;

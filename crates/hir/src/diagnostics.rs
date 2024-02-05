@@ -23,7 +23,13 @@ macro_rules! diagnostics {
     };
 }
 
-diagnostics![UnresolvedField, UnresolvedMethodCall,];
+diagnostics![UnresolvedInclude, UnresolvedField, UnresolvedMethodCall,];
+
+#[derive(Debug)]
+pub struct UnresolvedInclude {
+    pub expr: InFile<NodePtr>,
+    pub path: String,
+}
 
 #[derive(Debug)]
 pub struct UnresolvedField {
