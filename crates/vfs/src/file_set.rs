@@ -5,16 +5,16 @@
 use std::{fmt, path::PathBuf};
 
 use fxhash::FxHashMap;
-use lsp_types::Url;
 use nohash_hasher::IntMap;
+use paths::AbsPathBuf;
 
-use crate::{anchored_path::AnchoredUrl, normalize_uri, FileId, Vfs};
+use crate::{anchored_path::AnchoredUrl, vfs_path::VfsPath, FileId, Vfs};
 
 /// A set of [`VfsPath`]s identified by [`FileId`]s.
 #[derive(Default, Clone, Eq, PartialEq)]
 pub struct FileSet {
-    files: FxHashMap<Url, FileId>,
-    uris: IntMap<FileId, Url>,
+    files: FxHashMap<VfsPath, FileId>,
+    uris: IntMap<FileId, VfsPath>,
 }
 
 impl FileSet {
@@ -25,47 +25,41 @@ impl FileSet {
 
     /// Get the id of the file corresponding to `path`.
     ///
-    /// If either `uri`'s [`anchor`](AnchoredUrl::anchor) or the resolved path is not in
+    /// If either `path`'s [`anchor`](AnchoredUrl::anchor) or the resolved path is not in
     /// the set, returns [`None`].
-    pub fn resolve_path(&self, uri: AnchoredUrl<'_>) -> Option<FileId> {
+    pub fn resolve_path(&self, path: AnchoredUrl<'_>) -> Option<FileId> {
         // FIXME: Account for case insensitive filesystems.
-        let path = PathBuf::from(uri.uri);
+        let abs_path = PathBuf::from(path.path);
         // For absolute paths, we can just canonicalize and look it up.
-        if path.is_absolute() {
-            return self.files.get(&Url::from_file_path(path).ok()?).copied();
+        if abs_path.is_absolute() {
+            let abs_path = AbsPathBuf::try_from(abs_path).ok()?;
+            return self.files.get(&VfsPath::from(abs_path)).copied();
         }
+
         // Try relative to the anchor.
-        let mut base = self.uris[&uri.anchor].clone().to_file_path().ok()?;
+        let mut base = self.uris[&path.anchor].clone();
         base.pop();
-        let path = match dunce::canonicalize(base.join(uri.uri)) {
-            Ok(path) => path,
-            Err(err) => {
-                eprintln!("failed to canonicalize {:?} {:?}", uri, err);
-                return None;
-            }
-        };
-        let mut uri = Url::from_file_path(path).ok()?;
-        normalize_uri(&mut uri);
-        self.files.get(&uri).copied()
+        let path = base.join(path.path)?;
+        self.files.get(&path).copied()
     }
 
-    /// Get the id corresponding to `uri` if it exists in the set.
-    pub fn file_for_uri(&self, uri: &Url) -> Option<&FileId> {
+    /// Get the id corresponding to `path` if it exists in the set.
+    pub fn file_for_path(&self, uri: &VfsPath) -> Option<&FileId> {
         self.files.get(uri)
     }
 
-    /// Get the [`Url`] corresponding to `file` if it exists in the set.
-    pub fn path_for_file(&self, file: &FileId) -> Option<&Url> {
+    /// Get the [`VfsPath`] corresponding to `file` if it exists in the set.
+    pub fn path_for_file(&self, file: &FileId) -> Option<&VfsPath> {
         self.uris.get(file)
     }
 
-    /// Insert the `file_id, uri` pair into the set.
+    /// Insert the `file_id, path` pair into the set.
     ///
     /// # Note
-    /// Multiple [`FileId`] can be mapped to the same [`Url`], and vice-versa.
-    pub fn insert(&mut self, file_id: FileId, uri: Url) {
-        self.files.insert(uri.clone(), file_id);
-        self.uris.insert(file_id, uri);
+    /// Multiple [`FileId`] can be mapped to the same [`VfsPath`], and vice-versa.
+    pub fn insert(&mut self, file_id: FileId, path: VfsPath) {
+        self.files.insert(path.clone(), file_id);
+        self.uris.insert(file_id, path);
     }
 
     /// Iterate over this set's ids.
@@ -85,12 +79,11 @@ impl fmt::Debug for FileSet {
 #[derive(Debug, Default)]
 pub struct FileSetConfig {
     /// Roots of the file sets.
-    roots: Vec<Url>,
+    roots: Vec<VfsPath>,
 }
 
 impl FileSetConfig {
-    pub fn set_roots(&mut self, mut roots: Vec<Url>) {
-        roots.iter_mut().for_each(normalize_uri);
+    pub fn set_roots(&mut self, roots: Vec<VfsPath>) {
         self.roots = roots;
     }
 
@@ -100,12 +93,11 @@ impl FileSetConfig {
     pub fn partition(&mut self, vfs: &Vfs) -> Vec<FileSet> {
         self.roots.dedup();
         let mut res = vec![FileSet::default(); self.len()];
-        for (file_id, uri) in vfs.iter() {
-            for (root, root_uri) in self.roots.iter().enumerate() {
+        for (file_id, path) in vfs.iter() {
+            for (root, root_path) in self.roots.iter().enumerate() {
                 // FIXME: This breaks for nested roots.
-                eprintln!("checking if {:?} starts with {:?}", uri, root_uri);
-                if uri.as_str().starts_with(root_uri.as_str()) {
-                    res[root].insert(file_id, uri.clone());
+                if path.starts_with(root_path) {
+                    res[root].insert(file_id, path.clone());
                     break;
                 }
             }

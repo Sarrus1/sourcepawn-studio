@@ -3,7 +3,7 @@
 use std::mem;
 
 use fxhash::FxHashMap;
-use lsp_types::Url;
+use vfs::VfsPath;
 
 /// Holds the set of in-memory documents.
 ///
@@ -11,16 +11,16 @@ use lsp_types::Url;
 /// might be different from what's on disk.
 #[derive(Default, Clone)]
 pub(crate) struct MemDocs {
-    mem_docs: FxHashMap<Url, DocumentData>,
+    mem_docs: FxHashMap<VfsPath, DocumentData>,
     added_or_removed: bool,
 }
 
 impl MemDocs {
-    pub(crate) fn contains(&self, path: &Url) -> bool {
+    pub(crate) fn contains(&self, path: &VfsPath) -> bool {
         self.mem_docs.contains_key(path)
     }
 
-    pub(crate) fn insert(&mut self, path: Url, data: DocumentData) -> Result<(), ()> {
+    pub(crate) fn insert(&mut self, path: VfsPath, data: DocumentData) -> Result<(), ()> {
         self.added_or_removed = true;
         match self.mem_docs.insert(path, data) {
             Some(_) => Err(()),
@@ -28,7 +28,7 @@ impl MemDocs {
         }
     }
 
-    pub(crate) fn remove(&mut self, path: &Url) -> Result<(), ()> {
+    pub(crate) fn remove(&mut self, path: &VfsPath) -> Result<(), ()> {
         self.added_or_removed = true;
         match self.mem_docs.remove(path) {
             Some(_) => Ok(()),
@@ -36,17 +36,17 @@ impl MemDocs {
         }
     }
 
-    pub(crate) fn get(&self, path: &Url) -> Option<&DocumentData> {
+    pub(crate) fn get(&self, path: &VfsPath) -> Option<&DocumentData> {
         self.mem_docs.get(path)
     }
 
-    pub(crate) fn get_mut(&mut self, path: &Url) -> Option<&mut DocumentData> {
+    pub(crate) fn get_mut(&mut self, path: &VfsPath) -> Option<&mut DocumentData> {
         // NB: don't set `self.added_or_removed` here, as that purposefully only
         // tracks changes to the key set.
         self.mem_docs.get_mut(path)
     }
 
-    pub(crate) fn iter(&self) -> impl Iterator<Item = &Url> {
+    pub(crate) fn iter(&self) -> impl Iterator<Item = &VfsPath> {
         self.mem_docs.keys()
     }
 

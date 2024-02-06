@@ -168,10 +168,13 @@ pub(crate) fn file_includes_query(
                 _ => unreachable!(),
             };
             // TODO: resolve the include
-            unresolved.push(UnresolvedInclude {
-                expr: InFile::new(file_id, NodePtr::from(&node)),
-                path: text.to_string(),
-            });
+            if type_ == IncludeType::Include {
+                // TODO: Add setting for optional diagnostic for tryinclude.
+                unresolved.push(UnresolvedInclude {
+                    expr: InFile::new(file_id, NodePtr::from(&node)),
+                    path: text.to_string(),
+                });
+            }
             None
         }));
     }

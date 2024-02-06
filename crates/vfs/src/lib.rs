@@ -17,18 +17,20 @@ use std::{
     mem,
 };
 
-use lsp_types::Url;
 use path_interner::PathInterner;
 
 mod anchored_path;
 mod file_id;
 mod file_set;
+pub mod loader;
 mod path_interner;
+mod vfs_path;
 
 pub use {
     anchored_path::{AnchoredUrl, AnchoredUrlBuf},
     file_id::FileId,
     file_set::{FileSet, FileSetConfig},
+    vfs_path::VfsPath,
 };
 
 /// Storage for all files read by rust-analyzer.
@@ -76,8 +78,8 @@ pub enum ChangeKind {
 
 impl Vfs {
     /// Id of the given path if it exists in the `Vfs` and is not deleted.
-    pub fn file_id(&self, uri: &Url) -> Option<FileId> {
-        self.interner.get(uri).filter(|&it| self.get(it).is_some())
+    pub fn file_id(&self, path: &VfsPath) -> Option<FileId> {
+        self.interner.get(path).filter(|&it| self.get(it).is_some())
     }
 
     /// File path corresponding to the given `file_id`.
@@ -85,7 +87,7 @@ impl Vfs {
     /// # Panics
     ///
     /// Panics if the id is not present in the `Vfs`.
-    pub fn file_path(&self, file_id: FileId) -> Url {
+    pub fn file_path(&self, file_id: FileId) -> VfsPath {
         self.interner.lookup(file_id).clone()
     }
 
@@ -107,7 +109,7 @@ impl Vfs {
     /// Returns an iterator over the stored ids and their corresponding paths.
     ///
     /// This will skip deleted files.
-    pub fn iter(&self) -> impl Iterator<Item = (FileId, &Url)> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = (FileId, &VfsPath)> + '_ {
         (0..self.data.len())
             .map(|it| FileId(it as u32))
             .filter(move |&file_id| self.get(file_id).is_some())
@@ -123,7 +125,7 @@ impl Vfs {
     ///
     /// If the path does not currently exists in the `Vfs`, allocates a new
     /// [`FileId`] for it.
-    pub fn set_file_contents(&mut self, path: Url, mut contents: Option<Vec<u8>>) -> bool {
+    pub fn set_file_contents(&mut self, path: VfsPath, mut contents: Option<Vec<u8>>) -> bool {
         let file_id = self.alloc_file_id(path);
         let change_kind = match (self.get(file_id), &contents) {
             (None, None) => return false,
@@ -165,10 +167,8 @@ impl Vfs {
     /// - Else, returns `path`'s id.
     ///
     /// Does not record a change.
-    fn alloc_file_id(&mut self, uri: Url) -> FileId {
-        let mut uri = uri;
-        normalize_uri(&mut uri);
-        let file_id = self.interner.intern(uri);
+    fn alloc_file_id(&mut self, path: VfsPath) -> FileId {
+        let file_id = self.interner.intern(path);
         let idx = file_id.0 as usize;
         let len = self.data.len().max(idx + 1);
         self.data.resize_with(len, || None);
@@ -200,31 +200,4 @@ impl fmt::Debug for Vfs {
             .field("n_files", &self.data.len())
             .finish()
     }
-}
-
-pub fn normalize_uri(uri: &mut lsp_types::Url) {
-    fn fix_drive_letter(text: &str) -> Option<String> {
-        if !text.is_ascii() {
-            return None;
-        }
-
-        match &text[1..] {
-            ":" => Some(text.to_ascii_uppercase()),
-            "%3A" | "%3a" => Some(format!("{}:", text[0..1].to_ascii_uppercase())),
-            _ => None,
-        }
-    }
-
-    if let Some(mut segments) = uri.path_segments() {
-        if let Some(mut path) = segments.next().and_then(fix_drive_letter) {
-            for segment in segments {
-                path.push('/');
-                path.push_str(segment);
-            }
-
-            uri.set_path(&path);
-        }
-    }
-
-    uri.set_fragment(None);
 }

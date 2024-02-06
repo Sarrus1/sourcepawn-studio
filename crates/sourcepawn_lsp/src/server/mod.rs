@@ -14,7 +14,7 @@ use std::{env, sync::Arc, time::Instant};
 use stdx::thread::ThreadIntent;
 use store::normalize_uri;
 use threadpool::ThreadPool;
-use vfs::{FileId, Vfs};
+use vfs::{FileId, Vfs, VfsPath};
 
 use crate::{
     capabilities::server_capabilities,
@@ -24,6 +24,7 @@ use crate::{
     dispatch::{NotificationDispatcher, RequestDispatcher},
     from_json,
     line_index::LineEndings,
+    lsp::{from_proto, to_proto::url_from_abs_path},
     lsp_ext,
     mem_docs::MemDocs,
     task_pool::TaskPool,
@@ -483,8 +484,7 @@ impl GlobalState {
         // self.update_diagnostics();
         if let Some(diagnostic_changes) = self.diagnostics.take_changes() {
             for file_id in diagnostic_changes {
-                let mut uri = file_id_to_url(&self.vfs.read(), file_id);
-                normalize_uri(&mut uri);
+                let uri = file_id_to_url(&self.vfs.read(), file_id);
 
                 let mut diagnostics = self
                     .diagnostics
@@ -516,7 +516,9 @@ impl GlobalState {
                     }
                 }
 
-                let version = self.mem_docs.get(&uri).map(|it| it.version);
+                let version = from_proto::vfs_path(&uri)
+                    .map(|path| self.mem_docs.get(&path).map(|it| it.version))
+                    .unwrap_or_default();
 
                 self.send_notification::<lsp_types::notification::PublishDiagnostics>(
                     lsp_types::PublishDiagnosticsParams {
@@ -538,7 +540,7 @@ impl GlobalState {
         let subscriptions = self
             .mem_docs
             .iter()
-            .map(|uri| self.vfs.read().file_id(uri).unwrap())
+            .map(|path| self.vfs.read().file_id(path).unwrap())
             // .filter(|&file_id| {
             //     let source_root = db.file_source_root(file_id);
             //     // Only publish diagnostics for files in the workspace, not from crates.io deps
@@ -659,7 +661,7 @@ impl GlobalState {
             let mut bytes = vec![];
             for file in &changed_files {
                 let vfs_path = &vfs.file_path(file.file_id);
-                if let Ok(path) = vfs_path.to_file_path() {
+                if let Some(path) = vfs_path.as_path() {
                     let _path = path.to_path_buf();
                     if file.is_created_or_deleted() {
                         has_structure_changes = true;
@@ -753,8 +755,8 @@ impl GlobalStateSnapshot {
         self.vfs.read()
     }
 
-    pub(crate) fn url_to_file_id(&self, url: &Url) -> anyhow::Result<FileId> {
-        url_to_file_id(&self.vfs_read(), url)
+    pub(crate) fn url_to_file_id(&self, uri: &Url) -> anyhow::Result<FileId> {
+        url_to_file_id(&self.vfs_read(), uri)
     }
 
     pub(crate) fn file_id_to_url(&self, id: FileId) -> Url {
@@ -762,17 +764,21 @@ impl GlobalStateSnapshot {
     }
 
     pub(crate) fn url_file_version(&self, uri: &Url) -> Option<i32> {
-        self.mem_docs.get(&uri)?.version.into()
+        let path = from_proto::vfs_path(uri).ok()?;
+        self.mem_docs.get(&path)?.version.into()
     }
 }
 
 pub(crate) fn file_id_to_url(vfs: &vfs::Vfs, id: FileId) -> Url {
-    vfs.file_path(id)
+    let path = vfs.file_path(id);
+    let path = path.as_path().unwrap();
+    url_from_abs_path(path)
 }
 
-pub(crate) fn url_to_file_id(vfs: &vfs::Vfs, uri: &Url) -> anyhow::Result<FileId> {
+pub(crate) fn url_to_file_id(vfs: &vfs::Vfs, url: &Url) -> anyhow::Result<FileId> {
+    let path = from_proto::vfs_path(url)?;
     let res = vfs
-        .file_id(&uri)
-        .ok_or_else(|| anyhow::format_err!("file not found: {uri}"))?;
+        .file_id(&path)
+        .ok_or_else(|| anyhow::format_err!("file not found: {path}"))?;
     Ok(res)
 }

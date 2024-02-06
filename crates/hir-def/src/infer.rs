@@ -218,7 +218,7 @@ impl InferenceContext<'_> {
         receiver: &ExprId,
         target: &ExprId,
         method_name: &Name,
-        args: &Box<[ExprId]>,
+        args: &[ExprId],
     ) -> Option<TypeRef> {
         for arg in args.iter() {
             self.infer_expr(arg);

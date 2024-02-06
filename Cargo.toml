@@ -28,6 +28,7 @@ parser = { path = "./crates/parser" }
 semantic_analyzer = { path = "./crates/semantic_analyzer" }
 linter = { path = "./crates/linter" }
 vfs = { path = "./crates/vfs" }
+vfs-notify = { path = "./crates/vfs-notify" }
 base-db = { path = "./crates/base-db" }
 ide = { path = "./crates/ide" }
 ide-diagnostics = { path = "./crates/ide-diagnostics" }
@@ -35,6 +36,7 @@ ide-db = { path = "./crates/ide-db" }
 hir = { path = "./crates/hir" }
 hir-def = { path = "./crates/hir-def" }
 stdx = { path = "./crates/stdx" }
+paths = { path = "./crates/paths" }
 lsp-server = "0.7.4"
 crossbeam = "0.8.2"
 dashmap = "5.4.0"

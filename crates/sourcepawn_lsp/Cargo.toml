@@ -60,6 +60,7 @@ zip = "0.6.6"
 linter.workspace = true
 vfs.workspace = true
 ide.workspace = true
+paths.workspace = true
 
 [dependencies.openssl]
 optional = true

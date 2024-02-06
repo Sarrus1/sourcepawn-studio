@@ -1,5 +1,4 @@
-use lsp_types::Url;
-use vfs::{AnchoredUrl, FileId, FileSet, FileSetConfig};
+use vfs::{AnchoredUrl, FileId, FileSet, FileSetConfig, VfsPath};
 
 /// Files are grouped into source roots. A source root is a directory on the
 /// file systems which is watched for changes. Typically it corresponds to a
@@ -36,16 +35,16 @@ impl SourceRoot {
         }
     }
 
-    pub fn path_for_file(&self, file: &FileId) -> Option<&Url> {
+    pub fn path_for_file(&self, file: &FileId) -> Option<&VfsPath> {
         self.file_set.path_for_file(file)
     }
 
-    pub fn file_for_path(&self, uri: &Url) -> Option<&FileId> {
-        self.file_set.file_for_uri(uri)
+    pub fn file_for_path(&self, path: &VfsPath) -> Option<&FileId> {
+        self.file_set.file_for_path(path)
     }
 
-    pub fn resolve_path(&self, uri: &AnchoredUrl<'_>) -> Option<FileId> {
-        self.file_set.resolve_path(*uri)
+    pub fn resolve_path(&self, path: &AnchoredUrl<'_>) -> Option<FileId> {
+        self.file_set.resolve_path(*path)
     }
 
     pub fn iter(&self) -> impl Iterator<Item = FileId> + '_ {

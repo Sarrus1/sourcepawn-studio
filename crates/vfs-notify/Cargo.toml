@@ -1,5 +1,5 @@
 [package]
-name = "vfs"
+name = "vfs-notify"
 version = "0.1.0"
 include = ["Cargo.toml", "src/"]
 edition.workspace = true
@@ -10,11 +10,11 @@ authors.workspace = true
 doctest = false
 
 [dependencies]
-lsp-types.workspace = true
-lazy_static.workspace = true
-fxhash.workspace = true
-nohash-hasher.workspace = true
-indexmap.workspace = true
-dunce.workspace = true
+tracing.workspace = true
+walkdir = "2.3.2"
+crossbeam-channel = "0.5.5"
+notify = "6.1.1"
 
+stdx.workspace = true
+vfs.workspace = true
 paths.workspace = true

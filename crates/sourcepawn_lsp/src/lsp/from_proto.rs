@@ -1,6 +1,8 @@
 use anyhow::format_err;
 use base_db::FilePosition;
 use ide::{LineCol, WideLineCol};
+use lsp_types::Url;
+use paths::AbsPathBuf;
 use rowan::{TextRange, TextSize};
 use vfs::FileId;
 
@@ -8,6 +10,17 @@ use crate::{
     line_index::{LineIndex, PositionEncoding},
     server::GlobalStateSnapshot,
 };
+
+pub(crate) fn abs_path(url: &lsp_types::Url) -> anyhow::Result<AbsPathBuf> {
+    let path = url
+        .to_file_path()
+        .map_err(|()| anyhow::format_err!("url is not a file"))?;
+    Ok(AbsPathBuf::try_from(path).unwrap())
+}
+
+pub(crate) fn vfs_path(url: &lsp_types::Url) -> anyhow::Result<vfs::VfsPath> {
+    abs_path(url).map(vfs::VfsPath::from)
+}
 
 pub(crate) fn offset(
     line_index: &LineIndex,
@@ -49,8 +62,8 @@ pub(crate) fn text_range(
     }
 }
 
-pub(crate) fn file_id(snap: &GlobalStateSnapshot, url: &lsp_types::Url) -> anyhow::Result<FileId> {
-    snap.url_to_file_id(url)
+pub(crate) fn file_id(snap: &GlobalStateSnapshot, uri: &Url) -> anyhow::Result<FileId> {
+    snap.url_to_file_id(uri)
 }
 
 pub(crate) fn file_position(
