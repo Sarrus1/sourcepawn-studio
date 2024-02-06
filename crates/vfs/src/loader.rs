@@ -84,37 +84,13 @@ impl Entry {
     /// Returns:
     /// ```text
     /// Entry::Directories(Directories {
-    ///     extensions: ["rs"],
+    ///     extensions: ["sp", "inc"],
     ///     include: [base],
     ///     exclude: [base/.git],
     /// })
     /// ```
-    pub fn rs_files_recursively(base: AbsPathBuf) -> Entry {
+    pub fn sp_files_recursively(base: AbsPathBuf) -> Entry {
         Entry::Directories(dirs(base, &[".git"]))
-    }
-
-    /// Returns:
-    /// ```text
-    /// Entry::Directories(Directories {
-    ///     extensions: ["rs"],
-    ///     include: [base],
-    ///     exclude: [base/.git, base/target],
-    /// })
-    /// ```
-    pub fn local_cargo_package(base: AbsPathBuf) -> Entry {
-        Entry::Directories(dirs(base, &[".git", "target"]))
-    }
-
-    /// Returns:
-    /// ```text
-    /// Entry::Directories(Directories {
-    ///     extensions: ["rs"],
-    ///     include: [base],
-    ///     exclude: [base/.git, /tests, /examples, /benches],
-    /// })
-    /// ```
-    pub fn cargo_package_dependency(base: AbsPathBuf) -> Entry {
-        Entry::Directories(dirs(base, &[".git", "/tests", "/examples", "/benches"]))
     }
 
     /// Returns `true` if `path` is included in `self`.
@@ -192,7 +168,7 @@ impl Directories {
 /// Returns :
 /// ```text
 /// Directories {
-///     extensions: ["rs"],
+///     extensions: ["sp", "inc"],
 ///     include: [base],
 ///     exclude: [base/<exclude>],
 /// }
@@ -200,7 +176,7 @@ impl Directories {
 fn dirs(base: AbsPathBuf, exclude: &[&str]) -> Directories {
     let exclude = exclude.iter().map(|it| base.join(it)).collect::<Vec<_>>();
     Directories {
-        extensions: vec!["rs".to_string()],
+        extensions: vec!["sp".to_string(), "inc".to_string()],
         include: vec![base],
         exclude,
     }

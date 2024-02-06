@@ -7,6 +7,7 @@ mod lsp_ext;
 // mod providers;
 mod diagnostics;
 mod mem_docs;
+mod op_queue;
 mod reload;
 mod server;
 mod task_pool;

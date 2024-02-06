@@ -1,18 +1,20 @@
+use always_assert::always;
 use base_db::{Change, SourceRootConfig};
 use crossbeam::channel::{unbounded, Receiver, Sender};
 use fxhash::FxHashMap;
 use ide::{Analysis, AnalysisHost};
 
+use itertools::Itertools;
 use lsp_server::{Connection, ErrorCode, Request, RequestId};
 use lsp_types::{
     notification::{Notification, ShowMessage},
     InitializeResult, MessageType, ServerInfo, ShowMessageParams, Url,
 };
 use parking_lot::{RwLock, RwLockUpgradableReadGuard, RwLockWriteGuard};
+use paths::AbsPathBuf;
 use serde::Serialize;
-use std::{env, sync::Arc, time::Instant};
+use std::{env, path::PathBuf, sync::Arc, time::Instant};
 use stdx::thread::ThreadIntent;
-use store::normalize_uri;
 use threadpool::ThreadPool;
 use vfs::{FileId, Vfs, VfsPath};
 
@@ -27,6 +29,8 @@ use crate::{
     lsp::{from_proto, to_proto::url_from_abs_path},
     lsp_ext,
     mem_docs::MemDocs,
+    op_queue::OpQueue,
+    server::progress::Progress,
     task_pool::TaskPool,
     version::version,
     Task,
@@ -84,11 +88,27 @@ pub struct GlobalState {
     pub(crate) analysis_host: AnalysisHost,
 
     // VFS
+    pub(crate) loader: Handle<Box<dyn vfs::loader::Handle>, Receiver<vfs::loader::Message>>,
     pub(crate) vfs: Arc<RwLock<Vfs>>,
+    pub(crate) vfs_config_version: u32,
+    pub(crate) vfs_progress_config_version: u32,
+    pub(crate) vfs_progress_n_total: usize,
+    pub(crate) vfs_progress_n_done: usize,
+    // // op queues
+    // pub(crate) fetch_workspaces_queue:
+    //     OpQueue<bool, Option<(Vec<anyhow::Result<ProjectWorkspace>>, bool)>>,
 }
 
 impl GlobalState {
     pub fn new(connection: Connection, amxxpawn_mode: bool) -> Self {
+        let loader = {
+            let (sender, receiver) = unbounded::<vfs::loader::Message>();
+            let handle: vfs_notify::NotifyHandle =
+                vfs::loader::Handle::spawn(Box::new(move |msg| sender.send(msg).unwrap()));
+            let handle = Box::new(handle) as Box<dyn vfs::loader::Handle>;
+            Handle { handle, receiver }
+        };
+
         let client = LspClient::new(connection.sender.clone());
         let task_pool = {
             let (sender, receiver) = unbounded();
@@ -103,7 +123,9 @@ impl GlobalState {
 
             req_queue: ReqQueue::default(),
             sender: connection.sender.clone(),
+            connection: Arc::new(connection),
             task_pool,
+
             mem_docs: MemDocs::default(),
             source_root_config: SourceRootConfig::default(),
             diagnostics: DiagnosticCollection::default(),
@@ -114,9 +136,13 @@ impl GlobalState {
             config: Arc::default(),
             config_errors: Default::default(),
             analysis_host: AnalysisHost::default(),
-            vfs: Arc::new(RwLock::new(Vfs::default())),
 
-            connection: Arc::new(connection),
+            loader,
+            vfs: Arc::new(RwLock::new(Vfs::default())),
+            vfs_config_version: 0,
+            vfs_progress_config_version: 0,
+            vfs_progress_n_total: 0,
+            vfs_progress_n_done: 0,
         }
     }
 
@@ -187,6 +213,7 @@ impl GlobalState {
     //     log::trace!("Done resolving project {:?}", uri);
     // }
 
+    /// Synchronously initialize the lsp server according to the LSP spec.
     fn initialize(&mut self) -> anyhow::Result<()> {
         log::debug!("Initializing server...");
         let (id, initialize_params) = self.connection.initialize_start()?;
@@ -199,9 +226,16 @@ impl GlobalState {
             ..
         } = from_json::<lsp_types::InitializeParams>("InitializeParams", &initialize_params)?;
 
-        let root_path = match root_uri.and_then(|it| it.to_file_path().ok()) {
+        let root_path = match root_uri
+            .and_then(|it| it.to_file_path().ok())
+            .map(patch_path_prefix)
+            .and_then(|it| AbsPathBuf::try_from(it).ok())
+        {
             Some(it) => it,
-            None => env::current_dir()?, // FIXME: Is this correct?
+            None => {
+                let cwd = env::current_dir()?;
+                AbsPathBuf::assert(cwd)
+            }
         };
 
         let mut is_visual_studio_code = false;
@@ -222,7 +256,7 @@ impl GlobalState {
                     .collect::<Vec<_>>()
             })
             .filter(|workspaces| !workspaces.is_empty())
-            .unwrap_or_else(|| vec![root_path.clone()]);
+            .unwrap_or_else(|| vec![root_path.clone().into()]);
         let mut config = Config::new(
             root_path,
             capabilities,
@@ -382,9 +416,10 @@ impl GlobalState {
         }
         .on_sync_mut::<notifs::DidOpenTextDocument>(handlers::handle_did_open_text_document)?
         .on_sync_mut::<notifs::DidChangeTextDocument>(handlers::handle_did_change_text_document)?
-        .on_sync_mut::<notifs::DidChangeConfiguration>(handlers::handle_did_change_configuration)?
         .on_sync_mut::<notifs::DidCloseTextDocument>(handlers::handle_did_close_text_document)?
-        // .on_sync_mut::<notifs::DidChangeWatchedFiles>(handlers::did_open)? // TODO: Implement this.
+        .on_sync_mut::<notifs::DidSaveTextDocument>(handlers::handle_did_save_text_document)?
+        .on_sync_mut::<notifs::DidChangeConfiguration>(handlers::handle_did_change_configuration)?
+        .on_sync_mut::<notifs::DidChangeWatchedFiles>(handlers::handle_did_change_watched_files)? // TODO: Implement this.
         .finish();
 
         Ok(())
@@ -397,6 +432,9 @@ impl GlobalState {
 
             recv(self.task_pool.receiver) -> task =>
                 Some(Event::Task(task.unwrap())),
+
+            recv(self.loader.receiver) -> task =>
+                Some(Event::Vfs(task.unwrap())),
         }
     }
 
@@ -444,6 +482,13 @@ impl GlobalState {
                     }
                 }
             },
+            Event::Vfs(message) => {
+                self.handle_vfs_msg(message);
+                // Coalesce many VFS event into a single loop turn
+                while let Ok(message) = self.loader.receiver.try_recv() {
+                    self.handle_vfs_msg(message);
+                }
+            }
         }
         let state_changed = self.process_changes();
         let memdocs_added_or_removed = self.mem_docs.take_changes();
@@ -480,8 +525,6 @@ impl GlobalState {
             }
         }
 
-        // FIXME: Infinite loop
-        // self.update_diagnostics();
         if let Some(diagnostic_changes) = self.diagnostics.take_changes() {
             for file_id in diagnostic_changes {
                 let uri = file_id_to_url(&self.vfs.read(), file_id);
@@ -533,6 +576,47 @@ impl GlobalState {
         self.update_status_or_notify();
 
         Ok(())
+    }
+
+    fn handle_vfs_msg(&mut self, message: vfs::loader::Message) {
+        match message {
+            vfs::loader::Message::Loaded { files } => {
+                let vfs = &mut self.vfs.write();
+                for (path, contents) in files {
+                    let path = VfsPath::from(path);
+                    if !self.mem_docs.contains(&path) {
+                        vfs.set_file_contents(path, contents);
+                    }
+                }
+            }
+            vfs::loader::Message::Progress {
+                n_total,
+                n_done,
+                config_version,
+            } => {
+                always!(config_version <= self.vfs_config_version);
+
+                self.vfs_progress_config_version = config_version;
+                self.vfs_progress_n_total = n_total;
+                self.vfs_progress_n_done = n_done;
+
+                let state = if n_done == 0 {
+                    Progress::Begin
+                } else if n_done < n_total {
+                    Progress::Report
+                } else {
+                    assert_eq!(n_done, n_total);
+                    Progress::End
+                };
+                self.report_progress(
+                    "Roots Scanned",
+                    state,
+                    Some(format!("{n_done}/{n_total}")),
+                    Some(Progress::fraction(n_done, n_total)),
+                    None,
+                );
+            }
+        }
     }
 
     fn update_diagnostics(&mut self) {
@@ -719,6 +803,15 @@ impl GlobalState {
         self.update_status_or_notify();
 
         self.initialize()?;
+
+        // self.fetch_workspaces_queue
+        //     .request_op("startup".to_string(), false);
+        // if let Some((cause, force_crate_graph_reload)) =
+        //     self.fetch_workspaces_queue.should_start_op()
+        // {
+        //     self.fetch_workspaces(cause, force_crate_graph_reload);
+        // }
+
         while let Some(event) = self.next_event(&self.connection.receiver) {
             if matches!(
                 &event,
@@ -737,7 +830,7 @@ impl GlobalState {
 enum Event {
     Lsp(lsp_server::Message),
     Task(Task),
-    // Vfs(vfs::loader::Message),
+    Vfs(vfs::loader::Message),
 }
 
 /// An immutable snapshot of the world's state at a point in time.
@@ -781,4 +874,36 @@ pub(crate) fn url_to_file_id(vfs: &vfs::Vfs, url: &Url) -> anyhow::Result<FileId
         .file_id(&path)
         .ok_or_else(|| anyhow::format_err!("file not found: {path}"))?;
     Ok(res)
+}
+
+fn patch_path_prefix(path: PathBuf) -> PathBuf {
+    use std::path::{Component, Prefix};
+    if cfg!(windows) {
+        // VSCode might report paths with the file drive in lowercase, but this can mess
+        // with env vars set by tools and build scripts executed by r-a such that it invalidates
+        // cargo's compilations unnecessarily. https://github.com/rust-lang/rust-analyzer/issues/14683
+        // So we just uppercase the drive letter here unconditionally.
+        // (doing it conditionally is a pain because std::path::Prefix always reports uppercase letters on windows)
+        let mut comps = path.components();
+        match comps.next() {
+            Some(Component::Prefix(prefix)) => {
+                let prefix = match prefix.kind() {
+                    Prefix::Disk(d) => {
+                        format!("{}:", d.to_ascii_uppercase() as char)
+                    }
+                    Prefix::VerbatimDisk(d) => {
+                        format!(r"\\?\{}:", d.to_ascii_uppercase() as char)
+                    }
+                    _ => return path,
+                };
+                let mut path = PathBuf::new();
+                path.push(prefix);
+                path.extend(comps);
+                path
+            }
+            _ => path,
+        }
+    } else {
+        path
+    }
 }

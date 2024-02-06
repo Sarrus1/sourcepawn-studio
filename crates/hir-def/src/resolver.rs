@@ -49,7 +49,7 @@ impl fmt::Debug for ExprScope {
 #[derive(Debug, Clone)]
 enum Scope {
     /// All the items and included names of a project.
-    GlobalScope(Arc<DefMap>),
+    GlobalScope(Vec<Arc<DefMap>>),
     /// Brings `this` into scope.
     // ThisScope(ImplId),
     /// Local bindings.
@@ -66,8 +66,8 @@ impl Resolver {
         self
     }
 
-    fn push_global_scope(self, def_map: Arc<DefMap>, _file_id: FileId) -> Self {
-        self.push_scope(Scope::GlobalScope(def_map))
+    fn push_global_scope(self, def_maps: Vec<Arc<DefMap>>, _file_id: FileId) -> Self {
+        self.push_scope(Scope::GlobalScope(def_maps))
     }
 
     fn push_expr_scope(
@@ -94,17 +94,26 @@ impl Resolver {
                         return Some(ValueNs::LocalId((scope.owner, entry)));
                     }
                 }
-                Scope::GlobalScope(def_map) => {
-                    let entry = def_map.get(&name)?;
-                    match entry {
-                        FileDefId::FunctionId(it) => {
-                            return Some(ValueNs::FunctionId(InFile::new(self.file_id, it)));
-                        }
-                        FileDefId::GlobalId(it) => {
-                            return Some(ValueNs::GlobalId(InFile::new(self.file_id, it)));
-                        }
-                        FileDefId::EnumStructId(it) => {
-                            return Some(ValueNs::EnumStructId(InFile::new(self.file_id, it)));
+                Scope::GlobalScope(def_maps) => {
+                    for def_map in def_maps.iter() {
+                        if let Some(entry) = def_map.get(&name) {
+                            match entry {
+                                FileDefId::FunctionId(it) => {
+                                    return Some(ValueNs::FunctionId(InFile::new(
+                                        self.file_id,
+                                        it,
+                                    )));
+                                }
+                                FileDefId::GlobalId(it) => {
+                                    return Some(ValueNs::GlobalId(InFile::new(self.file_id, it)));
+                                }
+                                FileDefId::EnumStructId(it) => {
+                                    return Some(ValueNs::EnumStructId(InFile::new(
+                                        self.file_id,
+                                        it,
+                                    )));
+                                }
+                            }
                         }
                     }
                 }
@@ -203,7 +212,7 @@ impl HasResolver for FunctionId {
 impl HasResolver for FileId {
     fn resolver(self, db: &dyn DefDatabase) -> Resolver {
         Resolver {
-            scopes: vec![Scope::GlobalScope(db.file_def_map(self))],
+            scopes: vec![Scope::GlobalScope(file_def_maps(db, self))],
             file_id: self,
         }
     }
@@ -222,11 +231,22 @@ pub fn resolver_for_scope(
     for scope in scope_chain.into_iter().rev() {
         match scopes.file_id(scope) {
             Some(file_id) => {
-                let def_map = db.file_def_map(file_id);
-                resolver = resolver.push_global_scope(def_map, file_id);
+                let def_maps = file_def_maps(db, file_id);
+                resolver = resolver.push_global_scope(def_maps, file_id);
             }
             None => resolver = resolver.push_expr_scope(owner, Arc::clone(&scopes), scope),
         }
     }
     resolver
+}
+
+fn file_def_maps(db: &dyn DefDatabase, file_id: FileId) -> Vec<Arc<DefMap>> {
+    let mut def_maps = vec![db.file_def_map(file_id)];
+    def_maps.extend(
+        db.file_includes(file_id)
+            .0
+            .iter()
+            .map(|it| db.file_def_map(it.file_id())),
+    );
+    def_maps
 }

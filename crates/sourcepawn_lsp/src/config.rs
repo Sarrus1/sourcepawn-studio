@@ -4,7 +4,9 @@
 //! best way to do it, but was the simplest thing we could implement.
 
 use ide::DiagnosticsConfig;
+use itertools::Itertools;
 use lsp_types::ClientCapabilities;
+use paths::AbsPathBuf;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, path::PathBuf};
 
@@ -39,14 +41,14 @@ pub struct Config {
     /// The workspace roots as registered by the LSP client
     workspace_roots: Vec<PathBuf>,
     caps: lsp_types::ClientCapabilities,
-    root_path: PathBuf,
+    root_path: AbsPathBuf,
     data: ConfigData,
     is_visual_studio_code: bool,
 }
 
 impl Config {
     pub fn new(
-        root_path: PathBuf,
+        root_path: AbsPathBuf,
         caps: ClientCapabilities,
         workspace_roots: Vec<PathBuf>,
         is_visual_studio_code: bool,
@@ -78,9 +80,9 @@ impl Config {
         // TODO: Implement this.
         // self.validate(&mut errors);
         if let Some(error) = error {
-            return Err(error);
+            Err(error)
         } else {
-            return Ok(());
+            Ok(())
         }
     }
 
@@ -88,7 +90,8 @@ impl Config {
         negotiated_encoding(&self.caps)
     }
 
-    pub fn root_path(&self) -> &PathBuf {
+    pub fn root_path(&self) -> &AbsPathBuf {
+        // FIXME: Make the config owned by the server and use AbsPathBuf directly.
         &self.root_path
     }
 
@@ -110,7 +113,13 @@ impl Config {
         }
     }
 
-    pub fn include_directories(&self) -> &[PathBuf] {
-        &self.data.include_directories
+    pub fn include_directories(&self) -> Vec<AbsPathBuf> {
+        // FIXME: Instead of dropping invalid paths, we should report them to the user.
+        self.data
+            .include_directories
+            .clone()
+            .into_iter()
+            .flat_map(AbsPathBuf::try_from)
+            .collect_vec()
     }
 }

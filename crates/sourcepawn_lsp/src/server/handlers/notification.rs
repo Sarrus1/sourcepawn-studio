@@ -1,8 +1,7 @@
 use lsp_types::{
-    DidChangeConfigurationParams, DidChangeTextDocumentParams, DidCloseTextDocumentParams,
-    DidOpenTextDocumentParams,
+    DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
+    DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams,
 };
-use store::normalize_uri;
 
 use crate::{
     capabilities::ClientCapabilitiesExt,
@@ -95,19 +94,39 @@ pub(crate) fn handle_did_close_text_document(
             tracing::error!("orphan DidCloseTextDocument: {}", path);
         }
 
-        // TODO: Implement this
-        // if let Some(file_id) = state.vfs.read().file_id(&uri) {
-        //     state.diagnostics.clear_native_for(file_id);
-        // }
+        if let Some(file_id) = state.vfs.read().file_id(&path) {
+            state.diagnostics.clear_native_for(file_id);
+        }
 
+        // TODO: Implement this
         // state
         //     .semantic_tokens_cache
         //     .lock()
         //     .remove(&params.text_document.uri);
 
-        // if let Some(path) = path.as_path() {
-        //     state.loader.handle.invalidate(path.to_path_buf());
-        // }
+        if let Some(path) = path.as_path() {
+            state.loader.handle.invalidate(path.to_path_buf());
+        }
+    }
+    Ok(())
+}
+
+pub(crate) fn handle_did_save_text_document(
+    _state: &mut GlobalState,
+    _params: DidSaveTextDocumentParams,
+) -> anyhow::Result<()> {
+    // Nothing to do here
+    Ok(())
+}
+
+pub(crate) fn handle_did_change_watched_files(
+    state: &mut GlobalState,
+    params: DidChangeWatchedFilesParams,
+) -> anyhow::Result<()> {
+    for change in params.changes {
+        if let Ok(path) = from_proto::abs_path(&change.uri) {
+            state.loader.handle.invalidate(path);
+        }
     }
     Ok(())
 }

@@ -1,7 +1,11 @@
 //! Thin wrappers around `std::path`, distinguishing between absolute and
 //! relative paths.
 
-#![warn(rust_2018_idioms, unused_lifetimes, semicolon_in_expressions_from_macros)]
+#![warn(
+    rust_2018_idioms,
+    unused_lifetimes,
+    semicolon_in_expressions_from_macros
+)]
 
 use std::{
     borrow::Borrow,
@@ -11,7 +15,7 @@ use std::{
 };
 
 /// Wrapper around an absolute [`PathBuf`].
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Default)]
 pub struct AbsPathBuf(PathBuf);
 
 impl From<AbsPathBuf> for PathBuf {

@@ -49,6 +49,7 @@ uuid.workspace = true
 tracing.workspace = true
 salsa.workspace = true
 dunce.workspace = true
+always-assert.workspace = true
 nohash-hasher = "0.2.0"
 num_cpus = "1.16.0"
 # This is only used in the fixture module for benchmarks and tests.
@@ -59,6 +60,7 @@ zip = "0.6.6"
 # Local crates
 linter.workspace = true
 vfs.workspace = true
+vfs-notify.workspace = true
 ide.workspace = true
 paths.workspace = true
 

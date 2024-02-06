@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::{mem, vec};
 
-use paths::AbsPathBuf;
+use itertools::Itertools;
 use vfs::VfsPath;
 
 use crate::{config::Config, GlobalState};
@@ -12,16 +12,30 @@ impl GlobalState {
         if self.config.include_directories() != old_config.include_directories()
             || self.config.root_path() != old_config.root_path()
         {
-            let mut roots = vec![VfsPath::from(
-                AbsPathBuf::try_from(self.config.root_path().clone()).expect("Bad root path"),
-            )];
+            let mut roots = vec![VfsPath::from(self.config.root_path().clone())];
             roots.extend(
                 self.config
                     .include_directories()
-                    .iter()
-                    .flat_map(|it| AbsPathBuf::try_from(it.clone()).map(VfsPath::from)),
+                    .into_iter()
+                    .map(VfsPath::from),
             );
             self.source_root_config.fsc.set_roots(roots);
+            let mut load = self
+                .config
+                .include_directories()
+                .into_iter()
+                .map(vfs::loader::Entry::sp_files_recursively)
+                .collect_vec();
+            let watch = (0..load.len()).collect_vec();
+            load.push(vfs::loader::Entry::sp_files_recursively(
+                self.config.root_path().clone(),
+            ));
+            self.loader.handle.set_config(vfs::loader::Config {
+                load,
+                watch,
+                version: self.vfs_config_version,
+            });
+            self.vfs_config_version += 1;
         }
     }
 }

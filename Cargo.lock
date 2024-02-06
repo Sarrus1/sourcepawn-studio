@@ -2538,6 +2538,7 @@ dependencies = [
 name = "sourcepawn_lsp"
 version = "0.12.0"
 dependencies = [
+ "always-assert",
  "anyhow",
  "assert_unordered",
  "base-db",
@@ -2583,6 +2584,7 @@ dependencies = [
  "tree-sitter-sourcepawn",
  "uuid",
  "vfs",
+ "vfs-notify",
  "walkdir",
  "zip",
 ]

@@ -129,15 +129,15 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 static ref RE_QUOTE: Regex = Regex::new("^\"([^>]+)\"$").unwrap();
             }
             let text = match TSKind::from(node) {
-                TSKind::system_lib_string => RE_CHEVRON.captures(&text)?.get(1)?.as_str(),
+                TSKind::system_lib_string => RE_CHEVRON.captures(text)?.get(1)?.as_str(),
                 TSKind::string_literal => {
-                    let text = RE_QUOTE.captures(&text)?.get(1)?.as_str();
+                    let text = RE_QUOTE.captures(text)?.get(1)?.as_str();
                     // try to resolve path relative to the referencing file.
                     if let Some(file_id) = self
                         .db
                         .resolve_path(AnchoredUrl::new(file_id, infer_include_ext(text).as_str()))
                     {
-                        return Some(DefResolution::File(file_id.into())).into();
+                        return DefResolution::File(file_id.into()).into();
                     }
                     text
                 }
@@ -147,7 +147,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             let file_id = self
                 .db
                 .resolve_path(AnchoredUrl::new(file_id, text.as_str()))?;
-            return Some(DefResolution::File(file_id.into())).into();
+            return DefResolution::File(file_id.into()).into();
         }
         match TSKind::from(container) {
             TSKind::function_definition => {

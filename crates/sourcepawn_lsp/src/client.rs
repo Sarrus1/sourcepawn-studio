@@ -42,7 +42,7 @@ impl LspClient {
         N::Params: Serialize,
     {
         let notification = lsp_server::Notification::new(N::METHOD.to_string(), params);
-        log::trace!("Sending notification {:?}", notification);
+        log::debug!("Sending notification {:?}", notification);
         self.raw.sender.send(notification.into())?;
         Ok(())
     }
@@ -53,13 +53,14 @@ impl LspClient {
         R::Params: Serialize,
         R::Result: DeserializeOwned,
     {
+        panic!("Not supported.");
         let id = RequestId::from(self.raw.next_id.fetch_add(1, Ordering::SeqCst));
 
         let (tx, _) = crossbeam::channel::bounded(1);
         self.raw.pending.insert(id.clone(), tx);
 
         let request = Request::new(id, R::METHOD.to_string(), params);
-        log::trace!(
+        log::debug!(
             "Sending request without waiting for a response {:?}",
             request
         );
@@ -80,11 +81,11 @@ impl LspClient {
         self.raw.pending.insert(id.clone(), tx);
 
         let request = Request::new(id, R::METHOD.to_string(), params);
-        log::trace!("Sending request {:?}", request);
+        log::debug!("Sending request {:?}", request);
         self.raw.sender.send(request.into())?;
 
         let response = rx.recv_timeout(Duration::from_secs(15))?;
-        log::trace!("Received response {:?}", response);
+        log::debug!("Received response {:?}", response);
         let result = match response.error {
             Some(error) => bail!(error.message),
             None => response.result.unwrap_or_default(),
@@ -103,36 +104,20 @@ impl LspClient {
             // Ignore null responses, as they will be sent on a disconnected channel.
             return Ok(());
         }
-        log::trace!("Sending received response {:?}", response);
+        log::debug!("Sending received response {:?}", response);
         tx.send(response)?;
         Ok(())
     }
 
     pub fn send_response(&self, response: lsp_server::Response) -> Result<()> {
-        log::trace!("Sending response {:?}", response);
+        log::debug!("Sending response {:?}", response);
         self.raw.sender.send(response.into())?;
         Ok(())
     }
 
     pub fn send_error(&self, id: RequestId, code: ErrorCode, message: String) -> Result<()> {
-        log::trace!("Sending error {:?}", message);
+        log::debug!("Sending error {:?}", message);
         self.send_response(lsp_server::Response::new_err(id, code as i32, message))?;
         Ok(())
-    }
-
-    pub fn parse_options(&self, value: serde_json::Value) -> Result<Options> {
-        let options = match serde_json::from_value(value) {
-            Ok(new_options) => new_options,
-            Err(why) => {
-                let message = format!(
-                    "The texlab configuration is invalid; using the default settings instead.\nDetails: {why}"
-                );
-                let typ = MessageType::WARNING;
-                self.send_notification::<ShowMessage>(ShowMessageParams { message, typ })?;
-                None
-            }
-        };
-
-        Ok(options.unwrap_or_default())
     }
 }

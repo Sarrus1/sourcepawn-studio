@@ -158,6 +158,38 @@ void bar(int foo) {
 }
 
 #[test]
+fn function_parameter_3() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+int foo;
+
+void bar(int foo) {
+              |
+              ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn function_parameter_4() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#include "foo.sp"
+void bar(int foo) {
+              |
+              ^
+}
+
+%! foo.sp
+int foo;
+"#,
+    ));
+}
+
+#[test]
 fn function_1() {
     assert_json_snapshot!(goto_definition(
         r#"
