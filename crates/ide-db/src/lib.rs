@@ -57,8 +57,11 @@ impl FileLoader for RootDatabase {
     fn file_text(&self, file_id: FileId) -> Arc<str> {
         FileLoaderDelegate(self).file_text(file_id)
     }
-    fn resolve_path(&self, uri: vfs::AnchoredUrl<'_>) -> Option<FileId> {
+    fn resolve_path(&self, uri: vfs::AnchoredPath<'_>) -> Option<FileId> {
         FileLoaderDelegate(self).resolve_path(uri)
+    }
+    fn resolve_path_relative_to_roots(&self, path: &str) -> Option<FileId> {
+        FileLoaderDelegate(self).resolve_path_relative_to_roots(path)
     }
 }
 

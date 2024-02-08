@@ -4,11 +4,12 @@ use crossbeam::channel::{unbounded, Receiver, Sender};
 use fxhash::FxHashMap;
 use ide::{Analysis, AnalysisHost};
 
-use itertools::Itertools;
-use lsp_server::{Connection, ErrorCode, Request, RequestId};
+use lsp_server::{Connection, ErrorCode, Message, RequestId};
 use lsp_types::{
     notification::{Notification, ShowMessage},
-    InitializeResult, MessageType, ServerInfo, ShowMessageParams, Url,
+    request::{Request, WorkspaceConfiguration},
+    ConfigurationItem, ConfigurationParams, InitializeResult, MessageType, ServerInfo,
+    ShowMessageParams, Url,
 };
 use parking_lot::{RwLock, RwLockUpgradableReadGuard, RwLockWriteGuard};
 use paths::AbsPathBuf;
@@ -19,9 +20,9 @@ use threadpool::ThreadPool;
 use vfs::{FileId, Vfs, VfsPath};
 
 use crate::{
-    capabilities::server_capabilities,
+    capabilities::{server_capabilities, ClientCapabilitiesExt},
     client::LspClient,
-    config::Config,
+    config::{Config, ConfigData},
     diagnostics::{fetch_native_diagnostics, DiagnosticCollection},
     dispatch::{NotificationDispatcher, RequestDispatcher},
     from_json,
@@ -214,7 +215,7 @@ impl GlobalState {
     // }
 
     /// Synchronously initialize the lsp server according to the LSP spec.
-    fn initialize(&mut self) -> anyhow::Result<()> {
+    fn initialize(&mut self) -> anyhow::Result<Vec<lsp_server::Message>> {
         log::debug!("Initializing server...");
         let (id, initialize_params) = self.connection.initialize_start()?;
         let lsp_types::InitializeParams {
@@ -227,6 +228,7 @@ impl GlobalState {
         } = from_json::<lsp_types::InitializeParams>("InitializeParams", &initialize_params)?;
 
         let root_path = match root_uri
+            .clone()
             .and_then(|it| it.to_file_path().ok())
             .map(patch_path_prefix)
             .and_then(|it| AbsPathBuf::try_from(it).ok())
@@ -304,16 +306,75 @@ impl GlobalState {
         //     .filter_map(|folder| folder.uri.to_file_path().ok())
         //     .collect();
 
+        let ignored = if config.caps().has_pull_configuration_support() {
+            let (config_data, ignored) = self.pull_config_sync(root_uri);
+            // FIXME: Report error to the user.
+            config.update(config_data);
+            ignored
+        } else {
+            Vec::new()
+        };
+
+        self.update_configuration(config);
+
         let _ = self.send_status(lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,
             quiescent: !self.indexing,
             message: None,
         });
-
-        self.update_configuration(config);
         log::debug!("Server is initialized.");
 
-        Ok(())
+        Ok(ignored)
+    }
+
+    /// Synchronously pull the configuration from the client and return it, along with any ignored messages.
+    fn pull_config_sync(
+        &self,
+        scope_uri: Option<Url>,
+    ) -> (serde_json::Value, Vec<lsp_server::Message>) {
+        let request_id = lsp_server::RequestId::from("initial_config_pull".to_string());
+        let config_item = ConfigurationItem {
+            scope_uri,
+            section: Some("SourcePawnLanguageServer".to_string()),
+        };
+        let params = ConfigurationParams {
+            items: vec![config_item],
+        };
+        let request = lsp_server::Request::new(
+            request_id.clone(),
+            WorkspaceConfiguration::METHOD.to_string(),
+            params,
+        );
+
+        self.sender
+            .send(Message::Request(request))
+            .expect("Failed to send request");
+
+        let mut config: Option<Vec<serde_json::Value>> = None;
+        let mut ignored = Vec::new();
+        while config.is_none() {
+            match self.connection.receiver.recv() {
+                Ok(Message::Response(response)) if response.id == request_id => {
+                    if let Some(result) = response.result {
+                        config = serde_json::from_value(result).ok();
+                    }
+                }
+                Ok(e) => ignored.push(e),
+                Err(e) => panic!("Error receiving message: {:?}", e),
+            }
+        }
+
+        // Reverse the stack of ignored events to pop them in the correct order.
+        ignored.reverse();
+
+        (
+            config
+                .expect("Failed to receive configuration")
+                .first()
+                .expect("Empty configuration")
+                .clone(),
+            ignored,
+        )
     }
 
     fn send_status(&self, status: lsp_ext::ServerStatusParams) -> anyhow::Result<()> {
@@ -369,7 +430,7 @@ impl GlobalState {
     }
 
     /// Handles a request.
-    fn on_request(&mut self, req: Request) {
+    fn on_request(&mut self, req: lsp_server::Request) {
         log::debug!("received request: {:?}", req);
         let req_id = req.id.clone();
         let mut dispatcher = RequestDispatcher {
@@ -450,7 +511,7 @@ impl GlobalState {
     }
 
     /// Registers and handles a request. This should only be called once per incoming request.
-    fn on_new_request(&mut self, request_received: Instant, req: Request) {
+    fn on_new_request(&mut self, request_received: Instant, req: lsp_server::Request) {
         self.register_request(&req, request_received);
         self.on_request(req);
     }
@@ -783,7 +844,6 @@ impl GlobalState {
                 }
             });
             if has_structure_changes {
-                eprintln!("source_root_config: {:?}", self.source_root_config);
                 let roots = self.source_root_config.partition(vfs);
                 change.set_roots(roots);
             }
@@ -802,7 +862,7 @@ impl GlobalState {
         );
         self.update_status_or_notify();
 
-        self.initialize()?;
+        let mut ignored = self.initialize()?;
 
         // self.fetch_workspaces_queue
         //     .request_op("startup".to_string(), false);
@@ -811,6 +871,18 @@ impl GlobalState {
         // {
         //     self.fetch_workspaces(cause, force_crate_graph_reload);
         // }
+
+        while let Some(event) = ignored.pop() {
+            let event = Event::Lsp(event);
+            if matches!(
+                &event,
+                Event::Lsp(lsp_server::Message::Notification(lsp_server::Notification { method, .. }))
+                if method == lsp_types::notification::Exit::METHOD
+            ) {
+                return Ok(());
+            }
+            self.handle_event(event)?;
+        }
 
         while let Some(event) = self.next_event(&self.connection.receiver) {
             if matches!(

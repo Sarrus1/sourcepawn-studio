@@ -8,7 +8,7 @@ use hir_def::{resolver::ValueNs, InFile, Name, NodePtr};
 use lazy_static::lazy_static;
 use regex::Regex;
 use syntax::TSKind;
-use vfs::{AnchoredUrl, FileId};
+use vfs::{AnchoredPath, FileId};
 
 use crate::{
     db::HirDatabase,
@@ -135,7 +135,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                     // try to resolve path relative to the referencing file.
                     if let Some(file_id) = self
                         .db
-                        .resolve_path(AnchoredUrl::new(file_id, infer_include_ext(text).as_str()))
+                        .resolve_path(AnchoredPath::new(file_id, infer_include_ext(text).as_str()))
                     {
                         return DefResolution::File(file_id.into()).into();
                     }
@@ -144,9 +144,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 _ => unreachable!(),
             };
             let text = infer_include_ext(text);
-            let file_id = self
-                .db
-                .resolve_path(AnchoredUrl::new(file_id, text.as_str()))?;
+            let file_id = self.db.resolve_path_relative_to_roots(text.as_str())?;
             return DefResolution::File(file_id.into()).into();
         }
         match TSKind::from(container) {

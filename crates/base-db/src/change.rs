@@ -46,14 +46,18 @@ impl Change {
 
     pub fn apply(self, db: &mut dyn SourceDatabaseExt) {
         if let Some(roots) = self.roots {
+            let mut res = Vec::new();
             for (idx, root) in roots.into_iter().enumerate() {
                 let root_id = SourceRootId(idx as u32);
                 let durability = durability(&root);
                 for file_id in root.iter() {
                     db.set_file_source_root_with_durability(file_id, root_id, durability);
                 }
-                db.set_source_root_with_durability(root_id, Arc::new(root), durability);
+                let root = Arc::new(root);
+                res.push(root.clone());
+                db.set_source_root_with_durability(root_id, root, durability);
             }
+            db.set_source_roots(res);
         }
 
         for (file_id, text) in self.files_changed {

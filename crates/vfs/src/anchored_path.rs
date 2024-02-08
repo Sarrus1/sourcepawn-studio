@@ -4,7 +4,7 @@ use crate::FileId;
 ///
 /// Owned version of [`AnchoredUrl`].
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub struct AnchoredUrlBuf {
+pub struct AnchoredPathBuf {
     /// File that this path is relative to.
     pub anchor: FileId,
     /// Path relative to `anchor`'s containing directory.
@@ -15,16 +15,16 @@ pub struct AnchoredUrlBuf {
 ///
 /// Borrowed version of [`AnchoredUrlBuf`].
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct AnchoredUrl<'a> {
+pub struct AnchoredPath<'a> {
     /// File that this path is relative to.
     pub anchor: FileId,
     /// Path relative to `anchor`'s containing directory.
     pub path: &'a str,
 }
 
-impl<'a> AnchoredUrl<'a> {
+impl<'a> AnchoredPath<'a> {
     /// Create a new [`AnchoredUrl`] from `anchor` and `path`.
-    pub fn new(anchor: FileId, path: &str) -> AnchoredUrl<'_> {
-        AnchoredUrl { anchor, path }
+    pub fn new(anchor: FileId, path: &str) -> AnchoredPath<'_> {
+        AnchoredPath { anchor, path }
     }
 }

@@ -8,7 +8,7 @@ use fxhash::FxHashMap;
 use nohash_hasher::IntMap;
 use paths::AbsPathBuf;
 
-use crate::{anchored_path::AnchoredUrl, vfs_path::VfsPath, FileId, Vfs};
+use crate::{anchored_path::AnchoredPath, vfs_path::VfsPath, FileId, Vfs};
 
 /// A set of [`VfsPath`]s identified by [`FileId`]s.
 #[derive(Default, Clone, Eq, PartialEq)]
@@ -27,7 +27,7 @@ impl FileSet {
     ///
     /// If either `path`'s [`anchor`](AnchoredUrl::anchor) or the resolved path is not in
     /// the set, returns [`None`].
-    pub fn resolve_path(&self, path: AnchoredUrl<'_>) -> Option<FileId> {
+    pub fn resolve_path(&self, path: AnchoredPath<'_>) -> Option<FileId> {
         // FIXME: Account for case insensitive filesystems.
         let abs_path = PathBuf::from(path.path);
         // For absolute paths, we can just canonicalize and look it up.
@@ -40,6 +40,11 @@ impl FileSet {
         let mut base = self.uris[&path.anchor].clone();
         base.pop();
         let path = base.join(path.path)?;
+        self.files.get(&path).copied()
+    }
+
+    pub fn resolve_path_relative_to_root(&self, root: &VfsPath, path: &str) -> Option<FileId> {
+        let path = root.join(path)?;
         self.files.get(&path).copied()
     }
 
@@ -90,14 +95,17 @@ impl FileSetConfig {
     /// Partition `vfs` into `FileSet`s.
     ///
     /// Creates a new [`FileSet`] for every set of prefixes in `self`.
-    pub fn partition(&mut self, vfs: &Vfs) -> Vec<FileSet> {
+    pub fn partition(&mut self, vfs: &Vfs) -> Vec<(FileSet, VfsPath)> {
         self.roots.dedup();
-        let mut res = vec![FileSet::default(); self.len()];
+        let mut res = Vec::new();
+        for root in self.roots.iter() {
+            res.push((FileSet::default(), root.clone()));
+        }
         for (file_id, path) in vfs.iter() {
             for (root, root_path) in self.roots.iter().enumerate() {
                 // FIXME: This breaks for nested roots.
                 if path.starts_with(root_path) {
-                    res[root].insert(file_id, path.clone());
+                    res[root].0.insert(file_id, path.clone());
                     break;
                 }
             }

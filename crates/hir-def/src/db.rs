@@ -6,7 +6,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use syntax::TSKind;
 use tree_sitter::QueryCursor;
-use vfs::{AnchoredUrl, FileId};
+use vfs::{AnchoredPath, FileId};
 
 use crate::{
     ast_id_map::AstIdMap,
@@ -156,7 +156,9 @@ pub(crate) fn file_includes_query(
                 TSKind::string_literal => {
                     let text = RE_QUOTE.captures(text)?.get(1)?.as_str();
                     // try to resolve path relative to the referencing file.
-                    if let Some(file_id) = db.resolve_path(AnchoredUrl::new(file_id, text)) {
+                    if let Some(file_id) =
+                        db.resolve_path(AnchoredPath::new(file_id, &infer_include_ext(text)))
+                    {
                         return Some(Include {
                             id: file_id,
                             kind: IncludeKind::Quotes,
@@ -167,7 +169,14 @@ pub(crate) fn file_includes_query(
                 }
                 _ => unreachable!(),
             };
-            // TODO: resolve the include
+            let text = &infer_include_ext(text);
+            if let Some(file_id) = db.resolve_path_relative_to_roots(text) {
+                return Some(Include {
+                    id: file_id,
+                    kind: IncludeKind::Chevrons,
+                    type_,
+                });
+            }
             if type_ == IncludeType::Include {
                 // TODO: Add setting for optional diagnostic for tryinclude.
                 unresolved.push(UnresolvedInclude {

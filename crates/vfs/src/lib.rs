@@ -27,7 +27,7 @@ mod path_interner;
 mod vfs_path;
 
 pub use {
-    anchored_path::{AnchoredUrl, AnchoredUrlBuf},
+    anchored_path::{AnchoredPath, AnchoredPathBuf},
     file_id::FileId,
     file_set::{FileSet, FileSetConfig},
     vfs_path::VfsPath,

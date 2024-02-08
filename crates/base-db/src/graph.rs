@@ -9,7 +9,7 @@ use lsp_types::Url;
 use regex::Regex;
 use syntax::TSKind;
 use tree_sitter::QueryCursor;
-use vfs::{AnchoredUrl, FileId};
+use vfs::{AnchoredPath, FileId};
 
 use crate::SourceDatabase;
 

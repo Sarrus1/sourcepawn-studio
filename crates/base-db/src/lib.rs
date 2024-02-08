@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use graph::Graph;
 use input::{SourceRoot, SourceRootId};
-use vfs::{AnchoredUrl, FileId};
+use vfs::{AnchoredPath, FileId};
 
 mod change;
 mod graph;
@@ -15,7 +15,10 @@ pub trait FileLoader {
     fn file_text(&self, file_id: FileId) -> Arc<str>;
 
     /// Resolve a path to a file.
-    fn resolve_path(&self, uri: AnchoredUrl<'_>) -> Option<FileId>;
+    fn resolve_path(&self, path: AnchoredPath<'_>) -> Option<FileId>;
+
+    /// Resolve a path relative to the roots.
+    fn resolve_path_relative_to_roots(&self, path: &str) -> Option<FileId>;
 }
 
 #[derive(Debug, Clone)]
@@ -124,6 +127,10 @@ pub trait SourceDatabaseExt: SourceDatabase {
     /// Contents of the source root.
     #[salsa::input]
     fn source_root(&self, id: SourceRootId) -> Arc<SourceRoot>;
+
+    /// Source roots
+    #[salsa::input]
+    fn source_roots(&self) -> Vec<Arc<SourceRoot>>;
 }
 
 /// Silly workaround for cyclic deps between the traits
@@ -133,11 +140,19 @@ impl<T: SourceDatabaseExt> FileLoader for FileLoaderDelegate<&'_ T> {
     fn file_text(&self, file_id: FileId) -> Arc<str> {
         SourceDatabaseExt::file_text(self.0, file_id)
     }
-    fn resolve_path(&self, uri: AnchoredUrl<'_>) -> Option<FileId> {
+    fn resolve_path(&self, path: AnchoredPath<'_>) -> Option<FileId> {
         // FIXME: this *somehow* should be platform agnostic...
-        let source_root = self.0.file_source_root(uri.anchor);
+        let source_root = self.0.file_source_root(path.anchor);
         let source_root = self.0.source_root(source_root);
-        source_root.resolve_path(&uri)
+        source_root.resolve_path(&path)
+    }
+    fn resolve_path_relative_to_roots(&self, path: &str) -> Option<FileId> {
+        for source_root in self.0.source_roots() {
+            if let Some(file_id) = source_root.resolve_path_relative_to_root(path) {
+                return Some(file_id);
+            }
+        }
+        None
     }
 }
 

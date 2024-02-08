@@ -1,4 +1,4 @@
-use vfs::{AnchoredUrl, FileId, FileSet, FileSetConfig, VfsPath};
+use vfs::{AnchoredPath, FileId, FileSet, FileSetConfig, VfsPath};
 
 /// Files are grouped into source roots. A source root is a directory on the
 /// file systems which is watched for changes. Typically it corresponds to a
@@ -18,20 +18,23 @@ pub struct SourceRoot {
     /// optimize salsa's query structure.
     pub is_include_dir: bool,
     file_set: FileSet,
+    root: VfsPath,
 }
 
 impl SourceRoot {
-    pub fn new_local(file_set: FileSet) -> SourceRoot {
+    pub fn new_local(file_set: FileSet, root: VfsPath) -> SourceRoot {
         SourceRoot {
             is_include_dir: false,
             file_set,
+            root,
         }
     }
 
-    pub fn new_include_dir(file_set: FileSet) -> SourceRoot {
+    pub fn new_include_dir(file_set: FileSet, root: VfsPath) -> SourceRoot {
         SourceRoot {
             is_include_dir: true,
             file_set,
+            root,
         }
     }
 
@@ -43,8 +46,13 @@ impl SourceRoot {
         self.file_set.file_for_path(path)
     }
 
-    pub fn resolve_path(&self, path: &AnchoredUrl<'_>) -> Option<FileId> {
+    pub fn resolve_path(&self, path: &AnchoredPath<'_>) -> Option<FileId> {
         self.file_set.resolve_path(*path)
+    }
+
+    pub fn resolve_path_relative_to_root(&self, path: &str) -> Option<FileId> {
+        self.file_set
+            .resolve_path_relative_to_root(&self.root, path)
     }
 
     pub fn iter(&self) -> impl Iterator<Item = FileId> + '_ {
@@ -63,12 +71,12 @@ impl SourceRootConfig {
             .partition(vfs)
             .into_iter()
             .enumerate()
-            .map(|(idx, file_set)| {
-                // Assume that the first file set is the local one.
+            // Assume that the first file set is the local one.
+            .map(|(idx, (file_set, root))| {
                 if idx == 0 {
-                    SourceRoot::new_local(file_set)
+                    SourceRoot::new_local(file_set, root)
                 } else {
-                    SourceRoot::new_include_dir(file_set)
+                    SourceRoot::new_include_dir(file_set, root)
                 }
             })
             .collect()
