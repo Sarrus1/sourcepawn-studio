@@ -116,6 +116,10 @@ impl Include {
     }
 }
 
+/// Returns all resolved and unresolved includes in the file.
+///
+/// # Note
+/// Does not return includes that are in subincludes, i.e this function is not recursive.
 pub(crate) fn file_includes_query(
     db: &dyn DefDatabase,
     file_id: FileId,
@@ -140,48 +144,15 @@ pub(crate) fn file_includes_query(
     let mut unresolved = vec![];
     for (match_, _) in matches {
         res.extend(match_.captures.iter().filter_map(|c| {
-            let node = c.node.child_by_field_name("path")?;
-            let text = node.utf8_text(source.as_bytes()).ok()?;
-            lazy_static! {
-                static ref RE_CHEVRON: Regex = Regex::new(r"<([^>]+)>").unwrap();
-                static ref RE_QUOTE: Regex = Regex::new("\"([^>]+)\"").unwrap();
-            }
-            let type_ = match TSKind::from(&c.node) {
-                TSKind::preproc_include => IncludeType::Include,
-                TSKind::preproc_tryinclude => IncludeType::TryInclude,
-                _ => unreachable!(),
-            };
-            let text = match TSKind::from(node) {
-                TSKind::system_lib_string => RE_CHEVRON.captures(text)?.get(1)?.as_str(),
-                TSKind::string_literal => {
-                    let text = RE_QUOTE.captures(text)?.get(1)?.as_str();
-                    // try to resolve path relative to the referencing file.
-                    if let Some(file_id) =
-                        db.resolve_path(AnchoredPath::new(file_id, &infer_include_ext(text)))
-                    {
-                        return Some(Include {
-                            id: file_id,
-                            kind: IncludeKind::Quotes,
-                            type_,
-                        });
-                    }
-                    text
-                }
-                _ => unreachable!(),
-            };
-            let text = &infer_include_ext(text);
-            if let Some(file_id) = db.resolve_path_relative_to_roots(text) {
-                return Some(Include {
-                    id: file_id,
-                    kind: IncludeKind::Chevrons,
-                    type_,
-                });
+            let (id, kind, type_, text, ptr) = resolve_include_node(db, file_id, &source, c.node)?;
+            if let Some(id) = id {
+                return Some(Include { id, kind, type_ });
             }
             if type_ == IncludeType::Include {
                 // TODO: Add setting for optional diagnostic for tryinclude.
                 unresolved.push(UnresolvedInclude {
-                    expr: InFile::new(file_id, NodePtr::from(&node)),
-                    path: text.to_string(),
+                    expr: InFile::new(file_id, ptr),
+                    path: text,
                 });
             }
             None
@@ -189,6 +160,63 @@ pub(crate) fn file_includes_query(
     }
 
     (Arc::new(res), Arc::new(unresolved))
+}
+
+/// Resolves an include node to a file id and include type and kind.
+///
+/// # Returns
+/// - `None` if the include is invalid (does not have a path).
+/// - `Some(None, _, _, _)` if the include is unresolved.
+pub fn resolve_include_node(
+    db: &dyn DefDatabase,
+    file_id: FileId,
+    source: &str,
+    node: tree_sitter::Node,
+) -> Option<(Option<FileId>, IncludeKind, IncludeType, String, NodePtr)> {
+    let path_node = node.child_by_field_name("path")?;
+    let text = path_node.utf8_text(source.as_bytes()).ok()?;
+    lazy_static! {
+        static ref RE_CHEVRON: Regex = Regex::new(r"<([^>]+)>").unwrap();
+        static ref RE_QUOTE: Regex = Regex::new("\"([^>]+)\"").unwrap();
+    }
+    let type_ = match TSKind::from(&node) {
+        TSKind::preproc_include => IncludeType::Include,
+        TSKind::preproc_tryinclude => IncludeType::TryInclude,
+        _ => unreachable!(),
+    };
+    let (text, kind) = match TSKind::from(path_node) {
+        TSKind::system_lib_string => (
+            RE_CHEVRON.captures(text)?.get(1)?.as_str(),
+            IncludeKind::Chevrons,
+        ),
+        TSKind::string_literal => {
+            let text = RE_QUOTE.captures(text)?.get(1)?.as_str();
+            // try to resolve path relative to the referencing file.
+            if let Some(file_id) =
+                db.resolve_path(AnchoredPath::new(file_id, &infer_include_ext(text)))
+            {
+                return Some((
+                    Some(file_id),
+                    IncludeKind::Quotes,
+                    type_,
+                    text.to_string(),
+                    NodePtr::from(&path_node),
+                ));
+            }
+            (text, IncludeKind::Quotes)
+        }
+        _ => unreachable!(),
+    };
+    let text = infer_include_ext(text);
+
+    (
+        db.resolve_path_relative_to_roots(&text),
+        kind,
+        type_,
+        text,
+        NodePtr::from(&path_node),
+    )
+        .into()
 }
 
 pub fn infer_include_ext(path: &str) -> String {

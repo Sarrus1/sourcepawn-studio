@@ -18,6 +18,7 @@ pub mod resolver;
 pub mod src;
 
 pub use ast_id_map::NodePtr;
+pub use db::resolve_include_node;
 pub use db::DefDatabase;
 pub use hir::ExprId;
 pub use infer::{InferenceDiagnostic, InferenceResult};

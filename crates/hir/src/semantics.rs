@@ -4,11 +4,9 @@ use std::{cell::RefCell, fmt, ops, sync::Arc};
 
 use base_db::{is_field_receiver_node, is_name_node, Tree};
 use fxhash::FxHashMap;
-use hir_def::{resolver::ValueNs, InFile, Name, NodePtr};
-use lazy_static::lazy_static;
-use regex::Regex;
+use hir_def::{resolve_include_node, resolver::ValueNs, InFile, Name, NodePtr};
 use syntax::TSKind;
-use vfs::{AnchoredPath, FileId};
+use vfs::FileId;
 
 use crate::{
     db::HirDatabase,
@@ -122,30 +120,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
 
         let parent_kind = TSKind::from(node.parent()?);
         if parent_kind == TSKind::preproc_include || parent_kind == TSKind::preproc_tryinclude {
-            let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
-            // FIXME: Dup of graph.rs
-            lazy_static! {
-                static ref RE_CHEVRON: Regex = Regex::new(r"^<([^>]+)>$").unwrap();
-                static ref RE_QUOTE: Regex = Regex::new("^\"([^>]+)\"$").unwrap();
-            }
-            let text = match TSKind::from(node) {
-                TSKind::system_lib_string => RE_CHEVRON.captures(text)?.get(1)?.as_str(),
-                TSKind::string_literal => {
-                    let text = RE_QUOTE.captures(text)?.get(1)?.as_str();
-                    // try to resolve path relative to the referencing file.
-                    if let Some(file_id) = self
-                        .db
-                        .resolve_path(AnchoredPath::new(file_id, infer_include_ext(text).as_str()))
-                    {
-                        return DefResolution::File(file_id.into()).into();
-                    }
-                    text
-                }
-                _ => unreachable!(),
-            };
-            let text = infer_include_ext(text);
-            let file_id = self.db.resolve_path_relative_to_roots(text.as_str())?;
-            return DefResolution::File(file_id.into()).into();
+            return self.include_node_to_def(file_id, node.parent()?, source);
         }
         match TSKind::from(container) {
             TSKind::function_definition => {
@@ -176,6 +151,16 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 DefResolution::EnumStruct(EnumStruct::from(id)).into()
             }
         }
+    }
+
+    fn include_node_to_def(
+        &self,
+        file_id: FileId,
+        node: tree_sitter::Node,
+        source: Arc<str>,
+    ) -> Option<DefResolution> {
+        let (id, ..) = resolve_include_node(self.db, file_id, source.as_ref(), node)?;
+        id.map(|id| DefResolution::File(id.into()))
     }
 
     fn method_node_to_def(
