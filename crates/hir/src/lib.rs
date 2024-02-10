@@ -1,3 +1,5 @@
+use std::any::Any;
+
 use base_db::Tree;
 use db::HirDatabase;
 use hir_def::{
@@ -89,6 +91,18 @@ impl File {
                 .into(),
             ))
         });
+        db.preprocess_file(self.id)
+            .evaluation_errors()
+            .iter()
+            .for_each(|it| {
+                acc.push(AnyDiagnostic::PreprocessorEvaluationError(
+                    PreprocessorEvaluationError {
+                        range: InFile::new(self.id, *it.range()),
+                        text: it.text().to_owned(),
+                    }
+                    .into(),
+                ))
+            });
         self.declarations(db)
             .iter()
             .for_each(|it| acc.extend(it.diagnostics(db)));

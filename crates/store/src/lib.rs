@@ -271,7 +271,7 @@ impl Store {
             None => FxHashMap::default(),
         };
         let mut document = Document::new(uri.clone(), file_id, text);
-        self.preprocess_document(&mut document);
+        // self.preprocess_document(&mut document);
         self.add_sourcemod_include(&mut document);
         self.parse(&mut document).expect("Couldn't parse document");
         if !self.first_parse {
@@ -338,129 +338,129 @@ impl Store {
         log::trace!("Done syncing references for document {:?}", document.uri);
     }
 
-    pub(crate) fn preprocess_document(
-        &mut self,
-        document: &mut Document,
-    ) -> Option<FxHashMap<String, Macro>> {
-        log::trace!("Preprocessing document {:?}", document.uri);
-        if !document.preprocessed_text.is_empty() || document.being_preprocessed {
-            log::trace!("Skipped preprocessing document {:?}", document.uri);
-            return Some(document.macros.clone());
-        }
-        document.being_preprocessed = true;
-        let mut preprocessor = SourcepawnPreprocessor::new(document.uri.clone(), &document.text);
-        let preprocessed_text = preprocessor
-            .preprocess_input(
-                &mut (|macros: &mut FxHashMap<String, Macro>,
-                       path: String,
-                       document_uri: &Url,
-                       quoted: bool| {
-                    self.extend_macros(macros, path, document_uri, quoted)
-                }),
-            )
-            .unwrap_or_else(|err| {
-                log::error!("{:?}", err);
-                document.text.clone()
-            });
+    // pub(crate) fn preprocess_document(
+    //     &mut self,
+    //     document: &mut Document,
+    // ) -> Option<FxHashMap<String, Macro>> {
+    //     log::trace!("Preprocessing document {:?}", document.uri);
+    //     if !document.preprocessed_text.is_empty() || document.being_preprocessed {
+    //         log::trace!("Skipped preprocessing document {:?}", document.uri);
+    //         return Some(document.macros.clone());
+    //     }
+    //     document.being_preprocessed = true;
+    //     let mut preprocessor = SourcepawnPreprocessor::new(document.uri.clone(), &document.text);
+    //     let preprocessed_text = preprocessor
+    //         .preprocess_input(
+    //             &mut (|macros: &mut FxHashMap<String, Macro>,
+    //                    path: String,
+    //                    document_uri: &Url,
+    //                    quoted: bool| {
+    //                 self.extend_macros(macros, path, document_uri, quoted)
+    //             }),
+    //         )
+    //         .unwrap_or_else(|err| {
+    //             log::error!("{:?}", err);
+    //             document.text.clone()
+    //         });
 
-        document.preprocessed_text = preprocessed_text;
-        document.macros = preprocessor.macros.clone();
-        document.offsets = preprocessor.offsets.clone();
-        preprocessor
-            .add_diagnostics(&mut self.diagnostics.get_mut(&document.uri).local_diagnostics);
-        document
-            .macro_symbols
-            .extend(preprocessor.evaluated_define_symbols.iter().map(|token| {
-                Arc::new(Token {
-                    text: token.text(),
-                    range: token.range,
-                })
-            }));
-        document.being_preprocessed = false;
-        log::trace!("Done preprocessing document {:?}", document.uri);
+    //     document.preprocessed_text = preprocessed_text;
+    //     document.macros = preprocessor.macros.clone();
+    //     document.offsets = preprocessor.offsets.clone();
+    //     preprocessor
+    //         .add_diagnostics(&mut self.diagnostics.get_mut(&document.uri).local_diagnostics);
+    //     document
+    //         .macro_symbols
+    //         .extend(preprocessor.evaluated_define_symbols.iter().map(|token| {
+    //             Arc::new(Token {
+    //                 text: token.text(),
+    //                 range: token.range,
+    //             })
+    //         }));
+    //     document.being_preprocessed = false;
+    //     log::trace!("Done preprocessing document {:?}", document.uri);
 
-        Some(preprocessor.macros)
-    }
+    //     Some(preprocessor.macros)
+    // }
 
-    pub(crate) fn preprocess_document_by_id(
-        &mut self,
-        file_id: &FileId,
-    ) -> Option<FxHashMap<String, Macro>> {
-        // let document_uri = Arc::new(self.vfs.lookup(*file_id).clone());
-        let document_uri = Arc::new(Url::from_str("http://example.com").unwrap());
-        log::trace!("Preprocessing document by uri {:?}", document_uri);
-        if let Some(document) = self.documents.get(file_id) {
-            // Don't reprocess the text if it has not changed.
-            if !document.preprocessed_text.is_empty() || document.being_preprocessed {
-                log::trace!("Skipped preprocessing document by uri {:?}", document_uri);
-                return Some(document.macros.clone());
-            }
-        }
-        if let Some(document) = self.documents.get_mut(file_id) {
-            document.being_preprocessed = true;
-        }
-        if let Some(text) = self.get_text(file_id) {
-            let mut preprocessor = SourcepawnPreprocessor::new(document_uri, &text);
-            let preprocessed_text = preprocessor
-                .preprocess_input(
-                    &mut (|macros: &mut FxHashMap<String, Macro>,
-                           path: String,
-                           document_uri: &Url,
-                           quoted: bool| {
-                        self.extend_macros(macros, path, document_uri, quoted)
-                    }),
-                )
-                .unwrap_or_else(|err| {
-                    log::error!("{:?}", err);
-                    text.clone()
-                });
+    // pub(crate) fn preprocess_document_by_id(
+    //     &mut self,
+    //     file_id: &FileId,
+    // ) -> Option<FxHashMap<String, Macro>> {
+    //     // let document_uri = Arc::new(self.vfs.lookup(*file_id).clone());
+    //     let document_uri = Arc::new(Url::from_str("http://example.com").unwrap());
+    //     log::trace!("Preprocessing document by uri {:?}", document_uri);
+    //     if let Some(document) = self.documents.get(file_id) {
+    //         // Don't reprocess the text if it has not changed.
+    //         if !document.preprocessed_text.is_empty() || document.being_preprocessed {
+    //             log::trace!("Skipped preprocessing document by uri {:?}", document_uri);
+    //             return Some(document.macros.clone());
+    //         }
+    //     }
+    //     if let Some(document) = self.documents.get_mut(file_id) {
+    //         document.being_preprocessed = true;
+    //     }
+    //     if let Some(text) = self.get_text(file_id) {
+    //         let mut preprocessor = SourcepawnPreprocessor::new(document_uri, &text);
+    //         let preprocessed_text = preprocessor
+    //             .preprocess_input(
+    //                 &mut (|macros: &mut FxHashMap<String, Macro>,
+    //                        path: String,
+    //                        document_uri: &Url,
+    //                        quoted: bool| {
+    //                     self.extend_macros(macros, path, document_uri, quoted)
+    //                 }),
+    //             )
+    //             .unwrap_or_else(|err| {
+    //                 log::error!("{:?}", err);
+    //                 text.clone()
+    //             });
 
-            if let Some(document) = self.documents.get_mut(file_id) {
-                document.preprocessed_text = preprocessed_text;
-                document.macros = preprocessor.macros.clone();
-                preprocessor.add_diagnostics(
-                    &mut self.diagnostics.get_mut(&document.uri).local_diagnostics,
-                );
-                document
-                    .macro_symbols
-                    .extend(preprocessor.evaluated_define_symbols.iter().map(|token| {
-                        Arc::new(Token {
-                            text: token.text(),
-                            range: token.range,
-                        })
-                    }));
-            }
-            return Some(preprocessor.macros);
-        }
-        if let Some(document) = self.documents.get_mut(file_id) {
-            document.being_preprocessed = false;
-        }
-        log::trace!("Done preprocessing document by uri {:?}", document_uri);
+    //         if let Some(document) = self.documents.get_mut(file_id) {
+    //             document.preprocessed_text = preprocessed_text;
+    //             document.macros = preprocessor.macros.clone();
+    //             preprocessor.add_diagnostics(
+    //                 &mut self.diagnostics.get_mut(&document.uri).local_diagnostics,
+    //             );
+    //             document
+    //                 .macro_symbols
+    //                 .extend(preprocessor.evaluated_define_symbols.iter().map(|token| {
+    //                     Arc::new(Token {
+    //                         text: token.text(),
+    //                         range: token.range,
+    //                     })
+    //                 }));
+    //         }
+    //         return Some(preprocessor.macros);
+    //     }
+    //     if let Some(document) = self.documents.get_mut(file_id) {
+    //         document.being_preprocessed = false;
+    //     }
+    //     log::trace!("Done preprocessing document by uri {:?}", document_uri);
 
-        None
-    }
+    //     None
+    // }
 
-    pub(crate) fn extend_macros(
-        &mut self,
-        macros: &mut FxHashMap<String, Macro>,
-        mut include_text: String,
-        document_uri: &Url,
-        quoted: bool,
-    ) -> anyhow::Result<()> {
-        if let Some(file_id) =
-            self.resolve_import(&mut include_text, &Arc::new(document_uri.clone()), quoted)
-        {
-            if let Some(include_macros) = self.preprocess_document_by_id(&file_id) {
-                macros.extend(include_macros);
-            }
-            return Ok(());
-        }
+    // pub(crate) fn extend_macros(
+    //     &mut self,
+    //     macros: &mut FxHashMap<String, Macro>,
+    //     mut include_text: String,
+    //     document_uri: &Url,
+    //     quoted: bool,
+    // ) -> anyhow::Result<()> {
+    //     if let Some(file_id) =
+    //         self.resolve_import(&mut include_text, &Arc::new(document_uri.clone()), quoted)
+    //     {
+    //         if let Some(include_macros) = self.preprocess_document_by_id(&file_id) {
+    //             macros.extend(include_macros);
+    //         }
+    //         return Ok(());
+    //     }
 
-        Err(anyhow!(
-            "Could not resolve include \"{}\" from path.",
-            include_text
-        ))
-    }
+    //     Err(anyhow!(
+    //         "Could not resolve include \"{}\" from path.",
+    //         include_text
+    //     ))
+    // }
 
     pub fn parse(&mut self, document: &mut Document) -> anyhow::Result<()> {
         log::trace!("Parsing document {:?}", document.uri);

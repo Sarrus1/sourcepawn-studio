@@ -101,8 +101,8 @@ impl fmt::Display for ParseIntError {
 
 impl error::Error for ParseIntError {}
 
-#[derive(Debug, Clone)]
-pub(super) struct EvaluationError {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EvaluationError {
     pub(super) text: String,
     pub(super) range: Range,
 }
@@ -110,6 +110,14 @@ pub(super) struct EvaluationError {
 impl EvaluationError {
     pub(super) fn new(text: String, range: Range) -> EvaluationError {
         EvaluationError { text, range }
+    }
+
+    pub fn text(&self) -> &str {
+        &self.text
+    }
+
+    pub fn range(&self) -> &Range {
+        &self.range
     }
 }
 

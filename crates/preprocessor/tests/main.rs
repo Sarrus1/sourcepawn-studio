@@ -1,12 +1,10 @@
-use std::sync::Arc;
-
 use fxhash::FxHashMap;
-use lsp_types::Url;
+use vfs::FileId;
 
 fn extend_macros(
     _macros: &mut FxHashMap<String, Macro>,
     mut _path: String,
-    _document_uri: &Url,
+    _file_id: FileId,
     _quoted: bool,
 ) -> anyhow::Result<()> {
     Ok(())
@@ -16,12 +14,11 @@ fn extend_macros(
 macro_rules! assert_preproc_eq {
     ($input:expr, $output:expr) => {
         assert_eq!(
-            SourcepawnPreprocessor::new(
-                Arc::new(Url::parse("https://example.net").unwrap()),
-                $input
-            )
-            .preprocess_input(&mut extend_macros)
-            .unwrap(),
+            SourcepawnPreprocessor::new(FileId::from(0), $input)
+                .preprocess_input(&mut extend_macros)
+                .unwrap()
+                .result()
+                .preprocessed_text(),
             $output
         );
     };
@@ -884,13 +881,5 @@ void foo(){
 void foo(){
     Handle m_hFoo;    if(this.GetValue("m_" ... "Foo", m_hFoo)){        delete m_hFoo;}
 }"#;
-    assert_eq!(
-        SourcepawnPreprocessor::new(Arc::new(Url::parse("https://example.net").unwrap()), input)
-            .preprocess_input(&mut extend_macros)
-            .unwrap_or_else(|err| {
-                eprintln!("{:?}", err);
-                "".to_string()
-            }),
-        output
-    );
+    assert_preproc_eq!(input, output);
 }

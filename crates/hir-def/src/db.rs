@@ -3,6 +3,7 @@ use std::sync::Arc;
 use base_db::{FileExtension, SourceDatabase};
 use fxhash::FxHashMap;
 use lazy_static::lazy_static;
+use preprocessor::{Macro, PreprocessingResult};
 use regex::Regex;
 use syntax::TSKind;
 use tree_sitter::QueryCursor;
@@ -14,6 +15,7 @@ use crate::{
     data::{EnumStructData, FunctionData},
     graph, infer,
     item_tree::{ItemTree, Name},
+    preprocessor::HashableHashMap,
     BlockId, BlockLoc, DefWithBodyId, EnumStructId, EnumStructLoc, FileDefId, FileItem, FunctionId,
     FunctionLoc, GlobalId, GlobalLoc, InFile, InferenceResult, Intern, ItemTreeId, Lookup, NodePtr,
     TreeId,
@@ -76,6 +78,16 @@ pub trait DefDatabase: InternDatabase {
 
     #[salsa::invoke(graph::Graph::projet_subgraph_query)]
     fn projet_subgraph(&self, file_id: FileId) -> Option<Arc<graph::SubGraph>>;
+
+    #[salsa::invoke(crate::preprocessor::_preprocess_file_query)]
+    fn preprocess_file_inner(
+        &self,
+        file_id: FileId,
+        macros: HashableHashMap<String, Macro>,
+    ) -> Arc<FxHashMap<FileId, Arc<PreprocessingResult>>>;
+
+    #[salsa::invoke(crate::preprocessor::preprocess_file_query)]
+    fn preprocess_file(&self, file_id: FileId) -> Arc<PreprocessingResult>;
 
     // region: infer
     #[salsa::invoke(infer::infer_query)]

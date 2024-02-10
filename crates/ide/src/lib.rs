@@ -5,7 +5,8 @@ mod goto_definition;
 use std::sync::Arc;
 
 use base_db::{Change, FileExtension, FilePosition, SourceDatabase, SourceDatabaseExt, Tree};
-use hir_def::DefDatabase;
+use fxhash::FxHashMap;
+use hir_def::{DefDatabase, HashableHashMap};
 use ide_db::RootDatabase;
 use salsa::{Cancelled, ParallelDatabase};
 use vfs::FileId;
@@ -73,6 +74,11 @@ impl Analysis {
 
     pub fn graph(&self) -> Cancellable<Arc<Graph>> {
         self.with_db(|db| db.graph())
+    }
+
+    /// Gets the preprocessed text of the file.
+    pub fn preprocess(&self, file_id: FileId) -> Cancellable<String> {
+        self.with_db(|db| db.preprocess_file(file_id).preprocessed_text().to_owned())
     }
 
     /// Performs an operation on the database that may be canceled.

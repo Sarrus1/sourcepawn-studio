@@ -15,6 +15,7 @@ mod graph;
 mod hir;
 mod infer;
 mod item_tree;
+mod preprocessor;
 pub mod resolver;
 pub mod src;
 
@@ -25,6 +26,7 @@ pub use graph::Graph;
 pub use hir::ExprId;
 pub use infer::{InferenceDiagnostic, InferenceResult};
 pub use item_tree::{FileItem, Name};
+pub use preprocessor::HashableHashMap;
 
 trait Intern {
     type ID;

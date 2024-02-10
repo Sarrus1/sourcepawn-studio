@@ -3,7 +3,7 @@ use store::normalize_uri;
 
 use crate::{
     lsp::{from_proto, to_proto},
-    lsp_ext::{ProjectsGraphvizParams, SyntaxTreeParams},
+    lsp_ext::{PreprocessedDocumentParams, ProjectsGraphvizParams, SyntaxTreeParams},
     server::GlobalStateSnapshot,
 };
 
@@ -52,4 +52,19 @@ pub(crate) fn handle_projects_graphviz(
                 .map(|(name, ext)| format!("{}.{}", name, ext.unwrap_or_default()))
         })
         .ok_or_else(|| anyhow::anyhow!("Failed to generate graphviz"))
+}
+
+pub(crate) fn handle_preprocessed_document(
+    snap: GlobalStateSnapshot,
+    params: PreprocessedDocumentParams,
+) -> anyhow::Result<String> {
+    let uri = params
+        .text_document
+        .ok_or_else(|| anyhow::anyhow!("No uri received in request"))?
+        .uri;
+    let file_id = from_proto::file_id(&snap, &uri)?;
+
+    snap.analysis
+        .preprocess(file_id)
+        .context("Failed to preprocess document")
 }

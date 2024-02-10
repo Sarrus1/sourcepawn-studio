@@ -23,7 +23,12 @@ macro_rules! diagnostics {
     };
 }
 
-diagnostics![UnresolvedInclude, UnresolvedField, UnresolvedMethodCall,];
+diagnostics![
+    UnresolvedInclude,
+    UnresolvedField,
+    UnresolvedMethodCall,
+    PreprocessorEvaluationError,
+];
 
 #[derive(Debug)]
 pub struct UnresolvedInclude {
@@ -45,4 +50,10 @@ pub struct UnresolvedMethodCall {
     pub receiver: Name,
     pub name: Name,
     pub field_with_same_name_exists: bool,
+}
+
+#[derive(Debug)]
+pub struct PreprocessorEvaluationError {
+    pub range: InFile<lsp_types::Range>,
+    pub text: String,
 }

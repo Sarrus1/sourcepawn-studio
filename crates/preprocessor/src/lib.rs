@@ -1,12 +1,12 @@
 use anyhow::{anyhow, bail, Context};
 use fxhash::FxHashMap;
 use lazy_static::lazy_static;
-use lsp_types::{Diagnostic, Position, Range, Url};
+use lsp_types::{Diagnostic, Position, Range};
 use regex::Regex;
 use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
-use std::sync::Arc;
+use vfs::FileId;
 
-use errors::{EvaluationError, ExpansionError, IncludeNotFoundError, MacroNotFoundError};
+use errors::{ExpansionError, IncludeNotFoundError, MacroNotFoundError};
 use evaluator::IfCondition;
 use macros::expand_identifier;
 
@@ -14,6 +14,10 @@ mod errors;
 pub(crate) mod evaluator;
 mod macros;
 mod preprocessor_operator;
+mod result;
+
+pub use errors::EvaluationError;
+pub use result::PreprocessingResult;
 
 #[cfg(test)]
 mod test;
@@ -25,7 +29,7 @@ enum ConditionState {
     Active,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Offset {
     pub col: u32,
     pub diff: i32,
@@ -33,24 +37,24 @@ pub struct Offset {
 
 #[derive(Debug, Clone)]
 pub struct SourcepawnPreprocessor<'a> {
-    pub lexer: SourcepawnLexer<'a>,
-    pub macros: FxHashMap<String, Macro>,
-    pub expansion_stack: Vec<Symbol>,
+    lexer: SourcepawnLexer<'a>,
+    macros: FxHashMap<String, Macro>,
+    expansion_stack: Vec<Symbol>,
     skip_line_start_col: u32,
     skipped_lines: Vec<lsp_types::Range>,
-    pub(self) macro_not_found_errors: Vec<MacroNotFoundError>,
-    pub(self) evaluation_errors: Vec<EvaluationError>,
-    pub(self) include_not_found_errors: Vec<IncludeNotFoundError>,
-    pub evaluated_define_symbols: Vec<Symbol>,
-    document_uri: Arc<Url>,
+    macro_not_found_errors: Vec<MacroNotFoundError>,
+    evaluation_errors: Vec<EvaluationError>,
+    include_not_found_errors: Vec<IncludeNotFoundError>,
+    evaluated_define_symbols: Vec<Symbol>,
+    file_id: FileId,
     current_line: String,
     prev_end: u32,
     conditions_stack: Vec<ConditionState>,
     out: Vec<String>,
-    pub offsets: FxHashMap<u32, Vec<Offset>>,
+    offsets: FxHashMap<u32, Vec<Offset>>,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub struct Macro {
     pub(crate) params: Option<Vec<i8>>,
     pub(crate) nb_params: i8,
@@ -59,10 +63,10 @@ pub struct Macro {
 }
 
 impl<'a> SourcepawnPreprocessor<'a> {
-    pub fn new(document_uri: Arc<Url>, input: &'a str) -> Self {
+    pub fn new(file_id: FileId, input: &'a str) -> Self {
         Self {
             lexer: SourcepawnLexer::new(input),
-            document_uri,
+            file_id,
             current_line: "".to_string(),
             skip_line_start_col: 0,
             skipped_lines: vec![],
@@ -77,6 +81,19 @@ impl<'a> SourcepawnPreprocessor<'a> {
             expansion_stack: vec![],
             offsets: FxHashMap::default(),
         }
+    }
+
+    pub fn set_macros(&mut self, macros: FxHashMap<String, Macro>) {
+        self.macros = macros;
+    }
+
+    pub fn result(self) -> PreprocessingResult {
+        PreprocessingResult::new(
+            self.out.join("\n"),
+            self.macros,
+            self.offsets,
+            self.evaluation_errors,
+        )
     }
 
     pub fn add_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
@@ -140,14 +157,14 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }));
     }
 
-    pub fn preprocess_input<F>(&mut self, include_file: &mut F) -> anyhow::Result<String>
+    pub fn preprocess_input<F>(mut self, include_file: &mut F) -> anyhow::Result<Self>
     where
-        F: FnMut(&mut FxHashMap<String, Macro>, String, &Url, bool) -> anyhow::Result<()>,
+        F: FnMut(&mut FxHashMap<String, Macro>, String, FileId, bool) -> anyhow::Result<()>,
     {
         let _ = include_file(
             &mut self.macros,
             "sourcemod".to_string(),
-            &self.document_uri,
+            self.file_id,
             false,
         );
         let mut col_offset: Option<i32> = None;
@@ -166,7 +183,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 if let Some(symbol) = symbol.clone() {
                     self.offsets
                         .entry(symbol.range.start.line)
-                        .or_insert_with(Vec::new)
+                        .or_default()
                         .push(Offset {
                             col: expanded_symbol.range.start.character,
                             diff: (col_offset.take().unwrap_or(0)
@@ -241,7 +258,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
             }
         }
 
-        Ok(self.out.join("\n"))
+        Ok(self)
     }
 
     fn process_if_directive(&mut self, symbol: &Symbol) {
@@ -326,7 +343,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
         symbol: &Symbol,
     ) -> anyhow::Result<()>
     where
-        F: FnMut(&mut FxHashMap<String, Macro>, String, &Url, bool) -> anyhow::Result<()>,
+        F: FnMut(&mut FxHashMap<String, Macro>, String, FileId, bool) -> anyhow::Result<()>,
     {
         match dir {
             PreprocDir::MIf => self.process_if_directive(symbol),
@@ -474,7 +491,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                         match include_file(
                             &mut self.macros,
                             path.as_str().to_string(),
-                            &self.document_uri,
+                            self.file_id,
                             false,
                         ) {
                             Ok(_) => (),
@@ -493,7 +510,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                         match include_file(
                             &mut self.macros,
                             path.as_str().to_string(),
-                            &self.document_uri,
+                            self.file_id,
                             true,
                         ) {
                             Ok(_) => (),

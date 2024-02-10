@@ -73,6 +73,14 @@ impl Diagnostic {
         Diagnostic::new(code, message, ts_range_to_lsp_range(&range))
     }
 
+    fn new_with_range(
+        code: DiagnosticCode,
+        message: impl Into<String>,
+        range: InFile<lsp_types::Range>,
+    ) -> Diagnostic {
+        Diagnostic::new(code, message, range.value)
+    }
+
     fn experimental(mut self) -> Diagnostic {
         self.experimental = true;
         self
@@ -129,6 +137,9 @@ pub fn diagnostics(
             AnyDiagnostic::UnresolvedField(d) => handlers::unresolved_field::f(&ctx, &d),
             AnyDiagnostic::UnresolvedMethodCall(d) => handlers::unresolved_method_call::f(&ctx, &d),
             AnyDiagnostic::UnresolvedInclude(d) => handlers::unresolved_include::f(&ctx, &d),
+            AnyDiagnostic::PreprocessorEvaluationError(d) => {
+                handlers::preprocessor_evaluation_error::f(&ctx, &d)
+            }
         };
         res.push(d);
     }
