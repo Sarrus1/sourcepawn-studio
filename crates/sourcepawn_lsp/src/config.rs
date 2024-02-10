@@ -91,7 +91,6 @@ impl Config {
     }
 
     pub fn root_path(&self) -> &AbsPathBuf {
-        // FIXME: Make the config owned by the server and use AbsPathBuf directly.
         &self.root_path
     }
 

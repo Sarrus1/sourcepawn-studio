@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use base_db::SourceDatabase;
+use base_db::{FileExtension, SourceDatabase};
 use fxhash::FxHashMap;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -12,7 +12,7 @@ use crate::{
     ast_id_map::AstIdMap,
     body::{scope::ExprScopes, Body, BodySourceMap},
     data::{EnumStructData, FunctionData},
-    infer,
+    graph, infer,
     item_tree::{ItemTree, Name},
     BlockId, BlockLoc, DefWithBodyId, EnumStructId, EnumStructLoc, FileDefId, FileItem, FunctionId,
     FunctionLoc, GlobalId, GlobalLoc, InFile, InferenceResult, Intern, ItemTreeId, Lookup, NodePtr,
@@ -71,6 +71,12 @@ pub trait DefDatabase: InternDatabase {
     #[salsa::invoke(file_includes_query)]
     fn file_includes(&self, file_id: FileId) -> (Arc<Vec<Include>>, Arc<Vec<UnresolvedInclude>>);
 
+    #[salsa::invoke(graph::Graph::graph_query)]
+    fn graph(&self) -> Arc<graph::Graph>;
+
+    #[salsa::invoke(graph::Graph::projet_subgraph_query)]
+    fn projet_subgraph(&self, file_id: FileId) -> Option<Arc<graph::SubGraph>>;
+
     // region: infer
     #[salsa::invoke(infer::infer_query)]
     fn infer(&self, def: DefWithBodyId) -> Arc<InferenceResult>;
@@ -100,6 +106,7 @@ pub struct Include {
     id: FileId,
     kind: IncludeKind,
     type_: IncludeType,
+    extension: FileExtension,
 }
 
 impl Include {
@@ -113,6 +120,10 @@ impl Include {
 
     pub fn type_(&self) -> IncludeType {
         self.type_
+    }
+
+    pub fn extension(&self) -> FileExtension {
+        self.extension
     }
 }
 
@@ -144,9 +155,15 @@ pub(crate) fn file_includes_query(
     let mut unresolved = vec![];
     for (match_, _) in matches {
         res.extend(match_.captures.iter().filter_map(|c| {
-            let (id, kind, type_, text, ptr) = resolve_include_node(db, file_id, &source, c.node)?;
+            let (id, kind, type_, text, ptr, extension) =
+                resolve_include_node(db, file_id, &source, c.node)?;
             if let Some(id) = id {
-                return Some(Include { id, kind, type_ });
+                return Some(Include {
+                    id,
+                    kind,
+                    type_,
+                    extension,
+                });
             }
             if type_ == IncludeType::Include {
                 // TODO: Add setting for optional diagnostic for tryinclude.
@@ -172,7 +189,14 @@ pub fn resolve_include_node(
     file_id: FileId,
     source: &str,
     node: tree_sitter::Node,
-) -> Option<(Option<FileId>, IncludeKind, IncludeType, String, NodePtr)> {
+) -> Option<(
+    Option<FileId>,
+    IncludeKind,
+    IncludeType,
+    String,
+    NodePtr,
+    FileExtension,
+)> {
     let path_node = node.child_by_field_name("path")?;
     let text = path_node.utf8_text(source.as_bytes()).ok()?;
     lazy_static! {
@@ -184,30 +208,30 @@ pub fn resolve_include_node(
         TSKind::preproc_tryinclude => IncludeType::TryInclude,
         _ => unreachable!(),
     };
-    let (text, kind) = match TSKind::from(path_node) {
+    let (mut text, kind) = match TSKind::from(path_node) {
         TSKind::system_lib_string => (
-            RE_CHEVRON.captures(text)?.get(1)?.as_str(),
+            RE_CHEVRON.captures(text)?.get(1)?.as_str().to_string(),
             IncludeKind::Chevrons,
         ),
         TSKind::string_literal => {
-            let text = RE_QUOTE.captures(text)?.get(1)?.as_str();
+            let mut text = RE_QUOTE.captures(text)?.get(1)?.as_str().to_string();
+            let extension = infer_include_ext(&mut text);
             // try to resolve path relative to the referencing file.
-            if let Some(file_id) =
-                db.resolve_path(AnchoredPath::new(file_id, &infer_include_ext(text)))
-            {
+            if let Some(file_id) = db.resolve_path(AnchoredPath::new(file_id, &text)) {
                 return Some((
                     Some(file_id),
                     IncludeKind::Quotes,
                     type_,
                     text.to_string(),
                     NodePtr::from(&path_node),
+                    extension,
                 ));
             }
             (text, IncludeKind::Quotes)
         }
         _ => unreachable!(),
     };
-    let text = infer_include_ext(text);
+    let extension = infer_include_ext(&mut text);
 
     (
         db.resolve_path_relative_to_roots(&text),
@@ -215,15 +239,19 @@ pub fn resolve_include_node(
         type_,
         text,
         NodePtr::from(&path_node),
+        extension,
     )
         .into()
 }
 
-pub fn infer_include_ext(path: &str) -> String {
-    if path.ends_with(".sp") || path.ends_with(".inc") {
-        path.to_string()
+pub fn infer_include_ext(path: &mut String) -> FileExtension {
+    if path.ends_with(".sp") {
+        FileExtension::Sp
+    } else if path.ends_with(".inc") {
+        FileExtension::Inc
     } else {
-        format!("{}.inc", path)
+        *path += ".inc";
+        FileExtension::Inc
     }
 }
 

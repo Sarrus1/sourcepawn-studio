@@ -4,12 +4,14 @@ mod goto_definition;
 
 use std::sync::Arc;
 
-use base_db::{Change, FileLoader, FilePosition, SourceDatabase, Tree};
+use base_db::{Change, FileExtension, FilePosition, SourceDatabase, SourceDatabaseExt, Tree};
+use hir_def::DefDatabase;
 use ide_db::RootDatabase;
 use salsa::{Cancelled, ParallelDatabase};
 use vfs::FileId;
 
 pub use goto_definition::NavigationTarget;
+pub use hir_def::Graph;
 pub use ide_db::Cancellable;
 pub use ide_diagnostics::{Diagnostic, DiagnosticsConfig, Severity};
 pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};
@@ -39,6 +41,10 @@ impl AnalysisHost {
         &self.db
     }
 
+    pub fn set_known_files(&mut self, files: Vec<(FileId, FileExtension)>) {
+        self.db.set_known_files(files);
+    }
+
     /// Applies changes to the current state of the world.
     pub fn apply_change(&mut self, change: Change) {
         self.db.apply_change(change)
@@ -63,6 +69,10 @@ impl Analysis {
     /// Gets the syntax tree of the file.
     pub fn parse(&self, file_id: FileId) -> Cancellable<Tree> {
         self.with_db(|db| db.parse(file_id))
+    }
+
+    pub fn graph(&self) -> Cancellable<Arc<Graph>> {
+        self.with_db(|db| db.graph())
     }
 
     /// Performs an operation on the database that may be canceled.

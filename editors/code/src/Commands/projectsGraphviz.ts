@@ -3,22 +3,6 @@ import { projectsGraphviz, ProjectsGraphvizParams } from "../lsp_ext";
 import { getCtxFromUri } from "../spIndex";
 
 export async function run(args: any) {
-  if (!vscode.extensions.getExtension("graphviz-interactive-preview.preview")) {
-    vscode.window
-      .showErrorMessage(
-        "The extension 'graphviz-interactive-preview' is required to run this command.",
-        "Install"
-      )
-      .then((msg) => {
-        if (msg === "Install") {
-          vscode.commands.executeCommand(
-            "workbench.extensions.search",
-            "graphviz-interactive-preview"
-          );
-        }
-      });
-    return;
-  }
   const params: ProjectsGraphvizParams = {};
   const doc = vscode.window.activeTextEditor?.document;
   if (doc === undefined) {
@@ -37,8 +21,27 @@ export async function run(args: any) {
     title: "Sourcepawn Dependency Graph",
   };
 
-  vscode.commands.executeCommand(
-    "graphviz-interactive-preview.preview.beside",
-    options
-  );
+  vscode.commands
+    .executeCommand("graphviz-interactive-preview.preview.beside", options)
+    .then(
+      (result) => {
+        return;
+      },
+      (error) => {
+        console.error(error);
+        vscode.window
+          .showErrorMessage(
+            "The extension 'graphviz-interactive-preview' is required to run this command.",
+            "Install"
+          )
+          .then((msg) => {
+            if (msg === "Install") {
+              vscode.commands.executeCommand(
+                "workbench.extensions.search",
+                "graphviz-interactive-preview"
+              );
+            }
+          });
+      }
+    );
 }

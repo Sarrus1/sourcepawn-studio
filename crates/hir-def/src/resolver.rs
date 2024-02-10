@@ -242,11 +242,9 @@ pub fn resolver_for_scope(
 
 fn file_def_maps(db: &dyn DefDatabase, file_id: FileId) -> Vec<Arc<DefMap>> {
     let mut def_maps = vec![db.file_def_map(file_id)];
-    def_maps.extend(
-        db.file_includes(file_id)
-            .0
-            .iter()
-            .map(|it| db.file_def_map(it.file_id())),
-    );
+    if let Some(subgraph) = db.projet_subgraph(file_id) {
+        def_maps.extend(subgraph.nodes.iter().map(|it| db.file_def_map(it.file_id)));
+    }
+
     def_maps
 }

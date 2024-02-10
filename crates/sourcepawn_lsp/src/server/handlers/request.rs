@@ -3,7 +3,7 @@ use store::normalize_uri;
 
 use crate::{
     lsp::{from_proto, to_proto},
-    lsp_ext::SyntaxTreeParams,
+    lsp_ext::{ProjectsGraphvizParams, SyntaxTreeParams},
     server::GlobalStateSnapshot,
 };
 
@@ -37,4 +37,19 @@ pub(crate) fn handle_syntax_tree(
 
     // Ok(prettify_s_expression(&tree.root_node().to_sexp()))
     Ok("".to_string())
+}
+
+pub(crate) fn handle_projects_graphviz(
+    snap: GlobalStateSnapshot,
+    _params: ProjectsGraphvizParams,
+) -> anyhow::Result<String> {
+    let graph = snap.analysis.graph()?;
+
+    graph
+        .to_graphviz(|id| {
+            let path = snap.vfs_read().file_path(id);
+            path.name_and_extension()
+                .map(|(name, ext)| format!("{}.{}", name, ext.unwrap_or_default()))
+        })
+        .ok_or_else(|| anyhow::anyhow!("Failed to generate graphviz"))
 }

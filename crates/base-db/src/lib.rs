@@ -1,11 +1,9 @@
 use std::sync::Arc;
 
-use graph::Graph;
 use input::{SourceRoot, SourceRootId};
 use vfs::{AnchoredPath, FileId};
 
 mod change;
-mod graph;
 mod input;
 
 pub use {change::Change, input::SourceRootConfig};
@@ -13,6 +11,9 @@ pub use {change::Change, input::SourceRootConfig};
 pub trait FileLoader {
     /// Text of the file.
     fn file_text(&self, file_id: FileId) -> Arc<str>;
+
+    /// Known files.
+    fn known_files(&self) -> Vec<(FileId, FileExtension)>;
 
     /// Resolve a path to a file.
     fn resolve_path(&self, path: AnchoredPath<'_>) -> Option<FileId>;
@@ -91,12 +92,6 @@ pub trait SourceDatabase: FileLoader + std::fmt::Debug {
     /// Parses the file into the syntax tree.
     #[salsa::invoke(parse_query)]
     fn parse(&self, file_id: FileId) -> Tree;
-
-    #[salsa::input]
-    fn projects_graph(&self) -> Graph;
-
-    #[salsa::invoke(Graph::projet_root_query)]
-    fn projet_root(&self, file_id: FileId) -> Option<FileId>;
 }
 
 fn parse_query(db: &dyn SourceDatabase, file_id: FileId) -> Tree {
@@ -120,6 +115,9 @@ pub trait SourceDatabaseExt: SourceDatabase {
     #[salsa::input]
     fn file_text(&self, file_id: FileId) -> Arc<str>;
 
+    #[salsa::input]
+    fn known_files(&self) -> Vec<(FileId, FileExtension)>;
+
     /// Source root of the file.
     #[salsa::input]
     fn file_source_root(&self, file_id: FileId) -> SourceRootId;
@@ -139,6 +137,9 @@ pub struct FileLoaderDelegate<T>(pub T);
 impl<T: SourceDatabaseExt> FileLoader for FileLoaderDelegate<&'_ T> {
     fn file_text(&self, file_id: FileId) -> Arc<str> {
         SourceDatabaseExt::file_text(self.0, file_id)
+    }
+    fn known_files(&self) -> Vec<(FileId, FileExtension)> {
+        SourceDatabaseExt::known_files(self.0)
     }
     fn resolve_path(&self, path: AnchoredPath<'_>) -> Option<FileId> {
         // FIXME: this *somehow* should be platform agnostic...
@@ -164,4 +165,23 @@ pub struct FilePosition {
 
 pub trait Upcast<T: ?Sized> {
     fn upcast(&self) -> &T;
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, PartialOrd, Ord)]
+pub enum FileExtension {
+    #[default]
+    Sp,
+    Inc,
+}
+
+impl TryFrom<&str> for FileExtension {
+    type Error = &'static str;
+
+    fn try_from(extension: &str) -> Result<Self, Self::Error> {
+        match extension {
+            "sp" => Ok(FileExtension::Sp),
+            "inc" => Ok(FileExtension::Inc),
+            _ => Err(""),
+        }
+    }
 }

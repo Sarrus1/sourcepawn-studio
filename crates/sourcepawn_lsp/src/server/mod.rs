@@ -1,9 +1,10 @@
 use always_assert::always;
-use base_db::{Change, SourceRootConfig};
+use base_db::{Change, FileExtension, SourceRootConfig};
 use crossbeam::channel::{unbounded, Receiver, Sender};
 use fxhash::FxHashMap;
 use ide::{Analysis, AnalysisHost};
 
+use itertools::Itertools;
 use lsp_server::{Connection, ErrorCode, Message, RequestId};
 use lsp_types::{
     notification::{Notification, ShowMessage},
@@ -463,6 +464,7 @@ impl GlobalState {
         dispatcher
             .on::<lsp_request::GotoDefinition>(handlers::handle_goto_definition)
             .on::<lsp_ext::SyntaxTree>(handlers::handle_syntax_tree)
+            .on::<lsp_ext::ProjectsGraphviz>(handlers::handle_projects_graphviz)
             .finish();
         log::debug!("Handled request id: {:?}", req_id);
     }
@@ -851,6 +853,18 @@ impl GlobalState {
         };
 
         self.analysis_host.apply_change(change);
+
+        let mut files = self
+            .vfs
+            .read()
+            .iter()
+            .flat_map(|(id, path)| {
+                let (_, ext) = path.name_and_extension()?;
+                FileExtension::try_from(ext?).ok().map(|ext| (id, ext))
+            })
+            .collect_vec();
+        files.sort(); // FIXME: Maybe we can avoid sorting here? This was done to make the query deterministic.
+        self.analysis_host.set_known_files(files);
 
         true
     }

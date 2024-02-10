@@ -3,43 +3,11 @@ use std::{
     sync::Arc,
 };
 
+use base_db::FileExtension;
 use fxhash::{FxHashMap, FxHashSet};
-use lazy_static::lazy_static;
-use lsp_types::Url;
-use regex::Regex;
-use syntax::TSKind;
-use tree_sitter::QueryCursor;
-use vfs::{AnchoredPath, FileId};
+use vfs::FileId;
 
-use crate::SourceDatabase;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub enum FileExtension {
-    #[default]
-    Sp,
-    Inc,
-}
-
-impl TryFrom<Url> for FileExtension {
-    type Error = &'static str;
-
-    fn try_from(uri: Url) -> Result<Self, Self::Error> {
-        let path = uri
-            .to_file_path()
-            .or(Err("Failed to convert uri to file path."))?;
-        let extension = path
-            .extension()
-            .ok_or("Failed to get extension from file path.")?;
-        match extension
-            .to_str()
-            .ok_or("Failed to convert extension to string.")?
-        {
-            "sp" => Ok(FileExtension::Sp),
-            "inc" => Ok(FileExtension::Inc),
-            _ => Err(""),
-        }
-    }
-}
+use crate::DefDatabase;
 
 #[derive(Debug, Clone)]
 pub struct Node {
@@ -67,18 +35,17 @@ pub struct Edge {
     pub target: Node,
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Graph {
     pub edges: FxHashSet<Edge>,
-    pub missing: Vec<Url>,
     pub nodes: FxHashSet<Node>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct SubGraph {
     pub root: Node,
-    pub nodes: Vec<Node>,
-    pub edges: Vec<Edge>,
+    pub nodes: FxHashSet<Node>,
+    pub edges: FxHashSet<Edge>,
 }
 
 impl Graph {
@@ -87,44 +54,81 @@ impl Graph {
     /// - If the [file_id](FileId) is not in the graph, return [None].
     /// - If the [file_id](FileId) or one of its parent has more than one parent, return [None].
     /// - If the [file_id](FileId) or one of its parent is an include file, return the [file_id](FileId) of the include file.
-    pub fn projet_root_query(db: &dyn SourceDatabase, file_id: FileId) -> Option<FileId> {
-        let graph = db.projects_graph();
-        let mut adj_sources: FxHashMap<Node, FxHashSet<Node>> = FxHashMap::default();
-        for edge in graph.edges.iter() {
-            adj_sources
-                .entry(edge.target.clone())
-                .or_insert_with(FxHashSet::default)
-                .insert(edge.source.clone());
-        }
-        let mut child = &Node {
+    pub fn projet_subgraph_query(db: &dyn DefDatabase, file_id: FileId) -> Option<Arc<SubGraph>> {
+        let graph = db.graph();
+        let subgraphs = graph.find_subgraphs();
+
+        let dummy_node = Node {
             file_id,
-            extension: FileExtension::Sp,
+            extension: FileExtension::Sp, // We don't care about the extension here. The hash is based on the file_id.
         };
+        subgraphs
+            .into_iter()
+            .find(|subgraph| subgraph.nodes.contains(&dummy_node))
+            .map(Arc::new)
 
-        // Keep track of the nodes we visited to avoid infinite loops.
-        let mut visited: FxHashSet<&Node> = FxHashSet::default();
-        while let Some(parents) = adj_sources.get(child) {
-            if visited.contains(child) {
-                return Some(child.file_id);
-            }
-            visited.insert(child);
-            if parents.len() == 1 {
-                let parent = parents.iter().next().unwrap();
+        // let mut adj_sources: FxHashMap<Node, FxHashSet<Node>> = FxHashMap::default();
+        // for edge in graph.edges.iter() {
+        //     adj_sources
+        //         .entry(edge.target.clone())
+        //         .or_default()
+        //         .insert(edge.source.clone());
+        // }
+        // let mut child = &Node {
+        //     file_id,
+        //     extension: FileExtension::Sp,
+        // };
 
-                // If the parent is an include file, we don't want to go further.
-                // Include files can be included in multiple files.
-                if child.extension == FileExtension::Inc && parent.extension == FileExtension::Sp {
-                    return Some(child.file_id);
-                }
-                child = parent;
-            } else if child.extension == FileExtension::Inc {
-                return Some(child.file_id);
-            } else {
-                return None;
+        // // Keep track of the nodes we visited to avoid infinite loops.
+        // let mut visited: FxHashSet<&Node> = FxHashSet::default();
+        // while let Some(parents) = adj_sources.get(child) {
+        //     if visited.contains(child) {
+        //         return Some(child.file_id);
+        //     }
+        //     visited.insert(child);
+        //     if parents.len() == 1 {
+        //         let parent = parents.iter().next().unwrap();
+
+        //         // If the parent is an include file, we don't want to go further.
+        //         // Include files can be included in multiple files.
+        //         if child.extension == FileExtension::Inc && parent.extension == FileExtension::Sp {
+        //             return Some(child.file_id);
+        //         }
+        //         child = parent;
+        //     } else if child.extension == FileExtension::Inc {
+        //         return Some(child.file_id);
+        //     } else {
+        //         return None;
+        //     }
+        // }
+
+        // Some(child.file_id)
+    }
+
+    pub fn graph_query(db: &dyn DefDatabase) -> Arc<Self> {
+        let documents = db.known_files();
+        let mut graph = Self::default();
+
+        for (file_id, extension) in documents.iter() {
+            let source = Node {
+                file_id: *file_id,
+                extension: *extension,
+            };
+            graph.nodes.insert(source.clone());
+            for include in db.file_includes(source.file_id).0.iter() {
+                let target = Node {
+                    file_id: include.file_id(),
+                    extension: include.extension(),
+                };
+                graph.edges.insert(Edge {
+                    source: source.clone(),
+                    target: target.clone(),
+                });
+                graph.nodes.insert(target);
             }
         }
 
-        Some(child.file_id)
+        graph.into()
     }
 }
 
@@ -244,7 +248,7 @@ impl Graph {
         for edge in self.edges.iter() {
             adj_targets
                 .entry(edge.source.clone())
-                .or_insert_with(FxHashSet::default)
+                .or_default()
                 .insert(edge.target.clone());
         }
 
@@ -281,8 +285,8 @@ impl Graph {
     pub fn get_subgraph_ids_from_root(&self, root_id: FileId) -> FxHashSet<FileId> {
         let adj_targets = self.get_adjacent_targets();
         let mut visited = FxHashSet::default();
-        let mut nodes = vec![];
-        let mut edges = vec![];
+        let mut nodes = FxHashSet::default();
+        let mut edges = FxHashSet::default();
         let root = Node {
             file_id: root_id,
             extension: FileExtension::Sp,
@@ -298,8 +302,8 @@ impl Graph {
         let mut subgraphs = vec![];
         for root in self.find_roots() {
             let mut visited = FxHashSet::default();
-            let mut nodes = vec![];
-            let mut edges = vec![];
+            let mut nodes = FxHashSet::default();
+            let mut edges = FxHashSet::default();
             dfs(&root, &adj_targets, &mut visited, &mut nodes, &mut edges);
             visited.insert(root.clone());
             subgraphs.push(SubGraph {
@@ -352,11 +356,13 @@ impl Include {
     }
 }
 
-/*
-impl Store {
-    pub fn represent_graphs(&self) -> Option<String> {
+impl Graph {
+    pub fn to_graphviz<F>(&self, file_id_to_name: F) -> Option<String>
+    where
+        F: Fn(FileId) -> Option<String>,
+    {
+        let subgraphs = self.find_subgraphs();
         let mut out = vec!["digraph G {".to_string()];
-        let subgraphs = self.projects.find_subgraphs();
         for (i, sub_graph) in subgraphs.iter().enumerate() {
             out.push(format!(
                 r#"  subgraph cluster_{} {{
@@ -371,8 +377,8 @@ impl Store {
             for edge in sub_graph.edges.iter() {
                 out.push(format!(
                     "\"{}\" -> \"{}\";",
-                    uri_to_file_name(self.vfs.lookup(edge.source.file_id))?,
-                    uri_to_file_name(self.vfs.lookup(edge.target.file_id))?
+                    file_id_to_name(edge.source.file_id)?,
+                    file_id_to_name(edge.target.file_id)?
                 ));
             }
             out.push("}".to_string());
@@ -383,7 +389,7 @@ impl Store {
             }
             out.push(format!(
                 "\"{}\" [shape=Mdiamond];",
-                uri_to_file_name(self.vfs.lookup(sub_graph.root.file_id))?
+                file_id_to_name(sub_graph.root.file_id)?
             ))
         }
         out.push("}".to_string());
@@ -391,22 +397,21 @@ impl Store {
         Some(out.join("\n"))
     }
 }
-*/
 
 fn dfs(
     node: &Node,
     adj_map: &FxHashMap<Node, FxHashSet<Node>>,
     visited: &mut FxHashSet<Node>,
-    nodes: &mut Vec<Node>,
-    edges: &mut Vec<Edge>,
+    nodes: &mut FxHashSet<Node>,
+    edges: &mut FxHashSet<Edge>,
 ) {
     visited.insert(node.clone());
-    nodes.push(node.clone());
+    nodes.insert(node.clone());
 
     if let Some(neighbors) = adj_map.get(node) {
         for neighbor in neighbors {
             if !visited.contains(neighbor) {
-                edges.push(Edge {
+                edges.insert(Edge {
                     source: node.clone(),
                     target: neighbor.clone(),
                 });
