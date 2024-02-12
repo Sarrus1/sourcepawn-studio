@@ -3,13 +3,13 @@ use std::{
     sync::Arc,
 };
 
-use fxhash::FxHashMap;
+use fxhash::{FxHashMap, FxHashSet};
 use preprocessor::{Macro, PreprocessingResult, SourcepawnPreprocessor};
 use vfs::{AnchoredPath, FileId};
 
-use crate::DefDatabase;
+use crate::{db::infer_include_ext, DefDatabase};
 
-// FIXME: Everything about this is bad.
+// FIXME: Hopefully there is a way to avoid Hashable Hashmaps?
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct HashableHashMap<K: Hash + Eq, V: Eq> {
     pub map: FxHashMap<K, V>,
@@ -29,28 +29,50 @@ impl<K: Hash + Ord, V: Hash + Eq> Hash for HashableHashMap<K, V> {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HashableHashSet<K: Hash + Eq> {
+    pub set: FxHashSet<K>,
+}
+
+impl<K: Hash + Ord> Hash for HashableHashSet<K> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // Collect and sort the keys to ensure consistent order
+        let mut pairs: Vec<_> = self.set.iter().collect();
+        pairs.sort();
+        pairs.iter().for_each(|k| k.hash(state));
+    }
+}
+
+impl<K: Hash + Eq> Default for HashableHashSet<K> {
+    fn default() -> Self {
+        Self {
+            set: FxHashSet::default(),
+        }
+    }
+}
+
 pub(crate) fn preprocess_file_query(
     db: &dyn DefDatabase,
     file_id: FileId,
 ) -> Arc<PreprocessingResult> {
-    // FIXME: Handle cyclic dependencies
     // FIXME: Handle errors
     let root_file_id = db.projet_subgraph(file_id).unwrap().root.file_id;
-    let res = db.preprocess_file_inner(root_file_id, HashableHashMap::default());
+    let res = db.preprocess_file_inner(
+        root_file_id,
+        HashableHashMap::default(),
+        HashableHashSet::default(),
+    );
 
     res.get(&file_id).unwrap().clone()
 }
 
-// FIXME: When preprocessing subfiles, we do not know the macros of the parent file.
-// Solutions:
-// 1. Make a struct that holds the macros that is always equal and always has the same hash?
-// 2. Get all the parents's macros and pass them to the subfile's preprocessing function?
 pub(crate) fn _preprocess_file_query(
     db: &dyn DefDatabase,
     file_id: FileId,
     macros: HashableHashMap<String, Macro>,
+    mut being_preprocessed: HashableHashSet<FileId>,
 ) -> Arc<FxHashMap<FileId, Arc<PreprocessingResult>>> {
-    // FIXME: Handle cyclic dependencies
+    being_preprocessed.set.insert(file_id);
     let text = db.file_text(file_id);
     let mut results: FxHashMap<FileId, Arc<PreprocessingResult>> = FxHashMap::default();
     let mut preprocessor = SourcepawnPreprocessor::new(file_id, &text);
@@ -58,24 +80,29 @@ pub(crate) fn _preprocess_file_query(
     let res = preprocessor
         .preprocess_input(
             &mut (|macros: &mut FxHashMap<String, Macro>,
-                   path: String,
+                   mut path: String,
                    file_id: FileId,
                    quoted: bool| {
                 let mut inc_file_id = None;
+                infer_include_ext(&mut path);
                 if quoted {
                     inc_file_id = db.resolve_path(AnchoredPath::new(file_id, &path));
                 };
                 if inc_file_id.is_none() {
                     inc_file_id = db.resolve_path_relative_to_roots(&path);
                 }
-                if let Some(inc_file_id) = inc_file_id {
-                    let map = HashableHashMap {
-                        map: macros.clone(),
-                    };
-                    let res = db.preprocess_file_inner(inc_file_id, map);
-                    results.extend(res.as_ref().clone()); // FIXME: This is bad
-                    macros.extend(res.as_ref().get(&inc_file_id).unwrap().macros().clone());
+                let inc_file_id =
+                    inc_file_id.ok_or_else(|| anyhow::anyhow!("Include not found"))?;
+                if being_preprocessed.set.contains(&inc_file_id) {
+                    // Avoid cyclic deps
+                    return Ok(());
                 }
+                let map = HashableHashMap {
+                    map: macros.clone(),
+                };
+                let res = db.preprocess_file_inner(inc_file_id, map, being_preprocessed.clone());
+                results.extend(res.as_ref().clone()); //FIXME: Maybe find a way to avoid this clone?
+                macros.extend(res.as_ref().get(&inc_file_id).unwrap().macros().clone());
 
                 Ok(())
             }),

@@ -15,7 +15,7 @@ use crate::{
     data::{EnumStructData, FunctionData},
     graph, infer,
     item_tree::{ItemTree, Name},
-    preprocessor::HashableHashMap,
+    preprocessor::{HashableHashMap, HashableHashSet},
     BlockId, BlockLoc, DefWithBodyId, EnumStructId, EnumStructLoc, FileDefId, FileItem, FunctionId,
     FunctionLoc, GlobalId, GlobalLoc, InFile, InferenceResult, Intern, ItemTreeId, Lookup, NodePtr,
     TreeId,
@@ -84,6 +84,7 @@ pub trait DefDatabase: InternDatabase {
         &self,
         file_id: FileId,
         macros: HashableHashMap<String, Macro>,
+        being_preprocessed: HashableHashSet<FileId>,
     ) -> Arc<FxHashMap<FileId, Arc<PreprocessingResult>>>;
 
     #[salsa::invoke(crate::preprocessor::preprocess_file_query)]
@@ -256,6 +257,7 @@ pub fn resolve_include_node(
         .into()
 }
 
+/// Mutate the include path to add `.inc` if necessary and return the detected file extension.
 pub fn infer_include_ext(path: &mut String) -> FileExtension {
     if path.ends_with(".sp") {
         FileExtension::Sp

@@ -340,11 +340,3 @@ impl<'db> SemanticsImpl<'db> {
         (crate::Local, local_to_def),
     ];
 }
-
-pub fn infer_include_ext(path: &str) -> String {
-    if path.ends_with(".sp") || path.ends_with(".inc") {
-        path.to_string()
-    } else {
-        format!("{}.inc", path)
-    }
-}
