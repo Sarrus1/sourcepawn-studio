@@ -1924,6 +1924,7 @@ dependencies = [
  "regex",
  "salsa",
  "sourcepawn_lexer",
+ "stdx",
  "vfs",
 ]
 
@@ -2609,6 +2610,7 @@ dependencies = [
  "always-assert",
  "backtrace",
  "crossbeam-channel",
+ "fxhash",
  "jod-thread",
  "libc",
  "miow",

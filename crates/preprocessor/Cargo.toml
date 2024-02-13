@@ -21,6 +21,7 @@ salsa.workspace = true
 
 vfs.workspace = true
 base-db.workspace = true
+stdx.workspace = true
 
 [dev-dependencies]
 criterion = "0.3"
