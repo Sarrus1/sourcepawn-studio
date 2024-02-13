@@ -3,11 +3,10 @@ use std::{
     sync::Arc,
 };
 
-use base_db::FileExtension;
 use fxhash::{FxHashMap, FxHashSet};
 use vfs::FileId;
 
-use crate::DefDatabase;
+use crate::{FileExtension, SourceDatabase};
 
 #[derive(Debug, Clone)]
 pub struct Node {
@@ -54,7 +53,10 @@ impl Graph {
     /// - If the [file_id](FileId) is not in the graph, return [None].
     /// - If the [file_id](FileId) or one of its parent has more than one parent, return [None].
     /// - If the [file_id](FileId) or one of its parent is an include file, return the [file_id](FileId) of the include file.
-    pub fn projet_subgraph_query(db: &dyn DefDatabase, file_id: FileId) -> Option<Arc<SubGraph>> {
+    pub fn projet_subgraph_query(
+        db: &dyn SourceDatabase,
+        file_id: FileId,
+    ) -> Option<Arc<SubGraph>> {
         let graph = db.graph();
         let subgraphs = graph.find_subgraphs();
 
@@ -105,7 +107,7 @@ impl Graph {
         // Some(child.file_id)
     }
 
-    pub fn graph_query(db: &dyn DefDatabase) -> Arc<Self> {
+    pub fn graph_query(db: &dyn SourceDatabase) -> Arc<Self> {
         let documents = db.known_files();
         let mut graph = Self::default();
 
@@ -314,45 +316,6 @@ impl Graph {
         }
 
         subgraphs
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum IncludeType {
-    /// #include <foo>
-    Include,
-
-    /// #tryinclude <foo>
-    TryInclude,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum IncludeKind {
-    /// #include <foo>
-    Chevrons,
-
-    /// #include "foo"
-    Quotes,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Include {
-    id: FileId,
-    kind: IncludeKind,
-    type_: IncludeType,
-}
-
-impl Include {
-    pub fn file_id(&self) -> FileId {
-        self.id
-    }
-
-    pub fn kind(&self) -> IncludeKind {
-        self.kind
-    }
-
-    pub fn type_(&self) -> IncludeType {
-        self.type_
     }
 }
 

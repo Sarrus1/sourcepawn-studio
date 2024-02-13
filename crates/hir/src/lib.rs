@@ -1,5 +1,3 @@
-use std::any::Any;
-
 use base_db::Tree;
 use db::HirDatabase;
 use hir_def::{
@@ -85,7 +83,8 @@ impl File {
         db.file_includes(self.id).1.iter().for_each(|it| {
             acc.push(AnyDiagnostic::UnresolvedInclude(
                 UnresolvedInclude {
-                    expr: it.expr,
+                    file_id: it.file_id,
+                    range: it.range,
                     path: it.path.clone(),
                 }
                 .into(),

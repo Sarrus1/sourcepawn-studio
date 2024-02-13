@@ -993,6 +993,7 @@ dependencies = [
  "lazy_static",
  "log",
  "lsp-types",
+ "preprocessor",
  "regex",
  "salsa",
  "smallvec",
@@ -1141,6 +1142,7 @@ dependencies = [
  "line-index",
  "log",
  "lsp-types",
+ "preprocessor",
  "regex",
  "salsa",
  "sourcepawn_lexer",
@@ -1164,6 +1166,7 @@ dependencies = [
  "line-index",
  "log",
  "lsp-types",
+ "preprocessor",
  "regex",
  "salsa",
  "sourcepawn_lexer",
@@ -1912,12 +1915,14 @@ name = "preprocessor"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "base-db",
  "criterion 0.3.6",
  "fxhash",
  "lazy_static",
  "lsp-types",
  "minreq",
  "regex",
+ "salsa",
  "sourcepawn_lexer",
  "vfs",
 ]

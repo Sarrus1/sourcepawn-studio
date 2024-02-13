@@ -17,6 +17,7 @@ pub type Cancellable<T> = Result<T, Cancelled>;
     SourceDatabaseStorage,
     hir_def::db::InternDatabaseStorage,
     hir_def::db::DefDatabaseStorage,
+    preprocessor::db::PreprocDatabaseStorage,
     hir::db::HirDatabaseStorage
 )]
 pub struct RootDatabase {

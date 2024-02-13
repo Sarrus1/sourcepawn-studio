@@ -1,3 +1,5 @@
+use hir_def::InFile;
+
 use crate::{Diagnostic, DiagnosticCode, DiagnosticsContext};
 
 pub(crate) use self::unresolved_include as f;
@@ -6,14 +8,13 @@ pub(crate) use self::unresolved_include as f;
 //
 // This diagnostic is triggered if an include is not found.
 pub(crate) fn unresolved_include(
-    ctx: &DiagnosticsContext<'_>,
+    _ctx: &DiagnosticsContext<'_>,
     d: &hir::UnresolvedInclude,
 ) -> Diagnostic {
-    Diagnostic::new_with_syntax_node_ptr(
-        ctx,
+    Diagnostic::new_with_range(
         DiagnosticCode::SpCompError("E0000"),
         format!("file `{}` was not found", d.path),
-        d.expr,
+        InFile::new(d.file_id, d.range),
     )
     // .with_fixes(fixes(ctx, d))
     // .experimental()

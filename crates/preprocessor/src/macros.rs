@@ -246,7 +246,7 @@ where
             | TokenKind::Literal(Literal::CharLiteral) => {
                 let text = &queued_symbol.symbol.inline_text();
                 reversed_expansion_stack.push(Symbol::new(
-                    queued_symbol.symbol.token_kind.clone(),
+                    queued_symbol.symbol.token_kind,
                     Some(text),
                     Range::new(
                         queued_symbol.symbol.range.start,

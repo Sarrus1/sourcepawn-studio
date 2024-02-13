@@ -31,3 +31,4 @@ vfs.workspace = true
 base-db.workspace = true
 hir-def.workspace = true
 stdx.workspace = true
+preprocessor.workspace = true

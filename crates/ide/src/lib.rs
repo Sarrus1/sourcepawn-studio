@@ -4,15 +4,17 @@ mod goto_definition;
 
 use std::sync::Arc;
 
-use base_db::{Change, FileExtension, FilePosition, SourceDatabase, SourceDatabaseExt, Tree};
+use base_db::{
+    Change, FileExtension, FilePosition, Graph, SourceDatabase, SourceDatabaseExt, Tree,
+};
 use fxhash::FxHashMap;
 use hir_def::{DefDatabase, HashableHashMap};
 use ide_db::RootDatabase;
+use preprocessor::db::PreprocDatabase;
 use salsa::{Cancelled, ParallelDatabase};
 use vfs::FileId;
 
 pub use goto_definition::NavigationTarget;
-pub use hir_def::Graph;
 pub use ide_db::Cancellable;
 pub use ide_diagnostics::{Diagnostic, DiagnosticsConfig, Severity};
 pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};

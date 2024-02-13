@@ -1,12 +1,23 @@
 use std::sync::Arc;
 
+use include::file_includes_query;
 use input::{SourceRoot, SourceRootId};
 use vfs::{AnchoredPath, FileId};
 
 mod change;
+mod graph;
+mod include;
 mod input;
 
-pub use {change::Change, input::SourceRootConfig};
+pub use {
+    change::Change,
+    graph::Graph,
+    include::{
+        infer_include_ext, Include, IncludeKind, IncludeType, UnresolvedInclude, RE_CHEVRON,
+        RE_QUOTE,
+    },
+    input::SourceRootConfig,
+};
 
 pub trait FileLoader {
     /// Text of the file.
@@ -92,6 +103,15 @@ pub trait SourceDatabase: FileLoader + std::fmt::Debug {
     /// Parses the file into the syntax tree.
     #[salsa::invoke(parse_query)]
     fn parse(&self, file_id: FileId) -> Tree;
+
+    #[salsa::invoke(file_includes_query)]
+    fn file_includes(&self, file_id: FileId) -> (Arc<Vec<Include>>, Arc<Vec<UnresolvedInclude>>);
+
+    #[salsa::invoke(graph::Graph::graph_query)]
+    fn graph(&self) -> Arc<graph::Graph>;
+
+    #[salsa::invoke(graph::Graph::projet_subgraph_query)]
+    fn projet_subgraph(&self, file_id: FileId) -> Option<Arc<graph::SubGraph>>;
 }
 
 fn parse_query(db: &dyn SourceDatabase, file_id: FileId) -> Tree {

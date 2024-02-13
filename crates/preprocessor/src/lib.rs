@@ -1,8 +1,7 @@
 use anyhow::{anyhow, bail, Context};
+use base_db::{RE_CHEVRON, RE_QUOTE};
 use fxhash::FxHashMap;
-use lazy_static::lazy_static;
 use lsp_types::{Diagnostic, Position, Range};
-use regex::Regex;
 use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
 use vfs::FileId;
 
@@ -10,6 +9,7 @@ use errors::{ExpansionError, IncludeNotFoundError, MacroNotFoundError};
 use evaluator::IfCondition;
 use macros::expand_identifier;
 
+pub mod db;
 mod errors;
 pub(crate) mod evaluator;
 mod macros;
@@ -474,7 +474,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 let text = symbol.inline_text().trim().to_string();
                 let delta = symbol.range.end.line - symbol.range.start.line;
                 let symbol = Symbol::new(
-                    symbol.token_kind.clone(),
+                    symbol.token_kind,
                     Some(&text),
                     Range::new(
                         Position::new(symbol.range.start.line, symbol.range.start.character),
@@ -482,11 +482,8 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     ),
                     symbol.delta,
                 );
-                lazy_static! {
-                    static ref RE1: Regex = Regex::new(r"<([^>]+)>").unwrap();
-                    static ref RE2: Regex = Regex::new("\"([^>]+)\"").unwrap();
-                }
-                if let Some(caps) = RE1.captures(&text) {
+                // FIXME: The logic here is wrong.
+                if let Some(caps) = RE_CHEVRON.captures(&text) {
                     if let Some(path) = caps.get(1) {
                         match include_file(
                             &mut self.macros,
@@ -505,7 +502,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                         }
                     }
                 };
-                if let Some(caps) = RE2.captures(&text) {
+                if let Some(caps) = RE_QUOTE.captures(&text) {
                     if let Some(path) = caps.get(1) {
                         match include_file(
                             &mut self.macros,

@@ -32,3 +32,4 @@ vfs.workspace = true
 base-db.workspace = true
 ide-db.workspace = true
 ide-diagnostics.workspace = true
+preprocessor.workspace = true

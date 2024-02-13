@@ -3,7 +3,6 @@ use std::sync::Arc;
 use fxhash::FxHashMap;
 use la_arena::{Arena, ArenaMap, Idx};
 use syntax::TSKind;
-use tracing::field;
 
 use crate::{
     hir::type_ref::TypeRef,

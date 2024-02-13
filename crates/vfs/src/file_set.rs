@@ -23,6 +23,11 @@ impl FileSet {
         self.files.len()
     }
 
+    /// Returns `true` if the set contains no paths.
+    pub fn is_empty(&self) -> bool {
+        self.files.is_empty()
+    }
+
     /// Get the id of the file corresponding to `path`.
     ///
     /// If either `path`'s [`anchor`](AnchoredUrl::anchor) or the resolved path is not in
