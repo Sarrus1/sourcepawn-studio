@@ -2,7 +2,7 @@ use fxhash::FxHashMap;
 use vfs::FileId;
 
 fn extend_macros(
-    _macros: &mut FxHashMap<String, Macro>,
+    _macro_store: &mut FxHashMap<String, Macro>,
     mut _path: String,
     _file_id: FileId,
     _quoted: bool,

@@ -222,7 +222,11 @@ where
                     expanded_macros.push(queued_symbol.symbol.clone());
                 }
                 let new_context = if macro_.params.is_none() {
-                    expand_non_macro_define(macro_, &queued_symbol.symbol.delta)
+                    expand_non_macro_define(
+                        macro_,
+                        &queued_symbol.symbol.delta,
+                        queued_symbol.symbol.range,
+                    )
                 } else {
                     let Some(args) = args_collector.collect_arguments(
                         lexer,
@@ -288,14 +292,22 @@ where
 /// * `macro_` - [Macro] we are expanding.
 /// * `delta` - [Delta](sourcepawn_lexer::Delta) of the [symbols](Symbol) we are expanding
 /// to use for the first symbol in the [macro's](Macro) body.
-fn expand_non_macro_define(macro_: &Macro, delta: &sourcepawn_lexer::Delta) -> MacroContext {
+fn expand_non_macro_define(
+    macro_: &Macro,
+    delta: &sourcepawn_lexer::Delta,
+    mut prev_range: Range,
+) -> MacroContext {
     let mut macro_context = macro_
         .body
         .iter()
         .enumerate()
-        .map(|(i, child)| QueuedSymbol {
-            symbol: child.clone(),
-            delta: if i == 0 { *delta } else { child.delta },
+        .map(|(i, child)| {
+            let s = QueuedSymbol {
+                symbol: child.to_symbol(prev_range),
+                delta: if i == 0 { *delta } else { child.delta },
+            };
+            prev_range = s.symbol.range;
+            s
         })
         .collect::<MacroContext>();
 
@@ -312,12 +324,12 @@ fn expand_non_macro_define(macro_: &Macro, delta: &sourcepawn_lexer::Delta) -> M
 }
 
 /// Expand a function like macro by returning a new [context](MacroContext) of all the [symbols](Symbol)
-/// in the [macro](Macro)'s body.
+/// in the [macro](RangeLessMacro)'s body.
 ///
 /// # Arguments
 ///
 /// * `args` - [Arguments](MacroArguments) of the macro call.
-/// * `macro_` - [Macro] we are expanding.
+/// * `macro_` - [RangeLessMacro] we are expanding.
 /// * `symbol` - [Symbol] that originated the macro expansion. Used to keep track of the delta to insert.
 fn expand_macro(
     args: MacroArguments,
@@ -327,7 +339,17 @@ fn expand_macro(
     let mut new_context = MacroContext::default();
     let mut consecutive_percent = 0;
     let mut stringize_delta = None;
-    for (i, child) in macro_.body.iter().enumerate() {
+    let mut prev_range = symbol.range;
+    for (i, child) in macro_
+        .body
+        .iter()
+        .map(|s| {
+            let s = s.to_symbol(prev_range);
+            prev_range = s.range;
+            s
+        })
+        .enumerate()
+    {
         match &child.token_kind {
             TokenKind::Operator(Operator::Percent) => {
                 // Count consecutive % tokens.

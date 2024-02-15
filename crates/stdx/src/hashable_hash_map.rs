@@ -3,7 +3,7 @@ use std::hash::{Hash, Hasher};
 use fxhash::{FxHashMap, FxHashSet};
 
 // FIXME: Hopefully there is a way to avoid Hashable Hashmaps?
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HashableHashMap<K: Hash + Eq, V: Eq> {
     pub map: FxHashMap<K, V>,
 }
@@ -18,6 +18,14 @@ impl<K: Hash + Ord, V: Hash + Eq> Hash for HashableHashMap<K, V> {
         for (key, value) in pairs {
             key.hash(state);
             value.hash(state);
+        }
+    }
+}
+
+impl<K: Hash + Ord, V: Hash + Eq> Default for HashableHashMap<K, V> {
+    fn default() -> Self {
+        Self {
+            map: FxHashMap::default(),
         }
     }
 }

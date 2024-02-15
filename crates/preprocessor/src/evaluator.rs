@@ -13,17 +13,17 @@ use crate::Macro;
 pub struct IfCondition<'a> {
     pub symbols: Vec<Symbol>,
     pub(super) macro_not_found_errors: Vec<MacroNotFoundError>,
-    macros: &'a mut FxHashMap<String, Macro>,
+    macro_store: &'a mut FxHashMap<String, Macro>,
     expansion_stack: Vec<Symbol>,
     line_nb: u32,
 }
 
 impl<'a> IfCondition<'a> {
-    pub(super) fn new(macros: &'a mut FxHashMap<String, Macro>, line_nb: u32) -> Self {
+    pub(super) fn new(macro_store: &'a mut FxHashMap<String, Macro>, line_nb: u32) -> Self {
         Self {
             symbols: vec![],
             macro_not_found_errors: vec![],
-            macros,
+            macro_store,
             expansion_stack: vec![],
             line_nb,
         }
@@ -157,12 +157,12 @@ impl<'a> IfCondition<'a> {
                 }
                 _ => {
                     if looking_for_defined {
-                        output_queue.push(self.macros.contains_key(&symbol.text()).into());
+                        output_queue.push(self.macro_store.contains_key(&symbol.text()).into());
                         looking_for_defined = false;
                         may_be_unary = false;
                     } else {
                         // Skip the macro if it is disabled and reenable it.
-                        if let Some(macro_) = self.macros.get_mut(&symbol.text()) {
+                        if let Some(macro_) = self.macro_store.get_mut(&symbol.text()) {
                             if macro_.disabled {
                                 macro_.disabled = false;
                                 continue;
@@ -170,7 +170,7 @@ impl<'a> IfCondition<'a> {
                         }
                         match expand_identifier(
                             &mut symbol_iter,
-                            self.macros,
+                            self.macro_store,
                             &symbol,
                             &mut self.expansion_stack,
                             false

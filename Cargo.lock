@@ -1918,6 +1918,7 @@ dependencies = [
  "base-db",
  "criterion 0.3.6",
  "fxhash",
+ "la-arena",
  "lazy_static",
  "lsp-types",
  "minreq",

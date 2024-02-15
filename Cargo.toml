@@ -75,6 +75,7 @@ smallvec = { version = "1.10.0", features = [
 ] }
 dunce = "1.0.4"
 always-assert = "0.1.2"
+itertools = "0.11.0"
 
 
 [workspace.dependencies.uuid]

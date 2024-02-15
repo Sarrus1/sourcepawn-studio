@@ -1,11 +1,11 @@
 use fxhash::FxHashMap;
 use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
 
-use crate::{evaluator::IfCondition, Macro};
+use crate::evaluator::IfCondition;
 
 fn evaluate_if_condition(input: &str) -> bool {
     let mut lexer = SourcepawnLexer::new(input);
-    let mut macros: FxHashMap<String, Macro> = FxHashMap::default();
+    let mut macros = FxHashMap::default();
     let mut if_condition = IfCondition::new(&mut macros, 0);
     if let Some(symbol) = lexer.next() {
         if TokenKind::PreprocDir(sourcepawn_lexer::PreprocDir::MIf) == symbol.token_kind {

@@ -1,8 +1,10 @@
+use std::hash::Hash;
+
 use anyhow::{anyhow, bail, Context};
 use base_db::{RE_CHEVRON, RE_QUOTE};
 use fxhash::FxHashMap;
 use lsp_types::{Diagnostic, Position, Range};
-use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
+use sourcepawn_lexer::{Delta, Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
 use vfs::FileId;
 
 use errors::{ExpansionError, IncludeNotFoundError, MacroNotFoundError};
@@ -35,8 +37,54 @@ pub struct Offset {
     pub diff: i32,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RangeLessSymbol {
+    pub(crate) token_kind: TokenKind,
+    text: String,
+    pub(crate) delta: Delta,
+}
+
+impl Hash for RangeLessSymbol {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.token_kind.hash(state);
+        self.text.hash(state);
+        self.delta.hash(state);
+    }
+}
+
+impl From<Symbol> for RangeLessSymbol {
+    fn from(symbol: Symbol) -> Self {
+        Self {
+            token_kind: symbol.token_kind,
+            text: symbol.inline_text(),
+            delta: symbol.delta,
+        }
+    }
+}
+
+impl RangeLessSymbol {
+    pub fn text(&self) -> &String {
+        &self.text
+    }
+
+    pub fn to_symbol(&self, prev_range: Range) -> Symbol {
+        let range = Range::new(
+            Position::new(prev_range.end.line, prev_range.end.character),
+            Position::new(
+                prev_range.end.line.saturating_add_signed(self.delta.line),
+                prev_range
+                    .end
+                    .character
+                    .saturating_add_signed(self.delta.col),
+            ),
+        );
+        Symbol::new(self.token_kind, Some(&self.text), range, self.delta)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct SourcepawnPreprocessor<'a> {
+    idx: usize,
     lexer: SourcepawnLexer<'a>,
     macros: FxHashMap<String, Macro>,
     expansion_stack: Vec<Symbol>,
@@ -54,12 +102,27 @@ pub struct SourcepawnPreprocessor<'a> {
     offsets: FxHashMap<u32, Vec<Offset>>,
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Macro {
+    pub(crate) file_id: FileId,
+    pub(crate) idx: usize,
     pub(crate) params: Option<Vec<i8>>,
     pub(crate) nb_params: i8,
-    pub(crate) body: Vec<Symbol>,
+    pub(crate) body: Vec<RangeLessSymbol>,
     pub(crate) disabled: bool,
+}
+
+impl Macro {
+    pub fn default(file_id: FileId) -> Self {
+        Self {
+            file_id,
+            idx: 0,
+            params: None,
+            nb_params: 0,
+            body: vec![],
+            disabled: false,
+        }
+    }
 }
 
 impl<'a> SourcepawnPreprocessor<'a> {
@@ -67,7 +130,8 @@ impl<'a> SourcepawnPreprocessor<'a> {
         Self {
             lexer: SourcepawnLexer::new(input),
             file_id,
-            current_line: "".to_string(),
+            idx: 0,
+            current_line: String::new(),
             skip_line_start_col: 0,
             skipped_lines: vec![],
             macro_not_found_errors: vec![],
@@ -83,8 +147,18 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }
     }
 
-    pub fn set_macros(&mut self, macros: FxHashMap<String, Macro>) {
-        self.macros = macros;
+    pub fn set_macros(&mut self, macros_map: FxHashMap<String, Macro>) {
+        self.macros.extend(macros_map);
+    }
+
+    fn remove_macro(&mut self, name: &str) {
+        self.macros.remove(name);
+    }
+
+    pub fn insert_macro(&mut self, name: String, mut macro_: Macro) {
+        macro_.idx = self.idx;
+        self.idx += 1;
+        self.macros.insert(name, macro_);
     }
 
     pub fn result(self) -> PreprocessingResult {
@@ -362,7 +436,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
             PreprocDir::MDefine => {
                 self.push_symbol(symbol);
                 let mut macro_name = String::new();
-                let mut macro_ = Macro::default();
+                let mut macro_ = Macro::default(self.file_id);
                 enum State {
                     Start,
                     Params,
@@ -396,13 +470,13 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                     if symbol.token_kind == TokenKind::Identifier {
                                         self.evaluated_define_symbols.push(symbol.clone());
                                     }
-                                    macro_.body.push(symbol);
+                                    macro_.body.push(symbol.into());
                                     state = State::Body;
                                 }
                             }
                             State::Params => {
                                 if symbol.delta.col > 0 {
-                                    macro_.body.push(symbol);
+                                    macro_.body.push(symbol.into());
                                     state = State::Body;
                                     continue;
                                 }
@@ -438,7 +512,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                 if symbol.token_kind == TokenKind::Identifier {
                                     self.evaluated_define_symbols.push(symbol.clone());
                                 }
-                                macro_.body.push(symbol);
+                                macro_.body.push(symbol.into());
                             }
                         }
                     }
@@ -450,7 +524,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 self.push_current_line();
                 self.current_line = "".to_string();
                 self.prev_end = 0;
-                self.macros.insert(macro_name, macro_);
+                self.insert_macro(macro_name, macro_);
             }
             PreprocDir::MUndef => {
                 self.push_symbol(symbol);
@@ -462,7 +536,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                             self.current_line.push_str(&symbol.text());
                         }
                         if symbol.token_kind == TokenKind::Identifier {
-                            self.macros.remove(&symbol.text());
+                            self.remove_macro(&symbol.text());
                             break;
                         }
                     }
