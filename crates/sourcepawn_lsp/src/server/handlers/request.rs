@@ -1,4 +1,8 @@
 use anyhow::Context;
+use lsp_types::{
+    SemanticTokensDeltaParams, SemanticTokensFullDeltaResult, SemanticTokensParams,
+    SemanticTokensResult,
+};
 use store::normalize_uri;
 
 use crate::{
@@ -21,6 +25,65 @@ pub(crate) fn handle_goto_definition(
     };
 
     Ok(Some(to_proto::goto_definition_response(&snap, targets)?))
+}
+
+pub(crate) fn handle_semantic_tokens_full(
+    snap: GlobalStateSnapshot,
+    params: SemanticTokensParams,
+) -> anyhow::Result<Option<SemanticTokensResult>> {
+    let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
+    let text = snap.analysis.file_text(file_id)?;
+
+    let highlights = snap.analysis.highlight(file_id)?;
+    let semantic_tokens = to_proto::semantic_tokens(&text, highlights);
+
+    // Unconditionally cache the tokens
+    snap.semantic_tokens_cache
+        .lock()
+        .insert(params.text_document.uri, semantic_tokens.clone());
+
+    Ok(Some(semantic_tokens.into()))
+}
+
+pub(crate) fn handle_semantic_tokens_full_delta(
+    snap: GlobalStateSnapshot,
+    params: SemanticTokensDeltaParams,
+) -> anyhow::Result<Option<SemanticTokensFullDeltaResult>> {
+    let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
+    let text = snap.analysis.file_text(file_id)?;
+
+    let highlights = snap.analysis.highlight(file_id)?;
+
+    let semantic_tokens = to_proto::semantic_tokens(&text, highlights);
+
+    let cached_tokens = snap
+        .semantic_tokens_cache
+        .lock()
+        .remove(&params.text_document.uri);
+
+    if let Some(
+        cached_tokens @ lsp_types::SemanticTokens {
+            result_id: Some(prev_id),
+            ..
+        },
+    ) = &cached_tokens
+    {
+        if *prev_id == params.previous_result_id {
+            let delta = to_proto::semantic_token_delta(cached_tokens, &semantic_tokens);
+            snap.semantic_tokens_cache
+                .lock()
+                .insert(params.text_document.uri, semantic_tokens);
+            return Ok(Some(delta.into()));
+        }
+    }
+
+    // Clone first to keep the lock short
+    let semantic_tokens_clone = semantic_tokens.clone();
+    snap.semantic_tokens_cache
+        .lock()
+        .insert(params.text_document.uri, semantic_tokens_clone);
+
+    Ok(Some(semantic_tokens.into()))
 }
 
 pub(crate) fn handle_syntax_tree(

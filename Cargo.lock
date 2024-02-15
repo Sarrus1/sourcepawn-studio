@@ -2560,6 +2560,7 @@ dependencies = [
  "fxhash",
  "humantime",
  "ide",
+ "ide-db",
  "insta",
  "itertools 0.11.0",
  "lazy_static",

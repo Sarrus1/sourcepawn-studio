@@ -33,7 +33,7 @@ enum ConditionState {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Offset {
-    pub col: u32,
+    pub range: lsp_types::Range,
     pub diff: i32,
 }
 
@@ -259,7 +259,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                         .entry(symbol.range.start.line)
                         .or_default()
                         .push(Offset {
-                            col: expanded_symbol.range.start.character,
+                            range: expanded_symbol.range,
                             diff: (col_offset.take().unwrap_or(0)
                                 - (expanded_symbol.range.end.character
                                     - expanded_symbol.range.start.character)

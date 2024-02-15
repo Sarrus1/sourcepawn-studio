@@ -53,6 +53,10 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         self.db.parse(file_id)
     }
 
+    pub fn preprocess_file(&self, file_id: FileId) -> Arc<preprocessor::PreprocessingResult> {
+        self.db.preprocess_file(file_id)
+    }
+
     fn find_name_def(&self, file_id: FileId, node: &tree_sitter::Node) -> Option<DefResolution> {
         if !is_name_node(node) {
             return None;

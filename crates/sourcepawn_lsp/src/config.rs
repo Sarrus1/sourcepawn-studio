@@ -12,6 +12,23 @@ use std::{collections::HashSet, path::PathBuf};
 
 use crate::{line_index::PositionEncoding, lsp::ext::negotiated_encoding};
 
+macro_rules! try_ {
+    ($expr:expr) => {
+        || -> _ { Some($expr) }()
+    };
+}
+macro_rules! try_or {
+    ($expr:expr, $or:expr) => {
+        try_!($expr).unwrap_or($or)
+    };
+}
+
+macro_rules! try_or_def {
+    ($expr:expr) => {
+        try_!($expr).unwrap_or_default()
+    };
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(default)]
@@ -120,5 +137,16 @@ impl Config {
             .into_iter()
             .flat_map(AbsPathBuf::try_from)
             .collect_vec()
+    }
+
+    pub fn semantic_tokens_refresh(&self) -> bool {
+        try_or_def!(
+            self.caps
+                .workspace
+                .as_ref()?
+                .semantic_tokens
+                .as_ref()?
+                .refresh_support?
+        )
     }
 }

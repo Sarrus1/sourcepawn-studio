@@ -9,10 +9,10 @@ use lsp_server::{Connection, ErrorCode, Message, RequestId};
 use lsp_types::{
     notification::{Notification, ShowMessage},
     request::{Request, WorkspaceConfiguration},
-    ConfigurationItem, ConfigurationParams, InitializeResult, MessageType, ServerInfo,
-    ShowMessageParams, Url,
+    ConfigurationItem, ConfigurationParams, InitializeResult, MessageType, SemanticTokens,
+    ServerInfo, ShowMessageParams, Url,
 };
-use parking_lot::{RwLock, RwLockUpgradableReadGuard, RwLockWriteGuard};
+use parking_lot::{Mutex, RwLock, RwLockUpgradableReadGuard, RwLockWriteGuard};
 use paths::AbsPathBuf;
 use serde::Serialize;
 use std::{env, path::PathBuf, sync::Arc, time::Instant};
@@ -23,7 +23,7 @@ use vfs::{FileId, Vfs, VfsPath};
 use crate::{
     capabilities::{server_capabilities, ClientCapabilitiesExt},
     client::LspClient,
-    config::{Config, ConfigData},
+    config::Config,
     diagnostics::{fetch_native_diagnostics, DiagnosticCollection},
     dispatch::{NotificationDispatcher, RequestDispatcher},
     from_json,
@@ -31,7 +31,6 @@ use crate::{
     lsp::{from_proto, to_proto::url_from_abs_path},
     lsp_ext,
     mem_docs::MemDocs,
-    op_queue::OpQueue,
     server::progress::Progress,
     task_pool::TaskPool,
     version::version,
@@ -73,6 +72,7 @@ pub struct GlobalState {
     pub(crate) diagnostics: DiagnosticCollection,
     pub(crate) mem_docs: MemDocs,
     pub(crate) source_root_config: SourceRootConfig,
+    pub(crate) semantic_tokens_cache: Arc<Mutex<FxHashMap<Url, SemanticTokens>>>,
 
     connection: Arc<Connection>,
     client: LspClient,
@@ -130,6 +130,7 @@ impl GlobalState {
 
             mem_docs: MemDocs::default(),
             source_root_config: SourceRootConfig::default(),
+            semantic_tokens_cache: Arc::new(Mutex::new(FxHashMap::default())),
             diagnostics: DiagnosticCollection::default(),
 
             shutdown_requested: false,
@@ -153,6 +154,7 @@ impl GlobalState {
             config: Arc::clone(&self.config),
             analysis: self.analysis_host.analysis(),
             mem_docs: self.mem_docs.clone(),
+            semantic_tokens_cache: Arc::clone(&self.semantic_tokens_cache),
             vfs: Arc::clone(&self.vfs),
         }
     }
@@ -462,6 +464,12 @@ impl GlobalState {
         use lsp_types::request as lsp_request;
 
         dispatcher
+            .on_latency_sensitive::<lsp_request::SemanticTokensFullRequest>(
+                handlers::handle_semantic_tokens_full,
+            )
+            .on_latency_sensitive::<lsp_request::SemanticTokensFullDeltaRequest>(
+                handlers::handle_semantic_tokens_full_delta,
+            )
             .on::<lsp_request::GotoDefinition>(handlers::handle_goto_definition)
             .on::<lsp_ext::SyntaxTree>(handlers::handle_syntax_tree)
             .on::<lsp_ext::ProjectsGraphviz>(handlers::handle_projects_graphviz)
@@ -560,27 +568,27 @@ impl GlobalState {
         if self.is_quiescent() {
             let became_quiescent = !(was_quiescent);
 
-            // let client_refresh = !was_quiescent || state_changed;
-            // if client_refresh {
-            // Refresh semantic tokens if the client supports it.
-            // if self.config.semantic_tokens_refresh() {
-            //     self.semantic_tokens_cache.lock().clear();
-            //     self.send_request::<lsp_types::request::SemanticTokensRefresh>((), |_, _| ());
-            // }
+            let client_refresh = !was_quiescent || state_changed;
+            if client_refresh {
+                // Refresh semantic tokens if the client supports it.
+                if self.config.semantic_tokens_refresh() {
+                    self.semantic_tokens_cache.lock().clear();
+                    self.send_request::<lsp_types::request::SemanticTokensRefresh>((), |_, _| ());
+                }
 
-            // Refresh code lens if the client supports it.
-            // if self.config.code_lens_refresh() {
-            //     self.send_request::<lsp_types::request::CodeLensRefresh>((), |_, _| ());
-            // }
+                // Refresh code lens if the client supports it.
+                // if self.config.code_lens_refresh() {
+                //     self.send_request::<lsp_types::request::CodeLensRefresh>((), |_, _| ());
+                // }
 
-            // Refresh inlay hints if the client supports it.
-            // if (self.send_hint_refresh_query || self.proc_macro_changed)
-            //     && self.config.inlay_hints_refresh()
-            // {
-            //     self.send_request::<lsp_types::request::InlayHintRefreshRequest>((), |_, _| ());
-            //     self.send_hint_refresh_query = false;
-            // }
-            // }
+                // Refresh inlay hints if the client supports it.
+                // if (self.send_hint_refresh_query || self.proc_macro_changed)
+                //     && self.config.inlay_hints_refresh()
+                // {
+                //     self.send_request::<lsp_types::request::InlayHintRefreshRequest>((), |_, _| ());
+                //     self.send_hint_refresh_query = false;
+                // }
+            }
 
             let update_diagnostics = (!was_quiescent || state_changed || memdocs_added_or_removed)
                 && self.config.publish_diagnostics();
@@ -925,6 +933,7 @@ pub(crate) struct GlobalStateSnapshot {
     pub(crate) config: Arc<Config>,
     pub(crate) analysis: Analysis,
     pub(crate) mem_docs: MemDocs,
+    pub(crate) semantic_tokens_cache: Arc<Mutex<FxHashMap<Url, SemanticTokens>>>,
     vfs: Arc<RwLock<vfs::Vfs>>,
 }
 

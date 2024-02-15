@@ -1,6 +1,7 @@
 //! base_db defines basic database traits. The concrete DB is defined by ide.
 
 mod goto_definition;
+mod syntax_highlighting;
 
 use std::sync::Arc;
 
@@ -16,6 +17,7 @@ pub use goto_definition::NavigationTarget;
 pub use ide_db::Cancellable;
 pub use ide_diagnostics::{Diagnostic, DiagnosticsConfig, Severity};
 pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};
+pub use syntax_highlighting::{Highlight, HlMod, HlMods, HlRange, HlTag};
 
 /// `AnalysisHost` stores the current state of the world.
 #[derive(Debug, Default)]
@@ -113,5 +115,10 @@ impl Analysis {
     /// Returns the definitions from the symbol at `position`.
     pub fn goto_definition(&self, pos: FilePosition) -> Cancellable<Option<Vec<NavigationTarget>>> {
         self.with_db(|db| goto_definition::goto_definition(db, pos))
+    }
+
+    /// Returns the highlighted ranges for the file.
+    pub fn highlight(&self, file_id: FileId) -> Cancellable<Vec<syntax_highlighting::HlRange>> {
+        self.with_db(|db| syntax_highlighting::highlight(db, file_id))
     }
 }

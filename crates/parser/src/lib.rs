@@ -48,7 +48,7 @@ pub fn build_v_range(offsets: &FxHashMap<u32, Vec<Offset>>, range: &Range) -> Ra
 
     if let Some(start_offsets) = offsets.get(&start.line) {
         for offset in start_offsets.iter() {
-            if offset.col < start.character {
+            if offset.range.start.character < start.character {
                 start.character = start
                     .character
                     .checked_add_signed(-offset.diff)
@@ -59,7 +59,7 @@ pub fn build_v_range(offsets: &FxHashMap<u32, Vec<Offset>>, range: &Range) -> Ra
 
     if let Some(end_offsets) = offsets.get(&end.line) {
         for offset in end_offsets.iter() {
-            if offset.col < end.character {
+            if offset.range.start.character < end.character {
                 end.character = end.character.checked_add_signed(-offset.diff).unwrap_or(0);
             }
         }

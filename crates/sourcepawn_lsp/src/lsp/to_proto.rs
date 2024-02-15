@@ -1,9 +1,14 @@
-use std::path;
+use std::{
+    path,
+    sync::atomic::{AtomicU32, Ordering},
+};
 
-use ide::{Cancellable, NavigationTarget, Severity};
+use ide::{Cancellable, Highlight, HlMod, HlRange, HlTag, NavigationTarget, Severity};
+use ide_db::SymbolKind;
 use itertools::Itertools;
 use paths::AbsPath;
 
+use super::semantic_tokens;
 use crate::server::GlobalStateSnapshot;
 
 pub(crate) fn goto_definition_response(
@@ -21,6 +26,59 @@ pub(crate) fn goto_definition_response(
             })
             .collect(),
     ))
+}
+
+static TOKEN_RESULT_COUNTER: AtomicU32 = AtomicU32::new(1);
+
+pub(crate) fn semantic_tokens(text: &str, highlights: Vec<HlRange>) -> lsp_types::SemanticTokens {
+    let id = TOKEN_RESULT_COUNTER
+        .fetch_add(1, Ordering::SeqCst)
+        .to_string();
+    let mut builder = semantic_tokens::SemanticTokensBuilder::new(id);
+
+    for highlight_range in highlights {
+        if highlight_range.highlight.is_empty() {
+            continue;
+        }
+
+        let (mut ty, mut mods) = semantic_token_type_and_modifiers(highlight_range.highlight);
+
+        let token_index = semantic_tokens::type_index(ty);
+        let modifier_bitset = mods.0;
+        builder.push(highlight_range.range, token_index, modifier_bitset);
+    }
+
+    builder.build()
+}
+
+pub(crate) fn semantic_token_delta(
+    previous: &lsp_types::SemanticTokens,
+    current: &lsp_types::SemanticTokens,
+) -> lsp_types::SemanticTokensDelta {
+    let result_id = current.result_id.clone();
+    let edits = semantic_tokens::diff_tokens(&previous.data, &current.data);
+    lsp_types::SemanticTokensDelta { result_id, edits }
+}
+
+fn semantic_token_type_and_modifiers(
+    highlight: Highlight,
+) -> (lsp_types::SemanticTokenType, semantic_tokens::ModifierSet) {
+    let mut mods = semantic_tokens::ModifierSet::default();
+    let type_ = match highlight.tag {
+        HlTag::Symbol(symbol) => match symbol {
+            SymbolKind::Macro => semantic_tokens::MACRO,
+        },
+        HlTag::None => semantic_tokens::GENERIC,
+    };
+
+    for modifier in highlight.mods.iter() {
+        let modifier = match modifier {
+            HlMod::Macro => semantic_tokens::MACRO_MODIFIER,
+        };
+        mods |= modifier;
+    }
+
+    (type_, mods)
 }
 
 pub(crate) fn diagnostic_severity(severity: Severity) -> lsp_types::DiagnosticSeverity {

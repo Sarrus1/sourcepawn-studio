@@ -1,11 +1,15 @@
 use ide::WideEncoding;
 use lsp_types::{
-    ClientCapabilities, MarkupKind, OneOf,
-    PositionEncodingKind,
-    ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind,
+    ClientCapabilities, MarkupKind, OneOf, PositionEncodingKind, SemanticTokensFullOptions,
+    SemanticTokensLegend, SemanticTokensOptions, ServerCapabilities, TextDocumentSyncCapability,
+    TextDocumentSyncKind,
 };
 
-use crate::{config::Config, line_index::PositionEncoding, lsp::ext::negotiated_encoding};
+use crate::{
+    config::Config,
+    line_index::PositionEncoding,
+    lsp::{ext::negotiated_encoding, semantic_tokens},
+};
 
 pub fn server_capabilities(config: &Config) -> ServerCapabilities {
     ServerCapabilities {
@@ -21,6 +25,19 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
             TextDocumentSyncKind::INCREMENTAL,
         )),
         definition_provider: Some(OneOf::Left(true)),
+        semantic_tokens_provider: Some(
+            SemanticTokensOptions {
+                legend: SemanticTokensLegend {
+                    token_types: semantic_tokens::SUPPORTED_TYPES.to_vec(),
+                    token_modifiers: semantic_tokens::SUPPORTED_MODIFIERS.to_vec(),
+                },
+
+                full: Some(SemanticTokensFullOptions::Delta { delta: Some(true) }),
+                range: Some(true),
+                work_done_progress_options: Default::default(),
+            }
+            .into(),
+        ),
         /*
         completion_provider: Some(CompletionOptions {
             trigger_characters: Some(vec![
@@ -50,34 +67,6 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
         references_provider: Some(OneOf::Left(true)),
         document_symbol_provider: Some(OneOf::Left(true)),
         rename_provider: Some(OneOf::Left(true)),
-        semantic_tokens_provider: Some(SemanticTokensServerCapabilities::SemanticTokensOptions(
-            SemanticTokensOptions {
-                work_done_progress_options: WorkDoneProgressOptions {
-                    work_done_progress: None,
-                },
-                legend: SemanticTokensLegend {
-                    token_types: vec![
-                        SemanticTokenType::VARIABLE,
-                        SemanticTokenType::ENUM_MEMBER,
-                        SemanticTokenType::FUNCTION,
-                        SemanticTokenType::CLASS,
-                        SemanticTokenType::METHOD,
-                        SemanticTokenType::MACRO,
-                        SemanticTokenType::PROPERTY,
-                        SemanticTokenType::STRUCT,
-                        SemanticTokenType::ENUM,
-                    ],
-                    token_modifiers: vec![
-                        SemanticTokenModifier::READONLY,
-                        SemanticTokenModifier::DECLARATION,
-                        SemanticTokenModifier::DEPRECATED,
-                        SemanticTokenModifier::MODIFICATION,
-                    ],
-                },
-                range: Some(false),
-                full: Some(SemanticTokensFullOptions::Delta { delta: Some(false) }),
-            },
-        )),
         call_hierarchy_provider: Some(CallHierarchyServerCapability::Simple(true)),
         */
         ..Default::default()

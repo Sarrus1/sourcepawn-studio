@@ -1,5 +1,5 @@
 use anyhow::Result;
-use lsp_server::{ExtractError};
+use lsp_server::ExtractError;
 use salsa::Cancelled;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{fmt, panic, thread};
@@ -61,10 +61,23 @@ impl RequestDispatcher<'_> {
         R::Params: DeserializeOwned + panic::UnwindSafe + Send + fmt::Debug,
         R::Result: Serialize,
     {
-        self.on_with_thread_intent::<R>(ThreadIntent::Worker, f)
+        self.on_with_thread_intent::<true, R>(ThreadIntent::Worker, f)
     }
 
-    fn on_with_thread_intent<R>(
+    /// Dispatches a latency-sensitive request onto the thread pool.
+    pub(crate) fn on_latency_sensitive<R>(
+        &mut self,
+        f: fn(GlobalStateSnapshot, R::Params) -> anyhow::Result<R::Result>,
+    ) -> &mut Self
+    where
+        R: lsp_types::request::Request + 'static,
+        R::Params: DeserializeOwned + panic::UnwindSafe + Send + fmt::Debug,
+        R::Result: Serialize,
+    {
+        self.on_with_thread_intent::<true, R>(ThreadIntent::LatencySensitive, f)
+    }
+
+    fn on_with_thread_intent<const MAIN_POOL: bool, R>(
         &mut self,
         intent: ThreadIntent,
         f: fn(GlobalStateSnapshot, R::Params) -> anyhow::Result<R::Result>,

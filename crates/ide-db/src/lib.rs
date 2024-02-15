@@ -96,3 +96,8 @@ impl salsa::ParallelDatabase for RootDatabase {
         })
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum SymbolKind {
+    Macro,
+}
