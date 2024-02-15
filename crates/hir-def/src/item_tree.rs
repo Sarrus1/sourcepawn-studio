@@ -8,7 +8,7 @@ use std::sync::Arc;
 use syntax::TSKind;
 use vfs::FileId;
 
-pub use crate::ast_id_map::{AstId, NodePtr};
+pub use crate::ast_id_map::AstId;
 use crate::{db::DefDatabase, hir::type_ref::TypeRef, src::HasSource, BlockId, ItemTreeId, Lookup};
 
 use self::lower::Ctx;

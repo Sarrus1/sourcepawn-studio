@@ -7,8 +7,6 @@ use std::sync::Arc;
 use base_db::{
     Change, FileExtension, FilePosition, Graph, SourceDatabase, SourceDatabaseExt, Tree,
 };
-use fxhash::FxHashMap;
-use hir_def::{DefDatabase, HashableHashMap};
 use ide_db::RootDatabase;
 use preprocessor::db::PreprocDatabase;
 use salsa::{Cancelled, ParallelDatabase};

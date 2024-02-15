@@ -5,8 +5,6 @@ use base_db::{
     RE_QUOTE,
 };
 use fxhash::FxHashMap;
-use lazy_static::lazy_static;
-use regex::Regex;
 use syntax::TSKind;
 use vfs::{AnchoredPath, FileId};
 
