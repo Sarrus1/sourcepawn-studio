@@ -20,28 +20,28 @@ pub(crate) fn goto_definition(
     log::info!("Going to def.");
     let sema = &Semantics::new(db);
     let preprocessing_results = sema.preprocess_file(pos.file_id);
-    let (def, range) =
-        if let Some(offsets) = preprocessing_results.offsets().get(&pos.position.line) {
-            let offset = offsets
-                .iter()
-                .find(|offset| offset.contains(pos.position))?;
-            (
-                sema.find_macro_def(offset.file_id, offset.idx)
-                    .map(DefResolution::from)?,
-                offset.range,
-            )
-        } else {
-            let tree = sema.parse(pos.file_id);
-            let root_node = tree.root_node();
-            let node = root_node.descendant_for_point_range(
-                lsp_position_to_ts_point(&pos.position),
-                lsp_position_to_ts_point(&pos.position),
-            )?;
-            (
-                sema.find_def(pos.file_id, &node)?,
-                ts_range_to_lsp_range(&node.range()),
-            )
-        };
+    let (def, range) = if let Some(offset) = preprocessing_results
+        .offsets()
+        .get(&pos.position.line)
+        .and_then(|offsets| offsets.iter().find(|offset| offset.contains(pos.position)))
+    {
+        (
+            sema.find_macro_def(offset.file_id, offset.idx)
+                .map(DefResolution::from)?,
+            offset.range,
+        )
+    } else {
+        let tree = sema.parse(pos.file_id);
+        let root_node = tree.root_node();
+        let node = root_node.descendant_for_point_range(
+            lsp_position_to_ts_point(&pos.position),
+            lsp_position_to_ts_point(&pos.position),
+        )?;
+        (
+            sema.find_def(pos.file_id, &node)?,
+            ts_range_to_lsp_range(&node.range()),
+        )
+    };
 
     let file_id = def.file_id(db);
     let source_tree = sema.parse(file_id);

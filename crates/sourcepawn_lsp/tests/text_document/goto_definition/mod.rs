@@ -65,6 +65,19 @@ void bar() {
 }
 
 #[test]
+fn global_variable_6() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOO 1
+int foo = FOO;
+     |
+     ^
+"#,
+    ));
+}
+
+#[test]
 fn local_variable_1() {
     assert_json_snapshot!(goto_definition(
         r#"
