@@ -1,13 +1,13 @@
 use fxhash::FxHashMap;
 
-use crate::{errors::EvaluationError, Macro, Offset};
+use crate::{errors::PreprocessorErrors, Macro, Offset};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PreprocessingResult {
     preprocessed_text: String,
     macros: FxHashMap<String, Macro>,
     offsets: FxHashMap<u32, Vec<Offset>>,
-    evaluation_errors: Vec<EvaluationError>,
+    errors: PreprocessorErrors,
 }
 
 impl PreprocessingResult {
@@ -15,13 +15,13 @@ impl PreprocessingResult {
         preprocessed_text: String,
         macros: FxHashMap<String, Macro>,
         offsets: FxHashMap<u32, Vec<Offset>>,
-        evaluation_errors: Vec<EvaluationError>,
+        errors: PreprocessorErrors,
     ) -> Self {
         Self {
             preprocessed_text,
             macros,
             offsets,
-            evaluation_errors,
+            errors,
         }
     }
 
@@ -30,7 +30,7 @@ impl PreprocessingResult {
             preprocessed_text: text.to_string(),
             macros: FxHashMap::default(),
             offsets: FxHashMap::default(),
-            evaluation_errors: Vec::new(),
+            errors: Default::default(),
         }
     }
 
@@ -46,7 +46,7 @@ impl PreprocessingResult {
         &self.offsets
     }
 
-    pub fn evaluation_errors(&self) -> &Vec<EvaluationError> {
-        &self.evaluation_errors
+    pub fn errors(&self) -> &PreprocessorErrors {
+        &self.errors
     }
 }

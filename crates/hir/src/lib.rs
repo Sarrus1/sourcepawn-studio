@@ -91,7 +91,8 @@ impl File {
             ))
         });
         db.preprocess_file(self.id)
-            .evaluation_errors()
+            .errors()
+            .evaluation_errors
             .iter()
             .for_each(|it| {
                 acc.push(AnyDiagnostic::PreprocessorEvaluationError(

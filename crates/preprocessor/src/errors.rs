@@ -30,8 +30,8 @@ impl From<ParseIntError> for ExpansionError {
 
 impl error::Error for ExpansionError {}
 
-#[derive(Debug, Clone)]
-pub(super) struct MacroNotFoundError {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MacroNotFoundError {
     pub(super) macro_name: String,
     pub(super) range: Range,
 }
@@ -50,8 +50,8 @@ impl fmt::Display for MacroNotFoundError {
 
 impl error::Error for MacroNotFoundError {}
 
-#[derive(Debug, Clone)]
-pub(super) struct IncludeNotFoundError {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IncludeNotFoundError {
     pub(super) include_text: String,
     pub(super) range: Range,
 }
@@ -77,7 +77,7 @@ impl fmt::Display for IncludeNotFoundError {
 
 impl error::Error for IncludeNotFoundError {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct ParseIntError {
     pub(super) text: String,
     pub(super) range: Range,
@@ -132,3 +132,10 @@ impl fmt::Display for EvaluationError {
 }
 
 impl error::Error for EvaluationError {}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct PreprocessorErrors {
+    pub macro_not_found_errors: Vec<MacroNotFoundError>,
+    pub evaluation_errors: Vec<EvaluationError>,
+    pub include_not_found_errors: Vec<IncludeNotFoundError>,
+}

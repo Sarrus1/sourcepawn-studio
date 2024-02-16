@@ -77,47 +77,43 @@ pub(crate) fn _preprocess_file_params_query(
 
     let mut preprocessor = SourcepawnPreprocessor::new(file_id, &text);
     preprocessor.set_macros(macros.to_map().clone());
-    let res = preprocessor
-        .preprocess_input(
-            &mut (|macros: &mut FxHashMap<String, Macro>,
-                   mut path: String,
-                   file_id: FileId,
-                   quoted: bool| {
-                let mut inc_file_id = None;
-                infer_include_ext(&mut path);
-                if quoted {
-                    inc_file_id = db.resolve_path(AnchoredPath::new(file_id, &path));
-                };
-                if inc_file_id.is_none() {
-                    inc_file_id = db.resolve_path_relative_to_roots(&path);
-                }
-                let inc_file_id =
-                    inc_file_id.ok_or_else(|| anyhow::anyhow!("Include not found"))?;
-                if being_preprocessed.contains(&inc_file_id) {
-                    // Avoid cyclic deps
-                    return Ok(());
-                }
-                let map = macros.clone().into();
-                let res =
-                    db.preprocess_file_inner_params(inc_file_id, map, being_preprocessed.clone());
-                results.extend(res.as_ref().clone());
+    let res = preprocessor.preprocess_input(
+        &mut (|macros: &mut FxHashMap<String, Macro>,
+               mut path: String,
+               file_id: FileId,
+               quoted: bool| {
+            let mut inc_file_id = None;
+            infer_include_ext(&mut path);
+            if quoted {
+                inc_file_id = db.resolve_path(AnchoredPath::new(file_id, &path));
+            };
+            if inc_file_id.is_none() {
+                inc_file_id = db.resolve_path_relative_to_roots(&path);
+            }
+            let inc_file_id = inc_file_id.ok_or_else(|| anyhow::anyhow!("Include not found"))?;
+            if being_preprocessed.contains(&inc_file_id) {
+                // Avoid cyclic deps
+                return Ok(());
+            }
+            let map = macros.clone().into();
+            let res = db.preprocess_file_inner_params(inc_file_id, map, being_preprocessed.clone());
+            results.extend(res.as_ref().clone());
 
-                let Some(params) = res.as_ref().get(&inc_file_id) else {
-                    bail!("No preprocessing params found for file_id: {}", inc_file_id);
-                };
-                output_macros.extend(params.output_macros.clone());
-                macros.extend(
-                    params
-                        .output_macros
-                        .get(&inc_file_id)
-                        .map(|m| m.to_map().clone())
-                        .unwrap_or_default(),
-                );
+            let Some(params) = res.as_ref().get(&inc_file_id) else {
+                bail!("No preprocessing params found for file_id: {}", inc_file_id);
+            };
+            output_macros.extend(params.output_macros.clone());
+            macros.extend(
+                params
+                    .output_macros
+                    .get(&inc_file_id)
+                    .map(|m| m.to_map().clone())
+                    .unwrap_or_default(),
+            );
 
-                Ok(())
-            }),
-        )
-        .unwrap_or_else(|_| PreprocessingResult::default(&text));
+            Ok(())
+        }),
+    );
 
     output_macros.insert(file_id, res.macros().clone().into());
     results.insert(
@@ -168,6 +164,5 @@ pub(crate) fn _preprocess_file_data_query(
                 Ok(())
             }),
         )
-        .unwrap_or_else(|_| PreprocessingResult::default(&text))
         .into()
 }

@@ -1,13 +1,14 @@
 use std::hash::Hash;
 
-use anyhow::{anyhow, bail, Context};
+use anyhow::{bail, Context};
 use base_db::{RE_CHEVRON, RE_QUOTE};
 use fxhash::FxHashMap;
 use lsp_types::{Diagnostic, Position, Range};
-use sourcepawn_lexer::{Delta, Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
+use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
+use symbol::RangeLessSymbol;
 use vfs::FileId;
 
-use errors::{ExpansionError, IncludeNotFoundError, MacroNotFoundError};
+use errors::{ExpansionError, IncludeNotFoundError, PreprocessorErrors};
 use evaluator::IfCondition;
 use macros::expand_identifier;
 
@@ -17,6 +18,7 @@ pub(crate) mod evaluator;
 mod macros;
 mod preprocessor_operator;
 mod result;
+mod symbol;
 
 pub use errors::EvaluationError;
 pub use result::PreprocessingResult;
@@ -24,10 +26,16 @@ pub use result::PreprocessingResult;
 #[cfg(test)]
 mod test;
 
+/// State of a preprocessor condition.
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum ConditionState {
+    /// The condition is not activated and could be activated by an else/elseif directive.
     NotActivated,
+
+    /// The condition has been activated, all related else/elseif directives should be skipped.
     Activated,
+
+    /// The condition is active and the preprocessor should process the code.
     Active,
 }
 
@@ -37,62 +45,16 @@ pub struct Offset {
     pub diff: i32,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RangeLessSymbol {
-    pub(crate) token_kind: TokenKind,
-    text: String,
-    pub(crate) delta: Delta,
-}
-
-impl Hash for RangeLessSymbol {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.token_kind.hash(state);
-        self.text.hash(state);
-        self.delta.hash(state);
-    }
-}
-
-impl From<Symbol> for RangeLessSymbol {
-    fn from(symbol: Symbol) -> Self {
-        Self {
-            token_kind: symbol.token_kind,
-            text: symbol.inline_text(),
-            delta: symbol.delta,
-        }
-    }
-}
-
-impl RangeLessSymbol {
-    pub fn text(&self) -> &String {
-        &self.text
-    }
-
-    pub fn to_symbol(&self, prev_range: Range) -> Symbol {
-        let range = Range::new(
-            Position::new(prev_range.end.line, prev_range.end.character),
-            Position::new(
-                prev_range.end.line.saturating_add_signed(self.delta.line),
-                prev_range
-                    .end
-                    .character
-                    .saturating_add_signed(self.delta.col),
-            ),
-        );
-        Symbol::new(self.token_kind, Some(&self.text), range, self.delta)
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct SourcepawnPreprocessor<'a> {
     idx: usize,
     lexer: SourcepawnLexer<'a>,
+    input: &'a str,
     macros: FxHashMap<String, Macro>,
     expansion_stack: Vec<Symbol>,
     skip_line_start_col: u32,
     skipped_lines: Vec<lsp_types::Range>,
-    macro_not_found_errors: Vec<MacroNotFoundError>,
-    evaluation_errors: Vec<EvaluationError>,
-    include_not_found_errors: Vec<IncludeNotFoundError>,
+    errors: PreprocessorErrors,
     evaluated_define_symbols: Vec<Symbol>,
     file_id: FileId,
     current_line: String,
@@ -129,14 +91,13 @@ impl<'a> SourcepawnPreprocessor<'a> {
     pub fn new(file_id: FileId, input: &'a str) -> Self {
         Self {
             lexer: SourcepawnLexer::new(input),
+            input,
             file_id,
             idx: 0,
             current_line: String::new(),
             skip_line_start_col: 0,
             skipped_lines: vec![],
-            macro_not_found_errors: vec![],
-            include_not_found_errors: vec![],
-            evaluation_errors: vec![],
+            errors: Default::default(),
             evaluated_define_symbols: vec![],
             prev_end: 0,
             conditions_stack: vec![],
@@ -162,11 +123,15 @@ impl<'a> SourcepawnPreprocessor<'a> {
     }
 
     pub fn result(self) -> PreprocessingResult {
+        PreprocessingResult::new(self.out.join("\n"), self.macros, self.offsets, self.errors)
+    }
+
+    pub fn error_result(self) -> PreprocessingResult {
         PreprocessingResult::new(
-            self.out.join("\n"),
+            self.input.to_owned(),
             self.macros,
             self.offsets,
-            self.evaluation_errors,
+            self.errors,
         )
     }
 
@@ -205,25 +170,35 @@ impl<'a> SourcepawnPreprocessor<'a> {
     }
 
     fn get_macro_not_found_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
-        diagnostics.extend(self.macro_not_found_errors.iter().map(|err| Diagnostic {
-            range: err.range,
-            message: format!("Macro {} not found.", err.macro_name),
-            severity: Some(lsp_types::DiagnosticSeverity::ERROR),
-            ..Default::default()
-        }));
+        diagnostics.extend(
+            self.errors
+                .macro_not_found_errors
+                .iter()
+                .map(|err| Diagnostic {
+                    range: err.range,
+                    message: format!("Macro {} not found.", err.macro_name),
+                    severity: Some(lsp_types::DiagnosticSeverity::ERROR),
+                    ..Default::default()
+                }),
+        );
     }
 
     fn get_include_not_found_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
-        diagnostics.extend(self.include_not_found_errors.iter().map(|err| Diagnostic {
-            range: err.range,
-            message: format!("Include \"{}\" not found.", err.include_text),
-            severity: Some(lsp_types::DiagnosticSeverity::ERROR),
-            ..Default::default()
-        }));
+        diagnostics.extend(
+            self.errors
+                .include_not_found_errors
+                .iter()
+                .map(|err| Diagnostic {
+                    range: err.range,
+                    message: format!("Include \"{}\" not found.", err.include_text),
+                    severity: Some(lsp_types::DiagnosticSeverity::ERROR),
+                    ..Default::default()
+                }),
+        );
     }
 
     fn get_evaluation_error_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
-        diagnostics.extend(self.evaluation_errors.iter().map(|err| Diagnostic {
+        diagnostics.extend(self.errors.evaluation_errors.iter().map(|err| Diagnostic {
             range: err.range,
             message: format!("Preprocessor condition is invalid: {}", err.text),
             severity: Some(lsp_types::DiagnosticSeverity::ERROR),
@@ -231,10 +206,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }));
     }
 
-    pub fn preprocess_input<F>(
-        mut self,
-        include_file: &mut F,
-    ) -> anyhow::Result<PreprocessingResult>
+    pub fn preprocess_input<F>(mut self, include_file: &mut F) -> PreprocessingResult
     where
         F: FnMut(&mut FxHashMap<String, Macro>, String, FileId, bool) -> anyhow::Result<()>,
     {
@@ -279,12 +251,18 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     .unwrap_or(&ConditionState::Active),
                 ConditionState::Activated | ConditionState::NotActivated
             ) {
-                self.process_negative_condition(&symbol)?;
+                if self.process_negative_condition(&symbol).is_err() {
+                    return self.error_result();
+                }
                 continue;
             }
             match &symbol.token_kind {
-                TokenKind::Unknown => Err(anyhow!("Unknown token: {:#?}", symbol.range))?,
-                TokenKind::PreprocDir(dir) => self.process_directive(include_file, dir, &symbol)?,
+                TokenKind::Unknown => return self.error_result(),
+                TokenKind::PreprocDir(dir) => {
+                    if self.process_directive(include_file, dir, &symbol).is_err() {
+                        return self.error_result();
+                    }
+                }
                 TokenKind::Newline => {
                     self.push_ws(&symbol);
                     self.push_current_line();
@@ -314,11 +292,11 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                 continue;
                             }
                             Err(ExpansionError::MacroNotFound(err)) => {
-                                self.macro_not_found_errors.push(err.clone());
-                                bail!("{}", err);
+                                self.errors.macro_not_found_errors.push(err.clone());
+                                return self.error_result();
                             }
-                            Err(ExpansionError::Parse(err)) => {
-                                bail!("{}", err);
+                            Err(ExpansionError::Parse(_)) => {
+                                return self.error_result();
                             }
                         }
                     }
@@ -335,7 +313,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
             }
         }
 
-        Ok(self.result())
+        self.result()
     }
 
     fn process_if_directive(&mut self, symbol: &Symbol) {
@@ -354,7 +332,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
         let if_condition_eval = match if_condition.evaluate() {
             Ok(res) => res,
             Err(err) => {
-                self.evaluation_errors.push(err);
+                self.errors.evaluation_errors.push(err);
                 // Default to false when we fail to evaluate a condition.
                 false
             }
@@ -366,7 +344,8 @@ impl<'a> SourcepawnPreprocessor<'a> {
             self.skip_line_start_col = symbol.range.end.character;
             self.conditions_stack.push(ConditionState::NotActivated);
         }
-        self.macro_not_found_errors
+        self.errors
+            .macro_not_found_errors
             .extend(if_condition.macro_not_found_errors);
         if let Some(last_symbol) = if_condition.symbols.last() {
             let line_diff = last_symbol.range.end.line - line_nb;
@@ -569,13 +548,9 @@ impl<'a> SourcepawnPreprocessor<'a> {
                             false,
                         ) {
                             Ok(_) => (),
-                            Err(_) => {
-                                self.include_not_found_errors
-                                    .push(IncludeNotFoundError::new(
-                                        path.as_str().to_string(),
-                                        symbol.range,
-                                    ))
-                            }
+                            Err(_) => self.errors.include_not_found_errors.push(
+                                IncludeNotFoundError::new(path.as_str().to_string(), symbol.range),
+                            ),
                         }
                     }
                 };
@@ -588,13 +563,9 @@ impl<'a> SourcepawnPreprocessor<'a> {
                             true,
                         ) {
                             Ok(_) => (),
-                            Err(_) => {
-                                self.include_not_found_errors
-                                    .push(IncludeNotFoundError::new(
-                                        path.as_str().to_string(),
-                                        symbol.range,
-                                    ))
-                            }
+                            Err(_) => self.errors.include_not_found_errors.push(
+                                IncludeNotFoundError::new(path.as_str().to_string(), symbol.range),
+                            ),
                         }
                     }
                 };
