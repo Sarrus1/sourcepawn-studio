@@ -161,7 +161,28 @@ pub fn syntax_error_diagnostics(source: &str, tree: &Tree) -> Vec<Diagnostic> {
             )
         }));
     }
-    // TODO: Add MISSING query here once https://github.com/tree-sitter/tree-sitter/issues/606 is fixed.
+
+    missing_nodes(tree.root_node(), &mut res);
 
     res
+}
+
+/// Capture all the missing nodes of a document and add them to its Local Diagnostics.
+///
+/// # Arguments
+/// * `node` - [Node](tree_sitter::Node) to scan.
+/// * `diagnostics` - [Vec](std::vec::Vec) of [Diagnostic](crate::Diagnostic) to add the missing nodes to.
+fn missing_nodes(node: tree_sitter::Node, diagnostics: &mut Vec<Diagnostic>) {
+    if node.is_missing() {
+        let diagnostic = Diagnostic::new(
+            DiagnosticCode::SpCompError("missing-node"),
+            format!("expected `{}`", node.kind()),
+            ts_range_to_lsp_range(&node.range()),
+        );
+        diagnostics.push(diagnostic);
+    }
+
+    for child in node.children(&mut node.walk()) {
+        missing_nodes(child, diagnostics);
+    }
 }
