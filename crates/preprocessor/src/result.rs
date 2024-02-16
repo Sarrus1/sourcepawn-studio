@@ -25,6 +25,15 @@ impl PreprocessingResult {
         }
     }
 
+    pub fn default(text: &str) -> Self {
+        Self {
+            preprocessed_text: text.to_string(),
+            macros: FxHashMap::default(),
+            offsets: FxHashMap::default(),
+            evaluation_errors: Vec::new(),
+        }
+    }
+
     pub fn preprocessed_text(&self) -> &str {
         &self.preprocessed_text
     }

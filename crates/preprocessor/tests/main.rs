@@ -17,7 +17,6 @@ macro_rules! assert_preproc_eq {
             SourcepawnPreprocessor::new(FileId::from(0), $input)
                 .preprocess_input(&mut extend_macros)
                 .unwrap()
-                .result()
                 .preprocessed_text(),
             $output
         );

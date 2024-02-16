@@ -231,7 +231,10 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }));
     }
 
-    pub fn preprocess_input<F>(mut self, include_file: &mut F) -> anyhow::Result<Self>
+    pub fn preprocess_input<F>(
+        mut self,
+        include_file: &mut F,
+    ) -> anyhow::Result<PreprocessingResult>
     where
         F: FnMut(&mut FxHashMap<String, Macro>, String, FileId, bool) -> anyhow::Result<()>,
     {
@@ -332,7 +335,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
             }
         }
 
-        Ok(self)
+        Ok(self.result())
     }
 
     fn process_if_directive(&mut self, symbol: &Symbol) {

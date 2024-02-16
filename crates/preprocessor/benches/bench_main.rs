@@ -24,7 +24,6 @@ pub fn criterion_benchmark(c: &mut Criterion) {
                 SourcepawnPreprocessor::new(FileId::from(0), input)
                     .preprocess_input(&mut extend_macros)
                     .unwrap()
-                    .result()
                     .preprocessed_text(),
             );
         })
