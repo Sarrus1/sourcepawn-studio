@@ -1,7 +1,7 @@
 use base_db::Tree;
 use hir_def::{src::HasChildSource, EnumStructId, InFile, Lookup};
 
-use crate::{db::HirDatabase, EnumStruct, Function, Global, LocalSource};
+use crate::{db::HirDatabase, EnumStruct, Function, Global, LocalSource, Macro};
 use hir_def::src::HasSource as _;
 
 pub trait HasSource<'tree> {
@@ -30,17 +30,7 @@ macro_rules! has_source {
     )*}
 }
 
-has_source![Function, Global,];
-
-impl<'tree> HasSource<'tree> for EnumStruct {
-    fn source(
-        self,
-        db: &dyn HirDatabase,
-        tree: &'tree Tree,
-    ) -> Option<InFile<tree_sitter::Node<'tree>>> {
-        Some(self.id.lookup(db.upcast()).source(db.upcast(), tree))
-    }
-}
+has_source![Function, Macro, Global, EnumStruct];
 
 impl<'tree> HasSource<'tree> for LocalSource<'tree> {
     fn source(

@@ -90,6 +90,7 @@ impl ItemTree {
 struct ItemTreeData {
     functions: Arena<Function>,
     variables: Arena<Variable>,
+    macros: Arena<Macro>,
     enum_structs: Arena<EnumStruct>,
     fields: Arena<Field>,
     // params: Arena<Param>,
@@ -125,6 +126,13 @@ impl fmt::Display for Name {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(&self.0, f)
     }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Macro {
+    pub name: Name,
+    // pub params: IdxRange<Param>,
+    pub ast_id: AstId,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -238,6 +246,7 @@ macro_rules! mod_items {
 mod_items! {
     Function functions,
     Variable variables,
+    Macro macros,
     EnumStruct enum_structs,
 }
 

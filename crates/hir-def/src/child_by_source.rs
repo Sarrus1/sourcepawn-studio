@@ -3,7 +3,7 @@ use vfs::FileId;
 use crate::{
     data::EnumStructItemData,
     dyn_map::{
-        keys::{ENUM_STRUCT, FIELD, FUNCTION, GLOBAL},
+        keys::{ENUM_STRUCT, FIELD, FUNCTION, GLOBAL, MACRO},
         DynMap,
     },
     src::HasChildSource,
@@ -30,6 +30,11 @@ impl ChildBySource for FileId {
                     let item = &item_tree[id.lookup(db).id];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
                     res[FUNCTION].insert(node_ptr, *id);
+                }
+                FileDefId::MacroId(id) => {
+                    let item = &item_tree[id.lookup(db).id];
+                    let node_ptr = ast_id_map.get_raw(item.ast_id);
+                    res[MACRO].insert(node_ptr, *id);
                 }
                 FileDefId::GlobalId(id) => {
                     let item = &item_tree[id.lookup(db)];

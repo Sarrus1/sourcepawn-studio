@@ -1,6 +1,6 @@
 use crate::db::DefDatabase;
 
-use super::{EnumStruct, EnumStructItemId, Field, FileItem, Function, ItemTree, Variable};
+use super::{EnumStruct, EnumStructItemId, Field, FileItem, Function, ItemTree, Macro, Variable};
 
 pub(super) fn print_item_tree(_db: &dyn DefDatabase, tree: &ItemTree) -> String {
     let mut buf: Vec<String> = vec![];
@@ -33,6 +33,11 @@ pub(super) fn print_item_tree(_db: &dyn DefDatabase, tree: &ItemTree) -> String 
                     }
                 }
                 buf.push("}\n".to_string());
+            }
+            FileItem::Macro(idx) => {
+                let Macro { name, .. } = &tree[*idx];
+                buf.push(format!("#define {}", name.0.to_string()));
+                buf.push("\n".to_string())
             }
         }
     }

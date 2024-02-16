@@ -1,10 +1,14 @@
 use std::sync::Arc;
 
 use la_arena::Idx;
+use lazy_static::lazy_static;
 use syntax::TSKind;
+use tree_sitter::QueryCursor;
 use vfs::FileId;
 
-use crate::{ast_id_map::AstIdMap, hir::type_ref::TypeRef, DefDatabase, FileItem, Name};
+use crate::{
+    ast_id_map::AstIdMap, hir::type_ref::TypeRef, item_tree::Macro, DefDatabase, FileItem, Name,
+};
 
 use super::{EnumStruct, EnumStructItemId, Field, Function, ItemTree, Variable};
 
@@ -63,6 +67,33 @@ impl<'db> Ctx<'db> {
                 _ => (),
             }
         }
+
+        // query for all macro definitions in the file
+        lazy_static! {
+            static ref MACRO_QUERY: tree_sitter::Query = tree_sitter::Query::new(
+                tree_sitter_sourcepawn::language(),
+                "[(preproc_macro) @macro (preproc_define) @define]"
+            )
+            .expect("Could not build macro query.");
+        }
+
+        let mut cursor = QueryCursor::new();
+        let matches = cursor.captures(&MACRO_QUERY, tree.root_node(), self.source.as_bytes());
+        for (match_, _) in matches {
+            for c in match_.captures {
+                let node = c.node;
+                if let Some(name) = node
+                    .child_by_field_name("name")
+                    .and_then(|n| n.utf8_text(self.source.as_bytes()).ok())
+                    .map(Name::from)
+                {
+                    let ast_id = self.source_ast_id_map.ast_id_of(&node);
+                    let res = Macro { name, ast_id };
+                    let id = self.tree.data_mut().macros.alloc(res);
+                    self.tree.top_level.push(FileItem::Macro(id));
+                }
+            }
+        }
     }
 
     fn function_return_type(&self, node: &tree_sitter::Node) -> Option<TypeRef> {
@@ -103,8 +134,8 @@ impl<'db> Ctx<'db> {
         let name_node = node.child_by_field_name("name")?;
         let res = Function {
             name: Name::from(name_node.utf8_text(self.source.as_bytes()).unwrap()),
-            ret_type: self.function_return_type(&node),
-            ast_id: self.source_ast_id_map.ast_id_of(&node),
+            ret_type: self.function_return_type(node),
+            ast_id: self.source_ast_id_map.ast_id_of(node),
         };
         Some(self.tree.data_mut().functions.alloc(res))
     }

@@ -2,7 +2,7 @@ use fxhash::FxHashMap;
 use hir_def::{
     child_by_source::ChildBySource,
     dyn_map::{keys, DynMap, Key},
-    DefWithBodyId, EnumStructId, ExprId, FieldId, FunctionId, GlobalId, InFile, NodePtr,
+    DefWithBodyId, EnumStructId, ExprId, FieldId, FunctionId, GlobalId, InFile, MacroId, NodePtr,
 };
 use stdx::impl_from;
 use syntax::TSKind;
@@ -19,10 +19,13 @@ pub(super) struct SourceToDefCtx<'a, 'b> {
 
 impl SourceToDefCtx<'_, '_> {
     pub(super) fn file_to_def(&self, file_id: FileId) -> File {
-        File::from(file_id).into()
+        file_id.into()
     }
     pub(super) fn fn_to_def(&mut self, src: InFile<NodePtr>) -> Option<FunctionId> {
         self.to_def(src, keys::FUNCTION)
+    }
+    pub(super) fn macro_to_def(&mut self, src: InFile<NodePtr>) -> Option<MacroId> {
+        self.to_def(src, keys::MACRO)
     }
     pub(super) fn enum_struct_to_def(&mut self, src: InFile<NodePtr>) -> Option<EnumStructId> {
         self.to_def(src, keys::ENUM_STRUCT)
@@ -98,6 +101,7 @@ impl SourceToDefCtx<'_, '_> {
 pub(crate) enum ChildContainer {
     DefWithBodyId(DefWithBodyId),
     FileId(FileId),
+    MacroId(MacroId),
     EnumStructId(EnumStructId),
 }
 

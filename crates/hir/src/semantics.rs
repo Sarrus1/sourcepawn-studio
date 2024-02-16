@@ -12,7 +12,7 @@ use crate::{
     db::HirDatabase,
     source_analyzer::SourceAnalyzer,
     source_to_def::{SourceToDefCache, SourceToDefCtx},
-    DefResolution, EnumStruct, Field, File, Function, Global, Local,
+    DefResolution, EnumStruct, Field, File, Function, Global, Local, Macro,
 };
 
 /// Primary API to get semantic information, like types, from syntax trees.
@@ -99,10 +99,31 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                     _ => todo!(),
                 }
             }
+            TSKind::preproc_macro | TSKind::preproc_define => self
+                .macro_to_def(src)
+                .map(Macro::from)
+                .map(DefResolution::Macro),
             _ => todo!(),
         }
     }
 
+    /// Find a macro definition by its index in the file.
+    ///
+    /// # Arguments
+    /// * `file_id` - The [`file_id`](FileId) of the file containing the macro definition.
+    /// * `idx` - The index of the macro definition in the file.
+    pub fn find_macro_def(&self, file_id: FileId, idx: u32) -> Option<Macro> {
+        self.db
+            .file_def_map(file_id)
+            .get_macro(&idx)
+            .map(Macro::from)
+    }
+
+    /// Find a definition given a reference node.
+    ///
+    /// # Arguments
+    /// * `file_id` - The [`file_id`](FileId) of the file containing the reference.
+    /// * `node` - The reference node.
     pub fn find_def(&self, file_id: FileId, node: &tree_sitter::Node) -> Option<DefResolution> {
         let source = self.db.file_text(file_id);
         if let Some(res) = self.find_name_def(file_id, node) {
@@ -150,6 +171,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             hir_def::FileDefId::FunctionId(id) => {
                 DefResolution::Function(Function::from(id)).into()
             }
+            hir_def::FileDefId::MacroId(id) => DefResolution::Macro(Macro::from(id)).into(),
             hir_def::FileDefId::GlobalId(id) => DefResolution::Global(Global::from(id)).into(),
             hir_def::FileDefId::EnumStructId(id) => {
                 DefResolution::EnumStruct(EnumStruct::from(id)).into()
@@ -227,6 +249,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             // TODO: Maybe hide the match logic in a function/macro?
             ValueNs::LocalId(expr) => DefResolution::Local(Local::from(expr)).into(),
             ValueNs::FunctionId(id) => DefResolution::Function(Function::from(id.value)).into(),
+            ValueNs::MacroId(id) => DefResolution::Macro(Macro::from(id.value)).into(),
             ValueNs::GlobalId(id) => DefResolution::Global(Global::from(id.value)).into(),
             ValueNs::EnumStructId(id) => {
                 DefResolution::EnumStruct(EnumStruct::from(id.value)).into()
@@ -286,6 +309,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                         ValueNs::FunctionId(id) => {
                             DefResolution::Function(Function::from(id.value)).into()
                         }
+                        ValueNs::MacroId(id) => DefResolution::Macro(Macro::from(id.value)).into(),
                         ValueNs::GlobalId(id) => {
                             DefResolution::Global(Global::from(id.value)).into()
                         }
@@ -342,5 +366,6 @@ impl<'db> SemanticsImpl<'db> {
         (hir_def::FieldId, field_to_def),
         (crate::GlobalId, global_to_def),
         (crate::Local, local_to_def),
+        (crate::Macro, macro_to_def),
     ];
 }

@@ -11,11 +11,12 @@ use vfs::{AnchoredPath, FileId};
 use crate::{
     ast_id_map::AstIdMap,
     body::{scope::ExprScopes, Body, BodySourceMap},
-    data::{EnumStructData, FunctionData},
+    data::{EnumStructData, FunctionData, MacroData},
     infer,
     item_tree::{ItemTree, Name},
     BlockId, BlockLoc, DefWithBodyId, EnumStructId, EnumStructLoc, FileDefId, FileItem, FunctionId,
-    FunctionLoc, GlobalId, GlobalLoc, InferenceResult, Intern, ItemTreeId, Lookup, NodePtr, TreeId,
+    FunctionLoc, GlobalId, GlobalLoc, InferenceResult, Intern, ItemTreeId, Lookup, MacroId,
+    MacroLoc, NodePtr, TreeId,
 };
 
 #[salsa::query_group(InternDatabaseStorage)]
@@ -23,6 +24,8 @@ pub trait InternDatabase: SourceDatabase {
     // region: items
     #[salsa::interned]
     fn intern_function(&'tree self, loc: FunctionLoc) -> FunctionId;
+    #[salsa::interned]
+    fn intern_macro(&'tree self, loc: MacroLoc) -> MacroId;
     #[salsa::interned]
     fn intern_enum_struct(&'tree self, loc: EnumStructLoc) -> EnumStructId;
     #[salsa::interned]
@@ -62,6 +65,9 @@ pub trait DefDatabase: InternDatabase {
     // region: data
     #[salsa::invoke(FunctionData::function_data_query)]
     fn function_data(&self, id: FunctionId) -> Arc<FunctionData>;
+
+    #[salsa::invoke(MacroData::macro_data_query)]
+    fn macro_data(&self, id: MacroId) -> Arc<MacroData>;
 
     #[salsa::invoke(EnumStructData::enum_struct_data_query)]
     fn enum_struct_data(&self, id: EnumStructId) -> Arc<EnumStructData>;
@@ -148,6 +154,7 @@ struct BlockInfo {
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct DefMap {
     values: FxHashMap<Name, FileDefId>,
+    macros: FxHashMap<u32, MacroId>,
     declarations: Vec<FileDefId>,
     /// When this is a block def map, this will hold the block id of the block and module that
     /// contains this block.
@@ -159,6 +166,7 @@ impl DefMap {
         let mut res = DefMap::default();
         let item_tree = db.file_item_tree(file_id);
         let tree_id = TreeId::new(file_id, None);
+        let mut macro_idx = 0u32;
         for item in item_tree.top_level_items() {
             match item {
                 FileItem::Function(id) => {
@@ -197,6 +205,20 @@ impl DefMap {
                         FileDefId::EnumStructId(enum_struct_id),
                     );
                 }
+                FileItem::Macro(id) => {
+                    let macro_ = &item_tree[*id];
+                    let macro_id = MacroLoc {
+                        container: file_id.into(),
+                        id: ItemTreeId {
+                            tree: tree_id,
+                            value: *id,
+                        },
+                    }
+                    .intern(db);
+                    res.declare(macro_.name.clone(), FileDefId::MacroId(macro_id));
+                    res.macros.insert(macro_idx, macro_id);
+                    macro_idx += 1;
+                }
             }
         }
 
@@ -209,6 +231,10 @@ impl DefMap {
 
     pub fn get_from_str(&self, name: &str) -> Option<FileDefId> {
         self.get(&Name::from(name))
+    }
+
+    pub fn get_macro(&self, idx: &u32) -> Option<MacroId> {
+        self.macros.get(idx).copied()
     }
 
     pub(crate) fn block_def_map_query(db: &dyn DefDatabase, block_id: BlockId) -> Arc<DefMap> {

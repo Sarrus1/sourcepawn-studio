@@ -9,7 +9,7 @@ use crate::{
     item_tree::{EnumStructItemId, Name},
     src::{HasChildSource, HasSource},
     DefDatabase, EnumStructId, FunctionId, FunctionLoc, InFile, Intern, ItemTreeId, LocalFieldId,
-    Lookup, NodePtr,
+    Lookup, MacroId, NodePtr,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -29,6 +29,24 @@ impl FunctionData {
         };
 
         Arc::new(function_data)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MacroData {
+    pub name: Name,
+}
+
+impl MacroData {
+    pub(crate) fn macro_data_query(db: &dyn DefDatabase, id: MacroId) -> Arc<MacroData> {
+        let loc = id.lookup(db).id;
+        let item_tree = loc.tree_id().item_tree(db);
+        let macro_ = &item_tree[loc.value];
+        let macro_data = MacroData {
+            name: macro_.name.clone(),
+        };
+
+        Arc::new(macro_data)
     }
 }
 

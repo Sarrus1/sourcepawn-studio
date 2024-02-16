@@ -43,11 +43,29 @@ enum ConditionState {
 pub struct Offset {
     pub range: lsp_types::Range,
     pub diff: i32,
+    pub idx: u32,
+    pub file_id: FileId,
+}
+
+impl Offset {
+    pub fn contains(&self, pos: Position) -> bool {
+        if self.range.start.line > pos.line || self.range.end.line < pos.line {
+            return false;
+        }
+
+        if self.range.start.line == pos.line && self.range.start.character > pos.character
+            || self.range.end.line == pos.line && self.range.end.character < pos.character
+        {
+            return false;
+        }
+
+        true
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct SourcepawnPreprocessor<'a> {
-    idx: usize,
+    idx: u32,
     lexer: SourcepawnLexer<'a>,
     input: &'a str,
     macros: FxHashMap<String, Macro>,
@@ -67,7 +85,7 @@ pub struct SourcepawnPreprocessor<'a> {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Macro {
     pub(crate) file_id: FileId,
-    pub(crate) idx: usize,
+    pub(crate) idx: u32,
     pub(crate) params: Option<Vec<i8>>,
     pub(crate) nb_params: i8,
     pub(crate) body: Vec<RangeLessSymbol>,
@@ -220,7 +238,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
             false,
         );
         let mut col_offset: Option<i32> = None;
-        let mut expanded_symbol: Option<Symbol> = None;
+        let mut expanded_symbol: Option<(Symbol, u32, FileId)> = None;
         while let Some(symbol) = if !self.expansion_stack.is_empty() {
             let symbol = self.expansion_stack.pop().unwrap();
             col_offset = Some(
@@ -231,12 +249,14 @@ impl<'a> SourcepawnPreprocessor<'a> {
             Some(symbol)
         } else {
             let symbol = self.lexer.next();
-            if let Some(expanded_symbol) = expanded_symbol.take() {
+            if let Some((expanded_symbol, idx, file_id)) = expanded_symbol.take() {
                 if let Some(symbol) = symbol.clone() {
                     self.offsets
                         .entry(symbol.range.start.line)
                         .or_default()
                         .push(Offset {
+                            idx,
+                            file_id,
                             range: expanded_symbol.range,
                             diff: (col_offset.take().unwrap_or(0)
                                 - (expanded_symbol.range.end.character
@@ -282,6 +302,8 @@ impl<'a> SourcepawnPreprocessor<'a> {
                             self.push_symbol(&symbol);
                             continue;
                         }
+                        let idx = macro_.idx;
+                        let file_id: FileId = macro_.file_id;
                         match expand_identifier(
                             &mut self.lexer,
                             &mut self.macros,
@@ -290,7 +312,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                             true,
                         ) {
                             Ok(expanded_macros) => {
-                                expanded_symbol = Some(symbol.clone());
+                                expanded_symbol = Some((symbol.clone(), idx, file_id));
                                 self.evaluated_define_symbols.extend(expanded_macros);
                                 continue;
                             }

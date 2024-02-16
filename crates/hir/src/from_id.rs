@@ -19,6 +19,7 @@ macro_rules! from_id {
 
 from_id![
     (hir_def::FunctionId, crate::Function),
+    (hir_def::MacroId, crate::Macro),
     (hir_def::EnumStructId, crate::EnumStruct),
     (hir_def::GlobalId, crate::Global),
 ];
@@ -67,6 +68,7 @@ impl From<FileDefId> for FileDef {
     fn from(id: FileDefId) -> Self {
         match id {
             FileDefId::FunctionId(it) => FileDef::Function(it.into()),
+            FileDefId::MacroId(it) => FileDef::Macro(it.into()),
             FileDefId::EnumStructId(it) => FileDef::EnumStruct(it.into()),
             FileDefId::GlobalId(it) => FileDef::Global(it.into()),
         }
@@ -77,6 +79,7 @@ impl From<FileDef> for FileDefId {
     fn from(id: FileDef) -> Self {
         match id {
             FileDef::Function(it) => FileDefId::FunctionId(it.into()),
+            FileDef::Macro(it) => FileDefId::MacroId(it.into()),
             FileDef::EnumStruct(it) => FileDefId::EnumStructId(it.into()),
             FileDef::Global(it) => FileDefId::GlobalId(it.into()),
         }

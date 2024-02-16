@@ -6,6 +6,7 @@ use crate::{
     hir::ExprId,
     item_tree::Name,
     DefDatabase, DefWithBodyId, EnumStructId, FileDefId, FunctionId, GlobalId, InFile, Lookup,
+    MacroId,
 };
 use vfs::FileId;
 
@@ -104,6 +105,9 @@ impl Resolver {
                                         it,
                                     )));
                                 }
+                                FileDefId::MacroId(it) => {
+                                    return Some(ValueNs::MacroId(InFile::new(self.file_id, it)));
+                                }
                                 FileDefId::GlobalId(it) => {
                                     return Some(ValueNs::GlobalId(InFile::new(self.file_id, it)));
                                 }
@@ -185,6 +189,7 @@ pub struct UpdateGuard(usize);
 pub enum ValueNs {
     LocalId((DefWithBodyId, ExprId)),
     GlobalId(InFile<GlobalId>),
+    MacroId(InFile<MacroId>),
     FunctionId(InFile<FunctionId>),
     EnumStructId(InFile<EnumStructId>),
 }

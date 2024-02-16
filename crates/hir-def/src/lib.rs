@@ -1,5 +1,5 @@
 use core::hash::Hash;
-use item_tree::{AstId, EnumStruct, Function, ItemTree, ItemTreeNode, Variable};
+use item_tree::{AstId, EnumStruct, Function, ItemTree, ItemTreeNode, Macro, Variable};
 use la_arena::Idx;
 use std::{hash::Hasher, sync::Arc};
 use stdx::impl_from;
@@ -85,6 +85,11 @@ impl_intern!(
 );
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct MacroId(salsa::InternId);
+type MacroLoc = AssocItemLoc<Macro>;
+impl_intern!(MacroId, MacroLoc, intern_macro, lookup_intern_macro);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct EnumStructId(salsa::InternId);
 type EnumStructLoc = AssocItemLoc<EnumStruct>;
 impl_intern!(
@@ -120,12 +125,13 @@ impl_intern!(GlobalId, GlobalLoc, intern_variable, lookup_intern_variable);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FileDefId {
     FunctionId(FunctionId),
+    MacroId(MacroId),
     GlobalId(GlobalId),
     EnumStructId(EnumStructId),
 }
 
 impl_from!(
-    FunctionId, GlobalId, EnumStructId for FileDefId
+    FunctionId, MacroId, GlobalId, EnumStructId for FileDefId
 );
 
 /// Identifies a particular [`ItemTree`].
