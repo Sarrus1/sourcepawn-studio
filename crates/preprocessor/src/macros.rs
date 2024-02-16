@@ -1,11 +1,10 @@
 use std::{cmp::Ordering, collections::VecDeque};
 
-use fxhash::FxHashMap;
 use lsp_types::{Position, Range};
 use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
 
 use super::errors::{ExpansionError, MacroNotFoundError, ParseIntError};
-use crate::Macro;
+use crate::{Macro, MacrosMap};
 
 /// Arguments of a [macro](Macro) call.
 type MacroArguments = [Vec<Symbol>; 10];
@@ -178,7 +177,7 @@ impl ArgumentsCollector {
 /// * `allow_undefined_macros` - Should not found macros throw an error.
 pub(super) fn expand_identifier<T>(
     lexer: &mut T,
-    macros: &mut FxHashMap<String, Macro>,
+    macros: &mut MacrosMap,
     symbol: &Symbol,
     expansion_stack: &mut Vec<Symbol>,
     allow_undefined_macros: bool,
@@ -205,7 +204,7 @@ where
                     None => {
                         if !allow_undefined_macros {
                             return Err(MacroNotFoundError::new(
-                                queued_symbol.symbol.text(),
+                                queued_symbol.symbol.text().into(),
                                 queued_symbol.symbol.range,
                             )
                             .into());
@@ -371,15 +370,15 @@ fn expand_macro(
                     let percent_symbol = new_context.pop_back().unwrap(); // Safe unwrap.
                     let arg_idx = child
                         .to_int()
-                        .ok_or_else(|| ParseIntError::new(child.text(), child.range))?
+                        .ok_or_else(|| ParseIntError::new(child.text().into(), child.range))?
                         as usize;
                     if arg_idx >= 10 {
-                        return Err(ParseIntError::new(child.text(), child.range));
+                        return Err(ParseIntError::new(child.text().into(), child.range));
                     }
                     // Safe to unwrap here because we know the macro has arguments.
                     let arg_idx = macro_.params.as_ref().unwrap()[arg_idx] as usize;
                     if arg_idx >= 10 {
-                        return Err(ParseIntError::new(child.text(), child.range));
+                        return Err(ParseIntError::new(child.text().into(), child.range));
                     }
                     if let Some(stringize_delta) = stringize_delta.take() {
                         new_context.pop_back();

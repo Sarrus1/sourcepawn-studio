@@ -3,15 +3,16 @@ use std::sync::Arc;
 use anyhow::bail;
 use base_db::{infer_include_ext, SourceDatabase};
 use fxhash::FxHashMap;
+use smol_str::SmolStr;
 use stdx::hashable_hash_map::{HashableHashMap, HashableHashSet};
 use vfs::{AnchoredPath, FileId};
 
-use crate::{Macro, PreprocessingResult, SourcepawnPreprocessor};
+use crate::{HMacrosMap, Macro, MacrosMap, PreprocessingResult, SourcepawnPreprocessor};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct PreprocessingParams {
-    input_macros: HashableHashMap<String, Macro>,
-    output_macros: HashableHashMap<FileId, HashableHashMap<String, Macro>>,
+    input_macros: HMacrosMap,
+    output_macros: HashableHashMap<FileId, HMacrosMap>,
     being_preprocessed: HashableHashSet<FileId>,
 }
 
@@ -21,7 +22,7 @@ pub trait PreprocDatabase: SourceDatabase {
     fn preprocess_file_inner_params(
         &self,
         file_id: FileId,
-        macros: HashableHashMap<String, Macro>,
+        macros: HMacrosMap,
         being_preprocessed: HashableHashSet<FileId>,
     ) -> Arc<FxHashMap<FileId, Arc<PreprocessingParams>>>;
 
@@ -64,7 +65,7 @@ pub(crate) fn preprocess_file_query(
 pub(crate) fn _preprocess_file_params_query(
     db: &dyn PreprocDatabase,
     file_id: FileId,
-    macros: HashableHashMap<String, Macro>,
+    macros: HashableHashMap<SmolStr, Macro>,
     mut being_preprocessed: HashableHashSet<FileId>,
 ) -> Arc<FxHashMap<FileId, Arc<PreprocessingParams>>> {
     being_preprocessed.insert(file_id);
@@ -72,16 +73,12 @@ pub(crate) fn _preprocess_file_params_query(
     let mut results: FxHashMap<FileId, Arc<PreprocessingParams>> = FxHashMap::default();
     let input_macros = macros.clone();
     let being_preprocessed = being_preprocessed.clone();
-    let mut output_macros: HashableHashMap<FileId, HashableHashMap<String, Macro>> =
-        HashableHashMap::default();
+    let mut output_macros: HashableHashMap<FileId, HMacrosMap> = HashableHashMap::default();
 
     let mut preprocessor = SourcepawnPreprocessor::new(file_id, &text);
     preprocessor.set_macros(macros.to_map().clone());
     let res = preprocessor.preprocess_input(
-        &mut (|macros: &mut FxHashMap<String, Macro>,
-               mut path: String,
-               file_id: FileId,
-               quoted: bool| {
+        &mut (|macros: &mut MacrosMap, mut path: String, file_id: FileId, quoted: bool| {
             let mut inc_file_id = None;
             infer_include_ext(&mut path);
             if quoted {
@@ -138,10 +135,7 @@ pub(crate) fn _preprocess_file_data_query(
     preprocessor.set_macros(params.input_macros.to_map());
     preprocessor
         .preprocess_input(
-            &mut (|macros: &mut FxHashMap<String, Macro>,
-                   mut path: String,
-                   file_id: FileId,
-                   quoted: bool| {
+            &mut (|macros: &mut MacrosMap, mut path: String, file_id: FileId, quoted: bool| {
                 let mut inc_file_id = None;
                 infer_include_ext(&mut path);
                 if quoted {

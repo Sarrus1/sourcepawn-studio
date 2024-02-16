@@ -8,13 +8,13 @@ use super::{
     macros::expand_identifier,
     preprocessor_operator::PreOperator,
 };
-use crate::{Macro, Offset};
+use crate::{MacrosMap, Offset};
 
 #[derive(Debug)]
 pub struct IfCondition<'a> {
     pub symbols: Vec<Symbol>,
     pub(super) macro_not_found_errors: Vec<MacroNotFoundError>,
-    macro_store: &'a mut FxHashMap<String, Macro>,
+    macro_store: &'a mut MacrosMap,
     expansion_stack: Vec<Symbol>,
     line_nb: u32,
     offsets: &'a mut FxHashMap<u32, Vec<Offset>>,
@@ -22,7 +22,7 @@ pub struct IfCondition<'a> {
 
 impl<'a> IfCondition<'a> {
     pub(super) fn new(
-        macro_store: &'a mut FxHashMap<String, Macro>,
+        macro_store: &'a mut MacrosMap,
         line_nb: u32,
         offsets: &'a mut FxHashMap<u32, Vec<Offset>>,
     ) -> Self {
@@ -37,8 +37,8 @@ impl<'a> IfCondition<'a> {
     }
 
     pub(super) fn evaluate(&mut self) -> Result<bool, EvaluationError> {
-        let mut output_queue: Vec<i32> = vec![];
-        let mut operator_stack: Vec<(PreOperator, Range)> = vec![];
+        let mut output_queue: Vec<i32> = Vec::new();
+        let mut operator_stack: Vec<(PreOperator, Range)> = Vec::new();
         let mut may_be_unary = true;
         let mut looking_for_defined = false;
         let mut current_symbol_range = Range::new(

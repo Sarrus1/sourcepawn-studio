@@ -1,13 +1,14 @@
 use std::hash::Hash;
 
 use lsp_types::{Position, Range};
+use smol_str::SmolStr;
 use sourcepawn_lexer::{Delta, Symbol, TokenKind};
 
 /// Wrapper around `Symbol` that does not contain range information.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RangeLessSymbol {
     pub(crate) token_kind: TokenKind,
-    text: String,
+    text: SmolStr,
     pub(crate) delta: Delta,
 }
 
@@ -23,7 +24,7 @@ impl From<Symbol> for RangeLessSymbol {
     fn from(symbol: Symbol) -> Self {
         Self {
             token_kind: symbol.token_kind,
-            text: symbol.inline_text(),
+            text: symbol.inline_text(), // TODO: Maybe use an option here?
             delta: symbol.delta,
         }
     }

@@ -4,7 +4,9 @@ use anyhow::{bail, Context};
 use base_db::{RE_CHEVRON, RE_QUOTE};
 use fxhash::FxHashMap;
 use lsp_types::{Diagnostic, Position, Range};
+use smol_str::SmolStr;
 use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
+use stdx::hashable_hash_map::HashableHashMap;
 use symbol::RangeLessSymbol;
 use vfs::FileId;
 
@@ -41,13 +43,16 @@ enum ConditionState {
     Active,
 }
 
+pub type MacrosMap = FxHashMap<SmolStr, Macro>;
+pub type HMacrosMap = HashableHashMap<SmolStr, Macro>;
+
 #[derive(Debug, Clone)]
 pub struct SourcepawnPreprocessor<'a> {
     /// The index of the current macro in the file.
     idx: u32,
     lexer: SourcepawnLexer<'a>,
     input: &'a str,
-    macros: FxHashMap<String, Macro>,
+    macros: MacrosMap,
     expansion_stack: Vec<Symbol>,
     skip_line_start_col: u32,
     skipped_lines: Vec<lsp_types::Range>,
@@ -105,15 +110,15 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }
     }
 
-    pub fn set_macros(&mut self, macros_map: FxHashMap<String, Macro>) {
-        self.macros.extend(macros_map);
+    pub fn set_macros(&mut self, macros: MacrosMap) {
+        self.macros.extend(macros);
     }
 
     fn remove_macro(&mut self, name: &str) {
         self.macros.remove(name);
     }
 
-    pub fn insert_macro(&mut self, name: String, mut macro_: Macro) {
+    pub fn insert_macro(&mut self, name: SmolStr, mut macro_: Macro) {
         macro_.idx = self.idx;
         self.idx += 1;
         self.macros.insert(name, macro_);
@@ -208,7 +213,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
 
     pub fn preprocess_input<F>(mut self, include_file: &mut F) -> PreprocessingResult
     where
-        F: FnMut(&mut FxHashMap<String, Macro>, String, FileId, bool) -> anyhow::Result<()>,
+        F: FnMut(&mut MacrosMap, String, FileId, bool) -> anyhow::Result<()>,
     {
         let _ = include_file(
             &mut self.macros,
@@ -404,7 +409,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
         symbol: &Symbol,
     ) -> anyhow::Result<()>
     where
-        F: FnMut(&mut FxHashMap<String, Macro>, String, FileId, bool) -> anyhow::Result<()>,
+        F: FnMut(&mut MacrosMap, String, FileId, bool) -> anyhow::Result<()>,
     {
         match dir {
             PreprocDir::MIf => self.process_if_directive(symbol),
@@ -422,7 +427,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
             }
             PreprocDir::MDefine => {
                 self.push_symbol(symbol);
-                let mut macro_name = String::new();
+                let mut macro_name = SmolStr::default();
                 let mut macro_ = Macro::default(self.file_id);
                 enum State {
                     Start,

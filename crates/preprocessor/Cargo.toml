@@ -19,13 +19,14 @@ fxhash.workspace = true
 sourcepawn_lexer.workspace = true
 salsa.workspace = true
 log.workspace = true
+smol_str.workspace = true
 
 vfs.workspace = true
 base-db.workspace = true
 stdx.workspace = true
 
 [dev-dependencies]
-criterion = "0.3"
+criterion = "0.5.1"
 minreq = { version = "2.7.0", features = ["https"] }
 
 [[bench]]

@@ -1,10 +1,9 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use fxhash::FxHashMap;
-use preprocessor::{Macro, SourcepawnPreprocessor};
+use preprocessor::{MacrosMap, SourcepawnPreprocessor};
 use vfs::FileId;
 
 fn extend_macros(
-    _macros: &mut FxHashMap<String, Macro>,
+    _macros: &mut MacrosMap,
     mut _path: String,
     _file_id: FileId,
     _quoted: bool,

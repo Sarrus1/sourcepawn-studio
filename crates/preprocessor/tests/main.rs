@@ -1,8 +1,7 @@
-use fxhash::FxHashMap;
 use vfs::FileId;
 
 fn extend_macros(
-    _macro_store: &mut FxHashMap<String, Macro>,
+    _macro_store: &mut MacrosMap,
     mut _path: String,
     _file_id: FileId,
     _quoted: bool,
@@ -22,7 +21,7 @@ macro_rules! assert_preproc_eq {
     };
 }
 
-use preprocessor::{Macro, SourcepawnPreprocessor};
+use preprocessor::{MacrosMap, SourcepawnPreprocessor};
 #[test]
 fn no_preprocessor_directives() {
     let input = r#"

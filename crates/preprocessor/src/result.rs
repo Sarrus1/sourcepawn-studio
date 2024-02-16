@@ -1,11 +1,11 @@
 use fxhash::FxHashMap;
 
-use crate::{errors::PreprocessorErrors, Macro, Offset};
+use crate::{errors::PreprocessorErrors, MacrosMap, Offset};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PreprocessingResult {
     preprocessed_text: String,
-    macros: FxHashMap<String, Macro>,
+    macros: MacrosMap,
     offsets: FxHashMap<u32, Vec<Offset>>,
     errors: PreprocessorErrors,
     inactive_ranges: Vec<lsp_types::Range>,
@@ -14,7 +14,7 @@ pub struct PreprocessingResult {
 impl PreprocessingResult {
     pub(crate) fn new(
         preprocessed_text: String,
-        macros: FxHashMap<String, Macro>,
+        macros: MacrosMap,
         offsets: FxHashMap<u32, Vec<Offset>>,
         errors: PreprocessorErrors,
         inactive_ranges: Vec<lsp_types::Range>,
@@ -42,7 +42,7 @@ impl PreprocessingResult {
         &self.preprocessed_text
     }
 
-    pub fn macros(&self) -> &FxHashMap<String, Macro> {
+    pub fn macros(&self) -> &MacrosMap {
         &self.macros
     }
 
