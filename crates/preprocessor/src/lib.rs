@@ -16,11 +16,13 @@ pub mod db;
 mod errors;
 pub(crate) mod evaluator;
 mod macros;
+mod offset;
 mod preprocessor_operator;
 mod result;
 mod symbol;
 
 pub use errors::EvaluationError;
+pub use offset::Offset;
 pub use result::PreprocessingResult;
 
 #[cfg(test)]
@@ -37,30 +39,6 @@ enum ConditionState {
 
     /// The condition is active and the preprocessor should process the code.
     Active,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Offset {
-    pub range: lsp_types::Range,
-    pub diff: i32,
-    pub idx: u32,
-    pub file_id: FileId,
-}
-
-impl Offset {
-    pub fn contains(&self, pos: Position) -> bool {
-        if self.range.start.line > pos.line || self.range.end.line < pos.line {
-            return false;
-        }
-
-        if self.range.start.line == pos.line && self.range.start.character > pos.character
-            || self.range.end.line == pos.line && self.range.end.character < pos.character
-        {
-            return false;
-        }
-
-        true
-    }
 }
 
 #[derive(Debug, Clone)]
