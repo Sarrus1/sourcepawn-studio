@@ -34,3 +34,17 @@ int foo = FOO;
            ^"#,
     ));
 }
+
+#[test]
+fn define_4() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOO
+#if defined FOO
+             |
+             ^
+#endif
+"#,
+    ));
+}

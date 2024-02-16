@@ -65,6 +65,7 @@ impl Offset {
 
 #[derive(Debug, Clone)]
 pub struct SourcepawnPreprocessor<'a> {
+    /// The index of the current macro in the file.
     idx: u32,
     lexer: SourcepawnLexer<'a>,
     input: &'a str,
@@ -343,7 +344,8 @@ impl<'a> SourcepawnPreprocessor<'a> {
 
     fn process_if_directive(&mut self, symbol: &Symbol) {
         let line_nb = symbol.range.start.line;
-        let mut if_condition = IfCondition::new(&mut self.macros, symbol.range.start.line);
+        let mut if_condition =
+            IfCondition::new(&mut self.macros, symbol.range.start.line, &mut self.offsets);
         while self.lexer.in_preprocessor() {
             if let Some(symbol) = self.lexer.next() {
                 if symbol.token_kind == TokenKind::Identifier {

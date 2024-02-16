@@ -1,13 +1,14 @@
 use fxhash::FxHashMap;
 use lsp_types::{Position, Range};
 use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
+use vfs::FileId;
 
 use super::{
     errors::{EvaluationError, ExpansionError, MacroNotFoundError},
     macros::expand_identifier,
     preprocessor_operator::PreOperator,
 };
-use crate::Macro;
+use crate::{Macro, Offset};
 
 #[derive(Debug)]
 pub struct IfCondition<'a> {
@@ -16,16 +17,22 @@ pub struct IfCondition<'a> {
     macro_store: &'a mut FxHashMap<String, Macro>,
     expansion_stack: Vec<Symbol>,
     line_nb: u32,
+    offsets: &'a mut FxHashMap<u32, Vec<Offset>>,
 }
 
 impl<'a> IfCondition<'a> {
-    pub(super) fn new(macro_store: &'a mut FxHashMap<String, Macro>, line_nb: u32) -> Self {
+    pub(super) fn new(
+        macro_store: &'a mut FxHashMap<String, Macro>,
+        line_nb: u32,
+        offsets: &'a mut FxHashMap<u32, Vec<Offset>>,
+    ) -> Self {
         Self {
             symbols: vec![],
             macro_not_found_errors: vec![],
             macro_store,
             expansion_stack: vec![],
             line_nb,
+            offsets,
         }
     }
 
@@ -157,17 +164,29 @@ impl<'a> IfCondition<'a> {
                 }
                 _ => {
                     if looking_for_defined {
-                        output_queue.push(self.macro_store.contains_key(&symbol.text()).into());
+                        if let Some(macro_) = self.macro_store.get(&symbol.text()) {
+                            self.offsets.entry(symbol.range.start.line).or_default().push(Offset {
+                                        file_id: macro_.file_id,
+                                        range: symbol.range,
+                                        diff: 0, // FIXME: This is the default value, we should calculate it.
+                                        idx: macro_.idx
+                                    });
+                            output_queue.push(1);
+                        } else {
+                            output_queue.push(0);
+                        }
                         looking_for_defined = false;
                         may_be_unary = false;
                     } else {
                         // Skip the macro if it is disabled and reenable it.
+                        let mut attr: Option<(u32, FileId)> = None;
                         if let Some(macro_) = self.macro_store.get_mut(&symbol.text()) {
+                            attr = (macro_.idx, macro_.file_id).into();
                             if macro_.disabled {
                                 macro_.disabled = false;
                                 continue;
                             }
-                        }
+                        };
                         match expand_identifier(
                             &mut symbol_iter,
                             self.macro_store,
@@ -175,7 +194,17 @@ impl<'a> IfCondition<'a> {
                             &mut self.expansion_stack,
                             false
                         ) {
-                            Ok(_) => continue, // No need to keep track of expanded macros here, we do that when calling expand_symbol.
+                            Ok(_) => {
+                                if let Some((idx, file_id)) = attr {
+                                    self.offsets.entry(symbol.range.start.line).or_default().push(Offset {
+                                        file_id,
+                                        range: symbol.range,
+                                        diff: 0, // FIXME: This is the default value, we should calculate it.
+                                        idx
+                                    })
+                                    ;
+                                }
+                            }, // No need to keep track of expanded macros here, we do that when calling expand_symbol.
                             Err(ExpansionError::MacroNotFound(err)) => {
                                 self.macro_not_found_errors.push(err.clone());
                                 return Err(EvaluationError::new(
