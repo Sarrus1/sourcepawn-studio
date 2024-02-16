@@ -57,7 +57,6 @@ pub struct SourcepawnPreprocessor<'a> {
     skip_line_start_col: u32,
     skipped_lines: Vec<lsp_types::Range>,
     errors: PreprocessorErrors,
-    evaluated_define_symbols: Vec<Symbol>,
     file_id: FileId,
     current_line: String,
     prev_end: u32,
@@ -95,17 +94,16 @@ impl<'a> SourcepawnPreprocessor<'a> {
             lexer: SourcepawnLexer::new(input),
             input,
             file_id,
-            idx: 0,
-            current_line: String::new(),
-            skip_line_start_col: 0,
-            skipped_lines: vec![],
+            idx: Default::default(),
+            current_line: Default::default(),
+            skip_line_start_col: Default::default(),
+            skipped_lines: Default::default(),
             errors: Default::default(),
-            evaluated_define_symbols: vec![],
-            prev_end: 0,
-            conditions_stack: vec![],
-            out: vec![],
+            prev_end: Default::default(),
+            conditions_stack: Default::default(),
+            out: Default::default(),
             macros: FxHashMap::default(),
-            expansion_stack: vec![],
+            expansion_stack: Default::default(),
             offsets: FxHashMap::default(),
         }
     }
@@ -295,9 +293,8 @@ impl<'a> SourcepawnPreprocessor<'a> {
                             &mut self.expansion_stack,
                             true,
                         ) {
-                            Ok(expanded_macros) => {
+                            Ok(_) => {
                                 expanded_symbol = Some((symbol.clone(), idx, file_id));
-                                self.evaluated_define_symbols.extend(expanded_macros);
                                 continue;
                             }
                             Err(ExpansionError::MacroNotFound(err)) => {
@@ -331,9 +328,6 @@ impl<'a> SourcepawnPreprocessor<'a> {
             IfCondition::new(&mut self.macros, symbol.range.start.line, &mut self.offsets);
         while self.lexer.in_preprocessor() {
             if let Some(symbol) = self.lexer.next() {
-                if symbol.token_kind == TokenKind::Identifier {
-                    self.evaluated_define_symbols.push(symbol.clone());
-                }
                 if_condition.symbols.push(symbol);
             } else {
                 break;
@@ -459,9 +453,6 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                 {
                                     state = State::Params;
                                 } else {
-                                    if symbol.token_kind == TokenKind::Identifier {
-                                        self.evaluated_define_symbols.push(symbol.clone());
-                                    }
                                     macro_.body.push(symbol.into());
                                     state = State::Body;
                                 }
@@ -501,9 +492,6 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                 }
                             }
                             State::Body => {
-                                if symbol.token_kind == TokenKind::Identifier {
-                                    self.evaluated_define_symbols.push(symbol.clone());
-                                }
                                 macro_.body.push(symbol.into());
                             }
                         }
@@ -628,10 +616,6 @@ impl<'a> SourcepawnPreprocessor<'a> {
                 ));
                 self.current_line = "".to_string();
                 self.prev_end = 0;
-            }
-            TokenKind::Identifier => {
-                // Keep track of the identifiers, so that they can be seen by the semantic analyzer.
-                self.evaluated_define_symbols.push(symbol.clone());
             }
             // Skip any token that is not a directive or a newline.
             _ => (),

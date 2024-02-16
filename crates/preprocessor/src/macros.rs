@@ -181,11 +181,10 @@ pub(super) fn expand_identifier<T>(
     symbol: &Symbol,
     expansion_stack: &mut Vec<Symbol>,
     allow_undefined_macros: bool,
-) -> Result<Vec<Symbol>, ExpansionError>
+) -> Result<(), ExpansionError>
 where
     T: Iterator<Item = Symbol>,
 {
-    let mut expanded_macros = Vec::new();
     let mut reversed_expansion_stack = Vec::new();
     let mut args_collector = ArgumentsCollector::default();
     let mut context_stack = vec![VecDeque::from([QueuedSymbol::new(
@@ -216,10 +215,6 @@ where
                         continue;
                     }
                 };
-                if context_stack.is_empty() {
-                    // Do not keep track of sub-macros, they will not appear in the final document.
-                    expanded_macros.push(queued_symbol.symbol.clone());
-                }
                 let new_context = if macro_.params.is_none() {
                     expand_non_macro_define(
                         macro_,
@@ -280,7 +275,7 @@ where
     // produces them in the correct order, therefore we have to reverse them.
     expansion_stack.extend(reversed_expansion_stack.into_iter().rev());
 
-    Ok(expanded_macros)
+    Ok(())
 }
 
 /// Expand a non macro define by returning a new [context](MacroContext) of all the [symbols](Symbol)
