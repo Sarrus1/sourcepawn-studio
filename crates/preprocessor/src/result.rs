@@ -8,6 +8,7 @@ pub struct PreprocessingResult {
     macros: FxHashMap<String, Macro>,
     offsets: FxHashMap<u32, Vec<Offset>>,
     errors: PreprocessorErrors,
+    inactive_ranges: Vec<lsp_types::Range>,
 }
 
 impl PreprocessingResult {
@@ -16,12 +17,14 @@ impl PreprocessingResult {
         macros: FxHashMap<String, Macro>,
         offsets: FxHashMap<u32, Vec<Offset>>,
         errors: PreprocessorErrors,
+        inactive_ranges: Vec<lsp_types::Range>,
     ) -> Self {
         Self {
             preprocessed_text,
             macros,
             offsets,
             errors,
+            inactive_ranges,
         }
     }
 
@@ -31,6 +34,7 @@ impl PreprocessingResult {
             macros: FxHashMap::default(),
             offsets: FxHashMap::default(),
             errors: Default::default(),
+            inactive_ranges: Default::default(),
         }
     }
 
@@ -48,5 +52,9 @@ impl PreprocessingResult {
 
     pub fn errors(&self) -> &PreprocessorErrors {
         &self.errors
+    }
+
+    pub fn inactive_ranges(&self) -> &[lsp_types::Range] {
+        &self.inactive_ranges
     }
 }

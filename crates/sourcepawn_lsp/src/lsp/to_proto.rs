@@ -85,6 +85,7 @@ pub(crate) fn diagnostic_severity(severity: Severity) -> lsp_types::DiagnosticSe
     match severity {
         Severity::Error => lsp_types::DiagnosticSeverity::ERROR,
         Severity::Warning => lsp_types::DiagnosticSeverity::WARNING,
+        Severity::WeakWarning => lsp_types::DiagnosticSeverity::HINT,
     }
 }
 

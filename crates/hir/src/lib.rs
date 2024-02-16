@@ -90,19 +90,22 @@ impl File {
                 .into(),
             ))
         });
-        db.preprocess_file(self.id)
-            .errors()
-            .evaluation_errors
-            .iter()
-            .for_each(|it| {
-                acc.push(AnyDiagnostic::PreprocessorEvaluationError(
-                    PreprocessorEvaluationError {
-                        range: InFile::new(self.id, *it.range()),
-                        text: it.text().to_owned(),
-                    }
-                    .into(),
-                ))
-            });
+        let result = db.preprocess_file(self.id);
+        let errors = result.errors();
+        errors.evaluation_errors.iter().for_each(|it| {
+            acc.push(AnyDiagnostic::PreprocessorEvaluationError(
+                PreprocessorEvaluationError {
+                    range: *it.range(),
+                    text: it.text().to_owned(),
+                }
+                .into(),
+            ))
+        });
+        result.inactive_ranges().iter().for_each(|range| {
+            acc.push(AnyDiagnostic::InactiveCode(
+                InactiveCode { range: *range }.into(),
+            ))
+        });
         self.declarations(db)
             .iter()
             .for_each(|it| acc.extend(it.diagnostics(db)));

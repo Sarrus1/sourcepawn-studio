@@ -9,7 +9,7 @@ pub(crate) fn preprocessor_evaluation_error(
     _ctx: &DiagnosticsContext<'_>,
     d: &hir::PreprocessorEvaluationError,
 ) -> Diagnostic {
-    Diagnostic::new_with_range(
+    Diagnostic::new(
         DiagnosticCode::SpCompError("E0000"),
         d.text.to_owned(),
         d.range,

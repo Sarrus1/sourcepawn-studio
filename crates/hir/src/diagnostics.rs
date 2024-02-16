@@ -29,6 +29,7 @@ diagnostics![
     UnresolvedField,
     UnresolvedMethodCall,
     PreprocessorEvaluationError,
+    InactiveCode,
 ];
 
 #[derive(Debug)]
@@ -56,6 +57,11 @@ pub struct UnresolvedMethodCall {
 
 #[derive(Debug)]
 pub struct PreprocessorEvaluationError {
-    pub range: InFile<lsp_types::Range>,
+    pub range: lsp_types::Range,
     pub text: String,
+}
+
+#[derive(Debug)]
+pub struct InactiveCode {
+    pub range: lsp_types::Range,
 }

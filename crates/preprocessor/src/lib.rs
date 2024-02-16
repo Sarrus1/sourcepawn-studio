@@ -123,26 +123,34 @@ impl<'a> SourcepawnPreprocessor<'a> {
     }
 
     pub fn result(self) -> PreprocessingResult {
-        PreprocessingResult::new(self.out.join("\n"), self.macros, self.offsets, self.errors)
+        let inactive_ranges = self.get_inactive_ranges();
+        PreprocessingResult::new(
+            self.out.join("\n"),
+            self.macros,
+            self.offsets,
+            self.errors,
+            inactive_ranges,
+        )
     }
 
     pub fn error_result(self) -> PreprocessingResult {
+        let inactive_ranges = self.get_inactive_ranges();
         PreprocessingResult::new(
             self.input.to_owned(),
             self.macros,
             self.offsets,
             self.errors,
+            inactive_ranges,
         )
     }
 
     pub fn add_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
-        self.get_disabled_diagnostics(diagnostics);
         self.get_macro_not_found_diagnostics(diagnostics);
         self.get_evaluation_error_diagnostics(diagnostics);
         self.get_include_not_found_diagnostics(diagnostics);
     }
 
-    fn get_disabled_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
+    fn get_inactive_ranges(&self) -> Vec<lsp_types::Range> {
         let mut ranges: Vec<lsp_types::Range> = vec![];
         for range in self.skipped_lines.iter() {
             if let Some(old_range) = ranges.pop() {
@@ -160,13 +168,8 @@ impl<'a> SourcepawnPreprocessor<'a> {
         for range in ranges.iter_mut() {
             range.start.character = 0;
         }
-        diagnostics.extend(ranges.iter().map(|range| Diagnostic {
-            range: *range,
-            message: "Code disabled by the preprocessor.".to_string(),
-            severity: Some(lsp_types::DiagnosticSeverity::HINT),
-            tags: Some(vec![lsp_types::DiagnosticTag::UNNECESSARY]),
-            ..Default::default()
-        }));
+
+        ranges
     }
 
     fn get_macro_not_found_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {

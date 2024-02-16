@@ -73,14 +73,6 @@ impl Diagnostic {
         Diagnostic::new(code, message, ts_range_to_lsp_range(&range))
     }
 
-    fn new_with_range(
-        code: DiagnosticCode,
-        message: impl Into<String>,
-        range: InFile<lsp_types::Range>,
-    ) -> Diagnostic {
-        Diagnostic::new(code, message, range.value)
-    }
-
     fn experimental(mut self) -> Diagnostic {
         self.experimental = true;
         self
@@ -101,6 +93,7 @@ impl Diagnostic {
 pub enum Severity {
     Error,
     Warning,
+    WeakWarning,
 }
 
 struct DiagnosticsContext<'a> {
@@ -140,6 +133,7 @@ pub fn diagnostics(
             AnyDiagnostic::PreprocessorEvaluationError(d) => {
                 handlers::preprocessor_evaluation_error::f(&ctx, &d)
             }
+            AnyDiagnostic::InactiveCode(d) => handlers::inactive_code::f(&ctx, &d),
         };
         res.push(d);
     }
