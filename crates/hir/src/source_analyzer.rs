@@ -121,11 +121,7 @@ fn scope_for(
     node: InFile<tree_sitter::Node>,
 ) -> Option<ScopeId> {
     let node_ancestors = iter::successors(Some(node), |it| {
-        if let Some(parent) = it.value.parent() {
-            Some(it.with_value(parent))
-        } else {
-            None
-        }
+        it.value.parent().map(|parent| it.with_value(parent))
     });
     node_ancestors
         .filter(|it| matches!(TSKind::from(it.value), TSKind::block))

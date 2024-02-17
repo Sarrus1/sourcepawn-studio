@@ -13,8 +13,8 @@ fn extend_macros(
 macro_rules! assert_preproc_eq {
     ($input:expr, $output:expr) => {
         assert_eq!(
-            SourcepawnPreprocessor::new(FileId::from(0), $input)
-                .preprocess_input(&mut extend_macros)
+            SourcepawnPreprocessor::new(FileId::from(0), $input, &mut extend_macros)
+                .preprocess_input()
                 .preprocessed_text(),
             $output
         );

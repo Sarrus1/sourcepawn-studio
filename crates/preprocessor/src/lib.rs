@@ -10,7 +10,7 @@ use stdx::hashable_hash_map::HashableHashMap;
 use symbol::RangeLessSymbol;
 use vfs::FileId;
 
-use errors::{ExpansionError, IncludeNotFoundError, PreprocessorErrors};
+use errors::{ExpansionError, PreprocessorErrors, UnresolvedIncludeError};
 use evaluator::IfCondition;
 use macros::expand_identifier;
 
@@ -23,7 +23,7 @@ mod preprocessor_operator;
 mod result;
 mod symbol;
 
-pub use errors::EvaluationError;
+pub use errors::{EvaluationError, PreprocessorError};
 pub use offset::Offset;
 pub use result::PreprocessingResult;
 
@@ -46,8 +46,11 @@ enum ConditionState {
 pub type MacrosMap = FxHashMap<SmolStr, Macro>;
 pub type HMacrosMap = HashableHashMap<SmolStr, Macro>;
 
-#[derive(Debug, Clone)]
-pub struct SourcepawnPreprocessor<'a> {
+#[derive(Debug)]
+pub struct SourcepawnPreprocessor<'a, F>
+where
+    F: FnMut(&mut MacrosMap, String, FileId, bool) -> anyhow::Result<()>,
+{
     /// The index of the current macro in the file.
     idx: u32,
     lexer: SourcepawnLexer<'a>,
@@ -63,6 +66,7 @@ pub struct SourcepawnPreprocessor<'a> {
     conditions_stack: Vec<ConditionState>,
     out: Vec<String>,
     offsets: FxHashMap<u32, Vec<Offset>>,
+    include_file: &'a mut F,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -88,12 +92,16 @@ impl Macro {
     }
 }
 
-impl<'a> SourcepawnPreprocessor<'a> {
-    pub fn new(file_id: FileId, input: &'a str) -> Self {
+impl<'a, F> SourcepawnPreprocessor<'a, F>
+where
+    F: FnMut(&mut MacrosMap, String, FileId, bool) -> anyhow::Result<()>,
+{
+    pub fn new(file_id: FileId, input: &'a str, include_file: &'a mut F) -> Self {
         Self {
             lexer: SourcepawnLexer::new(input),
             input,
             file_id,
+            include_file,
             idx: Default::default(),
             current_line: Default::default(),
             skip_line_start_col: Default::default(),
@@ -189,7 +197,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
     fn get_include_not_found_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
         diagnostics.extend(
             self.errors
-                .include_not_found_errors
+                .unresolved_include_errors
                 .iter()
                 .map(|err| Diagnostic {
                     range: err.range,
@@ -209,11 +217,8 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }));
     }
 
-    pub fn preprocess_input<F>(mut self, include_file: &mut F) -> PreprocessingResult
-    where
-        F: FnMut(&mut MacrosMap, String, FileId, bool) -> anyhow::Result<()>,
-    {
-        let _ = include_file(
+    pub fn preprocess_input(mut self) -> PreprocessingResult {
+        let _ = (self.include_file)(
             &mut self.macros,
             "sourcemod".to_string(),
             self.file_id,
@@ -264,7 +269,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
             match &symbol.token_kind {
                 TokenKind::Unknown => return self.error_result(),
                 TokenKind::PreprocDir(dir) => {
-                    if self.process_directive(include_file, dir, &symbol).is_err() {
+                    if self.process_directive(dir, &symbol).is_err() {
                         return self.error_result();
                     }
                 }
@@ -396,15 +401,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
         Ok(())
     }
 
-    fn process_directive<F>(
-        &mut self,
-        include_file: &mut F,
-        dir: &PreprocDir,
-        symbol: &Symbol,
-    ) -> anyhow::Result<()>
-    where
-        F: FnMut(&mut MacrosMap, String, FileId, bool) -> anyhow::Result<()>,
-    {
+    fn process_directive(&mut self, dir: &PreprocDir, symbol: &Symbol) -> anyhow::Result<()> {
         match dir {
             PreprocDir::MIf => self.process_if_directive(symbol),
             PreprocDir::MElseif => {
@@ -524,64 +521,85 @@ impl<'a> SourcepawnPreprocessor<'a> {
             }
             PreprocDir::MEndif => self.process_endif_directive(symbol)?,
             PreprocDir::MElse => self.process_else_directive(symbol)?,
-            PreprocDir::MInclude | PreprocDir::MTryinclude => {
-                let text = symbol.inline_text().trim().to_string();
-                let delta = symbol.range.end.line - symbol.range.start.line;
-                let symbol = Symbol::new(
-                    symbol.token_kind,
-                    Some(&text),
-                    Range::new(
-                        Position::new(symbol.range.start.line, symbol.range.start.character),
-                        Position::new(symbol.range.start.line, text.len() as u32),
-                    ),
-                    symbol.delta,
-                );
-                // FIXME: The logic here is wrong.
-                if let Some(caps) = RE_CHEVRON.captures(&text) {
-                    if let Some(path) = caps.get(1) {
-                        match include_file(
-                            &mut self.macros,
-                            path.as_str().to_string(),
-                            self.file_id,
-                            false,
-                        ) {
-                            Ok(_) => (),
-                            Err(_) => self.errors.include_not_found_errors.push(
-                                IncludeNotFoundError::new(path.as_str().to_string(), symbol.range),
-                            ),
-                        }
-                    }
-                };
-                if let Some(caps) = RE_QUOTE.captures(&text) {
-                    if let Some(path) = caps.get(1) {
-                        match include_file(
-                            &mut self.macros,
-                            path.as_str().to_string(),
-                            self.file_id,
-                            true,
-                        ) {
-                            Ok(_) => (),
-                            Err(_) => self.errors.include_not_found_errors.push(
-                                IncludeNotFoundError::new(path.as_str().to_string(), symbol.range),
-                            ),
-                        }
-                    }
-                };
-
-                self.push_symbol(&symbol);
-                if delta > 0 {
-                    self.push_current_line();
-                    self.current_line = "".to_string();
-                    self.prev_end = 0;
-                    for _ in 0..delta - 1 {
-                        self.out.push(String::new());
-                    }
-                }
-            }
+            PreprocDir::MInclude => self.process_include_directive(symbol, false),
+            PreprocDir::MTryinclude => self.process_include_directive(symbol, true),
             _ => self.push_symbol(symbol),
         }
 
         Ok(())
+    }
+
+    fn process_include_directive(&mut self, symbol: &Symbol, is_try: bool) {
+        let text = symbol.inline_text().trim().to_string();
+        let delta = symbol.range.end.line - symbol.range.start.line;
+        let symbol = Symbol::new(
+            symbol.token_kind,
+            Some(&text),
+            Range::new(
+                Position::new(symbol.range.start.line, symbol.range.start.character),
+                Position::new(symbol.range.start.line, text.len() as u32),
+            ),
+            symbol.delta,
+        );
+
+        if let Some(path) = RE_CHEVRON.captures(&text).and_then(|c| c.get(1)) {
+            match (self.include_file)(
+                &mut self.macros,
+                path.as_str().to_string(),
+                self.file_id,
+                false,
+            ) {
+                Ok(_) => (),
+                Err(_) => {
+                    if !is_try {
+                        // TODO: Emit a warning here for #tryinclude?
+                        let mut range = symbol.range;
+                        range.start.character = path.start() as u32;
+                        range.end.character = path.end() as u32;
+                        self.errors
+                            .unresolved_include_errors
+                            .push(UnresolvedIncludeError::new(
+                                path.as_str().to_string(),
+                                range,
+                            ))
+                    }
+                }
+            }
+        };
+        if let Some(path) = RE_QUOTE.captures(&text).and_then(|c| c.get(1)) {
+            match (self.include_file)(
+                &mut self.macros,
+                path.as_str().to_string(),
+                self.file_id,
+                true,
+            ) {
+                Ok(_) => (),
+                Err(_) => {
+                    if !is_try {
+                        // TODO: Emit a warning here for #tryinclude?
+                        let mut range = symbol.range;
+                        range.start.character = path.start() as u32;
+                        range.end.character = path.end() as u32;
+                        self.errors
+                            .unresolved_include_errors
+                            .push(UnresolvedIncludeError::new(
+                                path.as_str().to_string(),
+                                range,
+                            ))
+                    }
+                }
+            }
+        };
+
+        self.push_symbol(&symbol);
+        if delta > 0 {
+            self.push_current_line();
+            self.current_line = "".to_string();
+            self.prev_end = 0;
+            for _ in 0..delta - 1 {
+                self.out.push(String::new());
+            }
+        }
     }
 
     fn process_negative_condition(&mut self, symbol: &Symbol) -> anyhow::Result<()> {

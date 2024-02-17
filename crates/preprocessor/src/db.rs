@@ -75,10 +75,8 @@ pub(crate) fn _preprocess_file_params_query(
     let being_preprocessed = being_preprocessed.clone();
     let mut output_macros: HashableHashMap<FileId, HMacrosMap> = HashableHashMap::default();
 
-    let mut preprocessor = SourcepawnPreprocessor::new(file_id, &text);
-    preprocessor.set_macros(macros.to_map().clone());
-    let res = preprocessor.preprocess_input(
-        &mut (|macros: &mut MacrosMap, mut path: String, file_id: FileId, quoted: bool| {
+    let mut extend_macros =
+        |macros: &mut MacrosMap, mut path: String, file_id: FileId, quoted: bool| {
             let mut inc_file_id = None;
             infer_include_ext(&mut path);
             if quoted {
@@ -109,8 +107,11 @@ pub(crate) fn _preprocess_file_params_query(
             );
 
             Ok(())
-        }),
-    );
+        };
+
+    let mut preprocessor = SourcepawnPreprocessor::new(file_id, &text, &mut extend_macros);
+    preprocessor.set_macros(macros.to_map().clone());
+    let res = preprocessor.preprocess_input();
 
     output_macros.insert(file_id, res.macros().clone().into());
     results.insert(
@@ -131,32 +132,31 @@ pub(crate) fn _preprocess_file_data_query(
     params: Arc<PreprocessingParams>,
 ) -> Arc<PreprocessingResult> {
     let text = db.file_text(file_id);
-    let mut preprocessor = SourcepawnPreprocessor::new(file_id, &text);
-    preprocessor.set_macros(params.input_macros.to_map());
-    preprocessor
-        .preprocess_input(
-            &mut (|macros: &mut MacrosMap, mut path: String, file_id: FileId, quoted: bool| {
-                let mut inc_file_id = None;
-                infer_include_ext(&mut path);
-                if quoted {
-                    inc_file_id = db.resolve_path(AnchoredPath::new(file_id, &path));
-                };
-                if inc_file_id.is_none() {
-                    inc_file_id = db.resolve_path_relative_to_roots(&path);
-                }
-                let inc_file_id =
-                    inc_file_id.ok_or_else(|| anyhow::anyhow!("Include not found"))?;
-                macros.extend(
-                    params
-                        .as_ref()
-                        .output_macros
-                        .get(&inc_file_id)
-                        .map(|m| m.to_map().clone())
-                        .unwrap_or_default(),
-                );
+    let mut extend_macros =
+        |macros: &mut MacrosMap, mut path: String, file_id: FileId, quoted: bool| {
+            let mut inc_file_id = None;
+            infer_include_ext(&mut path);
+            if quoted {
+                inc_file_id = db.resolve_path(AnchoredPath::new(file_id, &path));
+            };
+            if inc_file_id.is_none() {
+                inc_file_id = db.resolve_path_relative_to_roots(&path);
+            }
+            let inc_file_id = inc_file_id.ok_or_else(|| anyhow::anyhow!("Include not found"))?;
+            macros.extend(
+                params
+                    .as_ref()
+                    .output_macros
+                    .get(&inc_file_id)
+                    .map(|m| m.to_map().clone())
+                    .unwrap_or_default(),
+            );
 
-                Ok(())
-            }),
-        )
-        .into()
+            Ok(())
+        };
+
+    let mut preprocessor = SourcepawnPreprocessor::new(file_id, &text, &mut extend_macros);
+    preprocessor.set_macros(params.input_macros.to_map());
+
+    preprocessor.preprocess_input().into()
 }

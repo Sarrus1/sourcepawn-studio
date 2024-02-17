@@ -4,6 +4,7 @@ use hir_def::{
     DefWithBodyId, EnumStructId, ExprId, FunctionId, GlobalId, InFile, InferenceDiagnostic,
     LocalFieldId, Lookup, MacroId, Name,
 };
+use preprocessor::PreprocessorError;
 use stdx::impl_from;
 use vfs::FileId;
 
@@ -93,16 +94,6 @@ impl File {
     }
 
     pub fn diagnostics(self, db: &dyn HirDatabase, acc: &mut Vec<AnyDiagnostic>) {
-        db.file_includes(self.id).1.iter().for_each(|it| {
-            acc.push(AnyDiagnostic::UnresolvedInclude(
-                UnresolvedInclude {
-                    file_id: it.file_id,
-                    range: it.range,
-                    path: it.path.clone(),
-                }
-                .into(),
-            ))
-        });
         let result = db.preprocess_file(self.id);
         let errors = result.errors();
         errors.evaluation_errors.iter().for_each(|it| {
@@ -114,11 +105,21 @@ impl File {
                 .into(),
             ))
         });
+        errors.unresolved_include_errors.iter().for_each(|it| {
+            acc.push(AnyDiagnostic::UnresolvedInclude(
+                UnresolvedInclude {
+                    range: *it.range(),
+                    path: it.text().to_owned(),
+                }
+                .into(),
+            ))
+        });
         result.inactive_ranges().iter().for_each(|range| {
             acc.push(AnyDiagnostic::InactiveCode(
                 InactiveCode { range: *range }.into(),
             ))
         });
+
         self.declarations(db)
             .iter()
             .for_each(|it| acc.extend(it.diagnostics(db)));

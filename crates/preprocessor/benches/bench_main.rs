@@ -20,8 +20,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("surftimer_sql", |b| {
         b.iter(|| {
             let _res = black_box(
-                SourcepawnPreprocessor::new(FileId::from(0), input)
-                    .preprocess_input(&mut extend_macros)
+                SourcepawnPreprocessor::new(FileId::from(0), input, &mut extend_macros)
+                    .preprocess_input()
                     .preprocessed_text(),
             );
         })

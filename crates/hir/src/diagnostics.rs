@@ -5,7 +5,6 @@
 //! be expressed in terms of hir types themselves.
 
 use hir_def::{InFile, Name, NodePtr};
-use vfs::FileId;
 
 macro_rules! diagnostics {
     ($($diag:ident,)*) => {
@@ -34,7 +33,6 @@ diagnostics![
 
 #[derive(Debug)]
 pub struct UnresolvedInclude {
-    pub file_id: FileId,
     pub range: lsp_types::Range,
     pub path: String,
 }

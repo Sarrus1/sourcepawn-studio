@@ -1,6 +1,12 @@
 use lsp_types::Range;
 use std::{error, fmt};
 
+pub trait PreprocessorError {
+    fn text(&self) -> &str;
+
+    fn range(&self) -> &Range;
+}
+
 #[derive(Debug)]
 pub(super) enum ExpansionError {
     MacroNotFound(MacroNotFoundError),
@@ -50,37 +56,67 @@ impl fmt::Display for MacroNotFoundError {
 
 impl error::Error for MacroNotFoundError {}
 
+impl PreprocessorError for MacroNotFoundError {
+    fn text(&self) -> &str {
+        &self.macro_name
+    }
+
+    fn range(&self) -> &Range {
+        &self.range
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct IncludeNotFoundError {
+pub struct UnresolvedIncludeError {
     pub(super) include_text: String,
     pub(super) range: Range,
 }
 
-impl IncludeNotFoundError {
-    pub(super) fn new(include_text: String, range: Range) -> IncludeNotFoundError {
-        IncludeNotFoundError {
+impl PreprocessorError for UnresolvedIncludeError {
+    fn text(&self) -> &str {
+        &self.include_text
+    }
+
+    fn range(&self) -> &Range {
+        &self.range
+    }
+}
+
+impl UnresolvedIncludeError {
+    pub(super) fn new(include_text: String, range: Range) -> UnresolvedIncludeError {
+        UnresolvedIncludeError {
             include_text,
             range,
         }
     }
 }
 
-impl fmt::Display for IncludeNotFoundError {
+impl fmt::Display for UnresolvedIncludeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "Include {} not found at {:?}",
+            "Unresolved include {} at {:?}",
             self.include_text, self.range
         )
     }
 }
 
-impl error::Error for IncludeNotFoundError {}
+impl error::Error for UnresolvedIncludeError {}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct ParseIntError {
     pub(super) text: String,
     pub(super) range: Range,
+}
+
+impl PreprocessorError for ParseIntError {
+    fn text(&self) -> &str {
+        &self.text
+    }
+
+    fn range(&self) -> &Range {
+        &self.range
+    }
 }
 
 impl ParseIntError {
@@ -107,17 +143,19 @@ pub struct EvaluationError {
     pub(super) range: Range,
 }
 
-impl EvaluationError {
-    pub(super) fn new(text: String, range: Range) -> EvaluationError {
-        EvaluationError { text, range }
-    }
-
-    pub fn text(&self) -> &str {
+impl PreprocessorError for EvaluationError {
+    fn text(&self) -> &str {
         &self.text
     }
 
-    pub fn range(&self) -> &Range {
+    fn range(&self) -> &Range {
         &self.range
+    }
+}
+
+impl EvaluationError {
+    pub(super) fn new(text: String, range: Range) -> EvaluationError {
+        EvaluationError { text, range }
     }
 }
 
@@ -137,5 +175,5 @@ impl error::Error for EvaluationError {}
 pub struct PreprocessorErrors {
     pub macro_not_found_errors: Vec<MacroNotFoundError>,
     pub evaluation_errors: Vec<EvaluationError>,
-    pub include_not_found_errors: Vec<IncludeNotFoundError>,
+    pub unresolved_include_errors: Vec<UnresolvedIncludeError>,
 }
