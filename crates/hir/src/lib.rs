@@ -96,30 +96,30 @@ impl File {
     pub fn diagnostics(self, db: &dyn HirDatabase, acc: &mut Vec<AnyDiagnostic>) {
         let result = db.preprocess_file(self.id);
         let errors = result.errors();
-        errors.evaluation_errors.iter().for_each(|it| {
-            acc.push(AnyDiagnostic::PreprocessorEvaluationError(
+        acc.extend(errors.evaluation_errors.iter().map(|it| {
+            AnyDiagnostic::PreprocessorEvaluationError(
                 PreprocessorEvaluationError {
                     range: *it.range(),
                     text: it.text().to_owned(),
                 }
                 .into(),
-            ))
-        });
-        errors.unresolved_include_errors.iter().for_each(|it| {
-            acc.push(AnyDiagnostic::UnresolvedInclude(
+            )
+        }));
+        acc.extend(errors.unresolved_include_errors.iter().map(|it| {
+            AnyDiagnostic::UnresolvedInclude(
                 UnresolvedInclude {
                     range: *it.range(),
                     path: it.text().to_owned(),
                 }
                 .into(),
-            ))
-        });
-        result.inactive_ranges().iter().for_each(|range| {
-            acc.push(AnyDiagnostic::InactiveCode(
-                InactiveCode { range: *range }.into(),
-            ))
-        });
-
+            )
+        }));
+        acc.extend(
+            result
+                .inactive_ranges()
+                .iter()
+                .map(|range| AnyDiagnostic::InactiveCode(InactiveCode { range: *range }.into())),
+        );
         self.declarations(db)
             .iter()
             .for_each(|it| acc.extend(it.diagnostics(db)));
