@@ -78,6 +78,20 @@ int foo = FOO;
 }
 
 #[test]
+fn global_variable_7() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define A_REALLY_LONG_INCLUDE(%1,%2) %1 + %2
+int foo;
+int bar = A_REALLY_LONG_INCLUDE(foo + foo, foo);
+                                 |
+                                 ^             
+"#,
+    ));
+}
+
+#[test]
 fn local_variable_1() {
     assert_json_snapshot!(goto_definition(
         r#"

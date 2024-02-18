@@ -36,7 +36,7 @@ impl ItemTree {
         let loc = block.lookup(db);
         let tree = db.parse(loc.file_id);
         let block_node = loc.source(db, &tree);
-        let source = db.file_text(loc.file_id);
+        let source = db.preprocessed_text(loc.file_id);
         let ast_id_map = db.ast_id_map(loc.file_id);
         let mut item_tree = ItemTree::default();
         for child in block_node.value.children(&mut block_node.value.walk()) {

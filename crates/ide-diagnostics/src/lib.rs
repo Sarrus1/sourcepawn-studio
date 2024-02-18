@@ -1,7 +1,7 @@
-use base_db::{SourceDatabase, SourceDatabaseExt, Tree};
+use base_db::{SourceDatabaseExt, Tree};
 use fxhash::FxHashSet;
 use hir::{AnyDiagnostic, Semantics};
-use hir_def::{InFile, NodePtr};
+use hir_def::{DefDatabase, InFile, NodePtr};
 use ide_db::RootDatabase;
 use queries::ERROR_QUERY;
 use syntax::utils::ts_range_to_lsp_range;
@@ -115,7 +115,7 @@ pub fn diagnostics(
 ) -> Vec<Diagnostic> {
     let sema = Semantics::new(db);
     let tree = db.parse(file_id);
-    let source = db.file_text(file_id);
+    let source = db.file_text(file_id); //FIXME: Incorrect text
     let mut res = Vec::new();
 
     res.extend(syntax_error_diagnostics(&source, &tree));

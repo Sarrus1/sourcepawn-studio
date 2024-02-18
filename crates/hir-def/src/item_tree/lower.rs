@@ -26,7 +26,7 @@ impl<'db> Ctx<'db> {
             db,
             tree: ItemTree::default(),
             source_ast_id_map: db.ast_id_map(file_id),
-            source: db.file_text(file_id),
+            source: db.preprocessed_text(file_id),
             file_id,
         }
     }

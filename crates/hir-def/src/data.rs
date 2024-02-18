@@ -155,21 +155,22 @@ impl HasChildSource<LocalFieldId> for EnumStructId {
             match TSKind::from(child) {
                 TSKind::enum_struct_field => {
                     let name_node = child.child_by_field_name("name").unwrap();
-                    let name = Name::from_node(&name_node, &db.file_text(loc.file_id()));
+                    let name = Name::from_node(&name_node, &db.preprocessed_text(loc.file_id()));
                     let type_ref_node = child.child_by_field_name("type").unwrap();
                     let type_ref =
-                        TypeRef::from_node(&type_ref_node, &db.file_text(loc.file_id())).unwrap();
+                        TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id()))
+                            .unwrap();
                     let field = EnumStructItemData::Field(FieldData { name, type_ref });
                     map.insert(items.alloc(field), NodePtr::from(&child));
                 }
                 // TSKind::enum_struct_method => {
                 //     let name_node = child.child_by_field_name("name").unwrap();
-                //     let name = Name::from_node(&name_node, &db.file_text(loc.file_id()));
+                //     let name = Name::from_node(&name_node, &db.preprocessed_text(loc.file_id()));
                 //     let type_ref =
                 //         child
                 //             .child_by_field_name("returnType")
                 //             .and_then(|type_ref_node| {
-                //                 TypeRef::from_node(&type_ref_node, &db.file_text(loc.file_id()))
+                //                 TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id()))
                 //             });
                 //     let method = EnumStructItemData::Method(FunctionData { name, type_ref });
                 //     map.insert(items.alloc(method), NodePtr::from(&child));

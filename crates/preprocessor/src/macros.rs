@@ -1,5 +1,6 @@
 use std::{cmp::Ordering, collections::VecDeque};
 
+use itertools::Itertools;
 use lsp_types::{Position, Range};
 use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
 
@@ -181,10 +182,11 @@ pub(super) fn expand_identifier<T>(
     symbol: &Symbol,
     expansion_stack: &mut Vec<Symbol>,
     allow_undefined_macros: bool,
-) -> Result<(), ExpansionError>
+) -> Result<Option<Vec<Vec<(Range, Range)>>>, ExpansionError>
 where
     T: Iterator<Item = Symbol>,
 {
+    let mut args_mapping: Option<Vec<Vec<(Range, Range)>>> = None;
     let mut reversed_expansion_stack = Vec::new();
     let mut args_collector = ArgumentsCollector::default();
     let mut context_stack = vec![VecDeque::from([QueuedSymbol::new(
@@ -222,7 +224,7 @@ where
                         queued_symbol.symbol.range,
                     )
                 } else {
-                    let Some(args) = args_collector.collect_arguments(
+                    let Some(args) = &args_collector.collect_arguments(
                         lexer,
                         &queued_symbol.symbol,
                         &mut current_context,
@@ -235,7 +237,22 @@ where
                         context_stack.push(current_context);
                         continue;
                     };
-                    expand_macro(args, macro_, &queued_symbol.symbol)?
+                    let (ctx, args_map) = expand_macro(args, macro_, &queued_symbol.symbol)?;
+                    if context_stack.len() == 0 {
+                        // FIXME: 1 or 0 here?
+                        args_mapping = args
+                            .iter()
+                            .zip(args_map)
+                            .map(|(args, maps)| {
+                                args.iter()
+                                    .zip(maps)
+                                    .map(|(arg, mapped_range)| (arg.range, mapped_range))
+                                    .collect_vec()
+                            })
+                            .collect_vec()
+                            .into();
+                    }
+                    ctx
                 };
                 context_stack.push(current_context);
                 context_stack.push(new_context);
@@ -275,7 +292,7 @@ where
     // produces them in the correct order, therefore we have to reverse them.
     expansion_stack.extend(reversed_expansion_stack.into_iter().rev());
 
-    Ok(())
+    Ok(args_mapping)
 }
 
 /// Expand a non macro define by returning a new [context](MacroContext) of all the [symbols](Symbol)
@@ -317,19 +334,21 @@ fn expand_non_macro_define(
     macro_context
 }
 
-/// Expand a function like macro by returning a new [context](MacroContext) of all the [symbols](Symbol)
-/// in the [macro](RangeLessMacro)'s body.
+/// Expand a function like macro by returning a new [`context`](MacroContext) of all the [`symbols`](Symbol)
+/// in the [`macro`](Macro)'s body.
 ///
 /// # Arguments
 ///
-/// * `args` - [Arguments](MacroArguments) of the macro call.
-/// * `macro_` - [RangeLessMacro] we are expanding.
-/// * `symbol` - [Symbol] that originated the macro expansion. Used to keep track of the delta to insert.
+/// * `args` - [`Arguments`](MacroArguments) of the macro call.
+/// * `macro_` - [`Macro`] we are expanding.
+/// * `symbol` - [`Symbol`] that originated the [`macro`](Macro) expansion. Used to keep track of the
+/// [`delta`](sourcepawn_lexer::Delta) to insert.
 fn expand_macro(
-    args: MacroArguments,
+    args: &MacroArguments,
     macro_: &Macro,
     symbol: &Symbol,
-) -> Result<MacroContext, ParseIntError> {
+) -> Result<(MacroContext, Vec<Vec<Range>>), ParseIntError> {
+    let mut args_map: Vec<Vec<Range>> = vec![vec![]; 10]; // FIXME: Consider smolvec here.
     let mut new_context = MacroContext::default();
     let mut consecutive_percent = 0;
     let mut stringize_delta = None;
@@ -405,6 +424,7 @@ fn expand_macro(
                         new_context.push_back(QueuedSymbol::new(symbol, delta));
                     } else {
                         for (j, sub_child) in args[arg_idx].iter().enumerate() {
+                            args_map[arg_idx].push(symbol.range);
                             new_context.push_back(QueuedSymbol::new(
                                 sub_child.clone(),
                                 if i == 1 {
@@ -439,5 +459,5 @@ fn expand_macro(
         }
     }
 
-    Ok(new_context)
+    Ok((new_context, args_map))
 }

@@ -75,7 +75,7 @@ impl Body {
                     db,
                     def,
                     file_id,
-                    &db.file_text(file_id),
+                    &db.preprocessed_text(file_id),
                     params_list,
                     body_node,
                 );

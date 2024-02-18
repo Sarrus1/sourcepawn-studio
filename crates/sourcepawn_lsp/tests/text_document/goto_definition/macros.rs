@@ -48,3 +48,56 @@ fn define_4() {
 "#,
     ));
 }
+
+#[test]
+fn macro_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOO(%1) %1
+         |
+         ^
+"#,
+    ));
+}
+
+#[test]
+fn macro_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOO(%1) %1
+int foo = FOO(1);
+           |
+           ^
+"#,
+    ));
+}
+
+#[test]
+fn macro_3() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOO(%1) %1
+#if defined FOO
+             |
+             ^
+#endif
+"#,
+    ));
+}
+
+#[test]
+fn macro_4() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOO(%1) %1
+int foo;
+int bar = FOO(foo)
+               |
+               ^
+"#,
+    ));
+}

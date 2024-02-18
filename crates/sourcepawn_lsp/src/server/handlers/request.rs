@@ -1,4 +1,5 @@
 use anyhow::Context;
+use base_db::FileRange;
 use lsp_types::{
     SemanticTokensDeltaParams, SemanticTokensFullDeltaResult, SemanticTokensParams,
     SemanticTokensResult,
@@ -23,8 +24,16 @@ pub(crate) fn handle_goto_definition(
         None => return Ok(None),
         Some(it) => it,
     };
+    let src = FileRange {
+        file_id: pos.file_id,
+        range: targets.range,
+    };
 
-    Ok(Some(to_proto::goto_definition_response(&snap, targets)?))
+    Ok(Some(to_proto::goto_definition_response(
+        &snap,
+        Some(src),
+        targets.info,
+    )?))
 }
 
 pub(crate) fn handle_semantic_tokens_full(
@@ -128,6 +137,7 @@ pub(crate) fn handle_preprocessed_document(
     let file_id = from_proto::file_id(&snap, &uri)?;
 
     snap.analysis
-        .preprocess(file_id)
+        .preprocessed_text(file_id)
         .context("Failed to preprocess document")
+        .map(|it| it.to_string())
 }

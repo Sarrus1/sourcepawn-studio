@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{hash::Hash, sync::Arc};
 
 use include::file_includes_query;
 use input::{SourceRoot, SourceRootId};
@@ -100,10 +100,6 @@ impl Eq for Tree {}
 /// model. Everything else in rust-analyzer is derived from these queries.
 #[salsa::query_group(SourceDatabaseStorage)]
 pub trait SourceDatabase: FileLoader + std::fmt::Debug {
-    /// Parses the file into the syntax tree.
-    #[salsa::invoke(parse_query)]
-    fn parse(&self, file_id: FileId) -> Tree;
-
     #[salsa::invoke(file_includes_query)]
     fn file_includes(&self, file_id: FileId) -> (Arc<Vec<Include>>, Arc<Vec<UnresolvedInclude>>);
 
@@ -112,19 +108,6 @@ pub trait SourceDatabase: FileLoader + std::fmt::Debug {
 
     #[salsa::invoke(graph::Graph::projet_subgraph_query)]
     fn projet_subgraph(&self, file_id: FileId) -> Option<Arc<graph::SubGraph>>;
-}
-
-fn parse_query(db: &dyn SourceDatabase, file_id: FileId) -> Tree {
-    tracing::info!("Parsing {}", file_id);
-    let mut parser = tree_sitter::Parser::new();
-    parser
-        .set_language(tree_sitter_sourcepawn::language())
-        .expect("Failed to set language");
-    let text = db.file_text(file_id);
-    parser
-        .parse(text.as_ref(), None)
-        .expect("Failed to parse a file.")
-        .into()
 }
 
 /// We don't want to give HIR knowledge of source roots, hence we extract these
@@ -181,6 +164,22 @@ impl<T: SourceDatabaseExt> FileLoader for FileLoaderDelegate<&'_ T> {
 pub struct FilePosition {
     pub file_id: FileId,
     pub position: lsp_types::Position,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct FileRange {
+    pub file_id: FileId,
+    pub range: lsp_types::Range,
+}
+
+impl Hash for FileRange {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.file_id.hash(state);
+        self.range.start.line.hash(state);
+        self.range.start.character.hash(state);
+        self.range.end.line.hash(state);
+        self.range.end.character.hash(state);
+    }
 }
 
 pub trait Upcast<T: ?Sized> {

@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
 use base_db::{
-    infer_include_ext, FileExtension, IncludeKind, IncludeType, SourceDatabase, RE_CHEVRON,
+    infer_include_ext, FileExtension, IncludeKind, IncludeType, SourceDatabase, Tree, RE_CHEVRON,
     RE_QUOTE,
 };
 use fxhash::FxHashMap;
+use preprocessor::db::PreprocDatabase;
 use syntax::TSKind;
 use vfs::{AnchoredPath, FileId};
 
@@ -36,7 +37,11 @@ pub trait InternDatabase: SourceDatabase {
 }
 
 #[salsa::query_group(DefDatabaseStorage)]
-pub trait DefDatabase: InternDatabase {
+pub trait DefDatabase: InternDatabase + PreprocDatabase {
+    /// Parses the file into the syntax tree.
+    #[salsa::invoke(parse_query)]
+    fn parse(&self, file_id: FileId) -> Tree;
+
     #[salsa::invoke(ItemTree::file_item_tree_query)]
     fn file_item_tree(&self, file_id: FileId) -> Arc<ItemTree>;
 
@@ -77,6 +82,19 @@ pub trait DefDatabase: InternDatabase {
     #[salsa::invoke(infer::infer_query)]
     fn infer(&self, def: DefWithBodyId) -> Arc<InferenceResult>;
     // endregion: infer
+}
+
+fn parse_query(db: &dyn DefDatabase, file_id: FileId) -> Tree {
+    tracing::info!("Parsing {}", file_id);
+    let mut parser = tree_sitter::Parser::new();
+    parser
+        .set_language(tree_sitter_sourcepawn::language())
+        .expect("Failed to set language");
+    let text = db.preprocessed_text(file_id);
+    parser
+        .parse(text.as_bytes(), None)
+        .expect("Failed to parse a file.")
+        .into()
 }
 
 /// Resolves an include node to a file id and include type and kind.

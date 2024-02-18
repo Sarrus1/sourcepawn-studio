@@ -3,29 +3,56 @@ use std::{
     sync::atomic::{AtomicU32, Ordering},
 };
 
+use base_db::FileRange;
 use ide::{Cancellable, Highlight, HlMod, HlRange, HlTag, NavigationTarget, Severity};
 use ide_db::SymbolKind;
 use itertools::Itertools;
 use paths::AbsPath;
+use vfs::FileId;
 
 use super::semantic_tokens;
 use crate::server::GlobalStateSnapshot;
 
 pub(crate) fn goto_definition_response(
     snap: &GlobalStateSnapshot,
+    src: Option<FileRange>,
     targets: Vec<NavigationTarget>,
 ) -> Cancellable<lsp_types::GotoDefinitionResponse> {
-    Ok(lsp_types::GotoDefinitionResponse::Link(
-        targets
-            .into_iter()
-            .map(|target| lsp_types::LocationLink {
-                target_uri: snap.file_id_to_url(target.file_id),
-                origin_selection_range: Some(target.origin_selection_range),
-                target_range: target.target_range,
-                target_selection_range: target.target_selection_range,
-            })
-            .collect(),
-    ))
+    let links = targets
+        .into_iter()
+        .map(|nav| location_link(snap, src, nav))
+        .collect::<Cancellable<Vec<_>>>()?;
+    Ok(links.into())
+}
+
+pub(crate) fn location_link(
+    snap: &GlobalStateSnapshot,
+    src: Option<FileRange>,
+    target: NavigationTarget,
+) -> Cancellable<lsp_types::LocationLink> {
+    let origin_selection_range = src.map(|it| it.range);
+    let (target_uri, target_range, target_selection_range) = location_info(snap, target)?;
+    let res = lsp_types::LocationLink {
+        origin_selection_range,
+        target_uri,
+        target_range,
+        target_selection_range,
+    };
+    Ok(res)
+}
+
+fn location_info(
+    snap: &GlobalStateSnapshot,
+    target: NavigationTarget,
+) -> Cancellable<(lsp_types::Url, lsp_types::Range, lsp_types::Range)> {
+    let target_uri = url(snap, target.file_id);
+    let target_range = target.full_range;
+    let target_selection_range = target.focus_range.unwrap_or(target_range);
+    Ok((target_uri, target_range, target_selection_range))
+}
+
+pub(crate) fn url(snap: &GlobalStateSnapshot, file_id: FileId) -> lsp_types::Url {
+    snap.file_id_to_url(file_id)
 }
 
 static TOKEN_RESULT_COUNTER: AtomicU32 = AtomicU32::new(1);

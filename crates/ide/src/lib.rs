@@ -8,6 +8,7 @@ use std::sync::Arc;
 use base_db::{
     Change, FileExtension, FilePosition, Graph, SourceDatabase, SourceDatabaseExt, Tree,
 };
+use hir_def::DefDatabase;
 use ide_db::RootDatabase;
 use preprocessor::db::PreprocDatabase;
 use salsa::{Cancelled, ParallelDatabase};
@@ -18,6 +19,19 @@ pub use ide_db::Cancellable;
 pub use ide_diagnostics::{Diagnostic, DiagnosticsConfig, Severity};
 pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};
 pub use syntax_highlighting::{Highlight, HlMod, HlMods, HlRange, HlTag};
+
+/// Info associated with a [`range`](lsp_types::Range).
+#[derive(Debug)]
+pub struct RangeInfo<T> {
+    pub range: lsp_types::Range,
+    pub info: T,
+}
+
+impl<T> RangeInfo<T> {
+    pub fn new(range: lsp_types::Range, info: T) -> RangeInfo<T> {
+        RangeInfo { range, info }
+    }
+}
 
 /// `AnalysisHost` stores the current state of the world.
 #[derive(Debug, Default)]
@@ -79,8 +93,8 @@ impl Analysis {
     }
 
     /// Gets the preprocessed text of the file.
-    pub fn preprocess(&self, file_id: FileId) -> Cancellable<String> {
-        self.with_db(|db| db.preprocess_file(file_id).preprocessed_text().to_owned())
+    pub fn preprocessed_text(&self, file_id: FileId) -> Cancellable<Arc<str>> {
+        self.with_db(|db| db.preprocessed_text(file_id))
     }
 
     /// Performs an operation on the database that may be canceled.
@@ -113,7 +127,10 @@ impl Analysis {
     }
 
     /// Returns the definitions from the symbol at `position`.
-    pub fn goto_definition(&self, pos: FilePosition) -> Cancellable<Option<Vec<NavigationTarget>>> {
+    pub fn goto_definition(
+        &self,
+        pos: FilePosition,
+    ) -> Cancellable<Option<RangeInfo<Vec<NavigationTarget>>>> {
         self.with_db(|db| goto_definition::goto_definition(db, pos))
     }
 

@@ -1887,6 +1887,7 @@ dependencies = [
  "base-db",
  "criterion 0.5.1",
  "fxhash",
+ "itertools 0.11.0",
  "lazy_static",
  "log",
  "lsp-types",

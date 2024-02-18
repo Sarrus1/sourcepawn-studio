@@ -35,6 +35,9 @@ pub trait PreprocDatabase: SourceDatabase {
 
     #[salsa::invoke(preprocess_file_query)]
     fn preprocess_file(&self, file_id: FileId) -> Arc<PreprocessingResult>;
+
+    #[salsa::invoke(preprocessed_text_query)]
+    fn preprocessed_text(&self, file_id: FileId) -> Arc<str>;
 }
 
 pub(crate) fn preprocess_file_query(
@@ -60,6 +63,12 @@ pub(crate) fn preprocess_file_query(
     };
 
     db.preprocess_file_inner_data(file_id, params.clone())
+}
+
+pub(crate) fn preprocessed_text_query(db: &dyn PreprocDatabase, file_id: FileId) -> Arc<str> {
+    let res = db.preprocess_file(file_id);
+
+    res.preprocessed_text()
 }
 
 pub(crate) fn _preprocess_file_params_query(

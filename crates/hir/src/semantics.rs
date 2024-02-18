@@ -57,6 +57,10 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         self.db.preprocess_file(file_id)
     }
 
+    pub fn preprocessed_text(&self, file_id: FileId) -> Arc<str> {
+        self.db.preprocessed_text(file_id)
+    }
+
     fn find_name_def(&self, file_id: FileId, node: &tree_sitter::Node) -> Option<DefResolution> {
         if !is_name_node(node) {
             return None;
@@ -125,7 +129,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
     /// * `file_id` - The [`file_id`](FileId) of the file containing the reference.
     /// * `node` - The reference node.
     pub fn find_def(&self, file_id: FileId, node: &tree_sitter::Node) -> Option<DefResolution> {
-        let source = self.db.file_text(file_id);
+        let source = self.db.preprocessed_text(file_id);
         if let Some(res) = self.find_name_def(file_id, node) {
             return res.into();
         }

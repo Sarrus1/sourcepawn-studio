@@ -45,6 +45,7 @@ enum ConditionState {
 
 pub type MacrosMap = FxHashMap<SmolStr, Macro>;
 pub type HMacrosMap = HashableHashMap<SmolStr, Macro>;
+pub type ArgsMap = FxHashMap<u32, Vec<(Range, Range)>>;
 
 #[derive(Debug)]
 pub struct SourcepawnPreprocessor<'a, F>
@@ -66,6 +67,7 @@ where
     conditions_stack: Vec<ConditionState>,
     out: Vec<String>,
     offsets: FxHashMap<u32, Vec<Offset>>,
+    args_maps: ArgsMap,
     include_file: &'a mut F,
 }
 
@@ -113,6 +115,7 @@ where
             macros: FxHashMap::default(),
             expansion_stack: Default::default(),
             offsets: FxHashMap::default(),
+            args_maps: FxHashMap::default(),
         }
     }
 
@@ -133,9 +136,10 @@ where
     pub fn result(self) -> PreprocessingResult {
         let inactive_ranges = self.get_inactive_ranges();
         PreprocessingResult::new(
-            self.out.join("\n"),
+            self.out.join("\n").into(),
             self.macros,
             self.offsets,
+            self.args_maps,
             self.errors,
             inactive_ranges,
         )
@@ -144,9 +148,10 @@ where
     pub fn error_result(self) -> PreprocessingResult {
         let inactive_ranges = self.get_inactive_ranges();
         PreprocessingResult::new(
-            self.input.to_owned(),
+            self.input.to_owned().into(),
             self.macros,
             self.offsets,
+            self.args_maps,
             self.errors,
             inactive_ranges,
         )
@@ -298,7 +303,8 @@ where
                             &mut self.expansion_stack,
                             true,
                         ) {
-                            Ok(_) => {
+                            Ok(args_map) => {
+                                extend_args_map(&mut self.args_maps, args_map);
                                 expanded_symbol = Some((symbol.clone(), idx, file_id));
                                 continue;
                             }
@@ -329,8 +335,12 @@ where
 
     fn process_if_directive(&mut self, symbol: &Symbol) {
         let line_nb = symbol.range.start.line;
-        let mut if_condition =
-            IfCondition::new(&mut self.macros, symbol.range.start.line, &mut self.offsets);
+        let mut if_condition = IfCondition::new(
+            &mut self.macros,
+            symbol.range.start.line,
+            &mut self.offsets,
+            &mut self.args_maps,
+        );
         while self.lexer.in_preprocessor() {
             if let Some(symbol) = self.lexer.next() {
                 if_condition.symbols.push(symbol);
@@ -660,4 +670,15 @@ where
         self.prev_end = symbol.range.end.character;
         self.current_line.push_str(&symbol.text());
     }
+}
+
+fn extend_args_map(args_map: &mut ArgsMap, buffer: Option<Vec<Vec<(Range, Range)>>>) {
+    let Some(buffer) = buffer else { return };
+    buffer
+        .into_iter()
+        .filter(|it| !it.is_empty())
+        .for_each(|it| {
+            it.into_iter()
+                .for_each(|it| args_map.entry(it.0.start.line).or_default().push(it))
+        })
 }

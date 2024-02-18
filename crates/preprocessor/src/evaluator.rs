@@ -8,7 +8,7 @@ use super::{
     macros::expand_identifier,
     preprocessor_operator::PreOperator,
 };
-use crate::{MacrosMap, Offset};
+use crate::{extend_args_map, ArgsMap, MacrosMap, Offset};
 
 #[derive(Debug)]
 pub struct IfCondition<'a> {
@@ -18,6 +18,7 @@ pub struct IfCondition<'a> {
     expansion_stack: Vec<Symbol>,
     line_nb: u32,
     offsets: &'a mut FxHashMap<u32, Vec<Offset>>,
+    args_map: &'a mut ArgsMap,
 }
 
 impl<'a> IfCondition<'a> {
@@ -25,6 +26,7 @@ impl<'a> IfCondition<'a> {
         macro_store: &'a mut MacrosMap,
         line_nb: u32,
         offsets: &'a mut FxHashMap<u32, Vec<Offset>>,
+        args_map: &'a mut ArgsMap,
     ) -> Self {
         Self {
             symbols: vec![],
@@ -33,6 +35,7 @@ impl<'a> IfCondition<'a> {
             expansion_stack: vec![],
             line_nb,
             offsets,
+            args_map,
         }
     }
 
@@ -194,7 +197,8 @@ impl<'a> IfCondition<'a> {
                             &mut self.expansion_stack,
                             false
                         ) {
-                            Ok(_) => {
+                            Ok(args_map) => {
+                                extend_args_map(self.args_map, args_map);
                                 if let Some((idx, file_id)) = attr {
                                     self.offsets.entry(symbol.range.start.line).or_default().push(Offset {
                                         file_id,

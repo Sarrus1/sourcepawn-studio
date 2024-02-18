@@ -20,6 +20,7 @@ sourcepawn_lexer.workspace = true
 salsa.workspace = true
 log.workspace = true
 smol_str.workspace = true
+itertools.workspace = true
 
 vfs.workspace = true
 base-db.workspace = true

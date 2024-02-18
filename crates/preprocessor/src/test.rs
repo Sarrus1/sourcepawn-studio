@@ -7,7 +7,8 @@ fn evaluate_if_condition(input: &str) -> bool {
     let mut lexer = SourcepawnLexer::new(input);
     let mut macros = FxHashMap::default();
     let mut offsets = FxHashMap::default();
-    let mut if_condition = IfCondition::new(&mut macros, 0, &mut offsets);
+    let mut args_map = FxHashMap::default();
+    let mut if_condition = IfCondition::new(&mut macros, 0, &mut offsets, &mut args_map);
     if let Some(symbol) = lexer.next() {
         if TokenKind::PreprocDir(sourcepawn_lexer::PreprocDir::MIf) == symbol.token_kind {
             while lexer.in_preprocessor() {
