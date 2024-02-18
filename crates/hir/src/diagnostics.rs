@@ -28,6 +28,7 @@ diagnostics![
     UnresolvedField,
     UnresolvedMethodCall,
     PreprocessorEvaluationError,
+    UnresolvedMacro,
     InactiveCode,
 ];
 
@@ -57,6 +58,12 @@ pub struct UnresolvedMethodCall {
 pub struct PreprocessorEvaluationError {
     pub range: lsp_types::Range,
     pub text: String,
+}
+
+#[derive(Debug)]
+pub struct UnresolvedMacro {
+    pub range: lsp_types::Range,
+    pub name: String,
 }
 
 #[derive(Debug)]

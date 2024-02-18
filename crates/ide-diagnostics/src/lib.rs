@@ -133,6 +133,7 @@ pub fn diagnostics(
             AnyDiagnostic::PreprocessorEvaluationError(d) => {
                 handlers::preprocessor_evaluation_error::f(&ctx, &d)
             }
+            AnyDiagnostic::UnresolvedMacro(d) => handlers::unresolved_macro::f(&ctx, &d),
             AnyDiagnostic::InactiveCode(d) => handlers::inactive_code::f(&ctx, &d),
         };
         res.push(d);

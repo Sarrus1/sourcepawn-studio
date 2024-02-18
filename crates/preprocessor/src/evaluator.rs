@@ -212,7 +212,7 @@ impl<'a> IfCondition<'a> {
                             Err(ExpansionError::MacroNotFound(err)) => {
                                 self.macro_not_found_errors.push(err.clone());
                                 return Err(EvaluationError::new(
-                                    err.to_string(),
+                                    "Unresolved macro".into(), // The error is already propagated in `macro_not_found_errors`.
                                     current_symbol_range,
                                 ));
                             }

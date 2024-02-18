@@ -114,6 +114,15 @@ impl File {
                 .into(),
             )
         }));
+        acc.extend(errors.macro_not_found_errors.iter().map(|it| {
+            AnyDiagnostic::UnresolvedMacro(
+                UnresolvedMacro {
+                    range: *it.range(),
+                    name: it.text().to_owned(),
+                }
+                .into(),
+            )
+        }));
         acc.extend(
             result
                 .inactive_ranges()
