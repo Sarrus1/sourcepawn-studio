@@ -4,7 +4,7 @@ use std::{
 };
 
 use base_db::FileRange;
-use ide::{Cancellable, Highlight, HlMod, HlRange, HlTag, NavigationTarget, Severity};
+use ide::{Cancellable, Highlight, HlMod, HlRange, HlTag, Markup, NavigationTarget, Severity};
 use ide_db::SymbolKind;
 use itertools::Itertools;
 use paths::AbsPath;
@@ -49,6 +49,19 @@ fn location_info(
     let target_range = target.full_range;
     let target_selection_range = target.focus_range.unwrap_or(target_range);
     Ok((target_uri, target_range, target_selection_range))
+}
+
+pub(crate) fn markup_content(
+    markup: Markup,
+    kind: ide::HoverDocFormat,
+) -> lsp_types::MarkupContent {
+    let kind = match kind {
+        ide::HoverDocFormat::Markdown => lsp_types::MarkupKind::Markdown,
+        ide::HoverDocFormat::PlainText => lsp_types::MarkupKind::PlainText,
+    };
+    // let value = format_docs(&Documentation::new(markup.into()));
+    let value = markup.to_string();
+    lsp_types::MarkupContent { kind, value }
 }
 
 pub(crate) fn url(snap: &GlobalStateSnapshot, file_id: FileId) -> lsp_types::Url {

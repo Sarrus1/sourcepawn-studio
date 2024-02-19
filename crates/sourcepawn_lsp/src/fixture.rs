@@ -4,10 +4,9 @@ use itertools::Itertools;
 use lsp_server::{Connection, Response};
 use lsp_types::{
     notification::{DidOpenTextDocument, Exit, Initialized},
-    request::ResolveCompletionItem,
-    request::{Completion, Initialize, Shutdown},
+    request::{Completion, Initialize, ResolveCompletionItem, Shutdown},
     ClientCapabilities, CompletionContext, CompletionItem, CompletionItemKind, CompletionParams,
-    CompletionResponse, CompletionTriggerKind, DidOpenTextDocumentParams, InitializeParams,
+    CompletionResponse, CompletionTriggerKind, DidOpenTextDocumentParams, Hover, InitializeParams,
     InitializedParams, Location, LocationLink, Position, Range, TextDocumentIdentifier,
     TextDocumentItem, TextDocumentPositionParams, Url, WorkspaceFolder,
 };
@@ -22,8 +21,6 @@ use std::{
 };
 use tempfile::{tempdir, TempDir};
 use zip::ZipArchive;
-
-use crate::config::Config;
 
 use super::{GlobalState, LspClient};
 use store::options::Options;
@@ -470,4 +467,38 @@ pub fn unzip_file(zip_file_path: &Path, destination: &Path) -> Result<(), io::Er
     }
 
     Ok(())
+}
+
+pub fn hover(fixture: &str) -> Hover {
+    let test_bed = TestBed::new(fixture, true).unwrap();
+    test_bed
+        .initialize(
+            serde_json::from_value(serde_json::json!({
+                "textDocument": {
+                    "hover": {
+                        "contentFormat": [
+                            "plaintext",
+                            "markdown"
+                        ]
+                    }
+                },
+                "workspace": {
+                    "configuration": true,
+                    "workspace_folders": true
+                }
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+    let text_document_position = test_bed.cursor().unwrap();
+    let params = lsp_types::HoverParams {
+        text_document_position_params: text_document_position,
+        work_done_progress_params: Default::default(),
+    };
+
+    test_bed
+        .client()
+        .send_request::<lsp_types::request::HoverRequest>(params)
+        .unwrap()
+        .expect("Expected a hover response.")
 }

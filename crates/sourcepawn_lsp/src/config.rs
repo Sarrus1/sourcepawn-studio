@@ -3,9 +3,9 @@
 //! We currently get this config from `initialize` LSP request, which is not the
 //! best way to do it, but was the simplest thing we could implement.
 
-use ide::DiagnosticsConfig;
+use ide::{DiagnosticsConfig, HoverConfig, HoverDocFormat};
 use itertools::Itertools;
-use lsp_types::ClientCapabilities;
+use lsp_types::{ClientCapabilities, MarkupKind};
 use paths::AbsPathBuf;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, path::PathBuf};
@@ -148,5 +148,34 @@ impl Config {
                 .as_ref()?
                 .refresh_support?
         )
+    }
+
+    pub fn hover(&self) -> HoverConfig {
+        HoverConfig {
+            // TODO: Impl these configs
+            // links_in_hover: self.data.hover_links_enable,
+            links_in_hover: true,
+            // documentation: self.data.hover_documentation_enable,
+            documentation: true,
+            format: {
+                let is_markdown = try_or_def!(self
+                    .caps
+                    .text_document
+                    .as_ref()?
+                    .hover
+                    .as_ref()?
+                    .content_format
+                    .as_ref()?
+                    .as_slice())
+                .contains(&MarkupKind::Markdown);
+                if is_markdown {
+                    HoverDocFormat::Markdown
+                } else {
+                    HoverDocFormat::PlainText
+                }
+            },
+            // keywords: self.data.hover_documentation_keywords_enable,
+            keywords: true,
+        }
     }
 }

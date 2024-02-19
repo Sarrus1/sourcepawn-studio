@@ -1,8 +1,8 @@
 use ide::WideEncoding;
 use lsp_types::{
-    ClientCapabilities, MarkupKind, OneOf, PositionEncodingKind, SemanticTokensFullOptions,
-    SemanticTokensLegend, SemanticTokensOptions, ServerCapabilities, TextDocumentSyncCapability,
-    TextDocumentSyncKind,
+    ClientCapabilities, HoverProviderCapability, MarkupKind, OneOf, PositionEncodingKind,
+    SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions, ServerCapabilities,
+    TextDocumentSyncCapability, TextDocumentSyncKind,
 };
 
 use crate::{
@@ -24,6 +24,7 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
         text_document_sync: Some(TextDocumentSyncCapability::Kind(
             TextDocumentSyncKind::INCREMENTAL,
         )),
+        hover_provider: Some(HoverProviderCapability::Simple(true)),
         definition_provider: Some(OneOf::Left(true)),
         semantic_tokens_provider: Some(
             SemanticTokensOptions {

@@ -1,5 +1,7 @@
 //! base_db defines basic database traits. The concrete DB is defined by ide.
 
+mod documentation;
+
 use std::{fmt, mem::ManuallyDrop, sync::Arc};
 
 use base_db::{
@@ -9,6 +11,8 @@ use hir::db::HirDatabase;
 use hir_def::DefDatabase;
 use salsa::Cancelled;
 use vfs::FileId;
+
+pub use documentation::Documentation;
 
 pub type Cancellable<T> = Result<T, Cancelled>;
 

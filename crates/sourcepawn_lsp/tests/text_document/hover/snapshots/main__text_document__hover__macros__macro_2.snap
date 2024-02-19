@@ -1,0 +1,21 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/hover/macros.rs
+assertion_line: 19
+expression: "hover(r#\"\n%! main.sp\n#define FOO 1\nint foo = FOO;\n           |\n           ^\n\"#)"
+---
+{
+  "contents": {
+    "kind": "markdown",
+    "value": "```sourcepawn\n#define FOO 1\n```\nExpands to:\n```sourcepawn\n1\n```"
+  },
+  "range": {
+    "start": {
+      "line": 1,
+      "character": 10
+    },
+    "end": {
+      "line": 1,
+      "character": 13
+    }
+  }
+}

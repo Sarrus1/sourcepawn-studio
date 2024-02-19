@@ -21,7 +21,6 @@ pub(crate) fn goto_definition(
     db: &RootDatabase,
     mut pos: FilePosition,
 ) -> Option<RangeInfo<Vec<NavigationTarget>>> {
-    log::info!("Going to def.");
     let sema = &Semantics::new(db);
     let preprocessing_results = sema.preprocess_file(pos.file_id);
     let offsets = preprocessing_results.offsets();
@@ -117,10 +116,3 @@ fn s_range_to_u_range(
 
     s_range
 }
-
-// AAAAAAAAAA = 1
-// int foo = AAAAAAAAAA;
-// int foo = 1
-// AAAAAAAAAA = int foo;
-// AAAAAAAAAA = 1
-// int foo = 1

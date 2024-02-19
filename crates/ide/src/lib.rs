@@ -1,6 +1,8 @@
 //! base_db defines basic database traits. The concrete DB is defined by ide.
 
 mod goto_definition;
+mod hover;
+mod markup;
 mod syntax_highlighting;
 
 use std::sync::Arc;
@@ -9,15 +11,18 @@ use base_db::{
     Change, FileExtension, FilePosition, Graph, SourceDatabase, SourceDatabaseExt, Tree,
 };
 use hir_def::DefDatabase;
+use hover::HoverResult;
 use ide_db::RootDatabase;
 use preprocessor::db::PreprocDatabase;
 use salsa::{Cancelled, ParallelDatabase};
 use vfs::FileId;
 
 pub use goto_definition::NavigationTarget;
+pub use hover::{HoverConfig, HoverDocFormat};
 pub use ide_db::Cancellable;
 pub use ide_diagnostics::{Diagnostic, DiagnosticsConfig, Severity};
 pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};
+pub use markup::Markup;
 pub use syntax_highlighting::{Highlight, HlMod, HlMods, HlRange, HlTag};
 
 /// Info associated with a [`range`](lsp_types::Range).
@@ -132,6 +137,15 @@ impl Analysis {
         pos: FilePosition,
     ) -> Cancellable<Option<RangeInfo<Vec<NavigationTarget>>>> {
         self.with_db(|db| goto_definition::goto_definition(db, pos))
+    }
+
+    /// Returns the hover information at `position`.
+    pub fn hover(
+        &self,
+        pos: FilePosition,
+        config: &HoverConfig,
+    ) -> Cancellable<Option<RangeInfo<HoverResult>>> {
+        self.with_db(|db| hover::hover(db, pos, config))
     }
 
     /// Returns the highlighted ranges for the file.

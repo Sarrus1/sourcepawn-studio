@@ -36,6 +36,28 @@ pub(crate) fn handle_goto_definition(
     )?))
 }
 
+pub(crate) fn handle_hover(
+    snap: GlobalStateSnapshot,
+    params: lsp_types::HoverParams,
+) -> anyhow::Result<Option<lsp_types::Hover>> {
+    let pos = from_proto::file_position(&snap, params.text_document_position_params.clone())?;
+
+    let hover = match snap.analysis.hover(pos, &snap.config.hover())? {
+        None => return Ok(None),
+        Some(it) => it,
+    };
+
+    let res = lsp_types::Hover {
+        contents: lsp_types::HoverContents::Markup(to_proto::markup_content(
+            hover.info.markup,
+            snap.config.hover().format,
+        )),
+        range: Some(hover.range),
+    };
+
+    Ok(res.into())
+}
+
 pub(crate) fn handle_semantic_tokens_full(
     snap: GlobalStateSnapshot,
     params: SemanticTokensParams,

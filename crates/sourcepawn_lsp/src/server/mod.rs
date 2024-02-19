@@ -471,6 +471,7 @@ impl GlobalState {
                 handlers::handle_semantic_tokens_full_delta,
             )
             .on::<lsp_request::GotoDefinition>(handlers::handle_goto_definition)
+            .on::<lsp_request::HoverRequest>(handlers::handle_hover)
             .on::<lsp_ext::SyntaxTree>(handlers::handle_syntax_tree)
             .on::<lsp_ext::ProjectsGraphviz>(handlers::handle_projects_graphviz)
             .on::<lsp_ext::PreprocessedDocument>(handlers::handle_preprocessed_document)
