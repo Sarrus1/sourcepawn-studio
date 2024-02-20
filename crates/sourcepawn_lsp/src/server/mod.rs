@@ -475,6 +475,7 @@ impl GlobalState {
             .on::<lsp_ext::SyntaxTree>(handlers::handle_syntax_tree)
             .on::<lsp_ext::ProjectsGraphviz>(handlers::handle_projects_graphviz)
             .on::<lsp_ext::PreprocessedDocument>(handlers::handle_preprocessed_document)
+            .on::<lsp_ext::ItemTree>(handlers::handle_item_tree)
             .finish();
         log::debug!("Handled request id: {:?}", req_id);
     }

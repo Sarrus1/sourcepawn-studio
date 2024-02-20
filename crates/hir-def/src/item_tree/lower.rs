@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use la_arena::Idx;
+use la_arena::{Idx, IdxRange, RawIdx};
 use lazy_static::lazy_static;
 use syntax::TSKind;
 use tree_sitter::QueryCursor;
@@ -10,7 +10,9 @@ use crate::{
     ast_id_map::AstIdMap, hir::type_ref::TypeRef, item_tree::Macro, DefDatabase, FileItem, Name,
 };
 
-use super::{EnumStruct, EnumStructItemId, Field, Function, ItemTree, Variable};
+use super::{
+    EnumStruct, EnumStructItemId, Field, Function, ItemTree, Param, RawVisibilityId, Variable,
+};
 
 pub(super) struct Ctx<'db> {
     db: &'db dyn DefDatabase,
@@ -131,13 +133,55 @@ impl<'db> Ctx<'db> {
     }
 
     fn lower_function_(&mut self, node: &tree_sitter::Node) -> Option<Idx<Function>> {
+        let params = self.lower_parameters(node);
         let name_node = node.child_by_field_name("name")?;
+        let mut visibility = RawVisibilityId::NONE;
+        if let Some(vis_node) = node.child_by_field_name("visibility") {
+            vis_node.children(&mut vis_node.walk()).for_each(|n| {
+                eprintln!("viskind {:?}", TSKind::from(n));
+                visibility |= match TSKind::from(n) {
+                    TSKind::anon_public => RawVisibilityId::PUBLIC,
+                    TSKind::anon_static => RawVisibilityId::STATIC,
+                    TSKind::anon_stock => RawVisibilityId::STOCK,
+                    _ => RawVisibilityId::NONE,
+                };
+            });
+        }
+        eprintln!("visibility {:?}", visibility);
         let res = Function {
             name: Name::from(name_node.utf8_text(self.source.as_bytes()).unwrap()),
             ret_type: self.function_return_type(node),
+            visibility,
+            params,
             ast_id: self.source_ast_id_map.ast_id_of(node),
         };
-        Some(self.tree.data_mut().functions.alloc(res))
+
+        self.tree.data_mut().functions.alloc(res).into()
+    }
+
+    fn lower_parameters(&mut self, node: &tree_sitter::Node) -> IdxRange<Param> {
+        let start_param_idx = self.next_param_idx();
+        let Some(params_node) = node.child_by_field_name("parameters") else {
+            return IdxRange::new(start_param_idx..start_param_idx);
+        };
+        assert!(TSKind::from(params_node) == TSKind::parameter_declarations);
+        params_node
+            .children(&mut params_node.walk())
+            .for_each(|n| match TSKind::from(n) {
+                TSKind::parameter_declaration | TSKind::rest_parameter => {
+                    let res = Param {
+                        type_ref: n
+                            .child_by_field_name("type")
+                            .and_then(|t| TypeRef::from_node(&t, &self.source)),
+                        ast_id: self.source_ast_id_map.ast_id_of(&n),
+                        has_default: n.child_by_field_name("defaultValue").is_some(),
+                    };
+                    self.tree.data_mut().params.alloc(res);
+                }
+                _ => (),
+            });
+        let end_param_idx = self.next_param_idx();
+        IdxRange::new(start_param_idx..end_param_idx)
     }
 
     fn lower_enum_struct(&mut self, node: &tree_sitter::Node) {
@@ -156,7 +200,7 @@ impl<'db> Ctx<'db> {
                     };
                     let res = Field {
                         name: Name::from(
-                            field_name_node.utf8_text(&self.source.as_bytes()).unwrap(),
+                            field_name_node.utf8_text(self.source.as_bytes()).unwrap(),
                         ),
                         type_ref: TypeRef::from_node(&field_type_node, &self.source).unwrap(),
                         ast_id: self.source_ast_id_map.ast_id_of(&e),
@@ -167,14 +211,23 @@ impl<'db> Ctx<'db> {
                 TSKind::enum_struct_method => {
                     self.lower_method(&e, &mut items);
                 }
-                _ => return,
+                _ => (),
             });
         let res = EnumStruct {
             name: Name::from(name_node.utf8_text(self.source.as_bytes()).unwrap()),
             items: items.into_boxed_slice(),
-            ast_id: self.source_ast_id_map.ast_id_of(&node),
+            ast_id: self.source_ast_id_map.ast_id_of(node),
         };
         let id = self.tree.data_mut().enum_structs.alloc(res);
         self.tree.top_level.push(FileItem::EnumStruct(id));
+    }
+
+    fn next_param_idx(&self) -> Idx<Param> {
+        Idx::from_raw(RawIdx::from(
+            self.tree
+                .data
+                .as_ref()
+                .map_or(0, |data| data.params.len() as u32),
+        ))
     }
 }

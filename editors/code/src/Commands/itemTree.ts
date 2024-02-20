@@ -1,12 +1,12 @@
 import * as vscode from "vscode";
-import { preprocessedDocument, PreprocessedDocumentParams } from "../lsp_ext";
+import { itemTree, ItemTreeParams } from "../lsp_ext";
 import { isSPFile, sleep } from "../spUtils";
 import { Cmd, CtxInit } from "../ctx";
 
-export function preprocessedDocumentCommand(ctx: CtxInit): Cmd {
+export function itemTreeCommand(ctx: CtxInit): Cmd {
   const tdcp = new (class implements vscode.TextDocumentContentProvider {
     readonly uri = vscode.Uri.parse(
-      "sourcepawn-lsp-preprocessed-file://preprocessedFile/file.sp"
+      "sourcepawn-lsp-item-tree://itemTree/itemTree.sp"
     );
     readonly eventEmitter = new vscode.EventEmitter<vscode.Uri>();
     constructor() {
@@ -39,7 +39,7 @@ export function preprocessedDocumentCommand(ctx: CtxInit): Cmd {
       _uri: vscode.Uri,
       ct: vscode.CancellationToken
     ): Promise<string> {
-      const params: PreprocessedDocumentParams = {};
+      const params: ItemTreeParams = {};
       const doc = vscode.window.activeTextEditor?.document;
       if (doc === undefined) {
         return "";
@@ -49,7 +49,7 @@ export function preprocessedDocumentCommand(ctx: CtxInit): Cmd {
       if (params.textDocument === undefined) {
         return "";
       }
-      const text = await ctx?.client.sendRequest(preprocessedDocument, params);
+      const text = await ctx?.client.sendRequest(itemTree, params);
       if (text === undefined) {
         return "";
       }
@@ -63,7 +63,7 @@ export function preprocessedDocumentCommand(ctx: CtxInit): Cmd {
 
   ctx.pushExtCleanup(
     vscode.workspace.registerTextDocumentContentProvider(
-      "sourcepawn-lsp-preprocessed-file",
+      "sourcepawn-lsp-item-tree",
       tdcp
     )
   );

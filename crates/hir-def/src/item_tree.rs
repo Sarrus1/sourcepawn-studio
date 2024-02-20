@@ -1,5 +1,6 @@
+use bitflags::bitflags;
 use core::hash::Hash;
-use la_arena::{Arena, Idx};
+use la_arena::{Arena, Idx, IdxRange};
 use smallvec::SmallVec;
 use smol_str::SmolStr;
 use std::fmt;
@@ -16,10 +17,56 @@ use self::lower::Ctx;
 mod lower;
 mod pretty;
 
+pub use pretty::print_item_tree;
+
+bitflags! {
+    #[repr(transparent)]
+    #[derive(Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct RawVisibilityId: u32 {
+        const PUBLIC = 1 << 0;
+        const STOCK = 1 << 1;
+        const STATIC = 1 << 2;
+        const NONE = 1 << 3;
+    }
+}
+
+impl fmt::Debug for RawVisibilityId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut f = f.debug_tuple("RawVisibilityId");
+
+        if self.contains(Self::PUBLIC) {
+            f.field(&"public");
+        }
+        if self.contains(Self::STOCK) {
+            f.field(&"stock");
+        }
+        if self.contains(Self::STATIC) {
+            f.field(&"static");
+        }
+        f.finish()
+    }
+}
+
+impl ToString for RawVisibilityId {
+    fn to_string(&self) -> String {
+        let mut s = String::new();
+        if self.contains(Self::PUBLIC) {
+            s.push_str("public ");
+        }
+        if self.contains(Self::STOCK) {
+            s.push_str("stock ");
+        }
+        if self.contains(Self::STATIC) {
+            s.push_str("static ");
+        }
+
+        s.trim_end().to_string()
+    }
+}
+
 /// The item tree of a source file.
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct ItemTree {
-    // attrs: FxHashMap<AttrOwner, RawAttrs>,
     top_level: SmallVec<[FileItem; 1]>,
     data: Option<Box<ItemTreeData>>,
 }
@@ -93,7 +140,7 @@ struct ItemTreeData {
     macros: Arena<Macro>,
     enum_structs: Arena<EnumStruct>,
     fields: Arena<Field>,
-    // params: Arena<Param>,
+    params: Arena<Param>,
 }
 
 /// `Name` is a wrapper around string, which is used in hir for both references
@@ -146,9 +193,16 @@ pub struct Variable {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Function {
     pub name: Name,
-    // pub visibility: RawVisibilityId,
-    // pub params: IdxRange<Param>,
+    pub visibility: RawVisibilityId,
+    pub params: IdxRange<Param>,
     pub ret_type: Option<TypeRef>,
+    pub ast_id: AstId,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Param {
+    pub has_default: bool,
+    pub type_ref: Option<TypeRef>,
     pub ast_id: AstId,
 }
 
@@ -165,12 +219,11 @@ pub struct EnumStruct {
     pub ast_id: AstId,
 }
 
-/// A single field of an enum variant or struct
+/// A single field of an enum struct
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Field {
     pub name: Name,
     pub type_ref: TypeRef,
-    // pub visibility: RawVisibilityId,
     pub ast_id: AstId,
 }
 

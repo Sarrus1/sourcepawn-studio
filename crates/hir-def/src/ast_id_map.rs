@@ -1,3 +1,5 @@
+use core::fmt;
+use std::fmt::Display;
 use std::ops::Index;
 use std::sync::Arc;
 
@@ -68,6 +70,12 @@ pub struct AstId {
     raw: Idx<NodePtr>,
 }
 
+impl Display for AstId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "AstId({})", self.raw.into_raw().into_u32())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AstIdMap {
     arena: Arena<NodePtr>,
@@ -105,6 +113,7 @@ impl AstIdMap {
             matches!(
                 TSKind::from(node),
                 TSKind::function_definition
+                    | TSKind::parameter_declarations
                     | TSKind::block
                     | TSKind::for_statement
                     | TSKind::condition_statement

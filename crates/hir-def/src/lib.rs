@@ -1,5 +1,6 @@
 use core::hash::Hash;
-use item_tree::{AstId, EnumStruct, Function, ItemTree, ItemTreeNode, Macro, Variable};
+use item_tree::ItemTree;
+use item_tree::{AstId, EnumStruct, Function, ItemTreeNode, Macro, Variable};
 use la_arena::Idx;
 use std::{hash::Hasher, sync::Arc};
 use stdx::impl_from;
@@ -22,7 +23,7 @@ pub use db::resolve_include_node;
 pub use db::DefDatabase;
 pub use hir::ExprId;
 pub use infer::{InferenceDiagnostic, InferenceResult};
-pub use item_tree::{FileItem, Name};
+pub use item_tree::{print_item_tree, FileItem, Name};
 
 trait Intern {
     type ID;
@@ -158,19 +159,10 @@ impl TreeId {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AssocItemLoc<N: ItemTreeNode> {
     pub container: ItemContainerId,
     pub id: ItemTreeId<N>,
-}
-
-impl<N: ItemTreeNode> Clone for AssocItemLoc<N> {
-    fn clone(&self) -> Self {
-        Self {
-            container: self.container,
-            id: self.id,
-        }
-    }
 }
 
 impl<N: ItemTreeNode> Copy for AssocItemLoc<N> {}

@@ -23,6 +23,7 @@ la-arena.workspace = true
 smallvec.workspace = true
 lazy_static.workspace = true
 regex.workspace = true
+bitflags.workspace = true
 
 # Local crates
 syntax.workspace = true

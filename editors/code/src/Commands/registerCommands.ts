@@ -17,6 +17,7 @@ import { run as doctorCommand } from "./doctor";
 import { run as projectsGraphvizCommand } from "./projectsGraphviz";
 import { preprocessedDocumentCommand } from "./preprocessedDocument";
 import { syntaxTreeCommand } from "./syntaxTree";
+import { itemTreeCommand } from "./itemTree";
 import { CommandFactory } from "../ctx";
 
 /**
@@ -158,6 +159,9 @@ export function createServerCommands(): Record<string, CommandFactory> {
     },
     syntaxTree: {
       enabled: syntaxTreeCommand,
+    },
+    itemTree: {
+      enabled: itemTreeCommand,
     },
   };
 }

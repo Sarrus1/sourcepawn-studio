@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { syntaxTree, SyntaxTreeParams } from "../lsp_ext";
-import { sleep } from "../spUtils";
+import { isSPFile, sleep } from "../spUtils";
 import { Cmd, CtxInit } from "../ctx";
 
 export function syntaxTreeCommand(ctx: CtxInit): Cmd {
@@ -76,8 +76,4 @@ export function syntaxTreeCommand(ctx: CtxInit): Cmd {
       preserveFocus: true,
     }));
   };
-}
-
-function isSPFile(fileName: string) {
-  return /(?:\.sp|\.inc)\s*^/.test(fileName);
 }

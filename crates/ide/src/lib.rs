@@ -10,7 +10,7 @@ use std::sync::Arc;
 use base_db::{
     Change, FileExtension, FilePosition, Graph, SourceDatabase, SourceDatabaseExt, Tree,
 };
-use hir_def::DefDatabase;
+use hir_def::{print_item_tree, DefDatabase};
 use hover::HoverResult;
 use ide_db::RootDatabase;
 use preprocessor::db::PreprocDatabase;
@@ -100,6 +100,14 @@ impl Analysis {
     /// Gets the preprocessed text of the file.
     pub fn preprocessed_text(&self, file_id: FileId) -> Cancellable<Arc<str>> {
         self.with_db(|db| db.preprocessed_text(file_id))
+    }
+
+    /// Gets the [`String`] representation of the item tree of the file.
+    pub fn pretty_item_tree(&self, file_id: FileId) -> Cancellable<String> {
+        self.with_db(|db| {
+            let item_tree = db.file_item_tree(file_id);
+            print_item_tree(db, &item_tree)
+        })
     }
 
     /// Performs an operation on the database that may be canceled.

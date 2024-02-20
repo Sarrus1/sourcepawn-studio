@@ -8,7 +8,9 @@ use store::normalize_uri;
 
 use crate::{
     lsp::{from_proto, to_proto},
-    lsp_ext::{PreprocessedDocumentParams, ProjectsGraphvizParams, SyntaxTreeParams},
+    lsp_ext::{
+        ItemTreeParams, PreprocessedDocumentParams, ProjectsGraphvizParams, SyntaxTreeParams,
+    },
     server::GlobalStateSnapshot,
 };
 
@@ -162,4 +164,19 @@ pub(crate) fn handle_preprocessed_document(
         .preprocessed_text(file_id)
         .context("Failed to preprocess document")
         .map(|it| it.to_string())
+}
+
+pub(crate) fn handle_item_tree(
+    snap: GlobalStateSnapshot,
+    params: ItemTreeParams,
+) -> anyhow::Result<String> {
+    let uri = params
+        .text_document
+        .ok_or_else(|| anyhow::anyhow!("No uri received in request"))?
+        .uri;
+    let file_id = from_proto::file_id(&snap, &uri)?;
+
+    snap.analysis
+        .pretty_item_tree(file_id)
+        .context("Failed to get the item tree")
 }

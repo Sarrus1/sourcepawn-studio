@@ -22,6 +22,14 @@ export type SyntaxTreeParams = {
   textDocument?: lc.TextDocumentIdentifier;
 };
 
+export const itemTree = new lc.RequestType<ItemTreeParams, string, void>(
+  "sourcepawn-lsp/itemTree"
+);
+
+export type ItemTreeParams = {
+  textDocument?: lc.TextDocumentIdentifier;
+};
+
 export const projectMainPath = new lc.RequestType<
   ProjectMainPathParams,
   lc.URI,
