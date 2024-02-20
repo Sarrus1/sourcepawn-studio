@@ -48,6 +48,7 @@ impl<'db> Ctx<'db> {
                 }
                 TSKind::r#enum => self.lower_enum(&child),
                 TSKind::global_variable_declaration => {
+                    let visibility = RawVisibilityId::from_node(&child);
                     let type_ref = if let Some(type_node) = child.child_by_field_name("type") {
                         TypeRef::from_node(&type_node, &self.source)
                     } else {
@@ -60,6 +61,7 @@ impl<'db> Ctx<'db> {
                                     name: Name::from(
                                         name_node.utf8_text(self.source.as_bytes()).unwrap(),
                                     ),
+                                    visibility,
                                     type_ref: type_ref.clone(),
                                     ast_id: self.source_ast_id_map.ast_id_of(&sub_child),
                                 };
@@ -174,30 +176,10 @@ impl<'db> Ctx<'db> {
     }
 
     fn lower_function_(&mut self, node: &tree_sitter::Node) -> Option<Idx<Function>> {
-        // FIXME: Add a field in the tree-sitter grammar.
-        let kind_text = node
-            .children(&mut node.walk())
-            .find(|n| TSKind::from(n) == TSKind::function_declaration_kind)
-            .map(|n| n.utf8_text(self.source.as_bytes()).unwrap());
-        let mut kind = FunctionKind::Def;
-        if kind_text == Some("native") {
-            kind = FunctionKind::Native;
-        } else if kind_text == Some("forward") {
-            kind = FunctionKind::Forward;
-        }
+        let kind = FunctionKind::from_node(node);
         let params = self.lower_parameters(node);
         let name_node = node.child_by_field_name("name")?;
-        let mut visibility = RawVisibilityId::NONE;
-        if let Some(vis_node) = node.child_by_field_name("visibility") {
-            vis_node.children(&mut vis_node.walk()).for_each(|n| {
-                visibility |= match TSKind::from(n) {
-                    TSKind::anon_public => RawVisibilityId::PUBLIC,
-                    TSKind::anon_static => RawVisibilityId::STATIC,
-                    TSKind::anon_stock => RawVisibilityId::STOCK,
-                    _ => RawVisibilityId::NONE,
-                };
-            });
-        }
+        let visibility = RawVisibilityId::from_node(node);
         let res = Function {
             name: Name::from(name_node.utf8_text(self.source.as_bytes()).unwrap()),
             kind,

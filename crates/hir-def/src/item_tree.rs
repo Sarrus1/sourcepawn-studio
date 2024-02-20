@@ -26,6 +26,22 @@ pub enum FunctionKind {
     Native,
 }
 
+impl FunctionKind {
+    pub fn from_node(node: &tree_sitter::Node) -> Self {
+        if let Some(kind_node) = node.child_by_field_name("kind") {
+            for child in kind_node.children(&mut kind_node.walk()) {
+                match TSKind::from(child) {
+                    TSKind::anon_forward => return FunctionKind::Forward,
+                    TSKind::anon_native => return FunctionKind::Native,
+                    _ => (),
+                }
+            }
+        }
+
+        FunctionKind::Def
+    }
+}
+
 bitflags! {
     #[repr(transparent)]
     #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -71,6 +87,24 @@ impl ToString for RawVisibilityId {
     }
 }
 
+impl RawVisibilityId {
+    pub fn from_node(node: &tree_sitter::Node) -> Self {
+        let mut visibility = RawVisibilityId::NONE;
+        let Some(visibility_node) = node.child_by_field_name("visibility") else {
+            return visibility;
+        };
+        for child in visibility_node.children(&mut visibility_node.walk()) {
+            match TSKind::from(child) {
+                TSKind::anon_public => visibility |= RawVisibilityId::PUBLIC,
+                TSKind::anon_stock => visibility |= RawVisibilityId::STOCK,
+                TSKind::anon_static => visibility |= RawVisibilityId::STATIC,
+                _ => log::error!("Unexpected child of visibility: {:?}", child),
+            }
+        }
+        visibility
+    }
+}
+
 /// The item tree of a source file.
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct ItemTree {
@@ -108,6 +142,7 @@ impl ItemTree {
                                     name: Name::from(
                                         name_node.utf8_text(source.as_bytes()).unwrap(),
                                     ),
+                                    visibility: RawVisibilityId::NONE,
                                     type_ref: type_ref.clone(),
                                     ast_id: ast_id_map.ast_id_of(&sub_child),
                                 };
@@ -194,11 +229,10 @@ pub struct Macro {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Variable {
     pub name: Name,
-    // FIXME: Implement visibility
-    // pub visibility: RawVisibilityId,
+    pub visibility: RawVisibilityId,
     pub type_ref: Option<TypeRef>,
     pub ast_id: AstId,
-} // TODO: Each variable decl is stored as a separate item, but we should probably group them up ?
+}
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Function {

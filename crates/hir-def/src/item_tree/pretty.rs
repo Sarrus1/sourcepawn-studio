@@ -12,16 +12,13 @@ pub fn print_item_tree(_db: &dyn DefDatabase, tree: &ItemTree) -> String {
     for item in tree.top_level_items() {
         match item {
             FileItem::Function(idx) => printer.print_function(idx),
-            FileItem::Variable(idx) => {
-                let Variable { name, .. } = &tree[*idx];
-                printer.push(name.0.as_str());
-                printer.push("\n");
-            }
+            FileItem::Variable(idx) => printer.print_variable(idx),
             FileItem::EnumStruct(idx) => printer.print_enum_struct(idx),
             FileItem::Enum(idx) => printer.print_enum(idx),
             FileItem::Macro(idx) => printer.print_macro(idx),
             FileItem::Variant(_) => (),
         }
+        printer.newline();
     }
 
     printer.into_string()
@@ -71,6 +68,27 @@ impl<'a> Printer<'a> {
         self.newline();
     }
 
+    pub fn print_variable(&mut self, idx: &Idx<Variable>) {
+        let Variable {
+            name,
+            visibility,
+            type_ref,
+            ast_id,
+        } = &self.tree[*idx];
+        self.push(format!("// {}", ast_id).as_str());
+        self.newline();
+        if visibility != &RawVisibilityId::NONE {
+            self.push(&visibility.to_string());
+            self.push(" ");
+        }
+        if let Some(type_ref) = type_ref {
+            self.push(&type_ref.to_str());
+            self.push(" ");
+        }
+        self.push(name.0.as_str());
+        self.newline();
+    }
+
     pub fn print_enum(&mut self, idx: &Idx<Enum>) {
         let Enum {
             name,
@@ -110,7 +128,11 @@ impl<'a> Printer<'a> {
         for item_idx in items.iter() {
             match item_idx {
                 EnumStructItemId::Field(field_idx) => {
-                    let Field { name, type_ref, .. } = &self.tree[*field_idx];
+                    let Field {
+                        name,
+                        type_ref,
+                        ast_id,
+                    } = &self.tree[*field_idx];
                     self.push(format!("// {}", ast_id).as_str());
                     self.newline();
                     self.push(&format!("{} {};", type_ref.to_str(), name.0));
