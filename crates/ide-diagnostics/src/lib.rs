@@ -1,4 +1,4 @@
-use base_db::{SourceDatabaseExt, Tree};
+use base_db::{SourceDatabaseExt, Tree, Upcast};
 use fxhash::FxHashSet;
 use hir::{AnyDiagnostic, Semantics};
 use hir_def::{DefDatabase, InFile, NodePtr};
@@ -114,8 +114,8 @@ pub fn diagnostics(
     file_id: FileId,
 ) -> Vec<Diagnostic> {
     let sema = Semantics::new(db);
-    let tree = db.parse(file_id);
-    let source = db.file_text(file_id); //FIXME: Incorrect text
+    let tree = sema.parse(file_id);
+    let source = sema.preprocessed_text(file_id);
     let mut res = Vec::new();
 
     res.extend(syntax_error_diagnostics(&source, &tree));
