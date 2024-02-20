@@ -1,6 +1,6 @@
 use core::hash::Hash;
-use item_tree::ItemTree;
-use item_tree::{AstId, EnumStruct, Function, ItemTreeNode, Macro, Variable};
+use item_tree::{AstId, EnumStruct, Function, ItemTreeNode, Macro, Variable, Variant};
+use item_tree::{Enum, ItemTree};
 use la_arena::Idx;
 use std::{hash::Hasher, sync::Arc};
 use stdx::impl_from;
@@ -108,6 +108,16 @@ pub struct FieldId {
 
 pub type LocalFieldId = Idx<data::EnumStructItemData>;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct EnumId(salsa::InternId);
+type EnumLoc = AssocItemLoc<Enum>;
+impl_intern!(EnumId, EnumLoc, intern_enum, lookup_intern_enum);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct VariantId(salsa::InternId);
+type VariantLoc = AssocItemLoc<Variant>;
+impl_intern!(VariantId, VariantLoc, intern_variant, lookup_intern_variant);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct BlockId(salsa::InternId);
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
@@ -129,10 +139,12 @@ pub enum FileDefId {
     MacroId(MacroId),
     GlobalId(GlobalId),
     EnumStructId(EnumStructId),
+    EnumId(EnumId),
+    VariantId(VariantId),
 }
 
 impl_from!(
-    FunctionId, MacroId, GlobalId, EnumStructId for FileDefId
+    FunctionId, MacroId, GlobalId, EnumStructId, EnumId, VariantId for FileDefId
 );
 
 /// Identifies a particular [`ItemTree`].

@@ -76,6 +76,20 @@ impl Display for AstId {
     }
 }
 
+impl From<u32> for AstId {
+    fn from(raw: u32) -> Self {
+        AstId {
+            raw: Idx::from_raw(raw.into()),
+        }
+    }
+}
+
+impl AstId {
+    pub fn to_u32(self) -> u32 {
+        self.raw.into_raw().into_u32()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AstIdMap {
     arena: Arena<NodePtr>,
@@ -113,6 +127,8 @@ impl AstIdMap {
             matches!(
                 TSKind::from(node),
                 TSKind::function_definition
+                    | TSKind::r#enum
+                    | TSKind::enum_entries
                     | TSKind::parameter_declarations
                     | TSKind::block
                     | TSKind::for_statement

@@ -141,6 +141,8 @@ struct ItemTreeData {
     enum_structs: Arena<EnumStruct>,
     fields: Arena<Field>,
     params: Arena<Param>,
+    enums: Arena<Enum>,
+    variants: Arena<Variant>,
 }
 
 /// `Name` is a wrapper around string, which is used in hir for both references
@@ -228,6 +230,19 @@ pub struct Field {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Enum {
+    pub name: Name,
+    pub variants: IdxRange<Variant>,
+    pub ast_id: AstId,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Variant {
+    pub name: Name,
+    pub ast_id: AstId,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Block {
     pub ast_id: AstId,
 }
@@ -301,6 +316,8 @@ mod_items! {
     Variable variables,
     Macro macros,
     EnumStruct enum_structs,
+    Enum enums,
+    Variant variants,
 }
 
 macro_rules! impl_index {

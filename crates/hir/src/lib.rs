@@ -1,8 +1,8 @@
 use base_db::Tree;
 use db::HirDatabase;
 use hir_def::{
-    DefWithBodyId, EnumStructId, ExprId, FunctionId, GlobalId, InFile, InferenceDiagnostic,
-    LocalFieldId, Lookup, MacroId, Name,
+    DefWithBodyId, EnumId, EnumStructId, ExprId, FunctionId, GlobalId, InFile, InferenceDiagnostic,
+    LocalFieldId, Lookup, MacroId, Name, VariantId,
 };
 use preprocessor::PreprocessorError;
 use stdx::impl_from;
@@ -23,6 +23,8 @@ pub enum DefResolution {
     Function(Function),
     Macro(Macro),
     EnumStruct(EnumStruct),
+    Enum(Enum),
+    Variant(Variant),
     Field(Field),
     Global(Global),
     Local(Local),
@@ -49,6 +51,8 @@ impl<'tree> HasSource<'tree> for DefResolution {
             DefResolution::Function(func) => func.source(db, tree),
             DefResolution::Macro(macro_) => macro_.source(db, tree),
             DefResolution::EnumStruct(enum_struct) => enum_struct.source(db, tree),
+            DefResolution::Enum(enum_) => enum_.source(db, tree),
+            DefResolution::Variant(variant) => variant.source(db, tree),
             DefResolution::Field(field) => field.source(db, tree),
             DefResolution::Global(global) => global.source(db, tree),
             DefResolution::Local(local) => local.source(db, tree)?.source(db, tree),
@@ -63,6 +67,8 @@ impl DefResolution {
             DefResolution::Function(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Macro(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::EnumStruct(it) => it.id.lookup(db.upcast()).id.file_id(),
+            DefResolution::Enum(it) => it.id.lookup(db.upcast()).id.file_id(),
+            DefResolution::Variant(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Field(it) => it.parent.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Global(it) => it.id.lookup(db.upcast()).file_id(),
             DefResolution::Local(it) => it.parent.file_id(db.upcast()),
@@ -152,9 +158,11 @@ pub enum FileDef {
     Macro(Macro),
     EnumStruct(EnumStruct),
     Global(Global),
+    Enum(Enum),
+    Variant(Variant),
 }
 
-impl_from!(Function, Macro, EnumStruct, Global for FileDef);
+impl_from!(Function, Macro, EnumStruct, Global, Enum, Variant for FileDef);
 
 impl FileDef {
     pub fn diagnostics(self, db: &dyn HirDatabase) -> Vec<AnyDiagnostic> {
@@ -184,7 +192,11 @@ impl FileDef {
     pub fn as_def_with_body(self) -> Option<DefWithBody> {
         match self {
             FileDef::Function(it) => Some(it.into()),
-            FileDef::EnumStruct(_) | FileDef::Global(_) | FileDef::Macro(_) => None,
+            FileDef::EnumStruct(_)
+            | FileDef::Global(_)
+            | FileDef::Macro(_)
+            | FileDef::Enum(_)
+            | FileDef::Variant(_) => None,
         }
     }
 }
@@ -277,6 +289,16 @@ impl Macro {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct EnumStruct {
     pub(crate) id: EnumStructId,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Enum {
+    pub(crate) id: EnumId,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Variant {
+    pub(crate) id: VariantId,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

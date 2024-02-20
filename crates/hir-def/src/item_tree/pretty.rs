@@ -3,8 +3,8 @@ use la_arena::Idx;
 use crate::db::DefDatabase;
 
 use super::{
-    EnumStruct, EnumStructItemId, Field, FileItem, Function, ItemTree, Macro, RawVisibilityId,
-    Variable,
+    Enum, EnumStruct, EnumStructItemId, Field, FileItem, Function, ItemTree, Macro,
+    RawVisibilityId, Variable, Variant,
 };
 
 pub fn print_item_tree(_db: &dyn DefDatabase, tree: &ItemTree) -> String {
@@ -18,7 +18,9 @@ pub fn print_item_tree(_db: &dyn DefDatabase, tree: &ItemTree) -> String {
                 printer.push("\n");
             }
             FileItem::EnumStruct(idx) => printer.print_enum_struct(idx),
+            FileItem::Enum(idx) => printer.print_enum(idx),
             FileItem::Macro(idx) => printer.print_macro(idx),
+            FileItem::Variant(_) => (),
         }
     }
 
@@ -66,6 +68,30 @@ impl<'a> Printer<'a> {
         self.push(format!("// {}", ast_id).as_str());
         self.newline();
         self.push(&format!("#define {}", name.0.to_string()));
+        self.newline();
+    }
+
+    pub fn print_enum(&mut self, idx: &Idx<Enum>) {
+        let Enum {
+            name,
+            variants,
+            ast_id,
+            ..
+        } = &self.tree[*idx];
+        self.push(format!("// {}", ast_id).as_str());
+        self.newline();
+        self.push(&format!("enum {} {{", name.0));
+        self.indent();
+        self.newline();
+        for variant in self.tree.data().variants[variants.clone()].iter() {
+            let Variant { name, ast_id, .. } = variant;
+            self.push(format!("// {}", ast_id).as_str());
+            self.newline();
+            self.push(&format!("{},", name.0));
+            self.newline();
+        }
+        self.dedent();
+        self.push("};");
         self.newline();
     }
 

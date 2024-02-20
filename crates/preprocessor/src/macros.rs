@@ -238,8 +238,7 @@ where
                         continue;
                     };
                     let (ctx, args_map) = expand_macro(args, macro_, &queued_symbol.symbol)?;
-                    if context_stack.len() == 0 {
-                        // FIXME: 1 or 0 here?
+                    if context_stack.is_empty() {
                         args_mapping = args
                             .iter()
                             .zip(args_map)

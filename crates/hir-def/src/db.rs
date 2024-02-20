@@ -15,9 +15,9 @@ use crate::{
     data::{EnumStructData, FunctionData, MacroData},
     infer,
     item_tree::{ItemTree, Name},
-    BlockId, BlockLoc, DefWithBodyId, EnumStructId, EnumStructLoc, FileDefId, FileItem, FunctionId,
-    FunctionLoc, GlobalId, GlobalLoc, InferenceResult, Intern, ItemTreeId, Lookup, MacroId,
-    MacroLoc, NodePtr, TreeId,
+    BlockId, BlockLoc, DefWithBodyId, EnumId, EnumLoc, EnumStructId, EnumStructLoc, FileDefId,
+    FileItem, FunctionId, FunctionLoc, GlobalId, GlobalLoc, InferenceResult, Intern, ItemTreeId,
+    Lookup, MacroId, MacroLoc, NodePtr, TreeId, VariantId, VariantLoc,
 };
 
 #[salsa::query_group(InternDatabaseStorage)]
@@ -29,6 +29,10 @@ pub trait InternDatabase: SourceDatabase {
     fn intern_macro(&'tree self, loc: MacroLoc) -> MacroId;
     #[salsa::interned]
     fn intern_enum_struct(&'tree self, loc: EnumStructLoc) -> EnumStructId;
+    #[salsa::interned]
+    fn intern_enum(&'tree self, loc: EnumLoc) -> EnumId;
+    #[salsa::interned]
+    fn intern_variant(&'tree self, loc: VariantLoc) -> VariantId;
     #[salsa::interned]
     fn intern_variable(&'tree self, loc: GlobalLoc) -> GlobalId;
     #[salsa::interned]
@@ -236,6 +240,30 @@ impl DefMap {
                     res.declare(macro_.name.clone(), FileDefId::MacroId(macro_id));
                     res.macros.insert(macro_idx, macro_id);
                     macro_idx += 1;
+                }
+                FileItem::Enum(id) => {
+                    let enum_ = &item_tree[*id];
+                    let enum_id = EnumLoc {
+                        container: file_id.into(),
+                        id: ItemTreeId {
+                            tree: tree_id,
+                            value: *id,
+                        },
+                    }
+                    .intern(db);
+                    res.declare(enum_.name.clone(), FileDefId::EnumId(enum_id));
+                }
+                FileItem::Variant(id) => {
+                    let variant = &item_tree[*id];
+                    let variant_id = VariantLoc {
+                        container: file_id.into(),
+                        id: ItemTreeId {
+                            tree: tree_id,
+                            value: *id,
+                        },
+                    }
+                    .intern(db);
+                    res.declare(variant.name.clone(), FileDefId::VariantId(variant_id));
                 }
             }
         }

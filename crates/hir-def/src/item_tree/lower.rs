@@ -11,7 +11,8 @@ use crate::{
 };
 
 use super::{
-    EnumStruct, EnumStructItemId, Field, Function, ItemTree, Param, RawVisibilityId, Variable,
+    Enum, EnumStruct, EnumStructItemId, Field, Function, ItemTree, Param, RawVisibilityId,
+    Variable, Variant,
 };
 
 pub(super) struct Ctx<'db> {
@@ -43,6 +44,7 @@ impl<'db> Ctx<'db> {
         for child in root_node.children(&mut root_node.walk()) {
             match TSKind::from(child) {
                 TSKind::function_definition => self.lower_function(&child),
+                TSKind::r#enum => self.lower_enum(&child),
                 TSKind::global_variable_declaration => {
                     let type_ref = if let Some(type_node) = child.child_by_field_name("type") {
                         TypeRef::from_node(&type_node, &self.source)
@@ -120,6 +122,43 @@ impl<'db> Ctx<'db> {
         None
     }
 
+    fn lower_enum(&mut self, node: &tree_sitter::Node) {
+        let start_idx = self.next_variant_idx();
+        if let Some(entries_node) = node.child_by_field_name("entries") {
+            entries_node
+                .children(&mut entries_node.walk())
+                .filter(|e| TSKind::from(e) == TSKind::enum_entry)
+                .for_each(|e| {
+                    let Some(variant_name_node) = e.child_by_field_name("name") else {
+                        return;
+                    };
+                    let name =
+                        Name::from(variant_name_node.utf8_text(self.source.as_bytes()).unwrap());
+                    let res = Variant {
+                        name,
+                        ast_id: self.source_ast_id_map.ast_id_of(&e),
+                    };
+                    let id = self.tree.data_mut().variants.alloc(res);
+                    self.tree.top_level.push(FileItem::Variant(id));
+                });
+        }
+        let end_idx = self.next_variant_idx();
+
+        let ast_id = self.source_ast_id_map.ast_id_of(node);
+        let name = if let Some(name_node) = node.child_by_field_name("name") {
+            Name::from(name_node.utf8_text(self.source.as_bytes()).unwrap())
+        } else {
+            Name::from(format!("unnamed_enum_{}", ast_id.to_u32()).as_str())
+        };
+        let res = Enum {
+            name,
+            variants: IdxRange::new(start_idx..end_idx),
+            ast_id: self.source_ast_id_map.ast_id_of(node),
+        };
+        let id = self.tree.data_mut().enums.alloc(res);
+        self.tree.top_level.push(FileItem::Enum(id));
+    }
+
     fn lower_method(&mut self, node: &tree_sitter::Node, items: &mut Vec<EnumStructItemId>) {
         if let Some(id) = self.lower_function_(node) {
             items.push(EnumStructItemId::Method(id));
@@ -138,7 +177,6 @@ impl<'db> Ctx<'db> {
         let mut visibility = RawVisibilityId::NONE;
         if let Some(vis_node) = node.child_by_field_name("visibility") {
             vis_node.children(&mut vis_node.walk()).for_each(|n| {
-                eprintln!("viskind {:?}", TSKind::from(n));
                 visibility |= match TSKind::from(n) {
                     TSKind::anon_public => RawVisibilityId::PUBLIC,
                     TSKind::anon_static => RawVisibilityId::STATIC,
@@ -147,7 +185,6 @@ impl<'db> Ctx<'db> {
                 };
             });
         }
-        eprintln!("visibility {:?}", visibility);
         let res = Function {
             name: Name::from(name_node.utf8_text(self.source.as_bytes()).unwrap()),
             ret_type: self.function_return_type(node),
@@ -228,6 +265,15 @@ impl<'db> Ctx<'db> {
                 .data
                 .as_ref()
                 .map_or(0, |data| data.params.len() as u32),
+        ))
+    }
+
+    fn next_variant_idx(&self) -> Idx<Variant> {
+        Idx::from_raw(RawIdx::from(
+            self.tree
+                .data
+                .as_ref()
+                .map_or(0, |data| data.variants.len() as u32),
         ))
     }
 }

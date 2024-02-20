@@ -12,7 +12,7 @@ use crate::{
     db::HirDatabase,
     source_analyzer::SourceAnalyzer,
     source_to_def::{SourceToDefCache, SourceToDefCtx},
-    DefResolution, EnumStruct, Field, File, Function, Global, Local, Macro,
+    DefResolution, Enum, EnumStruct, Field, File, Function, Global, Local, Macro, Variant,
 };
 
 /// Primary API to get semantic information, like types, from syntax trees.
@@ -107,6 +107,14 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 .macro_to_def(src)
                 .map(Macro::from)
                 .map(DefResolution::Macro),
+            TSKind::r#enum => self
+                .enum_to_def(src)
+                .map(Enum::from)
+                .map(DefResolution::Enum),
+            TSKind::enum_entry => self
+                .variant_to_def(src)
+                .map(Variant::from)
+                .map(DefResolution::Variant),
             _ => todo!(),
         }
     }
@@ -138,7 +146,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         // If the node does not have a parent we are at the root, nothing to resolve.
         while !matches!(
             TSKind::from(container),
-            TSKind::function_definition | TSKind::enum_struct_method
+            TSKind::function_definition | TSKind::enum_struct_method | TSKind::r#enum
         ) {
             if let Some(candidate) = container.parent() {
                 container = candidate;
@@ -158,6 +166,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             TSKind::enum_struct_method => {
                 self.method_node_to_def(file_id, container, *node, source)
             }
+            TSKind::r#enum => self.source_node_to_def(file_id, *node, source), // Variants are in the global scope
             TSKind::source_file => self.source_node_to_def(file_id, *node, source),
             _ => todo!(),
         }
@@ -180,6 +189,8 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             hir_def::FileDefId::EnumStructId(id) => {
                 DefResolution::EnumStruct(EnumStruct::from(id)).into()
             }
+            hir_def::FileDefId::EnumId(id) => DefResolution::Enum(Enum::from(id)).into(),
+            hir_def::FileDefId::VariantId(id) => DefResolution::Variant(Variant::from(id)).into(),
         }
     }
 
@@ -258,6 +269,8 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             ValueNs::EnumStructId(id) => {
                 DefResolution::EnumStruct(EnumStruct::from(id.value)).into()
             }
+            ValueNs::EnumId(id) => DefResolution::Enum(Enum::from(id.value)).into(),
+            ValueNs::VariantId(id) => DefResolution::Variant(Variant::from(id.value)).into(),
         }
     }
 
@@ -320,6 +333,10 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                         ValueNs::EnumStructId(id) => {
                             DefResolution::EnumStruct(EnumStruct::from(id.value)).into()
                         }
+                        ValueNs::EnumId(id) => DefResolution::Enum(Enum::from(id.value)).into(),
+                        ValueNs::VariantId(id) => {
+                            DefResolution::Variant(Variant::from(id.value)).into()
+                        }
                     }
                 }
                 _ => unreachable!("Expected a function"),
@@ -371,5 +388,7 @@ impl<'db> SemanticsImpl<'db> {
         (crate::GlobalId, global_to_def),
         (crate::Local, local_to_def),
         (crate::Macro, macro_to_def),
+        (crate::Enum, enum_to_def),
+        (crate::Variant, variant_to_def),
     ];
 }

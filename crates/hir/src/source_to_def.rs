@@ -2,7 +2,8 @@ use fxhash::FxHashMap;
 use hir_def::{
     child_by_source::ChildBySource,
     dyn_map::{keys, DynMap, Key},
-    DefWithBodyId, EnumStructId, ExprId, FieldId, FunctionId, GlobalId, InFile, MacroId, NodePtr,
+    DefWithBodyId, EnumId, EnumStructId, ExprId, FieldId, FunctionId, GlobalId, InFile, MacroId,
+    NodePtr, VariantId,
 };
 use stdx::impl_from;
 use syntax::TSKind;
@@ -29,6 +30,12 @@ impl SourceToDefCtx<'_, '_> {
     }
     pub(super) fn enum_struct_to_def(&mut self, src: InFile<NodePtr>) -> Option<EnumStructId> {
         self.to_def(src, keys::ENUM_STRUCT)
+    }
+    pub(super) fn enum_to_def(&mut self, src: InFile<NodePtr>) -> Option<EnumId> {
+        self.to_def(src, keys::ENUM)
+    }
+    pub(super) fn variant_to_def(&mut self, src: InFile<NodePtr>) -> Option<VariantId> {
+        self.to_def(src, keys::ENUM_VARIANT)
     }
     pub(super) fn field_to_def(&mut self, src: InFile<NodePtr>) -> Option<FieldId> {
         self.to_def(src, keys::FIELD)
