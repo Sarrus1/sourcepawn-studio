@@ -81,7 +81,7 @@ impl ExprCollector<'_> {
             }
         }
         if let Some(body) = body {
-            self.body.body_expr = self.collect_expr(body);
+            self.body.body_expr = self.collect_expr(body).into();
         }
         (self.body, self.source_map)
     }

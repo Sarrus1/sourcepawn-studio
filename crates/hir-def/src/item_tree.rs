@@ -19,6 +19,13 @@ mod pretty;
 
 pub use pretty::print_item_tree;
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd)]
+pub enum FunctionKind {
+    Def,
+    Forward,
+    Native,
+}
+
 bitflags! {
     #[repr(transparent)]
     #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -187,6 +194,7 @@ pub struct Macro {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Variable {
     pub name: Name,
+    // FIXME: Implement visibility
     // pub visibility: RawVisibilityId,
     pub type_ref: Option<TypeRef>,
     pub ast_id: AstId,
@@ -195,6 +203,7 @@ pub struct Variable {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Function {
     pub name: Name,
+    pub kind: FunctionKind,
     pub visibility: RawVisibilityId,
     pub params: IdxRange<Param>,
     pub ret_type: Option<TypeRef>,

@@ -1,4 +1,4 @@
-use base_db::{SourceDatabaseExt, Tree, Upcast};
+use base_db::Tree;
 use fxhash::FxHashSet;
 use hir::{AnyDiagnostic, Semantics};
 use hir_def::{DefDatabase, InFile, NodePtr};

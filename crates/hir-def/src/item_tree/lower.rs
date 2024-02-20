@@ -11,8 +11,8 @@ use crate::{
 };
 
 use super::{
-    Enum, EnumStruct, EnumStructItemId, Field, Function, ItemTree, Param, RawVisibilityId,
-    Variable, Variant,
+    Enum, EnumStruct, EnumStructItemId, Field, Function, FunctionKind, ItemTree, Param,
+    RawVisibilityId, Variable, Variant,
 };
 
 pub(super) struct Ctx<'db> {
@@ -43,7 +43,9 @@ impl<'db> Ctx<'db> {
         let root_node = tree.root_node();
         for child in root_node.children(&mut root_node.walk()) {
             match TSKind::from(child) {
-                TSKind::function_definition => self.lower_function(&child),
+                TSKind::function_definition | TSKind::function_declaration => {
+                    self.lower_function(&child)
+                }
                 TSKind::r#enum => self.lower_enum(&child),
                 TSKind::global_variable_declaration => {
                     let type_ref = if let Some(type_node) = child.child_by_field_name("type") {
@@ -172,6 +174,17 @@ impl<'db> Ctx<'db> {
     }
 
     fn lower_function_(&mut self, node: &tree_sitter::Node) -> Option<Idx<Function>> {
+        // FIXME: Add a field in the tree-sitter grammar.
+        let kind_text = node
+            .children(&mut node.walk())
+            .find(|n| TSKind::from(n) == TSKind::function_declaration_kind)
+            .map(|n| n.utf8_text(self.source.as_bytes()).unwrap());
+        let mut kind = FunctionKind::Def;
+        if kind_text == Some("native") {
+            kind = FunctionKind::Native;
+        } else if kind_text == Some("forward") {
+            kind = FunctionKind::Forward;
+        }
         let params = self.lower_parameters(node);
         let name_node = node.child_by_field_name("name")?;
         let mut visibility = RawVisibilityId::NONE;
@@ -187,6 +200,7 @@ impl<'db> Ctx<'db> {
         }
         let res = Function {
             name: Name::from(name_node.utf8_text(self.source.as_bytes()).unwrap()),
+            kind,
             ret_type: self.function_return_type(node),
             visibility,
             params,

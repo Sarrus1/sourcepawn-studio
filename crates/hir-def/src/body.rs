@@ -5,7 +5,7 @@ use crate::{
     BlockId, DefDatabase, DefWithBodyId, InFile, Lookup, NodePtr,
 };
 use fxhash::FxHashMap;
-use la_arena::{Arena, ArenaMap, RawIdx};
+use la_arena::{Arena, ArenaMap};
 use std::ops::Index;
 use std::sync::Arc;
 use syntax::TSKind;
@@ -15,10 +15,10 @@ pub mod lower;
 pub mod scope;
 
 /// The body of a function
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Default)]
 pub struct Body {
     pub exprs: Arena<Expr>,
-    pub body_expr: ExprId,
+    pub body_expr: Option<ExprId>,
     pub idents: Arena<Ident>,
     pub params: Vec<(IdentId, ExprId)>,
     /// Block expressions in this body that may contain inner items.
@@ -109,18 +109,6 @@ impl Body {
         body: Option<tree_sitter::Node>,
     ) -> (Body, BodySourceMap) {
         lower::lower(db, owner, params_list, file_id, source, body)
-    }
-}
-
-impl Default for Body {
-    fn default() -> Self {
-        Self {
-            body_expr: ExprId::from_raw(RawIdx::from(u32::MAX)), // HACK: Initialize with invalid index
-            exprs: Default::default(),
-            idents: Default::default(),
-            params: Default::default(),
-            block_scopes: Default::default(),
-        }
     }
 }
 

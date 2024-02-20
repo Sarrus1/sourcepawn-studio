@@ -79,7 +79,9 @@ impl ExprScopes {
         };
         let mut root = scopes.root_scope(file_id);
         scopes.add_params_bindings(body, root);
-        compute_expr_scopes(body.body_expr, body, &mut scopes, &mut root);
+        if let Some(id) = body.body_expr {
+            compute_expr_scopes(id, body, &mut scopes, &mut root);
+        }
         scopes
     }
 

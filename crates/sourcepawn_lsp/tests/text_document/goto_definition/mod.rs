@@ -2,6 +2,7 @@ use insta::assert_json_snapshot;
 use sourcepawn_lsp::fixture::goto_definition;
 
 mod enums;
+mod function_declarations;
 mod macros;
 
 #[test]

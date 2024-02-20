@@ -127,6 +127,7 @@ impl AstIdMap {
             matches!(
                 TSKind::from(node),
                 TSKind::function_definition
+                    | TSKind::function_declaration
                     | TSKind::r#enum
                     | TSKind::enum_entries
                     | TSKind::parameter_declarations

@@ -118,16 +118,10 @@ impl Resolver {
                                     )));
                                 }
                                 FileDefId::EnumId(it) => {
-                                    return Some(ValueNs::EnumId(InFile::new(
-                                        self.file_id,
-                                        it.into(),
-                                    )));
+                                    return Some(ValueNs::EnumId(InFile::new(self.file_id, it)));
                                 }
                                 FileDefId::VariantId(it) => {
-                                    return Some(ValueNs::VariantId(InFile::new(
-                                        self.file_id,
-                                        it.into(),
-                                    )));
+                                    return Some(ValueNs::VariantId(InFile::new(self.file_id, it)));
                                 }
                             }
                         }

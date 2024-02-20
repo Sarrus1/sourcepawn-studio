@@ -159,7 +159,9 @@ impl InferenceContext<'_> {
     }
 
     pub(crate) fn collect_fn(&mut self, _func: FunctionId) {
-        self.infer_expr(&self.body.body_expr);
+        if let Some(id) = self.body.body_expr {
+            self.infer_expr(&id);
+        }
     }
 
     fn infer_field_access(

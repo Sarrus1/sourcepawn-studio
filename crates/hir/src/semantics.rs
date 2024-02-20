@@ -69,7 +69,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         let src = InFile::new(file_id, NodePtr::from(&parent));
 
         match TSKind::from(parent) {
-            TSKind::function_definition => self
+            TSKind::function_definition | TSKind::function_declaration => self
                 .fn_to_def(src)
                 .map(Function::from)
                 .map(DefResolution::Function),
@@ -262,8 +262,8 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         let value_ns = analyzer.resolver.resolve_ident(text);
         match value_ns? {
             // TODO: Maybe hide the match logic in a function/macro?
-            ValueNs::LocalId(expr) => DefResolution::Local(Local::from(expr)).into(),
             ValueNs::FunctionId(id) => DefResolution::Function(Function::from(id.value)).into(),
+            ValueNs::LocalId(expr) => DefResolution::Local(Local::from(expr)).into(),
             ValueNs::MacroId(id) => DefResolution::Macro(Macro::from(id.value)).into(),
             ValueNs::GlobalId(id) => DefResolution::Global(Global::from(id.value)).into(),
             ValueNs::EnumStructId(id) => {
@@ -322,10 +322,10 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                     let value_ns = analyzer.resolver.resolve_ident(text);
                     match value_ns? {
                         // TODO: Maybe hide the match logic in a function/macro?
-                        ValueNs::LocalId(expr) => DefResolution::Local(Local::from(expr)).into(),
                         ValueNs::FunctionId(id) => {
                             DefResolution::Function(Function::from(id.value)).into()
                         }
+                        ValueNs::LocalId(expr) => DefResolution::Local(Local::from(expr)).into(),
                         ValueNs::MacroId(id) => DefResolution::Macro(Macro::from(id.value)).into(),
                         ValueNs::GlobalId(id) => {
                             DefResolution::Global(Global::from(id.value)).into()

@@ -82,7 +82,9 @@ impl SourceToDefCtx<'_, '_> {
         loop {
             match TSKind::from(container) {
                 TSKind::source_file => return Some(ChildContainer::FileId(src.file_id)),
-                TSKind::function_definition | TSKind::enum_struct_method => {
+                TSKind::function_definition
+                | TSKind::function_declaration
+                | TSKind::enum_struct_method => {
                     let func =
                         self.fn_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
                     return Some(ChildContainer::DefWithBodyId(DefWithBodyId::from(func)));

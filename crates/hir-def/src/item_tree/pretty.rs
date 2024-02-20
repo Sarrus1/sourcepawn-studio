@@ -3,7 +3,7 @@ use la_arena::Idx;
 use crate::db::DefDatabase;
 
 use super::{
-    Enum, EnumStruct, EnumStructItemId, Field, FileItem, Function, ItemTree, Macro,
+    Enum, EnumStruct, EnumStructItemId, Field, FileItem, Function, FunctionKind, ItemTree, Macro,
     RawVisibilityId, Variable, Variant,
 };
 
@@ -128,17 +128,22 @@ impl<'a> Printer<'a> {
     pub fn print_function(&mut self, idx: &Idx<Function>) {
         let Function {
             name,
+            kind,
             visibility,
             ret_type,
             params,
             ast_id,
-            ..
         } = &self.tree[*idx];
         self.push(format!("// {}", ast_id).as_str());
         self.newline();
         if visibility != &RawVisibilityId::NONE {
             self.push(&visibility.to_string());
             self.push(" ");
+        }
+        match kind {
+            FunctionKind::Forward => self.push("forward "),
+            FunctionKind::Native => self.push("native "),
+            _ => (),
         }
         if let Some(ret_type) = ret_type {
             self.push(&ret_type.to_str());
@@ -156,12 +161,16 @@ impl<'a> Printer<'a> {
                 self.push(",");
             }
         }
-        self.push(") {");
-        self.newline();
-        self.push("/* body */");
-        self.dedent();
-        self.newline();
-        self.push("}");
+        if kind == &FunctionKind::Def {
+            self.push(") {");
+            self.newline();
+            self.push("/* body */");
+            self.dedent();
+            self.newline();
+            self.push("}");
+        } else {
+            self.push(");");
+        }
         self.newline();
     }
 }
