@@ -3,7 +3,7 @@ use hir_def::{
     child_by_source::ChildBySource,
     dyn_map::{keys, DynMap, Key},
     DefWithBodyId, EnumId, EnumStructId, ExprId, FieldId, FunctionId, GlobalId, InFile, MacroId,
-    NodePtr, VariantId,
+    MethodmapId, NodePtr, PropertyId, VariantId,
 };
 use stdx::impl_from;
 use syntax::TSKind;
@@ -31,6 +31,12 @@ impl SourceToDefCtx<'_, '_> {
     pub(super) fn enum_struct_to_def(&mut self, src: InFile<NodePtr>) -> Option<EnumStructId> {
         self.to_def(src, keys::ENUM_STRUCT)
     }
+    pub(super) fn methodmap_to_def(&mut self, src: InFile<NodePtr>) -> Option<MethodmapId> {
+        self.to_def(src, keys::METHODMAP)
+    }
+    pub(super) fn property_to_def(&mut self, src: InFile<NodePtr>) -> Option<PropertyId> {
+        self.to_def(src, keys::PROPERTY)
+    }
     pub(super) fn enum_to_def(&mut self, src: InFile<NodePtr>) -> Option<EnumId> {
         self.to_def(src, keys::ENUM)
     }
@@ -51,7 +57,7 @@ impl SourceToDefCtx<'_, '_> {
                 let (_, source_map) = self.db.body_with_source_map(def);
                 source_map.node_ptr_expr(src).map(|expr| (def, expr))
             }
-            _ => todo!(),
+            _ => unreachable!("Local should be in a function/method"),
         }
     }
 
@@ -84,7 +90,10 @@ impl SourceToDefCtx<'_, '_> {
                 TSKind::source_file => return Some(ChildContainer::FileId(src.file_id)),
                 TSKind::function_definition
                 | TSKind::function_declaration
-                | TSKind::enum_struct_method => {
+                | TSKind::enum_struct_method
+                | TSKind::methodmap_method
+                | TSKind::methodmap_method_constructor
+                | TSKind::methodmap_method_destructor => {
                     let func =
                         self.fn_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
                     return Some(ChildContainer::DefWithBodyId(DefWithBodyId::from(func)));
@@ -93,6 +102,11 @@ impl SourceToDefCtx<'_, '_> {
                     let enum_struct = self
                         .enum_struct_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
                     return Some(ChildContainer::EnumStructId(enum_struct));
+                }
+                TSKind::methodmap => {
+                    let methodmap =
+                        self.methodmap_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
+                    return Some(ChildContainer::MethodmapId(methodmap));
                 }
                 _ => {
                     if let Some(candidate) = container.parent() {
@@ -112,6 +126,7 @@ pub(crate) enum ChildContainer {
     FileId(FileId),
     MacroId(MacroId),
     EnumStructId(EnumStructId),
+    MethodmapId(MethodmapId),
 }
 
 impl_from! {
@@ -127,6 +142,7 @@ impl ChildContainer {
         match self {
             ChildContainer::FileId(id) => id.child_by_source(db, file_id),
             ChildContainer::EnumStructId(id) => id.child_by_source(db, file_id),
+            ChildContainer::MethodmapId(id) => id.child_by_source(db, file_id),
             _ => todo!(),
         }
     }

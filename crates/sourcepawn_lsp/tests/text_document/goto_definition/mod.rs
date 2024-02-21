@@ -4,6 +4,7 @@ use sourcepawn_lsp::fixture::goto_definition;
 mod enums;
 mod function_declarations;
 mod macros;
+mod methodmaps;
 
 #[test]
 fn global_variable_1() {

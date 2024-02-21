@@ -2,7 +2,7 @@ use base_db::Tree;
 use db::HirDatabase;
 use hir_def::{
     DefWithBodyId, EnumId, EnumStructId, ExprId, FunctionId, GlobalId, InFile, InferenceDiagnostic,
-    LocalFieldId, Lookup, MacroId, Name, VariantId,
+    LocalFieldId, LocalPropertyId, Lookup, MacroId, MethodmapId, Name, VariantId,
 };
 use preprocessor::PreprocessorError;
 use stdx::impl_from;
@@ -23,6 +23,7 @@ pub enum DefResolution {
     Function(Function),
     Macro(Macro),
     EnumStruct(EnumStruct),
+    Methodmap(Methodmap),
     Enum(Enum),
     Variant(Variant),
     Field(Field),
@@ -51,6 +52,7 @@ impl<'tree> HasSource<'tree> for DefResolution {
             DefResolution::Function(func) => func.source(db, tree),
             DefResolution::Macro(macro_) => macro_.source(db, tree),
             DefResolution::EnumStruct(enum_struct) => enum_struct.source(db, tree),
+            DefResolution::Methodmap(methodmap) => methodmap.source(db, tree),
             DefResolution::Enum(enum_) => enum_.source(db, tree),
             DefResolution::Variant(variant) => variant.source(db, tree),
             DefResolution::Field(field) => field.source(db, tree),
@@ -67,6 +69,7 @@ impl DefResolution {
             DefResolution::Function(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Macro(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::EnumStruct(it) => it.id.lookup(db.upcast()).id.file_id(),
+            DefResolution::Methodmap(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Enum(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Variant(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Field(it) => it.parent.id.lookup(db.upcast()).id.file_id(),
@@ -157,6 +160,7 @@ pub enum FileDef {
     Function(Function),
     Macro(Macro),
     EnumStruct(EnumStruct),
+    Methodmap(Methodmap),
     Global(Global),
     Enum(Enum),
     Variant(Variant),
@@ -193,6 +197,7 @@ impl FileDef {
         match self {
             FileDef::Function(it) => Some(it.into()),
             FileDef::EnumStruct(_)
+            | FileDef::Methodmap(_)
             | FileDef::Global(_)
             | FileDef::Macro(_)
             | FileDef::Enum(_)
@@ -289,6 +294,17 @@ impl Macro {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct EnumStruct {
     pub(crate) id: EnumStructId,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Methodmap {
+    pub(crate) id: MethodmapId,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Property {
+    pub(crate) parent: Methodmap,
+    pub(crate) id: LocalPropertyId,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

@@ -5,8 +5,8 @@ use crate::{
     db::DefMap,
     hir::ExprId,
     item_tree::Name,
-    DefDatabase, DefWithBodyId, EnumId, EnumStructId, FileDefId, FunctionId, GlobalId, InFile,
-    Lookup, MacroId, VariantId,
+    AdtId, DefDatabase, DefWithBodyId, EnumId, EnumStructId, FileDefId, FunctionId, GlobalId,
+    InFile, ItemContainerId, Lookup, MacroId, MethodmapId, VariantId,
 };
 use vfs::FileId;
 
@@ -52,7 +52,7 @@ enum Scope {
     /// All the items and included names of a project.
     GlobalScope(Vec<Arc<DefMap>>),
     /// Brings `this` into scope.
-    // ThisScope(ImplId),
+    ThisScope(AdtId),
     /// Local bindings.
     ExprScope(ExprScope),
 }
@@ -69,6 +69,10 @@ impl Resolver {
 
     fn push_global_scope(self, def_maps: Vec<Arc<DefMap>>, _file_id: FileId) -> Self {
         self.push_scope(Scope::GlobalScope(def_maps))
+    }
+
+    fn push_this_scope(self, adt_id: AdtId) -> Resolver {
+        self.push_scope(Scope::ThisScope(adt_id))
     }
 
     fn push_expr_scope(
@@ -95,6 +99,19 @@ impl Resolver {
                         return Some(ValueNs::LocalId((scope.owner, entry)));
                     }
                 }
+                Scope::ThisScope(adt_id) => {
+                    if name != "this".into() {
+                        continue;
+                    }
+                    match adt_id {
+                        AdtId::EnumStructId(it) => {
+                            return Some(ValueNs::EnumStructId(InFile::new(self.file_id, *it)));
+                        }
+                        AdtId::MethodmapId(it) => {
+                            return Some(ValueNs::MethodmapId(InFile::new(self.file_id, *it)));
+                        }
+                    }
+                }
                 Scope::GlobalScope(def_maps) => {
                     for def_map in def_maps.iter() {
                         if let Some(entry) = def_map.get(&name) {
@@ -113,6 +130,12 @@ impl Resolver {
                                 }
                                 FileDefId::EnumStructId(it) => {
                                     return Some(ValueNs::EnumStructId(InFile::new(
+                                        self.file_id,
+                                        it,
+                                    )));
+                                }
+                                FileDefId::MethodmapId(it) => {
+                                    return Some(ValueNs::MethodmapId(InFile::new(
                                         self.file_id,
                                         it,
                                     )));
@@ -198,6 +221,7 @@ pub enum ValueNs {
     MacroId(InFile<MacroId>),
     FunctionId(InFile<FunctionId>),
     EnumStructId(InFile<EnumStructId>),
+    MethodmapId(InFile<MethodmapId>),
     EnumId(InFile<EnumId>),
     VariantId(InFile<VariantId>),
 }
@@ -205,6 +229,36 @@ pub enum ValueNs {
 pub trait HasResolver: Copy {
     /// Builds a resolver for type references inside this def.
     fn resolver(self, db: &dyn DefDatabase) -> Resolver;
+}
+
+impl HasResolver for ItemContainerId {
+    fn resolver(self, db: &dyn DefDatabase) -> Resolver {
+        match self {
+            ItemContainerId::FileId(file_id) => file_id.resolver(db),
+            ItemContainerId::EnumStructId(it) => it.resolver(db),
+            ItemContainerId::MethodmapId(it) => it.resolver(db),
+        }
+    }
+}
+
+impl HasResolver for EnumStructId {
+    fn resolver(self, db: &dyn DefDatabase) -> Resolver {
+        self.lookup(db)
+            .id
+            .file_id()
+            .resolver(db)
+            .push_this_scope(self.into())
+    }
+}
+
+impl HasResolver for MethodmapId {
+    fn resolver(self, db: &dyn DefDatabase) -> Resolver {
+        self.lookup(db)
+            .id
+            .file_id()
+            .resolver(db)
+            .push_this_scope(self.into())
+    }
 }
 
 impl HasResolver for DefWithBodyId {
@@ -217,8 +271,7 @@ impl HasResolver for DefWithBodyId {
 
 impl HasResolver for FunctionId {
     fn resolver(self, db: &dyn DefDatabase) -> Resolver {
-        self.lookup(db).id.file_id().resolver(db)
-        // .push_generic_params_scope(db, self.into())
+        self.lookup(db).container.resolver(db)
     }
 }
 

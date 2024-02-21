@@ -1,5 +1,5 @@
 use core::hash::Hash;
-use item_tree::{AstId, EnumStruct, Function, ItemTreeNode, Macro, Variable, Variant};
+use item_tree::{AstId, EnumStruct, Function, ItemTreeNode, Macro, Methodmap, Variable, Variant};
 use item_tree::{Enum, ItemTree};
 use la_arena::Idx;
 use std::{hash::Hasher, sync::Arc};
@@ -72,8 +72,17 @@ macro_rules! impl_intern {
 pub enum ItemContainerId {
     FileId(FileId),
     EnumStructId(EnumStructId),
+    MethodmapId(MethodmapId),
 }
-impl_from!(FileId, EnumStructId for ItemContainerId);
+impl_from!(FileId, EnumStructId, MethodmapId for ItemContainerId);
+
+/// A Data Type
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum AdtId {
+    EnumStructId(EnumStructId),
+    MethodmapId(MethodmapId),
+}
+impl_from!(EnumStructId, MethodmapId for AdtId);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FunctionId(salsa::InternId);
@@ -90,7 +99,7 @@ pub struct MacroId(salsa::InternId);
 type MacroLoc = AssocItemLoc<Macro>;
 impl_intern!(MacroId, MacroLoc, intern_macro, lookup_intern_macro);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct EnumStructId(salsa::InternId);
 type EnumStructLoc = AssocItemLoc<EnumStruct>;
 impl_intern!(
@@ -107,6 +116,24 @@ pub struct FieldId {
 }
 
 pub type LocalFieldId = Idx<data::EnumStructItemData>;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct MethodmapId(salsa::InternId);
+type MethodmapLoc = AssocItemLoc<Methodmap>;
+impl_intern!(
+    MethodmapId,
+    MethodmapLoc,
+    intern_methodmap,
+    lookup_intern_methodmap
+);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct PropertyId {
+    pub parent: MethodmapId,
+    pub local_id: LocalPropertyId,
+}
+
+pub type LocalPropertyId = Idx<data::MethodmapItemData>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct EnumId(salsa::InternId);
@@ -139,6 +166,7 @@ pub enum FileDefId {
     MacroId(MacroId),
     GlobalId(GlobalId),
     EnumStructId(EnumStructId),
+    MethodmapId(MethodmapId),
     EnumId(EnumId),
     VariantId(VariantId),
 }

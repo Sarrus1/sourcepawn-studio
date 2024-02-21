@@ -4,7 +4,7 @@ use fxhash::FxHashMap;
 
 use crate::{
     body::Body,
-    data::EnumStructItemData,
+    data::{EnumStructItemData, MethodmapItemData},
     hir::{type_ref::TypeRef, BinaryOp, Expr},
     item_tree::Name,
     resolver::{HasResolver, Resolver, ValueNs},
@@ -128,6 +128,14 @@ impl InferenceContext<'_> {
                         };
                         type_ref.as_ref().cloned()
                     }
+                    ValueNs::MethodmapId(it) => {
+                        let item_tree = self.db.file_item_tree(it.file_id);
+                        TypeRef::Name(item_tree[it.value.lookup(self.db).id].name.clone()).into()
+                    }
+                    ValueNs::EnumStructId(it) => {
+                        let item_tree = self.db.file_item_tree(it.file_id);
+                        TypeRef::Name(item_tree[it.value.lookup(self.db).id].name.clone()).into()
+                    }
                     _ => todo!(),
                 }
             }
@@ -231,31 +239,56 @@ impl InferenceContext<'_> {
             return None;
         };
         let def_map = self.db.file_def_map(self.owner.file_id(self.db));
-        let res = def_map.get(&type_name)?;
-        let FileDefId::EnumStructId(it) = res else {
-            return None;
-        };
-        let data = self.db.enum_struct_data(it);
-        if let Some(item) = data.items(method_name) {
-            match data.item(item) {
-                EnumStructItemData::Field(_) => {
-                    self.result
-                        .diagnostics
-                        .push(InferenceDiagnostic::UnresolvedMethodCall {
-                            expr: *receiver,
-                            receiver: type_name,
-                            name: method_name.clone(),
-                            field_with_same_name_exists: true,
-                        });
-                    return None;
-                }
-                EnumStructItemData::Method(method) => {
-                    self.result.method_resolutions.insert(*receiver, *method);
-                    let function = method.lookup(self.db);
-                    let item_tree = function.id.item_tree(self.db);
-                    return item_tree[function.id.value].ret_type.clone();
+        match def_map.get(&type_name)? {
+            FileDefId::EnumStructId(it) => {
+                let data = self.db.enum_struct_data(it);
+                if let Some(item) = data.items(method_name) {
+                    match data.item(item) {
+                        EnumStructItemData::Field(_) => {
+                            self.result.diagnostics.push(
+                                InferenceDiagnostic::UnresolvedMethodCall {
+                                    expr: *receiver,
+                                    receiver: type_name,
+                                    name: method_name.clone(),
+                                    field_with_same_name_exists: true,
+                                },
+                            );
+                            return None;
+                        }
+                        EnumStructItemData::Method(method) => {
+                            self.result.method_resolutions.insert(*receiver, *method);
+                            let function = method.lookup(self.db);
+                            let item_tree = function.id.item_tree(self.db);
+                            return item_tree[function.id.value].ret_type.clone();
+                        }
+                    }
                 }
             }
+            FileDefId::MethodmapId(it) => {
+                let data = self.db.methodmap_data(it);
+                if let Some(item) = data.items(method_name) {
+                    match data.item(item) {
+                        MethodmapItemData::Property(_) => {
+                            self.result.diagnostics.push(
+                                InferenceDiagnostic::UnresolvedMethodCall {
+                                    expr: *receiver,
+                                    receiver: type_name,
+                                    name: method_name.clone(),
+                                    field_with_same_name_exists: true,
+                                },
+                            );
+                            return None;
+                        }
+                        MethodmapItemData::Method(method) => {
+                            self.result.method_resolutions.insert(*receiver, *method);
+                            let function = method.lookup(self.db);
+                            let item_tree = function.id.item_tree(self.db);
+                            return item_tree[function.id.value].ret_type.clone();
+                        }
+                    }
+                }
+            }
+            _ => unreachable!("Method calls are only allowed on enum structs and methodmaps."),
         }
         self.result
             .diagnostics

@@ -200,7 +200,7 @@ impl ExprCollector<'_> {
                 Some(self.alloc_expr(field_access, NodePtr::from(&field)))
             }
             TSKind::variable_declaration_statement => Some(self.collect_variable_declaration(expr)),
-            TSKind::identifier => {
+            TSKind::identifier | TSKind::this => {
                 let name = Name::from_node(&expr, self.source);
                 Some(self.alloc_expr(Expr::Ident(name), NodePtr::from(&expr)))
             }

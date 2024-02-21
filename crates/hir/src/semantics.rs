@@ -12,7 +12,8 @@ use crate::{
     db::HirDatabase,
     source_analyzer::SourceAnalyzer,
     source_to_def::{SourceToDefCache, SourceToDefCtx},
-    DefResolution, Enum, EnumStruct, Field, File, Function, Global, Local, Macro, Variant,
+    DefResolution, Enum, EnumStruct, Field, File, Function, Global, Local, Macro, Methodmap,
+    Variant,
 };
 
 /// Primary API to get semantic information, like types, from syntax trees.
@@ -69,11 +70,12 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         let src = InFile::new(file_id, NodePtr::from(&parent));
 
         match TSKind::from(parent) {
-            TSKind::function_definition | TSKind::function_declaration => self
-                .fn_to_def(src)
-                .map(Function::from)
-                .map(DefResolution::Function),
-            TSKind::enum_struct_method => self
+            TSKind::function_definition
+            | TSKind::function_declaration
+            | TSKind::enum_struct_method
+            | TSKind::methodmap_method
+            | TSKind::methodmap_method_constructor
+            | TSKind::methodmap_method_destructor => self
                 .fn_to_def(src)
                 .map(Function::from)
                 .map(DefResolution::Function),
@@ -115,6 +117,10 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 .variant_to_def(src)
                 .map(Variant::from)
                 .map(DefResolution::Variant),
+            TSKind::methodmap => self
+                .methodmap_to_def(src)
+                .map(Methodmap::from)
+                .map(DefResolution::Methodmap),
             _ => todo!(),
         }
     }
@@ -146,7 +152,12 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         // If the node does not have a parent we are at the root, nothing to resolve.
         while !matches!(
             TSKind::from(container),
-            TSKind::function_definition | TSKind::enum_struct_method | TSKind::r#enum
+            TSKind::function_definition
+                | TSKind::enum_struct_method
+                | TSKind::r#enum
+                | TSKind::methodmap_method
+                | TSKind::methodmap_method_constructor
+                | TSKind::methodmap_method_destructor
         ) {
             if let Some(candidate) = container.parent() {
                 container = candidate;
@@ -163,7 +174,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             TSKind::function_definition => {
                 self.function_node_to_def(file_id, container, *node, source)
             }
-            TSKind::enum_struct_method => {
+            TSKind::methodmap_method
+            | TSKind::methodmap_method_constructor
+            | TSKind::methodmap_method_destructor => {
                 self.method_node_to_def(file_id, container, *node, source)
             }
             TSKind::r#enum => self.source_node_to_def(file_id, *node, source), // Variants are in the global scope
@@ -188,6 +201,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             hir_def::FileDefId::GlobalId(id) => DefResolution::Global(Global::from(id)).into(),
             hir_def::FileDefId::EnumStructId(id) => {
                 DefResolution::EnumStruct(EnumStruct::from(id)).into()
+            }
+            hir_def::FileDefId::MethodmapId(id) => {
+                DefResolution::Methodmap(Methodmap::from(id)).into()
             }
             hir_def::FileDefId::EnumId(id) => DefResolution::Enum(Enum::from(id)).into(),
             hir_def::FileDefId::VariantId(id) => DefResolution::Variant(Variant::from(id)).into(),
@@ -227,14 +243,21 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             .ok()?;
         let body_node = container.child_by_field_name("body")?;
         assert!(TSKind::from(body_node) == TSKind::block);
-        let hir_def::FileDefId::EnumStructId(es_id) = def_map.get_from_str(enum_struct_name)?
-        else {
-            return None;
+        let id = match def_map.get_from_str(enum_struct_name)? {
+            hir_def::FileDefId::EnumStructId(es_id) => {
+                let data = self.db.enum_struct_data(es_id);
+                let method_idx = data.items(&Name::from(method_name))?;
+                data.method(method_idx).cloned()?
+            }
+            hir_def::FileDefId::MethodmapId(id) => {
+                let data = self.db.methodmap_data(id);
+                let method_idx = data.items(&Name::from(method_name))?;
+                data.method(method_idx).cloned()?
+            }
+            _ => return None,
         };
-        let data = self.db.enum_struct_data(es_id);
-        let method_idx = data.items(&Name::from(method_name))?;
-        let id = data.method(method_idx)?;
-        let def = hir_def::DefWithBodyId::FunctionId(*id);
+
+        let def = hir_def::DefWithBodyId::FunctionId(id);
         let offset = node.start_position();
         if TSKind::field_access == TSKind::from(parent) && is_field_receiver_node(&node) {
             let analyzer = SourceAnalyzer::new_for_body(
@@ -269,6 +292,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             ValueNs::EnumStructId(id) => {
                 DefResolution::EnumStruct(EnumStruct::from(id.value)).into()
             }
+            ValueNs::MethodmapId(id) => DefResolution::Methodmap(Methodmap::from(id.value)).into(),
             ValueNs::EnumId(id) => DefResolution::Enum(Enum::from(id.value)).into(),
             ValueNs::VariantId(id) => DefResolution::Variant(Variant::from(id.value)).into(),
         }
@@ -333,6 +357,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                         ValueNs::EnumStructId(id) => {
                             DefResolution::EnumStruct(EnumStruct::from(id.value)).into()
                         }
+                        ValueNs::MethodmapId(id) => {
+                            DefResolution::Methodmap(Methodmap::from(id.value)).into()
+                        }
                         ValueNs::EnumId(id) => DefResolution::Enum(Enum::from(id.value)).into(),
                         ValueNs::VariantId(id) => {
                             DefResolution::Variant(Variant::from(id.value)).into()
@@ -390,5 +417,7 @@ impl<'db> SemanticsImpl<'db> {
         (crate::Macro, macro_to_def),
         (crate::Enum, enum_to_def),
         (crate::Variant, variant_to_def),
+        (crate::Methodmap, methodmap_to_def),
+        (hir_def::PropertyId, property_to_def),
     ];
 }

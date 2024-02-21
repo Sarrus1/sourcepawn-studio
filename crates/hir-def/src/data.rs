@@ -6,10 +6,10 @@ use syntax::TSKind;
 
 use crate::{
     hir::type_ref::TypeRef,
-    item_tree::{EnumStructItemId, Name},
+    item_tree::{EnumStructItemId, MethodmapItemId, Name},
     src::{HasChildSource, HasSource},
     DefDatabase, EnumStructId, FunctionId, FunctionLoc, InFile, Intern, ItemTreeId, LocalFieldId,
-    Lookup, MacroId, NodePtr,
+    LocalPropertyId, Lookup, MacroId, MethodmapId, NodePtr,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -51,11 +51,113 @@ impl MacroData {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MethodmapData {
+    pub name: Name,
+    pub items: Arc<Arena<MethodmapItemData>>,
+    pub items_map: Arc<FxHashMap<Name, Idx<MethodmapItemData>>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MethodmapItemData {
+    Property(PropertyData),
+    Method(FunctionId),
+}
+
+/// A single property of a methodmap
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PropertyData {
+    pub name: Name,
+    pub type_ref: TypeRef,
+    pub getters_setters: Vec<FunctionId>,
+}
+
+impl MethodmapData {
+    pub(crate) fn methodmap_data_query(
+        db: &dyn DefDatabase,
+        id: MethodmapId,
+    ) -> Arc<MethodmapData> {
+        let loc = id.lookup(db).id;
+        let item_tree = loc.tree_id().item_tree(db);
+        let methodmap = &item_tree[loc.value];
+        let mut items = Arena::new();
+        let mut items_map = FxHashMap::default();
+        methodmap.items.iter().for_each(|e| match *e {
+            MethodmapItemId::Property(property_idx) => {
+                let property = &item_tree[property_idx];
+                let property_data = MethodmapItemData::Property(PropertyData {
+                    name: property.name.clone(),
+                    type_ref: property.type_ref.clone(),
+                    getters_setters: property
+                        .getters_setters
+                        .clone()
+                        .map(|fn_id| {
+                            FunctionLoc {
+                                container: id.into(),
+                                id: ItemTreeId {
+                                    tree: loc.tree_id(),
+                                    value: fn_id,
+                                },
+                            }
+                            .intern(db)
+                        })
+                        .collect(),
+                });
+                let property_id = items.alloc(property_data);
+                items_map.insert(property.name.clone(), property_id);
+            }
+            MethodmapItemId::Method(method_idx) => {
+                let method = &item_tree[method_idx];
+                let fn_id = FunctionLoc {
+                    container: id.into(),
+                    id: ItemTreeId {
+                        tree: loc.tree_id(),
+                        value: method_idx,
+                    },
+                }
+                .intern(db);
+                let method_id = items.alloc(MethodmapItemData::Method(fn_id));
+                // FIXME: Not sure if we should intern like this...
+                items_map.insert(method.name.clone(), method_id);
+            } // TODO: Add diagnostic for duplicate methodmap items
+        });
+        // FIXME: Should we look up the inherited methodmap and add its items to the items_map?
+        let methodmap_data = MethodmapData {
+            name: methodmap.name.clone(),
+            items: Arc::new(items),
+            items_map: Arc::new(items_map),
+        };
+
+        Arc::new(methodmap_data)
+    }
+
+    pub fn item(&self, item: Idx<MethodmapItemData>) -> &MethodmapItemData {
+        &self.items[item]
+    }
+
+    pub fn method(&self, item: Idx<MethodmapItemData>) -> Option<&FunctionId> {
+        match &self.items[item] {
+            MethodmapItemData::Property(_) => None,
+            MethodmapItemData::Method(function_id) => Some(function_id),
+        }
+    }
+
+    pub fn items(&self, name: &Name) -> Option<Idx<MethodmapItemData>> {
+        self.items_map.get(name).cloned()
+    }
+
+    pub fn property_type(&self, property: Idx<MethodmapItemData>) -> Option<&TypeRef> {
+        match &self.items[property] {
+            MethodmapItemData::Property(property_data) => Some(&property_data.type_ref),
+            MethodmapItemData::Method(_) => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EnumStructData {
     pub name: Name,
     pub items: Arc<Arena<EnumStructItemData>>,
     pub items_map: Arc<FxHashMap<Name, Idx<EnumStructItemData>>>,
-    // pub visibility: RawVisibility,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -163,6 +265,56 @@ impl HasChildSource<LocalFieldId> for EnumStructId {
                     let field = EnumStructItemData::Field(FieldData { name, type_ref });
                     map.insert(items.alloc(field), NodePtr::from(&child));
                 }
+                // TSKind::enum_struct_method => {
+                //     let name_node = child.child_by_field_name("name").unwrap();
+                //     let name = Name::from_node(&name_node, &db.preprocessed_text(loc.file_id()));
+                //     let type_ref =
+                //         child
+                //             .child_by_field_name("returnType")
+                //             .and_then(|type_ref_node| {
+                //                 TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id()))
+                //             });
+                //     let method = EnumStructItemData::Method(FunctionData { name, type_ref });
+                //     map.insert(items.alloc(method), NodePtr::from(&child));
+                // }
+                _ => (),
+            }
+        }
+        InFile::new(loc.file_id(), map)
+    }
+}
+
+impl HasChildSource<LocalPropertyId> for MethodmapId {
+    type Value = NodePtr;
+
+    fn child_source(&self, db: &dyn DefDatabase) -> InFile<ArenaMap<LocalPropertyId, Self::Value>> {
+        let loc = self.lookup(db).id;
+        let mut map = ArenaMap::default();
+        let tree = db.parse(loc.file_id());
+        // We use fields to get the Idx of the field, even if they are dropped at the end of the call.
+        // The Idx will be the same when we rebuild the EnumStructData.
+        // TODO: Is there a better way to do this?
+        // FIXME: Why does it feel like we are doing this twice?
+        let mut items: Arena<MethodmapItemData> = Arena::new();
+        let methodmap_node = loc.source(db, &tree).value;
+        for child in methodmap_node.children(&mut methodmap_node.walk()) {
+            match TSKind::from(child) {
+                // TSKind::methodmap_property => {
+                //     let name_node = child.child_by_field_name("name").unwrap();
+                //     let name = Name::from_node(&name_node, &db.preprocessed_text(loc.file_id()));
+                //     let type_ref_node = child.child_by_field_name("type").unwrap();
+                //     let type_ref =
+                //         TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id()))
+                //             .unwrap();
+                //     let mut getters_setters = Vec::new();
+
+                //     let property = MethodmapItemData::Property(PropertyData {
+                //         name,
+                //         type_ref,
+                //         getters_setters,
+                //     });
+                //     map.insert(items.alloc(property), NodePtr::from(&child));
+                // }
                 // TSKind::enum_struct_method => {
                 //     let name_node = child.child_by_field_name("name").unwrap();
                 //     let name = Name::from_node(&name_node, &db.preprocessed_text(loc.file_id()));

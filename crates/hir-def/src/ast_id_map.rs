@@ -127,6 +127,16 @@ impl AstIdMap {
             matches!(
                 TSKind::from(node),
                 TSKind::function_definition
+                    | TSKind::methodmap
+                    | TSKind::methodmap_property
+                    | TSKind::methodmap_property_alias
+                    | TSKind::methodmap_property_method
+                    | TSKind::methodmap_property_getter
+                    | TSKind::methodmap_property_setter
+                    | TSKind::methodmap_property_native
+                    | TSKind::methodmap_method
+                    | TSKind::methodmap_method_constructor
+                    | TSKind::methodmap_method_destructor
                     | TSKind::function_declaration
                     | TSKind::r#enum
                     | TSKind::enum_entries

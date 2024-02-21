@@ -182,6 +182,8 @@ struct ItemTreeData {
     macros: Arena<Macro>,
     enum_structs: Arena<EnumStruct>,
     fields: Arena<Field>,
+    methodmaps: Arena<Methodmap>,
+    properties: Arena<Property>,
     params: Arena<Param>,
     enums: Arena<Enum>,
     variants: Arena<Variant>,
@@ -273,6 +275,28 @@ pub struct Field {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
+pub enum MethodmapItemId {
+    Method(Idx<Function>),
+    Property(Idx<Property>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Property {
+    pub name: Name,
+    pub getters_setters: IdxRange<Function>,
+    pub type_ref: TypeRef,
+    pub ast_id: AstId,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Methodmap {
+    pub name: Name,
+    pub items: Box<[MethodmapItemId]>,
+    pub inherits: Option<Name>,
+    pub ast_id: AstId,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Enum {
     pub name: Name,
     pub variants: IdxRange<Variant>,
@@ -359,6 +383,7 @@ mod_items! {
     Variable variables,
     Macro macros,
     EnumStruct enum_structs,
+    Methodmap methodmaps,
     Enum enums,
     Variant variants,
 }
@@ -379,6 +404,7 @@ macro_rules! impl_index {
 
 impl_index! {
     fields: Field,
+    properties: Property,
 }
 
 impl<N: ItemTreeNode> Index<ItemTreeId<N>> for ItemTree {

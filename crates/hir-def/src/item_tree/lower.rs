@@ -11,8 +11,8 @@ use crate::{
 };
 
 use super::{
-    Enum, EnumStruct, EnumStructItemId, Field, Function, FunctionKind, ItemTree, Param,
-    RawVisibilityId, Variable, Variant,
+    Enum, EnumStruct, EnumStructItemId, Field, Function, FunctionKind, ItemTree, Methodmap,
+    MethodmapItemId, Param, Property, RawVisibilityId, Variable, Variant,
 };
 
 pub(super) struct Ctx<'db> {
@@ -72,6 +72,7 @@ impl<'db> Ctx<'db> {
                     }
                 }
                 TSKind::enum_struct => self.lower_enum_struct(&child),
+                TSKind::methodmap => self.lower_methodmap(&child),
                 _ => (),
             }
         }
@@ -163,23 +164,48 @@ impl<'db> Ctx<'db> {
         self.tree.top_level.push(FileItem::Enum(id));
     }
 
-    fn lower_method(&mut self, node: &tree_sitter::Node, items: &mut Vec<EnumStructItemId>) {
-        if let Some(id) = self.lower_function_(node) {
+    fn lower_enum_struct_method(
+        &mut self,
+        node: &tree_sitter::Node,
+        items: &mut Vec<EnumStructItemId>,
+    ) {
+        if let Some(id) = self.lower_function_(node, None) {
             items.push(EnumStructItemId::Method(id));
         }
     }
 
+    fn lower_methodmap_method(
+        &mut self,
+        node: &tree_sitter::Node,
+        items: &mut Vec<MethodmapItemId>,
+    ) {
+        let mut visibility = RawVisibilityId::PUBLIC;
+        if node
+            .children(&mut node.walk())
+            .any(|n| TSKind::from(n) == TSKind::anon_static)
+        {
+            visibility |= RawVisibilityId::STATIC;
+        }
+        if let Some(id) = self.lower_function_(node, visibility.into()) {
+            items.push(MethodmapItemId::Method(id));
+        }
+    }
+
     fn lower_function(&mut self, node: &tree_sitter::Node) {
-        if let Some(id) = self.lower_function_(node) {
+        if let Some(id) = self.lower_function_(node, None) {
             self.tree.top_level.push(FileItem::Function(id));
         }
     }
 
-    fn lower_function_(&mut self, node: &tree_sitter::Node) -> Option<Idx<Function>> {
+    fn lower_function_(
+        &mut self,
+        node: &tree_sitter::Node,
+        visibility: Option<RawVisibilityId>,
+    ) -> Option<Idx<Function>> {
         let kind = FunctionKind::from_node(node);
         let params = self.lower_parameters(node);
         let name_node = node.child_by_field_name("name")?;
-        let visibility = RawVisibilityId::from_node(node);
+        let visibility = visibility.unwrap_or_else(|| RawVisibilityId::from_node(node));
         let res = Function {
             name: Name::from(name_node.utf8_text(self.source.as_bytes()).unwrap()),
             kind,
@@ -217,6 +243,126 @@ impl<'db> Ctx<'db> {
         IdxRange::new(start_param_idx..end_param_idx)
     }
 
+    fn lower_methodmap(&mut self, node: &tree_sitter::Node) {
+        let Some(name_node) = node.child_by_field_name("name") else {
+            return;
+        };
+        let mut items = Vec::new();
+        node.children(&mut node.walk())
+            .for_each(|e| match TSKind::from(e) {
+                TSKind::methodmap_property => {
+                    let Some(property_name_node) = e.child_by_field_name("name") else {
+                        return;
+                    };
+                    let Some(property_type_node) = e.child_by_field_name("type") else {
+                        return;
+                    };
+                    let type_ = TypeRef::from_node(&property_type_node, &self.source).unwrap();
+
+                    let start_idx = self.next_function_idx();
+                    e.children(&mut e.walk())
+                        .for_each(|e| match TSKind::from(e) {
+                            TSKind::methodmap_property_method => {
+                                e.children(&mut e.walk()).for_each(|e| {
+                                    self.lower_property_method(&e, type_.clone(), FunctionKind::Def)
+                                })
+                            }
+                            TSKind::methodmap_property_native => {
+                                e.children(&mut e.walk()).for_each(|e| {
+                                    self.lower_property_method(
+                                        &e,
+                                        type_.clone(),
+                                        FunctionKind::Native,
+                                    )
+                                })
+                            }
+                            TSKind::methodmap_property_alias => (), //TODO: Handle this node
+                            _ => (),
+                        });
+                    let end_idx = self.next_function_idx();
+
+                    let res = Property {
+                        name: Name::from(
+                            property_name_node
+                                .utf8_text(self.source.as_bytes())
+                                .unwrap(),
+                        ),
+                        getters_setters: IdxRange::new(start_idx..end_idx),
+                        type_ref: type_,
+                        ast_id: self.source_ast_id_map.ast_id_of(&e),
+                    };
+                    let property_idx = self.tree.data_mut().properties.alloc(res);
+                    items.push(MethodmapItemId::Property(property_idx));
+                }
+                TSKind::methodmap_method
+                | TSKind::methodmap_method_constructor
+                | TSKind::methodmap_method_destructor => {
+                    self.lower_methodmap_method(&e, &mut items)
+                }
+                _ => (),
+            });
+        let inherits = node
+            .child_by_field_name("inherits")
+            .and_then(|n| n.utf8_text(self.source.as_bytes()).map(Name::from).ok());
+        let res = Methodmap {
+            name: Name::from(name_node.utf8_text(self.source.as_bytes()).unwrap()),
+            items: items.into_boxed_slice(),
+            inherits,
+            ast_id: self.source_ast_id_map.ast_id_of(node),
+        };
+        let id = self.tree.data_mut().methodmaps.alloc(res);
+        self.tree.top_level.push(FileItem::Methodmap(id));
+    }
+
+    fn lower_property_method(
+        &mut self,
+        node: &tree_sitter::Node,
+        type_: TypeRef,
+        kind: FunctionKind,
+    ) {
+        match TSKind::from(node) {
+            TSKind::methodmap_property_getter => {
+                let idx = self.next_param_idx();
+                let res = Function {
+                    name: Name::from("get"),
+                    kind,
+                    ret_type: type_.clone().into(),
+                    visibility: RawVisibilityId::PUBLIC,
+                    params: IdxRange::new(idx..idx),
+                    ast_id: self.source_ast_id_map.ast_id_of(node),
+                };
+                self.tree.data_mut().functions.alloc(res);
+            }
+            TSKind::methodmap_property_setter => {
+                let Some(param_node) = node.child_by_field_name("parameter") else {
+                    return;
+                };
+                let storage_class_node = param_node.child_by_field_name("storage_class"); // FIXME: Handle this node
+                let Some(param_type_node) = param_node.child_by_field_name("type") else {
+                    return;
+                };
+                let param = Param {
+                    type_ref: TypeRef::from_node(&param_type_node, &self.source),
+                    ast_id: self.source_ast_id_map.ast_id_of(&param_node),
+                    has_default: false,
+                };
+                let start_idx = self.next_param_idx();
+                self.tree.data_mut().params.alloc(param);
+                let end_idx = self.next_param_idx();
+                let res = Function {
+                    name: Name::from("set"),
+                    kind,
+                    ret_type: None,
+                    visibility: RawVisibilityId::NONE,
+                    params: IdxRange::new(start_idx..end_idx),
+                    ast_id: self.source_ast_id_map.ast_id_of(node),
+                };
+                self.tree.data_mut().functions.alloc(res);
+            }
+            _ => (),
+        }
+    }
+
     fn lower_enum_struct(&mut self, node: &tree_sitter::Node) {
         let Some(name_node) = node.child_by_field_name("name") else {
             return;
@@ -241,9 +387,7 @@ impl<'db> Ctx<'db> {
                     let field_idx = self.tree.data_mut().fields.alloc(res);
                     items.push(EnumStructItemId::Field(field_idx));
                 }
-                TSKind::enum_struct_method => {
-                    self.lower_method(&e, &mut items);
-                }
+                TSKind::enum_struct_method => self.lower_enum_struct_method(&e, &mut items),
                 _ => (),
             });
         let res = EnumStruct {
@@ -261,6 +405,15 @@ impl<'db> Ctx<'db> {
                 .data
                 .as_ref()
                 .map_or(0, |data| data.params.len() as u32),
+        ))
+    }
+
+    fn next_function_idx(&self) -> Idx<Function> {
+        Idx::from_raw(RawIdx::from(
+            self.tree
+                .data
+                .as_ref()
+                .map_or(0, |data| data.functions.len() as u32),
         ))
     }
 

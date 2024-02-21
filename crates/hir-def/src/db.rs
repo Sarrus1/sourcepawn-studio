@@ -12,12 +12,12 @@ use vfs::{AnchoredPath, FileId};
 use crate::{
     ast_id_map::AstIdMap,
     body::{scope::ExprScopes, Body, BodySourceMap},
-    data::{EnumStructData, FunctionData, MacroData},
+    data::{EnumStructData, FunctionData, MacroData, MethodmapData},
     infer,
     item_tree::{ItemTree, Name},
     BlockId, BlockLoc, DefWithBodyId, EnumId, EnumLoc, EnumStructId, EnumStructLoc, FileDefId,
     FileItem, FunctionId, FunctionLoc, GlobalId, GlobalLoc, InferenceResult, Intern, ItemTreeId,
-    Lookup, MacroId, MacroLoc, NodePtr, TreeId, VariantId, VariantLoc,
+    Lookup, MacroId, MacroLoc, MethodmapId, MethodmapLoc, NodePtr, TreeId, VariantId, VariantLoc,
 };
 
 #[salsa::query_group(InternDatabaseStorage)]
@@ -29,6 +29,8 @@ pub trait InternDatabase: SourceDatabase {
     fn intern_macro(&'tree self, loc: MacroLoc) -> MacroId;
     #[salsa::interned]
     fn intern_enum_struct(&'tree self, loc: EnumStructLoc) -> EnumStructId;
+    #[salsa::interned]
+    fn intern_methodmap(&'tree self, loc: MethodmapLoc) -> MethodmapId;
     #[salsa::interned]
     fn intern_enum(&'tree self, loc: EnumLoc) -> EnumId;
     #[salsa::interned]
@@ -80,6 +82,9 @@ pub trait DefDatabase: InternDatabase + PreprocDatabase {
 
     #[salsa::invoke(EnumStructData::enum_struct_data_query)]
     fn enum_struct_data(&self, id: EnumStructId) -> Arc<EnumStructData>;
+
+    #[salsa::invoke(MethodmapData::methodmap_data_query)]
+    fn methodmap_data(&self, id: MethodmapId) -> Arc<MethodmapData>;
     // endregion: data
 
     // region: infer
@@ -226,6 +231,18 @@ impl DefMap {
                         enum_struct.name.clone(),
                         FileDefId::EnumStructId(enum_struct_id),
                     );
+                }
+                FileItem::Methodmap(id) => {
+                    let methodmap = &item_tree[*id];
+                    let methodmap_id = MethodmapLoc {
+                        container: file_id.into(),
+                        id: ItemTreeId {
+                            tree: tree_id,
+                            value: *id,
+                        },
+                    }
+                    .intern(db);
+                    res.declare(methodmap.name.clone(), FileDefId::MethodmapId(methodmap_id));
                 }
                 FileItem::Macro(id) => {
                     let macro_ = &item_tree[*id];

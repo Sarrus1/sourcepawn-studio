@@ -4,7 +4,7 @@ use crate::db::DefDatabase;
 
 use super::{
     Enum, EnumStruct, EnumStructItemId, Field, FileItem, Function, FunctionKind, ItemTree, Macro,
-    RawVisibilityId, Variable, Variant,
+    Methodmap, MethodmapItemId, Property, RawVisibilityId, Variable, Variant,
 };
 
 pub fn print_item_tree(_db: &dyn DefDatabase, tree: &ItemTree) -> String {
@@ -16,6 +16,7 @@ pub fn print_item_tree(_db: &dyn DefDatabase, tree: &ItemTree) -> String {
             FileItem::EnumStruct(idx) => printer.print_enum_struct(idx),
             FileItem::Enum(idx) => printer.print_enum(idx),
             FileItem::Macro(idx) => printer.print_macro(idx),
+            FileItem::Methodmap(idx) => printer.print_methodmap(idx),
             FileItem::Variant(_) => (),
         }
         printer.newline();
@@ -122,7 +123,7 @@ impl<'a> Printer<'a> {
         } = &self.tree[*idx];
         self.push(format!("// {}", ast_id).as_str());
         self.newline();
-        self.push(&format!("{} {{", name.0));
+        self.push(&format!("enum struct {} {{", name.0));
         self.indent();
         self.newline();
         for item_idx in items.iter() {
@@ -139,6 +140,53 @@ impl<'a> Printer<'a> {
                     self.newline();
                 }
                 EnumStructItemId::Method(method_idx) => self.print_function(method_idx),
+            }
+        }
+        self.dedent();
+        self.newline();
+        self.push("}");
+        self.newline();
+    }
+
+    pub fn print_methodmap(&mut self, idx: &Idx<Methodmap>) {
+        let Methodmap {
+            name,
+            items,
+            inherits,
+            ast_id,
+            ..
+        } = &self.tree[*idx];
+        self.push(format!("// {}", ast_id).as_str());
+        self.newline();
+        self.push(&format!("methodmap {}", name.0));
+        if let Some(inherits) = inherits {
+            self.push(&format!(" < {}", inherits.0));
+        }
+        self.push(" {");
+        self.indent();
+        self.newline();
+        for item_idx in items.iter() {
+            match item_idx {
+                &MethodmapItemId::Property(property_idx) => {
+                    let Property {
+                        name,
+                        type_ref,
+                        getters_setters,
+                        ast_id,
+                    } = &self.tree[property_idx];
+                    self.push(format!("// {}", ast_id).as_str());
+                    self.newline();
+                    self.push(&format!("property {} {} {{", type_ref.to_str(), name.0));
+                    self.indent();
+                    self.newline();
+                    for fn_idx in getters_setters.clone() {
+                        self.print_function(&fn_idx);
+                    }
+                    self.dedent();
+                    self.push("}");
+                    self.newline();
+                }
+                MethodmapItemId::Method(method_idx) => self.print_function(method_idx),
             }
         }
         self.dedent();
@@ -192,6 +240,7 @@ impl<'a> Printer<'a> {
             self.push("}");
         } else {
             self.push(");");
+            self.dedent();
         }
         self.newline();
     }
