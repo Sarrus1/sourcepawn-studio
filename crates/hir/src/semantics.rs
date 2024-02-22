@@ -404,7 +404,6 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         source: Arc<str>,
     ) -> Option<DefResolution> {
         let def_map = self.db.file_def_map(file_id);
-        let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
         let parent = node.parent()?;
 
         let parent_name = container
@@ -415,54 +414,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         match TSKind::from(body_node) {
             TSKind::block => match def_map.get_from_str(parent_name)? {
                 hir_def::FileDefId::FunctionId(id) => {
-                    let def = hir_def::DefWithBodyId::FunctionId(id);
-                    let offset = node.start_position();
-                    if TSKind::field_access == TSKind::from(parent) && is_field_receiver_node(&node)
-                    {
-                        let analyzer = SourceAnalyzer::new_for_body(
-                            self.db,
-                            def,
-                            InFile::new(file_id, body_node),
-                            Some(offset),
-                        );
-                        if let Some(grand_parent) = parent.parent() {
-                            if TSKind::call_expression == TSKind::from(&grand_parent) {
-                                let method = analyzer.resolve_method(self.db, &node, &parent)?;
-                                return Some(DefResolution::Function(method));
-                            }
-                        }
-                        let field = analyzer.resolve_field(self.db, &node, &parent)?;
-                        return Some(DefResolution::Field(field));
-                    }
-
-                    let analyzer = SourceAnalyzer::new_for_body_no_infer(
-                        self.db,
-                        def,
-                        InFile::new(file_id, body_node),
-                        Some(offset),
-                    );
-                    let value_ns = analyzer.resolver.resolve_ident(text);
-                    match value_ns? {
-                        // TODO: Maybe hide the match logic in a function/macro?
-                        ValueNs::FunctionId(id) => {
-                            DefResolution::Function(Function::from(id.value)).into()
-                        }
-                        ValueNs::LocalId(expr) => DefResolution::Local(Local::from(expr)).into(),
-                        ValueNs::MacroId(id) => DefResolution::Macro(Macro::from(id.value)).into(),
-                        ValueNs::GlobalId(id) => {
-                            DefResolution::Global(Global::from(id.value)).into()
-                        }
-                        ValueNs::EnumStructId(id) => {
-                            DefResolution::EnumStruct(EnumStruct::from(id.value)).into()
-                        }
-                        ValueNs::MethodmapId(id) => {
-                            DefResolution::Methodmap(Methodmap::from(id.value)).into()
-                        }
-                        ValueNs::EnumId(id) => DefResolution::Enum(Enum::from(id.value)).into(),
-                        ValueNs::VariantId(id) => {
-                            DefResolution::Variant(Variant::from(id.value)).into()
-                        }
-                    }
+                    self.function_node_to_def_(file_id, container, parent, node, source, id)
                 }
                 _ => unreachable!("Expected a function"),
             },
