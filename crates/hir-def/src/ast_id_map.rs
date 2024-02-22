@@ -130,10 +130,10 @@ impl AstIdMap {
                     | TSKind::methodmap
                     | TSKind::methodmap_property
                     | TSKind::methodmap_property_alias
+                    | TSKind::methodmap_property_native
                     | TSKind::methodmap_property_method
                     | TSKind::methodmap_property_getter
                     | TSKind::methodmap_property_setter
-                    | TSKind::methodmap_property_native
                     | TSKind::methodmap_native
                     | TSKind::methodmap_native_constructor
                     | TSKind::methodmap_native_destructor

@@ -386,3 +386,54 @@ methodmap Foo {
 "#,
     ));
 }
+
+#[test]
+fn methodmap_property_native_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    property int Foo {
+        public native get();
+                       |
+                       ^
+        }
+    }
+}
+"#,
+    ));
+}
+
+#[test]
+fn methodmap_property_native_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    property int Foo {
+        public native set(int foo);
+                       |
+                       ^
+        }
+    }
+}
+"#,
+    ));
+}
+
+#[test]
+fn methodmap_property_native_3() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    property int Foo {
+        public native set(int foo);
+                               |
+                               ^
+        }
+    }
+}
+"#,
+    ));
+}

@@ -69,7 +69,7 @@ impl Body {
                 } = func.source(db, &tree);
                 let body_node = func_node.child_by_field_name("body");
                 let params_list = match TSKind::from(func_node) {
-                    TSKind::methodmap_property_method => {
+                    TSKind::methodmap_property_native | TSKind::methodmap_property_method => {
                         if let Some(setter_node) = func_node
                             .children(&mut func_node.walk())
                             .find(|child| TSKind::from(child) == TSKind::methodmap_property_setter)

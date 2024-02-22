@@ -89,6 +89,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             | TSKind::methodmap_method
             | TSKind::methodmap_method_constructor
             | TSKind::methodmap_method_destructor
+            | TSKind::methodmap_property_native
             | TSKind::methodmap_property_method => self
                 .fn_to_def(src)
                 .map(Function::from)
@@ -181,6 +182,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 | TSKind::methodmap_method_destructor
                 | TSKind::methodmap_property_getter
                 | TSKind::methodmap_property_setter
+                | TSKind::methodmap_property_native
                 | TSKind::methodmap_property_method
         ) {
             if let Some(candidate) = container.parent() {
@@ -201,7 +203,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             TSKind::methodmap_property_getter | TSKind::methodmap_property_setter => {
                 self.property_getter_setter_node_to_def(file_id, container, *node, source)
             }
-            TSKind::methodmap_property_method => {
+            TSKind::methodmap_property_native | TSKind::methodmap_property_method => {
                 self.property_method_node_to_def(file_id, container, *node, source)
             }
             TSKind::enum_struct_method

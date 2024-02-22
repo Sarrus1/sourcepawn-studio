@@ -89,7 +89,7 @@ pub(crate) fn goto_definition(
 
     let mut name_range = def_node.range();
     let inner_name_range = match TSKind::from(def_node) {
-        TSKind::methodmap_property_method => {
+        TSKind::methodmap_property_native | TSKind::methodmap_property_method => {
             def_node.children(&mut def_node.walk()).find_map(|child| {
                 if matches!(
                     TSKind::from(child),

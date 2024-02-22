@@ -97,6 +97,7 @@ impl SourceToDefCtx<'_, '_> {
                 | TSKind::methodmap_method
                 | TSKind::methodmap_method_constructor
                 | TSKind::methodmap_method_destructor
+                | TSKind::methodmap_property_native
                 | TSKind::methodmap_property_method => {
                     let func =
                         self.fn_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
