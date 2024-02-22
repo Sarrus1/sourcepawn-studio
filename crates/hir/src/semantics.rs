@@ -5,7 +5,7 @@ use std::{cell::RefCell, fmt, ops, sync::Arc};
 use base_db::{is_field_receiver_node, is_name_node, Tree};
 use fxhash::FxHashMap;
 use hir_def::{
-    resolve_include_node, resolver::ValueNs, src, FunctionId, InFile, Name, NodePtr, PropertyItem,
+    resolve_include_node, resolver::ValueNs, FunctionId, InFile, Name, NodePtr, PropertyItem,
 };
 use syntax::TSKind;
 use vfs::FileId;
@@ -14,8 +14,8 @@ use crate::{
     db::HirDatabase,
     source_analyzer::SourceAnalyzer,
     source_to_def::{SourceToDefCache, SourceToDefCtx},
-    DefResolution, Enum, EnumStruct, Field, File, Function, Global, Local, Macro, Methodmap,
-    Property, Variant,
+    Attribute, DefResolution, Enum, EnumStruct, Field, File, Function, Global, Local, Macro,
+    Methodmap, Property, Variant,
 };
 
 /// Primary API to get semantic information, like types, from syntax trees.
@@ -381,8 +381,10 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                     return Some(DefResolution::Function(method));
                 }
             }
-            let field = analyzer.resolve_field(self.db, &node, &parent)?;
-            return Some(DefResolution::Field(field));
+            match analyzer.resolve_attribute(self.db, &node, &parent)? {
+                Attribute::Field(field) => return Some(DefResolution::Field(field)),
+                Attribute::Property(property) => return Some(DefResolution::Property(property)),
+            }
         }
 
         let analyzer = SourceAnalyzer::new_for_body_no_infer(

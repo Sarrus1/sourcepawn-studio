@@ -1,6 +1,6 @@
-use hir_def::{DefWithBodyId, ExprId, FieldId, FileDefId, PropertyId};
+use hir_def::{AttributeId, DefWithBodyId, ExprId, FieldId, FileDefId, PropertyId};
 
-use crate::{DefWithBody, Field, FileDef, Property};
+use crate::{Attribute, DefWithBody, Field, FileDef, Property};
 
 macro_rules! from_id {
     ($(($id:path, $ty:path)),* $(,)?) => {$(
@@ -65,6 +65,15 @@ impl From<PropertyId> for Property {
         Property {
             parent: def.parent.into(),
             id: def.local_id,
+        }
+    }
+}
+
+impl From<AttributeId> for Attribute {
+    fn from(id: AttributeId) -> Self {
+        match id {
+            AttributeId::FieldId(it) => Attribute::Field(it.into()),
+            AttributeId::PropertyId(it) => Attribute::Property(it.into()),
         }
     }
 }

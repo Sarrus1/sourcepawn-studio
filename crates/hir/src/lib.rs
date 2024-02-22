@@ -333,6 +333,14 @@ pub struct Field {
     pub(crate) id: LocalFieldId,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Attribute {
+    Field(Field),
+    Property(Property),
+}
+
+impl_from!(Field, Property for Attribute);
+
 /// A single local variable definition.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Local {

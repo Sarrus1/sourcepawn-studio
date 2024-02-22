@@ -23,7 +23,7 @@ pub use data::PropertyItem;
 pub use db::resolve_include_node;
 pub use db::DefDatabase;
 pub use hir::ExprId;
-pub use infer::{InferenceDiagnostic, InferenceResult};
+pub use infer::{AttributeId, InferenceDiagnostic, InferenceResult};
 pub use item_tree::{print_item_tree, FileItem, Name};
 
 trait Intern {

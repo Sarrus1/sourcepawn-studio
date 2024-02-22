@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use fxhash::FxHashMap;
+use stdx::impl_from;
 
 use crate::{
     body::Body,
@@ -8,7 +9,7 @@ use crate::{
     hir::{type_ref::TypeRef, BinaryOp, Expr},
     item_tree::Name,
     resolver::{HasResolver, Resolver, ValueNs},
-    DefDatabase, DefWithBodyId, ExprId, FieldId, FileDefId, FunctionId, Lookup,
+    DefDatabase, DefWithBodyId, ExprId, FieldId, FileDefId, FunctionId, Lookup, PropertyId,
 };
 
 pub(crate) fn infer_query(db: &dyn DefDatabase, def: DefWithBodyId) -> Arc<InferenceResult> {
@@ -40,11 +41,19 @@ pub enum InferenceDiagnostic {
     },
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum AttributeId {
+    FieldId(FieldId),
+    PropertyId(PropertyId),
+}
+
+impl_from!(FieldId, PropertyId for AttributeId);
+
 /// The result of type inference: A mapping from expressions and patterns to types.
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
 pub struct InferenceResult {
-    /// For each field access expr, records the field it resolves to.
-    field_resolutions: FxHashMap<ExprId, FieldId>,
+    /// For each field/property access expr, records the field/property it resolves to.
+    attribute_resolutions: FxHashMap<ExprId, AttributeId>,
     /// For each method call expr, records the function it resolves to.
     method_resolutions: FxHashMap<ExprId, FunctionId>,
 
@@ -52,8 +61,8 @@ pub struct InferenceResult {
 }
 
 impl InferenceResult {
-    pub fn field_resolution(&self, expr: ExprId) -> Option<FieldId> {
-        self.field_resolutions.get(&expr).copied()
+    pub fn attribute_resolution(&self, expr: ExprId) -> Option<AttributeId> {
+        self.attribute_resolutions.get(&expr).copied()
     }
 
     pub fn method_resolution(&self, expr: ExprId) -> Option<FunctionId> {
@@ -189,33 +198,66 @@ impl InferenceContext<'_> {
             return None;
         };
         let def_map = self.db.file_def_map(self.owner.file_id(self.db));
-        let res = def_map.get(&type_name)?;
-        let FileDefId::EnumStructId(it) = res else {
-            return None;
-        };
-        let data = self.db.enum_struct_data(it);
-        if let Some(item) = data.items(name) {
-            match data.item(item) {
-                EnumStructItemData::Field(_) => {
-                    let field_id = FieldId {
-                        parent: it,
-                        local_id: item,
-                    };
-                    self.result.field_resolutions.insert(*receiver, field_id);
-                    return Some(data.field_type(item)?.clone());
-                }
-                EnumStructItemData::Method(_) => {
-                    self.result
-                        .diagnostics
-                        .push(InferenceDiagnostic::UnresolvedField {
-                            expr: *receiver,
-                            receiver: type_name,
-                            name: name.clone(),
-                            method_with_same_name_exists: true,
-                        });
-                    return None;
+        match def_map.get(&type_name)? {
+            FileDefId::EnumStructId(it) => {
+                let data = self.db.enum_struct_data(it);
+                if let Some(item) = data.items(name) {
+                    match data.item(item) {
+                        EnumStructItemData::Field(_) => {
+                            let field_id = FieldId {
+                                parent: it,
+                                local_id: item,
+                            };
+                            self.result
+                                .attribute_resolutions
+                                .insert(*receiver, field_id.into());
+                            return Some(data.field_type(item)?.clone());
+                        }
+                        EnumStructItemData::Method(_) => {
+                            self.result
+                                .diagnostics
+                                .push(InferenceDiagnostic::UnresolvedField {
+                                    expr: *receiver,
+                                    receiver: type_name,
+                                    name: name.clone(),
+                                    method_with_same_name_exists: true,
+                                });
+                            return None;
+                        }
+                    }
                 }
             }
+            FileDefId::MethodmapId(it) => {
+                let data = self.db.methodmap_data(it);
+                if let Some(item) = data.items(name) {
+                    match data.item(item) {
+                        MethodmapItemData::Property(_) => {
+                            let property_id = PropertyId {
+                                parent: it,
+                                local_id: item,
+                            };
+                            self.result
+                                .attribute_resolutions
+                                .insert(*receiver, property_id.into());
+                            return Some(data.property_type(item)?.clone());
+                        }
+                        MethodmapItemData::Method(_)
+                        | MethodmapItemData::Constructor(_)
+                        | MethodmapItemData::Destructor(_) => {
+                            self.result
+                                .diagnostics
+                                .push(InferenceDiagnostic::UnresolvedField {
+                                    expr: *receiver,
+                                    receiver: type_name,
+                                    name: name.clone(),
+                                    method_with_same_name_exists: true,
+                                });
+                            return None;
+                        }
+                    }
+                }
+            }
+            _ => unreachable!("Field access is only allowed on enum structs and methodmaps."),
         }
         self.result
             .diagnostics

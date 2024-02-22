@@ -265,6 +265,26 @@ methodmap Foo {
 }
 
 #[test]
+fn methodmap_property_3() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    property int Foo {}
+}
+
+Foo foo;
+
+void main() {
+    foo.Foo;
+         |
+         ^
+}
+"#,
+    ));
+}
+
+#[test]
 fn methodmap_property_getter_1() {
     assert_json_snapshot!(goto_definition(
         r#"
