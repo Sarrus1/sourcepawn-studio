@@ -5,7 +5,7 @@ use vfs::FileId;
 
 use crate::{
     ast_id_map::AstIdMap,
-    hir::{type_ref::TypeRef, BinaryOp, Expr, ExprId},
+    hir::{type_ref::TypeRef, Expr, ExprId, FloatTypeWrapper, Literal},
     item_tree::Name,
     BlockLoc, DefDatabase, DefWithBodyId, InFile, NodePtr,
 };
@@ -147,16 +147,33 @@ impl ExprCollector<'_> {
                 let child = expr.children(&mut expr.walk()).next()?;
                 Some(self.collect_expr(child))
             }
+            TSKind::unary_expression | TSKind::update_expression => {
+                // For our needs, unary and update expressions are the same
+                let expr = expr.child_by_field_name("argument")?;
+                let op = expr.child_by_field_name("operator").map(TSKind::from);
+                let unary = Expr::UnaryOp {
+                    expr: self.collect_expr(expr),
+                    op,
+                };
+                Some(self.alloc_expr(unary, NodePtr::from(&expr)))
+            }
             TSKind::assignment_expression | TSKind::binary_expression => {
                 let lhs = self.collect_expr(expr.child_by_field_name("left")?);
                 let rhs = self.collect_expr(expr.child_by_field_name("right")?);
                 let op = expr.child_by_field_name("operator").map(TSKind::from);
-                let assign = Expr::BinaryOp {
-                    lhs,
-                    rhs,
-                    op: Some(BinaryOp::Assignment { op }),
-                };
+                let assign = Expr::BinaryOp { lhs, rhs, op };
                 Some(self.alloc_expr(assign, NodePtr::from(&expr)))
+            }
+            TSKind::ternary_expression => {
+                let condition = self.collect_expr(expr.child_by_field_name("condition")?);
+                let then_branch = self.collect_expr(expr.child_by_field_name("consequence")?);
+                let else_branch = self.collect_expr(expr.child_by_field_name("alternative")?);
+                let ternary = Expr::TernaryOp {
+                    condition,
+                    then_branch,
+                    else_branch,
+                };
+                Some(self.alloc_expr(ternary, NodePtr::from(&expr)))
             }
             TSKind::call_expression => {
                 let function = expr.child_by_field_name("function")?;
@@ -214,11 +231,81 @@ impl ExprCollector<'_> {
                 };
                 Some(self.alloc_expr(new, NodePtr::from(&expr)))
             }
+            TSKind::view_as | TSKind::old_type_cast => {
+                let expr = expr.child_by_field_name("value")?;
+                let type_ref = expr
+                    .child_by_field_name("type")
+                    .and_then(|type_node| TypeRef::from_node(&type_node, self.source))?;
+                let view_as = Expr::ViewAs {
+                    expr: self.collect_expr(expr),
+                    type_ref,
+                };
+                Some(self.alloc_expr(view_as, NodePtr::from(&expr)))
+            }
             TSKind::variable_declaration_statement => Some(self.collect_variable_declaration(expr)),
             TSKind::identifier | TSKind::this => {
                 let name = Name::from_node(&expr, self.source);
                 Some(self.alloc_expr(Expr::Ident(name), NodePtr::from(&expr)))
             }
+            TSKind::int_literal => {
+                let text = expr.utf8_text(self.source.as_bytes()).unwrap();
+                let int = text.parse().ok()?;
+                Some(self.alloc_expr(Expr::Literal(Literal::Int(int)), NodePtr::from(&expr)))
+            }
+            TSKind::float_literal => {
+                let text = expr.utf8_text(self.source.as_bytes()).unwrap();
+                let float = FloatTypeWrapper::new(text.parse().ok()?);
+                Some(self.alloc_expr(Expr::Literal(Literal::Float(float)), NodePtr::from(&expr)))
+            }
+            TSKind::char_literal => {
+                let text = expr.utf8_text(self.source.as_bytes()).unwrap();
+                let char = text.chars().nth(1)?;
+                Some(self.alloc_expr(Expr::Literal(Literal::Char(char)), NodePtr::from(&expr)))
+            }
+            TSKind::string_literal | TSKind::concatenated_string => {
+                // FIXME: How do we want to handle string literals?
+                None
+            }
+            TSKind::bool_literal => {
+                let text = expr.utf8_text(self.source.as_bytes()).unwrap();
+                let bool = text.parse().ok()?;
+                Some(self.alloc_expr(Expr::Literal(Literal::Bool(bool)), NodePtr::from(&expr)))
+            }
+            TSKind::null => {
+                Some(self.alloc_expr(Expr::Literal(Literal::Null), NodePtr::from(&expr)))
+            }
+            TSKind::parenthesized_expression => {
+                let expr = expr.child_by_field_name("expression")?;
+                self.maybe_collect_expr(expr)
+            }
+            TSKind::comma_expression => {
+                let mut exprs = vec![];
+                for child in expr.children(&mut expr.walk()) {
+                    exprs.push(self.collect_expr(child));
+                }
+                Some(self.alloc_expr(
+                    Expr::CommaExpr(exprs.into_boxed_slice()),
+                    NodePtr::from(&expr),
+                ))
+            }
+            TSKind::sizeof_expression => {
+                let expr = expr.child_by_field_name("type")?;
+                // For Sourcepawn, sizeof as a unary operator will do fine.
+                let sizeof = Expr::UnaryOp {
+                    expr: self.collect_expr(expr),
+                    op: Some(TSKind::sizeof_expression),
+                };
+                Some(self.alloc_expr(sizeof, NodePtr::from(&expr)))
+            }
+            TSKind::array_scope_access | TSKind::scope_access => {
+                let field = expr.child_by_field_name("field")?;
+                let access = Expr::ScopeAccess {
+                    scope: self.collect_expr(expr.child_by_field_name("scope")?),
+                    field: Name::from_node(&field, self.source),
+                };
+                Some(self.alloc_expr(access, NodePtr::from(&expr)))
+            }
+            TSKind::array_indexed_access | TSKind::array_literal => None, // FIXME: How do we want to handle these?
             _ => {
                 log::warn!("Unhandled expression: {:?}", expr);
                 None

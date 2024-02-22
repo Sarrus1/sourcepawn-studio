@@ -1,3 +1,5 @@
+use std::fmt;
+
 use la_arena::Idx;
 use smallvec::SmallVec;
 use syntax::TSKind;
@@ -30,18 +32,36 @@ pub enum Expr {
         id: Option<BlockId>,
         statements: Box<[ExprId]>,
     },
+    CommaExpr(Box<[ExprId]>),
     New {
         constructor: ExprId,
         args: Box<[ExprId]>,
+    },
+    ViewAs {
+        expr: ExprId,
+        type_ref: TypeRef,
     },
     FieldAccess {
         target: ExprId,
         name: Name,
     },
+    ScopeAccess {
+        scope: ExprId,
+        field: Name,
+    },
+    UnaryOp {
+        expr: ExprId,
+        op: Option<TSKind>,
+    },
     BinaryOp {
         lhs: ExprId,
         rhs: ExprId,
-        op: Option<BinaryOp>,
+        op: Option<TSKind>,
+    },
+    TernaryOp {
+        condition: ExprId,
+        then_branch: ExprId,
+        else_branch: ExprId,
     },
     Call {
         callee: ExprId,
@@ -58,9 +78,44 @@ pub enum Expr {
         type_ref: Option<TypeRef>,
         initializer: Option<ExprId>,
     },
+    Literal(Literal),
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum BinaryOp {
-    Assignment { op: Option<TSKind> },
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum Literal {
+    String(Box<str>),
+    Char(char),
+    Bool(bool),
+    Int(i64),
+    Null,
+    // Here we are using a wrapper around float because f32 and f64 do not implement Eq, so they
+    // could not be used directly here, to understand how the wrapper works go to definition of
+    // FloatTypeWrapper
+    Float(FloatTypeWrapper),
+}
+
+// We convert float values into bits and that's how we don't need to deal with f32 and f64.
+// For PartialEq, bits comparison should work, as ordering is not important
+// https://github.com/rust-lang/rust-analyzer/issues/12380#issuecomment-1137284360
+#[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
+pub struct FloatTypeWrapper(u64);
+
+impl FloatTypeWrapper {
+    pub fn new(value: f64) -> Self {
+        Self(value.to_bits())
+    }
+
+    pub fn into_f64(self) -> f64 {
+        f64::from_bits(self.0)
+    }
+
+    pub fn into_f32(self) -> f32 {
+        f64::from_bits(self.0) as f32
+    }
+}
+
+impl fmt::Display for FloatTypeWrapper {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", f64::from_bits(self.0))
+    }
 }

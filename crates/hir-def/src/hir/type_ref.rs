@@ -34,7 +34,9 @@ pub enum TypeRef {
 
 impl TypeRef {
     pub fn from_node(node: &Node, source: &str) -> Option<Self> {
-        match node.utf8_text(source.as_bytes()).ok()? {
+        let mut text = node.utf8_text(source.as_bytes()).ok()?;
+        text = text.strip_suffix(':').unwrap_or(text);
+        match text {
             "int" => Some(TypeRef::Int),
             "bool" => Some(TypeRef::Bool),
             "float" => Some(TypeRef::Float),

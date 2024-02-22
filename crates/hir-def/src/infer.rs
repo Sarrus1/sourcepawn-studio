@@ -6,15 +6,15 @@ use stdx::impl_from;
 use crate::{
     body::Body,
     data::{EnumStructItemData, MethodmapItemData},
-    hir::{type_ref::TypeRef, BinaryOp, Expr},
+    hir::{type_ref::TypeRef, Expr, Literal},
     item_tree::Name,
     resolver::{HasResolver, Resolver, ValueNs},
-    DefDatabase, DefWithBodyId, ExprId, FieldId, FileDefId, FunctionId, Lookup, PropertyId,
+    DefDatabase, DefWithBodyId, ExprId, FieldId, FunctionId, Lookup, PropertyId,
 };
 
 pub(crate) fn infer_query(db: &dyn DefDatabase, def: DefWithBodyId) -> Arc<InferenceResult> {
     let body = db.body(def);
-    let resolver = def.resolver(db); // FIXME: The resolver is not properly initialized yet...
+    let resolver = def.resolver(db);
     let mut ctx = InferenceContext::new(db, def, &body, resolver);
     match def {
         DefWithBodyId::FunctionId(it) => {
@@ -110,6 +110,13 @@ impl InferenceContext<'_> {
                 self.resolver.reset_to_guard(g);
                 None
             }
+            Expr::CommaExpr(exprs) => {
+                let mut ty = None;
+                for expr in exprs.iter() {
+                    ty = self.infer_expr(expr);
+                }
+                ty
+            }
             Expr::New { constructor, args } => {
                 for arg in args.iter() {
                     self.infer_expr(arg);
@@ -117,12 +124,37 @@ impl InferenceContext<'_> {
                 self.infer_expr(constructor)
             }
             Expr::FieldAccess { target, name } => self.infer_field_access(expr, target, name),
-            Expr::BinaryOp { lhs, rhs, op } => {
-                let _lhs_ty = self.infer_expr(lhs);
-                let _rhs_ty = self.infer_expr(rhs);
-                match op.as_ref()? {
-                    BinaryOp::Assignment { op: _ } => None,
-                }
+            Expr::UnaryOp { expr, .. } => self.infer_expr(expr),
+            Expr::BinaryOp { lhs, rhs, .. } => {
+                let _ = self.infer_expr(lhs);
+                // Assume the type of the left-hand side is the same as the right-hand side.
+                self.infer_expr(rhs)
+            }
+            Expr::TernaryOp {
+                condition,
+                then_branch,
+                else_branch,
+            } => {
+                self.infer_expr(condition);
+                let _ = self.infer_expr(then_branch);
+                // Assume the type of the then branch is the same as the else branch.
+                self.infer_expr(else_branch)
+            }
+            Expr::ScopeAccess { scope, field } => self.infer_field_access(expr, scope, field),
+            Expr::ViewAs { expr, type_ref } => {
+                let _ = self.infer_expr(expr);
+                Some(type_ref.clone())
+            }
+            Expr::Literal(lit) => {
+                let ty = match lit {
+                    Literal::Int(_) => TypeRef::Int,
+                    Literal::Bool(_) => TypeRef::Bool,
+                    Literal::Float(_) => TypeRef::Float,
+                    Literal::Char(_) => TypeRef::Char,
+                    Literal::String(_) => TypeRef::OldString,
+                    Literal::Null => TypeRef::Void,
+                };
+                Some(ty)
             }
             Expr::Ident(name) => {
                 let name: String = name.clone().into();
@@ -151,7 +183,13 @@ impl InferenceContext<'_> {
                         let item_tree = self.db.file_item_tree(it.file_id);
                         TypeRef::Name(item_tree[it.value.lookup(self.db).id].name.clone()).into()
                     }
-                    _ => todo!(),
+                    ValueNs::FunctionId(it) => {
+                        let item_tree = self.db.file_item_tree(it.file_id);
+                        item_tree[it.value.lookup(self.db).id.value]
+                            .ret_type
+                            .clone()
+                    }
+                    ValueNs::VariantId(_) | ValueNs::EnumId(_) | ValueNs::MacroId(_) => None,
                 }
             }
             Expr::MethodCall {
@@ -163,19 +201,7 @@ impl InferenceContext<'_> {
                 for arg in args.iter() {
                     self.infer_expr(arg);
                 }
-                let Expr::Ident(callee) = &self.body[*callee] else {
-                    panic!("Callees are identifiers.")
-                };
-                let name: String = callee.clone().into();
-                match self.resolver.resolve_ident(&name)? {
-                    ValueNs::FunctionId(it) => {
-                        let item_tree = self.db.file_item_tree(it.file_id);
-                        item_tree[it.value.lookup(self.db).id.value]
-                            .ret_type
-                            .clone()
-                    }
-                    _ => todo!(),
-                }
+                self.infer_expr(callee)
             }
             Expr::Missing | Expr::Decl(_) | Expr::Binding { .. } => None,
         }

@@ -175,11 +175,17 @@ fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope
         }
         // These expressions do not introduce any declarations.
         Expr::Missing
+        | Expr::CommaExpr { .. }
+        | Expr::ScopeAccess { .. }
         | Expr::Ident(_)
         | Expr::New { .. }
+        | Expr::ViewAs { .. }
         | Expr::FieldAccess { .. }
         | Expr::BinaryOp { .. }
+        | Expr::UnaryOp { .. }
+        | Expr::TernaryOp { .. }
         | Expr::Call { .. }
-        | Expr::MethodCall { .. } => (),
+        | Expr::MethodCall { .. }
+        | Expr::Literal(_) => (),
     };
 }

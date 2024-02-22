@@ -148,7 +148,7 @@ impl ChildContainer {
             ChildContainer::FileId(id) => id.child_by_source(db, file_id),
             ChildContainer::EnumStructId(id) => id.child_by_source(db, file_id),
             ChildContainer::MethodmapId(id) => id.child_by_source(db, file_id),
-            _ => todo!(),
+            _ => unreachable!(),
         }
     }
 }
