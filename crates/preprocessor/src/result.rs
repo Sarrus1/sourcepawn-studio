@@ -33,6 +33,15 @@ impl PreprocessingResult {
         }
     }
 
+    pub fn sort_offsets(&mut self) {
+        for offsets in self.offsets.values_mut() {
+            offsets.sort_by(|a, b| match a.range.start.cmp(&b.range.start) {
+                std::cmp::Ordering::Equal => a.range.end.cmp(&b.range.end),
+                ord => ord,
+            });
+        }
+    }
+
     pub fn default(text: &str) -> Self {
         Self {
             preprocessed_text: text.to_string().into(),

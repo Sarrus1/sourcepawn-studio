@@ -150,6 +150,18 @@ impl Config {
         )
     }
 
+    pub fn semantics_tokens_augments_syntax_tokens(&self) -> bool {
+        try_!(
+            self.caps
+                .text_document
+                .as_ref()?
+                .semantic_tokens
+                .as_ref()?
+                .augments_syntax_tokens?
+        )
+        .unwrap_or(false)
+    }
+
     pub fn hover(&self) -> HoverConfig {
         HoverConfig {
             // TODO: Impl these configs

@@ -2,6 +2,7 @@ use std::{hash::Hash, sync::Arc};
 
 use include::file_includes_query;
 use input::{SourceRoot, SourceRootId};
+use syntax::utils::lsp_position_to_ts_point;
 use vfs::{AnchoredPath, FileId};
 
 mod change;
@@ -67,6 +68,12 @@ impl Tree {
 
     pub fn root_node(&self) -> tree_sitter::Node {
         self.tree().root_node()
+    }
+
+    pub fn covering_element(&self, range: lsp_types::Range) -> Option<tree_sitter::Node> {
+        let start = lsp_position_to_ts_point(&range.start);
+        let end = lsp_position_to_ts_point(&range.end);
+        self.root_node().descendant_for_point_range(start, end)
     }
 }
 

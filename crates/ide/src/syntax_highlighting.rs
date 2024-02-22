@@ -2,6 +2,8 @@ use std::fmt::{self, Debug, Write};
 
 use hir::Semantics;
 use ide_db::{RootDatabase, SymbolKind};
+use itertools::Itertools;
+use syntax::utils::{intersect, ts_range_to_lsp_range};
 use vfs::FileId;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -106,21 +108,43 @@ pub(crate) fn highlight(
     db: &RootDatabase,
     // config: HighlightConfig,
     file_id: FileId,
-    // range_to_highlight: Option<TextRange>,
+    range_to_highlight: Option<lsp_types::Range>,
 ) -> Vec<HlRange> {
     let sema = Semantics::new(db);
+    // Determine the root based on the given range.
+    let tree = sema.parse(file_id);
+    let (root, range_to_highlight) = {
+        let source_file = tree.root_node();
+        match range_to_highlight {
+            Some(range) => {
+                let node = match tree.covering_element(range) {
+                    Some(it) => it,
+                    None => source_file,
+                };
+                (node, range)
+            }
+            None => (source_file, ts_range_to_lsp_range(&source_file.range())),
+        }
+    };
     let mut res = Vec::new();
     let preprocessing_res = sema.preprocess_file(file_id);
-    for offsets in preprocessing_res.offsets().values() {
-        offsets.iter().for_each(|offset| {
-            res.push(HlRange {
-                range: offset.range,
-                highlight: Highlight {
-                    tag: HlTag::Symbol(SymbolKind::Macro),
-                    mods: HlMods::default(),
-                },
+    for (_, offsets) in preprocessing_res
+        .offsets()
+        .iter()
+        .sorted_by_key(|(k, _)| *k)
+    {
+        offsets
+            .iter()
+            .filter(|offset| intersect(offset.range, range_to_highlight).is_some())
+            .for_each(|offset| {
+                res.push(HlRange {
+                    range: offset.range,
+                    highlight: Highlight {
+                        tag: HlTag::Symbol(SymbolKind::Macro),
+                        mods: HlMods::default(),
+                    },
+                });
             });
-        });
     }
 
     res

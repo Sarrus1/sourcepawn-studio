@@ -470,6 +470,9 @@ impl GlobalState {
             .on_latency_sensitive::<lsp_request::SemanticTokensFullDeltaRequest>(
                 handlers::handle_semantic_tokens_full_delta,
             )
+            .on_latency_sensitive::<lsp_request::SemanticTokensRangeRequest>(
+                handlers::handle_semantic_tokens_range,
+            )
             .on::<lsp_request::GotoDefinition>(handlers::handle_goto_definition)
             .on::<lsp_request::HoverRequest>(handlers::handle_hover)
             .on::<lsp_ext::SyntaxTree>(handlers::handle_syntax_tree)

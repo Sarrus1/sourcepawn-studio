@@ -8,7 +8,7 @@ mod syntax_highlighting;
 use std::sync::Arc;
 
 use base_db::{
-    Change, FileExtension, FilePosition, Graph, SourceDatabase, SourceDatabaseExt, Tree,
+    Change, FileExtension, FilePosition, FileRange, Graph, SourceDatabase, SourceDatabaseExt, Tree,
 };
 use hir_def::{print_item_tree, DefDatabase};
 use hover::HoverResult;
@@ -158,6 +158,11 @@ impl Analysis {
 
     /// Returns the highlighted ranges for the file.
     pub fn highlight(&self, file_id: FileId) -> Cancellable<Vec<syntax_highlighting::HlRange>> {
-        self.with_db(|db| syntax_highlighting::highlight(db, file_id))
+        self.with_db(|db| syntax_highlighting::highlight(db, file_id, None))
+    }
+
+    /// Computes syntax highlighting for the given file range.
+    pub fn highlight_range(&self, frange: FileRange) -> Cancellable<Vec<HlRange>> {
+        self.with_db(|db| syntax_highlighting::highlight(db, frange.file_id, Some(frange.range)))
     }
 }

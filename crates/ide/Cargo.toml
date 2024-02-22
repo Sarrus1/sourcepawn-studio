@@ -22,6 +22,7 @@ regex.workspace = true
 line-index = "0.1.0-pre.1"
 tracing.workspace = true
 log.workspace = true
+itertools.workspace = true
 
 
 # Local crates

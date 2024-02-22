@@ -2,7 +2,7 @@ use anyhow::Context;
 use base_db::FileRange;
 use lsp_types::{
     SemanticTokensDeltaParams, SemanticTokensFullDeltaResult, SemanticTokensParams,
-    SemanticTokensResult,
+    SemanticTokensRangeParams, SemanticTokensRangeResult, SemanticTokensResult,
 };
 use store::normalize_uri;
 
@@ -115,6 +115,19 @@ pub(crate) fn handle_semantic_tokens_full_delta(
     snap.semantic_tokens_cache
         .lock()
         .insert(params.text_document.uri, semantic_tokens_clone);
+
+    Ok(Some(semantic_tokens.into()))
+}
+
+pub(crate) fn handle_semantic_tokens_range(
+    snap: GlobalStateSnapshot,
+    params: SemanticTokensRangeParams,
+) -> anyhow::Result<Option<SemanticTokensRangeResult>> {
+    let frange = from_proto::file_range(&snap, &params.text_document, params.range)?;
+    let text = snap.analysis.file_text(frange.file_id)?;
+
+    let highlights = snap.analysis.highlight_range(frange)?;
+    let semantic_tokens = to_proto::semantic_tokens(&text, highlights);
 
     Ok(Some(semantic_tokens.into()))
 }

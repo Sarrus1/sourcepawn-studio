@@ -1,5 +1,5 @@
 use anyhow::format_err;
-use base_db::FilePosition;
+use base_db::{FilePosition, FileRange};
 use ide::{LineCol, WideLineCol};
 use lsp_types::Url;
 use paths::AbsPathBuf;
@@ -75,4 +75,21 @@ pub(crate) fn file_position(
         file_id,
         position: params.position,
     })
+}
+
+pub(crate) fn file_range(
+    snap: &GlobalStateSnapshot,
+    text_document_identifier: &lsp_types::TextDocumentIdentifier,
+    range: lsp_types::Range,
+) -> anyhow::Result<FileRange> {
+    file_range_uri(snap, &text_document_identifier.uri, range)
+}
+
+pub(crate) fn file_range_uri(
+    snap: &GlobalStateSnapshot,
+    document: &lsp_types::Url,
+    range: lsp_types::Range,
+) -> anyhow::Result<FileRange> {
+    let file_id = file_id(snap, document)?;
+    Ok(FileRange { file_id, range })
 }

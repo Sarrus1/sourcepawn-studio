@@ -1097,6 +1097,7 @@ dependencies = [
  "hir-def",
  "ide-db",
  "ide-diagnostics",
+ "itertools 0.11.0",
  "lazy_static",
  "line-index",
  "log",
