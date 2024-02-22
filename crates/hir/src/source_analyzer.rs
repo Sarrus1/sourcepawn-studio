@@ -14,7 +14,7 @@ use syntax::TSKind;
 use tree_sitter::Point;
 use vfs::FileId;
 
-use crate::{db::HirDatabase, Attribute, Field, Function};
+use crate::{db::HirDatabase, Attribute, Function};
 
 /// `SourceAnalyzer` is a convenience wrapper which exposes HIR API in terms of
 /// original source files. It should not be used inside the HIR itself.

@@ -232,7 +232,12 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         let resolver = global_resolver(self.db, file_id);
         let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
         match resolver.resolve_ident(text)? {
-            ValueNs::FunctionId(id) => DefResolution::Function(Function::from(id.value)).into(),
+            ValueNs::FunctionId(ids) => ids
+                .iter()
+                .find(|id| file_id == id.file_id)
+                .map(|id| id.value)
+                .map(Function::from)
+                .map(DefResolution::Function),
             ValueNs::MacroId(id) => DefResolution::Macro(Macro::from(id.value)).into(),
             ValueNs::GlobalId(id) => DefResolution::Global(Global::from(id.value)).into(),
             ValueNs::EnumStructId(id) => {
@@ -294,7 +299,8 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         let def_map = self.db.file_def_map(file_id);
         let body_node = container.child_by_field_name("body")?;
         assert!(TSKind::from(body_node) == TSKind::block);
-        let hir_def::FileDefId::MethodmapId(id) = def_map.get_from_str(methodmap_name)? else {
+        let hir_def::FileDefId::MethodmapId(id) = def_map.get_first_from_str(methodmap_name)?
+        else {
             return None;
         };
         let data = self.db.methodmap_data(id);
@@ -336,7 +342,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             .child_by_field_name("name")?
             .utf8_text(source.as_ref().as_bytes())
             .ok()?;
-        let id = match def_map.get_from_str(enum_struct_name)? {
+        let id = match def_map.get_first_from_str(enum_struct_name)? {
             hir_def::FileDefId::EnumStructId(es_id) => {
                 let data = self.db.enum_struct_data(es_id);
                 let method_idx = data.items(&Name::from(method_name))?;
@@ -395,7 +401,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         let value_ns = analyzer.resolver.resolve_ident(text);
         match value_ns? {
             // TODO: Maybe hide the match logic in a function/macro?
-            ValueNs::FunctionId(id) => DefResolution::Function(Function::from(id.value)).into(),
+            ValueNs::FunctionId(ids) => {
+                DefResolution::Function(Function::from(ids.first()?.value)).into()
+            }
             ValueNs::LocalId(expr) => DefResolution::Local(Local::from(expr)).into(),
             ValueNs::MacroId(id) => DefResolution::Macro(Macro::from(id.value)).into(),
             ValueNs::GlobalId(id) => DefResolution::Global(Global::from(id.value)).into(),
@@ -424,7 +432,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             .ok()?;
         let body_node = container.child_by_field_name("body")?;
         match TSKind::from(body_node) {
-            TSKind::block => match def_map.get_from_str(parent_name)? {
+            TSKind::block => match def_map.get_first_from_str(parent_name)? {
                 hir_def::FileDefId::FunctionId(id) => {
                     self.function_node_to_def_(file_id, container, parent, node, source, id)
                 }

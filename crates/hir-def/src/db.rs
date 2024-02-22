@@ -6,6 +6,7 @@ use base_db::{
 };
 use fxhash::FxHashMap;
 use preprocessor::db::PreprocDatabase;
+use smallvec::SmallVec;
 use syntax::TSKind;
 use vfs::{AnchoredPath, FileId};
 
@@ -178,9 +179,10 @@ struct BlockInfo {
 
 // FIXME: DefMap should not be used as a scope. It should be used to map ids to defs.
 // It should be useless to have a DefMap for a block, as they do not define functions etc.
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct DefMap {
-    values: FxHashMap<Name, FileDefId>,
+    file_id: FileId,
+    values: FxHashMap<Name, SmallVec<[FileDefId; 1]>>,
     macros: FxHashMap<u32, MacroId>,
     declarations: Vec<FileDefId>,
     /// When this is a block def map, this will hold the block id of the block and module that
@@ -189,8 +191,22 @@ pub struct DefMap {
 }
 
 impl DefMap {
+    pub fn new(file_id: FileId) -> Self {
+        Self {
+            file_id,
+            values: FxHashMap::default(),
+            macros: FxHashMap::default(),
+            declarations: Default::default(),
+            block: Default::default(),
+        }
+    }
+
+    pub fn file_id(&self) -> FileId {
+        self.file_id
+    }
+
     pub fn file_def_map_query(db: &dyn DefDatabase, file_id: FileId) -> Arc<Self> {
-        let mut res = DefMap::default();
+        let mut res = DefMap::new(file_id);
         let item_tree = db.file_item_tree(file_id);
         let tree_id = TreeId::new(file_id, None);
         let mut macro_idx = 0u32;
@@ -288,12 +304,16 @@ impl DefMap {
         Arc::new(res)
     }
 
-    pub fn get(&self, name: &Name) -> Option<FileDefId> {
-        self.values.get(name).copied()
+    pub fn get(&self, name: &Name) -> Option<SmallVec<[FileDefId; 1]>> {
+        self.values.get(name).cloned()
     }
 
-    pub fn get_from_str(&self, name: &str) -> Option<FileDefId> {
+    pub fn get_from_str(&self, name: &str) -> Option<SmallVec<[FileDefId; 1]>> {
         self.get(&Name::from(name))
+    }
+
+    pub fn get_first_from_str(&self, name: &str) -> Option<FileDefId> {
+        self.get_from_str(name).and_then(|v| v.first().copied())
     }
 
     pub fn get_macro(&self, idx: &u32) -> Option<MacroId> {
@@ -303,7 +323,7 @@ impl DefMap {
     pub(crate) fn block_def_map_query(db: &dyn DefDatabase, block_id: BlockId) -> Arc<DefMap> {
         let item_tree = db.block_item_tree(block_id);
         let file_id = block_id.lookup(db).file_id;
-        let mut res = DefMap::default();
+        let mut res = DefMap::new(file_id);
         for item in item_tree.top_level_items() {
             match item {
                 FileItem::Variable(id) => {
@@ -323,7 +343,7 @@ impl DefMap {
     }
 
     fn declare(&mut self, name: Name, def: FileDefId) {
-        self.values.insert(name, def);
+        self.values.entry(name).or_default().push(def);
         self.declarations.push(def);
     }
 

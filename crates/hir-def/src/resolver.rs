@@ -8,6 +8,7 @@ use crate::{
     AdtId, DefDatabase, DefWithBodyId, EnumId, EnumStructId, FileDefId, FunctionId, GlobalId,
     InFile, ItemContainerId, Lookup, MacroId, MethodmapId, VariantId,
 };
+use smallvec::SmallVec;
 use vfs::FileId;
 
 #[derive(Debug, Clone)]
@@ -113,40 +114,48 @@ impl Resolver {
                     }
                 }
                 Scope::GlobalScope(def_maps) => {
-                    for def_map in def_maps.iter() {
+                    let mut entries: Vec<(FileDefId, FileId)> = vec![];
+                    def_maps.iter().for_each(|def_map| {
                         if let Some(entry) = def_map.get(&name) {
-                            match entry {
-                                FileDefId::FunctionId(it) => {
-                                    return Some(ValueNs::FunctionId(InFile::new(
-                                        self.file_id,
-                                        it,
-                                    )));
-                                }
-                                FileDefId::MacroId(it) => {
-                                    return Some(ValueNs::MacroId(InFile::new(self.file_id, it)));
-                                }
-                                FileDefId::GlobalId(it) => {
-                                    return Some(ValueNs::GlobalId(InFile::new(self.file_id, it)));
-                                }
-                                FileDefId::EnumStructId(it) => {
-                                    return Some(ValueNs::EnumStructId(InFile::new(
-                                        self.file_id,
-                                        it,
-                                    )));
-                                }
-                                FileDefId::MethodmapId(it) => {
-                                    return Some(ValueNs::MethodmapId(InFile::new(
-                                        self.file_id,
-                                        it,
-                                    )));
-                                }
-                                FileDefId::EnumId(it) => {
-                                    return Some(ValueNs::EnumId(InFile::new(self.file_id, it)));
-                                }
-                                FileDefId::VariantId(it) => {
-                                    return Some(ValueNs::VariantId(InFile::new(self.file_id, it)));
+                            entries
+                                .extend(entry.into_iter().map(|entry| (entry, def_map.file_id())));
+                        }
+                    });
+                    match entries.len() {
+                        0 => continue,
+                        1 => match *entries.first().unwrap() {
+                            (FileDefId::FunctionId(it), file_id) => {
+                                let mut fn_ids: SmallVec<[InFile<FunctionId>; 1]> = SmallVec::new();
+                                fn_ids.push(InFile::new(file_id, it));
+                                return Some(ValueNs::FunctionId(fn_ids));
+                            }
+                            (FileDefId::MacroId(it), file_id) => {
+                                return Some(ValueNs::MacroId(InFile::new(file_id, it)));
+                            }
+                            (FileDefId::GlobalId(it), file_id) => {
+                                return Some(ValueNs::GlobalId(InFile::new(file_id, it)));
+                            }
+                            (FileDefId::EnumStructId(it), file_id) => {
+                                return Some(ValueNs::EnumStructId(InFile::new(file_id, it)));
+                            }
+                            (FileDefId::MethodmapId(it), file_id) => {
+                                return Some(ValueNs::MethodmapId(InFile::new(file_id, it)));
+                            }
+                            (FileDefId::EnumId(it), file_id) => {
+                                return Some(ValueNs::EnumId(InFile::new(file_id, it)));
+                            }
+                            (FileDefId::VariantId(it), file_id) => {
+                                return Some(ValueNs::VariantId(InFile::new(file_id, it)));
+                            }
+                        },
+                        _ => {
+                            let mut fn_ids: SmallVec<[InFile<FunctionId>; 1]> = SmallVec::new();
+                            for entry in entries {
+                                if let (FileDefId::FunctionId(it), file_id) = entry {
+                                    fn_ids.push(InFile::new(file_id, it));
                                 }
                             }
+                            return Some(ValueNs::FunctionId(fn_ids));
                         }
                     }
                 }
@@ -214,12 +223,12 @@ impl Resolver {
 
 pub struct UpdateGuard(usize);
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ValueNs {
     LocalId((DefWithBodyId, ExprId)),
     GlobalId(InFile<GlobalId>),
     MacroId(InFile<MacroId>),
-    FunctionId(InFile<FunctionId>),
+    FunctionId(SmallVec<[InFile<FunctionId>; 1]>),
     EnumStructId(InFile<EnumStructId>),
     MethodmapId(InFile<MethodmapId>),
     EnumId(InFile<EnumId>),

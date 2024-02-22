@@ -184,10 +184,14 @@ impl InferenceContext<'_> {
                         TypeRef::Name(item_tree[it.value.lookup(self.db).id].name.clone()).into()
                     }
                     ValueNs::FunctionId(it) => {
-                        let item_tree = self.db.file_item_tree(it.file_id);
-                        item_tree[it.value.lookup(self.db).id.value]
-                            .ret_type
-                            .clone()
+                        let mut ret_type = None;
+                        for fn_id in it.iter() {
+                            let item_tree = self.db.file_item_tree(fn_id.file_id);
+                            let function = &item_tree[fn_id.value.lookup(self.db).id];
+                            ret_type = function.ret_type.clone();
+                        }
+
+                        ret_type
                     }
                     ValueNs::VariantId(_) | ValueNs::EnumId(_) | ValueNs::MacroId(_) => None,
                 }
