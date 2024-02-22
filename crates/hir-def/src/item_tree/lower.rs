@@ -169,7 +169,7 @@ impl<'db> Ctx<'db> {
         node: &tree_sitter::Node,
         items: &mut Vec<EnumStructItemId>,
     ) {
-        if let Some(id) = self.lower_function_(node, None) {
+        if let Some(id) = self.lower_function_(node, None, None) {
             items.push(EnumStructItemId::Method(id));
         }
     }
@@ -178,6 +178,7 @@ impl<'db> Ctx<'db> {
         &mut self,
         node: &tree_sitter::Node,
         items: &mut Vec<MethodmapItemId>,
+        kind: Option<FunctionKind>,
     ) {
         let mut visibility = RawVisibilityId::PUBLIC;
         if node
@@ -186,13 +187,13 @@ impl<'db> Ctx<'db> {
         {
             visibility |= RawVisibilityId::STATIC;
         }
-        if let Some(id) = self.lower_function_(node, visibility.into()) {
+        if let Some(id) = self.lower_function_(node, visibility.into(), kind) {
             items.push(MethodmapItemId::Method(id));
         }
     }
 
     fn lower_function(&mut self, node: &tree_sitter::Node) {
-        if let Some(id) = self.lower_function_(node, None) {
+        if let Some(id) = self.lower_function_(node, None, None) {
             self.tree.top_level.push(FileItem::Function(id));
         }
     }
@@ -201,8 +202,12 @@ impl<'db> Ctx<'db> {
         &mut self,
         node: &tree_sitter::Node,
         visibility: Option<RawVisibilityId>,
+        kind: Option<FunctionKind>,
     ) -> Option<Idx<Function>> {
-        let kind = FunctionKind::from_node(node);
+        let kind = match kind {
+            Some(kind) => kind,
+            None => FunctionKind::from_node(node),
+        };
         let params = self.lower_parameters(node);
         let name_node = node.child_by_field_name("name")?;
         let visibility = visibility.unwrap_or_else(|| RawVisibilityId::from_node(node));
@@ -303,7 +308,12 @@ impl<'db> Ctx<'db> {
                 TSKind::methodmap_method
                 | TSKind::methodmap_method_constructor
                 | TSKind::methodmap_method_destructor => {
-                    self.lower_methodmap_method(&e, &mut items)
+                    self.lower_methodmap_method(&e, &mut items, None)
+                }
+                TSKind::methodmap_native
+                | TSKind::methodmap_native_constructor
+                | TSKind::methodmap_native_destructor => {
+                    self.lower_methodmap_method(&e, &mut items, Some(FunctionKind::Native))
                 }
                 _ => (),
             });

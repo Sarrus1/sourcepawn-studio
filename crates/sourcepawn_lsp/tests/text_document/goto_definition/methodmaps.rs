@@ -147,6 +147,34 @@ void main() {
 }
 
 #[test]
+fn methodmap_native_method_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    public native Foo();
+                   |
+                   ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn methodmap_native_method_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    public native Foo(int foo);
+                           |
+                           ^
+}
+"#,
+    ));
+}
+
+#[test]
 fn methodmap_constructor_1() {
     assert_json_snapshot!(goto_definition(
         r#"

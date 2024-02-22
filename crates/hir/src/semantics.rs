@@ -83,6 +83,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             TSKind::function_definition
             | TSKind::function_declaration
             | TSKind::enum_struct_method
+            | TSKind::methodmap_native
+            | TSKind::methodmap_native_constructor
+            | TSKind::methodmap_native_destructor
             | TSKind::methodmap_method
             | TSKind::methodmap_method_constructor
             | TSKind::methodmap_method_destructor
@@ -170,6 +173,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             TSKind::function_definition
                 | TSKind::enum_struct_method
                 | TSKind::r#enum
+                | TSKind::methodmap_native
+                | TSKind::methodmap_native_constructor
+                | TSKind::methodmap_native_destructor
                 | TSKind::methodmap_method
                 | TSKind::methodmap_method_constructor
                 | TSKind::methodmap_method_destructor
@@ -199,6 +205,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 self.property_method_node_to_def(file_id, container, *node, source)
             }
             TSKind::enum_struct_method
+            | TSKind::methodmap_native
+            | TSKind::methodmap_native_constructor
+            | TSKind::methodmap_native_destructor
             | TSKind::methodmap_method
             | TSKind::methodmap_method_constructor
             | TSKind::methodmap_method_destructor => {

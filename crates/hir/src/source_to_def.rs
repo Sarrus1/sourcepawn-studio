@@ -91,10 +91,13 @@ impl SourceToDefCtx<'_, '_> {
                 TSKind::function_definition
                 | TSKind::function_declaration
                 | TSKind::enum_struct_method
+                | TSKind::methodmap_native
+                | TSKind::methodmap_native_constructor
+                | TSKind::methodmap_native_destructor
                 | TSKind::methodmap_method
                 | TSKind::methodmap_method_constructor
-                | TSKind::methodmap_property_method
-                | TSKind::methodmap_method_destructor => {
+                | TSKind::methodmap_method_destructor
+                | TSKind::methodmap_property_method => {
                     let func =
                         self.fn_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
                     return Some(ChildContainer::DefWithBodyId(DefWithBodyId::from(func)));

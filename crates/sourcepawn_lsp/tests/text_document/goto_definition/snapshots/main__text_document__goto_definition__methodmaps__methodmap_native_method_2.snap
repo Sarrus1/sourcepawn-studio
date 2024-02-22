@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/goto_definition/methodmaps.rs
+assertion_line: 165
+expression: "goto_definition(r#\"\n%! main.sp\nmethodmap Foo {\n    public native Foo(int foo);\n                           |\n                           ^\n}\n\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 1,
+        "character": 26
+      },
+      "end": {
+        "line": 1,
+        "character": 29
+      }
+    },
+    "targetUri": "file:///main.sp",
+    "targetRange": {
+      "start": {
+        "line": 1,
+        "character": 22
+      },
+      "end": {
+        "line": 1,
+        "character": 29
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 1,
+        "character": 26
+      },
+      "end": {
+        "line": 1,
+        "character": 29
+      }
+    }
+  }
+]

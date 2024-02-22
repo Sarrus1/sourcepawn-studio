@@ -134,6 +134,9 @@ impl AstIdMap {
                     | TSKind::methodmap_property_getter
                     | TSKind::methodmap_property_setter
                     | TSKind::methodmap_property_native
+                    | TSKind::methodmap_native
+                    | TSKind::methodmap_native_constructor
+                    | TSKind::methodmap_native_destructor
                     | TSKind::methodmap_method
                     | TSKind::methodmap_method_constructor
                     | TSKind::methodmap_method_destructor
