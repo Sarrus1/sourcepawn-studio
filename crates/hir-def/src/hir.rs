@@ -30,6 +30,10 @@ pub enum Expr {
         id: Option<BlockId>,
         statements: Box<[ExprId]>,
     },
+    New {
+        constructor: ExprId,
+        args: Box<[ExprId]>,
+    },
     FieldAccess {
         target: ExprId,
         name: Name,

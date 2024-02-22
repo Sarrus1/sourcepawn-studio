@@ -7,7 +7,7 @@ use syntax::TSKind;
 
 use crate::{
     hir::type_ref::TypeRef,
-    item_tree::{EnumStructItemId, MethodmapItemId, Name},
+    item_tree::{EnumStructItemId, MethodmapItemId, Name, SpecialMethod},
     src::{HasChildSource, HasSource},
     DefDatabase, EnumStructId, FunctionId, FunctionLoc, InFile, Intern, ItemTreeId, LocalFieldId,
     LocalPropertyId, Lookup, MacroId, MethodmapId, NodePtr, PropertyId,
@@ -62,6 +62,8 @@ pub struct MethodmapData {
 pub enum MethodmapItemData {
     Property(PropertyData),
     Method(FunctionId),
+    Constructor(FunctionId),
+    Destructor(FunctionId),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -136,7 +138,12 @@ impl MethodmapData {
                     },
                 }
                 .intern(db);
-                let method_id = items.alloc(MethodmapItemData::Method(fn_id));
+                let method_ = match method.special {
+                    Some(SpecialMethod::Constructor) => MethodmapItemData::Constructor(fn_id),
+                    Some(SpecialMethod::Destructor) => MethodmapItemData::Destructor(fn_id),
+                    None => MethodmapItemData::Method(fn_id),
+                };
+                let method_id = items.alloc(method_);
                 // FIXME: Not sure if we should intern like this...
                 items_map.insert(method.name.clone(), method_id);
             } // TODO: Add diagnostic for duplicate methodmap items
@@ -151,6 +158,19 @@ impl MethodmapData {
         Arc::new(methodmap_data)
     }
 
+    pub fn name(&self) -> &Name {
+        &self.name
+    }
+
+    pub fn constructor(&self) -> Option<FunctionId> {
+        self.items.iter().find_map(|(_, item)| match item {
+            MethodmapItemData::Constructor(id) => Some(*id),
+            MethodmapItemData::Method(_)
+            | MethodmapItemData::Property(_)
+            | MethodmapItemData::Destructor(_) => None,
+        })
+    }
+
     pub fn item(&self, item: Idx<MethodmapItemData>) -> &MethodmapItemData {
         &self.items[item]
     }
@@ -159,13 +179,17 @@ impl MethodmapData {
         match &self.items[item] {
             MethodmapItemData::Property(_) => None,
             MethodmapItemData::Method(function_id) => Some(function_id),
+            MethodmapItemData::Constructor(function_id) => Some(function_id),
+            MethodmapItemData::Destructor(function_id) => Some(function_id),
         }
     }
 
     pub fn property(&self, item: Idx<MethodmapItemData>) -> Option<&PropertyData> {
         match &self.items[item] {
             MethodmapItemData::Property(property_data) => Some(property_data),
-            MethodmapItemData::Method(_) => None,
+            MethodmapItemData::Method(_)
+            | MethodmapItemData::Constructor(_)
+            | MethodmapItemData::Destructor(_) => None,
         }
     }
 
@@ -176,7 +200,9 @@ impl MethodmapData {
     pub fn property_type(&self, property: Idx<MethodmapItemData>) -> Option<&TypeRef> {
         match &self.items[property] {
             MethodmapItemData::Property(property_data) => Some(&property_data.type_ref),
-            MethodmapItemData::Method(_) => None,
+            MethodmapItemData::Method(_)
+            | MethodmapItemData::Constructor(_)
+            | MethodmapItemData::Destructor(_) => None,
         }
     }
 }

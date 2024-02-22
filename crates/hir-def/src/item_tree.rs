@@ -237,11 +237,18 @@ pub struct Variable {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
+pub enum SpecialMethod {
+    Constructor,
+    Destructor,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Function {
     pub name: Name,
     pub kind: FunctionKind,
     pub visibility: RawVisibilityId,
     pub params: IdxRange<Param>,
+    pub special: Option<SpecialMethod>,
     pub ret_type: Option<TypeRef>,
     pub ast_id: AstId,
 }

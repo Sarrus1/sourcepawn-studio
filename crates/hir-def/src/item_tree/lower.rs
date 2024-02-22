@@ -12,7 +12,7 @@ use crate::{
 
 use super::{
     Enum, EnumStruct, EnumStructItemId, Field, Function, FunctionKind, ItemTree, Methodmap,
-    MethodmapItemId, Param, Property, RawVisibilityId, Variable, Variant,
+    MethodmapItemId, Param, Property, RawVisibilityId, SpecialMethod, Variable, Variant,
 };
 
 pub(super) struct Ctx<'db> {
@@ -169,7 +169,7 @@ impl<'db> Ctx<'db> {
         node: &tree_sitter::Node,
         items: &mut Vec<EnumStructItemId>,
     ) {
-        if let Some(id) = self.lower_function_(node, None, None) {
+        if let Some(id) = self.lower_function_(node, None, None, None) {
             items.push(EnumStructItemId::Method(id));
         }
     }
@@ -179,6 +179,7 @@ impl<'db> Ctx<'db> {
         node: &tree_sitter::Node,
         items: &mut Vec<MethodmapItemId>,
         kind: Option<FunctionKind>,
+        special: Option<SpecialMethod>,
     ) {
         let mut visibility = RawVisibilityId::PUBLIC;
         if node
@@ -187,13 +188,13 @@ impl<'db> Ctx<'db> {
         {
             visibility |= RawVisibilityId::STATIC;
         }
-        if let Some(id) = self.lower_function_(node, visibility.into(), kind) {
+        if let Some(id) = self.lower_function_(node, visibility.into(), kind, special) {
             items.push(MethodmapItemId::Method(id));
         }
     }
 
     fn lower_function(&mut self, node: &tree_sitter::Node) {
-        if let Some(id) = self.lower_function_(node, None, None) {
+        if let Some(id) = self.lower_function_(node, None, None, None) {
             self.tree.top_level.push(FileItem::Function(id));
         }
     }
@@ -203,6 +204,7 @@ impl<'db> Ctx<'db> {
         node: &tree_sitter::Node,
         visibility: Option<RawVisibilityId>,
         kind: Option<FunctionKind>,
+        special: Option<SpecialMethod>,
     ) -> Option<Idx<Function>> {
         let kind = match kind {
             Some(kind) => kind,
@@ -217,6 +219,7 @@ impl<'db> Ctx<'db> {
             ret_type: self.function_return_type(node),
             visibility,
             params,
+            special,
             ast_id: self.source_ast_id_map.ast_id_of(node),
         };
 
@@ -305,16 +308,34 @@ impl<'db> Ctx<'db> {
                     let property_idx = self.tree.data_mut().properties.alloc(res);
                     items.push(MethodmapItemId::Property(property_idx));
                 }
-                TSKind::methodmap_method
-                | TSKind::methodmap_method_constructor
-                | TSKind::methodmap_method_destructor => {
-                    self.lower_methodmap_method(&e, &mut items, None)
+                TSKind::methodmap_method => self.lower_methodmap_method(&e, &mut items, None, None),
+                TSKind::methodmap_method_constructor => self.lower_methodmap_method(
+                    &e,
+                    &mut items,
+                    None,
+                    Some(SpecialMethod::Constructor),
+                ),
+                TSKind::methodmap_method_destructor => self.lower_methodmap_method(
+                    &e,
+                    &mut items,
+                    None,
+                    Some(SpecialMethod::Destructor),
+                ),
+                TSKind::methodmap_native => {
+                    self.lower_methodmap_method(&e, &mut items, Some(FunctionKind::Native), None)
                 }
-                TSKind::methodmap_native
-                | TSKind::methodmap_native_constructor
-                | TSKind::methodmap_native_destructor => {
-                    self.lower_methodmap_method(&e, &mut items, Some(FunctionKind::Native))
-                }
+                TSKind::methodmap_native_constructor => self.lower_methodmap_method(
+                    &e,
+                    &mut items,
+                    Some(FunctionKind::Native),
+                    Some(SpecialMethod::Constructor),
+                ),
+                TSKind::methodmap_native_destructor => self.lower_methodmap_method(
+                    &e,
+                    &mut items,
+                    Some(FunctionKind::Native),
+                    Some(SpecialMethod::Destructor),
+                ),
                 _ => (),
             });
         let inherits = node
@@ -346,6 +367,7 @@ impl<'db> Ctx<'db> {
                     ret_type: type_.clone().into(),
                     visibility: RawVisibilityId::PUBLIC,
                     params: IdxRange::new(idx..idx),
+                    special: None,
                     ast_id: self.source_ast_id_map.ast_id_of(parent),
                 };
                 self.tree.data_mut().functions.alloc(res);
@@ -372,6 +394,7 @@ impl<'db> Ctx<'db> {
                     ret_type: None,
                     visibility: RawVisibilityId::NONE,
                     params: IdxRange::new(start_idx..end_idx),
+                    special: None,
                     ast_id: self.source_ast_id_map.ast_id_of(parent), // We care about the method itself, not the getter/setter in the grammar.
                 };
                 self.tree.data_mut().functions.alloc(res);

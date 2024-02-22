@@ -201,6 +201,19 @@ impl ExprCollector<'_> {
                 };
                 Some(self.alloc_expr(field_access, NodePtr::from(&field)))
             }
+            TSKind::new_expression => {
+                let constructor = expr.child_by_field_name("class")?;
+                let args = expr.child_by_field_name("arguments")?;
+                let new = Expr::New {
+                    constructor: self.collect_expr(constructor),
+                    args: args
+                        .children(&mut args.walk())
+                        .filter_map(|arg| self.maybe_collect_expr(arg))
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                };
+                Some(self.alloc_expr(new, NodePtr::from(&expr)))
+            }
             TSKind::variable_declaration_statement => Some(self.collect_variable_declaration(expr)),
             TSKind::identifier | TSKind::this => {
                 let name = Name::from_node(&expr, self.source);

@@ -118,7 +118,9 @@ impl ChildBySource for MethodmapId {
                 };
                 map[PROPERTY].insert(arena_map.value[idx], property_id);
             }
-            MethodmapItemData::Method(id) => {
+            MethodmapItemData::Method(id)
+            | MethodmapItemData::Constructor(id)
+            | MethodmapItemData::Destructor(id) => {
                 let item = &item_tree[id.lookup(db).id];
                 let node_ptr = ast_id_map.get_raw(item.ast_id);
                 map[FUNCTION].insert(node_ptr, *id);

@@ -176,6 +176,7 @@ fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope
         // These expressions do not introduce any declarations.
         Expr::Missing
         | Expr::Ident(_)
+        | Expr::New { .. }
         | Expr::FieldAccess { .. }
         | Expr::BinaryOp { .. }
         | Expr::Call { .. }

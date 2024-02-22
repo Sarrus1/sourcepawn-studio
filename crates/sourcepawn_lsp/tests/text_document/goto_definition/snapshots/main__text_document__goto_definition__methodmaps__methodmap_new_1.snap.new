@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/goto_definition/methodmaps.rs
+assertion_line: 443
+expression: "goto_definition(r#\"\n%! main.sp\nmethodmap Foo {\n    public Foo() {}\n    public void bar() {}\n}\n\nvoid main() {\n    Foo foo = new Foo();\n    foo.bar();\n         |\n         ^\n}\n\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 7,
+        "character": 8
+      },
+      "end": {
+        "line": 7,
+        "character": 11
+      }
+    },
+    "targetUri": "file:///main.sp",
+    "targetRange": {
+      "start": {
+        "line": 2,
+        "character": 4
+      },
+      "end": {
+        "line": 2,
+        "character": 24
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 2,
+        "character": 16
+      },
+      "end": {
+        "line": 2,
+        "character": 19
+      }
+    }
+  }
+]

@@ -203,6 +203,7 @@ impl<'a> Printer<'a> {
             ret_type,
             params,
             ast_id,
+            ..
         } = &self.tree[*idx];
         self.push(format!("// {}", ast_id).as_str());
         self.newline();

@@ -101,6 +101,12 @@ impl InferenceContext<'_> {
                 self.resolver.reset_to_guard(g);
                 None
             }
+            Expr::New { constructor, args } => {
+                for arg in args.iter() {
+                    self.infer_expr(arg);
+                }
+                self.infer_expr(constructor)
+            }
             Expr::FieldAccess { target, name } => self.infer_field_access(expr, target, name),
             Expr::BinaryOp { lhs, rhs, op } => {
                 let _lhs_ty = self.infer_expr(lhs);
@@ -279,7 +285,9 @@ impl InferenceContext<'_> {
                             );
                             return None;
                         }
-                        MethodmapItemData::Method(method) => {
+                        MethodmapItemData::Method(method)
+                        | MethodmapItemData::Constructor(method)
+                        | MethodmapItemData::Destructor(method) => {
                             self.result.method_resolutions.insert(*receiver, *method);
                             let function = method.lookup(self.db);
                             let item_tree = function.id.item_tree(self.db);
