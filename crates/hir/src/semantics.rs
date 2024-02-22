@@ -4,7 +4,9 @@ use std::{cell::RefCell, fmt, ops, sync::Arc};
 
 use base_db::{is_field_receiver_node, is_name_node, Tree};
 use fxhash::FxHashMap;
-use hir_def::{resolve_include_node, resolver::ValueNs, InFile, Name, NodePtr};
+use hir_def::{
+    resolve_include_node, resolver::ValueNs, src, FunctionId, InFile, Name, NodePtr, PropertyItem,
+};
 use syntax::TSKind;
 use vfs::FileId;
 
@@ -13,7 +15,7 @@ use crate::{
     source_analyzer::SourceAnalyzer,
     source_to_def::{SourceToDefCache, SourceToDefCtx},
     DefResolution, Enum, EnumStruct, Field, File, Function, Global, Local, Macro, Methodmap,
-    Variant,
+    Property, Variant,
 };
 
 /// Primary API to get semantic information, like types, from syntax trees.
@@ -66,16 +68,25 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         if !is_name_node(node) {
             return None;
         }
-        let parent = node.parent()?;
-        let src = InFile::new(file_id, NodePtr::from(&parent));
+        let mut parent = node.parent()?;
 
+        if matches!(
+            TSKind::from(parent),
+            TSKind::methodmap_property_setter | TSKind::methodmap_property_getter
+        ) {
+            // Convert the setter/getter to its parent, the methodmap_property_method.
+            // The actual method like declaration in the grammar is one level above in the tree.
+            parent = parent.parent()?;
+        }
+        let src = InFile::new(file_id, NodePtr::from(&parent));
         match TSKind::from(parent) {
             TSKind::function_definition
             | TSKind::function_declaration
             | TSKind::enum_struct_method
             | TSKind::methodmap_method
             | TSKind::methodmap_method_constructor
-            | TSKind::methodmap_method_destructor => self
+            | TSKind::methodmap_method_destructor
+            | TSKind::methodmap_property_method => self
                 .fn_to_def(src)
                 .map(Function::from)
                 .map(DefResolution::Function),
@@ -121,7 +132,11 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 .methodmap_to_def(src)
                 .map(Methodmap::from)
                 .map(DefResolution::Methodmap),
-            _ => todo!(),
+            TSKind::methodmap_property => self
+                .property_to_def(src)
+                .map(Property::from)
+                .map(DefResolution::Property),
+            _ => unreachable!(),
         }
     }
 
@@ -158,6 +173,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 | TSKind::methodmap_method
                 | TSKind::methodmap_method_constructor
                 | TSKind::methodmap_method_destructor
+                | TSKind::methodmap_property_getter
+                | TSKind::methodmap_property_setter
+                | TSKind::methodmap_property_method
         ) {
             if let Some(candidate) = container.parent() {
                 container = candidate;
@@ -174,7 +192,14 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             TSKind::function_definition => {
                 self.function_node_to_def(file_id, container, *node, source)
             }
-            TSKind::methodmap_method
+            TSKind::methodmap_property_getter | TSKind::methodmap_property_setter => {
+                self.property_getter_setter_node_to_def(file_id, container, *node, source)
+            }
+            TSKind::methodmap_property_method => {
+                self.property_method_node_to_def(file_id, container, *node, source)
+            }
+            TSKind::enum_struct_method
+            | TSKind::methodmap_method
             | TSKind::methodmap_method_constructor
             | TSKind::methodmap_method_destructor => {
                 self.method_node_to_def(file_id, container, *node, source)
@@ -220,6 +245,67 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         id.map(|id| DefResolution::File(id.into()))
     }
 
+    fn property_getter_setter_node_to_def(
+        &self,
+        file_id: FileId,
+        container: tree_sitter::Node,
+        node: tree_sitter::Node,
+        source: Arc<str>,
+    ) -> Option<DefResolution> {
+        self.property_method_node_to_def(file_id, container.parent()?, node, source)
+    }
+
+    fn property_method_node_to_def(
+        &self,
+        file_id: FileId,
+        container: tree_sitter::Node,
+        node: tree_sitter::Node,
+        source: Arc<str>,
+    ) -> Option<DefResolution> {
+        let property_method_node = container;
+        let property_node = property_method_node.parent()?;
+        let methodmap_node = property_node.parent()?;
+        let method_kind = property_method_node
+            .children(&mut property_method_node.walk())
+            .find_map(|node| match TSKind::from(node) {
+                TSKind::methodmap_property_getter => Some(TSKind::methodmap_property_getter),
+                TSKind::methodmap_property_setter => Some(TSKind::methodmap_property_setter),
+                _ => None,
+            })?;
+        let property_name = property_node
+            .child_by_field_name("name")?
+            .utf8_text(source.as_ref().as_bytes())
+            .ok()?;
+        let methodmap_name = methodmap_node
+            .child_by_field_name("name")?
+            .utf8_text(source.as_ref().as_bytes())
+            .ok()?;
+
+        let def_map = self.db.file_def_map(file_id);
+        let body_node = container.child_by_field_name("body")?;
+        assert!(TSKind::from(body_node) == TSKind::block);
+        let hir_def::FileDefId::MethodmapId(id) = def_map.get_from_str(methodmap_name)? else {
+            return None;
+        };
+        let data = self.db.methodmap_data(id);
+        let property_idx = data.items(&Name::from(property_name))?;
+        let property_data = data.property(property_idx)?;
+        let id = property_data
+            .getters_setters
+            .iter()
+            .find_map(|item| match *item {
+                PropertyItem::Getter(fn_id) if method_kind == TSKind::methodmap_property_getter => {
+                    Some(fn_id)
+                }
+                PropertyItem::Setter(fn_id) if method_kind == TSKind::methodmap_property_setter => {
+                    Some(fn_id)
+                }
+                _ => None,
+            })?;
+
+        self.function_node_to_def_(file_id, container, node.parent()?, node, source, id)
+    }
+
     fn method_node_to_def(
         &self,
         file_id: FileId,
@@ -228,7 +314,6 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         source: Arc<str>,
     ) -> Option<DefResolution> {
         let def_map = self.db.file_def_map(file_id);
-        let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
         let parent = node.parent()?;
 
         let method_name = container
@@ -241,8 +326,6 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             .child_by_field_name("name")?
             .utf8_text(source.as_ref().as_bytes())
             .ok()?;
-        let body_node = container.child_by_field_name("body")?;
-        assert!(TSKind::from(body_node) == TSKind::block);
         let id = match def_map.get_from_str(enum_struct_name)? {
             hir_def::FileDefId::EnumStructId(es_id) => {
                 let data = self.db.enum_struct_data(es_id);
@@ -257,6 +340,21 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             _ => return None,
         };
 
+        self.function_node_to_def_(file_id, container, parent, node, source, id)
+    }
+
+    fn function_node_to_def_(
+        &self,
+        file_id: FileId,
+        container: tree_sitter::Node,
+        parent: tree_sitter::Node,
+        node: tree_sitter::Node,
+        source: Arc<str>,
+        id: FunctionId,
+    ) -> Option<DefResolution> {
+        let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
+        let body_node = container.child_by_field_name("body")?;
+        assert!(TSKind::from(body_node) == TSKind::block);
         let def = hir_def::DefWithBodyId::FunctionId(id);
         let offset = node.start_position();
         if TSKind::field_access == TSKind::from(parent) && is_field_receiver_node(&node) {

@@ -106,6 +106,47 @@ methodmap Foo {
 }
 
 #[test]
+fn methodmap_method_6() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    public void Foo() {}
+}
+
+Foo foo;
+
+void main() {
+    foo.Foo();
+         |
+         ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn methodmap_method_7() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    public void Foo() {int bar}
+}
+
+Foo foo;
+
+void main() {
+    int bar;
+    foo.Foo(bar);
+             |
+             ^
+}
+"#,
+    ));
+}
+
+#[test]
 fn methodmap_constructor_1() {
     assert_json_snapshot!(goto_definition(
         r#"
@@ -158,6 +199,161 @@ methodmap Foo {
     public ~Foo() {}
              |
              ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn methodmap_property_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    property int Foo {}
+                  |
+                  ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn methodmap_property_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum Bar {
+    Baz
+}
+
+methodmap Foo {
+    property Bar Foo {}
+              |
+              ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn methodmap_property_getter_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    property int Foo {
+        public get() { return 1; }
+                |
+                ^
+    }
+}
+"#,
+    ));
+}
+
+#[test]
+fn methodmap_property_getter_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+int foo;
+methodmap Foo {
+    property int Foo {
+        public get() { 
+            return foo;
+                    |
+                    ^
+        }
+    }
+}
+"#,
+    ));
+}
+
+#[test]
+fn methodmap_property_getter_3() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    property int Foo {
+        public get() { 
+            int foo;
+            return foo;
+                    |
+                    ^
+        }
+    }
+}
+"#,
+    ));
+}
+
+#[test]
+fn methodmap_property_setter_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    property int Foo {
+        public set(int foo) {}
+                |
+                ^
+    }
+}
+"#,
+    ));
+}
+
+#[test]
+fn methodmap_property_setter_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    property int Foo {
+        public set(int foo) {}
+                        |
+                        ^
+    }
+}
+"#,
+    ));
+}
+
+#[test]
+fn methodmap_property_setter_3() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    property int Foo {
+        public set(int foo) {
+            foo += 1;
+             |
+             ^
+        }
+    }
+}
+"#,
+    ));
+}
+
+#[test]
+fn methodmap_property_setter_4() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    property int Foo {
+        public set(int foo) {
+            int foo;
+            foo += 1;
+             |
+             ^
+        }
+    }
 }
 "#,
     ));

@@ -261,16 +261,22 @@ impl<'db> Ctx<'db> {
 
                     let start_idx = self.next_function_idx();
                     e.children(&mut e.walk())
-                        .for_each(|e| match TSKind::from(e) {
+                        .for_each(|e1| match TSKind::from(e1) {
                             TSKind::methodmap_property_method => {
-                                e.children(&mut e.walk()).for_each(|e| {
-                                    self.lower_property_method(&e, type_.clone(), FunctionKind::Def)
+                                e1.children(&mut e1.walk()).for_each(|e2| {
+                                    self.lower_property_method(
+                                        &e2,
+                                        &e1,
+                                        type_.clone(),
+                                        FunctionKind::Def,
+                                    )
                                 })
                             }
                             TSKind::methodmap_property_native => {
-                                e.children(&mut e.walk()).for_each(|e| {
+                                e1.children(&mut e.walk()).for_each(|e2| {
                                     self.lower_property_method(
-                                        &e,
+                                        &e2,
+                                        &e1,
                                         type_.clone(),
                                         FunctionKind::Native,
                                     )
@@ -317,6 +323,7 @@ impl<'db> Ctx<'db> {
     fn lower_property_method(
         &mut self,
         node: &tree_sitter::Node,
+        parent: &tree_sitter::Node,
         type_: TypeRef,
         kind: FunctionKind,
     ) {
@@ -329,7 +336,7 @@ impl<'db> Ctx<'db> {
                     ret_type: type_.clone().into(),
                     visibility: RawVisibilityId::PUBLIC,
                     params: IdxRange::new(idx..idx),
-                    ast_id: self.source_ast_id_map.ast_id_of(node),
+                    ast_id: self.source_ast_id_map.ast_id_of(parent),
                 };
                 self.tree.data_mut().functions.alloc(res);
             }
@@ -355,7 +362,7 @@ impl<'db> Ctx<'db> {
                     ret_type: None,
                     visibility: RawVisibilityId::NONE,
                     params: IdxRange::new(start_idx..end_idx),
-                    ast_id: self.source_ast_id_map.ast_id_of(node),
+                    ast_id: self.source_ast_id_map.ast_id_of(parent), // We care about the method itself, not the getter/setter in the grammar.
                 };
                 self.tree.data_mut().functions.alloc(res);
             }

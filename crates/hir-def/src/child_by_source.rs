@@ -104,8 +104,14 @@ impl ChildBySource for MethodmapId {
         let data = db.methodmap_data(*self);
         let item_tree = db.file_item_tree(file_id);
         let ast_id_map = db.ast_id_map(file_id);
-        data.items.iter().for_each(|(idx, item)| match *item {
-            MethodmapItemData::Property(_) => {
+        data.items.iter().for_each(|(idx, item)| match item {
+            MethodmapItemData::Property(data) => {
+                for fn_id in data.getters_setters.iter() {
+                    let fn_id = fn_id.function_id();
+                    let item = &item_tree[fn_id.lookup(db).id];
+                    let node_ptr = ast_id_map.get_raw(item.ast_id);
+                    map[FUNCTION].insert(node_ptr, fn_id);
+                }
                 let property_id = PropertyId {
                     parent: *self,
                     local_id: idx,
@@ -115,7 +121,7 @@ impl ChildBySource for MethodmapId {
             MethodmapItemData::Method(id) => {
                 let item = &item_tree[id.lookup(db).id];
                 let node_ptr = ast_id_map.get_raw(item.ast_id);
-                map[FUNCTION].insert(node_ptr, id);
+                map[FUNCTION].insert(node_ptr, *id);
             }
         });
         for (local_id, source) in arena_map.value.iter() {

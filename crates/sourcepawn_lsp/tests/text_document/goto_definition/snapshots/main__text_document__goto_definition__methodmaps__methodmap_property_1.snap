@@ -1,18 +1,18 @@
 ---
 source: crates/sourcepawn_lsp/tests/text_document/goto_definition/methodmaps.rs
-assertion_line: 151
-expression: "goto_definition(r#\"\n%! main.sp\nmethodmap Foo {\n    public Foo() {}\n            |\n            ^\n}\n\"#)"
+assertion_line: 209
+expression: "goto_definition(r#\"\n%! main.sp\nmethodmap Foo {\n    property int Foo {}\n                  |\n                  ^\n}\n\"#)"
 ---
 [
   {
     "originSelectionRange": {
       "start": {
         "line": 1,
-        "character": 11
+        "character": 17
       },
       "end": {
         "line": 1,
-        "character": 14
+        "character": 20
       }
     },
     "targetUri": "file:///main.sp",
@@ -23,17 +23,17 @@ expression: "goto_definition(r#\"\n%! main.sp\nmethodmap Foo {\n    public Foo()
       },
       "end": {
         "line": 1,
-        "character": 19
+        "character": 23
       }
     },
     "targetSelectionRange": {
       "start": {
         "line": 1,
-        "character": 11
+        "character": 17
       },
       "end": {
         "line": 1,
-        "character": 14
+        "character": 20
       }
     }
   }

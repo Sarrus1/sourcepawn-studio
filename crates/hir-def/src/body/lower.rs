@@ -53,30 +53,12 @@ impl ExprCollector<'_> {
         if let Some(params_list) = params_list {
             match TSKind::from(params_list) {
                 TSKind::parameter_declarations => {
-                    for child in params_list.children(&mut params_list.walk()) {
-                        if TSKind::from(child) == TSKind::parameter_declaration {
-                            if let Some(name_node) = child.child_by_field_name("name") {
-                                let ident_id = self
-                                    .body
-                                    .idents
-                                    .alloc(Name::from_node(&name_node, self.source));
-                                let binding = Expr::Binding {
-                                    ident_id,
-                                    type_ref: child.child_by_field_name("type").and_then(
-                                        |type_node| TypeRef::from_node(&type_node, self.source),
-                                    ),
-                                    initializer: child
-                                        .child_by_field_name("defaultValue")
-                                        .and_then(|default_node| {
-                                            self.maybe_collect_expr(default_node)
-                                        }),
-                                };
-                                let decl_id = self.alloc_expr(binding, NodePtr::from(&child));
-                                self.body.params.push((ident_id, decl_id));
-                            }
-                        }
-                    }
+                    params_list
+                        .children(&mut params_list.walk())
+                        .filter(|n| TSKind::from(n) == TSKind::parameter_declaration)
+                        .for_each(|child| self.collect_parameter_declaration(child));
                 }
+                TSKind::parameter_declaration => self.collect_parameter_declaration(params_list),
                 _ => todo!("Handle non argument declarations"),
             }
         }
@@ -84,6 +66,26 @@ impl ExprCollector<'_> {
             self.body.body_expr = self.collect_expr(body).into();
         }
         (self.body, self.source_map)
+    }
+
+    fn collect_parameter_declaration(&mut self, node: tree_sitter::Node) {
+        if let Some(name_node) = node.child_by_field_name("name") {
+            let ident_id = self
+                .body
+                .idents
+                .alloc(Name::from_node(&name_node, self.source));
+            let binding = Expr::Binding {
+                ident_id,
+                type_ref: node
+                    .child_by_field_name("type")
+                    .and_then(|type_node| TypeRef::from_node(&type_node, self.source)),
+                initializer: node
+                    .child_by_field_name("defaultValue")
+                    .and_then(|default_node| self.maybe_collect_expr(default_node)),
+            };
+            let decl_id = self.alloc_expr(binding, NodePtr::from(&node));
+            self.body.params.push((ident_id, decl_id));
+        }
     }
 
     fn collect_variable_declaration(&mut self, expr: tree_sitter::Node) -> ExprId {

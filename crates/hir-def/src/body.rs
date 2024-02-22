@@ -68,9 +68,21 @@ impl Body {
                     value: func_node,
                 } = func.source(db, &tree);
                 let body_node = func_node.child_by_field_name("body");
-                let params_list = func_node
-                    .children(&mut func_node.walk())
-                    .find(|child| TSKind::from(child) == TSKind::parameter_declarations);
+                let params_list = match TSKind::from(func_node) {
+                    TSKind::methodmap_property_method => {
+                        if let Some(setter_node) = func_node
+                            .children(&mut func_node.walk())
+                            .find(|child| TSKind::from(child) == TSKind::methodmap_property_setter)
+                        {
+                            setter_node.child_by_field_name("parameter")
+                        } else {
+                            None
+                        }
+                    }
+                    _ => func_node
+                        .children(&mut func_node.walk())
+                        .find(|child| TSKind::from(child) == TSKind::parameter_declarations),
+                };
                 let (body, sourcemap) = Body::new(
                     db,
                     def,

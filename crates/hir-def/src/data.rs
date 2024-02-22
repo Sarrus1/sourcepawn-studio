@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use fxhash::FxHashMap;
 use la_arena::{Arena, ArenaMap, Idx};
+use smol_str::ToSmolStr;
 use syntax::TSKind;
 
 use crate::{
@@ -9,7 +10,7 @@ use crate::{
     item_tree::{EnumStructItemId, MethodmapItemId, Name},
     src::{HasChildSource, HasSource},
     DefDatabase, EnumStructId, FunctionId, FunctionLoc, InFile, Intern, ItemTreeId, LocalFieldId,
-    LocalPropertyId, Lookup, MacroId, MethodmapId, NodePtr,
+    LocalPropertyId, Lookup, MacroId, MethodmapId, NodePtr, PropertyId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -63,12 +64,26 @@ pub enum MethodmapItemData {
     Method(FunctionId),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PropertyItem {
+    Getter(FunctionId),
+    Setter(FunctionId),
+}
+
+impl PropertyItem {
+    pub fn function_id(&self) -> FunctionId {
+        match self {
+            PropertyItem::Getter(id) | PropertyItem::Setter(id) => *id,
+        }
+    }
+}
+
 /// A single property of a methodmap
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PropertyData {
     pub name: Name,
     pub type_ref: TypeRef,
-    pub getters_setters: Vec<FunctionId>,
+    pub getters_setters: Vec<PropertyItem>,
 }
 
 impl MethodmapData {
@@ -91,14 +106,20 @@ impl MethodmapData {
                         .getters_setters
                         .clone()
                         .map(|fn_id| {
-                            FunctionLoc {
+                            let id = FunctionLoc {
                                 container: id.into(),
                                 id: ItemTreeId {
                                     tree: loc.tree_id(),
                                     value: fn_id,
                                 },
                             }
-                            .intern(db)
+                            .intern(db);
+                            let data = db.function_data(id);
+                            match data.name.to_smolstr().as_str() {
+                                "get" => PropertyItem::Getter(id),
+                                "set" => PropertyItem::Setter(id),
+                                _ => unreachable!("Invalid getter/setter function"),
+                            }
                         })
                         .collect(),
                 });
@@ -138,6 +159,13 @@ impl MethodmapData {
         match &self.items[item] {
             MethodmapItemData::Property(_) => None,
             MethodmapItemData::Method(function_id) => Some(function_id),
+        }
+    }
+
+    pub fn property(&self, item: Idx<MethodmapItemData>) -> Option<&PropertyData> {
+        match &self.items[item] {
+            MethodmapItemData::Property(property_data) => Some(property_data),
+            MethodmapItemData::Method(_) => None,
         }
     }
 
@@ -249,36 +277,23 @@ impl HasChildSource<LocalFieldId> for EnumStructId {
         let tree = db.parse(loc.file_id());
         // We use fields to get the Idx of the field, even if they are dropped at the end of the call.
         // The Idx will be the same when we rebuild the EnumStructData.
+        // It feels like we could just be inserting empty data...
+        // Why can't we just treat fields as item_tree members instead of making them local to the enum_struct?
         // TODO: Is there a better way to do this?
         // FIXME: Why does it feel like we are doing this twice?
         let mut items = Arena::new();
         let enum_struct_node = loc.source(db, &tree).value;
-        for child in enum_struct_node.children(&mut enum_struct_node.walk()) {
-            match TSKind::from(child) {
-                TSKind::enum_struct_field => {
-                    let name_node = child.child_by_field_name("name").unwrap();
-                    let name = Name::from_node(&name_node, &db.preprocessed_text(loc.file_id()));
-                    let type_ref_node = child.child_by_field_name("type").unwrap();
-                    let type_ref =
-                        TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id()))
-                            .unwrap();
-                    let field = EnumStructItemData::Field(FieldData { name, type_ref });
-                    map.insert(items.alloc(field), NodePtr::from(&child));
-                }
-                // TSKind::enum_struct_method => {
-                //     let name_node = child.child_by_field_name("name").unwrap();
-                //     let name = Name::from_node(&name_node, &db.preprocessed_text(loc.file_id()));
-                //     let type_ref =
-                //         child
-                //             .child_by_field_name("returnType")
-                //             .and_then(|type_ref_node| {
-                //                 TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id()))
-                //             });
-                //     let method = EnumStructItemData::Method(FunctionData { name, type_ref });
-                //     map.insert(items.alloc(method), NodePtr::from(&child));
-                // }
-                _ => (),
-            }
+        for child in enum_struct_node
+            .children(&mut enum_struct_node.walk())
+            .filter(|c| TSKind::from(c) == TSKind::enum_struct_field)
+        {
+            let name_node = child.child_by_field_name("name").unwrap();
+            let name = Name::from_node(&name_node, &db.preprocessed_text(loc.file_id()));
+            let type_ref_node = child.child_by_field_name("type").unwrap();
+            let type_ref =
+                TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id())).unwrap();
+            let field = EnumStructItemData::Field(FieldData { name, type_ref });
+            map.insert(items.alloc(field), NodePtr::from(&child));
         }
         InFile::new(loc.file_id(), map)
     }
@@ -291,44 +306,24 @@ impl HasChildSource<LocalPropertyId> for MethodmapId {
         let loc = self.lookup(db).id;
         let mut map = ArenaMap::default();
         let tree = db.parse(loc.file_id());
-        // We use fields to get the Idx of the field, even if they are dropped at the end of the call.
-        // The Idx will be the same when we rebuild the EnumStructData.
-        // TODO: Is there a better way to do this?
-        // FIXME: Why does it feel like we are doing this twice?
         let mut items: Arena<MethodmapItemData> = Arena::new();
         let methodmap_node = loc.source(db, &tree).value;
-        for child in methodmap_node.children(&mut methodmap_node.walk()) {
-            match TSKind::from(child) {
-                // TSKind::methodmap_property => {
-                //     let name_node = child.child_by_field_name("name").unwrap();
-                //     let name = Name::from_node(&name_node, &db.preprocessed_text(loc.file_id()));
-                //     let type_ref_node = child.child_by_field_name("type").unwrap();
-                //     let type_ref =
-                //         TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id()))
-                //             .unwrap();
-                //     let mut getters_setters = Vec::new();
-
-                //     let property = MethodmapItemData::Property(PropertyData {
-                //         name,
-                //         type_ref,
-                //         getters_setters,
-                //     });
-                //     map.insert(items.alloc(property), NodePtr::from(&child));
-                // }
-                // TSKind::enum_struct_method => {
-                //     let name_node = child.child_by_field_name("name").unwrap();
-                //     let name = Name::from_node(&name_node, &db.preprocessed_text(loc.file_id()));
-                //     let type_ref =
-                //         child
-                //             .child_by_field_name("returnType")
-                //             .and_then(|type_ref_node| {
-                //                 TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id()))
-                //             });
-                //     let method = EnumStructItemData::Method(FunctionData { name, type_ref });
-                //     map.insert(items.alloc(method), NodePtr::from(&child));
-                // }
-                _ => (),
-            }
+        for child in methodmap_node
+            .children(&mut methodmap_node.walk())
+            .filter(|c| TSKind::from(c) == TSKind::methodmap_property)
+        {
+            let name_node = child.child_by_field_name("name").unwrap();
+            let name = Name::from_node(&name_node, &db.preprocessed_text(loc.file_id()));
+            let type_ref_node = child.child_by_field_name("type").unwrap();
+            let type_ref =
+                TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id())).unwrap();
+            let getters_setters = Vec::new();
+            let property = MethodmapItemData::Property(PropertyData {
+                name,
+                type_ref,
+                getters_setters,
+            });
+            map.insert(items.alloc(property), NodePtr::from(&child));
         }
         InFile::new(loc.file_id(), map)
     }

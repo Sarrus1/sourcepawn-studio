@@ -6,6 +6,7 @@ use preprocessor::Offset;
 use syntax::{
     range_contains_pos,
     utils::{lsp_position_to_ts_point, ts_range_to_lsp_range},
+    TSKind,
 };
 use vfs::FileId;
 
@@ -87,8 +88,25 @@ pub(crate) fn goto_definition(
     let def_node = def.source(db, &source_tree)?.value;
 
     let mut name_range = def_node.range();
-    if let Some(name_node) = def_node.child_by_field_name("name") {
-        name_range = name_node.range();
+    let inner_name_range = match TSKind::from(def_node) {
+        TSKind::methodmap_property_method => {
+            def_node.children(&mut def_node.walk()).find_map(|child| {
+                if matches!(
+                    TSKind::from(child),
+                    TSKind::methodmap_property_getter | TSKind::methodmap_property_setter
+                ) {
+                    Some(child.child_by_field_name("name")?.range())
+                } else {
+                    None
+                }
+            })
+        }
+        _ => def_node
+            .child_by_field_name("name")
+            .map(|name_node| name_node.range()),
+    };
+    if let Some(inner_name_range) = inner_name_range {
+        name_range = inner_name_range;
     }
 
     let target_preprocessing_results = sema.preprocess_file(file_id);
