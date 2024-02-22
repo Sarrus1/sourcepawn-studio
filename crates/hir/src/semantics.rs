@@ -5,7 +5,9 @@ use std::{cell::RefCell, fmt, ops, sync::Arc};
 use base_db::{is_field_receiver_node, is_name_node, Tree};
 use fxhash::FxHashMap;
 use hir_def::{
-    resolve_include_node, resolver::ValueNs, FunctionId, InFile, Name, NodePtr, PropertyItem,
+    resolve_include_node,
+    resolver::{global_resolver, ValueNs},
+    FunctionId, InFile, Name, NodePtr, PropertyItem,
 };
 use syntax::TSKind;
 use vfs::FileId;
@@ -227,22 +229,19 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         node: tree_sitter::Node,
         source: Arc<str>,
     ) -> Option<DefResolution> {
-        let def_map = self.db.file_def_map(file_id);
+        let resolver = global_resolver(self.db, file_id);
         let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
-        match def_map.get_from_str(text)? {
-            hir_def::FileDefId::FunctionId(id) => {
-                DefResolution::Function(Function::from(id)).into()
+        match resolver.resolve_ident(text)? {
+            ValueNs::FunctionId(id) => DefResolution::Function(Function::from(id.value)).into(),
+            ValueNs::MacroId(id) => DefResolution::Macro(Macro::from(id.value)).into(),
+            ValueNs::GlobalId(id) => DefResolution::Global(Global::from(id.value)).into(),
+            ValueNs::EnumStructId(id) => {
+                DefResolution::EnumStruct(EnumStruct::from(id.value)).into()
             }
-            hir_def::FileDefId::MacroId(id) => DefResolution::Macro(Macro::from(id)).into(),
-            hir_def::FileDefId::GlobalId(id) => DefResolution::Global(Global::from(id)).into(),
-            hir_def::FileDefId::EnumStructId(id) => {
-                DefResolution::EnumStruct(EnumStruct::from(id)).into()
-            }
-            hir_def::FileDefId::MethodmapId(id) => {
-                DefResolution::Methodmap(Methodmap::from(id)).into()
-            }
-            hir_def::FileDefId::EnumId(id) => DefResolution::Enum(Enum::from(id)).into(),
-            hir_def::FileDefId::VariantId(id) => DefResolution::Variant(Variant::from(id)).into(),
+            ValueNs::MethodmapId(id) => DefResolution::Methodmap(Methodmap::from(id.value)).into(),
+            ValueNs::EnumId(id) => DefResolution::Enum(Enum::from(id.value)).into(),
+            ValueNs::VariantId(id) => DefResolution::Variant(Variant::from(id.value)).into(),
+            _ => None,
         }
     }
 

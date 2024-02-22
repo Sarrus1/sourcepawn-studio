@@ -197,15 +197,15 @@ impl InferenceContext<'_> {
         let Some(TypeRef::Name(type_name)) = target_ty else {
             return None;
         };
-        let def_map = self.db.file_def_map(self.owner.file_id(self.db));
-        match def_map.get(&type_name)? {
-            FileDefId::EnumStructId(it) => {
-                let data = self.db.enum_struct_data(it);
+        let type_name_str: String = type_name.clone().into();
+        match self.resolver.resolve_ident(&type_name_str)? {
+            ValueNs::EnumStructId(it) => {
+                let data = self.db.enum_struct_data(it.value);
                 if let Some(item) = data.items(name) {
                     match data.item(item) {
                         EnumStructItemData::Field(_) => {
                             let field_id = FieldId {
-                                parent: it,
+                                parent: it.value,
                                 local_id: item,
                             };
                             self.result
@@ -227,13 +227,13 @@ impl InferenceContext<'_> {
                     }
                 }
             }
-            FileDefId::MethodmapId(it) => {
-                let data = self.db.methodmap_data(it);
+            ValueNs::MethodmapId(it) => {
+                let data = self.db.methodmap_data(it.value);
                 if let Some(item) = data.items(name) {
                     match data.item(item) {
                         MethodmapItemData::Property(_) => {
                             let property_id = PropertyId {
-                                parent: it,
+                                parent: it.value,
                                 local_id: item,
                             };
                             self.result
@@ -286,10 +286,10 @@ impl InferenceContext<'_> {
         let Some(TypeRef::Name(type_name)) = target_ty else {
             return None;
         };
-        let def_map = self.db.file_def_map(self.owner.file_id(self.db));
-        match def_map.get(&type_name)? {
-            FileDefId::EnumStructId(it) => {
-                let data = self.db.enum_struct_data(it);
+        let type_name_str: String = type_name.clone().into();
+        match self.resolver.resolve_ident(&type_name_str)? {
+            ValueNs::EnumStructId(it) => {
+                let data = self.db.enum_struct_data(it.value);
                 if let Some(item) = data.items(method_name) {
                     match data.item(item) {
                         EnumStructItemData::Field(_) => {
@@ -312,8 +312,8 @@ impl InferenceContext<'_> {
                     }
                 }
             }
-            FileDefId::MethodmapId(it) => {
-                let data = self.db.methodmap_data(it);
+            ValueNs::MethodmapId(it) => {
+                let data = self.db.methodmap_data(it.value);
                 if let Some(item) = data.items(method_name) {
                     match data.item(item) {
                         MethodmapItemData::Property(_) => {

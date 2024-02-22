@@ -284,6 +284,10 @@ impl HasResolver for FileId {
     }
 }
 
+pub fn global_resolver(db: &dyn DefDatabase, file_id: FileId) -> Resolver {
+    file_id.resolver(db)
+}
+
 pub fn resolver_for_scope(
     db: &dyn DefDatabase,
     owner: DefWithBodyId,
