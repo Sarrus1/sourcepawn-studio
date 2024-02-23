@@ -1,8 +1,9 @@
 use base_db::Tree;
 use db::HirDatabase;
 use hir_def::{
-    DefWithBodyId, EnumId, EnumStructId, ExprId, FunctionId, GlobalId, InFile, InferenceDiagnostic,
-    LocalFieldId, LocalPropertyId, Lookup, MacroId, MethodmapId, Name, TypedefId, VariantId,
+    resolver::ValueNs, DefWithBodyId, EnumId, EnumStructId, ExprId, FunctionId, GlobalId, InFile,
+    InferenceDiagnostic, LocalFieldId, LocalPropertyId, Lookup, MacroId, MethodmapId, Name,
+    TypedefId, VariantId,
 };
 use preprocessor::PreprocessorError;
 use stdx::impl_from;
@@ -45,6 +46,26 @@ impl_from!(
     Local,
     File for DefResolution
 );
+
+impl DefResolution {
+    fn try_from(value: ValueNs) -> Option<Self> {
+        match value {
+            ValueNs::FunctionId(ids) => {
+                DefResolution::Function(Function::from(ids.first()?.value)).into()
+            }
+            ValueNs::LocalId(expr) => DefResolution::Local(Local::from(expr)).into(),
+            ValueNs::MacroId(id) => DefResolution::Macro(Macro::from(id.value)).into(),
+            ValueNs::GlobalId(id) => DefResolution::Global(Global::from(id.value)).into(),
+            ValueNs::EnumStructId(id) => {
+                DefResolution::EnumStruct(EnumStruct::from(id.value)).into()
+            }
+            ValueNs::MethodmapId(id) => DefResolution::Methodmap(Methodmap::from(id.value)).into(),
+            ValueNs::EnumId(id) => DefResolution::Enum(Enum::from(id.value)).into(),
+            ValueNs::VariantId(id) => DefResolution::Variant(Variant::from(id.value)).into(),
+            ValueNs::TypedefId(id) => DefResolution::Typedef(Typedef::from(id.value)).into(),
+        }
+    }
+}
 
 impl<'tree> HasSource<'tree> for DefResolution {
     fn source(

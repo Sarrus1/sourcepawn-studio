@@ -419,23 +419,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             InFile::new(file_id, body_node),
             Some(offset),
         );
-        let value_ns = analyzer.resolver.resolve_ident(text);
-        match value_ns? {
-            // TODO: Maybe hide the match logic in a function/macro?
-            ValueNs::FunctionId(ids) => {
-                DefResolution::Function(Function::from(ids.first()?.value)).into()
-            }
-            ValueNs::LocalId(expr) => DefResolution::Local(Local::from(expr)).into(),
-            ValueNs::MacroId(id) => DefResolution::Macro(Macro::from(id.value)).into(),
-            ValueNs::GlobalId(id) => DefResolution::Global(Global::from(id.value)).into(),
-            ValueNs::EnumStructId(id) => {
-                DefResolution::EnumStruct(EnumStruct::from(id.value)).into()
-            }
-            ValueNs::MethodmapId(id) => DefResolution::Methodmap(Methodmap::from(id.value)).into(),
-            ValueNs::EnumId(id) => DefResolution::Enum(Enum::from(id.value)).into(),
-            ValueNs::VariantId(id) => DefResolution::Variant(Variant::from(id.value)).into(),
-            ValueNs::TypedefId(id) => DefResolution::Typedef(Typedef::from(id.value)).into(),
-        }
+        DefResolution::try_from(analyzer.resolver.resolve_ident(text)?)
     }
 
     fn function_node_to_def(
@@ -482,28 +466,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 let def = hir_def::DefWithBodyId::TypedefId(id);
                 let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
                 let analyzer = SourceAnalyzer::new_no_body_no_infer(self.db, def, file_id);
-                let value_ns = analyzer.resolver.resolve_ident(text);
-                match value_ns? {
-                    ValueNs::FunctionId(ids) => {
-                        DefResolution::Function(Function::from(ids.first()?.value)).into()
-                    }
-                    ValueNs::LocalId(expr) => DefResolution::Local(Local::from(expr)).into(),
-                    ValueNs::MacroId(id) => DefResolution::Macro(Macro::from(id.value)).into(),
-                    ValueNs::GlobalId(id) => DefResolution::Global(Global::from(id.value)).into(),
-                    ValueNs::EnumStructId(id) => {
-                        DefResolution::EnumStruct(EnumStruct::from(id.value)).into()
-                    }
-                    ValueNs::MethodmapId(id) => {
-                        DefResolution::Methodmap(Methodmap::from(id.value)).into()
-                    }
-                    ValueNs::EnumId(id) => DefResolution::Enum(Enum::from(id.value)).into(),
-                    ValueNs::VariantId(id) => {
-                        DefResolution::Variant(Variant::from(id.value)).into()
-                    }
-                    ValueNs::TypedefId(id) => {
-                        DefResolution::Typedef(Typedef::from(id.value)).into()
-                    }
-                }
+                DefResolution::try_from(analyzer.resolver.resolve_ident(text)?)
             }
             _ => None,
         }
