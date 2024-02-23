@@ -113,6 +113,21 @@ impl SourceAnalyzer {
             .method_resolution(expr_id)
             .map(|it| it.into())
     }
+
+    pub(crate) fn resolve_constructor(
+        &self,
+        db: &dyn HirDatabase,
+        node: &tree_sitter::Node,
+        parent: &tree_sitter::Node,
+    ) -> Option<Function> {
+        assert!(matches!(TSKind::from(*parent), TSKind::new_expression));
+        let src = InFile::new(self.file_id, node);
+        let expr_id = self.expr_id(db, src)?;
+        self.infer
+            .as_ref()?
+            .method_resolution(expr_id)
+            .map(|it| it.into())
+    }
 }
 
 fn scope_for(

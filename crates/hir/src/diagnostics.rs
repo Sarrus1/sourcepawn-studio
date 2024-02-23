@@ -27,6 +27,7 @@ diagnostics![
     UnresolvedInclude,
     UnresolvedField,
     UnresolvedMethodCall,
+    UnresolvedConstructor,
     PreprocessorEvaluationError,
     UnresolvedMacro,
     InactiveCode,
@@ -52,6 +53,19 @@ pub struct UnresolvedMethodCall {
     pub receiver: Name,
     pub name: Name,
     pub field_with_same_name_exists: bool,
+}
+
+#[derive(Debug)]
+pub struct UnresolvedConstructor {
+    pub expr: InFile<NodePtr>,
+    pub methodmap: Name,
+    pub exists: Option<ConstructorDiagnosticKind>,
+}
+
+#[derive(Debug)]
+pub enum ConstructorDiagnosticKind {
+    Methodmap,
+    EnumStruct,
 }
 
 #[derive(Debug)]

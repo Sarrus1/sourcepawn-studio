@@ -477,3 +477,21 @@ void main() {
 "#,
     ));
 }
+
+#[test]
+fn methodmap_new_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    public Foo() {}
+}
+
+void main() {
+    new Foo();
+         |
+         ^
+}
+"#,
+    ));
+}

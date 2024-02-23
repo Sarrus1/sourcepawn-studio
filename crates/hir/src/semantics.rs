@@ -373,23 +373,38 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         assert!(TSKind::from(body_node) == TSKind::block);
         let def = hir_def::DefWithBodyId::FunctionId(id);
         let offset = node.start_position();
-        if TSKind::field_access == TSKind::from(parent) && is_field_receiver_node(&node) {
-            let analyzer = SourceAnalyzer::new_for_body(
-                self.db,
-                def,
-                InFile::new(file_id, body_node),
-                Some(offset),
-            );
-            if let Some(grand_parent) = parent.parent() {
-                if TSKind::call_expression == TSKind::from(&grand_parent) {
-                    let method = analyzer.resolve_method(self.db, &node, &parent)?;
-                    return Some(DefResolution::Function(method));
+        match TSKind::from(parent) {
+            TSKind::field_access if is_field_receiver_node(&node) => {
+                let analyzer = SourceAnalyzer::new_for_body(
+                    self.db,
+                    def,
+                    InFile::new(file_id, body_node),
+                    Some(offset),
+                );
+                if let Some(grand_parent) = parent.parent() {
+                    if TSKind::call_expression == TSKind::from(&grand_parent) {
+                        let method = analyzer.resolve_method(self.db, &node, &parent)?;
+                        return Some(DefResolution::Function(method));
+                    }
+                }
+                match analyzer.resolve_attribute(self.db, &node, &parent)? {
+                    Attribute::Field(field) => return Some(DefResolution::Field(field)),
+                    Attribute::Property(property) => {
+                        return Some(DefResolution::Property(property))
+                    }
                 }
             }
-            match analyzer.resolve_attribute(self.db, &node, &parent)? {
-                Attribute::Field(field) => return Some(DefResolution::Field(field)),
-                Attribute::Property(property) => return Some(DefResolution::Property(property)),
+            TSKind::new_expression => {
+                let analyzer = SourceAnalyzer::new_for_body(
+                    self.db,
+                    def,
+                    InFile::new(file_id, body_node),
+                    Some(offset),
+                );
+                let constructor = analyzer.resolve_constructor(self.db, &node, &parent)?;
+                return Some(DefResolution::Function(constructor));
             }
+            _ => {}
         }
 
         let analyzer = SourceAnalyzer::new_for_body_no_infer(

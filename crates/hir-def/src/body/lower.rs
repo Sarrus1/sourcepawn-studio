@@ -222,14 +222,14 @@ impl ExprCollector<'_> {
                 let constructor = expr.child_by_field_name("class")?;
                 let args = expr.child_by_field_name("arguments")?;
                 let new = Expr::New {
-                    constructor: self.collect_expr(constructor),
+                    name: Name::from_node(&constructor, self.source),
                     args: args
                         .children(&mut args.walk())
                         .filter_map(|arg| self.maybe_collect_expr(arg))
                         .collect::<Vec<_>>()
                         .into_boxed_slice(),
                 };
-                Some(self.alloc_expr(new, NodePtr::from(&expr)))
+                Some(self.alloc_expr(new, NodePtr::from(&constructor)))
             }
             TSKind::view_as | TSKind::old_type_cast => {
                 let expr = expr.child_by_field_name("value")?;

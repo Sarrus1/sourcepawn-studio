@@ -238,33 +238,48 @@ impl DefWithBody {
                     receiver,
                     name,
                     method_with_same_name_exists,
-                } => {
-                    let expr = expr_syntax(*expr);
-
-                    acc.push(
-                        UnresolvedField {
-                            expr,
-                            name: name.clone(),
-                            receiver: receiver.clone(),
-                            method_with_same_name_exists: *method_with_same_name_exists,
-                        }
-                        .into(),
-                    )
-                }
+                } => acc.push(
+                    UnresolvedField {
+                        expr: expr_syntax(*expr),
+                        name: name.clone(),
+                        receiver: receiver.clone(),
+                        method_with_same_name_exists: *method_with_same_name_exists,
+                    }
+                    .into(),
+                ),
                 InferenceDiagnostic::UnresolvedMethodCall {
                     expr,
                     receiver,
                     name,
                     field_with_same_name_exists,
+                } => acc.push(
+                    UnresolvedMethodCall {
+                        expr: expr_syntax(*expr),
+                        name: name.clone(),
+                        receiver: receiver.clone(),
+                        field_with_same_name_exists: *field_with_same_name_exists,
+                    }
+                    .into(),
+                ),
+                InferenceDiagnostic::UnresolvedConstructor {
+                    expr,
+                    methodmap,
+                    exists,
                 } => {
-                    let expr = expr_syntax(*expr);
-
+                    let exists = match exists {
+                        Some(hir_def::ConstructorDiagnosticKind::Methodmap) => {
+                            Some(ConstructorDiagnosticKind::Methodmap)
+                        }
+                        Some(hir_def::ConstructorDiagnosticKind::EnumStruct) => {
+                            Some(ConstructorDiagnosticKind::EnumStruct)
+                        }
+                        _ => None,
+                    };
                     acc.push(
-                        UnresolvedMethodCall {
-                            expr,
-                            name: name.clone(),
-                            receiver: receiver.clone(),
-                            field_with_same_name_exists: *field_with_same_name_exists,
+                        UnresolvedConstructor {
+                            expr: expr_syntax(*expr),
+                            methodmap: methodmap.clone(),
+                            exists,
                         }
                         .into(),
                     )

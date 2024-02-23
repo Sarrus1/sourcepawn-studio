@@ -121,6 +121,7 @@ impl Resolver {
                                 .extend(entry.into_iter().map(|entry| (entry, def_map.file_id())));
                         }
                     });
+                    entries.dedup(); // FIXME: Use a HashSet instead of Vec
                     match entries.len() {
                         0 => continue,
                         1 => match *entries.first().unwrap() {

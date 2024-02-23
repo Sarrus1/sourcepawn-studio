@@ -34,7 +34,7 @@ pub enum Expr {
     },
     CommaExpr(Box<[ExprId]>),
     New {
-        constructor: ExprId,
+        name: Name,
         args: Box<[ExprId]>,
     },
     ViewAs {

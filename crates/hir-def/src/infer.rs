@@ -39,6 +39,17 @@ pub enum InferenceDiagnostic {
         name: Name,
         field_with_same_name_exists: bool,
     },
+    UnresolvedConstructor {
+        expr: ExprId,
+        methodmap: Name,
+        exists: Option<ConstructorDiagnosticKind>,
+    },
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum ConstructorDiagnosticKind {
+    EnumStruct,
+    Methodmap,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -117,11 +128,11 @@ impl InferenceContext<'_> {
                 }
                 ty
             }
-            Expr::New { constructor, args } => {
+            Expr::New { name, args } => {
                 for arg in args.iter() {
                     self.infer_expr(arg);
                 }
-                self.infer_expr(constructor)
+                self.infer_constructor(expr, name)
             }
             Expr::FieldAccess { target, name } => self.infer_field_access(expr, target, name),
             Expr::UnaryOp { expr, .. } => self.infer_expr(expr),
@@ -214,6 +225,48 @@ impl InferenceContext<'_> {
     pub(crate) fn collect_fn(&mut self, _func: FunctionId) {
         if let Some(id) = self.body.body_expr {
             self.infer_expr(&id);
+        }
+    }
+
+    fn infer_constructor(&mut self, expr: &ExprId, name: &Name) -> Option<TypeRef> {
+        let type_name_str: String = name.clone().into();
+        match self.resolver.resolve_ident(&type_name_str) {
+            Some(ValueNs::EnumStructId(_)) => {
+                self.result
+                    .diagnostics
+                    .push(InferenceDiagnostic::UnresolvedConstructor {
+                        expr: *expr,
+                        methodmap: name.clone(),
+                        exists: Some(ConstructorDiagnosticKind::EnumStruct),
+                    });
+                None
+            }
+            Some(ValueNs::MethodmapId(it)) => {
+                let data = self.db.methodmap_data(it.value);
+                if let Some(constructor_id) = data.constructor() {
+                    self.result.method_resolutions.insert(*expr, constructor_id);
+                    TypeRef::Name(name.clone()).into()
+                } else {
+                    self.result
+                        .diagnostics
+                        .push(InferenceDiagnostic::UnresolvedConstructor {
+                            expr: *expr,
+                            methodmap: name.clone(),
+                            exists: Some(ConstructorDiagnosticKind::Methodmap),
+                        });
+                    None
+                }
+            }
+            _ => {
+                self.result
+                    .diagnostics
+                    .push(InferenceDiagnostic::UnresolvedConstructor {
+                        expr: *expr,
+                        methodmap: name.clone(),
+                        exists: None,
+                    });
+                None
+            }
         }
     }
 
