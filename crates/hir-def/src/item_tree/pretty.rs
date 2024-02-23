@@ -4,7 +4,7 @@ use crate::db::DefDatabase;
 
 use super::{
     Enum, EnumStruct, EnumStructItemId, Field, FileItem, Function, FunctionKind, ItemTree, Macro,
-    Methodmap, MethodmapItemId, Property, RawVisibilityId, Variable, Variant,
+    Methodmap, MethodmapItemId, Property, RawVisibilityId, Typedef, Variable, Variant,
 };
 
 pub fn print_item_tree(_db: &dyn DefDatabase, tree: &ItemTree) -> String {
@@ -17,6 +17,7 @@ pub fn print_item_tree(_db: &dyn DefDatabase, tree: &ItemTree) -> String {
             FileItem::Enum(idx) => printer.print_enum(idx),
             FileItem::Macro(idx) => printer.print_macro(idx),
             FileItem::Methodmap(idx) => printer.print_methodmap(idx),
+            FileItem::Typedef(idx) => printer.print_typedef(idx),
             FileItem::Variant(_) => (),
         }
         printer.newline();
@@ -243,6 +244,35 @@ impl<'a> Printer<'a> {
             self.push(");");
             self.dedent();
         }
+        self.newline();
+    }
+
+    pub fn print_typedef(&mut self, idx: &Idx<Typedef>) {
+        let Typedef {
+            name,
+            type_ref,
+            params,
+            ast_id,
+        } = &self.tree[*idx];
+        self.push(format!("// {}", ast_id).as_str());
+        self.newline();
+        if let Some(name) = name {
+            self.push(format!("typedef {} = ", name).as_str());
+        }
+        self.push(format!("function {}", type_ref.to_str()).as_str());
+        self.push("(");
+        self.indent();
+        for param in self.tree.data().params[params.clone()].iter() {
+            if let Some(type_ref) = &param.type_ref {
+                self.newline();
+                self.push(format!("// {}", param.ast_id).as_str());
+                self.newline();
+                self.push(&type_ref.to_str());
+                self.push(",");
+            }
+        }
+        self.push(");");
+        self.dedent();
         self.newline();
     }
 }

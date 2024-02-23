@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/goto_definition/typedefs.rs
+assertion_line: 18
+expression: "goto_definition(r#\"\n%! main.sp\ntypedef Foo = function int (int foo);\n                                 |\n                                 ^\n\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 0,
+        "character": 32
+      },
+      "end": {
+        "line": 0,
+        "character": 35
+      }
+    },
+    "targetUri": "file:///main.sp",
+    "targetRange": {
+      "start": {
+        "line": 0,
+        "character": 28
+      },
+      "end": {
+        "line": 0,
+        "character": 35
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 0,
+        "character": 32
+      },
+      "end": {
+        "line": 0,
+        "character": 35
+      }
+    }
+  }
+]

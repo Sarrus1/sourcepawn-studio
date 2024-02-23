@@ -10,7 +10,7 @@ use crate::{
     item_tree::{EnumStructItemId, MethodmapItemId, Name, SpecialMethod},
     src::{HasChildSource, HasSource},
     DefDatabase, EnumStructId, FunctionId, FunctionLoc, InFile, Intern, ItemTreeId, LocalFieldId,
-    LocalPropertyId, Lookup, MacroId, MethodmapId, NodePtr, PropertyId,
+    LocalPropertyId, Lookup, MacroId, MethodmapId, NodePtr, TypedefId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -208,6 +208,30 @@ impl MethodmapData {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TypedefData {
+    pub name: Option<Name>,
+    pub type_ref: TypeRef,
+}
+
+impl TypedefData {
+    pub(crate) fn typedef_data_query(db: &dyn DefDatabase, id: TypedefId) -> Arc<TypedefData> {
+        let loc = id.lookup(db).id;
+        let item_tree = loc.tree_id().item_tree(db);
+        let typedef = &item_tree[loc.value];
+        let typedef_data = TypedefData {
+            name: typedef.name.clone(),
+            type_ref: typedef.type_ref.clone(),
+        };
+
+        Arc::new(typedef_data)
+    }
+
+    pub fn name(&self) -> Option<Name> {
+        self.name.clone()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EnumStructData {
     pub name: Name,
     pub items: Arc<Arena<EnumStructItemData>>,
@@ -316,8 +340,7 @@ impl HasChildSource<LocalFieldId> for EnumStructId {
             let name_node = child.child_by_field_name("name").unwrap();
             let name = Name::from_node(&name_node, &db.preprocessed_text(loc.file_id()));
             let type_ref_node = child.child_by_field_name("type").unwrap();
-            let type_ref =
-                TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id())).unwrap();
+            let type_ref = TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id()));
             let field = EnumStructItemData::Field(FieldData { name, type_ref });
             map.insert(items.alloc(field), NodePtr::from(&child));
         }
@@ -341,8 +364,7 @@ impl HasChildSource<LocalPropertyId> for MethodmapId {
             let name_node = child.child_by_field_name("name").unwrap();
             let name = Name::from_node(&name_node, &db.preprocessed_text(loc.file_id()));
             let type_ref_node = child.child_by_field_name("type").unwrap();
-            let type_ref =
-                TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id())).unwrap();
+            let type_ref = TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id()));
             let getters_setters = Vec::new();
             let property = MethodmapItemData::Property(PropertyData {
                 name,

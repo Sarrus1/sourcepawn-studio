@@ -13,12 +13,13 @@ use vfs::{AnchoredPath, FileId};
 use crate::{
     ast_id_map::AstIdMap,
     body::{scope::ExprScopes, Body, BodySourceMap},
-    data::{EnumStructData, FunctionData, MacroData, MethodmapData},
+    data::{EnumStructData, FunctionData, MacroData, MethodmapData, TypedefData},
     infer,
     item_tree::{ItemTree, Name},
     BlockId, BlockLoc, DefWithBodyId, EnumId, EnumLoc, EnumStructId, EnumStructLoc, FileDefId,
     FileItem, FunctionId, FunctionLoc, GlobalId, GlobalLoc, InferenceResult, Intern, ItemTreeId,
-    Lookup, MacroId, MacroLoc, MethodmapId, MethodmapLoc, NodePtr, TreeId, VariantId, VariantLoc,
+    Lookup, MacroId, MacroLoc, MethodmapId, MethodmapLoc, NodePtr, TreeId, TypedefId, TypedefLoc,
+    VariantId, VariantLoc,
 };
 
 #[salsa::query_group(InternDatabaseStorage)]
@@ -36,6 +37,8 @@ pub trait InternDatabase: SourceDatabase {
     fn intern_enum(&'tree self, loc: EnumLoc) -> EnumId;
     #[salsa::interned]
     fn intern_variant(&'tree self, loc: VariantLoc) -> VariantId;
+    #[salsa::interned]
+    fn intern_typedef(&'tree self, loc: TypedefLoc) -> TypedefId;
     #[salsa::interned]
     fn intern_variable(&'tree self, loc: GlobalLoc) -> GlobalId;
     #[salsa::interned]
@@ -86,6 +89,9 @@ pub trait DefDatabase: InternDatabase + PreprocDatabase {
 
     #[salsa::invoke(MethodmapData::methodmap_data_query)]
     fn methodmap_data(&self, id: MethodmapId) -> Arc<MethodmapData>;
+
+    #[salsa::invoke(TypedefData::typedef_data_query)]
+    fn typedef_data(&self, id: TypedefId) -> Arc<TypedefData>;
     // endregion: data
 
     // region: infer
@@ -297,6 +303,20 @@ impl DefMap {
                     }
                     .intern(db);
                     res.declare(variant.name.clone(), FileDefId::VariantId(variant_id));
+                }
+                FileItem::Typedef(id) => {
+                    let typedef = &item_tree[*id];
+                    let typedef_id = TypedefLoc {
+                        container: file_id.into(),
+                        id: ItemTreeId {
+                            tree: tree_id,
+                            value: *id,
+                        },
+                    }
+                    .intern(db);
+                    if let Some(name) = typedef.name.clone() {
+                        res.declare(name, FileDefId::TypedefId(typedef_id))
+                    }
                 }
             }
         }

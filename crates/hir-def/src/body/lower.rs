@@ -78,7 +78,7 @@ impl ExprCollector<'_> {
                 ident_id,
                 type_ref: node
                     .child_by_field_name("type")
-                    .and_then(|type_node| TypeRef::from_node(&type_node, self.source)),
+                    .map(|type_node| TypeRef::from_node(&type_node, self.source)),
                 initializer: node
                     .child_by_field_name("defaultValue")
                     .and_then(|default_node| self.maybe_collect_expr(default_node)),
@@ -92,7 +92,7 @@ impl ExprCollector<'_> {
         let mut decl = vec![];
         let type_ref = expr
             .child_by_field_name("type")
-            .and_then(|type_node| TypeRef::from_node(&type_node, self.source));
+            .map(|type_node| TypeRef::from_node(&type_node, self.source));
         for child in expr.children(&mut expr.walk()) {
             if TSKind::from(child) == TSKind::variable_declaration {
                 if let Some(name_node) = child.child_by_field_name("name") {
@@ -235,7 +235,7 @@ impl ExprCollector<'_> {
                 let expr = expr.child_by_field_name("value")?;
                 let type_ref = expr
                     .child_by_field_name("type")
-                    .and_then(|type_node| TypeRef::from_node(&type_node, self.source))?;
+                    .map(|type_node| TypeRef::from_node(&type_node, self.source))?;
                 let view_as = Expr::ViewAs {
                     expr: self.collect_expr(expr),
                     type_ref,

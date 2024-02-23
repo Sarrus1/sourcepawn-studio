@@ -6,8 +6,7 @@ use hir_def::{
         scope::{ExprScopes, ScopeId},
         Body, BodySourceMap,
     },
-    resolver::resolver_for_scope,
-    resolver::Resolver,
+    resolver::{resolver_for_scope, HasResolver, Resolver},
     DefWithBodyId, ExprId, InFile, InferenceResult,
 };
 use syntax::TSKind;
@@ -63,6 +62,21 @@ impl SourceAnalyzer {
             Some(offset) => scope_for_offset(db, &scopes, &source_map, file_id, offset),
         };
         let resolver = resolver_for_scope(db.upcast(), def, scope);
+        SourceAnalyzer {
+            resolver,
+            def: Some((def, body, source_map)),
+            file_id,
+            infer: None,
+        }
+    }
+
+    pub(crate) fn new_no_body_no_infer(
+        db: &dyn HirDatabase,
+        def: DefWithBodyId,
+        file_id: FileId,
+    ) -> SourceAnalyzer {
+        let (body, source_map) = db.body_with_source_map(def);
+        let resolver = def.resolver(db.upcast());
         SourceAnalyzer {
             resolver,
             def: Some((def, body, source_map)),

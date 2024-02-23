@@ -2,7 +2,7 @@ use base_db::Tree;
 use db::HirDatabase;
 use hir_def::{
     DefWithBodyId, EnumId, EnumStructId, ExprId, FunctionId, GlobalId, InFile, InferenceDiagnostic,
-    LocalFieldId, LocalPropertyId, Lookup, MacroId, MethodmapId, Name, VariantId,
+    LocalFieldId, LocalPropertyId, Lookup, MacroId, MethodmapId, Name, TypedefId, VariantId,
 };
 use preprocessor::PreprocessorError;
 use stdx::impl_from;
@@ -27,6 +27,7 @@ pub enum DefResolution {
     Property(Property),
     Enum(Enum),
     Variant(Variant),
+    Typedef(Typedef),
     Field(Field),
     Global(Global),
     Local(Local),
@@ -59,6 +60,7 @@ impl<'tree> HasSource<'tree> for DefResolution {
             DefResolution::Property(property) => property.source(db, tree),
             DefResolution::Enum(enum_) => enum_.source(db, tree),
             DefResolution::Variant(variant) => variant.source(db, tree),
+            DefResolution::Typedef(typedef) => typedef.source(db, tree),
             DefResolution::Field(field) => field.source(db, tree),
             DefResolution::Global(global) => global.source(db, tree),
             DefResolution::Local(local) => local.source(db, tree)?.source(db, tree),
@@ -77,6 +79,7 @@ impl DefResolution {
             DefResolution::Property(it) => it.parent.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Enum(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Variant(it) => it.id.lookup(db.upcast()).id.file_id(),
+            DefResolution::Typedef(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Field(it) => it.parent.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Global(it) => it.id.lookup(db.upcast()).file_id(),
             DefResolution::Local(it) => it.parent.file_id(db.upcast()),
@@ -169,9 +172,10 @@ pub enum FileDef {
     Global(Global),
     Enum(Enum),
     Variant(Variant),
+    Typedef(Typedef),
 }
 
-impl_from!(Function, Macro, EnumStruct, Global, Enum, Variant for FileDef);
+impl_from!(Function, Macro, EnumStruct, Global, Enum, Variant, Typedef for FileDef);
 
 impl FileDef {
     pub fn diagnostics(self, db: &dyn HirDatabase) -> Vec<AnyDiagnostic> {
@@ -206,7 +210,8 @@ impl FileDef {
             | FileDef::Global(_)
             | FileDef::Macro(_)
             | FileDef::Enum(_)
-            | FileDef::Variant(_) => None,
+            | FileDef::Variant(_)
+            | FileDef::Typedef(_) => None,
         }
     }
 }
@@ -215,6 +220,7 @@ impl FileDef {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DefWithBody {
     Function(Function),
+    Typedef(Typedef),
 }
 impl_from!(Function for DefWithBody);
 
@@ -222,6 +228,7 @@ impl DefWithBody {
     pub fn name(self, db: &dyn HirDatabase) -> Option<Name> {
         match self {
             DefWithBody::Function(f) => Some(f.name(db)),
+            DefWithBody::Typedef(t) => t.name(db),
         }
     }
 
@@ -335,6 +342,17 @@ pub struct Enum {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Variant {
     pub(crate) id: VariantId,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Typedef {
+    pub(crate) id: TypedefId,
+}
+
+impl Typedef {
+    pub fn name(self, db: &dyn HirDatabase) -> Option<Name> {
+        db.typedef_data(self.id).name.clone()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

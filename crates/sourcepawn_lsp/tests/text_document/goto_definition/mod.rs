@@ -5,6 +5,7 @@ mod enums;
 mod function_declarations;
 mod macros;
 mod methodmaps;
+mod typedefs;
 
 #[test]
 fn global_variable_1() {

@@ -153,6 +153,12 @@ impl AstIdMap {
                     | TSKind::while_statement
                     | TSKind::enum_struct
                     | TSKind::enum_struct_method
+                    | TSKind::typedef
+                    | TSKind::typedef_expression
+                    | TSKind::typeset
+                    | TSKind::functag
+                    | TSKind::funcenum
+                    | TSKind::funcenum_member
             )
         });
         AstIdMap { arena, map }

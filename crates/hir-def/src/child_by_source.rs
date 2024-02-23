@@ -6,6 +6,7 @@ use crate::{
     dyn_map::{
         keys::{
             ENUM, ENUM_STRUCT, ENUM_VARIANT, FIELD, FUNCTION, GLOBAL, MACRO, METHODMAP, PROPERTY,
+            TYPEDEF,
         },
         DynMap,
     },
@@ -63,6 +64,11 @@ impl ChildBySource for FileId {
                     let item = &item_tree[id.lookup(db).id];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
                     res[ENUM_VARIANT].insert(node_ptr, *id);
+                }
+                FileDefId::TypedefId(id) => {
+                    let item = &item_tree[id.lookup(db).id];
+                    let node_ptr = ast_id_map.get_raw(item.ast_id);
+                    res[TYPEDEF].insert(node_ptr, *id);
                 }
             }
         }

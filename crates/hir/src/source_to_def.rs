@@ -3,7 +3,7 @@ use hir_def::{
     child_by_source::ChildBySource,
     dyn_map::{keys, DynMap, Key},
     DefWithBodyId, EnumId, EnumStructId, ExprId, FieldId, FunctionId, GlobalId, InFile, MacroId,
-    MethodmapId, NodePtr, PropertyId, VariantId,
+    MethodmapId, NodePtr, PropertyId, TypedefId, VariantId,
 };
 use stdx::impl_from;
 use syntax::TSKind;
@@ -42,6 +42,9 @@ impl SourceToDefCtx<'_, '_> {
     }
     pub(super) fn variant_to_def(&mut self, src: InFile<NodePtr>) -> Option<VariantId> {
         self.to_def(src, keys::ENUM_VARIANT)
+    }
+    pub(super) fn typedef_to_def(&mut self, src: InFile<NodePtr>) -> Option<TypedefId> {
+        self.to_def(src, keys::TYPEDEF)
     }
     pub(super) fn field_to_def(&mut self, src: InFile<NodePtr>) -> Option<FieldId> {
         self.to_def(src, keys::FIELD)
@@ -113,6 +116,13 @@ impl SourceToDefCtx<'_, '_> {
                         self.methodmap_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
                     return Some(ChildContainer::MethodmapId(methodmap));
                 }
+                TSKind::typedef => {
+                    let typedef =
+                        self.typedef_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
+                    return Some(ChildContainer::DefWithBodyId(DefWithBodyId::TypedefId(
+                        typedef,
+                    )));
+                }
                 _ => {
                     if let Some(candidate) = container.parent() {
                         container = candidate;
@@ -132,11 +142,14 @@ pub(crate) enum ChildContainer {
     MacroId(MacroId),
     EnumStructId(EnumStructId),
     MethodmapId(MethodmapId),
+    TypedefId(TypedefId),
 }
 
 impl_from! {
     DefWithBodyId,
     EnumStructId,
+    MethodmapId,
+    TypedefId,
     FileId
     for ChildContainer
 }

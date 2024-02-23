@@ -130,11 +130,9 @@ impl ItemTree {
         for child in block_node.value.children(&mut block_node.value.walk()) {
             match TSKind::from(child) {
                 TSKind::variable_declaration_statement => {
-                    let type_ref = if let Some(type_node) = child.child_by_field_name("type") {
-                        TypeRef::from_node(&type_node, &source)
-                    } else {
-                        None
-                    };
+                    let type_ref = child
+                        .child_by_field_name("type")
+                        .map(|n| TypeRef::from_node(&n, &source));
                     for sub_child in child.children(&mut child.walk()) {
                         if TSKind::from(sub_child) == TSKind::variable_declaration {
                             if let Some(name_node) = sub_child.child_by_field_name("name") {
@@ -186,6 +184,7 @@ struct ItemTreeData {
     properties: Arena<Property>,
     params: Arena<Param>,
     enums: Arena<Enum>,
+    typedefs: Arena<Typedef>,
     variants: Arena<Variant>,
 }
 
@@ -257,6 +256,14 @@ pub struct Function {
 pub struct Param {
     pub has_default: bool,
     pub type_ref: Option<TypeRef>,
+    pub ast_id: AstId,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Typedef {
+    pub name: Option<Name>,
+    pub params: IdxRange<Param>,
+    pub type_ref: TypeRef,
     pub ast_id: AstId,
 }
 
@@ -393,6 +400,7 @@ mod_items! {
     Methodmap methodmaps,
     Enum enums,
     Variant variants,
+    Typedef typedefs
 }
 
 macro_rules! impl_index {

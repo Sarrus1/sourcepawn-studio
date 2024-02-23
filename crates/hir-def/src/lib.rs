@@ -1,5 +1,7 @@
 use core::hash::Hash;
-use item_tree::{AstId, EnumStruct, Function, ItemTreeNode, Macro, Methodmap, Variable, Variant};
+use item_tree::{
+    AstId, EnumStruct, Function, ItemTreeNode, Macro, Methodmap, Typedef, Variable, Variant,
+};
 use item_tree::{Enum, ItemTree};
 use la_arena::Idx;
 use std::{hash::Hasher, sync::Arc};
@@ -146,6 +148,11 @@ pub struct VariantId(salsa::InternId);
 type VariantLoc = AssocItemLoc<Variant>;
 impl_intern!(VariantId, VariantLoc, intern_variant, lookup_intern_variant);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct TypedefId(salsa::InternId);
+type TypedefLoc = AssocItemLoc<Typedef>;
+impl_intern!(TypedefId, TypedefLoc, intern_typedef, lookup_intern_typedef);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct BlockId(salsa::InternId);
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
@@ -170,10 +177,11 @@ pub enum FileDefId {
     MethodmapId(MethodmapId),
     EnumId(EnumId),
     VariantId(VariantId),
+    TypedefId(TypedefId),
 }
 
 impl_from!(
-    FunctionId, MacroId, GlobalId, EnumStructId, EnumId, VariantId for FileDefId
+    FunctionId, MacroId, GlobalId, EnumStructId, EnumId, VariantId, TypedefId for FileDefId
 );
 
 /// Identifies a particular [`ItemTree`].
@@ -273,6 +281,7 @@ impl<N: ItemTreeNode> Hash for ItemTreeId<N> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DefWithBodyId {
     FunctionId(FunctionId),
+    TypedefId(TypedefId),
 }
 
 impl_from!(FunctionId for DefWithBodyId);
@@ -281,6 +290,7 @@ impl DefWithBodyId {
     pub fn file_id(&self, db: &dyn DefDatabase) -> FileId {
         match self {
             DefWithBodyId::FunctionId(it) => it.lookup(db).id.file_id(),
+            DefWithBodyId::TypedefId(it) => it.lookup(db).id.file_id(),
         }
     }
 }

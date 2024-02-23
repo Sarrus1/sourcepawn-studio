@@ -25,6 +25,7 @@ from_id![
     (hir_def::GlobalId, crate::Global),
     (hir_def::EnumId, crate::Enum),
     (hir_def::VariantId, crate::Variant),
+    (hir_def::TypedefId, crate::Typedef),
 ];
 
 impl From<(DefWithBodyId, ExprId)> for crate::Local {
@@ -82,6 +83,7 @@ impl From<DefWithBody> for DefWithBodyId {
     fn from(def: DefWithBody) -> Self {
         match def {
             DefWithBody::Function(it) => DefWithBodyId::FunctionId(it.id),
+            DefWithBody::Typedef(it) => DefWithBodyId::TypedefId(it.id),
         }
     }
 }
@@ -90,6 +92,7 @@ impl From<DefWithBodyId> for DefWithBody {
     fn from(def: DefWithBodyId) -> Self {
         match def {
             DefWithBodyId::FunctionId(it) => DefWithBody::Function(it.into()),
+            DefWithBodyId::TypedefId(it) => DefWithBody::Typedef(it.into()),
         }
     }
 }
@@ -104,6 +107,7 @@ impl From<FileDefId> for FileDef {
             FileDefId::GlobalId(it) => FileDef::Global(it.into()),
             FileDefId::EnumId(it) => FileDef::Enum(it.into()),
             FileDefId::VariantId(it) => FileDef::Variant(it.into()),
+            FileDefId::TypedefId(it) => FileDef::Typedef(it.into()),
         }
     }
 }
@@ -118,6 +122,7 @@ impl From<FileDef> for FileDefId {
             FileDef::Global(it) => FileDefId::GlobalId(it.into()),
             FileDef::Enum(it) => FileDefId::EnumId(it.into()),
             FileDef::Variant(it) => FileDefId::VariantId(it.into()),
+            FileDef::Typedef(it) => FileDefId::TypedefId(it.into()),
         }
     }
 }

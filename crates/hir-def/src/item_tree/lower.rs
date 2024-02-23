@@ -12,7 +12,7 @@ use crate::{
 
 use super::{
     Enum, EnumStruct, EnumStructItemId, Field, Function, FunctionKind, ItemTree, Methodmap,
-    MethodmapItemId, Param, Property, RawVisibilityId, SpecialMethod, Variable, Variant,
+    MethodmapItemId, Param, Property, RawVisibilityId, SpecialMethod, Typedef, Variable, Variant,
 };
 
 pub(super) struct Ctx<'db> {
@@ -49,11 +49,9 @@ impl<'db> Ctx<'db> {
                 TSKind::r#enum => self.lower_enum(&child),
                 TSKind::global_variable_declaration => {
                     let visibility = RawVisibilityId::from_node(&child);
-                    let type_ref = if let Some(type_node) = child.child_by_field_name("type") {
-                        TypeRef::from_node(&type_node, &self.source)
-                    } else {
-                        None
-                    };
+                    let type_ref = child
+                        .child_by_field_name("type")
+                        .map(|n| TypeRef::from_node(&n, &self.source));
                     for sub_child in child.children(&mut child.walk()) {
                         if TSKind::from(sub_child) == TSKind::variable_declaration {
                             if let Some(name_node) = sub_child.child_by_field_name("name") {
@@ -73,6 +71,7 @@ impl<'db> Ctx<'db> {
                 }
                 TSKind::enum_struct => self.lower_enum_struct(&child),
                 TSKind::methodmap => self.lower_methodmap(&child),
+                TSKind::typedef => self.lower_typedef(&child),
                 _ => (),
             }
         }
@@ -109,21 +108,25 @@ impl<'db> Ctx<'db> {
         let ret_type_node = node.child_by_field_name("returnType")?;
         for child in ret_type_node.children(&mut ret_type_node.walk()) {
             match TSKind::from(child) {
-                TSKind::r#type => return TypeRef::from_node(&child, &self.source),
+                TSKind::r#type | TSKind::builtin_type | TSKind::identifier => {
+                    return TypeRef::from_node(&child, &self.source).into()
+                }
                 TSKind::old_type => {
                     for sub_child in child.children(&mut child.walk()) {
                         match TSKind::from(sub_child) {
                             TSKind::old_builtin_type | TSKind::identifier | TSKind::any_type => {
-                                return Some(TypeRef::OldString)
+                                // FIXME: This is wrong.
+                                return Some(TypeRef::OldString);
                             }
                             _ => (),
                         }
                     }
-                    return TypeRef::from_node(&child, &self.source);
+                    return TypeRef::from_node(&child, &self.source).into();
                 }
                 _ => (),
             }
         }
+
         None
     }
 
@@ -239,7 +242,7 @@ impl<'db> Ctx<'db> {
                     let res = Param {
                         type_ref: n
                             .child_by_field_name("type")
-                            .and_then(|t| TypeRef::from_node(&t, &self.source)),
+                            .map(|n| TypeRef::from_node(&n, &self.source)),
                         ast_id: self.source_ast_id_map.ast_id_of(&n),
                         has_default: n.child_by_field_name("defaultValue").is_some(),
                     };
@@ -249,6 +252,31 @@ impl<'db> Ctx<'db> {
             });
         let end_param_idx = self.next_param_idx();
         IdxRange::new(start_param_idx..end_param_idx)
+    }
+
+    fn lower_typedef(&mut self, node: &tree_sitter::Node) {
+        let Some(name_node) = node.child_by_field_name("name") else {
+            return;
+        };
+        let name = Name::from_node(&name_node, &self.source);
+        let Some(typedef_expr_node) = node
+            .children(&mut node.walk())
+            .find(|n| TSKind::from(n) == TSKind::typedef_expression)
+        else {
+            return;
+        };
+        let Some(type_ref) = self.function_return_type(&typedef_expr_node) else {
+            return;
+        };
+        let params = self.lower_parameters(&typedef_expr_node);
+        let res = Typedef {
+            name: name.into(),
+            params,
+            type_ref,
+            ast_id: self.source_ast_id_map.ast_id_of(node),
+        };
+        let id = self.tree.data_mut().typedefs.alloc(res);
+        self.tree.top_level.push(FileItem::Typedef(id));
     }
 
     fn lower_methodmap(&mut self, node: &tree_sitter::Node) {
@@ -265,7 +293,7 @@ impl<'db> Ctx<'db> {
                     let Some(property_type_node) = e.child_by_field_name("type") else {
                         return;
                     };
-                    let type_ = TypeRef::from_node(&property_type_node, &self.source).unwrap();
+                    let type_ = TypeRef::from_node(&property_type_node, &self.source);
 
                     let start_idx = self.next_function_idx();
                     e.children(&mut e.walk())
@@ -381,7 +409,7 @@ impl<'db> Ctx<'db> {
                     return;
                 };
                 let param = Param {
-                    type_ref: TypeRef::from_node(&param_type_node, &self.source),
+                    type_ref: TypeRef::from_node(&param_type_node, &self.source).into(),
                     ast_id: self.source_ast_id_map.ast_id_of(&param_node),
                     has_default: false,
                 };
@@ -421,7 +449,7 @@ impl<'db> Ctx<'db> {
                         name: Name::from(
                             field_name_node.utf8_text(self.source.as_bytes()).unwrap(),
                         ),
-                        type_ref: TypeRef::from_node(&field_type_node, &self.source).unwrap(),
+                        type_ref: TypeRef::from_node(&field_type_node, &self.source),
                         ast_id: self.source_ast_id_map.ast_id_of(&e),
                     };
                     let field_idx = self.tree.data_mut().fields.alloc(res);

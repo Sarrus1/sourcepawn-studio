@@ -20,6 +20,7 @@ pub(crate) fn infer_query(db: &dyn DefDatabase, def: DefWithBodyId) -> Arc<Infer
         DefWithBodyId::FunctionId(it) => {
             ctx.collect_fn(it);
         }
+        DefWithBodyId::TypedefId(_) => (),
     }
 
     Arc::new(ctx.result)
@@ -203,6 +204,13 @@ impl InferenceContext<'_> {
                         }
 
                         ret_type
+                    }
+                    ValueNs::TypedefId(it) => {
+                        let item_tree = self.db.file_item_tree(it.file_id);
+                        item_tree[it.value.lookup(self.db).id]
+                            .type_ref
+                            .clone()
+                            .into()
                     }
                     ValueNs::VariantId(_) | ValueNs::EnumId(_) | ValueNs::MacroId(_) => None,
                 }

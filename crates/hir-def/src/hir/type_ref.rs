@@ -1,3 +1,4 @@
+use syntax::TSKind;
 use tree_sitter::Node;
 
 use crate::item_tree::Name;
@@ -33,19 +34,17 @@ pub enum TypeRef {
 }
 
 impl TypeRef {
-    pub fn from_node(node: &Node, source: &str) -> Option<Self> {
-        let mut text = node.utf8_text(source.as_bytes()).ok()?;
-        text = text.strip_suffix(':').unwrap_or(text);
-        match text {
-            "int" => Some(TypeRef::Int),
-            "bool" => Some(TypeRef::Bool),
-            "float" => Some(TypeRef::Float),
-            "char" => Some(TypeRef::Char),
-            "void" => Some(TypeRef::Void),
-            "any" => Some(TypeRef::Any),
-            "String" => Some(TypeRef::OldString),
-            "Float" => Some(TypeRef::OldFloat),
-            _ => Some(TypeRef::Name(Name::from_node(node, source))),
+    pub fn from_node(node: &Node, source: &str) -> Self {
+        match TSKind::from(node) {
+            TSKind::anon_int => Self::Int,
+            TSKind::anon_bool => Self::Bool,
+            TSKind::anon_float => Self::Float,
+            TSKind::anon_char => Self::Char,
+            TSKind::anon_void => Self::Void,
+            TSKind::any_type => Self::Any,
+            TSKind::anon_String => Self::OldString,
+            TSKind::anon_Float => Self::Float,
+            _ => TypeRef::Name(Name::from_node(node, source)),
         }
     }
 

@@ -93,6 +93,28 @@ impl Body {
                 );
                 (Arc::new(body), Arc::new(sourcemap))
             }
+            DefWithBodyId::TypedefId(id) => {
+                let typedef = id.lookup(db);
+                let file_id = typedef.id.file_id();
+                let tree = db.parse(file_id);
+                let InFile {
+                    file_id,
+                    value: typedef_node,
+                } = typedef.source(db, &tree);
+                let params_list = typedef_node
+                    .children(&mut typedef_node.walk())
+                    .find(|child| TSKind::from(child) == TSKind::typedef_expression)
+                    .and_then(|n| n.child_by_field_name("parameters"));
+                let (body, sourcemap) = Body::new(
+                    db,
+                    def,
+                    file_id,
+                    &db.preprocessed_text(file_id),
+                    params_list,
+                    None,
+                );
+                (Arc::new(body), Arc::new(sourcemap))
+            }
         }
     }
 
