@@ -152,9 +152,9 @@ fn methodmap_native_method_1() {
         r#"
 %! main.sp
 methodmap Foo {
-    public native Foo();
-                   |
-                   ^
+    public native int Foo();
+                       |
+                       ^
 }
 "#,
     ));
@@ -166,9 +166,9 @@ fn methodmap_native_method_2() {
         r#"
 %! main.sp
 methodmap Foo {
-    public native Foo(int foo);
-                           |
-                           ^
+    public native int Foo(int foo);
+                               |
+                               ^
 }
 "#,
     ));
@@ -491,6 +491,24 @@ void main() {
     new Foo();
          |
          ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn methodmap_complex_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    public native Foo Bar();
+                       |
+                       ^
+    public native int Baz();
+    property int Qux {
+        public native get();
+    }
 }
 "#,
     ));

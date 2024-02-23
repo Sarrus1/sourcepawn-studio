@@ -1,3 +1,4 @@
+use la_arena::{Idx, RawIdx};
 use vfs::FileId;
 
 use crate::{
@@ -74,13 +75,19 @@ impl ChildBySource for EnumStructId {
         let data = db.enum_struct_data(*self);
         let item_tree = db.file_item_tree(file_id);
         let ast_id_map = db.ast_id_map(file_id);
+        // TODO: See below
+        let mut field_idx = 0u32;
         data.items.iter().for_each(|(idx, item)| match item {
             EnumStructItemData::Field(_) => {
                 let field_id = FieldId {
                     parent: *self,
                     local_id: idx,
                 };
-                map[FIELD].insert(arena_map.value[idx], field_id);
+                map[FIELD].insert(
+                    arena_map.value[Idx::from_raw(RawIdx::from_u32(field_idx))],
+                    field_id,
+                );
+                field_idx += 1;
             }
             EnumStructItemData::Method(id) => {
                 let item = &item_tree[id.lookup(db).id];
@@ -104,6 +111,11 @@ impl ChildBySource for MethodmapId {
         let data = db.methodmap_data(*self);
         let item_tree = db.file_item_tree(file_id);
         let ast_id_map = db.ast_id_map(file_id);
+        // This is not ideal.
+        // When we build the arena_map, we only push properties in it. Therefore, we need to keep track of the property
+        // index because some methods may squeeze in between properties.
+        // TODO: We should probably change the way we build the arena_map to include methods as well.
+        let mut property_idx = 0u32;
         data.items.iter().for_each(|(idx, item)| match item {
             MethodmapItemData::Property(data) => {
                 for fn_id in data.getters_setters.iter() {
@@ -116,7 +128,11 @@ impl ChildBySource for MethodmapId {
                     parent: *self,
                     local_id: idx,
                 };
-                map[PROPERTY].insert(arena_map.value[idx], property_id);
+                map[PROPERTY].insert(
+                    arena_map.value[Idx::from_raw(RawIdx::from_u32(property_idx))],
+                    property_id,
+                );
+                property_idx += 1;
             }
             MethodmapItemData::Method(id)
             | MethodmapItemData::Constructor(id)
