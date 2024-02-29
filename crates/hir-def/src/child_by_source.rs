@@ -6,12 +6,13 @@ use crate::{
     dyn_map::{
         keys::{
             ENUM, ENUM_STRUCT, ENUM_VARIANT, FIELD, FUNCTION, GLOBAL, MACRO, METHODMAP, PROPERTY,
-            TYPEDEF,
+            TYPEDEF, TYPESET,
         },
         DynMap,
     },
     src::HasChildSource,
-    DefDatabase, EnumStructId, FieldId, FileDefId, Lookup, MethodmapId, PropertyId,
+    DefDatabase, EnumStructId, FieldId, FileDefId, Lookup, MethodmapId, PropertyId, TypedefId,
+    TypesetId,
 };
 
 pub trait ChildBySource {
@@ -69,6 +70,11 @@ impl ChildBySource for FileId {
                     let item = &item_tree[id.lookup(db).id];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
                     res[TYPEDEF].insert(node_ptr, *id);
+                }
+                FileDefId::TypesetId(id) => {
+                    let item = &item_tree[id.lookup(db).id];
+                    let node_ptr = ast_id_map.get_raw(item.ast_id);
+                    res[TYPESET].insert(node_ptr, *id);
                 }
             }
         }
@@ -155,5 +161,18 @@ impl ChildBySource for MethodmapId {
             };
             map[PROPERTY].insert(*source, field_id);
         }
+    }
+}
+
+impl ChildBySource for TypesetId {
+    fn child_by_source_to(&self, db: &dyn DefDatabase, map: &mut DynMap, file_id: FileId) {
+        let data = db.typeset_data(*self);
+        let item_tree = db.file_item_tree(file_id);
+        let ast_id_map = db.ast_id_map(file_id);
+        data.typedefs.iter().for_each(|(_, id)| {
+            let item = &item_tree[id.lookup(db).id];
+            let node_ptr = ast_id_map.get_raw(item.ast_id);
+            map[TYPEDEF].insert(node_ptr, *id);
+        });
     }
 }

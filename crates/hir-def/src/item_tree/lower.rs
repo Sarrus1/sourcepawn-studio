@@ -12,7 +12,8 @@ use crate::{
 
 use super::{
     Enum, EnumStruct, EnumStructItemId, Field, Function, FunctionKind, ItemTree, Methodmap,
-    MethodmapItemId, Param, Property, RawVisibilityId, SpecialMethod, Typedef, Variable, Variant,
+    MethodmapItemId, Param, Property, RawVisibilityId, SpecialMethod, Typedef, Typeset, Variable,
+    Variant,
 };
 
 pub(super) struct Ctx<'db> {
@@ -72,6 +73,7 @@ impl<'db> Ctx<'db> {
                 TSKind::enum_struct => self.lower_enum_struct(&child),
                 TSKind::methodmap => self.lower_methodmap(&child),
                 TSKind::typedef => self.lower_typedef(&child),
+                TSKind::typeset => self.lower_typeset(&child),
                 _ => (),
             }
         }
@@ -277,6 +279,39 @@ impl<'db> Ctx<'db> {
         };
         let id = self.tree.data_mut().typedefs.alloc(res);
         self.tree.top_level.push(FileItem::Typedef(id));
+    }
+
+    fn lower_typeset(&mut self, node: &tree_sitter::Node) {
+        let Some(name_node) = node.child_by_field_name("name") else {
+            return;
+        };
+        let name = Name::from_node(&name_node, &self.source);
+
+        let start = self.next_typedef_idx();
+        node.children(&mut node.walk())
+            .filter(|n| TSKind::from(n) == TSKind::typedef_expression)
+            .for_each(|typedef_expr_node| {
+                let Some(type_ref) = self.function_return_type(&typedef_expr_node) else {
+                    return;
+                };
+                let params = self.lower_parameters(&typedef_expr_node);
+                let res = Typedef {
+                    name: None,
+                    params,
+                    type_ref,
+                    ast_id: self.source_ast_id_map.ast_id_of(&typedef_expr_node),
+                };
+                let _ = self.tree.data_mut().typedefs.alloc(res);
+            });
+        let end = self.next_typedef_idx();
+        let res = Typeset {
+            name,
+            typedefs: IdxRange::new(start..end),
+            ast_id: self.source_ast_id_map.ast_id_of(node),
+        };
+        let id = self.tree.data_mut().typesets.alloc(res);
+
+        self.tree.top_level.push(FileItem::Typeset(id));
     }
 
     fn lower_methodmap(&mut self, node: &tree_sitter::Node) {
@@ -491,6 +526,15 @@ impl<'db> Ctx<'db> {
                 .data
                 .as_ref()
                 .map_or(0, |data| data.variants.len() as u32),
+        ))
+    }
+
+    fn next_typedef_idx(&self) -> Idx<Typedef> {
+        Idx::from_raw(RawIdx::from(
+            self.tree
+                .data
+                .as_ref()
+                .map_or(0, |data| data.typedefs.len() as u32),
         ))
     }
 }

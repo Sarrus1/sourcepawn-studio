@@ -13,13 +13,13 @@ use vfs::{AnchoredPath, FileId};
 use crate::{
     ast_id_map::AstIdMap,
     body::{scope::ExprScopes, Body, BodySourceMap},
-    data::{EnumStructData, FunctionData, MacroData, MethodmapData, TypedefData},
+    data::{EnumStructData, FunctionData, MacroData, MethodmapData, TypedefData, TypesetData},
     infer,
     item_tree::{ItemTree, Name},
     BlockId, BlockLoc, DefWithBodyId, EnumId, EnumLoc, EnumStructId, EnumStructLoc, FileDefId,
     FileItem, FunctionId, FunctionLoc, GlobalId, GlobalLoc, InferenceResult, Intern, ItemTreeId,
     Lookup, MacroId, MacroLoc, MethodmapId, MethodmapLoc, NodePtr, TreeId, TypedefId, TypedefLoc,
-    VariantId, VariantLoc,
+    TypesetId, TypesetLoc, VariantId, VariantLoc,
 };
 
 #[salsa::query_group(InternDatabaseStorage)]
@@ -39,6 +39,8 @@ pub trait InternDatabase: SourceDatabase {
     fn intern_variant(&'tree self, loc: VariantLoc) -> VariantId;
     #[salsa::interned]
     fn intern_typedef(&'tree self, loc: TypedefLoc) -> TypedefId;
+    #[salsa::interned]
+    fn intern_typeset(&'tree self, loc: TypesetLoc) -> TypesetId;
     #[salsa::interned]
     fn intern_variable(&'tree self, loc: GlobalLoc) -> GlobalId;
     #[salsa::interned]
@@ -92,6 +94,9 @@ pub trait DefDatabase: InternDatabase + PreprocDatabase {
 
     #[salsa::invoke(TypedefData::typedef_data_query)]
     fn typedef_data(&self, id: TypedefId) -> Arc<TypedefData>;
+
+    #[salsa::invoke(TypesetData::typeset_data_query)]
+    fn typeset_data(&self, id: TypesetId) -> Arc<TypesetData>;
     // endregion: data
 
     // region: infer
@@ -317,6 +322,18 @@ impl DefMap {
                     if let Some(name) = typedef.name.clone() {
                         res.declare(name, FileDefId::TypedefId(typedef_id))
                     }
+                }
+                FileItem::Typeset(id) => {
+                    let typeset = &item_tree[*id];
+                    let typeset_id = TypesetLoc {
+                        container: file_id.into(),
+                        id: ItemTreeId {
+                            tree: tree_id,
+                            value: *id,
+                        },
+                    }
+                    .intern(db);
+                    res.declare(typeset.name.clone(), FileDefId::TypesetId(typeset_id));
                 }
             }
         }

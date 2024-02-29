@@ -1,9 +1,12 @@
 use fxhash::FxHashMap;
 use hir_def::{
     child_by_source::ChildBySource,
-    dyn_map::{keys, DynMap, Key},
+    dyn_map::{
+        keys::{self},
+        DynMap, Key,
+    },
     DefWithBodyId, EnumId, EnumStructId, ExprId, FieldId, FunctionId, GlobalId, InFile, MacroId,
-    MethodmapId, NodePtr, PropertyId, TypedefId, VariantId,
+    MethodmapId, NodePtr, PropertyId, TypedefId, TypesetId, VariantId,
 };
 use stdx::impl_from;
 use syntax::TSKind;
@@ -45,6 +48,9 @@ impl SourceToDefCtx<'_, '_> {
     }
     pub(super) fn typedef_to_def(&mut self, src: InFile<NodePtr>) -> Option<TypedefId> {
         self.to_def(src, keys::TYPEDEF)
+    }
+    pub(super) fn typeset_to_def(&mut self, src: InFile<NodePtr>) -> Option<TypesetId> {
+        self.to_def(src, keys::TYPESET)
     }
     pub(super) fn field_to_def(&mut self, src: InFile<NodePtr>) -> Option<FieldId> {
         self.to_def(src, keys::FIELD)
@@ -123,13 +129,31 @@ impl SourceToDefCtx<'_, '_> {
                         typedef,
                     )));
                 }
-                _ => {
-                    if let Some(candidate) = container.parent() {
-                        container = candidate;
-                    } else {
-                        return None;
+                TSKind::typeset => {
+                    let typeset =
+                        self.typeset_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
+                    return Some(ChildContainer::TypesetId(typeset));
+                }
+                TSKind::typedef_expression => {
+                    let candidate = container.parent()?;
+                    match TSKind::from(candidate) {
+                        TSKind::typedef => {
+                            container = candidate;
+                            continue;
+                        }
+                        TSKind::typeset => {
+                            let typedef = self.typedef_to_def(InFile::new(
+                                src.file_id,
+                                NodePtr::from(&container),
+                            ))?;
+                            return Some(ChildContainer::DefWithBodyId(DefWithBodyId::TypedefId(
+                                typedef,
+                            )));
+                        }
+                        _ => return None,
                     }
                 }
+                _ => container = container.parent()?,
             }
         }
     }
@@ -143,6 +167,7 @@ pub(crate) enum ChildContainer {
     EnumStructId(EnumStructId),
     MethodmapId(MethodmapId),
     TypedefId(TypedefId),
+    TypesetId(TypesetId),
 }
 
 impl_from! {
@@ -150,7 +175,8 @@ impl_from! {
     EnumStructId,
     MethodmapId,
     TypedefId,
-    FileId
+    FileId,
+    TypesetId
     for ChildContainer
 }
 
@@ -161,6 +187,7 @@ impl ChildContainer {
             ChildContainer::FileId(id) => id.child_by_source(db, file_id),
             ChildContainer::EnumStructId(id) => id.child_by_source(db, file_id),
             ChildContainer::MethodmapId(id) => id.child_by_source(db, file_id),
+            ChildContainer::TypesetId(id) => id.child_by_source(db, file_id),
             _ => unreachable!(),
         }
     }

@@ -6,7 +6,7 @@ use crate::{
     hir::ExprId,
     item_tree::Name,
     AdtId, DefDatabase, DefWithBodyId, EnumId, EnumStructId, FileDefId, FunctionId, GlobalId,
-    InFile, ItemContainerId, Lookup, MacroId, MethodmapId, TypedefId, VariantId,
+    InFile, ItemContainerId, Lookup, MacroId, MethodmapId, TypedefId, TypesetId, VariantId,
 };
 use smallvec::SmallVec;
 use vfs::FileId;
@@ -151,6 +151,9 @@ impl Resolver {
                             (FileDefId::TypedefId(it), file_id) => {
                                 return Some(ValueNs::TypedefId(InFile::new(file_id, it)));
                             }
+                            (FileDefId::TypesetId(it), file_id) => {
+                                return Some(ValueNs::TypesetId(InFile::new(file_id, it)));
+                            }
                         },
                         _ => {
                             let mut fn_ids: SmallVec<[InFile<FunctionId>; 1]> = SmallVec::new();
@@ -238,6 +241,7 @@ pub enum ValueNs {
     EnumId(InFile<EnumId>),
     VariantId(InFile<VariantId>),
     TypedefId(InFile<TypedefId>),
+    TypesetId(InFile<TypesetId>),
 }
 
 pub trait HasResolver: Copy {
@@ -251,7 +255,14 @@ impl HasResolver for ItemContainerId {
             ItemContainerId::FileId(file_id) => file_id.resolver(db),
             ItemContainerId::EnumStructId(it) => it.resolver(db),
             ItemContainerId::MethodmapId(it) => it.resolver(db),
+            ItemContainerId::TypesetId(it) => it.resolver(db),
         }
+    }
+}
+
+impl HasResolver for TypesetId {
+    fn resolver(self, db: &dyn DefDatabase) -> Resolver {
+        self.lookup(db).id.file_id().resolver(db)
     }
 }
 

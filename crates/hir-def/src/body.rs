@@ -101,10 +101,14 @@ impl Body {
                     file_id,
                     value: typedef_node,
                 } = typedef.source(db, &tree);
-                let params_list = typedef_node
-                    .children(&mut typedef_node.walk())
-                    .find(|child| TSKind::from(child) == TSKind::typedef_expression)
-                    .and_then(|n| n.child_by_field_name("parameters"));
+                let params_list = match TSKind::from(typedef_node) {
+                    TSKind::typedef => typedef_node
+                        .children(&mut typedef_node.walk())
+                        .find(|child| TSKind::from(child) == TSKind::typedef_expression)
+                        .and_then(|n| n.child_by_field_name("parameters")),
+                    TSKind::typedef_expression => typedef_node.child_by_field_name("parameters"),
+                    _ => None,
+                };
                 let (body, sourcemap) = Body::new(
                     db,
                     def,

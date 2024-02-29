@@ -50,3 +50,31 @@ typedef Foo = function Bar (Bar bar);
 "#,
     ));
 }
+
+#[test]
+fn typeset_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+typeset Foo {
+         |
+         ^
+    function Bar ();
+}
+"#,
+    ));
+}
+
+#[test]
+fn typeset_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+typeset Foo {
+    function (int foo);
+                   |
+                   ^
+}
+"#,
+    ));
+}

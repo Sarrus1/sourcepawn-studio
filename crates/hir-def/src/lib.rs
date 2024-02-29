@@ -1,6 +1,7 @@
 use core::hash::Hash;
 use item_tree::{
-    AstId, EnumStruct, Function, ItemTreeNode, Macro, Methodmap, Typedef, Variable, Variant,
+    AstId, EnumStruct, Function, ItemTreeNode, Macro, Methodmap, Typedef, Typeset, Variable,
+    Variant,
 };
 use item_tree::{Enum, ItemTree};
 use la_arena::Idx;
@@ -76,8 +77,9 @@ pub enum ItemContainerId {
     FileId(FileId),
     EnumStructId(EnumStructId),
     MethodmapId(MethodmapId),
+    TypesetId(TypesetId),
 }
-impl_from!(FileId, EnumStructId, MethodmapId for ItemContainerId);
+impl_from!(FileId, EnumStructId, MethodmapId, TypesetId for ItemContainerId);
 
 /// A Data Type
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -153,6 +155,11 @@ pub struct TypedefId(salsa::InternId);
 type TypedefLoc = AssocItemLoc<Typedef>;
 impl_intern!(TypedefId, TypedefLoc, intern_typedef, lookup_intern_typedef);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct TypesetId(salsa::InternId);
+type TypesetLoc = AssocItemLoc<Typeset>;
+impl_intern!(TypesetId, TypesetLoc, intern_typeset, lookup_intern_typeset);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct BlockId(salsa::InternId);
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
@@ -178,6 +185,7 @@ pub enum FileDefId {
     EnumId(EnumId),
     VariantId(VariantId),
     TypedefId(TypedefId),
+    TypesetId(TypesetId),
 }
 
 impl_from!(

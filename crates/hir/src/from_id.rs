@@ -26,6 +26,7 @@ from_id![
     (hir_def::EnumId, crate::Enum),
     (hir_def::VariantId, crate::Variant),
     (hir_def::TypedefId, crate::Typedef),
+    (hir_def::TypesetId, crate::Typeset),
 ];
 
 impl From<(DefWithBodyId, ExprId)> for crate::Local {
@@ -108,6 +109,7 @@ impl From<FileDefId> for FileDef {
             FileDefId::EnumId(it) => FileDef::Enum(it.into()),
             FileDefId::VariantId(it) => FileDef::Variant(it.into()),
             FileDefId::TypedefId(it) => FileDef::Typedef(it.into()),
+            FileDefId::TypesetId(it) => FileDef::Typeset(it.into()),
         }
     }
 }
@@ -123,6 +125,7 @@ impl From<FileDef> for FileDefId {
             FileDef::Enum(it) => FileDefId::EnumId(it.into()),
             FileDef::Variant(it) => FileDefId::VariantId(it.into()),
             FileDef::Typedef(it) => FileDefId::TypedefId(it.into()),
+            FileDef::Typeset(it) => FileDefId::TypesetId(it.into()),
         }
     }
 }

@@ -17,7 +17,7 @@ use crate::{
     source_analyzer::SourceAnalyzer,
     source_to_def::{SourceToDefCache, SourceToDefCtx},
     Attribute, DefResolution, Enum, EnumStruct, Field, File, Function, Global, Local, Macro,
-    Methodmap, Property, Typedef, Variant,
+    Methodmap, Property, Typedef, Typeset, Variant,
 };
 
 /// Primary API to get semantic information, like types, from syntax trees.
@@ -146,6 +146,10 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 .typedef_to_def(src)
                 .map(Typedef::from)
                 .map(DefResolution::Typedef),
+            TSKind::typeset => self
+                .typeset_to_def(src)
+                .map(Typeset::from)
+                .map(DefResolution::Typeset),
             _ => unreachable!(),
         }
     }
@@ -472,6 +476,30 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         }
     }
 
+    pub fn typeset_node_to_def(
+        &self,
+        file_id: FileId,
+        container: tree_sitter::Node,
+        node: tree_sitter::Node,
+        source: Arc<str>,
+    ) -> Option<DefResolution> {
+        let def_map = self.db.file_def_map(file_id);
+
+        let parent_name = container
+            .child_by_field_name("name")?
+            .utf8_text(source.as_ref().as_bytes())
+            .ok()?;
+        match def_map.get_first_from_str(parent_name)? {
+            FileDefId::TypedefId(id) => {
+                let def = hir_def::DefWithBodyId::TypedefId(id);
+                let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
+                let analyzer = SourceAnalyzer::new_no_body_no_infer(self.db, def, file_id);
+                DefResolution::try_from(analyzer.resolver.resolve_ident(text)?)
+            }
+            _ => None,
+        }
+    }
+
     pub fn to_file_def(&self, file_id: FileId) -> File {
         self.imp.file_to_def(file_id)
     }
@@ -520,5 +548,6 @@ impl<'db> SemanticsImpl<'db> {
         (crate::Methodmap, methodmap_to_def),
         (hir_def::PropertyId, property_to_def),
         (crate::Typedef, typedef_to_def),
+        (crate::Typeset, typeset_to_def),
     ];
 }

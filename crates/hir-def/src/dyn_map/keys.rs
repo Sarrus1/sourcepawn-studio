@@ -2,7 +2,7 @@
 
 use crate::{
     EnumId, EnumStructId, FieldId, FunctionId, GlobalId, MacroId, MethodmapId, NodePtr, PropertyId,
-    TypedefId, VariantId,
+    TypedefId, TypesetId, VariantId,
 };
 
 pub type Key<K, V> = crate::dyn_map::Key<K, V>;
@@ -16,4 +16,5 @@ pub const PROPERTY: Key<NodePtr, PropertyId> = Key::new();
 pub const ENUM: Key<NodePtr, EnumId> = Key::new();
 pub const ENUM_VARIANT: Key<NodePtr, VariantId> = Key::new();
 pub const TYPEDEF: Key<NodePtr, TypedefId> = Key::new();
+pub const TYPESET: Key<NodePtr, TypesetId> = Key::new();
 pub const FIELD: Key<NodePtr, FieldId> = Key::new();

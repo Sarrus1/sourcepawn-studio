@@ -3,7 +3,7 @@ use db::HirDatabase;
 use hir_def::{
     resolver::ValueNs, DefWithBodyId, EnumId, EnumStructId, ExprId, FunctionId, GlobalId, InFile,
     InferenceDiagnostic, LocalFieldId, LocalPropertyId, Lookup, MacroId, MethodmapId, Name,
-    TypedefId, VariantId,
+    TypedefId, TypesetId, VariantId,
 };
 use preprocessor::PreprocessorError;
 use stdx::impl_from;
@@ -29,6 +29,7 @@ pub enum DefResolution {
     Enum(Enum),
     Variant(Variant),
     Typedef(Typedef),
+    Typeset(Typeset),
     Field(Field),
     Global(Global),
     Local(Local),
@@ -63,6 +64,7 @@ impl DefResolution {
             ValueNs::EnumId(id) => DefResolution::Enum(Enum::from(id.value)).into(),
             ValueNs::VariantId(id) => DefResolution::Variant(Variant::from(id.value)).into(),
             ValueNs::TypedefId(id) => DefResolution::Typedef(Typedef::from(id.value)).into(),
+            ValueNs::TypesetId(id) => DefResolution::Typeset(Typeset::from(id.value)).into(),
         }
     }
 }
@@ -82,6 +84,7 @@ impl<'tree> HasSource<'tree> for DefResolution {
             DefResolution::Enum(enum_) => enum_.source(db, tree),
             DefResolution::Variant(variant) => variant.source(db, tree),
             DefResolution::Typedef(typedef) => typedef.source(db, tree),
+            DefResolution::Typeset(typeset) => typeset.source(db, tree),
             DefResolution::Field(field) => field.source(db, tree),
             DefResolution::Global(global) => global.source(db, tree),
             DefResolution::Local(local) => local.source(db, tree)?.source(db, tree),
@@ -101,6 +104,7 @@ impl DefResolution {
             DefResolution::Enum(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Variant(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Typedef(it) => it.id.lookup(db.upcast()).id.file_id(),
+            DefResolution::Typeset(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Field(it) => it.parent.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Global(it) => it.id.lookup(db.upcast()).file_id(),
             DefResolution::Local(it) => it.parent.file_id(db.upcast()),
@@ -194,6 +198,7 @@ pub enum FileDef {
     Enum(Enum),
     Variant(Variant),
     Typedef(Typedef),
+    Typeset(Typeset),
 }
 
 impl_from!(Function, Macro, EnumStruct, Global, Enum, Variant, Typedef for FileDef);
@@ -226,13 +231,14 @@ impl FileDef {
     pub fn as_def_with_body(self) -> Option<DefWithBody> {
         match self {
             FileDef::Function(it) => Some(it.into()),
+            FileDef::Typedef(it) => Some(it.into()),
             FileDef::EnumStruct(_)
             | FileDef::Methodmap(_)
             | FileDef::Global(_)
             | FileDef::Macro(_)
             | FileDef::Enum(_)
             | FileDef::Variant(_)
-            | FileDef::Typedef(_) => None,
+            | FileDef::Typeset(_) => None,
         }
     }
 }
@@ -243,7 +249,7 @@ pub enum DefWithBody {
     Function(Function),
     Typedef(Typedef),
 }
-impl_from!(Function for DefWithBody);
+impl_from!(Function, Typedef for DefWithBody);
 
 impl DefWithBody {
     pub fn name(self, db: &dyn HirDatabase) -> Option<Name> {
@@ -373,6 +379,17 @@ pub struct Typedef {
 impl Typedef {
     pub fn name(self, db: &dyn HirDatabase) -> Option<Name> {
         db.typedef_data(self.id).name.clone()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Typeset {
+    pub(crate) id: TypesetId,
+}
+
+impl Typeset {
+    pub fn name(self, db: &dyn HirDatabase) -> Name {
+        db.typeset_data(self.id).name.clone()
     }
 }
 

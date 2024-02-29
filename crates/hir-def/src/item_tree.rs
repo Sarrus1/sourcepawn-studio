@@ -185,6 +185,7 @@ struct ItemTreeData {
     params: Arena<Param>,
     enums: Arena<Enum>,
     typedefs: Arena<Typedef>,
+    typesets: Arena<Typeset>,
     variants: Arena<Variant>,
 }
 
@@ -264,6 +265,13 @@ pub struct Typedef {
     pub name: Option<Name>,
     pub params: IdxRange<Param>,
     pub type_ref: TypeRef,
+    pub ast_id: AstId,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Typeset {
+    pub name: Name,
+    pub typedefs: IdxRange<Typedef>,
     pub ast_id: AstId,
 }
 
@@ -400,7 +408,8 @@ mod_items! {
     Methodmap methodmaps,
     Enum enums,
     Variant variants,
-    Typedef typedefs
+    Typedef typedefs,
+    Typeset typesets
 }
 
 macro_rules! impl_index {

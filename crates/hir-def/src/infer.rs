@@ -207,10 +207,12 @@ impl InferenceContext<'_> {
                     }
                     ValueNs::TypedefId(it) => {
                         let item_tree = self.db.file_item_tree(it.file_id);
-                        item_tree[it.value.lookup(self.db).id]
-                            .type_ref
-                            .clone()
-                            .into()
+                        let name = item_tree[it.value.lookup(self.db).id].name.clone()?;
+                        TypeRef::Name(name).into()
+                    }
+                    ValueNs::TypesetId(it) => {
+                        let item_tree = self.db.file_item_tree(it.file_id);
+                        TypeRef::Name(item_tree[it.value.lookup(self.db).id].name.clone()).into()
                     }
                     ValueNs::VariantId(_) | ValueNs::EnumId(_) | ValueNs::MacroId(_) => None,
                 }

@@ -10,7 +10,7 @@ use crate::{
     item_tree::{EnumStructItemId, MethodmapItemId, Name, SpecialMethod},
     src::{HasChildSource, HasSource},
     DefDatabase, EnumStructId, FunctionId, FunctionLoc, InFile, Intern, ItemTreeId, LocalFieldId,
-    LocalPropertyId, Lookup, MacroId, MethodmapId, NodePtr, TypedefId,
+    LocalPropertyId, Lookup, MacroId, MethodmapId, NodePtr, TypedefId, TypedefLoc, TypesetId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -232,6 +232,42 @@ impl TypedefData {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TypesetData {
+    pub name: Name,
+    pub typedefs: Arc<Arena<TypedefId>>,
+}
+
+impl TypesetData {
+    pub(crate) fn typeset_data_query(db: &dyn DefDatabase, id: TypesetId) -> Arc<TypesetData> {
+        let loc = id.lookup(db).id;
+        let item_tree = loc.tree_id().item_tree(db);
+        let typeset = &item_tree[loc.value];
+        let mut typedefs = Arena::new();
+        typeset.typedefs.clone().for_each(|typedef_idx| {
+            let typedef_id = TypedefLoc {
+                container: id.into(),
+                id: ItemTreeId {
+                    tree: loc.tree_id(),
+                    value: typedef_idx,
+                },
+            }
+            .intern(db);
+            let _ = typedefs.alloc(typedef_id);
+        });
+        let typeset_data = TypesetData {
+            name: typeset.name.clone(),
+            typedefs: typedefs.into(),
+        };
+
+        Arc::new(typeset_data)
+    }
+
+    pub fn name(&self) -> Name {
+        self.name.clone()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EnumStructData {
     pub name: Name,
     pub items: Arc<Arena<EnumStructItemData>>,
@@ -372,6 +408,34 @@ impl HasChildSource<LocalPropertyId> for MethodmapId {
                 getters_setters,
             });
             map.insert(items.alloc(property), NodePtr::from(&child));
+        }
+        InFile::new(loc.file_id(), map)
+    }
+}
+
+impl HasChildSource<Idx<TypedefData>> for TypesetId {
+    type Value = NodePtr;
+
+    fn child_source(
+        &self,
+        db: &dyn DefDatabase,
+    ) -> InFile<ArenaMap<Idx<TypedefData>, Self::Value>> {
+        let loc = self.lookup(db).id;
+        let mut map = ArenaMap::default();
+        let tree = db.parse(loc.file_id());
+        let mut typedefs: Arena<TypedefData> = Arena::new();
+        let typeset_node = loc.source(db, &tree).value;
+        for child in typeset_node
+            .children(&mut typeset_node.walk())
+            .filter(|c| TSKind::from(c) == TSKind::typedef_expression)
+        {
+            let type_ref_node = child.child_by_field_name("returnType").unwrap();
+            let type_ref = TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id()));
+            let typedef = TypedefData {
+                name: None,
+                type_ref,
+            };
+            map.insert(typedefs.alloc(typedef), NodePtr::from(&child));
         }
         InFile::new(loc.file_id(), map)
     }
