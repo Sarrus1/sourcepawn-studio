@@ -1,0 +1,16 @@
+[package]
+name = "test-utils"
+version = "0.1.0"
+include = ["Cargo.toml", "src/"]
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lib]
+doctest = false
+
+[dependencies]
+
+stdx.workspace = true
+vfs.workspace = true
+paths.workspace = true

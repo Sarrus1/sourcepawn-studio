@@ -31,3 +31,4 @@ proc-macro2 = "1.0.71"
 xshell = "0.2.5"
 convert_case = "0.6.0"
 syn = "2.0.43"
+test-utils.workspace = true

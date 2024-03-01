@@ -18,6 +18,7 @@ mod config;
 pub mod lsp;
 
 use serde::de::DeserializeOwned;
+use server::PrimeCachesProgress;
 use vfs::FileId;
 
 pub use self::{client::LspClient, server::GlobalState};
@@ -35,4 +36,5 @@ pub(crate) enum Task {
     Response(lsp_server::Response),
     Retry(lsp_server::Request),
     Diagnostics(Vec<(FileId, Vec<lsp_types::Diagnostic>)>),
+    PrimeCaches(PrimeCachesProgress),
 }

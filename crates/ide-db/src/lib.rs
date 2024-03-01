@@ -16,6 +16,10 @@ pub use documentation::Documentation;
 
 pub type Cancellable<T> = Result<T, Cancelled>;
 
+pub type FxIndexSet<T> = indexmap::IndexSet<T, std::hash::BuildHasherDefault<fxhash::FxHasher>>;
+pub type FxIndexMap<K, V> =
+    indexmap::IndexMap<K, V, std::hash::BuildHasherDefault<fxhash::FxHasher>>;
+
 #[salsa::database(
     SourceDatabaseExtStorage,
     SourceDatabaseStorage,

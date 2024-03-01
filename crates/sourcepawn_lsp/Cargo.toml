@@ -74,6 +74,7 @@ assert_unordered = "0.3.5"
 criterion = { version = "0.4.0" }
 insta = { version = "1.28.0", features = ["glob", "redactions", "json"] }
 minreq = { version = "2.7.0", features = ["https"] }
+test-utils.workspace = true
 
 [features]
 # If compiling on a system without OpenSSL installed, or cross-compiling for a different

@@ -12,7 +12,7 @@ mod input;
 
 pub use {
     change::Change,
-    graph::Graph,
+    graph::{Graph, SubGraph},
     include::{
         infer_include_ext, Include, IncludeKind, IncludeType, UnresolvedInclude, RE_CHEVRON,
         RE_QUOTE,

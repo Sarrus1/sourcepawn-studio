@@ -5,10 +5,9 @@
 //! potential mistakes when the tree-sitter grammar is updated.
 //! Comparing ints is also much faster than computing strings.
 
-use std::path::PathBuf;
-
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
+use test_utils::project_root;
 use tree_sitter_sourcepawn::language;
 use xshell::{cmd, Shell};
 
@@ -159,18 +158,6 @@ fn sanitize_identifier(name: &str) -> String {
         }
     }
     result
-}
-
-/// Get the workspace root.
-fn project_root() -> PathBuf {
-    let dir = env!("CARGO_MANIFEST_DIR");
-    let res = PathBuf::from(dir)
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .to_owned();
-    res
 }
 
 /// Ensure rustfmt is installed.

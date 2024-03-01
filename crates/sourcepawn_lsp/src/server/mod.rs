@@ -23,7 +23,7 @@ use vfs::{FileId, Vfs, VfsPath};
 use crate::{
     capabilities::{server_capabilities, ClientCapabilitiesExt},
     client::LspClient,
-    config::Config,
+    config::{Config, ConfigError},
     diagnostics::{fetch_native_diagnostics, DiagnosticCollection},
     dispatch::{NotificationDispatcher, RequestDispatcher},
     from_json,
@@ -31,6 +31,7 @@ use crate::{
     lsp::{from_proto, to_proto::url_from_abs_path},
     lsp_ext,
     mem_docs::MemDocs,
+    op_queue::OpQueue,
     server::progress::Progress,
     task_pool::TaskPool,
     version::version,
@@ -47,6 +48,13 @@ mod handlers {
 }
 mod reload;
 // mod requests;
+
+#[derive(Debug)]
+pub(crate) enum PrimeCachesProgress {
+    Begin,
+    Report(ide::ParallelPrimeCachesProgress),
+    End { cancelled: bool },
+}
 
 // Enforces drop order
 pub(crate) struct Handle<H, C> {
@@ -85,7 +93,7 @@ pub struct GlobalState {
     pub(crate) last_reported_status: Option<lsp_ext::ServerStatusParams>,
 
     pub(crate) config: Arc<Config>,
-    pub(crate) config_errors: Option<serde_json::Error>,
+    pub(crate) config_errors: Option<ConfigError>,
 
     pub(crate) analysis_host: AnalysisHost,
 
@@ -96,9 +104,9 @@ pub struct GlobalState {
     pub(crate) vfs_progress_config_version: u32,
     pub(crate) vfs_progress_n_total: usize,
     pub(crate) vfs_progress_n_done: usize,
-    // // op queues
-    // pub(crate) fetch_workspaces_queue:
-    //     OpQueue<bool, Option<(Vec<anyhow::Result<ProjectWorkspace>>, bool)>>,
+
+    // op queues
+    pub(crate) prime_caches_queue: OpQueue,
 }
 
 impl GlobalState {
@@ -146,6 +154,8 @@ impl GlobalState {
             vfs_progress_config_version: 0,
             vfs_progress_n_total: 0,
             vfs_progress_n_done: 0,
+
+            prime_caches_queue: Default::default(),
         }
     }
 
@@ -172,13 +182,41 @@ impl GlobalState {
         });
     }
 
-    // pub(crate) fn execute<F>(&self, job: F)
-    // where
-    //     F: FnOnce() -> T + Send + 'static,
-    //     T: Send + 'static,
-    // {
-    //     self.pool.execute(job);
-    // }
+    fn prime_caches(&mut self, cause: String) {
+        tracing::debug!(%cause, "will prime caches");
+        let num_worker_threads = self.config.prime_caches_num_threads();
+        // FIXME: This is a full clone of the VFS
+        let vfs = self.vfs.read().get_url_map();
+        self.task_pool
+            .handle
+            .spawn_with_sender(ThreadIntent::Worker, {
+                let analysis = self.snapshot().analysis;
+                move |sender| {
+                    sender
+                        .send(Task::PrimeCaches(PrimeCachesProgress::Begin))
+                        .unwrap();
+                    let res = analysis.parallel_prime_caches(
+                        num_worker_threads,
+                        |progress| {
+                            let report = PrimeCachesProgress::Report(progress);
+                            sender.send(Task::PrimeCaches(report)).unwrap();
+                        },
+                        |id| {
+                            vfs.get(&id).and_then(|path| {
+                                path.name_and_extension().map(|(name, ext)| {
+                                    format!("{}.{}", name, ext.unwrap_or_default())
+                                })
+                            })
+                        },
+                    );
+                    sender
+                        .send(Task::PrimeCaches(PrimeCachesProgress::End {
+                            cancelled: res.is_err(),
+                        }))
+                        .unwrap();
+                }
+            });
+    }
 
     #[allow(unused)]
     fn run_fallible<R, Q>(&self, id: RequestId, query: Q)
@@ -548,17 +586,58 @@ impl GlobalState {
                 lsp_server::Message::Notification(not) => self.on_notification(not)?,
                 lsp_server::Message::Response(resp) => self.complete_request(resp),
             },
-            Event::Task(task) => match task {
-                Task::Response(response) => self.respond(response),
-                Task::Retry(req) if !self.is_completed(&req) => self.on_request(req),
-                Task::Retry(_) => (),
-                Task::Diagnostics(diagnostics_per_file) => {
-                    for (file_id, diagnostics) in diagnostics_per_file {
-                        self.diagnostics
-                            .set_native_diagnostics(file_id, diagnostics)
-                    }
+            Event::Task(task) => {
+                let mut prime_caches_progress = Vec::new();
+                self.handle_task(&mut prime_caches_progress, task);
+                // Coalesce multiple task events into one loop turn
+                while let Ok(task) = self.task_pool.receiver.try_recv() {
+                    self.handle_task(&mut prime_caches_progress, task);
                 }
-            },
+                for progress in prime_caches_progress {
+                    let (state, message, fraction);
+                    match progress {
+                        PrimeCachesProgress::Begin => {
+                            state = Progress::Begin;
+                            message = None;
+                            fraction = 0.0;
+                        }
+                        PrimeCachesProgress::Report(report) => {
+                            state = Progress::Report;
+
+                            message = match &report.projects_currently_indexing[..] {
+                                [crate_name] => Some(format!(
+                                    "{}/{} ({crate_name})",
+                                    report.projects_done, report.projects_total
+                                )),
+                                [crate_name, rest @ ..] => Some(format!(
+                                    "{}/{} ({} + {} more)",
+                                    report.projects_done,
+                                    report.projects_total,
+                                    crate_name,
+                                    rest.len()
+                                )),
+                                _ => None,
+                            };
+
+                            fraction =
+                                Progress::fraction(report.projects_done, report.projects_total);
+                        }
+                        PrimeCachesProgress::End { cancelled } => {
+                            state = Progress::End;
+                            message = None;
+                            fraction = 1.0;
+
+                            self.prime_caches_queue.op_completed(());
+                            if cancelled {
+                                self.prime_caches_queue
+                                    .request_op("restart after cancellation".to_string(), ());
+                            }
+                        }
+                    };
+
+                    self.report_progress("Indexing", state, message, Some(fraction), None);
+                }
+            }
             Event::Vfs(message) => {
                 self.handle_vfs_msg(message);
                 // Coalesce many VFS event into a single loop turn
@@ -572,6 +651,11 @@ impl GlobalState {
 
         if self.is_quiescent() {
             let became_quiescent = !(was_quiescent);
+
+            if became_quiescent && self.config.prefill_caches() {
+                self.prime_caches_queue
+                    .request_op("became quiescent".to_string(), ());
+            }
 
             let client_refresh = !was_quiescent || state_changed;
             if client_refresh {
@@ -648,6 +732,10 @@ impl GlobalState {
                     },
                 );
             }
+        }
+
+        if let Some((cause, ())) = self.prime_caches_queue.should_start_op() {
+            self.prime_caches(cause);
         }
 
         self.update_status_or_notify();
@@ -729,12 +817,12 @@ impl GlobalState {
         if self.last_reported_status.as_ref() != Some(&status) {
             self.last_reported_status = Some(status.clone());
 
-            // TODO: Handle this config eventually.
-            // if self.config.server_status_notification() {
-            //     self.send_notification::<lsp_ext::ServerStatusNotification>(status);
-            // } else
-            if let (health @ (lsp_ext::Health::Warning | lsp_ext::Health::Error), Some(message)) =
-                (status.health, &status.message)
+            if self.config.server_status_notification() {
+                self.send_notification::<lsp_ext::ServerStatusNotification>(status);
+            } else if let (
+                health @ (lsp_ext::Health::Warning | lsp_ext::Health::Error),
+                Some(message),
+            ) = (status.health, &status.message)
             {
                 // let open_log_button = tracing::enabled!(tracing::Level::ERROR)
                 //     && (self.fetch_build_data_error().is_err()
@@ -750,6 +838,33 @@ impl GlobalState {
                     open_log_button,
                 );
             }
+        }
+    }
+
+    fn handle_task(&mut self, prime_caches_progress: &mut Vec<PrimeCachesProgress>, task: Task) {
+        match task {
+            Task::Response(response) => self.respond(response),
+            Task::Retry(req) if !self.is_completed(&req) => self.on_request(req),
+            Task::Retry(_) => (),
+            Task::Diagnostics(diagnostics_per_file) => {
+                for (file_id, diagnostics) in diagnostics_per_file {
+                    self.diagnostics
+                        .set_native_diagnostics(file_id, diagnostics)
+                }
+            }
+            Task::PrimeCaches(progress) => match progress {
+                PrimeCachesProgress::Begin => prime_caches_progress.push(progress),
+                PrimeCachesProgress::Report(_) => {
+                    match prime_caches_progress.last_mut() {
+                        Some(last @ PrimeCachesProgress::Report(_)) => {
+                            // Coalesce subsequent update events.
+                            *last = progress;
+                        }
+                        _ => prime_caches_progress.push(progress),
+                    }
+                }
+                PrimeCachesProgress::End { .. } => prime_caches_progress.push(progress),
+            },
         }
     }
 
@@ -891,14 +1006,6 @@ impl GlobalState {
         self.update_status_or_notify();
 
         let mut ignored = self.initialize()?;
-
-        // self.fetch_workspaces_queue
-        //     .request_op("startup".to_string(), false);
-        // if let Some((cause, force_crate_graph_reload)) =
-        //     self.fetch_workspaces_queue.should_start_op()
-        // {
-        //     self.fetch_workspaces(cause, force_crate_graph_reload);
-        // }
 
         while let Some(event) = ignored.pop() {
             let event = Event::Lsp(event);

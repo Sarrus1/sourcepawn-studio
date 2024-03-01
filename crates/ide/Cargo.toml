@@ -23,7 +23,7 @@ line-index = "0.1.0-pre.1"
 tracing.workspace = true
 log.workspace = true
 itertools.workspace = true
-
+crossbeam.workspace = true
 
 # Local crates
 hir-def.workspace = true
@@ -34,3 +34,4 @@ base-db.workspace = true
 ide-db.workspace = true
 ide-diagnostics.workspace = true
 preprocessor.workspace = true
+stdx.workspace = true

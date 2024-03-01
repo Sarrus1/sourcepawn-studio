@@ -1,3 +1,17 @@
+/// Appends formatted string to a `String`.
+#[macro_export]
+macro_rules! format_to {
+    ($buf:expr) => ();
+    ($buf:expr, $lit:literal $($arg:tt)*) => {
+        {
+            use ::std::fmt::Write as _;
+            // We can't do ::std::fmt::Write::write_fmt($buf, format_args!($lit $($arg)*))
+            // unfortunately, as that loses out on autoref behavior.
+            _ = $buf.write_fmt(format_args!($lit $($arg)*))
+        }
+    };
+}
+
 /// Generates `From` impls for `Enum E { Foo(Foo), Bar(Bar) }` enums
 ///
 /// # Example

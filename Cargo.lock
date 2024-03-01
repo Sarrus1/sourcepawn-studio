@@ -878,7 +878,7 @@ dependencies = [
  "futures-sink",
  "futures-util",
  "http",
- "indexmap 2.1.0",
+ "indexmap 2.2.5",
  "slab",
  "tokio",
  "tokio-util",
@@ -1092,6 +1092,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base-db",
+ "crossbeam",
  "fxhash",
  "hir",
  "hir-def",
@@ -1106,6 +1107,7 @@ dependencies = [
  "regex",
  "salsa",
  "sourcepawn_lexer",
+ "stdx",
  "syntax",
  "tracing",
  "tree-sitter",
@@ -1122,6 +1124,7 @@ dependencies = [
  "fxhash",
  "hir",
  "hir-def",
+ "indexmap 2.2.5",
  "lazy_static",
  "line-index",
  "log",
@@ -1183,9 +1186,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.1.0"
+version = "2.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d530e1a18b1cb4c484e6e34556a0d948706958449fca0cab753d649f2bce3d1f"
+checksum = "7b0b929d511467233429c45a44ac1dcaa21ba0f5ba11e4879e6ed28ddb4f9df4"
 dependencies = [
  "equivalent",
  "hashbrown 0.14.3",
@@ -2394,6 +2397,7 @@ version = "1.0.108"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d1c7e3eac408d115102c4c24ad393e0821bb3a5df4d506a80f85f7a742a526b"
 dependencies = [
+ "indexmap 2.2.5",
  "itoa",
  "ryu",
  "serde",
@@ -2552,6 +2556,7 @@ dependencies = [
  "store",
  "syntax",
  "tempfile",
+ "test-utils",
  "threadpool",
  "tracing",
  "tree-sitter",
@@ -2589,7 +2594,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "fxhash",
- "indexmap 2.1.0",
+ "indexmap 2.2.5",
  "lazy_static",
  "linter",
  "log",
@@ -2671,6 +2676,7 @@ dependencies = [
  "serde",
  "serde_json",
  "syn 2.0.43",
+ "test-utils",
  "tree-sitter",
  "tree-sitter-sourcepawn",
  "vfs",
@@ -2709,6 +2715,15 @@ dependencies = [
  "redox_syscall 0.4.1",
  "rustix",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "test-utils"
+version = "0.1.0"
+dependencies = [
+ "paths",
+ "stdx",
+ "vfs",
 ]
 
 [[package]]
@@ -3037,7 +3052,7 @@ version = "0.1.0"
 dependencies = [
  "dunce",
  "fxhash",
- "indexmap 2.1.0",
+ "indexmap 2.2.5",
  "lazy_static",
  "lsp-types",
  "nohash-hasher",

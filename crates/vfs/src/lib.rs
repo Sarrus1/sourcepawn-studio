@@ -17,6 +17,7 @@ use std::{
     mem,
 };
 
+use fxhash::FxHashMap;
 use path_interner::PathInterner;
 
 mod anchored_path;
@@ -191,6 +192,16 @@ impl Vfs {
     /// Panics if no file is associated to that id.
     fn get_mut(&mut self, file_id: FileId) -> &mut Option<Vec<u8>> {
         &mut self.data[file_id.0 as usize]
+    }
+
+    /// Returns a map of all the files in the `Vfs`.
+    pub fn get_url_map(&self) -> FxHashMap<FileId, VfsPath> {
+        let mut res = FxHashMap::default();
+        for (file_id, path) in self.iter() {
+            res.insert(file_id, path.clone());
+        }
+
+        res
     }
 }
 

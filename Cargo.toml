@@ -37,6 +37,7 @@ hir = { path = "./crates/hir" }
 hir-def = { path = "./crates/hir-def" }
 stdx = { path = "./crates/stdx" }
 paths = { path = "./crates/paths" }
+test-utils = { path = "./crates/test-utils" }
 lsp-server = "0.7.4"
 crossbeam = "0.8.2"
 dashmap = "5.4.0"
@@ -61,9 +62,9 @@ tree-sitter = "0.20.9"
 tree-sitter-sourcepawn = { git = "https://github.com/nilshelmig/tree-sitter-sourcepawn" }
 strip_bom = "1.0.0"
 serde = "1.0.147"
-serde_json = "^1.0.83"
+serde_json = { version = "^1.0.83", features = ["preserve_order"] }
 nohash-hasher = "^0.2.0"
-indexmap = "^2.0.0"
+indexmap = "2.2.5"
 salsa = "0.17.0-pre.2"
 tracing = "0.1.40"
 smol_str = "0.2.0"

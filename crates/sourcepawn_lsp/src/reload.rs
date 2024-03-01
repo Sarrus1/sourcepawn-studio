@@ -30,12 +30,12 @@ impl GlobalState {
             load.push(vfs::loader::Entry::sp_files_recursively(
                 self.config.root_path().clone(),
             ));
+            self.vfs_config_version += 1;
             self.loader.handle.set_config(vfs::loader::Config {
                 load,
                 watch,
                 version: self.vfs_config_version,
             });
-            self.vfs_config_version += 1;
         }
     }
 }

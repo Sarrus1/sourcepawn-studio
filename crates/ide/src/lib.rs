@@ -3,6 +3,7 @@
 mod goto_definition;
 mod hover;
 mod markup;
+mod prime_caches;
 mod syntax_highlighting;
 
 use std::sync::Arc;
@@ -23,6 +24,7 @@ pub use ide_db::Cancellable;
 pub use ide_diagnostics::{Diagnostic, DiagnosticsConfig, Severity};
 pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};
 pub use markup::Markup;
+pub use prime_caches::ParallelPrimeCachesProgress;
 pub use syntax_highlighting::{Highlight, HlMod, HlMods, HlRange, HlTag};
 
 /// Info associated with a [`range`](lsp_types::Range).
@@ -107,6 +109,21 @@ impl Analysis {
         self.with_db(|db| {
             let item_tree = db.file_item_tree(file_id);
             print_item_tree(db, &item_tree)
+        })
+    }
+
+    pub fn parallel_prime_caches<F1, F2>(
+        &self,
+        num_worker_threads: u8,
+        cb: F1,
+        file_id_to_name: F2,
+    ) -> Cancellable<()>
+    where
+        F1: Fn(ParallelPrimeCachesProgress) + Sync + std::panic::UnwindSafe,
+        F2: Fn(FileId) -> Option<String> + Sync + std::panic::UnwindSafe,
+    {
+        self.with_db(move |db| {
+            prime_caches::parallel_prime_caches(db, num_worker_threads, &cb, file_id_to_name)
         })
     }
 

@@ -47,6 +47,12 @@ pub struct SubGraph {
     pub edges: FxHashSet<Edge>,
 }
 
+impl SubGraph {
+    pub fn file_ids(&self) -> FxHashSet<FileId> {
+        self.nodes.iter().map(|node| node.file_id).collect()
+    }
+}
+
 impl Graph {
     /// Get the root of the [subgraph](SubGraph) from a given [file_id](FileId).
     ///
@@ -68,43 +74,6 @@ impl Graph {
             .into_iter()
             .find(|subgraph| subgraph.nodes.contains(&dummy_node))
             .map(Arc::new)
-
-        // let mut adj_sources: FxHashMap<Node, FxHashSet<Node>> = FxHashMap::default();
-        // for edge in graph.edges.iter() {
-        //     adj_sources
-        //         .entry(edge.target.clone())
-        //         .or_default()
-        //         .insert(edge.source.clone());
-        // }
-        // let mut child = &Node {
-        //     file_id,
-        //     extension: FileExtension::Sp,
-        // };
-
-        // // Keep track of the nodes we visited to avoid infinite loops.
-        // let mut visited: FxHashSet<&Node> = FxHashSet::default();
-        // while let Some(parents) = adj_sources.get(child) {
-        //     if visited.contains(child) {
-        //         return Some(child.file_id);
-        //     }
-        //     visited.insert(child);
-        //     if parents.len() == 1 {
-        //         let parent = parents.iter().next().unwrap();
-
-        //         // If the parent is an include file, we don't want to go further.
-        //         // Include files can be included in multiple files.
-        //         if child.extension == FileExtension::Inc && parent.extension == FileExtension::Sp {
-        //             return Some(child.file_id);
-        //         }
-        //         child = parent;
-        //     } else if child.extension == FileExtension::Inc {
-        //         return Some(child.file_id);
-        //     } else {
-        //         return None;
-        //     }
-        // }
-
-        // Some(child.file_id)
     }
 
     pub fn graph_query(db: &dyn SourceDatabase) -> Arc<Self> {
@@ -133,93 +102,6 @@ impl Graph {
         graph.into()
     }
 }
-
-/*
-impl Store {
-    /// Get all the files that are included in the given document.
-    fn get_include_ids_from_document(&self, document: &Document) -> Vec<(FileId, FileExtension)> {
-        let mut file_ids = vec![];
-        let lexer = SourcepawnLexer::new(&document.text);
-        for symbol in lexer {
-            if symbol.token_kind != TokenKind::PreprocDir(PreprocDir::MInclude) {
-                continue;
-            }
-            let text = symbol.text();
-            lazy_static! {
-                static ref RE1: Regex = Regex::new(r"<([^>]+)>").unwrap();
-                static ref RE2: Regex = Regex::new("\"([^>]+)\"").unwrap();
-            }
-            let mut file_id = None;
-            if let Some(caps) = RE1.captures(&text) {
-                if let Some(path) = caps.get(1) {
-                    file_id =
-                        self.resolve_import(&mut path.as_str().to_string(), &document.uri, false);
-                }
-            } else if let Some(caps) = RE2.captures(&text) {
-                if let Some(path) = caps.get(1) {
-                    file_id =
-                        self.resolve_import(&mut path.as_str().to_string(), &document.uri, true);
-                }
-            }
-            if let Some(file_id) = file_id {
-                file_ids.push((
-                    file_id,
-                    uri_to_file_extension(self.vfs.lookup(file_id)).unwrap_or_default(),
-                ));
-            }
-        }
-
-        file_ids
-    }
-
-    pub fn load_projects_graph(&mut self) -> Graph {
-        let mut graph = Graph::default();
-
-        for document in self.documents.values() {
-            let source = Node {
-                file_id: document.file_id,
-                extension: document.extension(),
-            };
-            graph.nodes.insert(source.clone());
-            for (file_id, extension) in self.get_include_ids_from_document(document) {
-                let target = Node { file_id, extension };
-                graph.edges.insert(Edge {
-                    source: source.clone(),
-                    target: target.clone(),
-                });
-                graph.nodes.insert(target);
-            }
-        }
-
-        graph
-    }
-
-    pub fn add_file_to_projects(&mut self, file_id: &FileId) -> anyhow::Result<()> {
-        let Some(document) = self.documents.get(file_id) else {
-            bail!(
-                "Could not find document to insert from uri {:?}",
-                self.vfs.lookup(*file_id)
-            );
-        };
-        for (file_id, extension) in self.get_include_ids_from_document(document) {
-            self.projects
-                .add_file_id(document.file_id, document.extension(), file_id, extension)
-        }
-
-        Ok(())
-    }
-
-    pub fn remove_file_from_projects(&mut self, file_id: &FileId) {
-        self.projects
-            .edges
-            .retain(|edge| &edge.source.file_id != file_id || &edge.target.file_id != file_id);
-        self.projects.nodes.remove(&Node {
-            file_id: *file_id,
-            extension: FileExtension::Sp, // We don't care about the extension here.
-        });
-    }
-}
-*/
 
 impl Graph {
     pub fn add_file_id(
@@ -317,6 +199,14 @@ impl Graph {
 
         subgraphs
     }
+
+    pub fn subgraphs_with_roots(&self) -> FxHashMap<FileId, SubGraph> {
+        let subgraphs = self.find_subgraphs();
+        subgraphs
+            .into_iter()
+            .map(|subgraph| (subgraph.root.file_id, subgraph))
+            .collect()
+    }
 }
 
 impl Graph {
@@ -326,7 +216,11 @@ impl Graph {
     {
         let subgraphs = self.find_subgraphs();
         let mut out = vec!["digraph G {".to_string()];
-        for (i, sub_graph) in subgraphs.iter().enumerate() {
+        for (i, sub_graph) in subgraphs
+            .iter()
+            .filter(|subgraph| subgraph.root.extension == FileExtension::Sp)
+            .enumerate()
+        {
             out.push(format!(
                 r#"  subgraph cluster_{} {{
     style=filled;
@@ -346,7 +240,10 @@ impl Graph {
             }
             out.push("}".to_string());
         }
-        for sub_graph in subgraphs.iter() {
+        for sub_graph in subgraphs
+            .iter()
+            .filter(|subgraph| subgraph.root.extension == FileExtension::Sp)
+        {
             if sub_graph.root.extension == FileExtension::Inc {
                 continue;
             }

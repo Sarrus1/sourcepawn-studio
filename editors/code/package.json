@@ -227,11 +227,6 @@
           "scope": "resource",
           "deprecationMessage": "Use `SourcePawnLanguageServer.spcompPath` instead."
         },
-        "SourcePawnLanguageServer.spcompPath": {
-          "type": "string",
-          "description": "Location of the SourceMod compiler (spcomp)",
-          "scope": "resource"
-        },
         "sourcepawn.MainPathCompilation": {
           "type": "boolean",
           "default": true,
@@ -272,18 +267,6 @@
           "scope": "resource",
           "deprecationMessage": "Use `SourcePawnLanguageServer.includesDirectories` instead."
         },
-        "SourcePawnLanguageServer.disableSyntaxLinter": {
-          "type": "boolean",
-          "default": false,
-          "description": "Disable the language server's syntax linter. This is independant from spcomp.",
-          "scope": "resource"
-        },
-        "SourcePawnLanguageServer.includeDirectories": {
-          "type": "array",
-          "default": [],
-          "description": "Include directories paths for the compiler and the linter.",
-          "scope": "resource"
-        },
         "sourcepawn.compilerArguments": {
           "type": "array",
           "default": [
@@ -299,12 +282,6 @@
           "description": "SourcePawn linter compiler options. Don't add paths here.",
           "scope": "resource",
           "deprecationMessage": "Use `SourcePawnLanguageServer.linterArguments` instead."
-        },
-        "SourcePawnLanguageServer.linterArguments": {
-          "type": "array",
-          "default": [],
-          "description": "Linter arguments that will be passed to spcomp. Note that the compilation target, include directories and output path are already handled by the server.",
-          "scope": "resource"
         },
         "sourcepawn.availableAPIs": {
           "type": "array",
@@ -484,6 +461,82 @@
           ],
           "default": "info",
           "description": "Set the logging level of the SourcePawnLanguageServer."
+        },
+        "SourcePawnLanguageServer.cachePriming.enable": {
+          "markdownDescription": "Warm up caches on project load.",
+          "default": true,
+          "type": "boolean"
+        },
+        "SourcePawnLanguageServer.cachePriming.numThreads": {
+          "markdownDescription": "How many worker threads to handle priming caches. The default `0` means to pick automatically.",
+          "default": 0,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "SourcePawnLanguageServer.numThreads": {
+          "markdownDescription": "How many worker threads in the main loop. The default `null` means to pick automatically.",
+          "default": null,
+          "type": [
+            "null",
+            "integer"
+          ],
+          "minimum": 0
+        },
+        "SourcePawnLanguageServer.includeDirectories": {
+          "markdownDescription": "Include directories paths for the compiler and the linter.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "SourcePawnLanguageServer.spcompPath": {
+          "markdownDescription": "Path to the SourcePawn compiler (spcomp).",
+          "default": "",
+          "type": "string"
+        },
+        "SourcePawnLanguageServer.linterArguments": {
+          "markdownDescription": "Linter arguments that will be passed to spcomp.\nNote that the compilation target, include directories and output path are already handled by the server.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "SourcePawnLanguageServer.disableSyntaxLinter": {
+          "markdownDescription": "Disable the language server's syntax linter. This is independant from spcomp.",
+          "default": false,
+          "type": "boolean"
+        },
+        "SourcePawnLanguageServer.compiler.path": {
+          "markdownDescription": "Path to the SourcePawn compiler (spcomp).",
+          "default": null,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "SourcePawnLanguageServer.compiler.arguments": {
+          "markdownDescription": "Linter arguments that will be passed to spcomp.\nNote that the compilation target, include directories and output path are already handled by the server.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "SourcePawnLanguageServer.linter.arguments": {
+          "markdownDescription": "Linter arguments that will be passed to spcomp.\nNote that the compilation target, include directories and output path are already handled by the server.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "SourcePawnLanguageServer.linter.disable": {
+          "markdownDescription": "Disable the language server's syntax linter. This is independant from spcomp.",
+          "default": false,
+          "type": "boolean"
         }
       }
     },
