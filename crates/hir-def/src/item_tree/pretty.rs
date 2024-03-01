@@ -3,9 +3,9 @@ use la_arena::Idx;
 use crate::db::DefDatabase;
 
 use super::{
-    Enum, EnumStruct, EnumStructItemId, Field, FileItem, Functag, Function, FunctionKind, ItemTree,
-    Macro, Methodmap, MethodmapItemId, Property, RawVisibilityId, Typedef, Typeset, Variable,
-    Variant,
+    Enum, EnumStruct, EnumStructItemId, Field, FileItem, Funcenum, Functag, Function, FunctionKind,
+    ItemTree, Macro, Methodmap, MethodmapItemId, Property, RawVisibilityId, Typedef, Typeset,
+    Variable, Variant,
 };
 
 pub fn print_item_tree(_db: &dyn DefDatabase, tree: &ItemTree) -> String {
@@ -21,6 +21,7 @@ pub fn print_item_tree(_db: &dyn DefDatabase, tree: &ItemTree) -> String {
             FileItem::Typedef(idx) => printer.print_typedef(idx),
             FileItem::Typeset(idx) => printer.print_typeset(idx),
             FileItem::Functag(idx) => printer.print_functag(idx),
+            FileItem::Funcenum(idx) => printer.print_funcenum(idx),
             FileItem::Variant(_) => (),
         }
         printer.newline();
@@ -338,6 +339,25 @@ impl<'a> Printer<'a> {
         }
         self.push(");");
         self.dedent();
+        self.newline();
+    }
+
+    pub fn print_funcenum(&mut self, idx: &Idx<Funcenum>) {
+        let Funcenum {
+            name,
+            functags,
+            ast_id,
+        } = &self.tree[*idx];
+        self.push(format!("// {}", ast_id).as_str());
+        self.newline();
+        self.push(format!("funcenum {}", name).as_str());
+        self.newline();
+        self.indent();
+        for functag in functags.clone() {
+            self.print_functag(&functag);
+        }
+        self.dedent();
+        self.push("};");
         self.newline();
     }
 }

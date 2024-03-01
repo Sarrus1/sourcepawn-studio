@@ -28,6 +28,7 @@ from_id![
     (hir_def::TypedefId, crate::Typedef),
     (hir_def::TypesetId, crate::Typeset),
     (hir_def::FunctagId, crate::Functag),
+    (hir_def::FuncenumId, crate::Funcenum),
 ];
 
 impl From<(DefWithBodyId, ExprId)> for crate::Local {
@@ -114,6 +115,7 @@ impl From<FileDefId> for FileDef {
             FileDefId::TypedefId(it) => FileDef::Typedef(it.into()),
             FileDefId::TypesetId(it) => FileDef::Typeset(it.into()),
             FileDefId::FunctagId(it) => FileDef::Functag(it.into()),
+            FileDefId::FuncenumId(it) => FileDef::Funcenum(it.into()),
         }
     }
 }
@@ -131,6 +133,7 @@ impl From<FileDef> for FileDefId {
             FileDef::Typedef(it) => FileDefId::TypedefId(it.into()),
             FileDef::Typeset(it) => FileDefId::TypesetId(it.into()),
             FileDef::Functag(it) => FileDefId::FunctagId(it.into()),
+            FileDef::Funcenum(it) => FileDefId::FuncenumId(it.into()),
         }
     }
 }

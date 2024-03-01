@@ -16,8 +16,8 @@ use crate::{
     db::HirDatabase,
     source_analyzer::SourceAnalyzer,
     source_to_def::{SourceToDefCache, SourceToDefCtx},
-    Attribute, DefResolution, Enum, EnumStruct, Field, File, Functag, Function, Global, Local,
-    Macro, Methodmap, Property, Typedef, Typeset, Variant,
+    Attribute, DefResolution, Enum, EnumStruct, Field, File, Funcenum, Functag, Function, Global,
+    Local, Macro, Methodmap, Property, Typedef, Typeset, Variant,
 };
 
 /// Primary API to get semantic information, like types, from syntax trees.
@@ -154,6 +154,10 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 .functag_to_def(src)
                 .map(Functag::from)
                 .map(DefResolution::Functag),
+            TSKind::funcenum => self
+                .funcenum_to_def(src)
+                .map(Funcenum::from)
+                .map(DefResolution::Funcenum),
             _ => unreachable!(),
         }
     }
@@ -481,30 +485,6 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         }
     }
 
-    pub fn typeset_node_to_def(
-        &self,
-        file_id: FileId,
-        container: tree_sitter::Node,
-        node: tree_sitter::Node,
-        source: Arc<str>,
-    ) -> Option<DefResolution> {
-        let def_map = self.db.file_def_map(file_id);
-
-        let parent_name = container
-            .child_by_field_name("name")?
-            .utf8_text(source.as_ref().as_bytes())
-            .ok()?;
-        match def_map.get_first_from_str(parent_name)? {
-            FileDefId::TypedefId(id) => {
-                let def = hir_def::DefWithBodyId::TypedefId(id);
-                let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
-                let analyzer = SourceAnalyzer::new_no_body_no_infer(self.db, def, file_id);
-                DefResolution::try_from(analyzer.resolver.resolve_ident(text)?)
-            }
-            _ => None,
-        }
-    }
-
     pub fn functag_node_to_def(
         &self,
         file_id: FileId,
@@ -579,5 +559,6 @@ impl<'db> SemanticsImpl<'db> {
         (crate::Typedef, typedef_to_def),
         (crate::Typeset, typeset_to_def),
         (crate::Functag, functag_to_def),
+        (crate::Funcenum, funcenum_to_def),
     ];
 }

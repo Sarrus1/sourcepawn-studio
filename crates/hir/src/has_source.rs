@@ -2,8 +2,8 @@ use base_db::Tree;
 use hir_def::{src::HasChildSource, EnumStructId, InFile, Lookup, MethodmapId};
 
 use crate::{
-    db::HirDatabase, Enum, EnumStruct, Functag, Function, Global, LocalSource, Macro, Methodmap,
-    Typedef, Typeset, Variant,
+    db::HirDatabase, Enum, EnumStruct, Funcenum, Functag, Function, Global, LocalSource, Macro,
+    Methodmap, Typedef, Typeset, Variant,
 };
 use hir_def::src::HasSource as _;
 
@@ -34,7 +34,8 @@ macro_rules! has_source {
 }
 
 has_source![
-    Function, Macro, Global, EnumStruct, Methodmap, Enum, Variant, Typedef, Typeset, Functag
+    Function, Macro, Global, EnumStruct, Methodmap, Enum, Variant, Typedef, Typeset, Functag,
+    Funcenum
 ];
 
 impl<'tree> HasSource<'tree> for LocalSource<'tree> {

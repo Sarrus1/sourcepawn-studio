@@ -11,7 +11,7 @@ use crate::{
 };
 
 use super::{
-    Enum, EnumStruct, EnumStructItemId, Field, Functag, Function, FunctionKind, ItemTree,
+    Enum, EnumStruct, EnumStructItemId, Field, Funcenum, Functag, Function, FunctionKind, ItemTree,
     Methodmap, MethodmapItemId, Param, Property, RawVisibilityId, SpecialMethod, Typedef, Typeset,
     Variable, Variant,
 };
@@ -75,6 +75,7 @@ impl<'db> Ctx<'db> {
                 TSKind::typedef => self.lower_typedef(&child),
                 TSKind::typeset => self.lower_typeset(&child),
                 TSKind::functag => self.lower_functag(&child),
+                TSKind::funcenum => self.lower_funcenum(&child),
                 _ => (),
             }
         }
@@ -332,6 +333,36 @@ impl<'db> Ctx<'db> {
         self.tree.top_level.push(FileItem::Functag(id));
     }
 
+    fn lower_funcenum(&mut self, node: &tree_sitter::Node) {
+        let Some(name_node) = node.child_by_field_name("name") else {
+            return;
+        };
+        let name = Name::from_node(&name_node, &self.source);
+
+        let start = self.next_functag_idx();
+        node.children(&mut node.walk())
+            .filter(|n| TSKind::from(n) == TSKind::funcenum_member)
+            .for_each(|funcenum_member_node| {
+                let type_ref = self.function_return_type(&funcenum_member_node);
+                let params = self.lower_parameters(&funcenum_member_node);
+                let res = Functag {
+                    name: None,
+                    params,
+                    type_ref,
+                    ast_id: self.source_ast_id_map.ast_id_of(&funcenum_member_node),
+                };
+                let _ = self.tree.data_mut().functags.alloc(res);
+            });
+        let end = self.next_functag_idx();
+        let res = Funcenum {
+            name,
+            functags: IdxRange::new(start..end),
+            ast_id: self.source_ast_id_map.ast_id_of(node),
+        };
+        let id = self.tree.data_mut().funcenums.alloc(res);
+        self.tree.top_level.push(FileItem::Funcenum(id));
+    }
+
     fn lower_methodmap(&mut self, node: &tree_sitter::Node) {
         let Some(name_node) = node.child_by_field_name("name") else {
             return;
@@ -553,6 +584,15 @@ impl<'db> Ctx<'db> {
                 .data
                 .as_ref()
                 .map_or(0, |data| data.typedefs.len() as u32),
+        ))
+    }
+
+    fn next_functag_idx(&self) -> Idx<Functag> {
+        Idx::from_raw(RawIdx::from(
+            self.tree
+                .data
+                .as_ref()
+                .map_or(0, |data| data.functags.len() as u32),
         ))
     }
 }

@@ -9,9 +9,9 @@ use crate::{
     hir::type_ref::TypeRef,
     item_tree::{EnumStructItemId, MethodmapItemId, Name, SpecialMethod},
     src::{HasChildSource, HasSource},
-    DefDatabase, EnumStructId, FunctagId, FunctionId, FunctionLoc, InFile, Intern, ItemTreeId,
-    LocalFieldId, LocalPropertyId, Lookup, MacroId, MethodmapId, NodePtr, TypedefId, TypedefLoc,
-    TypesetId,
+    DefDatabase, EnumStructId, FuncenumId, FunctagId, FunctagLoc, FunctionId, FunctionLoc, InFile,
+    Intern, ItemTreeId, LocalFieldId, LocalPropertyId, Lookup, MacroId, MethodmapId, NodePtr,
+    TypedefId, TypedefLoc, TypesetId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -293,6 +293,42 @@ impl FunctagData {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FuncenumData {
+    pub name: Name,
+    pub functags: Arc<Arena<FunctagId>>,
+}
+
+impl FuncenumData {
+    pub(crate) fn funcenum_data_query(db: &dyn DefDatabase, id: FuncenumId) -> Arc<Self> {
+        let loc = id.lookup(db).id;
+        let item_tree = loc.tree_id().item_tree(db);
+        let funcenum = &item_tree[loc.value];
+        let mut functags = Arena::new();
+        funcenum.functags.clone().for_each(|functag_idx| {
+            let functag_id = FunctagLoc {
+                container: id.into(),
+                id: ItemTreeId {
+                    tree: loc.tree_id(),
+                    value: functag_idx,
+                },
+            }
+            .intern(db);
+            let _ = functags.alloc(functag_id);
+        });
+        let functag_data = Self {
+            name: funcenum.name.clone(),
+            functags: functags.into(),
+        };
+
+        Arc::new(functag_data)
+    }
+
+    pub fn name(&self) -> Name {
+        self.name.clone()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EnumStructData {
     pub name: Name,
     pub items: Arc<Arena<EnumStructItemData>>,
@@ -454,13 +490,46 @@ impl HasChildSource<Idx<TypedefData>> for TypesetId {
             .children(&mut typeset_node.walk())
             .filter(|c| TSKind::from(c) == TSKind::typedef_expression)
         {
-            let type_ref_node = child.child_by_field_name("returnType").unwrap();
-            let type_ref = TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id()));
-            let typedef = TypedefData {
+            if let Some(type_ref_node) = child.child_by_field_name("returnType") {
+                let type_ref =
+                    TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id()));
+                let typedef = TypedefData {
+                    name: None,
+                    type_ref,
+                };
+                map.insert(typedefs.alloc(typedef), NodePtr::from(&child));
+            }
+        }
+        InFile::new(loc.file_id(), map)
+    }
+}
+
+impl HasChildSource<Idx<FunctagData>> for FuncenumId {
+    type Value = NodePtr;
+
+    fn child_source(
+        &self,
+        db: &dyn DefDatabase,
+    ) -> InFile<ArenaMap<Idx<FunctagData>, Self::Value>> {
+        let loc = self.lookup(db).id;
+        let mut map = ArenaMap::default();
+        let tree = db.parse(loc.file_id());
+        let mut functags: Arena<FunctagData> = Arena::new();
+        let typeset_node = loc.source(db, &tree).value;
+        for child in typeset_node
+            .children(&mut typeset_node.walk())
+            .filter(|c| TSKind::from(c) == TSKind::typedef_expression)
+        {
+            let type_ref = if let Some(type_ref_node) = child.child_by_field_name("returnType") {
+                TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id())).into()
+            } else {
+                None
+            };
+            let functag = FunctagData {
                 name: None,
                 type_ref,
             };
-            map.insert(typedefs.alloc(typedef), NodePtr::from(&child));
+            map.insert(functags.alloc(functag), NodePtr::from(&child));
         }
         InFile::new(loc.file_id(), map)
     }

@@ -5,7 +5,8 @@ use crate::{
     data::{EnumStructItemData, MethodmapItemData},
     dyn_map::{keys, DynMap},
     src::HasChildSource,
-    DefDatabase, EnumStructId, FieldId, FileDefId, Lookup, MethodmapId, PropertyId, TypesetId,
+    DefDatabase, EnumStructId, FieldId, FileDefId, FuncenumId, Lookup, MethodmapId, PropertyId,
+    TypesetId,
 };
 
 pub trait ChildBySource {
@@ -73,6 +74,11 @@ impl ChildBySource for FileId {
                     let item = &item_tree[id.lookup(db).id];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
                     res[keys::FUNCTAG].insert(node_ptr, *id);
+                }
+                FileDefId::FuncenumId(id) => {
+                    let item = &item_tree[id.lookup(db).id];
+                    let node_ptr = ast_id_map.get_raw(item.ast_id);
+                    res[keys::FUNCENUM].insert(node_ptr, *id);
                 }
             }
         }
@@ -171,6 +177,19 @@ impl ChildBySource for TypesetId {
             let item = &item_tree[id.lookup(db).id];
             let node_ptr = ast_id_map.get_raw(item.ast_id);
             map[keys::TYPEDEF].insert(node_ptr, *id);
+        });
+    }
+}
+
+impl ChildBySource for FuncenumId {
+    fn child_by_source_to(&self, db: &dyn DefDatabase, map: &mut DynMap, file_id: FileId) {
+        let data = db.funcenum_data(*self);
+        let item_tree = db.file_item_tree(file_id);
+        let ast_id_map = db.ast_id_map(file_id);
+        data.functags.iter().for_each(|(_, id)| {
+            let item = &item_tree[id.lookup(db).id];
+            let node_ptr = ast_id_map.get_raw(item.ast_id);
+            map[keys::FUNCTAG].insert(node_ptr, *id);
         });
     }
 }

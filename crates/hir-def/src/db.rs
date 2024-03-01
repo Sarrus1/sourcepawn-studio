@@ -14,15 +14,16 @@ use crate::{
     ast_id_map::AstIdMap,
     body::{scope::ExprScopes, Body, BodySourceMap},
     data::{
-        EnumStructData, FunctagData, FunctionData, MacroData, MethodmapData, TypedefData,
-        TypesetData,
+        EnumStructData, FuncenumData, FunctagData, FunctionData, MacroData, MethodmapData,
+        TypedefData, TypesetData,
     },
     infer,
     item_tree::{ItemTree, Name},
     BlockId, BlockLoc, DefWithBodyId, EnumId, EnumLoc, EnumStructId, EnumStructLoc, FileDefId,
-    FileItem, FunctagId, FunctagLoc, FunctionId, FunctionLoc, GlobalId, GlobalLoc, InferenceResult,
-    Intern, ItemTreeId, Lookup, MacroId, MacroLoc, MethodmapId, MethodmapLoc, NodePtr, TreeId,
-    TypedefId, TypedefLoc, TypesetId, TypesetLoc, VariantId, VariantLoc,
+    FileItem, FuncenumId, FuncenumLoc, FunctagId, FunctagLoc, FunctionId, FunctionLoc, GlobalId,
+    GlobalLoc, InferenceResult, Intern, ItemTreeId, Lookup, MacroId, MacroLoc, MethodmapId,
+    MethodmapLoc, NodePtr, TreeId, TypedefId, TypedefLoc, TypesetId, TypesetLoc, VariantId,
+    VariantLoc,
 };
 
 #[salsa::query_group(InternDatabaseStorage)]
@@ -46,6 +47,8 @@ pub trait InternDatabase: SourceDatabase {
     fn intern_typeset(&'tree self, loc: TypesetLoc) -> TypesetId;
     #[salsa::interned]
     fn intern_functag(&'tree self, loc: FunctagLoc) -> FunctagId;
+    #[salsa::interned]
+    fn intern_funcenum(&'tree self, loc: FuncenumLoc) -> FuncenumId;
     #[salsa::interned]
     fn intern_variable(&'tree self, loc: GlobalLoc) -> GlobalId;
     #[salsa::interned]
@@ -105,6 +108,9 @@ pub trait DefDatabase: InternDatabase + PreprocDatabase {
 
     #[salsa::invoke(FunctagData::functag_data_query)]
     fn functag_data(&self, id: FunctagId) -> Arc<FunctagData>;
+
+    #[salsa::invoke(FuncenumData::funcenum_data_query)]
+    fn funcenum_data(&self, id: FuncenumId) -> Arc<FuncenumData>;
     // endregion: data
 
     // region: infer
@@ -356,6 +362,18 @@ impl DefMap {
                     if let Some(name) = functag.name.clone() {
                         res.declare(name, FileDefId::FunctagId(functag_id))
                     }
+                }
+                FileItem::Funcenum(id) => {
+                    let funcenum = &item_tree[*id];
+                    let funcenum_id = FuncenumLoc {
+                        container: file_id.into(),
+                        id: ItemTreeId {
+                            tree: tree_id,
+                            value: *id,
+                        },
+                    }
+                    .intern(db);
+                    res.declare(funcenum.name.clone(), FileDefId::FuncenumId(funcenum_id));
                 }
             }
         }

@@ -2,8 +2,8 @@ use fxhash::FxHashMap;
 use hir_def::{
     child_by_source::ChildBySource,
     dyn_map::{keys, DynMap, Key},
-    DefWithBodyId, EnumId, EnumStructId, ExprId, FieldId, FunctagId, FunctionId, GlobalId, InFile,
-    MacroId, MethodmapId, NodePtr, PropertyId, TypedefId, TypesetId, VariantId,
+    DefWithBodyId, EnumId, EnumStructId, ExprId, FieldId, FuncenumId, FunctagId, FunctionId,
+    GlobalId, InFile, MacroId, MethodmapId, NodePtr, PropertyId, TypedefId, TypesetId, VariantId,
 };
 use stdx::impl_from;
 use syntax::TSKind;
@@ -51,6 +51,9 @@ impl SourceToDefCtx<'_, '_> {
     }
     pub(super) fn functag_to_def(&mut self, src: InFile<NodePtr>) -> Option<FunctagId> {
         self.to_def(src, keys::FUNCTAG)
+    }
+    pub(super) fn funcenum_to_def(&mut self, src: InFile<NodePtr>) -> Option<FuncenumId> {
+        self.to_def(src, keys::FUNCENUM)
     }
     pub(super) fn field_to_def(&mut self, src: InFile<NodePtr>) -> Option<FieldId> {
         self.to_def(src, keys::FIELD)
@@ -153,12 +156,17 @@ impl SourceToDefCtx<'_, '_> {
                         _ => return None,
                     }
                 }
-                TSKind::functag => {
+                TSKind::functag | TSKind::funcenum_member => {
                     let functag =
                         self.functag_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
                     return Some(ChildContainer::DefWithBodyId(DefWithBodyId::FunctagId(
                         functag,
                     )));
+                }
+                TSKind::funcenum => {
+                    let funcenum =
+                        self.funcenum_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
+                    return Some(ChildContainer::FuncenumId(funcenum));
                 }
                 _ => container = container.parent()?,
             }
@@ -175,6 +183,8 @@ pub(crate) enum ChildContainer {
     MethodmapId(MethodmapId),
     TypedefId(TypedefId),
     TypesetId(TypesetId),
+    FunctagId(FunctagId),
+    FuncenumId(FuncenumId),
 }
 
 impl_from! {
@@ -182,8 +192,10 @@ impl_from! {
     EnumStructId,
     MethodmapId,
     TypedefId,
-    FileId,
-    TypesetId
+    TypesetId,
+    FunctagId,
+    FuncenumId,
+    FileId
     for ChildContainer
 }
 
@@ -195,6 +207,7 @@ impl ChildContainer {
             ChildContainer::EnumStructId(id) => id.child_by_source(db, file_id),
             ChildContainer::MethodmapId(id) => id.child_by_source(db, file_id),
             ChildContainer::TypesetId(id) => id.child_by_source(db, file_id),
+            ChildContainer::FuncenumId(id) => id.child_by_source(db, file_id),
             _ => unreachable!(),
         }
     }

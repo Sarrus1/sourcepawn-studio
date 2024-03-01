@@ -1,7 +1,7 @@
 use core::hash::Hash;
 use item_tree::{
-    AstId, EnumStruct, Functag, Function, ItemTreeNode, Macro, Methodmap, Typedef, Typeset,
-    Variable, Variant,
+    AstId, EnumStruct, Funcenum, Functag, Function, ItemTreeNode, Macro, Methodmap, Typedef,
+    Typeset, Variable, Variant,
 };
 use item_tree::{Enum, ItemTree};
 use la_arena::Idx;
@@ -78,8 +78,9 @@ pub enum ItemContainerId {
     EnumStructId(EnumStructId),
     MethodmapId(MethodmapId),
     TypesetId(TypesetId),
+    FuncenumId(FuncenumId),
 }
-impl_from!(FileId, EnumStructId, MethodmapId, TypesetId for ItemContainerId);
+impl_from!(FileId, EnumStructId, MethodmapId, TypesetId, FuncenumId for ItemContainerId);
 
 /// A Data Type
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -165,6 +166,16 @@ pub struct FunctagId(salsa::InternId);
 type FunctagLoc = AssocItemLoc<Functag>;
 impl_intern!(FunctagId, FunctagLoc, intern_functag, lookup_intern_functag);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FuncenumId(salsa::InternId);
+type FuncenumLoc = AssocItemLoc<Funcenum>;
+impl_intern!(
+    FuncenumId,
+    FuncenumLoc,
+    intern_funcenum,
+    lookup_intern_funcenum
+);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct BlockId(salsa::InternId);
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
@@ -192,10 +203,11 @@ pub enum FileDefId {
     TypedefId(TypedefId),
     TypesetId(TypesetId),
     FunctagId(FunctagId),
+    FuncenumId(FuncenumId),
 }
 
 impl_from!(
-    FunctionId, MacroId, GlobalId, EnumStructId, EnumId, VariantId, TypedefId, FunctagId for FileDefId
+    FunctionId, MacroId, GlobalId, EnumStructId, EnumId, VariantId, TypedefId, FunctagId, FuncenumId for FileDefId
 );
 
 /// Identifies a particular [`ItemTree`].

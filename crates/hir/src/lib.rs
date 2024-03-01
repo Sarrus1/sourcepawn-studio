@@ -1,9 +1,9 @@
 use base_db::Tree;
 use db::HirDatabase;
 use hir_def::{
-    resolver::ValueNs, DefWithBodyId, EnumId, EnumStructId, ExprId, FunctagId, FunctionId,
-    GlobalId, InFile, InferenceDiagnostic, LocalFieldId, LocalPropertyId, Lookup, MacroId,
-    MethodmapId, Name, TypedefId, TypesetId, VariantId,
+    resolver::ValueNs, DefWithBodyId, EnumId, EnumStructId, ExprId, FuncenumId, FunctagId,
+    FunctionId, GlobalId, InFile, InferenceDiagnostic, LocalFieldId, LocalPropertyId, Lookup,
+    MacroId, MethodmapId, Name, TypedefId, TypesetId, VariantId,
 };
 use preprocessor::PreprocessorError;
 use stdx::impl_from;
@@ -31,6 +31,7 @@ pub enum DefResolution {
     Typedef(Typedef),
     Typeset(Typeset),
     Functag(Functag),
+    Funcenum(Funcenum),
     Field(Field),
     Global(Global),
     Local(Local),
@@ -49,6 +50,7 @@ impl_from!(
     Typedef,
     Typeset,
     Functag,
+    Funcenum,
     File for DefResolution
 );
 
@@ -70,6 +72,7 @@ impl DefResolution {
             ValueNs::TypedefId(id) => DefResolution::Typedef(Typedef::from(id.value)).into(),
             ValueNs::TypesetId(id) => DefResolution::Typeset(Typeset::from(id.value)).into(),
             ValueNs::FunctagId(id) => DefResolution::Functag(Functag::from(id.value)).into(),
+            ValueNs::FuncenumId(id) => DefResolution::Funcenum(Funcenum::from(id.value)).into(),
         }
     }
 }
@@ -91,6 +94,7 @@ impl<'tree> HasSource<'tree> for DefResolution {
             DefResolution::Typedef(typedef) => typedef.source(db, tree),
             DefResolution::Typeset(typeset) => typeset.source(db, tree),
             DefResolution::Functag(functag) => functag.source(db, tree),
+            DefResolution::Funcenum(funcenum) => funcenum.source(db, tree),
             DefResolution::Field(field) => field.source(db, tree),
             DefResolution::Global(global) => global.source(db, tree),
             DefResolution::Local(local) => local.source(db, tree)?.source(db, tree),
@@ -112,6 +116,7 @@ impl DefResolution {
             DefResolution::Typedef(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Typeset(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Functag(it) => it.id.lookup(db.upcast()).id.file_id(),
+            DefResolution::Funcenum(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Field(it) => it.parent.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Global(it) => it.id.lookup(db.upcast()).file_id(),
             DefResolution::Local(it) => it.parent.file_id(db.upcast()),
@@ -207,6 +212,7 @@ pub enum FileDef {
     Typedef(Typedef),
     Typeset(Typeset),
     Functag(Functag),
+    Funcenum(Funcenum),
 }
 
 impl_from!(Function, Macro, EnumStruct, Global, Enum, Variant, Typedef for FileDef);
@@ -247,7 +253,8 @@ impl FileDef {
             | FileDef::Macro(_)
             | FileDef::Enum(_)
             | FileDef::Variant(_)
-            | FileDef::Typeset(_) => None,
+            | FileDef::Typeset(_)
+            | FileDef::Funcenum(_) => None,
         }
     }
 }
@@ -412,6 +419,17 @@ pub struct Functag {
 impl Functag {
     pub fn name(self, db: &dyn HirDatabase) -> Option<Name> {
         db.functag_data(self.id).name.clone()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Funcenum {
+    pub(crate) id: FuncenumId,
+}
+
+impl Funcenum {
+    pub fn name(self, db: &dyn HirDatabase) -> Name {
+        db.funcenum_data(self.id).name.clone()
     }
 }
 

@@ -74,6 +74,22 @@ typeset Foo {
     function (int foo);
                    |
                    ^
+    function (int foo, int bar);
+}
+"#,
+    ));
+}
+
+#[test]
+fn typeset_3() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum Bar {}
+typeset Foo {
+    function (Bar foo);
+               |
+               ^
 }
 "#,
     ));
@@ -125,6 +141,51 @@ enum Bar {}
 functag public Bar:Foo();
                 |
                 ^
+"#,
+    ));
+}
+
+#[test]
+fn funcenum_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+funcenum Foo {
+          |
+          ^
+    int:public(),
+}
+"#,
+    ));
+}
+
+#[test]
+fn funcenum_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+funcenum Foo {
+    int:public(foo),
+                |
+                ^
+    int:public(foo, bar),
+
+}
+"#,
+    ));
+}
+
+#[test]
+fn funcenum_3() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum Bar {}
+funcenum Foo {
+    int:public(Bar:foo),
+                |
+                ^
+}
 "#,
     ));
 }
