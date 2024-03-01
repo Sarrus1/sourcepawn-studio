@@ -15,13 +15,13 @@ use vfs::FileId;
 
 lazy_static! {
     static ref METHOD_QUERY: Query = Query::new(
-        tree_sitter_sourcepawn::language(),
+        &tree_sitter_sourcepawn::language(),
         "[(field_access) @method] (scope_access) @method (array_scope_access) @method",
     )
     .expect("Could not build methods query.");
     static ref SYMBOL_QUERY: Query = {
         Query::new(
-            tree_sitter_sourcepawn::language(),
+            &tree_sitter_sourcepawn::language(),
             "[(symbol) @symbol (this) @symbol]",
         )
         .expect("Could not build symbols query.")

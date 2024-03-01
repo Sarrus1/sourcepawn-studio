@@ -29,7 +29,7 @@ use crate::{document::Document, environment::Environment};
 fn spawn_parser() -> tree_sitter::Parser {
     let mut parser = tree_sitter::Parser::new();
     parser
-        .set_language(tree_sitter_sourcepawn::language())
+        .set_language(&tree_sitter_sourcepawn::language())
         .expect("Error loading SourcePawn grammar");
     parser
 }

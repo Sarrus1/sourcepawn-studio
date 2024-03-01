@@ -158,11 +158,13 @@ pub fn syntax_error_diagnostics(source: &str, tree: &Tree) -> Vec<Diagnostic> {
     let matches = cursor.captures(&ERROR_QUERY, tree.root_node(), source.as_bytes());
     for (match_, _) in matches {
         res.extend(match_.captures.iter().map(|c| {
-            Diagnostic::new(
-                DiagnosticCode::SpCompError("syntax-error"),
-                c.node.to_sexp(),
-                ts_range_to_lsp_range(&c.node.range()),
-            )
+            ts_error_to_diagnostic(c.node).unwrap_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::SpCompError("syntax-error"),
+                    c.node.to_sexp(),
+                    ts_range_to_lsp_range(&c.node.range()),
+                )
+            })
         }));
     }
 
@@ -189,4 +191,22 @@ fn missing_nodes(node: tree_sitter::Node, diagnostics: &mut Vec<Diagnostic>) {
     for child in node.children(&mut node.walk()) {
         missing_nodes(child, diagnostics);
     }
+}
+
+/// Convert a tree-sitter error node to a diagnostic by using a [`LookaheadIterator`](tree_sitter::LookaheadIterator)
+/// to get the expected nodes.
+fn ts_error_to_diagnostic(node: tree_sitter::Node) -> Option<Diagnostic> {
+    let language = tree_sitter_sourcepawn::language();
+    let first_lead_node = node.child(0)?;
+    let mut lookahead = language.lookahead_iterator(first_lead_node.parse_state())?;
+    let expected: Vec<_> = lookahead
+        .iter_names()
+        .map(|it| format!("`{}`", it))
+        .collect();
+    Diagnostic::new(
+        DiagnosticCode::SpCompError("syntax-error"),
+        format!("expected {:?}", expected.join(", ")),
+        ts_range_to_lsp_range(&node.range()),
+    )
+    .into()
 }

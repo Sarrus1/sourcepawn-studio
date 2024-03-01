@@ -13,7 +13,7 @@ pub mod spcomp;
 
 lazy_static! {
     pub(crate) static ref ERROR_QUERY: Query =
-        Query::new(tree_sitter_sourcepawn::language(), "(ERROR) @error")
+        Query::new(&tree_sitter_sourcepawn::language(), "(ERROR) @error")
             .expect("Could not build error query.");
 }
 

@@ -81,7 +81,7 @@ impl<'db> Ctx<'db> {
         // query for all macro definitions in the file
         lazy_static! {
             static ref MACRO_QUERY: tree_sitter::Query = tree_sitter::Query::new(
-                tree_sitter_sourcepawn::language(),
+                &tree_sitter_sourcepawn::language(),
                 "[(preproc_macro) @macro (preproc_define) @define]"
             )
             .expect("Could not build macro query.");

@@ -109,7 +109,7 @@ fn parse_query(db: &dyn DefDatabase, file_id: FileId) -> Tree {
     tracing::info!("Parsing {}", file_id);
     let mut parser = tree_sitter::Parser::new();
     parser
-        .set_language(tree_sitter_sourcepawn::language())
+        .set_language(&tree_sitter_sourcepawn::language())
         .expect("Failed to set language");
     let text = db.preprocessed_text(file_id);
     parser
