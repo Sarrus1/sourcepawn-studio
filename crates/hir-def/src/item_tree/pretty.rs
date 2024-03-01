@@ -3,8 +3,9 @@ use la_arena::Idx;
 use crate::db::DefDatabase;
 
 use super::{
-    Enum, EnumStruct, EnumStructItemId, Field, FileItem, Function, FunctionKind, ItemTree, Macro,
-    Methodmap, MethodmapItemId, Property, RawVisibilityId, Typedef, Typeset, Variable, Variant,
+    Enum, EnumStruct, EnumStructItemId, Field, FileItem, Functag, Function, FunctionKind, ItemTree,
+    Macro, Methodmap, MethodmapItemId, Property, RawVisibilityId, Typedef, Typeset, Variable,
+    Variant,
 };
 
 pub fn print_item_tree(_db: &dyn DefDatabase, tree: &ItemTree) -> String {
@@ -19,6 +20,7 @@ pub fn print_item_tree(_db: &dyn DefDatabase, tree: &ItemTree) -> String {
             FileItem::Methodmap(idx) => printer.print_methodmap(idx),
             FileItem::Typedef(idx) => printer.print_typedef(idx),
             FileItem::Typeset(idx) => printer.print_typeset(idx),
+            FileItem::Functag(idx) => printer.print_functag(idx),
             FileItem::Variant(_) => (),
         }
         printer.newline();
@@ -293,6 +295,49 @@ impl<'a> Printer<'a> {
         }
         self.dedent();
         self.push("};");
+        self.newline();
+    }
+
+    pub fn print_functag(&mut self, idx: &Idx<Functag>) {
+        let Functag {
+            name,
+            type_ref,
+            params,
+            ast_id,
+        } = &self.tree[*idx];
+        self.push(format!("// {}", ast_id).as_str());
+        self.newline();
+        if let Some(name) = name {
+            self.push(
+                format!(
+                    "functag public {}:{}",
+                    type_ref.as_ref().map(|e| e.to_str()).unwrap_or_default(),
+                    name
+                )
+                .as_str(),
+            );
+        } else {
+            self.push(
+                format!(
+                    "{}:public",
+                    type_ref.as_ref().map(|e| e.to_str()).unwrap_or_default(),
+                )
+                .as_str(),
+            );
+        }
+        self.push("(");
+        self.indent();
+        for param in self.tree.data().params[params.clone()].iter() {
+            if let Some(type_ref) = &param.type_ref {
+                self.newline();
+                self.push(format!("// {}", param.ast_id).as_str());
+                self.newline();
+                self.push(&type_ref.to_str());
+                self.push(",");
+            }
+        }
+        self.push(");");
+        self.dedent();
         self.newline();
     }
 }

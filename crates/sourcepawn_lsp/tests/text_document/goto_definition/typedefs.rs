@@ -78,3 +78,53 @@ typeset Foo {
 "#,
     ));
 }
+
+#[test]
+fn functag_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+functag public int:Foo();
+                    |
+                    ^
+"#,
+    ));
+}
+
+#[test]
+fn functag_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+functag public int:Foo(args);
+                        |
+                        ^
+"#,
+    ));
+}
+
+#[test]
+fn functag_3() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum Bar {}
+functag public int:Foo(Bar:args);
+                        |
+                        ^
+"#,
+    ));
+}
+
+#[test]
+fn functag_4() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum Bar {}
+functag public Bar:Foo();
+                |
+                ^
+"#,
+    ));
+}

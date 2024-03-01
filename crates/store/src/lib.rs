@@ -6,13 +6,11 @@ use linter::DiagnosticsManager;
 use lsp_types::{Range, Url};
 use parking_lot::RwLock;
 use parser::Parser;
-use preprocessor::{Macro, SourcepawnPreprocessor};
 use semantic_analyzer::{purge_references, Token};
 use std::{
     fs::{self, File},
     io::{self, Read},
     path::{Path, PathBuf},
-    str::FromStr,
     sync::{Arc, Mutex},
 };
 use walkdir::WalkDir;

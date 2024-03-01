@@ -186,6 +186,7 @@ struct ItemTreeData {
     enums: Arena<Enum>,
     typedefs: Arena<Typedef>,
     typesets: Arena<Typeset>,
+    functags: Arena<Functag>,
     variants: Arena<Variant>,
 }
 
@@ -272,6 +273,14 @@ pub struct Typedef {
 pub struct Typeset {
     pub name: Name,
     pub typedefs: IdxRange<Typedef>,
+    pub ast_id: AstId,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Functag {
+    pub name: Option<Name>,
+    pub params: IdxRange<Param>,
+    pub type_ref: Option<TypeRef>,
     pub ast_id: AstId,
 }
 
@@ -409,7 +418,8 @@ mod_items! {
     Enum enums,
     Variant variants,
     Typedef typedefs,
-    Typeset typesets
+    Typeset typesets,
+    Functag functags
 }
 
 macro_rules! impl_index {

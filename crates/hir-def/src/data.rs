@@ -9,8 +9,9 @@ use crate::{
     hir::type_ref::TypeRef,
     item_tree::{EnumStructItemId, MethodmapItemId, Name, SpecialMethod},
     src::{HasChildSource, HasSource},
-    DefDatabase, EnumStructId, FunctionId, FunctionLoc, InFile, Intern, ItemTreeId, LocalFieldId,
-    LocalPropertyId, Lookup, MacroId, MethodmapId, NodePtr, TypedefId, TypedefLoc, TypesetId,
+    DefDatabase, EnumStructId, FunctagId, FunctionId, FunctionLoc, InFile, Intern, ItemTreeId,
+    LocalFieldId, LocalPropertyId, Lookup, MacroId, MethodmapId, NodePtr, TypedefId, TypedefLoc,
+    TypesetId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -263,6 +264,30 @@ impl TypesetData {
     }
 
     pub fn name(&self) -> Name {
+        self.name.clone()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FunctagData {
+    pub name: Option<Name>,
+    pub type_ref: Option<TypeRef>,
+}
+
+impl FunctagData {
+    pub(crate) fn functag_data_query(db: &dyn DefDatabase, id: FunctagId) -> Arc<Self> {
+        let loc = id.lookup(db).id;
+        let item_tree = loc.tree_id().item_tree(db);
+        let functag = &item_tree[loc.value];
+        let functag_data = FunctagData {
+            name: functag.name.clone(),
+            type_ref: functag.type_ref.clone(),
+        };
+
+        Arc::new(functag_data)
+    }
+
+    pub fn name(&self) -> Option<Name> {
         self.name.clone()
     }
 }

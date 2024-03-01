@@ -27,6 +27,7 @@ from_id![
     (hir_def::VariantId, crate::Variant),
     (hir_def::TypedefId, crate::Typedef),
     (hir_def::TypesetId, crate::Typeset),
+    (hir_def::FunctagId, crate::Functag),
 ];
 
 impl From<(DefWithBodyId, ExprId)> for crate::Local {
@@ -85,6 +86,7 @@ impl From<DefWithBody> for DefWithBodyId {
         match def {
             DefWithBody::Function(it) => DefWithBodyId::FunctionId(it.id),
             DefWithBody::Typedef(it) => DefWithBodyId::TypedefId(it.id),
+            DefWithBody::Functag(it) => DefWithBodyId::FunctagId(it.id),
         }
     }
 }
@@ -94,6 +96,7 @@ impl From<DefWithBodyId> for DefWithBody {
         match def {
             DefWithBodyId::FunctionId(it) => DefWithBody::Function(it.into()),
             DefWithBodyId::TypedefId(it) => DefWithBody::Typedef(it.into()),
+            DefWithBodyId::FunctagId(it) => DefWithBody::Functag(it.into()),
         }
     }
 }
@@ -110,6 +113,7 @@ impl From<FileDefId> for FileDef {
             FileDefId::VariantId(it) => FileDef::Variant(it.into()),
             FileDefId::TypedefId(it) => FileDef::Typedef(it.into()),
             FileDefId::TypesetId(it) => FileDef::Typeset(it.into()),
+            FileDefId::FunctagId(it) => FileDef::Functag(it.into()),
         }
     }
 }
@@ -126,6 +130,7 @@ impl From<FileDef> for FileDefId {
             FileDef::Variant(it) => FileDefId::VariantId(it.into()),
             FileDef::Typedef(it) => FileDefId::TypedefId(it.into()),
             FileDef::Typeset(it) => FileDefId::TypesetId(it.into()),
+            FileDef::Functag(it) => FileDefId::FunctagId(it.into()),
         }
     }
 }

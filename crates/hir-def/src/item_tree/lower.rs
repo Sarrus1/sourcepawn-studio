@@ -11,9 +11,9 @@ use crate::{
 };
 
 use super::{
-    Enum, EnumStruct, EnumStructItemId, Field, Function, FunctionKind, ItemTree, Methodmap,
-    MethodmapItemId, Param, Property, RawVisibilityId, SpecialMethod, Typedef, Typeset, Variable,
-    Variant,
+    Enum, EnumStruct, EnumStructItemId, Field, Functag, Function, FunctionKind, ItemTree,
+    Methodmap, MethodmapItemId, Param, Property, RawVisibilityId, SpecialMethod, Typedef, Typeset,
+    Variable, Variant,
 };
 
 pub(super) struct Ctx<'db> {
@@ -74,6 +74,7 @@ impl<'db> Ctx<'db> {
                 TSKind::methodmap => self.lower_methodmap(&child),
                 TSKind::typedef => self.lower_typedef(&child),
                 TSKind::typeset => self.lower_typeset(&child),
+                TSKind::functag => self.lower_functag(&child),
                 _ => (),
             }
         }
@@ -312,6 +313,23 @@ impl<'db> Ctx<'db> {
         let id = self.tree.data_mut().typesets.alloc(res);
 
         self.tree.top_level.push(FileItem::Typeset(id));
+    }
+
+    fn lower_functag(&mut self, node: &tree_sitter::Node) {
+        let Some(name_node) = node.child_by_field_name("name") else {
+            return;
+        };
+        let name = Name::from_node(&name_node, &self.source);
+        let type_ref = self.function_return_type(node);
+        let params = self.lower_parameters(node);
+        let res = Functag {
+            name: name.into(),
+            params,
+            type_ref,
+            ast_id: self.source_ast_id_map.ast_id_of(node),
+        };
+        let id = self.tree.data_mut().functags.alloc(res);
+        self.tree.top_level.push(FileItem::Functag(id));
     }
 
     fn lower_methodmap(&mut self, node: &tree_sitter::Node) {

@@ -3,16 +3,9 @@ use vfs::FileId;
 
 use crate::{
     data::{EnumStructItemData, MethodmapItemData},
-    dyn_map::{
-        keys::{
-            ENUM, ENUM_STRUCT, ENUM_VARIANT, FIELD, FUNCTION, GLOBAL, MACRO, METHODMAP, PROPERTY,
-            TYPEDEF, TYPESET,
-        },
-        DynMap,
-    },
+    dyn_map::{keys, DynMap},
     src::HasChildSource,
-    DefDatabase, EnumStructId, FieldId, FileDefId, Lookup, MethodmapId, PropertyId, TypedefId,
-    TypesetId,
+    DefDatabase, EnumStructId, FieldId, FileDefId, Lookup, MethodmapId, PropertyId, TypesetId,
 };
 
 pub trait ChildBySource {
@@ -34,47 +27,52 @@ impl ChildBySource for FileId {
                 FileDefId::FunctionId(id) => {
                     let item = &item_tree[id.lookup(db).id];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
-                    res[FUNCTION].insert(node_ptr, *id);
+                    res[keys::FUNCTION].insert(node_ptr, *id);
                 }
                 FileDefId::MacroId(id) => {
                     let item = &item_tree[id.lookup(db).id];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
-                    res[MACRO].insert(node_ptr, *id);
+                    res[keys::MACRO].insert(node_ptr, *id);
                 }
                 FileDefId::GlobalId(id) => {
                     let item = &item_tree[id.lookup(db)];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
-                    res[GLOBAL].insert(node_ptr, *id);
+                    res[keys::GLOBAL].insert(node_ptr, *id);
                 }
                 FileDefId::EnumStructId(id) => {
                     let item = &item_tree[id.lookup(db).id];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
-                    res[ENUM_STRUCT].insert(node_ptr, *id);
+                    res[keys::ENUM_STRUCT].insert(node_ptr, *id);
                 }
                 FileDefId::MethodmapId(id) => {
                     let item = &item_tree[id.lookup(db).id];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
-                    res[METHODMAP].insert(node_ptr, *id);
+                    res[keys::METHODMAP].insert(node_ptr, *id);
                 }
                 FileDefId::EnumId(id) => {
                     let item = &item_tree[id.lookup(db).id];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
-                    res[ENUM].insert(node_ptr, *id);
+                    res[keys::ENUM].insert(node_ptr, *id);
                 }
                 FileDefId::VariantId(id) => {
                     let item = &item_tree[id.lookup(db).id];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
-                    res[ENUM_VARIANT].insert(node_ptr, *id);
+                    res[keys::ENUM_VARIANT].insert(node_ptr, *id);
                 }
                 FileDefId::TypedefId(id) => {
                     let item = &item_tree[id.lookup(db).id];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
-                    res[TYPEDEF].insert(node_ptr, *id);
+                    res[keys::TYPEDEF].insert(node_ptr, *id);
                 }
                 FileDefId::TypesetId(id) => {
                     let item = &item_tree[id.lookup(db).id];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
-                    res[TYPESET].insert(node_ptr, *id);
+                    res[keys::TYPESET].insert(node_ptr, *id);
+                }
+                FileDefId::FunctagId(id) => {
+                    let item = &item_tree[id.lookup(db).id];
+                    let node_ptr = ast_id_map.get_raw(item.ast_id);
+                    res[keys::FUNCTAG].insert(node_ptr, *id);
                 }
             }
         }
@@ -95,7 +93,7 @@ impl ChildBySource for EnumStructId {
                     parent: *self,
                     local_id: idx,
                 };
-                map[FIELD].insert(
+                map[keys::FIELD].insert(
                     arena_map.value[Idx::from_raw(RawIdx::from_u32(field_idx))],
                     field_id,
                 );
@@ -104,7 +102,7 @@ impl ChildBySource for EnumStructId {
             EnumStructItemData::Method(id) => {
                 let item = &item_tree[id.lookup(db).id];
                 let node_ptr = ast_id_map.get_raw(item.ast_id);
-                map[FUNCTION].insert(node_ptr, *id);
+                map[keys::FUNCTION].insert(node_ptr, *id);
             }
         });
         for (local_id, source) in arena_map.value.iter() {
@@ -112,7 +110,7 @@ impl ChildBySource for EnumStructId {
                 parent: *self,
                 local_id,
             };
-            map[FIELD].insert(*source, field_id);
+            map[keys::FIELD].insert(*source, field_id);
         }
     }
 }
@@ -134,13 +132,13 @@ impl ChildBySource for MethodmapId {
                     let fn_id = fn_id.function_id();
                     let item = &item_tree[fn_id.lookup(db).id];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
-                    map[FUNCTION].insert(node_ptr, fn_id);
+                    map[keys::FUNCTION].insert(node_ptr, fn_id);
                 }
                 let property_id = PropertyId {
                     parent: *self,
                     local_id: idx,
                 };
-                map[PROPERTY].insert(
+                map[keys::PROPERTY].insert(
                     arena_map.value[Idx::from_raw(RawIdx::from_u32(property_idx))],
                     property_id,
                 );
@@ -151,7 +149,7 @@ impl ChildBySource for MethodmapId {
             | MethodmapItemData::Destructor(id) => {
                 let item = &item_tree[id.lookup(db).id];
                 let node_ptr = ast_id_map.get_raw(item.ast_id);
-                map[FUNCTION].insert(node_ptr, *id);
+                map[keys::FUNCTION].insert(node_ptr, *id);
             }
         });
         for (local_id, source) in arena_map.value.iter() {
@@ -159,7 +157,7 @@ impl ChildBySource for MethodmapId {
                 parent: *self,
                 local_id,
             };
-            map[PROPERTY].insert(*source, field_id);
+            map[keys::PROPERTY].insert(*source, field_id);
         }
     }
 }
@@ -172,7 +170,7 @@ impl ChildBySource for TypesetId {
         data.typedefs.iter().for_each(|(_, id)| {
             let item = &item_tree[id.lookup(db).id];
             let node_ptr = ast_id_map.get_raw(item.ast_id);
-            map[TYPEDEF].insert(node_ptr, *id);
+            map[keys::TYPEDEF].insert(node_ptr, *id);
         });
     }
 }

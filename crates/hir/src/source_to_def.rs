@@ -1,12 +1,9 @@
 use fxhash::FxHashMap;
 use hir_def::{
     child_by_source::ChildBySource,
-    dyn_map::{
-        keys::{self},
-        DynMap, Key,
-    },
-    DefWithBodyId, EnumId, EnumStructId, ExprId, FieldId, FunctionId, GlobalId, InFile, MacroId,
-    MethodmapId, NodePtr, PropertyId, TypedefId, TypesetId, VariantId,
+    dyn_map::{keys, DynMap, Key},
+    DefWithBodyId, EnumId, EnumStructId, ExprId, FieldId, FunctagId, FunctionId, GlobalId, InFile,
+    MacroId, MethodmapId, NodePtr, PropertyId, TypedefId, TypesetId, VariantId,
 };
 use stdx::impl_from;
 use syntax::TSKind;
@@ -51,6 +48,9 @@ impl SourceToDefCtx<'_, '_> {
     }
     pub(super) fn typeset_to_def(&mut self, src: InFile<NodePtr>) -> Option<TypesetId> {
         self.to_def(src, keys::TYPESET)
+    }
+    pub(super) fn functag_to_def(&mut self, src: InFile<NodePtr>) -> Option<FunctagId> {
+        self.to_def(src, keys::FUNCTAG)
     }
     pub(super) fn field_to_def(&mut self, src: InFile<NodePtr>) -> Option<FieldId> {
         self.to_def(src, keys::FIELD)
@@ -152,6 +152,13 @@ impl SourceToDefCtx<'_, '_> {
                         }
                         _ => return None,
                     }
+                }
+                TSKind::functag => {
+                    let functag =
+                        self.functag_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
+                    return Some(ChildContainer::DefWithBodyId(DefWithBodyId::FunctagId(
+                        functag,
+                    )));
                 }
                 _ => container = container.parent()?,
             }

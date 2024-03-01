@@ -13,13 +13,16 @@ use vfs::{AnchoredPath, FileId};
 use crate::{
     ast_id_map::AstIdMap,
     body::{scope::ExprScopes, Body, BodySourceMap},
-    data::{EnumStructData, FunctionData, MacroData, MethodmapData, TypedefData, TypesetData},
+    data::{
+        EnumStructData, FunctagData, FunctionData, MacroData, MethodmapData, TypedefData,
+        TypesetData,
+    },
     infer,
     item_tree::{ItemTree, Name},
     BlockId, BlockLoc, DefWithBodyId, EnumId, EnumLoc, EnumStructId, EnumStructLoc, FileDefId,
-    FileItem, FunctionId, FunctionLoc, GlobalId, GlobalLoc, InferenceResult, Intern, ItemTreeId,
-    Lookup, MacroId, MacroLoc, MethodmapId, MethodmapLoc, NodePtr, TreeId, TypedefId, TypedefLoc,
-    TypesetId, TypesetLoc, VariantId, VariantLoc,
+    FileItem, FunctagId, FunctagLoc, FunctionId, FunctionLoc, GlobalId, GlobalLoc, InferenceResult,
+    Intern, ItemTreeId, Lookup, MacroId, MacroLoc, MethodmapId, MethodmapLoc, NodePtr, TreeId,
+    TypedefId, TypedefLoc, TypesetId, TypesetLoc, VariantId, VariantLoc,
 };
 
 #[salsa::query_group(InternDatabaseStorage)]
@@ -41,6 +44,8 @@ pub trait InternDatabase: SourceDatabase {
     fn intern_typedef(&'tree self, loc: TypedefLoc) -> TypedefId;
     #[salsa::interned]
     fn intern_typeset(&'tree self, loc: TypesetLoc) -> TypesetId;
+    #[salsa::interned]
+    fn intern_functag(&'tree self, loc: FunctagLoc) -> FunctagId;
     #[salsa::interned]
     fn intern_variable(&'tree self, loc: GlobalLoc) -> GlobalId;
     #[salsa::interned]
@@ -97,6 +102,9 @@ pub trait DefDatabase: InternDatabase + PreprocDatabase {
 
     #[salsa::invoke(TypesetData::typeset_data_query)]
     fn typeset_data(&self, id: TypesetId) -> Arc<TypesetData>;
+
+    #[salsa::invoke(FunctagData::functag_data_query)]
+    fn functag_data(&self, id: FunctagId) -> Arc<FunctagData>;
     // endregion: data
 
     // region: infer
@@ -334,6 +342,20 @@ impl DefMap {
                     }
                     .intern(db);
                     res.declare(typeset.name.clone(), FileDefId::TypesetId(typeset_id));
+                }
+                FileItem::Functag(id) => {
+                    let functag = &item_tree[*id];
+                    let functag_id = FunctagLoc {
+                        container: file_id.into(),
+                        id: ItemTreeId {
+                            tree: tree_id,
+                            value: *id,
+                        },
+                    }
+                    .intern(db);
+                    if let Some(name) = functag.name.clone() {
+                        res.declare(name, FileDefId::FunctagId(functag_id))
+                    }
                 }
             }
         }
