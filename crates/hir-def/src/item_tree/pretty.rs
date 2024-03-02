@@ -22,7 +22,7 @@ pub fn print_item_tree(_db: &dyn DefDatabase, tree: &ItemTree) -> String {
             FileItem::Typeset(idx) => printer.print_typeset(idx),
             FileItem::Functag(idx) => printer.print_functag(idx),
             FileItem::Funcenum(idx) => printer.print_funcenum(idx),
-            FileItem::Variant(_) => (),
+            FileItem::Variant(_) | FileItem::Property(_) => (),
         }
         printer.newline();
     }

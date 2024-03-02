@@ -133,6 +133,7 @@ pub fn diagnostics(
             AnyDiagnostic::UnresolvedConstructor(d) => {
                 handlers::unresolved_constructor::f(&ctx, &d)
             }
+            AnyDiagnostic::UnresolvedInherit(d) => handlers::unresolved_inherit::f(&ctx, &d),
             AnyDiagnostic::PreprocessorEvaluationError(d) => {
                 handlers::preprocessor_evaluation_error::f(&ctx, &d)
             }

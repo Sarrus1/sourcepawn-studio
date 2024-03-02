@@ -1,7 +1,7 @@
 use core::hash::Hash;
 use item_tree::{
-    AstId, EnumStruct, Funcenum, Functag, Function, ItemTreeNode, Macro, Methodmap, Typedef,
-    Typeset, Variable, Variant,
+    AstId, EnumStruct, Funcenum, Functag, Function, ItemTreeNode, Macro, Methodmap, Property,
+    Typedef, Typeset, Variable, Variant,
 };
 use item_tree::{Enum, ItemTree};
 use la_arena::Idx;
@@ -14,6 +14,7 @@ pub mod body;
 pub mod child_by_source;
 mod data;
 pub mod db;
+mod diagnostics;
 pub mod dyn_map;
 mod hir;
 mod infer;
@@ -25,6 +26,7 @@ pub use ast_id_map::NodePtr;
 pub use data::PropertyItem;
 pub use db::resolve_include_node;
 pub use db::DefDatabase;
+pub use diagnostics::DefDiagnostic;
 pub use hir::ExprId;
 pub use infer::{AttributeId, ConstructorDiagnosticKind, InferenceDiagnostic, InferenceResult};
 pub use item_tree::{print_item_tree, FileItem, Name};
@@ -133,11 +135,15 @@ impl_intern!(
     lookup_intern_methodmap
 );
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct PropertyId {
-    pub parent: MethodmapId,
-    pub local_id: LocalPropertyId,
-}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct PropertyId(salsa::InternId);
+type PropertyLoc = AssocItemLoc<Property>;
+impl_intern!(
+    PropertyId,
+    PropertyLoc,
+    intern_property,
+    lookup_intern_property
+);
 
 pub type LocalPropertyId = Idx<data::MethodmapItemData>;
 

@@ -8,10 +8,11 @@ use syntax::TSKind;
 use crate::{
     hir::type_ref::TypeRef,
     item_tree::{EnumStructItemId, MethodmapItemId, Name, SpecialMethod},
+    resolver::{global_resolver, ValueNs},
     src::{HasChildSource, HasSource},
-    DefDatabase, EnumStructId, FuncenumId, FunctagId, FunctagLoc, FunctionId, FunctionLoc, InFile,
-    Intern, ItemTreeId, LocalFieldId, LocalPropertyId, Lookup, MacroId, MethodmapId, NodePtr,
-    TypedefId, TypedefLoc, TypesetId,
+    DefDatabase, DefDiagnostic, EnumStructId, FuncenumId, FunctagId, FunctagLoc, FunctionId,
+    FunctionLoc, InFile, Intern, ItemTreeId, LocalFieldId, Lookup, MacroId, MethodmapId, NodePtr,
+    PropertyId, PropertyLoc, TypedefId, TypedefLoc, TypesetId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -84,8 +85,7 @@ impl PropertyItem {
 /// A single property of a methodmap
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PropertyData {
-    pub name: Name,
-    pub type_ref: TypeRef,
+    pub id: PropertyId,
     pub getters_setters: Vec<PropertyItem>,
 }
 
@@ -94,17 +94,60 @@ impl MethodmapData {
         db: &dyn DefDatabase,
         id: MethodmapId,
     ) -> Arc<MethodmapData> {
+        Self::methodmap_data_with_diagnostics_query(db, id).0
+    }
+
+    pub(crate) fn methodmap_data_with_diagnostics_query(
+        db: &dyn DefDatabase,
+        id: MethodmapId,
+    ) -> (Arc<MethodmapData>, Arc<[DefDiagnostic]>) {
+        let mut diags = Vec::new();
         let loc = id.lookup(db).id;
         let item_tree = loc.tree_id().item_tree(db);
         let methodmap = &item_tree[loc.value];
         let mut items = Arena::new();
         let mut items_map = FxHashMap::default();
+        // Compute inherits first, so that they get properly overwritten.
+        if let Some(inherits_name) = methodmap.inherits.clone() {
+            let resolver = global_resolver(db, loc.file_id());
+            if let Some(inherits) = resolver.resolve_ident(inherits_name.to_string().as_str()) {
+                if let ValueNs::MethodmapId(inherits) = inherits {
+                    let inherits_data = db.methodmap_data(inherits.value);
+                    for ((name, _), (_, item)) in inherits_data
+                        .items_map
+                        .iter()
+                        .zip(inherits_data.items.iter())
+                    {
+                        items_map.insert(name.clone(), items.alloc(item.clone()));
+                    }
+                } else {
+                    diags.push(DefDiagnostic::UnresolvedInherit {
+                        inherit_name: inherits_name,
+                        methodmap_ast_id: methodmap.ast_id,
+                        exists: true,
+                    });
+                };
+            } else {
+                diags.push(DefDiagnostic::UnresolvedInherit {
+                    inherit_name: inherits_name,
+                    methodmap_ast_id: methodmap.ast_id,
+                    exists: false,
+                });
+            }
+        }
         methodmap.items.iter().for_each(|e| match *e {
             MethodmapItemId::Property(property_idx) => {
                 let property = &item_tree[property_idx];
+                let property_id = PropertyLoc {
+                    container: id.into(),
+                    id: ItemTreeId {
+                        tree: loc.tree_id(),
+                        value: property_idx,
+                    },
+                }
+                .intern(db);
                 let property_data = MethodmapItemData::Property(PropertyData {
-                    name: property.name.clone(),
-                    type_ref: property.type_ref.clone(),
+                    id: property_id,
                     getters_setters: property
                         .getters_setters
                         .clone()
@@ -149,14 +192,13 @@ impl MethodmapData {
                 items_map.insert(method.name.clone(), method_id);
             } // TODO: Add diagnostic for duplicate methodmap items
         });
-        // FIXME: Should we look up the inherited methodmap and add its items to the items_map?
         let methodmap_data = MethodmapData {
             name: methodmap.name.clone(),
             items: Arc::new(items),
             items_map: Arc::new(items_map),
         };
 
-        Arc::new(methodmap_data)
+        (Arc::new(methodmap_data), diags.into())
     }
 
     pub fn name(&self) -> &Name {
@@ -196,15 +238,6 @@ impl MethodmapData {
 
     pub fn items(&self, name: &Name) -> Option<Idx<MethodmapItemData>> {
         self.items_map.get(name).cloned()
-    }
-
-    pub fn property_type(&self, property: Idx<MethodmapItemData>) -> Option<&TypeRef> {
-        match &self.items[property] {
-            MethodmapItemData::Property(property_data) => Some(&property_data.type_ref),
-            MethodmapItemData::Method(_)
-            | MethodmapItemData::Constructor(_)
-            | MethodmapItemData::Destructor(_) => None,
-        }
     }
 }
 
@@ -440,35 +473,6 @@ impl HasChildSource<LocalFieldId> for EnumStructId {
             let type_ref = TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id()));
             let field = EnumStructItemData::Field(FieldData { name, type_ref });
             map.insert(items.alloc(field), NodePtr::from(&child));
-        }
-        InFile::new(loc.file_id(), map)
-    }
-}
-
-impl HasChildSource<LocalPropertyId> for MethodmapId {
-    type Value = NodePtr;
-
-    fn child_source(&self, db: &dyn DefDatabase) -> InFile<ArenaMap<LocalPropertyId, Self::Value>> {
-        let loc = self.lookup(db).id;
-        let mut map = ArenaMap::default();
-        let tree = db.parse(loc.file_id());
-        let mut items: Arena<MethodmapItemData> = Arena::new();
-        let methodmap_node = loc.source(db, &tree).value;
-        for child in methodmap_node
-            .children(&mut methodmap_node.walk())
-            .filter(|c| TSKind::from(c) == TSKind::methodmap_property)
-        {
-            let name_node = child.child_by_field_name("name").unwrap();
-            let name = Name::from_node(&name_node, &db.preprocessed_text(loc.file_id()));
-            let type_ref_node = child.child_by_field_name("type").unwrap();
-            let type_ref = TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id()));
-            let getters_setters = Vec::new();
-            let property = MethodmapItemData::Property(PropertyData {
-                name,
-                type_ref,
-                getters_setters,
-            });
-            map.insert(items.alloc(property), NodePtr::from(&child));
         }
         InFile::new(loc.file_id(), map)
     }

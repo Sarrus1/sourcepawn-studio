@@ -19,11 +19,11 @@ use crate::{
     },
     infer,
     item_tree::{ItemTree, Name},
-    BlockId, BlockLoc, DefWithBodyId, EnumId, EnumLoc, EnumStructId, EnumStructLoc, FileDefId,
-    FileItem, FuncenumId, FuncenumLoc, FunctagId, FunctagLoc, FunctionId, FunctionLoc, GlobalId,
-    GlobalLoc, InferenceResult, Intern, ItemTreeId, Lookup, MacroId, MacroLoc, MethodmapId,
-    MethodmapLoc, NodePtr, TreeId, TypedefId, TypedefLoc, TypesetId, TypesetLoc, VariantId,
-    VariantLoc,
+    BlockId, BlockLoc, DefDiagnostic, DefWithBodyId, EnumId, EnumLoc, EnumStructId, EnumStructLoc,
+    FileDefId, FileItem, FuncenumId, FuncenumLoc, FunctagId, FunctagLoc, FunctionId, FunctionLoc,
+    GlobalId, GlobalLoc, InferenceResult, Intern, ItemTreeId, Lookup, MacroId, MacroLoc,
+    MethodmapId, MethodmapLoc, NodePtr, PropertyId, PropertyLoc, TreeId, TypedefId, TypedefLoc,
+    TypesetId, TypesetLoc, VariantId, VariantLoc,
 };
 
 #[salsa::query_group(InternDatabaseStorage)]
@@ -37,6 +37,8 @@ pub trait InternDatabase: SourceDatabase {
     fn intern_enum_struct(&'tree self, loc: EnumStructLoc) -> EnumStructId;
     #[salsa::interned]
     fn intern_methodmap(&'tree self, loc: MethodmapLoc) -> MethodmapId;
+    #[salsa::interned]
+    fn intern_property(&'tree self, loc: PropertyLoc) -> PropertyId;
     #[salsa::interned]
     fn intern_enum(&'tree self, loc: EnumLoc) -> EnumId;
     #[salsa::interned]
@@ -99,6 +101,11 @@ pub trait DefDatabase: InternDatabase + PreprocDatabase {
 
     #[salsa::invoke(MethodmapData::methodmap_data_query)]
     fn methodmap_data(&self, id: MethodmapId) -> Arc<MethodmapData>;
+    #[salsa::invoke(MethodmapData::methodmap_data_with_diagnostics_query)]
+    fn methodmap_data_with_diagnostics(
+        &self,
+        id: MethodmapId,
+    ) -> (Arc<MethodmapData>, Arc<[DefDiagnostic]>);
 
     #[salsa::invoke(TypedefData::typedef_data_query)]
     fn typedef_data(&self, id: TypedefId) -> Arc<TypedefData>;
@@ -375,6 +382,7 @@ impl DefMap {
                     .intern(db);
                     res.declare(funcenum.name.clone(), FileDefId::FuncenumId(funcenum_id));
                 }
+                FileItem::Property(_) => (),
             }
         }
 

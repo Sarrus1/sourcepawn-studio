@@ -333,15 +333,13 @@ impl InferenceContext<'_> {
                 let data = self.db.methodmap_data(it.value);
                 if let Some(item) = data.items(name) {
                     match data.item(item) {
-                        MethodmapItemData::Property(_) => {
-                            let property_id = PropertyId {
-                                parent: it.value,
-                                local_id: item,
-                            };
+                        MethodmapItemData::Property(property_data) => {
                             self.result
                                 .attribute_resolutions
-                                .insert(*receiver, property_id.into());
-                            return Some(data.property_type(item)?.clone());
+                                .insert(*receiver, property_data.id.into());
+                            let property = property_data.id.lookup(self.db);
+                            let item_tree = property.id.item_tree(self.db);
+                            return Some(item_tree[property.id.value].type_ref.clone());
                         }
                         MethodmapItemData::Method(_)
                         | MethodmapItemData::Constructor(_)

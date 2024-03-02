@@ -443,6 +443,7 @@ mod_items! {
     Macro macros,
     EnumStruct enum_structs,
     Methodmap methodmaps,
+    Property properties,
     Enum enums,
     Variant variants,
     Typedef typedefs,
@@ -467,7 +468,6 @@ macro_rules! impl_index {
 
 impl_index! {
     fields: Field,
-    properties: Property,
 }
 
 impl<N: ItemTreeNode> Index<ItemTreeId<N>> for ItemTree {

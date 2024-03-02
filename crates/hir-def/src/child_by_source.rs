@@ -2,10 +2,10 @@ use la_arena::{Idx, RawIdx};
 use vfs::FileId;
 
 use crate::{
-    data::{EnumStructItemData, MethodmapItemData},
+    data::{EnumStructItemData, MethodmapItemData, PropertyData},
     dyn_map::{keys, DynMap},
     src::HasChildSource,
-    DefDatabase, EnumStructId, FieldId, FileDefId, FuncenumId, Lookup, MethodmapId, PropertyId,
+    DefDatabase, EnumStructId, FieldId, FileDefId, FuncenumId, Lookup, MethodmapId, PropertyItem,
     TypesetId,
 };
 
@@ -91,7 +91,10 @@ impl ChildBySource for EnumStructId {
         let data = db.enum_struct_data(*self);
         let item_tree = db.file_item_tree(file_id);
         let ast_id_map = db.ast_id_map(file_id);
-        // TODO: See below
+        // This is not ideal.
+        // When we build the arena_map, we only push properties in it. Therefore, we need to keep track of the property
+        // index because some methods may squeeze in between properties.
+        // TODO: We should probably change the way we build the arena_map to include methods as well.
         let mut field_idx = 0u32;
         data.items.iter().for_each(|(idx, item)| match item {
             EnumStructItemData::Field(_) => {
@@ -123,32 +126,22 @@ impl ChildBySource for EnumStructId {
 
 impl ChildBySource for MethodmapId {
     fn child_by_source_to(&self, db: &dyn DefDatabase, map: &mut DynMap, file_id: FileId) {
-        let arena_map = self.child_source(db);
         let data = db.methodmap_data(*self);
         let item_tree = db.file_item_tree(file_id);
         let ast_id_map = db.ast_id_map(file_id);
-        // This is not ideal.
-        // When we build the arena_map, we only push properties in it. Therefore, we need to keep track of the property
-        // index because some methods may squeeze in between properties.
-        // TODO: We should probably change the way we build the arena_map to include methods as well.
-        let mut property_idx = 0u32;
-        data.items.iter().for_each(|(idx, item)| match item {
-            MethodmapItemData::Property(data) => {
-                for fn_id in data.getters_setters.iter() {
-                    let fn_id = fn_id.function_id();
+        data.items.iter().for_each(|(_, item)| match item {
+            MethodmapItemData::Property(PropertyData {
+                id,
+                getters_setters,
+            }) => {
+                let item = &item_tree[id.lookup(db).id];
+                for fn_id in getters_setters.iter().map(PropertyItem::function_id) {
                     let item = &item_tree[fn_id.lookup(db).id];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
                     map[keys::FUNCTION].insert(node_ptr, fn_id);
                 }
-                let property_id = PropertyId {
-                    parent: *self,
-                    local_id: idx,
-                };
-                map[keys::PROPERTY].insert(
-                    arena_map.value[Idx::from_raw(RawIdx::from_u32(property_idx))],
-                    property_id,
-                );
-                property_idx += 1;
+                let node_ptr = ast_id_map.get_raw(item.ast_id);
+                map[keys::PROPERTY].insert(node_ptr, *id);
             }
             MethodmapItemData::Method(id)
             | MethodmapItemData::Constructor(id)
@@ -158,13 +151,6 @@ impl ChildBySource for MethodmapId {
                 map[keys::FUNCTION].insert(node_ptr, *id);
             }
         });
-        for (local_id, source) in arena_map.value.iter() {
-            let field_id = PropertyId {
-                parent: *self,
-                local_id,
-            };
-            map[keys::PROPERTY].insert(*source, field_id);
-        }
     }
 }
 

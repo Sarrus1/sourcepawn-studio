@@ -497,6 +497,92 @@ void main() {
 }
 
 #[test]
+fn methodmap_inherit_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    public void Foo() {}
+    public void Foo2() {}
+}
+methodmap Bar < Foo {
+    public void Bar() {}
+}
+Bar bar;
+void main() {
+    bar.Foo2();
+         |
+         ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn methodmap_inherit_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    property int Foo
+    {
+        public get() {}
+        public set(int value) {}
+    }
+    property int Bar
+    {
+        public get() {}
+        public set(int value) {}
+    }
+}
+methodmap Bar < Foo {
+    public void Bar2() {}
+}
+Bar bar;
+void main() {
+    bar.Bar;
+         |
+         ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn methodmap_inherit_3() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo {
+    property int Foo
+    {
+        public get() {}
+        public set(int value) {}
+    }
+    property int Bar
+    {
+        public get() {}
+        public set(int value) {}
+    }
+}
+methodmap Bar < Foo {
+    property int Bar
+    {
+        public get() {}
+        public set(int value) {}
+    }
+}
+Bar bar;
+void main() {
+    bar.Bar;
+         |
+         ^
+}
+"#,
+    ));
+}
+
+#[test]
 fn methodmap_complex_1() {
     assert_json_snapshot!(goto_definition(
         r#"

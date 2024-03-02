@@ -358,12 +358,12 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             .utf8_text(source.as_ref().as_bytes())
             .ok()?;
 
-        let enum_struct_name = container
+        let container_name = container
             .parent()?
             .child_by_field_name("name")?
             .utf8_text(source.as_ref().as_bytes())
             .ok()?;
-        let id = match def_map.get_first_from_str(enum_struct_name)? {
+        let id = match def_map.get_first_from_str(container_name)? {
             hir_def::FileDefId::EnumStructId(es_id) => {
                 let data = self.db.enum_struct_data(es_id);
                 let method_idx = data.items(&Name::from(method_name))?;

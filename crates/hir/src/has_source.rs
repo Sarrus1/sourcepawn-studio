@@ -3,7 +3,7 @@ use hir_def::{src::HasChildSource, EnumStructId, InFile, Lookup, MethodmapId};
 
 use crate::{
     db::HirDatabase, Enum, EnumStruct, Funcenum, Functag, Function, Global, LocalSource, Macro,
-    Methodmap, Typedef, Typeset, Variant,
+    Methodmap, Property, Typedef, Typeset, Variant,
 };
 use hir_def::src::HasSource as _;
 
@@ -35,7 +35,7 @@ macro_rules! has_source {
 
 has_source![
     Function, Macro, Global, EnumStruct, Methodmap, Enum, Variant, Typedef, Typeset, Functag,
-    Funcenum
+    Funcenum, Property
 ];
 
 impl<'tree> HasSource<'tree> for LocalSource<'tree> {
@@ -58,21 +58,6 @@ impl<'tree> HasSource<'tree> for crate::Field {
         let src = enum_struct_id.child_source(db.upcast());
         Some(InFile {
             file_id: enum_struct_id.lookup(db.upcast()).id.file_id(),
-            value: src.value[self.id].to_node(tree),
-        })
-    }
-}
-
-impl<'tree> HasSource<'tree> for crate::Property {
-    fn source(
-        self,
-        db: &dyn HirDatabase,
-        tree: &'tree Tree,
-    ) -> Option<InFile<tree_sitter::Node<'tree>>> {
-        let methodmap_id = MethodmapId::from(self.parent);
-        let src = methodmap_id.child_source(db.upcast());
-        Some(InFile {
-            file_id: methodmap_id.lookup(db.upcast()).id.file_id(),
             value: src.value[self.id].to_node(tree),
         })
     }

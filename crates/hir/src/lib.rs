@@ -1,9 +1,9 @@
 use base_db::Tree;
 use db::HirDatabase;
 use hir_def::{
-    resolver::ValueNs, DefWithBodyId, EnumId, EnumStructId, ExprId, FuncenumId, FunctagId,
-    FunctionId, GlobalId, InFile, InferenceDiagnostic, LocalFieldId, LocalPropertyId, Lookup,
-    MacroId, MethodmapId, Name, TypedefId, TypesetId, VariantId,
+    resolver::ValueNs, DefDiagnostic, DefWithBodyId, EnumId, EnumStructId, ExprId, FileDefId,
+    FuncenumId, FunctagId, FunctionId, GlobalId, InFile, InferenceDiagnostic, LocalFieldId, Lookup,
+    MacroId, MethodmapId, Name, NodePtr, PropertyId, TypedefId, TypesetId, VariantId,
 };
 use preprocessor::PreprocessorError;
 use stdx::impl_from;
@@ -110,7 +110,7 @@ impl DefResolution {
             DefResolution::Macro(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::EnumStruct(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Methodmap(it) => it.id.lookup(db.upcast()).id.file_id(),
-            DefResolution::Property(it) => it.parent.id.lookup(db.upcast()).id.file_id(),
+            DefResolution::Property(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Enum(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Variant(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Typedef(it) => it.id.lookup(db.upcast()).id.file_id(),
@@ -215,27 +215,49 @@ pub enum FileDef {
     Funcenum(Funcenum),
 }
 
-impl_from!(Function, Macro, EnumStruct, Global, Enum, Variant, Typedef for FileDef);
+impl_from!(Function, Macro, EnumStruct, Methodmap, Global, Enum, Variant, Typedef for FileDef);
 
 impl FileDef {
     pub fn diagnostics(self, db: &dyn HirDatabase) -> Vec<AnyDiagnostic> {
-        // let id: FileDefId = match self {
-        //     FileDef::Function(it) => it.id.into(),
-        //     FileDef::Macro(it) => it.id.into(),
-        //     FileDef::EnumStruct(it) => it.id.into(),
-        //     FileDef::Global(it) => it.id.into(),
-        // };
-
         let mut acc = Vec::new();
-
-        match self.as_def_with_body() {
-            Some(def) => {
-                def.diagnostics(db, &mut acc);
-            }
-            None => {
-                // for diag in hir_ty::diagnostics::incorrect_case(db, id) {
-                //     acc.push(diag.into())
-                // }
+        if let Some(def) = self.as_def_with_body() {
+            def.diagnostics(db, &mut acc);
+        } else {
+            match self {
+                FileDef::Methodmap(it) => {
+                    for diag in db.methodmap_data_with_diagnostics(it.id).1.iter() {
+                        match diag {
+                            DefDiagnostic::UnresolvedInherit {
+                                methodmap_ast_id,
+                                inherit_name,
+                                exists,
+                            } => {
+                                let file_id = it.id.lookup(db.upcast()).id.file_id();
+                                let tree = db.parse(file_id);
+                                let ast_id_map = db.ast_id_map(file_id);
+                                let methodmap_node = ast_id_map[*methodmap_ast_id].to_node(&tree);
+                                // FIXME: This is not ideal, we have to find a better way to get the node.
+                                if let Some(inherit_node) =
+                                    methodmap_node.child_by_field_name("inherits")
+                                {
+                                    acc.push(AnyDiagnostic::UnresolvedInherit(
+                                        UnresolvedInherit {
+                                            expr: InFile::new(
+                                                file_id,
+                                                NodePtr::from(&inherit_node),
+                                            ),
+                                            inherit: inherit_name.clone(),
+                                            exists: *exists,
+                                        }
+                                        .into(),
+                                    ));
+                                }
+                            }
+                        }
+                    }
+                }
+                FileDef::EnumStruct(_) => (),
+                _ => (),
             }
         }
 
@@ -375,8 +397,7 @@ pub struct Methodmap {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Property {
-    pub(crate) parent: Methodmap,
-    pub(crate) id: LocalPropertyId,
+    pub(crate) id: PropertyId,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
