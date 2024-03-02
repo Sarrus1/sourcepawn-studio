@@ -1,15 +1,16 @@
 use std::sync::Arc;
 
 use fxhash::FxHashMap;
+use smallvec::smallvec;
 use stdx::impl_from;
 
 use crate::{
     body::Body,
     data::{EnumStructItemData, MethodmapItemData},
     hir::{type_ref::TypeRef, Expr, Literal},
-    item_tree::Name,
+    item_tree::{FunctionKind, Name},
     resolver::{HasResolver, Resolver, ValueNs},
-    DefDatabase, DefWithBodyId, ExprId, FieldId, FunctionId, Lookup, PropertyId,
+    DefDatabase, DefWithBodyId, ExprId, FieldId, FunctionId, InFile, Lookup, PropertyId,
 };
 
 pub(crate) fn infer_query(db: &dyn DefDatabase, def: DefWithBodyId) -> Arc<InferenceResult> {
@@ -45,6 +46,10 @@ pub enum InferenceDiagnostic {
         methodmap: Name,
         exists: Option<ConstructorDiagnosticKind>,
     },
+    UnresolvedNamedArg {
+        expr: ExprId,
+        name: Name,
+    },
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -68,6 +73,8 @@ pub struct InferenceResult {
     attribute_resolutions: FxHashMap<ExprId, AttributeId>,
     /// For each method call expr, records the function it resolves to.
     method_resolutions: FxHashMap<ExprId, FunctionId>,
+    /// For each named argument, records the local it resolves to.
+    named_arg_resolutions: FxHashMap<ExprId, (DefWithBodyId, ExprId)>,
 
     pub diagnostics: Vec<InferenceDiagnostic>,
 }
@@ -80,6 +87,10 @@ impl InferenceResult {
     pub fn method_resolution(&self, expr: ExprId) -> Option<FunctionId> {
         self.method_resolutions.get(&expr).copied()
     }
+
+    pub fn named_arg_resolution(&self, expr: ExprId) -> Option<(DefWithBodyId, ExprId)> {
+        self.named_arg_resolutions.get(&expr).copied()
+    }
 }
 
 /// The inference context contains all information needed during type inference.
@@ -90,6 +101,13 @@ pub(crate) struct InferenceContext<'a> {
     pub(crate) body: &'a Body,
     pub(crate) result: InferenceResult,
     pub(crate) resolver: Resolver,
+    call_stack: Vec<Callee>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Callee {
+    expr: ExprId,
+    id: Option<ValueNs>,
 }
 
 impl<'a> InferenceContext<'a> {
@@ -105,7 +123,24 @@ impl<'a> InferenceContext<'a> {
             owner,
             body,
             resolver,
+            call_stack: Vec::new(),
         }
+    }
+
+    fn push_call(&mut self, expr: ExprId) {
+        self.call_stack.push(Callee { expr, id: None });
+    }
+
+    fn pop_call(&mut self) {
+        self.call_stack.pop();
+    }
+
+    fn current_call(&self) -> Option<Callee> {
+        self.call_stack.last().cloned()
+    }
+
+    fn current_call_mut(&mut self) -> Option<&mut Callee> {
+        self.call_stack.last_mut()
     }
 }
 
@@ -128,6 +163,40 @@ impl InferenceContext<'_> {
                     ty = self.infer_expr(expr);
                 }
                 ty
+            }
+            Expr::NamedArg { name, value } => {
+                let current_call = self.current_call()?;
+                let id = current_call.id?;
+                let ValueNs::FunctionId(it) = id else {
+                    return None;
+                };
+                let function = it.iter().find_map(|it| {
+                    let item_tree = self.db.file_item_tree(it.file_id);
+                    let function = &item_tree[it.value.lookup(self.db).id];
+                    if function.kind == FunctionKind::Def {
+                        Some(it.value)
+                    } else {
+                        None
+                    }
+                })?;
+                let mut resolver = function.resolver(self.db);
+                resolver.update_to_first_local_scope(self.db, function.into());
+                let Expr::Ident(name_str) = self.body[*name].clone() else {
+                    return None;
+                };
+                if let Some(ValueNs::LocalId(local)) =
+                    resolver.resolve_ident(name_str.to_string().as_str())
+                {
+                    self.result.named_arg_resolutions.insert(*name, local);
+                } else {
+                    self.result
+                        .diagnostics
+                        .push(InferenceDiagnostic::UnresolvedNamedArg {
+                            expr: *name,
+                            name: name_str,
+                        });
+                }
+                self.infer_expr(value)
             }
             Expr::New { name, args } => {
                 for arg in args.iter() {
@@ -171,7 +240,7 @@ impl InferenceContext<'_> {
             Expr::Ident(name) => {
                 let name: String = name.clone().into();
                 let res = self.resolver.resolve_ident(&name)?; // TODO: Should we emit a diagnostic here?
-                match res {
+                match &res {
                     ValueNs::GlobalId(it) => {
                         let item_tree = self.db.file_item_tree(it.file_id);
                         item_tree[it.value.lookup(self.db).value].type_ref.clone()
@@ -181,7 +250,7 @@ impl InferenceContext<'_> {
                             ident_id: _,
                             type_ref,
                             initializer: _,
-                        } = &self.body[expr_id]
+                        } = &self.body[*expr_id]
                         else {
                             return None;
                         };
@@ -196,6 +265,11 @@ impl InferenceContext<'_> {
                         TypeRef::Name(item_tree[it.value.lookup(self.db).id].name.clone()).into()
                     }
                     ValueNs::FunctionId(it) => {
+                        if let Some(current_call) = self.current_call_mut() {
+                            if current_call.id.is_none() {
+                                current_call.id = Some(res.clone());
+                            }
+                        }
                         let mut ret_type = None;
                         for fn_id in it.iter() {
                             let item_tree = self.db.file_item_tree(fn_id.file_id);
@@ -230,12 +304,23 @@ impl InferenceContext<'_> {
                 target,
                 method_name,
                 args,
-            } => self.infer_method_call(expr, target, method_name, args),
-            Expr::Call { callee, args } => {
+            } => {
+                self.push_call(*target);
+                let ty = self.infer_method_call(expr, target, method_name);
                 for arg in args.iter() {
                     self.infer_expr(arg);
                 }
-                self.infer_expr(callee)
+                self.pop_call();
+                ty
+            }
+            Expr::Call { callee, args } => {
+                self.push_call(*callee);
+                let ty = self.infer_expr(callee);
+                for arg in args.iter() {
+                    self.infer_expr(arg);
+                }
+                self.pop_call();
+                ty
             }
             Expr::Missing | Expr::Decl(_) | Expr::Binding { .. } => None,
         }
@@ -376,12 +461,7 @@ impl InferenceContext<'_> {
         receiver: &ExprId,
         target: &ExprId,
         method_name: &Name,
-        args: &[ExprId],
     ) -> Option<TypeRef> {
-        for arg in args.iter() {
-            self.infer_expr(arg);
-        }
-
         let target_ty = self.infer_expr(target);
         let Some(TypeRef::Name(type_name)) = target_ty else {
             return None;
@@ -405,6 +485,12 @@ impl InferenceContext<'_> {
                         }
                         EnumStructItemData::Method(method) => {
                             self.result.method_resolutions.insert(*receiver, *method);
+                            if let Some(current_call) = self.current_call_mut() {
+                                if current_call.id.is_none() {
+                                    let res = InFile::new(it.file_id, *method);
+                                    current_call.id = Some(ValueNs::FunctionId(smallvec![res;1]));
+                                }
+                            }
                             let function = method.lookup(self.db);
                             let item_tree = function.id.item_tree(self.db);
                             return item_tree[function.id.value].ret_type.clone();

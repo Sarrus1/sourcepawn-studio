@@ -28,6 +28,7 @@ diagnostics![
     UnresolvedField,
     UnresolvedMethodCall,
     UnresolvedConstructor,
+    UnresolvedNamedArg,
     UnresolvedInherit,
     PreprocessorEvaluationError,
     UnresolvedMacro,
@@ -67,6 +68,12 @@ pub struct UnresolvedConstructor {
 pub enum ConstructorDiagnosticKind {
     Methodmap,
     EnumStruct,
+}
+
+#[derive(Debug)]
+pub struct UnresolvedNamedArg {
+    pub expr: InFile<NodePtr>,
+    pub name: Name,
 }
 
 #[derive(Debug)]

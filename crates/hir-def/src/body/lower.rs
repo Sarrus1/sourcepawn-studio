@@ -173,6 +173,15 @@ impl ExprCollector<'_> {
                 };
                 Some(self.alloc_expr(block, NodePtr::from(&expr)))
             }
+            TSKind::named_arg => {
+                let name = expr.child_by_field_name("arg_name")?;
+                let value = expr.child_by_field_name("value")?;
+                let named_arg = Expr::NamedArg {
+                    name: self.collect_expr(name),
+                    value: self.collect_expr(value),
+                };
+                Some(self.alloc_expr(named_arg, NodePtr::from(&expr)))
+            }
             TSKind::expression_statement => {
                 let child = expr.children(&mut expr.walk()).next()?;
                 Some(self.collect_expr(child))

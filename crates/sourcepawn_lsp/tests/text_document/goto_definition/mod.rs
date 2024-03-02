@@ -3,6 +3,7 @@ use sourcepawn_lsp::fixture::goto_definition;
 
 mod enums;
 mod function_declarations;
+mod functions;
 mod macros;
 mod methodmaps;
 mod typedefs;

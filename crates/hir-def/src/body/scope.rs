@@ -68,6 +68,10 @@ impl ExprScopes {
     pub fn entry(&self, entry: ScopeEntry) -> &ExprId {
         &self.scope_entries[entry]
     }
+
+    pub fn first_scope(&self) -> Option<ScopeId> {
+        self.scopes.iter().next().map(|(id, _)| id)
+    }
 }
 
 impl ExprScopes {
@@ -175,6 +179,7 @@ fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope
         }
         // These expressions do not introduce any declarations.
         Expr::Missing
+        | Expr::NamedArg { .. }
         | Expr::CommaExpr { .. }
         | Expr::ScopeAccess { .. }
         | Expr::Ident(_)

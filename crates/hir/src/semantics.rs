@@ -425,6 +425,16 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 let constructor = analyzer.resolve_constructor(self.db, &node, &parent)?;
                 return Some(DefResolution::Function(constructor));
             }
+            TSKind::named_arg => {
+                let analyzer = SourceAnalyzer::new_for_body(
+                    self.db,
+                    def,
+                    InFile::new(file_id, body_node),
+                    Some(offset),
+                );
+                let arg = analyzer.resolve_named_arg(self.db, &node, &parent)?;
+                return Some(DefResolution::Local(arg));
+            }
             _ => {}
         }
 

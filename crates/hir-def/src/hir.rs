@@ -32,7 +32,12 @@ pub enum Expr {
         id: Option<BlockId>,
         statements: Box<[ExprId]>,
     },
+    #[allow(clippy::enum_variant_names)]
     CommaExpr(Box<[ExprId]>),
+    NamedArg {
+        name: ExprId,
+        value: ExprId,
+    },
     New {
         name: Name,
         args: Box<[ExprId]>,

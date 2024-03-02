@@ -233,6 +233,19 @@ impl Resolver {
     pub fn reset_to_guard(&mut self, UpdateGuard(start): UpdateGuard) {
         self.scopes.truncate(start);
     }
+
+    /// Update the resolver to the outer most local scope of the owner.
+    pub fn update_to_first_local_scope(&mut self, db: &dyn DefDatabase, owner: DefWithBodyId) {
+        let expr_scopes = db.expr_scopes(owner, self.file_id);
+        let scope_id = expr_scopes.first_scope();
+        if let Some(scope_id) = scope_id {
+            self.scopes.push(Scope::ExprScope(ExprScope {
+                owner,
+                expr_scopes: Arc::clone(&expr_scopes),
+                scope_id,
+            }));
+        }
+    }
 }
 
 pub struct UpdateGuard(usize);
