@@ -12,7 +12,7 @@ pub(crate) fn unresolved_named_arg(
     Diagnostic::new_with_syntax_node_ptr(
         ctx,
         DiagnosticCode::SpCompError("E0000"),
-        format!("no parameter `{}` found", d.name),
+        format!("no parameter `{}` found for `{}`", d.name, d.callee),
         d.expr,
     )
 }

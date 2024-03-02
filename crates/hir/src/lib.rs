@@ -358,10 +358,11 @@ impl DefWithBody {
                         .into(),
                     )
                 }
-                InferenceDiagnostic::UnresolvedNamedArg { expr, name } => acc.push(
+                InferenceDiagnostic::UnresolvedNamedArg { expr, name, callee } => acc.push(
                     UnresolvedNamedArg {
                         expr: expr_syntax(*expr),
                         name: name.clone(),
+                        callee: callee.clone(),
                     }
                     .into(),
                 ),

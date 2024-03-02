@@ -75,6 +75,7 @@ pub enum ConstructorDiagnosticKind {
 pub struct UnresolvedNamedArg {
     pub expr: InFile<NodePtr>,
     pub name: Name,
+    pub callee: Name,
 }
 
 #[derive(Debug)]

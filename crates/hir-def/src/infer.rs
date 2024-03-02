@@ -49,6 +49,7 @@ pub enum InferenceDiagnostic {
     UnresolvedNamedArg {
         expr: ExprId,
         name: Name,
+        callee: Name,
     },
     IncorrectNumberOfArguments {
         expr: ExprId,
@@ -219,6 +220,7 @@ impl InferenceContext<'_> {
                         .push(InferenceDiagnostic::UnresolvedNamedArg {
                             expr: *name,
                             name: name_str,
+                            callee: self.current_call_name().expect("No current call"),
                         });
                 }
                 self.infer_expr(value)
