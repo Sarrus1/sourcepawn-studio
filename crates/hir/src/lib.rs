@@ -365,6 +365,20 @@ impl DefWithBody {
                     }
                     .into(),
                 ),
+                InferenceDiagnostic::IncorrectNumberOfArguments {
+                    expr,
+                    name,
+                    expected,
+                    actual,
+                } => acc.push(
+                    IncorrectNumberOfArguments {
+                        expr: expr_syntax(*expr),
+                        name: name.clone(),
+                        expected: *expected,
+                        actual: *actual,
+                    }
+                    .into(),
+                ),
             }
         }
     }

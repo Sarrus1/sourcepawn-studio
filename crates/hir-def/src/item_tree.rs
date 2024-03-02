@@ -468,6 +468,7 @@ macro_rules! impl_index {
 
 impl_index! {
     fields: Field,
+    params: Param
 }
 
 impl<N: ItemTreeNode> Index<ItemTreeId<N>> for ItemTree {

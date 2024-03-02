@@ -1,4 +1,5 @@
 pub(crate) mod inactive_code;
+pub(crate) mod incorrect_number_of_arguments;
 pub(crate) mod preprocessor_evaluation_error;
 pub(crate) mod unresolved_constructor;
 pub(crate) mod unresolved_field;

@@ -134,6 +134,9 @@ pub fn diagnostics(
                 handlers::unresolved_constructor::f(&ctx, &d)
             }
             AnyDiagnostic::UnresolvedNamedArg(d) => handlers::unresolved_named_arg::f(&ctx, &d),
+            AnyDiagnostic::IncorrectNumberOfArguments(d) => {
+                handlers::incorrect_number_of_arguments::f(&ctx, &d)
+            }
             AnyDiagnostic::UnresolvedInherit(d) => handlers::unresolved_inherit::f(&ctx, &d),
             AnyDiagnostic::PreprocessorEvaluationError(d) => {
                 handlers::preprocessor_evaluation_error::f(&ctx, &d)

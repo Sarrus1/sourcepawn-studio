@@ -972,6 +972,7 @@ dependencies = [
  "base-db",
  "bitflags 2.4.2",
  "fxhash",
+ "itertools 0.11.0",
  "la-arena",
  "lazy_static",
  "log",

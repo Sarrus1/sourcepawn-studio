@@ -29,6 +29,7 @@ diagnostics![
     UnresolvedMethodCall,
     UnresolvedConstructor,
     UnresolvedNamedArg,
+    IncorrectNumberOfArguments,
     UnresolvedInherit,
     PreprocessorEvaluationError,
     UnresolvedMacro,
@@ -74,6 +75,14 @@ pub enum ConstructorDiagnosticKind {
 pub struct UnresolvedNamedArg {
     pub expr: InFile<NodePtr>,
     pub name: Name,
+}
+
+#[derive(Debug)]
+pub struct IncorrectNumberOfArguments {
+    pub expr: InFile<NodePtr>,
+    pub name: Name,
+    pub expected: usize,
+    pub actual: usize,
 }
 
 #[derive(Debug)]

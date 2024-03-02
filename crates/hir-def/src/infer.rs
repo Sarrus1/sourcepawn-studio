@@ -6,9 +6,9 @@ use stdx::impl_from;
 
 use crate::{
     body::Body,
-    data::{EnumStructItemData, MethodmapItemData},
+    data::{EnumStructItemData, FunctionData, MethodmapItemData},
     hir::{type_ref::TypeRef, Expr, Literal},
-    item_tree::{FunctionKind, Name},
+    item_tree::Name,
     resolver::{HasResolver, Resolver, ValueNs},
     DefDatabase, DefWithBodyId, ExprId, FieldId, FunctionId, InFile, Lookup, PropertyId,
 };
@@ -49,6 +49,12 @@ pub enum InferenceDiagnostic {
     UnresolvedNamedArg {
         expr: ExprId,
         name: Name,
+    },
+    IncorrectNumberOfArguments {
+        expr: ExprId,
+        name: Name,
+        expected: usize,
+        actual: usize,
     },
 }
 
@@ -142,6 +148,33 @@ impl<'a> InferenceContext<'a> {
     fn current_call_mut(&mut self) -> Option<&mut Callee> {
         self.call_stack.last_mut()
     }
+
+    fn current_call_data(&self) -> Option<Arc<FunctionData>> {
+        let current_call = self.current_call()?;
+        let id = current_call.id?;
+        let ValueNs::FunctionId(fn_ids) = id else {
+            return None;
+        };
+        let fn_id = fn_ids.first()?.value;
+        self.db.function_data(fn_id).into()
+    }
+
+    /// Returns the min and max number of parameters for the current call.
+    fn current_call_params_numbers(&self) -> Option<(usize, usize)> {
+        let data = self.current_call_data()?;
+
+        (
+            data.number_of_mandatory_parameters(),
+            data.number_of_parameters(),
+        )
+            .into()
+    }
+
+    fn current_call_name(&self) -> Option<Name> {
+        let data = self.current_call_data()?;
+
+        data.name().into()
+    }
 }
 
 impl InferenceContext<'_> {
@@ -170,15 +203,7 @@ impl InferenceContext<'_> {
                 let ValueNs::FunctionId(it) = id else {
                     return None;
                 };
-                let function = it.iter().find_map(|it| {
-                    let item_tree = self.db.file_item_tree(it.file_id);
-                    let function = &item_tree[it.value.lookup(self.db).id];
-                    if function.kind == FunctionKind::Def {
-                        Some(it.value)
-                    } else {
-                        None
-                    }
-                })?;
+                let function = it.first()?.value;
                 let mut resolver = function.resolver(self.db);
                 resolver.update_to_first_local_scope(self.db, function.into());
                 let Expr::Ident(name_str) = self.body[*name].clone() else {
@@ -318,6 +343,18 @@ impl InferenceContext<'_> {
                 let ty = self.infer_expr(callee);
                 for arg in args.iter() {
                     self.infer_expr(arg);
+                }
+                if let Some((min, max)) = self.current_call_params_numbers() {
+                    if args.len() < min || args.len() > max {
+                        self.result.diagnostics.push(
+                            InferenceDiagnostic::IncorrectNumberOfArguments {
+                                expr: args.last().cloned().unwrap_or(*expr),
+                                name: self.current_call_name().expect("No current call"),
+                                expected: if args.len() < min { min } else { max },
+                                actual: args.len(),
+                            },
+                        );
+                    }
                 }
                 self.pop_call();
                 ty

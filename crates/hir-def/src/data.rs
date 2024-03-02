@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use fxhash::FxHashMap;
+use itertools::Itertools;
 use la_arena::{Arena, ArenaMap, Idx};
 use smol_str::ToSmolStr;
 use syntax::TSKind;
@@ -16,9 +17,16 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ParamData {
+    pub type_ref: Option<TypeRef>,
+    pub has_default: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FunctionData {
     pub name: Name,
     pub type_ref: Option<TypeRef>,
+    params: Vec<ParamData>,
 }
 
 impl FunctionData {
@@ -26,12 +34,43 @@ impl FunctionData {
         let loc = id.lookup(db).id;
         let item_tree = loc.tree_id().item_tree(db);
         let function = &item_tree[loc.value];
+        let params = function
+            .params
+            .clone()
+            .map(|param_idx| {
+                let param = &item_tree[param_idx];
+                let type_ref = param.type_ref.clone();
+                let has_default = param.has_default;
+                ParamData {
+                    type_ref,
+                    has_default,
+                }
+            })
+            .collect_vec();
+
         let function_data = FunctionData {
             name: function.name.clone(),
             type_ref: function.ret_type.clone(),
+            params,
         };
 
         Arc::new(function_data)
+    }
+
+    pub fn name(&self) -> Name {
+        self.name.clone()
+    }
+
+    pub fn type_ref(&self) -> Option<TypeRef> {
+        self.type_ref.clone()
+    }
+
+    pub fn number_of_mandatory_parameters(&self) -> usize {
+        self.params.iter().filter(|p| !p.has_default).count()
+    }
+
+    pub fn number_of_parameters(&self) -> usize {
+        self.params.len()
     }
 }
 
