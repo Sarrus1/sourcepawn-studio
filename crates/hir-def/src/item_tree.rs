@@ -150,6 +150,26 @@ impl ItemTree {
                         }
                     }
                 }
+                TSKind::old_variable_declaration_statement => {
+                    for sub_child in child
+                        .children(&mut child.walk())
+                        .filter(|n| TSKind::from(n) == TSKind::old_variable_declaration)
+                    {
+                        let type_ref = sub_child
+                            .child_by_field_name("type")
+                            .map(|n| TypeRef::from_node(&n, &source));
+                        if let Some(name_node) = sub_child.child_by_field_name("name") {
+                            let res = Variable {
+                                name: Name::from(name_node.utf8_text(source.as_bytes()).unwrap()),
+                                visibility: RawVisibilityId::NONE,
+                                type_ref: type_ref.clone(),
+                                ast_id: ast_id_map.ast_id_of(&sub_child),
+                            };
+                            let id = item_tree.data_mut().variables.alloc(res);
+                            item_tree.top_level.push(FileItem::Variable(id));
+                        }
+                    }
+                }
                 _ => log::error!("Unexpected child of block: {:?}", child),
             }
         }

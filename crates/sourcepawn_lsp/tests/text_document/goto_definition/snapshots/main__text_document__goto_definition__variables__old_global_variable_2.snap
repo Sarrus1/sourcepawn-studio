@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/goto_definition/variables.rs
+assertion_line: 18
+expression: "goto_definition(r#\"\n%! main.sp\nnew _:foo = 0, Float:bar, bool:baz = true, String:qux = 'c';\n                                                   |\n                                                   ^             \n\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 0,
+        "character": 50
+      },
+      "end": {
+        "line": 0,
+        "character": 53
+      }
+    },
+    "targetUri": "file:///main.sp",
+    "targetRange": {
+      "start": {
+        "line": 0,
+        "character": 43
+      },
+      "end": {
+        "line": 0,
+        "character": 59
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 0,
+        "character": 50
+      },
+      "end": {
+        "line": 0,
+        "character": 53
+      }
+    }
+  }
+]

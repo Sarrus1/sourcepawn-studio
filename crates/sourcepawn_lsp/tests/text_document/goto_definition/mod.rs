@@ -6,6 +6,7 @@ mod function_declarations;
 mod macros;
 mod methodmaps;
 mod typedefs;
+mod variables;
 
 #[test]
 fn global_variable_1() {

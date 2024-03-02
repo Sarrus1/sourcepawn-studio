@@ -48,28 +48,8 @@ impl<'db> Ctx<'db> {
                     self.lower_function(&child)
                 }
                 TSKind::r#enum => self.lower_enum(&child),
-                TSKind::global_variable_declaration => {
-                    let visibility = RawVisibilityId::from_node(&child);
-                    let type_ref = child
-                        .child_by_field_name("type")
-                        .map(|n| TypeRef::from_node(&n, &self.source));
-                    for sub_child in child.children(&mut child.walk()) {
-                        if TSKind::from(sub_child) == TSKind::variable_declaration {
-                            if let Some(name_node) = sub_child.child_by_field_name("name") {
-                                let res = Variable {
-                                    name: Name::from(
-                                        name_node.utf8_text(self.source.as_bytes()).unwrap(),
-                                    ),
-                                    visibility,
-                                    type_ref: type_ref.clone(),
-                                    ast_id: self.source_ast_id_map.ast_id_of(&sub_child),
-                                };
-                                let id = self.tree.data_mut().variables.alloc(res);
-                                self.tree.top_level.push(FileItem::Variable(id));
-                            }
-                        }
-                    }
-                }
+                TSKind::global_variable_declaration => self.lower_global_variable(&child),
+                TSKind::old_global_variable_declaration => self.lower_old_global_variable(&child),
                 TSKind::enum_struct => self.lower_enum_struct(&child),
                 TSKind::methodmap => self.lower_methodmap(&child),
                 TSKind::typedef => self.lower_typedef(&child),
@@ -104,6 +84,49 @@ impl<'db> Ctx<'db> {
                     let id = self.tree.data_mut().macros.alloc(res);
                     self.tree.top_level.push(FileItem::Macro(id));
                 }
+            }
+        }
+    }
+
+    fn lower_global_variable(&mut self, node: &tree_sitter::Node) {
+        let visibility = RawVisibilityId::from_node(node);
+        let type_ref = node
+            .child_by_field_name("type")
+            .map(|n| TypeRef::from_node(&n, &self.source));
+        for child in node.children(&mut node.walk()) {
+            if TSKind::from(child) == TSKind::variable_declaration {
+                if let Some(name_node) = child.child_by_field_name("name") {
+                    let res = Variable {
+                        name: Name::from(name_node.utf8_text(self.source.as_bytes()).unwrap()),
+                        visibility,
+                        type_ref: type_ref.clone(),
+                        ast_id: self.source_ast_id_map.ast_id_of(&child),
+                    };
+                    let id = self.tree.data_mut().variables.alloc(res);
+                    self.tree.top_level.push(FileItem::Variable(id));
+                }
+            }
+        }
+    }
+
+    fn lower_old_global_variable(&mut self, node: &tree_sitter::Node) {
+        let visibility = RawVisibilityId::from_node(node);
+        for child in node
+            .children(&mut node.walk())
+            .filter(|n| TSKind::from(n) == TSKind::old_variable_declaration)
+        {
+            let type_ref = child
+                .child_by_field_name("type")
+                .map(|n| TypeRef::from_node(&n, &self.source));
+            if let Some(name_node) = child.child_by_field_name("name") {
+                let res = Variable {
+                    name: Name::from(name_node.utf8_text(self.source.as_bytes()).unwrap()),
+                    visibility,
+                    type_ref: type_ref.clone(),
+                    ast_id: self.source_ast_id_map.ast_id_of(&child),
+                };
+                let id = self.tree.data_mut().variables.alloc(res);
+                self.tree.top_level.push(FileItem::Variable(id));
             }
         }
     }

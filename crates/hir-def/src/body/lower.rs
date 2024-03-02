@@ -93,23 +93,53 @@ impl ExprCollector<'_> {
         let type_ref = expr
             .child_by_field_name("type")
             .map(|type_node| TypeRef::from_node(&type_node, self.source));
-        for child in expr.children(&mut expr.walk()) {
-            if TSKind::from(child) == TSKind::variable_declaration {
-                if let Some(name_node) = child.child_by_field_name("name") {
-                    let ident_id = self
-                        .body
-                        .idents
-                        .alloc(Name::from_node(&name_node, self.source));
-                    let binding = Expr::Binding {
-                        ident_id,
-                        type_ref: type_ref.clone(),
-                        initializer: child
-                            .child_by_field_name("initialValue")
-                            .and_then(|default_node| self.maybe_collect_expr(default_node)),
-                    };
-                    let binding_id = self.alloc_expr(binding, NodePtr::from(&child));
-                    decl.push(binding_id);
-                }
+        for child in expr
+            .children(&mut expr.walk())
+            .filter(|n| TSKind::from(n) == TSKind::variable_declaration)
+        {
+            if let Some(name_node) = child.child_by_field_name("name") {
+                let ident_id = self
+                    .body
+                    .idents
+                    .alloc(Name::from_node(&name_node, self.source));
+                let binding = Expr::Binding {
+                    ident_id,
+                    type_ref: type_ref.clone(),
+                    initializer: child
+                        .child_by_field_name("initialValue")
+                        .and_then(|default_node| self.maybe_collect_expr(default_node)),
+                };
+                let binding_id = self.alloc_expr(binding, NodePtr::from(&child));
+                decl.push(binding_id);
+            }
+        }
+        let decl = Expr::Decl(decl.into_boxed_slice());
+        self.alloc_expr(decl, NodePtr::from(&expr))
+    }
+
+    fn collect_old_variable_declaration(&mut self, expr: tree_sitter::Node) -> ExprId {
+        let mut decl = vec![];
+        for child in expr
+            .children(&mut expr.walk())
+            .filter(|n| TSKind::from(n) == TSKind::old_variable_declaration)
+        {
+            let type_ref = child
+                .child_by_field_name("type")
+                .map(|type_node| TypeRef::from_node(&type_node, self.source));
+            if let Some(name_node) = child.child_by_field_name("name") {
+                let ident_id = self
+                    .body
+                    .idents
+                    .alloc(Name::from_node(&name_node, self.source));
+                let binding = Expr::Binding {
+                    ident_id,
+                    type_ref: type_ref.clone(),
+                    initializer: child
+                        .child_by_field_name("initialValue")
+                        .and_then(|default_node| self.maybe_collect_expr(default_node)),
+                };
+                let binding_id = self.alloc_expr(binding, NodePtr::from(&child));
+                decl.push(binding_id);
             }
         }
         let decl = Expr::Decl(decl.into_boxed_slice());
@@ -243,6 +273,9 @@ impl ExprCollector<'_> {
                 Some(self.alloc_expr(view_as, NodePtr::from(&expr)))
             }
             TSKind::variable_declaration_statement => Some(self.collect_variable_declaration(expr)),
+            TSKind::old_variable_declaration_statement => {
+                Some(self.collect_old_variable_declaration(expr))
+            }
             TSKind::identifier | TSKind::this => {
                 let name = Name::from_node(&expr, self.source);
                 Some(self.alloc_expr(Expr::Ident(name), NodePtr::from(&expr)))

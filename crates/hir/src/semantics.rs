@@ -108,18 +108,20 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 .local_to_def(src)
                 .map(Local::from)
                 .map(DefResolution::Local),
-            TSKind::variable_declaration => {
+            TSKind::variable_declaration | TSKind::old_variable_declaration => {
                 let grand_parent = parent.parent()?;
                 match TSKind::from(&grand_parent) {
-                    TSKind::global_variable_declaration => self
+                    TSKind::global_variable_declaration
+                    | TSKind::old_global_variable_declaration => self
                         .global_to_def(src)
                         .map(Global::from)
                         .map(DefResolution::Global),
-                    TSKind::variable_declaration_statement => self
+                    TSKind::variable_declaration_statement
+                    | TSKind::old_variable_declaration_statement => self
                         .local_to_def(src)
                         .map(Local::from)
                         .map(DefResolution::Local),
-                    _ => todo!(),
+                    _ => unreachable!(),
                 }
             }
             TSKind::preproc_macro | TSKind::preproc_define => self

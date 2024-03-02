@@ -109,9 +109,15 @@ impl AstIdMap {
         bdfs(root_node, &mut |node: tree_sitter::Node<'_>| {
             match TSKind::from(node) {
                 TSKind::source_file => (),
-                TSKind::global_variable_declaration | TSKind::variable_declaration_statement => {
+                TSKind::global_variable_declaration
+                | TSKind::old_global_variable_declaration
+                | TSKind::variable_declaration_statement
+                | TSKind::old_variable_declaration_statement => {
                     for child in node.children(&mut node.walk()) {
-                        if TSKind::from(child) == TSKind::variable_declaration {
+                        if matches!(
+                            TSKind::from(child),
+                            TSKind::variable_declaration | TSKind::old_variable_declaration
+                        ) {
                             let node_ptr = NodePtr::from(&child);
                             let ast_id = arena.alloc(node_ptr);
                             map.insert(node_ptr, AstId { raw: ast_id });
