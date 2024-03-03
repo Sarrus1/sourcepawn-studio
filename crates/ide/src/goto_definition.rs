@@ -68,9 +68,10 @@ pub(crate) fn goto_definition(
 
     let tree = sema.parse(pos.file_id);
     let root_node = tree.root_node();
+    let s_pos = u_pos_to_s_pos(offsets, pos.position);
     let node = root_node.descendant_for_point_range(
-        lsp_position_to_ts_point(&pos.position),
-        lsp_position_to_ts_point(&pos.position),
+        lsp_position_to_ts_point(&s_pos),
+        lsp_position_to_ts_point(&s_pos),
     )?;
 
     let def = sema.find_def(pos.file_id, &node)?;
@@ -120,16 +121,41 @@ pub(crate) fn goto_definition(
     RangeInfo::new(u_range, navs).into()
 }
 
+/// Convert a position seen by the user to a position seen by the server (preprocessed).
+fn u_pos_to_s_pos(
+    offsets: &FxHashMap<u32, Vec<Offset>>,
+    u_pos: lsp_types::Position,
+) -> lsp_types::Position {
+    if let Some(diff) = offsets.get(&u_pos.line).map(|offsets| {
+        offsets
+            .iter()
+            .filter(|offset| offset.range.end.character <= u_pos.character)
+            .map(|offset| offset.diff)
+            .sum::<i32>()
+    }) {
+        lsp_types::Position {
+            line: u_pos.line,
+            character: u_pos.character.saturating_add_signed(diff),
+        }
+    } else {
+        u_pos
+    }
+}
+
+/// Convert a range seen by the server to a range seen by the user.
 fn s_range_to_u_range(
     offsets: &FxHashMap<u32, Vec<Offset>>,
     mut s_range: lsp_types::Range,
 ) -> lsp_types::Range {
-    if let Some(offset) = offsets.get(&s_range.start.line).and_then(|offsets| {
+    if let Some(diff) = offsets.get(&s_range.start.line).map(|offsets| {
         offsets
             .iter()
-            .find(|offset| offset.contains(s_range.start) || offset.contains(s_range.end))
+            .filter(|offset| offset.range.start.character <= s_range.start.character)
+            .map(|offset| offset.diff)
+            .sum::<i32>()
     }) {
-        s_range.end.character = s_range.end.character.saturating_add_signed(-offset.diff);
+        s_range.end.character = s_range.end.character.saturating_add_signed(-diff);
+        s_range.start.character = s_range.start.character.saturating_add_signed(-diff);
     }
 
     s_range

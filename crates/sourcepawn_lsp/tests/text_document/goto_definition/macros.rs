@@ -101,3 +101,106 @@ int bar = FOO(foo)
 "#,
     ));
 }
+
+#[test]
+fn preprocessor_offsetting_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOO foo
+int foo;
+int bar = FOO + foo;
+                 |
+                 ^
+"#,
+    ));
+}
+
+#[test]
+fn preprocessor_offsetting_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOO foo + foo
+int foo;
+int baz;
+int bar = FOO + baz;
+                 |
+                 ^
+"#,
+    ));
+}
+
+#[test]
+fn preprocessor_offsetting_3() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOO foo + foo
+int foo;
+int baz;
+int bar = FOO + FOO + baz;
+                       |
+                       ^
+"#,
+    ));
+}
+
+#[test]
+fn preprocessor_offsetting_4() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOOOOOOOOOOOOOOO foo
+int foo;
+int baz;
+int bar = FOOOOOOOOOOOOOOO + baz;
+                              |
+                              ^
+"#,
+    ));
+}
+
+#[test]
+fn preprocessor_offsetting_5() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOOOOOOOOOOOOOOO foo
+int foo;
+int baz;
+int bar = FOOOOOOOOOOOOOOO + FOOOOOOOOOOOOOOO + baz;
+                                                 |
+                                                 ^
+"#,
+    ));
+}
+
+#[test]
+fn preprocessor_offsetting_6() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOOOOOOOOOOOOOOO int foo;
+FOOOOOOOOOOOOOOO int bar;
+int baz = bar;
+           |
+           ^
+"#,
+    ));
+}
+
+#[test]
+fn preprocessor_offsetting_7() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOOOOOOOOOOOOOOO int foo;
+#define BAAAAAAAAAAAAAAR int bar;
+FOOOOOOOOOOOOOOO BAAAAAAAAAAAAAAR int baz;
+int qux = baz;
+           |
+           ^
+"#,
+    ));
+}
