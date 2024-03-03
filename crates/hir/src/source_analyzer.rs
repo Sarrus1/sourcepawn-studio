@@ -26,7 +26,6 @@ pub(crate) struct SourceAnalyzer {
 }
 
 impl SourceAnalyzer {
-    // TODO: Add a no infer method for non field/method references.
     pub(crate) fn new_for_body(
         db: &dyn HirDatabase,
         def: DefWithBodyId,

@@ -7,7 +7,7 @@
 
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use test_utils::project_root;
+use test_utils::{ensure_file_contents, project_root};
 use tree_sitter_sourcepawn::language;
 use xshell::{cmd, Shell};
 
@@ -60,7 +60,7 @@ fn generate_node_kinds() {
         }
     };
     let path = project_root().join("crates/syntax/src/generated.rs");
-    std::fs::write(path, reformat(stream.to_string())).unwrap();
+    ensure_file_contents(&path, &reformat(stream.to_string()));
 }
 
 /// Exact copy of the identifier sanitization logic of tree-sitter.
