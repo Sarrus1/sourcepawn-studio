@@ -68,7 +68,11 @@ impl Pool {
             handles.push(handle);
         }
 
-        Pool { _handles: handles, extant_tasks, job_sender }
+        Pool {
+            _handles: handles,
+            extant_tasks,
+            job_sender,
+        }
     }
 
     pub fn spawn<F>(&self, intent: ThreadIntent, f: F)
@@ -82,11 +86,18 @@ impl Pool {
             f()
         });
 
-        let job = Job { requested_intent: intent, f };
+        let job = Job {
+            requested_intent: intent,
+            f,
+        };
         self.job_sender.send(job).unwrap();
     }
 
     pub fn len(&self) -> usize {
         self.extant_tasks.load(Ordering::SeqCst)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }

@@ -39,6 +39,7 @@ impl<T> TaskPool<T> {
         })
     }
 
+    #[allow(unused)]
     pub(crate) fn len(&self) -> usize {
         self.pool.len()
     }

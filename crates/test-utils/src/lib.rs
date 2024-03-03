@@ -23,6 +23,7 @@ pub fn ensure_file_contents(file: &Path, contents: &str) {
 
 /// Checks that the `file` has the specified `contents`. If that is not the
 /// case, updates the file and return an Error.
+#[allow(clippy::result_unit_err)]
 pub fn try_ensure_file_contents(file: &Path, contents: &str) -> Result<(), ()> {
     match std::fs::read_to_string(file) {
         Ok(old_contents) if normalize_newlines(&old_contents) == normalize_newlines(contents) => {

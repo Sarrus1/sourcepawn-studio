@@ -69,6 +69,7 @@ pub enum HlMod {
 impl HlMod {
     const ALL: &'static [HlMod; HlMod::Macro as usize + 1] = &[HlMod::Macro];
 
+    #[allow(unused)]
     fn as_str(self) -> &'static str {
         match self {
             HlMod::Macro => "macro",
@@ -113,7 +114,7 @@ pub(crate) fn highlight(
     let sema = Semantics::new(db);
     // Determine the root based on the given range.
     let tree = sema.parse(file_id);
-    let (root, range_to_highlight) = {
+    let (_root, range_to_highlight) = {
         let source_file = tree.root_node();
         match range_to_highlight {
             Some(range) => {

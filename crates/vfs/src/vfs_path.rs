@@ -120,6 +120,7 @@ impl VfsPath {
     /// by `self`'s representation.
     ///
     /// Note that this encoding is dependent on the operating system.
+    #[allow(unused)]
     pub(crate) fn encode(&self, buf: &mut Vec<u8>) {
         let tag = match &self.0 {
             VfsPathRepr::PathBuf(_) => 0,

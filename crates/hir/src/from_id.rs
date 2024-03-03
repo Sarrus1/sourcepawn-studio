@@ -1,6 +1,6 @@
-use hir_def::{AttributeId, DefWithBodyId, ExprId, FieldId, FileDefId, PropertyId};
+use hir_def::{AttributeId, DefWithBodyId, ExprId, FieldId, FileDefId};
 
-use crate::{Attribute, DefWithBody, Field, FileDef, Property};
+use crate::{Attribute, DefWithBody, Field, FileDef};
 
 macro_rules! from_id {
     ($(($id:path, $ty:path)),* $(,)?) => {$(

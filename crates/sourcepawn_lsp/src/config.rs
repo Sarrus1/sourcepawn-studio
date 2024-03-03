@@ -1,3 +1,4 @@
+#![allow(unused)]
 //! Config used by the language server.
 //!
 //! We currently get this config from `initialize` LSP request, which is not the
@@ -19,6 +20,7 @@ macro_rules! try_ {
     };
 }
 
+#[allow(unused)]
 macro_rules! try_or {
     ($expr:expr, $or:expr) => {
         try_!($expr).unwrap_or($or)
@@ -57,6 +59,7 @@ impl Default for ConfigData {
     }
 }
 
+#[allow(unused)]
 #[derive(Debug, Default, Clone)]
 pub struct Config {
     /// The workspace roots as registered by the LSP client
@@ -106,7 +109,7 @@ impl Config {
         }
     }
 
-    pub fn update(&mut self, mut json: serde_json::Value) -> Result<(), ConfigError> {
+    pub fn update(&mut self, json: serde_json::Value) -> Result<(), ConfigError> {
         tracing::info!("updating config from JSON: {:#}", json);
         if json.is_null() || json.as_object().map_or(false, |it| it.is_empty()) {
             return Ok(());
@@ -122,6 +125,7 @@ impl Config {
         }
     }
 
+    #[allow(unused)]
     pub fn json_schema() -> serde_json::Value {
         ConfigData::json_schema()
     }
@@ -169,10 +173,9 @@ impl Config {
         }
     }
 
+    #[allow(unused)]
     pub fn main_loop_num_threads(&self) -> usize {
-        self.data
-            .numThreads
-            .unwrap_or(num_cpus::get_physical().try_into().unwrap_or(1))
+        self.data.numThreads.unwrap_or(num_cpus::get_physical()) // TODO: Use this config.
     }
 
     pub fn prefill_caches(&self) -> bool {
@@ -190,6 +193,7 @@ impl Config {
         )
     }
 
+    #[allow(unused)]
     pub fn semantics_tokens_augments_syntax_tokens(&self) -> bool {
         try_!(
             self.caps
@@ -449,8 +453,7 @@ Default:
 fn doc_comment_to_string(doc: &[&str]) -> String {
     doc.iter()
         .map(|it| it.strip_prefix(' ').unwrap_or(it))
-        .map(|it| format!("{it}\n"))
-        .collect()
+        .fold(String::new(), |acc, it| acc + it + "\n")
 }
 
 #[cfg(test)]

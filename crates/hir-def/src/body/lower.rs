@@ -37,6 +37,7 @@ struct ExprCollector<'a> {
     db: &'a dyn DefDatabase,
     file_id: FileId,
     source: &'a str,
+    #[allow(unused)]
     owner: DefWithBodyId,
     // def_map: Arc<DefMap>,
     ast_id_map: Arc<AstIdMap>,

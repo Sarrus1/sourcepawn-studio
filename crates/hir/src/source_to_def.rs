@@ -73,6 +73,7 @@ impl SourceToDefCtx<'_, '_> {
         }
     }
 
+    #[allow(clippy::wrong_self_convention)]
     fn to_def<ID: Copy + 'static>(
         &mut self,
         src: InFile<NodePtr>,
@@ -174,11 +175,11 @@ impl SourceToDefCtx<'_, '_> {
     }
 }
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub(crate) enum ChildContainer {
     DefWithBodyId(DefWithBodyId),
     FileId(FileId),
-    MacroId(MacroId),
     EnumStructId(EnumStructId),
     MethodmapId(MethodmapId),
     TypedefId(TypedefId),

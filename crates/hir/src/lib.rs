@@ -1,9 +1,9 @@
 use base_db::Tree;
 use db::HirDatabase;
 use hir_def::{
-    resolver::ValueNs, DefDiagnostic, DefWithBodyId, EnumId, EnumStructId, ExprId, FileDefId,
-    FuncenumId, FunctagId, FunctionId, GlobalId, InFile, InferenceDiagnostic, LocalFieldId, Lookup,
-    MacroId, MethodmapId, Name, NodePtr, PropertyId, TypedefId, TypesetId, VariantId,
+    resolver::ValueNs, DefDiagnostic, DefWithBodyId, EnumId, EnumStructId, ExprId, FuncenumId,
+    FunctagId, FunctionId, GlobalId, InFile, InferenceDiagnostic, LocalFieldId, Lookup, MacroId,
+    MethodmapId, Name, NodePtr, PropertyId, TypedefId, TypesetId, VariantId,
 };
 use preprocessor::PreprocessorError;
 use stdx::impl_from;

@@ -88,6 +88,7 @@ impl SourceAnalyzer {
         self.def.as_ref().map(|(.., source_map)| &**source_map)
     }
 
+    #[allow(unused)]
     fn body(&self) -> Option<&Body> {
         self.def.as_ref().map(|(_, body, _)| &**body)
     }

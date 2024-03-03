@@ -36,12 +36,17 @@ impl<Args, Output> OpQueue<Args, Output> {
         self.last_op_result = result;
     }
 
+    #[allow(unused)]
     pub(crate) fn last_op_result(&self) -> &Output {
         &self.last_op_result
     }
+
+    #[allow(unused)]
     pub(crate) fn op_in_progress(&self) -> bool {
         self.op_in_progress
     }
+
+    #[allow(unused)]
     pub(crate) fn op_requested(&self) -> bool {
         self.op_requested.is_some()
     }

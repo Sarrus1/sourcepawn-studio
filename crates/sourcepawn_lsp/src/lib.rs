@@ -11,7 +11,6 @@ mod op_queue;
 mod reload;
 mod server;
 mod task_pool;
-mod utils;
 mod version;
 
 mod config;

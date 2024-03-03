@@ -119,6 +119,7 @@ impl FileSetConfig {
     }
 
     /// Number of sets that `self` should partition a [`Vfs`] into.
+    #[allow(unused)]
     fn len(&self) -> usize {
         self.roots.len()
     }

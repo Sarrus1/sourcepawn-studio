@@ -17,6 +17,7 @@ pub enum PositionEncoding {
 
 pub(crate) struct LineIndex {
     pub(crate) index: Arc<ide::LineIndex>,
+    #[allow(unused)]
     pub(crate) endings: LineEndings,
     pub(crate) encoding: PositionEncoding,
 }

@@ -24,7 +24,7 @@ impl Scope {
         &mut self,
         range: Range,
         func_idx: &mut usize,
-        funcs_in_file: &Vec<Arc<RwLock<SPItem>>>,
+        funcs_in_file: &[Arc<RwLock<SPItem>>],
     ) {
         // Do not update the function, we are still in its scope.
         if self.func.is_some() && range_contains_range(&self.func_full_range(), &range) {
@@ -49,7 +49,7 @@ impl Scope {
         &mut self,
         range: Range,
         mm_es_idx: &mut usize,
-        mm_es_in_file: &Vec<Arc<RwLock<SPItem>>>,
+        mm_es_in_file: &[Arc<RwLock<SPItem>>],
     ) {
         // Do not update the function, we are still in its scope.
         if self.mm_es.is_some() && range_contains_range(&self.mm_es_full_range(), &range) {

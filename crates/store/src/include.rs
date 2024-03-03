@@ -47,7 +47,7 @@ impl Store {
             let document_path = document_uri.to_file_path().ok()?;
             let parent_path = document_path.parent()?;
             let include_file_path = parent_path.join(include_text);
-            let uri = Url::from_file_path(&include_file_path).ok()?;
+            let uri = Url::from_file_path(include_file_path).ok()?;
             if self.contains_uri(&uri) {
                 // return self.vfs.get(&uri);
             }

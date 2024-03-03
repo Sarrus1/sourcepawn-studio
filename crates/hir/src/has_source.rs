@@ -1,5 +1,5 @@
 use base_db::Tree;
-use hir_def::{src::HasChildSource, EnumStructId, InFile, Lookup, MethodmapId};
+use hir_def::{src::HasChildSource, EnumStructId, InFile, Lookup};
 
 use crate::{
     db::HirDatabase, Enum, EnumStruct, Funcenum, Functag, Function, Global, LocalSource, Macro,

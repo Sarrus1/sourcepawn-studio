@@ -70,7 +70,7 @@ pub(crate) fn url(snap: &GlobalStateSnapshot, file_id: FileId) -> lsp_types::Url
 
 static TOKEN_RESULT_COUNTER: AtomicU32 = AtomicU32::new(1);
 
-pub(crate) fn semantic_tokens(text: &str, highlights: Vec<HlRange>) -> lsp_types::SemanticTokens {
+pub(crate) fn semantic_tokens(_text: &str, highlights: Vec<HlRange>) -> lsp_types::SemanticTokens {
     let id = TOKEN_RESULT_COUNTER
         .fetch_add(1, Ordering::SeqCst)
         .to_string();
@@ -81,7 +81,7 @@ pub(crate) fn semantic_tokens(text: &str, highlights: Vec<HlRange>) -> lsp_types
             continue;
         }
 
-        let (mut ty, mut mods) = semantic_token_type_and_modifiers(highlight_range.highlight);
+        let (ty, mods) = semantic_token_type_and_modifiers(highlight_range.highlight);
 
         let token_index = semantic_tokens::type_index(ty);
         let modifier_bitset = mods.0;

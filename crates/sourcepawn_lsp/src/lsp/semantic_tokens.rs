@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! Semantic Tokens helpers
 
 use std::ops;
@@ -25,6 +26,7 @@ macro_rules! define_semantic_token_types {
             $($custom),*
         ];
 
+        #[allow(unused)]
         pub(crate) fn standard_fallback_type(token: SemanticTokenType) -> Option<SemanticTokenType> {
             $(
                 if token == $custom {
@@ -155,9 +157,10 @@ define_semantic_token_modifiers![
 pub(crate) struct ModifierSet(pub(crate) u32);
 
 impl ModifierSet {
+    #[allow(unused)]
     pub(crate) fn standard_fallback(&mut self) {
         // Remove all non standard modifiers
-        self.0 = self.0 & !(!0u32 << LAST_STANDARD_MOD)
+        self.0 &= !(!0u32 << LAST_STANDARD_MOD)
     }
 }
 

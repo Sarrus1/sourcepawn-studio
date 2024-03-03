@@ -2,7 +2,6 @@ use anyhow::{bail, Result};
 use crossbeam::channel::Sender;
 use dashmap::DashMap;
 use lsp_server::{ErrorCode, Message, Request, RequestId, Response};
-use lsp_types::{notification::ShowMessage, MessageType, ShowMessageParams};
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
     sync::{
@@ -11,8 +10,8 @@ use std::{
     },
     time::Duration,
 };
-use store::options::Options;
 
+// TODO: Move this to fixtures
 #[derive(Debug)]
 struct RawClient {
     sender: Sender<Message>,
@@ -44,28 +43,6 @@ impl LspClient {
         let notification = lsp_server::Notification::new(N::METHOD.to_string(), params);
         log::debug!("Sending notification {:?}", notification);
         self.raw.sender.send(notification.into())?;
-        Ok(())
-    }
-
-    pub fn send_request_without_response<R>(&self, params: R::Params) -> anyhow::Result<()>
-    where
-        R: lsp_types::request::Request,
-        R::Params: Serialize,
-        R::Result: DeserializeOwned,
-    {
-        panic!("Not supported.");
-        let id = RequestId::from(self.raw.next_id.fetch_add(1, Ordering::SeqCst));
-
-        let (tx, _) = crossbeam::channel::bounded(1);
-        self.raw.pending.insert(id.clone(), tx);
-
-        let request = Request::new(id, R::METHOD.to_string(), params);
-        log::debug!(
-            "Sending request without waiting for a response {:?}",
-            request
-        );
-        self.raw.sender.send(request.into())?;
-
         Ok(())
     }
 

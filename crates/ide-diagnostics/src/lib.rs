@@ -73,6 +73,7 @@ impl Diagnostic {
         Diagnostic::new(code, message, ts_range_to_lsp_range(&range))
     }
 
+    #[allow(unused)]
     fn experimental(mut self) -> Diagnostic {
         self.experimental = true;
         self
@@ -97,6 +98,7 @@ pub enum Severity {
 }
 
 struct DiagnosticsContext<'a> {
+    #[allow(unused)]
     config: &'a DiagnosticsConfig,
     sema: Semantics<'a, RootDatabase>,
 }

@@ -1,11 +1,9 @@
 //! Utilities for LSP-related boilerplate code.
 use std::{mem, ops::Range, sync::Arc};
 
-use lsp_types::request::Request;
-
 use crate::{
     line_index::{LineEndings, LineIndex, PositionEncoding},
-    lsp_ext, GlobalState,
+    GlobalState,
 };
 
 use super::from_proto;
@@ -15,7 +13,7 @@ impl GlobalState {
         &mut self,
         typ: lsp_types::MessageType,
         message: String,
-        show_open_log_button: bool,
+        _show_open_log_button: bool,
     ) {
         self.send_notification::<lsp_types::notification::ShowMessage>(
             lsp_types::ShowMessageParams { typ, message },

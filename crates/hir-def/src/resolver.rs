@@ -52,11 +52,11 @@ impl fmt::Debug for ExprScope {
 #[derive(Debug, Clone)]
 enum Scope {
     /// All the items and included names of a project.
-    GlobalScope(Vec<Arc<DefMap>>),
+    Global(Vec<Arc<DefMap>>),
     /// Brings `this` into scope.
-    ThisScope(AdtId),
+    This(AdtId),
     /// Local bindings.
-    ExprScope(ExprScope),
+    Expr(ExprScope),
 }
 
 impl Resolver {
@@ -70,11 +70,11 @@ impl Resolver {
     }
 
     fn push_global_scope(self, def_maps: Vec<Arc<DefMap>>, _file_id: FileId) -> Self {
-        self.push_scope(Scope::GlobalScope(def_maps))
+        self.push_scope(Scope::Global(def_maps))
     }
 
     fn push_this_scope(self, adt_id: AdtId) -> Resolver {
-        self.push_scope(Scope::ThisScope(adt_id))
+        self.push_scope(Scope::This(adt_id))
     }
 
     fn push_expr_scope(
@@ -83,7 +83,7 @@ impl Resolver {
         expr_scopes: Arc<ExprScopes>,
         scope_id: ScopeId,
     ) -> Resolver {
-        self.push_scope(Scope::ExprScope(ExprScope {
+        self.push_scope(Scope::Expr(ExprScope {
             owner,
             expr_scopes,
             scope_id,
@@ -96,12 +96,12 @@ impl Resolver {
         let name = Name::from(name);
         for scope in self.scopes() {
             match scope {
-                Scope::ExprScope(scope) => {
+                Scope::Expr(scope) => {
                     if let Some(entry) = scope.resolve_name_in_scope(&name) {
                         return Some(ValueNs::LocalId((scope.owner, entry)));
                     }
                 }
-                Scope::ThisScope(adt_id) => {
+                Scope::This(adt_id) => {
                     if name != "this".into() {
                         continue;
                     }
@@ -114,7 +114,7 @@ impl Resolver {
                         }
                     }
                 }
-                Scope::GlobalScope(def_maps) => {
+                Scope::Global(def_maps) => {
                     let mut entries: Vec<(FileDefId, FileId)> = vec![];
                     def_maps.iter().for_each(|def_map| {
                         if let Some(entry) = def_map.get(&name) {
@@ -194,7 +194,7 @@ impl Resolver {
             expr_scopes: &Arc<ExprScopes>,
             scope_id: ScopeId,
         ) {
-            resolver.scopes.push(Scope::ExprScope(ExprScope {
+            resolver.scopes.push(Scope::Expr(ExprScope {
                 owner,
                 expr_scopes: expr_scopes.clone(),
                 scope_id,
@@ -204,7 +204,7 @@ impl Resolver {
         let start = self.scopes.len();
         let innermost_scope = self.scopes().next();
         match innermost_scope {
-            Some(&Scope::ExprScope(ExprScope {
+            Some(&Scope::Expr(ExprScope {
                 scope_id,
                 ref expr_scopes,
                 owner,
@@ -239,7 +239,7 @@ impl Resolver {
         let expr_scopes = db.expr_scopes(owner, self.file_id);
         let scope_id = expr_scopes.first_scope();
         if let Some(scope_id) = scope_id {
-            self.scopes.push(Scope::ExprScope(ExprScope {
+            self.scopes.push(Scope::Expr(ExprScope {
                 owner,
                 expr_scopes: Arc::clone(&expr_scopes),
                 scope_id,
@@ -346,7 +346,7 @@ impl HasResolver for FunctagId {
 impl HasResolver for FileId {
     fn resolver(self, db: &dyn DefDatabase) -> Resolver {
         Resolver {
-            scopes: vec![Scope::GlobalScope(file_def_maps(db, self))],
+            scopes: vec![Scope::Global(file_def_maps(db, self))],
             file_id: self,
         }
     }

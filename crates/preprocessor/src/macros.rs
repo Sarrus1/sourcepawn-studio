@@ -156,6 +156,8 @@ impl ArgumentsCollector {
     }
 }
 
+pub type ExpansionOffsets = Vec<Vec<(Range, Range)>>;
+
 /// Try to expand an identifier and return a [vector][Vec] of expanded [symbols](Symbol).
 ///
 /// We use a [context](MacroContext) stack to keep track of the expanded macros.
@@ -182,11 +184,11 @@ pub(super) fn expand_identifier<T>(
     symbol: &Symbol,
     expansion_stack: &mut Vec<Symbol>,
     allow_undefined_macros: bool,
-) -> Result<Option<Vec<Vec<(Range, Range)>>>, ExpansionError>
+) -> Result<Option<ExpansionOffsets>, ExpansionError>
 where
     T: Iterator<Item = Symbol>,
 {
-    let mut args_mapping: Option<Vec<Vec<(Range, Range)>>> = None;
+    let mut args_mapping: Option<ExpansionOffsets> = None;
     let mut reversed_expansion_stack = Vec::new();
     let mut args_collector = ArgumentsCollector::default();
     let mut context_stack = vec![VecDeque::from([QueuedSymbol::new(

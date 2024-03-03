@@ -235,6 +235,7 @@ impl TreeId {
         }
     }
 
+    #[allow(unused)]
     pub(crate) fn file_id(self) -> FileId {
         self.file
     }

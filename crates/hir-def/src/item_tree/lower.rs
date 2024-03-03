@@ -511,7 +511,8 @@ impl<'db> Ctx<'db> {
                 let Some(param_node) = node.child_by_field_name("parameter") else {
                     return;
                 };
-                let storage_class_node = param_node.child_by_field_name("storage_class"); // FIXME: Handle this node
+                // TODO: Handle storage_class
+                let _storage_class_node = param_node.child_by_field_name("storage_class"); // FIXME: Handle this node
                 let Some(param_type_node) = param_node.child_by_field_name("type") else {
                     return;
                 };

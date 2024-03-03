@@ -432,6 +432,7 @@ impl DefMap {
         self.declarations.push(def);
     }
 
+    #[allow(unused)]
     pub(crate) fn block_id(&self) -> Option<BlockId> {
         self.block.map(|block| block.block)
     }

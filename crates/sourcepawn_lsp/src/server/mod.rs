@@ -169,19 +169,6 @@ impl GlobalState {
         }
     }
 
-    fn run_query<R, Q>(&self, id: RequestId, query: Q)
-    where
-        R: Serialize,
-        Q: FnOnce(&GlobalStateSnapshot) -> R + Send + 'static,
-    {
-        let client = self.client.clone();
-        let state_snapshot = self.snapshot();
-        self.pool.execute(move || {
-            let response = lsp_server::Response::new_ok(id, query(&state_snapshot));
-            client.send_response(response).unwrap();
-        });
-    }
-
     fn prime_caches(&mut self, cause: String) {
         tracing::debug!(%cause, "will prime caches");
         let num_worker_threads = self.config.prime_caches_num_threads();
@@ -349,8 +336,19 @@ impl GlobalState {
 
         let ignored = if config.caps().has_pull_configuration_support() {
             let (config_data, ignored) = self.pull_config_sync(root_uri);
-            // FIXME: Report error to the user.
-            config.update(config_data);
+            if let Err(e) = config.update(config_data) {
+                let not = lsp_server::Notification::new(
+                    ShowMessage::METHOD.to_string(),
+                    ShowMessageParams {
+                        typ: MessageType::WARNING,
+                        message: e.to_string(),
+                    },
+                );
+                self.connection
+                    .sender
+                    .send(lsp_server::Message::Notification(not))
+                    .unwrap();
+            }
             ignored
         } else {
             Vec::new()
@@ -785,7 +783,7 @@ impl GlobalState {
     }
 
     fn update_diagnostics(&mut self) {
-        let db = self.analysis_host.raw_database();
+        // let db = self.analysis_host.raw_database();
         let subscriptions = self
             .mem_docs
             .iter()
@@ -954,11 +952,11 @@ impl GlobalState {
                 let text = if file.exists() {
                     let bytes = vfs.file_contents(file.file_id).to_vec();
 
-                    String::from_utf8(bytes).ok().and_then(|text| {
+                    String::from_utf8(bytes).ok().map(|text| {
                         // FIXME: Consider doing normalization in the `vfs` instead? That allows
                         // getting rid of some locking
                         let (text, line_endings) = LineEndings::normalize(text);
-                        Some((Arc::from(text), line_endings))
+                        (Arc::from(text), line_endings)
                     })
                 } else {
                     None
@@ -1044,6 +1042,7 @@ enum Event {
 pub(crate) struct GlobalStateSnapshot {
     pub(crate) config: Arc<Config>,
     pub(crate) analysis: Analysis,
+    #[allow(unused)]
     pub(crate) mem_docs: MemDocs,
     pub(crate) semantic_tokens_cache: Arc<Mutex<FxHashMap<Url, SemanticTokens>>>,
     vfs: Arc<RwLock<vfs::Vfs>>,
@@ -1064,6 +1063,7 @@ impl GlobalStateSnapshot {
         file_id_to_url(&self.vfs_read(), id)
     }
 
+    #[allow(unused)]
     pub(crate) fn url_file_version(&self, uri: &Url) -> Option<i32> {
         let path = from_proto::vfs_path(uri).ok()?;
         self.mem_docs.get(&path)?.version.into()

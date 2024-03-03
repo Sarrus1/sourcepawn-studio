@@ -3,7 +3,6 @@
 use std::{cell::RefCell, fmt, ops, sync::Arc};
 
 use base_db::{is_field_receiver_node, is_name_node, Tree};
-use fxhash::FxHashMap;
 use hir_def::{
     resolve_include_node,
     resolver::{global_resolver, ValueNs},
@@ -31,7 +30,6 @@ pub struct Semantics<'db, DB> {
 pub struct SemanticsImpl<'db> {
     pub db: &'db dyn HirDatabase,
     s2d_cache: RefCell<SourceToDefCache>,
-    cache: RefCell<FxHashMap<NodePtr, FileId>>, //FIXME: What is this?
 }
 
 impl<DB> fmt::Debug for Semantics<'_, DB> {
@@ -540,7 +538,6 @@ impl<'db> SemanticsImpl<'db> {
         SemanticsImpl {
             db,
             s2d_cache: Default::default(),
-            cache: Default::default(),
         }
     }
 

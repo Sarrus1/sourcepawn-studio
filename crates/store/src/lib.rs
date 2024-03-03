@@ -15,8 +15,10 @@ use std::{
 };
 use walkdir::WalkDir;
 
+#[allow(unused)]
 pub mod document;
 pub mod environment;
+#[allow(unused)]
 pub mod include;
 pub mod options;
 mod semantics;

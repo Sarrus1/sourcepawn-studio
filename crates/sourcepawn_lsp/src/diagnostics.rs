@@ -35,6 +35,7 @@ pub(crate) struct DiagnosticCollection {
 // }
 
 impl DiagnosticCollection {
+    #[allow(unused)]
     pub(crate) fn clear_check(&mut self, flycheck_id: usize) {
         // if let Some(it) = Arc::make_mut(&mut self.check_fixes).get_mut(&flycheck_id) {
         //     it.clear();
@@ -44,6 +45,7 @@ impl DiagnosticCollection {
         }
     }
 
+    #[allow(unused)]
     pub(crate) fn clear_check_all(&mut self) {
         // Arc::make_mut(&mut self.check_fixes).clear();
         self.changes.extend(
@@ -58,6 +60,7 @@ impl DiagnosticCollection {
         self.changes.insert(file_id);
     }
 
+    #[allow(unused)]
     pub(crate) fn add_check_diagnostic(
         &mut self,
         flycheck_id: usize,
