@@ -304,9 +304,12 @@ impl ExprCollector<'_> {
                 let char = text.chars().nth(1)?;
                 Some(self.alloc_expr(Expr::Literal(Literal::Char(char)), NodePtr::from(&expr)))
             }
-            TSKind::string_literal | TSKind::concatenated_string => {
-                // FIXME: How do we want to handle string literals?
-                None
+            TSKind::string_literal => {
+                let text = expr.utf8_text(self.source.as_bytes()).unwrap();
+                Some(self.alloc_expr(
+                    Expr::Literal(Literal::String(text.into())),
+                    NodePtr::from(&expr),
+                ))
             }
             TSKind::bool_literal => {
                 let text = expr.utf8_text(self.source.as_bytes()).unwrap();
