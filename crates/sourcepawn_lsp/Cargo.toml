@@ -56,12 +56,12 @@ zip = "0.6.6"
 
 
 # Local crates
-linter.workspace = true
 vfs.workspace = true
 vfs-notify.workspace = true
 ide.workspace = true
 ide-db.workspace = true
 paths.workspace = true
+flycheck.workspace = true
 
 [dependencies.openssl]
 optional = true

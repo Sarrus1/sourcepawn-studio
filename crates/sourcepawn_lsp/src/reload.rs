@@ -1,7 +1,10 @@
 use std::sync::Arc;
 use std::{mem, vec};
 
+use flycheck::{FlycheckConfig, FlycheckHandle};
+use fxhash::FxHashMap;
 use itertools::Itertools;
+use paths::AbsPathBuf;
 use vfs::VfsPath;
 
 use crate::{config::Config, GlobalState};
@@ -37,5 +40,50 @@ impl GlobalState {
                 version: self.vfs_config_version,
             });
         }
+        if self.config.compiler_path() != old_config.compiler_path()
+            || self.config.compiler_arguments() != old_config.compiler_arguments()
+            || self.config.include_directories() != old_config.include_directories()
+        {
+            self.reload_flycheck();
+        }
+    }
+
+    pub fn reload_flycheck(&mut self) {
+        let analysis = self.analysis_host.analysis();
+        let Some(compiler_path) = self.config.compiler_path() else {
+            return;
+        };
+        let Ok(graph) = analysis.graph() else {
+            // FIXME: report error
+            return;
+        };
+        let tempdir_path = AbsPathBuf::try_from(self.flycheck_tempdir.path().to_path_buf())
+            .expect("Failed to convert tempdir path to AbsPathBuf.");
+        let mut flycheck = FxHashMap::default();
+        graph.subgraphs_with_roots().keys().for_each(|root| {
+            let root = *root;
+            let sender = self.flycheck_sender.clone();
+            flycheck.insert(
+                root,
+                FlycheckHandle::spawn(
+                    root.0,
+                    Box::new(move |msg| sender.send(msg).unwrap()),
+                    FlycheckConfig::new(
+                        compiler_path.to_owned(),
+                        self.config.compiler_arguments(),
+                        self.config.include_directories().clone(),
+                    ),
+                    self.vfs
+                        .read()
+                        .file_path(root)
+                        .as_path()
+                        .unwrap()
+                        .to_owned(),
+                    tempdir_path.clone(),
+                ),
+            );
+        });
+
+        self.flycheck = Arc::new(flycheck);
     }
 }

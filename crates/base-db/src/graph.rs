@@ -51,6 +51,12 @@ impl SubGraph {
     pub fn file_ids(&self) -> FxHashSet<FileId> {
         self.nodes.iter().map(|node| node.file_id).collect()
     }
+
+    /// Returns true if the subgraph contains the given file_id.
+    /// **Note** This is O(n).
+    pub fn contains_file(&self, file_id: FileId) -> bool {
+        self.nodes.iter().any(|node| node.file_id == file_id)
+    }
 }
 
 impl Graph {

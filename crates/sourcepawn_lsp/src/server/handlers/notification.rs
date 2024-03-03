@@ -1,7 +1,13 @@
+use std::panic::AssertUnwindSafe;
+
+use itertools::Itertools;
 use lsp_types::{
     DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
     DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams,
+    WorkDoneProgressCancelParams,
 };
+use salsa::Cancelled;
+use vfs::{FileId, VfsPath};
 
 use crate::{
     capabilities::ClientCapabilitiesExt,
@@ -111,10 +117,19 @@ pub(crate) fn handle_did_close_text_document(
 }
 
 pub(crate) fn handle_did_save_text_document(
-    _state: &mut GlobalState,
-    _params: DidSaveTextDocumentParams,
+    state: &mut GlobalState,
+    params: DidSaveTextDocumentParams,
 ) -> anyhow::Result<()> {
-    // Nothing to do here
+    if let Ok(vfs_path) = from_proto::vfs_path(&params.text_document.uri) {
+        if !state.config.compiler_on_save() || run_flycheck(state, vfs_path) {
+            return Ok(());
+        }
+    } else if state.config.compiler_on_save() {
+        // No specific flycheck was triggered, so let's trigger all of them.
+        for flycheck in state.flycheck.values() {
+            flycheck.restart();
+        }
+    }
     Ok(())
 }
 
@@ -127,6 +142,26 @@ pub(crate) fn handle_did_change_watched_files(
             state.loader.handle.invalidate(path);
         }
     }
+    Ok(())
+}
+
+pub(crate) fn handle_work_done_progress_cancel(
+    state: &mut GlobalState,
+    params: WorkDoneProgressCancelParams,
+) -> anyhow::Result<()> {
+    if let lsp_types::NumberOrString::String(s) = &params.token {
+        if let Some(id) = s.strip_prefix("sourcepawn-lsp/flycheck/") {
+            if let Ok(id) = id.parse::<FileId>() {
+                if let Some(flycheck) = state.flycheck.get(&id) {
+                    flycheck.cancel();
+                }
+            }
+        }
+    }
+
+    // Just ignore this. It is OK to continue sending progress
+    // notifications for this token, as the client can't know when
+    // we accepted notification.
     Ok(())
 }
 
@@ -182,4 +217,51 @@ pub(crate) fn handle_did_change_configuration(
     );
 
     Ok(())
+}
+
+fn run_flycheck(state: &mut GlobalState, vfs_path: VfsPath) -> bool {
+    let file_id = state.vfs.read().file_id(&vfs_path);
+    let Some(file_id) = file_id else {
+        return false;
+    };
+    let world = state.snapshot();
+    let mut updated = false;
+    let task = move || -> std::result::Result<(), Cancelled> {
+        // Trigger flychecks for all workspaces that depend on the saved file
+        // Crates containing or depending on the saved file
+        let root_ids = world
+            .analysis
+            .projects_for_file(file_id)?
+            .into_iter()
+            .sorted()
+            .unique()
+            .collect_vec();
+
+        // Find and trigger corresponding flychecks
+        for flycheck in root_ids
+            .iter()
+            .flat_map(|root_id| world.flycheck.get(root_id))
+        {
+            updated = true;
+            flycheck.restart();
+        }
+
+        // No specific flycheck was triggered, so let's trigger all of them.
+        if !updated {
+            for flycheck in world.flycheck.values() {
+                flycheck.restart();
+            }
+        }
+        Ok(())
+    };
+    state
+        .task_pool
+        .handle
+        .spawn_with_sender(stdx::thread::ThreadIntent::Worker, move |_| {
+            // FIXME: The `AssertUnwindSafe` is a workaround. Not sure why this causes problems.
+            if let Err(e) = std::panic::catch_unwind(AssertUnwindSafe(task)) {
+                tracing::error!("flycheck task panicked: {e:?}")
+            }
+        });
+    true
 }

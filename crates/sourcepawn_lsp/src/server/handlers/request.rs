@@ -15,7 +15,7 @@ use crate::{
 
 pub(crate) fn handle_goto_definition(
     snap: GlobalStateSnapshot,
-    mut params: lsp_types::GotoDefinitionParams,
+    params: lsp_types::GotoDefinitionParams,
 ) -> anyhow::Result<Option<lsp_types::GotoDefinitionResponse>> {
     log::debug!("goto def: {:?}", params);
     let pos = from_proto::file_position(&snap, params.text_document_position_params.clone())?;

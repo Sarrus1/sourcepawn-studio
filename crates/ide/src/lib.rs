@@ -14,6 +14,7 @@ use base_db::{
 use hir_def::{print_item_tree, DefDatabase};
 use hover::HoverResult;
 use ide_db::RootDatabase;
+use itertools::Itertools;
 use preprocessor::db::PreprocDatabase;
 use salsa::{Cancelled, ParallelDatabase};
 use vfs::FileId;
@@ -109,6 +110,24 @@ impl Analysis {
         self.with_db(|db| {
             let item_tree = db.file_item_tree(file_id);
             print_item_tree(db, &item_tree)
+        })
+    }
+
+    /// Get all the root files of the projects that depend on the file.
+    pub fn projects_for_file(&self, file_id: FileId) -> Cancellable<Vec<FileId>> {
+        self.with_db(|db| {
+            let graph = db.graph();
+            let subgraphs = graph.find_subgraphs();
+            subgraphs
+                .iter()
+                .filter_map(|subgraph| {
+                    if subgraph.contains_file(file_id) {
+                        Some(subgraph.root.file_id)
+                    } else {
+                        None
+                    }
+                })
+                .collect_vec()
         })
     }
 

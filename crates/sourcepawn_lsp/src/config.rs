@@ -42,6 +42,8 @@ config_data! {
         /// Linter arguments that will be passed to spcomp.
         /// Note that the compilation target, include directories and output path are already handled by the server.
         compiler_arguments: Vec<String> = "[]",
+        /// Compute spcomp diagnostics on save.
+        compiler_onSave: bool = "true",
         /// Path to the SourcePawn compiler (spcomp).
         compiler_path: Option<String> = "null",
         /// Include directories paths for the compiler and the linter.
@@ -217,6 +219,18 @@ impl Config {
 
     pub fn server_status_notification(&self) -> bool {
         self.experimental("serverStatusNotification")
+    }
+
+    pub fn compiler_path(&self) -> Option<&str> {
+        self.data.compiler_path.as_deref()
+    }
+
+    pub fn compiler_arguments(&self) -> Vec<String> {
+        self.data.compiler_arguments.clone()
+    }
+
+    pub fn compiler_on_save(&self) -> bool {
+        self.data.compiler_onSave
     }
 
     pub fn hover(&self) -> HoverConfig {

@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 /// Handle to a file.
 #[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -10,6 +10,14 @@ impl nohash_hasher::IsEnabled for FileId {}
 impl From<u32> for FileId {
     fn from(id: u32) -> Self {
         Self(id)
+    }
+}
+
+impl FromStr for FileId {
+    type Err = std::num::ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        s.parse().map(FileId)
     }
 }
 

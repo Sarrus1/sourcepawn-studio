@@ -7,6 +7,8 @@ use vfs::FileId;
 
 use crate::{lsp, server::GlobalStateSnapshot};
 
+pub mod to_proto;
+
 // pub(crate) type CheckFixes = Arc<IntMap<usize, IntMap<FileId, Vec<Fix>>>>;
 
 #[derive(Debug, Default, Clone)]
@@ -22,7 +24,7 @@ pub(crate) struct DiagnosticCollection {
     // FIXME: should be IntMap<FileId, Vec<ra_id::Diagnostic>>
     pub(crate) native: IntMap<FileId, Vec<lsp_types::Diagnostic>>,
     // FIXME: should be Vec<flycheck::Diagnostic>
-    pub(crate) check: IntMap<usize, IntMap<FileId, Vec<lsp_types::Diagnostic>>>,
+    pub(crate) check: IntMap<u32, IntMap<FileId, Vec<lsp_types::Diagnostic>>>,
     // pub(crate) check_fixes: CheckFixes,
     changes: IntSet<FileId>,
 }
@@ -36,7 +38,7 @@ pub(crate) struct DiagnosticCollection {
 
 impl DiagnosticCollection {
     #[allow(unused)]
-    pub(crate) fn clear_check(&mut self, flycheck_id: usize) {
+    pub(crate) fn clear_check(&mut self, flycheck_id: u32) {
         // if let Some(it) = Arc::make_mut(&mut self.check_fixes).get_mut(&flycheck_id) {
         //     it.clear();
         // }
@@ -63,7 +65,7 @@ impl DiagnosticCollection {
     #[allow(unused)]
     pub(crate) fn add_check_diagnostic(
         &mut self,
-        flycheck_id: usize,
+        flycheck_id: u32,
         file_id: FileId,
         diagnostic: lsp_types::Diagnostic,
         // fix: Option<Fix>,

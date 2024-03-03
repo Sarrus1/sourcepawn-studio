@@ -1,6 +1,7 @@
 use always_assert::always;
 use base_db::{Change, FileExtension, SourceRootConfig};
 use crossbeam::channel::{unbounded, Receiver, Sender};
+use flycheck::FlycheckHandle;
 use fxhash::FxHashMap;
 use ide::{Analysis, AnalysisHost};
 
@@ -17,6 +18,7 @@ use paths::AbsPathBuf;
 use serde::Serialize;
 use std::{env, path::PathBuf, sync::Arc, time::Instant};
 use stdx::thread::ThreadIntent;
+use tempfile::TempDir;
 use threadpool::ThreadPool;
 use vfs::{FileId, Vfs, VfsPath};
 
@@ -92,10 +94,17 @@ pub struct GlobalState {
     pub(crate) shutdown_requested: bool,
     pub(crate) last_reported_status: Option<lsp_ext::ServerStatusParams>,
 
-    pub(crate) config: Arc<Config>,
+    pub config: Arc<Config>,
     pub(crate) config_errors: Option<ConfigError>,
 
     pub(crate) analysis_host: AnalysisHost,
+
+    // Flycheck
+    pub(crate) flycheck: Arc<FxHashMap<FileId, FlycheckHandle>>,
+    pub(crate) flycheck_tempdir: TempDir,
+    pub(crate) flycheck_sender: Sender<flycheck::Message>,
+    pub(crate) flycheck_receiver: Receiver<flycheck::Message>,
+    pub(crate) last_flycheck_error: Option<String>,
 
     // VFS
     pub(crate) loader: Handle<Box<dyn vfs::loader::Handle>, Receiver<vfs::loader::Message>>,
@@ -125,6 +134,8 @@ impl GlobalState {
             let handle = TaskPool::new_with_threads(sender, num_cpus::get_physical());
             Handle { handle, receiver }
         };
+
+        let (flycheck_sender, flycheck_receiver) = unbounded();
         Self {
             client,
             pool: threadpool::Builder::new().build(),
@@ -148,6 +159,12 @@ impl GlobalState {
             config_errors: Default::default(),
             analysis_host: AnalysisHost::default(),
 
+            flycheck: Arc::new(FxHashMap::default()),
+            flycheck_tempdir: TempDir::new().expect("failed to create temp dir"),
+            flycheck_sender,
+            flycheck_receiver,
+            last_flycheck_error: None,
+
             loader,
             vfs: Arc::new(RwLock::new(Vfs::default())),
             vfs_config_version: 0,
@@ -165,6 +182,7 @@ impl GlobalState {
             analysis: self.analysis_host.analysis(),
             mem_docs: self.mem_docs.clone(),
             semantic_tokens_cache: Arc::clone(&self.semantic_tokens_cache),
+            flycheck: self.flycheck.clone(),
             vfs: Arc::clone(&self.vfs),
         }
     }
@@ -224,23 +242,6 @@ impl GlobalState {
             }
         });
     }
-
-    // /// Resolve the references in a project if they have not been resolved yet. Will return early if the project
-    // /// has been resolved at least once.
-    // ///
-    // /// This should be called before every feature request.
-    // ///
-    // /// # Arguments
-    // /// * `uri` - [Url] of a file in the project.
-    // fn initialize_project_resolution(&mut self, uri: &Url) {
-    //     log::trace!("Resolving project {:?}", uri);
-    //     let main_id = self.store.write().resolve_project_references(uri);
-    //     if let Some(main_id) = main_id {
-    //         let main_path_uri = self.store.read().vfs.lookup(main_id).clone();
-    //         self.reload_project_diagnostics(main_path_uri);
-    //     }
-    //     log::trace!("Done resolving project {:?}", uri);
-    // }
 
     /// Synchronously initialize the lsp server according to the LSP spec.
     fn initialize(&mut self) -> anyhow::Result<Vec<lsp_server::Message>> {
@@ -533,6 +534,7 @@ impl GlobalState {
         .on_sync_mut::<notifs::DidSaveTextDocument>(handlers::handle_did_save_text_document)?
         .on_sync_mut::<notifs::DidChangeConfiguration>(handlers::handle_did_change_configuration)?
         .on_sync_mut::<notifs::DidChangeWatchedFiles>(handlers::handle_did_change_watched_files)? // TODO: Implement this.
+        .on_sync_mut::<notifs::WorkDoneProgressCancel>(handlers::handle_work_done_progress_cancel)?
         .finish();
 
         Ok(())
@@ -548,6 +550,9 @@ impl GlobalState {
 
             recv(self.loader.receiver) -> task =>
                 Some(Event::Vfs(task.unwrap())),
+
+            recv(self.flycheck_receiver) -> task =>
+                Some(Event::Flycheck(task.unwrap())),
         }
     }
 
@@ -641,6 +646,13 @@ impl GlobalState {
                 // Coalesce many VFS event into a single loop turn
                 while let Ok(message) = self.loader.receiver.try_recv() {
                     self.handle_vfs_msg(message);
+                }
+            }
+            Event::Flycheck(message) => {
+                self.handle_flycheck_msg(message);
+                // Coalesce many flycheck updates into a single loop turn
+                while let Ok(message) = self.flycheck_receiver.try_recv() {
+                    self.handle_flycheck_msg(message);
                 }
             }
         }
@@ -777,6 +789,61 @@ impl GlobalState {
                     Some(format!("{n_done}/{n_total}")),
                     Some(Progress::fraction(n_done, n_total)),
                     None,
+                );
+            }
+        }
+    }
+
+    fn handle_flycheck_msg(&mut self, message: flycheck::Message) {
+        match message {
+            flycheck::Message::AddDiagnostic { id, diagnostic, .. } => {
+                let diag = crate::diagnostics::to_proto::map_spcomp_diagnostic_to_lsp(&diagnostic);
+                if let Some(file_id) = self
+                    .vfs
+                    .read()
+                    .file_id(&VfsPath::from(diagnostic.path().to_owned()))
+                {
+                    self.diagnostics.add_check_diagnostic(id, file_id, diag)
+                }
+            }
+
+            flycheck::Message::Progress { id, progress } => {
+                let (state, message) = match progress {
+                    flycheck::Progress::DidStart => {
+                        self.diagnostics.clear_check(id);
+                        (Progress::Begin, None)
+                    }
+                    flycheck::Progress::DidCheckCrate(target) => (Progress::Report, Some(target)),
+                    flycheck::Progress::DidCancel => {
+                        self.last_flycheck_error = None;
+                        (Progress::End, None)
+                    }
+                    flycheck::Progress::DidFailToRestart(err) => {
+                        self.last_flycheck_error =
+                            Some(format!("spcomp check failed to start: {err}"));
+                        return;
+                    }
+                    flycheck::Progress::DidFinish(result) => {
+                        self.last_flycheck_error = result
+                            .err()
+                            .map(|err| format!("spcomp check failed to start: {err}"));
+                        (Progress::End, None)
+                    }
+                };
+
+                // When we're running multiple flychecks, we have to include a disambiguator in
+                // the title, or the editor complains. Note that this is a user-facing string.
+                let title = if self.flycheck.len() == 1 {
+                    "spcomp check".to_string()
+                } else {
+                    format!("spcomp check (#{})", id + 1)
+                };
+                self.report_progress(
+                    &title,
+                    state,
+                    message,
+                    None,
+                    Some(format!("sourcepawn-lsp/flycheck/{id}")),
                 );
             }
         }
@@ -1017,6 +1084,8 @@ impl GlobalState {
             self.handle_event(event)?;
         }
 
+        self.reload_flycheck();
+
         while let Some(event) = self.next_event(&self.connection.receiver) {
             if matches!(
                 &event,
@@ -1036,6 +1105,7 @@ enum Event {
     Lsp(lsp_server::Message),
     Task(Task),
     Vfs(vfs::loader::Message),
+    Flycheck(flycheck::Message),
 }
 
 /// An immutable snapshot of the world's state at a point in time.
@@ -1045,6 +1115,7 @@ pub(crate) struct GlobalStateSnapshot {
     #[allow(unused)]
     pub(crate) mem_docs: MemDocs,
     pub(crate) semantic_tokens_cache: Arc<Mutex<FxHashMap<Url, SemanticTokens>>>,
+    pub(crate) flycheck: Arc<FxHashMap<FileId, FlycheckHandle>>,
     vfs: Arc<RwLock<vfs::Vfs>>,
 }
 

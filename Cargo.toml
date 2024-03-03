@@ -23,7 +23,6 @@ debug = true
 preprocessor = { path = "./crates/preprocessor" }
 sourcepawn_lsp = { path = "./crates/sourcepawn_lsp" }
 syntax = { path = "./crates/syntax" }
-linter = { path = "./crates/linter" }
 vfs = { path = "./crates/vfs" }
 vfs-notify = { path = "./crates/vfs-notify" }
 base-db = { path = "./crates/base-db" }
@@ -32,6 +31,7 @@ ide-diagnostics = { path = "./crates/ide-diagnostics" }
 ide-db = { path = "./crates/ide-db" }
 hir = { path = "./crates/hir" }
 hir-def = { path = "./crates/hir-def" }
+flycheck = { path = "./crates/flycheck" }
 stdx = { path = "./crates/stdx" }
 paths = { path = "./crates/paths" }
 test-utils = { path = "./crates/test-utils" }

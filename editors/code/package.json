@@ -537,6 +537,11 @@
           "markdownDescription": "Disable the language server's syntax linter. This is independant from spcomp.",
           "default": false,
           "type": "boolean"
+        },
+        "SourcePawnLanguageServer.compiler.onSave": {
+          "markdownDescription": "Compute spcomp diagnostics on save.",
+          "default": true,
+          "type": "boolean"
         }
       }
     },
