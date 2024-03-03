@@ -4,7 +4,6 @@ use lsp_types::{
     SemanticTokensDeltaParams, SemanticTokensFullDeltaResult, SemanticTokensParams,
     SemanticTokensRangeParams, SemanticTokensRangeResult, SemanticTokensResult,
 };
-use store::normalize_uri;
 
 use crate::{
     lsp::{from_proto, to_proto},
@@ -19,7 +18,6 @@ pub(crate) fn handle_goto_definition(
     mut params: lsp_types::GotoDefinitionParams,
 ) -> anyhow::Result<Option<lsp_types::GotoDefinitionResponse>> {
     log::debug!("goto def: {:?}", params);
-    normalize_uri(&mut params.text_document_position_params.text_document.uri);
     let pos = from_proto::file_position(&snap, params.text_document_position_params.clone())?;
 
     let targets = match snap.analysis.goto_definition(pos)? {
@@ -64,6 +62,7 @@ pub(crate) fn handle_semantic_tokens_full(
     snap: GlobalStateSnapshot,
     params: SemanticTokensParams,
 ) -> anyhow::Result<Option<SemanticTokensResult>> {
+    // FIXME: Do we need to normalize the URI?
     let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
     let text = snap.analysis.file_text(file_id)?;
 

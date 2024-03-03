@@ -22,10 +22,7 @@ debug = true
 [workspace.dependencies]
 preprocessor = { path = "./crates/preprocessor" }
 sourcepawn_lsp = { path = "./crates/sourcepawn_lsp" }
-store = { path = "./crates/store" }
 syntax = { path = "./crates/syntax" }
-parser = { path = "./crates/parser" }
-semantic_analyzer = { path = "./crates/semantic_analyzer" }
 linter = { path = "./crates/linter" }
 vfs = { path = "./crates/vfs" }
 vfs-notify = { path = "./crates/vfs-notify" }

@@ -1732,24 +1732,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "parser"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "fxhash",
- "lazy_static",
- "log",
- "lsp-types",
- "parking_lot 0.12.1",
- "preprocessor",
- "regex",
- "syntax",
- "tree-sitter",
- "tree-sitter-sourcepawn",
- "vfs",
-]
-
-[[package]]
 name = "password-hash"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2241,24 +2223,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "semantic_analyzer"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "fxhash",
- "lazy_static",
- "log",
- "lsp-types",
- "parking_lot 0.12.1",
- "parser",
- "preprocessor",
- "regex",
- "syntax",
- "tree-sitter",
- "vfs",
-]
-
-[[package]]
 name = "semver"
 version = "1.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2548,13 +2512,11 @@ dependencies = [
  "regex",
  "rowan",
  "salsa",
- "semantic_analyzer",
  "sentry",
  "serde",
  "serde_json",
  "sourcepawn_lexer",
  "stdx",
- "store",
  "syntax",
  "tempfile",
  "test-utils",
@@ -2588,43 +2550,6 @@ dependencies = [
  "miow",
  "winapi",
 ]
-
-[[package]]
-name = "store"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "fxhash",
- "indexmap 2.2.5",
- "lazy_static",
- "linter",
- "log",
- "lsp-types",
- "nohash-hasher",
- "notify",
- "parking_lot 0.12.1",
- "parser",
- "preprocessor",
- "regex",
- "salsa",
- "semantic_analyzer",
- "serde",
- "serde_json",
- "sourcepawn_lexer",
- "strip_bom",
- "syntax",
- "tempfile",
- "tree-sitter",
- "tree-sitter-sourcepawn",
- "vfs",
- "walkdir",
-]
-
-[[package]]
-name = "strip_bom"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20cecc5f9998340da802809fe89e8a769b192960cf4dd77fccd9da7f60821d33"
 
 [[package]]
 name = "strsim"

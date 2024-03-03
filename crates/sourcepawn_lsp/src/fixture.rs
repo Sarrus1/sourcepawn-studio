@@ -22,8 +22,9 @@ use std::{
 use tempfile::{tempdir, TempDir};
 use zip::ZipArchive;
 
+use crate::config::ConfigData;
+
 use super::{GlobalState, LspClient};
-use store::options::Options;
 
 #[derive(Debug)]
 pub enum InternalMessage {
@@ -210,7 +211,8 @@ impl TestBed {
                     match message {
                         lsp_server::Message::Request(request) => {
                             if request.method == "workspace/configuration" {
-                                let mut options = Options::default();
+                                #[allow(unused_mut)]
+                                let mut config = ConfigData::default();
                                 if add_sourcemod {
                                     let mut current_dir = env::current_dir().unwrap();
                                     // The env depends on if we use the debugger or not.
@@ -220,12 +222,13 @@ impl TestBed {
                                     let sourcemod_path =
                                         current_dir.join("test_data/sourcemod.zip");
                                     unzip_file(&sourcemod_path, &destination).unwrap();
-                                    options
-                                        .includes_directories
+                                    #[cfg(test)]
+                                    config
+                                        .includeDirectories
                                         .push(destination.clone().join("include/"));
                                 }
                                 client
-                                    .send_response(Response::new_ok(request.id, vec![options]))
+                                    .send_response(Response::new_ok(request.id, vec![config]))
                                     .unwrap();
                                 std::thread::sleep(Duration::from_millis(100));
                                 internal_tx.send(InternalMessage::OptionsRequested).unwrap()

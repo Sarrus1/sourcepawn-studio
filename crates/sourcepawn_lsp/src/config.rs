@@ -142,6 +142,11 @@ impl Config {
         &self.caps
     }
 
+    #[cfg(test)]
+    pub fn data_mut(&mut self) -> &mut ConfigData {
+        &mut self.data
+    }
+
     pub fn publish_diagnostics(&self) -> bool {
         // TODO: Implement this config
         // self.data.diagnostics_enable
@@ -254,8 +259,13 @@ macro_rules! _config_data {
         )*
     }) => {
         #[allow(non_snake_case)]
-        #[derive(Debug, Clone)]
-        struct $name { $($field: $ty,)* }
+        #[derive(Debug, Clone, serde::Serialize)]
+        pub struct $name { $(
+            #[cfg(test)]
+            pub $field: $ty,
+            #[cfg(not(test))]
+            $field: $ty,
+        )* }
         impl $name {
             fn from_json(mut json: serde_json::Value, error_sink: &mut Vec<(String, serde_json::Error)>) -> $name {
                 $name {$(

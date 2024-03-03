@@ -1,11 +1,10 @@
 use document_diagnostics::DocumentDiagnostics;
 use fxhash::FxHashMap;
 use lazy_static::lazy_static;
-use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, Url};
-use parking_lot::RwLock;
+use lsp_types::{Diagnostic, DiagnosticSeverity, Url};
 use spcomp::SPCompDiagnostic;
 use std::sync::Arc;
-use syntax::{utils::ts_range_to_lsp_range, SPItem};
+use syntax::utils::ts_range_to_lsp_range;
 use tree_sitter::{Node, Query, QueryCursor};
 
 pub mod document_diagnostics;
@@ -55,47 +54,6 @@ impl DiagnosticsManager {
     pub fn clear_all_global_diagnostics(&mut self) {
         for diagnostics in self.diagnostics.values_mut() {
             diagnostics.global_diagnostics.clear();
-        }
-    }
-
-    /// Lint all documents for the use of deprecated items.
-    ///
-    /// # Arguments
-    ///
-    /// * `all_items_flat` - Vector of all the [SPItems](SPItem) that are in the mainpath's scope.
-    pub fn get_deprecated_diagnostics(&mut self, all_items_flat: &[Arc<RwLock<SPItem>>]) {
-        for item in all_items_flat.iter() {
-            if let Some(description) = item.read().description() {
-                if let Some(deprecated) = description.deprecated {
-                    if !&item.read().uri().as_str().ends_with(".inc") {
-                        self.get_mut(&item.read().uri())
-                            .local_diagnostics
-                            .push(Diagnostic {
-                                range: item.read().range(),
-                                message: format!("Deprecated {:?}", deprecated),
-                                severity: Some(DiagnosticSeverity::HINT),
-                                tags: Some(vec![DiagnosticTag::DEPRECATED]),
-                                ..Default::default()
-                            });
-                    }
-                    if let Some(references) = item.read().references() {
-                        for reference in references.iter() {
-                            if reference.uri.as_str().ends_with(".inc") {
-                                continue;
-                            }
-                            self.get_mut(&reference.uri)
-                                .local_diagnostics
-                                .push(Diagnostic {
-                                    range: reference.range,
-                                    message: format!("Deprecated {:?}", deprecated),
-                                    severity: Some(DiagnosticSeverity::HINT),
-                                    tags: Some(vec![DiagnosticTag::DEPRECATED]),
-                                    ..Default::default()
-                                });
-                        }
-                    }
-                }
-            }
         }
     }
 
