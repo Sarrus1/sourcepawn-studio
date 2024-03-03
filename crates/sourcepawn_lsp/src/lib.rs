@@ -1,15 +1,20 @@
 mod capabilities;
 mod client;
+mod diagnostics;
 mod dispatch;
 pub mod fixture;
+mod global_state;
+mod handlers {
+    pub(crate) mod notification;
+    pub(crate) mod request;
+}
 mod line_index;
 mod lsp_ext;
-// mod providers;
-mod diagnostics;
+mod main_loop;
 mod mem_docs;
 mod op_queue;
+mod progress;
 mod reload;
-mod server;
 mod task_pool;
 mod version;
 
@@ -17,10 +22,8 @@ mod config;
 pub mod lsp;
 
 use serde::de::DeserializeOwned;
-use server::PrimeCachesProgress;
-use vfs::FileId;
 
-pub use self::{client::LspClient, server::GlobalState};
+pub use self::{client::LspClient, global_state::GlobalState};
 
 pub fn from_json<T: DeserializeOwned>(
     what: &'static str,
@@ -28,12 +31,4 @@ pub fn from_json<T: DeserializeOwned>(
 ) -> anyhow::Result<T> {
     serde_json::from_value(json.clone())
         .map_err(|e| anyhow::format_err!("Failed to deserialize {what}: {e}; {json}"))
-}
-
-#[derive(Debug)]
-pub(crate) enum Task {
-    Response(lsp_server::Response),
-    Retry(lsp_server::Request),
-    Diagnostics(Vec<(FileId, Vec<lsp_types::Diagnostic>)>),
-    PrimeCaches(PrimeCachesProgress),
 }

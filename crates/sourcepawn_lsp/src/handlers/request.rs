@@ -6,11 +6,11 @@ use lsp_types::{
 };
 
 use crate::{
+    global_state::GlobalStateSnapshot,
     lsp::{from_proto, to_proto},
     lsp_ext::{
         ItemTreeParams, PreprocessedDocumentParams, ProjectsGraphvizParams, SyntaxTreeParams,
     },
-    server::GlobalStateSnapshot,
 };
 
 pub(crate) fn handle_goto_definition(

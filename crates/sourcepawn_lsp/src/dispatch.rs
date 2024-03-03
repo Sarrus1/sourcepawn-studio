@@ -5,7 +5,10 @@ use serde::{de::DeserializeOwned, Serialize};
 use std::{fmt, panic, thread};
 use stdx::thread::ThreadIntent;
 
-use crate::{lsp::LspError, server::GlobalStateSnapshot, version::version, GlobalState, Task};
+use crate::{
+    global_state::GlobalStateSnapshot, lsp::LspError, main_loop::Task, version::version,
+    GlobalState,
+};
 
 /// A visitor for routing a raw JSON request to an appropriate handler function.
 ///

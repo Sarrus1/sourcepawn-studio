@@ -7,8 +7,8 @@ use rowan::{TextRange, TextSize};
 use vfs::FileId;
 
 use crate::{
+    global_state::GlobalStateSnapshot,
     line_index::{LineIndex, PositionEncoding},
-    server::GlobalStateSnapshot,
 };
 
 pub(crate) fn abs_path(url: &lsp_types::Url) -> anyhow::Result<AbsPathBuf> {

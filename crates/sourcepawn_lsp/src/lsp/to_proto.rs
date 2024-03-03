@@ -10,8 +10,9 @@ use itertools::Itertools;
 use paths::AbsPath;
 use vfs::FileId;
 
+use crate::global_state::GlobalStateSnapshot;
+
 use super::semantic_tokens;
-use crate::server::GlobalStateSnapshot;
 
 pub(crate) fn goto_definition_response(
     snap: &GlobalStateSnapshot,

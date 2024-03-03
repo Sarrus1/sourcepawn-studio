@@ -5,7 +5,7 @@ use fxhash::{FxHashMap, FxHashSet};
 use nohash_hasher::{IntMap, IntSet};
 use vfs::FileId;
 
-use crate::{lsp, server::GlobalStateSnapshot};
+use crate::{global_state::GlobalStateSnapshot, lsp};
 
 pub mod to_proto;
 
