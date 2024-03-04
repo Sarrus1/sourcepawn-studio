@@ -108,10 +108,8 @@ impl FileSetConfig {
         }
         for (file_id, path) in vfs.iter() {
             for (root, root_path) in self.roots.iter().enumerate() {
-                // FIXME: This breaks for nested roots.
                 if path.starts_with(root_path) {
                     res[root].0.insert(file_id, path.clone());
-                    break;
                 }
             }
         }
