@@ -40,6 +40,7 @@ fn generate_node_kinds() {
         quote! { #name = #kind_id }
     });
     let stream = quote! {
+        #![cfg_attr(rustfmt, rustfmt_skip)]
         #![allow(bad_style, missing_docs, unreachable_pub, unused)]
         #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
         #[repr(u16)]

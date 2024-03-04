@@ -55,7 +55,10 @@ pub fn spawn_with_streaming_output(
     on_stdout_line: &mut dyn FnMut(&str),
     on_stderr_line: &mut dyn FnMut(&str),
 ) -> io::Result<Output> {
-    let cmd = cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).stdin(Stdio::null());
+    let cmd = cmd
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .stdin(Stdio::null());
 
     let mut child = JodChild(cmd.spawn()?);
     let (stdout, stderr) = streaming_output(
@@ -65,7 +68,11 @@ pub fn spawn_with_streaming_output(
         on_stderr_line,
     )?;
     let status = child.wait()?;
-    Ok(Output { status, stdout, stderr })
+    Ok(Output {
+        status,
+        stdout,
+        stderr,
+    })
 }
 
 #[cfg(unix)]
