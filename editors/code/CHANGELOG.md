@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [7.0.0]
+
+### Chore
+
+- LSP version bump. Only GoToDefinition and Lints work as of now.
+
 ## [6.2.0]
 
 ### Added
