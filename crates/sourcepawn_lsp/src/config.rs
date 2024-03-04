@@ -544,7 +544,6 @@ mod tests {
         }
     }
 
-    #[ignore]
     #[test]
     fn generate_config_documentation() {
         let docs_path = project_root().join("docs/user/generated_config.adoc");
