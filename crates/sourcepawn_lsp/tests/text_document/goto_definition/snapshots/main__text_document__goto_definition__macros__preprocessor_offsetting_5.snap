@@ -8,11 +8,11 @@ expression: "goto_definition(r#\"\n%! main.sp\n#define FOOOOOOOOOOOOOOO foo\nint
     "originSelectionRange": {
       "start": {
         "line": 3,
-        "character": 22
+        "character": 48
       },
       "end": {
         "line": 3,
-        "character": 38
+        "character": 51
       }
     },
     "targetUri": "file:///main.sp",
