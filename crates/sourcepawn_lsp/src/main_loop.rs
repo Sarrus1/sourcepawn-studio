@@ -199,7 +199,7 @@ impl GlobalState {
             Vec::new()
         };
 
-        self.update_configuration(config);
+        self.update_configuration(config, true);
 
         let _ = self.send_status(lsp_ext::ServerStatusParams {
             health: crate::lsp_ext::Health::Ok,

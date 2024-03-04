@@ -35,7 +35,8 @@ impl GlobalState {
 
         status
     }
-    pub(crate) fn update_configuration(&mut self, config: Config) {
+
+    pub(crate) fn update_configuration(&mut self, config: Config, initialization: bool) {
         let old_config = mem::replace(&mut self.config, Arc::new(config));
         if self.config.include_directories() != old_config.include_directories()
             || self.config.root_path() != old_config.root_path()
@@ -65,9 +66,10 @@ impl GlobalState {
                 version: self.vfs_config_version,
             });
         }
-        if self.config.compiler_path() != old_config.compiler_path()
-            || self.config.compiler_arguments() != old_config.compiler_arguments()
-            || self.config.include_directories() != old_config.include_directories()
+        if !initialization
+            && (self.config.compiler_path() != old_config.compiler_path()
+                || self.config.compiler_arguments() != old_config.compiler_arguments()
+                || self.config.include_directories() != old_config.include_directories())
         {
             self.reload_flycheck();
         }

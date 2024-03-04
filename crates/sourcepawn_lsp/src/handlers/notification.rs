@@ -206,7 +206,7 @@ pub(crate) fn handle_did_change_configuration(
                         // provide a configuration. This is handled in Config::update below.
                         let mut config = Config::clone(&*this.config);
                         this.config_errors = config.update(json.take()).err();
-                        this.update_configuration(config);
+                        this.update_configuration(config, false);
                     }
                 }
                 (None, None) => {
