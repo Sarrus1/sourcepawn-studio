@@ -69,7 +69,7 @@ version = "0.10.55"
 
 [dev-dependencies]
 assert_unordered = "0.3.5"
-criterion = { version = "0.4.0" }
+criterion = "0.5.1"
 insta = { version = "1.28.0", features = ["glob", "redactions", "json"] }
 minreq = { version = "2.7.0", features = ["https"] }
 test-utils.workspace = true
