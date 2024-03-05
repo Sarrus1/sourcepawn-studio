@@ -219,6 +219,7 @@ jobs:
     needs: [build, github]
     steps:
       - name: Release to Homebrew tap
+        if: ${{ !github.event.release.prerelease }}
         uses: Justintime50/homebrew-releaser@v1
         with:
           homebrew_owner: Sarrus1
