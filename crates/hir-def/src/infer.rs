@@ -481,7 +481,7 @@ impl InferenceContext<'_> {
                     }
                 }
             }
-            _ => unreachable!("Field access is only allowed on enum structs and methodmaps."),
+            _ => (),
         }
         self.result
             .diagnostics
@@ -563,7 +563,7 @@ impl InferenceContext<'_> {
                     }
                 }
             }
-            _ => unreachable!("Method calls are only allowed on enum structs and methodmaps."),
+            _ => (),
         }
         self.result
             .diagnostics
