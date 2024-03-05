@@ -2289,9 +2289,9 @@ dependencies = [
 
 [[package]]
 name = "sourcepawn_lexer"
-version = "0.1.1"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ff77b46edd95cc86b4969ede038cd07e668e3868b139c96eab5ac5b283f1e25"
+checksum = "c3a3c69426e35ea8bf6d550a59f571820c968ccc972763e0bf2ce5ec88f79558"
 dependencies = [
  "lazy_static",
  "logos",

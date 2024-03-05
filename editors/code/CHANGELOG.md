@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [7.1.0]
+
+### Fixed
+
+- This is the same release as 6.2.0. There was an error.
+
 ## [6.2.0]
 
 ### Added
