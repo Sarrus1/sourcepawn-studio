@@ -149,12 +149,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v3
       - name: Publish VSIX package (Release)
-        if: ${{ !github.event.prerelease }}
+        if: ${{ !github.event.release.prerelease }}
         run: npx vsce publish --packagePath $(find . -iname *.vsix)
         env:
           VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
       - name: Publish VSIX package (Prerelease)
-        if: ${{ github.event.prerelease }}
+        if: ${{ github.event.release.prerelease }}
         run: npx vsce publish --packagePath $(find . -iname *.vsix) --pre-release
         env:
           VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
@@ -167,12 +167,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v3
       - name: Publish VSIX package (Release)
-        if: ${{ !github.event.prerelease }}
+        if: ${{ !github.event.release.prerelease }}
         run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname *.vsix)
         env:
           OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
       - name: Publish VSIX package (Prerelease)
-        if: ${{ github.event.prerelease }}
+        if: ${{ github.event.release.prerelease }}
         run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname *.vsix) --pre-release
         env:
           OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
