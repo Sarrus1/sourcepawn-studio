@@ -1,5 +1,6 @@
-use std::{cmp::Ordering, collections::VecDeque};
+use std::{cmp::Ordering, collections::VecDeque, sync::Arc};
 
+use fxhash::FxHashSet;
 use itertools::Itertools;
 use lsp_types::{Position, Range};
 use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
@@ -184,6 +185,7 @@ pub(super) fn expand_identifier<T>(
     symbol: &Symbol,
     expansion_stack: &mut Vec<Symbol>,
     allow_undefined_macros: bool,
+    disabled_macros: &mut FxHashSet<Arc<Macro>>,
 ) -> Result<Option<ExpansionOffsets>, ExpansionError>
 where
     T: Iterator<Item = Symbol>,
@@ -235,7 +237,7 @@ where
                         // The macro was not expanded, put it back on the expansion stack
                         // and disable it to avoid an infinite loop.
                         reversed_expansion_stack.push(queued_symbol.symbol);
-                        macro_.disabled = true;
+                        disabled_macros.insert(macro_.clone());
                         context_stack.push(current_context);
                         continue;
                     };

@@ -177,3 +177,11 @@ pub struct PreprocessorErrors {
     pub evaluation_errors: Vec<EvaluationError>,
     pub unresolved_include_errors: Vec<UnresolvedIncludeError>,
 }
+
+impl PreprocessorErrors {
+    pub fn shrink_to_fit(&mut self) {
+        self.macro_not_found_errors.shrink_to_fit();
+        self.evaluation_errors.shrink_to_fit();
+        self.unresolved_include_errors.shrink_to_fit();
+    }
+}

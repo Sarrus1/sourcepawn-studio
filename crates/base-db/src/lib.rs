@@ -20,6 +20,8 @@ pub use {
     input::SourceRootConfig,
 };
 
+pub const DEFAULT_PARSE_LRU_CAP: usize = 128;
+
 pub trait FileLoader {
     /// Text of the file.
     fn file_text(&self, file_id: FileId) -> Arc<str>;

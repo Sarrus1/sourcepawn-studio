@@ -1,5 +1,6 @@
 use std::hash::Hash;
 
+use deepsize::DeepSizeOf;
 use lsp_types::{Position, Range};
 use smol_str::SmolStr;
 use sourcepawn_lexer::{Delta, Symbol, TokenKind};
@@ -10,6 +11,12 @@ pub struct RangeLessSymbol {
     pub(crate) token_kind: TokenKind,
     text: SmolStr,
     pub(crate) delta: Delta,
+}
+
+impl DeepSizeOf for RangeLessSymbol {
+    fn deep_size_of_children(&self, context: &mut deepsize::Context) -> usize {
+        self.text.deep_size_of_children(context)
+    }
 }
 
 impl Hash for RangeLessSymbol {

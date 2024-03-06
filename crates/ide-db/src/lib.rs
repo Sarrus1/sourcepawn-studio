@@ -5,11 +5,13 @@ mod documentation;
 use std::{fmt, mem::ManuallyDrop, sync::Arc};
 
 use base_db::{
-    Change, FileLoader, FileLoaderDelegate, SourceDatabaseExtStorage, SourceDatabaseStorage, Upcast,
+    Change, FileLoader, FileLoaderDelegate, SourceDatabaseExt, SourceDatabaseExtStorage,
+    SourceDatabaseStorage, Upcast,
 };
+use fxhash::FxHashMap;
 use hir::db::HirDatabase;
 use hir_def::DefDatabase;
-use salsa::Cancelled;
+use salsa::{Cancelled, Durability};
 use vfs::FileId;
 
 pub use documentation::Documentation;
@@ -81,15 +83,70 @@ impl salsa::Database for RootDatabase {}
 
 impl Default for RootDatabase {
     fn default() -> Self {
-        RootDatabase::new()
+        RootDatabase::new(None)
     }
 }
 
 impl RootDatabase {
-    pub fn new() -> Self {
-        RootDatabase {
+    pub fn new(lru_capacity: Option<usize>) -> RootDatabase {
+        let mut db = RootDatabase {
             storage: ManuallyDrop::new(salsa::Storage::default()),
+        };
+        db.set_known_files_with_durability(Default::default(), Durability::HIGH);
+        db.set_source_roots_with_durability(Default::default(), Durability::HIGH);
+        db.update_parse_query_lru_capacity(lru_capacity);
+        db
+    }
+
+    pub fn update_parse_query_lru_capacity(&mut self, lru_capacity: Option<usize>) {
+        let lru_capacity = lru_capacity.unwrap_or(base_db::DEFAULT_PARSE_LRU_CAP);
+        hir_def::db::ParseQuery
+            .in_db_mut(self)
+            .set_lru_capacity(lru_capacity);
+        preprocessor::db::PreprocessFileQuery
+            .in_db_mut(self)
+            .set_lru_capacity(lru_capacity);
+        preprocessor::db::PreprocessedTextQuery
+            .in_db_mut(self)
+            .set_lru_capacity(lru_capacity);
+        preprocessor::db::PreprocessFileInnerDataQuery
+            .in_db_mut(self)
+            .set_lru_capacity(lru_capacity);
+        preprocessor::db::PreprocessFileInnerParamsQuery
+            .in_db_mut(self)
+            .set_lru_capacity(4);
+    }
+
+    pub fn update_lru_capacities(&mut self, lru_capacities: &FxHashMap<Box<str>, usize>) {
+        base_db::GraphQuery.in_db_mut(self).set_lru_capacity(
+            lru_capacities
+                .get(stringify!(GraphQuery))
+                .copied()
+                .unwrap_or(base_db::DEFAULT_PARSE_LRU_CAP),
+        );
+        base_db::ProjetSubgraphQuery
+            .in_db_mut(self)
+            .set_lru_capacity(
+                lru_capacities
+                    .get(stringify!(ProjectSubgraphQuery))
+                    .copied()
+                    .unwrap_or(base_db::DEFAULT_PARSE_LRU_CAP),
+            );
+
+        macro_rules! update_lru_capacity_per_query {
+            ($( $module:ident :: $query:ident )*) => {$(
+                if let Some(&cap) = lru_capacities.get(stringify!($query)) {
+                    $module::$query.in_db_mut(self).set_lru_capacity(cap);
+                }
+            )*}
         }
+        // FIXME: Implement this
+        // update_lru_capacity_per_query![
+        //     // SourceDatabase
+        //     // base_db::ParseQuery
+        //     // base_db::CrateGraphQuery
+        //     // base_db::ProcMacrosQuery
+        // ];
     }
 
     pub fn apply_change(&mut self, change: Change) {

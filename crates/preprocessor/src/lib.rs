@@ -1,8 +1,9 @@
-use std::hash::Hash;
+use std::{hash::Hash, sync::Arc};
 
 use anyhow::{bail, Context};
 use base_db::{RE_CHEVRON, RE_QUOTE};
-use fxhash::FxHashMap;
+use deepsize::DeepSizeOf;
+use fxhash::{FxHashMap, FxHashSet};
 use lsp_types::{Diagnostic, Position, Range};
 use smol_str::SmolStr;
 use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
@@ -43,8 +44,8 @@ enum ConditionState {
     Active,
 }
 
-pub type MacrosMap = FxHashMap<SmolStr, Macro>;
-pub type HMacrosMap = HashableHashMap<SmolStr, Macro>;
+pub type MacrosMap = FxHashMap<SmolStr, Arc<Macro>>;
+pub type HMacrosMap = HashableHashMap<SmolStr, Arc<Macro>>;
 pub type ArgsMap = FxHashMap<u32, Vec<(Range, Range)>>;
 
 #[derive(Debug)]
@@ -69,6 +70,7 @@ where
     offsets: FxHashMap<u32, Vec<Offset>>,
     args_maps: ArgsMap,
     include_file: &'a mut F,
+    disabled_macros: FxHashSet<Arc<Macro>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -78,7 +80,16 @@ pub struct Macro {
     pub(crate) params: Option<Vec<i8>>,
     pub(crate) nb_params: i8,
     pub(crate) body: Vec<RangeLessSymbol>,
-    pub(crate) disabled: bool,
+}
+
+impl DeepSizeOf for Macro {
+    fn deep_size_of_children(&self, context: &mut deepsize::Context) -> usize {
+        std::mem::size_of::<FileId>()
+            + self.idx.deep_size_of_children(context)
+            + self.params.deep_size_of_children(context)
+            + self.nb_params.deep_size_of_children(context)
+            + self.body.deep_size_of_children(context)
+    }
 }
 
 impl Macro {
@@ -89,7 +100,6 @@ impl Macro {
             params: None,
             nb_params: 0,
             body: vec![],
-            disabled: false,
         }
     }
 }
@@ -116,6 +126,7 @@ where
             expansion_stack: Default::default(),
             offsets: FxHashMap::default(),
             args_maps: FxHashMap::default(),
+            disabled_macros: FxHashSet::default(),
         }
     }
 
@@ -130,31 +141,47 @@ where
     pub fn insert_macro(&mut self, name: SmolStr, mut macro_: Macro) {
         macro_.idx = self.idx;
         self.idx += 1;
-        self.macros.insert(name, macro_);
+        self.macros.insert(name, macro_.into());
+    }
+
+    pub fn disable_macro(&mut self, macro_: Arc<Macro>) {
+        self.disabled_macros.insert(macro_);
+    }
+
+    pub fn enable_macro(&mut self, macro_: Arc<Macro>) {
+        self.disabled_macros.remove(&macro_);
+    }
+
+    pub fn is_macro_disabled(&self, macro_: &Arc<Macro>) -> bool {
+        self.disabled_macros.contains(macro_)
     }
 
     pub fn result(self) -> PreprocessingResult {
         let inactive_ranges = self.get_inactive_ranges();
-        PreprocessingResult::new(
+        let mut res = PreprocessingResult::new(
             self.out.join("\n").into(),
             self.macros,
             self.offsets,
             self.args_maps,
             self.errors,
             inactive_ranges,
-        )
+        );
+        res.shrink_to_fit();
+        res
     }
 
     pub fn error_result(self) -> PreprocessingResult {
         let inactive_ranges = self.get_inactive_ranges();
-        PreprocessingResult::new(
+        let mut res = PreprocessingResult::new(
             self.input.to_owned().into(),
             self.macros,
             self.offsets,
             self.args_maps,
             self.errors,
             inactive_ranges,
-        )
+        );
+        res.shrink_to_fit();
+        res
     }
 
     pub fn add_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
@@ -284,13 +311,13 @@ where
                     self.current_line = "".to_string();
                     self.prev_end = 0;
                 }
-                TokenKind::Identifier => match self.macros.get_mut(&symbol.text()) {
+                TokenKind::Identifier => match self.macros.get(&symbol.text()) {
                     // TODO: Evaluate the performance dropoff of supporting macro expansion when overriding reserved keywords.
                     // This might only be a problem for a very small subset of users.
                     Some(macro_) => {
                         // Skip the macro if it is disabled and reenable it.
-                        if macro_.disabled {
-                            macro_.disabled = false;
+                        if self.is_macro_disabled(macro_) {
+                            self.enable_macro(macro_.clone());
                             self.push_symbol(&symbol);
                             continue;
                         }
@@ -302,6 +329,7 @@ where
                             &symbol,
                             &mut self.expansion_stack,
                             true,
+                            &mut self.disabled_macros,
                         ) {
                             Ok(args_map) => {
                                 extend_args_map(&mut self.args_maps, args_map);
@@ -340,6 +368,7 @@ where
             symbol.range.start.line,
             &mut self.offsets,
             &mut self.args_maps,
+            &mut self.disabled_macros,
         );
         while self.lexer.in_preprocessor() {
             if let Some(symbol) = self.lexer.next() {

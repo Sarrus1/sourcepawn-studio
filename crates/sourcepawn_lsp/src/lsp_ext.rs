@@ -43,6 +43,20 @@ pub struct ItemTreeParams {
     pub text_document: Option<TextDocumentIdentifier>,
 }
 
+pub enum AnalyzerStatus {}
+
+impl Request for AnalyzerStatus {
+    type Params = AnalyzerStatusParams;
+    type Result = String;
+    const METHOD: &'static str = "sourcepawn-lsp/analyzerStatus";
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct AnalyzerStatusParams {
+    pub text_document: Option<TextDocumentIdentifier>,
+}
+
 pub enum ProjectMainPath {}
 
 impl Request for ProjectMainPath {

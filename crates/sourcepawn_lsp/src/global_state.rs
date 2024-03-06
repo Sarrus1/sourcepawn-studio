@@ -395,6 +395,10 @@ impl GlobalStateSnapshot {
         let path = from_proto::vfs_path(uri).ok()?;
         self.mem_docs.get(&path)?.version.into()
     }
+
+    pub(crate) fn vfs_memory_usage(&self) -> usize {
+        self.vfs_read().memory_usage()
+    }
 }
 
 pub(crate) fn file_id_to_url(vfs: &vfs::Vfs, id: FileId) -> Url {

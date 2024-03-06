@@ -18,6 +18,7 @@ import { run as projectsGraphvizCommand } from "./projectsGraphviz";
 import { preprocessedDocumentCommand } from "./preprocessedDocument";
 import { syntaxTreeCommand } from "./syntaxTree";
 import { itemTreeCommand } from "./itemTree";
+import { analyzerStatusCommand } from "./analyzerStatus";
 import { CommandFactory } from "../ctx";
 
 /**
@@ -162,6 +163,9 @@ export function createServerCommands(): Record<string, CommandFactory> {
     },
     itemTree: {
       enabled: itemTreeCommand,
+    },
+    analyzerStatus: {
+      enabled: analyzerStatusCommand,
     },
   };
 }

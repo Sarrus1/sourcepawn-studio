@@ -90,6 +90,7 @@ fn setup_logger(opts: Opts) {
         })
         .level(LevelFilter::Error)
         .level_for("sourcepawn_lsp", verbosity_level)
+        .level_for("preprocessor", verbosity_level)
         .chain(io::stderr());
 
     let logger = match opts.log_file {

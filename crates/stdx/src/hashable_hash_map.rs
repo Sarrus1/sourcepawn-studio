@@ -54,6 +54,14 @@ impl<K: Hash + Eq + Clone, V: Eq + Clone> HashableHashMap<K, V> {
     pub fn to_map(&self) -> FxHashMap<K, V> {
         self.map.clone()
     }
+
+    pub fn capacity(&self) -> usize {
+        self.map.capacity()
+    }
+
+    pub fn shrink_to_fit(&mut self) {
+        self.map.shrink_to_fit()
+    }
 }
 
 impl<K: Hash + Ord + Clone, V: Hash + Eq + Clone> Hash for HashableHashMap<K, V> {
@@ -117,6 +125,18 @@ impl<K: Hash + Eq> HashableHashSet<K> {
 
     pub fn clear(&mut self) {
         self.set.clear()
+    }
+
+    pub fn capacity(&self) -> usize {
+        self.set.capacity()
+    }
+
+    pub fn shrink_to_fit(&mut self) {
+        self.set.shrink_to_fit()
+    }
+
+    pub fn extend(&mut self, other: HashableHashSet<K>) {
+        self.set.extend(other.set)
     }
 }
 

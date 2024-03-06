@@ -4,12 +4,14 @@ use lsp_types::{
     SemanticTokensDeltaParams, SemanticTokensFullDeltaResult, SemanticTokensParams,
     SemanticTokensRangeParams, SemanticTokensRangeResult, SemanticTokensResult,
 };
+use stdx::format_to;
 
 use crate::{
     global_state::GlobalStateSnapshot,
     lsp::{from_proto, to_proto},
     lsp_ext::{
-        ItemTreeParams, PreprocessedDocumentParams, ProjectsGraphvizParams, SyntaxTreeParams,
+        AnalyzerStatusParams, ItemTreeParams, PreprocessedDocumentParams, ProjectsGraphvizParams,
+        SyntaxTreeParams,
     },
 };
 
@@ -191,4 +193,57 @@ pub(crate) fn handle_item_tree(
     snap.analysis
         .pretty_item_tree(file_id)
         .context("Failed to get the item tree")
+}
+
+pub(crate) fn handle_analyzer_status(
+    snap: GlobalStateSnapshot,
+    params: AnalyzerStatusParams,
+) -> anyhow::Result<String> {
+    let mut buf = String::new();
+
+    let mut file_id = None;
+    if let Some(tdi) = params.text_document {
+        match from_proto::file_id(&snap, &tdi.uri) {
+            Ok(it) => file_id = Some(it),
+            Err(_) => format_to!(buf, "file {} not found in vfs", tdi.uri),
+        }
+    }
+
+    // if snap.workspaces.is_empty() {
+    //     buf.push_str("No workspaces\n")
+    // } else {
+    //     buf.push_str("Workspaces:\n");
+    //     format_to!(
+    //         buf,
+    //         "Loaded {:?} packages across {} workspace{}.\n",
+    //         snap.workspaces
+    //             .iter()
+    //             .map(|w| w.n_packages())
+    //             .sum::<usize>(),
+    //         snap.workspaces.len(),
+    //         if snap.workspaces.len() == 1 { "" } else { "s" }
+    //     );
+
+    //     format_to!(
+    //         buf,
+    //         "Workspace root folders: {:?}",
+    //         snap.workspaces
+    //             .iter()
+    //             .flat_map(|ws| ws.workspace_definition_path())
+    //             .collect::<Vec<&AbsPath>>()
+    //     );
+    // }
+    format_to!(
+        buf,
+        "\nVfs memory usage: {}\n",
+        profile::Bytes::new(snap.vfs_memory_usage() as _)
+    );
+    buf.push_str("\nAnalysis:\n");
+    buf.push_str(
+        &snap
+            .analysis
+            .status(file_id)
+            .unwrap_or_else(|_| "Analysis retrieval was cancelled".to_owned()),
+    );
+    Ok(buf)
 }

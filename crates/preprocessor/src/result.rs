@@ -33,6 +33,14 @@ impl PreprocessingResult {
         }
     }
 
+    pub fn shrink_to_fit(&mut self) {
+        self.macros.shrink_to_fit();
+        self.offsets.shrink_to_fit();
+        self.args_map.shrink_to_fit();
+        self.errors.shrink_to_fit();
+        self.inactive_ranges.shrink_to_fit();
+    }
+
     pub fn sort_offsets(&mut self) {
         for offsets in self.offsets.values_mut() {
             offsets.sort_by(|a, b| match a.range.start.cmp(&b.range.start) {

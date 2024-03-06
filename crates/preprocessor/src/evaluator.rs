@@ -1,4 +1,6 @@
-use fxhash::FxHashMap;
+use std::sync::Arc;
+
+use fxhash::{FxHashMap, FxHashSet};
 use lsp_types::{Position, Range};
 use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
 use vfs::FileId;
@@ -8,7 +10,7 @@ use super::{
     macros::expand_identifier,
     preprocessor_operator::PreOperator,
 };
-use crate::{extend_args_map, ArgsMap, MacrosMap, Offset};
+use crate::{extend_args_map, ArgsMap, Macro, MacrosMap, Offset};
 
 #[derive(Debug)]
 pub struct IfCondition<'a> {
@@ -19,6 +21,7 @@ pub struct IfCondition<'a> {
     line_nb: u32,
     offsets: &'a mut FxHashMap<u32, Vec<Offset>>,
     args_map: &'a mut ArgsMap,
+    disabled_macros: &'a mut FxHashSet<Arc<Macro>>,
 }
 
 impl<'a> IfCondition<'a> {
@@ -27,6 +30,7 @@ impl<'a> IfCondition<'a> {
         line_nb: u32,
         offsets: &'a mut FxHashMap<u32, Vec<Offset>>,
         args_map: &'a mut ArgsMap,
+        disabled_macros: &'a mut FxHashSet<Arc<Macro>>,
     ) -> Self {
         Self {
             symbols: vec![],
@@ -36,7 +40,16 @@ impl<'a> IfCondition<'a> {
             line_nb,
             offsets,
             args_map,
+            disabled_macros,
         }
+    }
+
+    pub fn enable_macro(&mut self, macro_: Arc<Macro>) {
+        self.disabled_macros.remove(&macro_);
+    }
+
+    pub fn is_macro_disabled(&self, macro_: &Arc<Macro>) -> bool {
+        self.disabled_macros.contains(macro_)
     }
 
     pub(super) fn evaluate(&mut self) -> Result<bool, EvaluationError> {
@@ -183,10 +196,10 @@ impl<'a> IfCondition<'a> {
                     } else {
                         // Skip the macro if it is disabled and reenable it.
                         let mut attr: Option<(u32, FileId)> = None;
-                        if let Some(macro_) = self.macro_store.get_mut(&symbol.text()) {
+                        if let Some(macro_) = self.macro_store.get(&symbol.text()) {
                             attr = (macro_.idx, macro_.file_id).into();
-                            if macro_.disabled {
-                                macro_.disabled = false;
+                            if self.is_macro_disabled(macro_) {
+                                self.enable_macro(macro_.clone());
                                 continue;
                             }
                         };
@@ -195,7 +208,8 @@ impl<'a> IfCondition<'a> {
                             self.macro_store,
                             &symbol,
                             &mut self.expansion_stack,
-                            false
+                            false,
+                            self.disabled_macros
                         ) {
                             Ok(args_map) => {
                                 extend_args_map(self.args_map, args_map);

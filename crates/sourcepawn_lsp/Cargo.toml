@@ -62,6 +62,7 @@ ide.workspace = true
 ide-db.workspace = true
 paths.workspace = true
 flycheck.workspace = true
+profile.workspace = true
 
 [dependencies.openssl]
 optional = true

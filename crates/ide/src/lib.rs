@@ -4,6 +4,7 @@ mod goto_definition;
 mod hover;
 mod markup;
 mod prime_caches;
+mod status;
 mod syntax_highlighting;
 
 use std::sync::Arc;
@@ -11,6 +12,7 @@ use std::sync::Arc;
 use base_db::{
     Change, FileExtension, FilePosition, FileRange, Graph, SourceDatabase, SourceDatabaseExt, Tree,
 };
+use fxhash::FxHashMap;
 use hir_def::{print_item_tree, DefDatabase};
 use hover::HoverResult;
 use ide_db::RootDatabase;
@@ -48,10 +50,18 @@ pub struct AnalysisHost {
 }
 
 impl AnalysisHost {
-    pub fn new() -> AnalysisHost {
+    pub fn new(lru_capacity: Option<usize>) -> AnalysisHost {
         AnalysisHost {
-            db: RootDatabase::new(),
+            db: RootDatabase::new(lru_capacity),
         }
+    }
+
+    pub fn update_lru_capacity(&mut self, lru_capacity: Option<usize>) {
+        self.db.update_parse_query_lru_capacity(lru_capacity);
+    }
+
+    pub fn update_lru_capacities(&mut self, lru_capacities: &FxHashMap<Box<str>, usize>) {
+        self.db.update_lru_capacities(lru_capacities);
     }
 
     /// Returns a snapshot of the current state, which you can query for
@@ -129,6 +139,11 @@ impl Analysis {
                 })
                 .collect_vec()
         })
+    }
+
+    /// Debug info about the current state of the analysis.
+    pub fn status(&self, file_id: Option<FileId>) -> Cancellable<String> {
+        self.with_db(|db| status::status(db, file_id))
     }
 
     pub fn parallel_prime_caches<F1, F2>(

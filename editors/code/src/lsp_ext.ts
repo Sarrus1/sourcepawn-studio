@@ -22,6 +22,16 @@ export type SyntaxTreeParams = {
   textDocument?: lc.TextDocumentIdentifier;
 };
 
+export const analyzerStatus = new lc.RequestType<
+  AnalyzerStatusParams,
+  string,
+  void
+>("sourcepawn-lsp/analyzerStatus");
+
+export type AnalyzerStatusParams = {
+  textDocument?: lc.TextDocumentIdentifier;
+};
+
 export const itemTree = new lc.RequestType<ItemTreeParams, string, void>(
   "sourcepawn-lsp/itemTree"
 );

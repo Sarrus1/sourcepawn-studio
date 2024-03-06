@@ -3,17 +3,24 @@ use std::sync::Arc;
 use anyhow::bail;
 use base_db::{infer_include_ext, SourceDatabase};
 use fxhash::FxHashMap;
-use smol_str::SmolStr;
 use stdx::hashable_hash_map::{HashableHashMap, HashableHashSet};
 use vfs::{AnchoredPath, FileId};
 
-use crate::{HMacrosMap, Macro, MacrosMap, PreprocessingResult, SourcepawnPreprocessor};
+use crate::{HMacrosMap, MacrosMap, PreprocessingResult, SourcepawnPreprocessor};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct PreprocessingParams {
     input_macros: HMacrosMap,
     output_macros: HashableHashMap<FileId, HMacrosMap>,
     being_preprocessed: HashableHashSet<FileId>,
+}
+
+impl PreprocessingParams {
+    pub fn shrink_to_fit(&mut self) {
+        self.input_macros.shrink_to_fit();
+        self.output_macros.shrink_to_fit();
+        self.being_preprocessed.shrink_to_fit();
+    }
 }
 
 #[salsa::query_group(PreprocDatabaseStorage)]
@@ -74,14 +81,14 @@ pub(crate) fn preprocessed_text_query(db: &dyn PreprocDatabase, file_id: FileId)
 pub(crate) fn _preprocess_file_params_query(
     db: &dyn PreprocDatabase,
     file_id: FileId,
-    macros: HashableHashMap<SmolStr, Macro>,
+    macros: HMacrosMap,
     mut being_preprocessed: HashableHashSet<FileId>,
 ) -> Arc<FxHashMap<FileId, Arc<PreprocessingParams>>> {
     being_preprocessed.insert(file_id);
     let text = db.file_text(file_id);
     let mut results: FxHashMap<FileId, Arc<PreprocessingParams>> = FxHashMap::default();
     let input_macros = macros.clone();
-    let being_preprocessed = being_preprocessed.clone();
+    let mut being_preprocessed = being_preprocessed.clone();
     let mut output_macros: HashableHashMap<FileId, HMacrosMap> = HashableHashMap::default();
 
     let mut extend_macros =
@@ -99,9 +106,13 @@ pub(crate) fn _preprocess_file_params_query(
                 // Avoid cyclic deps
                 return Ok(());
             }
-            let map = macros.clone().into();
-            let res = db.preprocess_file_inner_params(inc_file_id, map, being_preprocessed.clone());
+            let res = db.preprocess_file_inner_params(
+                inc_file_id,
+                macros.clone().into(),
+                being_preprocessed.clone(),
+            );
             results.extend(res.as_ref().clone());
+            being_preprocessed.extend(res[&inc_file_id].being_preprocessed.clone());
 
             let Some(params) = res.as_ref().get(&inc_file_id) else {
                 bail!("No preprocessing params found for file_id: {}", inc_file_id);
@@ -119,18 +130,18 @@ pub(crate) fn _preprocess_file_params_query(
         };
 
     let mut preprocessor = SourcepawnPreprocessor::new(file_id, &text, &mut extend_macros);
-    preprocessor.set_macros(macros.to_map().clone());
+    preprocessor.set_macros(macros.to_map());
     let res = preprocessor.preprocess_input();
 
     output_macros.insert(file_id, res.macros().clone().into());
-    results.insert(
-        file_id,
-        Arc::new(PreprocessingParams {
-            input_macros,
-            output_macros,
-            being_preprocessed,
-        }),
-    );
+    let mut preprocessing_params = PreprocessingParams {
+        input_macros,
+        output_macros,
+        being_preprocessed,
+    };
+    preprocessing_params.shrink_to_fit();
+    results.insert(file_id, preprocessing_params.into());
+    results.shrink_to_fit();
 
     results.into()
 }

@@ -21,6 +21,7 @@ debug = true
 
 [workspace.dependencies]
 preprocessor = { path = "./crates/preprocessor" }
+profile = { path = "./crates/profile" }
 sourcepawn_lsp = { path = "./crates/sourcepawn_lsp" }
 syntax = { path = "./crates/syntax" }
 vfs = { path = "./crates/vfs" }
@@ -75,6 +76,7 @@ dunce = "1.0.4"
 always-assert = "0.1.2"
 itertools = "0.11.0"
 bitflags = "2.4.2"
+deepsize.workspace = true
 
 
 [workspace.dependencies.uuid]

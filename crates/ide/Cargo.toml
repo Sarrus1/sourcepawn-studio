@@ -24,6 +24,7 @@ tracing.workspace = true
 log.workspace = true
 itertools.workspace = true
 crossbeam.workspace = true
+deepsize.workspace = true
 
 # Local crates
 hir-def.workspace = true
@@ -35,3 +36,5 @@ ide-db.workspace = true
 ide-diagnostics.workspace = true
 preprocessor.workspace = true
 stdx.workspace = true
+profile.workspace = true
+smol_str.workspace = true
