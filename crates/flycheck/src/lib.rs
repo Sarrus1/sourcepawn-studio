@@ -145,6 +145,7 @@ impl fmt::Debug for Message {
 #[derive(Debug)]
 pub enum Progress {
     DidStart,
+    // FIXME: Implement this
     DidCheckCrate(String),
     DidFinish(io::Result<()>),
     DidCancel,

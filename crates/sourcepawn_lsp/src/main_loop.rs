@@ -21,7 +21,7 @@ use crate::{
     from_json,
     global_state::file_id_to_url,
     lsp::from_proto,
-    lsp_ext,
+    lsp_ext::{self, SpcompStatusParams},
     progress::Progress,
     version::version,
     GlobalState,
@@ -201,21 +201,9 @@ impl GlobalState {
 
         self.update_configuration(config, true);
 
-        let _ = self.send_status(lsp_ext::ServerStatusParams {
-            health: crate::lsp_ext::Health::Ok,
-            quiescent: self.is_quiescent(),
-            message: None,
-        });
         log::debug!("Server is initialized.");
 
         Ok(ignored)
-    }
-
-    // FIXME: Get rid of this
-    fn send_status(&self, status: lsp_ext::ServerStatusParams) -> anyhow::Result<()> {
-        self.client
-            .send_notification::<lsp_ext::ServerStatusNotification>(status)?;
-        Ok(())
     }
 
     /// Synchronously pull the configuration from the client and return it, along with any ignored messages.
@@ -517,11 +505,17 @@ impl GlobalState {
                 let (state, message) = match progress {
                     flycheck::Progress::DidStart => {
                         self.diagnostics.clear_check(id);
+                        self.send_notification::<lsp_ext::SpcompStatusNotification>(
+                            SpcompStatusParams { quiescent: false },
+                        );
                         (Progress::Begin, None)
                     }
                     flycheck::Progress::DidCheckCrate(target) => (Progress::Report, Some(target)),
                     flycheck::Progress::DidCancel => {
                         self.last_flycheck_error = None;
+                        self.send_notification::<lsp_ext::SpcompStatusNotification>(
+                            SpcompStatusParams { quiescent: true },
+                        );
                         (Progress::End, None)
                     }
                     flycheck::Progress::DidFailToRestart(err) => {
@@ -533,6 +527,9 @@ impl GlobalState {
                         self.last_flycheck_error = result
                             .err()
                             .map(|err| format!("spcomp check failed to start: {err}"));
+                        self.send_notification::<lsp_ext::SpcompStatusNotification>(
+                            SpcompStatusParams { quiescent: true },
+                        );
                         (Progress::End, None)
                     }
                 };
