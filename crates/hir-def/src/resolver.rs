@@ -163,6 +163,14 @@ impl Resolver {
                             }
                         },
                         _ => {
+                            // Handle enum methodmaps by returning the methodmap id in priority if it exists
+                            if let Some((FileDefId::MethodmapId(it), file_id)) = entries
+                                .iter()
+                                .find(|(entry, _)| matches!(entry, FileDefId::MethodmapId(_)))
+                            {
+                                return Some(ValueNs::MethodmapId(InFile::new(*file_id, *it)));
+                            }
+
                             let mut fn_ids: SmallVec<[InFile<FunctionId>; 1]> = SmallVec::new();
                             for entry in entries {
                                 if let (FileDefId::FunctionId(it), file_id) = entry {
