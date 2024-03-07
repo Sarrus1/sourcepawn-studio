@@ -6,7 +6,10 @@ use crate::item_tree::Name;
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum TypeRef {
     /// Reference to a type definition (e.g. enum struct, enum, methodmap, etc.)
-    Name(Name), // TODO: Disambiguate between new types and old types.
+    Name(Name),
+
+    /// Old name
+    OldName(Name),
 
     /// int
     Int,
@@ -32,6 +35,7 @@ pub enum TypeRef {
     /// Float
     OldFloat,
 
+    /// Array
     Array((Box<TypeRef>, usize)),
 }
 
@@ -46,6 +50,14 @@ impl TypeRef {
             TSKind::any_type => Self::Any,
             TSKind::anon_String => Self::OldString,
             TSKind::anon_Float => Self::Float,
+            TSKind::r#type => TypeRef::Name(Name::from_node(node, source)),
+            TSKind::old_type => {
+                let text = node
+                    .utf8_text(source.as_bytes())
+                    .expect("Failed to get utf8 text")
+                    .trim_end_matches(':');
+                TypeRef::OldName(Name::from(text))
+            }
             _ => TypeRef::Name(Name::from_node(node, source)),
         }
     }
@@ -90,6 +102,7 @@ impl TypeRef {
     pub fn to_str(&self) -> String {
         match self {
             TypeRef::Name(name) => String::from(name.clone()), //TODO: Can we avoid this clone?
+            TypeRef::OldName(name) => format!("{}:", name),
             TypeRef::Int => "int".to_string(),
             TypeRef::Bool => "bool".to_string(),
             TypeRef::Float => "float".to_string(),
