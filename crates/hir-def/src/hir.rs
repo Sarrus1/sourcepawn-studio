@@ -54,6 +54,10 @@ pub enum Expr {
         scope: ExprId,
         field: Name,
     },
+    ArrayIndexedAccess {
+        array: ExprId,
+        index: ExprId,
+    },
     UnaryOp {
         expr: ExprId,
         op: Option<TSKind>,

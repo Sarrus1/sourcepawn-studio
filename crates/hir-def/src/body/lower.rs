@@ -78,9 +78,7 @@ impl ExprCollector<'_> {
                 .alloc(Name::from_node(&name_node, self.source));
             let binding = Expr::Binding {
                 ident_id,
-                type_ref: node
-                    .child_by_field_name("type")
-                    .map(|type_node| TypeRef::from_node(&type_node, self.source)),
+                type_ref: TypeRef::from_returntype_node(&node, "type", self.source),
                 initializer: node
                     .child_by_field_name("initialValue")
                     .map(|default_node| self.collect_expr(default_node)),
@@ -92,9 +90,7 @@ impl ExprCollector<'_> {
 
     fn collect_variable_declaration(&mut self, expr: tree_sitter::Node) -> ExprId {
         let mut decl = vec![];
-        let type_ref = expr
-            .child_by_field_name("type")
-            .map(|type_node| TypeRef::from_node(&type_node, self.source));
+        let type_ref = TypeRef::from_returntype_node(&expr, "type", self.source);
         for child in expr
             .children(&mut expr.walk())
             .filter(|n| TSKind::from(n) == TSKind::variable_declaration)
@@ -125,9 +121,7 @@ impl ExprCollector<'_> {
             .children(&mut expr.walk())
             .filter(|n| TSKind::from(n) == TSKind::old_variable_declaration)
         {
-            let type_ref = child
-                .child_by_field_name("type")
-                .map(|type_node| TypeRef::from_node(&type_node, self.source));
+            let type_ref = TypeRef::from_returntype_node(&child, "type", self.source);
             if let Some(name_node) = child.child_by_field_name("name") {
                 let ident_id = self
                     .body
@@ -330,7 +324,15 @@ impl ExprCollector<'_> {
                     _ => unreachable!(),
                 }
             }
-            TSKind::array_indexed_access => None, // FIXME: Implement this
+            TSKind::array_indexed_access => {
+                let array = expr.child_by_field_name("array")?;
+                let index = expr.child_by_field_name("index")?;
+                let access = Expr::ArrayIndexedAccess {
+                    array: self.collect_expr(array),
+                    index: self.collect_expr(index),
+                };
+                Some(self.alloc_expr(access, NodePtr::from(&expr)))
+            }
             TSKind::ternary_expression => {
                 let condition = self.collect_expr(expr.child_by_field_name("condition")?);
                 let then_branch = self.collect_expr(expr.child_by_field_name("consequence")?);
@@ -379,9 +381,7 @@ impl ExprCollector<'_> {
             }
             TSKind::view_as | TSKind::old_type_cast => {
                 let expr = expr.child_by_field_name("value")?;
-                let type_ref = expr
-                    .child_by_field_name("type")
-                    .map(|type_node| TypeRef::from_node(&type_node, self.source))?;
+                let type_ref = TypeRef::from_returntype_node(&expr, "type", self.source)?;
                 let view_as = Expr::ViewAs {
                     expr: self.collect_expr(expr),
                     type_ref,

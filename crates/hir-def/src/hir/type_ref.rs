@@ -31,6 +31,8 @@ pub enum TypeRef {
 
     /// Float
     OldFloat,
+
+    Array((Box<TypeRef>, usize)),
 }
 
 impl TypeRef {
@@ -48,6 +50,43 @@ impl TypeRef {
         }
     }
 
+    pub fn from_returntype_node(node: &Node, field_name: &str, source: &str) -> Option<Self> {
+        let mut type_ref = None;
+        let mut size = 0;
+        for child in node.children_by_field_name(field_name, &mut node.walk()) {
+            match TSKind::from(child) {
+                TSKind::dimension | TSKind::fixed_dimension => {
+                    size += 1;
+                }
+                _ => {
+                    type_ref = Some(TypeRef::from_node(&child, source));
+                }
+            }
+        }
+        if let Some(type_ref) = type_ref {
+            if size > 0 {
+                Some(Self::Array((Box::new(type_ref), size)))
+            } else {
+                Some(type_ref)
+            }
+        } else {
+            None
+        }
+    }
+
+    pub fn to_lower_dim(&self) -> Self {
+        match self {
+            TypeRef::Array((type_ref, size)) => {
+                if *size > 1 {
+                    TypeRef::Array((type_ref.clone(), size - 1))
+                } else {
+                    self.clone()
+                }
+            }
+            _ => self.clone(),
+        }
+    }
+
     pub fn to_str(&self) -> String {
         match self {
             TypeRef::Name(name) => String::from(name.clone()), //TODO: Can we avoid this clone?
@@ -59,6 +98,11 @@ impl TypeRef {
             TypeRef::Any => "any".to_string(),
             TypeRef::OldString => "String".to_string(),
             TypeRef::OldFloat => "Float".to_string(),
+            TypeRef::Array((type_ref, size)) => {
+                let mut res = type_ref.to_str();
+                res.push_str(&"[]".repeat(*size));
+                res
+            }
         }
     }
 }

@@ -130,9 +130,7 @@ impl ItemTree {
         for child in block_node.value.children(&mut block_node.value.walk()) {
             match TSKind::from(child) {
                 TSKind::variable_declaration_statement => {
-                    let type_ref = child
-                        .child_by_field_name("type")
-                        .map(|n| TypeRef::from_node(&n, &source));
+                    let type_ref = TypeRef::from_returntype_node(&child, "type", &source);
                     for sub_child in child.children(&mut child.walk()) {
                         if TSKind::from(sub_child) == TSKind::variable_declaration {
                             if let Some(name_node) = sub_child.child_by_field_name("name") {
@@ -155,9 +153,7 @@ impl ItemTree {
                         .children(&mut child.walk())
                         .filter(|n| TSKind::from(n) == TSKind::old_variable_declaration)
                     {
-                        let type_ref = sub_child
-                            .child_by_field_name("type")
-                            .map(|n| TypeRef::from_node(&n, &source));
+                        let type_ref = TypeRef::from_returntype_node(&sub_child, "type", &source);
                         if let Some(name_node) = sub_child.child_by_field_name("name") {
                             let res = Variable {
                                 name: Name::from(name_node.utf8_text(source.as_bytes()).unwrap()),

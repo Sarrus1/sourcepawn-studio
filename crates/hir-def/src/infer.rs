@@ -287,6 +287,10 @@ impl InferenceContext<'_> {
                 self.infer_expr(else_branch)
             }
             Expr::ScopeAccess { scope, field } => self.infer_field_access(expr, scope, field),
+            Expr::ArrayIndexedAccess { array, index } => {
+                self.infer_expr(index);
+                self.infer_expr(array).map(|ty| ty.to_lower_dim())
+            }
             Expr::ViewAs { expr, type_ref } => {
                 let _ = self.infer_expr(expr);
                 Some(type_ref.clone())

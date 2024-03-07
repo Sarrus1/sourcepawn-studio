@@ -90,9 +90,7 @@ impl<'db> Ctx<'db> {
 
     fn lower_global_variable(&mut self, node: &tree_sitter::Node) {
         let visibility = RawVisibilityId::from_node(node);
-        let type_ref = node
-            .child_by_field_name("type")
-            .map(|n| TypeRef::from_node(&n, &self.source));
+        let type_ref = TypeRef::from_returntype_node(node, "type", &self.source);
         for child in node.children(&mut node.walk()) {
             if TSKind::from(child) == TSKind::variable_declaration {
                 if let Some(name_node) = child.child_by_field_name("name") {
@@ -115,9 +113,7 @@ impl<'db> Ctx<'db> {
             .children(&mut node.walk())
             .filter(|n| TSKind::from(n) == TSKind::old_variable_declaration)
         {
-            let type_ref = child
-                .child_by_field_name("type")
-                .map(|n| TypeRef::from_node(&n, &self.source));
+            let type_ref = TypeRef::from_returntype_node(&child, "type", &self.source);
             if let Some(name_node) = child.child_by_field_name("name") {
                 let res = Variable {
                     name: Name::from(name_node.utf8_text(self.source.as_bytes()).unwrap()),
@@ -132,29 +128,7 @@ impl<'db> Ctx<'db> {
     }
 
     fn function_return_type(&self, node: &tree_sitter::Node) -> Option<TypeRef> {
-        let ret_type_node = node.child_by_field_name("returnType")?;
-        for child in ret_type_node.children(&mut ret_type_node.walk()) {
-            match TSKind::from(child) {
-                TSKind::r#type | TSKind::builtin_type | TSKind::identifier => {
-                    return TypeRef::from_node(&child, &self.source).into()
-                }
-                TSKind::old_type => {
-                    for sub_child in child.children(&mut child.walk()) {
-                        match TSKind::from(sub_child) {
-                            TSKind::old_builtin_type | TSKind::identifier | TSKind::any_type => {
-                                // FIXME: This is wrong.
-                                return Some(TypeRef::OldString);
-                            }
-                            _ => (),
-                        }
-                    }
-                    return TypeRef::from_node(&child, &self.source).into();
-                }
-                _ => (),
-            }
-        }
-
-        None
+        TypeRef::from_returntype_node(node, "returnType", &self.source)
     }
 
     fn lower_enum(&mut self, node: &tree_sitter::Node) {
@@ -267,9 +241,7 @@ impl<'db> Ctx<'db> {
             .for_each(|n| match TSKind::from(n) {
                 TSKind::parameter_declaration | TSKind::rest_parameter => {
                     let res = Param {
-                        type_ref: n
-                            .child_by_field_name("type")
-                            .map(|n| TypeRef::from_node(&n, &self.source)),
+                        type_ref: TypeRef::from_returntype_node(&n, "type", &self.source),
                         ast_id: self.source_ast_id_map.ast_id_of(&n),
                         has_default: n.child_by_field_name("defaultValue").is_some(),
                     };
@@ -397,10 +369,10 @@ impl<'db> Ctx<'db> {
                     let Some(property_name_node) = e.child_by_field_name("name") else {
                         return;
                     };
-                    let Some(property_type_node) = e.child_by_field_name("type") else {
+                    let Some(type_) = TypeRef::from_returntype_node(&e, "type", &self.source)
+                    else {
                         return;
                     };
-                    let type_ = TypeRef::from_node(&property_type_node, &self.source);
 
                     let start_idx = self.next_function_idx();
                     e.children(&mut e.walk())
@@ -513,11 +485,8 @@ impl<'db> Ctx<'db> {
                 };
                 // TODO: Handle storage_class
                 let _storage_class_node = param_node.child_by_field_name("storage_class"); // FIXME: Handle this node
-                let Some(param_type_node) = param_node.child_by_field_name("type") else {
-                    return;
-                };
                 let param = Param {
-                    type_ref: TypeRef::from_node(&param_type_node, &self.source).into(),
+                    type_ref: TypeRef::from_returntype_node(&param_node, "type", &self.source),
                     ast_id: self.source_ast_id_map.ast_id_of(&param_node),
                     has_default: false,
                 };
@@ -550,14 +519,15 @@ impl<'db> Ctx<'db> {
                     let Some(field_name_node) = e.child_by_field_name("name") else {
                         return;
                     };
-                    let Some(field_type_node) = e.child_by_field_name("type") else {
+                    let Some(type_ref) = TypeRef::from_returntype_node(&e, "type", &self.source)
+                    else {
                         return;
                     };
                     let res = Field {
                         name: Name::from(
                             field_name_node.utf8_text(self.source.as_bytes()).unwrap(),
                         ),
-                        type_ref: TypeRef::from_node(&field_type_node, &self.source),
+                        type_ref,
                         ast_id: self.source_ast_id_map.ast_id_of(&e),
                     };
                     let field_idx = self.tree.data_mut().fields.alloc(res);

@@ -508,8 +508,9 @@ impl HasChildSource<LocalFieldId> for EnumStructId {
         {
             let name_node = child.child_by_field_name("name").unwrap();
             let name = Name::from_node(&name_node, &db.preprocessed_text(loc.file_id()));
-            let type_ref_node = child.child_by_field_name("type").unwrap();
-            let type_ref = TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id()));
+            let type_ref =
+                TypeRef::from_returntype_node(&child, "type", &db.preprocessed_text(loc.file_id()))
+                    .unwrap();
             let field = EnumStructItemData::Field(FieldData { name, type_ref });
             map.insert(items.alloc(field), NodePtr::from(&child));
         }
@@ -533,9 +534,11 @@ impl HasChildSource<Idx<TypedefData>> for TypesetId {
             .children(&mut typeset_node.walk())
             .filter(|c| TSKind::from(c) == TSKind::typedef_expression)
         {
-            if let Some(type_ref_node) = child.child_by_field_name("returnType") {
-                let type_ref =
-                    TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id()));
+            if let Some(type_ref) = TypeRef::from_returntype_node(
+                &child,
+                "returnType",
+                &db.preprocessed_text(loc.file_id()),
+            ) {
                 let typedef = TypedefData {
                     name: None,
                     type_ref,
@@ -563,11 +566,11 @@ impl HasChildSource<Idx<FunctagData>> for FuncenumId {
             .children(&mut typeset_node.walk())
             .filter(|c| TSKind::from(c) == TSKind::typedef_expression)
         {
-            let type_ref = if let Some(type_ref_node) = child.child_by_field_name("returnType") {
-                TypeRef::from_node(&type_ref_node, &db.preprocessed_text(loc.file_id())).into()
-            } else {
-                None
-            };
+            let type_ref = TypeRef::from_returntype_node(
+                &child,
+                "returnType",
+                &db.preprocessed_text(loc.file_id()),
+            );
             let functag = FunctagData {
                 name: None,
                 type_ref,

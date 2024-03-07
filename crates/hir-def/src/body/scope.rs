@@ -204,6 +204,7 @@ fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope
         | Expr::NamedArg { .. }
         | Expr::CommaExpr { .. }
         | Expr::ScopeAccess { .. }
+        | Expr::ArrayIndexedAccess { .. }
         | Expr::Ident(_)
         | Expr::New { .. }
         | Expr::ViewAs { .. }
