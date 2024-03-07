@@ -8,7 +8,7 @@ use syntax::TSKind;
 
 use crate::{
     hir::type_ref::TypeRef,
-    item_tree::{EnumStructItemId, MethodmapItemId, Name, SpecialMethod},
+    item_tree::{EnumStructItemId, MethodmapItemId, Name, Param, SpecialMethod},
     resolver::{global_resolver, ValueNs},
     src::{HasChildSource, HasSource},
     DefDatabase, DefDiagnostic, EnumStructId, FuncenumId, FunctagId, FunctagLoc, FunctionId,
@@ -21,6 +21,18 @@ pub struct ParamData {
     pub type_ref: Option<TypeRef>,
     pub has_default: bool,
     pub is_rest: bool,
+    pub is_const: bool,
+}
+
+impl From<&Param> for ParamData {
+    fn from(param: &Param) -> Self {
+        ParamData {
+            type_ref: param.type_ref.clone(),
+            has_default: param.has_default,
+            is_rest: param.is_rest,
+            is_const: param.is_const,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -38,14 +50,7 @@ impl FunctionData {
         let params = function
             .params
             .clone()
-            .map(|param_idx| {
-                let param = &item_tree[param_idx];
-                ParamData {
-                    type_ref: param.type_ref.clone(),
-                    has_default: param.has_default,
-                    is_rest: param.is_rest,
-                }
-            })
+            .map(|param_idx| ParamData::from(&item_tree[param_idx]))
             .collect_vec();
 
         let function_data = FunctionData {

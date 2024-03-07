@@ -275,6 +275,7 @@ pub struct Function {
 pub struct Param {
     pub has_default: bool,
     pub is_rest: bool,
+    pub is_const: bool,
     pub type_ref: Option<TypeRef>,
     pub ast_id: AstId,
 }

@@ -245,6 +245,7 @@ impl<'db> Ctx<'db> {
                         ast_id: self.source_ast_id_map.ast_id_of(&n),
                         has_default: n.child_by_field_name("defaultValue").is_some(),
                         is_rest: TSKind::from(n) == TSKind::rest_parameter,
+                        is_const: n.child_by_field_name("storage_class").is_some(),
                     };
                     self.tree.data_mut().params.alloc(res);
                 }
@@ -484,13 +485,13 @@ impl<'db> Ctx<'db> {
                 let Some(param_node) = node.child_by_field_name("parameter") else {
                     return;
                 };
-                // TODO: Handle storage_class
-                let _storage_class_node = param_node.child_by_field_name("storage_class"); // FIXME: Handle this node
+                let storage_class_node = param_node.child_by_field_name("storage_class");
                 let param = Param {
                     type_ref: TypeRef::from_returntype_node(&param_node, "type", &self.source),
                     ast_id: self.source_ast_id_map.ast_id_of(&param_node),
                     has_default: false,
                     is_rest: false,
+                    is_const: storage_class_node.is_some(),
                 };
                 let start_idx = self.next_param_idx();
                 self.tree.data_mut().params.alloc(param);
