@@ -1882,6 +1882,7 @@ dependencies = [
  "la-arena",
  "libc",
  "once_cell",
+ "winapi",
 ]
 
 [[package]]
