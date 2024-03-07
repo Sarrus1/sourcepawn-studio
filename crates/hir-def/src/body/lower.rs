@@ -190,8 +190,20 @@ impl ExprCollector<'_> {
             TSKind::old_variable_declaration_statement => {
                 Some(self.collect_old_variable_declaration(expr))
             }
-            TSKind::for_statement
-            | TSKind::while_statement
+            TSKind::for_statement => {
+                let init = expr.child_by_field_name("initialization")?;
+                let condition = expr.child_by_field_name("condition")?;
+                let iteration = expr.child_by_field_name("iteration")?;
+                let body = expr.child_by_field_name("body")?;
+                let for_loop = Expr::Loop {
+                    initialization: self.collect_expr(init),
+                    condition: self.collect_expr(condition),
+                    iteration: self.collect_expr(iteration),
+                    body: self.collect_expr(body),
+                };
+                Some(self.alloc_expr(for_loop, NodePtr::from(&expr)))
+            }
+            TSKind::while_statement
             | TSKind::do_while_statement
             | TSKind::break_statement
             | TSKind::continue_statement

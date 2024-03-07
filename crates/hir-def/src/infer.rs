@@ -198,6 +198,18 @@ impl InferenceContext<'_> {
                 }
                 ty
             }
+            Expr::Loop {
+                initialization,
+                condition,
+                iteration,
+                body,
+            } => {
+                self.infer_expr(initialization);
+                self.infer_expr(condition);
+                self.infer_expr(iteration);
+                self.infer_expr(body);
+                None
+            }
             Expr::NamedArg { name, value } => {
                 let current_call = self.current_call()?;
                 let id = current_call.id?;

@@ -68,6 +68,12 @@ pub enum Expr {
         then_branch: ExprId,
         else_branch: ExprId,
     },
+    Loop {
+        initialization: ExprId,
+        condition: ExprId,
+        iteration: ExprId,
+        body: ExprId,
+    },
     Call {
         callee: ExprId,
         args: Box<[ExprId]>,

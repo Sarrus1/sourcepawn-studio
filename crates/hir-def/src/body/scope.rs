@@ -158,17 +158,13 @@ fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope
                 compute_expr_scopes(*binding, body, scopes, scope);
             }
         }
-        Expr::Binding {
-            ident_id,
-            type_ref: _,
-            initializer: _,
-        } => {
+        Expr::Binding { ident_id, .. } => {
             let binding = scopes.scope_entries.alloc(expr);
             scopes.scopes[*scope]
                 .entries
                 .insert(body.idents[*ident_id].clone(), binding);
         }
-        Expr::Block { id: _, statements } => {
+        Expr::Block { statements, .. } => {
             let mut scope = scopes.new_block_scope(*scope);
             // Overwrite the old scope for the block expr, so that every block scope can be found
             // via the block itself (important for blocks that only contain items, no expressions).
@@ -176,6 +172,15 @@ fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope
             for &stmt in statements.iter() {
                 compute_expr_scopes(stmt, body, scopes, &mut scope);
             }
+        }
+        Expr::Loop {
+            initialization,
+            condition,
+            iteration,
+            body: loop_body,
+        } => {
+            compute_expr_scopes(*initialization, body, scopes, scope);
+            compute_expr_scopes(*loop_body, body, scopes, scope);
         }
         // These expressions do not introduce any declarations.
         Expr::Missing
