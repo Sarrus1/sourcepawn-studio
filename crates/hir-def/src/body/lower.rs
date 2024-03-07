@@ -439,7 +439,17 @@ impl ExprCollector<'_> {
                 };
                 Some(self.alloc_expr(new, NodePtr::from(&constructor)))
             }
-            TSKind::array_literal => None, // FIXME: How do we want to handle these?
+            TSKind::array_literal => {
+                let elements = expr
+                    .children(&mut expr.walk())
+                    .filter_map(|n| self.maybe_collect_expr(n))
+                    .collect_vec()
+                    .into_boxed_slice();
+                Some(self.alloc_expr(
+                    Expr::Literal(Literal::Array(elements)),
+                    NodePtr::from(&expr),
+                ))
+            }
             // endregion: Expressions
             TSKind::comma_expression => {
                 let mut exprs = vec![];

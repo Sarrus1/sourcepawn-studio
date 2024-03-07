@@ -299,6 +299,13 @@ impl InferenceContext<'_> {
                     Literal::Char(_) => TypeRef::Char,
                     Literal::String(_) => TypeRef::OldString,
                     Literal::Null => TypeRef::Void,
+                    Literal::Array(elements) => {
+                        let mut ty = None;
+                        for element in elements.iter() {
+                            ty = self.infer_expr(element);
+                        }
+                        ty?
+                    }
                 };
                 Some(ty)
             }

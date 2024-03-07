@@ -136,6 +136,7 @@ pub enum Literal {
     // could not be used directly here, to understand how the wrapper works go to definition of
     // FloatTypeWrapper
     Float(FloatTypeWrapper),
+    Array(Box<[ExprId]>),
 }
 
 // We convert float values into bits and that's how we don't need to deal with f32 and f64.
