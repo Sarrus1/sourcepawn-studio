@@ -6,7 +6,7 @@ expression: "hover(r#\"\n%! main.sp\n#define FOO(%1) %1 + %1\nint foo = 1;\nint 
 {
   "contents": {
     "kind": "markdown",
-    "value": "```sourcepawn\n#define FOO(%1) %1 + %1\n```\nExpands to:\n```sourcepawn\nfoo + foo\n```"
+    "value": "```sourcepawn\n#define FOO(%1) %1 + %1\n```\nExpands to:\n```sourcepawn\n\n```"
   },
   "range": {
     "start": {

@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [7.2.1]
+
+### Chore
+
+- LSP version bump.
+
 ## [7.2.0]
 
 ### Chore
