@@ -154,6 +154,18 @@ impl ExprCollector<'_> {
 
     fn maybe_collect_expr(&mut self, expr: tree_sitter::Node) -> Option<ExprId> {
         match TSKind::from(expr) {
+            // region: Parameters
+            TSKind::named_arg => {
+                let name = expr.child_by_field_name("arg_name")?;
+                let value = expr.child_by_field_name("value")?;
+                let named_arg = Expr::NamedArg {
+                    name: self.collect_expr(name),
+                    value: self.collect_expr(value),
+                };
+                Some(self.alloc_expr(named_arg, NodePtr::from(&expr)))
+            }
+            // endregion: Parameters
+            // region: Statements
             TSKind::block => {
                 let ast_id = self.ast_id_map.ast_id_of(&expr);
                 let block_id = self.db.intern_block(BlockLoc {
@@ -174,46 +186,30 @@ impl ExprCollector<'_> {
                 };
                 Some(self.alloc_expr(block, NodePtr::from(&expr)))
             }
-            TSKind::named_arg => {
-                let name = expr.child_by_field_name("arg_name")?;
-                let value = expr.child_by_field_name("value")?;
-                let named_arg = Expr::NamedArg {
-                    name: self.collect_expr(name),
-                    value: self.collect_expr(value),
-                };
-                Some(self.alloc_expr(named_arg, NodePtr::from(&expr)))
+            TSKind::variable_declaration_statement => Some(self.collect_variable_declaration(expr)),
+            TSKind::old_variable_declaration_statement => {
+                Some(self.collect_old_variable_declaration(expr))
             }
+            TSKind::for_statement
+            | TSKind::while_statement
+            | TSKind::do_while_statement
+            | TSKind::break_statement
+            | TSKind::continue_statement
+            | TSKind::switch_statement
+            | TSKind::return_statement
+            | TSKind::delete_statement => None, // FIXME: Implement this
             TSKind::expression_statement => {
                 let child = expr.children(&mut expr.walk()).next()?;
                 Some(self.collect_expr(child))
             }
-            TSKind::unary_expression | TSKind::update_expression => {
-                // For our needs, unary and update expressions are the same
-                let expr = expr.child_by_field_name("argument")?;
-                let op = expr.child_by_field_name("operator").map(TSKind::from);
-                let unary = Expr::UnaryOp {
-                    expr: self.collect_expr(expr),
-                    op,
-                };
-                Some(self.alloc_expr(unary, NodePtr::from(&expr)))
-            }
+            // endregion: Statements
+            // region: Expressions
             TSKind::assignment_expression | TSKind::binary_expression => {
                 let lhs = self.collect_expr(expr.child_by_field_name("left")?);
                 let rhs = self.collect_expr(expr.child_by_field_name("right")?);
                 let op = expr.child_by_field_name("operator").map(TSKind::from);
                 let assign = Expr::BinaryOp { lhs, rhs, op };
                 Some(self.alloc_expr(assign, NodePtr::from(&expr)))
-            }
-            TSKind::ternary_expression => {
-                let condition = self.collect_expr(expr.child_by_field_name("condition")?);
-                let then_branch = self.collect_expr(expr.child_by_field_name("consequence")?);
-                let else_branch = self.collect_expr(expr.child_by_field_name("alternative")?);
-                let ternary = Expr::TernaryOp {
-                    condition,
-                    then_branch,
-                    else_branch,
-                };
-                Some(self.alloc_expr(ternary, NodePtr::from(&expr)))
             }
             TSKind::call_expression => {
                 let function = expr.child_by_field_name("function")?;
@@ -250,6 +246,18 @@ impl ExprCollector<'_> {
                     _ => unreachable!(),
                 }
             }
+            TSKind::array_indexed_access => None, // FIXME: Implement this
+            TSKind::ternary_expression => {
+                let condition = self.collect_expr(expr.child_by_field_name("condition")?);
+                let then_branch = self.collect_expr(expr.child_by_field_name("consequence")?);
+                let else_branch = self.collect_expr(expr.child_by_field_name("alternative")?);
+                let ternary = Expr::TernaryOp {
+                    condition,
+                    then_branch,
+                    else_branch,
+                };
+                Some(self.alloc_expr(ternary, NodePtr::from(&expr)))
+            }
             TSKind::field_access => {
                 let field = expr.child_by_field_name("field")?;
                 let field_access = Expr::FieldAccess {
@@ -258,18 +266,32 @@ impl ExprCollector<'_> {
                 };
                 Some(self.alloc_expr(field_access, NodePtr::from(&field)))
             }
-            TSKind::new_expression => {
-                let constructor = expr.child_by_field_name("class")?;
-                let args = expr.child_by_field_name("arguments")?;
-                let new = Expr::New {
-                    name: Name::from_node(&constructor, self.source),
-                    args: args
-                        .children(&mut args.walk())
-                        .filter_map(|arg| self.maybe_collect_expr(arg))
-                        .collect::<Vec<_>>()
-                        .into_boxed_slice(),
+            TSKind::array_scope_access | TSKind::scope_access => {
+                let field = expr.child_by_field_name("field")?;
+                let access = Expr::ScopeAccess {
+                    scope: self.collect_expr(expr.child_by_field_name("scope")?),
+                    field: Name::from_node(&field, self.source),
                 };
-                Some(self.alloc_expr(new, NodePtr::from(&constructor)))
+                Some(self.alloc_expr(access, NodePtr::from(&expr)))
+            }
+            TSKind::unary_expression | TSKind::update_expression => {
+                // For our needs, unary and update expressions are the same
+                let expr = expr.child_by_field_name("argument")?;
+                let op = expr.child_by_field_name("operator").map(TSKind::from);
+                let unary = Expr::UnaryOp {
+                    expr: self.collect_expr(expr),
+                    op,
+                };
+                Some(self.alloc_expr(unary, NodePtr::from(&expr)))
+            }
+            TSKind::sizeof_expression => {
+                let expr = expr.child_by_field_name("type")?;
+                // For Sourcepawn, sizeof as a unary operator will do fine.
+                let sizeof = Expr::UnaryOp {
+                    expr: self.collect_expr(expr),
+                    op: Some(TSKind::sizeof_expression),
+                };
+                Some(self.alloc_expr(sizeof, NodePtr::from(&expr)))
             }
             TSKind::view_as | TSKind::old_type_cast => {
                 let expr = expr.child_by_field_name("value")?;
@@ -281,10 +303,6 @@ impl ExprCollector<'_> {
                     type_ref,
                 };
                 Some(self.alloc_expr(view_as, NodePtr::from(&expr)))
-            }
-            TSKind::variable_declaration_statement => Some(self.collect_variable_declaration(expr)),
-            TSKind::old_variable_declaration_statement => {
-                Some(self.collect_old_variable_declaration(expr))
             }
             TSKind::identifier | TSKind::this => {
                 let name = Name::from_node(&expr, self.source);
@@ -324,6 +342,21 @@ impl ExprCollector<'_> {
                 let expr = expr.child_by_field_name("expression")?;
                 self.maybe_collect_expr(expr)
             }
+            TSKind::new_expression => {
+                let constructor = expr.child_by_field_name("class")?;
+                let args = expr.child_by_field_name("arguments")?;
+                let new = Expr::New {
+                    name: Name::from_node(&constructor, self.source),
+                    args: args
+                        .children(&mut args.walk())
+                        .filter_map(|arg| self.maybe_collect_expr(arg))
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                };
+                Some(self.alloc_expr(new, NodePtr::from(&constructor)))
+            }
+            TSKind::array_literal => None, // FIXME: How do we want to handle these?
+            // endregion: Expressions
             TSKind::comma_expression => {
                 let mut exprs = vec![];
                 for child in expr.children(&mut expr.walk()) {
@@ -334,24 +367,6 @@ impl ExprCollector<'_> {
                     NodePtr::from(&expr),
                 ))
             }
-            TSKind::sizeof_expression => {
-                let expr = expr.child_by_field_name("type")?;
-                // For Sourcepawn, sizeof as a unary operator will do fine.
-                let sizeof = Expr::UnaryOp {
-                    expr: self.collect_expr(expr),
-                    op: Some(TSKind::sizeof_expression),
-                };
-                Some(self.alloc_expr(sizeof, NodePtr::from(&expr)))
-            }
-            TSKind::array_scope_access | TSKind::scope_access => {
-                let field = expr.child_by_field_name("field")?;
-                let access = Expr::ScopeAccess {
-                    scope: self.collect_expr(expr.child_by_field_name("scope")?),
-                    field: Name::from_node(&field, self.source),
-                };
-                Some(self.alloc_expr(access, NodePtr::from(&expr)))
-            }
-            TSKind::array_indexed_access | TSKind::array_literal => None, // FIXME: How do we want to handle these?
             _ => {
                 log::warn!("Unhandled expression: {:?}", expr);
                 None
