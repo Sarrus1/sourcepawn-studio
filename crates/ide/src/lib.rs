@@ -17,7 +17,7 @@ use hir_def::{print_item_tree, DefDatabase};
 use hover::HoverResult;
 use ide_db::RootDatabase;
 use itertools::Itertools;
-use preprocessor::db::PreprocDatabase;
+use preprocessor::{db::PreprocDatabase, Offset};
 use salsa::{Cancelled, ParallelDatabase};
 use vfs::FileId;
 
@@ -216,4 +216,47 @@ impl Analysis {
     pub fn highlight_range(&self, frange: FileRange) -> Cancellable<Vec<HlRange>> {
         self.with_db(|db| syntax_highlighting::highlight(db, frange.file_id, Some(frange.range)))
     }
+}
+
+/// Convert a position seen by the user to a position seen by the server (preprocessed).
+fn u_pos_to_s_pos(
+    offsets: &FxHashMap<u32, Vec<Offset>>,
+    u_pos: lsp_types::Position,
+) -> lsp_types::Position {
+    if let Some(diff) = offsets.get(&u_pos.line).map(|offsets| {
+        offsets
+            .iter()
+            .filter(|offset| offset.range.end.character <= u_pos.character)
+            .map(|offset| offset.diff)
+            .sum::<i32>()
+    }) {
+        lsp_types::Position {
+            line: u_pos.line,
+            character: u_pos.character.saturating_add_signed(diff),
+        }
+    } else {
+        u_pos
+    }
+}
+
+/// Convert a range seen by the server to a range seen by the user.
+fn s_range_to_u_range(
+    offsets: &FxHashMap<u32, Vec<Offset>>,
+    mut s_range: lsp_types::Range,
+) -> lsp_types::Range {
+    if let Some(offsets) = offsets.get(&s_range.start.line) {
+        for offset in offsets.iter() {
+            if offset.range.start.character < s_range.start.character {
+                s_range.start.character =
+                    s_range.start.character.saturating_add_signed(-offset.diff);
+            }
+        }
+        for offset in offsets.iter() {
+            if offset.range.start.character < s_range.end.character {
+                s_range.end.character = s_range.end.character.saturating_add_signed(-offset.diff);
+            }
+        }
+    }
+
+    s_range
 }

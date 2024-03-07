@@ -1,5 +1,6 @@
 use hir::{DefResolution, HasSource, Semantics};
 use ide_db::RootDatabase;
+use preprocessor::db::PreprocDatabase;
 
 use crate::{markup::Markup, FilePosition, RangeInfo};
 
@@ -69,13 +70,15 @@ pub(crate) fn hover(
         let file_id = def.file_id(db);
         let source_tree = sema.parse(file_id);
         let def_node = def.source(db, &source_tree)?.value;
-        let source_text = def_node.utf8_text(preprocessed_text.as_bytes()).ok()?;
+        let source_text = db.preprocessed_text(file_id);
+        let source_text = def_node.utf8_text(source_text.as_bytes()).ok()?;
+
         let start = offset.range.start.character as usize;
         let end = offset
             .range
             .end
             .character
-            .saturating_add_signed(offset.diff) as usize;
+            .saturating_add_signed(-offset.diff) as usize;
         let slc = start..end;
         // The preprocessed file might be shorter than the original file
         let hover_text = preprocessed_text
