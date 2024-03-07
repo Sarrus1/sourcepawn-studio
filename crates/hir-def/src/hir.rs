@@ -43,7 +43,7 @@ pub enum Expr {
         args: Box<[ExprId]>,
     },
     ViewAs {
-        expr: ExprId,
+        operand: ExprId,
         type_ref: TypeRef,
     },
     FieldAccess {
@@ -59,7 +59,7 @@ pub enum Expr {
         index: ExprId,
     },
     UnaryOp {
-        expr: ExprId,
+        operand: ExprId,
         op: Option<TSKind>,
     },
     BinaryOp {
@@ -89,7 +89,7 @@ pub enum Expr {
     },
     Control {
         keyword: TSKind,
-        expr: Option<ExprId>,
+        operand: Option<ExprId>,
     },
     Call {
         callee: ExprId,

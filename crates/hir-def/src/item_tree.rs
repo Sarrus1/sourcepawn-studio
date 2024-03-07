@@ -274,6 +274,7 @@ pub struct Function {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Param {
     pub has_default: bool,
+    pub is_rest: bool,
     pub type_ref: Option<TypeRef>,
     pub ast_id: AstId,
 }

@@ -244,6 +244,7 @@ impl<'db> Ctx<'db> {
                         type_ref: TypeRef::from_returntype_node(&n, "type", &self.source),
                         ast_id: self.source_ast_id_map.ast_id_of(&n),
                         has_default: n.child_by_field_name("defaultValue").is_some(),
+                        is_rest: TSKind::from(n) == TSKind::rest_parameter,
                     };
                     self.tree.data_mut().params.alloc(res);
                 }
@@ -489,6 +490,7 @@ impl<'db> Ctx<'db> {
                     type_ref: TypeRef::from_returntype_node(&param_node, "type", &self.source),
                     ast_id: self.source_ast_id_map.ast_id_of(&param_node),
                     has_default: false,
+                    is_rest: false,
                 };
                 let start_idx = self.next_param_idx();
                 self.tree.data_mut().params.alloc(param);

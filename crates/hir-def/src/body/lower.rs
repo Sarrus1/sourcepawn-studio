@@ -215,14 +215,14 @@ impl ExprCollector<'_> {
             TSKind::break_statement => {
                 let control_expr = Expr::Control {
                     keyword: TSKind::anon_break,
-                    expr: None,
+                    operand: None,
                 };
                 Some(self.alloc_expr(control_expr, NodePtr::from(&expr)))
             }
             TSKind::continue_statement => {
                 let control_expr = Expr::Control {
                     keyword: TSKind::anon_continue,
-                    expr: None,
+                    operand: None,
                 };
                 Some(self.alloc_expr(control_expr, NodePtr::from(&expr)))
             }
@@ -264,7 +264,7 @@ impl ExprCollector<'_> {
                 let expr = expr.child_by_field_name("expression")?;
                 let control_expr = Expr::Control {
                     keyword: TSKind::anon_return_,
-                    expr: self.maybe_collect_expr(expr),
+                    operand: self.maybe_collect_expr(expr),
                 };
                 Some(self.alloc_expr(control_expr, NodePtr::from(&expr)))
             }
@@ -272,7 +272,7 @@ impl ExprCollector<'_> {
                 let expr = expr.child_by_field_name("free")?;
                 let control_expr = Expr::Control {
                     keyword: TSKind::anon_delete_,
-                    expr: self.maybe_collect_expr(expr),
+                    operand: self.maybe_collect_expr(expr),
                 };
                 Some(self.alloc_expr(control_expr, NodePtr::from(&expr)))
             }
@@ -365,25 +365,25 @@ impl ExprCollector<'_> {
                 let expr = expr.child_by_field_name("argument")?;
                 let op = expr.child_by_field_name("operator").map(TSKind::from);
                 let unary = Expr::UnaryOp {
-                    expr: self.collect_expr(expr),
+                    operand: self.collect_expr(expr),
                     op,
                 };
                 Some(self.alloc_expr(unary, NodePtr::from(&expr)))
             }
             TSKind::sizeof_expression => {
-                let expr = expr.child_by_field_name("type")?;
+                let type_expr = expr.child_by_field_name("type")?;
                 // For Sourcepawn, sizeof as a unary operator will do fine.
                 let sizeof = Expr::UnaryOp {
-                    expr: self.collect_expr(expr),
+                    operand: self.collect_expr(type_expr),
                     op: Some(TSKind::sizeof_expression),
                 };
                 Some(self.alloc_expr(sizeof, NodePtr::from(&expr)))
             }
             TSKind::view_as | TSKind::old_type_cast => {
-                let expr = expr.child_by_field_name("value")?;
+                let value_expr = expr.child_by_field_name("value")?;
                 let type_ref = TypeRef::from_returntype_node(&expr, "type", self.source)?;
                 let view_as = Expr::ViewAs {
-                    expr: self.collect_expr(expr),
+                    operand: self.collect_expr(value_expr),
                     type_ref,
                 };
                 Some(self.alloc_expr(view_as, NodePtr::from(&expr)))
@@ -461,6 +461,14 @@ impl ExprCollector<'_> {
                     NodePtr::from(&expr),
                 ))
             }
+            TSKind::comment
+            | TSKind::anon_LBRACE
+            | TSKind::anon_RBRACE
+            | TSKind::anon_LBRACK
+            | TSKind::anon_RBRACK
+            | TSKind::anon_LPAREN
+            | TSKind::anon_RPAREN
+            | TSKind::anon_COMMA => None,
             _ => {
                 log::warn!("Unhandled expression: {:?}", expr);
                 None

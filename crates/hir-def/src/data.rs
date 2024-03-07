@@ -20,6 +20,7 @@ use crate::{
 pub struct ParamData {
     pub type_ref: Option<TypeRef>,
     pub has_default: bool,
+    pub is_rest: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -39,11 +40,10 @@ impl FunctionData {
             .clone()
             .map(|param_idx| {
                 let param = &item_tree[param_idx];
-                let type_ref = param.type_ref.clone();
-                let has_default = param.has_default;
                 ParamData {
-                    type_ref,
-                    has_default,
+                    type_ref: param.type_ref.clone(),
+                    has_default: param.has_default,
+                    is_rest: param.is_rest,
                 }
             })
             .collect_vec();
@@ -66,11 +66,18 @@ impl FunctionData {
     }
 
     pub fn number_of_mandatory_parameters(&self) -> usize {
-        self.params.iter().filter(|p| !p.has_default).count()
+        self.params
+            .iter()
+            .filter(|p| !(p.has_default || p.is_rest))
+            .count()
     }
 
-    pub fn number_of_parameters(&self) -> usize {
-        self.params.len()
+    pub fn number_of_parameters(&self) -> Option<usize> {
+        if self.params.iter().any(|p| p.is_rest) {
+            None
+        } else {
+            Some(self.params.len())
+        }
     }
 }
 

@@ -161,7 +161,7 @@ impl<'a> InferenceContext<'a> {
     }
 
     /// Returns the min and max number of parameters for the current call.
-    fn current_call_params_numbers(&self) -> Option<(usize, usize)> {
+    fn current_call_params_numbers(&self) -> Option<(usize, Option<usize>)> {
         let data = self.current_call_data()?;
 
         (
@@ -270,7 +270,7 @@ impl InferenceContext<'_> {
                 self.infer_constructor(expr, name)
             }
             Expr::FieldAccess { target, name } => self.infer_field_access(expr, target, name),
-            Expr::UnaryOp { expr, .. } => self.infer_expr(expr),
+            Expr::UnaryOp { operand, .. } => self.infer_expr(operand),
             Expr::BinaryOp { lhs, rhs, .. } => {
                 let _ = self.infer_expr(lhs);
                 // Assume the type of the left-hand side is the same as the right-hand side.
@@ -291,8 +291,8 @@ impl InferenceContext<'_> {
                 self.infer_expr(index);
                 self.infer_expr(array).map(|ty| ty.to_lower_dim())
             }
-            Expr::ViewAs { expr, type_ref } => {
-                let _ = self.infer_expr(expr);
+            Expr::ViewAs { operand, type_ref } => {
+                let _ = self.infer_expr(operand);
                 Some(type_ref.clone())
             }
             Expr::Literal(lit) => {
@@ -313,9 +313,9 @@ impl InferenceContext<'_> {
                 };
                 Some(ty)
             }
-            Expr::Control { expr, .. } => {
-                if let Some(expr) = expr {
-                    self.infer_expr(expr);
+            Expr::Control { operand, .. } => {
+                if let Some(operand) = operand {
+                    self.infer_expr(operand);
                 }
                 None
             }
@@ -402,12 +402,16 @@ impl InferenceContext<'_> {
                     self.infer_expr(arg);
                 }
                 if let Some((min, max)) = self.current_call_params_numbers() {
-                    if args.len() < min || args.len() > max {
+                    if args.len() < min || args.len() > max.unwrap_or(usize::MAX) {
                         self.result.diagnostics.push(
                             InferenceDiagnostic::IncorrectNumberOfArguments {
                                 expr: args.last().cloned().unwrap_or(*expr),
                                 name: self.current_call_name().expect("No current call"),
-                                expected: if args.len() < min { min } else { max },
+                                expected: if args.len() < min {
+                                    min
+                                } else {
+                                    max.unwrap_or(usize::MAX)
+                                },
                                 actual: args.len(),
                             },
                         );
