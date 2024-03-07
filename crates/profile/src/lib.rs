@@ -6,19 +6,19 @@
     semicolon_in_expressions_from_macros
 )]
 
-#[cfg(feature = "cpu_profiler")]
-mod google_cpu_profiler;
-mod hprof;
+// #[cfg(feature = "cpu_profiler")]
+// mod google_cpu_profiler;
+// mod hprof;
 mod memory_usage;
-mod stop_watch;
-mod tree;
+// mod stop_watch;
+// mod tree;
 
 use std::cell::RefCell;
 
 pub use crate::{
-    hprof::{heartbeat, heartbeat_span, init, init_from, span},
+    //     hprof::{heartbeat, heartbeat_span, init, init_from, span},
     memory_usage::{Bytes, MemoryUsage},
-    stop_watch::{StopWatch, StopWatchSpan},
+    //     stop_watch::{StopWatch, StopWatchSpan},
 };
 
 pub use countme;
@@ -131,6 +131,6 @@ impl Drop for CpuSpan {
     }
 }
 
-pub fn memory_usage() -> MemoryUsage {
-    MemoryUsage::now()
-}
+// pub fn memory_usage() -> MemoryUsage {
+//     MemoryUsage::now()
+// }

@@ -21,7 +21,7 @@ salsa.workspace = true
 log.workspace = true
 smol_str.workspace = true
 itertools.workspace = true
-deepsize = "0.2.0"
+deepsize.workspace = true
 
 vfs.workspace = true
 base-db.workspace = true
