@@ -6,6 +6,7 @@ mod function_declarations;
 mod functions;
 mod macros;
 mod methodmaps;
+mod statements;
 mod typedefs;
 mod variables;
 
@@ -159,6 +160,25 @@ void bar() {
     foo.foo = 1;
       |
       ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn local_variable_5() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum struct Foo {
+    int foo;
+}
+
+void bar() {
+    Foo foo;
+    int bar = foo.foo;
+                   |
+                   ^
 }
 "#,
     ));

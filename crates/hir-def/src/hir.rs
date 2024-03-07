@@ -69,10 +69,23 @@ pub enum Expr {
         else_branch: ExprId,
     },
     Loop {
-        initialization: ExprId,
+        initialization: Box<[ExprId]>,
         condition: ExprId,
-        iteration: ExprId,
+        iteration: Option<ExprId>,
         body: ExprId,
+    },
+    Switch {
+        condition: ExprId,
+        cases: Box<[SwitchCase]>,
+    },
+    Condition {
+        condition: ExprId,
+        then_branch: ExprId,
+        else_branch: Option<ExprId>,
+    },
+    Control {
+        keyword: TSKind,
+        expr: Option<ExprId>,
     },
     Call {
         callee: ExprId,
@@ -90,6 +103,26 @@ pub enum Expr {
         initializer: Option<ExprId>,
     },
     Literal(Literal),
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct SwitchCase {
+    values: Box<[ExprId]>,
+    body: ExprId,
+}
+
+impl SwitchCase {
+    pub fn new(values: Box<[ExprId]>, body: ExprId) -> Self {
+        Self { values, body }
+    }
+
+    pub fn body(&self) -> ExprId {
+        self.body
+    }
+
+    pub fn values(&self) -> &[ExprId] {
+        &self.values
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]

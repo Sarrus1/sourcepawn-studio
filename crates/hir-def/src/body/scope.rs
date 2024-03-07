@@ -175,15 +175,32 @@ fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope
         }
         Expr::Loop {
             initialization,
-            condition,
-            iteration,
             body: loop_body,
+            ..
         } => {
-            compute_expr_scopes(*initialization, body, scopes, scope);
+            for init in initialization.iter() {
+                compute_expr_scopes(*init, body, scopes, scope);
+            }
             compute_expr_scopes(*loop_body, body, scopes, scope);
+        }
+        Expr::Condition {
+            then_branch,
+            else_branch,
+            ..
+        } => {
+            compute_expr_scopes(*then_branch, body, scopes, scope);
+            if let Some(else_branch) = else_branch {
+                compute_expr_scopes(*else_branch, body, scopes, scope);
+            }
+        }
+        Expr::Switch { cases, .. } => {
+            for case in cases.iter() {
+                compute_expr_scopes(case.body(), body, scopes, scope);
+            }
         }
         // These expressions do not introduce any declarations.
         Expr::Missing
+        | Expr::Control { .. }
         | Expr::NamedArg { .. }
         | Expr::CommaExpr { .. }
         | Expr::ScopeAccess { .. }

@@ -204,10 +204,36 @@ impl InferenceContext<'_> {
                 iteration,
                 body,
             } => {
-                self.infer_expr(initialization);
+                for init in initialization.iter() {
+                    self.infer_expr(init);
+                }
                 self.infer_expr(condition);
-                self.infer_expr(iteration);
+                if let Some(iteration) = iteration {
+                    self.infer_expr(iteration);
+                }
                 self.infer_expr(body);
+                None
+            }
+            Expr::Condition {
+                condition,
+                then_branch,
+                else_branch,
+            } => {
+                self.infer_expr(condition);
+                self.infer_expr(then_branch);
+                if let Some(else_branch) = else_branch {
+                    self.infer_expr(else_branch);
+                }
+                None
+            }
+            Expr::Switch { condition, cases } => {
+                self.infer_expr(condition);
+                for case in cases.iter() {
+                    for value in case.values() {
+                        self.infer_expr(value);
+                    }
+                    self.infer_expr(&case.body());
+                }
                 None
             }
             Expr::NamedArg { name, value } => {
@@ -275,6 +301,12 @@ impl InferenceContext<'_> {
                     Literal::Null => TypeRef::Void,
                 };
                 Some(ty)
+            }
+            Expr::Control { expr, .. } => {
+                if let Some(expr) = expr {
+                    self.infer_expr(expr);
+                }
+                None
             }
             Expr::Ident(name) => {
                 let name: String = name.clone().into();
@@ -373,7 +405,23 @@ impl InferenceContext<'_> {
                 self.pop_call();
                 ty
             }
-            Expr::Missing | Expr::Decl(_) | Expr::Binding { .. } => None,
+            Expr::Decl(bindings) => {
+                for binding in bindings.iter() {
+                    self.infer_expr(binding);
+                }
+                None
+            }
+            Expr::Binding {
+                initializer,
+                type_ref,
+                ..
+            } => {
+                if let Some(initializer) = initializer {
+                    self.infer_expr(initializer);
+                }
+                type_ref.as_ref().cloned()
+            }
+            Expr::Missing => None,
         }
     }
 

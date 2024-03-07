@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
+use itertools::Itertools;
 use syntax::TSKind;
 use vfs::FileId;
 
 use crate::{
     ast_id_map::AstIdMap,
-    hir::{type_ref::TypeRef, Expr, ExprId, FloatTypeWrapper, Literal},
+    hir::{type_ref::TypeRef, Expr, ExprId, FloatTypeWrapper, Literal, SwitchCase},
     item_tree::Name,
     BlockLoc, DefDatabase, DefWithBodyId, InFile, NodePtr,
 };
@@ -81,8 +82,8 @@ impl ExprCollector<'_> {
                     .child_by_field_name("type")
                     .map(|type_node| TypeRef::from_node(&type_node, self.source)),
                 initializer: node
-                    .child_by_field_name("defaultValue")
-                    .and_then(|default_node| self.maybe_collect_expr(default_node)),
+                    .child_by_field_name("initialValue")
+                    .map(|default_node| self.collect_expr(default_node)),
             };
             let decl_id = self.alloc_expr(binding, NodePtr::from(&node));
             self.body.params.push((ident_id, decl_id));
@@ -108,7 +109,7 @@ impl ExprCollector<'_> {
                     type_ref: type_ref.clone(),
                     initializer: child
                         .child_by_field_name("initialValue")
-                        .and_then(|default_node| self.maybe_collect_expr(default_node)),
+                        .map(|default_node| self.collect_expr(default_node)),
                 };
                 let binding_id = self.alloc_expr(binding, NodePtr::from(&child));
                 decl.push(binding_id);
@@ -137,7 +138,7 @@ impl ExprCollector<'_> {
                     type_ref: type_ref.clone(),
                     initializer: child
                         .child_by_field_name("initialValue")
-                        .and_then(|default_node| self.maybe_collect_expr(default_node)),
+                        .map(|default_node| self.collect_expr(default_node)),
                 };
                 let binding_id = self.alloc_expr(binding, NodePtr::from(&child));
                 decl.push(binding_id);
@@ -191,25 +192,96 @@ impl ExprCollector<'_> {
                 Some(self.collect_old_variable_declaration(expr))
             }
             TSKind::for_statement => {
-                let init = expr.child_by_field_name("initialization")?;
+                let mut initialization = vec![];
+                for init in expr.children_by_field_name("initialization", &mut expr.walk()) {
+                    initialization.push(self.collect_expr(init));
+                }
                 let condition = expr.child_by_field_name("condition")?;
                 let iteration = expr.child_by_field_name("iteration")?;
                 let body = expr.child_by_field_name("body")?;
                 let for_loop = Expr::Loop {
-                    initialization: self.collect_expr(init),
+                    initialization: initialization.into_boxed_slice(),
                     condition: self.collect_expr(condition),
-                    iteration: self.collect_expr(iteration),
+                    iteration: self.maybe_collect_expr(iteration),
                     body: self.collect_expr(body),
                 };
                 Some(self.alloc_expr(for_loop, NodePtr::from(&expr)))
             }
-            TSKind::while_statement
-            | TSKind::do_while_statement
-            | TSKind::break_statement
-            | TSKind::continue_statement
-            | TSKind::switch_statement
-            | TSKind::return_statement
-            | TSKind::delete_statement => None, // FIXME: Implement this
+            TSKind::while_statement | TSKind::do_while_statement => {
+                let condition = expr.child_by_field_name("condition")?;
+                let body = expr.child_by_field_name("body")?;
+                let loop_expr = Expr::Loop {
+                    initialization: Default::default(),
+                    condition: self.collect_expr(condition),
+                    iteration: None,
+                    body: self.collect_expr(body),
+                };
+                Some(self.alloc_expr(loop_expr, NodePtr::from(&expr)))
+            }
+            TSKind::break_statement => {
+                let control_expr = Expr::Control {
+                    keyword: TSKind::anon_break,
+                    expr: None,
+                };
+                Some(self.alloc_expr(control_expr, NodePtr::from(&expr)))
+            }
+            TSKind::continue_statement => {
+                let control_expr = Expr::Control {
+                    keyword: TSKind::anon_continue,
+                    expr: None,
+                };
+                Some(self.alloc_expr(control_expr, NodePtr::from(&expr)))
+            }
+            TSKind::condition_statement => {
+                let condition = expr.child_by_field_name("condition")?;
+                let then_branch = expr.child_by_field_name("truePath")?;
+                let else_branch = expr
+                    .child_by_field_name("falsePath")
+                    .map(|n| self.collect_expr(n));
+                let ternary = Expr::Condition {
+                    condition: self.collect_expr(condition),
+                    then_branch: self.collect_expr(then_branch),
+                    else_branch,
+                };
+                Some(self.alloc_expr(ternary, NodePtr::from(&expr)))
+            }
+            TSKind::switch_statement => {
+                let condition = expr.child_by_field_name("condition")?;
+                let cases = expr
+                    .children(&mut expr.walk())
+                    .filter(|n| TSKind::from(n) == TSKind::switch_case)
+                    .flat_map(|case| {
+                        let values = case
+                            .children_by_field_name("value", &mut case.walk())
+                            .map(|value| self.collect_expr(value))
+                            .collect_vec()
+                            .into_boxed_slice();
+                        let body = case.child_by_field_name("body")?;
+                        Some(SwitchCase::new(values, self.collect_expr(body)))
+                    })
+                    .collect_vec();
+                let switch = Expr::Switch {
+                    condition: self.collect_expr(condition),
+                    cases: cases.into_boxed_slice(),
+                };
+                Some(self.alloc_expr(switch, NodePtr::from(&expr)))
+            }
+            TSKind::return_statement => {
+                let expr = expr.child_by_field_name("expression")?;
+                let control_expr = Expr::Control {
+                    keyword: TSKind::anon_return_,
+                    expr: self.maybe_collect_expr(expr),
+                };
+                Some(self.alloc_expr(control_expr, NodePtr::from(&expr)))
+            }
+            TSKind::delete_statement => {
+                let expr = expr.child_by_field_name("free")?;
+                let control_expr = Expr::Control {
+                    keyword: TSKind::anon_delete_,
+                    expr: self.maybe_collect_expr(expr),
+                };
+                Some(self.alloc_expr(control_expr, NodePtr::from(&expr)))
+            }
             TSKind::expression_statement => {
                 let child = expr.children(&mut expr.walk()).next()?;
                 Some(self.collect_expr(child))

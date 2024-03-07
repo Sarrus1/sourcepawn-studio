@@ -89,8 +89,22 @@ fn setup_logger(opts: Opts) {
             ))
         })
         .level(LevelFilter::Error)
-        .level_for("sourcepawn_lsp", verbosity_level)
+        .level_for("base-db", verbosity_level)
+        .level_for("flychek", verbosity_level)
+        .level_for("hir", verbosity_level)
+        .level_for("hir-def", verbosity_level)
+        .level_for("ide", verbosity_level)
+        .level_for("ide-db", verbosity_level)
+        .level_for("ide-diagnostics", verbosity_level)
+        .level_for("paths", verbosity_level)
         .level_for("preprocessor", verbosity_level)
+        .level_for("profile", verbosity_level)
+        .level_for("sourcepawn_lsp", verbosity_level)
+        .level_for("stdx", verbosity_level)
+        .level_for("syntax", verbosity_level)
+        .level_for("test-utils", verbosity_level)
+        .level_for("vfs", verbosity_level)
+        .level_for("vfs-notify", verbosity_level)
         .chain(io::stderr());
 
     let logger = match opts.log_file {
