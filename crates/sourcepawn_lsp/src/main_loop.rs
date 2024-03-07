@@ -56,7 +56,6 @@ impl GlobalState {
             "sourcepawn_lsp will use a maximum of {} threads.",
             self.pool.max_count()
         );
-        self.update_status_or_notify();
 
         let mut ignored = self.initialize()?;
 
@@ -73,6 +72,8 @@ impl GlobalState {
         }
 
         self.reload_flycheck();
+
+        self.update_status_or_notify();
 
         while let Some(event) = self.next_event(&self.connection.receiver) {
             if matches!(
@@ -276,28 +277,27 @@ impl GlobalState {
         let status = self.current_status();
         if self.last_reported_status.as_ref() != Some(&status) {
             self.last_reported_status = Some(status.clone());
-
-            if self.config.server_status_notification() {
-                self.send_notification::<lsp_ext::ServerStatusNotification>(status);
-            } else if let (
-                health @ (lsp_ext::Health::Warning | lsp_ext::Health::Error),
-                Some(message),
-            ) = (status.health, &status.message)
-            {
-                // let open_log_button = tracing::enabled!(tracing::Level::ERROR)
-                //     && (self.fetch_build_data_error().is_err()
-                //         || self.fetch_workspace_error().is_err());
-                let open_log_button = false;
-                self.show_message(
-                    match health {
-                        lsp_ext::Health::Ok => lsp_types::MessageType::INFO,
-                        lsp_ext::Health::Warning => lsp_types::MessageType::WARNING,
-                        lsp_ext::Health::Error => lsp_types::MessageType::ERROR,
-                    },
-                    message.clone(),
-                    open_log_button,
-                );
-            }
+            // if self.config.server_status_notification() {
+            self.send_notification::<lsp_ext::ServerStatusNotification>(status);
+            // } else if let (
+            //     health @ (lsp_ext::Health::Warning | lsp_ext::Health::Error),
+            //     Some(message),
+            // ) = (status.health, &status.message)
+            // {
+            //     // let open_log_button = tracing::enabled!(tracing::Level::ERROR)
+            //     //     && (self.fetch_build_data_error().is_err()
+            //     //         || self.fetch_workspace_error().is_err());
+            //     let open_log_button = false;
+            //     self.show_message(
+            //         match health {
+            //             lsp_ext::Health::Ok => lsp_types::MessageType::INFO,
+            //             lsp_ext::Health::Warning => lsp_types::MessageType::WARNING,
+            //             lsp_ext::Health::Error => lsp_types::MessageType::ERROR,
+            //         },
+            //         message.clone(),
+            //         open_log_button,
+            //     );
+            // }
         }
     }
 
