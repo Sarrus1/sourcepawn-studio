@@ -164,13 +164,12 @@ impl MethodmapData {
             if let Some(inherits) = resolver.resolve_ident(inherits_name.to_string().as_str()) {
                 if let ValueNs::MethodmapId(inherits) = inherits {
                     let inherits_data = db.methodmap_data(inherits.value);
-                    for ((name, _), (_, item)) in inherits_data
-                        .items_map
-                        .iter()
-                        .zip(inherits_data.items.iter())
-                    {
-                        items_map.insert(name.clone(), items.alloc(item.clone()));
-                    }
+                    items_map.extend(
+                        inherits_data
+                            .items_map
+                            .iter()
+                            .map(|(k, v)| (k.clone(), items.alloc(inherits_data.item(*v).clone()))),
+                    );
                 } else {
                     diags.push(DefDiagnostic::UnresolvedInherit {
                         inherit_name: inherits_name,
