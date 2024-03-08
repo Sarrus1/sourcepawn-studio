@@ -9,6 +9,7 @@ use crate::{
 use super::from_proto;
 
 impl GlobalState {
+    #[allow(unused)]
     pub(crate) fn show_message(
         &mut self,
         typ: lsp_types::MessageType,

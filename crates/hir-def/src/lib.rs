@@ -26,6 +26,7 @@ pub use ast_id_map::NodePtr;
 pub use data::PropertyItem;
 pub use db::resolve_include_node;
 pub use db::DefDatabase;
+pub use db::{BlockDefMapQuery, BlockItemTreeQuery, BodyQuery, FileDefMapQuery, FileItemTreeQuery};
 pub use diagnostics::DefDiagnostic;
 pub use hir::ExprId;
 pub use infer::{AttributeId, ConstructorDiagnosticKind, InferenceDiagnostic, InferenceResult};

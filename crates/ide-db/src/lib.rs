@@ -114,7 +114,7 @@ impl RootDatabase {
             .set_lru_capacity(lru_capacity);
         preprocessor::db::PreprocessFileInnerParamsQuery
             .in_db_mut(self)
-            .set_lru_capacity(4);
+            .set_lru_capacity(lru_capacity);
     }
 
     pub fn update_lru_capacities(&mut self, lru_capacities: &FxHashMap<Box<str>, usize>) {
@@ -141,12 +141,15 @@ impl RootDatabase {
             )*}
         }
         // FIXME: Implement this
-        // update_lru_capacity_per_query![
-        //     // SourceDatabase
-        //     // base_db::ParseQuery
-        //     // base_db::CrateGraphQuery
-        //     // base_db::ProcMacrosQuery
-        // ];
+        update_lru_capacity_per_query![
+            // HIR Def
+            hir_def::FileItemTreeQuery
+            hir_def::BlockDefMapQuery
+            hir_def::BlockItemTreeQuery
+            hir_def::BodyQuery
+            hir_def::FileDefMapQuery
+            hir_def::FileItemTreeQuery
+        ];
     }
 
     pub fn apply_change(&mut self, change: Change) {
