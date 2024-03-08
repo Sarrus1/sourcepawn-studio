@@ -204,3 +204,63 @@ int qux = baz;
 "#,
     ));
 }
+
+#[test]
+fn preprocessor_disable_1() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOO
+#if defined FOO
+int foo;
+#endif
+void bar() {
+    foo = 1;
+     |
+     ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn preprocessor_disable_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOO
+#include "foo.sp"
+
+%! foo.sp
+#if defined FOO
+int foo;
+#endif
+void bar() {
+    foo = 1;
+     |
+     ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn preprocessor_disable_3() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#include "foo.sp"
+#if defined FOO
+int foo;
+#endif
+void bar() {
+    foo = 1;
+     |
+     ^
+}
+
+%! foo.sp
+#define FOO
+"#,
+    ));
+}

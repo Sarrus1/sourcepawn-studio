@@ -61,11 +61,8 @@ pub(crate) fn preprocess_file_query(
         HashableHashMap::default(),
         HashableHashSet::default(),
     );
-    let Some(params) = res.get(&root_file_id) else {
-        log::warn!(
-            "No preprocessing params found for file_id: {}",
-            root_file_id
-        );
+    let Some(params) = res.get(&file_id) else {
+        log::warn!("No preprocessing params found for file_id: {}", file_id);
         return Arc::new(PreprocessingResult::default(db.file_text(file_id).as_ref()));
     };
 
