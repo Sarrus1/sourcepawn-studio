@@ -185,7 +185,8 @@ impl<'a> IfCondition<'a> {
                                         file_id: macro_.file_id,
                                         range: symbol.range,
                                         diff: 0, // FIXME: This is the default value, we should calculate it.
-                                        idx: macro_.idx
+                                        idx: macro_.idx,
+                                        args_diff: 0
                                     });
                             output_queue.push(1);
                         } else {
@@ -211,14 +212,15 @@ impl<'a> IfCondition<'a> {
                             false,
                             self.disabled_macros
                         ) {
-                            Ok(args_map) => {
+                            Ok((args_map, args_diff)) => {
                                 extend_args_map(self.args_map, args_map);
                                 if let Some((idx, file_id)) = attr {
                                     self.offsets.entry(symbol.range.start.line).or_default().push(Offset {
                                         file_id,
                                         range: symbol.range,
                                         diff: 0, // FIXME: This is the default value, we should calculate it.
-                                        idx
+                                        idx,
+                                        args_diff
                                     })
                                     ;
                                 }

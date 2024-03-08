@@ -230,7 +230,7 @@
           "type": "string",
           "description": "The location of the SourceMod compiler",
           "scope": "resource",
-          "deprecationMessage": "Use `SourcePawnLanguageServer.spcompPath` instead."
+          "deprecationMessage": "Use `SourcePawnLanguageServer.compiler.path` instead."
         },
         "sourcepawn.MainPathCompilation": {
           "type": "boolean",
@@ -270,7 +270,7 @@
           "default": [],
           "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable.",
           "scope": "resource",
-          "deprecationMessage": "Use `SourcePawnLanguageServer.includesDirectories` instead."
+          "deprecationMessage": "Use `SourcePawnLanguageServer.includeDirectories` instead."
         },
         "sourcepawn.compilerArguments": {
           "type": "array",
@@ -286,7 +286,7 @@
           "default": [],
           "description": "SourcePawn linter compiler options. Don't add paths here.",
           "scope": "resource",
-          "deprecationMessage": "Use `SourcePawnLanguageServer.linterArguments` instead."
+          "deprecationMessage": "Use `SourcePawnLanguageServer.compiler.arguments` instead."
         },
         "sourcepawn.availableAPIs": {
           "type": "array",

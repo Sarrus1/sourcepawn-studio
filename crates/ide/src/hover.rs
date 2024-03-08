@@ -73,29 +73,53 @@ pub(crate) fn hover(
         let source_text = db.preprocessed_text(file_id);
         let source_text = def_node.utf8_text(source_text.as_bytes()).ok()?;
 
-        let start = offset.range.start.character as usize;
-        let end = offset
-            .range
-            .end
-            .character
-            .saturating_add_signed(-offset.diff) as usize;
+        let mut start = offset.range.start.character;
+        let mut end = offset.range.end.character;
+        offsets[&fpos.position.line]
+            .iter()
+            .filter(|prev_offset| prev_offset.range.start.character < offset.range.start.character)
+            .for_each(|prev_offset| {
+                start = start.saturating_add_signed(
+                    prev_offset
+                        .diff
+                        .saturating_sub_unsigned(prev_offset.args_diff),
+                );
+                end = end.saturating_add_signed(
+                    prev_offset
+                        .diff
+                        .saturating_sub_unsigned(prev_offset.args_diff),
+                );
+            });
+        end = end.saturating_add_signed(offset.diff);
+        let start = start as usize;
+        let end = end as usize;
         let slc = start..end;
         // The preprocessed file might be shorter than the original file
         let hover_text = preprocessed_text
             .lines()
             .nth(fpos.position.line as usize)
             .and_then(|it| it.get(slc))
-            .map(|it| it.to_string())
-            .unwrap_or_default();
-        let res = HoverResult {
-            markup: Markup::from(format!(
-                "{}\nExpands to:\n{}",
-                Markup::fenced_block(source_text),
-                Markup::fenced_block(hover_text)
-            )),
-            actions: vec![],
-        };
-        return Some(RangeInfo::new(offset.range, res));
+            .map(|it| it.to_string());
+        match hover_text {
+            Some(hover_text) => {
+                let res = HoverResult {
+                    markup: Markup::from(format!(
+                        "{}\nExpands to:\n{}",
+                        Markup::fenced_block(source_text),
+                        Markup::fenced_block(hover_text.trim())
+                    )),
+                    actions: vec![],
+                };
+                return Some(RangeInfo::new(offset.range, res));
+            }
+            None => {
+                let res = HoverResult {
+                    markup: Markup::fenced_block(source_text),
+                    actions: vec![],
+                };
+                return Some(RangeInfo::new(offset.range, res));
+            }
+        }
     }
 
     None

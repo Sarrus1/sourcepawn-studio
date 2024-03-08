@@ -75,7 +75,7 @@ impl ArgumentsCollector {
         symbol: &Symbol,
         context: &mut MacroContext,
         nb_params: usize,
-    ) -> Option<MacroArguments>
+    ) -> Option<(MacroArguments, u32)>
     where
         T: Iterator<Item = Symbol>,
     {
@@ -83,7 +83,8 @@ impl ArgumentsCollector {
         let mut paren_depth = 0;
         let mut arg_idx: usize = 0;
         let mut args: MacroArguments = Default::default();
-        let mut found_first_paren = false;
+        let mut first_paren_col = None;
+        let mut last_paren_col = None;
         while let Some(sub_symbol) = if !context.is_empty() {
             Some(context.pop_front().unwrap().symbol)
         } else if !self.popped_symbols_stack.is_empty() {
@@ -91,7 +92,7 @@ impl ArgumentsCollector {
         } else {
             lexer.next()
         } {
-            if !found_first_paren {
+            if first_paren_col.is_none() {
                 if !matches!(
                     &sub_symbol.token_kind,
                     TokenKind::LParen | TokenKind::Comment(sourcepawn_lexer::Comment::BlockComment)
@@ -108,7 +109,7 @@ impl ArgumentsCollector {
                             .extend(temp_expanded_stack.into_iter().rev());
                         return None;
                     }
-                    found_first_paren = true;
+                    first_paren_col = Some(sub_symbol.range.start.character);
                 } else {
                     temp_expanded_stack.push(sub_symbol);
                     continue;
@@ -127,6 +128,7 @@ impl ArgumentsCollector {
                     }
                     paren_depth -= 1;
                     if paren_depth == 0 {
+                        last_paren_col = Some(sub_symbol.range.end.character);
                         break;
                     }
                 }
@@ -152,8 +154,12 @@ impl ArgumentsCollector {
                 }
             }
         }
+        let diff = match (first_paren_col, last_paren_col) {
+            (Some(first), Some(last)) => last.saturating_sub(first),
+            _ => 0,
+        };
 
-        Some(args)
+        Some((args, diff))
     }
 }
 
@@ -186,11 +192,12 @@ pub(super) fn expand_identifier<T>(
     expansion_stack: &mut Vec<Symbol>,
     allow_undefined_macros: bool,
     disabled_macros: &mut FxHashSet<Arc<Macro>>,
-) -> Result<Option<ExpansionOffsets>, ExpansionError>
+) -> Result<(Option<ExpansionOffsets>, u32), ExpansionError>
 where
     T: Iterator<Item = Symbol>,
 {
     let mut args_mapping: Option<ExpansionOffsets> = None;
+    let mut args_diff = 0;
     let mut reversed_expansion_stack = Vec::new();
     let mut args_collector = ArgumentsCollector::default();
     let mut context_stack = vec![VecDeque::from([QueuedSymbol::new(
@@ -222,13 +229,9 @@ where
                     }
                 };
                 let new_context = if macro_.params.is_none() {
-                    expand_non_macro_define(
-                        macro_,
-                        &queued_symbol.symbol.delta,
-                        queued_symbol.symbol.range,
-                    )
+                    expand_non_macro_define(macro_, &symbol.delta, queued_symbol.symbol.range)
                 } else {
-                    let Some(args) = &args_collector.collect_arguments(
+                    let Some((args, diff)) = &args_collector.collect_arguments(
                         lexer,
                         &queued_symbol.symbol,
                         &mut current_context,
@@ -241,7 +244,11 @@ where
                         context_stack.push(current_context);
                         continue;
                     };
-                    let (ctx, args_map) = expand_macro(args, macro_, &queued_symbol.symbol)?;
+                    if context_stack.is_empty() {
+                        args_diff += *diff;
+                    }
+                    let (ctx, args_map) =
+                        expand_macro(args, macro_, &queued_symbol.symbol, &symbol.delta)?;
                     if context_stack.is_empty() {
                         args_mapping = args
                             .iter()
@@ -295,7 +302,7 @@ where
     // produces them in the correct order, therefore we have to reverse them.
     expansion_stack.extend(reversed_expansion_stack.into_iter().rev());
 
-    Ok(args_mapping)
+    Ok((args_mapping, args_diff))
 }
 
 /// Expand a non macro define by returning a new [context](MacroContext) of all the [symbols](Symbol)
@@ -350,6 +357,7 @@ fn expand_macro(
     args: &MacroArguments,
     macro_: &Macro,
     symbol: &Symbol,
+    delta: &sourcepawn_lexer::Delta,
 ) -> Result<(MacroContext, Vec<Vec<Range>>), ParseIntError> {
     let mut args_map: Vec<Vec<Range>> = vec![vec![]; 10]; // FIXME: Consider smolvec here.
     let mut new_context = MacroContext::default();
@@ -454,7 +462,7 @@ fn expand_macro(
                 }
                 new_context.push_back(QueuedSymbol::new(
                     child.clone(),
-                    if i == 0 { symbol.delta } else { child.delta },
+                    if i == 0 { *delta } else { child.delta },
                 ));
                 consecutive_percent = 0;
                 stringize_delta = None;

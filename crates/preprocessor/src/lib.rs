@@ -269,6 +269,7 @@ where
         let mut intrinsics_parse_status = None;
         let mut col_offset: Option<i32> = None;
         let mut expanded_symbol: Option<(Symbol, u32, FileId)> = None;
+        let mut args_diff = 0u32;
         while let Some(symbol) = if !self.expansion_stack.is_empty() {
             let symbol = self.expansion_stack.pop().unwrap();
             col_offset = Some(
@@ -292,7 +293,9 @@ where
                                 - (expanded_symbol.range.end.character
                                     - expanded_symbol.range.start.character)
                                     as i32),
+                            args_diff,
                         });
+                    args_diff = 0;
                 }
             }
 
@@ -353,9 +356,10 @@ where
                                 true,
                                 &mut self.disabled_macros,
                             ) {
-                                Ok(args_map) => {
+                                Ok((args_map, args_diff_)) => {
                                     extend_args_map(&mut self.args_maps, args_map);
                                     expanded_symbol = Some((symbol.clone(), idx, file_id));
+                                    args_diff = args_diff_;
                                     continue;
                                 }
                                 Err(ExpansionError::MacroNotFound(err)) => {
