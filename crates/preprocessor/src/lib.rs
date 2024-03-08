@@ -104,6 +104,16 @@ impl Macro {
     }
 }
 
+/// Parse status of `using __intrinsics__.Handle;`.
+/// This is used to handle the `using __intrinsics__.Handle;` in handles.inc.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+enum IntrinsicsParseStatus {
+    Using,
+    Dot,
+    Intrinsics,
+    Handle,
+}
+
 impl<'a, F> SourcepawnPreprocessor<'a, F>
 where
     F: FnMut(&mut MacrosMap, String, FileId, bool) -> anyhow::Result<()>,
@@ -256,6 +266,7 @@ where
             self.file_id,
             false,
         );
+        let mut intrinsics_parse_status = None;
         let mut col_offset: Option<i32> = None;
         let mut expanded_symbol: Option<(Symbol, u32, FileId)> = None;
         while let Some(symbol) = if !self.expansion_stack.is_empty() {
@@ -311,43 +322,76 @@ where
                     self.current_line = "".to_string();
                     self.prev_end = 0;
                 }
-                TokenKind::Identifier => match self.macros.get(&symbol.text()) {
-                    // TODO: Evaluate the performance dropoff of supporting macro expansion when overriding reserved keywords.
-                    // This might only be a problem for a very small subset of users.
-                    Some(macro_) => {
-                        // Skip the macro if it is disabled and reenable it.
-                        if self.is_macro_disabled(macro_) {
-                            self.enable_macro(macro_.clone());
-                            self.push_symbol(&symbol);
-                            continue;
+                TokenKind::Identifier => {
+                    // This is a hack to handle `using __intrinsics__.Handle;` in handles.inc, which
+                    // is not a part of sourcemod as of 060c832f89709e6a6222cf039071061dcc0a36da.
+                    // see: https://github.com/alliedmodders/sourcemod/commit/060c832f89709e6a6222cf039071061dcc0a36da
+                    if intrinsics_parse_status == Some(IntrinsicsParseStatus::Dot) {
+                        if symbol.text() == "Handle" {
+                            self.current_line.push_str("methodmap Handle __nullable__ {public native ~Handle();public native void Close();};")
                         }
-                        let idx = macro_.idx;
-                        let file_id: FileId = macro_.file_id;
-                        match expand_identifier(
-                            &mut self.lexer,
-                            &mut self.macros,
-                            &symbol,
-                            &mut self.expansion_stack,
-                            true,
-                            &mut self.disabled_macros,
-                        ) {
-                            Ok(args_map) => {
-                                extend_args_map(&mut self.args_maps, args_map);
-                                expanded_symbol = Some((symbol.clone(), idx, file_id));
+                        intrinsics_parse_status = Some(IntrinsicsParseStatus::Handle);
+                        continue;
+                    }
+                    match self.macros.get(&symbol.text()) {
+                        // TODO: Evaluate the performance dropoff of supporting macro expansion when overriding reserved keywords.
+                        // This might only be a problem for a very small subset of users.
+                        Some(macro_) => {
+                            // Skip the macro if it is disabled and reenable it.
+                            if self.is_macro_disabled(macro_) {
+                                self.enable_macro(macro_.clone());
+                                self.push_symbol(&symbol);
                                 continue;
                             }
-                            Err(ExpansionError::MacroNotFound(err)) => {
-                                self.errors.macro_not_found_errors.push(err.clone());
-                                return self.error_result();
-                            }
-                            Err(ExpansionError::Parse(_)) => {
-                                return self.error_result();
+                            let idx = macro_.idx;
+                            let file_id: FileId = macro_.file_id;
+                            match expand_identifier(
+                                &mut self.lexer,
+                                &mut self.macros,
+                                &symbol,
+                                &mut self.expansion_stack,
+                                true,
+                                &mut self.disabled_macros,
+                            ) {
+                                Ok(args_map) => {
+                                    extend_args_map(&mut self.args_maps, args_map);
+                                    expanded_symbol = Some((symbol.clone(), idx, file_id));
+                                    continue;
+                                }
+                                Err(ExpansionError::MacroNotFound(err)) => {
+                                    self.errors.macro_not_found_errors.push(err.clone());
+                                    return self.error_result();
+                                }
+                                Err(ExpansionError::Parse(_)) => {
+                                    return self.error_result();
+                                }
                             }
                         }
+                        None => {
+                            self.push_symbol(&symbol);
+                        }
                     }
-                    None => {
+                }
+                TokenKind::Using => {
+                    if intrinsics_parse_status.take().is_none() {
+                        intrinsics_parse_status = Some(IntrinsicsParseStatus::Using);
+                    }
+                }
+                TokenKind::Intrinsics => {
+                    if intrinsics_parse_status.take() == Some(IntrinsicsParseStatus::Using) {
+                        intrinsics_parse_status = Some(IntrinsicsParseStatus::Intrinsics);
+                    }
+                }
+                TokenKind::Semicolon => {
+                    if intrinsics_parse_status.take() != Some(IntrinsicsParseStatus::Handle) {
                         self.push_symbol(&symbol);
                     }
+                }
+                TokenKind::Dot => match intrinsics_parse_status {
+                    Some(IntrinsicsParseStatus::Intrinsics) => {
+                        intrinsics_parse_status = Some(IntrinsicsParseStatus::Dot);
+                    }
+                    _ => self.push_symbol(&symbol),
                 },
                 TokenKind::Eof => {
                     self.push_ws(&symbol);
