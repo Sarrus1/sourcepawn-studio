@@ -517,8 +517,9 @@ mod tests {
             }
         }
 
+        let package_template_json_path = project_root().join("editors/code/package_template.json");
         let package_json_path = project_root().join("editors/code/package.json");
-        let mut package_json = fs::read_to_string(&package_json_path).unwrap();
+        let mut package_json = fs::read_to_string(package_template_json_path).unwrap();
 
         // Parse the package.json and insert the schema.
         let mut old: Value = serde_json::from_str(&package_json).unwrap();

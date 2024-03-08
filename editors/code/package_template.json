@@ -230,7 +230,7 @@
           "type": "string",
           "description": "The location of the SourceMod compiler",
           "scope": "resource",
-          "deprecationMessage": "Use `SourcePawnLanguageServer.compiler.path` instead."
+          "deprecationMessage": "Use `SourcePawnLanguageServer.spcompPath` instead."
         },
         "sourcepawn.MainPathCompilation": {
           "type": "boolean",
@@ -270,7 +270,7 @@
           "default": [],
           "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable.",
           "scope": "resource",
-          "deprecationMessage": "Use `SourcePawnLanguageServer.includeDirectories` instead."
+          "deprecationMessage": "Use `SourcePawnLanguageServer.includesDirectories` instead."
         },
         "sourcepawn.compilerArguments": {
           "type": "array",
@@ -286,7 +286,7 @@
           "default": [],
           "description": "SourcePawn linter compiler options. Don't add paths here.",
           "scope": "resource",
-          "deprecationMessage": "Use `SourcePawnLanguageServer.compiler.arguments` instead."
+          "deprecationMessage": "Use `SourcePawnLanguageServer.linterArguments` instead."
         },
         "sourcepawn.availableAPIs": {
           "type": "array",
@@ -466,61 +466,6 @@
           ],
           "default": "info",
           "description": "Set the logging level of the SourcePawnLanguageServer."
-        },
-        "SourcePawnLanguageServer.cachePriming.enable": {
-          "markdownDescription": "Warm up caches on project load.",
-          "default": true,
-          "type": "boolean"
-        },
-        "SourcePawnLanguageServer.cachePriming.numThreads": {
-          "markdownDescription": "How many worker threads to handle priming caches. The default `0` means to pick automatically.",
-          "default": 0,
-          "type": "number",
-          "minimum": 0,
-          "maximum": 255
-        },
-        "SourcePawnLanguageServer.compiler.arguments": {
-          "markdownDescription": "Linter arguments that will be passed to spcomp.\nNote that the compilation target, include directories and output path are already handled by the server.",
-          "default": [],
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "SourcePawnLanguageServer.compiler.onSave": {
-          "markdownDescription": "Compute spcomp diagnostics on save.",
-          "default": true,
-          "type": "boolean"
-        },
-        "SourcePawnLanguageServer.compiler.path": {
-          "markdownDescription": "Path to the SourcePawn compiler (spcomp).",
-          "default": null,
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "SourcePawnLanguageServer.includeDirectories": {
-          "markdownDescription": "Include directories paths for the compiler and the linter.",
-          "default": [],
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "SourcePawnLanguageServer.linter.disable": {
-          "markdownDescription": "Disable the language server's syntax linter. This is independant from spcomp.",
-          "default": false,
-          "type": "boolean"
-        },
-        "SourcePawnLanguageServer.numThreads": {
-          "markdownDescription": "How many worker threads in the main loop. The default `null` means to pick automatically.",
-          "default": null,
-          "type": [
-            "null",
-            "integer"
-          ],
-          "minimum": 0
         }
       }
     },
