@@ -130,3 +130,16 @@ Bar bar = BAR;
 "#,
     ));
 }
+
+#[test]
+fn macro_10() {
+    assert_json_snapshot!(hover(
+        r#"
+%! main.sp
+#define FOO  "foo"
+char foo[10] = FOO;
+                |
+                ^
+"#,
+    ));
+}

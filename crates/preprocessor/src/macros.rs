@@ -280,7 +280,7 @@ where
                             queued_symbol.symbol.range.start.character + text.len() as u32,
                         ),
                     ),
-                    queued_symbol.symbol.delta,
+                    symbol.delta,
                 ));
                 context_stack.push(current_context);
             }

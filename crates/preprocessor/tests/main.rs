@@ -736,7 +736,7 @@ fn macro_expansion_6() {
         this.GetValue("m_" ... #%2, i); \
         return i;}
         
-    public void GetFoo(){        void i;        this.GetValue("m_" ... "Foo", i);        return i;}"#;
+    public void GetFoo(){        void i;        this.GetValue(        "m_" ...        "Foo", i);        return i;}"#;
 
     assert_preproc_eq!(input, output);
 }
@@ -877,7 +877,7 @@ void foo(){
     if(this.GetValue("m_" ... #%1, m_h%1)){ \
         delete m_h%1;}
 void foo(){
-    Handle m_hFoo;    if(this.GetValue("m_" ... "Foo", m_hFoo)){        delete m_hFoo;}
+    Handle m_hFoo;    if(this.GetValue(    "m_" ...    "Foo", m_hFoo)){        delete m_hFoo;}
 }"#;
     assert_preproc_eq!(input, output);
 }
