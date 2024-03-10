@@ -27,8 +27,19 @@ pub(crate) fn goto_definition(
     let tree = sema.parse(pos.file_id);
     let root_node = tree.root_node();
 
-    if let Some(res) = find_macro_def(offsets, &pos.position, sema) {
-        return res.into();
+    if let Some((offset, def)) = find_macro_def(offsets, &pos.position, sema) {
+        let file_id = def.file_id(sema.db);
+        let u_range = offset.range;
+        let source_tree = sema.parse(file_id);
+        let def_node = def.source(sema.db, &source_tree)?.value;
+        let name_range = find_inner_name_range(&def_node);
+        let navs = vec![NavigationTarget {
+            file_id,
+            full_range: ts_range_to_lsp_range(&def_node.range()),
+            focus_range: name_range.into(),
+        }];
+
+        return RangeInfo::new(u_range, navs).into();
     }
 
     let source_u_range =
@@ -63,7 +74,7 @@ pub(crate) fn goto_definition(
 
 /// Find the range of the inner name node of a definition node if there is one.
 /// Otherwise, return the range of the definition node.
-fn find_inner_name_range(node: &tree_sitter::Node) -> lsp_types::Range {
+pub fn find_inner_name_range(node: &tree_sitter::Node) -> lsp_types::Range {
     let name_range = match TSKind::from(node) {
         TSKind::methodmap_property_native | TSKind::methodmap_property_method => {
             node.children(&mut node.walk()).find_map(|child| {
@@ -87,27 +98,18 @@ fn find_inner_name_range(node: &tree_sitter::Node) -> lsp_types::Range {
 }
 
 /// Try to find the definition of a macro at the given position.
-fn find_macro_def(
+pub fn find_macro_def(
     offsets: &FxHashMap<u32, Vec<Offset>>,
     pos: &lsp_types::Position,
     sema: &Semantics<RootDatabase>,
-) -> Option<RangeInfo<Vec<NavigationTarget>>> {
+) -> Option<(Offset, DefResolution)> {
     let offset = offsets
         .get(&pos.line)
         .and_then(|offsets| offsets.iter().find(|offset| offset.contains(*pos)))?;
-    let def = sema
-        .find_macro_def(offset.file_id, offset.idx)
-        .map(DefResolution::from)?;
-    let file_id = def.file_id(sema.db);
-    let u_range = offset.range;
-    let source_tree = sema.parse(file_id);
-    let def_node = def.source(sema.db, &source_tree)?.value;
-    let name_range = find_inner_name_range(&def_node);
-    let navs = vec![NavigationTarget {
-        file_id,
-        full_range: ts_range_to_lsp_range(&def_node.range()),
-        focus_range: name_range.into(),
-    }];
-
-    RangeInfo::new(u_range, navs).into()
+    (
+        offset.to_owned(),
+        sema.find_macro_def(offset.file_id, offset.idx)
+            .map(DefResolution::from)?,
+    )
+        .into()
 }
