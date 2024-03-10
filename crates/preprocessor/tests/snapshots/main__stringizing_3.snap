@@ -1,0 +1,7 @@
+---
+source: crates/preprocessor/tests/main.rs
+assertion_line: 832
+expression: "SourcepawnPreprocessor::new(FileId::from(0), input,\n                &mut extend_macros).preprocess_input().preprocessed_text().as_ref()"
+---
+#define FOO(%0) #%0
+char foo[8] = "foo , bar";

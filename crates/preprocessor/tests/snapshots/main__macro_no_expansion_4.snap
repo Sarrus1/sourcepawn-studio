@@ -1,0 +1,11 @@
+---
+source: crates/preprocessor/tests/main.rs
+assertion_line: 779
+expression: "SourcepawnPreprocessor::new(FileId::from(0), input,\n                &mut extend_macros).preprocess_input().preprocessed_text().as_ref()"
+---
+#define FOO(%1) %1
+#define BAR(%1) %1
+public void OnPluginStart() {
+    PrintToServer(FOO);
+}
+

@@ -1851,6 +1851,7 @@ dependencies = [
  "criterion",
  "deepsize",
  "fxhash",
+ "insta",
  "itertools 0.11.0",
  "lazy_static",
  "log",
