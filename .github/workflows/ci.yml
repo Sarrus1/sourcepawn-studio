@@ -10,6 +10,7 @@ name: Lint and test
 jobs:
   tests:
     name: Tests
+    needs: [fmt, clippy, cargo-audit]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
