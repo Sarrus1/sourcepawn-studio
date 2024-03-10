@@ -17,8 +17,9 @@ use hir_def::{print_item_tree, DefDatabase};
 use hover::HoverResult;
 use ide_db::RootDatabase;
 use itertools::Itertools;
-use preprocessor::{db::PreprocDatabase, Offset};
+use preprocessor::{db::PreprocDatabase, ArgsMap, Offset};
 use salsa::{Cancelled, ParallelDatabase};
+use syntax::range_contains_pos;
 use vfs::FileId;
 
 pub use goto_definition::NavigationTarget;
@@ -219,24 +220,51 @@ impl Analysis {
 }
 
 /// Convert a position seen by the user to a position seen by the server (preprocessed).
+///
+/// Will try to look for a mapped range of a macro argument and return the offsetted position.
+/// If no mapped range is found, will try to apply the offsets to the position.
+///
+/// # Arguments
+///
+/// * `args_map` - The preprocessed arguments map.
+/// * `offsets` - The preprocessed offsets.
+/// * `pos` - The position to convert.
+///
+/// # Returns
+///
+/// The source position range, if a mapped range was found.
 fn u_pos_to_s_pos(
+    args_map: &ArgsMap,
     offsets: &FxHashMap<u32, Vec<Offset>>,
-    u_pos: lsp_types::Position,
-) -> lsp_types::Position {
-    if let Some(diff) = offsets.get(&u_pos.line).map(|offsets| {
-        offsets
-            .iter()
-            .filter(|offset| offset.range.end.character <= u_pos.character)
-            .map(|offset| offset.diff)
-            .sum::<i32>()
+    pos: &mut lsp_types::Position,
+) -> Option<lsp_types::Range> {
+    let mut source_u_range = None;
+
+    match args_map.get(&pos.line).and_then(|args| {
+        args.iter()
+            .find(|(range, _)| range_contains_pos(range, pos))
     }) {
-        lsp_types::Position {
-            line: u_pos.line,
-            character: u_pos.character.saturating_add_signed(diff),
+        Some((u_range, s_range)) => {
+            *pos = s_range.start;
+            source_u_range = Some(*u_range);
         }
-    } else {
-        u_pos
+        None => {
+            if let Some(diff) = offsets.get(&pos.line).map(|offsets| {
+                offsets
+                    .iter()
+                    .filter(|offset| offset.range.end.character <= pos.character)
+                    .map(|offset| offset.diff.saturating_sub_unsigned(offset.args_diff))
+                    .sum::<i32>()
+            }) {
+                *pos = lsp_types::Position {
+                    line: pos.line,
+                    character: pos.character.saturating_add_signed(diff),
+                };
+            }
+        }
     }
+
+    source_u_range
 }
 
 /// Convert a range seen by the server to a range seen by the user.
@@ -247,13 +275,18 @@ fn s_range_to_u_range(
     if let Some(offsets) = offsets.get(&s_range.start.line) {
         for offset in offsets.iter() {
             if offset.range.start.character < s_range.start.character {
-                s_range.start.character =
-                    s_range.start.character.saturating_add_signed(-offset.diff);
+                s_range.start.character = s_range
+                    .start
+                    .character
+                    .saturating_add_signed(-offset.diff.saturating_sub_unsigned(offset.args_diff));
             }
         }
         for offset in offsets.iter() {
             if offset.range.start.character < s_range.end.character {
-                s_range.end.character = s_range.end.character.saturating_add_signed(-offset.diff);
+                s_range.end.character = s_range
+                    .end
+                    .character
+                    .saturating_add_signed(-offset.diff.saturating_sub_unsigned(offset.args_diff));
             }
         }
     }

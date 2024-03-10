@@ -14,6 +14,7 @@ use vfs::FileId;
 use errors::{ExpansionError, PreprocessorErrors, UnresolvedIncludeError};
 use evaluator::IfCondition;
 use macros::expand_identifier;
+use token::Token;
 
 pub mod db;
 mod errors;
@@ -23,6 +24,7 @@ mod offset;
 mod preprocessor_operator;
 mod result;
 mod symbol;
+mod token;
 
 pub use errors::{EvaluationError, PreprocessorError};
 pub use offset::Offset;
@@ -58,19 +60,21 @@ where
     lexer: SourcepawnLexer<'a>,
     input: &'a str,
     macros: MacrosMap,
-    expansion_stack: Vec<Symbol>,
+    expansion_stack: Vec<Token>,
     skip_line_start_col: u32,
     skipped_lines: Vec<lsp_types::Range>,
     errors: PreprocessorErrors,
     file_id: FileId,
     current_line: String,
-    prev_end: u32,
     conditions_stack: Vec<ConditionState>,
     out: Vec<String>,
     offsets: FxHashMap<u32, Vec<Offset>>,
     args_maps: ArgsMap,
     include_file: &'a mut F,
     disabled_macros: FxHashSet<Arc<Macro>>,
+
+    /// The current position of the preprocessed text.
+    current_pos: Position,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -129,7 +133,6 @@ where
             skip_line_start_col: Default::default(),
             skipped_lines: Default::default(),
             errors: Default::default(),
-            prev_end: Default::default(),
             conditions_stack: Default::default(),
             out: Default::default(),
             macros: FxHashMap::default(),
@@ -137,6 +140,7 @@ where
             offsets: FxHashMap::default(),
             args_maps: FxHashMap::default(),
             disabled_macros: FxHashSet::default(),
+            current_pos: Default::default(),
         }
     }
 
@@ -270,14 +274,14 @@ where
         let mut col_offset: Option<i32> = None;
         let mut expanded_symbol: Option<(Symbol, u32, FileId)> = None;
         let mut args_diff = 0u32;
-        while let Some(symbol) = if !self.expansion_stack.is_empty() {
-            let symbol = self.expansion_stack.pop().unwrap();
+        while let Some(token) = if !self.expansion_stack.is_empty() {
+            let token = self.expansion_stack.pop().unwrap();
             col_offset = Some(
-                col_offset.map_or(symbol.inline_text().len() as i32, |offset| {
-                    offset + symbol.delta.col + symbol.inline_text().len() as i32
+                col_offset.map_or(token.inline_text().len() as i32, |offset| {
+                    offset + token.delta().col + token.inline_text().len() as i32
                 }),
             );
-            Some(symbol)
+            Some(token)
         } else {
             let symbol = self.lexer.next();
             if let Some((expanded_symbol, idx, file_id)) = expanded_symbol.take() {
@@ -299,51 +303,57 @@ where
                 }
             }
 
-            symbol
+            symbol.map(Token::from)
         } {
+            if let Some(original_range) = token.original_range() {
+                let new_range = self.current_range(&token);
+                self.args_maps
+                    .entry(original_range.start.line)
+                    .or_default()
+                    .push((original_range, new_range));
+            }
             if matches!(
                 self.conditions_stack
                     .last()
                     .unwrap_or(&ConditionState::Active),
                 ConditionState::Activated | ConditionState::NotActivated
             ) {
-                if self.process_negative_condition(&symbol).is_err() {
+                if self.process_negative_condition(token.symbol()).is_err() {
                     return self.error_result();
                 }
                 continue;
             }
-            match &symbol.token_kind {
+            match &token.token_kind() {
                 TokenKind::Unknown => return self.error_result(),
                 TokenKind::PreprocDir(dir) => {
-                    if self.process_directive(dir, &symbol).is_err() {
+                    if self.process_directive(dir, token.symbol()).is_err() {
                         return self.error_result();
                     }
                 }
                 TokenKind::Newline => {
-                    self.push_ws(&symbol);
+                    self.push_ws(token.symbol());
                     self.push_current_line();
-                    self.current_line = "".to_string();
-                    self.prev_end = 0;
+                    self.reset_current_line();
                 }
                 TokenKind::Identifier => {
                     // This is a hack to handle `using __intrinsics__.Handle;` in handles.inc, which
                     // is not a part of sourcemod as of 060c832f89709e6a6222cf039071061dcc0a36da.
                     // see: https://github.com/alliedmodders/sourcemod/commit/060c832f89709e6a6222cf039071061dcc0a36da
                     if intrinsics_parse_status == Some(IntrinsicsParseStatus::Dot) {
-                        if symbol.text() == "Handle" {
+                        if token.text() == "Handle" {
                             self.current_line.push_str("methodmap Handle __nullable__ {public native ~Handle();public native void Close();};")
                         }
                         intrinsics_parse_status = Some(IntrinsicsParseStatus::Handle);
                         continue;
                     }
-                    match self.macros.get(&symbol.text()) {
+                    match self.macros.get(&token.text()) {
                         // TODO: Evaluate the performance dropoff of supporting macro expansion when overriding reserved keywords.
                         // This might only be a problem for a very small subset of users.
                         Some(macro_) => {
                             // Skip the macro if it is disabled and reenable it.
                             if self.is_macro_disabled(macro_) {
                                 self.enable_macro(macro_.clone());
-                                self.push_symbol(&symbol);
+                                self.push_symbol(token.symbol());
                                 continue;
                             }
                             let idx = macro_.idx;
@@ -351,14 +361,14 @@ where
                             match expand_identifier(
                                 &mut self.lexer,
                                 &mut self.macros,
-                                &symbol,
+                                &token,
                                 &mut self.expansion_stack,
                                 true,
                                 &mut self.disabled_macros,
                             ) {
-                                Ok((args_map, args_diff_)) => {
-                                    extend_args_map(&mut self.args_maps, args_map);
-                                    expanded_symbol = Some((symbol.clone(), idx, file_id));
+                                Ok(args_diff_) => {
+                                    expanded_symbol =
+                                        Some((token.symbol().to_owned(), idx, file_id));
                                     args_diff = args_diff_;
                                     continue;
                                 }
@@ -372,7 +382,7 @@ where
                             }
                         }
                         None => {
-                            self.push_symbol(&symbol);
+                            self.push_symbol(token.symbol());
                         }
                     }
                 }
@@ -388,21 +398,21 @@ where
                 }
                 TokenKind::Semicolon => {
                     if intrinsics_parse_status.take() != Some(IntrinsicsParseStatus::Handle) {
-                        self.push_symbol(&symbol);
+                        self.push_symbol(token.symbol());
                     }
                 }
                 TokenKind::Dot => match intrinsics_parse_status {
                     Some(IntrinsicsParseStatus::Intrinsics) => {
                         intrinsics_parse_status = Some(IntrinsicsParseStatus::Dot);
                     }
-                    _ => self.push_symbol(&symbol),
+                    _ => self.push_symbol(token.symbol()),
                 },
                 TokenKind::Eof => {
-                    self.push_ws(&symbol);
+                    self.push_ws(token.symbol());
                     self.push_current_line();
                     break;
                 }
-                _ => self.push_symbol(&symbol),
+                _ => self.push_symbol(token.symbol()),
             }
         }
 
@@ -415,12 +425,11 @@ where
             &mut self.macros,
             symbol.range.start.line,
             &mut self.offsets,
-            &mut self.args_maps,
             &mut self.disabled_macros,
         );
         while self.lexer.in_preprocessor() {
             if let Some(symbol) = self.lexer.next() {
-                if_condition.symbols.push(symbol);
+                if_condition.tokens.push(symbol.into());
             } else {
                 break;
             }
@@ -443,14 +452,12 @@ where
         self.errors
             .macro_not_found_errors
             .extend(if_condition.macro_not_found_errors);
-        if let Some(last_symbol) = if_condition.symbols.last() {
-            let line_diff = last_symbol.range.end.line - line_nb;
+        if let Some(last_token) = if_condition.tokens.last() {
+            let line_diff = last_token.range().end.line - line_nb;
             for _ in 0..line_diff {
                 self.out.push(String::new());
             }
         }
-
-        self.prev_end = 0;
     }
 
     fn process_else_directive(&mut self, symbol: &Symbol) -> anyhow::Result<()> {
@@ -522,7 +529,6 @@ where
                             break;
                         }
                         self.push_ws(&symbol);
-                        self.prev_end = symbol.range.end.character;
                         if !matches!(symbol.token_kind, TokenKind::Newline | TokenKind::Eof) {
                             self.current_line.push_str(&symbol.text());
                         }
@@ -586,8 +592,7 @@ where
                     macro_.params = Some(args);
                 }
                 self.push_current_line();
-                self.current_line = "".to_string();
-                self.prev_end = 0;
+                self.reset_current_line();
                 self.insert_macro(macro_name, macro_);
             }
             PreprocDir::MUndef => {
@@ -595,7 +600,6 @@ where
                 while self.lexer.in_preprocessor() {
                     if let Some(symbol) = self.lexer.next() {
                         self.push_ws(&symbol);
-                        self.prev_end = symbol.range.end.character;
                         if !matches!(symbol.token_kind, TokenKind::Newline | TokenKind::Eof) {
                             self.current_line.push_str(&symbol.text());
                         }
@@ -681,8 +685,7 @@ where
         self.push_symbol(&symbol);
         if delta > 0 {
             self.push_current_line();
-            self.current_line = "".to_string();
-            self.prev_end = 0;
+            self.reset_current_line();
             for _ in 0..delta - 1 {
                 self.out.push(String::new());
             }
@@ -719,8 +722,7 @@ where
                     Position::new(symbol.range.start.line, self.skip_line_start_col),
                     Position::new(symbol.range.start.line, symbol.range.start.character),
                 ));
-                self.current_line = "".to_string();
-                self.prev_end = 0;
+                self.reset_current_line();
             }
             // Skip any token that is not a directive or a newline.
             _ => (),
@@ -730,11 +732,14 @@ where
     }
 
     fn push_ws(&mut self, symbol: &Symbol) {
+        self.current_pos.character += symbol.delta.col.unsigned_abs();
         self.current_line
             .push_str(&" ".repeat(symbol.delta.col.unsigned_abs() as usize));
     }
 
     fn push_current_line(&mut self) {
+        self.current_pos.line += 1;
+        self.current_pos.character = 0;
         self.out.push(self.current_line.clone());
     }
 
@@ -744,18 +749,33 @@ where
             return;
         }
         self.push_ws(symbol);
-        self.prev_end = symbol.range.end.character;
+        self.current_pos.character += symbol.text().len() as u32;
         self.current_line.push_str(&symbol.text());
     }
-}
 
-fn extend_args_map(args_map: &mut ArgsMap, buffer: Option<Vec<Vec<(Range, Range)>>>) {
-    let Some(buffer) = buffer else { return };
-    buffer
-        .into_iter()
-        .filter(|it| !it.is_empty())
-        .for_each(|it| {
-            it.into_iter()
-                .for_each(|it| args_map.entry(it.0.start.line).or_default().push(it))
-        })
+    fn reset_current_line(&mut self) {
+        self.current_line = String::new();
+    }
+
+    fn current_range(&self, token: &Token) -> Range {
+        Range::new(
+            Position::new(
+                self.current_pos.line,
+                self.current_pos
+                    .character
+                    .saturating_add_signed(token.delta().col),
+            ),
+            Position::new(
+                self.current_pos.line,
+                self.current_pos
+                    .character
+                    .saturating_add_signed(token.delta().col)
+                    + token
+                        .range()
+                        .end
+                        .character
+                        .saturating_sub(token.range().start.character),
+            ),
+        )
+    }
 }

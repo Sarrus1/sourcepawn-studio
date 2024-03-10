@@ -1,35 +1,34 @@
 use std::{cmp::Ordering, collections::VecDeque, sync::Arc};
 
 use fxhash::FxHashSet;
-use itertools::Itertools;
 use lsp_types::{Position, Range};
 use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
 
 use super::errors::{ExpansionError, MacroNotFoundError, ParseIntError};
-use crate::{Macro, MacrosMap};
+use crate::{Macro, MacrosMap, Token};
 
 /// Arguments of a [macro](Macro) call.
-type MacroArguments = [Vec<Symbol>; 10];
+type MacroArguments = [Vec<Token>; 10];
 
 /// Queue of symbols and the delta before the previous symbol in the expansion stack.
 ///
 /// The delta can be different from the symbol's delta, especially for nested macro calls.
-type MacroContext = VecDeque<QueuedSymbol>;
+type MacroContext = VecDeque<QueuedToken>;
 
 /// Representation of a queued [symbol](Symbol) after the expansion of a macro.
 #[derive(Debug, Clone)]
-struct QueuedSymbol {
+struct QueuedToken {
     /// Queued [symbol](Symbol).
-    symbol: Symbol,
+    token: Token,
 
     /// [Delta](sourcepawn_lexer::Delta) of the queued [symbol](Symbol) (which can be different than
     /// the [symbol](Symbol)'s [delta](sourcepawn_lexer::Delta)).
     delta: sourcepawn_lexer::Delta,
 }
 
-impl QueuedSymbol {
-    pub fn new(symbol: Symbol, delta: sourcepawn_lexer::Delta) -> Self {
-        Self { symbol, delta }
+impl QueuedToken {
+    pub fn new(token: Token, delta: sourcepawn_lexer::Delta) -> Self {
+        Self { token, delta }
     }
 }
 
@@ -48,7 +47,7 @@ impl QueuedSymbol {
 struct ArgumentsCollector {
     /// Stack that stores the [symbols](Symbol) we popped while looking for the opening parenthesis
     /// of the macro call.
-    popped_symbols_stack: Vec<Symbol>,
+    popped_symbols_stack: Vec<Token>,
 }
 
 impl ArgumentsCollector {
@@ -56,7 +55,7 @@ impl ArgumentsCollector {
     /// # Arguments
     ///
     /// * `expansion_stack` - Expansion stack of the main loop.
-    fn extend_expansion_stack(self, expansion_stack: &mut Vec<Symbol>) {
+    fn extend_expansion_stack(self, expansion_stack: &mut Vec<Token>) {
         expansion_stack.extend(self.popped_symbols_stack.into_iter().rev());
     }
 
@@ -85,50 +84,50 @@ impl ArgumentsCollector {
         let mut args: MacroArguments = Default::default();
         let mut first_paren_col = None;
         let mut last_paren_col = None;
-        while let Some(sub_symbol) = if !context.is_empty() {
-            Some(context.pop_front().unwrap().symbol)
+        while let Some(sub_token) = if !context.is_empty() {
+            Some(context.pop_front().unwrap().token)
         } else if !self.popped_symbols_stack.is_empty() {
             self.popped_symbols_stack.pop()
         } else {
-            lexer.next()
+            lexer.next().map(Token::from)
         } {
             if first_paren_col.is_none() {
                 if !matches!(
-                    &sub_symbol.token_kind,
+                    sub_token.token_kind(),
                     TokenKind::LParen | TokenKind::Comment(sourcepawn_lexer::Comment::BlockComment)
                 ) {
-                    temp_expanded_stack.push(sub_symbol);
+                    temp_expanded_stack.push(sub_token);
                     self.popped_symbols_stack
                         .extend(temp_expanded_stack.into_iter().rev());
                     return None;
                 }
-                if sub_symbol.token_kind == TokenKind::LParen {
-                    if sub_symbol.range.start.line != symbol.range.end.line {
-                        temp_expanded_stack.push(sub_symbol);
+                if sub_token.token_kind() == TokenKind::LParen {
+                    if sub_token.range().start.line != symbol.range.end.line {
+                        temp_expanded_stack.push(sub_token);
                         self.popped_symbols_stack
                             .extend(temp_expanded_stack.into_iter().rev());
                         return None;
                     }
-                    first_paren_col = Some(sub_symbol.range.start.character);
+                    first_paren_col = Some(sub_token.range().start.character);
                 } else {
-                    temp_expanded_stack.push(sub_symbol);
+                    temp_expanded_stack.push(sub_token);
                     continue;
                 }
             }
-            match &sub_symbol.token_kind {
+            match sub_token.token_kind() {
                 TokenKind::LParen => {
                     paren_depth += 1;
                     if paren_depth > 1 {
-                        args[arg_idx].push(sub_symbol.clone())
+                        args[arg_idx].push(sub_token)
                     }
                 }
                 TokenKind::RParen => {
                     if paren_depth > 1 {
-                        args[arg_idx].push(sub_symbol.clone())
+                        args[arg_idx].push(sub_token.to_owned())
                     }
                     paren_depth -= 1;
                     if paren_depth == 0 {
-                        last_paren_col = Some(sub_symbol.range.end.character);
+                        last_paren_col = Some(sub_token.range().end.character);
                         break;
                     }
                 }
@@ -140,16 +139,16 @@ impl ArgumentsCollector {
                             } else {
                                 // The stack of arguments is overflowed, store the rest in the last argument,
                                 // including the comma.
-                                args[arg_idx].push(sub_symbol.clone())
+                                args[arg_idx].push(sub_token)
                             }
                         }
-                        Ordering::Greater => args[arg_idx].push(sub_symbol.clone()),
+                        Ordering::Greater => args[arg_idx].push(sub_token),
                         Ordering::Less => (),
                     }
                 }
                 _ => {
                     if paren_depth > 0 {
-                        args[arg_idx].push(sub_symbol.clone());
+                        args[arg_idx].push(sub_token);
                     }
                 }
             }
@@ -162,8 +161,6 @@ impl ArgumentsCollector {
         Some((args, diff))
     }
 }
-
-pub type ExpansionOffsets = Vec<Vec<(Range, Range)>>;
 
 /// Try to expand an identifier and return a [vector][Vec] of expanded [symbols](Symbol).
 ///
@@ -188,58 +185,61 @@ pub type ExpansionOffsets = Vec<Vec<(Range, Range)>>;
 pub(super) fn expand_identifier<T>(
     lexer: &mut T,
     macros: &mut MacrosMap,
-    symbol: &Symbol,
-    expansion_stack: &mut Vec<Symbol>,
+    token: &Token,
+    expansion_stack: &mut Vec<Token>,
     allow_undefined_macros: bool,
     disabled_macros: &mut FxHashSet<Arc<Macro>>,
-) -> Result<(Option<ExpansionOffsets>, u32), ExpansionError>
+) -> Result<u32, ExpansionError>
 where
     T: Iterator<Item = Symbol>,
 {
-    let mut args_mapping: Option<ExpansionOffsets> = None;
     let mut args_diff = 0;
     let mut reversed_expansion_stack = Vec::new();
     let mut args_collector = ArgumentsCollector::default();
-    let mut context_stack = vec![VecDeque::from([QueuedSymbol::new(
-        symbol.clone(),
-        symbol.delta,
+    let mut context_stack = vec![VecDeque::from([QueuedToken::new(
+        token.clone(),
+        token.delta().to_owned(),
     )])];
     while !context_stack.is_empty() && context_stack.len() < 6 {
         let mut current_context = context_stack.pop().unwrap();
         let Some(queued_symbol) = current_context.pop_front() else {
             continue;
         };
-        match &queued_symbol.symbol.token_kind {
+        match queued_symbol.token.token_kind() {
             TokenKind::Identifier => {
-                let macro_ = match macros.get_mut(&queued_symbol.symbol.text()) {
+                let macro_ = match macros.get_mut(&queued_symbol.token.text()) {
                     Some(m) => m,
                     None => {
                         if !allow_undefined_macros {
                             return Err(MacroNotFoundError::new(
-                                queued_symbol.symbol.text().into(),
-                                queued_symbol.symbol.range,
+                                queued_symbol.token.text().into(),
+                                queued_symbol.token.range().to_owned(),
                             )
                             .into());
                         }
-                        let mut symbol = queued_symbol.symbol.clone();
-                        symbol.delta = queued_symbol.delta;
-                        reversed_expansion_stack.push(symbol);
+                        let mut token = queued_symbol.token.clone();
+                        token.set_delta(queued_symbol.delta);
+                        reversed_expansion_stack.push(token);
                         context_stack.push(current_context);
                         continue;
                     }
                 };
                 let new_context = if macro_.params.is_none() {
-                    expand_non_macro_define(macro_, &symbol.delta, queued_symbol.symbol.range)
+                    expand_non_macro_define(
+                        macro_,
+                        token.delta(),
+                        queued_symbol.token.range().to_owned(),
+                    )
                 } else {
                     let Some((args, diff)) = &args_collector.collect_arguments(
                         lexer,
-                        &queued_symbol.symbol,
+                        queued_symbol.token.symbol(),
                         &mut current_context,
                         macro_.nb_params as usize,
                     ) else {
                         // The macro was not expanded, put it back on the expansion stack
                         // and disable it to avoid an infinite loop.
-                        reversed_expansion_stack.push(queued_symbol.symbol);
+                        reversed_expansion_stack.push(queued_symbol.token);
                         disabled_macros.insert(macro_.clone());
                         context_stack.push(current_context);
                         continue;
@@ -247,50 +247,44 @@ where
                     if context_stack.is_empty() {
                         args_diff += *diff;
                     }
-                    let (ctx, args_map) =
-                        expand_macro(args, macro_, &queued_symbol.symbol, &symbol.delta)?;
-                    if context_stack.is_empty() {
-                        args_mapping = args
-                            .iter()
-                            .zip(args_map)
-                            .map(|(args, maps)| {
-                                args.iter()
-                                    .zip(maps)
-                                    .map(|(arg, mapped_range)| (arg.range, mapped_range))
-                                    .collect_vec()
-                            })
-                            .collect_vec()
-                            .into();
-                    }
-                    ctx
+                    expand_macro(
+                        args,
+                        macro_,
+                        queued_symbol.token.symbol(),
+                        token.delta(),
+                        context_stack.len(),
+                    )?
                 };
                 context_stack.push(current_context);
                 context_stack.push(new_context);
             }
             TokenKind::Literal(Literal::StringLiteral)
             | TokenKind::Literal(Literal::CharLiteral) => {
-                let text = &queued_symbol.symbol.inline_text();
-                reversed_expansion_stack.push(Symbol::new(
-                    queued_symbol.symbol.token_kind,
-                    Some(text),
-                    Range::new(
-                        queued_symbol.symbol.range.start,
-                        Position::new(
-                            queued_symbol.symbol.range.start.line,
-                            queued_symbol.symbol.range.start.character + text.len() as u32,
+                let text = &queued_symbol.token.inline_text();
+                reversed_expansion_stack.push(
+                    Symbol::new(
+                        queued_symbol.token.token_kind(),
+                        Some(text),
+                        Range::new(
+                            queued_symbol.token.range().start,
+                            Position::new(
+                                queued_symbol.token.range().start.line,
+                                queued_symbol.token.range().start.character + text.len() as u32,
+                            ),
                         ),
-                    ),
-                    symbol.delta,
-                ));
+                        token.delta().to_owned(),
+                    )
+                    .into(),
+                );
                 context_stack.push(current_context);
             }
             TokenKind::Newline | TokenKind::LineContinuation | TokenKind::Comment(_) => {
                 context_stack.push(current_context);
             }
             _ => {
-                let mut symbol = queued_symbol.symbol.clone();
-                symbol.delta = queued_symbol.delta;
-                reversed_expansion_stack.push(symbol);
+                let mut token = queued_symbol.token.clone();
+                token.set_delta(queued_symbol.delta);
+                reversed_expansion_stack.push(token);
                 context_stack.push(current_context);
             }
         }
@@ -302,7 +296,7 @@ where
     // produces them in the correct order, therefore we have to reverse them.
     expansion_stack.extend(reversed_expansion_stack.into_iter().rev());
 
-    Ok((args_mapping, args_diff))
+    Ok(args_diff)
 }
 
 /// Expand a non macro define by returning a new [context](MacroContext) of all the [symbols](Symbol)
@@ -323,11 +317,11 @@ fn expand_non_macro_define(
         .iter()
         .enumerate()
         .map(|(i, child)| {
-            let s = QueuedSymbol {
-                symbol: child.to_symbol(prev_range),
-                delta: if i == 0 { *delta } else { child.delta },
-            };
-            prev_range = s.symbol.range;
+            let s = QueuedToken::new(
+                child.to_symbol(prev_range).into(),
+                if i == 0 { *delta } else { child.delta },
+            );
+            prev_range = s.token.range().to_owned();
             s
         })
         .collect::<MacroContext>();
@@ -336,7 +330,7 @@ fn expand_non_macro_define(
     // when cancelling macro expansion for macro that are not called with their
     // parameters. So we skip it.
     if let Some(back) = macro_context.back() {
-        if back.symbol.token_kind == TokenKind::Newline {
+        if back.token.token_kind() == TokenKind::Newline {
             macro_context.pop_back();
         }
     };
@@ -353,13 +347,15 @@ fn expand_non_macro_define(
 /// * `macro_` - [`Macro`] we are expanding.
 /// * `symbol` - [`Symbol`] that originated the [`macro`](Macro) expansion. Used to keep track of the
 /// [`delta`](sourcepawn_lexer::Delta) to insert.
+/// * `delta` - [`Delta`](sourcepawn_lexer::Delta) of the [`symbols`](Symbol) we are expanding.
+/// * `depth` - Depth of the macro expansion context.
 fn expand_macro(
     args: &MacroArguments,
     macro_: &Macro,
     symbol: &Symbol,
     delta: &sourcepawn_lexer::Delta,
-) -> Result<(MacroContext, Vec<Vec<Range>>), ParseIntError> {
-    let mut args_map: Vec<Vec<Range>> = vec![vec![]; 10]; // FIXME: Consider smolvec here.
+    depth: usize,
+) -> Result<MacroContext, ParseIntError> {
     let mut new_context = MacroContext::default();
     let mut consecutive_percent = 0;
     let mut stringize_delta = None;
@@ -383,12 +379,12 @@ fn expand_macro(
                 // there is an escaped %.
                 consecutive_percent += 1;
                 if consecutive_percent % 2 == 1 {
-                    new_context.push_back(QueuedSymbol::new(child.clone(), child.delta))
+                    new_context.push_back(QueuedToken::new(child.clone().into(), child.delta))
                 }
             }
             TokenKind::Operator(Operator::Stringize) => {
                 stringize_delta = Some(child.delta);
-                new_context.push_back(QueuedSymbol::new(child.clone(), child.delta))
+                new_context.push_back(QueuedToken::new(child.clone().into(), child.delta))
             }
             TokenKind::Literal(Literal::IntegerLiteral) => {
                 if consecutive_percent == 1 {
@@ -409,8 +405,8 @@ fn expand_macro(
                         new_context.pop_back();
                         let mut stringized = '"'.to_string();
                         for (j, sub_child) in args[arg_idx].iter().enumerate() {
-                            if j > 0 && sub_child.delta.col > 0 {
-                                stringized.push_str(&" ".repeat(sub_child.delta.col as usize));
+                            if j > 0 && sub_child.delta().col > 0 {
+                                stringized.push_str(&" ".repeat(sub_child.delta().col as usize));
                             }
                             stringized.push_str(&sub_child.inline_text());
                         }
@@ -432,24 +428,25 @@ fn expand_macro(
                             ),
                             delta,
                         );
-                        new_context.push_back(QueuedSymbol::new(symbol, delta));
+                        new_context.push_back(QueuedToken::new(symbol.into(), delta));
                     } else {
                         for (j, sub_child) in args[arg_idx].iter().enumerate() {
-                            args_map[arg_idx].push(symbol.range);
-                            new_context.push_back(QueuedSymbol::new(
-                                sub_child.clone(),
-                                if i == 1 {
-                                    symbol.delta
-                                } else if j == 0 {
-                                    percent_symbol.delta
-                                } else {
-                                    sub_child.delta
-                                },
-                            ));
+                            let delta = if i == 1 {
+                                symbol.delta
+                            } else if j == 0 {
+                                percent_symbol.delta
+                            } else {
+                                sub_child.delta().to_owned()
+                            };
+                            let mut token = sub_child.to_owned();
+                            if token.original_range().is_none() && depth == 0 {
+                                token.set_original_range(*sub_child.range());
+                            }
+                            new_context.push_back(QueuedToken::new(token, delta));
                         }
                     }
                 } else {
-                    new_context.push_back(QueuedSymbol::new(child.clone(), child.delta));
+                    new_context.push_back(QueuedToken::new(child.clone().into(), child.delta));
                 }
                 consecutive_percent = 0;
             }
@@ -460,8 +457,8 @@ fn expand_macro(
                 if child.token_kind == TokenKind::Newline && i == macro_.body.len() - 1 {
                     continue;
                 }
-                new_context.push_back(QueuedSymbol::new(
-                    child.clone(),
+                new_context.push_back(QueuedToken::new(
+                    child.clone().into(),
                     if i == 0 { *delta } else { child.delta },
                 ));
                 consecutive_percent = 0;
@@ -470,5 +467,5 @@ fn expand_macro(
         }
     }
 
-    Ok((new_context, args_map))
+    Ok(new_context)
 }

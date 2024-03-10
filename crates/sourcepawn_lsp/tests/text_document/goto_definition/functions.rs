@@ -35,6 +35,41 @@ void foo() {
 }
 
 #[test]
+fn function_named_arg_3() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+int bar(int foo=1) {}
+int baz(int foo=1) {}
+
+void foo() {
+    bar(.foo=baz(.foo=1));
+              |
+              ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn function_named_arg_4() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+int bar(int foo=1) {}
+int baz(int foo=1) {}
+
+void foo() {
+    int qux = 1;
+    bar(.foo=baz(.foo=qux));
+                       |
+                       ^
+}
+"#,
+    ));
+}
+
+#[test]
 fn method_named_arg_1() {
     assert_json_snapshot!(goto_definition(
         r#"

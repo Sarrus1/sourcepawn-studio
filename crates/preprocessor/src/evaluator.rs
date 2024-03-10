@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use fxhash::{FxHashMap, FxHashSet};
 use lsp_types::{Position, Range};
-use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
+use sourcepawn_lexer::{Literal, Operator, TokenKind};
 use vfs::FileId;
 
 use super::{
@@ -10,17 +10,16 @@ use super::{
     macros::expand_identifier,
     preprocessor_operator::PreOperator,
 };
-use crate::{extend_args_map, ArgsMap, Macro, MacrosMap, Offset};
+use crate::{Macro, MacrosMap, Offset, Token};
 
 #[derive(Debug)]
 pub struct IfCondition<'a> {
-    pub symbols: Vec<Symbol>,
+    pub tokens: Vec<Token>,
     pub(super) macro_not_found_errors: Vec<MacroNotFoundError>,
     macro_store: &'a mut MacrosMap,
-    expansion_stack: Vec<Symbol>,
+    expansion_stack: Vec<Token>,
     line_nb: u32,
     offsets: &'a mut FxHashMap<u32, Vec<Offset>>,
-    args_map: &'a mut ArgsMap,
     disabled_macros: &'a mut FxHashSet<Arc<Macro>>,
 }
 
@@ -29,17 +28,15 @@ impl<'a> IfCondition<'a> {
         macro_store: &'a mut MacrosMap,
         line_nb: u32,
         offsets: &'a mut FxHashMap<u32, Vec<Offset>>,
-        args_map: &'a mut ArgsMap,
         disabled_macros: &'a mut FxHashSet<Arc<Macro>>,
     ) -> Self {
         Self {
-            symbols: vec![],
+            tokens: vec![],
             macro_not_found_errors: vec![],
             macro_store,
             expansion_stack: vec![],
             line_nb,
             offsets,
-            args_map,
             disabled_macros,
         }
     }
@@ -62,12 +59,15 @@ impl<'a> IfCondition<'a> {
             Position::new(self.line_nb, 1000),
         );
         let mut symbol_iter = self
-            .symbols
+            .tokens
             .clone() // TODO: This is horrible.
             .into_iter()
+            .map(|token| token.symbol().to_owned())
             .peekable();
         while let Some(symbol) = if !self.expansion_stack.is_empty() {
-            self.expansion_stack.pop()
+            self.expansion_stack
+                .pop()
+                .map(|token| token.symbol().to_owned())
         } else {
             let symbol = symbol_iter.next();
             if let Some(symbol) = &symbol {
@@ -207,13 +207,12 @@ impl<'a> IfCondition<'a> {
                         match expand_identifier(
                             &mut symbol_iter,
                             self.macro_store,
-                            &symbol,
+                            &symbol.clone().into(),
                             &mut self.expansion_stack,
                             false,
                             self.disabled_macros
                         ) {
-                            Ok((args_map, args_diff)) => {
-                                extend_args_map(self.args_map, args_map);
+                            Ok(args_diff) => {
                                 if let Some((idx, file_id)) = attr {
                                     self.offsets.entry(symbol.range.start.line).or_default().push(Offset {
                                         file_id,

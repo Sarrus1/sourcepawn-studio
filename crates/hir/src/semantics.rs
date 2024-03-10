@@ -430,8 +430,11 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                     InFile::new(file_id, body_node),
                     Some(offset),
                 );
-                let arg = analyzer.resolve_named_arg(self.db, &node, &parent)?;
-                return Some(DefResolution::Local(arg));
+
+                if let Some(arg) = analyzer.resolve_named_arg(self.db, &node, &parent) {
+                    // Only return if we find an argument. If we don't we were trying to resolve the value.
+                    return Some(DefResolution::Local(arg));
+                }
             }
             _ => {}
         }

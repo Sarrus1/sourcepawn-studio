@@ -95,9 +95,118 @@ fn macro_4() {
 %! main.sp
 #define FOO(%1) %1
 int foo;
-int bar = FOO(foo)
+int bar = FOO(foo);
                |
                ^
+"#,
+    ));
+}
+
+#[test]
+fn macro_5() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOO(%1)    %1
+int foo;
+int bar = FOO( foo )
+                |
+                ^
+"#,
+    ));
+}
+
+#[test]
+fn macro_6() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOO(%1,%2)    %1 +     %2
+int foo;
+int bar = FOO( foo    , foo )
+                         |
+                         ^
+"#,
+    ));
+}
+
+#[test]
+fn macro_7() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOO(%1,%2)    %1 +     %2
+#define BAAAAAR bar
+int foo;
+int bar;
+int baz = BAAAAAR + FOO( foo    , bar );
+                                   |
+                                   ^
+"#,
+    ));
+}
+
+#[test]
+fn macro_8() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOO(%1,%2)    %1 +     %2
+int foo;
+int bar;
+int baz = FOO( foo    , foo ) + FOO( foo    , bar );
+                                               |
+                                               ^
+"#,
+    ));
+}
+
+#[test]
+fn macro_9() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum Foo {
+    Foo1,
+}
+#define BAR(%0,%1) view_as<%0>( %1 )
+#define FOO(%0)    BAR( Foo, %0 )
+#define BAZ(%0)    sizeof   %0
+
+void bar(int foo, Foo foo2, int foo3, bool foo4  = true) {}
+
+void baz() {
+    int foo5 = 0;
+    char foo6[10];
+    bar( foo5, FOO( foo5 ), FOO( foo6 ), .foo4 = foo5 );
+                      |
+                      ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn macro_10() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum Foo {
+    Foo1,
+}
+#define BAR(%0,%1) view_as<%0>( %1 )
+#define FOO(%0)    BAR( Foo, %0 )
+#define BAZ(%0)    sizeof   %0
+
+void bar(int foo, Foo foo2, int foo3, bool foo4  = true) {}
+
+void baz() {
+    int foo5 = 0;
+    char foo6[10];
+    bar( foo5, FOO( foo5 ), FOO( foo6 ), .foo4 = foo5 );
+                                           |
+                                           ^
+}
 "#,
     ));
 }
