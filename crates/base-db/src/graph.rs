@@ -76,9 +76,19 @@ impl Graph {
             file_id,
             extension: FileExtension::Sp, // We don't care about the extension here. The hash is based on the file_id.
         };
+
         subgraphs
-            .into_iter()
+            .iter()
+            .filter(|subgraph| subgraph.root.extension == FileExtension::Sp)
             .find(|subgraph| subgraph.nodes.contains(&dummy_node))
+            .cloned()
+            .or_else(|| {
+                subgraphs
+                    .iter()
+                    .filter(|subgraph| subgraph.root.extension == FileExtension::Inc)
+                    .find(|subgraph| subgraph.nodes.contains(&dummy_node))
+                    .cloned()
+            })
             .map(Arc::new)
     }
 

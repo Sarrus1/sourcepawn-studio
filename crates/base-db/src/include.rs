@@ -120,7 +120,7 @@ pub(crate) fn file_includes_query(
                     let mut raw_path = m.as_str().to_string();
                     let raw_ext = infer_include_ext(&mut raw_path);
                     if let Some(include_file_id) =
-                        db.resolve_path(AnchoredPath::new(file_id, m.as_str()))
+                        db.resolve_path(AnchoredPath::new(file_id, &raw_path))
                     {
                         res.push(Include::new(include_file_id, kind, type_, raw_ext));
                         continue;
@@ -137,9 +137,23 @@ pub(crate) fn file_includes_query(
                         path = Some(raw_path);
                     }
                 }
-
-                let path = path.expect("Could not extract path from include.");
-                let ext = ext.expect("Could not infer file extension from include.");
+                let (path, ext) = match (path, ext) {
+                    (Some(path), Some(ext)) => (path, ext),
+                    (Some(path), _) => {
+                        if type_ == IncludeType::Include {
+                            // TODO: Optional diagnostic for tryinclude ?
+                            // FIXME: Emit the diagnostics in the preprocessor. This would make more sense as some
+                            // includes might be disabled by the preprocessor.
+                            unresolved.push(UnresolvedInclude {
+                                file_id,
+                                range: symbol.range,
+                                path,
+                            })
+                        }
+                        continue;
+                    }
+                    _ => continue,
+                };
                 match db.resolve_path_relative_to_roots(&path) {
                     Some(include_file_id) => {
                         res.push(Include::new(include_file_id, kind, type_, ext));

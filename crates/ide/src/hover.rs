@@ -103,7 +103,7 @@ pub(crate) fn hover(
             markup: Markup::from(format!(
                 "{}\n\n---\n\n{}",
                 Markup::fenced_block(source_text),
-                Markup::from(String::from(docs)),
+                Markup::from(docs.to_markdown()),
             )),
             actions: vec![],
         };

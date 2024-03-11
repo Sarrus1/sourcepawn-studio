@@ -127,14 +127,15 @@ impl ChildBySource for EnumStructId {
 impl ChildBySource for MethodmapId {
     fn child_by_source_to(&self, db: &dyn DefDatabase, map: &mut DynMap, file_id: FileId) {
         let data = db.methodmap_data(*self);
-        let item_tree = db.file_item_tree(file_id);
         let ast_id_map = db.ast_id_map(file_id);
         data.items.iter().for_each(|(_, item)| match item {
             MethodmapItemData::Property(PropertyData {
                 id,
                 getters_setters,
             }) => {
-                let item = &item_tree[id.lookup(db).id];
+                let item_id = id.lookup(db).id;
+                let item_tree = db.file_item_tree(item_id.file_id());
+                let item = &item_tree[item_id];
                 for fn_id in getters_setters.iter().map(PropertyItem::function_id) {
                     let item = &item_tree[fn_id.lookup(db).id];
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
@@ -146,6 +147,8 @@ impl ChildBySource for MethodmapId {
             MethodmapItemData::Method(id)
             | MethodmapItemData::Constructor(id)
             | MethodmapItemData::Destructor(id) => {
+                let item_id = id.lookup(db).id;
+                let item_tree = db.file_item_tree(item_id.file_id());
                 let item = &item_tree[id.lookup(db).id];
                 let node_ptr = ast_id_map.get_raw(item.ast_id);
                 map[keys::FUNCTION].insert(node_ptr, *id);

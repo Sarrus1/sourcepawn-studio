@@ -388,9 +388,13 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         id: FunctionId,
     ) -> Option<DefResolution> {
         let text = node.utf8_text(source.as_ref().as_bytes()).ok()?;
-        let body_node = container.child_by_field_name("body")?;
-        assert!(TSKind::from(body_node) == TSKind::block);
         let def = hir_def::DefWithBodyId::FunctionId(id);
+        let Some(body_node) = container.child_by_field_name("body") else {
+            // If the function has no body, try to resolve params and return type.
+            let analyzer = SourceAnalyzer::new_no_body_no_infer(self.db, def, file_id);
+            return DefResolution::try_from(analyzer.resolver.resolve_ident(text)?);
+        };
+        assert!(TSKind::from(body_node) == TSKind::block);
         let offset = node.start_position();
         match TSKind::from(parent) {
             TSKind::field_access if is_field_receiver_node(&node) => {
