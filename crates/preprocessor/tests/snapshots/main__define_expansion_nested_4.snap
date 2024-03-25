@@ -1,0 +1,9 @@
+---
+source: crates/preprocessor/tests/main.rs
+assertion_line: 628
+expression: "SourcepawnPreprocessor::new(FileId::from(0), input,\n                &mut extend_macros).preprocess_input().preprocessed_text().as_ref()"
+---
+#define FOO 1 + 2
+#define BAR FOO + 3 + 4
+int bar = 1 + 2 + 3 + 4;
+

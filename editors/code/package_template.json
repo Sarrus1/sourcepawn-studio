@@ -1,0 +1,592 @@
+{
+  "name": "sourcepawn-vscode",
+  "displayName": "SourcePawn",
+  "description": "SourcePawn highlighting, autocompletion and much more",
+  "version": "7.2.4",
+  "publisher": "Sarrus",
+  "main": "./dist/spIndex.js",
+  "icon": "sm.png",
+  "homepage": "https://github.com/Sarrus1/sourcepawn-vscode/wiki",
+  "bugs": {
+    "url": "https://github.com/Sarrus1/sourcepawn-vscode/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sarrus1/sourcepawn-vscode.git"
+  },
+  "sponsor": {
+    "url": "https://www.buymeacoffee.com/sarrus"
+  },
+  "engines": {
+    "vscode": "^1.63.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Linters",
+    "Formatters"
+  ],
+  "keywords": [
+    "SourcePawn",
+    "SourceMod",
+    "AlliedMods",
+    "AlliedModders",
+    "multi-root ready"
+  ],
+  "activationEvents": [
+    "onLanguage:sourcepawn",
+    "onLanguage:valve-kv",
+    "onLanguage:valve-cfg",
+    "onCommand:sourcepawn-vscode.createTask",
+    "onCommand:sourcepawn-vscode.createScript",
+    "onCommand:sourcepawn-vscode.createREADME",
+    "onCommand:sourcepawn-vscode.createMaster",
+    "onCommand:sourcepawn-vscode.createProject",
+    "onCommand:sourcepawn-vscode.compileSM",
+    "onCommand:sourcepawn-vscode.uploadToServer",
+    "onCommand:sourcepawn-vscode.refreshPlugins",
+    "onCommand:sourcepawn-vscode.insertParameters",
+    "onCommand:sourcepawn-vscode.createChangelog",
+    "onCommand:sourcepawn-vscode.changeSMApi",
+    "onCommand:sourcepawn-vscode.startServer"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "sourcepawn-vscode.doctor",
+        "title": "Doctor",
+        "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.createTask",
+        "title": "Create Task File",
+        "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.createScript",
+        "title": "Create Script File",
+        "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.createREADME",
+        "title": "Create README File",
+        "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.createMaster",
+        "title": "Create GitHub Actions",
+        "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.createProject",
+        "title": "Create project",
+        "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.uploadToServer",
+        "title": "Upload to Server",
+        "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.refreshPlugins",
+        "title": "Refresh Server Plugins",
+        "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.compileSM",
+        "title": "Compile file",
+        "category": "SM",
+        "icon": {
+          "light": "icons/compile.svg",
+          "dark": "icons/compile.svg"
+        }
+      },
+      {
+        "command": "sourcepawn-vscode.insertParameters",
+        "title": "Insert Function Parameters",
+        "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.installSM",
+        "title": "Install Sourcemod",
+        "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.createChangelog",
+        "title": "Create Changelog",
+        "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.createGitignore",
+        "title": "Create gitignore",
+        "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.createLicense",
+        "title": "Create license",
+        "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.changeSMApi",
+        "title": "Change SM API",
+        "category": "SM"
+      },
+      {
+        "command": "sourcepawn-vscode.preprocessedDocument",
+        "title": "Reveal preprocessed document (as seen by the server)",
+        "category": "sourcepawn-lsp (debug command)"
+      },
+      {
+        "command": "sourcepawn-vscode.syntaxTree",
+        "title": "Reveal document's syntax tree",
+        "category": "sourcepawn-lsp (debug command)"
+      },
+      {
+        "command": "sourcepawn-vscode.itemTree",
+        "title": "Reveal document's item tree",
+        "category": "sourcepawn-lsp (debug command)"
+      },
+      {
+        "command": "sourcepawn-vscode.analyzerStatus",
+        "title": "Reveal sourcepawn-lsp status",
+        "category": "sourcepawn-lsp (debug command)"
+      },
+      {
+        "command": "sourcepawn-vscode.projectsGraphviz",
+        "title": "Generate Graphviz file for projects in the workspace",
+        "category": "sourcepawn-lsp (debug command)"
+      },
+      {
+        "command": "sourcepawn-vscode.installLanguageServer",
+        "title": "Install SourcePawn Language Server"
+      },
+      {
+        "command": "sourcepawn-vscode.stopServer",
+        "title": "Stop SourcePawn Language Server"
+      },
+      {
+        "command": "sourcepawn-vscode.startServer",
+        "title": "Start SourcePawn Language Server"
+      },
+      {
+        "command": "sourcepawn-vscode.openLogs",
+        "title": "Open SourcePawn Language Server logs"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceLangId == sourcepawn",
+          "command": "sourcepawn-vscode.compileSM"
+        }
+      ],
+      "explorer/context": [
+        {
+          "when": "resourceLangId == sourcepawn",
+          "command": "sourcepawn-vscode.compileSM"
+        }
+      ],
+      "editor/title": [
+        {
+          "when": "resourceLangId == sourcepawn && config.sourcepawn.showCompileIconInEditorTitleMenu",
+          "command": "sourcepawn-vscode.compileSM",
+          "group": "navigation@1"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "sourcepawn-vscode.compileSM",
+        "key": "ctrl+shift+d",
+        "mac": "cmd+shift+d",
+        "when": "resourceLangId == sourcepawn"
+      },
+      {
+        "command": "sourcepawn-vscode.insertParameters",
+        "key": "ctrl+shift+i",
+        "mac": "cmd+shift+i",
+        "when": "editorTextFocus && resourceLangId == sourcepawn && parameterHintsVisible"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "SourcePawn configuration",
+      "properties": {
+        "sourcepawn.SourcemodHome": {
+          "type": "string",
+          "description": "The location of the SourceMod API include files found in addons/sourcemod/scripting/include",
+          "scope": "resource",
+          "deprecationMessage": "Use `SourcePawnLanguageServer.includeDirectories` instead."
+        },
+        "sourcepawn.AuthorName": {
+          "type": "string",
+          "description": "The name of the plugin's author (you)."
+        },
+        "sourcepawn.GithubName": {
+          "type": "string",
+          "description": "The GitHub username of the plugin's author (you)."
+        },
+        "sourcepawn.SpcompPath": {
+          "type": "string",
+          "description": "The location of the SourceMod compiler",
+          "scope": "resource",
+          "deprecationMessage": "Use `SourcePawnLanguageServer.compiler.path` instead."
+        },
+        "sourcepawn.MainPathCompilation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the compile button always compiles the MainPath file (true) or the currently opened file (false).",
+          "scope": "resource"
+        },
+        "sourcepawn.showCompileIconInEditorTitleMenu": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to show the 'Compile Code' icon in editor title menu."
+        },
+        "sourcepawn.refreshServerPlugins": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "afterCompile",
+            "afterUpload"
+          ],
+          "description": "Should the plugins list on the server be refreshed with `sm plugins refresh` after a successful action in VSCode.",
+          "scope": "resource"
+        },
+        "sourcepawn.uploadAfterSuccessfulCompile": {
+          "type": "boolean",
+          "default": false,
+          "description": "Should the upload command be executed on a successful compile.",
+          "scope": "resource"
+        },
+        "sourcepawn.enableLinter": {
+          "type": "boolean",
+          "default": true,
+          "description": "Toggle the linter on or off.",
+          "scope": "resource"
+        },
+        "sourcepawn.optionalIncludeDirsPaths": {
+          "type": "array",
+          "default": [],
+          "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable.",
+          "scope": "resource",
+          "deprecationMessage": "Use `SourcePawnLanguageServer.includeDirectories` instead."
+        },
+        "sourcepawn.compilerArguments": {
+          "type": "array",
+          "default": [
+            "-O2",
+            "-v2"
+          ],
+          "description": "SourcePawn compiler options. Don't add paths here.",
+          "scope": "resource"
+        },
+        "sourcepawn.linterCompilerOptions": {
+          "type": "array",
+          "default": [],
+          "description": "SourcePawn linter compiler options. Don't add paths here.",
+          "scope": "resource",
+          "deprecationMessage": "Use `SourcePawnLanguageServer.compiler.arguments` instead."
+        },
+        "sourcepawn.availableAPIs": {
+          "type": "array",
+          "default": [
+            {
+              "name": "",
+              "includeDirectories": [],
+              "spcompPath": "",
+              "compilerArguments": [],
+              "linterArguments": []
+            }
+          ],
+          "description": "Available Sourcemod APIs to quickly changed between them.",
+          "scope": "resource"
+        },
+        "sourcepawn.outputDirectoryPath": {
+          "type": "string",
+          "default": "",
+          "description": "The path to the output directory for the compiled .smx file. Ends with a `/`.",
+          "scope": "resource"
+        },
+        "sourcepawn.UploadOptions": {
+          "type": "object",
+          "default": {
+            "user": "",
+            "password": "",
+            "host": "",
+            "port": 21,
+            "localRoot": "",
+            "remoteRoot": "/public_html/remote-folder/",
+            "include": [
+              "**"
+            ],
+            "exclude": [
+              "scripting/**/",
+              ".vscode/**/",
+              ".github/**/",
+              ".gitignore",
+              "*.md",
+              ".git"
+            ],
+            "deleteRemote": false,
+            "forcePasv": true,
+            "sftp": false,
+            "isRootRelative": true
+          },
+          "description": "Upload options for the FTP/SFTP client.",
+          "scope": "resource"
+        },
+        "sourcepawn.SourceServerOptions": {
+          "type": "object",
+          "default": {
+            "host": "",
+            "port": 27015,
+            "encoding": "ascii",
+            "timeout": 1000,
+            "password": ""
+          },
+          "description": "Options for the Source server to refresh the plugins on.",
+          "scope": "resource"
+        },
+        "sourcepawn.formatterSettings": {
+          "type": "array",
+          "default": [
+            "AlignAfterOpenBracket: Align",
+            "AlignArrayOfStructures: Left",
+            "AlignConsecutiveAssignments: AcrossEmptyLinesAndComments",
+            "AlignConsecutiveBitFields: AcrossEmptyLinesAndComments",
+            "AlignConsecutiveDeclarations: AcrossEmptyLinesAndComments",
+            "AlignConsecutiveMacros: AcrossEmptyLinesAndComments",
+            "AlignEscapedNewlines: Left",
+            "AlignOperands: AlignAfterOperator",
+            "AlignTrailingComments: true",
+            "AllowAllArgumentsOnNextLine: true",
+            "AllowAllConstructorInitializersOnNextLine: true",
+            "AllowAllParametersOfDeclarationOnNextLine: true",
+            "AllowShortBlocksOnASingleLine: Always",
+            "AllowShortCaseLabelsOnASingleLine: true",
+            "AllowShortEnumsOnASingleLine: true",
+            "AllowShortFunctionsOnASingleLine: All",
+            "AllowShortIfStatementsOnASingleLine: AllIfsAndElse",
+            "AllowShortLambdasOnASingleLine: All",
+            "AllowShortLoopsOnASingleLine: false",
+            "AlwaysBreakAfterDefinitionReturnType: None",
+            "AlwaysBreakAfterReturnType: None",
+            "AlwaysBreakBeforeMultilineStrings: false",
+            "AlwaysBreakTemplateDeclarations: No",
+            "BasedOnStyle: Google",
+            "BinPackArguments: true",
+            "BinPackParameters: true",
+            "BreakBeforeBinaryOperators: NonAssignment",
+            "BreakBeforeBraces: Custom",
+            "BraceWrapping: { AfterCaseLabel: true",
+            "AfterClass: true",
+            "AfterControlStatement: Always",
+            "AfterEnum: true",
+            "AfterExternBlock: true",
+            "AfterFunction: true",
+            "AfterNamespace: true",
+            "AfterObjCDeclaration: false",
+            "AfterStruct: true",
+            "AfterUnion: true",
+            "BeforeCatch: true",
+            "BeforeElse: true",
+            "BeforeLambdaBody: true",
+            "BeforeWhile: true",
+            "IndentBraces: false",
+            "SplitEmptyFunction: false",
+            "SplitEmptyNamespace: false",
+            "SplitEmptyRecord: false }",
+            "BreakBeforeConceptDeclarations: false",
+            "BreakBeforeTernaryOperators: true",
+            "BreakConstructorInitializers: AfterColon",
+            "BreakInheritanceList: AfterComma",
+            "BreakStringLiterals: false",
+            "ColumnLimit: 0",
+            "CompactNamespaces: true",
+            "ConstructorInitializerAllOnOneLineOrOnePerLine: true",
+            "ConstructorInitializerIndentWidth: ${TabSize}",
+            "ContinuationIndentWidth: ${TabSize}",
+            "Cpp11BracedListStyle: false",
+            "EmptyLineBeforeAccessModifier: LogicalBlock",
+            "FixNamespaceComments: true",
+            "IncludeBlocks: Preserve",
+            "IndentAccessModifiers: false",
+            "IndentCaseBlocks: false",
+            "IndentCaseLabels: true",
+            "IndentExternBlock: Indent",
+            "IndentGotoLabels: false",
+            "IndentPPDirectives: BeforeHash",
+            "IndentRequires: true",
+            "IndentWidth: ${TabSize}",
+            "IndentWrappedFunctionNames: true",
+            "LambdaBodyIndentation: OuterScope",
+            "Language: Cpp",
+            "MaxEmptyLinesToKeep: 1",
+            "NamespaceIndentation: All",
+            "ObjCBinPackProtocolList: Always",
+            "ObjCBreakBeforeNestedBlockParam: false",
+            "ObjCSpaceBeforeProtocolList: false",
+            "ReflowComments: true",
+            "SortIncludes: Never",
+            "SpaceAfterCStyleCast: false",
+            "SpaceAfterLogicalNot: false",
+            "SpaceBeforeAssignmentOperators: true",
+            "SpaceBeforeCaseColon: false",
+            "SpaceBeforeCpp11BracedList: false",
+            "SpaceBeforeCtorInitializerColon: true",
+            "SpaceBeforeInheritanceColon: true",
+            "SpaceBeforeParens: ControlStatementsExceptControlMacros",
+            "SpaceBeforeRangeBasedForLoopColon: true",
+            "SpaceBeforeSquareBrackets: false",
+            "SpaceInEmptyBlock: false",
+            "SpaceInEmptyParentheses: false",
+            "SpacesBeforeTrailingComments: ${TabSize}",
+            "SpacesInConditionalStatement: false",
+            "SpacesInContainerLiterals: true",
+            "SpacesInCStyleCastParentheses: false",
+            "SpacesInParentheses: false",
+            "SpacesInSquareBrackets: false",
+            "Standard: Auto",
+            "TabWidth: ${TabSize}",
+            "UseTab: Always",
+            "CommentPragmas: '^#define|#tryinclude'"
+          ],
+          "description": "Settings for the formatter. Any setting supported by Clang Format can be used here.",
+          "scope": "resource"
+        },
+        "sourcepawn.trace.server": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warn",
+            "info",
+            "debug",
+            "trace"
+          ],
+          "default": "info",
+          "description": "Set the logging level of the SourcePawnLanguageServer."
+        }
+      }
+    },
+    "configurationDefaults": {
+      "editor.semanticHighlighting.enabled": true
+    },
+    "languages": [
+      {
+        "id": "sourcepawn",
+        "aliases": [
+          "SourcePawn",
+          "sourcepawn"
+        ],
+        "extensions": [
+          ".sp",
+          ".inc"
+        ],
+        "configuration": "./LanguageConfigurations/SPConfiguration.language-configuration.json",
+        "icon": {
+          "light": "./icons/SP.png",
+          "dark": "./icons/SP.png"
+        }
+      },
+      {
+        "id": "valve-kv",
+        "aliases": [
+          "Valve KeyValue"
+        ],
+        "extensions": [
+          ".phrases.txt",
+          ".games.txt",
+          ".kv"
+        ],
+        "configuration": "./LanguageConfigurations/ValveKVConfiguration.language-configuration.json"
+      },
+      {
+        "id": "valve-cfg",
+        "aliases": [
+          "Valve CFG",
+          "CFG"
+        ],
+        "extensions": [
+          ".cfg"
+        ],
+        "icon": {
+          "light": "./icons/cfg.svg",
+          "dark": "./icons/cfg.svg"
+        },
+        "configuration": "./LanguageConfigurations/ValveCFGConfiguration.language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "sourcepawn",
+        "scopeName": "source.sourcepawn",
+        "path": "./syntaxes/sourcepawn.tmLanguage.json"
+      },
+      {
+        "scopeName": "sp-jsdoc.injection",
+        "injectTo": [
+          "source.sourcepawn"
+        ],
+        "path": "./syntaxes/sourcepawn-jsdoc.json"
+      },
+      {
+        "language": "valve-kv",
+        "scopeName": "text.valve-kv",
+        "path": "./syntaxes/valve-kv.tmLanguage.json"
+      },
+      {
+        "language": "valve-cfg",
+        "scopeName": "text.valve-cfg",
+        "path": "./syntaxes/valve-cfg.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "sourcepawn",
+        "path": "./snippets/snippets.json"
+      }
+    ]
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "decompress": "^4.2.1",
+    "ftp-deploy": "git+https://github.com/Sarrus1/ftp-deploy.git",
+    "glob": "^7.2.0",
+    "rcon-srcds": "^2.0.1",
+    "valve_kv_tools": "^0.3.0",
+    "vscode-languageclient": "^8.1.0",
+    "vscode-uri": "^3.0.3"
+  },
+  "devDependencies": {
+    "@istanbuljs/nyc-config-typescript": "^1.0.2",
+    "@types/decompress": "^4.2.4",
+    "@types/glob": "^7.2.0",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "^16.13.2",
+    "@types/vscode": "^1.63.0",
+    "@vscode/test-electron": "^1.6.1",
+    "@vscode/vsce": "^2.19.0",
+    "esbuild": "^0.18.15",
+    "mocha": "^10.0.0",
+    "node-loader": "2.0.0",
+    "nyc": "^15.1.0",
+    "ovsx": "^0.8.2",
+    "ts-loader": "^9.2.6",
+    "typescript": "^4.5.4"
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "pretest": "npm run compile",
+    "test": "node ./dist/test/runTest.js",
+    "build": "node esbuild.mjs prod",
+    "compile": "npm run build && tsc -b tsconfig.json",
+    "watch": "node esbuild.mjs watch"
+  },
+  "__metadata": {
+    "id": "217597eb-5e7a-45ee-a236-5456c0f90948",
+    "publisherDisplayName": "Sarrus",
+    "publisherId": "ace08d21-1e01-422f-822b-c4f6145e6d5f",
+    "isPreReleaseVersion": false
+  }
+}

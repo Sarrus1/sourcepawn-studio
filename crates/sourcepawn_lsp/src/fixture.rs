@@ -4,12 +4,11 @@ use itertools::Itertools;
 use lsp_server::{Connection, Response};
 use lsp_types::{
     notification::{DidOpenTextDocument, Exit, Initialized},
-    request::ResolveCompletionItem,
-    request::{Completion, Initialize, Shutdown},
+    request::{Completion, Initialize, ResolveCompletionItem, Shutdown},
     ClientCapabilities, CompletionContext, CompletionItem, CompletionItemKind, CompletionParams,
-    CompletionResponse, CompletionTriggerKind, DidOpenTextDocumentParams, InitializeParams,
-    InitializedParams, Location, Position, Range, TextDocumentIdentifier, TextDocumentItem,
-    TextDocumentPositionParams, Url, WorkspaceFolder,
+    CompletionResponse, CompletionTriggerKind, DidOpenTextDocumentParams, Hover, InitializeParams,
+    InitializedParams, Location, LocationLink, Position, Range, TextDocumentIdentifier,
+    TextDocumentItem, TextDocumentPositionParams, Url, WorkspaceFolder,
 };
 use std::{
     env,
@@ -23,8 +22,9 @@ use std::{
 use tempfile::{tempdir, TempDir};
 use zip::ZipArchive;
 
-use super::{LspClient, Server};
-use store::options::Options;
+use crate::config::ConfigData;
+
+use super::{GlobalState, LspClient};
 
 #[derive(Debug)]
 pub enum InternalMessage {
@@ -178,10 +178,10 @@ impl TestBed {
         let fixture = Fixture::parse(fixture);
 
         let temp_dir = tempdir()?;
-        let temp_dir_path = temp_dir.path().canonicalize()?;
+        let temp_dir_path = dunce::canonicalize(temp_dir.path())?;
 
         let temp_sm_dir = tempdir()?;
-        let temp_sm_dir_path = temp_sm_dir.path().canonicalize()?;
+        let temp_sm_dir_path = dunce::canonicalize(temp_sm_dir.path())?;
         let temp_sm_dir_path_ = temp_sm_dir_path.clone(); // Copy the value to be able to move it into the closure
 
         let locations: Vec<Location> = fixture
@@ -202,7 +202,7 @@ impl TestBed {
         let client = LspClient::new(client_conn.sender);
 
         let server_thread =
-            std::thread::spawn(move || Server::new(server_conn, false).run().unwrap());
+            std::thread::spawn(move || GlobalState::new(server_conn, false).run().unwrap());
         let client_thread = {
             let client = client.clone();
             std::thread::spawn(move || {
@@ -211,7 +211,8 @@ impl TestBed {
                     match message {
                         lsp_server::Message::Request(request) => {
                             if request.method == "workspace/configuration" {
-                                let mut options = Options::default();
+                                #[allow(unused_mut)]
+                                let mut config = ConfigData::default();
                                 if add_sourcemod {
                                     let mut current_dir = env::current_dir().unwrap();
                                     // The env depends on if we use the debugger or not.
@@ -221,12 +222,13 @@ impl TestBed {
                                     let sourcemod_path =
                                         current_dir.join("test_data/sourcemod.zip");
                                     unzip_file(&sourcemod_path, &destination).unwrap();
-                                    options
-                                        .includes_directories
+                                    #[cfg(test)]
+                                    config
+                                        .includeDirectories
                                         .push(destination.clone().join("include/"));
                                 }
                                 client
-                                    .send_response(Response::new_ok(request.id, vec![options]))
+                                    .send_response(Response::new_ok(request.id, vec![config]))
                                     .unwrap();
                                 std::thread::sleep(Duration::from_millis(100));
                                 internal_tx.send(InternalMessage::OptionsRequested).unwrap()
@@ -271,6 +273,7 @@ impl TestBed {
                     uri: Url::from_file_path(self.temp_dir_path.clone()).unwrap(),
                     name: "test".to_string(),
                 }]),
+                root_uri: Some(Url::from_file_path(self.temp_dir_path.clone()).unwrap()),
                 ..Default::default()
             })
             .unwrap();
@@ -312,6 +315,57 @@ impl TestBed {
     pub fn documents(&self) -> &[Document] {
         &self.fixture.documents
     }
+
+    /// Remove the tempdir path from the uri, so that the tests are not dependent
+    /// on the tempdir.
+    pub fn anonymize_uri(&self, uri: &mut Url) {
+        let mut target_path = uri.to_file_path().unwrap();
+        target_path = target_path
+            .strip_prefix(&self.temp_dir_path)
+            .unwrap()
+            .to_path_buf();
+        uri.set_path(&target_path.to_string_lossy());
+    }
+}
+
+pub fn goto_definition(fixture: &str) -> Vec<LocationLink> {
+    let test_bed = TestBed::new(fixture, true).unwrap();
+    test_bed
+        .initialize(
+            serde_json::from_value(serde_json::json!({
+                "textDocument": {
+                    "definition": {
+                        "linkSupport": true
+                    }
+                },
+                "workspace": {
+                    "configuration": true,
+                    "workspace_folders": true
+                }
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+    let text_document_position = test_bed.cursor().unwrap();
+    let params = lsp_types::request::GotoTypeDefinitionParams {
+        text_document_position_params: text_document_position,
+        work_done_progress_params: Default::default(),
+        partial_result_params: Default::default(),
+    };
+    let mut locations = match test_bed
+        .client()
+        .send_request::<lsp_types::request::GotoDefinition>(params)
+        .unwrap()
+    {
+        Some(lsp_types::GotoDefinitionResponse::Link(locations)) => locations,
+        _ => unreachable!("Expected a link response."),
+    };
+
+    locations.iter_mut().for_each(|location| {
+        test_bed.anonymize_uri(&mut location.target_uri);
+    });
+
+    locations
 }
 
 pub fn complete(fixture: &str, trigger_character: Option<String>) -> Vec<CompletionItem> {
@@ -335,10 +389,6 @@ pub fn complete(fixture: &str, trigger_character: Option<String>) -> Vec<Complet
         )
         .unwrap();
     let text_document_position = test_bed.cursor().unwrap();
-    test_bed
-        .internal_rx
-        .recv_timeout(Duration::from_secs(10))
-        .unwrap();
     let mut items = match test_bed
         .client()
         .send_request::<Completion>(CompletionParams {
@@ -420,4 +470,38 @@ pub fn unzip_file(zip_file_path: &Path, destination: &Path) -> Result<(), io::Er
     }
 
     Ok(())
+}
+
+pub fn hover(fixture: &str) -> Hover {
+    let test_bed = TestBed::new(fixture, true).unwrap();
+    test_bed
+        .initialize(
+            serde_json::from_value(serde_json::json!({
+                "textDocument": {
+                    "hover": {
+                        "contentFormat": [
+                            "plaintext",
+                            "markdown"
+                        ]
+                    }
+                },
+                "workspace": {
+                    "configuration": true,
+                    "workspace_folders": true
+                }
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+    let text_document_position = test_bed.cursor().unwrap();
+    let params = lsp_types::HoverParams {
+        text_document_position_params: text_document_position,
+        work_done_progress_params: Default::default(),
+    };
+
+    test_bed
+        .client()
+        .send_request::<lsp_types::request::HoverRequest>(params)
+        .unwrap()
+        .expect("Expected a hover response.")
 }

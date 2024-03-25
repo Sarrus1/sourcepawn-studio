@@ -1,4 +1,78 @@
-use lsp_types::{ClientCapabilities, MarkupKind};
+use ide::WideEncoding;
+use lsp_types::{
+    ClientCapabilities, HoverProviderCapability, MarkupKind, OneOf, PositionEncodingKind,
+    SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions, ServerCapabilities,
+    TextDocumentSyncCapability, TextDocumentSyncKind,
+};
+
+use crate::{
+    config::Config,
+    line_index::PositionEncoding,
+    lsp::{ext::negotiated_encoding, semantic_tokens},
+};
+
+pub fn server_capabilities(config: &Config) -> ServerCapabilities {
+    ServerCapabilities {
+        position_encoding: match negotiated_encoding(config.caps()) {
+            PositionEncoding::Utf8 => Some(PositionEncodingKind::UTF8),
+            PositionEncoding::Wide(wide) => match wide {
+                WideEncoding::Utf16 => Some(PositionEncodingKind::UTF16),
+                WideEncoding::Utf32 => Some(PositionEncodingKind::UTF32),
+                _ => None,
+            },
+        },
+        text_document_sync: Some(TextDocumentSyncCapability::Kind(
+            TextDocumentSyncKind::INCREMENTAL,
+        )),
+        hover_provider: Some(HoverProviderCapability::Simple(true)),
+        definition_provider: Some(OneOf::Left(true)),
+        semantic_tokens_provider: Some(
+            SemanticTokensOptions {
+                legend: SemanticTokensLegend {
+                    token_types: semantic_tokens::SUPPORTED_TYPES.to_vec(),
+                    token_modifiers: semantic_tokens::SUPPORTED_MODIFIERS.to_vec(),
+                },
+
+                full: Some(SemanticTokensFullOptions::Delta { delta: Some(true) }),
+                range: Some(true),
+                work_done_progress_options: Default::default(),
+            }
+            .into(),
+        ),
+        /*
+        completion_provider: Some(CompletionOptions {
+            trigger_characters: Some(vec![
+                "<".to_string(),
+                '"'.to_string(),
+                "'".to_string(),
+                "/".to_string(),
+                "\\".to_string(),
+                ".".to_string(),
+                ":".to_string(),
+                " ".to_string(),
+                "$".to_string(),
+                "*".to_string(),
+            ]),
+            resolve_provider: Some(true),
+            completion_item: Some(CompletionOptionsCompletionItem {
+                label_details_support: Some(true),
+            }),
+            ..Default::default()
+        }),
+        hover_provider: Some(HoverProviderCapability::Simple(true)),
+        signature_help_provider: Some(SignatureHelpOptions {
+            trigger_characters: Some(vec![",".to_string(), "(".to_string()]),
+            retrigger_characters: Some(vec![",".to_string(), "(".to_string()]),
+            ..Default::default()
+        }),
+        references_provider: Some(OneOf::Left(true)),
+        document_symbol_provider: Some(OneOf::Left(true)),
+        rename_provider: Some(OneOf::Left(true)),
+        call_hierarchy_provider: Some(CallHierarchyServerCapability::Simple(true)),
+        */
+        ..Default::default()
+    }
+}
 
 pub trait ClientCapabilitiesExt {
     fn has_definition_link_support(&self) -> bool;

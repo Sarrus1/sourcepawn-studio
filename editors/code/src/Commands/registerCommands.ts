@@ -16,6 +16,9 @@ import { run as changeSMApiCommand } from "./changeSMApi";
 import { run as doctorCommand } from "./doctor";
 import { run as projectsGraphvizCommand } from "./projectsGraphviz";
 import { preprocessedDocumentCommand } from "./preprocessedDocument";
+import { syntaxTreeCommand } from "./syntaxTree";
+import { itemTreeCommand } from "./itemTree";
+import { analyzerStatusCommand } from "./analyzerStatus";
 import { CommandFactory } from "../ctx";
 
 /**
@@ -154,6 +157,15 @@ export function createServerCommands(): Record<string, CommandFactory> {
     },
     preprocessedDocument: {
       enabled: preprocessedDocumentCommand,
+    },
+    syntaxTree: {
+      enabled: syntaxTreeCommand,
+    },
+    itemTree: {
+      enabled: itemTreeCommand,
+    },
+    analyzerStatus: {
+      enabled: analyzerStatusCommand,
     },
   };
 }

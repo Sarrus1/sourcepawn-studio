@@ -40,7 +40,7 @@ class Doctor {
 
   isSMInstalled = DiagnosticState.None;
 
-  constructor() {}
+  constructor() { }
 
   toWebview(): string {
     return `<!DOCTYPE html>
@@ -182,22 +182,22 @@ class Doctor {
     switch (this.isSMInstalled) {
       case DiagnosticState.OK:
         diagnostics.push(
-          '✅ "SourcePawnLanguageServer.includesDirectories" contains at least one entry that contains "sourcemod.inc".'
+          '✅ "SourcePawnLanguageServer.includeDirectories" contains at least one entry that contains "sourcemod.inc".'
         );
         break;
       case DiagnosticState.Error:
         diagnostics.push(
-          '❌ "SourcePawnLanguageServer.includesDirectories" contains at least one invalid entry".'
+          '❌ "SourcePawnLanguageServer.includeDirectories" contains at least one invalid entry".'
         );
         break;
       case DiagnosticState.Warning:
         diagnostics.push(
-          '⚠️ "SourcePawnLanguageServer.includesDirectories" contains at least one entry that was not scanned properly.'
+          '⚠️ "SourcePawnLanguageServer.includeDirectories" contains at least one entry that was not scanned properly.'
         );
         break;
       case DiagnosticState.None:
         diagnostics.push(
-          '🩺 Checking if "SourcePawnLanguageServer.includesDirectories" is set.'
+          '🩺 Checking if "SourcePawnLanguageServer.includeDirectories" is set.'
         );
         break;
     }
@@ -206,14 +206,14 @@ class Doctor {
   }
 
   async checkIncludesDirectories() {
-    const includesDirectories: string[] = vscode.workspace
+    const includeDirectories: string[] = vscode.workspace
       .getConfiguration("SourcePawnLanguageServer")
-      .get("includesDirectories");
-    if (!includesDirectories) {
+      .get("includeDirectories");
+    if (!includeDirectories) {
       this.isSMInstalled = DiagnosticState.Error;
       return;
     }
-    includesDirectories.forEach((dir) => {
+    includeDirectories.forEach((dir) => {
       if (this.isSMInstalled !== DiagnosticState.None) return;
       fs.stat(dir, (err, _stats) => {
         if (err) {

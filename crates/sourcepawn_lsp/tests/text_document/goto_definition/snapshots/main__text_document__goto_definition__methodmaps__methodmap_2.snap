@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/goto_definition/methodmaps.rs
+assertion_line: 18
+expression: "goto_definition(r#\"\n%! main.sp\nmethodmap Foo {}\n\nmethodmap Bar < Foo {}\n                 |\n                 ^\n\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 2,
+        "character": 16
+      },
+      "end": {
+        "line": 2,
+        "character": 19
+      }
+    },
+    "targetUri": "file:///main.sp",
+    "targetRange": {
+      "start": {
+        "line": 0,
+        "character": 0
+      },
+      "end": {
+        "line": 0,
+        "character": 16
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 0,
+        "character": 10
+      },
+      "end": {
+        "line": 0,
+        "character": 13
+      }
+    }
+  }
+]

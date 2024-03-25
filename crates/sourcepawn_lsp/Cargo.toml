@@ -1,6 +1,6 @@
 [package]
 name = "sourcepawn_lsp"
-version = "0.12.0"
+version = "0.13.0"
 description = "Language Server implemention for the SourcePawn programming language."
 include = ["Cargo.toml", "src/"]
 edition.workspace = true
@@ -15,13 +15,11 @@ test = false
 doctest = false
 
 [dependencies]
-linter.workspace = true
+stdx.workspace = true
 lsp-server.workspace = true
 lsp-types.workspace = true
-semantic_analyzer.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-derive-new.workspace = true
 tree-sitter.workspace = true
 tree-sitter-sourcepawn.workspace = true
 anyhow.workspace = true
@@ -42,13 +40,29 @@ humantime.workspace = true
 sourcepawn_lexer.workspace = true
 sentry.workspace = true
 preprocessor.workspace = true
-store.workspace = true
+base-db.workspace = true
 syntax.workspace = true
 parking_lot.workspace = true
 uuid.workspace = true
+tracing.workspace = true
+salsa.workspace = true
+dunce.workspace = true
+always-assert.workspace = true
+nohash-hasher = "0.2.0"
+num_cpus = "1.16.0"
+itertools.workspace = true
 # This is only used in the fixture module for benchmarks and tests.
-itertools = "0.11.0"
 zip = "0.6.6"
+
+
+# Local crates
+vfs.workspace = true
+vfs-notify.workspace = true
+ide.workspace = true
+ide-db.workspace = true
+paths.workspace = true
+flycheck.workspace = true
+profile.workspace = true
 
 [dependencies.openssl]
 optional = true
@@ -56,9 +70,10 @@ version = "0.10.60"
 
 [dev-dependencies]
 assert_unordered = "0.3.5"
-criterion = { version = "0.4.0" }
+criterion = "0.5.1"
 insta = { version = "1.28.0", features = ["glob", "redactions", "json"] }
 minreq = { version = "2.7.0", features = ["https"] }
+test-utils.workspace = true
 
 [features]
 # If compiling on a system without OpenSSL installed, or cross-compiling for a different

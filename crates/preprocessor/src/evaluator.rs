@@ -1,37 +1,57 @@
-use fxhash::FxHashMap;
+use std::sync::Arc;
+
+use fxhash::{FxHashMap, FxHashSet};
 use lsp_types::{Position, Range};
-use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
+use sourcepawn_lexer::{Literal, Operator, TokenKind};
+use vfs::FileId;
 
 use super::{
     errors::{EvaluationError, ExpansionError, MacroNotFoundError},
     macros::expand_identifier,
     preprocessor_operator::PreOperator,
 };
-use crate::Macro;
+use crate::{Macro, MacrosMap, Offset, Token};
 
 #[derive(Debug)]
 pub struct IfCondition<'a> {
-    pub symbols: Vec<Symbol>,
+    pub tokens: Vec<Token>,
     pub(super) macro_not_found_errors: Vec<MacroNotFoundError>,
-    macros: &'a mut FxHashMap<String, Macro>,
-    expansion_stack: Vec<Symbol>,
+    macro_store: &'a mut MacrosMap,
+    expansion_stack: Vec<Token>,
     line_nb: u32,
+    offsets: &'a mut FxHashMap<u32, Vec<Offset>>,
+    disabled_macros: &'a mut FxHashSet<Arc<Macro>>,
 }
 
 impl<'a> IfCondition<'a> {
-    pub(super) fn new(macros: &'a mut FxHashMap<String, Macro>, line_nb: u32) -> Self {
+    pub(super) fn new(
+        macro_store: &'a mut MacrosMap,
+        line_nb: u32,
+        offsets: &'a mut FxHashMap<u32, Vec<Offset>>,
+        disabled_macros: &'a mut FxHashSet<Arc<Macro>>,
+    ) -> Self {
         Self {
-            symbols: vec![],
+            tokens: vec![],
             macro_not_found_errors: vec![],
-            macros,
+            macro_store,
             expansion_stack: vec![],
             line_nb,
+            offsets,
+            disabled_macros,
         }
     }
 
+    pub fn enable_macro(&mut self, macro_: Arc<Macro>) {
+        self.disabled_macros.remove(&macro_);
+    }
+
+    pub fn is_macro_disabled(&self, macro_: &Arc<Macro>) -> bool {
+        self.disabled_macros.contains(macro_)
+    }
+
     pub(super) fn evaluate(&mut self) -> Result<bool, EvaluationError> {
-        let mut output_queue: Vec<i32> = vec![];
-        let mut operator_stack: Vec<(PreOperator, Range)> = vec![];
+        let mut output_queue: Vec<i32> = Vec::new();
+        let mut operator_stack: Vec<(PreOperator, Range)> = Vec::new();
         let mut may_be_unary = true;
         let mut looking_for_defined = false;
         let mut current_symbol_range = Range::new(
@@ -39,12 +59,15 @@ impl<'a> IfCondition<'a> {
             Position::new(self.line_nb, 1000),
         );
         let mut symbol_iter = self
-            .symbols
+            .tokens
             .clone() // TODO: This is horrible.
             .into_iter()
+            .map(|token| token.symbol().to_owned())
             .peekable();
         while let Some(symbol) = if !self.expansion_stack.is_empty() {
-            self.expansion_stack.pop()
+            self.expansion_stack
+                .pop()
+                .map(|token| token.symbol().to_owned())
         } else {
             let symbol = symbol_iter.next();
             if let Some(symbol) = &symbol {
@@ -157,29 +180,54 @@ impl<'a> IfCondition<'a> {
                 }
                 _ => {
                     if looking_for_defined {
-                        output_queue.push(self.macros.contains_key(&symbol.text()).into());
+                        if let Some(macro_) = self.macro_store.get(&symbol.text()) {
+                            self.offsets.entry(symbol.range.start.line).or_default().push(Offset {
+                                        file_id: macro_.file_id,
+                                        range: symbol.range,
+                                        diff: 0, // FIXME: This is the default value, we should calculate it.
+                                        idx: macro_.idx,
+                                        args_diff: 0
+                                    });
+                            output_queue.push(1);
+                        } else {
+                            output_queue.push(0);
+                        }
                         looking_for_defined = false;
                         may_be_unary = false;
                     } else {
                         // Skip the macro if it is disabled and reenable it.
-                        if let Some(macro_) = self.macros.get_mut(&symbol.text()) {
-                            if macro_.disabled {
-                                macro_.disabled = false;
+                        let mut attr: Option<(u32, FileId)> = None;
+                        if let Some(macro_) = self.macro_store.get(&symbol.text()) {
+                            attr = (macro_.idx, macro_.file_id).into();
+                            if self.is_macro_disabled(macro_) {
+                                self.enable_macro(macro_.clone());
                                 continue;
                             }
-                        }
+                        };
                         match expand_identifier(
                             &mut symbol_iter,
-                            self.macros,
-                            &symbol,
+                            self.macro_store,
+                            &symbol.clone().into(),
                             &mut self.expansion_stack,
-                            false
+                            false,
+                            self.disabled_macros
                         ) {
-                            Ok(_) => continue, // No need to keep track of expanded macros here, we do that when calling expand_symbol.
+                            Ok(args_diff) => {
+                                if let Some((idx, file_id)) = attr {
+                                    self.offsets.entry(symbol.range.start.line).or_default().push(Offset {
+                                        file_id,
+                                        range: symbol.range,
+                                        diff: 0, // FIXME: This is the default value, we should calculate it.
+                                        idx,
+                                        args_diff
+                                    })
+                                    ;
+                                }
+                            }, // No need to keep track of expanded macros here, we do that when calling expand_symbol.
                             Err(ExpansionError::MacroNotFound(err)) => {
                                 self.macro_not_found_errors.push(err.clone());
                                 return Err(EvaluationError::new(
-                                    err.to_string(),
+                                    "Unresolved macro".into(), // The error is already propagated in `macro_not_found_errors`.
                                     current_symbol_range,
                                 ));
                             }

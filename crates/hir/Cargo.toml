@@ -1,0 +1,34 @@
+[package]
+name = "hir"
+version = "0.1.0"
+include = ["Cargo.toml", "src/"]
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lib]
+doctest = false
+
+[dependencies]
+lsp-types.workspace = true
+tree-sitter.workspace = true
+tree-sitter-sourcepawn.workspace = true
+salsa.workspace = true
+fxhash.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+smol_str.workspace = true
+log.workspace = true
+la-arena.workspace = true
+smallvec.workspace = true
+lazy_static.workspace = true
+regex.workspace = true
+
+
+# Local crates
+syntax.workspace = true
+vfs.workspace = true
+base-db.workspace = true
+hir-def.workspace = true
+stdx.workspace = true
+preprocessor.workspace = true

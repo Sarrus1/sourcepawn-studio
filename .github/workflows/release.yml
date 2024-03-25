@@ -123,9 +123,14 @@ jobs:
         run: |
           mkdir -p editors/code/languageServer
           cp target/${{ matrix.target }}/release/sourcepawn_lsp editors/code/languageServer/
-      - name: Package VSCode extension
+      - name: Package VSCode extension (Release)
+        if: ${{ !github.event.release.prerelease }}
         working-directory: ./editors/code
         run: npx vsce package --target ${{ env.target }}
+      - name: Package VSCode extension (Prerelease)
+        if: ${{ github.event.release.prerelease }}
+        working-directory: ./editors/code
+        run: npx vsce package --pre-release --target ${{ env.target }}
 
       - name: Upload sourcepawn-lsp binary
         uses: actions/upload-artifact@v3
@@ -219,6 +224,7 @@ jobs:
     needs: [build, github]
     steps:
       - name: Release to Homebrew tap
+        if: ${{ !github.event.release.prerelease }}
         uses: Justintime50/homebrew-releaser@v1
         with:
           homebrew_owner: Sarrus1

@@ -9,7 +9,7 @@ use std::io;
 use std::path::PathBuf;
 use std::time::SystemTime;
 
-use sourcepawn_lsp::Server;
+use sourcepawn_lsp::GlobalState;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -59,7 +59,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     env::set_var("RUST_BACKTRACE", "full");
     env::set_var("RUST_LIB_BACKTRACE", "full");
     let (connection, threads) = Connection::stdio();
-    Server::new(connection, opts.amxxpawn_mode).run()?;
+    GlobalState::new(connection, opts.amxxpawn_mode).run()?;
     threads.join()?;
     log::info!("Shutting down sourcepawn-lsp");
 
@@ -88,7 +88,23 @@ fn setup_logger(opts: Opts) {
                 message
             ))
         })
-        .level(verbosity_level)
+        .level(LevelFilter::Error)
+        .level_for("base_db", verbosity_level)
+        .level_for("flychek", verbosity_level)
+        .level_for("hir", verbosity_level)
+        .level_for("hir_def", verbosity_level)
+        .level_for("ide", verbosity_level)
+        .level_for("ide_db", verbosity_level)
+        .level_for("ide_diagnostics", verbosity_level)
+        .level_for("paths", verbosity_level)
+        .level_for("preprocessor", verbosity_level)
+        .level_for("profile", verbosity_level)
+        .level_for("sourcepawn_lsp", verbosity_level)
+        .level_for("stdx", verbosity_level)
+        .level_for("syntax", verbosity_level)
+        .level_for("test_utils", verbosity_level)
+        .level_for("vfs", verbosity_level)
+        .level_for("vfs_notify", verbosity_level)
         .chain(io::stderr());
 
     let logger = match opts.log_file {

@@ -1,0 +1,11 @@
+---
+source: crates/preprocessor/tests/main.rs
+assertion_line: 570
+expression: "SourcepawnPreprocessor::new(FileId::from(0), input,\n                &mut extend_macros).preprocess_input().preprocessed_text().as_ref()"
+---
+#define FOO "test \
+expansion \
+\
+also"
+char foo[64] = "test expansion also";
+

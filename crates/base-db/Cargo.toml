@@ -1,0 +1,28 @@
+[package]
+name = "base-db"
+version = "0.1.0"
+include = ["Cargo.toml", "src/"]
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lib]
+doctest = false
+
+[dependencies]
+lsp-types.workspace = true
+tree-sitter.workspace = true
+tree-sitter-sourcepawn.workspace = true
+salsa.workspace = true
+anyhow.workspace = true
+fxhash.workspace = true
+lazy_static.workspace = true
+sourcepawn_lexer.workspace = true
+regex.workspace = true
+tracing.workspace = true
+la-arena.workspace = true
+parking_lot.workspace = true
+
+# Local crates
+syntax.workspace = true
+vfs.workspace = true

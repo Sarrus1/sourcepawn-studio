@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "7.1.0",
+  "version": "7.2.4",
   "publisher": "Sarrus",
   "main": "./dist/spIndex.js",
   "icon": "sm.png",
@@ -137,6 +137,21 @@
         "category": "sourcepawn-lsp (debug command)"
       },
       {
+        "command": "sourcepawn-vscode.syntaxTree",
+        "title": "Reveal document's syntax tree",
+        "category": "sourcepawn-lsp (debug command)"
+      },
+      {
+        "command": "sourcepawn-vscode.itemTree",
+        "title": "Reveal document's item tree",
+        "category": "sourcepawn-lsp (debug command)"
+      },
+      {
+        "command": "sourcepawn-vscode.analyzerStatus",
+        "title": "Reveal sourcepawn-lsp status",
+        "category": "sourcepawn-lsp (debug command)"
+      },
+      {
         "command": "sourcepawn-vscode.projectsGraphviz",
         "title": "Generate Graphviz file for projects in the workspace",
         "category": "sourcepawn-lsp (debug command)"
@@ -201,7 +216,7 @@
           "type": "string",
           "description": "The location of the SourceMod API include files found in addons/sourcemod/scripting/include",
           "scope": "resource",
-          "deprecationMessage": "Use `SourcePawnLanguageServer.includesDirectories` instead."
+          "deprecationMessage": "Use `SourcePawnLanguageServer.includeDirectories` instead."
         },
         "sourcepawn.AuthorName": {
           "type": "string",
@@ -215,12 +230,7 @@
           "type": "string",
           "description": "The location of the SourceMod compiler",
           "scope": "resource",
-          "deprecationMessage": "Use `SourcePawnLanguageServer.spcompPath` instead."
-        },
-        "SourcePawnLanguageServer.spcompPath": {
-          "type": "string",
-          "description": "Location of the SourceMod compiler (spcomp)",
-          "scope": "resource"
+          "deprecationMessage": "Use `SourcePawnLanguageServer.compiler.path` instead."
         },
         "sourcepawn.MainPathCompilation": {
           "type": "boolean",
@@ -260,19 +270,7 @@
           "default": [],
           "description": "Optional additional include folders paths for the compiler and the linter. Use this if you know what you are doing. Leave blank to disable.",
           "scope": "resource",
-          "deprecationMessage": "Use `SourcePawnLanguageServer.includesDirectories` instead."
-        },
-        "SourcePawnLanguageServer.disableSyntaxLinter": {
-          "type": "boolean",
-          "default": false,
-          "description": "Disable the language server's syntax linter. This is independant from spcomp.",
-          "scope": "resource"
-        },
-        "SourcePawnLanguageServer.includesDirectories": {
-          "type": "array",
-          "default": [],
-          "description": "Include folders paths for the compiler and the linter.",
-          "scope": "resource"
+          "deprecationMessage": "Use `SourcePawnLanguageServer.includeDirectories` instead."
         },
         "sourcepawn.compilerArguments": {
           "type": "array",
@@ -288,20 +286,14 @@
           "default": [],
           "description": "SourcePawn linter compiler options. Don't add paths here.",
           "scope": "resource",
-          "deprecationMessage": "Use `SourcePawnLanguageServer.linterArguments` instead."
-        },
-        "SourcePawnLanguageServer.linterArguments": {
-          "type": "array",
-          "default": [],
-          "description": "Linter arguments that will be passed to spcomp. Note that the compilation target, include directories and output path are already handled by the server.",
-          "scope": "resource"
+          "deprecationMessage": "Use `SourcePawnLanguageServer.compiler.arguments` instead."
         },
         "sourcepawn.availableAPIs": {
           "type": "array",
           "default": [
             {
               "name": "",
-              "includesDirectories": [],
+              "includeDirectories": [],
               "spcompPath": "",
               "compilerArguments": [],
               "linterArguments": []
@@ -474,6 +466,61 @@
           ],
           "default": "info",
           "description": "Set the logging level of the SourcePawnLanguageServer."
+        },
+        "SourcePawnLanguageServer.cachePriming.enable": {
+          "markdownDescription": "Warm up caches on project load.",
+          "default": true,
+          "type": "boolean"
+        },
+        "SourcePawnLanguageServer.cachePriming.numThreads": {
+          "markdownDescription": "How many worker threads to handle priming caches. The default `0` means to pick automatically.",
+          "default": 0,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "SourcePawnLanguageServer.compiler.arguments": {
+          "markdownDescription": "Linter arguments that will be passed to spcomp.\nNote that the compilation target, include directories and output path are already handled by the server.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "SourcePawnLanguageServer.compiler.onSave": {
+          "markdownDescription": "Compute spcomp diagnostics on save.",
+          "default": true,
+          "type": "boolean"
+        },
+        "SourcePawnLanguageServer.compiler.path": {
+          "markdownDescription": "Path to the SourcePawn compiler (spcomp).",
+          "default": null,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "SourcePawnLanguageServer.includeDirectories": {
+          "markdownDescription": "Include directories paths for the compiler and the linter.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "SourcePawnLanguageServer.linter.disable": {
+          "markdownDescription": "Disable the language server's syntax linter. This is independant from spcomp.",
+          "default": false,
+          "type": "boolean"
+        },
+        "SourcePawnLanguageServer.numThreads": {
+          "markdownDescription": "How many worker threads in the main loop. The default `null` means to pick automatically.",
+          "default": null,
+          "type": [
+            "null",
+            "integer"
+          ],
+          "minimum": 0
         }
       }
     },
@@ -557,7 +604,7 @@
     ]
   },
   "dependencies": {
-    "axios": "^1.6.0",
+    "axios": "^1.4.0",
     "decompress": "^4.2.1",
     "ftp-deploy": "git+https://github.com/Sarrus1/ftp-deploy.git",
     "glob": "^7.2.0",

@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/goto_definition/macros.rs
+assertion_line: 228
+expression: "goto_definition(r#\"\n%! main.sp\n#define FOO\n#include \"foo.sp\"\n\n%! foo.sp\n#if defined FOO\nint foo;\n#endif\nvoid bar() {\n    foo = 1;\n     |\n     ^\n}\n\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 4,
+        "character": 4
+      },
+      "end": {
+        "line": 4,
+        "character": 7
+      }
+    },
+    "targetUri": "file:///foo.sp",
+    "targetRange": {
+      "start": {
+        "line": 1,
+        "character": 4
+      },
+      "end": {
+        "line": 1,
+        "character": 7
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 1,
+        "character": 4
+      },
+      "end": {
+        "line": 1,
+        "character": 7
+      }
+    }
+  }
+]

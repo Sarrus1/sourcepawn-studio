@@ -1,14 +1,11 @@
-use std::sync::Arc;
-
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use fxhash::FxHashMap;
-use lsp_types::Url;
-use preprocessor::{Macro, SourcepawnPreprocessor};
+use preprocessor::{MacrosMap, SourcepawnPreprocessor};
+use vfs::FileId;
 
 fn extend_macros(
-    _macros: &mut FxHashMap<String, Macro>,
+    _macros: &mut MacrosMap,
     mut _path: String,
-    _document_uri: &Url,
+    _file_id: FileId,
     _quoted: bool,
 ) -> anyhow::Result<()> {
     Ok(())
@@ -23,15 +20,9 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("surftimer_sql", |b| {
         b.iter(|| {
             let _res = black_box(
-                SourcepawnPreprocessor::new(
-                    Arc::new(Url::parse("https://example.net").unwrap()),
-                    input,
-                )
-                .preprocess_input(&mut extend_macros)
-                .unwrap_or_else(|err| {
-                    eprintln!("{:?}", err);
-                    "".to_string()
-                }),
+                SourcepawnPreprocessor::new(FileId::from(0), input, &mut extend_macros)
+                    .preprocess_input()
+                    .preprocessed_text(),
             );
         })
     });

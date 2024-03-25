@@ -1,0 +1,20 @@
+[package]
+name = "vfs"
+version = "0.1.0"
+include = ["Cargo.toml", "src/"]
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lib]
+doctest = false
+
+[dependencies]
+lsp-types.workspace = true
+lazy_static.workspace = true
+fxhash.workspace = true
+nohash-hasher.workspace = true
+indexmap.workspace = true
+dunce.workspace = true
+
+paths.workspace = true

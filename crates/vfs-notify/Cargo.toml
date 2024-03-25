@@ -1,0 +1,20 @@
+[package]
+name = "vfs-notify"
+version = "0.1.0"
+include = ["Cargo.toml", "src/"]
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lib]
+doctest = false
+
+[dependencies]
+tracing.workspace = true
+walkdir = "2.3.2"
+crossbeam-channel = "0.5.5"
+notify = "6.1.1"
+
+stdx.workspace = true
+vfs.workspace = true
+paths.workspace = true

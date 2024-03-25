@@ -7,7 +7,7 @@ import {
 
 type AvailableAPIOptional = {
   name: string | undefined;
-  includesDirectories: string[] | undefined;
+  includeDirectories: string[] | undefined;
   spcompPath: string | undefined;
   compilerArguments: string[] | undefined;
   linterArguments: string[] | undefined;
@@ -15,7 +15,7 @@ type AvailableAPIOptional = {
 
 type AvailableAPI = {
   name: string;
-  includesDirectories: string[];
+  includeDirectories: string[];
   spcompPath: string;
   compilerArguments: string[];
   linterArguments: string[];
@@ -38,8 +38,8 @@ export async function run(args: any) {
   window.showQuickPick(quickPickItems, quickPickOptions).then(async (item) => {
     const chosenAPI = availableAPIs.find((e) => e.name === item.label);
     await Workspace.getConfiguration("SourcePawnLanguageServer").update(
-      "includesDirectories",
-      chosenAPI.includesDirectories
+      "includeDirectories",
+      chosenAPI.includeDirectories
     );
     await Workspace.getConfiguration("SourcePawnLanguageServer").update(
       "spcompPath",
@@ -63,8 +63,8 @@ function buildAvailableAPIFromOptional(
 ): AvailableAPI {
   const name = "name" in optional ? optional.name : "";
   const spcompPath = "spcompPath" in optional ? optional.spcompPath : "";
-  const includesDirectories =
-    "includesDirectories" in optional ? optional.includesDirectories : [];
+  const includeDirectories =
+    "includeDirectories" in optional ? optional.includeDirectories : [];
   const compilerArguments =
     "compilerArguments" in optional ? optional.compilerArguments : [];
   const linterArguments =
@@ -73,7 +73,7 @@ function buildAvailableAPIFromOptional(
   return {
     name,
     spcompPath,
-    includesDirectories,
+    includeDirectories,
     compilerArguments,
     linterArguments,
   };

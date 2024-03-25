@@ -38,12 +38,18 @@
     },
     {
       "label": "Build Server and Extension",
-      "dependsOn": ["Build Server", "Build Extension"],
+      "dependsOn": [
+        "Build Extension",
+        "Build Server",
+      ],
       "problemMatcher": "$rustc"
     },
     {
       "label": "Build Server (Release) and Extension",
-      "dependsOn": ["Build Server (Release)", "Build Extension"],
+      "dependsOn": [
+        "Build Extension",
+        "Build Server (Release)"
+      ],
       "problemMatcher": "$rustc"
     }
   ]

@@ -1,0 +1,41 @@
+[[SourcePawnLanguageServer.cachePriming.enable]]SourcePawnLanguageServer.cachePriming.enable (default: `true`)::
++
+--
+Warm up caches on project load.
+--
+[[SourcePawnLanguageServer.cachePriming.numThreads]]SourcePawnLanguageServer.cachePriming.numThreads (default: `0`)::
++
+--
+How many worker threads to handle priming caches. The default `0` means to pick automatically.
+--
+[[SourcePawnLanguageServer.compiler.arguments]]SourcePawnLanguageServer.compiler.arguments (default: `[]`)::
++
+--
+Linter arguments that will be passed to spcomp.
+Note that the compilation target, include directories and output path are already handled by the server.
+--
+[[SourcePawnLanguageServer.compiler.onSave]]SourcePawnLanguageServer.compiler.onSave (default: `true`)::
++
+--
+Compute spcomp diagnostics on save.
+--
+[[SourcePawnLanguageServer.compiler.path]]SourcePawnLanguageServer.compiler.path (default: `null`)::
++
+--
+Path to the SourcePawn compiler (spcomp).
+--
+[[SourcePawnLanguageServer.includeDirectories]]SourcePawnLanguageServer.includeDirectories (default: `[]`)::
++
+--
+Include directories paths for the compiler and the linter.
+--
+[[SourcePawnLanguageServer.linter.disable]]SourcePawnLanguageServer.linter.disable (default: `false`)::
++
+--
+Disable the language server's syntax linter. This is independant from spcomp.
+--
+[[SourcePawnLanguageServer.numThreads]]SourcePawnLanguageServer.numThreads (default: `null`)::
++
+--
+How many worker threads in the main loop. The default `null` means to pick automatically.
+--

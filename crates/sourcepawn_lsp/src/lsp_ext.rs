@@ -15,6 +15,48 @@ pub struct PreprocessedDocumentParams {
     pub text_document: Option<TextDocumentIdentifier>,
 }
 
+pub enum SyntaxTree {}
+
+impl Request for SyntaxTree {
+    type Params = SyntaxTreeParams;
+    type Result = String;
+    const METHOD: &'static str = "sourcepawn-lsp/syntaxTree";
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SyntaxTreeParams {
+    pub text_document: Option<TextDocumentIdentifier>,
+}
+
+pub enum ItemTree {}
+
+impl Request for ItemTree {
+    type Params = ItemTreeParams;
+    type Result = String;
+    const METHOD: &'static str = "sourcepawn-lsp/itemTree";
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ItemTreeParams {
+    pub text_document: Option<TextDocumentIdentifier>,
+}
+
+pub enum AnalyzerStatus {}
+
+impl Request for AnalyzerStatus {
+    type Params = AnalyzerStatusParams;
+    type Result = String;
+    const METHOD: &'static str = "sourcepawn-lsp/analyzerStatus";
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct AnalyzerStatusParams {
+    pub text_document: Option<TextDocumentIdentifier>,
+}
+
 pub enum ProjectMainPath {}
 
 impl Request for ProjectMainPath {

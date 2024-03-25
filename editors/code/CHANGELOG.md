@@ -1,10 +1,52 @@
 ## Release Notes
 
+## [7.2.4]
+
+### Chore
+
+- LSP version bump.
+
+## [7.2.3]
+
+### Chore
+
+- LSP version bump.
+
+## [7.2.2]
+
+### Chore
+
+- LSP version bump.
+
+## [7.2.1]
+
+### Chore
+
+- LSP version bump.
+
+## [7.2.0]
+
+### Chore
+
+- LSP version bump.
+
 ## [7.1.0]
 
 ### Fixed
 
 - This is the same release as 6.2.0. There was an error.
+
+## [7.0.1]
+
+### Chore
+
+- LSP version bump.
+
+## [7.0.0]
+
+### Chore
+
+- LSP version bump. Only GoToDefinition and Lints work as of now.
 
 ## [6.2.0]
 

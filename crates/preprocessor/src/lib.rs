@@ -1,92 +1,210 @@
-use anyhow::{anyhow, bail, Context};
-use fxhash::FxHashMap;
-use lazy_static::lazy_static;
-use lsp_types::{Diagnostic, Position, Range, Url};
-use regex::Regex;
-use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
-use std::sync::Arc;
+use std::{hash::Hash, sync::Arc};
 
-use errors::{EvaluationError, ExpansionError, IncludeNotFoundError, MacroNotFoundError};
+use anyhow::{bail, Context};
+use base_db::{RE_CHEVRON, RE_QUOTE};
+use deepsize::DeepSizeOf;
+use fxhash::{FxHashMap, FxHashSet};
+use lsp_types::{Diagnostic, Position, Range};
+use smol_str::SmolStr;
+use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
+use stdx::hashable_hash_map::HashableHashMap;
+use symbol::RangeLessSymbol;
+use vfs::FileId;
+
+use errors::{ExpansionError, PreprocessorErrors, UnresolvedIncludeError};
 use evaluator::IfCondition;
 use macros::expand_identifier;
+use token::Token;
 
+pub mod db;
 mod errors;
 pub(crate) mod evaluator;
 mod macros;
+mod offset;
 mod preprocessor_operator;
+mod result;
+mod symbol;
+mod token;
+
+pub use errors::{EvaluationError, PreprocessorError};
+pub use offset::Offset;
+pub use result::PreprocessingResult;
 
 #[cfg(test)]
 mod test;
 
+/// State of a preprocessor condition.
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum ConditionState {
+    /// The condition is not activated and could be activated by an else/elseif directive.
     NotActivated,
+
+    /// The condition has been activated, all related else/elseif directives should be skipped.
     Activated,
+
+    /// The condition is active and the preprocessor should process the code.
     Active,
 }
 
-#[derive(Debug, Clone)]
-pub struct Offset {
-    pub col: u32,
-    pub diff: i32,
-}
+pub type MacrosMap = FxHashMap<SmolStr, Arc<Macro>>;
+pub type HMacrosMap = HashableHashMap<SmolStr, Arc<Macro>>;
+pub type ArgsMap = FxHashMap<u32, Vec<(Range, Range)>>;
 
-#[derive(Debug, Clone)]
-pub struct SourcepawnPreprocessor<'a> {
-    pub lexer: SourcepawnLexer<'a>,
-    pub macros: FxHashMap<String, Macro>,
-    pub expansion_stack: Vec<Symbol>,
+#[derive(Debug)]
+pub struct SourcepawnPreprocessor<'a, F>
+where
+    F: FnMut(&mut MacrosMap, String, FileId, bool) -> anyhow::Result<()>,
+{
+    /// The index of the current macro in the file.
+    idx: u32,
+    lexer: SourcepawnLexer<'a>,
+    input: &'a str,
+    macros: MacrosMap,
+    expansion_stack: Vec<Token>,
     skip_line_start_col: u32,
     skipped_lines: Vec<lsp_types::Range>,
-    pub(self) macro_not_found_errors: Vec<MacroNotFoundError>,
-    pub(self) evaluation_errors: Vec<EvaluationError>,
-    pub(self) include_not_found_errors: Vec<IncludeNotFoundError>,
-    pub evaluated_define_symbols: Vec<Symbol>,
-    document_uri: Arc<Url>,
+    errors: PreprocessorErrors,
+    file_id: FileId,
     current_line: String,
-    prev_end: u32,
     conditions_stack: Vec<ConditionState>,
     out: Vec<String>,
-    pub offsets: FxHashMap<u32, Vec<Offset>>,
+    offsets: FxHashMap<u32, Vec<Offset>>,
+    args_maps: ArgsMap,
+    include_file: &'a mut F,
+    disabled_macros: FxHashSet<Arc<Macro>>,
+
+    /// The current position of the preprocessed text.
+    current_pos: Position,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Macro {
+    pub(crate) file_id: FileId,
+    pub(crate) idx: u32,
     pub(crate) params: Option<Vec<i8>>,
     pub(crate) nb_params: i8,
-    pub(crate) body: Vec<Symbol>,
-    pub(crate) disabled: bool,
+    pub(crate) body: Vec<RangeLessSymbol>,
 }
 
-impl<'a> SourcepawnPreprocessor<'a> {
-    pub fn new(document_uri: Arc<Url>, input: &'a str) -> Self {
+impl DeepSizeOf for Macro {
+    fn deep_size_of_children(&self, context: &mut deepsize::Context) -> usize {
+        std::mem::size_of::<FileId>()
+            + self.idx.deep_size_of_children(context)
+            + self.params.deep_size_of_children(context)
+            + self.nb_params.deep_size_of_children(context)
+            + self.body.deep_size_of_children(context)
+    }
+}
+
+impl Macro {
+    pub fn default(file_id: FileId) -> Self {
+        Self {
+            file_id,
+            idx: 0,
+            params: None,
+            nb_params: 0,
+            body: vec![],
+        }
+    }
+}
+
+/// Parse status of `using __intrinsics__.Handle;`.
+/// This is used to handle the `using __intrinsics__.Handle;` in handles.inc.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+enum IntrinsicsParseStatus {
+    Using,
+    Dot,
+    Intrinsics,
+    Handle,
+}
+
+impl<'a, F> SourcepawnPreprocessor<'a, F>
+where
+    F: FnMut(&mut MacrosMap, String, FileId, bool) -> anyhow::Result<()>,
+{
+    pub fn new(file_id: FileId, input: &'a str, include_file: &'a mut F) -> Self {
         Self {
             lexer: SourcepawnLexer::new(input),
-            document_uri,
-            current_line: "".to_string(),
-            skip_line_start_col: 0,
-            skipped_lines: vec![],
-            macro_not_found_errors: vec![],
-            include_not_found_errors: vec![],
-            evaluation_errors: vec![],
-            evaluated_define_symbols: vec![],
-            prev_end: 0,
-            conditions_stack: vec![],
-            out: vec![],
+            input,
+            file_id,
+            include_file,
+            idx: Default::default(),
+            current_line: Default::default(),
+            skip_line_start_col: Default::default(),
+            skipped_lines: Default::default(),
+            errors: Default::default(),
+            conditions_stack: Default::default(),
+            out: Default::default(),
             macros: FxHashMap::default(),
-            expansion_stack: vec![],
+            expansion_stack: Default::default(),
             offsets: FxHashMap::default(),
+            args_maps: FxHashMap::default(),
+            disabled_macros: FxHashSet::default(),
+            current_pos: Default::default(),
         }
     }
 
+    pub fn set_macros(&mut self, macros: MacrosMap) {
+        self.macros.extend(macros);
+    }
+
+    fn remove_macro(&mut self, name: &str) {
+        self.macros.remove(name);
+    }
+
+    pub fn insert_macro(&mut self, name: SmolStr, mut macro_: Macro) {
+        macro_.idx = self.idx;
+        self.idx += 1;
+        self.macros.insert(name, macro_.into());
+    }
+
+    pub fn disable_macro(&mut self, macro_: Arc<Macro>) {
+        self.disabled_macros.insert(macro_);
+    }
+
+    pub fn enable_macro(&mut self, macro_: Arc<Macro>) {
+        self.disabled_macros.remove(&macro_);
+    }
+
+    pub fn is_macro_disabled(&self, macro_: &Arc<Macro>) -> bool {
+        self.disabled_macros.contains(macro_)
+    }
+
+    pub fn result(self) -> PreprocessingResult {
+        let inactive_ranges = self.get_inactive_ranges();
+        let mut res = PreprocessingResult::new(
+            self.out.join("\n").into(),
+            self.macros,
+            self.offsets,
+            self.args_maps,
+            self.errors,
+            inactive_ranges,
+        );
+        res.shrink_to_fit();
+        res
+    }
+
+    pub fn error_result(self) -> PreprocessingResult {
+        let inactive_ranges = self.get_inactive_ranges();
+        let mut res = PreprocessingResult::new(
+            self.input.to_owned().into(),
+            self.macros,
+            self.offsets,
+            self.args_maps,
+            self.errors,
+            inactive_ranges,
+        );
+        res.shrink_to_fit();
+        res
+    }
+
     pub fn add_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
-        self.get_disabled_diagnostics(diagnostics);
         self.get_macro_not_found_diagnostics(diagnostics);
         self.get_evaluation_error_diagnostics(diagnostics);
         self.get_include_not_found_diagnostics(diagnostics);
     }
 
-    fn get_disabled_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
+    fn get_inactive_ranges(&self) -> Vec<lsp_types::Range> {
         let mut ranges: Vec<lsp_types::Range> = vec![];
         for range in self.skipped_lines.iter() {
             if let Some(old_range) = ranges.pop() {
@@ -104,35 +222,40 @@ impl<'a> SourcepawnPreprocessor<'a> {
         for range in ranges.iter_mut() {
             range.start.character = 0;
         }
-        diagnostics.extend(ranges.iter().map(|range| Diagnostic {
-            range: *range,
-            message: "Code disabled by the preprocessor.".to_string(),
-            severity: Some(lsp_types::DiagnosticSeverity::HINT),
-            tags: Some(vec![lsp_types::DiagnosticTag::UNNECESSARY]),
-            ..Default::default()
-        }));
+
+        ranges
     }
 
     fn get_macro_not_found_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
-        diagnostics.extend(self.macro_not_found_errors.iter().map(|err| Diagnostic {
-            range: err.range,
-            message: format!("Macro {} not found.", err.macro_name),
-            severity: Some(lsp_types::DiagnosticSeverity::ERROR),
-            ..Default::default()
-        }));
+        diagnostics.extend(
+            self.errors
+                .macro_not_found_errors
+                .iter()
+                .map(|err| Diagnostic {
+                    range: err.range,
+                    message: format!("Macro {} not found.", err.macro_name),
+                    severity: Some(lsp_types::DiagnosticSeverity::ERROR),
+                    ..Default::default()
+                }),
+        );
     }
 
     fn get_include_not_found_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
-        diagnostics.extend(self.include_not_found_errors.iter().map(|err| Diagnostic {
-            range: err.range,
-            message: format!("Include \"{}\" not found.", err.include_text),
-            severity: Some(lsp_types::DiagnosticSeverity::ERROR),
-            ..Default::default()
-        }));
+        diagnostics.extend(
+            self.errors
+                .unresolved_include_errors
+                .iter()
+                .map(|err| Diagnostic {
+                    range: err.range,
+                    message: format!("Include \"{}\" not found.", err.include_text),
+                    severity: Some(lsp_types::DiagnosticSeverity::ERROR),
+                    ..Default::default()
+                }),
+        );
     }
 
     fn get_evaluation_error_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
-        diagnostics.extend(self.evaluation_errors.iter().map(|err| Diagnostic {
+        diagnostics.extend(self.errors.evaluation_errors.iter().map(|err| Diagnostic {
             range: err.range,
             message: format!("Preprocessor condition is invalid: {}", err.text),
             severity: Some(lsp_types::DiagnosticSeverity::ERROR),
@@ -140,119 +263,173 @@ impl<'a> SourcepawnPreprocessor<'a> {
         }));
     }
 
-    pub fn preprocess_input<F>(&mut self, include_file: &mut F) -> anyhow::Result<String>
-    where
-        F: FnMut(&mut FxHashMap<String, Macro>, String, &Url, bool) -> anyhow::Result<()>,
-    {
-        let _ = include_file(
+    pub fn preprocess_input(mut self) -> PreprocessingResult {
+        let _ = (self.include_file)(
             &mut self.macros,
             "sourcemod".to_string(),
-            &self.document_uri,
+            self.file_id,
             false,
         );
+        let mut intrinsics_parse_status = None;
         let mut col_offset: Option<i32> = None;
-        let mut expanded_symbol: Option<Symbol> = None;
-        while let Some(symbol) = if !self.expansion_stack.is_empty() {
-            let symbol = self.expansion_stack.pop().unwrap();
+        let mut expanded_symbol: Option<(Symbol, u32, FileId)> = None;
+        let mut args_diff = 0u32;
+        while let Some(token) = if !self.expansion_stack.is_empty() {
+            let token = self.expansion_stack.pop().unwrap();
             col_offset = Some(
-                col_offset.map_or(symbol.inline_text().len() as i32, |offset| {
-                    offset + symbol.delta.col + symbol.inline_text().len() as i32
+                col_offset.map_or(token.inline_text().len() as i32, |offset| {
+                    offset + token.delta().col + token.inline_text().len() as i32
                 }),
             );
-            Some(symbol)
+            Some(token)
         } else {
             let symbol = self.lexer.next();
-            if let Some(expanded_symbol) = expanded_symbol.take() {
+            if let Some((expanded_symbol, idx, file_id)) = expanded_symbol.take() {
                 if let Some(symbol) = symbol.clone() {
                     self.offsets
                         .entry(symbol.range.start.line)
-                        .or_insert_with(Vec::new)
+                        .or_default()
                         .push(Offset {
-                            col: expanded_symbol.range.start.character,
+                            idx,
+                            file_id,
+                            range: expanded_symbol.range,
                             diff: (col_offset.take().unwrap_or(0)
                                 - (expanded_symbol.range.end.character
                                     - expanded_symbol.range.start.character)
                                     as i32),
+                            args_diff,
                         });
+                    args_diff = 0;
                 }
             }
 
-            symbol
+            symbol.map(Token::from)
         } {
+            if let Some(original_range) = token.original_range() {
+                let new_range = self.current_range(&token);
+                self.args_maps
+                    .entry(original_range.start.line)
+                    .or_default()
+                    .push((original_range, new_range));
+            }
             if matches!(
                 self.conditions_stack
                     .last()
                     .unwrap_or(&ConditionState::Active),
                 ConditionState::Activated | ConditionState::NotActivated
             ) {
-                self.process_negative_condition(&symbol)?;
+                if self.process_negative_condition(token.symbol()).is_err() {
+                    return self.error_result();
+                }
                 continue;
             }
-            match &symbol.token_kind {
-                TokenKind::Unknown => Err(anyhow!("Unknown token: {:#?}", symbol.range))?,
-                TokenKind::PreprocDir(dir) => self.process_directive(include_file, dir, &symbol)?,
-                TokenKind::Newline => {
-                    self.push_ws(&symbol);
-                    self.push_current_line();
-                    self.current_line = "".to_string();
-                    self.prev_end = 0;
+            match &token.token_kind() {
+                TokenKind::Unknown => return self.error_result(),
+                TokenKind::PreprocDir(dir) => {
+                    if self.process_directive(dir, token.symbol()).is_err() {
+                        return self.error_result();
+                    }
                 }
-                TokenKind::Identifier => match self.macros.get_mut(&symbol.text()) {
-                    // TODO: Evaluate the performance dropoff of supporting macro expansion when overriding reserved keywords.
-                    // This might only be a problem for a very small subset of users.
-                    Some(macro_) => {
-                        // Skip the macro if it is disabled and reenable it.
-                        if macro_.disabled {
-                            macro_.disabled = false;
-                            self.push_symbol(&symbol);
-                            continue;
+                TokenKind::Newline => {
+                    self.push_ws(token.symbol());
+                    self.push_current_line();
+                    self.reset_current_line();
+                }
+                TokenKind::Identifier => {
+                    // This is a hack to handle `using __intrinsics__.Handle;` in handles.inc, which
+                    // is not a part of sourcemod as of 060c832f89709e6a6222cf039071061dcc0a36da.
+                    // see: https://github.com/alliedmodders/sourcemod/commit/060c832f89709e6a6222cf039071061dcc0a36da
+                    if intrinsics_parse_status == Some(IntrinsicsParseStatus::Dot) {
+                        if token.text() == "Handle" {
+                            self.current_line.push_str("methodmap Handle __nullable__ {public native ~Handle();public native void Close();};")
                         }
-                        match expand_identifier(
-                            &mut self.lexer,
-                            &mut self.macros,
-                            &symbol,
-                            &mut self.expansion_stack,
-                            true,
-                        ) {
-                            Ok(expanded_macros) => {
-                                expanded_symbol = Some(symbol.clone());
-                                self.evaluated_define_symbols.extend(expanded_macros);
+                        intrinsics_parse_status = Some(IntrinsicsParseStatus::Handle);
+                        continue;
+                    }
+                    match self.macros.get(&token.text()) {
+                        // TODO: Evaluate the performance dropoff of supporting macro expansion when overriding reserved keywords.
+                        // This might only be a problem for a very small subset of users.
+                        Some(macro_) => {
+                            // Skip the macro if it is disabled and reenable it.
+                            if self.is_macro_disabled(macro_) {
+                                self.enable_macro(macro_.clone());
+                                self.push_symbol(token.symbol());
                                 continue;
                             }
-                            Err(ExpansionError::MacroNotFound(err)) => {
-                                self.macro_not_found_errors.push(err.clone());
-                                bail!("{}", err);
-                            }
-                            Err(ExpansionError::Parse(err)) => {
-                                bail!("{}", err);
+                            let idx = macro_.idx;
+                            let file_id: FileId = macro_.file_id;
+                            match expand_identifier(
+                                &mut self.lexer,
+                                &mut self.macros,
+                                &token,
+                                &mut self.expansion_stack,
+                                true,
+                                &mut self.disabled_macros,
+                            ) {
+                                Ok(args_diff_) => {
+                                    expanded_symbol =
+                                        Some((token.symbol().to_owned(), idx, file_id));
+                                    args_diff = args_diff_;
+                                    continue;
+                                }
+                                Err(ExpansionError::MacroNotFound(err)) => {
+                                    self.errors.macro_not_found_errors.push(err.clone());
+                                    return self.error_result();
+                                }
+                                Err(ExpansionError::Parse(_)) => {
+                                    return self.error_result();
+                                }
                             }
                         }
+                        None => {
+                            self.push_symbol(token.symbol());
+                        }
                     }
-                    None => {
-                        self.push_symbol(&symbol);
+                }
+                TokenKind::Using => {
+                    if intrinsics_parse_status.take().is_none() {
+                        intrinsics_parse_status = Some(IntrinsicsParseStatus::Using);
                     }
+                }
+                TokenKind::Intrinsics => {
+                    if intrinsics_parse_status.take() == Some(IntrinsicsParseStatus::Using) {
+                        intrinsics_parse_status = Some(IntrinsicsParseStatus::Intrinsics);
+                    }
+                }
+                TokenKind::Semicolon => {
+                    if intrinsics_parse_status.take() != Some(IntrinsicsParseStatus::Handle) {
+                        self.push_symbol(token.symbol());
+                    }
+                }
+                TokenKind::Dot => match intrinsics_parse_status {
+                    Some(IntrinsicsParseStatus::Intrinsics) => {
+                        intrinsics_parse_status = Some(IntrinsicsParseStatus::Dot);
+                    }
+                    _ => self.push_symbol(token.symbol()),
                 },
                 TokenKind::Eof => {
-                    self.push_ws(&symbol);
+                    self.push_ws(token.symbol());
                     self.push_current_line();
                     break;
                 }
-                _ => self.push_symbol(&symbol),
+                _ => self.push_symbol(token.symbol()),
             }
         }
 
-        Ok(self.out.join("\n"))
+        self.result()
     }
 
     fn process_if_directive(&mut self, symbol: &Symbol) {
         let line_nb = symbol.range.start.line;
-        let mut if_condition = IfCondition::new(&mut self.macros, symbol.range.start.line);
+        let mut if_condition = IfCondition::new(
+            &mut self.macros,
+            symbol.range.start.line,
+            &mut self.offsets,
+            &mut self.disabled_macros,
+        );
         while self.lexer.in_preprocessor() {
             if let Some(symbol) = self.lexer.next() {
-                if symbol.token_kind == TokenKind::Identifier {
-                    self.evaluated_define_symbols.push(symbol.clone());
-                }
-                if_condition.symbols.push(symbol);
+                if_condition.tokens.push(symbol.into());
             } else {
                 break;
             }
@@ -260,7 +437,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
         let if_condition_eval = match if_condition.evaluate() {
             Ok(res) => res,
             Err(err) => {
-                self.evaluation_errors.push(err);
+                self.errors.evaluation_errors.push(err);
                 // Default to false when we fail to evaluate a condition.
                 false
             }
@@ -272,16 +449,15 @@ impl<'a> SourcepawnPreprocessor<'a> {
             self.skip_line_start_col = symbol.range.end.character;
             self.conditions_stack.push(ConditionState::NotActivated);
         }
-        self.macro_not_found_errors
+        self.errors
+            .macro_not_found_errors
             .extend(if_condition.macro_not_found_errors);
-        if let Some(last_symbol) = if_condition.symbols.last() {
-            let line_diff = last_symbol.range.end.line - line_nb;
+        if let Some(last_token) = if_condition.tokens.last() {
+            let line_diff = last_token.range().end.line - line_nb;
             for _ in 0..line_diff {
                 self.out.push(String::new());
             }
         }
-
-        self.prev_end = 0;
     }
 
     fn process_else_directive(&mut self, symbol: &Symbol) -> anyhow::Result<()> {
@@ -319,15 +495,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
         Ok(())
     }
 
-    fn process_directive<F>(
-        &mut self,
-        include_file: &mut F,
-        dir: &PreprocDir,
-        symbol: &Symbol,
-    ) -> anyhow::Result<()>
-    where
-        F: FnMut(&mut FxHashMap<String, Macro>, String, &Url, bool) -> anyhow::Result<()>,
-    {
+    fn process_directive(&mut self, dir: &PreprocDir, symbol: &Symbol) -> anyhow::Result<()> {
         match dir {
             PreprocDir::MIf => self.process_if_directive(symbol),
             PreprocDir::MElseif => {
@@ -344,8 +512,8 @@ impl<'a> SourcepawnPreprocessor<'a> {
             }
             PreprocDir::MDefine => {
                 self.push_symbol(symbol);
-                let mut macro_name = String::new();
-                let mut macro_ = Macro::default();
+                let mut macro_name = SmolStr::default();
+                let mut macro_ = Macro::default(self.file_id);
                 enum State {
                     Start,
                     Params,
@@ -361,7 +529,6 @@ impl<'a> SourcepawnPreprocessor<'a> {
                             break;
                         }
                         self.push_ws(&symbol);
-                        self.prev_end = symbol.range.end.character;
                         if !matches!(symbol.token_kind, TokenKind::Newline | TokenKind::Eof) {
                             self.current_line.push_str(&symbol.text());
                         }
@@ -376,16 +543,13 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                 {
                                     state = State::Params;
                                 } else {
-                                    if symbol.token_kind == TokenKind::Identifier {
-                                        self.evaluated_define_symbols.push(symbol.clone());
-                                    }
-                                    macro_.body.push(symbol);
+                                    macro_.body.push(symbol.into());
                                     state = State::Body;
                                 }
                             }
                             State::Params => {
                                 if symbol.delta.col > 0 {
-                                    macro_.body.push(symbol);
+                                    macro_.body.push(symbol.into());
                                     state = State::Body;
                                     continue;
                                 }
@@ -418,10 +582,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                                 }
                             }
                             State::Body => {
-                                if symbol.token_kind == TokenKind::Identifier {
-                                    self.evaluated_define_symbols.push(symbol.clone());
-                                }
-                                macro_.body.push(symbol);
+                                macro_.body.push(symbol.into());
                             }
                         }
                     }
@@ -431,21 +592,19 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     macro_.params = Some(args);
                 }
                 self.push_current_line();
-                self.current_line = "".to_string();
-                self.prev_end = 0;
-                self.macros.insert(macro_name, macro_);
+                self.reset_current_line();
+                self.insert_macro(macro_name, macro_);
             }
             PreprocDir::MUndef => {
                 self.push_symbol(symbol);
                 while self.lexer.in_preprocessor() {
                     if let Some(symbol) = self.lexer.next() {
                         self.push_ws(&symbol);
-                        self.prev_end = symbol.range.end.character;
                         if !matches!(symbol.token_kind, TokenKind::Newline | TokenKind::Eof) {
                             self.current_line.push_str(&symbol.text());
                         }
                         if symbol.token_kind == TokenKind::Identifier {
-                            self.macros.remove(&symbol.text());
+                            self.remove_macro(&symbol.text());
                             break;
                         }
                     }
@@ -453,75 +612,84 @@ impl<'a> SourcepawnPreprocessor<'a> {
             }
             PreprocDir::MEndif => self.process_endif_directive(symbol)?,
             PreprocDir::MElse => self.process_else_directive(symbol)?,
-            PreprocDir::MInclude | PreprocDir::MTryinclude => {
-                let text = symbol.inline_text().trim().to_string();
-                let delta = symbol.range.end.line - symbol.range.start.line;
-                let symbol = Symbol::new(
-                    symbol.token_kind.clone(),
-                    Some(&text),
-                    Range::new(
-                        Position::new(symbol.range.start.line, symbol.range.start.character),
-                        Position::new(symbol.range.start.line, text.len() as u32),
-                    ),
-                    symbol.delta,
-                );
-                lazy_static! {
-                    static ref RE1: Regex = Regex::new(r"<([^>]+)>").unwrap();
-                    static ref RE2: Regex = Regex::new("\"([^>]+)\"").unwrap();
-                }
-                if let Some(caps) = RE1.captures(&text) {
-                    if let Some(path) = caps.get(1) {
-                        match include_file(
-                            &mut self.macros,
-                            path.as_str().to_string(),
-                            &self.document_uri,
-                            false,
-                        ) {
-                            Ok(_) => (),
-                            Err(_) => {
-                                self.include_not_found_errors
-                                    .push(IncludeNotFoundError::new(
-                                        path.as_str().to_string(),
-                                        symbol.range,
-                                    ))
-                            }
-                        }
-                    }
-                };
-                if let Some(caps) = RE2.captures(&text) {
-                    if let Some(path) = caps.get(1) {
-                        match include_file(
-                            &mut self.macros,
-                            path.as_str().to_string(),
-                            &self.document_uri,
-                            true,
-                        ) {
-                            Ok(_) => (),
-                            Err(_) => {
-                                self.include_not_found_errors
-                                    .push(IncludeNotFoundError::new(
-                                        path.as_str().to_string(),
-                                        symbol.range,
-                                    ))
-                            }
-                        }
-                    }
-                };
-
-                self.push_symbol(&symbol);
-                if delta > 0 {
-                    self.push_current_line();
-                    self.current_line = "".to_string();
-                    self.prev_end = 0;
-                    for _ in 0..delta - 1 {
-                        self.out.push(String::new());
-                    }
-                }
-            }
+            PreprocDir::MInclude => self.process_include_directive(symbol, false),
+            PreprocDir::MTryinclude => self.process_include_directive(symbol, true),
             _ => self.push_symbol(symbol),
         }
 
         Ok(())
+    }
+
+    fn process_include_directive(&mut self, symbol: &Symbol, is_try: bool) {
+        let text = symbol.inline_text().trim().to_string();
+        let delta = symbol.range.end.line - symbol.range.start.line;
+        let symbol = Symbol::new(
+            symbol.token_kind,
+            Some(&text),
+            Range::new(
+                Position::new(symbol.range.start.line, symbol.range.start.character),
+                Position::new(symbol.range.start.line, text.len() as u32),
+            ),
+            symbol.delta,
+        );
+
+        if let Some(path) = RE_CHEVRON.captures(&text).and_then(|c| c.get(1)) {
+            match (self.include_file)(
+                &mut self.macros,
+                path.as_str().to_string(),
+                self.file_id,
+                false,
+            ) {
+                Ok(_) => (),
+                Err(_) => {
+                    if !is_try {
+                        // TODO: Emit a warning here for #tryinclude?
+                        let mut range = symbol.range;
+                        range.start.character = path.start() as u32;
+                        range.end.character = path.end() as u32;
+                        self.errors
+                            .unresolved_include_errors
+                            .push(UnresolvedIncludeError::new(
+                                path.as_str().to_string(),
+                                range,
+                            ))
+                    }
+                }
+            }
+        };
+        if let Some(path) = RE_QUOTE.captures(&text).and_then(|c| c.get(1)) {
+            match (self.include_file)(
+                &mut self.macros,
+                path.as_str().to_string(),
+                self.file_id,
+                true,
+            ) {
+                Ok(_) => (),
+                Err(_) => {
+                    if !is_try {
+                        // TODO: Emit a warning here for #tryinclude?
+                        let mut range = symbol.range;
+                        range.start.character = path.start() as u32;
+                        range.end.character = path.end() as u32;
+                        self.errors
+                            .unresolved_include_errors
+                            .push(UnresolvedIncludeError::new(
+                                path.as_str().to_string(),
+                                range,
+                            ))
+                    }
+                }
+            }
+        };
+
+        self.push_symbol(&symbol);
+        if delta > 0 {
+            self.push_current_line();
+            self.reset_current_line();
+            for _ in 0..delta - 1 {
+                self.out.push(String::new());
+            }
+        }
     }
 
     fn process_negative_condition(&mut self, symbol: &Symbol) -> anyhow::Result<()> {
@@ -554,12 +722,7 @@ impl<'a> SourcepawnPreprocessor<'a> {
                     Position::new(symbol.range.start.line, self.skip_line_start_col),
                     Position::new(symbol.range.start.line, symbol.range.start.character),
                 ));
-                self.current_line = "".to_string();
-                self.prev_end = 0;
-            }
-            TokenKind::Identifier => {
-                // Keep track of the identifiers, so that they can be seen by the semantic analyzer.
-                self.evaluated_define_symbols.push(symbol.clone());
+                self.reset_current_line();
             }
             // Skip any token that is not a directive or a newline.
             _ => (),
@@ -569,11 +732,14 @@ impl<'a> SourcepawnPreprocessor<'a> {
     }
 
     fn push_ws(&mut self, symbol: &Symbol) {
+        self.current_pos.character += symbol.delta.col.unsigned_abs();
         self.current_line
             .push_str(&" ".repeat(symbol.delta.col.unsigned_abs() as usize));
     }
 
     fn push_current_line(&mut self) {
+        self.current_pos.line += 1;
+        self.current_pos.character = 0;
         self.out.push(self.current_line.clone());
     }
 
@@ -583,7 +749,33 @@ impl<'a> SourcepawnPreprocessor<'a> {
             return;
         }
         self.push_ws(symbol);
-        self.prev_end = symbol.range.end.character;
+        self.current_pos.character += symbol.text().len() as u32;
         self.current_line.push_str(&symbol.text());
+    }
+
+    fn reset_current_line(&mut self) {
+        self.current_line = String::new();
+    }
+
+    fn current_range(&self, token: &Token) -> Range {
+        Range::new(
+            Position::new(
+                self.current_pos.line,
+                self.current_pos
+                    .character
+                    .saturating_add_signed(token.delta().col),
+            ),
+            Position::new(
+                self.current_pos.line,
+                self.current_pos
+                    .character
+                    .saturating_add_signed(token.delta().col)
+                    + token
+                        .range()
+                        .end
+                        .character
+                        .saturating_sub(token.range().start.character),
+            ),
+        )
     }
 }
