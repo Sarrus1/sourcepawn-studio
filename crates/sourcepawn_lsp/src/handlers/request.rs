@@ -2,7 +2,7 @@ use anyhow::Context;
 use base_db::FileRange;
 use lsp_types::{
     SemanticTokensDeltaParams, SemanticTokensFullDeltaResult, SemanticTokensParams,
-    SemanticTokensRangeParams, SemanticTokensRangeResult, SemanticTokensResult,
+    SemanticTokensRangeParams, SemanticTokensRangeResult, SemanticTokensResult, Url,
 };
 use stdx::format_to;
 
@@ -10,8 +10,8 @@ use crate::{
     global_state::GlobalStateSnapshot,
     lsp::{from_proto, to_proto},
     lsp_ext::{
-        AnalyzerStatusParams, ItemTreeParams, PreprocessedDocumentParams, ProjectsGraphvizParams,
-        SyntaxTreeParams,
+        AnalyzerStatusParams, ItemTreeParams, PreprocessedDocumentParams, ProjectMainPathParams,
+        ProjectsGraphvizParams, SyntaxTreeParams,
     },
 };
 
@@ -245,4 +245,21 @@ pub(crate) fn handle_analyzer_status(
             .unwrap_or_else(|_| "Analysis retrieval was cancelled".to_owned()),
     );
     Ok(buf)
+}
+
+pub(crate) fn handle_project_main_path(
+    snap: GlobalStateSnapshot,
+    params: ProjectMainPathParams,
+) -> anyhow::Result<Url> {
+    let uri = params
+        .uri
+        .ok_or_else(|| anyhow::anyhow!("No uri received in request"))?;
+    let file_id = from_proto::file_id(&snap, &uri)?;
+
+    snap.analysis
+        .projects_for_file(file_id)
+        .context("Failed to get project for file")?
+        .first()
+        .map(|it| to_proto::url(&snap, *it))
+        .ok_or_else(|| anyhow::anyhow!("No project found for file"))
 }

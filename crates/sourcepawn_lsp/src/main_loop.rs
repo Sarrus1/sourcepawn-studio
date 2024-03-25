@@ -391,6 +391,7 @@ impl GlobalState {
             .on::<lsp_ext::PreprocessedDocument>(handlers::handle_preprocessed_document)
             .on::<lsp_ext::ItemTree>(handlers::handle_item_tree)
             .on::<lsp_ext::AnalyzerStatus>(handlers::handle_analyzer_status)
+            .on::<lsp_ext::ProjectMainPath>(handlers::handle_project_main_path)
             .finish();
         log::debug!("Handled request id: {:?}", req_id);
     }
