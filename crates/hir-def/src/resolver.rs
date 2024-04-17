@@ -287,6 +287,7 @@ impl HasResolver for ItemContainerId {
             ItemContainerId::MethodmapId(it) => it.resolver(db),
             ItemContainerId::TypesetId(it) => it.resolver(db),
             ItemContainerId::FuncenumId(it) => it.resolver(db),
+            ItemContainerId::EnumId(it) => it.lookup(db).id.file_id().resolver(db),
         }
     }
 }

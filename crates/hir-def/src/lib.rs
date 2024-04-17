@@ -23,7 +23,7 @@ pub mod resolver;
 pub mod src;
 
 pub use ast_id_map::NodePtr;
-pub use data::PropertyItem;
+pub use data::{MethodmapExtension, PropertyItem};
 pub use db::resolve_include_node;
 pub use db::DefDatabase;
 pub use db::{BlockDefMapQuery, BlockItemTreeQuery, BodyQuery, FileDefMapQuery, FileItemTreeQuery};
@@ -80,12 +80,13 @@ macro_rules! impl_intern {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ItemContainerId {
     FileId(FileId),
+    EnumId(EnumId),
     EnumStructId(EnumStructId),
     MethodmapId(MethodmapId),
     TypesetId(TypesetId),
     FuncenumId(FuncenumId),
 }
-impl_from!(FileId, EnumStructId, MethodmapId, TypesetId, FuncenumId for ItemContainerId);
+impl_from!(FileId, EnumId, EnumStructId, MethodmapId, TypesetId, FuncenumId for ItemContainerId);
 
 /// A Data Type
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]

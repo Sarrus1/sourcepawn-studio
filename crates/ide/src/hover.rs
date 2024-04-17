@@ -90,7 +90,7 @@ pub(crate) fn hover(
     let file_id = def.file_id(db);
     let source_tree = sema.parse(file_id);
     let text = db.preprocessed_text(file_id);
-    let render = render::render_def(db, def.clone());
+    let render = render::render_def(db, def.clone())?;
     let def_node = def.source(db, &source_tree)?.value;
 
     if !config.documentation {

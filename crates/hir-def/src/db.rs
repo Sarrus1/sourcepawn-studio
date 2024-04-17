@@ -14,8 +14,8 @@ use crate::{
     ast_id_map::AstIdMap,
     body::{scope::ExprScopes, Body, BodySourceMap},
     data::{
-        EnumStructData, FuncenumData, FunctagData, FunctionData, MacroData, MethodmapData,
-        TypedefData, TypesetData,
+        EnumData, EnumStructData, FuncenumData, FunctagData, FunctionData, MacroData,
+        MethodmapData, PropertyData, TypedefData, TypesetData, VariantData,
     },
     infer,
     item_tree::{ItemTree, Name},
@@ -98,6 +98,15 @@ pub trait DefDatabase: InternDatabase + PreprocDatabase {
 
     #[salsa::invoke(EnumStructData::enum_struct_data_query)]
     fn enum_struct_data(&self, id: EnumStructId) -> Arc<EnumStructData>;
+
+    #[salsa::invoke(EnumData::enum_data_query)]
+    fn enum_data(&self, id: EnumId) -> Arc<EnumData>;
+
+    #[salsa::invoke(VariantData::variant_data_query)]
+    fn variant_data(&self, id: VariantId) -> Arc<VariantData>;
+
+    #[salsa::invoke(PropertyData::property_data_query)]
+    fn property_data(&self, id: PropertyId) -> Arc<PropertyData>;
 
     #[salsa::invoke(MethodmapData::methodmap_data_query)]
     fn methodmap_data(&self, id: MethodmapId) -> Arc<MethodmapData>;
@@ -316,20 +325,21 @@ impl DefMap {
                         },
                     }
                     .intern(db);
+                    for variant_idx in enum_.variants.clone() {
+                        let variant = &item_tree[variant_idx];
+                        let variant_id = VariantLoc {
+                            container: enum_id.into(),
+                            id: ItemTreeId {
+                                tree: tree_id,
+                                value: variant_idx,
+                            },
+                        }
+                        .intern(db);
+                        res.declare(variant.name.clone(), FileDefId::VariantId(variant_id));
+                    }
                     res.declare(enum_.name.clone(), FileDefId::EnumId(enum_id));
                 }
-                FileItem::Variant(id) => {
-                    let variant = &item_tree[*id];
-                    let variant_id = VariantLoc {
-                        container: file_id.into(),
-                        id: ItemTreeId {
-                            tree: tree_id,
-                            value: *id,
-                        },
-                    }
-                    .intern(db);
-                    res.declare(variant.name.clone(), FileDefId::VariantId(variant_id));
-                }
+                FileItem::Variant(_) => (),
                 FileItem::Typedef(id) => {
                     let typedef = &item_tree[*id];
                     let typedef_id = TypedefLoc {

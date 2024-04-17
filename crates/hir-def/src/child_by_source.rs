@@ -132,6 +132,7 @@ impl ChildBySource for MethodmapId {
             MethodmapItemData::Property(PropertyData {
                 id,
                 getters_setters,
+                ..
             }) => {
                 let item_id = id.lookup(db).id;
                 let item_tree = db.file_item_tree(item_id.file_id());

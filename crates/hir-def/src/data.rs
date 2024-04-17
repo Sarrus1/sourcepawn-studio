@@ -14,9 +14,10 @@ use crate::{
     },
     resolver::{global_resolver, ValueNs},
     src::{HasChildSource, HasSource},
-    DefDatabase, DefDiagnostic, EnumStructId, FuncenumId, FunctagId, FunctagLoc, FunctionId,
-    FunctionLoc, InFile, Intern, ItemTreeId, LocalFieldId, Lookup, MacroId, MethodmapId, NodePtr,
-    PropertyId, PropertyLoc, TypedefId, TypedefLoc, TypesetId,
+    DefDatabase, DefDiagnostic, EnumId, EnumStructId, FuncenumId, FunctagId, FunctagLoc,
+    FunctionId, FunctionLoc, InFile, Intern, ItemContainerId, ItemTreeId, LocalFieldId, Lookup,
+    MacroId, MethodmapId, NodePtr, PropertyId, PropertyLoc, TypedefId, TypedefLoc, TypesetId,
+    VariantId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -142,6 +143,23 @@ pub struct MethodmapData {
     pub name: Name,
     pub items: Arc<Arena<MethodmapItemData>>,
     pub items_map: Arc<FxHashMap<Name, Idx<MethodmapItemData>>>,
+    pub extension: Option<MethodmapExtension>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MethodmapExtension {
+    Inherits(Name),
+    Nullable,
+}
+
+impl MethodmapExtension {
+    pub fn from(inherits: Option<Name>, nullable: bool) -> Option<Self> {
+        match (inherits, nullable) {
+            (Some(name), false) => Some(MethodmapExtension::Inherits(name)),
+            (None, true) => Some(MethodmapExtension::Nullable),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -171,6 +189,23 @@ impl PropertyItem {
 pub struct PropertyData {
     pub id: PropertyId,
     pub getters_setters: Vec<PropertyItem>,
+    pub name: Name,
+    pub type_ref: TypeRef,
+}
+
+impl PropertyData {
+    pub(crate) fn property_data_query(db: &dyn DefDatabase, id: PropertyId) -> Arc<PropertyData> {
+        let ItemContainerId::MethodmapId(methodmap_id) = id.lookup(db).container else {
+            panic!("expected a methodmap id, got {:?}", id);
+        };
+
+        let methodmap_data = db.methodmap_data(methodmap_id);
+        methodmap_data
+            .property_from_id(id)
+            .expect("expected a property given an id")
+            .to_owned()
+            .into()
+    }
 }
 
 impl MethodmapData {
@@ -231,6 +266,8 @@ impl MethodmapData {
                 .intern(db);
                 let property_data = MethodmapItemData::Property(PropertyData {
                     id: property_id,
+                    name: property.name.clone(),
+                    type_ref: property.type_ref.clone(),
                     getters_setters: property
                         .getters_setters
                         .clone()
@@ -279,6 +316,7 @@ impl MethodmapData {
             name: methodmap.name.clone(),
             items: Arc::new(items),
             items_map: Arc::new(items_map),
+            extension: MethodmapExtension::from(methodmap.inherits.clone(), methodmap.nullable),
         };
 
         (Arc::new(methodmap_data), diags.into())
@@ -317,6 +355,19 @@ impl MethodmapData {
             | MethodmapItemData::Constructor(_)
             | MethodmapItemData::Destructor(_) => None,
         }
+    }
+
+    pub fn property_from_id(&self, id: PropertyId) -> Option<&PropertyData> {
+        // FIXME: O(n)
+        for idx in self.items_map.values() {
+            if let MethodmapItemData::Property(property_data) = &self.items[*idx] {
+                if property_data.id == id {
+                    return Some(property_data);
+                }
+            }
+        }
+
+        None
     }
 
     pub fn items(&self, name: &Name) -> Option<Idx<MethodmapItemData>> {
@@ -441,6 +492,56 @@ impl FuncenumData {
 
     pub fn name(&self) -> Name {
         self.name.clone()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EnumData {
+    pub name: Name,
+    pub variants: Arc<Arena<VariantData>>,
+    pub variants_map: Arc<FxHashMap<Name, Idx<VariantData>>>,
+}
+
+impl EnumData {
+    pub(crate) fn enum_data_query(db: &dyn DefDatabase, id: EnumId) -> Arc<EnumData> {
+        let loc = id.lookup(db).id;
+        let item_tree = loc.tree_id().item_tree(db);
+        let enum_ = &item_tree[loc.value];
+        let mut variants = Arena::new();
+        let mut variants_map = FxHashMap::default();
+        enum_.variants.clone().for_each(|variant_idx| {
+            let variant = &item_tree[variant_idx];
+            let variant_data = VariantData {
+                name: variant.name.clone(),
+            };
+            let variant_id = variants.alloc(variant_data);
+            variants_map.insert(variant.name.clone(), variant_id);
+        });
+        let enum_data = EnumData {
+            name: enum_.name.clone(),
+            variants: Arc::new(variants),
+            variants_map: Arc::new(variants_map),
+        };
+
+        Arc::new(enum_data)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VariantData {
+    pub name: Name,
+}
+
+impl VariantData {
+    pub(crate) fn variant_data_query(db: &dyn DefDatabase, id: VariantId) -> Arc<VariantData> {
+        let loc = id.lookup(db).id;
+        let item_tree = loc.tree_id().item_tree(db);
+        let variant = &item_tree[loc.value];
+
+        VariantData {
+            name: variant.name.clone(),
+        }
+        .into()
     }
 }
 

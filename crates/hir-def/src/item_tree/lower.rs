@@ -450,10 +450,14 @@ impl<'db> Ctx<'db> {
         let inherits = node
             .child_by_field_name("inherits")
             .and_then(|n| n.utf8_text(self.source.as_bytes()).map(Name::from).ok());
+        let nullable = node
+            .children(&mut node.walk())
+            .any(|n| TSKind::from(n) == TSKind::anon___nullable__);
         let res = Methodmap {
             name: Name::from(name_node.utf8_text(self.source.as_bytes()).unwrap()),
             items: items.into_boxed_slice(),
             inherits,
+            nullable,
             ast_id: self.source_ast_id_map.ast_id_of(node),
         };
         let id = self.tree.data_mut().methodmaps.alloc(res);

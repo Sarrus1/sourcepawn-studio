@@ -350,6 +350,7 @@ pub struct Methodmap {
     pub name: Name,
     pub items: Box<[MethodmapItemId]>,
     pub inherits: Option<Name>,
+    pub nullable: bool,
     pub ast_id: AstId,
 }
 

@@ -2,9 +2,9 @@ use base_db::Tree;
 use db::HirDatabase;
 use hir_def::{
     resolver::ValueNs, DefDiagnostic, DefWithBodyId, EnumId, EnumStructId, ExprId, FuncenumId,
-    FunctagId, FunctionId, FunctionKind, GlobalId, InFile, InferenceDiagnostic, LocalFieldId,
-    Lookup, MacroId, MethodmapId, Name, NodePtr, PropertyId, SpecialMethod, TypedefId, TypesetId,
-    VariantId,
+    FunctagId, FunctionId, FunctionKind, GlobalId, InFile, InferenceDiagnostic, ItemContainerId,
+    LocalFieldId, Lookup, MacroId, MethodmapExtension, MethodmapId, Name, NodePtr, PropertyId,
+    SpecialMethod, TypedefId, TypesetId, VariantId,
 };
 use preprocessor::PreprocessorError;
 use stdx::impl_from;
@@ -396,7 +396,7 @@ impl Function {
         db.function_data(self.id).name.clone()
     }
 
-    pub fn render(self, db: &dyn HirDatabase) -> String {
+    pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
         let data = db.function_data(self.id);
 
         let mut buf = String::new();
@@ -418,14 +418,13 @@ impl Function {
         }
         buf.push_str(&self.name(db).to_string());
 
-        let function_id = self.id.lookup(db.upcast()).id;
-        let item_tree = function_id.item_tree(db.upcast());
-        let function = &item_tree[function_id.value];
-        let ast_id_map = db.ast_id_map(function_id.file_id());
-        let tree = db.parse(function_id.file_id());
-        let node = ast_id_map[function.ast_id].to_node(&tree);
-        let source = db.preprocessed_text(function_id.file_id());
+        let file_id = self.id.lookup(db.upcast()).id.file_id();
+        let tree = db.parse(file_id);
+        let node = self.source(db, &tree)?;
+        let source = db.preprocessed_text(file_id);
+
         if let Some(params) = node
+            .value
             .child_by_field_name("parameters")
             .and_then(|params_node| {
                 params_node
@@ -436,8 +435,8 @@ impl Function {
         {
             buf.push_str(&params);
         }
-        let Some(parent) = node.parent() else {
-            return buf.to_string();
+        let Some(parent) = node.value.parent() else {
+            return buf.to_string().into();
         };
 
         if let Some(parent_name) = parent.child_by_field_name("name").and_then(|name_node| {
@@ -449,7 +448,7 @@ impl Function {
             buf = format!("{}\n{}", parent_name, buf);
         }
 
-        buf.to_string()
+        buf.to_string().into()
     }
 }
 
@@ -461,6 +460,18 @@ pub struct Macro {
 impl Macro {
     pub fn name(self, db: &dyn HirDatabase) -> Name {
         db.macro_data(self.id).name.clone()
+    }
+
+    pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
+        let file_id = self.id.lookup(db.upcast()).id.file_id();
+        let tree = db.parse(file_id);
+        let node = self.source(db, &tree)?;
+        let source = db.preprocessed_text(file_id);
+
+        node.value
+            .utf8_text(source.as_bytes())
+            .ok()
+            .map(String::from)
     }
 }
 
@@ -474,8 +485,8 @@ impl EnumStruct {
         db.enum_struct_data(self.id).name.clone()
     }
 
-    pub fn render(self, db: &dyn HirDatabase) -> String {
-        format!("enum struct {}", self.name(db))
+    pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
+        format!("enum struct {}", self.name(db)).into()
     }
 }
 
@@ -484,9 +495,48 @@ pub struct Methodmap {
     pub(crate) id: MethodmapId,
 }
 
+impl Methodmap {
+    pub fn name(self, db: &dyn HirDatabase) -> Name {
+        db.methodmap_data(self.id).name.clone()
+    }
+
+    pub fn extension(self, db: &dyn HirDatabase) -> Option<MethodmapExtension> {
+        db.methodmap_data(self.id).extension.clone()
+    }
+
+    pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
+        let mut buf = format!("methodmap {}", self.name(db));
+        match self.extension(db) {
+            Some(MethodmapExtension::Inherits(inherits)) => {
+                buf.push_str(&format!(" < {}", inherits))
+            }
+            Some(MethodmapExtension::Nullable) => buf.push_str(" __nullable__"),
+            None => (),
+        }
+
+        buf.into()
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Property {
     pub(crate) id: PropertyId,
+}
+
+impl Property {
+    pub fn name(self, db: &dyn HirDatabase) -> Name {
+        db.property_data(self.id).name.clone()
+    }
+
+    pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
+        let data = db.property_data(self.id);
+        let mut buf = "property ".to_string();
+        buf.push_str(&data.type_ref.to_string());
+        buf.push(' ');
+        buf.push_str(&self.name(db).to_string());
+
+        buf.into()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -494,9 +544,38 @@ pub struct Enum {
     pub(crate) id: EnumId,
 }
 
+impl Enum {
+    pub fn name(self, db: &dyn HirDatabase) -> Name {
+        db.enum_data(self.id).name.clone()
+    }
+
+    pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
+        format!("enum {}", self.name(db)).into()
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Variant {
     pub(crate) id: VariantId,
+}
+
+impl Variant {
+    pub fn name(self, db: &dyn HirDatabase) -> Name {
+        db.variant_data(self.id).name.clone()
+    }
+
+    pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
+        let ItemContainerId::EnumId(parent_id) = self.id.lookup(db.upcast()).container else {
+            panic!("expected a variant to have an enum as a parent");
+        };
+        let parent_name = db.enum_data(parent_id).name.to_string();
+        let name = self.name(db).to_string();
+        if parent_name.is_empty() {
+            name.into()
+        } else {
+            format!("{}::{}", parent_name, name).into()
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -573,14 +652,16 @@ impl Field {
             .to_string()
     }
 
-    pub fn render(self, db: &dyn HirDatabase) -> String {
+    pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
         let parent_data = db.enum_struct_data(self.parent.id);
+
         format!(
             "{}\n{} {};",
             parent_data.name,
             self.type_ref(db),
             self.name(db)
         )
+        .into()
     }
 }
 
