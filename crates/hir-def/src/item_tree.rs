@@ -254,7 +254,7 @@ pub struct Variable {
     pub ast_id: AstId,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum SpecialMethod {
     Constructor,
     Destructor,

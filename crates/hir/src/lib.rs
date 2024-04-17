@@ -2,8 +2,9 @@ use base_db::Tree;
 use db::HirDatabase;
 use hir_def::{
     resolver::ValueNs, DefDiagnostic, DefWithBodyId, EnumId, EnumStructId, ExprId, FuncenumId,
-    FunctagId, FunctionId, GlobalId, InFile, InferenceDiagnostic, LocalFieldId, Lookup, MacroId,
-    MethodmapId, Name, NodePtr, PropertyId, TypedefId, TypesetId, VariantId,
+    FunctagId, FunctionId, FunctionKind, GlobalId, InFile, InferenceDiagnostic, LocalFieldId,
+    Lookup, MacroId, MethodmapId, Name, NodePtr, PropertyId, SpecialMethod, TypedefId, TypesetId,
+    VariantId,
 };
 use preprocessor::PreprocessorError;
 use stdx::impl_from;
@@ -394,6 +395,62 @@ impl Function {
     pub fn name(self, db: &dyn HirDatabase) -> Name {
         db.function_data(self.id).name.clone()
     }
+
+    pub fn render(self, db: &dyn HirDatabase) -> String {
+        let data = db.function_data(self.id);
+
+        let mut buf = String::new();
+        buf.push_str(&data.visibility.to_string());
+        if !buf.is_empty() {
+            buf.push(' ');
+        }
+        match data.kind {
+            FunctionKind::Def => (),
+            FunctionKind::Forward => buf.push_str("forward "),
+            FunctionKind::Native => buf.push_str("native "),
+        }
+        if let Some(type_ref) = &data.type_ref {
+            buf.push_str(&type_ref.to_string());
+            buf.push(' ');
+        }
+        if data.special == Some(SpecialMethod::Destructor) {
+            buf.push('~');
+        }
+        buf.push_str(&self.name(db).to_string());
+
+        let function_id = self.id.lookup(db.upcast()).id;
+        let item_tree = function_id.item_tree(db.upcast());
+        let function = &item_tree[function_id.value];
+        let ast_id_map = db.ast_id_map(function_id.file_id());
+        let tree = db.parse(function_id.file_id());
+        let node = ast_id_map[function.ast_id].to_node(&tree);
+        let source = db.preprocessed_text(function_id.file_id());
+        if let Some(params) = node
+            .child_by_field_name("parameters")
+            .and_then(|params_node| {
+                params_node
+                    .utf8_text(source.as_bytes())
+                    .ok()
+                    .map(String::from)
+            })
+        {
+            buf.push_str(&params);
+        }
+        let Some(parent) = node.parent() else {
+            return buf.to_string();
+        };
+
+        if let Some(parent_name) = parent.child_by_field_name("name").and_then(|name_node| {
+            name_node
+                .utf8_text(source.as_bytes())
+                .ok()
+                .map(String::from)
+        }) {
+            buf = format!("{}\n{}", parent_name, buf);
+        }
+
+        buf.to_string()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -410,6 +467,16 @@ impl Macro {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct EnumStruct {
     pub(crate) id: EnumStructId,
+}
+
+impl EnumStruct {
+    pub fn name(self, db: &dyn HirDatabase) -> Name {
+        db.enum_struct_data(self.id).name.clone()
+    }
+
+    pub fn render(self, db: &dyn HirDatabase) -> String {
+        format!("enum struct {}", self.name(db))
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -485,6 +552,36 @@ pub struct Global {
 pub struct Field {
     pub(crate) parent: EnumStruct,
     pub(crate) id: LocalFieldId,
+}
+
+impl Field {
+    pub fn name(self, db: &dyn HirDatabase) -> Name {
+        let parent_data = db.enum_struct_data(self.parent.id);
+        parent_data
+            .field(self.id)
+            .expect("expected a field to have a name")
+            .name
+            .clone()
+    }
+
+    pub fn type_ref(self, db: &dyn HirDatabase) -> String {
+        let parent_data = db.enum_struct_data(self.parent.id);
+        parent_data
+            .field(self.id)
+            .expect("expected a field to have a type")
+            .type_ref
+            .to_string()
+    }
+
+    pub fn render(self, db: &dyn HirDatabase) -> String {
+        let parent_data = db.enum_struct_data(self.parent.id);
+        format!(
+            "{}\n{} {};",
+            parent_data.name,
+            self.type_ref(db),
+            self.name(db)
+        )
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

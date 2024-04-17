@@ -98,8 +98,10 @@ impl TypeRef {
             _ => self.clone(),
         }
     }
+}
 
-    pub fn to_str(&self) -> String {
+impl ToString for TypeRef {
+    fn to_string(&self) -> String {
         match self {
             TypeRef::Name(name) => String::from(name.clone()), //TODO: Can we avoid this clone?
             TypeRef::OldName(name) => format!("{}:", name),
@@ -112,7 +114,7 @@ impl TypeRef {
             TypeRef::OldString => "String".to_string(),
             TypeRef::OldFloat => "Float".to_string(),
             TypeRef::Array((type_ref, size)) => {
-                let mut res = type_ref.to_str();
+                let mut res = type_ref.to_string();
                 res.push_str(&"[]".repeat(*size));
                 res
             }

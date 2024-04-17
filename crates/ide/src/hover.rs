@@ -1,3 +1,5 @@
+mod render;
+
 use hir::{HasSource, Semantics};
 use ide_db::{Documentation, RootDatabase};
 use preprocessor::{db::PreprocDatabase, PreprocessingResult};
@@ -88,12 +90,12 @@ pub(crate) fn hover(
     let file_id = def.file_id(db);
     let source_tree = sema.parse(file_id);
     let text = db.preprocessed_text(file_id);
+    let render = render::render_def(db, def.clone());
     let def_node = def.source(db, &source_tree)?.value;
-    let source_text = def_node.utf8_text(text.as_bytes()).ok()?;
 
     if !config.documentation {
         let res = HoverResult {
-            markup: Markup::fenced_block(source_text),
+            markup: Markup::fenced_block(render),
             actions: vec![],
         };
         return Some(RangeInfo::new(u_range, res));
@@ -102,7 +104,7 @@ pub(crate) fn hover(
         let res = HoverResult {
             markup: Markup::from(format!(
                 "{}\n\n---\n\n{}",
-                Markup::fenced_block(source_text),
+                Markup::fenced_block(render),
                 Markup::from(docs.to_markdown()),
             )),
             actions: vec![],
@@ -110,7 +112,7 @@ pub(crate) fn hover(
         return Some(RangeInfo::new(u_range, res));
     }
     let res = HoverResult {
-        markup: Markup::fenced_block(source_text),
+        markup: Markup::fenced_block(render),
         actions: vec![],
     };
     Some(RangeInfo::new(u_range, res))

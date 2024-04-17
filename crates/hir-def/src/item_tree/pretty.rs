@@ -88,7 +88,7 @@ impl<'a> Printer<'a> {
             self.push(" ");
         }
         if let Some(type_ref) = type_ref {
-            self.push(&type_ref.to_str());
+            self.push(&type_ref.to_string());
             self.push(" ");
         }
         self.push(name.0.as_str());
@@ -141,7 +141,7 @@ impl<'a> Printer<'a> {
                     } = &self.tree[*field_idx];
                     self.push(format!("// {}", ast_id).as_str());
                     self.newline();
-                    self.push(&format!("{} {};", type_ref.to_str(), name.0));
+                    self.push(&format!("{} {};", type_ref.to_string(), name.0));
                     self.newline();
                 }
                 EnumStructItemId::Method(method_idx) => self.print_function(method_idx),
@@ -181,7 +181,7 @@ impl<'a> Printer<'a> {
                     } = &self.tree[property_idx];
                     self.push(format!("// {}", ast_id).as_str());
                     self.newline();
-                    self.push(&format!("property {} {} {{", type_ref.to_str(), name.0));
+                    self.push(&format!("property {} {} {{", type_ref.to_string(), name.0));
                     self.indent();
                     self.newline();
                     for fn_idx in getters_setters.clone() {
@@ -222,7 +222,7 @@ impl<'a> Printer<'a> {
             _ => (),
         }
         if let Some(ret_type) = ret_type {
-            self.push(&ret_type.to_str());
+            self.push(&ret_type.to_string());
             self.push(" ");
         }
         self.push(&name.0);
@@ -233,7 +233,7 @@ impl<'a> Printer<'a> {
                 self.newline();
                 self.push(format!("// {}", param.ast_id).as_str());
                 self.newline();
-                self.push(&type_ref.to_str());
+                self.push(&type_ref.to_string());
                 self.push(",");
             }
         }
@@ -263,7 +263,7 @@ impl<'a> Printer<'a> {
         if let Some(name) = name {
             self.push(format!("typedef {} = ", name).as_str());
         }
-        self.push(format!("function {}", type_ref.to_str()).as_str());
+        self.push(format!("function {}", type_ref.to_string()).as_str());
         self.push("(");
         self.indent();
         for param in self.tree.data().params[params.clone()].iter() {
@@ -271,7 +271,7 @@ impl<'a> Printer<'a> {
                 self.newline();
                 self.push(format!("// {}", param.ast_id).as_str());
                 self.newline();
-                self.push(&type_ref.to_str());
+                self.push(&type_ref.to_string());
                 self.push(",");
             }
         }
@@ -312,7 +312,7 @@ impl<'a> Printer<'a> {
             self.push(
                 format!(
                     "functag public {}:{}",
-                    type_ref.as_ref().map(|e| e.to_str()).unwrap_or_default(),
+                    type_ref.as_ref().map(|e| e.to_string()).unwrap_or_default(),
                     name
                 )
                 .as_str(),
@@ -321,7 +321,7 @@ impl<'a> Printer<'a> {
             self.push(
                 format!(
                     "{}:public",
-                    type_ref.as_ref().map(|e| e.to_str()).unwrap_or_default(),
+                    type_ref.as_ref().map(|e| e.to_string()).unwrap_or_default(),
                 )
                 .as_str(),
             );
@@ -333,7 +333,7 @@ impl<'a> Printer<'a> {
                 self.newline();
                 self.push(format!("// {}", param.ast_id).as_str());
                 self.newline();
-                self.push(&type_ref.to_str());
+                self.push(&type_ref.to_string());
                 self.push(",");
             }
         }

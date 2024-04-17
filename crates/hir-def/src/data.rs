@@ -8,7 +8,10 @@ use syntax::TSKind;
 
 use crate::{
     hir::type_ref::TypeRef,
-    item_tree::{EnumStructItemId, MethodmapItemId, Name, Param, SpecialMethod},
+    item_tree::{
+        EnumStructItemId, FunctionKind, MethodmapItemId, Name, Param, RawVisibilityId,
+        SpecialMethod,
+    },
     resolver::{global_resolver, ValueNs},
     src::{HasChildSource, HasSource},
     DefDatabase, DefDiagnostic, EnumStructId, FuncenumId, FunctagId, FunctagLoc, FunctionId,
@@ -35,11 +38,34 @@ impl From<&Param> for ParamData {
     }
 }
 
+impl ToString for ParamData {
+    fn to_string(&self) -> String {
+        let mut s = String::new();
+        if self.is_const {
+            s.push_str("const ");
+        }
+        if self.is_rest {
+            s.push_str("...");
+        }
+        if let Some(type_ref) = &self.type_ref {
+            s.push_str(&type_ref.to_string());
+        }
+        if self.has_default {
+            // TODO: Show the actual default value
+            s.push_str(" = ...");
+        }
+        s
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FunctionData {
     pub name: Name,
     pub type_ref: Option<TypeRef>,
     params: Vec<ParamData>,
+    pub kind: FunctionKind,
+    pub visibility: RawVisibilityId,
+    pub special: Option<SpecialMethod>,
 }
 
 impl FunctionData {
@@ -57,6 +83,9 @@ impl FunctionData {
             name: function.name.clone(),
             type_ref: function.ret_type.clone(),
             params,
+            kind: function.kind,
+            visibility: function.visibility,
+            special: function.special,
         };
 
         Arc::new(function_data)
@@ -68,6 +97,10 @@ impl FunctionData {
 
     pub fn type_ref(&self) -> Option<TypeRef> {
         self.type_ref.clone()
+    }
+
+    pub fn params(&self) -> &[ParamData] {
+        &self.params
     }
 
     pub fn number_of_mandatory_parameters(&self) -> usize {
@@ -483,6 +516,13 @@ impl EnumStructData {
         match &self.items[item] {
             EnumStructItemData::Field(_) => None,
             EnumStructItemData::Method(function_id) => Some(function_id),
+        }
+    }
+
+    pub fn field(&self, item: Idx<EnumStructItemData>) -> Option<&FieldData> {
+        match &self.items[item] {
+            EnumStructItemData::Field(field_data) => Some(field_data),
+            EnumStructItemData::Method(_) => None,
         }
     }
 

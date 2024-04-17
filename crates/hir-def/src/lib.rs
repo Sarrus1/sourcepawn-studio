@@ -30,7 +30,9 @@ pub use db::{BlockDefMapQuery, BlockItemTreeQuery, BodyQuery, FileDefMapQuery, F
 pub use diagnostics::DefDiagnostic;
 pub use hir::ExprId;
 pub use infer::{AttributeId, ConstructorDiagnosticKind, InferenceDiagnostic, InferenceResult};
-pub use item_tree::{print_item_tree, FileItem, Name};
+pub use item_tree::{
+    print_item_tree, FileItem, FunctionKind, Name, RawVisibilityId, SpecialMethod,
+};
 
 trait Intern {
     type ID;
