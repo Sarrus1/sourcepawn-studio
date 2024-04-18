@@ -7,7 +7,7 @@ mod prime_caches;
 mod status;
 mod syntax_highlighting;
 
-use std::sync::Arc;
+use std::{panic::AssertUnwindSafe, sync::Arc};
 
 use base_db::{
     Change, FileExtension, FilePosition, FileRange, Graph, SourceDatabase, SourceDatabaseExt, Tree,
@@ -204,8 +204,9 @@ impl Analysis {
         &self,
         pos: FilePosition,
         config: &HoverConfig,
+        file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Option<String>>,
     ) -> Cancellable<Option<RangeInfo<HoverResult>>> {
-        self.with_db(|db| hover::hover(db, pos, config))
+        self.with_db(|db| hover::hover(db, pos, config, file_id_to_url))
     }
 
     /// Returns the highlighted ranges for the file.

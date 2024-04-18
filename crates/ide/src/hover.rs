@@ -1,14 +1,19 @@
 mod render;
 
+use std::panic::AssertUnwindSafe;
+
 use hir::{HasSource, Semantics};
 use ide_db::{Documentation, RootDatabase};
 use preprocessor::{db::PreprocDatabase, PreprocessingResult};
 use syntax::utils::{lsp_position_to_ts_point, ts_range_to_lsp_range};
+use vfs::FileId;
 
 use crate::{
     goto_definition::find_macro_def, markup::Markup, s_range_to_u_range, u_pos_to_s_pos,
     FilePosition, RangeInfo,
 };
+
+use self::render::Render;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HoverConfig {
@@ -61,6 +66,7 @@ pub(crate) fn hover(
     db: &RootDatabase,
     mut fpos: FilePosition,
     config: &HoverConfig,
+    file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Option<String>>,
 ) -> Option<RangeInfo<HoverResult>> {
     let sema = &Semantics::new(db);
     let preprocessing_results = sema.preprocess_file(fpos.file_id);
@@ -93,9 +99,14 @@ pub(crate) fn hover(
     let render = render::render_def(db, def.clone())?;
     let def_node = def.source(db, &source_tree)?.value;
 
+    let markup = match render {
+        Render::FileId(file_id) => Markup::from(file_id_to_url(file_id).unwrap_or_default()),
+        Render::String(render) => Markup::fenced_block(render),
+    };
+
     if !config.documentation {
         let res = HoverResult {
-            markup: Markup::fenced_block(render),
+            markup,
             actions: vec![],
         };
         return Some(RangeInfo::new(u_range, res));
@@ -104,7 +115,7 @@ pub(crate) fn hover(
         let res = HoverResult {
             markup: Markup::from(format!(
                 "{}\n\n---\n\n{}",
-                Markup::fenced_block(render),
+                markup,
                 Markup::from(docs.to_markdown()),
             )),
             actions: vec![],
@@ -112,7 +123,7 @@ pub(crate) fn hover(
         return Some(RangeInfo::new(u_range, res));
     }
     let res = HoverResult {
-        markup: Markup::fenced_block(render),
+        markup,
         actions: vec![],
     };
     Some(RangeInfo::new(u_range, res))

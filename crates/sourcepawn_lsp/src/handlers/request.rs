@@ -1,3 +1,5 @@
+use std::panic::AssertUnwindSafe;
+
 use anyhow::Context;
 use base_db::FileRange;
 use lsp_types::{
@@ -5,6 +7,7 @@ use lsp_types::{
     SemanticTokensRangeParams, SemanticTokensRangeResult, SemanticTokensResult, Url,
 };
 use stdx::format_to;
+use vfs::FileId;
 
 use crate::{
     global_state::GlobalStateSnapshot,
@@ -44,7 +47,19 @@ pub(crate) fn handle_hover(
 ) -> anyhow::Result<Option<lsp_types::Hover>> {
     let pos = from_proto::file_position(&snap, params.text_document_position_params.clone())?;
 
-    let hover = match snap.analysis.hover(pos, &snap.config.hover())? {
+    let file_id_to_url = &|id: FileId| {
+        snap.file_id_to_url(id)
+            .to_file_path()
+            .ok()
+            .and_then(|it| it.to_path_buf().to_str().map(|it| it.to_string()))
+    };
+    let file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Option<String>> =
+        AssertUnwindSafe(file_id_to_url);
+
+    let hover = match snap
+        .analysis
+        .hover(pos, &snap.config.hover(), file_id_to_url)?
+    {
         None => return Ok(None),
         Some(it) => it,
     };

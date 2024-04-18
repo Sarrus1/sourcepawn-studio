@@ -15,9 +15,9 @@ use crate::{
     resolver::{global_resolver, ValueNs},
     src::{HasChildSource, HasSource},
     DefDatabase, DefDiagnostic, EnumId, EnumStructId, FuncenumId, FunctagId, FunctagLoc,
-    FunctionId, FunctionLoc, InFile, Intern, ItemContainerId, ItemTreeId, LocalFieldId, Lookup,
-    MacroId, MethodmapId, NodePtr, PropertyId, PropertyLoc, TypedefId, TypedefLoc, TypesetId,
-    VariantId,
+    FunctionId, FunctionLoc, GlobalId, InFile, Intern, ItemContainerId, ItemTreeId, LocalFieldId,
+    Lookup, MacroId, MethodmapId, NodePtr, PropertyId, PropertyLoc, TypedefId, TypedefLoc,
+    TypesetId, VariantId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -636,6 +636,40 @@ impl EnumStructData {
             EnumStructItemData::Field(field_data) => Some(&field_data.type_ref),
             EnumStructItemData::Method(_) => None,
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GlobalData {
+    name: Name,
+    type_ref: Option<TypeRef>,
+    visibility: RawVisibilityId,
+}
+
+impl GlobalData {
+    pub(crate) fn global_data_query(db: &dyn DefDatabase, id: GlobalId) -> Arc<GlobalData> {
+        let global_id = id.lookup(db);
+        let item_tree = global_id.item_tree(db);
+        let global = &item_tree[global_id];
+        let global_data = GlobalData {
+            name: global.name.clone(),
+            type_ref: global.type_ref.clone(),
+            visibility: global.visibility,
+        };
+
+        Arc::new(global_data)
+    }
+
+    pub fn name(&self) -> &Name {
+        &self.name
+    }
+
+    pub fn type_ref(&self) -> Option<&TypeRef> {
+        self.type_ref.as_ref()
+    }
+
+    pub fn visibility(&self) -> RawVisibilityId {
+        self.visibility
     }
 }
 

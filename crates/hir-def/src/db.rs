@@ -14,7 +14,7 @@ use crate::{
     ast_id_map::AstIdMap,
     body::{scope::ExprScopes, Body, BodySourceMap},
     data::{
-        EnumData, EnumStructData, FuncenumData, FunctagData, FunctionData, MacroData,
+        EnumData, EnumStructData, FuncenumData, FunctagData, FunctionData, GlobalData, MacroData,
         MethodmapData, PropertyData, TypedefData, TypesetData, VariantData,
     },
     infer,
@@ -127,6 +127,9 @@ pub trait DefDatabase: InternDatabase + PreprocDatabase {
 
     #[salsa::invoke(FuncenumData::funcenum_data_query)]
     fn funcenum_data(&self, id: FuncenumId) -> Arc<FuncenumData>;
+
+    #[salsa::invoke(GlobalData::global_data_query)]
+    fn global_data(&self, id: GlobalId) -> Arc<GlobalData>;
     // endregion: data
 
     // region: infer

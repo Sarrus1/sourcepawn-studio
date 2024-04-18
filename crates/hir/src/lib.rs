@@ -8,6 +8,7 @@ use hir_def::{
 };
 use preprocessor::PreprocessorError;
 use stdx::impl_from;
+use syntax::TSKind;
 use vfs::FileId;
 
 pub mod db;
@@ -138,6 +139,10 @@ impl From<FileId> for File {
 }
 
 impl File {
+    pub fn file_id(&self) -> FileId {
+        self.id
+    }
+
     pub fn declarations(self, db: &dyn HirDatabase) -> Vec<FileDef> {
         let db = db.upcast();
         let def_map = db.file_def_map(self.id);
@@ -587,6 +592,52 @@ impl Typedef {
     pub fn name(self, db: &dyn HirDatabase) -> Option<Name> {
         db.typedef_data(self.id).name.clone()
     }
+
+    pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
+        let file_id = self.id.lookup(db.upcast()).id.file_id();
+        let tree = db.parse(file_id);
+        let node = self.source(db, &tree)?;
+        let source = db.preprocessed_text(file_id);
+
+        let data = db.typedef_data(self.id);
+        let mut buf = String::new();
+        if let Some(name) = self.name(db) {
+            buf.push_str("typedef ");
+            buf.push_str(&name.to_string());
+            buf.push_str(" = ");
+        } else {
+            let ItemContainerId::TypesetId(parent_id) = self.id.lookup(db.upcast()).container
+            else {
+                panic!("expected a typedef to have a typeset as a parent");
+            };
+            let parent_name = db.typeset_data(parent_id).name.to_string();
+            buf.push_str(&parent_name);
+            buf.push('\n');
+        }
+        buf.push_str("function ");
+        buf.push_str(&data.type_ref.to_string());
+        buf.push(' ');
+
+        if let Some(params) = node
+            .value
+            .children(&mut node.value.walk())
+            .find(|n| TSKind::from(n) == TSKind::typedef_expression)
+            .expect("expected a typedef to have a typedef_expression")
+            .child_by_field_name("parameters")
+            .and_then(|params_node| {
+                params_node
+                    .utf8_text(source.as_bytes())
+                    .ok()
+                    .map(String::from)
+            })
+        {
+            buf.push_str(&params);
+        }
+
+        buf.push(';');
+
+        buf.into()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -597,6 +648,10 @@ pub struct Typeset {
 impl Typeset {
     pub fn name(self, db: &dyn HirDatabase) -> Name {
         db.typeset_data(self.id).name.clone()
+    }
+
+    pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
+        format!("typeset {}", self.name(db)).into()
     }
 }
 
@@ -609,6 +664,53 @@ impl Functag {
     pub fn name(self, db: &dyn HirDatabase) -> Option<Name> {
         db.functag_data(self.id).name.clone()
     }
+
+    pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
+        let file_id = self.id.lookup(db.upcast()).id.file_id();
+        let tree = db.parse(file_id);
+        let node = self.source(db, &tree)?;
+        let source = db.preprocessed_text(file_id);
+
+        let data = db.functag_data(self.id);
+        let mut buf = String::new();
+        let type_ = data
+            .type_ref
+            .as_ref()
+            .map(|it| it.to_string())
+            .unwrap_or_default();
+        if let Some(name) = self.name(db) {
+            buf.push_str("functag public ");
+            buf.push_str(&type_);
+            buf.push_str(&name.to_string());
+        } else {
+            let ItemContainerId::FuncenumId(parent_id) = self.id.lookup(db.upcast()).container
+            else {
+                panic!("expected a typedef to have a typeset as a parent");
+            };
+            let parent_name = db.funcenum_data(parent_id).name.to_string();
+            buf.push_str(&parent_name);
+            buf.push('\n');
+            buf.push_str(&type_);
+            buf.push_str(":public");
+        }
+
+        if let Some(params) = node
+            .value
+            .child_by_field_name("parameters")
+            .and_then(|params_node| {
+                params_node
+                    .utf8_text(source.as_bytes())
+                    .ok()
+                    .map(String::from)
+            })
+        {
+            buf.push_str(&params);
+        }
+
+        buf.push(';');
+
+        buf.into()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -620,11 +722,41 @@ impl Funcenum {
     pub fn name(self, db: &dyn HirDatabase) -> Name {
         db.funcenum_data(self.id).name.clone()
     }
+
+    pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
+        format!("funcenum {}", self.name(db)).into()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Global {
     pub(crate) id: GlobalId,
+}
+
+impl Global {
+    pub fn name(self, db: &dyn HirDatabase) -> Name {
+        db.global_data(self.id).name().clone()
+    }
+
+    pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
+        let data = db.global_data(self.id);
+
+        let mut buf = String::new();
+        buf.push_str(&data.visibility().to_string());
+        if !buf.is_empty() {
+            buf.push(' ');
+        }
+        if let Some(type_ref) = data.type_ref() {
+            buf.push_str(&type_ref.to_string());
+            if !buf.ends_with(':') {
+                buf.push(' ');
+            }
+        }
+        buf.push_str(&self.name(db).to_string());
+        buf.push(';');
+
+        buf.into()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -691,6 +823,42 @@ impl<'tree> Local {
                 node_ptr.value.to_node(tree),
             ),
         })
+    }
+
+    pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
+        let file_id = self.parent.file_id(db.upcast());
+        let tree = db.parse(file_id);
+        let source = db.preprocessed_text(file_id);
+        let node = self.source(db, &tree)?.source.value;
+        let name = node.utf8_text(source.as_bytes()).ok().map(String::from)?;
+        let Some(parent) = node.parent() else {
+            return name.into();
+        };
+        match TSKind::from(parent) {
+            TSKind::variable_declaration_statement => {
+                let mut buf = String::new();
+                let type_node = parent.child_by_field_name("type")?;
+                buf.push_str(type_node.utf8_text(source.as_bytes()).ok()?);
+                buf.push(' ');
+                buf.push_str(&name);
+                buf.push(';');
+                Some(buf)
+            }
+            TSKind::old_variable_declaration_statement => {
+                let mut buf = String::new();
+                let type_ = parent
+                    .child_by_field_name("type")
+                    .and_then(|it| it.utf8_text(source.as_bytes()).ok())
+                    .unwrap_or_default();
+                buf.push_str(type_);
+                buf.push_str(parent.utf8_text(source.as_bytes()).ok()?);
+                if !buf.ends_with(';') {
+                    buf.push(';');
+                }
+                Some(buf)
+            }
+            _ => None,
+        }
     }
 }
 
