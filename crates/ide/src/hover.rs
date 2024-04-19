@@ -1,19 +1,22 @@
+mod actions;
 mod render;
 
 use std::panic::AssertUnwindSafe;
 
-use hir::{HasSource, Semantics};
+use hir::{DefResolution, HasSource, Semantics};
 use ide_db::{Documentation, RootDatabase};
+use itertools::Itertools;
 use preprocessor::{db::PreprocDatabase, PreprocessingResult};
 use syntax::utils::{lsp_position_to_ts_point, ts_range_to_lsp_range};
 use vfs::FileId;
 
 use crate::{
-    goto_definition::find_macro_def, markup::Markup, s_range_to_u_range, u_pos_to_s_pos,
-    FilePosition, RangeInfo,
+    goto_definition::{find_inner_name_range, find_macro_def},
+    markup::Markup,
+    s_range_to_u_range, u_pos_to_s_pos, FilePosition, NavigationTarget, RangeInfo,
 };
 
-use self::render::Render;
+use self::{actions::goto_type_action_for_def, render::Render};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HoverConfig {
@@ -34,26 +37,45 @@ pub enum HoverAction {
     // Runnable(Runnable),
     Implementation(FilePosition),
     Reference(FilePosition),
+    GoToType(Vec<HoverGotoTypeData>),
 }
 
-// impl HoverAction {
-//     fn goto_type_from_targets(db: &RootDatabase, targets: Vec<hir::ModuleDef>) -> Self {
-//         let targets = targets
-//             .into_iter()
-//             .filter_map(|it| {
-//                 Some(HoverGotoTypeData {
-//                     mod_path: render::path(
-//                         db,
-//                         it.module(db)?,
-//                         it.name(db).map(|name| name.display(db).to_string()),
-//                     ),
-//                     nav: it.try_to_nav(db)?,
-//                 })
-//             })
-//             .collect();
-//         HoverAction::GoToType(targets)
-//     }
-// }
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct HoverGotoTypeData {
+    pub mod_path: String,
+    pub nav: NavigationTarget,
+}
+
+impl HoverAction {
+    fn goto_type_from_targets(db: &RootDatabase, targets: Vec<DefResolution>) -> Self {
+        let targets = targets
+            .into_iter()
+            .filter_map(|def| {
+                let sema = Semantics::new(db);
+                let file_id = def.file_id(db);
+                let source_tree = sema.parse(file_id);
+                let def_node = def.source(db, &source_tree)?.value;
+
+                let name_range = find_inner_name_range(&def_node);
+
+                let target_preprocessing_results = sema.preprocess_file(file_id);
+                let target_offsets = target_preprocessing_results.offsets();
+                Some(HoverGotoTypeData {
+                    mod_path: Default::default(),
+                    nav: NavigationTarget {
+                        file_id,
+                        full_range: s_range_to_u_range(
+                            target_offsets,
+                            ts_range_to_lsp_range(&def_node.range()),
+                        ),
+                        focus_range: s_range_to_u_range(target_offsets, name_range).into(),
+                    },
+                })
+            })
+            .collect();
+        HoverAction::GoToType(targets)
+    }
+}
 
 /// Contains the results when hovering over an item
 #[derive(Debug, Default)]
@@ -97,6 +119,10 @@ pub(crate) fn hover(
     let source_tree = sema.parse(file_id);
     let text = db.preprocessed_text(file_id);
     let render = render::render_def(db, def.clone())?;
+    let actions = [goto_type_action_for_def(db, def.clone())]
+        .into_iter()
+        .flatten()
+        .collect_vec();
     let def_node = def.source(db, &source_tree)?.value;
 
     let markup = match render {
@@ -105,10 +131,7 @@ pub(crate) fn hover(
     };
 
     if !config.documentation {
-        let res = HoverResult {
-            markup,
-            actions: vec![],
-        };
+        let res = HoverResult { markup, actions };
         return Some(RangeInfo::new(u_range, res));
     }
     if let Some(docs) = Documentation::from_node(def_node, text.as_bytes()) {
@@ -118,14 +141,11 @@ pub(crate) fn hover(
                 markup,
                 Markup::from(docs.to_markdown()),
             )),
-            actions: vec![],
+            actions,
         };
         return Some(RangeInfo::new(u_range, res));
     }
-    let res = HoverResult {
-        markup,
-        actions: vec![],
-    };
+    let res = HoverResult { markup, actions };
     Some(RangeInfo::new(u_range, res))
 }
 

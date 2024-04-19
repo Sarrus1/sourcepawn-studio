@@ -2,6 +2,7 @@ use std::panic::AssertUnwindSafe;
 
 use anyhow::Context;
 use base_db::FileRange;
+use ide::{HoverAction, HoverGotoTypeData};
 use lsp_types::{
     SemanticTokensDeltaParams, SemanticTokensFullDeltaResult, SemanticTokensParams,
     SemanticTokensRangeParams, SemanticTokensRangeResult, SemanticTokensResult, Url,
@@ -11,10 +12,10 @@ use vfs::FileId;
 
 use crate::{
     global_state::GlobalStateSnapshot,
-    lsp::{from_proto, to_proto},
+    lsp::{self, from_proto, to_proto},
     lsp_ext::{
-        AnalyzerStatusParams, ItemTreeParams, PreprocessedDocumentParams, ProjectMainPathParams,
-        ProjectsGraphvizParams, SyntaxTreeParams,
+        self, AnalyzerStatusParams, ItemTreeParams, PreprocessedDocumentParams,
+        ProjectMainPathParams, ProjectsGraphvizParams, SyntaxTreeParams,
     },
 };
 
@@ -44,7 +45,7 @@ pub(crate) fn handle_goto_definition(
 pub(crate) fn handle_hover(
     snap: GlobalStateSnapshot,
     params: lsp_types::HoverParams,
-) -> anyhow::Result<Option<lsp_types::Hover>> {
+) -> anyhow::Result<Option<lsp::ext::Hover>> {
     let pos = from_proto::file_position(&snap, params.text_document_position_params.clone())?;
 
     let file_id_to_url = &|id: FileId| {
@@ -56,7 +57,7 @@ pub(crate) fn handle_hover(
     let file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Option<String>> =
         AssertUnwindSafe(file_id_to_url);
 
-    let hover = match snap
+    let info = match snap
         .analysis
         .hover(pos, &snap.config.hover(), file_id_to_url)?
     {
@@ -64,15 +65,61 @@ pub(crate) fn handle_hover(
         Some(it) => it,
     };
 
-    let res = lsp_types::Hover {
-        contents: lsp_types::HoverContents::Markup(to_proto::markup_content(
-            hover.info.markup,
-            snap.config.hover().format,
-        )),
-        range: Some(hover.range),
+    let res = lsp::ext::Hover {
+        hover: lsp_types::Hover {
+            contents: lsp_types::HoverContents::Markup(to_proto::markup_content(
+                info.info.markup,
+                snap.config.hover().format,
+            )),
+            range: Some(info.range),
+        },
+        actions: prepare_hover_actions(&snap, &info.info.actions), // TODO: implement hover actions
+                                                                   // actions: if snap.config.hover_actions().none() {
+                                                                   //     Vec::new()
+                                                                   // } else {
+                                                                   //     prepare_hover_actions(&snap, &info.info.actions)
+                                                                   // },
     };
 
     Ok(res.into())
+}
+
+fn goto_type_action_links(
+    snap: &GlobalStateSnapshot,
+    nav_targets: &[HoverGotoTypeData],
+) -> Option<lsp::ext::CommandLinkGroup> {
+    // FIXME: implement this
+    // if !snap.config.hover_actions().goto_type_def
+    //     || nav_targets.is_empty()
+    //     || !snap.config.client_commands().goto_location
+    // {
+    //     return None;
+    // }
+
+    Some(lsp::ext::CommandLinkGroup {
+        title: Some("Go to ".into()),
+        commands: nav_targets
+            .iter()
+            .filter_map(|it| {
+                to_proto::command::goto_location(snap, &it.nav)
+                    .map(|cmd| to_command_link(cmd, it.mod_path.clone()))
+            })
+            .collect(),
+    })
+}
+
+fn prepare_hover_actions(
+    snap: &GlobalStateSnapshot,
+    actions: &[HoverAction],
+) -> Vec<lsp::ext::CommandLinkGroup> {
+    actions
+        .iter()
+        .filter_map(|it| match it {
+            HoverAction::Implementation(position) => todo!(),
+            HoverAction::Reference(position) => todo!(),
+            HoverAction::GoToType(targets) => goto_type_action_links(snap, targets),
+        })
+        .collect()
 }
 
 pub(crate) fn handle_semantic_tokens_full(

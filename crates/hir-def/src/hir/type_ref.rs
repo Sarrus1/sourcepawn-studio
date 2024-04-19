@@ -121,3 +121,23 @@ impl ToString for TypeRef {
         }
     }
 }
+
+impl TypeRef {
+    /// Returns the type as a string without the array brackets or
+    /// the colon for old types
+    pub fn type_as_string(&self) -> String {
+        match self {
+            TypeRef::Name(name) => name.to_string(),
+            TypeRef::OldName(name) => name.to_string(),
+            TypeRef::Int => "int".to_string(),
+            TypeRef::Bool => "bool".to_string(),
+            TypeRef::Float => "float".to_string(),
+            TypeRef::Char => "char".to_string(),
+            TypeRef::Void => "void".to_string(),
+            TypeRef::Any => "any".to_string(),
+            TypeRef::OldString => "String".to_string(),
+            TypeRef::OldFloat => "Float".to_string(),
+            TypeRef::Array((type_ref, _)) => type_ref.to_string(),
+        }
+    }
+}

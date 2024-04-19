@@ -1,3 +1,5 @@
+use std::hash::Hash;
+
 use base_db::FilePosition;
 use fxhash::FxHashMap;
 use hir::{DefResolution, HasSource, Semantics};
@@ -11,10 +13,27 @@ use vfs::FileId;
 
 use crate::{s_range_to_u_range, u_pos_to_s_pos, RangeInfo, RootDatabase};
 
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct NavigationTarget {
     pub file_id: FileId,
     pub full_range: lsp_types::Range,
     pub focus_range: Option<lsp_types::Range>,
+}
+
+impl Hash for NavigationTarget {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.file_id.hash(state);
+        self.full_range.start.line.hash(state);
+        self.full_range.start.character.hash(state);
+        self.full_range.end.line.hash(state);
+        self.full_range.end.character.hash(state);
+        if let Some(focus_range) = &self.focus_range {
+            focus_range.start.line.hash(state);
+            focus_range.start.character.hash(state);
+            focus_range.end.line.hash(state);
+            focus_range.end.character.hash(state);
+        }
+    }
 }
 
 pub(crate) fn goto_definition(

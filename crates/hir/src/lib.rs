@@ -1,10 +1,11 @@
 use base_db::Tree;
 use db::HirDatabase;
 use hir_def::{
-    resolver::ValueNs, DefDiagnostic, DefWithBodyId, EnumId, EnumStructId, ExprId, FuncenumId,
-    FunctagId, FunctionId, FunctionKind, GlobalId, InFile, InferenceDiagnostic, ItemContainerId,
-    LocalFieldId, Lookup, MacroId, MethodmapExtension, MethodmapId, Name, NodePtr, PropertyId,
-    SpecialMethod, TypedefId, TypesetId, VariantId,
+    resolver::{HasResolver, ValueNs},
+    DefDiagnostic, DefWithBodyId, EnumId, EnumStructId, ExprId, FuncenumId, FunctagId, FunctionId,
+    FunctionKind, GlobalId, InFile, InferenceDiagnostic, ItemContainerId, LocalFieldId, Lookup,
+    MacroId, MethodmapExtension, MethodmapId, Name, NodePtr, PropertyId, SpecialMethod, TypedefId,
+    TypesetId, VariantId,
 };
 use preprocessor::PreprocessorError;
 use stdx::impl_from;
@@ -397,8 +398,28 @@ pub struct Function {
 }
 
 impl Function {
+    pub fn id(self) -> FunctionId {
+        self.id
+    }
+
     pub fn name(self, db: &dyn HirDatabase) -> Name {
         db.function_data(self.id).name.clone()
+    }
+
+    pub fn type_ref(self, db: &dyn HirDatabase) -> Option<String> {
+        db.function_data(self.id)
+            .type_ref
+            .as_ref()
+            .map(|it| it.to_string())
+    }
+
+    pub fn type_def(self, db: &dyn HirDatabase) -> Option<DefResolution> {
+        let ty = db.function_data(self.id).type_ref.clone()?;
+        let ty_str = ty.type_as_string();
+        self.id
+            .resolver(db.upcast())
+            .resolve_ident(&ty_str)
+            .and_then(DefResolution::try_from)
     }
 
     pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
@@ -535,7 +556,12 @@ impl Property {
 
     pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
         let data = db.property_data(self.id);
-        let mut buf = "property ".to_string();
+        let ItemContainerId::MethodmapId(parent_id) = self.id.lookup(db.upcast()).container else {
+            panic!("expected a property to have a methodmap as a parent");
+        };
+        let parent_name = db.methodmap_data(parent_id).name.to_string();
+        let mut buf = format!("{}::", parent_name);
+        buf.push_str("property ");
         buf.push_str(&data.type_ref.to_string());
         buf.push(' ');
         buf.push_str(&self.name(db).to_string());
@@ -788,9 +814,9 @@ impl Field {
         let parent_data = db.enum_struct_data(self.parent.id);
 
         format!(
-            "{}\n{} {};",
-            parent_data.name,
+            "{} {}::{};",
             self.type_ref(db),
+            parent_data.name,
             self.name(db)
         )
         .into()

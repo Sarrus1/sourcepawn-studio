@@ -23,7 +23,7 @@ use syntax::range_contains_pos;
 use vfs::FileId;
 
 pub use goto_definition::NavigationTarget;
-pub use hover::{HoverConfig, HoverDocFormat};
+pub use hover::{HoverAction, HoverConfig, HoverDocFormat, HoverGotoTypeData};
 pub use ide_db::Cancellable;
 pub use ide_diagnostics::{Diagnostic, DiagnosticsConfig, Severity};
 pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};
