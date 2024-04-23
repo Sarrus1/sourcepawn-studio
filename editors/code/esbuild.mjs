@@ -68,8 +68,8 @@ let ctx = await esbuild.build({
   external: ["vscode"],
   format: "cjs",
   platform: "node",
-  loader: { ".node": "copy" },
-  plugins: [wasmPlugin, nativeNodeModulesPlugin],
+  loader: { ".node": "file" },
+  plugins: [wasmPlugin],
 });
 
 if (watch) {

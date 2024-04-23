@@ -243,15 +243,23 @@
           "default": true,
           "description": "Whether to show the 'Compile Code' icon in editor title menu."
         },
-        "sourcepawn.refreshServerPlugins": {
+        "sourcepawn.runServerCommands": {
           "type": "string",
           "enum": [
             "disabled",
             "afterCompile",
             "afterUpload"
           ],
-          "description": "Should the plugins list on the server be refreshed with `sm plugins refresh` after a successful action in VSCode.",
+          "description": "Should the specified commands be executed on the server after a successful action in VSCode (default: sm_plugins_refresh).",
           "scope": "resource"
+        },
+        "sourcepawn.serverCommands": {
+          "type": "array",
+          "default": [
+            "sm_plugins_refresh"
+          ],
+          "scope": "resource",
+          "description": "A list of commands that will be sent to the server after a successful action in VSCode."
         },
         "sourcepawn.uploadAfterSuccessfulCompile": {
           "type": "boolean",

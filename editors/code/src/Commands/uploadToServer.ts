@@ -1,7 +1,7 @@
 ﻿import * as vscode from "vscode";
 import { join } from "path";
 
-import { run as refreshPluginsCommand } from "./refreshPlugins";
+import { run as runServerCommands } from "./runServerCommands";
 import { getCtxFromUri } from "../spIndex";
 import { ProjectMainPathParams, projectMainPath } from "../lsp_ext";
 import { URI } from "vscode-uri";
@@ -84,9 +84,9 @@ export async function run(args: any) {
       if (
         vscode.workspace
           .getConfiguration("sourcepawn", workspaceFolder)
-          .get<string>("refreshServerPlugins") === "afterUpload"
+          .get<string>("runServerCommands") === "afterUpload"
       ) {
-        refreshPluginsCommand(undefined);
+        runServerCommands(undefined);
       }
     })
     .catch((err) => console.error(err));

@@ -6,7 +6,7 @@ import { run as CreateMasterCommand } from "./createGitHubActions";
 import { run as CreateProjectCommand } from "./createProject";
 import { run as CompileSMCommand } from "./compileSM";
 import { run as UploadToServerCommand } from "./uploadToServer";
-import { run as RefreshPluginsCommand } from "./refreshPlugins";
+import { run as RunServerCommandsCommand } from "./runServerCommands";
 import { run as InsertParametersCommand } from "./insertParameters";
 import { run as installSMCommand } from "./installSM";
 import { run as createChangelogCommand } from "./createCHANGELOG";
@@ -71,11 +71,11 @@ export function registerSMCommands(context: vscode.ExtensionContext): void {
   );
   context.subscriptions.push(uploadToServer);
 
-  const refreshPlugins = vscode.commands.registerCommand(
-    "sourcepawn-vscode.refreshPlugins",
-    RefreshPluginsCommand.bind(undefined)
+  const runServerCommands = vscode.commands.registerCommand(
+    "sourcepawn-vscode.runServerCommands",
+    RunServerCommandsCommand.bind(undefined)
   );
-  context.subscriptions.push(refreshPlugins);
+  context.subscriptions.push(runServerCommands);
 
   const insertParameters = vscode.commands.registerCommand(
     "sourcepawn-vscode.insertParameters",
@@ -171,7 +171,7 @@ export function createServerCommands(): Record<string, CommandFactory> {
           health: "stopped",
         });
       },
-      disabled: (_) => async () => {},
+      disabled: (_) => async () => { },
     },
     openLogs: {
       enabled: (ctx) => async () => {
@@ -179,7 +179,7 @@ export function createServerCommands(): Record<string, CommandFactory> {
           ctx.client.outputChannel.show();
         }
       },
-      disabled: (_) => async () => {},
+      disabled: (_) => async () => { },
     },
     preprocessedDocument: {
       enabled: preprocessedDocumentCommand,

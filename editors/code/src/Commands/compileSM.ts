@@ -10,7 +10,7 @@ import { existsSync, mkdirSync } from "fs";
 import { execFile } from "child_process";
 
 import { run as uploadToServerCommand } from "./uploadToServer";
-import { run as refreshPluginsCommand } from "./refreshPlugins";
+import { run as refreshPluginsCommand } from "./runServerCommands";
 import { getCtxFromUri } from "../spIndex";
 import { ProjectMainPathParams, projectMainPath } from "../lsp_ext";
 

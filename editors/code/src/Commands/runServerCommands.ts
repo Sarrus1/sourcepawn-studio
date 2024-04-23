@@ -17,8 +17,28 @@ export async function run(args: any) {
     "sourcepawn",
     workspaceFolder
   ).get("SourceServerOptions");
+  const serverCommands: string[] | undefined = Workspace.getConfiguration(
+    "sourcepawn",
+    workspaceFolder
+  ).get("serverCommands");
   if (serverOptions === undefined) {
     return 0;
+  }
+  if (serverCommands.length == 0) {
+    window
+      .showErrorMessage(
+        "No commands have been specified to run.",
+        "Open Settings"
+      )
+      .then((choice) => {
+        if (choice === "Open Settings") {
+          commands.executeCommand(
+            "workbench.action.openSettings",
+            "@ext:sarrus.sourcepawn-vscode"
+          );
+        }
+      });
+    return 1;
   }
   if (serverOptions["host"] == "" || serverOptions["password"] == "") {
     window
@@ -44,8 +64,10 @@ export async function run(args: any) {
   });
   try {
     await server.authenticate(serverOptions["password"]);
-    const refresh = await server.execute("sm plugins refresh");
-    console.log(refresh);
+    serverCommands.forEach(async (command) => {
+      const refresh = await server.execute(command);
+      console.log(refresh);
+    });
     return 0;
   } catch (e) {
     console.error(e);
