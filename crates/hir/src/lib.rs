@@ -2,10 +2,10 @@ use base_db::Tree;
 use db::HirDatabase;
 use hir_def::{
     resolver::{HasResolver, ValueNs},
-    DefDiagnostic, DefWithBodyId, EnumId, EnumStructId, ExprId, FuncenumId, FunctagId, FunctionId,
-    FunctionKind, GlobalId, InFile, InferenceDiagnostic, ItemContainerId, LocalFieldId, Lookup,
-    MacroId, MethodmapExtension, MethodmapId, Name, NodePtr, PropertyId, SpecialMethod, TypedefId,
-    TypesetId, VariantId,
+    type_string_from_node, DefDiagnostic, DefWithBodyId, EnumId, EnumStructId, ExprId, FuncenumId,
+    FunctagId, FunctionId, FunctionKind, GlobalId, InFile, InferenceDiagnostic, ItemContainerId,
+    LocalFieldId, Lookup, MacroId, MethodmapExtension, MethodmapId, Name, NodePtr, PropertyId,
+    SpecialMethod, TypedefId, TypesetId, VariantId,
 };
 use preprocessor::PreprocessorError;
 use stdx::impl_from;
@@ -433,13 +433,35 @@ impl Function {
             .map(|it| it.to_string())
     }
 
-    pub fn type_def(self, db: &dyn HirDatabase) -> Option<DefResolution> {
-        let ty = db.function_data(self.id).type_ref.clone()?;
-        let ty_str = ty.type_as_string();
-        self.id
+    pub fn type_def(self, db: &dyn HirDatabase) -> Vec<DefResolution> {
+        let mut res = Vec::new();
+        let Some(type_ref) = db.function_data(self.id).type_ref.clone() else {
+            return res;
+        };
+        let ty_str = type_ref.type_as_string();
+        if let Some(def) = self
+            .id
             .resolver(db.upcast())
             .resolve_ident(&ty_str)
             .and_then(DefResolution::try_from)
+        {
+            res.push(def);
+        }
+
+        match self.id.lookup(db.upcast()).container {
+            ItemContainerId::MethodmapId(it) => {
+                res.push(Methodmap::from(it).into());
+            }
+            ItemContainerId::EnumStructId(it) => {
+                res.push(EnumStruct::from(it).into());
+            }
+            ItemContainerId::FileId(_)
+            | ItemContainerId::EnumId(_)
+            | ItemContainerId::TypesetId(_)
+            | ItemContainerId::FuncenumId(_) => (),
+        }
+
+        res
     }
 
     pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
@@ -562,6 +584,15 @@ impl Methodmap {
 
         buf.into()
     }
+
+    pub fn type_def(self, db: &dyn HirDatabase) -> Vec<DefResolution> {
+        let mut res = Vec::new();
+        if let Some(inherits) = db.methodmap_data(self.id).inherits {
+            res.push(Methodmap::from(inherits).into());
+        }
+
+        res
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -587,6 +618,23 @@ impl Property {
         buf.push_str(&self.name(db).to_string());
 
         buf.into()
+    }
+
+    pub fn type_def(self, db: &dyn HirDatabase) -> Vec<DefResolution> {
+        let mut res = Vec::new();
+        let ty = db.property_data(self.id).type_ref.clone();
+        let ty_str = ty.type_as_string();
+
+        if let Some(def) = self
+            .id
+            .resolver(db.upcast())
+            .resolve_ident(&ty_str)
+            .and_then(DefResolution::try_from)
+        {
+            res.push(def);
+        }
+
+        res
     }
 }
 
@@ -626,6 +674,14 @@ impl Variant {
         } else {
             format!("{}::{}", parent_name, name).into()
         }
+    }
+
+    pub fn type_def(self, db: &dyn HirDatabase) -> Vec<DefResolution> {
+        let ItemContainerId::EnumId(parent_id) = self.id.lookup(db.upcast()).container else {
+            panic!("expected a variant to have an enum as a parent");
+        };
+
+        vec![DefResolution::Enum(parent_id.into())]
     }
 }
 
@@ -683,6 +739,22 @@ impl Typedef {
         buf.push(';');
 
         buf.into()
+    }
+
+    pub fn type_def(self, db: &dyn HirDatabase) -> Vec<DefResolution> {
+        let mut res = Vec::new();
+        let ty = db.typedef_data(self.id).type_ref.clone();
+        let ty_str = ty.type_as_string();
+        if let Some(def) = self
+            .id
+            .resolver(db.upcast())
+            .resolve_ident(&ty_str)
+            .and_then(DefResolution::try_from)
+        {
+            res.push(def);
+        }
+
+        res
     }
 }
 
@@ -757,6 +829,24 @@ impl Functag {
 
         buf.into()
     }
+
+    pub fn type_def(self, db: &dyn HirDatabase) -> Vec<DefResolution> {
+        let mut res = Vec::new();
+        let Some(ty) = db.functag_data(self.id).type_ref.clone() else {
+            return res;
+        };
+        let ty_str = ty.type_as_string();
+        if let Some(def) = self
+            .id
+            .resolver(db.upcast())
+            .resolve_ident(&ty_str)
+            .and_then(DefResolution::try_from)
+        {
+            res.push(def);
+        }
+
+        res
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -803,6 +893,24 @@ impl Global {
 
         buf.into()
     }
+
+    pub fn type_def(self, db: &dyn HirDatabase) -> Vec<DefResolution> {
+        let mut res = Vec::new();
+        let Some(ty) = db.global_data(self.id).type_ref().cloned() else {
+            return res;
+        };
+        let ty_str = ty.type_as_string();
+        if let Some(def) = self
+            .id
+            .resolver(db.upcast())
+            .resolve_ident(&ty_str)
+            .and_then(DefResolution::try_from)
+        {
+            res.push(def);
+        }
+
+        res
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -821,25 +929,39 @@ impl Field {
             .clone()
     }
 
-    pub fn type_ref(self, db: &dyn HirDatabase) -> String {
+    pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
         let parent_data = db.enum_struct_data(self.parent.id);
-        parent_data
+        let type_str = parent_data
             .field(self.id)
             .expect("expected a field to have a type")
             .type_ref
-            .to_string()
+            .to_string();
+
+        format!("{} {}::{};", type_str, parent_data.name, self.name(db)).into()
     }
 
-    pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
+    pub fn type_def(self, db: &dyn HirDatabase) -> Vec<DefResolution> {
+        let mut res = Vec::new();
         let parent_data = db.enum_struct_data(self.parent.id);
+        let ty_str = parent_data
+            .field(self.id)
+            .expect("expected a field to have a type")
+            .type_ref
+            .type_as_string();
 
-        format!(
-            "{} {}::{};",
-            self.type_ref(db),
-            parent_data.name,
-            self.name(db)
-        )
-        .into()
+        if let Some(type_) = self
+            .parent
+            .id
+            .resolver(db.upcast())
+            .resolve_ident(&ty_str)
+            .and_then(DefResolution::try_from)
+        {
+            res.push(type_);
+        }
+
+        res.push(DefResolution::EnumStruct(self.parent));
+
+        res
     }
 }
 
@@ -913,6 +1035,30 @@ impl<'tree> Local {
             }
             _ => None,
         }
+    }
+
+    pub fn type_def(self, db: &dyn HirDatabase) -> Vec<DefResolution> {
+        let mut res = Vec::new();
+        let file_id = self.parent.file_id(db.upcast());
+        let tree = db.parse(file_id);
+        let source = db.preprocessed_text(file_id);
+        let Some(node) = self.source(db, &tree).map(|s| s.source.value) else {
+            return res;
+        };
+        let Some(type_node) = node.parent().and_then(|it| it.child_by_field_name("type")) else {
+            return res;
+        };
+        let ty_str = type_string_from_node(&type_node, &source);
+        if let Some(def) = self
+            .parent
+            .resolver(db.upcast())
+            .resolve_ident(&ty_str)
+            .and_then(DefResolution::try_from)
+        {
+            res.push(def);
+        }
+
+        res
     }
 }
 

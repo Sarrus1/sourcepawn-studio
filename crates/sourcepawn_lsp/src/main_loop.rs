@@ -20,11 +20,7 @@ use crate::{
     dispatch::{NotificationDispatcher, RequestDispatcher},
     from_json,
     global_state::file_id_to_url,
-    lsp::{
-        self,
-        ext::{self, SpcompStatusParams},
-        from_proto,
-    },
+    lsp::{self, ext::SpcompStatusParams, from_proto},
     progress::Progress,
     version::version,
     GlobalState,

@@ -141,3 +141,7 @@ impl TypeRef {
         }
     }
 }
+
+pub fn type_string_from_node(node: &Node, source: &str) -> String {
+    TypeRef::from_node(node, source).type_as_string()
+}
