@@ -28,6 +28,7 @@ pub use db::resolve_include_node;
 pub use db::DefDatabase;
 pub use db::{BlockDefMapQuery, BlockItemTreeQuery, BodyQuery, FileDefMapQuery, FileItemTreeQuery};
 pub use diagnostics::DefDiagnostic;
+pub use hir::type_ref::type_string_from_node;
 pub use hir::ExprId;
 pub use infer::{AttributeId, ConstructorDiagnosticKind, InferenceDiagnostic, InferenceResult};
 pub use item_tree::{

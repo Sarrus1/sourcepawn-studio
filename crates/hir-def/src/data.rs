@@ -144,6 +144,7 @@ pub struct MethodmapData {
     pub items: Arc<Arena<MethodmapItemData>>,
     pub items_map: Arc<FxHashMap<Name, Idx<MethodmapItemData>>>,
     pub extension: Option<MethodmapExtension>,
+    pub inherits: Option<MethodmapId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -227,10 +228,12 @@ impl MethodmapData {
         let mut items = Arena::new();
         let mut items_map = FxHashMap::default();
         // Compute inherits first, so that they get properly overwritten.
+        let mut inherits_id = None;
         if let Some(inherits_name) = methodmap.inherits.clone() {
             let resolver = global_resolver(db, loc.file_id());
             if let Some(inherits) = resolver.resolve_ident(inherits_name.to_string().as_str()) {
                 if let ValueNs::MethodmapId(inherits) = inherits {
+                    inherits_id = Some(inherits.value);
                     let inherits_data = db.methodmap_data(inherits.value);
                     items_map.extend(
                         inherits_data
@@ -317,6 +320,7 @@ impl MethodmapData {
             items: Arc::new(items),
             items_map: Arc::new(items_map),
             extension: MethodmapExtension::from(methodmap.inherits.clone(), methodmap.nullable),
+            inherits: inherits_id,
         };
 
         (Arc::new(methodmap_data), diags.into())

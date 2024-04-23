@@ -20,8 +20,7 @@ use crate::{
     dispatch::{NotificationDispatcher, RequestDispatcher},
     from_json,
     global_state::file_id_to_url,
-    lsp::from_proto,
-    lsp_ext::{self, SpcompStatusParams},
+    lsp::{self, ext::SpcompStatusParams, from_proto},
     progress::Progress,
     version::version,
     GlobalState,
@@ -278,9 +277,9 @@ impl GlobalState {
         if self.last_reported_status.as_ref() != Some(&status) {
             self.last_reported_status = Some(status.clone());
             // if self.config.server_status_notification() {
-            self.send_notification::<lsp_ext::ServerStatusNotification>(status);
+            self.send_notification::<lsp::ext::ServerStatusNotification>(status);
             // } else if let (
-            //     health @ (lsp_ext::Health::Warning | lsp_ext::Health::Error),
+            //     health @ (lsp::ext::Health::Warning | lsp::ext::Health::Error),
             //     Some(message),
             // ) = (status.health, &status.message)
             // {
@@ -290,9 +289,9 @@ impl GlobalState {
             //     let open_log_button = false;
             //     self.show_message(
             //         match health {
-            //             lsp_ext::Health::Ok => lsp_types::MessageType::INFO,
-            //             lsp_ext::Health::Warning => lsp_types::MessageType::WARNING,
-            //             lsp_ext::Health::Error => lsp_types::MessageType::ERROR,
+            //             lsp::ext::Health::Ok => lsp_types::MessageType::INFO,
+            //             lsp::ext::Health::Warning => lsp_types::MessageType::WARNING,
+            //             lsp::ext::Health::Error => lsp_types::MessageType::ERROR,
             //         },
             //         message.clone(),
             //         open_log_button,
@@ -385,13 +384,13 @@ impl GlobalState {
                 handlers::handle_semantic_tokens_range,
             )
             .on::<lsp_request::GotoDefinition>(handlers::handle_goto_definition)
-            .on::<lsp_request::HoverRequest>(handlers::handle_hover)
-            .on::<lsp_ext::SyntaxTree>(handlers::handle_syntax_tree)
-            .on::<lsp_ext::ProjectsGraphviz>(handlers::handle_projects_graphviz)
-            .on::<lsp_ext::PreprocessedDocument>(handlers::handle_preprocessed_document)
-            .on::<lsp_ext::ItemTree>(handlers::handle_item_tree)
-            .on::<lsp_ext::AnalyzerStatus>(handlers::handle_analyzer_status)
-            .on::<lsp_ext::ProjectMainPath>(handlers::handle_project_main_path)
+            .on::<lsp::ext::HoverRequest>(handlers::handle_hover)
+            .on::<lsp::ext::SyntaxTree>(handlers::handle_syntax_tree)
+            .on::<lsp::ext::ProjectsGraphviz>(handlers::handle_projects_graphviz)
+            .on::<lsp::ext::PreprocessedDocument>(handlers::handle_preprocessed_document)
+            .on::<lsp::ext::ItemTree>(handlers::handle_item_tree)
+            .on::<lsp::ext::AnalyzerStatus>(handlers::handle_analyzer_status)
+            .on::<lsp::ext::ProjectMainPath>(handlers::handle_project_main_path)
             .finish();
         log::debug!("Handled request id: {:?}", req_id);
     }
@@ -506,7 +505,7 @@ impl GlobalState {
                 let (state, message) = match progress {
                     flycheck::Progress::DidStart => {
                         self.diagnostics.clear_check(id);
-                        self.send_notification::<lsp_ext::SpcompStatusNotification>(
+                        self.send_notification::<lsp::ext::SpcompStatusNotification>(
                             SpcompStatusParams { quiescent: false },
                         );
                         (Progress::Begin, None)
@@ -514,7 +513,7 @@ impl GlobalState {
                     flycheck::Progress::DidCheckCrate(target) => (Progress::Report, Some(target)),
                     flycheck::Progress::DidCancel => {
                         self.last_flycheck_error = None;
-                        self.send_notification::<lsp_ext::SpcompStatusNotification>(
+                        self.send_notification::<lsp::ext::SpcompStatusNotification>(
                             SpcompStatusParams { quiescent: true },
                         );
                         (Progress::End, None)
@@ -528,7 +527,7 @@ impl GlobalState {
                         self.last_flycheck_error = result
                             .err()
                             .map(|err| format!("spcomp check failed to start: {err}"));
-                        self.send_notification::<lsp_ext::SpcompStatusNotification>(
+                        self.send_notification::<lsp::ext::SpcompStatusNotification>(
                             SpcompStatusParams { quiescent: true },
                         );
                         (Progress::End, None)

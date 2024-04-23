@@ -4,6 +4,8 @@ import * as vscode from "vscode";
 import * as lc from "vscode-languageclient/node";
 
 import * as lsp_ext from "./lsp_ext";
+import { LazyOutputChannel } from "./spUtils";
+import { createClient } from "./client";
 import { execFile } from "child_process";
 
 export type CommandFactory = {
@@ -21,6 +23,8 @@ export class Ctx {
 
   private _client: lc.LanguageClient | undefined;
   private _serverPath: string | undefined;
+  private traceOutputChannel: vscode.OutputChannel | undefined;
+  private outputChannel: vscode.OutputChannel | undefined;
   private clientSubscriptions: Disposable[];
   private commandFactories: Record<string, CommandFactory>;
   private commandDisposables: Disposable[];
@@ -98,7 +102,20 @@ export class Ctx {
       .match(/^sourcepawn_lsp (\d+\.\d+\.\d+)$/)[1];
   }
 
-  private getOrCreateClient() {
+  private async getOrCreateClient() {
+    if (!this.traceOutputChannel) {
+      this.traceOutputChannel = new LazyOutputChannel(
+        "Rust Analyzer Language Server Trace"
+      );
+      this.pushExtCleanup(this.traceOutputChannel);
+    }
+    if (!this.outputChannel) {
+      this.outputChannel = vscode.window.createOutputChannel(
+        "Rust Analyzer Language Server"
+      );
+      this.pushExtCleanup(this.outputChannel);
+    }
+
     if (!this._client || !this._client.isRunning()) {
       const traceServer = vscode.workspace
         .getConfiguration("sourcepawn")
@@ -136,8 +153,9 @@ export class Ctx {
         },
       };
 
-      this._client = new lc.LanguageClient(
-        "SourcePawn Language Server",
+      this._client = await createClient(
+        this.traceOutputChannel,
+        this.outputChannel,
         serverOptions,
         this.clientOptions
       );
@@ -152,6 +170,11 @@ export class Ctx {
           this.setSpcompStatus(params)
         )
       );
+      // this.pushClientCleanup(
+      //   this._client.onNotification(lsp_ext.openServerLogs, () => {
+      //     this.outputChannel!.show();
+      //   })
+      // );
       this.pushClientCleanup(
         vscode.workspace.onDidChangeConfiguration((event) => {
           if (event.affectsConfiguration("SourcePawnLanguageServer")) {

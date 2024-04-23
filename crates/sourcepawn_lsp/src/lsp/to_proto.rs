@@ -164,3 +164,45 @@ pub(crate) fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
     url[driver_letter_range].make_ascii_lowercase();
     lsp_types::Url::parse(&url).unwrap()
 }
+
+pub(crate) fn location(
+    snap: &GlobalStateSnapshot,
+    frange: FileRange,
+) -> Cancellable<lsp_types::Location> {
+    let url = url(snap, frange.file_id);
+    let loc = lsp_types::Location::new(url, frange.range);
+    Ok(loc)
+}
+
+pub(crate) mod command {
+    use base_db::FileRange;
+    use ide::NavigationTarget;
+    use serde_json::to_value;
+
+    use crate::{global_state::GlobalStateSnapshot, lsp::ext, lsp::to_proto::location_link};
+
+    use super::location;
+
+    pub(crate) fn goto_location(
+        snap: &GlobalStateSnapshot,
+        nav: &NavigationTarget,
+    ) -> Option<lsp_types::Command> {
+        let value = if snap.config.location_link() {
+            let link = location_link(snap, None, nav.clone()).ok()?;
+            to_value(link).ok()?
+        } else {
+            let range = FileRange {
+                file_id: nav.file_id,
+                range: nav.focus_or_full_range(),
+            };
+            let location = location(snap, range).ok()?;
+            to_value(location).ok()?
+        };
+
+        Some(lsp_types::Command {
+            title: nav.name.to_string(),
+            command: "sourcepawn-vscode.gotoLocation".into(),
+            arguments: Some(vec![value]),
+        })
+    }
+}

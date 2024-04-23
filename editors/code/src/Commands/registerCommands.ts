@@ -19,7 +19,9 @@ import { preprocessedDocumentCommand } from "./preprocessedDocument";
 import { syntaxTreeCommand } from "./syntaxTree";
 import { itemTreeCommand } from "./itemTree";
 import { analyzerStatusCommand } from "./analyzerStatus";
-import { CommandFactory } from "../ctx";
+import { Cmd, CommandFactory, Ctx, CtxInit } from "../ctx";
+import * as lc from "vscode-languageclient";
+import { LINKED_COMMANDS } from "../client";
 
 /**
  * Register all the vscode.commands of the extension.
@@ -124,6 +126,30 @@ export function registerSMCommands(context: vscode.ExtensionContext): void {
   context.subscriptions.push(doctor);
 }
 
+export function linkToCommand(_: Ctx): Cmd {
+  return async (commandId: string) => {
+    const link = LINKED_COMMANDS.get(commandId);
+    if (link) {
+      const { command, arguments: args = [] } = link;
+      await vscode.commands.executeCommand(command, ...args);
+    }
+  };
+}
+
+function gotoLocation(ctx: CtxInit): Cmd {
+  return async (locationLink: lc.LocationLink) => {
+    const client = ctx.client;
+    const uri = client.protocol2CodeConverter.asUri(locationLink.targetUri);
+    let range = client.protocol2CodeConverter.asRange(
+      locationLink.targetSelectionRange
+    );
+    // collapse the range to a cursor position
+    range = range.with({ end: range.start });
+
+    await vscode.window.showTextDocument(uri, { selection: range });
+  };
+}
+
 /**
  * Prepare a record of server specific commands.
  * @returns Record
@@ -167,5 +193,9 @@ export function createServerCommands(): Record<string, CommandFactory> {
     analyzerStatus: {
       enabled: analyzerStatusCommand,
     },
+    gotoLocation: {
+      enabled: gotoLocation,
+    },
+    linkToCommand: { enabled: linkToCommand },
   };
 }

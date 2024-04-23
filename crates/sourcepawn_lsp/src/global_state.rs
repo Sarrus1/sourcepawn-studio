@@ -19,8 +19,7 @@ use crate::{
     config::{Config, ConfigError},
     diagnostics::DiagnosticCollection,
     line_index::LineEndings,
-    lsp::{from_proto, to_proto::url_from_abs_path},
-    lsp_ext,
+    lsp::{self, from_proto, to_proto::url_from_abs_path},
     main_loop::Task,
     mem_docs::MemDocs,
     op_queue::OpQueue,
@@ -60,7 +59,7 @@ pub struct GlobalState {
 
     // status
     pub(crate) shutdown_requested: bool,
-    pub(crate) last_reported_status: Option<lsp_ext::ServerStatusParams>,
+    pub(crate) last_reported_status: Option<lsp::ext::ServerStatusParams>,
 
     pub config: Arc<Config>,
     pub(crate) config_errors: Option<ConfigError>,

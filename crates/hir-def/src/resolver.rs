@@ -6,8 +6,8 @@ use crate::{
     hir::ExprId,
     item_tree::Name,
     AdtId, DefDatabase, DefWithBodyId, EnumId, EnumStructId, FileDefId, FuncenumId, FunctagId,
-    FunctionId, GlobalId, InFile, ItemContainerId, Lookup, MacroId, MethodmapId, TypedefId,
-    TypesetId, VariantId,
+    FunctionId, GlobalId, InFile, ItemContainerId, Lookup, MacroId, MethodmapId, PropertyId,
+    TypedefId, TypesetId, VariantId,
 };
 use smallvec::SmallVec;
 use vfs::FileId;
@@ -337,6 +337,18 @@ impl HasResolver for DefWithBodyId {
 impl HasResolver for FunctionId {
     fn resolver(self, db: &dyn DefDatabase) -> Resolver {
         self.lookup(db).container.resolver(db)
+    }
+}
+
+impl HasResolver for PropertyId {
+    fn resolver(self, db: &dyn DefDatabase) -> Resolver {
+        self.lookup(db).container.resolver(db)
+    }
+}
+
+impl HasResolver for GlobalId {
+    fn resolver(self, db: &dyn DefDatabase) -> Resolver {
+        self.lookup(db).file_id().resolver(db)
     }
 }
 

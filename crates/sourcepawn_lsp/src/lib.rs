@@ -9,7 +9,6 @@ mod handlers {
     pub(crate) mod request;
 }
 mod line_index;
-mod lsp_ext;
 mod main_loop;
 mod mem_docs;
 mod op_queue;

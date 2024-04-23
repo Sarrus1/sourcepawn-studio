@@ -33,7 +33,7 @@ pub(crate) struct DiagnosticCollection {
 // pub(crate) struct Fix {
 //     // Fixes may be triggerable from multiple ranges.
 //     pub(crate) ranges: Vec<lsp_types::Range>,
-//     pub(crate) action: lsp_ext::CodeAction,
+//     pub(crate) action: lsp::ext::CodeAction,
 // }
 
 impl DiagnosticCollection {
