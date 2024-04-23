@@ -7,6 +7,7 @@ use hir::{DefResolution, HasSource, Semantics};
 use ide_db::{Documentation, RootDatabase};
 use itertools::Itertools;
 use preprocessor::{db::PreprocDatabase, PreprocessingResult};
+use smol_str::ToSmolStr;
 use syntax::utils::{lsp_position_to_ts_point, ts_range_to_lsp_range};
 use vfs::FileId;
 
@@ -54,6 +55,7 @@ impl HoverAction {
                 let sema = Semantics::new(db);
                 let file_id = def.file_id(db);
                 let source_tree = sema.parse(file_id);
+                let name = def.name(db).map(|it| it.to_smolstr()).unwrap_or_default();
                 let def_node = def.source(db, &source_tree)?.value;
 
                 let name_range = find_inner_name_range(&def_node);
@@ -63,6 +65,7 @@ impl HoverAction {
                 Some(HoverGotoTypeData {
                     mod_path: Default::default(),
                     nav: NavigationTarget {
+                        name,
                         file_id,
                         full_range: s_range_to_u_range(
                             target_offsets,

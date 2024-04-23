@@ -7,11 +7,10 @@ use itertools::Itertools;
 use paths::AbsPathBuf;
 use vfs::VfsPath;
 
+use crate::lsp;
 use crate::{config::Config, GlobalState};
 
 use stdx::format_to;
-
-use crate::lsp_ext;
 
 impl GlobalState {
     pub(crate) fn is_quiescent(&self) -> bool {
@@ -20,16 +19,16 @@ impl GlobalState {
             || self.vfs_progress_n_done < self.vfs_progress_n_total)
     }
 
-    pub(crate) fn current_status(&self) -> lsp_ext::ServerStatusParams {
-        let mut status = lsp_ext::ServerStatusParams {
-            health: lsp_ext::Health::Ok,
+    pub(crate) fn current_status(&self) -> lsp::ext::ServerStatusParams {
+        let mut status = lsp::ext::ServerStatusParams {
+            health: lsp::ext::Health::Ok,
             quiescent: self.is_quiescent(),
             message: None,
         };
         let mut message = String::new();
 
         if let Some(err) = &self.config_errors {
-            status.health = lsp_ext::Health::Warning;
+            status.health = lsp::ext::Health::Warning;
             format_to!(message, "{err}\n");
         }
 

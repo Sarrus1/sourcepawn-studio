@@ -75,3 +75,20 @@ export const spcompStatus = new lc.NotificationType<ServerStatusParams>(
 export type SpcompStatusParams = {
   quiescent: boolean;
 };
+
+export const hover = new lc.RequestType<
+  lc.HoverParams,
+  (lc.Hover & { actions: CommandLinkGroup[] }) | null,
+  void
+>(lc.HoverRequest.method);
+
+export type CommandLink = {
+  /**
+   * A tooltip for the command, when represented in the UI.
+   */
+  tooltip?: string;
+} & lc.Command;
+export type CommandLinkGroup = {
+  title?: string;
+  commands: CommandLink[];
+};

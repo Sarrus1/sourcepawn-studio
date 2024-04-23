@@ -165,15 +165,23 @@ pub(crate) fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
     lsp_types::Url::parse(&url).unwrap()
 }
 
+pub(crate) fn location(
+    snap: &GlobalStateSnapshot,
+    frange: FileRange,
+) -> Cancellable<lsp_types::Location> {
+    let url = url(snap, frange.file_id);
+    let loc = lsp_types::Location::new(url, frange.range);
+    Ok(loc)
+}
+
 pub(crate) mod command {
-    use ide::{FileRange, NavigationTarget};
+    use base_db::FileRange;
+    use ide::NavigationTarget;
     use serde_json::to_value;
 
-    use crate::{
-        global_state::GlobalStateSnapshot,
-        lsp::to_proto::{location, location_link},
-        lsp_ext,
-    };
+    use crate::{global_state::GlobalStateSnapshot, lsp::ext, lsp::to_proto::location_link};
+
+    use super::location;
 
     pub(crate) fn goto_location(
         snap: &GlobalStateSnapshot,
@@ -193,7 +201,7 @@ pub(crate) mod command {
 
         Some(lsp_types::Command {
             title: nav.name.to_string(),
-            command: "rust-analyzer.gotoLocation".into(),
+            command: "sourcepawn-vscode.gotoLocation".into(),
             arguments: Some(vec![value]),
         })
     }

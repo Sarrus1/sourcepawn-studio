@@ -39,7 +39,7 @@ impl GlobalState {
         //             >(
         //                 lsp_types::request::ShowMessageRequest::METHOD, &result
         //             ) {
-        //                 this.send_notification::<lsp_ext::OpenServerLogs>(());
+        //                 this.send_notification::<lsp::ext::OpenServerLogs>(());
         //             }
         //         },
         //     ),

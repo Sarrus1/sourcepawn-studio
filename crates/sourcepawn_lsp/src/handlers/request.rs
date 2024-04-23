@@ -12,11 +12,11 @@ use vfs::FileId;
 
 use crate::{
     global_state::GlobalStateSnapshot,
-    lsp::{self, from_proto, to_proto},
-    lsp_ext::{
-        self, AnalyzerStatusParams, ItemTreeParams, PreprocessedDocumentParams,
-        ProjectMainPathParams, ProjectsGraphvizParams, SyntaxTreeParams,
+    lsp::ext::{
+        AnalyzerStatusParams, ItemTreeParams, PreprocessedDocumentParams, ProjectMainPathParams,
+        ProjectsGraphvizParams, SyntaxTreeParams,
     },
+    lsp::{self, from_proto, to_proto},
 };
 
 pub(crate) fn handle_goto_definition(
@@ -88,13 +88,12 @@ fn goto_type_action_links(
     snap: &GlobalStateSnapshot,
     nav_targets: &[HoverGotoTypeData],
 ) -> Option<lsp::ext::CommandLinkGroup> {
-    // FIXME: implement this
-    // if !snap.config.hover_actions().goto_type_def
-    //     || nav_targets.is_empty()
-    //     || !snap.config.client_commands().goto_location
-    // {
-    //     return None;
-    // }
+    if !snap.config.hover_actions().goto_type_def
+        || nav_targets.is_empty()
+        || !snap.config.client_commands().goto_location
+    {
+        return None;
+    }
 
     Some(lsp::ext::CommandLinkGroup {
         title: Some("Go to ".into()),
@@ -106,6 +105,13 @@ fn goto_type_action_links(
             })
             .collect(),
     })
+}
+
+fn to_command_link(command: lsp_types::Command, tooltip: String) -> lsp::ext::CommandLink {
+    lsp::ext::CommandLink {
+        tooltip: Some(tooltip),
+        command,
+    }
 }
 
 fn prepare_hover_actions(

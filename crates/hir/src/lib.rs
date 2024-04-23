@@ -126,6 +126,26 @@ impl DefResolution {
             DefResolution::File(it) => it.id,
         }
     }
+
+    pub fn name(&self, db: &dyn HirDatabase) -> Option<Name> {
+        match self {
+            DefResolution::Function(it) => Some(it.name(db)),
+            DefResolution::Macro(it) => Some(it.name(db)),
+            DefResolution::EnumStruct(it) => Some(it.name(db)),
+            DefResolution::Methodmap(it) => Some(it.name(db)),
+            DefResolution::Property(it) => Some(it.name(db)),
+            DefResolution::Enum(it) => Some(it.name(db)),
+            DefResolution::Variant(it) => Some(it.name(db)),
+            DefResolution::Typedef(it) => it.name(db),
+            DefResolution::Typeset(it) => Some(it.name(db)),
+            DefResolution::Functag(it) => it.name(db),
+            DefResolution::Funcenum(it) => Some(it.name(db)),
+            DefResolution::Field(it) => Some(it.name(db)),
+            DefResolution::Global(it) => Some(it.name(db)),
+            DefResolution::Local(it) => it.name(db),
+            DefResolution::File(_) => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -849,6 +869,14 @@ impl<'tree> Local {
                 node_ptr.value.to_node(tree),
             ),
         })
+    }
+
+    pub fn name(self, db: &dyn HirDatabase) -> Option<Name> {
+        let file_id = self.parent.file_id(db.upcast());
+        let tree = db.parse(file_id);
+        let source = db.preprocessed_text(file_id);
+        let node = self.source(db, &tree)?.source.value;
+        node.utf8_text(source.as_bytes()).ok().map(Name::from)
     }
 
     pub fn render(self, db: &dyn HirDatabase) -> Option<String> {

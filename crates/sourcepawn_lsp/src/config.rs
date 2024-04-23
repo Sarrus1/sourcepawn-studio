@@ -12,6 +12,7 @@ use serde::de::DeserializeOwned;
 use std::iter;
 use std::{collections::HashSet, fmt, path::PathBuf};
 
+use crate::lsp;
 use crate::{line_index::PositionEncoding, lsp::ext::negotiated_encoding};
 
 macro_rules! try_ {
@@ -52,6 +53,24 @@ config_data! {
         linter_disable: bool = "false",
         /// How many worker threads in the main loop. The default `null` means to pick automatically.
         numThreads: Option<usize> = "null",
+
+        /// Whether to show `Debug` action. Only applies when
+        /// `#sourcepawn-lsp.hover.actions.enable#` is set.
+        hover_actions_debug_enable: bool           = "true",
+        /// Whether to show HoverActions in Sourcepawn files.
+        hover_actions_enable: bool          = "true",
+        /// Whether to show `Go to Type Definition` action. Only applies when
+        /// `#sourcepawn-lsp.hover.actions.enable#` is set.
+        hover_actions_gotoTypeDef_enable: bool     = "true",
+        /// Whether to show `Implementations` action. Only applies when
+        /// `#sourcepawn-lsp.hover.actions.enable#` is set.
+        hover_actions_implementations_enable: bool = "true",
+        /// Whether to show `References` action. Only applies when
+        /// `#sourcepawn-lsp.hover.actions.enable#` is set.
+        hover_actions_references_enable: bool      = "false",
+        /// Whether to show `Run` action. Only applies when
+        /// `#sourcepawn-lsp.hover.actions.enable#` is set.
+        hover_actions_run_enable: bool             = "true",
     }
 }
 
@@ -180,6 +199,37 @@ impl Config {
         }
     }
 
+    pub fn hover_actions(&self) -> HoverActionsConfig {
+        let enable = self.experimental("hoverActions") && self.data.hover_actions_enable;
+        HoverActionsConfig {
+            implementations: enable && self.data.hover_actions_implementations_enable,
+            references: enable && self.data.hover_actions_references_enable,
+            run: enable && self.data.hover_actions_run_enable,
+            debug: enable && self.data.hover_actions_debug_enable,
+            goto_type_def: enable && self.data.hover_actions_gotoTypeDef_enable,
+        }
+    }
+
+    pub fn client_commands(&self) -> ClientCommandsConfig {
+        let commands = try_or!(
+            self.caps.experimental.as_ref()?.get("commands")?,
+            &serde_json::Value::Null
+        );
+        let commands: Option<lsp::ext::ClientCommandOptions> =
+            serde_json::from_value(commands.clone()).ok();
+        let commands = commands.map(|it| it.commands).unwrap_or_default();
+
+        let get = |name: &str| commands.iter().any(|it| it == name);
+
+        ClientCommandsConfig {
+            // run_single: get("sourcepawn-lsp.runSingle"),
+            // debug_single: get("sourcepawn-lsp.debugSingle"),
+            // show_reference: get("sourcepawn-lsp.showReferences"),
+            goto_location: get("sourcepawn-vscode.gotoLocation"),
+            // trigger_parameter_hints: get("editor.action.triggerParameterHints"),
+        }
+    }
+
     #[allow(unused)]
     pub fn main_loop_num_threads(&self) -> usize {
         self.data.numThreads.unwrap_or(num_cpus::get_physical()) // TODO: Use this config.
@@ -198,6 +248,10 @@ impl Config {
                 .as_ref()?
                 .refresh_support?
         )
+    }
+
+    pub fn location_link(&self) -> bool {
+        try_or_def!(self.caps.text_document.as_ref()?.definition?.link_support?)
     }
 
     #[allow(unused)]
@@ -264,6 +318,45 @@ impl Config {
 }
 
 type ParallelCachePrimingNumThreads = u8;
+
+pub struct ClientCommandsConfig {
+    // pub run_single: bool,
+    // pub debug_single: bool,
+    // pub show_reference: bool,
+    pub goto_location: bool,
+    // pub trigger_parameter_hints: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HoverActionsConfig {
+    pub implementations: bool,
+    pub references: bool,
+    pub run: bool,
+    pub debug: bool,
+    pub goto_type_def: bool,
+}
+
+impl HoverActionsConfig {
+    pub const NO_ACTIONS: Self = Self {
+        implementations: false,
+        references: false,
+        run: false,
+        debug: false,
+        goto_type_def: false,
+    };
+
+    pub fn any(&self) -> bool {
+        self.implementations || self.references || self.runnable() || self.goto_type_def
+    }
+
+    pub fn none(&self) -> bool {
+        !self.any()
+    }
+
+    pub fn runnable(&self) -> bool {
+        self.run || self.debug
+    }
+}
 
 macro_rules! _config_data {
     (struct $name:ident {
