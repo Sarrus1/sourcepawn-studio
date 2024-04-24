@@ -86,7 +86,7 @@ export async function run(args: any) {
           .getConfiguration("sourcepawn", workspaceFolder)
           .get<string>("runServerCommands") === "afterUpload"
       ) {
-        runServerCommands(undefined);
+        runServerCommands(args);
       }
     })
     .catch((err) => console.error(err));

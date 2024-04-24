@@ -186,7 +186,7 @@ export async function run(args: URI): Promise<void> {
           "runServerCommands"
         ) === "afterCompile"
       ) {
-        runServerCommands(undefined);
+        runServerCommands(URI.file(fileToCompilePath));
       }
     });
   } catch (error) {

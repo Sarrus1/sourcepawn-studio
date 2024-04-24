@@ -1,4 +1,5 @@
 ﻿import * as vscode from "vscode";
+import path from "path";
 
 export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -6,6 +7,12 @@ export function sleep(ms: number) {
 
 export function isSPFile(fileName: string) {
   return /(?:\.sp|\.inc)\s*^/.test(fileName);
+}
+
+export function getPluginName(uri: string): string {
+  const fileName = path.basename(uri);
+  const pluginName = fileName.split('.')[0];
+  return pluginName;
 }
 
 export class LazyOutputChannel implements vscode.OutputChannel {

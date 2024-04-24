@@ -1,6 +1,8 @@
 ﻿import { workspace as Workspace, window, commands } from "vscode";
+import { URI } from "vscode-uri";
 import Rcon from "rcon-srcds";
 import { EncodingOptions } from "rcon-srcds/dist/packet";
+import { getPluginName } from "../spUtils";
 
 export interface ServerOptions {
   host: string;
@@ -10,7 +12,12 @@ export interface ServerOptions {
   timeout: number;
 }
 
-export async function run(args: any) {
+/**
+ * Callback function for Run Server Commands command.
+ * @param args URI of the plugin that has been compiled.
+ * @returns A Promise.
+ */
+export async function run(args: URI) {
   const workspaceFolder =
     args === undefined ? undefined : Workspace.getWorkspaceFolder(args);
   const serverOptions: ServerOptions | undefined = Workspace.getConfiguration(
@@ -26,7 +33,7 @@ export async function run(args: any) {
   }
   if (serverCommands.length == 0) {
     window
-      .showErrorMessage(
+      .showInformationMessage(
         "No commands have been specified to run.",
         "Open Settings"
       )
@@ -65,6 +72,7 @@ export async function run(args: any) {
   try {
     await server.authenticate(serverOptions["password"]);
     serverCommands.forEach(async (command) => {
+      command = command.replace('{plugin}', getPluginName(args.fsPath));
       const runCommands = await server.execute(command);
       console.log(runCommands);
     });
