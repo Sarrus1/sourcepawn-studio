@@ -25,6 +25,33 @@ impl Documentation {
         let mut pragma = None;
         let mut docs = Vec::new();
         match TSKind::from(&node) {
+            TSKind::preproc_define => {
+                if let Some(prev_node) = node.prev_sibling() {
+                    if TSKind::from(prev_node) == TSKind::preproc_pragma {
+                        pragma = Some(
+                            prev_node
+                                .utf8_text(source)
+                                .ok()?
+                                .trim_start_matches("#pragma deprecated")
+                                .trim(),
+                        );
+                    }
+                }
+                while let Some(next_node) = node.next_sibling() {
+                    if node.range().end_point.row != next_node.range().start_point.row {
+                        break;
+                    }
+                    if TSKind::from(next_node) != TSKind::comment {
+                        break;
+                    }
+                    docs.push(comment_to_doc(next_node.utf8_text(source).ok()?));
+                    if next_node.range().start_point.row != next_node.range().end_point.row {
+                        // Only keep one multi-line comment
+                        break;
+                    }
+                    node = next_node;
+                }
+            }
             TSKind::function_declaration
             | TSKind::function_definition
             | TSKind::typedef
@@ -83,6 +110,9 @@ impl Documentation {
                 }
             }
             _ => (),
+        }
+        if let Some(pragma) = pragma {
+            docs.push(format!("DEPRECATED: {}\n", pragma));
         }
         docs.reverse();
         Documentation::new(docs.join("\n")).into()

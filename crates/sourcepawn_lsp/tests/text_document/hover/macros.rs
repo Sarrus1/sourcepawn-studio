@@ -143,3 +143,30 @@ char foo[10] = FOO;
 "#,
     ));
 }
+
+#[test]
+fn macro_11() {
+    assert_json_snapshot!(hover(
+        r#"
+%! main.sp
+#define MAXPLAYERS      101  /**< Maximum number of players SourceMod supports */
+int foo = MAXPLAYERS;
+              |
+              ^
+"#,
+    ));
+}
+
+#[test]
+fn macro_12() {
+    assert_json_snapshot!(hover(
+        r#"
+%! main.sp
+#pragma deprecated Use something else
+#define MAXPLAYERS      101  /**< Maximum number of players SourceMod supports */
+int foo = MAXPLAYERS;
+              |
+              ^
+"#,
+    ));
+}
