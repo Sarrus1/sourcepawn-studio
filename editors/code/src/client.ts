@@ -107,7 +107,6 @@ export async function createClient(
             if (!!result.actions) {
               hover.contents.push(renderHoverActions(result.actions));
             }
-            console.log(hover);
             return hover;
           },
           (error) => {

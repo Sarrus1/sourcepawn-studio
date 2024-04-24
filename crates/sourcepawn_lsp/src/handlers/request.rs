@@ -121,8 +121,8 @@ fn prepare_hover_actions(
     actions
         .iter()
         .filter_map(|it| match it {
-            HoverAction::Implementation(position) => todo!(),
-            HoverAction::Reference(position) => todo!(),
+            HoverAction::Implementation(_) => todo!(),
+            HoverAction::Reference(_) => todo!(),
             HoverAction::GoToType(targets) => goto_type_action_links(snap, targets),
         })
         .collect()

@@ -179,7 +179,7 @@ pub(crate) mod command {
     use ide::NavigationTarget;
     use serde_json::to_value;
 
-    use crate::{global_state::GlobalStateSnapshot, lsp::ext, lsp::to_proto::location_link};
+    use crate::{global_state::GlobalStateSnapshot, lsp::to_proto::location_link};
 
     use super::location;
 
