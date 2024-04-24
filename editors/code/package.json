@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "7.2.6",
+  "version": "7.2.5",
   "publisher": "Sarrus",
   "main": "./dist/spIndex.js",
   "icon": "sm.png",
@@ -499,6 +499,36 @@
             "null",
             "string"
           ]
+        },
+        "SourcePawnLanguageServer.hover.actions.debug.enable": {
+          "markdownDescription": "Whether to show `Debug` action. Only applies when\n`#sourcepawn-lsp.hover.actions.enable#` is set.",
+          "default": true,
+          "type": "boolean"
+        },
+        "SourcePawnLanguageServer.hover.actions.enable": {
+          "markdownDescription": "Whether to show HoverActions in Sourcepawn files.",
+          "default": true,
+          "type": "boolean"
+        },
+        "SourcePawnLanguageServer.hover.actions.gotoTypeDef.enable": {
+          "markdownDescription": "Whether to show `Go to Type Definition` action. Only applies when\n`#sourcepawn-lsp.hover.actions.enable#` is set.",
+          "default": true,
+          "type": "boolean"
+        },
+        "SourcePawnLanguageServer.hover.actions.implementations.enable": {
+          "markdownDescription": "Whether to show `Implementations` action. Only applies when\n`#sourcepawn-lsp.hover.actions.enable#` is set.",
+          "default": true,
+          "type": "boolean"
+        },
+        "SourcePawnLanguageServer.hover.actions.references.enable": {
+          "markdownDescription": "Whether to show `References` action. Only applies when\n`#sourcepawn-lsp.hover.actions.enable#` is set.",
+          "default": false,
+          "type": "boolean"
+        },
+        "SourcePawnLanguageServer.hover.actions.run.enable": {
+          "markdownDescription": "Whether to show `Run` action. Only applies when\n`#sourcepawn-lsp.hover.actions.enable#` is set.",
+          "default": true,
+          "type": "boolean"
         },
         "SourcePawnLanguageServer.includeDirectories": {
           "markdownDescription": "Include directories paths for the compiler and the linter.",

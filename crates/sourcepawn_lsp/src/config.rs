@@ -47,12 +47,6 @@ config_data! {
         compiler_onSave: bool = "true",
         /// Path to the SourcePawn compiler (spcomp).
         compiler_path: Option<String> = "null",
-        /// Include directories paths for the compiler and the linter.
-        includeDirectories: Vec<PathBuf> = "[]",
-        /// Disable the language server's syntax linter. This is independant from spcomp.
-        linter_disable: bool = "false",
-        /// How many worker threads in the main loop. The default `null` means to pick automatically.
-        numThreads: Option<usize> = "null",
 
         /// Whether to show `Debug` action. Only applies when
         /// `#sourcepawn-lsp.hover.actions.enable#` is set.
@@ -71,6 +65,14 @@ config_data! {
         /// Whether to show `Run` action. Only applies when
         /// `#sourcepawn-lsp.hover.actions.enable#` is set.
         hover_actions_run_enable: bool             = "true",
+
+        /// Include directories paths for the compiler and the linter.
+        includeDirectories: Vec<PathBuf> = "[]",
+
+        /// Disable the language server's syntax linter. This is independant from spcomp.
+        linter_disable: bool = "false",
+        /// How many worker threads in the main loop. The default `null` means to pick automatically.
+        numThreads: Option<usize> = "null",
     }
 }
 

@@ -24,6 +24,41 @@ Compute spcomp diagnostics on save.
 --
 Path to the SourcePawn compiler (spcomp).
 --
+[[SourcePawnLanguageServer.hover.actions.debug.enable]]SourcePawnLanguageServer.hover.actions.debug.enable (default: `true`)::
++
+--
+Whether to show `Debug` action. Only applies when
+`#sourcepawn-lsp.hover.actions.enable#` is set.
+--
+[[SourcePawnLanguageServer.hover.actions.enable]]SourcePawnLanguageServer.hover.actions.enable (default: `true`)::
++
+--
+Whether to show HoverActions in Sourcepawn files.
+--
+[[SourcePawnLanguageServer.hover.actions.gotoTypeDef.enable]]SourcePawnLanguageServer.hover.actions.gotoTypeDef.enable (default: `true`)::
++
+--
+Whether to show `Go to Type Definition` action. Only applies when
+`#sourcepawn-lsp.hover.actions.enable#` is set.
+--
+[[SourcePawnLanguageServer.hover.actions.implementations.enable]]SourcePawnLanguageServer.hover.actions.implementations.enable (default: `true`)::
++
+--
+Whether to show `Implementations` action. Only applies when
+`#sourcepawn-lsp.hover.actions.enable#` is set.
+--
+[[SourcePawnLanguageServer.hover.actions.references.enable]]SourcePawnLanguageServer.hover.actions.references.enable (default: `false`)::
++
+--
+Whether to show `References` action. Only applies when
+`#sourcepawn-lsp.hover.actions.enable#` is set.
+--
+[[SourcePawnLanguageServer.hover.actions.run.enable]]SourcePawnLanguageServer.hover.actions.run.enable (default: `true`)::
++
+--
+Whether to show `Run` action. Only applies when
+`#sourcepawn-lsp.hover.actions.enable#` is set.
+--
 [[SourcePawnLanguageServer.includeDirectories]]SourcePawnLanguageServer.includeDirectories (default: `[]`)::
 +
 --
