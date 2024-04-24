@@ -65,7 +65,7 @@
 - Call hierarchy
 - Code outline.
 - Upload to an FTP/SFTP server on successful compile.
-- Automatically run `sm plugins refresh` on a successful upload.
+- Automatically run custom commands on the server after compilation.
 - Hover for details.
 - Icons for `.smx`, `.sp` and `.inc` files
 - Automatically scan include files for natives, defines, methodmaps and more.

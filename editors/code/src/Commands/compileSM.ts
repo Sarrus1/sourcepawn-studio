@@ -10,7 +10,7 @@ import { existsSync, mkdirSync } from "fs";
 import { execFile } from "child_process";
 
 import { run as uploadToServerCommand } from "./uploadToServer";
-import { run as refreshPluginsCommand } from "./runServerCommands";
+import { run as runServerCommands } from "./runServerCommands";
 import { getCtxFromUri } from "../spIndex";
 import { ProjectMainPathParams, projectMainPath } from "../lsp_ext";
 
@@ -183,10 +183,10 @@ export async function run(args: URI): Promise<void> {
       }
       if (
         Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
-          "refreshServerPlugins"
+          "runServerCommands"
         ) === "afterCompile"
       ) {
-        refreshPluginsCommand(undefined);
+        runServerCommands(undefined);
       }
     });
   } catch (error) {

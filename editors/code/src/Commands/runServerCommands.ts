@@ -65,8 +65,8 @@ export async function run(args: any) {
   try {
     await server.authenticate(serverOptions["password"]);
     serverCommands.forEach(async (command) => {
-      const refresh = await server.execute(command);
-      console.log(refresh);
+      const runCommands = await server.execute(command);
+      console.log(runCommands);
     });
     return 0;
   } catch (e) {
