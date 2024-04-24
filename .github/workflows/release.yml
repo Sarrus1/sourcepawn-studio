@@ -168,12 +168,12 @@ jobs:
       - uses: actions/download-artifact@v3
       - name: Publish VSIX package (Release)
         if: ${{ !github.event.release.prerelease }}
-        run: npx vsce publish --packagePath $(find . -iname *.vsix)
+        run: npx vsce publish --packagePath $(find test -iname '*.vsix' ! -iname '*win32-ia32*')
         env:
           VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
       - name: Publish VSIX package (Prerelease)
         if: ${{ github.event.release.prerelease }}
-        run: npx vsce publish --packagePath $(find . -iname *.vsix) --pre-release
+        run: npx vsce publish --packagePath $(find test -iname '*.vsix' ! -iname '*win32-ia32*') --pre-release
         env:
           VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
 
