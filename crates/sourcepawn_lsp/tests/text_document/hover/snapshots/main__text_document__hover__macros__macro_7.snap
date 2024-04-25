@@ -1,6 +1,6 @@
 ---
 source: crates/sourcepawn_lsp/tests/text_document/hover/macros.rs
-assertion_line: 90
+assertion_line: 89
 expression: "hover(r#\"\n%! main.sp\n#define FOO(%0) \tview_as<int>( %0 )\n#define BAR(%0,%1) foo[FOO( %0 )][%1]\n#define BAZ      (1 << 0)\nint foo[10][10];\nint bar = BAR( FOO(1), 2 ) + BAZ;\n                              |\n                              ^\n\"#)"
 ---
 {
@@ -17,5 +17,6 @@ expression: "hover(r#\"\n%! main.sp\n#define FOO(%0) \tview_as<int>( %0 )\n#defi
       "line": 4,
       "character": 32
     }
-  }
+  },
+  "actions": []
 }

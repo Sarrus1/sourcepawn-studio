@@ -1,7 +1,7 @@
 ---
 source: crates/sourcepawn_lsp/tests/text_document/hover/macros.rs
 assertion_line: 32
-expression: "hover(r#\"\n%! main.sp\n#define FOO(%1) %1 + %1\nint foo = 1;\nint bar = FOO(foo);\n           |\n           ^\n\"#)"
+expression: "hover(r#\"\n%! main.sp\n#define FOO(%1) %1 + %1\nint foo;\nint bar = FOO(foo);\n           |\n           ^\n\"#)"
 ---
 {
   "contents": {
@@ -17,5 +17,6 @@ expression: "hover(r#\"\n%! main.sp\n#define FOO(%1) %1 + %1\nint foo = 1;\nint 
       "line": 2,
       "character": 13
     }
-  }
+  },
+  "actions": []
 }

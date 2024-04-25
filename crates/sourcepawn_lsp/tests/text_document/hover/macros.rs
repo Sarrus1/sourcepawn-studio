@@ -33,7 +33,7 @@ fn macro_3() {
         r#"
 %! main.sp
 #define FOO(%1) %1 + %1
-int foo = 1;
+int foo;
 int bar = FOO(foo);
            |
            ^
@@ -47,8 +47,7 @@ fn macro_4() {
         r#"
 %! main.sp
 #define FOO 1 + 1
-int foo = 1;
-int bar = FOO + FOO;
+int foo = FOO + FOO;
                  |
                  ^
 "#,
@@ -61,7 +60,7 @@ fn macro_5() {
         r#"
 %! main.sp
 #define FOO(%1) %1 + %1
-int foo = 1;
+int foo;
 int bar = FOO(foo) + FOO(foo);
                       |
                       ^

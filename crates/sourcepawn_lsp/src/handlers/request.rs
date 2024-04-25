@@ -73,12 +73,11 @@ pub(crate) fn handle_hover(
             )),
             range: Some(info.range),
         },
-        actions: prepare_hover_actions(&snap, &info.info.actions), // TODO: implement hover actions
-                                                                   // actions: if snap.config.hover_actions().none() {
-                                                                   //     Vec::new()
-                                                                   // } else {
-                                                                   //     prepare_hover_actions(&snap, &info.info.actions)
-                                                                   // },
+        actions: if snap.config.hover_actions().none() {
+            Vec::new()
+        } else {
+            prepare_hover_actions(&snap, &info.info.actions)
+        },
     };
 
     Ok(res.into())

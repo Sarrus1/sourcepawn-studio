@@ -6,7 +6,7 @@ expression: "hover(r#\"\n%! main.sp\n#define FOO\nFOO\n |\n ^\n\"#)"
 {
   "contents": {
     "kind": "markdown",
-    "value": "```sourcepawn\n#define FOO\n```"
+    "value": "```sourcepawn\n#define FOO\n```\nExpands to:\n```sourcepawn\n\n```"
   },
   "range": {
     "start": {
@@ -17,5 +17,6 @@ expression: "hover(r#\"\n%! main.sp\n#define FOO\nFOO\n |\n ^\n\"#)"
       "line": 1,
       "character": 3
     }
-  }
+  },
+  "actions": []
 }

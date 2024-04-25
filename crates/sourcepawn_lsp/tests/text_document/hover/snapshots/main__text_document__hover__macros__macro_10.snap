@@ -1,6 +1,6 @@
 ---
 source: crates/sourcepawn_lsp/tests/text_document/hover/macros.rs
-assertion_line: 136
+assertion_line: 135
 expression: "hover(r#\"\n%! main.sp\n#define FOO  \"foo\"\nchar foo[10] = FOO;\n                |\n                ^\n\"#)"
 ---
 {
@@ -17,5 +17,6 @@ expression: "hover(r#\"\n%! main.sp\n#define FOO  \"foo\"\nchar foo[10] = FOO;\n
       "line": 1,
       "character": 18
     }
-  }
+  },
+  "actions": []
 }
