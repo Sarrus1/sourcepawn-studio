@@ -105,7 +105,7 @@ export async function run(args?: string) {
   try {
     await server.authenticate(serverOptions["password"]);
     serverCommands.forEach(async (command) => {
-      command = command.replace('{plugin}', getPluginName(args));
+      command = command.replace('${plugin}', getPluginName(args));
       const runCommands = await server.execute(command);
       console.log(runCommands);
     });
