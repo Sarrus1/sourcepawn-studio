@@ -25,7 +25,7 @@ impl Documentation {
         let mut pragma = None;
         let mut docs = Vec::new();
         match TSKind::from(&node) {
-            TSKind::preproc_define => {
+            TSKind::preproc_define | TSKind::enum_entry => {
                 if let Some(prev_node) = node.prev_sibling() {
                     if TSKind::from(prev_node) == TSKind::preproc_pragma {
                         pragma = Some(
@@ -41,6 +41,10 @@ impl Documentation {
                     if node.range().end_point.row != next_node.range().start_point.row {
                         break;
                     }
+                    if TSKind::from(next_node) == TSKind::anon_COMMA {
+                        node = next_node;
+                        continue;
+                    }
                     if TSKind::from(next_node) != TSKind::comment {
                         break;
                     }
@@ -52,6 +56,18 @@ impl Documentation {
                     node = next_node;
                 }
             }
+            TSKind::parameter_declaration => {
+                let name = node.child_by_field_name("name")?.utf8_text(source).ok()?;
+                let fn_node = node.parent()?.parent()?;
+                let fn_doc = Documentation::from_node(fn_node, source)?;
+                docs = fn_doc
+                    .param_description(name)?
+                    .lines()
+                    .map(|l| l.to_string())
+                    .collect();
+                docs.reverse();
+            }
+
             TSKind::function_declaration
             | TSKind::function_definition
             | TSKind::typedef
@@ -144,18 +160,34 @@ impl Documentation {
         let text = RE8.replace_all(&text, "${1} `${2}` — >").into_owned();
         let text = RE9.replace_all(&text, "`${1}`").into_owned();
         text.replace("DEPRECATED", "\n\n**DEPRECATED**")
+            .trim()
+            .to_string()
+    }
+
+    pub fn param_description(&self, param_name: &str) -> Option<String> {
+        let re = Regex::new(&format!(r"\s*@param\s+{}\s+", param_name)).ok()?;
+        let start = re.find(self.as_str())?.end();
+        let end = self.as_str()[start..]
+            .find(|c: char| c == '@')
+            .map(|i| start + i)
+            .unwrap_or_else(|| self.as_str().len());
+        Some(self.as_str()[start..end].trim().to_string())
     }
 }
 
 fn comment_to_doc(text: &str) -> String {
     lazy_static! {
-        static ref RE1: Regex = Regex::new(r"^\s*/(?:\*)+\s*").unwrap();
+        static ref RE1: Regex = Regex::new(r"^\s*/(?:\*){2}<?\s*").unwrap();
         static ref RE2: Regex = Regex::new(r"\*/$").unwrap();
         static ref RE3: Regex = Regex::new(r"^\s*//\s*").unwrap();
+        static ref RE4: Regex = Regex::new(r"\r?\n\s*\*\s*").unwrap();
+        static ref RE5: Regex = Regex::new(r"^\s*\*\s*").unwrap();
     }
     let text = RE1.replace_all(text, "").into_owned();
     let text = RE2.replace_all(&text, "").into_owned();
     let text = RE3.replace_all(&text, "").into_owned();
+    let text = RE4.replace_all(&text, "\n").into_owned();
+    let text = RE5.replace_all(&text, "").into_owned();
 
     text
 }

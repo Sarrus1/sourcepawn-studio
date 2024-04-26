@@ -1,0 +1,48 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/hover/enum_structs.rs
+assertion_line: 89
+expression: "hover(r#\"\n%! main.sp\nenum struct Foo {\n    /**\n     * The foo method.\n     */\n    #pragma deprecated Use bar instead.\n    Foo foo() {}\n         |\n         ^\n}\n\"#)"
+---
+{
+  "contents": {
+    "kind": "markdown",
+    "value": "```sourcepawn\nFoo\nFoo foo()\n```\n\n---\n\n**DEPRECATED**: Use bar instead. The foo method."
+  },
+  "range": {
+    "start": {
+      "line": 5,
+      "character": 8
+    },
+    "end": {
+      "line": 5,
+      "character": 11
+    }
+  },
+  "actions": [
+    {
+      "title": "Go to ",
+      "commands": [
+        {
+          "title": "Foo",
+          "command": "sourcepawn-vscode.gotoLocation",
+          "arguments": [
+            {
+              "uri": "file:///main.sp",
+              "range": {
+                "start": {
+                  "line": 0,
+                  "character": 12
+                },
+                "end": {
+                  "line": 0,
+                  "character": 15
+                }
+              }
+            }
+          ],
+          "tooltip": ""
+        }
+      ]
+    }
+  ]
+}

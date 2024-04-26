@@ -533,13 +533,34 @@ impl Macro {
     pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
         let file_id = self.id.lookup(db.upcast()).id.file_id();
         let tree = db.parse(file_id);
-        let node = self.source(db, &tree)?;
+        let node = self.source(db, &tree)?.value;
         let source = db.preprocessed_text(file_id);
 
-        node.value
-            .utf8_text(source.as_bytes())
-            .ok()
-            .map(String::from)
+        let mut buf = "#define ".to_string();
+        buf.push_str(
+            node.child_by_field_name("name")?
+                .utf8_text(source.as_bytes())
+                .ok()?
+                .trim(),
+        );
+
+        if TSKind::from(node) == TSKind::preproc_macro {
+            buf.push_str(
+                node.child_by_field_name("parameters")?
+                    .utf8_text(source.as_bytes())
+                    .ok()?
+                    .trim(),
+            );
+        }
+        buf.push(' ');
+        buf.push_str(
+            node.child_by_field_name("value")?
+                .utf8_text(source.as_bytes())
+                .ok()?
+                .trim(),
+        );
+
+        buf.trim().to_string().into()
     }
 }
 
@@ -1028,6 +1049,13 @@ impl<'tree> Local {
                     .unwrap_or_default();
                 buf.push_str(type_);
                 buf.push_str(parent.utf8_text(source.as_bytes()).ok()?);
+                if !buf.ends_with(';') {
+                    buf.push(';');
+                }
+                Some(buf)
+            }
+            TSKind::parameter_declarations => {
+                let mut buf = node.utf8_text(source.as_bytes()).ok()?.to_string();
                 if !buf.ends_with(';') {
                     buf.push(';');
                 }

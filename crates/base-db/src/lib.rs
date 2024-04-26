@@ -169,7 +169,7 @@ impl<T: SourceDatabaseExt> FileLoader for FileLoaderDelegate<&'_ T> {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct FilePosition {
     pub file_id: FileId,
     pub position: lsp_types::Position,
