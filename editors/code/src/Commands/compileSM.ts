@@ -42,7 +42,7 @@ export async function run(args: URI): Promise<void> {
 
   // Don't compile if it's not a .sp file.
   if (!isSPFile(fileToCompilePath)) {
-    window.showErrorMessage("Not a .sp file, aborting");
+    window.showErrorMessage("The selected file is not a SourcePawn script.");
     return;
   }
 
@@ -146,9 +146,11 @@ export async function run(args: URI): Promise<void> {
   output.show();
 
   try {
+    // Set spcomp status
     const ctx = getCtxFromUri(URI.file(fileToCompilePath));
     ctx?.setSpcompStatus({ quiescent: false });
-    // Compile in child process.
+
+    // Set up compiler command and args
     let spcompCommand = spcomp;
     if (process.platform === "darwin" && process.arch === "arm64") {
       spcompCommand = "arch";
@@ -162,30 +164,34 @@ export async function run(args: URI): Promise<void> {
       }
     });
     output.appendLine(`${command}\n`);
+
+    // Execute
     execFile(spcompCommand, compilerArgs, async (error, stdout) => {
+      // Output any errors
       if (error) {
         console.error(error);
       }
+
+      // Update spcomp status
       ctx?.setSpcompStatus({ quiescent: true });
       output.append(stdout.toString().trim());
-      if (
-        workspace.getConfiguration("sourcepawn", workspaceFolder).get(
-          "uploadAfterSuccessfulCompile"
-        )
-      ) {
+
+      // Restore last active editor's focus
+      window.showTextDocument(lastActiveEditor.document);
+
+      // Run upload command if chosen
+      if (workspace.getConfiguration("sourcepawn", workspaceFolder)
+        .get("uploadAfterSuccessfulCompile")) {
         await uploadToServerCommand(fileToCompilePath);
       }
-      if (
-        workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
-          "runServerCommands"
-        ) === "afterCompile"
-      ) {
+
+      // Run server commands if chosen
+      if (workspace.getConfiguration("sourcepawn", workspaceFolder)
+        .get<string>("runServerCommands") === "afterCompile") {
         await runServerCommands(fileToCompilePath);
       }
     });
   } catch (error) {
     console.error(error);
   }
-
-  window.showTextDocument(lastActiveEditor.document, ViewColumn.Active);
 }
