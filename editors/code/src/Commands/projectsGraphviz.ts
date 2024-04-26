@@ -1,10 +1,10 @@
 import * as vscode from "vscode";
 import { projectsGraphviz, ProjectsGraphvizParams } from "../lsp_ext";
-import { getCtxFromUri } from "../spIndex";
+import { getCtxFromUri, lastActiveEditor } from "../spIndex";
 
 export async function run(args: any) {
   const params: ProjectsGraphvizParams = {};
-  const doc = vscode.window.activeTextEditor?.document;
+  const doc = lastActiveEditor.document;
   if (doc === undefined) {
     vscode.window.showErrorMessage("Open a document to use this command.");
     return;

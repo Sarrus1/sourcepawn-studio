@@ -1,18 +1,19 @@
 import {
-  workspace as Workspace,
+  workspace,
   window,
   commands,
   OutputChannel,
+  ViewColumn,
 } from "vscode";
 import { URI } from "vscode-uri";
-import { basename, extname, join, dirname, resolve } from "path";
+import { basename, join, dirname, resolve } from "path";
 import { existsSync, mkdirSync } from "fs";
 import { execFile } from "child_process";
 
 import { run as uploadToServerCommand } from "./uploadToServer";
 import { run as runServerCommands } from "./runServerCommands";
-import { getCtxFromUri } from "../spIndex";
-import { ProjectMainPathParams, projectMainPath } from "../lsp_ext";
+import { getCtxFromUri, lastActiveEditor } from "../spIndex";
+import { alwaysCompileMainPath, getMainCompilationFile, isSPFile } from "../spUtils";
 
 // Create an OutputChannel variable here but do not initialize yet.
 let output: OutputChannel;
@@ -23,46 +24,39 @@ let output: OutputChannel;
  * @returns Promise
  */
 export async function run(args: URI): Promise<void> {
-  const uri = args === undefined ? window.activeTextEditor.document.uri : args;
-  const workspaceFolder = Workspace.getWorkspaceFolder(uri);
-
-  const alwaysCompileMainPath: boolean = Workspace.getConfiguration(
-    "sourcepawn",
-    workspaceFolder
-  ).get<boolean>("MainPathCompilation");
-
-  // Decide which file to compile here.
   let fileToCompilePath: string;
-  if (alwaysCompileMainPath) {
-    const params: ProjectMainPathParams = { uri: uri.toString() };
-    const mainUri = await getCtxFromUri(uri)?.client.sendRequest(
-      projectMainPath,
-      params
-    );
-    if (mainUri === undefined) {
-      fileToCompilePath = uri.fsPath;
-    } else {
-      fileToCompilePath = URI.parse(mainUri).fsPath;
+
+  // If we always compile the main path, we always ignore the path of the current editor
+  if (await alwaysCompileMainPath()) {
+    fileToCompilePath = await getMainCompilationFile()
+  }
+  // Else, we take the arguments, or we take the last active editor's path
+  else {
+    if (args) {
+      fileToCompilePath = args.fsPath;
     }
-  } else {
-    fileToCompilePath = uri.fsPath;
+    else {
+      fileToCompilePath = lastActiveEditor.document.uri.fsPath;
+    }
   }
 
-  const scriptingFolderPath = dirname(fileToCompilePath);
-
   // Don't compile if it's not a .sp file.
-  if (extname(fileToCompilePath) !== ".sp") {
+  if (!isSPFile(fileToCompilePath)) {
     window.showErrorMessage("Not a .sp file, aborting");
     return;
   }
 
+  const workspaceFolder = workspace.getWorkspaceFolder(URI.file(fileToCompilePath));
+  const scriptingFolderPath = dirname(fileToCompilePath);
+
   // Invoke the compiler.
   const spcomp =
-    Workspace.getConfiguration(
+    workspace.getConfiguration(
       "SourcePawnLanguageServer",
       workspaceFolder
     ).get<string>("spcompPath") || "";
 
+  // Return if compiler not found
   if (!spcomp) {
     window
       .showErrorMessage(
@@ -83,7 +77,7 @@ export async function run(args: URI): Promise<void> {
   // Decide where to output the compiled file.
   const pluginsFolderPath = join(scriptingFolderPath, "../", "plugins/");
   let outputDir: string =
-    Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
+    workspace.getConfiguration("sourcepawn", workspaceFolder).get(
       "outputDirectoryPath"
     ) || pluginsFolderPath;
   if (outputDir === pluginsFolderPath) {
@@ -93,7 +87,7 @@ export async function run(args: URI): Promise<void> {
   } else {
     // If the outputDirectoryPath setting is not empty, make sure it exists before trying to write to it.
     if (!existsSync(outputDir)) {
-      const workspaceFolder = Workspace.workspaceFolders[0];
+      const workspaceFolder = workspace.workspaceFolders[0];
       outputDir = join(workspaceFolder.uri.fsPath, outputDir);
       if (!existsSync(outputDir)) {
         window
@@ -116,7 +110,7 @@ export async function run(args: URI): Promise<void> {
   outputDir += basename(fileToCompilePath, ".sp") + ".smx";
 
   // Add the compiler options from the settings.
-  const compilerArguments: string[] = Workspace.getConfiguration(
+  const compilerArguments: string[] = workspace.getConfiguration(
     "sourcepawn",
     workspaceFolder
   ).get("compilerArguments");
@@ -126,7 +120,7 @@ export async function run(args: URI): Promise<void> {
     scriptingFolderPath,
   ];
 
-  Workspace.getConfiguration("SourcePawnLanguageServer", workspaceFolder)
+  workspace.getConfiguration("SourcePawnLanguageServer", workspaceFolder)
     .get<string[]>("includeDirectories")
     .map((e) =>
       resolve(
@@ -152,7 +146,7 @@ export async function run(args: URI): Promise<void> {
   output.show();
 
   try {
-    const ctx = getCtxFromUri(uri);
+    const ctx = getCtxFromUri(URI.file(fileToCompilePath));
     ctx?.setSpcompStatus({ quiescent: false });
     // Compile in child process.
     let spcompCommand = spcomp;
@@ -175,21 +169,23 @@ export async function run(args: URI): Promise<void> {
       ctx?.setSpcompStatus({ quiescent: true });
       output.append(stdout.toString().trim());
       if (
-        Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
+        workspace.getConfiguration("sourcepawn", workspaceFolder).get(
           "uploadAfterSuccessfulCompile"
         )
       ) {
-        await uploadToServerCommand(URI.file(fileToCompilePath));
+        await uploadToServerCommand(fileToCompilePath);
       }
       if (
-        Workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
+        workspace.getConfiguration("sourcepawn", workspaceFolder).get<string>(
           "runServerCommands"
         ) === "afterCompile"
       ) {
-        runServerCommands(URI.file(fileToCompilePath));
+        await runServerCommands(fileToCompilePath);
       }
     });
   } catch (error) {
     console.error(error);
   }
+
+  window.showTextDocument(lastActiveEditor.document, ViewColumn.Active);
 }

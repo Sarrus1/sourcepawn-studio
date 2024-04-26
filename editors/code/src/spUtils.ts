@@ -1,18 +1,42 @@
 ﻿import * as vscode from "vscode";
 import path from "path";
+import { getCtxFromUri, lastActiveEditor } from "./spIndex";
+import { ProjectMainPathParams, projectMainPath } from "./lsp_ext";
+import { URI } from "vscode-uri";
 
 export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function isSPFile(fileName: string) {
-  return /(?:\.sp|\.inc)\s*^/.test(fileName);
+export function isSPFile(filePath: string): boolean {
+  return /\.(sp|inc)$/i.test(filePath);
 }
 
 export function getPluginName(uri: string): string {
   const fileName = path.basename(uri);
   const pluginName = fileName.split('.')[0];
   return pluginName;
+}
+
+export async function getMainCompilationFile(): Promise<string> {
+  const uri = lastActiveEditor.document.uri;
+  const params: ProjectMainPathParams = {
+    uri: uri.toString(),
+  };
+  const mainUri = await getCtxFromUri(uri)?.client.sendRequest(
+    projectMainPath,
+    params
+  );
+  return URI.parse(mainUri).fsPath;
+}
+
+export async function alwaysCompileMainPath(): Promise<boolean> {
+  const workspaceFolder =
+    vscode.workspace.getWorkspaceFolder(lastActiveEditor.document.uri)
+  return vscode.workspace.getConfiguration(
+    "sourcepawn",
+    workspaceFolder
+  ).get<boolean>("MainPathCompilation");
 }
 
 export class LazyOutputChannel implements vscode.OutputChannel {

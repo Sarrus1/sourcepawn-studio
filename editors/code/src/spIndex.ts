@@ -12,9 +12,11 @@ import { KVDocumentFormattingEditProvider } from "./Formatters/kvFormat";
 import { Ctx } from "./ctx";
 import { registerKVLinter } from "./Keyvalues/registerKVLinter";
 import { buildDoctorStatusBar } from "./Commands/doctor";
+import path from "path";
 
 export let defaultContext: Ctx;
 export const serverContexts: Map<string, Ctx> = new Map();
+export let lastActiveEditor: vscode.TextEditor
 
 export async function activate(context: vscode.ExtensionContext) {
   function didOpenTextDocument(document: vscode.TextDocument): void {
@@ -122,8 +124,19 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.window.onDidChangeActiveTextEditor((event) => {
-      let folder = vscode.workspace.getWorkspaceFolder(event.document.uri);
+    vscode.window.onDidChangeActiveTextEditor((editor) => {
+      // We check for a valid path in the editor's filename,
+      // which would indicate we're not on an output console
+      if (!path.isAbsolute(editor.document.fileName)) {
+        return;
+      }
+
+      // We save the last editor that's not an output console
+      if (lastActiveEditor != editor) {
+        lastActiveEditor = editor;
+      }
+
+      let folder = vscode.workspace.getWorkspaceFolder(editor.document.uri);
       folder = getOuterMostWorkspaceFolder(folder);
       serverContexts.forEach((ctx, _) => ctx.hideServer());
       const ctx = serverContexts.get(folder.uri.toString());
@@ -143,6 +156,13 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Register KV linter
   registerKVLinter(context);
+
+  // Set the last opened tab as the active document
+  vscode.window.visibleTextEditors.forEach(editor => {
+    if (path.isAbsolute(editor.document.fileName)) {
+      lastActiveEditor = editor;
+    }
+  })
 }
 
 export function getCtxFromUri(uri: URI): Ctx | undefined {
