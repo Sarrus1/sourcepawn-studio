@@ -192,16 +192,14 @@ fn find_macro_hover(
         .lines()
         .nth(pos.line as usize)
         .and_then(|it| it.get(slc))
-        .map(|it| it.to_string());
+        .map(|it| it.to_string())
+        .unwrap_or_default();
 
-    let markup = match hover_text {
-        Some(hover_text) => Markup::from(format!(
-            "{}\nExpands to:\n{}",
-            Markup::fenced_block(source_text),
-            Markup::fenced_block(hover_text.trim())
-        )),
-        None => Markup::fenced_block(source_text),
-    };
+    let markup = Markup::from(format!(
+        "{}\nExpands to:\n{}",
+        Markup::fenced_block(source_text),
+        Markup::fenced_block(hover_text.trim())
+    ));
 
     let res = if let Some(docs) = Documentation::from_node(def_node, source.as_bytes()) {
         HoverResult {

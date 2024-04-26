@@ -111,6 +111,9 @@ impl Documentation {
             }
             _ => (),
         }
+        if pragma.is_none() && docs.is_empty() {
+            return None;
+        }
         if let Some(pragma) = pragma {
             docs.push(format!("DEPRECATED: {}\n", pragma));
         }

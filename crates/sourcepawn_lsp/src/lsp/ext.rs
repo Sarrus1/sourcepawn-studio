@@ -154,7 +154,6 @@ impl Request for HoverRequest {
 pub struct Hover {
     #[serde(flatten)]
     pub hover: lsp_types::Hover,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<CommandLinkGroup>,
 }
 

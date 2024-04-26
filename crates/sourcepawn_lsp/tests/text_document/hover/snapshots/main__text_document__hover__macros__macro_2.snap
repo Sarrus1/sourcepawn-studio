@@ -17,5 +17,6 @@ expression: "hover(r#\"\n%! main.sp\n#define FOO 1\nint foo = FOO;\n           |
       "line": 1,
       "character": 13
     }
-  }
+  },
+  "actions": []
 }

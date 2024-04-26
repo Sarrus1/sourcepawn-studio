@@ -6,7 +6,7 @@ use lsp_types::{
     notification::{DidOpenTextDocument, Exit, Initialized},
     request::{Completion, Initialize, ResolveCompletionItem, Shutdown},
     ClientCapabilities, CompletionContext, CompletionItem, CompletionItemKind, CompletionParams,
-    CompletionResponse, CompletionTriggerKind, DidOpenTextDocumentParams, Hover, InitializeParams,
+    CompletionResponse, CompletionTriggerKind, DidOpenTextDocumentParams, InitializeParams,
     InitializedParams, Location, LocationLink, Position, Range, TextDocumentIdentifier,
     TextDocumentItem, TextDocumentPositionParams, Url, WorkspaceFolder,
 };
@@ -15,6 +15,7 @@ use std::{
     fs::File,
     io,
     path::{Path, PathBuf},
+    str::FromStr,
     sync::Once,
     thread::JoinHandle,
     time::Duration,
@@ -22,7 +23,7 @@ use std::{
 use tempfile::{tempdir, TempDir};
 use zip::ZipArchive;
 
-use crate::config::ConfigData;
+use crate::{config::ConfigData, lsp};
 
 use super::{GlobalState, LspClient};
 
@@ -472,7 +473,7 @@ pub fn unzip_file(zip_file_path: &Path, destination: &Path) -> Result<(), io::Er
     Ok(())
 }
 
-pub fn hover(fixture: &str) -> Hover {
+pub fn hover(fixture: &str) -> lsp::ext::Hover {
     let test_bed = TestBed::new(fixture, true).unwrap();
     test_bed
         .initialize(
@@ -488,6 +489,12 @@ pub fn hover(fixture: &str) -> Hover {
                 "workspace": {
                     "configuration": true,
                     "workspace_folders": true
+                },
+                "experimental": {
+                    "hoverActions": true,
+                    "commands": {
+                        "commands": ["sourcepawn-vscode.gotoLocation"],
+                    },
                 }
             }))
             .unwrap(),
@@ -499,9 +506,27 @@ pub fn hover(fixture: &str) -> Hover {
         work_done_progress_params: Default::default(),
     };
 
-    test_bed
+    let mut res = test_bed
         .client()
-        .send_request::<lsp_types::request::HoverRequest>(params)
+        .send_request::<lsp::ext::HoverRequest>(params)
         .unwrap()
-        .expect("Expected a hover response.")
+        .expect("Expected a hover response.");
+
+    for action in &mut res.actions {
+        for command in &mut action.commands {
+            if let Some(args) = command.command.arguments.as_mut() {
+                for arg in args.iter_mut() {
+                    if let Some(arg) = arg.as_object_mut() {
+                        if let Some(value) = arg.get_mut("uri") {
+                            let mut uri = Url::from_str(value.as_str().unwrap()).unwrap();
+                            test_bed.anonymize_uri(&mut uri);
+                            *value = serde_json::Value::String(uri.to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    res
 }
