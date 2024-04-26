@@ -14,12 +14,11 @@ import {
 } from "fs";
 import { URI } from "vscode-uri";
 import { join, basename } from "path";
+import { getConfig, Section } from "../configUtils";
 
 export function run(rootpath?: string) {
-  const AuthorName: string = Workspace.getConfiguration("sourcepawn").get(
-    "AuthorName"
-  );
-  if (!AuthorName) {
+  const authorName: string = getConfig(Section.SourcePawn, "AuthorName");
+  if (!authorName) {
     window
       .showWarningMessage("You didn't specify an author name.", "Open Settings")
       .then((choice) => {
@@ -32,25 +31,23 @@ export function run(rootpath?: string) {
       });
   }
 
-  const GithubName: string = Workspace.getConfiguration("sourcepawn").get(
-    "GithubName"
-  );
+  const githubName: string = getConfig(Section.SourcePawn, "GithubName");
 
-  // get workspace folder
+  // Get workspace folder
   const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
-    window.showErrorMessage("No workspace are opened.");
+    window.showErrorMessage("No workspaces are opened.");
     return 1;
   }
 
-  //Select the rootpath
+  // Select the rootpath
   if (rootpath === undefined) {
     rootpath = workspaceFolders?.[0].uri.fsPath;
   }
 
   const rootname = basename(rootpath);
 
-  // create a scripting folder if it doesn't exist
+  // Create a scripting folder if it doesn't exist
   const scriptingFolderPath = join(rootpath, "scripting");
   if (!existsSync(scriptingFolderPath)) {
     mkdirSync(scriptingFolderPath);
@@ -74,9 +71,9 @@ export function run(rootpath?: string) {
   // Replace placeholders
   try {
     const data = readFileSync(scriptFilePath, "utf8");
-    let result = data.replace(/\${AuthorName}/gm, AuthorName);
+    let result = data.replace(/\${AuthorName}/gm, authorName);
     result = result.replace(/\${plugin_name}/gm, rootname);
-    result = result.replace(/\${GithubName}/gm, GithubName);
+    result = result.replace(/\${GithubName}/gm, githubName);
     writeFileSync(scriptFilePath, result, "utf8");
   } catch (err) {
     console.error(err);

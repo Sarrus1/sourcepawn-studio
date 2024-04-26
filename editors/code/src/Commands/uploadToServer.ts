@@ -1,11 +1,27 @@
 ﻿import { join } from "path";
 
 import { run as runServerCommands } from "./runServerCommands";
-import { alwaysCompileMainPath, getMainCompilationFile } from "../spUtils";
+import { getMainCompilationFile } from "../spUtils";
 import { WorkspaceFolder, commands, window, workspace } from "vscode";
 import { lastActiveEditor } from "../spIndex";
 import { URI } from "vscode-uri";
+import { Section, getConfig } from "../configUtils";
 const FTPDeploy = require("ftp-deploy");
+
+export interface UploadOptions {
+  user: string;
+  password: string;
+  host: string;
+  port: number;
+  localRoot: string;
+  remoteRoot: string;
+  include: string[];
+  exclude: string[];
+  deleteRemote: boolean;
+  forcePasv: boolean;
+  sftp: boolean;
+  isRootRelative: boolean;
+}
 
 export async function run(args?: string) {
   const ftpDeploy = new FTPDeploy();
@@ -15,7 +31,9 @@ export async function run(args?: string) {
   // If we receive arguments, the file to upload has already been figured out for us,
   // else, we use the user's choice, main compilation file or current editor
   if (!args) {
-    if (await alwaysCompileMainPath()) {
+    workspaceFolder = workspace.getWorkspaceFolder(lastActiveEditor.document.uri);
+    const compileMainPath: boolean = getConfig(Section.SourcePawn, "MainPathCompilation", workspaceFolder);
+    if (compileMainPath) {
       fileToUpload = await getMainCompilationFile();
     }
     else {
@@ -24,16 +42,13 @@ export async function run(args?: string) {
   }
   else {
     fileToUpload = args;
-    workspaceFolder = workspace.getWorkspaceFolder(URI.file(args));
+    workspaceFolder = workspace.getWorkspaceFolder(URI.file(fileToUpload));
   }
 
   // Return if upload settings are not defined
-  const config: object = workspace
-    .getConfiguration("sourcepawn", workspaceFolder)
-    .get("UploadOptions");
-  if (config === undefined) {
-    window
-      .showErrorMessage("Upload settings are empty.", "Open Settings")
+  const uploadOptions: UploadOptions = getConfig(Section.SourcePawn, "UploadOptions", workspaceFolder)
+  if (uploadOptions === undefined) {
+    window.showErrorMessage("Upload settings are empty.", "Open Settings")
       .then((choice) => {
         if (choice === "Open Settings") {
           commands.executeCommand(
@@ -46,12 +61,8 @@ export async function run(args?: string) {
   }
 
   // Return if upload settings are not properly configured
-  if (config["user"] == "" || config["host"] == "") {
-    window
-      .showErrorMessage(
-        "Some settings are improperly defined in the upload settings.",
-        "Open Settings"
-      )
+  if (uploadOptions.user == "" || uploadOptions.host == "") {
+    window.showErrorMessage("Cannot upload - user or host empty.", "Open Settings")
       .then((choice) => {
         if (choice === "Open Settings") {
           commands.executeCommand(
@@ -64,14 +75,12 @@ export async function run(args?: string) {
   }
 
   // Override the "deleteRemote" setting for safety.
-  config["deleteRemote"] = false;
+  uploadOptions.deleteRemote = false;
 
   // If specified, replace macro with main compilation file
-  if (config["localRoot"] === "${mainPath}") {
-    config["localRoot"] = getMainCompilationFile();
-  }
+  uploadOptions.localRoot = uploadOptions.localRoot.replace("${mainPath}", await getMainCompilationFile())
 
-  if (config["isRootRelative"]) {
+  if (uploadOptions.isRootRelative) {
     // Concat the workspace with it's root if the path is relative.
     if (workspaceFolder === undefined) {
       window.showWarningMessage(
@@ -80,13 +89,13 @@ export async function run(args?: string) {
       return 1;
     }
     const workspaceRoot = workspaceFolder.uri.fsPath;
-    config["localRoot"] = join(workspaceRoot, config["localRoot"]);
+    uploadOptions.localRoot = join(workspaceRoot, uploadOptions.localRoot);
   }
 
   // Copy the config object to avoid https://github.com/microsoft/vscode/issues/80976
-  const ftpConfig = { ...config };
+  const ftpConfig = { ...uploadOptions };
   // Delete that setting to avoid problems with the ftp/sftp library
-  delete ftpConfig["isRootRelative"];
+  delete ftpConfig.isRootRelative;
 
   console.log("Starting the upload");
   console.log(ftpConfig);
@@ -94,11 +103,8 @@ export async function run(args?: string) {
     .deploy(ftpConfig)
     .then(() => {
       console.log("Upload is finished.");
-      if (
-        workspace
-          .getConfiguration("sourcepawn", workspaceFolder)
-          .get<string>("runServerCommands") === "afterUpload"
-      ) {
+      const commandsOption: string = getConfig(Section.SourcePawn, "runServerCommands", workspaceFolder);
+      if (commandsOption === "afterUpload") {
         runServerCommands(fileToUpload);
       }
     })

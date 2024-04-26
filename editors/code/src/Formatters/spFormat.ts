@@ -15,6 +15,7 @@ import { openSync, writeSync, closeSync, existsSync } from "fs";
 import { platform, arch } from "os";
 import { join } from "path";
 import { execFileSync } from "child_process";
+import { Section, getConfig } from "../configUtils";
 
 export class SMDocumentFormattingEditProvider
   implements DocumentFormattingEditProvider {
@@ -24,17 +25,12 @@ export class SMDocumentFormattingEditProvider
     token: CancellationToken
   ): ProviderResult<TextEdit[]> {
     // Get the user's settings.
-    const insertSpaces: boolean =
-      Workspace.getConfiguration("editor").get("insertSpaces") || false;
+    const insertSpaces: boolean = getConfig(Section.Editor, "insertSpaces") || false;
     const UseTab: string = insertSpaces ? "Never" : "Always";
-    const tabSize: number =
-      Workspace.getConfiguration("editor").get("tabSize") || 2;
+    const tabSize: number = getConfig(Section.Editor, "tabSize") || 2;
 
     const workspaceFolder = Workspace.getWorkspaceFolder(document.uri);
-    const defaultStyles: string[] =
-      Workspace.getConfiguration("sourcepawn", workspaceFolder).get(
-        "formatterSettings"
-      ) || [];
+    const defaultStyles: string[] = getConfig(Section.SourcePawn, "formatterSettings", workspaceFolder, []);
 
     let default_style: string = "{" + defaultStyles.join(", ") + "}";
 

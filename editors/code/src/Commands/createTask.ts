@@ -7,12 +7,12 @@ import {
   mkdirSync,
 } from "fs";
 import { join } from "path";
+import { getConfig, Section } from "../configUtils";
 
 export function run(rootpath?: string) {
   // Get configuration
-  let sm_home: string =
-    Workspace.getConfiguration("sourcepawn").get("SourcemodHome");
-  if (!sm_home) {
+  let smHome: string = getConfig(Section.SourcePawn, "SourcemodHome");
+  if (!smHome) {
     window
       .showWarningMessage(
         "Sourcemod API not found in the project. You should set Sourcemod Home for tasks generation to work. Do you want to install it automatically?",
@@ -31,9 +31,7 @@ export function run(rootpath?: string) {
       });
   }
 
-  let spcompPath: string = Workspace.getConfiguration(
-    "SourcePawnLanguageServer"
-  ).get("spcompPath");
+  let spcompPath: string = getConfig(Section.LSP, "spcompPath");
   if (!spcompPath) {
     window
       .showErrorMessage(
@@ -51,19 +49,19 @@ export function run(rootpath?: string) {
     return 1;
   }
 
-  // get workspace folder
+  // Get workspace folder
   const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
-    window.showErrorMessage("No workspace are opened.");
+    window.showErrorMessage("No workspaces are opened.");
     return 2;
   }
 
-  //Select the rootpath
+  // Select the rootpath
   if (rootpath === undefined) {
     rootpath = workspaceFolders?.[0].uri.fsPath;
   }
 
-  // create task folder if it doesn't exist
+  // Create task folder if it doesn't exist
   const taskFolderPath = join(rootpath, ".vscode");
   if (!existsSync(taskFolderPath)) {
     mkdirSync(taskFolderPath);
@@ -81,12 +79,12 @@ export function run(rootpath?: string) {
   const tasksTemplatesPath: string = join(myExtDir, "templates/tasks.json");
   copyFileSync(tasksTemplatesPath, taskFilePath);
   spcompPath = spcompPath.replace(/\\/gm, "\\\\");
-  sm_home = sm_home.replace(/\\/gm, "\\\\");
+  smHome = smHome.replace(/\\/gm, "\\\\");
   // Replace placeholders
   try {
     const data = readFileSync(taskFilePath, "utf8");
     let result = data.replace(/\${spcompPath}/gm, spcompPath);
-    result = result.replace(/\${include_path}/gm, sm_home);
+    result = result.replace(/\${include_path}/gm, smHome);
     writeFileSync(taskFilePath, result, "utf8");
   } catch (err) {
     console.error(err);

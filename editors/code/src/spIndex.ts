@@ -13,6 +13,7 @@ import { Ctx } from "./ctx";
 import { registerKVLinter } from "./Keyvalues/registerKVLinter";
 import { buildDoctorStatusBar } from "./Commands/doctor";
 import path from "path";
+import { Section, getConfig } from "./configUtils";
 
 export let defaultContext: Ctx;
 export const serverContexts: Map<string, Ctx> = new Map();
@@ -58,9 +59,7 @@ export async function activate(context: vscode.ExtensionContext) {
           pattern: `${folder.uri.fsPath}/**/*.{inc,sp}`,
         },
       ].concat(
-        vscode.workspace
-          .getConfiguration("SourcePawnLanguageServer")
-          .get<string[]>("includeDirectories", [])
+        getConfig(Section.LSP, "includeDirectories", undefined, [])
           .map((e) => {
             return {
               scheme: "file",

@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import { execFile } from "child_process";
+import { getConfig, Section } from "../configUtils";
 
 export async function run(args: any) {
   const panel = vscode.window.createWebviewPanel(
@@ -140,9 +141,7 @@ class Doctor {
   }
 
   async checkSpComp() {
-    this.spCompPath = vscode.workspace
-      .getConfiguration("SourcePawnLanguageServer")
-      .get("spcompPath");
+    this.spCompPath = getConfig(Section.LSP, "spcompPath");
     if (!this.spCompPath) {
       this.isSPCompSet = DiagnosticState.Error;
       this.isSPCompInstalled = DiagnosticState.Error;
@@ -206,9 +205,7 @@ class Doctor {
   }
 
   async checkIncludesDirectories() {
-    const includeDirectories: string[] = vscode.workspace
-      .getConfiguration("SourcePawnLanguageServer")
-      .get("includeDirectories");
+    const includeDirectories: string[] = getConfig(Section.LSP, "includeDirectories");
     if (!includeDirectories) {
       this.isSMInstalled = DiagnosticState.Error;
       return;

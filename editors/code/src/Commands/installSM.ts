@@ -11,6 +11,7 @@ import { platform, homedir } from "os";
 import { createWriteStream, existsSync, mkdirSync, rmSync } from "fs";
 import axios from "axios";
 import decompress from "decompress";
+import { getConfig, Section } from "../configUtils";
 
 const outputDir = join(homedir(), "sourcemodAPI/");
 
@@ -30,10 +31,7 @@ export async function run(args: any) {
       return getSourceModVersion(progress, token);
     }
   );
-  const spCompPath =
-    Workspace.getConfiguration("SourcePawnLanguageServer").get<string>(
-      "spcompPath"
-    ) || "";
+  const spCompPath: string = getConfig(Section.LSP, "spcompPath") || "";
   const smDir = join(outputDir, "addons/sourcemod/scripting/include");
   let spComp: string;
   if (Platform === "win32") {
@@ -60,16 +58,14 @@ export async function run(args: any) {
 }
 
 function updatePath(smDir: string, spComp: string): void {
-  const includeDirectories = Workspace.getConfiguration(
-    "SourcePawnLanguageServer"
-  ).get<string[]>("includeDirectories");
+  const includeDirectories: string[] = getConfig(Section.LSP, "includeDirectories");
   includeDirectories.push(smDir);
-  Workspace.getConfiguration("SourcePawnLanguageServer").update(
+  getConfig(Section.LSP).update(
     "includeDirectories",
     Array.from(new Set(includeDirectories)), // avoid duplicates
     true
   );
-  Workspace.getConfiguration("SourcePawnLanguageServer").update(
+  getConfig(Section.LSP).update(
     "spcompPath",
     spComp,
     true

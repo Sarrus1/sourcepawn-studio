@@ -7,6 +7,7 @@ import * as lsp_ext from "./lsp_ext";
 import { LazyOutputChannel } from "./spUtils";
 import { createClient } from "./client";
 import { execFile } from "child_process";
+import { Section, getConfig } from "./configUtils";
 
 export type CommandFactory = {
   enabled: (ctx: CtxInit) => Cmd;
@@ -117,9 +118,7 @@ export class Ctx {
     }
 
     if (!this._client || !this._client.isRunning()) {
-      const traceServer = vscode.workspace
-        .getConfiguration("sourcepawn")
-        .get<string>("trace.server");
+      const traceServer = getConfig(Section.SourcePawn, "trace.server");
       let traceServerLevel = 0;
       switch (traceServer) {
         case "warn":
@@ -147,7 +146,7 @@ export class Ctx {
         debug: {
           command: resolve(
             process.env["__SOURCEPAWN_LSP_SERVER_DEBUG"] +
-              (platform() == "win32" ? ".exe" : "")
+            (platform() == "win32" ? ".exe" : "")
           ),
           args: ["-vvv"],
         },

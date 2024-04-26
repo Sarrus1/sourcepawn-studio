@@ -4,6 +4,7 @@ import {
   QuickPickOptions,
   QuickPickItem,
 } from "vscode";
+import { Section, getConfig } from "../configUtils";
 
 type AvailableAPIOptional = {
   name: string | undefined;
@@ -22,9 +23,9 @@ type AvailableAPI = {
 };
 
 export async function run(args: any) {
-  const availableAPIs = Workspace.getConfiguration("sourcepawn")
-    .get<AvailableAPIOptional[]>("availableAPIs")
-    .map(buildAvailableAPIFromOptional);
+  const availableAPIs: AvailableAPIOptional[] =
+    getConfig(Section.SourcePawn, "availableAPIs")
+      .map(buildAvailableAPIFromOptional);
 
   const quickPickItems: QuickPickItem[] = availableAPIs.map((availableAPI) => {
     return {
@@ -37,19 +38,19 @@ export async function run(args: any) {
   };
   window.showQuickPick(quickPickItems, quickPickOptions).then(async (item) => {
     const chosenAPI = availableAPIs.find((e) => e.name === item.label);
-    await Workspace.getConfiguration("SourcePawnLanguageServer").update(
+    await getConfig(Section.LSP).update(
       "includeDirectories",
       chosenAPI.includeDirectories
     );
-    await Workspace.getConfiguration("SourcePawnLanguageServer").update(
+    await getConfig(Section.LSP).update(
       "spcompPath",
       chosenAPI.spcompPath
     );
-    await Workspace.getConfiguration("sourcepawn").update(
+    await getConfig(Section.SourcePawn).update(
       "compilerArguments",
       chosenAPI.compilerArguments
     );
-    await Workspace.getConfiguration("SourcePawnLanguageServer").update(
+    await getConfig(Section.LSP).update(
       "linterArguments",
       chosenAPI.linterArguments
     );

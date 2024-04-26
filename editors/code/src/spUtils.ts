@@ -12,8 +12,8 @@ export function isSPFile(filePath: string): boolean {
   return /\.(sp|inc)$/i.test(filePath);
 }
 
-export function getPluginName(uri: string): string {
-  const fileName = path.basename(uri);
+export function getPluginName(filePath: string): string {
+  const fileName = path.basename(filePath);
   const pluginName = fileName.split('.')[0];
   return pluginName;
 }
@@ -28,15 +28,6 @@ export async function getMainCompilationFile(): Promise<string> {
     params
   );
   return URI.parse(mainUri).fsPath;
-}
-
-export async function alwaysCompileMainPath(): Promise<boolean> {
-  const workspaceFolder =
-    vscode.workspace.getWorkspaceFolder(lastActiveEditor.document.uri)
-  return vscode.workspace.getConfiguration(
-    "sourcepawn",
-    workspaceFolder
-  ).get<boolean>("MainPathCompilation");
 }
 
 export class LazyOutputChannel implements vscode.OutputChannel {

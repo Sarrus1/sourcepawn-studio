@@ -44,7 +44,7 @@
     "onCommand:sourcepawn-vscode.createProject",
     "onCommand:sourcepawn-vscode.compileSM",
     "onCommand:sourcepawn-vscode.uploadToServer",
-    "onCommand:sourcepawn-vscode.refreshPlugins",
+    "onCommand:sourcepawn-vscode.runServerCommands",
     "onCommand:sourcepawn-vscode.insertParameters",
     "onCommand:sourcepawn-vscode.createChangelog",
     "onCommand:sourcepawn-vscode.changeSMApi",
@@ -88,8 +88,8 @@
         "category": "SM"
       },
       {
-        "command": "sourcepawn-vscode.refreshPlugins",
-        "title": "Refresh Server Plugins",
+        "command": "sourcepawn-vscode.runServerCommands",
+        "title": "Run Server Commands",
         "category": "SM"
       },
       {
@@ -243,15 +243,23 @@
           "default": true,
           "description": "Whether to show the 'Compile Code' icon in editor title menu."
         },
-        "sourcepawn.refreshServerPlugins": {
+        "sourcepawn.runServerCommands": {
           "type": "string",
           "enum": [
             "disabled",
             "afterCompile",
             "afterUpload"
           ],
-          "description": "Should the plugins list on the server be refreshed with `sm plugins refresh` after a successful action in VSCode.",
+          "description": "Should the specified commands be executed on the server after a successful action in VSCode (default: sm plugins refresh).",
           "scope": "resource"
+        },
+        "sourcepawn.serverCommands": {
+          "type": "array",
+          "default": [
+            "sm plugins refresh"
+          ],
+          "scope": "resource",
+          "description": "A list of commands that will be sent to the server after a successful action in VSCode."
         },
         "sourcepawn.uploadAfterSuccessfulCompile": {
           "type": "boolean",
@@ -345,7 +353,7 @@
             "timeout": 1000,
             "password": ""
           },
-          "description": "Options for the Source server to refresh the plugins on.",
+          "description": "Source server details to execute the commands on.",
           "scope": "resource"
         },
         "sourcepawn.formatterSettings": {

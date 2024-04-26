@@ -1,9 +1,10 @@
-﻿import { workspace as workspace, window, commands } from "vscode";
+﻿import { workspace as workspace, window, commands, WorkspaceFolder } from "vscode";
 import Rcon from "rcon-srcds";
 import { EncodingOptions } from "rcon-srcds/dist/packet";
-import { alwaysCompileMainPath, getMainCompilationFile, getPluginName } from "../spUtils";
+import { getMainCompilationFile, getPluginName } from "../spUtils";
 import { lastActiveEditor } from "../spIndex";
 import { URI } from "vscode-uri";
+import { Section, getConfig } from "../configUtils";
 
 export interface ServerOptions {
   host: string;
@@ -19,9 +20,13 @@ export interface ServerOptions {
  * @returns A Promise.
  */
 export async function run(args?: string) {
+  let workspaceFolder: WorkspaceFolder;
+
   // If we don't receive args, we need to figure out which plugin was sent
   if (!args) {
-    if (await alwaysCompileMainPath()) {
+    workspaceFolder = workspace.getWorkspaceFolder(lastActiveEditor.document.uri);
+    const compileMainPath: boolean = getConfig(Section.SourcePawn, "MainPathCompilation", workspaceFolder);
+    if (compileMainPath) {
       args = await getMainCompilationFile();
     }
     else {
@@ -29,19 +34,14 @@ export async function run(args?: string) {
     }
   }
 
-  const workspaceFolder = workspace.getWorkspaceFolder(URI.file(args));
+  workspaceFolder = workspace.getWorkspaceFolder(URI.file(args));
+  const serverOptions: ServerOptions = getConfig(Section.SourcePawn, "SourceServerOptions", workspaceFolder);
 
-  // Return if no server options were configured
-  const serverOptions: ServerOptions | undefined = workspace.getConfiguration(
-    "sourcepawn",
-    workspaceFolder
-  ).get("SourceServerOptions");
   if (serverOptions === undefined) {
-    window
-      .showInformationMessage(
-        "No server options to run the commands on were defined.",
-        "Open Settings"
-      )
+    window.showInformationMessage(
+      "No server details were defined.",
+      "Open Settings"
+    )
       .then((choice) => {
         if (choice === "Open Settings") {
           commands.executeCommand(
@@ -54,16 +54,12 @@ export async function run(args?: string) {
   }
 
   // Return if no server commands were defined to run
-  const serverCommands: string[] | undefined = workspace.getConfiguration(
-    "sourcepawn",
-    workspaceFolder
-  ).get("serverCommands");
+  const serverCommands: string[] = getConfig(Section.SourcePawn, "serverCommands", workspaceFolder);
   if (serverCommands.length == 0) {
-    window
-      .showInformationMessage(
-        "No commands have been specified to run.",
-        "Open Settings"
-      )
+    window.showInformationMessage(
+      "No commands have been specified to run.",
+      "Open Settings"
+    )
       .then((choice) => {
         if (choice === "Open Settings") {
           commands.executeCommand(
@@ -77,11 +73,10 @@ export async function run(args?: string) {
 
   // Return if the server options were not properly defined
   if (serverOptions["host"] == "" || serverOptions["password"] == "") {
-    window
-      .showErrorMessage(
-        "The host or the password was not set.",
-        "Open Settings"
-      )
+    window.showErrorMessage(
+      "The host or the password were not set.",
+      "Open Settings"
+    )
       .then((choice) => {
         if (choice === "Open Settings") {
           commands.executeCommand(
