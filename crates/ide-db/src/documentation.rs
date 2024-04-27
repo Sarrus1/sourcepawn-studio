@@ -25,7 +25,16 @@ impl Documentation {
         let mut pragma = None;
         let mut docs = Vec::new();
         match TSKind::from(&node) {
-            TSKind::preproc_define | TSKind::enum_entry => {
+            TSKind::preproc_define | TSKind::enum_entry | TSKind::variable_declaration => {
+                if let Some(parent) = node.parent() {
+                    if matches!(
+                        TSKind::from(parent),
+                        TSKind::global_variable_declaration
+                            | TSKind::variable_declaration_statement
+                    ) {
+                        node = parent;
+                    }
+                }
                 if let Some(prev_node) = node.prev_sibling() {
                     if TSKind::from(prev_node) == TSKind::preproc_pragma {
                         pragma = Some(

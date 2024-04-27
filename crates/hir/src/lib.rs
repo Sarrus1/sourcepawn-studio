@@ -655,6 +655,17 @@ impl Property {
             res.push(def);
         }
 
+        match self.id.lookup(db.upcast()).container {
+            ItemContainerId::MethodmapId(it) => {
+                res.push(Methodmap::from(it).into());
+            }
+            ItemContainerId::FileId(_)
+            | ItemContainerId::EnumStructId(_)
+            | ItemContainerId::EnumId(_)
+            | ItemContainerId::TypesetId(_)
+            | ItemContainerId::FuncenumId(_) => (),
+        }
+
         res
     }
 }
