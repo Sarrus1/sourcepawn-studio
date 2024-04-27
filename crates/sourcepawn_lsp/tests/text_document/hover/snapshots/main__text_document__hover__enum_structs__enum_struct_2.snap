@@ -6,7 +6,7 @@ expression: "hover(r#\"\n%! main.sp\n/**\n * The Foo enum struct.\n */\n#pragma 
 {
   "contents": {
     "kind": "markdown",
-    "value": "```sourcepawn\nenum struct Foo\n```\n\n---\n\n**DEPRECATED**: Use Bar instead. The Foo enum struct."
+    "value": "```sourcepawn\nenum struct Foo\n```\n\n---\n\n**DEPRECATED**: Use Bar instead.\n\nThe Foo enum struct."
   },
   "range": {
     "start": {
