@@ -1,0 +1,22 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/hover/enum_structs.rs
+assertion_line: 6
+expression: "hover(r#\"\n%! main.sp\n/**\n * The Foo enum struct.\n */\nenum struct Foo {}\n             |\n             ^\n\"#)"
+---
+{
+  "contents": {
+    "kind": "markdown",
+    "value": "```sourcepawn\nenum struct Foo\n```\n\n---\n\nThe Foo enum struct."
+  },
+  "range": {
+    "start": {
+      "line": 3,
+      "character": 12
+    },
+    "end": {
+      "line": 3,
+      "character": 15
+    }
+  },
+  "actions": []
+}

@@ -1,0 +1,48 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/hover/methodmaps.rs
+assertion_line: 55
+expression: "hover(r#\"\n%! main.sp\nmethodmap Foo {\n    /**\n     * The Foo method.\n     */\n    public void foo() {}\n                 |\n                 ^\n}\n\"#)"
+---
+{
+  "contents": {
+    "kind": "markdown",
+    "value": "```sourcepawn\nFoo\npublic void foo()\n```\n\n---\n\nThe foo method."
+  },
+  "range": {
+    "start": {
+      "line": 4,
+      "character": 16
+    },
+    "end": {
+      "line": 4,
+      "character": 19
+    }
+  },
+  "actions": [
+    {
+      "title": "Go to ",
+      "commands": [
+        {
+          "title": "Foo",
+          "command": "sourcepawn-vscode.gotoLocation",
+          "arguments": [
+            {
+              "uri": "file:///main.sp",
+              "range": {
+                "start": {
+                  "line": 0,
+                  "character": 10
+                },
+                "end": {
+                  "line": 0,
+                  "character": 13
+                }
+              }
+            }
+          ],
+          "tooltip": ""
+        }
+      ]
+    }
+  ]
+}

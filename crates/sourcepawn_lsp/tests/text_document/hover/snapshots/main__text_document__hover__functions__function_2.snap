@@ -1,0 +1,22 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/hover/functions.rs
+assertion_line: 21
+expression: "hover(r#\"\n%! main.sp\n/**\n * The foo function.\n */\n#pragma deprecated Use bar instead.\nvoid foo(){}\n      |\n      ^\n\"#)"
+---
+{
+  "contents": {
+    "kind": "markdown",
+    "value": "```sourcepawn\nvoid foo()\n```\n\n---\n\n**DEPRECATED**: Use bar instead.\n\nThe foo function."
+  },
+  "range": {
+    "start": {
+      "line": 4,
+      "character": 5
+    },
+    "end": {
+      "line": 4,
+      "character": 8
+    }
+  },
+  "actions": []
+}

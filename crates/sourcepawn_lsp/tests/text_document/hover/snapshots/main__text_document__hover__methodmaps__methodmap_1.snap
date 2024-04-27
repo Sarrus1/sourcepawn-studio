@@ -1,0 +1,22 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/hover/methodmaps.rs
+assertion_line: 6
+expression: "hover(r#\"\n%! main.sp\n/**\n * The Foo methodmap.\n */\nmethodmap Foo {}\n           |\n           ^\n\"#)"
+---
+{
+  "contents": {
+    "kind": "markdown",
+    "value": "```sourcepawn\nmethodmap Foo\n```\n\n---\n\nThe Foo methodmap."
+  },
+  "range": {
+    "start": {
+      "line": 3,
+      "character": 10
+    },
+    "end": {
+      "line": 3,
+      "character": 13
+    }
+  },
+  "actions": []
+}
