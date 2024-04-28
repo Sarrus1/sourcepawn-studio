@@ -413,6 +413,16 @@ impl DefWithBody {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FunctionType {
+    Function,
+    Method,
+    Getter,
+    Setter,
+    Constructor,
+    Destructor,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Function {
     pub(crate) id: FunctionId,
 }
@@ -517,6 +527,30 @@ impl Function {
         }
 
         buf.to_string().into()
+    }
+
+    pub fn kind(self, db: &dyn HirDatabase) -> FunctionType {
+        let item = self.id.lookup(db.upcast());
+        match item.container {
+            ItemContainerId::MethodmapId(container) => {
+                let method_map = db.methodmap_data(container);
+                if let Some(constructor_id) = method_map.constructor() {
+                    if constructor_id == self.id {
+                        return FunctionType::Constructor;
+                    }
+                }
+                if let Some(destructor_id) = method_map.destructor() {
+                    if destructor_id == self.id {
+                        return FunctionType::Destructor;
+                    }
+                }
+                FunctionType::Method
+            }
+
+            ItemContainerId::EnumStructId(_) => FunctionType::Method,
+            ItemContainerId::FileId(_) => FunctionType::Function,
+            _ => unreachable!("unexpected container for a function"),
+        }
     }
 }
 

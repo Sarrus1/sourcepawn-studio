@@ -9,7 +9,7 @@ use base_db::{
     SourceDatabaseStorage, Upcast,
 };
 use fxhash::FxHashMap;
-use hir::db::HirDatabase;
+use hir::{db::HirDatabase, FunctionType};
 use hir_def::DefDatabase;
 use salsa::{Cancelled, Durability};
 use vfs::FileId;
@@ -168,4 +168,34 @@ impl salsa::ParallelDatabase for RootDatabase {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum SymbolKind {
     Macro,
+    Function,
+    Constructor,
+    Destructor,
+    Typedef,
+    Typeset,
+    Functag,
+    Funcenum,
+    Method,
+    EnumStruct,
+    Field,
+    Methodmap,
+    Property,
+    Struct,
+    Enum,
+    Variant,
+    Global,
+    Local,
+}
+
+impl From<FunctionType> for SymbolKind {
+    fn from(ft: FunctionType) -> Self {
+        match ft {
+            FunctionType::Function => SymbolKind::Function,
+            FunctionType::Constructor => SymbolKind::Constructor,
+            FunctionType::Method => SymbolKind::Method,
+            FunctionType::Getter => SymbolKind::Method,
+            FunctionType::Setter => SymbolKind::Method,
+            FunctionType::Destructor => SymbolKind::Destructor,
+        }
+    }
 }

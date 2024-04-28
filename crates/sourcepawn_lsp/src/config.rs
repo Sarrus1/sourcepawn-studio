@@ -252,6 +252,20 @@ impl Config {
         )
     }
 
+    pub fn completion_label_details_support(&self) -> bool {
+        try_!(self
+            .caps
+            .text_document
+            .as_ref()?
+            .completion
+            .as_ref()?
+            .completion_item
+            .as_ref()?
+            .label_details_support
+            .as_ref()?)
+        .is_some()
+    }
+
     pub fn location_link(&self) -> bool {
         try_or_def!(self.caps.text_document.as_ref()?.definition?.link_support?)
     }

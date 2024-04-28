@@ -108,6 +108,7 @@ fn semantic_token_type_and_modifiers(
     let type_ = match highlight.tag {
         HlTag::Symbol(symbol) => match symbol {
             SymbolKind::Macro => semantic_tokens::MACRO,
+            _ => todo!(),
         },
         HlTag::None => semantic_tokens::GENERIC,
     };
@@ -172,6 +173,41 @@ pub(crate) fn location(
     let url = url(snap, frange.file_id);
     let loc = lsp_types::Location::new(url, frange.range);
     Ok(loc)
+}
+
+pub(crate) fn completion_item(
+    snap: &GlobalStateSnapshot,
+    item: ide::CompletionItem,
+) -> lsp_types::CompletionItem {
+    lsp_types::CompletionItem {
+        label: item.label.to_string(),
+        kind: Some(completion_item_kind(item.kind)),
+        ..Default::default()
+    }
+}
+
+pub(crate) fn completion_item_kind(kind: SymbolKind) -> lsp_types::CompletionItemKind {
+    use lsp_types::CompletionItemKind as CK;
+    match kind {
+        SymbolKind::Function => CK::FUNCTION,
+        SymbolKind::Constructor => CK::CONSTRUCTOR,
+        SymbolKind::Destructor => CK::CONSTRUCTOR,
+        SymbolKind::Struct => CK::STRUCT,
+        SymbolKind::Enum => CK::ENUM,
+        SymbolKind::Variant => CK::ENUM_MEMBER,
+        SymbolKind::Macro => CK::CONSTANT,
+        SymbolKind::Local => CK::VARIABLE,
+        SymbolKind::Field => CK::FIELD,
+        SymbolKind::Method => CK::METHOD,
+        SymbolKind::Typedef => CK::INTERFACE,
+        SymbolKind::Typeset => CK::INTERFACE,
+        SymbolKind::Functag => CK::INTERFACE,
+        SymbolKind::Funcenum => CK::INTERFACE,
+        SymbolKind::EnumStruct => CK::STRUCT,
+        SymbolKind::Methodmap => CK::CLASS,
+        SymbolKind::Property => CK::PROPERTY,
+        SymbolKind::Global => CK::VARIABLE,
+    }
 }
 
 pub(crate) mod command {

@@ -1,8 +1,9 @@
 use ide::WideEncoding;
 use lsp_types::{
-    ClientCapabilities, HoverProviderCapability, MarkupKind, OneOf, PositionEncodingKind,
-    SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions, ServerCapabilities,
-    TextDocumentSyncCapability, TextDocumentSyncKind,
+    ClientCapabilities, CompletionOptions, CompletionOptionsCompletionItem,
+    HoverProviderCapability, MarkupKind, OneOf, PositionEncodingKind, SemanticTokensFullOptions,
+    SemanticTokensLegend, SemanticTokensOptions, ServerCapabilities, TextDocumentSyncCapability,
+    TextDocumentSyncKind, WorkDoneProgressOptions,
 };
 
 use crate::{
@@ -39,8 +40,9 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
             }
             .into(),
         ),
-        /*
         completion_provider: Some(CompletionOptions {
+            // resolve_provider: completions_resolve_provider(config.caps()),
+            resolve_provider: None,
             trigger_characters: Some(vec![
                 "<".to_string(),
                 '"'.to_string(),
@@ -53,13 +55,13 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
                 "$".to_string(),
                 "*".to_string(),
             ]),
-            resolve_provider: Some(true),
-            completion_item: Some(CompletionOptionsCompletionItem {
-                label_details_support: Some(true),
-            }),
-            ..Default::default()
+            all_commit_characters: None,
+            completion_item: completion_item(config),
+            work_done_progress_options: WorkDoneProgressOptions {
+                work_done_progress: None,
+            },
         }),
-        hover_provider: Some(HoverProviderCapability::Simple(true)),
+        /*
         signature_help_provider: Some(SignatureHelpOptions {
             trigger_characters: Some(vec![",".to_string(), "(".to_string()]),
             retrigger_characters: Some(vec![",".to_string(), "(".to_string()]),
@@ -139,6 +141,40 @@ impl ClientCapabilitiesExt for ClientCapabilities {
             .and_then(|cap| cap.dynamic_registration)
             == Some(true)
     }
+}
+
+fn completion_item(config: &Config) -> Option<CompletionOptionsCompletionItem> {
+    Some(CompletionOptionsCompletionItem {
+        label_details_support: Some(config.completion_label_details_support()),
+    })
+}
+
+fn completions_resolve_provider(client_caps: &ClientCapabilities) -> Option<bool> {
+    if completion_item_edit_resolve(client_caps) {
+        Some(true)
+    } else {
+        tracing::info!("No `additionalTextEdits` completion resolve capability was found in the client capabilities, autoimport completion is disabled");
+        None
+    }
+}
+
+/// Parses client capabilities and returns all completion resolve capabilities rust-analyzer supports.
+pub(crate) fn completion_item_edit_resolve(caps: &ClientCapabilities) -> bool {
+    (|| {
+        Some(
+            caps.text_document
+                .as_ref()?
+                .completion
+                .as_ref()?
+                .completion_item
+                .as_ref()?
+                .resolve_support
+                .as_ref()?
+                .properties
+                .iter()
+                .any(|cap_string| cap_string.as_str() == "additionalTextEdits"),
+        )
+    })() == Some(true)
 }
 
 #[cfg(test)]

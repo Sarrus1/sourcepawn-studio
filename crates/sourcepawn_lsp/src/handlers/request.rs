@@ -19,6 +19,26 @@ use crate::{
     lsp::{self, from_proto, to_proto},
 };
 
+pub(crate) fn handle_completion(
+    snap: GlobalStateSnapshot,
+    params: lsp_types::CompletionParams,
+) -> anyhow::Result<Option<lsp_types::CompletionResponse>> {
+    let position = from_proto::file_position(&snap, params.text_document_position.clone())?;
+    let trigger_character = params
+        .context
+        .and_then(|it| it.trigger_character.and_then(|it| it.chars().next()));
+    if let Some(completions) = snap.analysis.completions(position, trigger_character)? {
+        return Ok(Some(lsp_types::CompletionResponse::Array(
+            completions
+                .into_iter()
+                .map(|item| to_proto::completion_item(&snap, item))
+                .collect(),
+        )));
+    }
+
+    Ok(None)
+}
+
 pub(crate) fn handle_goto_definition(
     snap: GlobalStateSnapshot,
     params: lsp_types::GotoDefinitionParams,

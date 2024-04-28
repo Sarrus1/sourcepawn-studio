@@ -8,6 +8,7 @@ use hir_def::{
     resolver::{global_resolver, ValueNs},
     FileDefId, FunctionId, InFile, Name, NodePtr, PropertyItem,
 };
+use itertools::Itertools;
 use syntax::TSKind;
 use vfs::FileId;
 
@@ -528,6 +529,15 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
 
     pub fn to_file_def(&self, file_id: FileId) -> File {
         self.imp.file_to_def(file_id)
+    }
+
+    pub fn defs_in_scope(&self, file_id: FileId) -> Vec<DefResolution> {
+        let resolver = global_resolver(self.db, file_id);
+        resolver
+            .available_defs()
+            .into_iter()
+            .flat_map(DefResolution::try_from)
+            .collect_vec()
     }
 }
 

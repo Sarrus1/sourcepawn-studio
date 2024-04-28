@@ -331,11 +331,21 @@ impl MethodmapData {
     }
 
     pub fn constructor(&self) -> Option<FunctionId> {
+        // TODO: O(n), cache this?
         self.items.iter().find_map(|(_, item)| match item {
             MethodmapItemData::Constructor(id) => Some(*id),
             MethodmapItemData::Method(_)
             | MethodmapItemData::Property(_)
             | MethodmapItemData::Destructor(_) => None,
+        })
+    }
+
+    pub fn destructor(&self) -> Option<FunctionId> {
+        self.items.iter().find_map(|(_, item)| match item {
+            MethodmapItemData::Destructor(id) => Some(*id),
+            MethodmapItemData::Method(_)
+            | MethodmapItemData::Property(_)
+            | MethodmapItemData::Constructor(_) => None,
         })
     }
 
