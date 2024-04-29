@@ -127,12 +127,12 @@ class Doctor {
         break;
       case DiagnosticState.Error:
         diagnostics.push(
-          `❌ "SourcePawnLanguageServer.spcompPath" is not executable (value: ${this.spCompPath}).`
+          `❌ "SourcePawnLanguageServer.compiler.path" is not executable (value: ${this.spCompPath}).`
         );
         break;
       case DiagnosticState.None:
         diagnostics.push(
-          '🩺 Checking if "SourcePawnLanguageServer.spcompPath" is executable.'
+          '🩺 Checking if "SourcePawnLanguageServer.compiler.path" is executable.'
         );
         break;
     }
@@ -141,7 +141,7 @@ class Doctor {
   }
 
   async checkSpComp() {
-    this.spCompPath = getConfig(Section.LSP, "spcompPath");
+    this.spCompPath = getConfig(Section.LSP, "compiler.path");
     if (!this.spCompPath) {
       this.isSPCompSet = DiagnosticState.Error;
       this.isSPCompInstalled = DiagnosticState.Error;

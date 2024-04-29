@@ -31,7 +31,7 @@ export async function run(args: any) {
       return getSourceModVersion(progress, token);
     }
   );
-  const spCompPath: string = getConfig(Section.LSP, "spcompPath") || "";
+  const spCompPath: string = getConfig(Section.LSP, "compiler.path") || "";
   const smDir = join(outputDir, "addons/sourcemod/scripting/include");
   let spComp: string;
   if (Platform === "win32") {

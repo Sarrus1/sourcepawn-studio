@@ -49,11 +49,11 @@ export async function run(args: URI): Promise<void> {
   }
 
   // Return if compiler not found
-  const spcomp: string = getConfig(Section.LSP, "spcompPath", workspaceFolder);
+  const spcomp: string = getConfig(Section.LSP, "compiler.path", workspaceFolder);
   if (!spcomp) {
     window
       .showErrorMessage(
-        "Sourcemod compiler not found in the project. You need to set the spCompPath setting to be able to compile a plugin.",
+        "Sourcemod compiler not found in the project. You need to set the 'compiler.path' setting to be able to compile a plugin.",
         "Open Settings"
       )
       .then((choice) => {

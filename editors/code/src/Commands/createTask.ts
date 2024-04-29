@@ -31,11 +31,11 @@ export function run(rootpath?: string) {
       });
   }
 
-  let spcompPath: string = getConfig(Section.LSP, "spcompPath");
+  let spcompPath: string = getConfig(Section.LSP, "compiler.path");
   if (!spcompPath) {
     window
       .showErrorMessage(
-        "Sourcemod compiler not found in the project. You need to set spcompPath for tasks generation to work.",
+        "Sourcemod compiler not found in the project. You need to set 'compiler.path' for tasks generation to work.",
         "Open Settings"
       )
       .then((choice) => {

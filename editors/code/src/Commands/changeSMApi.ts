@@ -43,7 +43,7 @@ export async function run(args: any) {
       chosenAPI.includeDirectories
     );
     await getConfig(Section.LSP).update(
-      "spcompPath",
+      "compiler.path",
       chosenAPI.spcompPath
     );
     await getConfig(Section.SourcePawn).update(
