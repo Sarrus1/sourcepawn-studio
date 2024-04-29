@@ -72,6 +72,15 @@ impl ExprScopes {
     pub fn first_scope(&self) -> Option<ScopeId> {
         self.scopes.iter().next().map(|(id, _)| id)
     }
+
+    pub fn entries(&self, scope: ScopeId) -> impl Iterator<Item = (&Name, &ScopeEntry)> + '_ {
+        self.scope_chain(Some(scope)).flat_map(move |scope| {
+            self.scopes[scope]
+                .entries
+                .iter()
+                .map(move |(name, entry)| (name, entry))
+        })
+    }
 }
 
 impl ExprScopes {

@@ -65,7 +65,11 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         self.db.preprocessed_text(file_id)
     }
 
-    fn find_name_def(&self, file_id: FileId, node: &tree_sitter::Node) -> Option<DefResolution> {
+    pub fn find_name_def(
+        &self,
+        file_id: FileId,
+        node: &tree_sitter::Node,
+    ) -> Option<DefResolution> {
         if !is_name_node(node) {
             return None;
         }
@@ -538,6 +542,27 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             .into_iter()
             .flat_map(DefResolution::try_from)
             .collect_vec()
+    }
+
+    pub fn defs_in_function_scope(
+        &self,
+        file_id: FileId,
+        def: FunctionId,
+        point: tree_sitter::Point,
+        body_node: tree_sitter::Node,
+    ) -> Vec<DefResolution> {
+        let analyzer = SourceAnalyzer::new_for_body_no_infer(
+            self.db,
+            hir_def::DefWithBodyId::FunctionId(def),
+            InFile::new(file_id, body_node),
+            Some(point),
+        );
+        analyzer
+            .resolver
+            .available_defs()
+            .into_iter()
+            .flat_map(DefResolution::try_from)
+            .collect()
     }
 }
 

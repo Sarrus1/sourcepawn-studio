@@ -3,13 +3,14 @@ use std::{fmt, sync::Arc};
 use crate::{
     body::scope::{ExprScopes, ScopeId},
     db::DefMap,
-    hir::ExprId,
+    hir::{Expr, ExprId},
     item_tree::Name,
     AdtId, DefDatabase, DefWithBodyId, EnumId, EnumStructId, FileDefId, FuncenumId, FunctagId,
     FunctionId, GlobalId, InFile, ItemContainerId, Lookup, MacroId, MethodmapId, PropertyId,
     TypedefId, TypesetId, VariantId,
 };
 use itertools::Itertools;
+use la_arena::Idx;
 use smallvec::SmallVec;
 use vfs::FileId;
 
@@ -38,6 +39,12 @@ impl ExprScope {
             .cloned()
             .map(|entry| self.expr_scopes.entry(entry))
             .cloned()
+    }
+
+    pub fn entries(&self) -> impl Iterator<Item = (&Name, &ExprId)> + '_ {
+        self.expr_scopes
+            .entries(self.scope_id)
+            .map(|(name, entry)| (name, self.expr_scopes.entry(*entry)))
     }
 }
 
@@ -222,20 +229,21 @@ impl Resolver {
 
     pub fn available_defs(&self) -> Vec<ValueNs> {
         self.scopes()
-            .flat_map(|scope| {
-                if let Scope::Global(def_maps) = scope {
-                    def_maps
-                        .iter()
-                        .flat_map(|def_map| {
-                            def_map
-                                .declarations()
-                                .iter()
-                                .flat_map(|it| to_valuens(*it, def_map.file_id()))
-                        })
-                        .collect_vec()
-                } else {
-                    vec![]
-                }
+            .flat_map(|scope| match scope {
+                Scope::Global(def_maps) => def_maps
+                    .iter()
+                    .flat_map(|def_map| {
+                        def_map
+                            .declarations()
+                            .iter()
+                            .flat_map(|it| to_valuens(*it, def_map.file_id()))
+                    })
+                    .collect_vec(),
+                Scope::Expr(it) => it
+                    .entries()
+                    .map(|(name, entry)| ValueNs::LocalId((it.owner, *entry)))
+                    .collect_vec(),
+                Scope::This(_) => todo!(),
             })
             .collect()
     }
@@ -246,39 +254,20 @@ fn to_valuens(entry: FileDefId, file_id: FileId) -> Option<ValueNs> {
         (FileDefId::FunctionId(it), file_id) => {
             let mut fn_ids: SmallVec<[InFile<FunctionId>; 1]> = SmallVec::new();
             fn_ids.push(InFile::new(file_id, it));
-            return Some(ValueNs::FunctionId(fn_ids));
+            ValueNs::FunctionId(fn_ids)
         }
-        (FileDefId::MacroId(it), file_id) => {
-            return Some(ValueNs::MacroId(InFile::new(file_id, it)));
-        }
-        (FileDefId::GlobalId(it), file_id) => {
-            return Some(ValueNs::GlobalId(InFile::new(file_id, it)));
-        }
-        (FileDefId::EnumStructId(it), file_id) => {
-            return Some(ValueNs::EnumStructId(InFile::new(file_id, it)));
-        }
-        (FileDefId::MethodmapId(it), file_id) => {
-            return Some(ValueNs::MethodmapId(InFile::new(file_id, it)));
-        }
-        (FileDefId::EnumId(it), file_id) => {
-            return Some(ValueNs::EnumId(InFile::new(file_id, it)));
-        }
-        (FileDefId::VariantId(it), file_id) => {
-            return Some(ValueNs::VariantId(InFile::new(file_id, it)));
-        }
-        (FileDefId::TypedefId(it), file_id) => {
-            return Some(ValueNs::TypedefId(InFile::new(file_id, it)));
-        }
-        (FileDefId::TypesetId(it), file_id) => {
-            return Some(ValueNs::TypesetId(InFile::new(file_id, it)));
-        }
-        (FileDefId::FunctagId(it), file_id) => {
-            return Some(ValueNs::FunctagId(InFile::new(file_id, it)));
-        }
-        (FileDefId::FuncenumId(it), file_id) => {
-            return Some(ValueNs::FuncenumId(InFile::new(file_id, it)));
-        }
+        (FileDefId::MacroId(it), file_id) => ValueNs::MacroId(InFile::new(file_id, it)),
+        (FileDefId::GlobalId(it), file_id) => ValueNs::GlobalId(InFile::new(file_id, it)),
+        (FileDefId::EnumStructId(it), file_id) => ValueNs::EnumStructId(InFile::new(file_id, it)),
+        (FileDefId::MethodmapId(it), file_id) => ValueNs::MethodmapId(InFile::new(file_id, it)),
+        (FileDefId::EnumId(it), file_id) => ValueNs::EnumId(InFile::new(file_id, it)),
+        (FileDefId::VariantId(it), file_id) => ValueNs::VariantId(InFile::new(file_id, it)),
+        (FileDefId::TypedefId(it), file_id) => ValueNs::TypedefId(InFile::new(file_id, it)),
+        (FileDefId::TypesetId(it), file_id) => ValueNs::TypesetId(InFile::new(file_id, it)),
+        (FileDefId::FunctagId(it), file_id) => ValueNs::FunctagId(InFile::new(file_id, it)),
+        (FileDefId::FuncenumId(it), file_id) => ValueNs::FuncenumId(InFile::new(file_id, it)),
     }
+    .into()
 }
 
 pub struct UpdateGuard(usize);
@@ -425,10 +414,13 @@ pub fn resolver_for_scope(
 }
 
 fn file_def_maps(db: &dyn DefDatabase, file_id: FileId) -> Vec<Arc<DefMap>> {
-    let mut def_maps = vec![db.file_def_map(file_id)];
-    if let Some(subgraph) = db.projet_subgraph(file_id) {
-        def_maps.extend(subgraph.nodes.iter().map(|it| db.file_def_map(it.file_id)));
-    }
-
-    def_maps
+    db.projet_subgraph(file_id)
+        .map(|subgraph| {
+            subgraph
+                .nodes
+                .iter()
+                .map(|it| db.file_def_map(it.file_id))
+                .collect()
+        })
+        .unwrap_or_default()
 }
