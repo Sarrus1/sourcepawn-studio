@@ -164,13 +164,13 @@ export async function run(args: URI): Promise<void> {
 
       // Run upload command if chosen
       if (getConfig(Section.SourcePawn, "uploadAfterSuccessfulCompile", workspaceFolder)) {
-        await uploadToServerCommand(fileToCompilePath);
-      }
-
-      // Run server commands if chosen
-      const commandsOption: string = getConfig(Section.SourcePawn, "runServerCommands", workspaceFolder);
-      if (commandsOption === "afterCompile") {
-        await runServerCommands(fileToCompilePath);
+        await uploadToServerCommand(fileToCompilePath).then(async () => {
+          // Run server commands if chosen
+          const commandsOption: string = getConfig(Section.SourcePawn, "runServerCommands", workspaceFolder);
+          if (commandsOption === "afterCompile") {
+            await runServerCommands(fileToCompilePath);
+          }
+        });
       }
     });
   } catch (error) {

@@ -1,30 +1,26 @@
-﻿import { join } from "path";
-
+﻿import path from "path";
 import { run as runServerCommands } from "./runServerCommands";
 import { getMainCompilationFile } from "../spUtils";
-import { WorkspaceFolder, commands, window, workspace } from "vscode";
+import { ProgressLocation, WorkspaceFolder, commands, window, workspace } from "vscode";
 import { lastActiveEditor } from "../spIndex";
 import { URI } from "vscode-uri";
 import { Section, getConfig } from "../configUtils";
-const FTPDeploy = require("ftp-deploy");
+import sftp from 'ssh2-sftp-client'
+import { glob } from "glob";
+import { Client } from 'basic-ftp'
+import * as fs from 'fs';
 
 export interface UploadOptions {
-  user: string;
+  sftp: boolean;
+  username: string;
   password: string;
   host: string;
   port: number;
-  localRoot: string;
   remoteRoot: string;
-  include: string[];
   exclude: string[];
-  deleteRemote: boolean;
-  forcePasv: boolean;
-  sftp: boolean;
-  isRootRelative: boolean;
 }
 
 export async function run(args?: string) {
-  const ftpDeploy = new FTPDeploy();
   let workspaceFolder: WorkspaceFolder;
   let fileToUpload: string;
 
@@ -61,7 +57,7 @@ export async function run(args?: string) {
   }
 
   // Return if upload settings are not properly configured
-  if (uploadOptions.user == "" || uploadOptions.host == "") {
+  if (uploadOptions.username == "" || uploadOptions.host == "") {
     window.showErrorMessage("Cannot upload - user or host empty.", "Open Settings")
       .then((choice) => {
         if (choice === "Open Settings") {
@@ -74,43 +70,117 @@ export async function run(args?: string) {
     return 2;
   }
 
-  // Override the "deleteRemote" setting for safety.
-  uploadOptions.deleteRemote = false;
+  const workspaceRoot = workspaceFolder.uri.fsPath;
 
-  // If specified, replace macro with main compilation file
-  uploadOptions.localRoot = uploadOptions.localRoot.replace("${mainPath}", await getMainCompilationFile())
-
-  if (uploadOptions.isRootRelative) {
-    // Concat the workspace with it's root if the path is relative.
-    if (workspaceFolder === undefined) {
-      window.showWarningMessage(
-        "No workspace or folder found, with isRootRelative is set to true.\nSet it to false, or open the file from a workspace."
-      );
-      return 1;
+  // Define the filter function to exclude user-defined files and directories
+  const filter = (itemPath: string): boolean => {
+    const relativePath = path.relative(workspaceRoot, itemPath);
+    for (const exclusion of uploadOptions.exclude) {
+      const globPattern = exclusion.endsWith('/') ? `${exclusion}**` : exclusion;
+      const matches = glob.sync(globPattern, { cwd: workspaceRoot, dot: true });
+      if (matches.includes(relativePath)) {
+        return false;
+      }
     }
-    const workspaceRoot = workspaceFolder.uri.fsPath;
-    uploadOptions.localRoot = join(workspaceRoot, uploadOptions.localRoot);
+
+    return true;
+  };
+
+  // Begin progress notification
+  await window.withProgress(
+    {
+      location: ProgressLocation.Notification,
+      cancellable: true,
+      title: "Uploading files..."
+    },
+    async (progress, token) => {
+      const client: sftp = new sftp();
+
+      // Handle cancellation
+      token.onCancellationRequested(() => {
+        window.showErrorMessage('The upload operation was cancelled.');
+        client.end();
+        return;
+      });
+
+      try {
+        // If sftp, use ssh2-sftp
+        if (uploadOptions.sftp) {
+
+          // Connect
+          await client.connect(uploadOptions);
+
+          // Get currently uploading file name to display it
+          client.on('upload', (info) => {
+            const fileName = path.basename(info.source);
+            progress.report({ message: ` ${fileName}` });
+          });
+
+          // Create promise
+          await client.uploadDir(workspaceRoot, "/tf/dddd", { filter });
+
+          // Show success message
+          window.showInformationMessage('Files uploaded successfully!');
+        }
+
+        // else, use FTP-Deploy
+        else {
+          const ftp = new Client();
+
+          // Access the server
+          await ftp.access({
+            host: uploadOptions.host,
+            port: uploadOptions.port,
+            user: uploadOptions.username,
+            password: uploadOptions.password,
+          });
+
+          // We have to manually build the filters...
+          const uploadFiles = async (dirPath: string) => {
+            const files = await fs.promises.readdir(dirPath);
+            for (const file of files) {
+              const filePath = path.join(dirPath, file);
+              const stat = await fs.promises.stat(filePath);
+
+              if (stat.isDirectory()) {
+                if (filter(filePath)) {
+                  await ftp.ensureDir(path.join(uploadOptions.remoteRoot, path.relative(workspaceRoot, filePath)));
+                  await uploadFiles(filePath);
+                }
+              }
+              else if (stat.isFile()) {
+                if (filter(filePath)) {
+                  const remoteFilePath = path.join(uploadOptions.remoteRoot, path.relative(workspaceRoot, filePath));
+                  progress.report({ message: ` ${file}` });
+                  await ftp.uploadFrom(filePath, remoteFilePath);
+                }
+              }
+            }
+          };
+
+          await uploadFiles(workspaceRoot);
+          window.showInformationMessage('Files uploaded successfully!');
+          ftp.close();
+
+        }
+      } catch (error) {
+        if (token.isCancellationRequested) {
+          return 0;
+        }
+        window.showErrorMessage('Failed to upload files! ' + error);
+        client.end();
+        return 1;
+      } finally {
+        client.end();
+      }
+
+      return 0;
+    }
+  );
+
+  if (getConfig(Section.SourcePawn, "runServerCommands", workspaceFolder) === "afterUpload") {
+    await runServerCommands(fileToUpload);
   }
 
-  // Copy the config object to avoid https://github.com/microsoft/vscode/issues/80976
-  const ftpConfig = { ...uploadOptions };
-  // Delete that setting to avoid problems with the ftp/sftp library
-  delete ftpConfig.isRootRelative;
-
-  console.log("Starting the upload");
-  console.log(ftpConfig);
-  ftpDeploy
-    .deploy(ftpConfig)
-    .then(() => {
-      console.log("Upload is finished.");
-      const commandsOption: string = getConfig(Section.SourcePawn, "runServerCommands", workspaceFolder);
-      if (commandsOption === "afterUpload") {
-        runServerCommands(fileToUpload);
-      }
-    })
-    .catch(err => {
-      // TODO: inform the user
-      return console.error(err);
-    });
   return 0;
 }

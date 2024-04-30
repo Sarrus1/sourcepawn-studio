@@ -1,4 +1,4 @@
-﻿import { workspace as workspace, window, commands, WorkspaceFolder } from "vscode";
+﻿import { workspace as workspace, window, commands, WorkspaceFolder, ProgressLocation } from "vscode";
 import Rcon from "rcon-srcds";
 import { EncodingOptions } from "rcon-srcds/dist/packet";
 import { getMainCompilationFile, getPluginName } from "../spUtils";
@@ -72,9 +72,9 @@ export async function run(args?: string) {
   }
 
   // Return if the server options were not properly defined
-  if (serverOptions["host"] == "" || serverOptions["password"] == "") {
+  if (serverOptions.host == "") {
     window.showErrorMessage(
-      "The host or the password were not set.",
+      "The host was not set.",
       "Open Settings"
     )
       .then((choice) => {
@@ -96,18 +96,30 @@ export async function run(args?: string) {
     timeout: serverOptions["timeout"],
   });
 
-  // Fire the commands
-  try {
-    await server.authenticate(serverOptions["password"]);
-    serverCommands.forEach(async (command) => {
-      command = command.replace('${plugin}', getPluginName(args));
-      const runCommands = await server.execute(command);
-      console.log(runCommands);
-    });
-    return 0;
-  } catch (e) {
-    // TODO: inform the user
-    console.error(e);
-    return 2;
-  }
+  // Begin progress
+  window.withProgress(
+    {
+      title: "Executing commands...",
+      location: ProgressLocation.Notification,
+      cancellable: false,
+    },
+    async () => {
+      try {
+        // Attempt to connect
+        await server.authenticate(serverOptions["password"]);
+
+        // Run commands
+        for (const command of serverCommands) {
+          const modifiedCommand = command.replace('${plugin}', getPluginName(args));
+          server.execute(modifiedCommand);
+        }
+
+        window.showInformationMessage("Commands executed successfully!");
+        return 0;
+      } catch (error) {
+        window.showErrorMessage(`Failed to run commands! ${error}`);
+        return 1;
+      }
+    }
+  );
 }

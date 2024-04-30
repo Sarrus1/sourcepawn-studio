@@ -642,11 +642,13 @@
     ]
   },
   "dependencies": {
+    "@types/ssh2-sftp-client": "^9.0.3",
     "axios": "^1.4.0",
+    "basic-ftp": "^5.0.5",
     "decompress": "^4.2.1",
-    "ftp-deploy": "git+https://github.com/Sarrus1/ftp-deploy.git",
     "glob": "^7.2.0",
     "rcon-srcds": "^2.0.1",
+    "ssh2-sftp-client": "^10.0.3",
     "valve_kv_tools": "^0.3.0",
     "vscode-languageclient": "^8.1.0",
     "vscode-uri": "^3.0.3"
