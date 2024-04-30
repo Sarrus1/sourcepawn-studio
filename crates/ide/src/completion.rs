@@ -19,8 +19,7 @@ pub fn completions(
     let preprocessing_results = sema.preprocess_file(pos.file_id);
     let preprocessed_text = preprocessing_results.preprocessed_text();
 
-    let old_tree = sema.parse(pos.file_id);
-    let mut tree = sema.parse(pos.file_id);
+    let tree = sema.parse(pos.file_id);
 
     let point = lsp_position_to_ts_point(&pos.position);
     let token = "foo";
@@ -31,12 +30,12 @@ pub fn completions(
         &preprocessed_text[edit.old_end_byte..],
     ]
     .concat();
-    tree.edit(&edit);
+    // tree.edit(&edit);
     let mut parser = tree_sitter::Parser::new();
     parser
         .set_language(&tree_sitter_sourcepawn::language())
         .unwrap();
-    let new_tree = parser.parse(new_source_code.as_bytes(), Some(tree.tree()))?;
+    let new_tree = parser.parse(new_source_code.as_bytes(), None)?;
 
     let root_node = new_tree.root_node();
     // get the node before the cursor
@@ -78,12 +77,11 @@ pub fn completions(
             let name = tree
                 .root_node()
                 .descendant_for_byte_range(name.start_byte(), name.end_byte())?;
+            let container = name.parent()?;
             let def = sema.find_def(pos.file_id, &name)?;
-            eprintln!("hi");
             let DefResolution::Function(def) = def else {
                 return None;
             };
-            eprintln!("hello");
             let body_node = container.child_by_field_name("body")?;
             sema.defs_in_function_scope(pos.file_id, def.id(), point, body_node)
         }

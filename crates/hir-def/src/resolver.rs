@@ -3,14 +3,13 @@ use std::{fmt, sync::Arc};
 use crate::{
     body::scope::{ExprScopes, ScopeId},
     db::DefMap,
-    hir::{Expr, ExprId},
+    hir::ExprId,
     item_tree::Name,
     AdtId, DefDatabase, DefWithBodyId, EnumId, EnumStructId, FileDefId, FuncenumId, FunctagId,
     FunctionId, GlobalId, InFile, ItemContainerId, Lookup, MacroId, MethodmapId, PropertyId,
     TypedefId, TypesetId, VariantId,
 };
 use itertools::Itertools;
-use la_arena::Idx;
 use smallvec::SmallVec;
 use vfs::FileId;
 
@@ -75,10 +74,6 @@ impl Resolver {
     fn push_scope(mut self, scope: Scope) -> Resolver {
         self.scopes.push(scope);
         self
-    }
-
-    fn push_global_scope(self, def_maps: Vec<Arc<DefMap>>, _file_id: FileId) -> Self {
-        self.push_scope(Scope::Global(def_maps))
     }
 
     fn push_this_scope(self, adt_id: AdtId) -> Resolver {
@@ -241,7 +236,7 @@ impl Resolver {
                     .collect_vec(),
                 Scope::Expr(it) => it
                     .entries()
-                    .map(|(name, entry)| ValueNs::LocalId((it.owner, *entry)))
+                    .map(|(_, entry)| ValueNs::LocalId((it.owner, *entry)))
                     .collect_vec(),
                 Scope::This(_) => todo!(),
             })
@@ -402,12 +397,8 @@ pub fn resolver_for_scope(
     resolver.scopes.reserve(scope_chain.len());
 
     for scope in scope_chain.into_iter().rev() {
-        match scopes.file_id(scope) {
-            Some(file_id) => {
-                let def_maps = file_def_maps(db, file_id);
-                resolver = resolver.push_global_scope(def_maps, file_id);
-            }
-            None => resolver = resolver.push_expr_scope(owner, Arc::clone(&scopes), scope),
+        if scopes.file_id(scope).is_none() {
+            resolver = resolver.push_expr_scope(owner, Arc::clone(&scopes), scope);
         }
     }
     resolver
