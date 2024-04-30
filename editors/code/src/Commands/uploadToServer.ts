@@ -117,7 +117,7 @@ export async function run(args?: string) {
           });
 
           // Create promise
-          await client.uploadDir(workspaceRoot, "/tf/dddd", { filter });
+          await client.uploadDir(workspaceRoot, uploadOptions.remoteRoot, { filter });
 
           // Show success message
           window.showInformationMessage('Files uploaded successfully!');
