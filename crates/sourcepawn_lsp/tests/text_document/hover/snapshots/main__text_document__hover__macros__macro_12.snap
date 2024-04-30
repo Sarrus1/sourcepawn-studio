@@ -1,0 +1,22 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/hover/macros.rs
+assertion_line: 161
+expression: "hover(r#\"\n%! main.sp\n#pragma deprecated Use something else\n#define MAXPLAYERS      101  /**< Maximum number of players SourceMod supports */\nint foo = MAXPLAYERS;\n              |\n              ^\n\"#)"
+---
+{
+  "contents": {
+    "kind": "markdown",
+    "value": "```sourcepawn\n#define MAXPLAYERS      101  \n```\nExpands to:\n```sourcepawn\n101\n```\n\n---\n\n**DEPRECATED**: Use something else\n\nMaximum number of players SourceMod supports"
+  },
+  "range": {
+    "start": {
+      "line": 2,
+      "character": 10
+    },
+    "end": {
+      "line": 2,
+      "character": 20
+    }
+  },
+  "actions": []
+}

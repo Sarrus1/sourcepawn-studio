@@ -33,7 +33,7 @@ pub enum HoverDocFormat {
     PlainText,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HoverAction {
     // Runnable(Runnable),
     Implementation(FilePosition),
@@ -49,7 +49,7 @@ pub struct HoverGotoTypeData {
 
 impl HoverAction {
     fn goto_type_from_targets(db: &RootDatabase, targets: Vec<DefResolution>) -> Self {
-        let targets = targets
+        let mut targets = targets
             .into_iter()
             .filter_map(|def| {
                 let sema = Semantics::new(db);
@@ -75,7 +75,8 @@ impl HoverAction {
                     },
                 })
             })
-            .collect();
+            .collect_vec();
+        targets.dedup();
         HoverAction::GoToType(targets)
     }
 }
@@ -122,10 +123,11 @@ pub(crate) fn hover(
     let source_tree = sema.parse(file_id);
     let text = db.preprocessed_text(file_id);
     let render = render::render_def(db, def.clone())?;
-    let actions = [goto_type_action_for_def(db, def.clone())]
+    let mut actions = [goto_type_action_for_def(db, def.clone())]
         .into_iter()
         .flatten()
         .collect_vec();
+    actions.dedup();
     let def_node = def.source(db, &source_tree)?.value;
 
     let markup = match render {

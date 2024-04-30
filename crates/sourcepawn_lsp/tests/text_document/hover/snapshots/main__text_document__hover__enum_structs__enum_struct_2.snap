@@ -1,0 +1,22 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/hover/enum_structs.rs
+assertion_line: 21
+expression: "hover(r#\"\n%! main.sp\n/**\n * The Foo enum struct.\n */\n#pragma deprecated Use Bar instead.\nenum struct Foo {}\n             |\n             ^\n\"#)"
+---
+{
+  "contents": {
+    "kind": "markdown",
+    "value": "```sourcepawn\nenum struct Foo\n```\n\n---\n\n**DEPRECATED**: Use Bar instead.\n\nThe Foo enum struct."
+  },
+  "range": {
+    "start": {
+      "line": 4,
+      "character": 12
+    },
+    "end": {
+      "line": 4,
+      "character": 15
+    }
+  },
+  "actions": []
+}
