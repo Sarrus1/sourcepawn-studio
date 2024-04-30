@@ -101,7 +101,7 @@ impl Resolver {
             match scope {
                 Scope::Expr(scope) => {
                     if let Some(entry) = scope.resolve_name_in_scope(&name) {
-                        return Some(ValueNs::LocalId((scope.owner, entry)));
+                        return Some(ValueNs::LocalId((name.into(), scope.owner, entry)));
                     }
                 }
                 Scope::This(adt_id) => {
@@ -236,7 +236,7 @@ impl Resolver {
                     .collect_vec(),
                 Scope::Expr(it) => it
                     .entries()
-                    .map(|(_, entry)| ValueNs::LocalId((it.owner, *entry)))
+                    .map(|(name, entry)| ValueNs::LocalId((name.clone().into(), it.owner, *entry)))
                     .collect_vec(),
                 Scope::This(_) => todo!(),
             })
@@ -269,7 +269,7 @@ pub struct UpdateGuard(usize);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ValueNs {
-    LocalId((DefWithBodyId, ExprId)),
+    LocalId((Option<Name>, DefWithBodyId, ExprId)),
     GlobalId(InFile<GlobalId>),
     MacroId(InFile<MacroId>),
     FunctionId(SmallVec<[InFile<FunctionId>; 1]>),

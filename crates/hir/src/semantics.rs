@@ -107,10 +107,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 .field_to_def(src)
                 .map(Field::from)
                 .map(DefResolution::Field),
-            TSKind::parameter_declaration => self
-                .local_to_def(src)
-                .map(Local::from)
-                .map(DefResolution::Local),
+            TSKind::parameter_declaration => {
+                self.local_to_def(src).map(Local::from).map(|it| it.into())
+            }
             TSKind::variable_declaration | TSKind::old_variable_declaration => {
                 let grand_parent = parent.parent()?;
                 match TSKind::from(&grand_parent) {
@@ -120,10 +119,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                         .map(Global::from)
                         .map(DefResolution::Global),
                     TSKind::variable_declaration_statement
-                    | TSKind::old_variable_declaration_statement => self
-                        .local_to_def(src)
-                        .map(Local::from)
-                        .map(DefResolution::Local),
+                    | TSKind::old_variable_declaration_statement => {
+                        self.local_to_def(src).map(Local::from).map(|it| it.into())
+                    }
                     _ => unreachable!(),
                 }
             }
@@ -442,7 +440,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
 
                 if let Some(arg) = analyzer.resolve_named_arg(self.db, &node, &parent) {
                     // Only return if we find an argument. If we don't we were trying to resolve the value.
-                    return Some(DefResolution::Local(arg));
+                    return Some(arg.into());
                 }
             }
             _ => {}

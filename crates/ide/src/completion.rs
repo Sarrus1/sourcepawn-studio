@@ -106,7 +106,16 @@ pub fn completions(
                 DefResolution::Funcenum(it) => (it.name(db).into(), SymbolKind::Funcenum),
                 DefResolution::Field(it) => (it.name(db).into(), SymbolKind::Field),
                 DefResolution::Global(it) => (it.name(db).into(), SymbolKind::Global),
-                DefResolution::Local(it) => (it.name(db), SymbolKind::Local),
+                DefResolution::Local((name, it)) => (
+                    {
+                        if let Some(name) = name {
+                            Some(name)
+                        } else {
+                            it.name(db)
+                        }
+                    },
+                    SymbolKind::Local,
+                ),
                 DefResolution::File(_) => unreachable!(),
             };
             let label = out.0?.to_smolstr();

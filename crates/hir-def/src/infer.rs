@@ -248,10 +248,12 @@ impl InferenceContext<'_> {
                 let Expr::Ident(name_str) = self.body[*name].clone() else {
                     return None;
                 };
-                if let Some(ValueNs::LocalId(local)) =
+                if let Some(ValueNs::LocalId((_, local, idx))) =
                     resolver.resolve_ident(name_str.to_string().as_str())
                 {
-                    self.result.named_arg_resolutions.insert(*name, local);
+                    self.result
+                        .named_arg_resolutions
+                        .insert(*name, (local, idx));
                 } else {
                     self.result
                         .diagnostics
@@ -327,7 +329,7 @@ impl InferenceContext<'_> {
                         let item_tree = self.db.file_item_tree(it.file_id);
                         item_tree[it.value.lookup(self.db).value].type_ref.clone()
                     }
-                    ValueNs::LocalId((_, expr_id)) => {
+                    ValueNs::LocalId((_, _, expr_id)) => {
                         let Expr::Binding {
                             ident_id: _,
                             type_ref,

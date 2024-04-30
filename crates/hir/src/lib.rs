@@ -37,7 +37,7 @@ pub enum DefResolution {
     Funcenum(Funcenum),
     Field(Field),
     Global(Global),
-    Local(Local),
+    Local((Option<Name>, Local)),
     File(File),
 }
 
@@ -49,7 +49,6 @@ impl_from!(
     EnumStruct,
     Field,
     Global,
-    Local,
     Typedef,
     Typeset,
     Functag,
@@ -57,13 +56,21 @@ impl_from!(
     File for DefResolution
 );
 
+impl From<Local> for DefResolution {
+    fn from(local: Local) -> Self {
+        DefResolution::Local((None, local))
+    }
+}
+
 impl DefResolution {
     fn try_from(value: ValueNs) -> Option<Self> {
         match value {
             ValueNs::FunctionId(ids) => {
                 DefResolution::Function(Function::from(ids.first()?.value)).into()
             }
-            ValueNs::LocalId(expr) => DefResolution::Local(Local::from(expr)).into(),
+            ValueNs::LocalId((name, id, expr)) => {
+                DefResolution::Local((name, Local::from((id, expr)))).into()
+            }
             ValueNs::MacroId(id) => DefResolution::Macro(Macro::from(id.value)).into(),
             ValueNs::GlobalId(id) => DefResolution::Global(Global::from(id.value)).into(),
             ValueNs::EnumStructId(id) => {
@@ -100,7 +107,7 @@ impl<'tree> HasSource<'tree> for DefResolution {
             DefResolution::Funcenum(funcenum) => funcenum.source(db, tree),
             DefResolution::Field(field) => field.source(db, tree),
             DefResolution::Global(global) => global.source(db, tree),
-            DefResolution::Local(local) => local.source(db, tree)?.source(db, tree),
+            DefResolution::Local(local) => local.1.source(db, tree)?.source(db, tree),
             DefResolution::File(file) => file.source(db, tree),
         }
     }
@@ -122,7 +129,7 @@ impl DefResolution {
             DefResolution::Funcenum(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Field(it) => it.parent.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Global(it) => it.id.lookup(db.upcast()).file_id(),
-            DefResolution::Local(it) => it.parent.file_id(db.upcast()),
+            DefResolution::Local(it) => it.1.parent.file_id(db.upcast()),
             DefResolution::File(it) => it.id,
         }
     }
@@ -142,7 +149,13 @@ impl DefResolution {
             DefResolution::Funcenum(it) => Some(it.name(db)),
             DefResolution::Field(it) => Some(it.name(db)),
             DefResolution::Global(it) => Some(it.name(db)),
-            DefResolution::Local(it) => it.name(db),
+            DefResolution::Local(it) => {
+                if let Some(name) = &it.0 {
+                    Some(name.clone())
+                } else {
+                    it.1.name(db)
+                }
+            }
             DefResolution::File(_) => None,
         }
     }
