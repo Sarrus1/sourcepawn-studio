@@ -632,6 +632,10 @@ pub struct Methodmap {
 }
 
 impl Methodmap {
+    pub fn id(self) -> MethodmapId {
+        self.id
+    }
+
     pub fn name(self, db: &dyn HirDatabase) -> Name {
         db.methodmap_data(self.id).name.clone()
     }

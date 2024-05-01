@@ -167,6 +167,7 @@ impl MethodmapExtension {
 pub enum MethodmapItemData {
     Property(PropertyData),
     Method(FunctionId),
+    Static(FunctionId),
     Constructor(FunctionId),
     Destructor(FunctionId),
 }
@@ -308,6 +309,9 @@ impl MethodmapData {
                 let method_ = match method.special {
                     Some(SpecialMethod::Constructor) => MethodmapItemData::Constructor(fn_id),
                     Some(SpecialMethod::Destructor) => MethodmapItemData::Destructor(fn_id),
+                    None if method.visibility.contains(RawVisibilityId::STATIC) => {
+                        MethodmapItemData::Static(fn_id)
+                    }
                     None => MethodmapItemData::Method(fn_id),
                 };
                 let method_id = items.alloc(method_);
@@ -335,6 +339,7 @@ impl MethodmapData {
         self.items.iter().find_map(|(_, item)| match item {
             MethodmapItemData::Constructor(id) => Some(*id),
             MethodmapItemData::Method(_)
+            | MethodmapItemData::Static(_)
             | MethodmapItemData::Property(_)
             | MethodmapItemData::Destructor(_) => None,
         })
@@ -344,6 +349,7 @@ impl MethodmapData {
         self.items.iter().find_map(|(_, item)| match item {
             MethodmapItemData::Destructor(id) => Some(*id),
             MethodmapItemData::Method(_)
+            | MethodmapItemData::Static(_)
             | MethodmapItemData::Property(_)
             | MethodmapItemData::Constructor(_) => None,
         })
@@ -356,6 +362,7 @@ impl MethodmapData {
     pub fn method(&self, item: Idx<MethodmapItemData>) -> Option<&FunctionId> {
         match &self.items[item] {
             MethodmapItemData::Property(_) => None,
+            MethodmapItemData::Static(function_id) => Some(function_id),
             MethodmapItemData::Method(function_id) => Some(function_id),
             MethodmapItemData::Constructor(function_id) => Some(function_id),
             MethodmapItemData::Destructor(function_id) => Some(function_id),
@@ -366,6 +373,7 @@ impl MethodmapData {
         match &self.items[item] {
             MethodmapItemData::Property(property_data) => Some(property_data),
             MethodmapItemData::Method(_)
+            | MethodmapItemData::Static(_)
             | MethodmapItemData::Constructor(_)
             | MethodmapItemData::Destructor(_) => None,
         }
@@ -386,6 +394,30 @@ impl MethodmapData {
 
     pub fn items(&self, name: &Name) -> Option<Idx<MethodmapItemData>> {
         self.items_map.get(name).cloned()
+    }
+
+    pub fn static_methods(&self) -> impl Iterator<Item = FunctionId> + '_ {
+        self.items.iter().filter_map(|(_, item)| match item {
+            MethodmapItemData::Static(id) => Some(*id),
+            _ => None,
+        })
+    }
+
+    pub fn methods(&self) -> impl Iterator<Item = FunctionId> + '_ {
+        self.items.iter().filter_map(|(_, item)| match item {
+            MethodmapItemData::Method(id)
+            | MethodmapItemData::Static(id)
+            | MethodmapItemData::Constructor(id)
+            | MethodmapItemData::Destructor(id) => Some(*id),
+            _ => None,
+        })
+    }
+
+    pub fn properties(&self) -> impl Iterator<Item = PropertyId> + '_ {
+        self.items.iter().filter_map(|(_, item)| match item {
+            MethodmapItemData::Property(property_data) => Some(property_data.id),
+            _ => None,
+        })
     }
 }
 

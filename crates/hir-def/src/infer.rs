@@ -543,6 +543,7 @@ impl InferenceContext<'_> {
                             return Some(item_tree[property.id.value].type_ref.clone());
                         }
                         MethodmapItemData::Method(_)
+                        | MethodmapItemData::Static(_)
                         | MethodmapItemData::Constructor(_)
                         | MethodmapItemData::Destructor(_) => {
                             self.result
@@ -630,6 +631,7 @@ impl InferenceContext<'_> {
                             return None;
                         }
                         MethodmapItemData::Method(method)
+                        | MethodmapItemData::Static(method)
                         | MethodmapItemData::Constructor(method)
                         | MethodmapItemData::Destructor(method) => {
                             self.result.method_resolutions.insert(*receiver, *method);
