@@ -30,6 +30,7 @@ pub fn completions(
         &preprocessed_text[edit.old_end_byte..],
     ]
     .concat();
+    // TODO: Use the edit to update the tree
     // tree.edit(&edit);
     let mut parser = tree_sitter::Parser::new();
     parser
@@ -71,22 +72,34 @@ pub fn completions(
         }
     }
 
+    log::debug!("completion container kind: {:?}", container.kind());
+    log::debug!("completion node: {:?}", node.kind());
     let defs = match TSKind::from(container) {
-        TSKind::function_definition => {
-            let name = container.child_by_field_name("name")?;
-            let name = tree
-                .root_node()
-                .descendant_for_byte_range(name.start_byte(), name.end_byte())?;
-            let container = name.parent()?;
-            let def = sema.find_def(pos.file_id, &name)?;
-            let DefResolution::Function(def) = def else {
-                return None;
-            };
-            let body_node = container.child_by_field_name("body")?;
-            sema.defs_in_function_scope(pos.file_id, def.id(), point, body_node)
+        TSKind::function_definition
+        | TSKind::methodmap_method
+        | TSKind::methodmap_property_getter
+        | TSKind::methodmap_property_method
+        | TSKind::methodmap_property_setter
+        | TSKind::enum_struct_method
+        | TSKind::methodmap_method_constructor
+        | TSKind::methodmap_method_destructor => {
+            if let Some(res) = in_function_completion(container, tree, sema, pos, point) {
+                res
+            } else {
+                // If we can't resolve the function we are in, the AST is probably broken
+                // return all global defs
+                sema.defs_in_scope(pos.file_id)
+                    .into_iter()
+                    .filter(|it| !matches!(it, DefResolution::Local(_) | DefResolution::Global(_)))
+                    .collect_vec()
+            }
         }
         TSKind::alias_assignment => todo!(),
-        _ => sema.defs_in_scope(pos.file_id),
+        _ => sema
+            .defs_in_scope(pos.file_id)
+            .into_iter()
+            .filter(|it| !matches!(it, DefResolution::Local(_) | DefResolution::Global(_)))
+            .collect_vec(),
     };
 
     let res = defs
@@ -131,6 +144,47 @@ pub fn completions(
         .collect_vec();
 
     res.into()
+}
+
+fn in_function_completion(
+    container: tree_sitter::Node,
+    tree: base_db::Tree,
+    sema: &Semantics<RootDatabase>,
+    pos: FilePosition,
+    point: Point,
+) -> Option<Vec<DefResolution>> {
+    // Trick to get the function node in the original tree.
+    // We get the byte range of the name node, as it is the same in both trees.
+    let name = if TSKind::from(container) == TSKind::methodmap_property_method {
+        container
+            .children(&mut container.walk())
+            .find_map(|child| {
+                if matches!(
+                    TSKind::from(child),
+                    TSKind::methodmap_property_getter | TSKind::methodmap_property_setter
+                ) {
+                    child.child_by_field_name("name")
+                } else {
+                    None
+                }
+            })?
+    } else {
+        container.child_by_field_name("name")?
+    };
+    let name = tree
+        .root_node()
+        .descendant_for_byte_range(name.start_byte(), name.end_byte())?;
+    let container = if TSKind::from(container) == TSKind::methodmap_property_method {
+        container
+    } else {
+        name.parent()?
+    };
+    let def = sema.find_def(pos.file_id, &name)?;
+    let DefResolution::Function(def) = def else {
+        return None;
+    };
+    let body_node = container.child_by_field_name("body")?;
+    Some(sema.defs_in_function_scope(pos.file_id, def.id(), point, body_node))
 }
 
 fn create_edit(source_code: &str, point: Point, token: &str) -> InputEdit {

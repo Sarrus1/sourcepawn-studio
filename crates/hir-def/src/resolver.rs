@@ -238,7 +238,7 @@ impl Resolver {
                     .entries()
                     .map(|(name, entry)| ValueNs::LocalId((name.clone().into(), it.owner, *entry)))
                     .collect_vec(),
-                Scope::This(_) => todo!(),
+                Scope::This(_) => Vec::new(),
             })
             .collect()
     }
