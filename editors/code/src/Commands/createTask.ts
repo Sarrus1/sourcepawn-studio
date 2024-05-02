@@ -1,8 +1,6 @@
-import { workspace as Workspace, window, commands, extensions } from "vscode";
+import { workspace as Workspace, window, commands } from "vscode";
 import {
   existsSync,
-  readFileSync,
-  copyFileSync,
   writeFileSync,
   mkdirSync,
 } from "fs";
@@ -11,8 +9,8 @@ import { getConfig, Section } from "../configUtils";
 
 export function run(rootpath?: string) {
   // Get configuration
-  let smHome: string = getConfig(Section.SourcePawn, "SourcemodHome");
-  if (!smHome) {
+  let includeDirs: string[] = getConfig(Section.LSP, "includeDirectories");
+  if (!includeDirs) {
     window
       .showWarningMessage(
         "Sourcemod API not found in the project. You should set Sourcemod Home for tasks generation to work. Do you want to install it automatically?",
@@ -31,8 +29,8 @@ export function run(rootpath?: string) {
       });
   }
 
-  let spcompPath: string = getConfig(Section.LSP, "compiler.path");
-  if (!spcompPath) {
+  let compilerPath: string = getConfig(Section.LSP, "compiler.path");
+  if (!compilerPath) {
     window
       .showErrorMessage(
         "Sourcemod compiler not found in the project. You need to set 'compiler.path' for tasks generation to work.",
@@ -67,28 +65,65 @@ export function run(rootpath?: string) {
     mkdirSync(taskFolderPath);
   }
 
-  // Check if file already exists
+  // Check if tasks file already exists
   const taskFilePath = join(rootpath, ".vscode/tasks.json");
   if (existsSync(taskFilePath)) {
     window.showErrorMessage("tasks.json file already exists.");
     return 3;
   }
-  const myExtDir: string = extensions.getExtension(
-    "Sarrus.sourcepawn-vscode"
-  ).extensionPath;
-  const tasksTemplatesPath: string = join(myExtDir, "templates/tasks.json");
-  copyFileSync(tasksTemplatesPath, taskFilePath);
-  spcompPath = spcompPath.replace(/\\/gm, "\\\\");
-  smHome = smHome.replace(/\\/gm, "\\\\");
-  // Replace placeholders
+
   try {
-    const data = readFileSync(taskFilePath, "utf8");
-    let result = data.replace(/\${spcompPath}/gm, spcompPath);
-    result = result.replace(/\${include_path}/gm, smHome);
-    writeFileSync(taskFilePath, result, "utf8");
-  } catch (err) {
-    console.error(err);
-    return 4;
+    let json = {
+      "version": "2.0.0",
+      "tasks": [
+        {
+          "label": "Compile plugin",
+          "type": "shell",
+          "presentation": {
+            "panel": "new"
+          },
+          "osx": {
+            "command": compilerPath
+          },
+          "linux": {
+            "command": compilerPath
+          },
+          "windows": {
+            "command": compilerPath
+          },
+          "args": [
+            "${file}",
+            "-E",
+            "-O2",
+            "-v2",
+            "-i${workspaceFolder}/scripting/include",
+            "-o${workspaceFolder}/plugins/${fileBasenameNoExtension}.smx"
+          ],
+          "problemMatcher": {
+            "owner": "sp",
+            "fileLocation": "absolute",
+            "pattern": {
+              "regexp": "^(.*)\\((.+)\\)\\s:\\s(((warning|error|fatal error)\\s\\d+):\\s.*)$",
+              "file": 1,
+              "line": 2,
+              "severity": 5,
+              "message": 3
+            }
+          },
+          "group": {
+            "kind": "build",
+            "isDefault": true
+          }
+        }
+      ]
+    }
+
+    includeDirs.map(dir => json.tasks[0].args.push(`-i${dir}`));
+    writeFileSync(taskFilePath, JSON.stringify(json, null, 2), "utf8");
+    window.showInformationMessage("Task file created successfully!")
+    return 0;
+  } catch (error) {
+    window.showErrorMessage(`Could not create tasks.json file! ${error}`)
+    return 5;
   }
-  return 0;
 }
