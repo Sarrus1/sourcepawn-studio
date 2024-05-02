@@ -15,7 +15,7 @@ impl<'tree, N: ItemTreeNode> HasSource<'tree> for AssocItemLoc<N> {
         let ast_id_map = db.ast_id_map(self.id.file_id());
         let item = &item_tree[self.id];
         let node_ptr = ast_id_map.get_raw(item.ast_id());
-        let node = node_ptr.to_node(tree);
+        let node = node_ptr.to_node(tree).expect("failed to find a node");
         InFile::new(self.id.file_id(), node)
     }
 }
@@ -26,7 +26,7 @@ impl<'tree, N: ItemTreeNode> HasSource<'tree> for ItemTreeId<N> {
         let ast_id_map = db.ast_id_map(self.file_id());
         let item = &item_tree[*self];
         let node_ptr = ast_id_map.get_raw(item.ast_id());
-        let node = node_ptr.to_node(tree);
+        let node = node_ptr.to_node(tree).expect("failed to find a node");
         InFile::new(self.file_id(), node)
     }
 }
@@ -35,7 +35,7 @@ impl<'tree> HasSource<'tree> for BlockLoc {
     fn source(&self, db: &dyn DefDatabase, tree: &'tree Tree) -> InFile<tree_sitter::Node<'tree>> {
         let ast_id_map = db.ast_id_map(self.file_id);
         let node_ptr = ast_id_map.get_raw(self.ast_id);
-        let node = node_ptr.to_node(tree);
+        let node = node_ptr.to_node(tree).expect("failed to find a node");
         InFile::new(self.file_id, node)
     }
 }

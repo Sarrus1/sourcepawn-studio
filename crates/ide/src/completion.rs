@@ -1,8 +1,8 @@
 mod item;
 
 use base_db::FilePosition;
-use hir::{DefResolution, Function, Property, Semantics};
-use hir_def::{DefDatabase, Name};
+use hir::{DefResolution, Field, Function, Property, Semantics};
+use hir_def::{DefDatabase, FieldId, Name};
 use ide_db::{RootDatabase, SymbolKind};
 pub use item::CompletionItem;
 use itertools::Itertools;
@@ -97,11 +97,13 @@ pub fn completions(
         }
         TSKind::field_access => {
             let target = container.child_by_field_name("target")?;
-            let def = sema.find_def(pos.file_id, &target)?;
+            let target = tree
+                .root_node()
+                .descendant_for_byte_range(target.start_byte(), target.end_byte())?;
+            let def = sema.find_type_def(pos.file_id, target)?;
+            let target_text = target.utf8_text(preprocessed_text.as_bytes()).ok()?;
             match def {
-                DefResolution::Methodmap(it)
-                    if target.utf8_text(preprocessed_text.as_bytes()).ok()? == "this" =>
-                {
+                DefResolution::Methodmap(it) if target_text == "this" => {
                     let data = db.methodmap_data(it.id());
                     let mut res = data
                         .methods()
@@ -111,30 +113,60 @@ pub fn completions(
                     res.extend(data.properties().map(Property::from).map(|it| it.into()));
                     res
                 }
-                DefResolution::Methodmap(it) => {
+                DefResolution::Methodmap(it) if target_text == it.name(db).to_string() => {
                     let data = db.methodmap_data(it.id());
                     data.static_methods()
                         .map(Function::from)
                         .map(|it| it.into())
                         .collect_vec()
                 }
-                DefResolution::Local(it) => {
-                    let type_def = it.1.type_def(db);
-                    match type_def.first()? {
-                        DefResolution::Methodmap(it) => {
-                            let data = db.methodmap_data(it.id());
-                            let mut res = data
-                                .methods()
-                                .map(Function::from)
-                                .map(|it| it.into())
-                                .collect_vec();
-                            res.extend(data.properties().map(Property::from).map(|it| it.into()));
-                            res
-                        }
-                        _ => vec![],
-                    }
+                DefResolution::Methodmap(it) => {
+                    let data = db.methodmap_data(it.id());
+                    let mut res = data
+                        .methods()
+                        .map(Function::from)
+                        .map(|it| it.into())
+                        .collect_vec();
+                    res.extend(data.properties().map(Property::from).map(|it| it.into()));
+                    res
                 }
-                _ => vec![],
+                DefResolution::EnumStruct(it) if target_text == "this" => {
+                    let data = db.enum_struct_data(it.id());
+                    let mut res = data
+                        .methods()
+                        .map(Function::from)
+                        .map(|it| it.into())
+                        .collect_vec();
+                    res.extend(
+                        data.fields()
+                            .map(|id| FieldId {
+                                parent: it.id(),
+                                local_id: id,
+                            })
+                            .map(Field::from)
+                            .map(|it| it.into()),
+                    );
+                    res
+                }
+                DefResolution::EnumStruct(it) => {
+                    let data = db.enum_struct_data(it.id());
+                    let mut res = data
+                        .methods()
+                        .map(Function::from)
+                        .map(|it| it.into())
+                        .collect_vec();
+                    res.extend(
+                        data.fields()
+                            .map(|id| FieldId {
+                                parent: it.id(),
+                                local_id: id,
+                            })
+                            .map(Field::from)
+                            .map(|it| it.into()),
+                    );
+                    res
+                }
+                _ => return None,
             }
         }
         _ => sema

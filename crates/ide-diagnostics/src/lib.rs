@@ -5,7 +5,7 @@ use hir_def::{DefDatabase, InFile, NodePtr};
 use ide_db::RootDatabase;
 use queries::ERROR_QUERY;
 use syntax::utils::ts_range_to_lsp_range;
-use tree_sitter::QueryCursor;
+use tree_sitter::{Point, QueryCursor, Range};
 use vfs::FileId;
 
 mod handlers;
@@ -69,7 +69,20 @@ impl Diagnostic {
     ) -> Diagnostic {
         let file_id = node.file_id;
         let tree = ctx.sema.db.parse(file_id);
-        let range = node.map(|x| x.to_node(&tree).range()).value;
+        let range = if let Some(node) = node.value.to_node(&tree) {
+            node.range()
+        } else {
+            // FIXME: Try to use the line index cache instead? this is inneficient.
+            let input = ctx.sema.preprocessed_text(file_id);
+            let start_point = byte_to_row_col(&input, node.value.start_byte())
+                .expect("failed to find diagnostic range");
+            Range {
+                start_byte: node.value.start_byte(),
+                end_byte: node.value.end_byte(),
+                start_point,
+                end_point: start_point,
+            }
+        };
         Diagnostic::new(code, message, ts_range_to_lsp_range(&range))
     }
 
@@ -88,6 +101,35 @@ impl Diagnostic {
         self.unused = unused;
         self
     }
+}
+
+fn byte_to_row_col(input: &str, byte_index: usize) -> Option<Point> {
+    let mut current_byte = 0;
+    let mut row = 1;
+    let mut col = 0;
+    let mut col_byte = 0;
+
+    for (i, c) in input.char_indices() {
+        if current_byte == byte_index {
+            return Some(Point { row, column: col });
+        }
+
+        if c == '\n' {
+            row += 1;
+            col = 0;
+            col_byte = i + c.len_utf8();
+        } else {
+            col = i - col_byte + 1;
+        }
+
+        current_byte += c.len_utf8();
+    }
+
+    if current_byte == byte_index {
+        return Some(Point { row, column: col });
+    }
+
+    None // if byte_index is out of bounds
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

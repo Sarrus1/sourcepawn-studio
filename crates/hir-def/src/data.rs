@@ -677,6 +677,18 @@ impl EnumStructData {
         self.items_map.get(name).cloned()
     }
 
+    pub fn fields(&self) -> impl Iterator<Item = LocalFieldId> + '_ {
+        self.items
+            .iter()
+            .filter_map(|(it, d)| self.field(it).map(|_| it))
+    }
+
+    pub fn methods(&self) -> impl Iterator<Item = FunctionId> + '_ {
+        self.items
+            .iter()
+            .filter_map(|(it, _)| self.method(it).cloned())
+    }
+
     pub fn field_type(&self, field: Idx<EnumStructItemData>) -> Option<&TypeRef> {
         match &self.items[field] {
             EnumStructItemData::Field(field_data) => Some(&field_data.type_ref),

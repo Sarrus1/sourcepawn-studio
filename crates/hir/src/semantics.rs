@@ -177,6 +177,35 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             .map(Macro::from)
     }
 
+    pub fn find_type_def(
+        &self,
+        file_id: FileId,
+        mut node: tree_sitter::Node,
+    ) -> Option<DefResolution> {
+        log::debug!("finding type of node: {}", node.to_sexp());
+        while TSKind::from(node) != TSKind::identifier {
+            node = match TSKind::from(node) {
+                TSKind::array_indexed_access => node.child_by_field_name("array")?,
+                TSKind::assignment_expression => node.child_by_field_name("left")?,
+                TSKind::call_expression => node.child_by_field_name("function")?,
+                TSKind::ternary_expression => node.child_by_field_name("consequence")?,
+                TSKind::field_access => node.child_by_field_name("target")?,
+                TSKind::binary_expression => node.child_by_field_name("left")?,
+                TSKind::unary_expression => node.child_by_field_name("argument")?,
+                TSKind::update_expression => node.child_by_field_name("argument")?,
+                TSKind::view_as => node.child_by_field_name("type")?,
+                TSKind::old_type_cast => node.child_by_field_name("type")?,
+                TSKind::parenthesized_expression => node.child_by_field_name("expression")?,
+                TSKind::r#type => node.child(0)?,
+                TSKind::old_type => node.child(0)?,
+                TSKind::new_expression => node.child_by_field_name("class")?,
+                _ => return None,
+            }
+        }
+        self.find_def(file_id, &node)
+            .and_then(|def| def.type_def(self.db))
+    }
+
     /// Find a definition given a reference node.
     ///
     /// # Arguments

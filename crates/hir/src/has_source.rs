@@ -58,7 +58,9 @@ impl<'tree> HasSource<'tree> for crate::Field {
         let src = enum_struct_id.child_source(db.upcast());
         Some(InFile {
             file_id: enum_struct_id.lookup(db.upcast()).id.file_id(),
-            value: src.value[self.id].to_node(tree),
+            value: src.value[self.id]
+                .to_node(tree)
+                .expect("failed to find a node"),
         })
     }
 }
