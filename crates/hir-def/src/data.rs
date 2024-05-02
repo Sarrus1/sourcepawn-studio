@@ -680,7 +680,7 @@ impl EnumStructData {
     pub fn fields(&self) -> impl Iterator<Item = LocalFieldId> + '_ {
         self.items
             .iter()
-            .filter_map(|(it, d)| self.field(it).map(|_| it))
+            .filter_map(|(it, _)| self.field(it).map(|_| it))
     }
 
     pub fn methods(&self) -> impl Iterator<Item = FunctionId> + '_ {

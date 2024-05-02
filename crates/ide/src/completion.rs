@@ -22,158 +22,181 @@ pub fn completions(
     let tree = sema.parse(pos.file_id);
 
     let point = lsp_position_to_ts_point(&pos.position);
-    let token = "foo";
-    let edit = create_edit(&preprocessed_text, point, token);
-    let new_source_code = [
-        &preprocessed_text[..edit.start_byte],
-        &token,
-        &preprocessed_text[edit.old_end_byte..],
-    ]
-    .concat();
-    // TODO: Use the edit to update the tree
-    // tree.edit(&edit);
-    let mut parser = tree_sitter::Parser::new();
-    parser
-        .set_language(&tree_sitter_sourcepawn::language())
-        .unwrap();
-    let new_tree = parser.parse(new_source_code.as_bytes(), None)?;
 
-    let root_node = new_tree.root_node();
-    // get the node before the cursor
-    let mut point_off = point;
-    point_off.column = point_off.column.saturating_add(1);
+    let new_point = Point::new(point.row, point.column.saturating_sub(2));
+    let node = tree
+        .root_node()
+        .descendant_for_point_range(new_point, new_point)?;
+    let defs = if node.utf8_text(preprocessed_text.as_bytes()).ok()? == "new" {
+        sema.defs_in_scope(pos.file_id)
+            .into_iter()
+            .filter_map(|it| match it {
+                DefResolution::Methodmap(it) => Some(it),
+                _ => None,
+            })
+            .flat_map(|it| {
+                let data = db.methodmap_data(it.id());
+                data.constructor()
+            })
+            .map(Function::from)
+            .map(|it| it.into())
+            .collect_vec()
+    } else {
+        let token = "foo";
+        let edit = create_edit(&preprocessed_text, point, token);
+        let new_source_code = [
+            &preprocessed_text[..edit.start_byte],
+            &token,
+            &preprocessed_text[edit.old_end_byte..],
+        ]
+        .concat();
+        // TODO: Use the edit to update the tree
+        // tree.edit(&edit);
+        let mut parser = tree_sitter::Parser::new();
+        parser
+            .set_language(&tree_sitter_sourcepawn::language())
+            .unwrap();
+        let new_tree = parser.parse(new_source_code.as_bytes(), None)?;
 
-    let node = root_node.descendant_for_point_range(point_off, point_off)?;
+        let root_node = new_tree.root_node();
+        // get the node before the cursor
+        let mut point_off = point;
+        point_off.column = point_off.column.saturating_add(1);
 
-    let mut container = node.parent()?;
-    // If the node does not have a parent we are at the root, nothing to resolve.
-    while !matches!(
-        TSKind::from(container),
-        TSKind::function_definition
-            | TSKind::enum_struct_method
-            | TSKind::r#enum
-            | TSKind::methodmap_native
-            | TSKind::methodmap_native_constructor
-            | TSKind::methodmap_native_destructor
-            | TSKind::methodmap_method
-            | TSKind::methodmap_method_constructor
-            | TSKind::methodmap_method_destructor
-            | TSKind::methodmap_property_getter
-            | TSKind::methodmap_property_setter
-            | TSKind::methodmap_property_native
-            | TSKind::methodmap_property_method
-            | TSKind::typedef
-            | TSKind::source_file
-            | TSKind::field_access
-    ) {
-        if let Some(candidate) = container.parent() {
-            container = candidate;
-        } else {
-            break;
-        }
-    }
+        let node = root_node.descendant_for_point_range(point_off, point_off)?;
 
-    log::debug!("completion container kind: {:?}", container.kind());
-    log::debug!("completion node: {:?}", node.kind());
-    let defs = match TSKind::from(container) {
-        TSKind::function_definition
-        | TSKind::methodmap_method
-        | TSKind::methodmap_property_getter
-        | TSKind::methodmap_property_method
-        | TSKind::methodmap_property_setter
-        | TSKind::enum_struct_method
-        | TSKind::methodmap_method_constructor
-        | TSKind::methodmap_method_destructor => {
-            if let Some(res) = in_function_completion(container, tree, sema, pos, point) {
-                res
+        let mut container = node.parent()?;
+        // If the node does not have a parent we are at the root, nothing to resolve.
+        while !matches!(
+            TSKind::from(container),
+            TSKind::function_definition
+                | TSKind::enum_struct_method
+                | TSKind::r#enum
+                | TSKind::methodmap_native
+                | TSKind::methodmap_native_constructor
+                | TSKind::methodmap_native_destructor
+                | TSKind::methodmap_method
+                | TSKind::methodmap_method_constructor
+                | TSKind::methodmap_method_destructor
+                | TSKind::methodmap_property_getter
+                | TSKind::methodmap_property_setter
+                | TSKind::methodmap_property_native
+                | TSKind::methodmap_property_method
+                | TSKind::typedef
+                | TSKind::source_file
+                | TSKind::field_access
+        ) {
+            if let Some(candidate) = container.parent() {
+                container = candidate;
             } else {
-                // If we can't resolve the function we are in, the AST is probably broken
-                // return all global defs
-                sema.defs_in_scope(pos.file_id)
-                    .into_iter()
-                    .filter(|it| !matches!(it, DefResolution::Local(_) | DefResolution::Global(_)))
-                    .collect_vec()
+                break;
             }
         }
-        TSKind::field_access => {
-            let target = container.child_by_field_name("target")?;
-            let target = tree
-                .root_node()
-                .descendant_for_byte_range(target.start_byte(), target.end_byte())?;
-            let def = sema.find_type_def(pos.file_id, target)?;
-            let target_text = target.utf8_text(preprocessed_text.as_bytes()).ok()?;
-            match def {
-                DefResolution::Methodmap(it) if target_text == "this" => {
-                    let data = db.methodmap_data(it.id());
-                    let mut res = data
-                        .methods()
-                        .map(Function::from)
-                        .map(|it| it.into())
-                        .collect_vec();
-                    res.extend(data.properties().map(Property::from).map(|it| it.into()));
+
+        log::debug!("completion container kind: {:?}", container.kind());
+        log::debug!("completion node: {:?}", node.kind());
+        match TSKind::from(container) {
+            TSKind::function_definition
+            | TSKind::methodmap_method
+            | TSKind::methodmap_property_getter
+            | TSKind::methodmap_property_method
+            | TSKind::methodmap_property_setter
+            | TSKind::enum_struct_method
+            | TSKind::methodmap_method_constructor
+            | TSKind::methodmap_method_destructor => {
+                if let Some(res) = in_function_completion(container, tree, sema, pos, point) {
                     res
-                }
-                DefResolution::Methodmap(it) if target_text == it.name(db).to_string() => {
-                    let data = db.methodmap_data(it.id());
-                    data.static_methods()
-                        .map(Function::from)
-                        .map(|it| it.into())
+                } else {
+                    // If we can't resolve the function we are in, the AST is probably broken
+                    // return all global defs
+                    sema.defs_in_scope(pos.file_id)
+                        .into_iter()
+                        .filter(|it| {
+                            !matches!(it, DefResolution::Local(_) | DefResolution::Global(_))
+                        })
                         .collect_vec()
                 }
-                DefResolution::Methodmap(it) => {
-                    let data = db.methodmap_data(it.id());
-                    let mut res = data
-                        .methods()
-                        .map(Function::from)
-                        .map(|it| it.into())
-                        .collect_vec();
-                    res.extend(data.properties().map(Property::from).map(|it| it.into()));
-                    res
-                }
-                DefResolution::EnumStruct(it) if target_text == "this" => {
-                    let data = db.enum_struct_data(it.id());
-                    let mut res = data
-                        .methods()
-                        .map(Function::from)
-                        .map(|it| it.into())
-                        .collect_vec();
-                    res.extend(
-                        data.fields()
-                            .map(|id| FieldId {
-                                parent: it.id(),
-                                local_id: id,
-                            })
-                            .map(Field::from)
-                            .map(|it| it.into()),
-                    );
-                    res
-                }
-                DefResolution::EnumStruct(it) => {
-                    let data = db.enum_struct_data(it.id());
-                    let mut res = data
-                        .methods()
-                        .map(Function::from)
-                        .map(|it| it.into())
-                        .collect_vec();
-                    res.extend(
-                        data.fields()
-                            .map(|id| FieldId {
-                                parent: it.id(),
-                                local_id: id,
-                            })
-                            .map(Field::from)
-                            .map(|it| it.into()),
-                    );
-                    res
-                }
-                _ => return None,
             }
+            TSKind::field_access => {
+                let target = container.child_by_field_name("target")?;
+                let target = tree
+                    .root_node()
+                    .descendant_for_byte_range(target.start_byte(), target.end_byte())?;
+                let def = sema.find_type_def(pos.file_id, target)?;
+                let target_text = target.utf8_text(preprocessed_text.as_bytes()).ok()?;
+                match def {
+                    DefResolution::Methodmap(it) if target_text == "this" => {
+                        let data = db.methodmap_data(it.id());
+                        let mut res = data
+                            .methods()
+                            .map(Function::from)
+                            .map(|it| it.into())
+                            .collect_vec();
+                        res.extend(data.properties().map(Property::from).map(|it| it.into()));
+                        res
+                    }
+                    DefResolution::Methodmap(it) if target_text == it.name(db).to_string() => {
+                        let data = db.methodmap_data(it.id());
+                        data.static_methods()
+                            .map(Function::from)
+                            .map(|it| it.into())
+                            .collect_vec()
+                    }
+                    DefResolution::Methodmap(it) => {
+                        let data = db.methodmap_data(it.id());
+                        let mut res = data
+                            .methods()
+                            .map(Function::from)
+                            .map(|it| it.into())
+                            .collect_vec();
+                        res.extend(data.properties().map(Property::from).map(|it| it.into()));
+                        res
+                    }
+                    DefResolution::EnumStruct(it) if target_text == "this" => {
+                        let data = db.enum_struct_data(it.id());
+                        let mut res = data
+                            .methods()
+                            .map(Function::from)
+                            .map(|it| it.into())
+                            .collect_vec();
+                        res.extend(
+                            data.fields()
+                                .map(|id| FieldId {
+                                    parent: it.id(),
+                                    local_id: id,
+                                })
+                                .map(Field::from)
+                                .map(|it| it.into()),
+                        );
+                        res
+                    }
+                    DefResolution::EnumStruct(it) => {
+                        let data = db.enum_struct_data(it.id());
+                        let mut res = data
+                            .methods()
+                            .map(Function::from)
+                            .map(|it| it.into())
+                            .collect_vec();
+                        res.extend(
+                            data.fields()
+                                .map(|id| FieldId {
+                                    parent: it.id(),
+                                    local_id: id,
+                                })
+                                .map(Field::from)
+                                .map(|it| it.into()),
+                        );
+                        res
+                    }
+                    _ => return None,
+                }
+            }
+            _ => sema
+                .defs_in_scope(pos.file_id)
+                .into_iter()
+                .filter(|it| !matches!(it, DefResolution::Local(_) | DefResolution::Global(_)))
+                .collect_vec(),
         }
-        _ => sema
-            .defs_in_scope(pos.file_id)
-            .into_iter()
-            .filter(|it| !matches!(it, DefResolution::Local(_) | DefResolution::Global(_)))
-            .collect_vec(),
     };
 
     let res = defs
