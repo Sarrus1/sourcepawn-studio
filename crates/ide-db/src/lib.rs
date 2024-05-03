@@ -187,6 +187,8 @@ pub enum SymbolKind {
     Local,
     Keyword,
     Literal,
+    Directory,
+    File,
 }
 
 impl From<FunctionType> for SymbolKind {

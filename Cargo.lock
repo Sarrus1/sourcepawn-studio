@@ -1092,6 +1092,7 @@ dependencies = [
  "line-index",
  "log",
  "lsp-types",
+ "paths",
  "preprocessor",
  "profile",
  "regex",

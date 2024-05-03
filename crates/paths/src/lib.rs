@@ -227,6 +227,9 @@ impl AbsPath {
     pub fn as_os_str(&self) -> &OsStr {
         self.0.as_os_str()
     }
+    pub fn is_dir(&self) -> bool {
+        self.0.is_dir()
+    }
     #[deprecated(note = "use Display instead")]
     pub fn display(&self) -> std::path::Display<'_> {
         self.0.display()

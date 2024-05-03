@@ -1,24 +1,35 @@
 mod defaults;
+mod includes;
 mod item;
 
-use base_db::FilePosition;
+use std::{panic::AssertUnwindSafe, path::PathBuf};
+
+use base_db::{FilePosition, SourceDatabaseExt};
 use hir::{DefResolution, Field, Function, Property, Semantics};
 use hir_def::{DefDatabase, FieldId, Name};
 use ide_db::{RootDatabase, SymbolKind};
 pub use item::CompletionItem;
 use itertools::Itertools;
 use lazy_static::lazy_static;
+use lsp_types::Url;
+use paths::AbsPathBuf;
 use regex::Regex;
 use smol_str::ToSmolStr;
 use syntax::{utils::lsp_position_to_ts_point, TSKind};
 use tree_sitter::{InputEdit, Point};
+use vfs::FileId;
 
-use crate::completion::defaults::get_default_completions;
+use crate::completion::{
+    defaults::get_default_completions,
+    includes::{get_include_completions, is_include_statement},
+};
 
 pub fn completions(
     db: &RootDatabase,
     pos: FilePosition,
     trigger_character: Option<char>,
+    include_directories: Vec<AbsPathBuf>,
+    file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Url>,
 ) -> Option<Vec<CompletionItem>> {
     let sema = &Semantics::new(db);
     let preprocessing_results = sema.preprocess_file(pos.file_id);
@@ -33,6 +44,15 @@ pub fn completions(
             .nth(point.column)
             .map_or(line.len(), |(idx, _)| idx),
     );
+    if let Some(include_st) = is_include_statement(split_line.0) {
+        return get_include_completions(
+            db,
+            include_st,
+            pos.file_id,
+            include_directories,
+            file_id_to_url,
+        );
+    }
 
     lazy_static! {
         pub static ref NEW_REGEX: Regex = Regex::new(r"new\s+$").unwrap();

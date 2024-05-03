@@ -8,7 +8,7 @@ mod prime_caches;
 mod status;
 mod syntax_highlighting;
 
-use std::{panic::AssertUnwindSafe, sync::Arc};
+use std::{panic::AssertUnwindSafe, path::PathBuf, sync::Arc};
 
 use base_db::{
     Change, FileExtension, FilePosition, FileRange, Graph, SourceDatabase, SourceDatabaseExt, Tree,
@@ -18,6 +18,8 @@ use hir_def::{print_item_tree, DefDatabase};
 use hover::HoverResult;
 use ide_db::RootDatabase;
 use itertools::Itertools;
+use lsp_types::Url;
+use paths::AbsPathBuf;
 use preprocessor::{db::PreprocDatabase, ArgsMap, Offset};
 use salsa::{Cancelled, ParallelDatabase};
 use syntax::range_contains_pos;
@@ -216,8 +218,19 @@ impl Analysis {
         &self,
         position: FilePosition,
         trigger_character: Option<char>,
+        include_directories: Vec<AbsPathBuf>,
+        file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Url>,
     ) -> Cancellable<Option<Vec<CompletionItem>>> {
-        self.with_db(|db| completion::completions(db, position, trigger_character).map(Into::into))
+        self.with_db(|db| {
+            completion::completions(
+                db,
+                position,
+                trigger_character,
+                include_directories,
+                file_id_to_url,
+            )
+            .map(Into::into)
+        })
     }
 
     /// Returns the highlighted ranges for the file.

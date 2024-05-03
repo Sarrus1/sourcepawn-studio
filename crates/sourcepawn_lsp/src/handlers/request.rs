@@ -4,6 +4,7 @@ use anyhow::Context;
 use base_db::FileRange;
 use ide::{HoverAction, HoverGotoTypeData};
 use ide_db::SymbolKind;
+use itertools::Itertools;
 use lsp_types::{
     SemanticTokensDeltaParams, SemanticTokensFullDeltaResult, SemanticTokensParams,
     SemanticTokensRangeParams, SemanticTokensRangeResult, SemanticTokensResult, Url,
@@ -28,7 +29,18 @@ pub(crate) fn handle_completion(
     let trigger_character = params
         .context
         .and_then(|it| it.trigger_character.and_then(|it| it.chars().next()));
-    if let Some(completions) = snap.analysis.completions(position, trigger_character)? {
+
+    let file_id_to_url = &|id: FileId| snap.file_id_to_url(id);
+    let file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Url> = AssertUnwindSafe(file_id_to_url);
+
+    let include_directories = snap.config.include_directories();
+
+    if let Some(completions) = snap.analysis.completions(
+        position,
+        trigger_character,
+        include_directories,
+        file_id_to_url,
+    )? {
         return Ok(Some(lsp_types::CompletionResponse::Array(
             completions
                 .into_iter()
@@ -84,7 +96,7 @@ pub(crate) fn handle_hover(
         snap.file_id_to_url(id)
             .to_file_path()
             .ok()
-            .and_then(|it| it.to_path_buf().to_str().map(|it| it.to_string()))
+            .and_then(|it| it.to_str().map(|it| it.to_string()))
     };
     let file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Option<String>> =
         AssertUnwindSafe(file_id_to_url);
