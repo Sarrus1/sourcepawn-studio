@@ -99,14 +99,10 @@ export async function run(args?: string) {
       // Handle cancellation
       token.onCancellationRequested(() => {
         window.showErrorMessage('The upload operation was cancelled.');
-        client.end();
-        return;
       });
 
       try {
-        // If sftp, use ssh2-sftp
         if (uploadOptions.sftp) {
-
           // Connect
           await client.connect(uploadOptions);
 
@@ -116,14 +112,12 @@ export async function run(args?: string) {
             progress.report({ message: ` ${fileName}` });
           });
 
-          // Create promise
+          // Upload...
           await client.uploadDir(workspaceRoot, uploadOptions.remoteRoot, { filter });
 
           // Show success message
           window.showInformationMessage('Files uploaded successfully!');
         }
-
-        // else, use FTP-Deploy
         else {
           const ftp = new Client();
 
@@ -158,29 +152,29 @@ export async function run(args?: string) {
             }
           };
 
+          // Upload...
           await uploadFiles(workspaceRoot);
           window.showInformationMessage('Files uploaded successfully!');
           ftp.close();
-
+          // Run commands if configured
+          if (getConfig(Section.SourcePawn, "runServerCommands", workspaceFolder) === "afterUpload") {
+            await runServerCommands(fileToUpload);
+          }
         }
-      } catch (error) {
+      }
+      catch (error) {
         if (token.isCancellationRequested) {
           return 0;
         }
         window.showErrorMessage('Failed to upload files! ' + error);
         client.end();
         return 1;
-      } finally {
-        client.end();
       }
-
-      return 0;
+      finally {
+        client.end();
+        return 0;
+      }
     }
   );
-
-  if (getConfig(Section.SourcePawn, "runServerCommands", workspaceFolder) === "afterUpload") {
-    await runServerCommands(fileToUpload);
-  }
-
   return 0;
 }

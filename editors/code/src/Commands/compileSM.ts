@@ -150,11 +150,6 @@ export async function run(args: URI): Promise<void> {
 
     // Execute
     execFile(spcompCommand, compilerArgs, async (error, stdout) => {
-      // Output any errors
-      if (error) {
-        console.error(error);
-      }
-
       // Update spcomp status
       ctx?.setSpcompStatus({ quiescent: true });
       output.append(stdout.toString().trim());
@@ -162,15 +157,21 @@ export async function run(args: URI): Promise<void> {
       // Restore last active editor's focus
       window.showTextDocument(lastActiveEditor.document);
 
+      // Return if compilation failed
+      if (error) {
+        window.showErrorMessage("Compilation failed!")
+        return;
+      }
+
       // Run upload command if chosen
       if (getConfig(Section.SourcePawn, "uploadAfterSuccessfulCompile", workspaceFolder)) {
-        await uploadToServerCommand(fileToCompilePath).then(async () => {
-          // Run server commands if chosen
-          const commandsOption: string = getConfig(Section.SourcePawn, "runServerCommands", workspaceFolder);
-          if (commandsOption === "afterCompile") {
-            await runServerCommands(fileToCompilePath);
-          }
-        });
+        await uploadToServerCommand(fileToCompilePath)
+      }
+
+      // Run server commands if chosen
+      const commandsOption: string = getConfig(Section.SourcePawn, "runServerCommands", workspaceFolder);
+      if (commandsOption === "afterCompile") {
+        await runServerCommands(fileToCompilePath);
       }
     });
   } catch (error) {

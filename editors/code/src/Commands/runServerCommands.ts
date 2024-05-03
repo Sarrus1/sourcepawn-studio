@@ -1,4 +1,4 @@
-﻿import { workspace as workspace, window, commands, WorkspaceFolder, ProgressLocation } from "vscode";
+﻿import { workspace as workspace, window, commands, WorkspaceFolder } from "vscode";
 import Rcon from "rcon-srcds";
 import { EncodingOptions } from "rcon-srcds/dist/packet";
 import { getMainCompilationFile, getPluginName } from "../spUtils";
@@ -97,29 +97,20 @@ export async function run(args?: string) {
   });
 
   // Begin progress
-  window.withProgress(
-    {
-      title: "Executing commands...",
-      location: ProgressLocation.Notification,
-      cancellable: false,
-    },
-    async () => {
-      try {
-        // Attempt to connect
-        await server.authenticate(serverOptions["password"]);
+  try {
+    // Attempt to connect
+    await server.authenticate(serverOptions["password"]);
 
-        // Run commands
-        for (const command of serverCommands) {
-          const modifiedCommand = command.replace('${plugin}', getPluginName(args));
-          server.execute(modifiedCommand);
-        }
-
-        window.showInformationMessage("Commands executed successfully!");
-        return 0;
-      } catch (error) {
-        window.showErrorMessage(`Failed to run commands! ${error}`);
-        return 1;
-      }
+    // Run commands
+    for (const command of serverCommands) {
+      const modifiedCommand = command.replace('${plugin}', getPluginName(args));
+      server.execute(modifiedCommand);
     }
-  );
+
+    window.showInformationMessage("Commands executed successfully!");
+    return 0;
+  } catch (error) {
+    window.showErrorMessage(`Failed to run commands! ${error}`);
+    return 1;
+  }
 }
