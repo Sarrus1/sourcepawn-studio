@@ -18,7 +18,7 @@ export async function run(args: any) {
   }
   let options = {
     content,
-    title: "Sourcepawn Dependency Graph",
+    title: "SourcePawn Dependency Graph",
   };
 
   vscode.commands

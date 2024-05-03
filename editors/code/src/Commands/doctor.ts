@@ -34,7 +34,7 @@ enum DiagnosticState {
 
 class Doctor {
   // Settings
-  spCompPath: string | undefined = undefined;
+  compilerPath: string | undefined = undefined;
   isSPCompSet = DiagnosticState.None;
   isSPCompInstalled = DiagnosticState.None;
   isSPCompRunnable = DiagnosticState.None;
@@ -86,17 +86,17 @@ class Doctor {
     switch (this.isSPCompSet) {
       case DiagnosticState.OK:
         diagnostics.push(
-          `✅ "SourcePawnLanguageServer.spcompPath" is set (value: ${this.spCompPath}).`
+          `✅ "SourcePawnLanguageServer.compiler.path" is set (value: ${this.compilerPath}).`
         );
         break;
       case DiagnosticState.Error:
         diagnostics.push(
-          '❌ "SourcePawnLanguageServer.spcompPath" is empty. You should set it to the path of the "spcomp" executable.'
+          '❌ "SourcePawnLanguageServer.compiler.path" is empty. You should set it to the path of the "spcomp" executable.'
         );
         break;
       case DiagnosticState.None:
         diagnostics.push(
-          '🩺 Checking if "SourcePawnLanguageServer.spcompPath" is set.'
+          '🩺 Checking if "SourcePawnLanguageServer.compiler.path" is set.'
         );
         break;
     }
@@ -104,17 +104,17 @@ class Doctor {
     switch (this.isSPCompInstalled) {
       case DiagnosticState.OK:
         diagnostics.push(
-          `✅ "SourcePawnLanguageServer.spcompPath" points to a file (value: ${this.spCompPath}).`
+          `✅ "SourcePawnLanguageServer.compiler.path" points to a file (value: ${this.compilerPath}).`
         );
         break;
       case DiagnosticState.Error:
         diagnostics.push(
-          `❌ "SourcePawnLanguageServer.spcompPath" does not point to a file (value: ${this.spCompPath}).`
+          `❌ "SourcePawnLanguageServer.compiler.path" does not point to a file (value: ${this.compilerPath}).`
         );
         break;
       case DiagnosticState.None:
         diagnostics.push(
-          '🩺 Checking if "SourcePawnLanguageServer.spcompPath" points to a file.'
+          '🩺 Checking if "SourcePawnLanguageServer.compiler.path" points to a file.'
         );
         break;
     }
@@ -122,12 +122,12 @@ class Doctor {
     switch (this.isSPCompRunnable) {
       case DiagnosticState.OK:
         diagnostics.push(
-          `✅ "SourcePawnLanguageServer.spcompPath" is executable (value: ${this.spCompPath}).`
+          `✅ "SourcePawnLanguageServer.compiler.path" is executable (value: ${this.compilerPath}).`
         );
         break;
       case DiagnosticState.Error:
         diagnostics.push(
-          `❌ "SourcePawnLanguageServer.compiler.path" is not executable (value: ${this.spCompPath}).`
+          `❌ "SourcePawnLanguageServer.compiler.path" is not executable (value: ${this.compilerPath}).`
         );
         break;
       case DiagnosticState.None:
@@ -141,15 +141,15 @@ class Doctor {
   }
 
   async checkSpComp() {
-    this.spCompPath = getConfig(Section.LSP, "compiler.path");
-    if (!this.spCompPath) {
+    this.compilerPath = getConfig(Section.LSP, "compiler.path");
+    if (!this.compilerPath) {
       this.isSPCompSet = DiagnosticState.Error;
       this.isSPCompInstalled = DiagnosticState.Error;
       this.isSPCompRunnable = DiagnosticState.Error;
       return;
     }
     this.isSPCompSet = DiagnosticState.OK;
-    fs.stat(this.spCompPath, (err, _stats) => {
+    fs.stat(this.compilerPath, (err, _stats) => {
       if (err) {
         this.isSPCompInstalled = DiagnosticState.Error;
         this.isSPCompRunnable = DiagnosticState.Error;
@@ -162,7 +162,7 @@ class Doctor {
       }
       this.isSPCompInstalled = DiagnosticState.OK;
 
-      execFile(this.spCompPath, ["-h"], (err, stdout, stderr) => {
+      execFile(this.compilerPath, ["-h"], (err, stdout, stderr) => {
         if (err) {
           if (stdout.startsWith("SourcePawn Compiler")) {
             this.isSPCompRunnable = DiagnosticState.OK;
@@ -249,10 +249,10 @@ export function buildDoctorStatusBar() {
   );
   doctorStatusBar.show();
   doctorStatusBar.tooltip = new vscode.MarkdownString(
-    "Sourcepawn Doctor helps you diagnose why the extension is not working.",
+    "SourcePawn Doctor helps you diagnose why the extension is not working.",
     true
   );
   doctorStatusBar.tooltip.isTrusted = true;
-  doctorStatusBar.text = "$(lightbulb-autofix) Sourcepawn Doctor";
+  doctorStatusBar.text = "$(lightbulb-autofix) SourcePawn Doctor";
   doctorStatusBar.command = "sourcepawn-vscode.doctor";
 }

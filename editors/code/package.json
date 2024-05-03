@@ -514,7 +514,7 @@
           "type": "boolean"
         },
         "SourcePawnLanguageServer.hover.actions.enable": {
-          "markdownDescription": "Whether to show HoverActions in Sourcepawn files.",
+          "markdownDescription": "Whether to show HoverActions in SourcePawn files.",
           "default": true,
           "type": "boolean"
         },
