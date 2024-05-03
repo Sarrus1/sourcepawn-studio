@@ -10,7 +10,8 @@ use crate::{
     hir::{type_ref::TypeRef, Expr, Literal},
     item_tree::Name,
     resolver::{HasResolver, Resolver, ValueNs},
-    DefDatabase, DefWithBodyId, ExprId, FieldId, FunctionId, InFile, Lookup, PropertyId,
+    DefDatabase, DefWithBodyId, ExprId, FieldId, FunctionId, InFile, ItemContainerId, Lookup,
+    PropertyId,
 };
 
 pub(crate) fn infer_query(db: &dyn DefDatabase, def: DefWithBodyId) -> Arc<InferenceResult> {
@@ -56,6 +57,9 @@ pub enum InferenceDiagnostic {
         name: Name,
         expected: usize,
         actual: usize,
+    },
+    InvalidUseOfThis {
+        expr: ExprId,
     },
 }
 
@@ -321,6 +325,32 @@ impl InferenceContext<'_> {
                 }
                 None
             }
+            Expr::This => {
+                let DefWithBodyId::FunctionId(fn_id) = self.owner else {
+                    self.result
+                        .diagnostics
+                        .push(InferenceDiagnostic::InvalidUseOfThis { expr: *expr });
+                    return None;
+                };
+                match fn_id.lookup(self.db).container {
+                    ItemContainerId::EnumStructId(id) => {
+                        let it = id.lookup(self.db);
+                        let item_tree = it.id.item_tree(self.db);
+                        TypeRef::Name(item_tree[it.id].name.clone()).into()
+                    }
+                    ItemContainerId::MethodmapId(id) => {
+                        let it = id.lookup(self.db);
+                        let item_tree = it.id.item_tree(self.db);
+                        TypeRef::Name(item_tree[it.id].name.clone()).into()
+                    }
+                    _ => {
+                        self.result
+                            .diagnostics
+                            .push(InferenceDiagnostic::InvalidUseOfThis { expr: *expr });
+                        return None;
+                    }
+                }
+            }
             Expr::Ident(name) => {
                 let name: String = name.clone().into();
                 let res = self.resolver.resolve_ident(&name)?; // TODO: Should we emit a diagnostic here?
@@ -464,7 +494,9 @@ impl InferenceContext<'_> {
             Some(ValueNs::MethodmapId(it)) => {
                 let data = self.db.methodmap_data(it.value);
                 if let Some(constructor_id) = data.constructor() {
-                    self.result.method_resolutions.insert(*expr, constructor_id);
+                    self.result
+                        .method_resolutions
+                        .insert(*expr, *constructor_id);
                     TypeRef::Name(name.clone()).into()
                 } else {
                     self.result

@@ -177,13 +177,18 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             .map(Macro::from)
     }
 
+    /// Find the type of an expression node.
+    ///
+    /// # Arguments
+    /// * `file_id` - The [`file_id`](FileId) of the file containing the node.
+    /// * `node` - The expression node.
     pub fn find_type_def(
         &self,
         file_id: FileId,
         mut node: tree_sitter::Node,
     ) -> Option<DefResolution> {
         log::debug!("finding type of node: {}", node.to_sexp());
-        while TSKind::from(node) != TSKind::identifier {
+        while !matches!(TSKind::from(node), TSKind::identifier | TSKind::this) {
             node = match TSKind::from(node) {
                 TSKind::array_indexed_access => node.child_by_field_name("array")?,
                 TSKind::assignment_expression => node.child_by_field_name("left")?,

@@ -145,6 +145,8 @@ pub struct MethodmapData {
     pub items_map: Arc<FxHashMap<Name, Idx<MethodmapItemData>>>,
     pub extension: Option<MethodmapExtension>,
     pub inherits: Option<MethodmapId>,
+    pub constructor: Option<Idx<MethodmapItemData>>,
+    pub destructor: Option<Idx<MethodmapItemData>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -230,6 +232,8 @@ impl MethodmapData {
         let mut items_map = FxHashMap::default();
         // Compute inherits first, so that they get properly overwritten.
         let mut inherits_id = None;
+        let mut constructor = None;
+        let mut destructor = None;
         if let Some(inherits_name) = methodmap.inherits.clone() {
             let resolver = global_resolver(db, loc.file_id());
             if let Some(inherits) = resolver.resolve_ident(inherits_name.to_string().as_str()) {
@@ -240,6 +244,14 @@ impl MethodmapData {
                         inherits_data
                             .items_map
                             .iter()
+                            .filter(|(_, v)| {
+                                // The constructors and destructors are not inherited
+                                !matches!(
+                                    inherits_data.item(**v),
+                                    MethodmapItemData::Constructor(_)
+                                        | MethodmapItemData::Destructor(_)
+                                )
+                            })
                             .map(|(k, v)| (k.clone(), items.alloc(inherits_data.item(*v).clone()))),
                     );
                 } else {
@@ -315,6 +327,11 @@ impl MethodmapData {
                     None => MethodmapItemData::Method(fn_id),
                 };
                 let method_id = items.alloc(method_);
+                match method.special {
+                    Some(SpecialMethod::Constructor) => constructor = method_id.into(),
+                    Some(SpecialMethod::Destructor) => destructor = method_id.into(),
+                    _ => (),
+                }
                 // FIXME: Not sure if we should intern like this...
                 items_map.insert(method.name.clone(), method_id);
             } // TODO: Add diagnostic for duplicate methodmap items
@@ -325,6 +342,8 @@ impl MethodmapData {
             items_map: Arc::new(items_map),
             extension: MethodmapExtension::from(methodmap.inherits.clone(), methodmap.nullable),
             inherits: inherits_id,
+            constructor,
+            destructor,
         };
 
         (Arc::new(methodmap_data), diags.into())
@@ -334,25 +353,12 @@ impl MethodmapData {
         &self.name
     }
 
-    pub fn constructor(&self) -> Option<FunctionId> {
-        // TODO: O(n), cache this?
-        self.items.iter().find_map(|(_, item)| match item {
-            MethodmapItemData::Constructor(id) => Some(*id),
-            MethodmapItemData::Method(_)
-            | MethodmapItemData::Static(_)
-            | MethodmapItemData::Property(_)
-            | MethodmapItemData::Destructor(_) => None,
-        })
+    pub fn constructor(&self) -> Option<&FunctionId> {
+        self.method(self.constructor?)
     }
 
-    pub fn destructor(&self) -> Option<FunctionId> {
-        self.items.iter().find_map(|(_, item)| match item {
-            MethodmapItemData::Destructor(id) => Some(*id),
-            MethodmapItemData::Method(_)
-            | MethodmapItemData::Static(_)
-            | MethodmapItemData::Property(_)
-            | MethodmapItemData::Constructor(_) => None,
-        })
+    pub fn destructor(&self) -> Option<&FunctionId> {
+        self.method(self.destructor?)
     }
 
     pub fn item(&self, item: Idx<MethodmapItemData>) -> &MethodmapItemData {
@@ -418,6 +424,21 @@ impl MethodmapData {
             MethodmapItemData::Property(property_data) => Some(property_data.id),
             _ => None,
         })
+    }
+
+    pub fn getters_setters(&self) -> impl Iterator<Item = FunctionId> + '_ {
+        self.items
+            .iter()
+            .filter_map(|(_, item)| match item {
+                MethodmapItemData::Property(property_data) => Some(property_data),
+                _ => None,
+            })
+            .flat_map(|property_data| {
+                property_data.getters_setters.iter().map(|it| match it {
+                    PropertyItem::Getter(id) => *id,
+                    PropertyItem::Setter(id) => *id,
+                })
+            })
     }
 }
 

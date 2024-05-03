@@ -207,6 +207,8 @@ pub(crate) fn completion_item_kind(kind: SymbolKind) -> lsp_types::CompletionIte
         SymbolKind::Methodmap => CK::CLASS,
         SymbolKind::Property => CK::PROPERTY,
         SymbolKind::Global => CK::VARIABLE,
+        SymbolKind::Keyword => CK::KEYWORD,
+        SymbolKind::Literal => CK::KEYWORD,
     }
 }
 

@@ -3,6 +3,7 @@ use std::panic::AssertUnwindSafe;
 use anyhow::Context;
 use base_db::FileRange;
 use ide::{HoverAction, HoverGotoTypeData};
+use ide_db::SymbolKind;
 use lsp_types::{
     SemanticTokensDeltaParams, SemanticTokensFullDeltaResult, SemanticTokensParams,
     SemanticTokensRangeParams, SemanticTokensRangeResult, SemanticTokensResult, Url,
@@ -31,7 +32,18 @@ pub(crate) fn handle_completion(
         return Ok(Some(lsp_types::CompletionResponse::Array(
             completions
                 .into_iter()
-                .map(|item| to_proto::completion_item(&snap, item))
+                .map(|item| {
+                    let kind = item.kind;
+                    let mut c_item = to_proto::completion_item(&snap, item);
+                    match kind {
+                        SymbolKind::Local | SymbolKind::Global => {
+                            c_item.sort_text = Some("0".to_string())
+                        }
+                        SymbolKind::Function => c_item.sort_text = Some("0.1".to_string()),
+                        _ => (),
+                    }
+                    c_item
+                })
                 .collect(),
         )));
     }

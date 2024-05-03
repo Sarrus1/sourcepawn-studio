@@ -285,7 +285,13 @@ impl FileDef {
         } else {
             match self {
                 FileDef::Methodmap(it) => {
-                    for diag in db.methodmap_data_with_diagnostics(it.id).1.iter() {
+                    let data = db.methodmap_data_with_diagnostics(it.id);
+                    data.0
+                        .methods()
+                        .chain(data.0.getters_setters())
+                        .flat_map(|id| FileDef::from(Function::from(id)).as_def_with_body())
+                        .for_each(|def| def.diagnostics(db, &mut acc));
+                    for diag in data.1.iter() {
                         match diag {
                             DefDiagnostic::UnresolvedInherit {
                                 methodmap_ast_id,
@@ -320,7 +326,12 @@ impl FileDef {
                         }
                     }
                 }
-                FileDef::EnumStruct(_) => (),
+                FileDef::EnumStruct(it) => {
+                    let data = db.enum_struct_data(it.id);
+                    data.methods()
+                        .flat_map(|id| FileDef::from(Function::from(id)).as_def_with_body())
+                        .for_each(|def| def.diagnostics(db, &mut acc));
+                }
                 _ => (),
             }
         }
@@ -441,6 +452,12 @@ impl DefWithBody {
                         name: name.clone(),
                         expected: *expected,
                         actual: *actual,
+                    }
+                    .into(),
+                ),
+                InferenceDiagnostic::InvalidUseOfThis { expr } => acc.push(
+                    InvalidUseOfThis {
+                        expr: expr_syntax(*expr),
                     }
                     .into(),
                 ),
@@ -572,12 +589,12 @@ impl Function {
             ItemContainerId::MethodmapId(container) => {
                 let method_map = db.methodmap_data(container);
                 if let Some(constructor_id) = method_map.constructor() {
-                    if constructor_id == self.id {
+                    if *constructor_id == self.id {
                         return FunctionType::Constructor;
                     }
                 }
                 if let Some(destructor_id) = method_map.destructor() {
-                    if destructor_id == self.id {
+                    if *destructor_id == self.id {
                         return FunctionType::Destructor;
                     }
                 }

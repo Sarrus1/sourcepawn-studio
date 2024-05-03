@@ -185,6 +185,8 @@ pub enum SymbolKind {
     Variant,
     Global,
     Local,
+    Keyword,
+    Literal,
 }
 
 impl From<FunctionType> for SymbolKind {

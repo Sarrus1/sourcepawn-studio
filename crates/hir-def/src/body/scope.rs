@@ -211,6 +211,7 @@ fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope
         | Expr::ScopeAccess { .. }
         | Expr::ArrayIndexedAccess { .. }
         | Expr::Ident(_)
+        | Expr::This
         | Expr::New { .. }
         | Expr::ViewAs { .. }
         | Expr::FieldAccess { .. }
