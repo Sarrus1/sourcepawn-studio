@@ -277,11 +277,12 @@
               "name": "",
               "includeDirectories": [],
               "compilerPath": "",
+              "outputDirectoryPath": "",
               "compilerArguments": [],
               "linterArguments": []
             }
           ],
-          "description": "Available Sourcemod APIs to quickly changed between them.",
+          "description": "Available Sourcemod APIs to quickly switch between them.",
           "scope": "resource"
         },
         "sourcepawn.outputDirectoryPath": {

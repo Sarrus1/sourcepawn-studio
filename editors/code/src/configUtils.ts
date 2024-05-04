@@ -1,4 +1,4 @@
-import { WorkspaceConfiguration, WorkspaceFolder, workspace } from 'vscode'
+import { WorkspaceConfiguration, WorkspaceFolder, commands, workspace } from 'vscode'
 
 /**
  * Get a value from the user's extension settings.
@@ -20,6 +20,18 @@ export function getConfig(section: Section, key?: string, workspaceFolder?: Work
         config = workspace.getConfiguration(section.toString());
     }
     return config.get(key, def);
+}
+
+/**
+ * Opens the settings for the user to modify the provided configuration
+ * @param section The section setting to access
+ * @param key The setting key
+ */
+export function editConfig(section: Section, key: string): void {
+    commands.executeCommand(
+        "workbench.action.openSettings",
+        `@id:${section}.${key}`
+    );
 }
 
 export enum Section {
