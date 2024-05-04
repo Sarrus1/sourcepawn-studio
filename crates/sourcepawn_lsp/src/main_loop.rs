@@ -384,6 +384,7 @@ impl GlobalState {
                 handlers::handle_semantic_tokens_range,
             )
             .on_latency_sensitive::<lsp_request::Completion>(handlers::handle_completion)
+            .on::<lsp_request::ResolveCompletionItem>(handlers::handle_resolve_completion)
             .on::<lsp_request::GotoDefinition>(handlers::handle_goto_definition)
             .on::<lsp::ext::HoverRequest>(handlers::handle_hover)
             .on::<lsp::ext::SyntaxTree>(handlers::handle_syntax_tree)

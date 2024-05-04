@@ -5,10 +5,10 @@ mod item;
 use std::panic::AssertUnwindSafe;
 
 use base_db::FilePosition;
-use hir::{DefResolution, Field, Function, Property, Semantics};
-use hir_def::{DefDatabase, FieldId, Name};
+use hir::{DefResolution, Field, Function, Property, Semantics, Typedef};
+use hir_def::{DefDatabase, FieldId, FunctionKind, TypedefId};
 use ide_db::{RootDatabase, SymbolKind};
-pub use item::CompletionItem;
+pub use item::{CompletionItem, CompletionKind};
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use lsp_types::Url;
@@ -176,47 +176,137 @@ pub fn completions(
         }
     };
 
-    let mut res = defs
-        .into_iter()
-        .flat_map(|it| {
-            let out: (Option<Name>, SymbolKind) = match it {
-                DefResolution::Function(it) => (it.name(db).into(), it.kind(db).into()),
-                DefResolution::Macro(it) => (it.name(db).into(), SymbolKind::Macro),
-                DefResolution::EnumStruct(it) => (it.name(db).into(), SymbolKind::Struct),
-                DefResolution::Methodmap(it) => (it.name(db).into(), SymbolKind::Methodmap),
-                DefResolution::Property(it) => (it.name(db).into(), SymbolKind::Property),
-                DefResolution::Enum(it) => (it.name(db).into(), SymbolKind::Enum),
-                DefResolution::Variant(it) => (it.name(db).into(), SymbolKind::Variant),
-                DefResolution::Typedef(it) => (it.name(db), SymbolKind::Typedef),
-                DefResolution::Typeset(it) => (it.name(db).into(), SymbolKind::Typeset),
-                DefResolution::Functag(it) => (it.name(db), SymbolKind::Functag),
-                DefResolution::Funcenum(it) => (it.name(db).into(), SymbolKind::Funcenum),
-                DefResolution::Field(it) => (it.name(db).into(), SymbolKind::Field),
-                DefResolution::Global(it) => (it.name(db).into(), SymbolKind::Global),
-                DefResolution::Local((name, it)) => (
-                    {
-                        if let Some(name) = name {
-                            Some(name)
-                        } else {
-                            it.name(db)
-                        }
-                    },
-                    SymbolKind::Local,
-                ),
-                DefResolution::File(_) => unreachable!(),
+    let mut res = Vec::new();
+
+    defs.into_iter().for_each(|def| match def {
+        DefResolution::Function(it) => {
+            let data = sema.db.function_data(it.id());
+            match data.kind {
+                FunctionKind::Def | FunctionKind::Native => {
+                    res.push(CompletionItem {
+                        label: it.name(db).to_string().into(),
+                        kind: SymbolKind::Function.into(),
+                        ..Default::default()
+                    });
+                }
+                FunctionKind::Forward => (),
+            }
+        }
+        DefResolution::Macro(it) => {
+            res.push(CompletionItem {
+                label: it.name(db).to_string().into(),
+                kind: SymbolKind::Macro.into(),
+                ..Default::default()
+            });
+        }
+        DefResolution::EnumStruct(it) => {
+            res.push(CompletionItem {
+                label: it.name(db).to_string().into(),
+                kind: SymbolKind::Struct.into(),
+                ..Default::default()
+            });
+        }
+        DefResolution::Methodmap(it) => {
+            res.push(CompletionItem {
+                label: it.name(db).to_string().into(),
+                kind: SymbolKind::Methodmap.into(),
+                ..Default::default()
+            });
+        }
+        DefResolution::Property(it) => {
+            res.push(CompletionItem {
+                label: it.name(db).to_string().into(),
+                kind: SymbolKind::Property.into(),
+                ..Default::default()
+            });
+        }
+        DefResolution::Enum(it) => {
+            res.push(CompletionItem {
+                label: it.name(db).to_string().into(),
+                kind: SymbolKind::Enum.into(),
+                ..Default::default()
+            });
+        }
+        DefResolution::Variant(it) => {
+            res.push(CompletionItem {
+                label: it.name(db).to_string().into(),
+                kind: SymbolKind::Variant.into(),
+                ..Default::default()
+            });
+        }
+        DefResolution::Typedef(it) => {
+            let Some(name) = it.name(db) else {
+                return;
             };
-            let label = out.0?.to_smolstr();
-            Some(CompletionItem {
-                label,
-                kind: out.1,
-                insert_text: None,
-                detail: None,
-                documentation: None,
-                deprecated: false,
-                trigger_call_info: false,
-            })
-        })
-        .collect_vec();
+            let name = name.to_smolstr();
+            res.push(CompletionItem {
+                label: name.clone(),
+                kind: SymbolKind::Typedef.into(),
+                ..Default::default()
+            });
+
+            res.push(CompletionItem {
+                label: name,
+                kind: CompletionKind::Snippet,
+                data: Some(it.id().as_u32().to_string()),
+                ..Default::default()
+            });
+        }
+        DefResolution::Typeset(it) => {
+            res.push(CompletionItem {
+                label: it.name(db).to_string().into(),
+                kind: SymbolKind::Typeset.into(),
+                ..Default::default()
+            });
+        }
+        DefResolution::Functag(it) => {
+            res.push(CompletionItem {
+                label: {
+                    let Some(name) = it.name(db) else {
+                        return;
+                    };
+                    name.to_smolstr()
+                },
+                kind: SymbolKind::Functag.into(),
+                ..Default::default()
+            });
+        }
+        DefResolution::Funcenum(it) => {
+            res.push(CompletionItem {
+                label: it.name(db).to_string().into(),
+                kind: SymbolKind::Funcenum.into(),
+                ..Default::default()
+            });
+        }
+        DefResolution::Field(it) => {
+            res.push(CompletionItem {
+                label: it.name(db).to_string().into(),
+                kind: SymbolKind::Field.into(),
+                ..Default::default()
+            });
+        }
+        DefResolution::Global(it) => {
+            res.push(CompletionItem {
+                label: it.name(db).to_string().into(),
+                kind: SymbolKind::Global.into(),
+                ..Default::default()
+            });
+        }
+        DefResolution::Local((name, _)) => {
+            res.push(CompletionItem {
+                label: {
+                    let Some(name) = name else {
+                        return;
+                    };
+                    name.to_smolstr()
+                },
+                kind: SymbolKind::Local.into(),
+                ..Default::default()
+            });
+        }
+        DefResolution::File(_) => (),
+    });
+
     if add_defaults {
         res.extend(get_default_completions(local_context));
     }
@@ -378,4 +468,9 @@ fn create_edit(source_code: &str, point: Point, token: &str) -> InputEdit {
         old_end_position: point,
         new_end_position: Point::new(point.row, point.column + token.chars().count()),
     }
+}
+
+pub fn resolve_completion(db: &RootDatabase, id: u32) -> Option<String> {
+    let def: Typedef = TypedefId::from_u32(id).into();
+    def.as_snippet(db)
 }

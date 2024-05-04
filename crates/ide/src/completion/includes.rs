@@ -1,6 +1,6 @@
 use base_db::SourceDatabaseExt;
 use fxhash::FxHashSet;
-use ide_db::{RootDatabase, SymbolKind};
+use ide_db::RootDatabase;
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use lsp_types::Url;
@@ -9,6 +9,8 @@ use regex::Regex;
 use smol_str::ToSmolStr;
 use std::panic::AssertUnwindSafe;
 use vfs::FileId;
+
+use crate::completion::item::CompletionKind;
 
 #[derive(Debug, Clone)]
 pub(super) struct IncludeStatement {
@@ -117,31 +119,29 @@ pub(super) fn get_include_completions(
 
     let closing_element = if include_st.should_append_closing_element {
         if include_st.use_chevron {
-            '>'
+            ">"
         } else {
-            '"'
+            "\""
         }
     } else {
-        ' '
+        ""
     };
 
     let items = completions
         .into_iter()
         .map(|(it, is_dir)| {
             let mut insert_text = it.replace(".inc", "");
-            insert_text.push(closing_element);
+            insert_text.push_str(closing_element);
             crate::CompletionItem {
                 label: it.to_smolstr(),
                 kind: if is_dir {
-                    SymbolKind::Directory
+                    CompletionKind::Directory
                 } else {
-                    SymbolKind::File
+                    CompletionKind::File
                 },
-                insert_text: Some(insert_text.trim().to_smolstr()),
+                insert_text: Some(insert_text),
                 detail: Some(it.to_string()),
-                documentation: None,
-                deprecated: false,
-                trigger_call_info: false,
+                ..Default::default()
             }
         })
         .collect_vec();

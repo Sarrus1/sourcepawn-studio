@@ -821,6 +821,10 @@ pub struct Typedef {
 }
 
 impl Typedef {
+    pub fn id(self) -> TypedefId {
+        self.id
+    }
+
     pub fn name(self, db: &dyn HirDatabase) -> Option<Name> {
         db.typedef_data(self.id).name.clone()
     }
@@ -871,6 +875,10 @@ impl Typedef {
         buf.into()
     }
 
+    pub fn return_type(self, db: &dyn HirDatabase) -> String {
+        db.typedef_data(self.id).type_ref.to_string()
+    }
+
     pub fn type_def(self, db: &dyn HirDatabase) -> Vec<DefResolution> {
         let mut res = Vec::new();
         let ty = db.typedef_data(self.id).type_ref.clone();
@@ -885,6 +893,46 @@ impl Typedef {
         }
 
         res
+    }
+
+    pub fn as_snippet(self, db: &dyn HirDatabase) -> Option<String> {
+        let loc = self.id.lookup(db.upcast());
+        let source = db.preprocessed_text(loc.id.file_id());
+        let file_id = loc.id.file_id();
+        let tree = db.parse(file_id);
+        let node = self.source(db, &tree)?.value;
+        let typedef_expr = node
+            .children(&mut node.walk())
+            .find(|n| TSKind::from(n) == TSKind::typedef_expression)?;
+        let type_ = typedef_expr
+            .child_by_field_name("returnType")?
+            .utf8_text(source.as_bytes())
+            .ok()?;
+        let params = typedef_expr.child_by_field_name("parameters")?;
+        let mut buf = format!("{} ${{1:name}}(", type_);
+        for (i, param) in params
+            .children(&mut params.walk())
+            .filter(|n| {
+                matches!(
+                    TSKind::from(n),
+                    TSKind::parameter_declaration | TSKind::rest_parameter
+                )
+            })
+            .enumerate()
+        {
+            let Some(name_node) = param.child_by_field_name("name") else {
+                continue;
+            };
+            let name = name_node.utf8_text(source.as_bytes()).ok()?;
+            let cur = param.utf8_text(source.as_bytes()).ok()?;
+            buf.push_str(&cur.replace(name, &format!("${{{}:{}}}", i + 2, name)));
+            buf.push_str(", ");
+        }
+        buf = buf.trim_end().to_string();
+        buf.pop();
+        buf.push_str(")\n{\n\t$0\n}");
+
+        buf.into()
     }
 }
 

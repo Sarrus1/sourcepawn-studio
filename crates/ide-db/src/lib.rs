@@ -165,8 +165,9 @@ impl salsa::ParallelDatabase for RootDatabase {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum SymbolKind {
+    #[default]
     Macro,
     Function,
     Constructor,
@@ -185,10 +186,6 @@ pub enum SymbolKind {
     Variant,
     Global,
     Local,
-    Keyword,
-    Literal,
-    Directory,
-    File,
 }
 
 impl From<FunctionType> for SymbolKind {

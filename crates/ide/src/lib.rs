@@ -25,7 +25,7 @@ use salsa::{Cancelled, ParallelDatabase};
 use syntax::range_contains_pos;
 use vfs::FileId;
 
-pub use completion::CompletionItem;
+pub use completion::{CompletionItem, CompletionKind};
 pub use goto_definition::NavigationTarget;
 pub use hover::{HoverAction, HoverConfig, HoverDocFormat, HoverGotoTypeData};
 pub use ide_db::Cancellable;
@@ -231,6 +231,10 @@ impl Analysis {
             )
             .map(Into::into)
         })
+    }
+
+    pub fn resolve_completion(&self, id: u32) -> Cancellable<Option<String>> {
+        self.with_db(|db| completion::resolve_completion(db, id))
     }
 
     /// Returns the highlighted ranges for the file.

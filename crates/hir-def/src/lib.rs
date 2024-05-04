@@ -78,6 +78,20 @@ macro_rules! impl_intern {
     };
 }
 
+macro_rules! impl_u32 {
+    ($id:ident) => {
+        impl $id {
+            pub fn as_u32(self) -> u32 {
+                self.0.as_u32()
+            }
+
+            pub fn from_u32(id: u32) -> Self {
+                Self(salsa::InternId::from(id))
+            }
+        }
+    };
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ItemContainerId {
     FileId(FileId),
@@ -166,6 +180,7 @@ impl_intern!(VariantId, VariantLoc, intern_variant, lookup_intern_variant);
 pub struct TypedefId(salsa::InternId);
 type TypedefLoc = AssocItemLoc<Typedef>;
 impl_intern!(TypedefId, TypedefLoc, intern_typedef, lookup_intern_typedef);
+impl_u32!(TypedefId);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TypesetId(salsa::InternId);

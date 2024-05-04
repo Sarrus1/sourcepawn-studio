@@ -5,6 +5,8 @@ use smol_str::SmolStr;
 
 use crate::CompletionItem;
 
+use super::item::CompletionKind;
+
 const DEFAULT_LITERAL: &[&str] = &["true", "false", "null"];
 
 const DEFAULT_KEYWORD: &[&str] = &[
@@ -36,12 +38,8 @@ pub(super) fn get_default_completions(locals: bool) -> Vec<CompletionItem> {
     res.extend(DEFAULT_LITERAL.iter().filter_map(|label| {
         CompletionItem {
             label: SmolStr::from_str(label).ok()?,
-            kind: SymbolKind::Literal,
-            insert_text: None,
-            detail: None,
-            documentation: None,
-            deprecated: false,
-            trigger_call_info: false,
+            kind: CompletionKind::Literal,
+            ..Default::default()
         }
         .into()
     }));
@@ -57,12 +55,8 @@ pub(super) fn get_default_completions(locals: bool) -> Vec<CompletionItem> {
             .filter_map(|label| {
                 CompletionItem {
                     label: SmolStr::from_str(label).ok()?,
-                    kind: SymbolKind::Keyword,
-                    insert_text: None,
-                    detail: None,
-                    documentation: None,
-                    deprecated: false,
-                    trigger_call_info: false,
+                    kind: CompletionKind::Keyword,
+                    ..Default::default()
                 }
                 .into()
             }),
@@ -71,12 +65,9 @@ pub(super) fn get_default_completions(locals: bool) -> Vec<CompletionItem> {
     res.extend(HARDCODED_DEFINES.iter().filter_map(|label| {
         CompletionItem {
             label: SmolStr::from_str(label).ok()?,
-            kind: SymbolKind::Macro,
-            insert_text: None,
+            kind: SymbolKind::Macro.into(),
             detail: Some("Hardcoded constant".to_string()),
-            documentation: None,
-            deprecated: false,
-            trigger_call_info: false,
+            ..Default::default()
         }
         .into()
     }));

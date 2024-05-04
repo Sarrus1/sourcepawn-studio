@@ -2,7 +2,7 @@ use std::panic::AssertUnwindSafe;
 
 use anyhow::Context;
 use base_db::FileRange;
-use ide::{HoverAction, HoverGotoTypeData};
+use ide::{CompletionKind, HoverAction, HoverGotoTypeData};
 use ide_db::SymbolKind;
 use lsp_types::{
     SemanticTokensDeltaParams, SemanticTokensFullDeltaResult, SemanticTokensParams,
@@ -19,6 +19,29 @@ use crate::{
     },
     lsp::{self, from_proto, to_proto},
 };
+
+pub(crate) fn handle_resolve_completion(
+    snap: GlobalStateSnapshot,
+    params: lsp_types::CompletionItem,
+) -> anyhow::Result<lsp_types::CompletionItem> {
+    let mut item = params;
+
+    if item.kind != Some(lsp_types::CompletionItemKind::SNIPPET) {
+        return Ok(item);
+    }
+
+    if let Some(data) = item.data.take() {
+        let data = data
+            .as_str()
+            .ok_or_else(|| anyhow::anyhow!("invalid completion data"))?
+            .to_string();
+        let id = data.parse::<u32>().context("invalid completion data")?;
+        item.insert_text = snap.analysis.resolve_completion(id)?;
+        item.insert_text_format = Some(lsp_types::InsertTextFormat::SNIPPET);
+    }
+
+    Ok(item)
+}
 
 pub(crate) fn handle_completion(
     snap: GlobalStateSnapshot,
@@ -47,10 +70,13 @@ pub(crate) fn handle_completion(
                     let kind = item.kind;
                     let mut c_item = to_proto::completion_item(&snap, item);
                     match kind {
-                        SymbolKind::Local | SymbolKind::Global => {
+                        CompletionKind::SymbolKind(SymbolKind::Local)
+                        | CompletionKind::SymbolKind(SymbolKind::Global) => {
                             c_item.sort_text = Some("0".to_string())
                         }
-                        SymbolKind::Function => c_item.sort_text = Some("0.1".to_string()),
+                        CompletionKind::SymbolKind(SymbolKind::Function) => {
+                            c_item.sort_text = Some("0.1".to_string())
+                        }
                         _ => (),
                     }
                     c_item

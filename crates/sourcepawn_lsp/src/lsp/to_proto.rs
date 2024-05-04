@@ -4,7 +4,10 @@ use std::{
 };
 
 use base_db::FileRange;
-use ide::{Cancellable, Highlight, HlMod, HlRange, HlTag, Markup, NavigationTarget, Severity};
+use ide::{
+    Cancellable, CompletionKind, Highlight, HlMod, HlRange, HlTag, Markup, NavigationTarget,
+    Severity,
+};
 use ide_db::SymbolKind;
 use itertools::Itertools;
 use paths::AbsPath;
@@ -183,35 +186,45 @@ pub(crate) fn completion_item(
         label: item.label.to_string(),
         insert_text: item.insert_text.map(|it| it.to_string()),
         kind: Some(completion_item_kind(item.kind)),
+        insert_text_format: {
+            if item.kind == CompletionKind::Snippet {
+                Some(lsp_types::InsertTextFormat::SNIPPET)
+            } else {
+                Some(lsp_types::InsertTextFormat::PLAIN_TEXT)
+            }
+        },
+        data: item.data.map(serde_json::Value::String),
         ..Default::default()
     }
 }
 
-pub(crate) fn completion_item_kind(kind: SymbolKind) -> lsp_types::CompletionItemKind {
+pub(crate) fn completion_item_kind(kind: CompletionKind) -> lsp_types::CompletionItemKind {
     use lsp_types::CompletionItemKind as CK;
+
     match kind {
-        SymbolKind::Function => CK::FUNCTION,
-        SymbolKind::Constructor => CK::CONSTRUCTOR,
-        SymbolKind::Destructor => CK::CONSTRUCTOR,
-        SymbolKind::Struct => CK::STRUCT,
-        SymbolKind::Enum => CK::ENUM,
-        SymbolKind::Variant => CK::ENUM_MEMBER,
-        SymbolKind::Macro => CK::CONSTANT,
-        SymbolKind::Local => CK::VARIABLE,
-        SymbolKind::Field => CK::FIELD,
-        SymbolKind::Method => CK::METHOD,
-        SymbolKind::Typedef => CK::INTERFACE,
-        SymbolKind::Typeset => CK::INTERFACE,
-        SymbolKind::Functag => CK::INTERFACE,
-        SymbolKind::Funcenum => CK::INTERFACE,
-        SymbolKind::EnumStruct => CK::STRUCT,
-        SymbolKind::Methodmap => CK::CLASS,
-        SymbolKind::Property => CK::PROPERTY,
-        SymbolKind::Global => CK::VARIABLE,
-        SymbolKind::Keyword => CK::KEYWORD,
-        SymbolKind::Literal => CK::KEYWORD,
-        SymbolKind::Directory => CK::FOLDER,
-        SymbolKind::File => CK::FILE,
+        CompletionKind::SymbolKind(SymbolKind::Function) => CK::FUNCTION,
+        CompletionKind::SymbolKind(SymbolKind::Constructor) => CK::CONSTRUCTOR,
+        CompletionKind::SymbolKind(SymbolKind::Destructor) => CK::CONSTRUCTOR,
+        CompletionKind::SymbolKind(SymbolKind::Struct) => CK::STRUCT,
+        CompletionKind::SymbolKind(SymbolKind::Enum) => CK::ENUM,
+        CompletionKind::SymbolKind(SymbolKind::Variant) => CK::ENUM_MEMBER,
+        CompletionKind::SymbolKind(SymbolKind::Macro) => CK::CONSTANT,
+        CompletionKind::SymbolKind(SymbolKind::Local) => CK::VARIABLE,
+        CompletionKind::SymbolKind(SymbolKind::Field) => CK::FIELD,
+        CompletionKind::SymbolKind(SymbolKind::Method) => CK::METHOD,
+        CompletionKind::SymbolKind(SymbolKind::Typedef) => CK::INTERFACE,
+        CompletionKind::SymbolKind(SymbolKind::Typeset) => CK::INTERFACE,
+        CompletionKind::SymbolKind(SymbolKind::Functag) => CK::INTERFACE,
+        CompletionKind::SymbolKind(SymbolKind::Funcenum) => CK::INTERFACE,
+        CompletionKind::SymbolKind(SymbolKind::EnumStruct) => CK::STRUCT,
+        CompletionKind::SymbolKind(SymbolKind::Methodmap) => CK::CLASS,
+        CompletionKind::SymbolKind(SymbolKind::Property) => CK::PROPERTY,
+        CompletionKind::SymbolKind(SymbolKind::Global) => CK::VARIABLE,
+        CompletionKind::Keyword => CK::KEYWORD,
+        CompletionKind::Literal => CK::KEYWORD,
+        CompletionKind::Directory => CK::FOLDER,
+        CompletionKind::File => CK::FILE,
+        CompletionKind::Snippet => CK::SNIPPET,
     }
 }
 
