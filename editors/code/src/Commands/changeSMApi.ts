@@ -9,7 +9,7 @@ import { Section, getConfig } from "../configUtils";
 type AvailableAPIOptional = {
   name: string | undefined;
   includeDirectories: string[] | undefined;
-  spcompPath: string | undefined;
+  compilerPath: string | undefined;
   compilerArguments: string[] | undefined;
   linterArguments: string[] | undefined;
 };
@@ -17,7 +17,7 @@ type AvailableAPIOptional = {
 type AvailableAPI = {
   name: string;
   includeDirectories: string[];
-  spcompPath: string;
+  compilerPath: string;
   compilerArguments: string[];
   linterArguments: string[];
 };
@@ -44,7 +44,7 @@ export async function run(args: any) {
     );
     await getConfig(Section.LSP).update(
       "compiler.path",
-      chosenAPI.spcompPath
+      chosenAPI.compilerPath
     );
     await getConfig(Section.SourcePawn).update(
       "compilerArguments",
@@ -63,7 +63,7 @@ function buildAvailableAPIFromOptional(
   optional: AvailableAPIOptional
 ): AvailableAPI {
   const name = "name" in optional ? optional.name : "";
-  const spcompPath = "spcompPath" in optional ? optional.spcompPath : "";
+  const compilerPath = "compilerPath" in optional ? optional.compilerPath : "";
   const includeDirectories =
     "includeDirectories" in optional ? optional.includeDirectories : [];
   const compilerArguments =
@@ -73,7 +73,7 @@ function buildAvailableAPIFromOptional(
 
   return {
     name,
-    spcompPath,
+    compilerPath,
     includeDirectories,
     compilerArguments,
     linterArguments,

@@ -31,7 +31,7 @@ export async function run(args: any) {
       return getSourceModVersion(progress, token);
     }
   );
-  const spCompPath: string = getConfig(Section.LSP, "compiler.path") || "";
+  const compilerPath: string = getConfig(Section.LSP, "compiler.path") || "";
   const smDir = join(outputDir, "addons/sourcemod/scripting/include");
   let spComp: string;
   if (Platform === "win32") {
@@ -39,10 +39,10 @@ export async function run(args: any) {
   } else {
     spComp = join(outputDir, "addons/sourcemod/scripting/spcomp");
   }
-  if (spCompPath != "") {
+  if (compilerPath != "") {
     window
       .showInformationMessage(
-        "The setting for spcompPath is not empty, do you want to override it?",
+        "The setting for compiler.path is not empty, do you want to override it?",
         "Yes",
         "No"
       )
@@ -66,7 +66,7 @@ function updatePath(smDir: string, spComp: string): void {
     true
   );
   getConfig(Section.LSP).update(
-    "spcompPath",
+    "compiler.path",
     spComp,
     true
   );
