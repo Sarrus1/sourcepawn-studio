@@ -13,6 +13,9 @@ pub struct CompletionItem {
     /// What item (struct, function, etc) are we completing.
     pub kind: SymbolKind,
 
+    /// What to insert if completion is accepted.
+    pub insert_text: Option<SmolStr>,
+
     /// Additional info to show in the UI pop up.
     pub detail: Option<String>,
     pub documentation: Option<Documentation>,

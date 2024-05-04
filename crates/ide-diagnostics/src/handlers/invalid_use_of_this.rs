@@ -12,7 +12,7 @@ pub(crate) fn invalid_use_of_this(
     Diagnostic::new_with_syntax_node_ptr(
         ctx,
         DiagnosticCode::SpCompError("E0000"),
-        format!("`this` can only be used in methods"),
+        "`this` can only be used in methods",
         d.expr,
     )
     // .with_fixes(fixes(ctx, d))

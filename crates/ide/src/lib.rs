@@ -8,7 +8,7 @@ mod prime_caches;
 mod status;
 mod syntax_highlighting;
 
-use std::{panic::AssertUnwindSafe, path::PathBuf, sync::Arc};
+use std::{panic::AssertUnwindSafe, sync::Arc};
 
 use base_db::{
     Change, FileExtension, FilePosition, FileRange, Graph, SourceDatabase, SourceDatabaseExt, Tree,

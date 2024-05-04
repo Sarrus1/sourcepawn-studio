@@ -347,7 +347,7 @@ impl InferenceContext<'_> {
                         self.result
                             .diagnostics
                             .push(InferenceDiagnostic::InvalidUseOfThis { expr: *expr });
-                        return None;
+                        None
                     }
                 }
             }

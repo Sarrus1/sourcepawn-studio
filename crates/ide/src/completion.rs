@@ -2,9 +2,9 @@ mod defaults;
 mod includes;
 mod item;
 
-use std::{panic::AssertUnwindSafe, path::PathBuf};
+use std::panic::AssertUnwindSafe;
 
-use base_db::{FilePosition, SourceDatabaseExt};
+use base_db::FilePosition;
 use hir::{DefResolution, Field, Function, Property, Semantics};
 use hir_def::{DefDatabase, FieldId, Name};
 use ide_db::{RootDatabase, SymbolKind};
@@ -44,7 +44,7 @@ pub fn completions(
             .nth(point.column)
             .map_or(line.len(), |(idx, _)| idx),
     );
-    if let Some(include_st) = is_include_statement(split_line.0) {
+    if let Some(include_st) = is_include_statement(split_line.0, split_line.1) {
         return get_include_completions(
             db,
             include_st,
@@ -209,6 +209,7 @@ pub fn completions(
             Some(CompletionItem {
                 label,
                 kind: out.1,
+                insert_text: None,
                 detail: None,
                 documentation: None,
                 deprecated: false,

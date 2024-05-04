@@ -37,6 +37,7 @@ pub(super) fn get_default_completions(locals: bool) -> Vec<CompletionItem> {
         CompletionItem {
             label: SmolStr::from_str(label).ok()?,
             kind: SymbolKind::Literal,
+            insert_text: None,
             detail: None,
             documentation: None,
             deprecated: false,
@@ -57,6 +58,7 @@ pub(super) fn get_default_completions(locals: bool) -> Vec<CompletionItem> {
                 CompletionItem {
                     label: SmolStr::from_str(label).ok()?,
                     kind: SymbolKind::Keyword,
+                    insert_text: None,
                     detail: None,
                     documentation: None,
                     deprecated: false,
@@ -70,6 +72,7 @@ pub(super) fn get_default_completions(locals: bool) -> Vec<CompletionItem> {
         CompletionItem {
             label: SmolStr::from_str(label).ok()?,
             kind: SymbolKind::Macro,
+            insert_text: None,
             detail: Some("Hardcoded constant".to_string()),
             documentation: None,
             deprecated: false,

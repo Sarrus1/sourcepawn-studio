@@ -181,6 +181,7 @@ pub(crate) fn completion_item(
 ) -> lsp_types::CompletionItem {
     lsp_types::CompletionItem {
         label: item.label.to_string(),
+        insert_text: item.insert_text.map(|it| it.to_string()),
         kind: Some(completion_item_kind(item.kind)),
         ..Default::default()
     }

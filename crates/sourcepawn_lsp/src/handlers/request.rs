@@ -4,7 +4,6 @@ use anyhow::Context;
 use base_db::FileRange;
 use ide::{HoverAction, HoverGotoTypeData};
 use ide_db::SymbolKind;
-use itertools::Itertools;
 use lsp_types::{
     SemanticTokensDeltaParams, SemanticTokensFullDeltaResult, SemanticTokensParams,
     SemanticTokensRangeParams, SemanticTokensRangeResult, SemanticTokensResult, Url,
