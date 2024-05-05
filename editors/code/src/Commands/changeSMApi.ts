@@ -30,12 +30,31 @@ export async function run(args: any): Promise<void> {
     availableAPIs.filter(api => api.name && api.name !== "").length !== 0;
 
   if (!validApis) {
-    window.showInformationMessage("API list is empty or contains invalid entries! They must have a 'name' property.", "Open Settings")
+    window.showInformationMessage(
+      "API list is empty or contains invalid entries! They must have a 'name' property.",
+      "Open Settings"
+    )
       .then((choice) => {
         if (choice === "Open Settings") {
           editConfig(Section.SourcePawn, "availableAPIs");
         }
       })
+    return;
+  }
+
+  const apiNames = availableAPIs.map(api => api.name);
+  const repeatedNames = apiNames.some((api, index) => apiNames.indexOf(api) !== index);
+
+  if (repeatedNames) {
+    window.showErrorMessage(
+      "API list has elements with duplicate names!",
+      "Open Settings"
+    )
+      .then(choice => {
+        if (choice === "Open Settings") {
+          editConfig(Section.SourcePawn, "availableAPIs")
+        }
+      });
     return;
   }
 
@@ -67,7 +86,7 @@ export async function run(args: any): Promise<void> {
       "outputDirectoryPath",
       chosenAPI.outputDirectoryPath
     );
-    window.showInformationMessage(`Changed to API '${chosenAPI.name}'!`)
+    window.showInformationMessage(`Changed to API ${chosenAPI.name}!`)
   });
 
   return;
