@@ -11,7 +11,6 @@ type AvailableAPIOptional = {
   compilerPath: string | undefined;
   outputDirectoryPath: string | undefined;
   compilerArguments: string[] | undefined;
-  linterArguments: string[] | undefined;
 };
 
 type AvailableAPI = {
@@ -20,7 +19,6 @@ type AvailableAPI = {
   compilerPath: string;
   outputDirectoryPath: string;
   compilerArguments: string[];
-  linterArguments: string[];
 };
 
 export async function run(args: any): Promise<void> {
@@ -50,6 +48,7 @@ export async function run(args: any): Promise<void> {
   const quickPickOptions: QuickPickOptions = {
     canPickMany: false,
   };
+
   window.showQuickPick(quickPickItems, quickPickOptions).then(async (item) => {
     const chosenAPI = availableAPIs.find((e) => e.name === item.label);
     await getConfig(Section.LSP).update(
@@ -60,8 +59,8 @@ export async function run(args: any): Promise<void> {
       "compiler.path",
       chosenAPI.compilerPath
     );
-    await getConfig(Section.SourcePawn).update(
-      "compilerArguments",
+    await getConfig(Section.LSP).update(
+      "compiler.arguments",
       chosenAPI.compilerArguments
     );
     await getConfig(Section.SourcePawn).update(
@@ -85,15 +84,12 @@ function buildAvailableAPIFromOptional(
     "includeDirectories" in optional ? optional.includeDirectories : [];
   const compilerArguments =
     "compilerArguments" in optional ? optional.compilerArguments : [];
-  const linterArguments =
-    "linterArguments" in optional ? optional.linterArguments : [];
 
   return {
     name,
     compilerPath,
     outputDirectoryPath,
     includeDirectories,
-    compilerArguments,
-    linterArguments,
+    compilerArguments
   };
 }

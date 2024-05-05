@@ -98,7 +98,7 @@ export async function run(args: URI): Promise<void> {
   outputDir += basename(fileToCompilePath, ".sp") + ".smx";
 
   // Add the compiler options from the settings.
-  const compilerArguments: string[] = getConfig(Section.SourcePawn, "compilerArguments", workspaceFolder);
+  const compilerArguments: string[] = getConfig(Section.LSP, "compiler.arguments", workspaceFolder);
   const includePaths: string[] = [
     join(scriptingFolderPath, "include"),
     scriptingFolderPath,

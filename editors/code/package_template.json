@@ -261,15 +261,6 @@
           "description": "Toggle the linter on or off.",
           "scope": "resource"
         },
-        "sourcepawn.compilerArguments": {
-          "type": "array",
-          "default": [
-            "-O2",
-            "-v2"
-          ],
-          "description": "SourcePawn compiler options. Don't add paths here.",
-          "scope": "resource"
-        },
         "sourcepawn.availableAPIs": {
           "type": "array",
           "default": [
@@ -278,8 +269,7 @@
               "includeDirectories": [],
               "compilerPath": "",
               "outputDirectoryPath": "",
-              "compilerArguments": [],
-              "linterArguments": []
+              "compilerArguments": []
             }
           ],
           "description": "Available Sourcemod APIs to quickly switch between them.",
