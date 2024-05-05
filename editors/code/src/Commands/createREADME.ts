@@ -29,8 +29,6 @@ export function run(rootpath?: string): void {
     rootpath = workspaceFolders?.[0].uri.fsPath;
   }
 
-  const rootname = basename(rootpath);
-
   // Check if README.md already exists
   const readmeFilePath = join(rootpath, "README.md");
   if (existsSync(readmeFilePath)) {
@@ -48,7 +46,7 @@ export function run(rootpath?: string): void {
   // Replace placeholders
   try {
     let result = readFileSync(readmeFilePath, "utf8");
-    result = result.replace(/\${plugin_name}/gm, rootname);
+    result = result.replace(/\${plugin_name}/gm, basename(rootpath));
     result = result.replace(/\${GithubName}/gm, githubName);
     writeFileSync(readmeFilePath, result, "utf8");
   } catch (err) {

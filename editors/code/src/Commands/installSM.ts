@@ -1,5 +1,4 @@
 import {
-  workspace as Workspace,
   window,
   ProgressLocation,
   CancellationToken,
@@ -14,10 +13,9 @@ import decompress from "decompress";
 import { getConfig, Section } from "../configUtils";
 
 const outputDir = join(homedir(), "sourcemodAPI/");
-
 const Platform = platform();
 
-export async function run(args: any) {
+export async function run(args: any): Promise<void> {
   if (!existsSync(outputDir)) {
     mkdirSync(outputDir);
   }
@@ -51,10 +49,10 @@ export async function run(args: any) {
           updatePath(smDir, spComp);
         }
       });
-    return 0;
+    return;
   }
   updatePath(smDir, spComp);
-  return 0;
+  return;
 }
 
 function updatePath(smDir: string, spComp: string): void {
@@ -171,6 +169,6 @@ async function downloadAndDecompressFile(
       });
     });
   } catch (error) {
-    console.error("Error during download and decompression:", error.message);
+    window.showErrorMessage("Failed to download and decompress the SourceMod package! " + error);
   }
 }

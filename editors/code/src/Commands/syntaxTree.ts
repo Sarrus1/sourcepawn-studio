@@ -41,16 +41,16 @@ export function syntaxTreeCommand(ctx: CtxInit): Cmd {
     ): Promise<string> {
       const params: SyntaxTreeParams = {};
       const doc = vscode.window.activeTextEditor?.document;
-      if (doc === undefined) {
+      if (!doc) {
         return "";
       }
       params.textDocument =
         ctx?.client.code2ProtocolConverter.asTextDocumentIdentifier(doc);
-      if (params.textDocument === undefined) {
+      if (!params.textDocument) {
         return "";
       }
       const text = await ctx?.client.sendRequest(syntaxTree, params);
-      if (text === undefined) {
+      if (!text) {
         return "";
       }
       return text;

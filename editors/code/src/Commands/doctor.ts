@@ -3,7 +3,7 @@ import * as fs from "fs";
 import { execFile } from "child_process";
 import { getConfig, Section } from "../configUtils";
 
-export async function run(args: any) {
+export async function run(args: any): Promise<void> {
   const panel = vscode.window.createWebviewPanel(
     "sourcepawnDoctor",
     "SourcePawn Doctor",

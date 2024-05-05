@@ -15,7 +15,7 @@ import { URI } from "vscode-uri";
 import { join, basename } from "path";
 import { editConfig, getConfig, Section } from "../configUtils";
 
-export function run(rootpath?: string) {
+export function run(rootpath?: string): void {
   const authorName: string = getConfig(Section.SourcePawn, "AuthorName");
   if (!authorName) {
     window
@@ -42,15 +42,13 @@ export function run(rootpath?: string) {
   const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
     window.showErrorMessage("No workspaces are opened.");
-    return 1;
+    return;
   }
 
   // Select the rootpath
-  if (rootpath === undefined) {
+  if (!rootpath) {
     rootpath = workspaceFolders?.[0].uri.fsPath;
   }
-
-  const rootname = basename(rootpath);
 
   // Create a scripting folder if it doesn't exist
   const scriptingFolderPath = join(rootpath, "scripting");
@@ -59,11 +57,11 @@ export function run(rootpath?: string) {
   }
 
   // Check if file already exists
-  const scriptFileName: string = rootname + ".sp";
+  const scriptFileName: string = basename(rootpath) + ".sp";
   const scriptFilePath = join(rootpath, "scripting", scriptFileName);
   if (existsSync(scriptFilePath)) {
-    window.showErrorMessage(scriptFileName + " already exists, aborting.");
-    return 2;
+    window.showErrorMessage(scriptFileName + " already exists.");
+    return;
   }
   const myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
     .extensionPath;
@@ -77,15 +75,14 @@ export function run(rootpath?: string) {
   try {
     const data = readFileSync(scriptFilePath, "utf8");
     let result = data.replace(/\${AuthorName}/gm, authorName);
-    result = result.replace(/\${plugin_name}/gm, rootname);
+    result = result.replace(/\${plugin_name}/gm, basename(rootpath));
     result = result.replace(/\${GithubName}/gm, githubName);
     writeFileSync(scriptFilePath, result, "utf8");
   } catch (err) {
     console.error(err);
-    return 3;
+    return;
   }
   workspace
     .openTextDocument(URI.file(scriptFilePath))
     .then((document) => window.showTextDocument(document));
-  return 0;
 }

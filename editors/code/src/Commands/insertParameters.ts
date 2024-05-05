@@ -1,6 +1,6 @@
 import { window, commands, SignatureHelp } from "vscode";
 
-export async function run(args: any) {
+export async function run(args: any): Promise<void> {
   const document = window.activeTextEditor.document;
   const position = window.activeTextEditor.selection.active;
   const linetext = document.lineAt(position).text;

@@ -10,10 +10,10 @@ import { run as createLicenseCommand } from "./createLICENSE";
 import { run as createGitignoreCommand } from "./createGITIGNORE";
 
 export async function run(args: any) {
-  // get workspace folder
+  // Get workspace folder
   const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
-    window.showErrorMessage("No workspace are opened.");
+    window.showErrorMessage("No workspaces are opened.");
     return;
   }
 

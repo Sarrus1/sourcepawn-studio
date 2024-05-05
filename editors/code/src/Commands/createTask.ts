@@ -33,7 +33,7 @@ export function run(rootpath?: string): void {
   }
 
   // Select the rootpath
-  if (rootpath === undefined) {
+  if (!rootpath) {
     rootpath = workspaceFolders?.[0].uri.fsPath;
   }
 
