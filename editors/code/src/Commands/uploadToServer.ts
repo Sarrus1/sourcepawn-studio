@@ -1,10 +1,10 @@
 ﻿import path from "path";
 import { run as runServerCommands } from "./runServerCommands";
 import { getMainCompilationFile } from "../spUtils";
-import { ProgressLocation, WorkspaceFolder, commands, window, workspace } from "vscode";
+import { ProgressLocation, WorkspaceFolder, window, workspace } from "vscode";
 import { lastActiveEditor } from "../spIndex";
 import { URI } from "vscode-uri";
-import { Section, getConfig } from "../configUtils";
+import { Section, editConfig, getConfig } from "../configUtils";
 import sftp from 'ssh2-sftp-client'
 import { glob } from "glob";
 import { Client } from 'basic-ftp'
@@ -20,7 +20,7 @@ export interface UploadOptions {
   exclude: string[];
 }
 
-export async function run(args?: string) {
+export async function run(args?: string): Promise<boolean> {
   let workspaceFolder: WorkspaceFolder;
   let fileToUpload: string;
 
@@ -43,31 +43,14 @@ export async function run(args?: string) {
 
   // Return if upload settings are not defined
   const uploadOptions: UploadOptions = getConfig(Section.SourcePawn, "UploadOptions", workspaceFolder)
-  if (uploadOptions === undefined) {
-    window.showErrorMessage("Upload settings are empty.", "Open Settings")
+  if (uploadOptions === undefined || uploadOptions.username == "" || uploadOptions.host == "") {
+    window.showErrorMessage("Upload settings are empty, or username or host are empty.", "Open Settings")
       .then((choice) => {
         if (choice === "Open Settings") {
-          commands.executeCommand(
-            "workbench.action.openSettings",
-            "@ext:sarrus.sourcepawn-vscode"
-          );
+          editConfig(Section.SourcePawn, "UploadOptions")
         }
       });
-    return 1;
-  }
-
-  // Return if upload settings are not properly configured
-  if (uploadOptions.username == "" || uploadOptions.host == "") {
-    window.showErrorMessage("Cannot upload - user or host empty.", "Open Settings")
-      .then((choice) => {
-        if (choice === "Open Settings") {
-          commands.executeCommand(
-            "workbench.action.openSettings",
-            "@ext:sarrus.sourcepawn-vscode"
-          );
-        }
-      });
-    return 2;
+    return false;
   }
 
   const workspaceRoot = workspaceFolder.uri.fsPath;
@@ -117,6 +100,7 @@ export async function run(args?: string) {
 
           // Show success message
           window.showInformationMessage('Files uploaded successfully!');
+          return true;
         }
         else {
           const ftp = new Client();
@@ -156,25 +140,25 @@ export async function run(args?: string) {
           await uploadFiles(workspaceRoot);
           window.showInformationMessage('Files uploaded successfully!');
           ftp.close();
+
           // Run commands if configured
           if (getConfig(Section.SourcePawn, "runServerCommands", workspaceFolder) === "afterUpload") {
             await runServerCommands(fileToUpload);
           }
+
+          return true;
         }
       }
       catch (error) {
-        if (token.isCancellationRequested) {
-          return 0;
+        if (!token.isCancellationRequested) {
+          window.showErrorMessage('Failed to upload files! ' + error);
         }
-        window.showErrorMessage('Failed to upload files! ' + error);
-        client.end();
-        return 1;
+        return false;
       }
       finally {
         client.end();
-        return 0;
       }
     }
   );
-  return 0;
+  return true;
 }

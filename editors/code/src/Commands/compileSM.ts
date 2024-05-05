@@ -1,7 +1,6 @@
 import {
   workspace,
   window,
-  commands,
   OutputChannel,
 } from "vscode";
 import { URI } from "vscode-uri";
@@ -13,7 +12,7 @@ import { run as uploadToServerCommand } from "./uploadToServer";
 import { run as runServerCommands } from "./runServerCommands";
 import { getCtxFromUri, lastActiveEditor } from "../spIndex";
 import { getMainCompilationFile, isSPFile } from "../spUtils";
-import { Section as Section, getConfig } from "../configUtils";
+import { Section as Section, editConfig, getConfig } from "../configUtils";
 
 // Create an OutputChannel variable here but do not initialize yet.
 let output: OutputChannel;
@@ -58,10 +57,7 @@ export async function run(args: URI): Promise<void> {
       )
       .then((choice) => {
         if (choice === "Open Settings") {
-          commands.executeCommand(
-            "workbench.action.openSettings",
-            "@ext:sarrus.sourcepawn-vscode"
-          );
+          editConfig(Section.LSP, "compiler.path")
         }
       });
     return;
@@ -85,10 +81,7 @@ export async function run(args: URI): Promise<void> {
         )
           .then((choice) => {
             if (choice === "Open Settings") {
-              commands.executeCommand(
-                "workbench.action.openSettings",
-                "@ext:sarrus.sourcepawn-vscode"
-              );
+              editConfig(Section.SourcePawn, "outputDirectoryPath");
             }
           });
         return;
@@ -165,13 +158,13 @@ export async function run(args: URI): Promise<void> {
 
       // Run upload command if chosen
       if (getConfig(Section.SourcePawn, "uploadAfterSuccessfulCompile", workspaceFolder)) {
-        await uploadToServerCommand(fileToCompilePath)
-      }
+        const uploadSuccessful = await uploadToServerCommand(fileToCompilePath);
 
-      // Run server commands if chosen
-      const commandsOption: string = getConfig(Section.SourcePawn, "runServerCommands", workspaceFolder);
-      if (commandsOption === "afterCompile") {
-        await runServerCommands(fileToCompilePath);
+        // Run server commands if chosen
+        const commandsOption: string = getConfig(Section.SourcePawn, "runServerCommands", workspaceFolder);
+        if (uploadSuccessful && commandsOption === "afterCompile") {
+          await runServerCommands(fileToCompilePath);
+        }
       }
     });
   } catch (error) {

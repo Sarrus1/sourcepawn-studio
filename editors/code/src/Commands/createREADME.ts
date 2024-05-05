@@ -1,9 +1,9 @@
-import { workspace as Workspace, window, commands, extensions } from "vscode";
+import { workspace as Workspace, window, extensions } from "vscode";
 import { existsSync, readFileSync, copyFileSync, writeFileSync } from "fs";
 import { join, basename } from "path";
-import { getConfig, Section } from "../configUtils";
+import { editConfig, getConfig, Section } from "../configUtils";
 
-export function run(rootpath?: string) {
+export function run(rootpath?: string): void {
   const githubName: string = getConfig(Section.SourcePawn, "GithubName");
   if (!githubName) {
     window.showWarningMessage(
@@ -12,10 +12,7 @@ export function run(rootpath?: string) {
     )
       .then((choice) => {
         if (choice === "Open Settings") {
-          commands.executeCommand(
-            "workbench.action.openSettings",
-            "@ext:sarrus.sourcepawn-vscode"
-          );
+          editConfig(Section.SourcePawn, "GithubName")
         }
       });
   }
@@ -24,7 +21,7 @@ export function run(rootpath?: string) {
   const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
     window.showErrorMessage("No workspaces are opened.");
-    return 1;
+    return;
   }
 
   // Select the rootpath
@@ -38,7 +35,7 @@ export function run(rootpath?: string) {
   const readmeFilePath = join(rootpath, "README.md");
   if (existsSync(readmeFilePath)) {
     window.showErrorMessage("README.md already exists, aborting.");
-    return 2;
+    return;
   }
   const myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
     .extensionPath;
@@ -56,7 +53,7 @@ export function run(rootpath?: string) {
     writeFileSync(readmeFilePath, result, "utf8");
   } catch (err) {
     console.error(err);
-    return 3;
+    return;
   }
-  return 0;
+  return;
 }

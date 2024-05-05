@@ -1,7 +1,6 @@
 import {
   workspace as Workspace,
   window,
-  commands,
   extensions,
   workspace,
 } from "vscode";
@@ -14,7 +13,7 @@ import {
 } from "fs";
 import { URI } from "vscode-uri";
 import { join, basename } from "path";
-import { getConfig, Section } from "../configUtils";
+import { editConfig, getConfig, Section } from "../configUtils";
 
 export function run(rootpath?: string) {
   const authorName: string = getConfig(Section.SourcePawn, "AuthorName");
@@ -23,15 +22,21 @@ export function run(rootpath?: string) {
       .showWarningMessage("You didn't specify an author name.", "Open Settings")
       .then((choice) => {
         if (choice === "Open Settings") {
-          commands.executeCommand(
-            "workbench.action.openSettings",
-            "@ext:sarrus.sourcepawn-vscode"
-          );
+          editConfig(Section.SourcePawn, "AuthorName")
         }
       });
   }
 
   const githubName: string = getConfig(Section.SourcePawn, "GithubName");
+  if (!githubName) {
+    window
+      .showWarningMessage("You didn't specify a GitHub name.", "Open Settings")
+      .then((choice) => {
+        if (choice === "Open Settings") {
+          editConfig(Section.SourcePawn, "GithubName")
+        }
+      });
+  }
 
   // Get workspace folder
   const workspaceFolders = Workspace.workspaceFolders;

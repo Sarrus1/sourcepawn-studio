@@ -1,34 +1,15 @@
-import { workspace as Workspace, window, commands } from "vscode";
+import { workspace as Workspace, window } from "vscode";
 import {
   existsSync,
   writeFileSync,
   mkdirSync,
 } from "fs";
 import { join } from "path";
-import { getConfig, Section } from "../configUtils";
+import { editConfig, getConfig, Section } from "../configUtils";
 
-export function run(rootpath?: string) {
+export function run(rootpath?: string): void {
   // Get configuration
   let includeDirs: string[] = getConfig(Section.LSP, "includeDirectories");
-  if (!includeDirs) {
-    window
-      .showWarningMessage(
-        "Sourcemod API not found in the project. You should set Sourcemod Home for tasks generation to work. Do you want to install it automatically?",
-        "Yes",
-        "No, open Settings"
-      )
-      .then((choice) => {
-        if (choice == "Yes") {
-          commands.executeCommand("sourcepawn-vscode.installSM");
-        } else if (choice === "No, open Settings") {
-          commands.executeCommand(
-            "workbench.action.openSettings",
-            "@ext:sarrus.sourcepawn-vscode"
-          );
-        }
-      });
-  }
-
   let compilerPath: string = getConfig(Section.LSP, "compiler.path");
   if (!compilerPath) {
     window
@@ -38,20 +19,17 @@ export function run(rootpath?: string) {
       )
       .then((choice) => {
         if (choice === "Open Settings") {
-          commands.executeCommand(
-            "workbench.action.openSettings",
-            "@ext:sarrus.sourcepawn-vscode"
-          );
+          editConfig(Section.LSP, "compiler.path")
         }
       });
-    return 1;
+    return;
   }
 
   // Get workspace folder
   const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
     window.showErrorMessage("No workspaces are opened.");
-    return 2;
+    return;
   }
 
   // Select the rootpath
@@ -69,7 +47,7 @@ export function run(rootpath?: string) {
   const taskFilePath = join(rootpath, ".vscode/tasks.json");
   if (existsSync(taskFilePath)) {
     window.showErrorMessage("tasks.json file already exists.");
-    return 3;
+    return;
   }
 
   try {
@@ -118,12 +96,12 @@ export function run(rootpath?: string) {
       ]
     }
 
-    includeDirs.map(dir => json.tasks[0].args.push(`-i${dir}`));
+    if (includeDirs.length > 0) {
+      includeDirs.map(dir => json.tasks[0].args.push(`-i${dir}`));
+    }
     writeFileSync(taskFilePath, JSON.stringify(json, null, 2), "utf8");
     window.showInformationMessage("Task file created successfully!")
-    return 0;
   } catch (error) {
     window.showErrorMessage(`Could not create tasks.json file! ${error}`)
-    return 5;
   }
 }
