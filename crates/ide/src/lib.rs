@@ -14,6 +14,7 @@ use base_db::{
     Change, FileExtension, FilePosition, FileRange, Graph, SourceDatabase, SourceDatabaseExt, Tree,
 };
 use fxhash::FxHashMap;
+use hir::DefResolution;
 use hir_def::{print_item_tree, DefDatabase};
 use hover::HoverResult;
 use ide_db::RootDatabase;
@@ -22,6 +23,7 @@ use lsp_types::Url;
 use paths::AbsPathBuf;
 use preprocessor::{db::PreprocDatabase, ArgsMap, Offset};
 use salsa::{Cancelled, ParallelDatabase};
+use serde_json::Value;
 use syntax::range_contains_pos;
 use vfs::FileId;
 
@@ -233,8 +235,14 @@ impl Analysis {
         })
     }
 
-    pub fn resolve_completion(&self, id: u32) -> Cancellable<Option<String>> {
-        self.with_db(|db| completion::resolve_completion(db, id))
+    pub fn resolve_completion(
+        &self,
+        data: Value,
+        item: lsp_types::CompletionItem,
+    ) -> Cancellable<Option<lsp_types::CompletionItem>> {
+        let data: DefResolution =
+            serde_json::from_value(data).expect("failed to deserialize completion data");
+        self.with_db(|db| completion::resolve_completion(db, data, item))
     }
 
     /// Returns the highlighted ranges for the file.

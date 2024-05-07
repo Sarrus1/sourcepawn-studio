@@ -16,5 +16,6 @@ fxhash.workspace = true
 nohash-hasher.workspace = true
 indexmap.workspace = true
 dunce.workspace = true
+serde.workspace = true
 
 paths.workspace = true

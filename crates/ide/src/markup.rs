@@ -37,3 +37,12 @@ impl Markup {
         format!("```sourcepawn\n{contents}\n```").into()
     }
 }
+
+impl From<Markup> for lsp_types::Documentation {
+    fn from(val: Markup) -> Self {
+        lsp_types::Documentation::MarkupContent(lsp_types::MarkupContent {
+            kind: lsp_types::MarkupKind::Markdown,
+            value: val.to_string(),
+        })
+    }
+}

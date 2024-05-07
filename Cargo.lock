@@ -941,6 +941,7 @@ dependencies = [
  "preprocessor",
  "regex",
  "salsa",
+ "serde",
  "smallvec",
  "smol_str",
  "stdx",
@@ -967,6 +968,7 @@ dependencies = [
  "preprocessor",
  "regex",
  "salsa",
+ "serde",
  "smallvec",
  "smol_str",
  "stdx",
@@ -1097,6 +1099,8 @@ dependencies = [
  "profile",
  "regex",
  "salsa",
+ "serde",
+ "serde_json",
  "smol_str",
  "sourcepawn_lexer",
  "stdx",
@@ -2969,6 +2973,7 @@ dependencies = [
  "lsp-types",
  "nohash-hasher",
  "paths",
+ "serde",
 ]
 
 [[package]]

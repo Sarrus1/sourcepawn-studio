@@ -12,6 +12,15 @@ impl From<Documentation> for String {
     }
 }
 
+impl From<Documentation> for lsp_types::Documentation {
+    fn from(val: Documentation) -> Self {
+        lsp_types::Documentation::MarkupContent(lsp_types::MarkupContent {
+            kind: lsp_types::MarkupKind::Markdown,
+            value: val.to_markdown(),
+        })
+    }
+}
+
 impl Documentation {
     pub fn new(s: String) -> Self {
         Documentation(s)

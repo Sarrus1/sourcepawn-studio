@@ -5,23 +5,28 @@ mod item;
 use std::panic::AssertUnwindSafe;
 
 use base_db::FilePosition;
-use hir::{DefResolution, Field, Function, Property, Semantics, Typedef};
-use hir_def::{DefDatabase, FieldId, FunctionKind, TypedefId};
-use ide_db::{RootDatabase, SymbolKind};
+use hir::{DefResolution, Field, Function, HasSource, Property, Semantics};
+use hir_def::{DefDatabase, FieldId, FunctionKind};
+use ide_db::{Documentation, RootDatabase, SymbolKind};
 pub use item::{CompletionItem, CompletionKind};
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use lsp_types::Url;
 use paths::AbsPathBuf;
+use preprocessor::db::PreprocDatabase;
 use regex::Regex;
-use smol_str::ToSmolStr;
+use smol_str::{SmolStr, ToSmolStr};
 use syntax::{utils::lsp_position_to_ts_point, TSKind};
 use tree_sitter::{InputEdit, Point};
 use vfs::FileId;
 
-use crate::completion::{
-    defaults::get_default_completions,
-    includes::{get_include_completions, is_include_statement},
+use crate::{
+    completion::{
+        defaults::get_default_completions,
+        includes::{get_include_completions, is_include_statement},
+    },
+    hover::render_def,
+    hover::Render,
 };
 
 pub fn completions(
@@ -178,7 +183,7 @@ pub fn completions(
 
     let mut res = Vec::new();
 
-    defs.into_iter().for_each(|def| match def {
+    defs.into_iter().for_each(|def| match &def {
         DefResolution::Function(it) => {
             let data = sema.db.function_data(it.id());
             match data.kind {
@@ -186,6 +191,7 @@ pub fn completions(
                     res.push(CompletionItem {
                         label: it.name(db).to_string().into(),
                         kind: SymbolKind::Function.into(),
+                        data: Some(def),
                         ..Default::default()
                     });
                 }
@@ -196,6 +202,7 @@ pub fn completions(
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),
                 kind: SymbolKind::Macro.into(),
+                data: Some(def),
                 ..Default::default()
             });
         }
@@ -203,6 +210,7 @@ pub fn completions(
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),
                 kind: SymbolKind::Struct.into(),
+                data: Some(def),
                 ..Default::default()
             });
         }
@@ -210,6 +218,7 @@ pub fn completions(
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),
                 kind: SymbolKind::Methodmap.into(),
+                data: Some(def),
                 ..Default::default()
             });
         }
@@ -217,6 +226,7 @@ pub fn completions(
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),
                 kind: SymbolKind::Property.into(),
+                data: Some(def),
                 ..Default::default()
             });
         }
@@ -224,6 +234,7 @@ pub fn completions(
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),
                 kind: SymbolKind::Enum.into(),
+                data: Some(def),
                 ..Default::default()
             });
         }
@@ -231,6 +242,7 @@ pub fn completions(
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),
                 kind: SymbolKind::Variant.into(),
+                data: Some(def),
                 ..Default::default()
             });
         }
@@ -242,22 +254,34 @@ pub fn completions(
             res.push(CompletionItem {
                 label: name.clone(),
                 kind: SymbolKind::Typedef.into(),
+                data: Some(def.clone()),
                 ..Default::default()
             });
 
             res.push(CompletionItem {
                 label: name,
                 kind: CompletionKind::Snippet,
-                data: Some(it.id().as_u32().to_string()),
+                data: Some(def),
                 ..Default::default()
             });
         }
         DefResolution::Typeset(it) => {
+            let name: SmolStr = it.name(db).to_string().into();
             res.push(CompletionItem {
-                label: it.name(db).to_string().into(),
+                label: name.clone(),
                 kind: SymbolKind::Typeset.into(),
+                data: Some(def.clone()),
                 ..Default::default()
             });
+
+            res.extend(it.children(db).into_iter().flat_map(|child| {
+                Some(CompletionItem {
+                    label: name.clone(),
+                    kind: CompletionKind::Snippet,
+                    data: Some(child.into()),
+                    ..Default::default()
+                })
+            }))
         }
         DefResolution::Functag(it) => {
             res.push(CompletionItem {
@@ -268,6 +292,7 @@ pub fn completions(
                     name.to_smolstr()
                 },
                 kind: SymbolKind::Functag.into(),
+                data: Some(def),
                 ..Default::default()
             });
         }
@@ -275,6 +300,7 @@ pub fn completions(
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),
                 kind: SymbolKind::Funcenum.into(),
+                data: Some(def),
                 ..Default::default()
             });
         }
@@ -282,6 +308,7 @@ pub fn completions(
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),
                 kind: SymbolKind::Field.into(),
+                data: Some(def),
                 ..Default::default()
             });
         }
@@ -289,6 +316,7 @@ pub fn completions(
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),
                 kind: SymbolKind::Global.into(),
+                data: Some(def),
                 ..Default::default()
             });
         }
@@ -301,6 +329,7 @@ pub fn completions(
                     name.to_smolstr()
                 },
                 kind: SymbolKind::Local.into(),
+                data: Some(def),
                 ..Default::default()
             });
         }
@@ -470,7 +499,28 @@ fn create_edit(source_code: &str, point: Point, token: &str) -> InputEdit {
     }
 }
 
-pub fn resolve_completion(db: &RootDatabase, id: u32) -> Option<String> {
-    let def: Typedef = TypedefId::from_u32(id).into();
-    def.as_snippet(db)
+pub fn resolve_completion(
+    db: &RootDatabase,
+    def: DefResolution,
+    mut item: lsp_types::CompletionItem,
+) -> Option<lsp_types::CompletionItem> {
+    if item.kind == Some(lsp_types::CompletionItemKind::SNIPPET) {
+        if let DefResolution::Typedef(it) = def {
+            item.insert_text = it.as_snippet(db);
+            item.insert_text_format = Some(lsp_types::InsertTextFormat::SNIPPET);
+        }
+    }
+    let file_id = def.file_id(db);
+    let source = db.preprocessed_text(file_id);
+    let tree = db.parse(file_id);
+    if let Some(def_node) = def.clone().source(db, &tree).map(|it| it.value) {
+        if let Some(docs) = Documentation::from_node(def_node, source.as_bytes()) {
+            item.documentation = Some(docs.into());
+        }
+    }
+    if let Some(Render::String(render)) = render_def(db, def) {
+        item.detail = Some(render);
+    }
+
+    item.into()
 }

@@ -1,6 +1,10 @@
 use bitflags::bitflags;
 use core::hash::Hash;
 use la_arena::{Arena, Idx, IdxRange};
+use serde::{
+    de::{self, Visitor},
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 use smallvec::SmallVec;
 use smol_str::SmolStr;
 use std::fmt;
@@ -236,6 +240,41 @@ impl Name {
 impl fmt::Display for Name {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(&self.0, f)
+    }
+}
+
+impl Serialize for Name {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.0.as_str())
+    }
+}
+
+impl<'de> Deserialize<'de> for Name {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct NameVisitor;
+
+        impl<'de> Visitor<'de> for NameVisitor {
+            type Value = Name;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a string for SmolStr")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Name, E>
+            where
+                E: de::Error,
+            {
+                Ok(Name(SmolStr::new(value)))
+            }
+        }
+
+        deserializer.deserialize_str(NameVisitor)
     }
 }
 

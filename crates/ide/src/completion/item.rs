@@ -1,3 +1,4 @@
+use hir::DefResolution;
 use ide_db::{Documentation, SymbolKind};
 use smol_str::SmolStr;
 
@@ -28,7 +29,7 @@ pub struct CompletionItem {
     /// after completion.
     pub trigger_call_info: bool,
 
-    pub data: Option<String>,
+    pub data: Option<DefResolution>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]

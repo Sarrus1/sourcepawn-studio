@@ -179,7 +179,7 @@ pub(crate) fn location(
 }
 
 pub(crate) fn completion_item(
-    snap: &GlobalStateSnapshot,
+    _snap: &GlobalStateSnapshot,
     item: ide::CompletionItem,
 ) -> lsp_types::CompletionItem {
     lsp_types::CompletionItem {
@@ -193,7 +193,7 @@ pub(crate) fn completion_item(
                 Some(lsp_types::InsertTextFormat::PLAIN_TEXT)
             }
         },
-        data: item.data.map(serde_json::Value::String),
+        data: item.data.and_then(|it| serde_json::to_value(it).ok()),
         ..Default::default()
     }
 }

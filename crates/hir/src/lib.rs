@@ -1,3 +1,5 @@
+use core::fmt;
+
 use base_db::Tree;
 use db::HirDatabase;
 use hir_def::{
@@ -7,7 +9,14 @@ use hir_def::{
     LocalFieldId, Lookup, MacroId, MethodmapExtension, MethodmapId, Name, NodePtr, PropertyId,
     SpecialMethod, TypedefId, TypesetId, VariantId,
 };
+use itertools::Itertools;
+use la_arena::RawIdx;
 use preprocessor::PreprocessorError;
+use serde::{
+    de::{self, MapAccess, Visitor},
+    ser::SerializeStruct,
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 use stdx::impl_from;
 use syntax::TSKind;
 use vfs::FileId;
@@ -22,7 +31,7 @@ mod source_to_def;
 
 pub use crate::{diagnostics::*, has_source::HasSource, semantics::Semantics};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DefResolution {
     Function(Function),
     Macro(Macro),
@@ -181,7 +190,7 @@ impl DefResolution {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct File {
     pub(crate) id: FileId,
 }
@@ -476,7 +485,7 @@ pub enum FunctionType {
     Destructor,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Function {
     pub(crate) id: FunctionId,
 }
@@ -608,7 +617,7 @@ impl Function {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Macro {
     pub(crate) id: MacroId,
 }
@@ -652,7 +661,7 @@ impl Macro {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct EnumStruct {
     pub(crate) id: EnumStructId,
 }
@@ -671,7 +680,7 @@ impl EnumStruct {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Methodmap {
     pub(crate) id: MethodmapId,
 }
@@ -712,7 +721,7 @@ impl Methodmap {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Property {
     pub(crate) id: PropertyId,
 }
@@ -768,7 +777,7 @@ impl Property {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Enum {
     pub(crate) id: EnumId,
 }
@@ -783,7 +792,7 @@ impl Enum {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Variant {
     pub(crate) id: VariantId,
 }
@@ -815,7 +824,7 @@ impl Variant {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Typedef {
     pub(crate) id: TypedefId,
 }
@@ -842,30 +851,36 @@ impl Typedef {
             buf.push_str(&name.to_string());
             buf.push_str(" = ");
         } else {
-            let ItemContainerId::TypesetId(parent_id) = self.id.lookup(db.upcast()).container
-            else {
-                panic!("expected a typedef to have a typeset as a parent");
-            };
-            let parent_name = db.typeset_data(parent_id).name.to_string();
-            buf.push_str(&parent_name);
-            buf.push('\n');
+            // let ItemContainerId::TypesetId(parent_id) = self.id.lookup(db.upcast()).container
+            // else {
+            //     panic!("expected a typedef to have a typeset as a parent");
+            // };
+            // let parent_name = db.typeset_data(parent_id).name.to_string();
+            // buf.push_str(&parent_name);
+            // buf.push_str("::");
+            // buf.push('\n');
         }
         buf.push_str("function ");
         buf.push_str(&data.type_ref.to_string());
         buf.push(' ');
 
-        if let Some(params) = node
-            .value
-            .children(&mut node.value.walk())
-            .find(|n| TSKind::from(n) == TSKind::typedef_expression)
-            .expect("expected a typedef to have a typedef_expression")
-            .child_by_field_name("parameters")
-            .and_then(|params_node| {
-                params_node
-                    .utf8_text(source.as_bytes())
-                    .ok()
-                    .map(String::from)
-            })
+        let typedef_expr = if TSKind::from(&node.value) == TSKind::typedef_expression {
+            node.value
+        } else {
+            node.value
+                .children(&mut node.value.walk())
+                .find(|n| TSKind::from(n) == TSKind::typedef_expression)?
+        };
+
+        if let Some(params) =
+            typedef_expr
+                .child_by_field_name("parameters")
+                .and_then(|params_node| {
+                    params_node
+                        .utf8_text(source.as_bytes())
+                        .ok()
+                        .map(String::from)
+                })
         {
             buf.push_str(&params);
         }
@@ -901,9 +916,12 @@ impl Typedef {
         let file_id = loc.id.file_id();
         let tree = db.parse(file_id);
         let node = self.source(db, &tree)?.value;
-        let typedef_expr = node
-            .children(&mut node.walk())
-            .find(|n| TSKind::from(n) == TSKind::typedef_expression)?;
+        let typedef_expr = if TSKind::from(&node) == TSKind::typedef_expression {
+            node
+        } else {
+            node.children(&mut node.walk())
+                .find(|n| TSKind::from(n) == TSKind::typedef_expression)?
+        };
         let type_ = typedef_expr
             .child_by_field_name("returnType")?
             .utf8_text(source.as_bytes())
@@ -936,7 +954,7 @@ impl Typedef {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Typeset {
     pub(crate) id: TypesetId,
 }
@@ -949,9 +967,19 @@ impl Typeset {
     pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
         format!("typeset {}", self.name(db)).into()
     }
+
+    pub fn children(self, db: &dyn HirDatabase) -> Vec<Typedef> {
+        let data = db.typeset_data(self.id);
+        data.typedefs
+            .iter()
+            .map(|it| it.1)
+            .cloned()
+            .map(|it| it.into())
+            .collect_vec()
+    }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Functag {
     pub(crate) id: FunctagId,
 }
@@ -1027,7 +1055,7 @@ impl Functag {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Funcenum {
     pub(crate) id: FuncenumId,
 }
@@ -1042,7 +1070,7 @@ impl Funcenum {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Global {
     pub(crate) id: GlobalId,
 }
@@ -1095,6 +1123,104 @@ impl Global {
 pub struct Field {
     pub(crate) parent: EnumStruct,
     pub(crate) id: LocalFieldId,
+}
+
+impl Serialize for Field {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Field", 2)?;
+        state.serialize_field("parent", &self.parent)?;
+        state.serialize_field("id", &self.id.into_raw().into_u32())?;
+        state.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for Field {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        enum FieldKey {
+            Parent,
+            Id,
+        }
+
+        impl<'de> Deserialize<'de> for FieldKey {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                struct KeyVisitor;
+
+                impl<'de> Visitor<'de> for KeyVisitor {
+                    type Value = FieldKey;
+
+                    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                        formatter.write_str("`parent` or `id`")
+                    }
+
+                    fn visit_str<E>(self, value: &str) -> Result<FieldKey, E>
+                    where
+                        E: de::Error,
+                    {
+                        match value {
+                            "parent" => Ok(FieldKey::Parent),
+                            "id" => Ok(FieldKey::Id),
+                            _ => Err(E::custom(format!("unexpected field: {}", value))),
+                        }
+                    }
+                }
+
+                deserializer.deserialize_identifier(KeyVisitor)
+            }
+        }
+
+        struct FieldVisitor;
+
+        impl<'de> Visitor<'de> for FieldVisitor {
+            type Value = Field;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct Field")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<Field, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                let mut parent = None;
+                let mut id = None;
+
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        FieldKey::Parent => {
+                            if parent.is_some() {
+                                return Err(de::Error::duplicate_field("parent"));
+                            }
+                            parent = Some(map.next_value()?);
+                        }
+                        FieldKey::Id => {
+                            if id.is_some() {
+                                return Err(de::Error::duplicate_field("id"));
+                            }
+                            let id_u32: u32 = map.next_value()?;
+                            id = Some(LocalFieldId::from_raw(RawIdx::from_u32(id_u32)));
+                        }
+                    }
+                }
+
+                let parent = parent.ok_or_else(|| de::Error::missing_field("parent"))?;
+                let id = id.ok_or_else(|| de::Error::missing_field("id"))?;
+
+                Ok(Field { parent, id })
+            }
+        }
+
+        const FIELDS: &[&str] = &["parent", "id"];
+        deserializer.deserialize_struct("Field", FIELDS, FieldVisitor)
+    }
 }
 
 impl Field {
@@ -1158,6 +1284,73 @@ impl_from!(Field, Property for Attribute);
 pub struct Local {
     pub(crate) parent: DefWithBodyId,
     pub(crate) expr_id: ExprId,
+}
+
+impl Serialize for Local {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Local", 2)?;
+        state.serialize_field("parent", &self.parent)?;
+        state.serialize_field("expr_id", &self.expr_id.into_raw().into_u32())?;
+        state.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for Local {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "snake_case")]
+        enum Field {
+            Parent,
+            ExprId,
+        }
+
+        struct LocalVisitor;
+
+        impl<'de> Visitor<'de> for LocalVisitor {
+            type Value = Local;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct Local")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<Local, V::Error>
+            where
+                V: serde::de::MapAccess<'de>,
+            {
+                let mut parent = None;
+                let mut expr_id = None;
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Parent => {
+                            if parent.is_some() {
+                                return Err(de::Error::duplicate_field("parent"));
+                            }
+                            parent = Some(map.next_value()?);
+                        }
+                        Field::ExprId => {
+                            if expr_id.is_some() {
+                                return Err(de::Error::duplicate_field("expr_id"));
+                            }
+                            let expr_id_u32: u32 = map.next_value()?;
+                            expr_id = Some(ExprId::from_raw(expr_id_u32.into()));
+                        }
+                    }
+                }
+                let parent = parent.ok_or_else(|| de::Error::missing_field("parent"))?;
+                let expr_id = expr_id.ok_or_else(|| de::Error::missing_field("expr_id"))?;
+                Ok(Local { parent, expr_id })
+            }
+        }
+
+        const FIELDS: &[&str] = &["parent", "expr_id"];
+        deserializer.deserialize_struct("Local", FIELDS, LocalVisitor)
+    }
 }
 
 impl<'tree> Local {

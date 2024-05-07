@@ -24,6 +24,7 @@ smallvec.workspace = true
 lazy_static.workspace = true
 regex.workspace = true
 itertools.workspace = true
+serde.workspace = true
 
 
 # Local crates

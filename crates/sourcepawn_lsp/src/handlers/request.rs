@@ -26,19 +26,14 @@ pub(crate) fn handle_resolve_completion(
 ) -> anyhow::Result<lsp_types::CompletionItem> {
     let mut item = params;
 
-    if item.kind != Some(lsp_types::CompletionItemKind::SNIPPET) {
+    let Some(data) = item.data.take() else {
         return Ok(item);
-    }
+    };
+    let Some(new_item) = snap.analysis.resolve_completion(data, item.clone())? else {
+        return Ok(item);
+    };
 
-    if let Some(data) = item.data.take() {
-        let data = data
-            .as_str()
-            .ok_or_else(|| anyhow::anyhow!("invalid completion data"))?
-            .to_string();
-        let id = data.parse::<u32>().context("invalid completion data")?;
-        item.insert_text = snap.analysis.resolve_completion(id)?;
-        item.insert_text_format = Some(lsp_types::InsertTextFormat::SNIPPET);
-    }
+    item = new_item;
 
     Ok(item)
 }
