@@ -615,6 +615,13 @@ impl Function {
             _ => unreachable!("unexpected container for a function"),
         }
     }
+
+    /// Returns whether the function is deprecated.
+    ///
+    /// This method is "fast" as it does not do a lookup of the node in the tree.
+    pub fn is_deprecated(self, db: &dyn HirDatabase) -> bool {
+        db.function_data(self.id).deprecated
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -659,6 +666,13 @@ impl Macro {
 
         buf.trim().to_string().into()
     }
+
+    /// Returns whether the macro is deprecated.
+    ///
+    /// This method is "fast" as it does not do a lookup of the node in the tree.
+    pub fn is_deprecated(self, db: &dyn HirDatabase) -> bool {
+        db.macro_data(self.id).deprecated
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -677,6 +691,13 @@ impl EnumStruct {
 
     pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
         format!("enum struct {}", self.name(db)).into()
+    }
+
+    /// Returns whether the enum struct is deprecated.
+    ///
+    /// This method is "fast" as it does not do a lookup of the node in the tree.
+    pub fn is_deprecated(self, db: &dyn HirDatabase) -> bool {
+        db.enum_struct_data(self.id).deprecated
     }
 }
 
@@ -718,6 +739,13 @@ impl Methodmap {
         }
 
         res
+    }
+
+    /// Returns whether the methodmap is deprecated.
+    ///
+    /// This method is "fast" as it does not do a lookup of the node in the tree.
+    pub fn is_deprecated(self, db: &dyn HirDatabase) -> bool {
+        db.methodmap_data(self.id).deprecated
     }
 }
 
@@ -775,6 +803,13 @@ impl Property {
 
         res
     }
+
+    /// Returns whether the property is deprecated.
+    ///
+    /// This method is "fast" as it does not do a lookup of the node in the tree.
+    pub fn is_deprecated(self, db: &dyn HirDatabase) -> bool {
+        db.property_data(self.id).deprecated
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -789,6 +824,13 @@ impl Enum {
 
     pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
         format!("enum {}", self.name(db)).into()
+    }
+
+    /// Returns whether the enum is deprecated.
+    ///
+    /// This method is "fast" as it does not do a lookup of the node in the tree.
+    pub fn is_deprecated(self, db: &dyn HirDatabase) -> bool {
+        db.enum_data(self.id).deprecated
     }
 }
 
@@ -821,6 +863,13 @@ impl Variant {
         };
 
         vec![DefResolution::Enum(parent_id.into())]
+    }
+
+    /// Returns whether the variant is deprecated.
+    ///
+    /// This method is "fast" as it does not do a lookup of the node in the tree.
+    pub fn is_deprecated(self, db: &dyn HirDatabase) -> bool {
+        db.variant_data(self.id).deprecated
     }
 }
 
@@ -952,6 +1001,13 @@ impl Typedef {
 
         buf.into()
     }
+
+    /// Returns whether the typedef is deprecated.
+    ///
+    /// This method is "fast" as it does not do a lookup of the node in the tree.
+    pub fn is_deprecated(self, db: &dyn HirDatabase) -> bool {
+        db.typedef_data(self.id).deprecated
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -976,6 +1032,13 @@ impl Typeset {
             .cloned()
             .map(|it| it.into())
             .collect_vec()
+    }
+
+    /// Returns whether the typeset is deprecated.
+    ///
+    /// This method is "fast" as it does not do a lookup of the node in the tree.
+    pub fn is_deprecated(self, db: &dyn HirDatabase) -> bool {
+        db.typeset_data(self.id).deprecated
     }
 }
 
@@ -1053,6 +1116,13 @@ impl Functag {
 
         res
     }
+
+    /// Returns whether the functag is deprecated.
+    ///
+    /// This method is "fast" as it does not do a lookup of the node in the tree.
+    pub fn is_deprecated(self, db: &dyn HirDatabase) -> bool {
+        db.functag_data(self.id).deprecated
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -1067,6 +1137,13 @@ impl Funcenum {
 
     pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
         format!("funcenum {}", self.name(db)).into()
+    }
+
+    /// Returns whether the funcenum is deprecated.
+    ///
+    /// This method is "fast" as it does not do a lookup of the node in the tree.
+    pub fn is_deprecated(self, db: &dyn HirDatabase) -> bool {
+        db.funcenum_data(self.id).deprecated
     }
 }
 
@@ -1268,6 +1345,16 @@ impl Field {
         res.push(DefResolution::EnumStruct(self.parent));
 
         res
+    }
+
+    /// Returns whether the field is deprecated.
+    ///
+    /// This method is "fast" as it does not do a lookup of the node in the tree.
+    pub fn is_deprecated(self, db: &dyn HirDatabase) -> bool {
+        db.enum_struct_data(self.parent.id)
+            .field(self.id)
+            .expect("expected a field to exist")
+            .deprecated
     }
 }
 

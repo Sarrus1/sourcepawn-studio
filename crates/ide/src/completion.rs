@@ -192,6 +192,7 @@ pub fn completions(
                         label: it.name(db).to_string().into(),
                         kind: SymbolKind::Function.into(),
                         data: Some(def),
+                        deprecated: data.deprecated,
                         ..Default::default()
                     });
                 }
@@ -202,7 +203,8 @@ pub fn completions(
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),
                 kind: SymbolKind::Macro.into(),
-                data: Some(def),
+                data: Some(def.clone()),
+                deprecated: it.is_deprecated(db),
                 ..Default::default()
             });
         }
@@ -210,7 +212,8 @@ pub fn completions(
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),
                 kind: SymbolKind::Struct.into(),
-                data: Some(def),
+                data: Some(def.clone()),
+                deprecated: it.is_deprecated(db),
                 ..Default::default()
             });
         }
@@ -218,7 +221,8 @@ pub fn completions(
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),
                 kind: SymbolKind::Methodmap.into(),
-                data: Some(def),
+                data: Some(def.clone()),
+                deprecated: it.is_deprecated(db),
                 ..Default::default()
             });
         }
@@ -226,7 +230,8 @@ pub fn completions(
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),
                 kind: SymbolKind::Property.into(),
-                data: Some(def),
+                data: Some(def.clone()),
+                deprecated: it.is_deprecated(db),
                 ..Default::default()
             });
         }
@@ -234,7 +239,8 @@ pub fn completions(
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),
                 kind: SymbolKind::Enum.into(),
-                data: Some(def),
+                data: Some(def.clone()),
+                deprecated: it.is_deprecated(db),
                 ..Default::default()
             });
         }
@@ -242,7 +248,8 @@ pub fn completions(
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),
                 kind: SymbolKind::Variant.into(),
-                data: Some(def),
+                data: Some(def.clone()),
+                deprecated: it.is_deprecated(db),
                 ..Default::default()
             });
         }
@@ -255,13 +262,15 @@ pub fn completions(
                 label: name.clone(),
                 kind: SymbolKind::Typedef.into(),
                 data: Some(def.clone()),
+                deprecated: it.is_deprecated(db),
                 ..Default::default()
             });
 
             res.push(CompletionItem {
                 label: name,
                 kind: CompletionKind::Snippet,
-                data: Some(def),
+                data: Some(def.clone()),
+                deprecated: it.is_deprecated(db),
                 ..Default::default()
             });
         }
@@ -271,6 +280,7 @@ pub fn completions(
                 label: name.clone(),
                 kind: SymbolKind::Typeset.into(),
                 data: Some(def.clone()),
+                deprecated: it.is_deprecated(db),
                 ..Default::default()
             });
 
@@ -279,6 +289,7 @@ pub fn completions(
                     label: name.clone(),
                     kind: CompletionKind::Snippet,
                     data: Some(child.into()),
+                    deprecated: child.is_deprecated(db),
                     ..Default::default()
                 })
             }))
@@ -292,7 +303,8 @@ pub fn completions(
                     name.to_smolstr()
                 },
                 kind: SymbolKind::Functag.into(),
-                data: Some(def),
+                data: Some(def.clone()),
+                deprecated: it.is_deprecated(db),
                 ..Default::default()
             });
         }
@@ -300,7 +312,8 @@ pub fn completions(
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),
                 kind: SymbolKind::Funcenum.into(),
-                data: Some(def),
+                data: Some(def.clone()),
+                deprecated: it.is_deprecated(db),
                 ..Default::default()
             });
         }
@@ -308,7 +321,8 @@ pub fn completions(
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),
                 kind: SymbolKind::Field.into(),
-                data: Some(def),
+                data: Some(def.clone()),
+                deprecated: it.is_deprecated(db),
                 ..Default::default()
             });
         }

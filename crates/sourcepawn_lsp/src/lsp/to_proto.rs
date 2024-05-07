@@ -193,6 +193,12 @@ pub(crate) fn completion_item(
                 Some(lsp_types::InsertTextFormat::PLAIN_TEXT)
             }
         },
+        deprecated: item.deprecated.into(),
+        tags: if item.deprecated {
+            Some(vec![lsp_types::CompletionItemTag::DEPRECATED])
+        } else {
+            None
+        },
         data: item.data.and_then(|it| serde_json::to_value(it).ok()),
         ..Default::default()
     }

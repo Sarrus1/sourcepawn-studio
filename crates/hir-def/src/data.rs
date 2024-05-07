@@ -67,6 +67,7 @@ pub struct FunctionData {
     pub kind: FunctionKind,
     pub visibility: RawVisibilityId,
     pub special: Option<SpecialMethod>,
+    pub deprecated: bool,
 }
 
 impl FunctionData {
@@ -87,6 +88,7 @@ impl FunctionData {
             kind: function.kind,
             visibility: function.visibility,
             special: function.special,
+            deprecated: function.deprecated,
         };
 
         Arc::new(function_data)
@@ -123,6 +125,7 @@ impl FunctionData {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MacroData {
     pub name: Name,
+    pub deprecated: bool,
 }
 
 impl MacroData {
@@ -132,6 +135,7 @@ impl MacroData {
         let macro_ = &item_tree[loc.value];
         let macro_data = MacroData {
             name: macro_.name.clone(),
+            deprecated: macro_.deprecated,
         };
 
         Arc::new(macro_data)
@@ -147,6 +151,7 @@ pub struct MethodmapData {
     pub inherits: Option<MethodmapId>,
     pub constructor: Option<Idx<MethodmapItemData>>,
     pub destructor: Option<Idx<MethodmapItemData>>,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -195,6 +200,7 @@ pub struct PropertyData {
     pub getters_setters: Vec<PropertyItem>,
     pub name: Name,
     pub type_ref: TypeRef,
+    pub deprecated: bool,
 }
 
 impl PropertyData {
@@ -304,6 +310,7 @@ impl MethodmapData {
                             }
                         })
                         .collect(),
+                    deprecated: property.deprecated,
                 });
                 let property_id = items.alloc(property_data);
                 items_map.insert(property.name.clone(), property_id);
@@ -344,6 +351,7 @@ impl MethodmapData {
             inherits: inherits_id,
             constructor,
             destructor,
+            deprecated: methodmap.deprecated,
         };
 
         (Arc::new(methodmap_data), diags.into())
@@ -446,6 +454,7 @@ impl MethodmapData {
 pub struct TypedefData {
     pub name: Option<Name>,
     pub type_ref: TypeRef,
+    pub deprecated: bool,
 }
 
 impl TypedefData {
@@ -456,6 +465,7 @@ impl TypedefData {
         let typedef_data = TypedefData {
             name: typedef.name.clone(),
             type_ref: typedef.type_ref.clone(),
+            deprecated: typedef.deprecated,
         };
 
         Arc::new(typedef_data)
@@ -470,6 +480,7 @@ impl TypedefData {
 pub struct TypesetData {
     pub name: Name,
     pub typedefs: Arc<Arena<TypedefId>>,
+    pub deprecated: bool,
 }
 
 impl TypesetData {
@@ -492,6 +503,7 @@ impl TypesetData {
         let typeset_data = TypesetData {
             name: typeset.name.clone(),
             typedefs: typedefs.into(),
+            deprecated: typeset.deprecated,
         };
 
         Arc::new(typeset_data)
@@ -506,6 +518,7 @@ impl TypesetData {
 pub struct FunctagData {
     pub name: Option<Name>,
     pub type_ref: Option<TypeRef>,
+    pub deprecated: bool,
 }
 
 impl FunctagData {
@@ -516,6 +529,7 @@ impl FunctagData {
         let functag_data = FunctagData {
             name: functag.name.clone(),
             type_ref: functag.type_ref.clone(),
+            deprecated: functag.deprecated,
         };
 
         Arc::new(functag_data)
@@ -530,6 +544,7 @@ impl FunctagData {
 pub struct FuncenumData {
     pub name: Name,
     pub functags: Arc<Arena<FunctagId>>,
+    pub deprecated: bool,
 }
 
 impl FuncenumData {
@@ -552,6 +567,7 @@ impl FuncenumData {
         let functag_data = Self {
             name: funcenum.name.clone(),
             functags: functags.into(),
+            deprecated: funcenum.deprecated,
         };
 
         Arc::new(functag_data)
@@ -567,6 +583,7 @@ pub struct EnumData {
     pub name: Name,
     pub variants: Arc<Arena<VariantData>>,
     pub variants_map: Arc<FxHashMap<Name, Idx<VariantData>>>,
+    pub deprecated: bool,
 }
 
 impl EnumData {
@@ -580,6 +597,7 @@ impl EnumData {
             let variant = &item_tree[variant_idx];
             let variant_data = VariantData {
                 name: variant.name.clone(),
+                deprecated: variant.deprecated,
             };
             let variant_id = variants.alloc(variant_data);
             variants_map.insert(variant.name.clone(), variant_id);
@@ -588,6 +606,7 @@ impl EnumData {
             name: enum_.name.clone(),
             variants: Arc::new(variants),
             variants_map: Arc::new(variants_map),
+            deprecated: enum_.deprecated,
         };
 
         Arc::new(enum_data)
@@ -597,6 +616,7 @@ impl EnumData {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VariantData {
     pub name: Name,
+    pub deprecated: bool,
 }
 
 impl VariantData {
@@ -607,6 +627,7 @@ impl VariantData {
 
         VariantData {
             name: variant.name.clone(),
+            deprecated: variant.deprecated,
         }
         .into()
     }
@@ -617,6 +638,7 @@ pub struct EnumStructData {
     pub name: Name,
     pub items: Arc<Arena<EnumStructItemData>>,
     pub items_map: Arc<FxHashMap<Name, Idx<EnumStructItemData>>>,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -630,6 +652,7 @@ pub enum EnumStructItemData {
 pub struct FieldData {
     pub name: Name,
     pub type_ref: TypeRef,
+    pub deprecated: bool,
 }
 
 impl EnumStructData {
@@ -648,6 +671,7 @@ impl EnumStructData {
                 let field_data = EnumStructItemData::Field(FieldData {
                     name: field.name.clone(),
                     type_ref: field.type_ref.clone(),
+                    deprecated: field.deprecated,
                 });
                 let field_id = items.alloc(field_data);
                 items_map.insert(field.name.clone(), field_id);
@@ -671,6 +695,7 @@ impl EnumStructData {
             name: enum_struct.name.clone(),
             items: Arc::new(items),
             items_map: Arc::new(items_map),
+            deprecated: enum_struct.deprecated,
         };
 
         Arc::new(enum_struct_data)
@@ -776,7 +801,11 @@ impl HasChildSource<LocalFieldId> for EnumStructId {
             let type_ref =
                 TypeRef::from_returntype_node(&child, "type", &db.preprocessed_text(loc.file_id()))
                     .unwrap();
-            let field = EnumStructItemData::Field(FieldData { name, type_ref });
+            let field = EnumStructItemData::Field(FieldData {
+                name,
+                type_ref,
+                deprecated: Default::default(),
+            });
             map.insert(items.alloc(field), NodePtr::from(&child));
         }
         InFile::new(loc.file_id(), map)
@@ -807,6 +836,7 @@ impl HasChildSource<Idx<TypedefData>> for TypesetId {
                 let typedef = TypedefData {
                     name: None,
                     type_ref,
+                    deprecated: Default::default(),
                 };
                 map.insert(typedefs.alloc(typedef), NodePtr::from(&child));
             }
@@ -839,6 +869,7 @@ impl HasChildSource<Idx<FunctagData>> for FuncenumId {
             let functag = FunctagData {
                 name: None,
                 type_ref,
+                deprecated: Default::default(),
             };
             map.insert(functags.alloc(functag), NodePtr::from(&child));
         }

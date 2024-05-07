@@ -168,17 +168,6 @@ impl GlobalState {
         self.connection
             .initialize_finish(id, serde_json::to_value(result)?)?;
 
-        // self.client_capabilities = Arc::new(params.capabilities);
-        // self.client_info = params.client_info.map(Arc::new);
-        // self.store.write().environment.root_uri = params.root_uri;
-
-        // self.store.write().folders = params
-        //     .workspace_folders
-        //     .unwrap_or_default()
-        //     .iter()
-        //     .filter_map(|folder| folder.uri.to_file_path().ok())
-        //     .collect();
-
         let ignored = if config.caps().has_pull_configuration_support() {
             let (config_data, ignored) = self.pull_config_sync(root_uri);
             if let Err(e) = config.update(config_data) {

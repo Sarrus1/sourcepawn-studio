@@ -283,6 +283,7 @@ pub struct Macro {
     pub name: Name,
     // pub params: IdxRange<Param>,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -308,6 +309,7 @@ pub struct Function {
     pub special: Option<SpecialMethod>,
     pub ret_type: Option<TypeRef>,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -325,6 +327,7 @@ pub struct Typedef {
     pub params: IdxRange<Param>,
     pub type_ref: TypeRef,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -332,6 +335,7 @@ pub struct Typeset {
     pub name: Name,
     pub typedefs: IdxRange<Typedef>,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -340,6 +344,7 @@ pub struct Functag {
     pub params: IdxRange<Param>,
     pub type_ref: Option<TypeRef>,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -347,6 +352,7 @@ pub struct Funcenum {
     pub name: Name,
     pub functags: IdxRange<Functag>,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -360,6 +366,7 @@ pub struct EnumStruct {
     pub name: Name,
     pub items: Box<[EnumStructItemId]>,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 /// A single field of an enum struct
@@ -368,6 +375,7 @@ pub struct Field {
     pub name: Name,
     pub type_ref: TypeRef,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -382,6 +390,7 @@ pub struct Property {
     pub getters_setters: IdxRange<Function>,
     pub type_ref: TypeRef,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -391,6 +400,7 @@ pub struct Methodmap {
     pub inherits: Option<Name>,
     pub nullable: bool,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -398,12 +408,14 @@ pub struct Enum {
     pub name: Name,
     pub variants: IdxRange<Variant>,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Variant {
     pub name: Name,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
