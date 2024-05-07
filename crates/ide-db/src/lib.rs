@@ -170,6 +170,7 @@ pub enum SymbolKind {
     #[default]
     Macro,
     Function,
+    Forward,
     Constructor,
     Destructor,
     Typedef,

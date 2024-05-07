@@ -196,7 +196,23 @@ pub fn completions(
                         ..Default::default()
                     });
                 }
-                FunctionKind::Forward => (),
+                FunctionKind::Forward => {
+                    res.push(CompletionItem {
+                        label: it.name(db).to_string().into(),
+                        kind: SymbolKind::Forward.into(),
+                        data: Some(def.clone()),
+                        deprecated: data.deprecated,
+                        ..Default::default()
+                    });
+
+                    res.push(CompletionItem {
+                        label: it.name(db).to_string().into(),
+                        kind: CompletionKind::Snippet,
+                        data: Some(def),
+                        deprecated: data.deprecated,
+                        ..Default::default()
+                    });
+                }
             }
         }
         DefResolution::Macro(it) => {
@@ -519,10 +535,16 @@ pub fn resolve_completion(
     mut item: lsp_types::CompletionItem,
 ) -> Option<lsp_types::CompletionItem> {
     if item.kind == Some(lsp_types::CompletionItemKind::SNIPPET) {
-        if let DefResolution::Typedef(it) = def {
-            item.insert_text = it.as_snippet(db);
-            item.insert_text_format = Some(lsp_types::InsertTextFormat::SNIPPET);
+        match def {
+            DefResolution::Typedef(it) => item.insert_text = it.as_snippet(db),
+            DefResolution::Function(it) => {
+                // Forward
+                item.insert_text = it.as_snippet(db);
+            }
+            // TODO: Do the same for functags
+            _ => unreachable!("unexpected completion kind: {:?}", item.kind),
         }
+        item.insert_text_format = Some(lsp_types::InsertTextFormat::SNIPPET);
     }
     let file_id = def.file_id(db);
     let source = db.preprocessed_text(file_id);

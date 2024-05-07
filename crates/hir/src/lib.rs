@@ -616,6 +616,51 @@ impl Function {
         }
     }
 
+    pub fn as_snippet(self, db: &dyn HirDatabase) -> Option<String> {
+        let loc = self.id.lookup(db.upcast());
+        let source = db.preprocessed_text(loc.id.file_id());
+        let file_id = loc.id.file_id();
+        let tree = db.parse(file_id);
+        let node = self.source(db, &tree)?.value;
+        let type_ = node
+            .child_by_field_name("returnType")?
+            .utf8_text(source.as_bytes())
+            .ok()?;
+        let name = node
+            .child_by_field_name("name")?
+            .utf8_text(source.as_bytes())
+            .ok()?;
+        let params = node.child_by_field_name("parameters")?;
+        let mut buf = format!("public {} {}(", type_, name);
+        let mut at_least_one_param = false;
+        for (i, param) in params
+            .children(&mut params.walk())
+            .filter(|n| {
+                matches!(
+                    TSKind::from(n),
+                    TSKind::parameter_declaration | TSKind::rest_parameter
+                )
+            })
+            .enumerate()
+        {
+            at_least_one_param = true;
+            let Some(name_node) = param.child_by_field_name("name") else {
+                continue;
+            };
+            let name = name_node.utf8_text(source.as_bytes()).ok()?;
+            let cur = param.utf8_text(source.as_bytes()).ok()?;
+            buf.push_str(&cur.replace(name, &format!("${{{}:{}}}", i + 2, name)));
+            buf.push_str(", ");
+        }
+        if at_least_one_param {
+            buf = buf.trim_end().to_string();
+            buf.pop();
+        }
+        buf.push_str(")\n{\n\t$0\n}");
+
+        buf.into()
+    }
+
     /// Returns whether the function is deprecated.
     ///
     /// This method is "fast" as it does not do a lookup of the node in the tree.
@@ -977,6 +1022,7 @@ impl Typedef {
             .ok()?;
         let params = typedef_expr.child_by_field_name("parameters")?;
         let mut buf = format!("{} ${{1:name}}(", type_);
+        let mut at_least_one_param = false;
         for (i, param) in params
             .children(&mut params.walk())
             .filter(|n| {
@@ -987,6 +1033,7 @@ impl Typedef {
             })
             .enumerate()
         {
+            at_least_one_param = true;
             let Some(name_node) = param.child_by_field_name("name") else {
                 continue;
             };
@@ -995,8 +1042,10 @@ impl Typedef {
             buf.push_str(&cur.replace(name, &format!("${{{}:{}}}", i + 2, name)));
             buf.push_str(", ");
         }
-        buf = buf.trim_end().to_string();
-        buf.pop();
+        if at_least_one_param {
+            buf = buf.trim_end().to_string();
+            buf.pop();
+        }
         buf.push_str(")\n{\n\t$0\n}");
 
         buf.into()

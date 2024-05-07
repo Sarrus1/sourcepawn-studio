@@ -209,6 +209,7 @@ pub(crate) fn completion_item_kind(kind: CompletionKind) -> lsp_types::Completio
 
     match kind {
         CompletionKind::SymbolKind(SymbolKind::Function) => CK::FUNCTION,
+        CompletionKind::SymbolKind(SymbolKind::Forward) => CK::INTERFACE,
         CompletionKind::SymbolKind(SymbolKind::Constructor) => CK::CONSTRUCTOR,
         CompletionKind::SymbolKind(SymbolKind::Destructor) => CK::CONSTRUCTOR,
         CompletionKind::SymbolKind(SymbolKind::Struct) => CK::STRUCT,
