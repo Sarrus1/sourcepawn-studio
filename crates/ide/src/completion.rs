@@ -204,7 +204,10 @@ pub fn completions(
                         deprecated: data.deprecated,
                         ..Default::default()
                     });
-
+                    if local_context {
+                        // Add the snippet only in a global context
+                        return;
+                    }
                     res.push(CompletionItem {
                         label: it.name(db).to_string().into(),
                         kind: CompletionKind::Snippet,
@@ -282,6 +285,10 @@ pub fn completions(
                 ..Default::default()
             });
 
+            if local_context {
+                // Add the snippet only in a global context
+                return;
+            }
             res.push(CompletionItem {
                 label: name,
                 kind: CompletionKind::Snippet,
@@ -300,6 +307,10 @@ pub fn completions(
                 ..Default::default()
             });
 
+            if local_context {
+                // Add the snippets only in a global context
+                return;
+            }
             res.extend(it.children(db).into_iter().flat_map(|child| {
                 Some(CompletionItem {
                     label: name.clone(),
@@ -322,6 +333,10 @@ pub fn completions(
                 ..Default::default()
             });
 
+            if local_context {
+                // Add the snippet only in a global context
+                return;
+            }
             res.push(CompletionItem {
                 label: name.to_smolstr(),
                 kind: CompletionKind::Snippet,
@@ -339,6 +354,10 @@ pub fn completions(
                 ..Default::default()
             });
 
+            if local_context {
+                // Add the snippets only in a global context
+                return;
+            }
             res.extend(it.children(db).into_iter().flat_map(|child| {
                 Some(CompletionItem {
                     label: it.name(db).to_string().into(),
