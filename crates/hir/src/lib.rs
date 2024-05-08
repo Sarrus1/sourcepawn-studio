@@ -1166,6 +1166,48 @@ impl Functag {
         res
     }
 
+    pub fn as_snippet(self, db: &dyn HirDatabase) -> Option<String> {
+        let loc = self.id.lookup(db.upcast());
+        let source = db.preprocessed_text(loc.id.file_id());
+        let file_id = loc.id.file_id();
+        let tree = db.parse(file_id);
+        let node = self.source(db, &tree)?.value;
+        let mut buf = node
+            .child_by_field_name("returnType")?
+            .utf8_text(source.as_bytes())
+            .unwrap_or_default()
+            .to_string();
+        let params = node.child_by_field_name("parameters")?;
+        buf.push_str("${1:name}(");
+        let mut at_least_one_param = false;
+        for (i, param) in params
+            .children(&mut params.walk())
+            .filter(|n| {
+                matches!(
+                    TSKind::from(n),
+                    TSKind::parameter_declaration | TSKind::rest_parameter
+                )
+            })
+            .enumerate()
+        {
+            at_least_one_param = true;
+            let Some(name_node) = param.child_by_field_name("name") else {
+                continue;
+            };
+            let name = name_node.utf8_text(source.as_bytes()).ok()?;
+            let cur = param.utf8_text(source.as_bytes()).ok()?;
+            buf.push_str(&cur.replace(name, &format!("${{{}:{}}}", i + 2, name)));
+            buf.push_str(", ");
+        }
+        if at_least_one_param {
+            buf = buf.trim_end().to_string();
+            buf.pop();
+        }
+        buf.push_str(")\n{\n\t$0\n}");
+
+        buf.into()
+    }
+
     /// Returns whether the functag is deprecated.
     ///
     /// This method is "fast" as it does not do a lookup of the node in the tree.
@@ -1186,6 +1228,16 @@ impl Funcenum {
 
     pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
         format!("funcenum {}", self.name(db)).into()
+    }
+
+    pub fn children(self, db: &dyn HirDatabase) -> Vec<Functag> {
+        let data = db.funcenum_data(self.id);
+        data.functags
+            .iter()
+            .map(|it| it.1)
+            .cloned()
+            .map(|it| it.into())
+            .collect_vec()
     }
 
     /// Returns whether the funcenum is deprecated.

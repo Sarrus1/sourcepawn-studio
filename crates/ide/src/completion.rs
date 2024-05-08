@@ -311,14 +311,20 @@ pub fn completions(
             }))
         }
         DefResolution::Functag(it) => {
+            let Some(name) = it.name(db) else {
+                return;
+            };
             res.push(CompletionItem {
-                label: {
-                    let Some(name) = it.name(db) else {
-                        return;
-                    };
-                    name.to_smolstr()
-                },
+                label: { name.to_smolstr() },
                 kind: SymbolKind::Functag.into(),
+                data: Some(def.clone()),
+                deprecated: it.is_deprecated(db),
+                ..Default::default()
+            });
+
+            res.push(CompletionItem {
+                label: name.to_smolstr(),
+                kind: CompletionKind::Snippet,
                 data: Some(def.clone()),
                 deprecated: it.is_deprecated(db),
                 ..Default::default()
@@ -332,6 +338,16 @@ pub fn completions(
                 deprecated: it.is_deprecated(db),
                 ..Default::default()
             });
+
+            res.extend(it.children(db).into_iter().flat_map(|child| {
+                Some(CompletionItem {
+                    label: it.name(db).to_string().into(),
+                    kind: CompletionKind::Snippet,
+                    data: Some(child.into()),
+                    deprecated: child.is_deprecated(db),
+                    ..Default::default()
+                })
+            }));
         }
         DefResolution::Field(it) => {
             res.push(CompletionItem {
@@ -541,7 +557,7 @@ pub fn resolve_completion(
                 // Forward
                 item.insert_text = it.as_snippet(db);
             }
-            // TODO: Do the same for functags
+            DefResolution::Functag(it) => item.insert_text = it.as_snippet(db),
             _ => unreachable!("unexpected completion kind: {:?}", item.kind),
         }
         item.insert_text_format = Some(lsp_types::InsertTextFormat::SNIPPET);
