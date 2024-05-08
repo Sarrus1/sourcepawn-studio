@@ -5,6 +5,9 @@ use item_tree::{
 };
 use item_tree::{Enum, ItemTree};
 use la_arena::Idx;
+use serde::de::{self, Visitor};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::fmt;
 use std::{hash::Hasher, sync::Arc};
 use stdx::impl_from;
 use vfs::FileId;
@@ -78,6 +81,53 @@ macro_rules! impl_intern {
     };
 }
 
+macro_rules! impl_serde {
+    ($id:ident) => {
+        impl Serialize for $id {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                serializer.serialize_u32(self.0.into())
+            }
+        }
+
+        impl<'de> Deserialize<'de> for $id {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                struct Vis;
+
+                impl<'de> Visitor<'de> for Vis {
+                    type Value = $id;
+
+                    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                        formatter.write_str("a u32 representing a salsa::InternId")
+                    }
+
+                    fn visit_u32<E>(self, value: u32) -> Result<$id, E>
+                    where
+                        E: de::Error,
+                    {
+                        Ok($id(salsa::InternId::from(value)))
+                    }
+
+                    fn visit_u64<E>(self, value: u64) -> Result<$id, E>
+                    where
+                        E: de::Error,
+                    {
+                        // Numbers are represented as u64 in JSON.
+                        Ok($id(salsa::InternId::from(value as u32)))
+                    }
+                }
+
+                deserializer.deserialize_u32(Vis)
+            }
+        }
+    };
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ItemContainerId {
     FileId(FileId),
@@ -106,11 +156,13 @@ impl_intern!(
     intern_function,
     lookup_intern_function
 );
+impl_serde!(FunctionId);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct MacroId(salsa::InternId);
 type MacroLoc = AssocItemLoc<Macro>;
 impl_intern!(MacroId, MacroLoc, intern_macro, lookup_intern_macro);
+impl_serde!(MacroId);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct EnumStructId(salsa::InternId);
@@ -121,6 +173,7 @@ impl_intern!(
     intern_enum_struct,
     lookup_intern_enum_struct
 );
+impl_serde!(EnumStructId);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FieldId {
@@ -139,6 +192,7 @@ impl_intern!(
     intern_methodmap,
     lookup_intern_methodmap
 );
+impl_serde!(MethodmapId);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct PropertyId(salsa::InternId);
@@ -149,6 +203,7 @@ impl_intern!(
     intern_property,
     lookup_intern_property
 );
+impl_serde!(PropertyId);
 
 pub type LocalPropertyId = Idx<data::MethodmapItemData>;
 
@@ -156,26 +211,31 @@ pub type LocalPropertyId = Idx<data::MethodmapItemData>;
 pub struct EnumId(salsa::InternId);
 type EnumLoc = AssocItemLoc<Enum>;
 impl_intern!(EnumId, EnumLoc, intern_enum, lookup_intern_enum);
+impl_serde!(EnumId);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct VariantId(salsa::InternId);
 type VariantLoc = AssocItemLoc<Variant>;
 impl_intern!(VariantId, VariantLoc, intern_variant, lookup_intern_variant);
+impl_serde!(VariantId);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TypedefId(salsa::InternId);
 type TypedefLoc = AssocItemLoc<Typedef>;
 impl_intern!(TypedefId, TypedefLoc, intern_typedef, lookup_intern_typedef);
+impl_serde!(TypedefId);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TypesetId(salsa::InternId);
 type TypesetLoc = AssocItemLoc<Typeset>;
 impl_intern!(TypesetId, TypesetLoc, intern_typeset, lookup_intern_typeset);
+impl_serde!(TypesetId);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FunctagId(salsa::InternId);
 type FunctagLoc = AssocItemLoc<Functag>;
 impl_intern!(FunctagId, FunctagLoc, intern_functag, lookup_intern_functag);
+impl_serde!(FunctagId);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FuncenumId(salsa::InternId);
@@ -186,6 +246,7 @@ impl_intern!(
     intern_funcenum,
     lookup_intern_funcenum
 );
+impl_serde!(FuncenumId);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct BlockId(salsa::InternId);
@@ -195,11 +256,13 @@ pub struct BlockLoc {
     file_id: FileId,
 }
 impl_intern!(BlockId, BlockLoc, intern_block, lookup_intern_block);
+impl_serde!(BlockId);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GlobalId(salsa::InternId);
 type GlobalLoc = ItemTreeId<Variable>;
 impl_intern!(GlobalId, GlobalLoc, intern_variable, lookup_intern_variable);
+impl_serde!(GlobalId);
 
 /// Defs which can be visible at the global scope.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -316,7 +379,7 @@ impl<N: ItemTreeNode> Hash for ItemTreeId<N> {
 }
 
 /// The defs which have a body.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DefWithBodyId {
     FunctionId(FunctionId),
     TypedefId(TypedefId),

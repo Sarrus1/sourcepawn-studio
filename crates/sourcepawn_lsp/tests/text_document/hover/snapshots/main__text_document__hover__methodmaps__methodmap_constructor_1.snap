@@ -18,5 +18,31 @@ expression: "hover(r#\"\n%! main.sp\nmethodmap Foo {\n    /**\n     * The Foo co
       "character": 14
     }
   },
-  "actions": []
+  "actions": [
+    {
+      "title": "Go to ",
+      "commands": [
+        {
+          "title": "Foo",
+          "command": "sourcepawn-vscode.gotoLocation",
+          "arguments": [
+            {
+              "uri": "file:///main.sp",
+              "range": {
+                "start": {
+                  "line": 0,
+                  "character": 10
+                },
+                "end": {
+                  "line": 0,
+                  "character": 13
+                }
+              }
+            }
+          ],
+          "tooltip": ""
+        }
+      ]
+    }
+  ]
 }

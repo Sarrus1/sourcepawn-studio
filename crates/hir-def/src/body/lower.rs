@@ -388,10 +388,11 @@ impl ExprCollector<'_> {
                 };
                 Some(self.alloc_expr(view_as, NodePtr::from(&expr)))
             }
-            TSKind::identifier | TSKind::this => {
+            TSKind::identifier => {
                 let name = Name::from_node(&expr, self.source);
                 Some(self.alloc_expr(Expr::Ident(name), NodePtr::from(&expr)))
             }
+            TSKind::this => Some(self.alloc_expr(Expr::This, NodePtr::from(&expr))),
             TSKind::int_literal => {
                 let text = expr.utf8_text(self.source.as_bytes()).unwrap();
                 let int = text.parse().ok()?;

@@ -1,5 +1,6 @@
 //! base_db defines basic database traits. The concrete DB is defined by ide.
 
+mod completion;
 mod goto_definition;
 mod hover;
 mod markup;
@@ -13,15 +14,20 @@ use base_db::{
     Change, FileExtension, FilePosition, FileRange, Graph, SourceDatabase, SourceDatabaseExt, Tree,
 };
 use fxhash::FxHashMap;
+use hir::DefResolution;
 use hir_def::{print_item_tree, DefDatabase};
 use hover::HoverResult;
 use ide_db::RootDatabase;
 use itertools::Itertools;
+use lsp_types::Url;
+use paths::AbsPathBuf;
 use preprocessor::{db::PreprocDatabase, ArgsMap, Offset};
 use salsa::{Cancelled, ParallelDatabase};
+use serde_json::Value;
 use syntax::range_contains_pos;
 use vfs::FileId;
 
+pub use completion::{CompletionItem, CompletionKind};
 pub use goto_definition::NavigationTarget;
 pub use hover::{HoverAction, HoverConfig, HoverDocFormat, HoverGotoTypeData};
 pub use ide_db::Cancellable;
@@ -207,6 +213,36 @@ impl Analysis {
         file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Option<String>>,
     ) -> Cancellable<Option<RangeInfo<HoverResult>>> {
         self.with_db(|db| hover::hover(db, pos, config, file_id_to_url))
+    }
+
+    /// Returns the completions at `position`.
+    pub fn completions(
+        &self,
+        position: FilePosition,
+        trigger_character: Option<char>,
+        include_directories: Vec<AbsPathBuf>,
+        file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Url>,
+    ) -> Cancellable<Option<Vec<CompletionItem>>> {
+        self.with_db(|db| {
+            completion::completions(
+                db,
+                position,
+                trigger_character,
+                include_directories,
+                file_id_to_url,
+            )
+            .map(Into::into)
+        })
+    }
+
+    pub fn resolve_completion(
+        &self,
+        data: Value,
+        item: lsp_types::CompletionItem,
+    ) -> Cancellable<Option<lsp_types::CompletionItem>> {
+        let data: DefResolution =
+            serde_json::from_value(data).expect("failed to deserialize completion data");
+        self.with_db(|db| completion::resolve_completion(db, data, item))
     }
 
     /// Returns the highlighted ranges for the file.

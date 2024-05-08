@@ -12,7 +12,7 @@ pub fn goto_type_action_for_def(db: &RootDatabase, def: DefResolution) -> Option
         DefResolution::Functag(it) => it.type_def(db),
         DefResolution::Field(it) => it.type_def(db),
         DefResolution::Global(it) => it.type_def(db),
-        DefResolution::Local(it) => it.type_def(db),
+        DefResolution::Local(it) => it.1.type_def(db),
         DefResolution::Variant(it) => it.type_def(db),
         DefResolution::Macro(_)
         | DefResolution::Enum(_)

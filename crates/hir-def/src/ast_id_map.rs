@@ -40,14 +40,17 @@ impl From<&tree_sitter::Node<'_>> for NodePtr {
 }
 
 impl NodePtr {
-    pub fn to_node(self, tree: &'_ Tree) -> tree_sitter::Node<'_> {
+    pub fn to_node(self, tree: &'_ Tree) -> Option<tree_sitter::Node<'_>> {
+        if self.is_null() {
+            return None;
+        }
         let mut node = tree.root_node();
         loop {
             if node.start_byte() == self.start_byte
                 && node.end_byte() == self.end_byte
                 && TSKind::from(node) == self.kind
             {
-                return node;
+                return node.into();
             }
             let mut found = false;
             let mut cursor = node.walk();
@@ -62,6 +65,19 @@ impl NodePtr {
                 panic!("failed to find node")
             }
         }
+    }
+
+    pub fn start_byte(&self) -> usize {
+        self.start_byte
+    }
+
+    pub fn end_byte(&self) -> usize {
+        self.end_byte
+    }
+
+    #[inline]
+    pub fn is_null(self) -> bool {
+        self.start_byte == self.end_byte
     }
 }
 

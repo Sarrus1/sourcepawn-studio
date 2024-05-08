@@ -34,6 +34,7 @@ diagnostics![
     PreprocessorEvaluationError,
     UnresolvedMacro,
     InactiveCode,
+    InvalidUseOfThis,
 ];
 
 #[derive(Debug)]
@@ -63,6 +64,11 @@ pub struct UnresolvedConstructor {
     pub expr: InFile<NodePtr>,
     pub methodmap: Name,
     pub exists: Option<ConstructorDiagnosticKind>,
+}
+
+#[derive(Debug)]
+pub struct InvalidUseOfThis {
+    pub expr: InFile<NodePtr>,
 }
 
 #[derive(Debug)]

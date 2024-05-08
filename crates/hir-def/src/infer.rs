@@ -10,7 +10,8 @@ use crate::{
     hir::{type_ref::TypeRef, Expr, Literal},
     item_tree::Name,
     resolver::{HasResolver, Resolver, ValueNs},
-    DefDatabase, DefWithBodyId, ExprId, FieldId, FunctionId, InFile, Lookup, PropertyId,
+    DefDatabase, DefWithBodyId, ExprId, FieldId, FunctionId, InFile, ItemContainerId, Lookup,
+    PropertyId,
 };
 
 pub(crate) fn infer_query(db: &dyn DefDatabase, def: DefWithBodyId) -> Arc<InferenceResult> {
@@ -56,6 +57,9 @@ pub enum InferenceDiagnostic {
         name: Name,
         expected: usize,
         actual: usize,
+    },
+    InvalidUseOfThis {
+        expr: ExprId,
     },
 }
 
@@ -248,10 +252,12 @@ impl InferenceContext<'_> {
                 let Expr::Ident(name_str) = self.body[*name].clone() else {
                     return None;
                 };
-                if let Some(ValueNs::LocalId(local)) =
+                if let Some(ValueNs::LocalId((_, local, idx))) =
                     resolver.resolve_ident(name_str.to_string().as_str())
                 {
-                    self.result.named_arg_resolutions.insert(*name, local);
+                    self.result
+                        .named_arg_resolutions
+                        .insert(*name, (local, idx));
                 } else {
                     self.result
                         .diagnostics
@@ -319,6 +325,32 @@ impl InferenceContext<'_> {
                 }
                 None
             }
+            Expr::This => {
+                let DefWithBodyId::FunctionId(fn_id) = self.owner else {
+                    self.result
+                        .diagnostics
+                        .push(InferenceDiagnostic::InvalidUseOfThis { expr: *expr });
+                    return None;
+                };
+                match fn_id.lookup(self.db).container {
+                    ItemContainerId::EnumStructId(id) => {
+                        let it = id.lookup(self.db);
+                        let item_tree = it.id.item_tree(self.db);
+                        TypeRef::Name(item_tree[it.id].name.clone()).into()
+                    }
+                    ItemContainerId::MethodmapId(id) => {
+                        let it = id.lookup(self.db);
+                        let item_tree = it.id.item_tree(self.db);
+                        TypeRef::Name(item_tree[it.id].name.clone()).into()
+                    }
+                    _ => {
+                        self.result
+                            .diagnostics
+                            .push(InferenceDiagnostic::InvalidUseOfThis { expr: *expr });
+                        None
+                    }
+                }
+            }
             Expr::Ident(name) => {
                 let name: String = name.clone().into();
                 let res = self.resolver.resolve_ident(&name)?; // TODO: Should we emit a diagnostic here?
@@ -327,7 +359,7 @@ impl InferenceContext<'_> {
                         let item_tree = self.db.file_item_tree(it.file_id);
                         item_tree[it.value.lookup(self.db).value].type_ref.clone()
                     }
-                    ValueNs::LocalId((_, expr_id)) => {
+                    ValueNs::LocalId((_, _, expr_id)) => {
                         let Expr::Binding {
                             ident_id: _,
                             type_ref,
@@ -462,7 +494,9 @@ impl InferenceContext<'_> {
             Some(ValueNs::MethodmapId(it)) => {
                 let data = self.db.methodmap_data(it.value);
                 if let Some(constructor_id) = data.constructor() {
-                    self.result.method_resolutions.insert(*expr, constructor_id);
+                    self.result
+                        .method_resolutions
+                        .insert(*expr, *constructor_id);
                     TypeRef::Name(name.clone()).into()
                 } else {
                     self.result
@@ -541,6 +575,7 @@ impl InferenceContext<'_> {
                             return Some(item_tree[property.id.value].type_ref.clone());
                         }
                         MethodmapItemData::Method(_)
+                        | MethodmapItemData::Static(_)
                         | MethodmapItemData::Constructor(_)
                         | MethodmapItemData::Destructor(_) => {
                             self.result
@@ -628,6 +663,7 @@ impl InferenceContext<'_> {
                             return None;
                         }
                         MethodmapItemData::Method(method)
+                        | MethodmapItemData::Static(method)
                         | MethodmapItemData::Constructor(method)
                         | MethodmapItemData::Destructor(method) => {
                             self.result.method_resolutions.insert(*receiver, *method);

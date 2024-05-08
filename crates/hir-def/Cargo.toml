@@ -25,6 +25,7 @@ lazy_static.workspace = true
 regex.workspace = true
 bitflags.workspace = true
 itertools.workspace = true
+serde.workspace = true
 
 # Local crates
 syntax.workspace = true

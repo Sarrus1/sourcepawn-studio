@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use base_db::Tree;
+use fxhash::FxHashSet;
 use la_arena::{Idx, IdxRange, RawIdx};
 use lazy_static::lazy_static;
 use syntax::TSKind;
@@ -22,6 +24,7 @@ pub(super) struct Ctx<'db> {
     source_ast_id_map: Arc<AstIdMap>,
     source: Arc<str>,
     file_id: FileId,
+    deprecated: FxHashSet<usize>,
 }
 
 impl<'db> Ctx<'db> {
@@ -32,6 +35,7 @@ impl<'db> Ctx<'db> {
             source_ast_id_map: db.ast_id_map(file_id),
             source: db.preprocessed_text(file_id),
             file_id,
+            deprecated: Default::default(),
         }
     }
 
@@ -41,6 +45,8 @@ impl<'db> Ctx<'db> {
 
     pub(super) fn lower(&mut self) {
         let tree = self.db.parse(self.file_id);
+        self.collect_deprecated(&tree);
+
         let root_node = tree.root_node();
         for child in root_node.children(&mut root_node.walk()) {
             match TSKind::from(child) {
@@ -80,12 +86,44 @@ impl<'db> Ctx<'db> {
                     .map(Name::from)
                 {
                     let ast_id = self.source_ast_id_map.ast_id_of(&node);
-                    let res = Macro { name, ast_id };
+                    let res = Macro {
+                        name,
+                        ast_id,
+                        deprecated: self.is_deprecated(&node),
+                    };
                     let id = self.tree.data_mut().macros.alloc(res);
                     self.tree.top_level.push(FileItem::Macro(id));
                 }
             }
         }
+    }
+
+    fn collect_deprecated(&mut self, tree: &Tree) {
+        // query for all pragmas
+        lazy_static! {
+            static ref MACRO_QUERY: tree_sitter::Query = tree_sitter::Query::new(
+                &tree_sitter_sourcepawn::language(),
+                "[(preproc_pragma) @pragma]"
+            )
+            .expect("Could not build pragma query.");
+        }
+        let mut cursor = QueryCursor::new();
+        let matches = cursor.captures(&MACRO_QUERY, tree.root_node(), self.source.as_bytes());
+        for (match_, _) in matches {
+            for c in match_.captures {
+                let Ok(pragma) = c.node.utf8_text(self.source.as_bytes()) else {
+                    return;
+                };
+                if pragma.starts_with("#pragma deprecated") {
+                    self.deprecated.insert(c.node.range().start_point.row);
+                }
+            }
+        }
+    }
+
+    fn is_deprecated(&self, node: &tree_sitter::Node) -> bool {
+        self.deprecated
+            .contains(&node.range().start_point.row.saturating_sub(1))
     }
 
     fn lower_global_variable(&mut self, node: &tree_sitter::Node) {
@@ -146,6 +184,7 @@ impl<'db> Ctx<'db> {
                     let res = Variant {
                         name,
                         ast_id: self.source_ast_id_map.ast_id_of(&e),
+                        deprecated: self.is_deprecated(&e),
                     };
                     let id = self.tree.data_mut().variants.alloc(res);
                     self.tree.top_level.push(FileItem::Variant(id));
@@ -163,6 +202,7 @@ impl<'db> Ctx<'db> {
             name,
             variants: IdxRange::new(start_idx..end_idx),
             ast_id: self.source_ast_id_map.ast_id_of(node),
+            deprecated: self.is_deprecated(node),
         };
         let id = self.tree.data_mut().enums.alloc(res);
         self.tree.top_level.push(FileItem::Enum(id));
@@ -225,6 +265,7 @@ impl<'db> Ctx<'db> {
             params,
             special,
             ast_id: self.source_ast_id_map.ast_id_of(node),
+            deprecated: self.is_deprecated(node),
         };
 
         self.tree.data_mut().functions.alloc(res).into()
@@ -275,6 +316,7 @@ impl<'db> Ctx<'db> {
             params,
             type_ref,
             ast_id: self.source_ast_id_map.ast_id_of(node),
+            deprecated: self.is_deprecated(node),
         };
         let id = self.tree.data_mut().typedefs.alloc(res);
         self.tree.top_level.push(FileItem::Typedef(id));
@@ -299,6 +341,7 @@ impl<'db> Ctx<'db> {
                     params,
                     type_ref,
                     ast_id: self.source_ast_id_map.ast_id_of(&typedef_expr_node),
+                    deprecated: self.is_deprecated(&typedef_expr_node),
                 };
                 let _ = self.tree.data_mut().typedefs.alloc(res);
             });
@@ -307,6 +350,7 @@ impl<'db> Ctx<'db> {
             name,
             typedefs: IdxRange::new(start..end),
             ast_id: self.source_ast_id_map.ast_id_of(node),
+            deprecated: self.is_deprecated(node),
         };
         let id = self.tree.data_mut().typesets.alloc(res);
 
@@ -325,6 +369,7 @@ impl<'db> Ctx<'db> {
             params,
             type_ref,
             ast_id: self.source_ast_id_map.ast_id_of(node),
+            deprecated: self.is_deprecated(node),
         };
         let id = self.tree.data_mut().functags.alloc(res);
         self.tree.top_level.push(FileItem::Functag(id));
@@ -347,6 +392,7 @@ impl<'db> Ctx<'db> {
                     params,
                     type_ref,
                     ast_id: self.source_ast_id_map.ast_id_of(&funcenum_member_node),
+                    deprecated: self.is_deprecated(&funcenum_member_node),
                 };
                 let _ = self.tree.data_mut().functags.alloc(res);
             });
@@ -355,6 +401,7 @@ impl<'db> Ctx<'db> {
             name,
             functags: IdxRange::new(start..end),
             ast_id: self.source_ast_id_map.ast_id_of(node),
+            deprecated: self.is_deprecated(node),
         };
         let id = self.tree.data_mut().funcenums.alloc(res);
         self.tree.top_level.push(FileItem::Funcenum(id));
@@ -413,6 +460,7 @@ impl<'db> Ctx<'db> {
                         getters_setters: IdxRange::new(start_idx..end_idx),
                         type_ref: type_,
                         ast_id: self.source_ast_id_map.ast_id_of(&e),
+                        deprecated: self.is_deprecated(&e),
                     };
                     let property_idx = self.tree.data_mut().properties.alloc(res);
                     items.push(MethodmapItemId::Property(property_idx));
@@ -459,6 +507,7 @@ impl<'db> Ctx<'db> {
             inherits,
             nullable,
             ast_id: self.source_ast_id_map.ast_id_of(node),
+            deprecated: self.is_deprecated(node),
         };
         let id = self.tree.data_mut().methodmaps.alloc(res);
         self.tree.top_level.push(FileItem::Methodmap(id));
@@ -482,6 +531,7 @@ impl<'db> Ctx<'db> {
                     params: IdxRange::new(idx..idx),
                     special: None,
                     ast_id: self.source_ast_id_map.ast_id_of(parent),
+                    deprecated: self.is_deprecated(node),
                 };
                 self.tree.data_mut().functions.alloc(res);
             }
@@ -508,6 +558,7 @@ impl<'db> Ctx<'db> {
                     params: IdxRange::new(start_idx..end_idx),
                     special: None,
                     ast_id: self.source_ast_id_map.ast_id_of(parent), // We care about the method itself, not the getter/setter in the grammar.
+                    deprecated: self.is_deprecated(node),
                 };
                 self.tree.data_mut().functions.alloc(res);
             }
@@ -536,6 +587,7 @@ impl<'db> Ctx<'db> {
                         ),
                         type_ref,
                         ast_id: self.source_ast_id_map.ast_id_of(&e),
+                        deprecated: self.is_deprecated(&e),
                     };
                     let field_idx = self.tree.data_mut().fields.alloc(res);
                     items.push(EnumStructItemId::Field(field_idx));
@@ -547,6 +599,7 @@ impl<'db> Ctx<'db> {
             name: Name::from(name_node.utf8_text(self.source.as_bytes()).unwrap()),
             items: items.into_boxed_slice(),
             ast_id: self.source_ast_id_map.ast_id_of(node),
+            deprecated: self.is_deprecated(node),
         };
         let id = self.tree.data_mut().enum_structs.alloc(res);
         self.tree.top_level.push(FileItem::EnumStruct(id));

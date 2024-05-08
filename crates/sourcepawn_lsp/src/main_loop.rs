@@ -168,17 +168,6 @@ impl GlobalState {
         self.connection
             .initialize_finish(id, serde_json::to_value(result)?)?;
 
-        // self.client_capabilities = Arc::new(params.capabilities);
-        // self.client_info = params.client_info.map(Arc::new);
-        // self.store.write().environment.root_uri = params.root_uri;
-
-        // self.store.write().folders = params
-        //     .workspace_folders
-        //     .unwrap_or_default()
-        //     .iter()
-        //     .filter_map(|folder| folder.uri.to_file_path().ok())
-        //     .collect();
-
         let ignored = if config.caps().has_pull_configuration_support() {
             let (config_data, ignored) = self.pull_config_sync(root_uri);
             if let Err(e) = config.update(config_data) {
@@ -383,6 +372,8 @@ impl GlobalState {
             .on_latency_sensitive::<lsp_request::SemanticTokensRangeRequest>(
                 handlers::handle_semantic_tokens_range,
             )
+            .on_latency_sensitive::<lsp_request::Completion>(handlers::handle_completion)
+            .on::<lsp_request::ResolveCompletionItem>(handlers::handle_resolve_completion)
             .on::<lsp_request::GotoDefinition>(handlers::handle_goto_definition)
             .on::<lsp::ext::HoverRequest>(handlers::handle_hover)
             .on::<lsp::ext::SyntaxTree>(handlers::handle_syntax_tree)

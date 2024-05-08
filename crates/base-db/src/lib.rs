@@ -68,6 +68,10 @@ impl Tree {
         &self.0
     }
 
+    pub fn edit(&mut self, edit: &tree_sitter::InputEdit) {
+        self.0.edit(edit);
+    }
+
     pub fn root_node(&self) -> tree_sitter::Node {
         self.tree().root_node()
     }

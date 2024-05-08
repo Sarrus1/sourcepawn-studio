@@ -185,7 +185,7 @@ fn scope_for_offset(
         .iter()
         .filter_map(|(id, scope)| {
             let ptr = source_map.expr_source(id)?;
-            Some((ptr.value.to_node(&tree), scope))
+            Some((ptr.value.to_node(&tree)?, scope))
         })
         .filter(|(node, _scope)| node.start_position() <= point && point <= node.end_position())
         .min_by_key(|(node, _)| node.end_byte() - node.start_byte())

@@ -96,7 +96,7 @@ impl SourceToDefCtx<'_, '_> {
 
     pub(super) fn find_container(&mut self, src: InFile<&NodePtr>) -> Option<ChildContainer> {
         let tree = self.db.parse(src.file_id);
-        let node = src.value.to_node(&tree);
+        let node = src.value.to_node(&tree)?;
         let mut container = node.parent()?;
         loop {
             match TSKind::from(container) {

@@ -17,7 +17,8 @@ use crate::{
     s_range_to_u_range, u_pos_to_s_pos, FilePosition, NavigationTarget, RangeInfo,
 };
 
-use self::{actions::goto_type_action_for_def, render::Render};
+use self::actions::goto_type_action_for_def;
+pub(crate) use render::{render_def, Render};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HoverConfig {

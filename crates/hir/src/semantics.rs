@@ -8,6 +8,7 @@ use hir_def::{
     resolver::{global_resolver, ValueNs},
     FileDefId, FunctionId, InFile, Name, NodePtr, PropertyItem,
 };
+use itertools::Itertools;
 use syntax::TSKind;
 use vfs::FileId;
 
@@ -64,7 +65,11 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         self.db.preprocessed_text(file_id)
     }
 
-    fn find_name_def(&self, file_id: FileId, node: &tree_sitter::Node) -> Option<DefResolution> {
+    pub fn find_name_def(
+        &self,
+        file_id: FileId,
+        node: &tree_sitter::Node,
+    ) -> Option<DefResolution> {
         if !is_name_node(node) {
             return None;
         }
@@ -102,10 +107,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 .field_to_def(src)
                 .map(Field::from)
                 .map(DefResolution::Field),
-            TSKind::parameter_declaration => self
-                .local_to_def(src)
-                .map(Local::from)
-                .map(DefResolution::Local),
+            TSKind::parameter_declaration => {
+                self.local_to_def(src).map(Local::from).map(|it| it.into())
+            }
             TSKind::variable_declaration | TSKind::old_variable_declaration => {
                 let grand_parent = parent.parent()?;
                 match TSKind::from(&grand_parent) {
@@ -115,10 +119,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                         .map(Global::from)
                         .map(DefResolution::Global),
                     TSKind::variable_declaration_statement
-                    | TSKind::old_variable_declaration_statement => self
-                        .local_to_def(src)
-                        .map(Local::from)
-                        .map(DefResolution::Local),
+                    | TSKind::old_variable_declaration_statement => {
+                        self.local_to_def(src).map(Local::from).map(|it| it.into())
+                    }
                     _ => unreachable!(),
                 }
             }
@@ -172,6 +175,40 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             .file_def_map(file_id)
             .get_macro(&idx)
             .map(Macro::from)
+    }
+
+    /// Find the type of an expression node.
+    ///
+    /// # Arguments
+    /// * `file_id` - The [`file_id`](FileId) of the file containing the node.
+    /// * `node` - The expression node.
+    pub fn find_type_def(
+        &self,
+        file_id: FileId,
+        mut node: tree_sitter::Node,
+    ) -> Option<DefResolution> {
+        log::debug!("finding type of node: {}", node.to_sexp());
+        while !matches!(TSKind::from(node), TSKind::identifier | TSKind::this) {
+            node = match TSKind::from(node) {
+                TSKind::array_indexed_access => node.child_by_field_name("array")?,
+                TSKind::assignment_expression => node.child_by_field_name("left")?,
+                TSKind::call_expression => node.child_by_field_name("function")?,
+                TSKind::ternary_expression => node.child_by_field_name("consequence")?,
+                TSKind::field_access => node.child_by_field_name("target")?,
+                TSKind::binary_expression => node.child_by_field_name("left")?,
+                TSKind::unary_expression => node.child_by_field_name("argument")?,
+                TSKind::update_expression => node.child_by_field_name("argument")?,
+                TSKind::view_as => node.child_by_field_name("type")?,
+                TSKind::old_type_cast => node.child_by_field_name("type")?,
+                TSKind::parenthesized_expression => node.child_by_field_name("expression")?,
+                TSKind::r#type => node.child(0)?,
+                TSKind::old_type => node.child(0)?,
+                TSKind::new_expression => node.child_by_field_name("class")?,
+                _ => return None,
+            }
+        }
+        self.find_def(file_id, &node)
+            .and_then(|def| def.type_def(self.db))
     }
 
     /// Find a definition given a reference node.
@@ -437,7 +474,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
 
                 if let Some(arg) = analyzer.resolve_named_arg(self.db, &node, &parent) {
                     // Only return if we find an argument. If we don't we were trying to resolve the value.
-                    return Some(DefResolution::Local(arg));
+                    return Some(arg.into());
                 }
             }
             _ => {}
@@ -528,6 +565,36 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
 
     pub fn to_file_def(&self, file_id: FileId) -> File {
         self.imp.file_to_def(file_id)
+    }
+
+    pub fn defs_in_scope(&self, file_id: FileId) -> Vec<DefResolution> {
+        let resolver = global_resolver(self.db, file_id);
+        resolver
+            .available_defs()
+            .into_iter()
+            .flat_map(DefResolution::try_from)
+            .collect_vec()
+    }
+
+    pub fn defs_in_function_scope(
+        &self,
+        file_id: FileId,
+        def: FunctionId,
+        point: tree_sitter::Point,
+        body_node: tree_sitter::Node,
+    ) -> Vec<DefResolution> {
+        let analyzer = SourceAnalyzer::new_for_body_no_infer(
+            self.db,
+            hir_def::DefWithBodyId::FunctionId(def),
+            InFile::new(file_id, body_node),
+            Some(point),
+        );
+        analyzer
+            .resolver
+            .available_defs()
+            .into_iter()
+            .flat_map(DefResolution::try_from)
+            .collect()
     }
 }
 
