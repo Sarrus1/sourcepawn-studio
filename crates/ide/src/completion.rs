@@ -1,4 +1,5 @@
 mod defaults;
+mod events;
 mod includes;
 mod item;
 
@@ -23,10 +24,10 @@ use vfs::FileId;
 use crate::{
     completion::{
         defaults::get_default_completions,
+        events::{events_completions, is_event_name},
         includes::{get_include_completions, is_include_statement},
     },
-    hover::render_def,
-    hover::Render,
+    hover::{render_def, Render},
 };
 
 pub fn completions(
@@ -93,6 +94,10 @@ pub fn completions(
     point_off.column = point_off.column.saturating_add(1);
 
     let node = root_node.descendant_for_point_range(point_off, point_off)?;
+
+    if is_event_name(&node, &preprocessed_text) {
+        return events_completions().into();
+    }
 
     let mut container = node.parent()?;
     // If the node does not have a parent we are at the root, nothing to resolve.

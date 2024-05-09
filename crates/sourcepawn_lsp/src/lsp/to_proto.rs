@@ -199,6 +199,8 @@ pub(crate) fn completion_item(
         } else {
             None
         },
+        detail: item.detail.map(|it| it.to_string()),
+        documentation: item.documentation.map(Into::into),
         data: item.data.and_then(|it| serde_json::to_value(it).ok()),
         ..Default::default()
     }
