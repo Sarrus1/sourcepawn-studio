@@ -222,6 +222,7 @@ impl Analysis {
         trigger_character: Option<char>,
         include_directories: Vec<AbsPathBuf>,
         file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Url>,
+        events_game_name: Option<&str>,
     ) -> Cancellable<Option<Vec<CompletionItem>>> {
         self.with_db(|db| {
             completion::completions(
@@ -230,6 +231,7 @@ impl Analysis {
                 trigger_character,
                 include_directories,
                 file_id_to_url,
+                events_game_name,
             )
             .map(Into::into)
         })

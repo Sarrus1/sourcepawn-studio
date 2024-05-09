@@ -48,6 +48,10 @@ impl<'a> Database<'a> {
     pub fn iter(&self) -> impl Iterator<Item = (&&str, &Game)> + '_ {
         self.0.iter()
     }
+
+    pub fn get(&self, game: &str) -> Option<&Game> {
+        self.0.get(game)
+    }
 }
 
 /// Bytes of the compressed JSON data for events completion.

@@ -57,6 +57,7 @@ pub(crate) fn handle_completion(
         trigger_character,
         include_directories,
         file_id_to_url,
+        snap.config.events_game_name(),
     )? {
         return Ok(Some(lsp_types::CompletionResponse::Array(
             completions

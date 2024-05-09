@@ -50,7 +50,27 @@ pub fn is_event_name(node: &Node, source: &str) -> bool {
 }
 
 /// Returns completions for event names.
-pub fn events_completions() -> Vec<CompletionItem> {
+///
+/// If `events_game_name` is `Some`, and if the game exits in the database,
+/// only completions for the given game will be returned.
+///
+/// # Parameters
+/// - `events_game_name`: The name of the game to get completions for
+pub fn events_completions(events_game_name: Option<&str>) -> Vec<CompletionItem> {
+    if let Some(game_name) = events_game_name {
+        if let Some(game) = DATABASE.get(game_name) {
+            return game
+                .events()
+                .iter()
+                .map(|ev| CompletionItem {
+                    label: ev.name().to_smolstr(),
+                    kind: CompletionKind::Literal,
+                    detail: Some(game_name.to_string()),
+                    ..Default::default()
+                })
+                .collect();
+        }
+    }
     DATABASE
         .iter()
         .flat_map(|(_, game)| {

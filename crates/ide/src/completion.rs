@@ -36,6 +36,7 @@ pub fn completions(
     trigger_character: Option<char>,
     include_directories: Vec<AbsPathBuf>,
     file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Url>,
+    events_game_name: Option<&str>,
 ) -> Option<Vec<CompletionItem>> {
     let sema = &Semantics::new(db);
     let preprocessing_results = sema.preprocess_file(pos.file_id);
@@ -96,7 +97,7 @@ pub fn completions(
     let node = root_node.descendant_for_point_range(point_off, point_off)?;
 
     if is_event_name(&node, &preprocessed_text) {
-        return events_completions().into();
+        return events_completions(events_game_name).into();
     }
 
     let mut container = node.parent()?;
