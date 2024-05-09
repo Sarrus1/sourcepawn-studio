@@ -89,6 +89,16 @@ pub(crate) fn file_includes_query(
     let mut res = vec![];
     let mut unresolved = vec![];
 
+    // Include sourcemod by default
+    if let Some(include_file_id) = db.resolve_path_relative_to_roots("sourcemod.inc") {
+        res.push(Include::new(
+            include_file_id,
+            IncludeKind::Chevrons,
+            IncludeType::TryInclude,
+            FileExtension::Inc,
+        ));
+    }
+
     let input = db.file_text(file_id);
     let lexer = sourcepawn_lexer::SourcepawnLexer::new(&input);
     for symbol in lexer {
