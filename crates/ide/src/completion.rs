@@ -1,5 +1,4 @@
 mod defaults;
-mod events;
 mod includes;
 mod item;
 
@@ -24,9 +23,9 @@ use vfs::FileId;
 use crate::{
     completion::{
         defaults::get_default_completions,
-        events::{events_completions, is_event_name},
         includes::{get_include_completions, is_include_statement},
     },
+    events::{event_name, events_completions},
     hover::{render_def, Render},
 };
 
@@ -96,7 +95,7 @@ pub fn completions(
 
     let node = root_node.descendant_for_point_range(point_off, point_off)?;
 
-    if is_event_name(&node, &preprocessed_text) {
+    if event_name(&node, &preprocessed_text).is_some() {
         return events_completions(events_game_name).into();
     }
 

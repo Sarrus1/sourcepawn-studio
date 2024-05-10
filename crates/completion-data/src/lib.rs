@@ -93,6 +93,21 @@ impl<'a> Database<'a> {
     pub fn get(&self, game: &str) -> Option<&Game> {
         self.0.get(game)
     }
+
+    pub fn get_event(&self, game: &str, event: &str) -> Option<&Event> {
+        self.0.get(game)?.events.iter().find(|ev| ev.name == event)
+    }
+
+    pub fn get_events(&self, name: &str) -> Vec<(String, Event)> {
+        let mut res = Vec::new();
+        self.0.iter().for_each(|(_, game)| {
+            if let Some(ev) = game.events().iter().find(|ev| ev.name() == name) {
+                res.push((game.name().into(), ev.clone()));
+            }
+        });
+
+        res
+    }
 }
 
 /// Bytes of the compressed JSON data for events completion.

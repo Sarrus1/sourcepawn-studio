@@ -87,7 +87,7 @@ class Scrapper:
             if note_p is None:
                 game.events.append(Event(name))
                 continue
-            note = note_p.text.strip().removeprefix("Note: ").replace("\u00a0", " ")
+            note = note_p.text.strip().removeprefix("Note:").replace("\u00a0", " ").strip()
             table = note_p.find_next_sibling("table")
             if table is None:
                 game.events.append(Event(name, note))

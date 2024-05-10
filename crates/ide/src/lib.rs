@@ -1,6 +1,7 @@
 //! base_db defines basic database traits. The concrete DB is defined by ide.
 
 mod completion;
+mod events;
 mod goto_definition;
 mod hover;
 mod markup;
@@ -211,8 +212,9 @@ impl Analysis {
         pos: FilePosition,
         config: &HoverConfig,
         file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Option<String>>,
+        events_game_name: Option<&str>,
     ) -> Cancellable<Option<RangeInfo<HoverResult>>> {
-        self.with_db(|db| hover::hover(db, pos, config, file_id_to_url))
+        self.with_db(|db| hover::hover(db, pos, config, file_id_to_url, events_game_name))
     }
 
     /// Returns the completions at `position`.
