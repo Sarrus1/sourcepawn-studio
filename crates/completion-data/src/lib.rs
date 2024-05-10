@@ -35,11 +35,48 @@ impl Game<'_> {
 pub struct Event<'a> {
     #[serde(borrow)]
     name: Cow<'a, str>,
+
+    #[serde(borrow)]
+    note: Option<Cow<'a, str>>,
+
+    #[serde(borrow)]
+    attributes: Vec<Attribute<'a>>,
 }
 
 impl Event<'_> {
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    pub fn note(&self) -> Option<&str> {
+        self.note.as_deref()
+    }
+
+    pub fn attributes(&self) -> &[Attribute] {
+        &self.attributes
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Attribute<'a> {
+    #[serde(borrow)]
+    name: Cow<'a, str>,
+
+    #[serde(borrow)]
+    r#type: Cow<'a, str>,
+
+    #[serde(borrow)]
+    description: Option<Cow<'a, str>>,
+}
+
+impl Attribute<'_> {
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn r#type(&self) -> &str {
+        &self.r#type
     }
 }
 

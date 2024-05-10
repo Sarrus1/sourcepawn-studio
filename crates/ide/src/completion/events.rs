@@ -2,6 +2,7 @@
 //! check if events completions should be provided for a given node.
 
 use completion_data::DATABASE;
+use ide_db::Documentation;
 use smol_str::ToSmolStr;
 use syntax::TSKind;
 use tree_sitter::Node;
@@ -66,6 +67,7 @@ pub fn events_completions(events_game_name: Option<&str>) -> Vec<CompletionItem>
                     label: ev.name().to_smolstr(),
                     kind: CompletionKind::Literal,
                     detail: Some(game_name.to_string()),
+                    documentation: ev.note().map(Documentation::from),
                     ..Default::default()
                 })
                 .collect();

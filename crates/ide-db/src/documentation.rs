@@ -12,6 +12,12 @@ impl From<Documentation> for String {
     }
 }
 
+impl From<&str> for Documentation {
+    fn from(s: &str) -> Self {
+        Documentation(s.to_string())
+    }
+}
+
 impl From<Documentation> for lsp_types::Documentation {
     fn from(val: Documentation) -> Self {
         lsp_types::Documentation::MarkupContent(lsp_types::MarkupContent {
