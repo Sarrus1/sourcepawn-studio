@@ -78,6 +78,10 @@ impl Attribute<'_> {
     pub fn r#type(&self) -> &str {
         &self.r#type
     }
+
+    pub fn description(&self) -> Option<&str> {
+        self.description.as_deref()
+    }
 }
 
 impl<'a> Database<'a> {

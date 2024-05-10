@@ -67,7 +67,7 @@ pub fn events_completions(events_game_name: Option<&str>) -> Vec<CompletionItem>
                     label: ev.name().to_smolstr(),
                     kind: CompletionKind::Literal,
                     detail: Some(game_name.to_string()),
-                    documentation: ev.note().map(Documentation::from),
+                    documentation: Documentation::from(ev).into(),
                     ..Default::default()
                 })
                 .collect();

@@ -1,3 +1,4 @@
+use completion_data::Event;
 use lazy_static::lazy_static;
 use regex::Regex;
 use syntax::TSKind;
@@ -15,6 +16,24 @@ impl From<Documentation> for String {
 impl From<&str> for Documentation {
     fn from(s: &str) -> Self {
         Documentation(s.to_string())
+    }
+}
+
+impl From<&Event<'_>> for Documentation {
+    fn from(event: &Event) -> Self {
+        let mut docs = Vec::new();
+        if let Some(note) = event.note() {
+            docs.push(note.to_string());
+            docs.push("---".to_string());
+        }
+        for attr in event.attributes() {
+            let mut buf = format!("`{}` (__{}__)", attr.name(), attr.r#type(),);
+            if let Some(desc) = attr.description() {
+                buf.push_str(&format!(" — {}", desc));
+            }
+            docs.push(buf);
+        }
+        Documentation(docs.join("\n\n"))
     }
 }
 

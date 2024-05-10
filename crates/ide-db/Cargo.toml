@@ -33,3 +33,4 @@ syntax.workspace = true
 vfs.workspace = true
 base-db.workspace = true
 preprocessor.workspace = true
+completion-data.workspace = true
