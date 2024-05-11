@@ -6,18 +6,22 @@ use ide::{CompletionKind, HoverAction, HoverGotoTypeData};
 use ide_db::SymbolKind;
 use lsp_types::{
     SemanticTokensDeltaParams, SemanticTokensFullDeltaResult, SemanticTokensParams,
-    SemanticTokensRangeParams, SemanticTokensRangeResult, SemanticTokensResult, Url,
+    SemanticTokensRangeParams, SemanticTokensRangeResult, SemanticTokensResult, SignatureHelp,
+    SignatureHelpParams, Url,
 };
 use stdx::format_to;
 use vfs::FileId;
 
 use crate::{
     global_state::GlobalStateSnapshot,
-    lsp::ext::{
-        AnalyzerStatusParams, ItemTreeParams, PreprocessedDocumentParams, ProjectMainPathParams,
-        ProjectsGraphvizParams, SyntaxTreeParams,
+    lsp::{
+        self,
+        ext::{
+            AnalyzerStatusParams, ItemTreeParams, PreprocessedDocumentParams,
+            ProjectMainPathParams, ProjectsGraphvizParams, SyntaxTreeParams,
+        },
+        from_proto, to_proto,
     },
-    lsp::{self, from_proto, to_proto},
 };
 
 pub(crate) fn handle_resolve_completion(
@@ -192,6 +196,19 @@ fn prepare_hover_actions(
             HoverAction::GoToType(targets) => goto_type_action_links(snap, targets),
         })
         .collect()
+}
+
+pub(crate) fn handle_signature_help(
+    snap: GlobalStateSnapshot,
+    params: SignatureHelpParams,
+) -> anyhow::Result<Option<SignatureHelp>> {
+    let position = from_proto::file_position(&snap, params.text_document_position_params.clone())?;
+    let signature = match snap.analysis.signature_help(position)? {
+        None => return Ok(None),
+        Some(it) => it,
+    };
+
+    Ok(Some(to_proto::signature_help(signature)))
 }
 
 pub(crate) fn handle_semantic_tokens_full(

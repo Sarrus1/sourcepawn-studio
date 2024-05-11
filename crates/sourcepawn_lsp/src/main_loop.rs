@@ -375,6 +375,7 @@ impl GlobalState {
             .on_latency_sensitive::<lsp_request::Completion>(handlers::handle_completion)
             .on::<lsp_request::ResolveCompletionItem>(handlers::handle_resolve_completion)
             .on::<lsp_request::GotoDefinition>(handlers::handle_goto_definition)
+            .on::<lsp_request::SignatureHelpRequest>(handlers::handle_signature_help)
             .on::<lsp::ext::HoverRequest>(handlers::handle_hover)
             .on::<lsp::ext::SyntaxTree>(handlers::handle_syntax_tree)
             .on::<lsp::ext::ProjectsGraphviz>(handlers::handle_projects_graphviz)

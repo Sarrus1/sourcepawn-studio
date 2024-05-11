@@ -4,7 +4,7 @@ use base_db::FilePosition;
 use fxhash::FxHashMap;
 use hir::{DefResolution, HasSource, Semantics};
 
-use preprocessor::Offset;
+use preprocessor::{s_range_to_u_range, u_pos_to_s_pos, Offset};
 use smol_str::{SmolStr, ToSmolStr};
 use syntax::{
     utils::{lsp_position_to_ts_point, ts_range_to_lsp_range},
@@ -12,7 +12,7 @@ use syntax::{
 };
 use vfs::FileId;
 
-use crate::{s_range_to_u_range, u_pos_to_s_pos, RangeInfo, RootDatabase};
+use crate::{RangeInfo, RootDatabase};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct NavigationTarget {

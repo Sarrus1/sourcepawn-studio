@@ -6,7 +6,7 @@ use std::{
 use base_db::FileRange;
 use ide::{
     Cancellable, CompletionKind, Highlight, HlMod, HlRange, HlTag, Markup, NavigationTarget,
-    Severity,
+    Severity, SignatureHelp,
 };
 use ide_db::SymbolKind;
 use itertools::Itertools;
@@ -234,6 +234,31 @@ pub(crate) fn completion_item_kind(kind: CompletionKind) -> lsp_types::Completio
         CompletionKind::Directory => CK::FOLDER,
         CompletionKind::File => CK::FILE,
         CompletionKind::Snippet => CK::SNIPPET,
+    }
+}
+
+pub(crate) fn signature_help(sig: SignatureHelp) -> lsp_types::SignatureHelp {
+    lsp_types::SignatureHelp {
+        signatures: vec![lsp_types::SignatureInformation {
+            label: sig.signature,
+            documentation: sig.doc.clone().map(|doc| doc.into()),
+            parameters: sig
+                .parameters
+                .into_iter()
+                .map(|it| lsp_types::ParameterInformation {
+                    label: lsp_types::ParameterLabel::Simple(it.clone()),
+                    documentation: sig
+                        .doc
+                        .clone()
+                        // This is not efficient, but it's not a hot path.
+                        .and_then(|doc| doc.param_description(&it).map(|it| it.into())),
+                })
+                .collect_vec()
+                .into(),
+            active_parameter: sig.active_parameter,
+        }],
+        active_signature: Default::default(),
+        active_parameter: sig.active_parameter,
     }
 }
 

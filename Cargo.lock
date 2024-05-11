@@ -1163,6 +1163,7 @@ dependencies = [
  "line-index",
  "log",
  "lsp-types",
+ "preprocessor",
  "regex",
  "salsa",
  "sourcepawn_lexer",
@@ -1881,6 +1882,7 @@ dependencies = [
  "smol_str",
  "sourcepawn_lexer",
  "stdx",
+ "syntax",
  "vfs",
 ]
 

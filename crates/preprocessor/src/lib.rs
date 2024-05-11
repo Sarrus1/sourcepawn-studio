@@ -25,10 +25,12 @@ mod preprocessor_operator;
 mod result;
 mod symbol;
 mod token;
+mod transforms;
 
 pub use errors::{EvaluationError, PreprocessorError};
 pub use offset::Offset;
 pub use result::PreprocessingResult;
+pub use transforms::{s_range_to_u_range, u_pos_to_s_pos};
 
 #[cfg(test)]
 mod test;

@@ -3,6 +3,7 @@ use fxhash::FxHashSet;
 use hir::{AnyDiagnostic, Semantics};
 use hir_def::{DefDatabase, InFile, NodePtr};
 use ide_db::RootDatabase;
+use preprocessor::s_range_to_u_range;
 use queries::ERROR_QUERY;
 use syntax::utils::ts_range_to_lsp_range;
 use tree_sitter::{Point, QueryCursor, Range};
@@ -41,6 +42,7 @@ pub struct Diagnostic {
 }
 
 impl Diagnostic {
+    // FIXME: Deprecate this, it does not account for preprocessor offsets in syntax errors.
     fn new(
         code: DiagnosticCode,
         message: impl Into<String>,
@@ -69,7 +71,7 @@ impl Diagnostic {
     ) -> Diagnostic {
         let file_id = node.file_id;
         let tree = ctx.sema.db.parse(file_id);
-        let range = if let Some(node) = node.value.to_node(&tree) {
+        let s_range = if let Some(node) = node.value.to_node(&tree) {
             node.range()
         } else {
             // FIXME: Try to use the line index cache instead? this is inneficient.
@@ -83,7 +85,30 @@ impl Diagnostic {
                 end_point: start_point,
             }
         };
-        Diagnostic::new(code, message, ts_range_to_lsp_range(&range))
+
+        Self::new_for_s_range(ctx, code, message, ts_range_to_lsp_range(&s_range))
+    }
+
+    fn new_for_s_range(
+        ctx: &DiagnosticsContext<'_>,
+        code: DiagnosticCode,
+        message: impl Into<String>,
+        s_range: lsp_types::Range,
+    ) -> Self {
+        let preprocessing_results = ctx.sema.preprocess_file(ctx.file_id);
+
+        Diagnostic {
+            code,
+            message: message.into(),
+            range: s_range_to_u_range(preprocessing_results.offsets(), s_range),
+            severity: match code {
+                DiagnosticCode::SpCompError(_) => Severity::Error,
+                DiagnosticCode::SpCompWarning(_) => Severity::Warning,
+                DiagnosticCode::Lint(_, s) => s,
+            },
+            unused: false,
+            experimental: false,
+        }
     }
 
     #[allow(unused)]
@@ -143,6 +168,7 @@ struct DiagnosticsContext<'a> {
     #[allow(unused)]
     config: &'a DiagnosticsConfig,
     sema: Semantics<'a, RootDatabase>,
+    file_id: FileId,
 }
 
 pub struct DiagnosticsConfig {
@@ -165,7 +191,11 @@ pub fn diagnostics(
     res.extend(syntax_error_diagnostics(&source, &tree));
 
     let file = sema.file_to_def(file_id);
-    let ctx = DiagnosticsContext { config, sema };
+    let ctx = DiagnosticsContext {
+        config,
+        sema,
+        file_id,
+    };
 
     let mut diags = Vec::new();
     file.diagnostics(db, &mut diags);
