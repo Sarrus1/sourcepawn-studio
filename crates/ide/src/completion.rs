@@ -25,8 +25,8 @@ use crate::{
         defaults::get_default_completions,
         includes::{get_include_completions, is_include_statement},
     },
-    hover::render_def,
-    hover::Render,
+    events::{event_name, events_completions},
+    hover::{render_def, Render},
 };
 
 pub fn completions(
@@ -35,6 +35,7 @@ pub fn completions(
     trigger_character: Option<char>,
     include_directories: Vec<AbsPathBuf>,
     file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Url>,
+    events_game_name: Option<&str>,
 ) -> Option<Vec<CompletionItem>> {
     let sema = &Semantics::new(db);
     let preprocessing_results = sema.preprocess_file(pos.file_id);
@@ -93,6 +94,10 @@ pub fn completions(
     point_off.column = point_off.column.saturating_add(1);
 
     let node = root_node.descendant_for_point_range(point_off, point_off)?;
+
+    if event_name(&node, &preprocessed_text).is_some() {
+        return events_completions(events_game_name).into();
+    }
 
     let mut container = node.parent()?;
     // If the node does not have a parent we are at the root, nothing to resolve.
@@ -204,7 +209,10 @@ pub fn completions(
                         deprecated: data.deprecated,
                         ..Default::default()
                     });
-
+                    if local_context {
+                        // Add the snippet only in a global context
+                        return;
+                    }
                     res.push(CompletionItem {
                         label: it.name(db).to_string().into(),
                         kind: CompletionKind::Snippet,
@@ -282,6 +290,10 @@ pub fn completions(
                 ..Default::default()
             });
 
+            if local_context {
+                // Add the snippet only in a global context
+                return;
+            }
             res.push(CompletionItem {
                 label: name,
                 kind: CompletionKind::Snippet,
@@ -300,6 +312,10 @@ pub fn completions(
                 ..Default::default()
             });
 
+            if local_context {
+                // Add the snippets only in a global context
+                return;
+            }
             res.extend(it.children(db).into_iter().flat_map(|child| {
                 Some(CompletionItem {
                     label: name.clone(),
@@ -322,6 +338,10 @@ pub fn completions(
                 ..Default::default()
             });
 
+            if local_context {
+                // Add the snippet only in a global context
+                return;
+            }
             res.push(CompletionItem {
                 label: name.to_smolstr(),
                 kind: CompletionKind::Snippet,
@@ -339,6 +359,10 @@ pub fn completions(
                 ..Default::default()
             });
 
+            if local_context {
+                // Add the snippets only in a global context
+                return;
+            }
             res.extend(it.children(db).into_iter().flat_map(|child| {
                 Some(CompletionItem {
                     label: it.name(db).to_string().into(),

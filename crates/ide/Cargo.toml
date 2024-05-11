@@ -41,3 +41,4 @@ preprocessor.workspace = true
 stdx.workspace = true
 profile.workspace = true
 smol_str.workspace = true
+completion-data.workspace = true

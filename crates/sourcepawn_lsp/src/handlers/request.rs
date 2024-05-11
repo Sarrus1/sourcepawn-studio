@@ -57,6 +57,7 @@ pub(crate) fn handle_completion(
         trigger_character,
         include_directories,
         file_id_to_url,
+        snap.config.events_game_name(),
     )? {
         return Ok(Some(lsp_types::CompletionResponse::Array(
             completions
@@ -121,10 +122,12 @@ pub(crate) fn handle_hover(
     let file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Option<String>> =
         AssertUnwindSafe(file_id_to_url);
 
-    let info = match snap
-        .analysis
-        .hover(pos, &snap.config.hover(), file_id_to_url)?
-    {
+    let info = match snap.analysis.hover(
+        pos,
+        &snap.config.hover(),
+        file_id_to_url,
+        snap.config.events_game_name(),
+    )? {
         None => return Ok(None),
         Some(it) => it,
     };

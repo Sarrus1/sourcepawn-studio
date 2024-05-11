@@ -500,6 +500,14 @@
             "string"
           ]
         },
+        "SourcePawnLanguageServer.eventsGameName": {
+          "markdownDescription": "Name of the game we want the events for, as it appears on the Alliedmodders website.\nFor example, \"Counter-Strike: Global Offensive\" or \"Team Fortress 2\".",
+          "default": null,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
         "SourcePawnLanguageServer.hover.actions.debug.enable": {
           "markdownDescription": "Whether to show `Debug` action. Only applies when\n`#sourcepawn-lsp.hover.actions.enable#` is set.",
           "default": true,
