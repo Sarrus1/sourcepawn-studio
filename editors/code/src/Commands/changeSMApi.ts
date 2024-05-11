@@ -31,7 +31,7 @@ export async function run(args: any): Promise<void> {
 
   if (!validApis) {
     window.showInformationMessage(
-      "API list is empty or contains invalid entries! They must have a 'name' property.",
+      "API list is empty or contains invalid entries. They must have a 'name' property.",
       "Open Settings"
     )
       .then((choice) => {
