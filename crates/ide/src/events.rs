@@ -1,5 +1,5 @@
-//! This module provides completions for event names and utilities to
-//! check if events completions should be provided for a given node.
+//! This module provides completions/hovers for event names and utilities to
+//! check if events completions/hovers should be provided for a given node.
 
 use completion_data::DATABASE;
 use fxhash::FxHashMap;
