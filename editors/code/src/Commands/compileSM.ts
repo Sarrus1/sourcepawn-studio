@@ -43,7 +43,7 @@ export async function run(args: URI): Promise<void> {
 
   // Don't compile if it's not a .sp file.
   if (!isSPFile(fileToCompilePath)) {
-    window.showErrorMessage("The selected file is not a SourcePawn script.");
+    window.showErrorMessage("The current file is not a SourcePawn script.");
     return;
   }
 
