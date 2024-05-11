@@ -216,7 +216,7 @@ impl Documentation {
 
     /// Extracts the description of a parameter from the documentation.
     pub fn param_description(&self, param_name: &str) -> Option<Self> {
-        let re = Regex::new(&format!(r"\s*@param\s+{}\s+", param_name)).ok()?;
+        let re = Regex::new(&format!(r"\s*@param\s+{}\s+", regex::escape(param_name))).ok()?;
         let start = re.find(self.as_str())?.end();
         let end = self.as_str()[start..]
             .find(|c: char| c == '@')

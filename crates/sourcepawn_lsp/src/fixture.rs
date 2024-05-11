@@ -7,8 +7,8 @@ use lsp_types::{
     request::{Completion, Initialize, ResolveCompletionItem, Shutdown},
     ClientCapabilities, CompletionContext, CompletionItem, CompletionItemKind, CompletionParams,
     CompletionResponse, CompletionTriggerKind, DidOpenTextDocumentParams, InitializeParams,
-    InitializedParams, Location, LocationLink, Position, Range, TextDocumentIdentifier,
-    TextDocumentItem, TextDocumentPositionParams, Url, WorkspaceFolder,
+    InitializedParams, Location, LocationLink, Position, Range, SignatureHelp,
+    TextDocumentIdentifier, TextDocumentItem, TextDocumentPositionParams, Url, WorkspaceFolder,
 };
 use std::{
     env,
@@ -449,6 +449,36 @@ pub fn complete(fixture: &str, trigger_character: Option<String>) -> Vec<Complet
     }
 
     items
+}
+
+pub fn signature_help(fixture: &str) -> SignatureHelp {
+    let test_bed = TestBed::new(fixture, true).unwrap();
+    test_bed
+        .initialize(
+            serde_json::from_value(serde_json::json!({
+                "textDocument": {
+                    "signatureHelpProvider": {}
+                },
+                "workspace": {
+                    "configuration": true,
+                    "workspace_folders": true
+                }
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+    let text_document_position = test_bed.cursor().unwrap();
+    let params = lsp_types::SignatureHelpParams {
+        text_document_position_params: text_document_position,
+        work_done_progress_params: Default::default(),
+        context: None,
+    };
+
+    test_bed
+        .client()
+        .send_request::<lsp_types::request::SignatureHelpRequest>(params)
+        .unwrap()
+        .unwrap()
 }
 
 pub fn unzip_file(zip_file_path: &Path, destination: &Path) -> Result<(), io::Error> {

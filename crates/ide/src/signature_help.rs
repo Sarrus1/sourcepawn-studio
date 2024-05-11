@@ -50,9 +50,13 @@ pub(crate) fn signature_help(
             break;
         }
     }
+
     let active_parameter = parent
         .children(&mut parent.walk())
-        .filter(|c| TSKind::from(c) == TSKind::anon_COMMA && c.end_position() <= point)
+        .filter(|c| {
+            // Hack: if the node is an error, it's likely a comma
+            (TSKind::from(c) == TSKind::anon_COMMA || c.is_error()) && c.end_position() <= point
+        })
         .count() as u32;
     let call_expression = parent.parent()?;
     let callee = call_expression.child_by_field_name("function")?;
