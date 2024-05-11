@@ -32,8 +32,6 @@ export function registerKVLinter(context: vscode.ExtensionContext) {
  * @returns void
  */
 export async function refreshKVDiagnostics(document: vscode.TextDocument) {
-  await null;
-
   // Check if the setting to activate the linter is set to true.
   const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
   const enableLinter = vscode.workspace

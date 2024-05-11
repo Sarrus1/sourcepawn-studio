@@ -1,7 +1,7 @@
 ﻿import path from "path";
 import { run as runServerCommands } from "./runServerCommands";
 import { getMainCompilationFile } from "../spUtils";
-import { ProgressLocation, WorkspaceFolder, window, workspace } from "vscode";
+import { ProgressLocation, WorkspaceFolder, window, workspace as Workspace } from "vscode";
 import { lastActiveEditor } from "../spIndex";
 import { URI } from "vscode-uri";
 import { Section, editConfig, getConfig } from "../configUtils";
@@ -27,7 +27,7 @@ export async function run(args?: string): Promise<boolean> {
   // If we receive arguments, the file to upload has already been figured out for us,
   // else, we use the user's choice, main compilation file or current editor
   if (!args) {
-    workspaceFolder = workspace.getWorkspaceFolder(lastActiveEditor.document.uri);
+    workspaceFolder = Workspace.getWorkspaceFolder(lastActiveEditor.document.uri);
     const compileMainPath: boolean = getConfig(Section.SourcePawn, "MainPathCompilation", workspaceFolder);
     if (compileMainPath) {
       fileToUpload = await getMainCompilationFile();
@@ -38,7 +38,7 @@ export async function run(args?: string): Promise<boolean> {
   }
   else {
     fileToUpload = args;
-    workspaceFolder = workspace.getWorkspaceFolder(URI.file(fileToUpload));
+    workspaceFolder = Workspace.getWorkspaceFolder(URI.file(fileToUpload));
   }
 
   // Return if upload settings are not defined

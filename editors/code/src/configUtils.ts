@@ -1,4 +1,4 @@
-import { WorkspaceConfiguration, WorkspaceFolder, commands, workspace } from 'vscode'
+import { WorkspaceConfiguration, WorkspaceFolder, commands, workspace as Workspace } from 'vscode'
 
 /**
  * Get a value from the user's extension settings.
@@ -11,13 +11,13 @@ import { WorkspaceConfiguration, WorkspaceFolder, commands, workspace } from 'vs
 export function getConfig(section: Section, key?: string, workspaceFolder?: WorkspaceFolder, def?: any): any {
     let config: WorkspaceConfiguration;
     if (!key) {
-        return workspace.getConfiguration(section.toString());
+        return Workspace.getConfiguration(section.toString());
     }
     if (workspaceFolder) {
-        config = workspace.getConfiguration(section.toString(), workspaceFolder);
+        config = Workspace.getConfiguration(section.toString(), workspaceFolder);
     }
     else {
-        config = workspace.getConfiguration(section.toString());
+        config = Workspace.getConfiguration(section.toString());
     }
     return config.get(key, def);
 }

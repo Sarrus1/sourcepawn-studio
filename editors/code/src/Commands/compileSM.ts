@@ -1,5 +1,5 @@
 import {
-  workspace,
+  workspace as Workspace,
   window,
   OutputChannel,
 } from "vscode";
@@ -26,7 +26,7 @@ export async function run(args: URI): Promise<void> {
   let fileToCompilePath: string;
 
   // If we always compile the main path, we always ignore the path of the current editor
-  const workspaceFolder = workspace.getWorkspaceFolder(lastActiveEditor.document.uri);
+  const workspaceFolder = Workspace.getWorkspaceFolder(lastActiveEditor.document.uri);
   const compileMainPath: boolean = getConfig(Section.SourcePawn, "MainPathCompilation", workspaceFolder);
   if (compileMainPath) {
     fileToCompilePath = await getMainCompilationFile()
@@ -72,7 +72,7 @@ export async function run(args: URI): Promise<void> {
   } else {
     // If the outputDirectoryPath setting is not empty, make sure it exists before trying to write to it.
     if (!existsSync(outputDir)) {
-      const workspaceFolder = workspace.workspaceFolders[0];
+      const workspaceFolder = Workspace.workspaceFolders[0];
       outputDir = join(workspaceFolder.uri.fsPath, outputDir);
       if (!existsSync(outputDir)) {
         window.showErrorMessage(

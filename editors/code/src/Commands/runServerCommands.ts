@@ -1,4 +1,4 @@
-﻿import { workspace as workspace, window, WorkspaceFolder } from "vscode";
+﻿import { workspace as Workspace, window, WorkspaceFolder } from "vscode";
 import Rcon from "rcon-srcds";
 import { EncodingOptions } from "rcon-srcds/dist/packet";
 import { getMainCompilationFile, getPluginName } from "../spUtils";
@@ -24,7 +24,7 @@ export async function run(args?: string): Promise<boolean> {
 
   // If we don't receive args, we need to figure out which plugin was sent
   if (!args) {
-    workspaceFolder = workspace.getWorkspaceFolder(lastActiveEditor.document.uri);
+    workspaceFolder = Workspace.getWorkspaceFolder(lastActiveEditor.document.uri);
     const compileMainPath: boolean = getConfig(Section.SourcePawn, "MainPathCompilation", workspaceFolder);
     if (compileMainPath) {
       args = await getMainCompilationFile();
@@ -34,7 +34,7 @@ export async function run(args?: string): Promise<boolean> {
     }
   }
 
-  workspaceFolder = workspace.getWorkspaceFolder(URI.file(args));
+  workspaceFolder = Workspace.getWorkspaceFolder(URI.file(args));
   const serverOptions: ServerOptions = getConfig(Section.SourcePawn, "SourceServerOptions", workspaceFolder);
   if (!serverOptions || serverOptions.host === "" || serverOptions.port <= 0) {
     window.showInformationMessage(

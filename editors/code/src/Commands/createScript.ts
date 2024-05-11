@@ -2,7 +2,6 @@ import {
   workspace as Workspace,
   window,
   extensions,
-  workspace,
 } from "vscode";
 import {
   existsSync,
@@ -82,7 +81,7 @@ export function run(rootpath?: string): void {
     console.error(err);
     return;
   }
-  workspace
+  Workspace
     .openTextDocument(URI.file(scriptFilePath))
     .then((document) => window.showTextDocument(document));
 }
