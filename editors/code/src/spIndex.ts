@@ -171,7 +171,6 @@ export function getCtxFromUri(uri: URI): Ctx | undefined {
   }
   // If we have nested workspace folders we only start a server on the outer most workspace folder.
   folder = getOuterMostWorkspaceFolder(folder);
-  // console.log(serverContexts);
   return serverContexts.get(folder.uri.toString());
 }
 
