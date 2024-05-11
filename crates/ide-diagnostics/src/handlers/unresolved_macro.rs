@@ -6,10 +6,11 @@ pub(crate) use self::unresolved_macro as f;
 //
 // This diagnostic is triggered if a macro is unresolved in a preprocessing directive (#if).
 pub(crate) fn unresolved_macro(
-    _ctx: &DiagnosticsContext<'_>,
+    ctx: &DiagnosticsContext<'_>,
     d: &hir::UnresolvedMacro,
 ) -> Diagnostic {
-    Diagnostic::new(
+    Diagnostic::new_for_s_range(
+        ctx,
         DiagnosticCode::SpCompError("E0000"),
         format!("no macro `{}` found", d.name),
         d.range,

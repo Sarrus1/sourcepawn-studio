@@ -2,8 +2,8 @@ use ide::WideEncoding;
 use lsp_types::{
     ClientCapabilities, CompletionOptions, CompletionOptionsCompletionItem,
     HoverProviderCapability, MarkupKind, OneOf, PositionEncodingKind, SemanticTokensFullOptions,
-    SemanticTokensLegend, SemanticTokensOptions, ServerCapabilities, TextDocumentSyncCapability,
-    TextDocumentSyncKind, WorkDoneProgressOptions,
+    SemanticTokensLegend, SemanticTokensOptions, ServerCapabilities, SignatureHelpOptions,
+    TextDocumentSyncCapability, TextDocumentSyncKind, WorkDoneProgressOptions,
 };
 
 use crate::{
@@ -60,12 +60,12 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
                 work_done_progress: None,
             },
         }),
-        /*
         signature_help_provider: Some(SignatureHelpOptions {
             trigger_characters: Some(vec![",".to_string(), "(".to_string()]),
             retrigger_characters: Some(vec![",".to_string(), "(".to_string()]),
             ..Default::default()
         }),
+        /*
         references_provider: Some(OneOf::Left(true)),
         document_symbol_provider: Some(OneOf::Left(true)),
         rename_provider: Some(OneOf::Left(true)),

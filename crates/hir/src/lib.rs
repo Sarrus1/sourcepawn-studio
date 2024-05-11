@@ -661,6 +661,33 @@ impl Function {
         buf.into()
     }
 
+    /// Returns the names of the parameters of the function, in order.
+    pub fn parameters(&self, db: &dyn HirDatabase) -> Vec<String> {
+        let loc = self.id.lookup(db.upcast());
+        let source = db.preprocessed_text(loc.id.file_id());
+        let file_id = loc.id.file_id();
+        let tree = db.parse(file_id);
+        let Some(node) = self.source(db, &tree).map(|it| it.value) else {
+            return Vec::new();
+        };
+        let Some(params) = node.child_by_field_name("parameters") else {
+            return Vec::new();
+        };
+        let res = params
+            .children(&mut params.walk())
+            .flat_map(|param| match TSKind::from(&param) {
+                TSKind::parameter_declaration => param
+                    .child_by_field_name("name")
+                    .and_then(|name| name.utf8_text(source.as_bytes()).ok())
+                    .map(String::from),
+                TSKind::rest_parameter => Some("...".to_string()),
+                _ => None,
+            })
+            .collect_vec();
+
+        res
+    }
+
     /// Returns whether the function is deprecated.
     ///
     /// This method is "fast" as it does not do a lookup of the node in the tree.

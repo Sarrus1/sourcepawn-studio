@@ -6,6 +6,7 @@ mod goto_definition;
 mod hover;
 mod markup;
 mod prime_caches;
+mod signature_help;
 mod status;
 mod syntax_highlighting;
 
@@ -22,10 +23,9 @@ use ide_db::RootDatabase;
 use itertools::Itertools;
 use lsp_types::Url;
 use paths::AbsPathBuf;
-use preprocessor::{db::PreprocDatabase, ArgsMap, Offset};
+use preprocessor::db::PreprocDatabase;
 use salsa::{Cancelled, ParallelDatabase};
 use serde_json::Value;
-use syntax::range_contains_pos;
 use vfs::FileId;
 
 pub use completion::{CompletionItem, CompletionKind};
@@ -36,6 +36,7 @@ pub use ide_diagnostics::{Diagnostic, DiagnosticsConfig, Severity};
 pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};
 pub use markup::Markup;
 pub use prime_caches::ParallelPrimeCachesProgress;
+pub use signature_help::SignatureHelp;
 pub use syntax_highlighting::{Highlight, HlMod, HlMods, HlRange, HlTag};
 
 /// Info associated with a [`range`](lsp_types::Range).
@@ -217,6 +218,11 @@ impl Analysis {
         self.with_db(|db| hover::hover(db, pos, config, file_id_to_url, events_game_name))
     }
 
+    /// Returns the hover information at `position`.
+    pub fn signature_help(&self, pos: FilePosition) -> Cancellable<Option<SignatureHelp>> {
+        self.with_db(|db| signature_help::signature_help(db, pos))
+    }
+
     /// Returns the completions at `position`.
     pub fn completions(
         &self,
@@ -258,79 +264,4 @@ impl Analysis {
     pub fn highlight_range(&self, frange: FileRange) -> Cancellable<Vec<HlRange>> {
         self.with_db(|db| syntax_highlighting::highlight(db, frange.file_id, Some(frange.range)))
     }
-}
-
-/// Convert a position seen by the user to a position seen by the server (preprocessed).
-///
-/// Will try to look for a mapped range of a macro argument and return the offsetted position.
-/// If no mapped range is found, will try to apply the offsets to the position.
-///
-/// # Arguments
-///
-/// * `args_map` - The preprocessed arguments map.
-/// * `offsets` - The preprocessed offsets.
-/// * `pos` - The position to convert.
-///
-/// # Returns
-///
-/// The source position range, if a mapped range was found.
-fn u_pos_to_s_pos(
-    args_map: &ArgsMap,
-    offsets: &FxHashMap<u32, Vec<Offset>>,
-    pos: &mut lsp_types::Position,
-) -> Option<lsp_types::Range> {
-    let mut source_u_range = None;
-
-    match args_map.get(&pos.line).and_then(|args| {
-        args.iter()
-            .find(|(range, _)| range_contains_pos(range, pos))
-    }) {
-        Some((u_range, s_range)) => {
-            *pos = s_range.start;
-            source_u_range = Some(*u_range);
-        }
-        None => {
-            if let Some(diff) = offsets.get(&pos.line).map(|offsets| {
-                offsets
-                    .iter()
-                    .filter(|offset| offset.range.end.character <= pos.character)
-                    .map(|offset| offset.diff.saturating_sub_unsigned(offset.args_diff))
-                    .sum::<i32>()
-            }) {
-                *pos = lsp_types::Position {
-                    line: pos.line,
-                    character: pos.character.saturating_add_signed(diff),
-                };
-            }
-        }
-    }
-
-    source_u_range
-}
-
-/// Convert a range seen by the server to a range seen by the user.
-fn s_range_to_u_range(
-    offsets: &FxHashMap<u32, Vec<Offset>>,
-    mut s_range: lsp_types::Range,
-) -> lsp_types::Range {
-    if let Some(offsets) = offsets.get(&s_range.start.line) {
-        for offset in offsets.iter() {
-            if offset.range.start.character < s_range.start.character {
-                s_range.start.character = s_range
-                    .start
-                    .character
-                    .saturating_add_signed(-offset.diff.saturating_sub_unsigned(offset.args_diff));
-            }
-        }
-        for offset in offsets.iter() {
-            if offset.range.start.character < s_range.end.character {
-                s_range.end.character = s_range
-                    .end
-                    .character
-                    .saturating_add_signed(-offset.diff.saturating_sub_unsigned(offset.args_diff));
-            }
-        }
-    }
-
-    s_range
 }

@@ -3,6 +3,7 @@ use fxhash::FxHashSet;
 use hir::{AnyDiagnostic, Semantics};
 use hir_def::{DefDatabase, InFile, NodePtr};
 use ide_db::RootDatabase;
+use preprocessor::s_range_to_u_range;
 use queries::ERROR_QUERY;
 use syntax::utils::ts_range_to_lsp_range;
 use tree_sitter::{Point, QueryCursor, Range};
@@ -41,26 +42,6 @@ pub struct Diagnostic {
 }
 
 impl Diagnostic {
-    fn new(
-        code: DiagnosticCode,
-        message: impl Into<String>,
-        range: lsp_types::Range,
-    ) -> Diagnostic {
-        let message = message.into();
-        Diagnostic {
-            code,
-            message,
-            range,
-            severity: match code {
-                DiagnosticCode::SpCompError(_) => Severity::Error,
-                DiagnosticCode::SpCompWarning(_) => Severity::Warning,
-                DiagnosticCode::Lint(_, s) => s,
-            },
-            unused: false,
-            experimental: false,
-        }
-    }
-
     fn new_with_syntax_node_ptr(
         ctx: &DiagnosticsContext<'_>,
         code: DiagnosticCode,
@@ -69,7 +50,7 @@ impl Diagnostic {
     ) -> Diagnostic {
         let file_id = node.file_id;
         let tree = ctx.sema.db.parse(file_id);
-        let range = if let Some(node) = node.value.to_node(&tree) {
+        let s_range = if let Some(node) = node.value.to_node(&tree) {
             node.range()
         } else {
             // FIXME: Try to use the line index cache instead? this is inneficient.
@@ -83,7 +64,30 @@ impl Diagnostic {
                 end_point: start_point,
             }
         };
-        Diagnostic::new(code, message, ts_range_to_lsp_range(&range))
+
+        Self::new_for_s_range(ctx, code, message, ts_range_to_lsp_range(&s_range))
+    }
+
+    fn new_for_s_range(
+        ctx: &DiagnosticsContext<'_>,
+        code: DiagnosticCode,
+        message: impl Into<String>,
+        s_range: lsp_types::Range,
+    ) -> Self {
+        let preprocessing_results = ctx.sema.preprocess_file(ctx.file_id);
+
+        Diagnostic {
+            code,
+            message: message.into(),
+            range: s_range_to_u_range(preprocessing_results.offsets(), s_range),
+            severity: match code {
+                DiagnosticCode::SpCompError(_) => Severity::Error,
+                DiagnosticCode::SpCompWarning(_) => Severity::Warning,
+                DiagnosticCode::Lint(_, s) => s,
+            },
+            unused: false,
+            experimental: false,
+        }
     }
 
     #[allow(unused)]
@@ -143,6 +147,7 @@ struct DiagnosticsContext<'a> {
     #[allow(unused)]
     config: &'a DiagnosticsConfig,
     sema: Semantics<'a, RootDatabase>,
+    file_id: FileId,
 }
 
 pub struct DiagnosticsConfig {
@@ -162,10 +167,14 @@ pub fn diagnostics(
     let source = sema.preprocessed_text(file_id);
     let mut res = Vec::new();
 
-    res.extend(syntax_error_diagnostics(&source, &tree));
-
     let file = sema.file_to_def(file_id);
-    let ctx = DiagnosticsContext { config, sema };
+    let ctx = DiagnosticsContext {
+        config,
+        sema,
+        file_id,
+    };
+
+    syntax_error_diagnostics(&ctx, &source, &tree, &mut res);
 
     let mut diags = Vec::new();
     file.diagnostics(db, &mut diags);
@@ -200,16 +209,24 @@ pub fn diagnostics(
 ///
 /// # Arguments
 ///
-/// * `root_node` - [Root Node](tree_sitter::Node) of the document to scan.
-/// * `disable_syntax_linter` - Whether or not the syntax linter should run.
-pub fn syntax_error_diagnostics(source: &str, tree: &Tree) -> Vec<Diagnostic> {
-    let mut res = Vec::new();
+/// * `ctx` - [DiagnosticsContext](DiagnosticsContext) of the document.
+/// * `source` - Preprocessed text of the document.
+/// * `tree` - [Tree](base_db::Tree) of the document.
+/// * `diagnostics` - [Vec](std::vec::Vec) of [Diagnostic](crate::Diagnostic) to add the
+/// syntax errors to.
+fn syntax_error_diagnostics(
+    ctx: &DiagnosticsContext,
+    source: &str,
+    tree: &Tree,
+    diagnostics: &mut Vec<Diagnostic>,
+) {
     let mut cursor = QueryCursor::new();
     let matches = cursor.captures(&ERROR_QUERY, tree.root_node(), source.as_bytes());
     for (match_, _) in matches {
-        res.extend(match_.captures.iter().map(|c| {
-            ts_error_to_diagnostic(c.node).unwrap_or_else(|| {
-                Diagnostic::new(
+        diagnostics.extend(match_.captures.iter().map(|c| {
+            ts_error_to_diagnostic(ctx, c.node).unwrap_or_else(|| {
+                Diagnostic::new_for_s_range(
+                    ctx,
                     DiagnosticCode::SpCompError("syntax-error"),
                     c.node.to_sexp(),
                     ts_range_to_lsp_range(&c.node.range()),
@@ -218,19 +235,24 @@ pub fn syntax_error_diagnostics(source: &str, tree: &Tree) -> Vec<Diagnostic> {
         }));
     }
 
-    missing_nodes(tree.root_node(), &mut res);
-
-    res
+    missing_nodes(ctx, tree.root_node(), diagnostics);
 }
 
 /// Capture all the missing nodes of a document and add them to its Local Diagnostics.
 ///
 /// # Arguments
+///
+/// * `ctx` - [DiagnosticsContext](DiagnosticsContext) of the document.
 /// * `node` - [Node](tree_sitter::Node) to scan.
 /// * `diagnostics` - [Vec](std::vec::Vec) of [Diagnostic](crate::Diagnostic) to add the missing nodes to.
-fn missing_nodes(node: tree_sitter::Node, diagnostics: &mut Vec<Diagnostic>) {
+fn missing_nodes(
+    ctx: &DiagnosticsContext,
+    node: tree_sitter::Node,
+    diagnostics: &mut Vec<Diagnostic>,
+) {
     if node.is_missing() {
-        let diagnostic = Diagnostic::new(
+        let diagnostic = Diagnostic::new_for_s_range(
+            ctx,
             DiagnosticCode::SpCompError("missing-node"),
             format!("expected `{}`", node.kind()),
             ts_range_to_lsp_range(&node.range()),
@@ -239,13 +261,13 @@ fn missing_nodes(node: tree_sitter::Node, diagnostics: &mut Vec<Diagnostic>) {
     }
 
     for child in node.children(&mut node.walk()) {
-        missing_nodes(child, diagnostics);
+        missing_nodes(ctx, child, diagnostics);
     }
 }
 
 /// Convert a tree-sitter error node to a diagnostic by using a [`LookaheadIterator`](tree_sitter::LookaheadIterator)
 /// to get the expected nodes.
-fn ts_error_to_diagnostic(node: tree_sitter::Node) -> Option<Diagnostic> {
+fn ts_error_to_diagnostic(ctx: &DiagnosticsContext, node: tree_sitter::Node) -> Option<Diagnostic> {
     let language = tree_sitter_sourcepawn::language();
     let first_lead_node = node.child(0)?;
     let mut lookahead = language.lookahead_iterator(first_lead_node.parse_state())?;
@@ -253,7 +275,8 @@ fn ts_error_to_diagnostic(node: tree_sitter::Node) -> Option<Diagnostic> {
         .iter_names()
         .map(|it| format!("`{}`", it))
         .collect();
-    Diagnostic::new(
+    Diagnostic::new_for_s_range(
+        ctx,
         DiagnosticCode::SpCompError("syntax-error"),
         format!("expected {:?}", expected.join(", ")),
         ts_range_to_lsp_range(&node.range()),

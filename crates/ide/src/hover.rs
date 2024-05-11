@@ -6,7 +6,7 @@ use std::panic::AssertUnwindSafe;
 use hir::{DefResolution, HasSource, Semantics};
 use ide_db::{Documentation, RootDatabase};
 use itertools::Itertools;
-use preprocessor::{db::PreprocDatabase, PreprocessingResult};
+use preprocessor::{db::PreprocDatabase, s_range_to_u_range, u_pos_to_s_pos, PreprocessingResult};
 use smol_str::ToSmolStr;
 use syntax::utils::{lsp_position_to_ts_point, ts_range_to_lsp_range};
 use vfs::FileId;
@@ -15,7 +15,7 @@ use crate::{
     events::{event_hover, event_name},
     goto_definition::{find_inner_name_range, find_macro_def},
     markup::Markup,
-    s_range_to_u_range, u_pos_to_s_pos, FilePosition, NavigationTarget, RangeInfo,
+    FilePosition, NavigationTarget, RangeInfo,
 };
 
 use self::actions::goto_type_action_for_def;

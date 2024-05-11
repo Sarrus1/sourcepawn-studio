@@ -46,6 +46,12 @@ impl From<Documentation> for lsp_types::Documentation {
     }
 }
 
+impl From<String> for Documentation {
+    fn from(s: String) -> Self {
+        Documentation(s)
+    }
+}
+
 impl Documentation {
     pub fn new(s: String) -> Self {
         Documentation(s)
@@ -105,6 +111,7 @@ impl Documentation {
                 let fn_doc = Documentation::from_node(fn_node, source)?;
                 docs = fn_doc
                     .param_description(name)?
+                    .0
                     .lines()
                     .map(|l| l.to_string())
                     .collect();
@@ -207,14 +214,15 @@ impl Documentation {
             .to_string()
     }
 
-    pub fn param_description(&self, param_name: &str) -> Option<String> {
-        let re = Regex::new(&format!(r"\s*@param\s+{}\s+", param_name)).ok()?;
+    /// Extracts the description of a parameter from the documentation.
+    pub fn param_description(&self, param_name: &str) -> Option<Self> {
+        let re = Regex::new(&format!(r"\s*@param\s+{}\s+", regex::escape(param_name))).ok()?;
         let start = re.find(self.as_str())?.end();
         let end = self.as_str()[start..]
             .find(|c: char| c == '@')
             .map(|i| start + i)
             .unwrap_or_else(|| self.as_str().len());
-        Some(self.as_str()[start..end].trim().to_string())
+        Some(self.as_str()[start..end].trim().to_string().into())
     }
 }
 

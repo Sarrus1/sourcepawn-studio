@@ -26,6 +26,7 @@ deepsize.workspace = true
 vfs.workspace = true
 base-db.workspace = true
 stdx.workspace = true
+syntax.workspace = true
 
 [dev-dependencies]
 criterion = "0.5.1"

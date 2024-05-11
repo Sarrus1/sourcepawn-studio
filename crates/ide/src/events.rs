@@ -4,14 +4,12 @@
 use completion_data::DATABASE;
 use fxhash::FxHashMap;
 use ide_db::Documentation;
-use preprocessor::Offset;
+use preprocessor::{s_range_to_u_range, Offset};
 use smol_str::ToSmolStr;
 use syntax::{utils::ts_range_to_lsp_range, TSKind};
 use tree_sitter::Node;
 
-use crate::{
-    hover::HoverResult, s_range_to_u_range, CompletionItem, CompletionKind, Markup, RangeInfo,
-};
+use crate::{hover::HoverResult, CompletionItem, CompletionKind, Markup, RangeInfo};
 
 /// Returns the event name if the node is an event name.
 ///
