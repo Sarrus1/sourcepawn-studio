@@ -2,12 +2,12 @@ import { workspace as Workspace, window, extensions } from "vscode";
 import { existsSync, copyFileSync } from "fs";
 import { join } from "path";
 
-export function run(rootpath?: string): void {
+export function run(rootpath?: string): number {
   // Get workspace folder
   const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
     window.showErrorMessage("No workspaces are opened.");
-    return;
+    return 1;
   }
 
   // Select the rootpath
@@ -19,7 +19,7 @@ export function run(rootpath?: string): void {
   const changelogFilePath = join(rootpath, "CHANGELOG.md");
   if (existsSync(changelogFilePath)) {
     window.showErrorMessage("CHANGELOG.md file already exists.");
-    return;
+    return 1;
   }
 
   const myExtDir: string = extensions
@@ -31,5 +31,5 @@ export function run(rootpath?: string): void {
   );
   copyFileSync(changelogTemplatePath, changelogFilePath);
   window.showInformationMessage("CHANGELOG.md created successfully!")
-  return;
+  return 0;
 }

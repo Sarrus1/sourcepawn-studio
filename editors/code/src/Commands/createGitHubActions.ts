@@ -2,12 +2,12 @@ import { workspace as Workspace, window, extensions } from "vscode";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { basename, join } from "path";
 
-export function run(rootpath?: string): void {
+export function run(rootpath?: string): number {
   // Get workspace folder
   const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
     window.showErrorMessage("No workspaces are opened.");
-    return;
+    return 1;
   }
 
   // Select the rootpath
@@ -19,7 +19,7 @@ export function run(rootpath?: string): void {
   let masterFilePath = join(rootpath, ".github/workflows/main.yml");
   if (existsSync(masterFilePath)) {
     window.showErrorMessage("main.yml file already exists.");
-    return;
+    return 1;
   }
 
   // Create .github folder if it doesn't exist
@@ -49,14 +49,14 @@ export function run(rootpath?: string): void {
     writeFileSync(masterFilePath, result, "utf8");
   } catch (err) {
     window.showErrorMessage("Failed to write to main.yml! " + err);
-    return;
+    return 1;
   }
 
   // Check if test.yml already exists
   masterFilePath = join(rootpath, ".github/workflows/test.yml");
   if (existsSync(masterFilePath)) {
     window.showErrorMessage("test.yml file already exists.");
-    return;
+    return 1;
   }
 
   tasksTemplatesPath = join(myExtDir, "templates/test_template.yml");
@@ -68,8 +68,9 @@ export function run(rootpath?: string): void {
     writeFileSync(masterFilePath, result, "utf8");
   } catch (err) {
     window.showErrorMessage("Failed to write to test.yml! " + err);
-    return;
+    return 1;
   }
 
   window.showInformationMessage("Github Actions files created successfully!");
+  return 0;
 }

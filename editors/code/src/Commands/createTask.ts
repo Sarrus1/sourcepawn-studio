@@ -7,7 +7,7 @@ import {
 import { join } from "path";
 import { editConfig, getConfig, Section } from "../configUtils";
 
-export function run(rootpath?: string): void {
+export function run(rootpath?: string): number {
   // Get configuration
   let includeDirs: string[] = getConfig(Section.LSP, "includeDirectories");
   let compilerPath: string = getConfig(Section.LSP, "compiler.path");
@@ -22,14 +22,14 @@ export function run(rootpath?: string): void {
           editConfig(Section.LSP, "compiler.path")
         }
       });
-    return;
+    return 1;
   }
 
   // Get workspace folder
   const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
     window.showErrorMessage("No workspaces are opened.");
-    return;
+    return 1;
   }
 
   // Select the rootpath
@@ -47,7 +47,7 @@ export function run(rootpath?: string): void {
   const taskFilePath = join(rootpath, ".vscode/tasks.json");
   if (existsSync(taskFilePath)) {
     window.showErrorMessage("tasks.json file already exists.");
-    return;
+    return 1;
   }
 
   try {
@@ -101,7 +101,9 @@ export function run(rootpath?: string): void {
     }
     writeFileSync(taskFilePath, JSON.stringify(json, null, 2), "utf8");
     window.showInformationMessage("Task file created successfully!")
+    return 0;
   } catch (error) {
     window.showErrorMessage(`Could not create tasks.json file! ${error}`)
+    return 1;
   }
 }

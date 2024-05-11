@@ -2,12 +2,12 @@ import { workspace as Workspace, window, extensions } from "vscode";
 import { existsSync, copyFileSync } from "fs";
 import { join } from "path";
 
-export function run(rootpath?: string): void {
+export function run(rootpath?: string): number {
   // Get workspace folder
   const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
     window.showErrorMessage("No workspaces are opened.");
-    return;
+    return 1;
   }
 
   // Select the rootpath
@@ -19,7 +19,7 @@ export function run(rootpath?: string): void {
   const gitignore = join(rootpath, ".gitignore");
   if (existsSync(gitignore)) {
     window.showErrorMessage(".gitignore file already exists.");
-    return;
+    return 1;
   }
 
   const myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
@@ -30,4 +30,5 @@ export function run(rootpath?: string): void {
   );
   copyFileSync(changelogTemplatePath, gitignore);
   window.showInformationMessage(".gitignore created successfully!")
+  return 0;
 }

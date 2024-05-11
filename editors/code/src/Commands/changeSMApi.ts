@@ -21,7 +21,7 @@ type AvailableAPI = {
   compilerArguments: string[];
 };
 
-export async function run(args: any): Promise<void> {
+export async function run(args: any): Promise<number> {
   const availableAPIs: AvailableAPIOptional[] = getConfig(Section.SourcePawn, "availableAPIs")
     .map(buildAvailableAPIFromOptional);
 
@@ -39,7 +39,7 @@ export async function run(args: any): Promise<void> {
           editConfig(Section.SourcePawn, "availableAPIs");
         }
       })
-    return;
+    return 1;
   }
 
   const apiNames = availableAPIs.map(api => api.name);
@@ -55,7 +55,7 @@ export async function run(args: any): Promise<void> {
           editConfig(Section.SourcePawn, "availableAPIs")
         }
       });
-    return;
+    return 1;
   }
 
   const quickPickItems: QuickPickItem[] = availableAPIs.map(api => {
@@ -89,7 +89,7 @@ export async function run(args: any): Promise<void> {
     window.showInformationMessage(`Changed to API ${chosenAPI.name}!`)
   });
 
-  return;
+  return 0;
 }
 
 function buildAvailableAPIFromOptional(

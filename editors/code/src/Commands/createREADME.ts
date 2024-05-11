@@ -3,7 +3,7 @@ import { existsSync, readFileSync, copyFileSync, writeFileSync } from "fs";
 import { join, basename } from "path";
 import { editConfig, getConfig, Section } from "../configUtils";
 
-export function run(rootpath?: string): void {
+export function run(rootpath?: string): number {
   const githubName: string = getConfig(Section.SourcePawn, "GithubName");
   if (!githubName) {
     window.showWarningMessage(
@@ -21,7 +21,7 @@ export function run(rootpath?: string): void {
   const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
     window.showErrorMessage("No workspaces are opened.");
-    return;
+    return 1;
   }
 
   // Select the rootpath
@@ -33,7 +33,7 @@ export function run(rootpath?: string): void {
   const readmeFilePath = join(rootpath, "README.md");
   if (existsSync(readmeFilePath)) {
     window.showErrorMessage("README.md already exists, aborting.");
-    return;
+    return 1;
   }
   const myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
     .extensionPath;
@@ -51,7 +51,7 @@ export function run(rootpath?: string): void {
     writeFileSync(readmeFilePath, result, "utf8");
   } catch (err) {
     console.error(err);
-    return;
+    return 1;
   }
-  return;
+  return 1;
 }

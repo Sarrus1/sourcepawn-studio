@@ -9,12 +9,12 @@ import { run as createChangelogCommand } from "./createCHANGELOG";
 import { run as createLicenseCommand } from "./createLICENSE";
 import { run as createGitignoreCommand } from "./createGITIGNORE";
 
-export async function run(args: any) {
+export async function run(args: any): Promise<number> {
   // Get workspace folder
   const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
     window.showErrorMessage("No workspaces are opened.");
-    return;
+    return 1;
   }
 
   const inputOptions: InputBoxOptions = {
@@ -24,7 +24,7 @@ export async function run(args: any) {
 
   const input = await window.showInputBox(inputOptions);
 
-  //Select the rootpath
+  // Select the rootpath
   const rootpath = join(workspaceFolders?.[0].uri.fsPath, input);
   if (!existsSync(rootpath)) {
     mkdirSync(rootpath);
@@ -44,4 +44,6 @@ export async function run(args: any) {
   createChangelogCommand(rootpath);
   createLicenseCommand(rootpath);
   createGitignoreCommand(rootpath);
+
+  return 0;
 }

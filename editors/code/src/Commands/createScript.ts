@@ -14,7 +14,7 @@ import { URI } from "vscode-uri";
 import { join, basename } from "path";
 import { editConfig, getConfig, Section } from "../configUtils";
 
-export function run(rootpath?: string): void {
+export function run(rootpath?: string): number {
   const authorName: string = getConfig(Section.SourcePawn, "AuthorName");
   if (!authorName) {
     window
@@ -41,7 +41,7 @@ export function run(rootpath?: string): void {
   const workspaceFolders = Workspace.workspaceFolders;
   if (!workspaceFolders) {
     window.showErrorMessage("No workspaces are opened.");
-    return;
+    return 1;
   }
 
   // Select the rootpath
@@ -60,7 +60,7 @@ export function run(rootpath?: string): void {
   const scriptFilePath = join(rootpath, "scripting", scriptFileName);
   if (existsSync(scriptFilePath)) {
     window.showErrorMessage(scriptFileName + " already exists.");
-    return;
+    return 1;
   }
   const myExtDir: string = extensions.getExtension("Sarrus.sourcepawn-vscode")
     .extensionPath;
@@ -79,9 +79,11 @@ export function run(rootpath?: string): void {
     writeFileSync(scriptFilePath, result, "utf8");
   } catch (err) {
     console.error(err);
-    return;
+    return 1;
   }
   Workspace
     .openTextDocument(URI.file(scriptFilePath))
     .then((document) => window.showTextDocument(document));
+
+  return 0;
 }

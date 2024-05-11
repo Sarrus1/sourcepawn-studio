@@ -22,7 +22,7 @@ let output: OutputChannel;
  * @param  {URI} args URI of the document to be compiled. This will be overrided if MainPathCompilation is set to true.
  * @returns Promise
  */
-export async function run(args: URI): Promise<void> {
+export async function run(args: URI): Promise<number> {
   let fileToCompilePath: string;
 
   // If we always compile the main path, we always ignore the path of the current editor
@@ -44,7 +44,7 @@ export async function run(args: URI): Promise<void> {
   // Don't compile if it's not a .sp file.
   if (!isSPFile(fileToCompilePath)) {
     window.showErrorMessage("The current file is not a SourcePawn script.");
-    return;
+    return 1;
   }
 
   // Return if compiler not found
@@ -60,7 +60,7 @@ export async function run(args: URI): Promise<void> {
           editConfig(Section.LSP, "compiler.path")
         }
       });
-    return;
+    return 1;
   }
 
   // Decide where to output the compiled file.
@@ -84,7 +84,7 @@ export async function run(args: URI): Promise<void> {
               editConfig(Section.SourcePawn, "outputDirectoryPath");
             }
           });
-        return;
+        return 1;
       }
     }
   }
@@ -153,7 +153,7 @@ export async function run(args: URI): Promise<void> {
       // Return if compilation failed
       if (error) {
         window.showErrorMessage("Compilation failed!")
-        return;
+        return 1;
       }
 
       // Run upload command if chosen
@@ -166,8 +166,13 @@ export async function run(args: URI): Promise<void> {
           await runServerCommands(fileToCompilePath);
         }
       }
+
+      return 0;
     });
   } catch (error) {
     console.error(error);
+    return 1;
   }
+
+  return 0;
 }
