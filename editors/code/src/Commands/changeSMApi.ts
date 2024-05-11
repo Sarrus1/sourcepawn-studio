@@ -47,7 +47,7 @@ export async function run(args: any): Promise<void> {
 
   if (repeatedNames) {
     window.showErrorMessage(
-      "API list has elements with duplicate names!",
+      "API list has elements with duplicate names.",
       "Open Settings"
     )
       .then(choice => {
