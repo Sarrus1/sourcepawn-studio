@@ -145,7 +145,7 @@ export async function run(args: URI): Promise<number> {
     execFile(spcompCommand, compilerArgs, async (error, stdout) => {
       // Update spcomp status
       ctx?.setSpcompStatus({ quiescent: true });
-      output.append(stdout.toString().trim());
+      output.appendLine(stdout.toString().trim() + '\n');
 
       // Restore last active editor's focus
       window.showTextDocument(lastActiveEditor.document);
@@ -155,6 +155,9 @@ export async function run(args: URI): Promise<number> {
         window.showErrorMessage("Compilation failed!")
         return 1;
       }
+
+      // Little success message in console
+      output.appendLine("Compilation successful!");
 
       // Run upload command if chosen
       if (getConfig(Section.SourcePawn, "uploadAfterSuccessfulCompile", workspaceFolder)) {
