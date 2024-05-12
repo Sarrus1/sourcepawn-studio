@@ -128,7 +128,8 @@ impl AstIdMap {
                 TSKind::global_variable_declaration
                 | TSKind::old_global_variable_declaration
                 | TSKind::variable_declaration_statement
-                | TSKind::old_variable_declaration_statement => {
+                | TSKind::old_variable_declaration_statement
+                | TSKind::old_for_loop_variable_declaration_statement => {
                     for child in node.children(&mut node.walk()) {
                         if matches!(
                             TSKind::from(child),

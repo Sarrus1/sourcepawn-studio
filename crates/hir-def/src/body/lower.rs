@@ -182,7 +182,8 @@ impl ExprCollector<'_> {
                 Some(self.alloc_expr(block, NodePtr::from(&expr)))
             }
             TSKind::variable_declaration_statement => Some(self.collect_variable_declaration(expr)),
-            TSKind::old_variable_declaration_statement => {
+            TSKind::old_variable_declaration_statement
+            | TSKind::old_for_loop_variable_declaration_statement => {
                 Some(self.collect_old_variable_declaration(expr))
             }
             TSKind::for_statement => {
@@ -395,7 +396,8 @@ impl ExprCollector<'_> {
             TSKind::this => Some(self.alloc_expr(Expr::This, NodePtr::from(&expr))),
             TSKind::int_literal => {
                 let text = expr.utf8_text(self.source.as_bytes()).unwrap();
-                let int = text.parse().ok()?;
+                // FIXME: The unwrap_or_default() is a workaround for hex literals
+                let int = text.parse().unwrap_or_default();
                 Some(self.alloc_expr(Expr::Literal(Literal::Int(int)), NodePtr::from(&expr)))
             }
             TSKind::float_literal => {

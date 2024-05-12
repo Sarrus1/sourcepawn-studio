@@ -1608,7 +1608,8 @@ impl<'tree> Local {
                 buf.push(';');
                 Some(buf)
             }
-            TSKind::old_variable_declaration_statement => {
+            TSKind::old_variable_declaration_statement
+            | TSKind::old_for_loop_variable_declaration_statement => {
                 let mut buf = String::new();
                 let type_ = parent
                     .child_by_field_name("type")

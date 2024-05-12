@@ -119,7 +119,8 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                         .map(Global::from)
                         .map(DefResolution::Global),
                     TSKind::variable_declaration_statement
-                    | TSKind::old_variable_declaration_statement => {
+                    | TSKind::old_variable_declaration_statement
+                    | TSKind::old_for_loop_variable_declaration_statement => {
                         self.local_to_def(src).map(Local::from).map(|it| it.into())
                     }
                     _ => unreachable!(),

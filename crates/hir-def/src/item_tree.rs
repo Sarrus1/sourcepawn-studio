@@ -152,7 +152,8 @@ impl ItemTree {
                         }
                     }
                 }
-                TSKind::old_variable_declaration_statement => {
+                TSKind::old_variable_declaration_statement
+                | TSKind::old_for_loop_variable_declaration_statement => {
                     for sub_child in child
                         .children(&mut child.walk())
                         .filter(|n| TSKind::from(n) == TSKind::old_variable_declaration)
