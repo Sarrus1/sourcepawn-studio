@@ -9,7 +9,7 @@ export function sleep(ms: number) {
 }
 
 export function isSPFile(filePath: string): boolean {
-  return /\.(sp|inc)$/i.test(filePath);
+  return /\.(sp|inc)$/.test(filePath);
 }
 
 export function getPluginName(filePath: string): string {
