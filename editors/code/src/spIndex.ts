@@ -126,7 +126,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       // We check for a valid path in the editor's filename,
       // which would indicate we're not on an output console
-      if (!path.isAbsolute(editor.document.fileName)) {
+      if (editor.document.uri.scheme === "output") {
         return;
       }
 
