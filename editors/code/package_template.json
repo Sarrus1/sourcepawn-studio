@@ -238,7 +238,7 @@
             "afterCompile",
             "afterUpload"
           ],
-          "description": "Should the specified commands be executed on the server after a successful action in VSCode (default: sm plugins refresh).",
+          "description": "Should the specified commands be executed on the server after a successful VSCode command or on `runServerCommands`.",
           "scope": "resource"
         },
         "sourcepawn.serverCommands": {
@@ -247,7 +247,7 @@
             "sm plugins refresh"
           ],
           "scope": "resource",
-          "description": "A list of commands that will be sent to the server after a successful action in VSCode."
+          "description": "A list of commands that will be sent to the server after a successful VSCode command or on `runServerCommands`."
         },
         "sourcepawn.uploadAfterSuccessfulCompile": {
           "type": "boolean",
