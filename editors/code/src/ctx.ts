@@ -106,13 +106,13 @@ export class Ctx {
   private async getOrCreateClient() {
     if (!this.traceOutputChannel) {
       this.traceOutputChannel = new LazyOutputChannel(
-        "Rust Analyzer Language Server Trace"
+        "SourcePawn Language Server Trace"
       );
       this.pushExtCleanup(this.traceOutputChannel);
     }
     if (!this.outputChannel) {
       this.outputChannel = vscode.window.createOutputChannel(
-        "Rust Analyzer Language Server"
+        "SourcePawn Language Server"
       );
       this.pushExtCleanup(this.outputChannel);
     }

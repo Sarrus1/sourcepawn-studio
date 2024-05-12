@@ -6,18 +6,20 @@ use std::panic::AssertUnwindSafe;
 use hir::{DefResolution, HasSource, Semantics};
 use ide_db::{Documentation, RootDatabase};
 use itertools::Itertools;
-use preprocessor::{db::PreprocDatabase, PreprocessingResult};
+use preprocessor::{db::PreprocDatabase, s_range_to_u_range, u_pos_to_s_pos, PreprocessingResult};
 use smol_str::ToSmolStr;
 use syntax::utils::{lsp_position_to_ts_point, ts_range_to_lsp_range};
 use vfs::FileId;
 
 use crate::{
+    events::{event_hover, event_name},
     goto_definition::{find_inner_name_range, find_macro_def},
     markup::Markup,
-    s_range_to_u_range, u_pos_to_s_pos, FilePosition, NavigationTarget, RangeInfo,
+    FilePosition, NavigationTarget, RangeInfo,
 };
 
-use self::{actions::goto_type_action_for_def, render::Render};
+use self::actions::goto_type_action_for_def;
+pub(crate) use render::{render_def, Render};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HoverConfig {
@@ -93,6 +95,7 @@ pub(crate) fn hover(
     mut fpos: FilePosition,
     config: &HoverConfig,
     file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Option<String>>,
+    events_game_name: Option<&str>,
 ) -> Option<RangeInfo<HoverResult>> {
     let sema = &Semantics::new(db);
     let preprocessing_results = sema.preprocess_file(fpos.file_id);
@@ -113,6 +116,11 @@ pub(crate) fn hover(
         lsp_position_to_ts_point(&fpos.position),
         lsp_position_to_ts_point(&fpos.position),
     )?;
+
+    if let Some(name) = event_name(&node, &preprocessing_results.preprocessed_text()) {
+        return event_hover(events_game_name, &name, &node, offsets);
+    }
+
     let def = sema.find_def(fpos.file_id, &node)?;
     let u_range = match source_u_range {
         Some(u_range) => u_range,

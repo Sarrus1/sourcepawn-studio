@@ -227,6 +227,9 @@ impl AbsPath {
     pub fn as_os_str(&self) -> &OsStr {
         self.0.as_os_str()
     }
+    pub fn is_dir(&self) -> bool {
+        self.0.is_dir()
+    }
     #[deprecated(note = "use Display instead")]
     pub fn display(&self) -> std::path::Display<'_> {
         self.0.display()
@@ -291,6 +294,10 @@ impl RelPathBuf {
     pub fn as_path(&self) -> &RelPath {
         RelPath::new_unchecked(self.0.as_path())
     }
+
+    pub fn is_dir(&self) -> bool {
+        self.0.is_dir()
+    }
 }
 
 /// Wrapper around a relative [`Path`].
@@ -308,6 +315,20 @@ impl RelPath {
     /// Creates a new `RelPath` from `path`, without checking if it is relative.
     pub fn new_unchecked(path: &Path) -> &RelPath {
         unsafe { &*(path as *const Path as *const RelPath) }
+    }
+
+    pub fn is_dir(&self) -> bool {
+        self.0.is_dir()
+    }
+
+    pub fn components(&self) -> impl Iterator<Item = Component<'_>> {
+        self.0.components()
+    }
+}
+
+impl fmt::Display for RelPath {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "I am A")
     }
 }
 

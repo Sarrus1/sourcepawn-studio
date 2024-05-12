@@ -369,6 +369,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "completion-data"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "fxhash",
+ "once_cell",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "console"
 version = "0.15.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -699,9 +710,9 @@ dependencies = [
 
 [[package]]
 name = "flate2"
-version = "1.0.28"
+version = "1.0.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46303f565772937ffe1d394a4fac6f411c6013172fadde9dcdb1e147a086940e"
+checksum = "5f54427cfd1c7829e2a139fcefea601bf088ebca651d2bf53ebc600eac295dae"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
@@ -933,6 +944,7 @@ dependencies = [
  "base-db",
  "fxhash",
  "hir-def",
+ "itertools 0.11.0",
  "la-arena",
  "lazy_static",
  "log",
@@ -940,6 +952,7 @@ dependencies = [
  "preprocessor",
  "regex",
  "salsa",
+ "serde",
  "smallvec",
  "smol_str",
  "stdx",
@@ -966,6 +979,7 @@ dependencies = [
  "preprocessor",
  "regex",
  "salsa",
+ "serde",
  "smallvec",
  "smol_str",
  "stdx",
@@ -1079,6 +1093,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base-db",
+ "completion-data",
  "crossbeam",
  "deepsize",
  "fxhash",
@@ -1091,10 +1106,13 @@ dependencies = [
  "line-index",
  "log",
  "lsp-types",
+ "paths",
  "preprocessor",
  "profile",
  "regex",
  "salsa",
+ "serde",
+ "serde_json",
  "smol_str",
  "sourcepawn_lexer",
  "stdx",
@@ -1111,6 +1129,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base-db",
+ "completion-data",
  "fxhash",
  "hir",
  "hir-def",
@@ -1144,6 +1163,7 @@ dependencies = [
  "line-index",
  "log",
  "lsp-types",
+ "preprocessor",
  "regex",
  "salsa",
  "sourcepawn_lexer",
@@ -1862,6 +1882,7 @@ dependencies = [
  "smol_str",
  "sourcepawn_lexer",
  "stdx",
+ "syntax",
  "vfs",
 ]
 
@@ -2830,8 +2851,9 @@ dependencies = [
 
 [[package]]
 name = "tree-sitter-sourcepawn"
-version = "0.7.1"
-source = "git+https://github.com/nilshelmig/tree-sitter-sourcepawn#3ea1653e7f3033c951518c7cf31a332ca79162ac"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "49a238e1bf60e528ae918ad532127da167b3c8df929633e05ef45c6eaca687ac"
 dependencies = [
  "cc",
  "tree-sitter",
@@ -2967,6 +2989,7 @@ dependencies = [
  "lsp-types",
  "nohash-hasher",
  "paths",
+ "serde",
 ]
 
 [[package]]

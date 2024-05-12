@@ -22,7 +22,16 @@ export async function run(args: any): Promise<void> {
   updateWebview();
 
   // And schedule updates to the content every second
-  setInterval(updateWebview, 100);
+  const interval = setInterval(updateWebview, 100);
+
+  panel.onDidDispose(
+    () => {
+      // When the panel is closed, cancel any future updates to the webview content
+      clearInterval(interval);
+    },
+    null,
+    null
+  );
 }
 
 enum DiagnosticState {
@@ -41,7 +50,7 @@ class Doctor {
 
   isSMInstalled = DiagnosticState.None;
 
-  constructor() { }
+  constructor() {}
 
   toWebview(): string {
     return `<!DOCTYPE html>

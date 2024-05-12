@@ -138,9 +138,14 @@ impl<'a> Printer<'a> {
                         name,
                         type_ref,
                         ast_id,
+                        deprecated,
                     } = &self.tree[*field_idx];
                     self.push(format!("// {}", ast_id).as_str());
                     self.newline();
+                    if *deprecated {
+                        self.push("#pragma deprecated");
+                        self.newline();
+                    }
                     self.push(&format!("{} {};", type_ref.to_string(), name.0));
                     self.newline();
                 }
@@ -178,9 +183,14 @@ impl<'a> Printer<'a> {
                         type_ref,
                         getters_setters,
                         ast_id,
+                        deprecated,
                     } = &self.tree[property_idx];
                     self.push(format!("// {}", ast_id).as_str());
                     self.newline();
+                    if *deprecated {
+                        self.push("#pragma deprecated");
+                        self.newline();
+                    }
                     self.push(&format!("property {} {} {{", type_ref.to_string(), name.0));
                     self.indent();
                     self.newline();
@@ -257,9 +267,14 @@ impl<'a> Printer<'a> {
             type_ref,
             params,
             ast_id,
+            deprecated,
         } = &self.tree[*idx];
         self.push(format!("// {}", ast_id).as_str());
         self.newline();
+        if *deprecated {
+            self.push("#pragma deprecated");
+            self.newline();
+        }
         if let Some(name) = name {
             self.push(format!("typedef {} = ", name).as_str());
         }
@@ -285,9 +300,14 @@ impl<'a> Printer<'a> {
             name,
             typedefs,
             ast_id,
+            deprecated,
         } = &self.tree[*idx];
         self.push(format!("// {}", ast_id).as_str());
         self.newline();
+        if *deprecated {
+            self.push("#pragma deprecated");
+            self.newline();
+        }
         self.push(format!("typeset {}", name).as_str());
         self.newline();
         self.indent();
@@ -305,9 +325,14 @@ impl<'a> Printer<'a> {
             type_ref,
             params,
             ast_id,
+            deprecated,
         } = &self.tree[*idx];
         self.push(format!("// {}", ast_id).as_str());
         self.newline();
+        if *deprecated {
+            self.push("#pragma deprecated");
+            self.newline();
+        }
         if let Some(name) = name {
             self.push(
                 format!(
@@ -347,9 +372,14 @@ impl<'a> Printer<'a> {
             name,
             functags,
             ast_id,
+            deprecated,
         } = &self.tree[*idx];
         self.push(format!("// {}", ast_id).as_str());
         self.newline();
+        if *deprecated {
+            self.push("#pragma deprecated");
+            self.newline();
+        }
         self.push(format!("funcenum {}", name).as_str());
         self.newline();
         self.indent();

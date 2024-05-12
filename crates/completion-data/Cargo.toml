@@ -1,0 +1,17 @@
+[package]
+name = "completion-data"
+version = "0.1.0"
+include = ["Cargo.toml", "src/"]
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lib]
+doctest = false
+
+[dependencies]
+flate2 = "1.0.29"
+once_cell.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+fxhash.workspace = true

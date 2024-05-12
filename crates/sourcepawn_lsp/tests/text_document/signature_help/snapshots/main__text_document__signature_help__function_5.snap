@@ -1,0 +1,34 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/signature_help/mod.rs
+assertion_line: 66
+expression: "signature_help(r#\"\n%! main.sp\n/**\n * @param bar    This is the bar parameter\n * @param baz    This is the baz parameter, it's a long description\n */\nvoid foo(int bar, int baz) {\n    foo(bar,);\n            |\n            ^\n}\n\n\"#)"
+---
+{
+  "signatures": [
+    {
+      "label": "void foo(int bar, int baz)",
+      "documentation": {
+        "kind": "markdown",
+        "value": "_@param_ `bar` — >This is the bar parameter\n\n_@param_ `baz` — >This is the baz parameter, it's a long description"
+      },
+      "parameters": [
+        {
+          "label": "bar",
+          "documentation": {
+            "kind": "markdown",
+            "value": "This is the bar parameter"
+          }
+        },
+        {
+          "label": "baz",
+          "documentation": {
+            "kind": "markdown",
+            "value": "This is the baz parameter, it's a long description"
+          }
+        }
+      ],
+      "activeParameter": 1
+    }
+  ],
+  "activeParameter": 1
+}

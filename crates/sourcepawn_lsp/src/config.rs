@@ -48,6 +48,10 @@ config_data! {
         /// Path to the SourcePawn compiler (spcomp).
         compiler_path: Option<String> = "null",
 
+        /// Name of the game we want the events for, as it appears on the Alliedmodders website.
+        /// For example, "Counter-Strike: Global Offensive" or "Team Fortress 2".
+        eventsGameName: Option<String> = "null",
+
         /// Whether to show `Debug` action. Only applies when
         /// `#sourcepawn-lsp.hover.actions.enable#` is set.
         hover_actions_debug_enable: bool           = "true",
@@ -212,6 +216,10 @@ impl Config {
         }
     }
 
+    pub fn events_game_name(&self) -> Option<&str> {
+        self.data.eventsGameName.as_deref()
+    }
+
     pub fn client_commands(&self) -> ClientCommandsConfig {
         let commands = try_or!(
             self.caps.experimental.as_ref()?.get("commands")?,
@@ -250,6 +258,20 @@ impl Config {
                 .as_ref()?
                 .refresh_support?
         )
+    }
+
+    pub fn completion_label_details_support(&self) -> bool {
+        try_!(self
+            .caps
+            .text_document
+            .as_ref()?
+            .completion
+            .as_ref()?
+            .completion_item
+            .as_ref()?
+            .label_details_support
+            .as_ref()?)
+        .is_some()
     }
 
     pub fn location_link(&self) -> bool {

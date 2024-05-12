@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "7.2.5",
+  "version": "7.2.7",
   "publisher": "Sarrus",
   "main": "./dist/spIndex.js",
   "icon": "sm.png",
@@ -460,6 +460,14 @@
         },
         "SourcePawnLanguageServer.compiler.path": {
           "markdownDescription": "Path to the SourcePawn compiler (spcomp).",
+          "default": null,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "SourcePawnLanguageServer.eventsGameName": {
+          "markdownDescription": "Name of the game we want the events for, as it appears on the Alliedmodders website.\nFor example, \"Counter-Strike: Global Offensive\" or \"Team Fortress 2\".",
           "default": null,
           "type": [
             "null",

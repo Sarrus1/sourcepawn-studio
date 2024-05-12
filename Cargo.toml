@@ -36,6 +36,7 @@ flycheck = { path = "./crates/flycheck" }
 stdx = { path = "./crates/stdx" }
 paths = { path = "./crates/paths" }
 test-utils = { path = "./crates/test-utils" }
+completion-data = { path = "./crates/completion-data" }
 lsp-server = "0.7.4"
 crossbeam = "0.8.2"
 dashmap = "5.4.0"
@@ -57,7 +58,7 @@ parking_lot = "0.12.1"
 lsp-types = { version = "=0.94.1", features = ["proposed"] }
 anyhow = "1.0.66"
 tree-sitter = "0.21.0"
-tree-sitter-sourcepawn = { git = "https://github.com/nilshelmig/tree-sitter-sourcepawn" }
+tree-sitter-sourcepawn = "0.7.2"
 strip_bom = "1.0.0"
 serde = "1.0.147"
 serde_json = { version = "^1.0.83", features = ["preserve_order"] }
@@ -77,6 +78,7 @@ always-assert = "0.1.2"
 itertools = "0.11.0"
 bitflags = "2.4.2"
 deepsize = "0.2.0"
+once_cell = "1.19.0"
 
 
 [workspace.dependencies.uuid]

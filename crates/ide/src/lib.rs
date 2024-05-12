@@ -1,9 +1,12 @@
 //! base_db defines basic database traits. The concrete DB is defined by ide.
 
+mod completion;
+mod events;
 mod goto_definition;
 mod hover;
 mod markup;
 mod prime_caches;
+mod signature_help;
 mod status;
 mod syntax_highlighting;
 
@@ -13,15 +16,19 @@ use base_db::{
     Change, FileExtension, FilePosition, FileRange, Graph, SourceDatabase, SourceDatabaseExt, Tree,
 };
 use fxhash::FxHashMap;
+use hir::DefResolution;
 use hir_def::{print_item_tree, DefDatabase};
 use hover::HoverResult;
 use ide_db::RootDatabase;
 use itertools::Itertools;
-use preprocessor::{db::PreprocDatabase, ArgsMap, Offset};
+use lsp_types::Url;
+use paths::AbsPathBuf;
+use preprocessor::db::PreprocDatabase;
 use salsa::{Cancelled, ParallelDatabase};
-use syntax::range_contains_pos;
+use serde_json::Value;
 use vfs::FileId;
 
+pub use completion::{CompletionItem, CompletionKind};
 pub use goto_definition::NavigationTarget;
 pub use hover::{HoverAction, HoverConfig, HoverDocFormat, HoverGotoTypeData};
 pub use ide_db::Cancellable;
@@ -29,6 +36,7 @@ pub use ide_diagnostics::{Diagnostic, DiagnosticsConfig, Severity};
 pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};
 pub use markup::Markup;
 pub use prime_caches::ParallelPrimeCachesProgress;
+pub use signature_help::SignatureHelp;
 pub use syntax_highlighting::{Highlight, HlMod, HlMods, HlRange, HlTag};
 
 /// Info associated with a [`range`](lsp_types::Range).
@@ -205,8 +213,46 @@ impl Analysis {
         pos: FilePosition,
         config: &HoverConfig,
         file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Option<String>>,
+        events_game_name: Option<&str>,
     ) -> Cancellable<Option<RangeInfo<HoverResult>>> {
-        self.with_db(|db| hover::hover(db, pos, config, file_id_to_url))
+        self.with_db(|db| hover::hover(db, pos, config, file_id_to_url, events_game_name))
+    }
+
+    /// Returns the hover information at `position`.
+    pub fn signature_help(&self, pos: FilePosition) -> Cancellable<Option<SignatureHelp>> {
+        self.with_db(|db| signature_help::signature_help(db, pos))
+    }
+
+    /// Returns the completions at `position`.
+    pub fn completions(
+        &self,
+        position: FilePosition,
+        trigger_character: Option<char>,
+        include_directories: Vec<AbsPathBuf>,
+        file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Url>,
+        events_game_name: Option<&str>,
+    ) -> Cancellable<Option<Vec<CompletionItem>>> {
+        self.with_db(|db| {
+            completion::completions(
+                db,
+                position,
+                trigger_character,
+                include_directories,
+                file_id_to_url,
+                events_game_name,
+            )
+            .map(Into::into)
+        })
+    }
+
+    pub fn resolve_completion(
+        &self,
+        data: Value,
+        item: lsp_types::CompletionItem,
+    ) -> Cancellable<Option<lsp_types::CompletionItem>> {
+        let data: DefResolution =
+            serde_json::from_value(data).expect("failed to deserialize completion data");
+        self.with_db(|db| completion::resolve_completion(db, data, item))
     }
 
     /// Returns the highlighted ranges for the file.
@@ -218,79 +264,4 @@ impl Analysis {
     pub fn highlight_range(&self, frange: FileRange) -> Cancellable<Vec<HlRange>> {
         self.with_db(|db| syntax_highlighting::highlight(db, frange.file_id, Some(frange.range)))
     }
-}
-
-/// Convert a position seen by the user to a position seen by the server (preprocessed).
-///
-/// Will try to look for a mapped range of a macro argument and return the offsetted position.
-/// If no mapped range is found, will try to apply the offsets to the position.
-///
-/// # Arguments
-///
-/// * `args_map` - The preprocessed arguments map.
-/// * `offsets` - The preprocessed offsets.
-/// * `pos` - The position to convert.
-///
-/// # Returns
-///
-/// The source position range, if a mapped range was found.
-fn u_pos_to_s_pos(
-    args_map: &ArgsMap,
-    offsets: &FxHashMap<u32, Vec<Offset>>,
-    pos: &mut lsp_types::Position,
-) -> Option<lsp_types::Range> {
-    let mut source_u_range = None;
-
-    match args_map.get(&pos.line).and_then(|args| {
-        args.iter()
-            .find(|(range, _)| range_contains_pos(range, pos))
-    }) {
-        Some((u_range, s_range)) => {
-            *pos = s_range.start;
-            source_u_range = Some(*u_range);
-        }
-        None => {
-            if let Some(diff) = offsets.get(&pos.line).map(|offsets| {
-                offsets
-                    .iter()
-                    .filter(|offset| offset.range.end.character <= pos.character)
-                    .map(|offset| offset.diff.saturating_sub_unsigned(offset.args_diff))
-                    .sum::<i32>()
-            }) {
-                *pos = lsp_types::Position {
-                    line: pos.line,
-                    character: pos.character.saturating_add_signed(diff),
-                };
-            }
-        }
-    }
-
-    source_u_range
-}
-
-/// Convert a range seen by the server to a range seen by the user.
-fn s_range_to_u_range(
-    offsets: &FxHashMap<u32, Vec<Offset>>,
-    mut s_range: lsp_types::Range,
-) -> lsp_types::Range {
-    if let Some(offsets) = offsets.get(&s_range.start.line) {
-        for offset in offsets.iter() {
-            if offset.range.start.character < s_range.start.character {
-                s_range.start.character = s_range
-                    .start
-                    .character
-                    .saturating_add_signed(-offset.diff.saturating_sub_unsigned(offset.args_diff));
-            }
-        }
-        for offset in offsets.iter() {
-            if offset.range.start.character < s_range.end.character {
-                s_range.end.character = s_range
-                    .end
-                    .character
-                    .saturating_add_signed(-offset.diff.saturating_sub_unsigned(offset.args_diff));
-            }
-        }
-    }
-
-    s_range
 }

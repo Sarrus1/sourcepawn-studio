@@ -31,3 +31,4 @@ syntax.workspace = true
 vfs.workspace = true
 base-db.workspace = true
 ide-db.workspace = true
+preprocessor.workspace = true

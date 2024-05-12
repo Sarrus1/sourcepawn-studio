@@ -146,6 +146,7 @@ impl ChildBySource for MethodmapId {
                 map[keys::PROPERTY].insert(node_ptr, *id);
             }
             MethodmapItemData::Method(id)
+            | MethodmapItemData::Static(id)
             | MethodmapItemData::Constructor(id)
             | MethodmapItemData::Destructor(id) => {
                 let item_id = id.lookup(db).id;

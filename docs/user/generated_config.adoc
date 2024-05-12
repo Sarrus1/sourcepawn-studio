@@ -24,6 +24,12 @@ Compute spcomp diagnostics on save.
 --
 Path to the SourcePawn compiler (spcomp).
 --
+[[SourcePawnLanguageServer.eventsGameName]]SourcePawnLanguageServer.eventsGameName (default: `null`)::
++
+--
+Name of the game we want the events for, as it appears on the Alliedmodders website.
+For example, "Counter-Strike: Global Offensive" or "Team Fortress 2".
+--
 [[SourcePawnLanguageServer.hover.actions.debug.enable]]SourcePawnLanguageServer.hover.actions.debug.enable (default: `true`)::
 +
 --

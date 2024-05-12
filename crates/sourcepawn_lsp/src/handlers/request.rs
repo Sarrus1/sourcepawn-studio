@@ -2,22 +2,91 @@ use std::panic::AssertUnwindSafe;
 
 use anyhow::Context;
 use base_db::FileRange;
-use ide::{HoverAction, HoverGotoTypeData};
+use ide::{CompletionKind, HoverAction, HoverGotoTypeData};
+use ide_db::SymbolKind;
 use lsp_types::{
     SemanticTokensDeltaParams, SemanticTokensFullDeltaResult, SemanticTokensParams,
-    SemanticTokensRangeParams, SemanticTokensRangeResult, SemanticTokensResult, Url,
+    SemanticTokensRangeParams, SemanticTokensRangeResult, SemanticTokensResult, SignatureHelp,
+    SignatureHelpParams, Url,
 };
 use stdx::format_to;
 use vfs::FileId;
 
 use crate::{
     global_state::GlobalStateSnapshot,
-    lsp::ext::{
-        AnalyzerStatusParams, ItemTreeParams, PreprocessedDocumentParams, ProjectMainPathParams,
-        ProjectsGraphvizParams, SyntaxTreeParams,
+    lsp::{
+        self,
+        ext::{
+            AnalyzerStatusParams, ItemTreeParams, PreprocessedDocumentParams,
+            ProjectMainPathParams, ProjectsGraphvizParams, SyntaxTreeParams,
+        },
+        from_proto, to_proto,
     },
-    lsp::{self, from_proto, to_proto},
 };
+
+pub(crate) fn handle_resolve_completion(
+    snap: GlobalStateSnapshot,
+    params: lsp_types::CompletionItem,
+) -> anyhow::Result<lsp_types::CompletionItem> {
+    let mut item = params;
+
+    let Some(data) = item.data.take() else {
+        return Ok(item);
+    };
+    let Some(new_item) = snap.analysis.resolve_completion(data, item.clone())? else {
+        return Ok(item);
+    };
+
+    item = new_item;
+
+    Ok(item)
+}
+
+pub(crate) fn handle_completion(
+    snap: GlobalStateSnapshot,
+    params: lsp_types::CompletionParams,
+) -> anyhow::Result<Option<lsp_types::CompletionResponse>> {
+    let position = from_proto::file_position(&snap, params.text_document_position.clone())?;
+    let trigger_character = params
+        .context
+        .and_then(|it| it.trigger_character.and_then(|it| it.chars().next()));
+
+    let file_id_to_url = &|id: FileId| snap.file_id_to_url(id);
+    let file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Url> = AssertUnwindSafe(file_id_to_url);
+
+    let include_directories = snap.config.include_directories();
+
+    if let Some(completions) = snap.analysis.completions(
+        position,
+        trigger_character,
+        include_directories,
+        file_id_to_url,
+        snap.config.events_game_name(),
+    )? {
+        return Ok(Some(lsp_types::CompletionResponse::Array(
+            completions
+                .into_iter()
+                .map(|item| {
+                    let kind = item.kind;
+                    let mut c_item = to_proto::completion_item(&snap, item);
+                    match kind {
+                        CompletionKind::SymbolKind(SymbolKind::Local)
+                        | CompletionKind::SymbolKind(SymbolKind::Global) => {
+                            c_item.sort_text = Some("0".to_string())
+                        }
+                        CompletionKind::SymbolKind(SymbolKind::Function) => {
+                            c_item.sort_text = Some("0.1".to_string())
+                        }
+                        _ => (),
+                    }
+                    c_item
+                })
+                .collect(),
+        )));
+    }
+
+    Ok(None)
+}
 
 pub(crate) fn handle_goto_definition(
     snap: GlobalStateSnapshot,
@@ -52,15 +121,17 @@ pub(crate) fn handle_hover(
         snap.file_id_to_url(id)
             .to_file_path()
             .ok()
-            .and_then(|it| it.to_path_buf().to_str().map(|it| it.to_string()))
+            .and_then(|it| it.to_str().map(|it| it.to_string()))
     };
     let file_id_to_url: AssertUnwindSafe<&dyn Fn(FileId) -> Option<String>> =
         AssertUnwindSafe(file_id_to_url);
 
-    let info = match snap
-        .analysis
-        .hover(pos, &snap.config.hover(), file_id_to_url)?
-    {
+    let info = match snap.analysis.hover(
+        pos,
+        &snap.config.hover(),
+        file_id_to_url,
+        snap.config.events_game_name(),
+    )? {
         None => return Ok(None),
         Some(it) => it,
     };
@@ -125,6 +196,19 @@ fn prepare_hover_actions(
             HoverAction::GoToType(targets) => goto_type_action_links(snap, targets),
         })
         .collect()
+}
+
+pub(crate) fn handle_signature_help(
+    snap: GlobalStateSnapshot,
+    params: SignatureHelpParams,
+) -> anyhow::Result<Option<SignatureHelp>> {
+    let position = from_proto::file_position(&snap, params.text_document_position_params.clone())?;
+    let signature = match snap.analysis.signature_help(position)? {
+        None => return Ok(None),
+        Some(it) => it,
+    };
+
+    Ok(Some(to_proto::signature_help(signature)))
 }
 
 pub(crate) fn handle_semantic_tokens_full(

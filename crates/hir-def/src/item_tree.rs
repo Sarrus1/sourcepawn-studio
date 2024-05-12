@@ -1,6 +1,10 @@
 use bitflags::bitflags;
 use core::hash::Hash;
 use la_arena::{Arena, Idx, IdxRange};
+use serde::{
+    de::{self, Visitor},
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 use smallvec::SmallVec;
 use smol_str::SmolStr;
 use std::fmt;
@@ -148,7 +152,8 @@ impl ItemTree {
                         }
                     }
                 }
-                TSKind::old_variable_declaration_statement => {
+                TSKind::old_variable_declaration_statement
+                | TSKind::old_for_loop_variable_declaration_statement => {
                     for sub_child in child
                         .children(&mut child.walk())
                         .filter(|n| TSKind::from(n) == TSKind::old_variable_declaration)
@@ -239,11 +244,47 @@ impl fmt::Display for Name {
     }
 }
 
+impl Serialize for Name {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.0.as_str())
+    }
+}
+
+impl<'de> Deserialize<'de> for Name {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct NameVisitor;
+
+        impl<'de> Visitor<'de> for NameVisitor {
+            type Value = Name;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a string for SmolStr")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Name, E>
+            where
+                E: de::Error,
+            {
+                Ok(Name(SmolStr::new(value)))
+            }
+        }
+
+        deserializer.deserialize_str(NameVisitor)
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Macro {
     pub name: Name,
     // pub params: IdxRange<Param>,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -269,6 +310,7 @@ pub struct Function {
     pub special: Option<SpecialMethod>,
     pub ret_type: Option<TypeRef>,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -286,6 +328,7 @@ pub struct Typedef {
     pub params: IdxRange<Param>,
     pub type_ref: TypeRef,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -293,6 +336,7 @@ pub struct Typeset {
     pub name: Name,
     pub typedefs: IdxRange<Typedef>,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -301,6 +345,7 @@ pub struct Functag {
     pub params: IdxRange<Param>,
     pub type_ref: Option<TypeRef>,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -308,6 +353,7 @@ pub struct Funcenum {
     pub name: Name,
     pub functags: IdxRange<Functag>,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -321,6 +367,7 @@ pub struct EnumStruct {
     pub name: Name,
     pub items: Box<[EnumStructItemId]>,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 /// A single field of an enum struct
@@ -329,6 +376,7 @@ pub struct Field {
     pub name: Name,
     pub type_ref: TypeRef,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -343,6 +391,7 @@ pub struct Property {
     pub getters_setters: IdxRange<Function>,
     pub type_ref: TypeRef,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -352,6 +401,7 @@ pub struct Methodmap {
     pub inherits: Option<Name>,
     pub nullable: bool,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -359,12 +409,14 @@ pub struct Enum {
     pub name: Name,
     pub variants: IdxRange<Variant>,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Variant {
     pub name: Name,
     pub ast_id: AstId,
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]

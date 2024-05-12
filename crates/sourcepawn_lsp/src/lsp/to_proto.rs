@@ -4,7 +4,10 @@ use std::{
 };
 
 use base_db::FileRange;
-use ide::{Cancellable, Highlight, HlMod, HlRange, HlTag, Markup, NavigationTarget, Severity};
+use ide::{
+    Cancellable, CompletionKind, Highlight, HlMod, HlRange, HlTag, Markup, NavigationTarget,
+    Severity, SignatureHelp,
+};
 use ide_db::SymbolKind;
 use itertools::Itertools;
 use paths::AbsPath;
@@ -108,6 +111,7 @@ fn semantic_token_type_and_modifiers(
     let type_ = match highlight.tag {
         HlTag::Symbol(symbol) => match symbol {
             SymbolKind::Macro => semantic_tokens::MACRO,
+            _ => todo!(),
         },
         HlTag::None => semantic_tokens::GENERIC,
     };
@@ -172,6 +176,90 @@ pub(crate) fn location(
     let url = url(snap, frange.file_id);
     let loc = lsp_types::Location::new(url, frange.range);
     Ok(loc)
+}
+
+pub(crate) fn completion_item(
+    _snap: &GlobalStateSnapshot,
+    item: ide::CompletionItem,
+) -> lsp_types::CompletionItem {
+    lsp_types::CompletionItem {
+        label: item.label.to_string(),
+        insert_text: item.insert_text.map(|it| it.to_string()),
+        kind: Some(completion_item_kind(item.kind)),
+        insert_text_format: {
+            if item.kind == CompletionKind::Snippet {
+                Some(lsp_types::InsertTextFormat::SNIPPET)
+            } else {
+                Some(lsp_types::InsertTextFormat::PLAIN_TEXT)
+            }
+        },
+        deprecated: item.deprecated.into(),
+        tags: if item.deprecated {
+            Some(vec![lsp_types::CompletionItemTag::DEPRECATED])
+        } else {
+            None
+        },
+        detail: item.detail.map(|it| it.to_string()),
+        documentation: item.documentation.map(Into::into),
+        data: item.data.and_then(|it| serde_json::to_value(it).ok()),
+        ..Default::default()
+    }
+}
+
+pub(crate) fn completion_item_kind(kind: CompletionKind) -> lsp_types::CompletionItemKind {
+    use lsp_types::CompletionItemKind as CK;
+
+    match kind {
+        CompletionKind::SymbolKind(SymbolKind::Function) => CK::FUNCTION,
+        CompletionKind::SymbolKind(SymbolKind::Forward) => CK::INTERFACE,
+        CompletionKind::SymbolKind(SymbolKind::Constructor) => CK::CONSTRUCTOR,
+        CompletionKind::SymbolKind(SymbolKind::Destructor) => CK::CONSTRUCTOR,
+        CompletionKind::SymbolKind(SymbolKind::Struct) => CK::STRUCT,
+        CompletionKind::SymbolKind(SymbolKind::Enum) => CK::ENUM,
+        CompletionKind::SymbolKind(SymbolKind::Variant) => CK::ENUM_MEMBER,
+        CompletionKind::SymbolKind(SymbolKind::Macro) => CK::CONSTANT,
+        CompletionKind::SymbolKind(SymbolKind::Local) => CK::VARIABLE,
+        CompletionKind::SymbolKind(SymbolKind::Field) => CK::FIELD,
+        CompletionKind::SymbolKind(SymbolKind::Method) => CK::METHOD,
+        CompletionKind::SymbolKind(SymbolKind::Typedef) => CK::INTERFACE,
+        CompletionKind::SymbolKind(SymbolKind::Typeset) => CK::INTERFACE,
+        CompletionKind::SymbolKind(SymbolKind::Functag) => CK::INTERFACE,
+        CompletionKind::SymbolKind(SymbolKind::Funcenum) => CK::INTERFACE,
+        CompletionKind::SymbolKind(SymbolKind::EnumStruct) => CK::STRUCT,
+        CompletionKind::SymbolKind(SymbolKind::Methodmap) => CK::CLASS,
+        CompletionKind::SymbolKind(SymbolKind::Property) => CK::PROPERTY,
+        CompletionKind::SymbolKind(SymbolKind::Global) => CK::VARIABLE,
+        CompletionKind::Keyword => CK::KEYWORD,
+        CompletionKind::Literal => CK::KEYWORD,
+        CompletionKind::Directory => CK::FOLDER,
+        CompletionKind::File => CK::FILE,
+        CompletionKind::Snippet => CK::SNIPPET,
+    }
+}
+
+pub(crate) fn signature_help(sig: SignatureHelp) -> lsp_types::SignatureHelp {
+    lsp_types::SignatureHelp {
+        signatures: vec![lsp_types::SignatureInformation {
+            label: sig.signature,
+            documentation: sig.doc.clone().map(|doc| doc.into()),
+            parameters: sig
+                .parameters
+                .into_iter()
+                .map(|it| lsp_types::ParameterInformation {
+                    label: lsp_types::ParameterLabel::Simple(it.clone()),
+                    documentation: sig
+                        .doc
+                        .clone()
+                        // This is not efficient, but it's not a hot path.
+                        .and_then(|doc| doc.param_description(&it).map(|it| it.into())),
+                })
+                .collect_vec()
+                .into(),
+            active_parameter: sig.active_parameter,
+        }],
+        active_signature: Default::default(),
+        active_parameter: sig.active_parameter,
+    }
 }
 
 pub(crate) mod command {

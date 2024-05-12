@@ -1,0 +1,15 @@
+---
+source: crates/sourcepawn_lsp/tests/text_document/signature_help/mod.rs
+assertion_line: 6
+expression: "signature_help(r#\"\n%! main.sp\nvoid foo() {\n    foo();\n        |\n        ^\n}\n\n\"#)"
+---
+{
+  "signatures": [
+    {
+      "label": "void foo()",
+      "parameters": [],
+      "activeParameter": 0
+    }
+  ],
+  "activeParameter": 0
+}

@@ -1,3 +1,4 @@
+use completion_data::Event;
 use lazy_static::lazy_static;
 use regex::Regex;
 use syntax::TSKind;
@@ -9,6 +10,45 @@ pub struct Documentation(String);
 impl From<Documentation> for String {
     fn from(Documentation(string): Documentation) -> Self {
         string
+    }
+}
+
+impl From<&str> for Documentation {
+    fn from(s: &str) -> Self {
+        Documentation(s.to_string())
+    }
+}
+
+impl From<&Event<'_>> for Documentation {
+    fn from(event: &Event) -> Self {
+        let mut docs = Vec::new();
+        if let Some(note) = event.note() {
+            docs.push(note.to_string());
+            docs.push("---".to_string());
+        }
+        for attr in event.attributes() {
+            let mut buf = format!("`{}` (__{}__)", attr.name(), attr.r#type(),);
+            if let Some(desc) = attr.description() {
+                buf.push_str(&format!(" — {}", desc));
+            }
+            docs.push(buf);
+        }
+        Documentation(docs.join("\n\n"))
+    }
+}
+
+impl From<Documentation> for lsp_types::Documentation {
+    fn from(val: Documentation) -> Self {
+        lsp_types::Documentation::MarkupContent(lsp_types::MarkupContent {
+            kind: lsp_types::MarkupKind::Markdown,
+            value: val.to_markdown(),
+        })
+    }
+}
+
+impl From<String> for Documentation {
+    fn from(s: String) -> Self {
+        Documentation(s)
     }
 }
 
@@ -71,6 +111,7 @@ impl Documentation {
                 let fn_doc = Documentation::from_node(fn_node, source)?;
                 docs = fn_doc
                     .param_description(name)?
+                    .0
                     .lines()
                     .map(|l| l.to_string())
                     .collect();
@@ -173,14 +214,15 @@ impl Documentation {
             .to_string()
     }
 
-    pub fn param_description(&self, param_name: &str) -> Option<String> {
-        let re = Regex::new(&format!(r"\s*@param\s+{}\s+", param_name)).ok()?;
+    /// Extracts the description of a parameter from the documentation.
+    pub fn param_description(&self, param_name: &str) -> Option<Self> {
+        let re = Regex::new(&format!(r"\s*@param\s+{}\s+", regex::escape(param_name))).ok()?;
         let start = re.find(self.as_str())?.end();
         let end = self.as_str()[start..]
             .find(|c: char| c == '@')
             .map(|i| start + i)
             .unwrap_or_else(|| self.as_str().len());
-        Some(self.as_str()[start..end].trim().to_string())
+        Some(self.as_str()[start..end].trim().to_string().into())
     }
 }
 

@@ -28,6 +28,7 @@ pub type ExprId = Idx<Expr>;
 pub enum Expr {
     Missing,
     Ident(Ident),
+    This,
     Block {
         id: Option<BlockId>,
         statements: Box<[ExprId]>,
