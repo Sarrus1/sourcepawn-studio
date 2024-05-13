@@ -152,12 +152,12 @@ export async function run(args: URI): Promise<number> {
 
       // Return if compilation failed
       if (error) {
-        window.showErrorMessage("Compilation failed!")
+        window.showErrorMessage("Compilation failed.")
         return 1;
       }
 
       // Little success message in console
-      output.appendLine("Compilation successful!");
+      output.appendLine("Compilation successful.");
 
       // Run upload command if chosen
       if (getConfig(Section.SourcePawn, "uploadAfterSuccessfulCompile", workspaceFolder)) {
