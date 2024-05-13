@@ -238,7 +238,7 @@
             "afterCompile",
             "afterUpload"
           ],
-          "description": "Should the specified commands be executed on the server after a successful action in VSCode (default: sm plugins refresh).",
+          "description": "Should the specified commands be executed on the server after a successful VSCode command or on `runServerCommands`.",
           "scope": "resource"
         },
         "sourcepawn.serverCommands": {
