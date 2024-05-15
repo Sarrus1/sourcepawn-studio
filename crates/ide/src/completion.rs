@@ -59,6 +59,10 @@ pub fn completions(
             file_id_to_url,
         );
     }
+    if trigger_character == Some('/') || trigger_character == Some('<') {
+        // We are past the include statement check, so we can return early.
+        return None;
+    }
 
     lazy_static! {
         pub static ref NEW_REGEX: Regex = Regex::new(r"new\s+$").unwrap();
@@ -95,8 +99,20 @@ pub fn completions(
 
     let node = root_node.descendant_for_point_range(point_off, point_off)?;
 
+    // Check if we are in an event such as "EventHook"
     if event_name(&node, &preprocessed_text).is_some() {
         return events_completions(events_game_name).into();
+    }
+    if trigger_character == Some('"') {
+        return None;
+    }
+
+    if matches!(
+        TSKind::from(node),
+        TSKind::comment | TSKind::string_literal | TSKind::char_literal
+    ) {
+        // No completions in comments or strings
+        return None;
     }
 
     let mut container = node.parent()?;
