@@ -195,6 +195,7 @@ impl InferenceContext<'_> {
                 self.resolver.reset_to_guard(g);
                 None
             }
+            Expr::DynamicArray { identifier } => self.infer_expr(identifier),
             Expr::CommaExpr(exprs) => {
                 let mut ty = None;
                 for expr in exprs.iter() {

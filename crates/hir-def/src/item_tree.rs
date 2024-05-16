@@ -136,7 +136,10 @@ impl ItemTree {
                 TSKind::variable_declaration_statement => {
                     let type_ref = TypeRef::from_returntype_node(&child, "type", &source);
                     for sub_child in child.children(&mut child.walk()) {
-                        if TSKind::from(sub_child) == TSKind::variable_declaration {
+                        if matches!(
+                            TSKind::from(sub_child),
+                            TSKind::variable_declaration | TSKind::dynamic_array_declaration
+                        ) {
                             if let Some(name_node) = sub_child.child_by_field_name("name") {
                                 let res = Variable {
                                     name: Name::from(

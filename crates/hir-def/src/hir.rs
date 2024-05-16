@@ -43,6 +43,9 @@ pub enum Expr {
         name: Name,
         args: Box<[ExprId]>,
     },
+    DynamicArray {
+        identifier: ExprId,
+    },
     ViewAs {
         operand: ExprId,
         type_ref: TypeRef,

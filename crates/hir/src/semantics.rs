@@ -110,7 +110,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             TSKind::parameter_declaration => {
                 self.local_to_def(src).map(Local::from).map(|it| it.into())
             }
-            TSKind::variable_declaration | TSKind::old_variable_declaration => {
+            TSKind::variable_declaration
+            | TSKind::old_variable_declaration
+            | TSKind::dynamic_array_declaration => {
                 let grand_parent = parent.parent()?;
                 match TSKind::from(&grand_parent) {
                     TSKind::global_variable_declaration

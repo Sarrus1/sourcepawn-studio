@@ -91,10 +91,12 @@ impl ExprCollector<'_> {
     fn collect_variable_declaration(&mut self, expr: tree_sitter::Node) -> ExprId {
         let mut decl = vec![];
         let type_ref = TypeRef::from_returntype_node(&expr, "type", self.source);
-        for child in expr
-            .children(&mut expr.walk())
-            .filter(|n| TSKind::from(n) == TSKind::variable_declaration)
-        {
+        for child in expr.children(&mut expr.walk()).filter(|n| {
+            matches!(
+                TSKind::from(n),
+                TSKind::variable_declaration | TSKind::dynamic_array_declaration
+            )
+        }) {
             if let Some(name_node) = child.child_by_field_name("name") {
                 let ident_id = self
                     .body
@@ -442,7 +444,14 @@ impl ExprCollector<'_> {
                         .collect::<Vec<_>>()
                         .into_boxed_slice(),
                 };
-                Some(self.alloc_expr(new, NodePtr::from(&constructor)))
+                Some(self.alloc_expr(new, NodePtr::from(&expr)))
+            }
+            TSKind::dynamic_array => {
+                let type_ = expr.child_by_field_name("type")?;
+                let dyn_arr = Expr::DynamicArray {
+                    identifier: self.maybe_collect_expr(type_)?,
+                };
+                Some(self.alloc_expr(dyn_arr, NodePtr::from(&expr)))
             }
             TSKind::array_literal => {
                 let elements = expr

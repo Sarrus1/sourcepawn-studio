@@ -65,7 +65,10 @@ impl Documentation {
         let mut pragma = None;
         let mut docs = Vec::new();
         match TSKind::from(&node) {
-            TSKind::preproc_define | TSKind::enum_entry | TSKind::variable_declaration => {
+            TSKind::preproc_define
+            | TSKind::enum_entry
+            | TSKind::variable_declaration
+            | TSKind::dynamic_array_declaration => {
                 if let Some(parent) = node.parent() {
                     if matches!(
                         TSKind::from(parent),

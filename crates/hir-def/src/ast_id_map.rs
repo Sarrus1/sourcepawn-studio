@@ -133,7 +133,9 @@ impl AstIdMap {
                     for child in node.children(&mut node.walk()) {
                         if matches!(
                             TSKind::from(child),
-                            TSKind::variable_declaration | TSKind::old_variable_declaration
+                            TSKind::variable_declaration
+                                | TSKind::old_variable_declaration
+                                | TSKind::dynamic_array_declaration
                         ) {
                             let node_ptr = NodePtr::from(&child);
                             let ast_id = arena.alloc(node_ptr);

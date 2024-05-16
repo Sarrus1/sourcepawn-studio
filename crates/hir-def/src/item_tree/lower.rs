@@ -130,7 +130,10 @@ impl<'db> Ctx<'db> {
         let visibility = RawVisibilityId::from_node(node);
         let type_ref = TypeRef::from_returntype_node(node, "type", &self.source);
         for child in node.children(&mut node.walk()) {
-            if TSKind::from(child) == TSKind::variable_declaration {
+            if matches!(
+                TSKind::from(child),
+                TSKind::variable_declaration | TSKind::dynamic_array_declaration
+            ) {
                 if let Some(name_node) = child.child_by_field_name("name") {
                     let res = Variable {
                         name: Name::from(name_node.utf8_text(self.source.as_bytes()).unwrap()),

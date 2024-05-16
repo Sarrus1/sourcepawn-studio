@@ -220,6 +220,7 @@ fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope
         | Expr::TernaryOp { .. }
         | Expr::Call { .. }
         | Expr::MethodCall { .. }
+        | Expr::DynamicArray { .. }
         | Expr::Literal(_) => (),
     };
 }
