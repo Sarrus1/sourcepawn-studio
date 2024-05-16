@@ -30,6 +30,7 @@ pub(super) struct IncludeStatement {
 /// # Arguments
 ///
 /// * `pre_line` - Prefix line to process.
+/// * `post_line` - Postfix line to process.
 pub(super) fn is_include_statement(pre_line: &str, post_line: &str) -> Option<IncludeStatement> {
     lazy_static! {
         static ref RE1: Regex = Regex::new(r"^\s*#\s*include\s*(?:<([^>]*)(>)?)").unwrap();

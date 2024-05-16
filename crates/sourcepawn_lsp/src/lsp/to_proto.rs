@@ -10,6 +10,7 @@ use ide::{
 };
 use ide_db::SymbolKind;
 use itertools::Itertools;
+use lsp_types::TextEdit;
 use paths::AbsPath;
 use vfs::FileId;
 
@@ -193,6 +194,10 @@ pub(crate) fn completion_item(
                 Some(lsp_types::InsertTextFormat::PLAIN_TEXT)
             }
         },
+        filter_text: item.filter_text,
+        text_edit: item.text_edit.map(|(range, new_text)| {
+            lsp_types::CompletionTextEdit::Edit(TextEdit::new(range, new_text))
+        }),
         deprecated: item.deprecated.into(),
         tags: if item.deprecated {
             Some(vec![lsp_types::CompletionItemTag::DEPRECATED])

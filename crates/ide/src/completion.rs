@@ -1,4 +1,5 @@
 mod defaults;
+mod documentation;
 mod includes;
 mod item;
 
@@ -23,6 +24,7 @@ use vfs::FileId;
 use crate::{
     completion::{
         defaults::get_default_completions,
+        documentation::{get_doc_completion, is_documentation_start},
         includes::{get_include_completions, is_include_statement},
     },
     events::{event_name, events_completions},
@@ -61,6 +63,14 @@ pub fn completions(
     }
     if trigger_character == Some('/') || trigger_character == Some('<') {
         // We are past the include statement check, so we can return early.
+        return None;
+    }
+
+    if is_documentation_start(split_line.0, split_line.1) {
+        return get_doc_completion(db, point, pos.file_id);
+    }
+    if trigger_character == Some('*') {
+        // We are past the doc comment check, so we can return early.
         return None;
     }
 
