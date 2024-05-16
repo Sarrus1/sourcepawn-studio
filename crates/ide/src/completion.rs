@@ -1,4 +1,5 @@
 mod defaults;
+mod documentation;
 mod includes;
 mod item;
 
@@ -23,6 +24,7 @@ use vfs::FileId;
 use crate::{
     completion::{
         defaults::get_default_completions,
+        documentation::{get_doc_completion, is_documentation_start},
         includes::{get_include_completions, is_include_statement},
     },
     events::{event_name, events_completions},
@@ -58,6 +60,18 @@ pub fn completions(
             include_directories,
             file_id_to_url,
         );
+    }
+    if trigger_character == Some('/') || trigger_character == Some('<') {
+        // We are past the include statement check, so we can return early.
+        return None;
+    }
+
+    if is_documentation_start(split_line.0, split_line.1) {
+        return get_doc_completion(db, point, pos.file_id);
+    }
+    if trigger_character == Some('*') {
+        // We are past the doc comment check, so we can return early.
+        return None;
     }
 
     lazy_static! {
@@ -95,8 +109,20 @@ pub fn completions(
 
     let node = root_node.descendant_for_point_range(point_off, point_off)?;
 
+    // Check if we are in an event such as "EventHook"
     if event_name(&node, &preprocessed_text).is_some() {
         return events_completions(events_game_name).into();
+    }
+    if trigger_character == Some('"') {
+        return None;
+    }
+
+    if matches!(
+        TSKind::from(node),
+        TSKind::comment | TSKind::string_literal | TSKind::char_literal
+    ) {
+        // No completions in comments or strings
+        return None;
     }
 
     let mut container = node.parent()?;

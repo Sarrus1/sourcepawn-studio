@@ -402,12 +402,14 @@ impl ExprCollector<'_> {
             }
             TSKind::float_literal => {
                 let text = expr.utf8_text(self.source.as_bytes()).unwrap();
-                let float = FloatTypeWrapper::new(text.parse().ok()?);
+                // FIXME: The unwrap_or_default() is a workaround
+                let float = FloatTypeWrapper::new(text.parse().unwrap_or_default());
                 Some(self.alloc_expr(Expr::Literal(Literal::Float(float)), NodePtr::from(&expr)))
             }
             TSKind::char_literal => {
                 let text = expr.utf8_text(self.source.as_bytes()).unwrap();
-                let char = text.chars().nth(1)?;
+                // FIXME: The unwrap_or_default() is a workaround
+                let char = text.chars().nth(1).unwrap_or_default();
                 Some(self.alloc_expr(Expr::Literal(Literal::Char(char)), NodePtr::from(&expr)))
             }
             TSKind::string_literal => {

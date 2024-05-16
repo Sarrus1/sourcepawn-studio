@@ -1015,6 +1015,39 @@ impl Typedef {
         db.typedef_data(self.id).type_ref.to_string()
     }
 
+    /// Returns the names of the parameters of the typedef, in order.
+    pub fn parameters(&self, db: &dyn HirDatabase) -> Vec<String> {
+        let loc = self.id.lookup(db.upcast());
+        let source = db.preprocessed_text(loc.id.file_id());
+        let file_id = loc.id.file_id();
+        let tree = db.parse(file_id);
+        let Some(node) = self.source(db, &tree).map(|it| it.value) else {
+            return Vec::new();
+        };
+        let Some(node) = node
+            .children(&mut node.walk())
+            .find(|it| TSKind::from(it) == TSKind::typedef_expression)
+        else {
+            return Vec::new();
+        };
+        let Some(params) = node.child_by_field_name("parameters") else {
+            return Vec::new();
+        };
+        let res = params
+            .children(&mut params.walk())
+            .flat_map(|param| match TSKind::from(&param) {
+                TSKind::parameter_declaration => param
+                    .child_by_field_name("name")
+                    .and_then(|name| name.utf8_text(source.as_bytes()).ok())
+                    .map(String::from),
+                TSKind::rest_parameter => Some("...".to_string()),
+                _ => None,
+            })
+            .collect_vec();
+
+        res
+    }
+
     pub fn type_def(self, db: &dyn HirDatabase) -> Vec<DefResolution> {
         let mut res = Vec::new();
         let ty = db.typedef_data(self.id).type_ref.clone();
@@ -1189,6 +1222,41 @@ impl Functag {
         {
             res.push(def);
         }
+
+        res
+    }
+
+    pub fn return_type(self, db: &dyn HirDatabase) -> Option<String> {
+        db.functag_data(self.id)
+            .type_ref
+            .clone()?
+            .to_string()
+            .into()
+    }
+
+    /// Returns the names of the parameters of the functag, in order.
+    pub fn parameters(&self, db: &dyn HirDatabase) -> Vec<String> {
+        let loc = self.id.lookup(db.upcast());
+        let source = db.preprocessed_text(loc.id.file_id());
+        let file_id = loc.id.file_id();
+        let tree = db.parse(file_id);
+        let Some(node) = self.source(db, &tree).map(|it| it.value) else {
+            return Vec::new();
+        };
+        let Some(params) = node.child_by_field_name("parameters") else {
+            return Vec::new();
+        };
+        let res = params
+            .children(&mut params.walk())
+            .flat_map(|param| match TSKind::from(&param) {
+                TSKind::parameter_declaration => param
+                    .child_by_field_name("name")
+                    .and_then(|name| name.utf8_text(source.as_bytes()).ok())
+                    .map(String::from),
+                TSKind::rest_parameter => Some("...".to_string()),
+                _ => None,
+            })
+            .collect_vec();
 
         res
     }
