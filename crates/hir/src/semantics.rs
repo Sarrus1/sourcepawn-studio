@@ -17,7 +17,7 @@ use crate::{
     source_analyzer::SourceAnalyzer,
     source_to_def::{SourceToDefCache, SourceToDefCtx},
     Attribute, DefResolution, Enum, EnumStruct, Field, File, Funcenum, Functag, Function, Global,
-    Local, Macro, Methodmap, Property, Typedef, Typeset, Variant,
+    Local, Macro, Methodmap, Property, Struct, StructField, Typedef, Typeset, Variant,
 };
 
 /// Primary API to get semantic information, like types, from syntax trees.
@@ -164,6 +164,19 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 .funcenum_to_def(src)
                 .map(Funcenum::from)
                 .map(DefResolution::Funcenum),
+            TSKind::r#struct => self
+                .struct_to_def(src)
+                .map(Struct::from)
+                .map(DefResolution::Struct),
+            TSKind::struct_field => self
+                .struct_field_to_def(src)
+                .map(StructField::from)
+                .map(DefResolution::StructField),
+            TSKind::struct_declaration => self
+                .global_to_def(src)
+                .map(Global::from)
+                .map(DefResolution::Global),
+            TSKind::struct_field_value => todo!(),
             _ => unreachable!(),
         }
     }
@@ -646,5 +659,7 @@ impl<'db> SemanticsImpl<'db> {
         (crate::Typeset, typeset_to_def),
         (crate::Functag, functag_to_def),
         (crate::Funcenum, funcenum_to_def),
+        (crate::Struct, struct_to_def),
+        (crate::StructField, struct_field_to_def),
     ];
 }

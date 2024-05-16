@@ -6,7 +6,7 @@ use crate::{
     dyn_map::{keys, DynMap},
     src::HasChildSource,
     DefDatabase, EnumStructId, FieldId, FileDefId, FuncenumId, Lookup, MethodmapId, PropertyItem,
-    TypesetId,
+    StructFieldId, StructId, TypesetId,
 };
 
 pub trait ChildBySource {
@@ -80,6 +80,11 @@ impl ChildBySource for FileId {
                     let node_ptr = ast_id_map.get_raw(item.ast_id);
                     res[keys::FUNCENUM].insert(node_ptr, *id);
                 }
+                FileDefId::StructId(id) => {
+                    let item = &item_tree[id.lookup(db).id];
+                    let node_ptr = ast_id_map.get_raw(item.ast_id);
+                    res[keys::STRUCT].insert(node_ptr, *id);
+                }
             }
         }
     }
@@ -121,6 +126,25 @@ impl ChildBySource for EnumStructId {
             };
             map[keys::FIELD].insert(*source, field_id);
         }
+    }
+}
+
+impl ChildBySource for StructId {
+    fn child_by_source_to(&self, db: &dyn DefDatabase, map: &mut DynMap, _: FileId) {
+        let arena_map = self.child_source(db);
+        let data = db.struct_data(*self);
+        let mut field_idx = 0u32;
+        data.fields.iter().for_each(|(idx, _)| {
+            let field_id = StructFieldId {
+                parent: *self,
+                local_id: idx,
+            };
+            map[keys::STRUCT_FIELD].insert(
+                arena_map.value[Idx::from_raw(RawIdx::from_u32(field_idx))],
+                field_id,
+            );
+            field_idx += 1;
+        });
     }
 }
 

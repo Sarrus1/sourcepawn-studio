@@ -1,6 +1,6 @@
-use hir_def::{AttributeId, DefWithBodyId, ExprId, FieldId, FileDefId};
+use hir_def::{AttributeId, DefWithBodyId, ExprId, FieldId, FileDefId, StructFieldId};
 
-use crate::{Attribute, DefWithBody, Field, FileDef};
+use crate::{Attribute, DefWithBody, Field, FileDef, StructField};
 
 macro_rules! from_id {
     ($(($id:path, $ty:path)),* $(,)?) => {$(
@@ -30,6 +30,7 @@ from_id![
     (hir_def::TypesetId, crate::Typeset),
     (hir_def::FunctagId, crate::Functag),
     (hir_def::FuncenumId, crate::Funcenum),
+    (hir_def::StructId, crate::Struct),
 ];
 
 impl From<(DefWithBodyId, ExprId)> for crate::Local {
@@ -50,6 +51,24 @@ impl From<Field> for FieldId {
 impl From<FieldId> for Field {
     fn from(def: FieldId) -> Self {
         Field {
+            parent: def.parent.into(),
+            id: def.local_id,
+        }
+    }
+}
+
+impl From<StructField> for StructFieldId {
+    fn from(def: StructField) -> Self {
+        StructFieldId {
+            parent: def.parent.into(),
+            local_id: def.id,
+        }
+    }
+}
+
+impl From<StructFieldId> for StructField {
+    fn from(def: StructFieldId) -> Self {
+        StructField {
             parent: def.parent.into(),
             id: def.local_id,
         }
@@ -99,6 +118,7 @@ impl From<FileDefId> for FileDef {
             FileDefId::TypesetId(it) => FileDef::Typeset(it.into()),
             FileDefId::FunctagId(it) => FileDef::Functag(it.into()),
             FileDefId::FuncenumId(it) => FileDef::Funcenum(it.into()),
+            FileDefId::StructId(it) => FileDef::Struct(it.into()),
         }
     }
 }
@@ -117,6 +137,7 @@ impl From<FileDef> for FileDefId {
             FileDef::Typeset(it) => FileDefId::TypesetId(it.into()),
             FileDef::Functag(it) => FileDefId::FunctagId(it.into()),
             FileDef::Funcenum(it) => FileDefId::FuncenumId(it.into()),
+            FileDef::Struct(it) => FileDefId::StructId(it.into()),
         }
     }
 }

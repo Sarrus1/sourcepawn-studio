@@ -1,7 +1,7 @@
 use core::hash::Hash;
 use item_tree::{
     AstId, EnumStruct, Funcenum, Functag, Function, ItemTreeNode, Macro, Methodmap, Property,
-    Typedef, Typeset, Variable, Variant,
+    Struct, Typedef, Typeset, Variable, Variant,
 };
 use item_tree::{Enum, ItemTree};
 use la_arena::Idx;
@@ -248,6 +248,20 @@ impl_intern!(
 );
 impl_serde!(FuncenumId);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct StructId(salsa::InternId);
+type StructLoc = AssocItemLoc<Struct>;
+impl_intern!(StructId, StructLoc, intern_struct, lookup_intern_struct);
+impl_serde!(StructId);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct StructFieldId {
+    pub parent: StructId,
+    pub local_id: LocalStructFieldId,
+}
+
+pub type LocalStructFieldId = Idx<data::StructFieldData>;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct BlockId(salsa::InternId);
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
@@ -278,6 +292,7 @@ pub enum FileDefId {
     TypesetId(TypesetId),
     FunctagId(FunctagId),
     FuncenumId(FuncenumId),
+    StructId(StructId),
 }
 
 impl_from!(

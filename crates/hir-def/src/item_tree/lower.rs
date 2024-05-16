@@ -14,8 +14,8 @@ use crate::{
 
 use super::{
     Enum, EnumStruct, EnumStructItemId, Field, Funcenum, Functag, Function, FunctionKind, ItemTree,
-    Methodmap, MethodmapItemId, Param, Property, RawVisibilityId, SpecialMethod, Typedef, Typeset,
-    Variable, Variant,
+    Methodmap, MethodmapItemId, Param, Property, RawVisibilityId, SpecialMethod, Struct,
+    StructField, Typedef, Typeset, Variable, Variant,
 };
 
 pub(super) struct Ctx<'db> {
@@ -54,6 +54,7 @@ impl<'db> Ctx<'db> {
                     self.lower_function(&child)
                 }
                 TSKind::r#enum => self.lower_enum(&child),
+                TSKind::struct_declaration => self.lower_struct_declaration(&child),
                 TSKind::global_variable_declaration => self.lower_global_variable(&child),
                 TSKind::old_global_variable_declaration => self.lower_old_global_variable(&child),
                 TSKind::enum_struct => self.lower_enum_struct(&child),
@@ -62,6 +63,7 @@ impl<'db> Ctx<'db> {
                 TSKind::typeset => self.lower_typeset(&child),
                 TSKind::functag => self.lower_functag(&child),
                 TSKind::funcenum => self.lower_funcenum(&child),
+                TSKind::r#struct => self.lower_struct(&child),
                 _ => (),
             }
         }
@@ -124,6 +126,21 @@ impl<'db> Ctx<'db> {
     fn is_deprecated(&self, node: &tree_sitter::Node) -> bool {
         self.deprecated
             .contains(&node.range().start_point.row.saturating_sub(1))
+    }
+
+    fn lower_struct_declaration(&mut self, node: &tree_sitter::Node) {
+        let visibility = RawVisibilityId::PUBLIC;
+        let type_ref = TypeRef::from_returntype_node(node, "type", &self.source);
+        if let Some(name_node) = node.child_by_field_name("name") {
+            let res = Variable {
+                name: Name::from(name_node.utf8_text(self.source.as_bytes()).unwrap()),
+                visibility,
+                type_ref: type_ref.clone(),
+                ast_id: self.source_ast_id_map.ast_id_of(node),
+            };
+            let id = self.tree.data_mut().variables.alloc(res);
+            self.tree.top_level.push(FileItem::Variable(id));
+        }
     }
 
     fn lower_global_variable(&mut self, node: &tree_sitter::Node) {
@@ -410,6 +427,47 @@ impl<'db> Ctx<'db> {
         self.tree.top_level.push(FileItem::Funcenum(id));
     }
 
+    fn lower_struct(&mut self, node: &tree_sitter::Node) {
+        let Some(name_node) = node.child_by_field_name("name") else {
+            return;
+        };
+        let name = Name::from_node(&name_node, &self.source);
+
+        let start = self.next_struct_field_idx();
+        node.children(&mut node.walk())
+            .filter(|n| TSKind::from(n) == TSKind::struct_field)
+            .for_each(|struct_field_node| {
+                let Some(type_ref) =
+                    TypeRef::from_returntype_node(&struct_field_node, "type", &self.source)
+                else {
+                    return;
+                };
+                let Some(name_node) = struct_field_node.child_by_field_name("name") else {
+                    return;
+                };
+                let name = Name::from_node(&name_node, &self.source);
+                let res = StructField {
+                    name,
+                    const_: struct_field_node
+                        .children(&mut struct_field_node.walk())
+                        .any(|c| TSKind::from(c) == TSKind::anon_const),
+                    type_ref,
+                    ast_id: self.source_ast_id_map.ast_id_of(&struct_field_node),
+                    deprecated: self.is_deprecated(&struct_field_node),
+                };
+                let _ = self.tree.data_mut().struct_fields.alloc(res);
+            });
+        let end = self.next_struct_field_idx();
+        let res = Struct {
+            name,
+            fields: IdxRange::new(start..end),
+            ast_id: self.source_ast_id_map.ast_id_of(node),
+            deprecated: self.is_deprecated(node),
+        };
+        let id = self.tree.data_mut().structs.alloc(res);
+        self.tree.top_level.push(FileItem::Struct(id));
+    }
+
     fn lower_methodmap(&mut self, node: &tree_sitter::Node) {
         let Some(name_node) = node.child_by_field_name("name") else {
             return;
@@ -650,6 +708,15 @@ impl<'db> Ctx<'db> {
                 .data
                 .as_ref()
                 .map_or(0, |data| data.functags.len() as u32),
+        ))
+    }
+
+    fn next_struct_field_idx(&self) -> Idx<StructField> {
+        Idx::from_raw(RawIdx::from(
+            self.tree
+                .data
+                .as_ref()
+                .map_or(0, |data| data.struct_fields.len() as u32),
         ))
     }
 }

@@ -184,6 +184,8 @@ impl AstIdMap {
                     | TSKind::functag
                     | TSKind::funcenum
                     | TSKind::funcenum_member
+                    | TSKind::r#struct
+                    | TSKind::struct_field
             )
         });
         AstIdMap { arena, map }

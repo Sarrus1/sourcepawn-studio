@@ -16,8 +16,8 @@ use crate::{
     src::{HasChildSource, HasSource},
     DefDatabase, DefDiagnostic, EnumId, EnumStructId, FuncenumId, FunctagId, FunctagLoc,
     FunctionId, FunctionLoc, GlobalId, InFile, Intern, ItemContainerId, ItemTreeId, LocalFieldId,
-    Lookup, MacroId, MethodmapId, NodePtr, PropertyId, PropertyLoc, TypedefId, TypedefLoc,
-    TypesetId, VariantId,
+    LocalStructFieldId, Lookup, MacroId, MethodmapId, NodePtr, PropertyId, PropertyLoc, StructId,
+    TypedefId, TypedefLoc, TypesetId, VariantId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -578,6 +578,56 @@ impl FuncenumData {
     }
 }
 
+/// A single field of a struct
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StructFieldData {
+    pub name: Name,
+    pub type_ref: TypeRef,
+    pub const_: bool,
+    pub deprecated: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StructData {
+    pub name: Name,
+    pub fields: Arc<Arena<StructFieldData>>,
+    pub deprecated: bool,
+}
+
+impl StructData {
+    pub(crate) fn struct_data_query(db: &dyn DefDatabase, id: StructId) -> Arc<Self> {
+        let loc = id.lookup(db).id;
+        let item_tree = loc.tree_id().item_tree(db);
+        let struct_ = &item_tree[loc.value];
+        let mut fields = Arena::new();
+        struct_.fields.clone().for_each(|field_idx| {
+            let field = &item_tree[field_idx];
+            let field_data = StructFieldData {
+                name: field.name.clone(),
+                type_ref: field.type_ref.clone(),
+                const_: field.const_,
+                deprecated: field.deprecated,
+            };
+            let _ = fields.alloc(field_data);
+        });
+        let struct_data = Self {
+            name: struct_.name.clone(),
+            fields: fields.into(),
+            deprecated: struct_.deprecated,
+        };
+
+        Arc::new(struct_data)
+    }
+
+    pub fn name(&self) -> Name {
+        self.name.clone()
+    }
+
+    pub fn field(&self, item: Idx<StructFieldData>) -> &StructFieldData {
+        &self.fields[item]
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EnumData {
     pub name: Name,
@@ -792,15 +842,14 @@ impl HasChildSource<LocalFieldId> for EnumStructId {
         // FIXME: Why does it feel like we are doing this twice?
         let mut items = Arena::new();
         let enum_struct_node = loc.source(db, &tree).value;
+        let source = db.preprocessed_text(loc.file_id());
         for child in enum_struct_node
             .children(&mut enum_struct_node.walk())
             .filter(|c| TSKind::from(c) == TSKind::enum_struct_field)
         {
             let name_node = child.child_by_field_name("name").unwrap();
-            let name = Name::from_node(&name_node, &db.preprocessed_text(loc.file_id()));
-            let type_ref =
-                TypeRef::from_returntype_node(&child, "type", &db.preprocessed_text(loc.file_id()))
-                    .unwrap();
+            let name = Name::from_node(&name_node, &source);
+            let type_ref = TypeRef::from_returntype_node(&child, "type", &source).unwrap();
             let field = EnumStructItemData::Field(FieldData {
                 name,
                 type_ref,
@@ -824,15 +873,12 @@ impl HasChildSource<Idx<TypedefData>> for TypesetId {
         let tree = db.parse(loc.file_id());
         let mut typedefs: Arena<TypedefData> = Arena::new();
         let typeset_node = loc.source(db, &tree).value;
+        let source = db.preprocessed_text(loc.file_id());
         for child in typeset_node
             .children(&mut typeset_node.walk())
             .filter(|c| TSKind::from(c) == TSKind::typedef_expression)
         {
-            if let Some(type_ref) = TypeRef::from_returntype_node(
-                &child,
-                "returnType",
-                &db.preprocessed_text(loc.file_id()),
-            ) {
+            if let Some(type_ref) = TypeRef::from_returntype_node(&child, "returnType", &source) {
                 let typedef = TypedefData {
                     name: None,
                     type_ref,
@@ -857,21 +903,52 @@ impl HasChildSource<Idx<FunctagData>> for FuncenumId {
         let tree = db.parse(loc.file_id());
         let mut functags: Arena<FunctagData> = Arena::new();
         let typeset_node = loc.source(db, &tree).value;
+        let source = db.preprocessed_text(loc.file_id());
         for child in typeset_node
             .children(&mut typeset_node.walk())
             .filter(|c| TSKind::from(c) == TSKind::typedef_expression)
         {
-            let type_ref = TypeRef::from_returntype_node(
-                &child,
-                "returnType",
-                &db.preprocessed_text(loc.file_id()),
-            );
+            let type_ref = TypeRef::from_returntype_node(&child, "returnType", &source);
             let functag = FunctagData {
                 name: None,
                 type_ref,
                 deprecated: Default::default(),
             };
             map.insert(functags.alloc(functag), NodePtr::from(&child));
+        }
+        InFile::new(loc.file_id(), map)
+    }
+}
+
+impl HasChildSource<LocalStructFieldId> for StructId {
+    type Value = NodePtr;
+
+    fn child_source(
+        &self,
+        db: &dyn DefDatabase,
+    ) -> InFile<ArenaMap<LocalStructFieldId, Self::Value>> {
+        let loc = self.lookup(db).id;
+        let mut map = ArenaMap::default();
+        let tree = db.parse(loc.file_id());
+        let mut items = Arena::new();
+        let struct_node = loc.source(db, &tree).value;
+        let source = db.preprocessed_text(loc.file_id());
+        for child in struct_node
+            .children(&mut struct_node.walk())
+            .filter(|c| TSKind::from(c) == TSKind::struct_field)
+        {
+            let name_node = child.child_by_field_name("name").unwrap();
+            let name = Name::from_node(&name_node, &source);
+            let type_ref = TypeRef::from_returntype_node(&child, "type", &source).unwrap();
+            let field = StructFieldData {
+                name,
+                type_ref,
+                const_: child
+                    .children(&mut child.walk())
+                    .any(|c| TSKind::from(c) == TSKind::anon_const),
+                deprecated: Default::default(),
+            };
+            map.insert(items.alloc(field), NodePtr::from(&child));
         }
         InFile::new(loc.file_id(), map)
     }

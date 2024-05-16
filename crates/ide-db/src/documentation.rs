@@ -68,6 +68,7 @@ impl Documentation {
             TSKind::preproc_define
             | TSKind::enum_entry
             | TSKind::variable_declaration
+            | TSKind::struct_field
             | TSKind::dynamic_array_declaration => {
                 if let Some(parent) = node.parent() {
                     if matches!(
@@ -127,6 +128,7 @@ impl Documentation {
             | TSKind::typeset
             | TSKind::functag
             | TSKind::funcenum
+            | TSKind::r#struct
             | TSKind::r#enum
             | TSKind::enum_struct
             | TSKind::enum_struct_field
