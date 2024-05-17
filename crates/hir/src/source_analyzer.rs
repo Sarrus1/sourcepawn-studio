@@ -104,7 +104,10 @@ impl SourceAnalyzer {
         node: &tree_sitter::Node,
         parent: &tree_sitter::Node,
     ) -> Option<Attribute> {
-        assert!(matches!(TSKind::from(*parent), TSKind::field_access));
+        assert!(matches!(
+            TSKind::from(*parent),
+            TSKind::field_access | TSKind::scope_access
+        ));
         let src = InFile::new(self.file_id, node);
         let expr_id = self.expr_id(db, src)?;
         self.infer

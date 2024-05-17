@@ -211,6 +211,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 TSKind::call_expression => node.child_by_field_name("function")?,
                 TSKind::ternary_expression => node.child_by_field_name("consequence")?,
                 TSKind::field_access => node.child_by_field_name("target")?,
+                TSKind::scope_access => node.child_by_field_name("scope")?,
                 TSKind::binary_expression => node.child_by_field_name("left")?,
                 TSKind::unary_expression => node.child_by_field_name("argument")?,
                 TSKind::update_expression => node.child_by_field_name("argument")?,
@@ -455,7 +456,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         assert!(TSKind::from(body_node) == TSKind::block);
         let offset = node.start_position();
         match TSKind::from(parent) {
-            TSKind::field_access if is_field_receiver_node(&node) => {
+            TSKind::field_access | TSKind::scope_access if is_field_receiver_node(&node) => {
                 let analyzer = SourceAnalyzer::new_for_body(
                     self.db,
                     def,
