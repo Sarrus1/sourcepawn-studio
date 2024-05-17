@@ -88,7 +88,7 @@ pub(super) fn get_doc_completion(
             snippet_builder(it.parameters(db), it.return_type(db).into(), &tab_str)
         }
         DefResolution::Functag(it) => {
-            snippet_builder(it.parameters(db), it.return_type(db).into(), &tab_str)
+            snippet_builder(it.parameters(db), it.return_type(db), &tab_str)
         }
         DefResolution::Enum(_)
         | DefResolution::Methodmap(_)
@@ -98,7 +98,8 @@ pub(super) fn get_doc_completion(
         | DefResolution::Property(_) => snippet_builder(vec![], None, &tab_str),
         _ => unreachable!(),
     };
-    return Some(vec![CompletionItem {
+
+    Some(vec![CompletionItem {
         label: "Insert documentation".to_smolstr(),
         kind: crate::CompletionKind::Snippet,
         filter_text: "/*".to_string().into(),
@@ -111,7 +112,7 @@ pub(super) fn get_doc_completion(
             res,
         )),
         ..Default::default()
-    }]);
+    }])
 }
 
 fn snippet_builder(params: Vec<String>, ret_type: Option<String>, tab_str: &str) -> String {
@@ -142,12 +143,12 @@ fn snippet_builder(params: Vec<String>, ret_type: Option<String>, tab_str: &str)
     let mut res = format!("{}/**", tab_str);
     for line in buf.iter() {
         res.push('\n');
-        res.push_str(&tab_str);
+        res.push_str(tab_str);
         res.push_str(" * ");
-        res.push_str(&line);
+        res.push_str(line);
     }
     res.push('\n');
-    res.push_str(&tab_str);
+    res.push_str(tab_str);
     res.push_str(" */");
 
     res

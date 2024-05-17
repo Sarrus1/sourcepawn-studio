@@ -8,6 +8,7 @@ mod functions;
 mod macros;
 mod methodmaps;
 mod statements;
+mod structs;
 mod typedefs;
 mod variables;
 

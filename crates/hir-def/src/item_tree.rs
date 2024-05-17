@@ -213,6 +213,8 @@ struct ItemTreeData {
     functags: Arena<Functag>,
     funcenums: Arena<Funcenum>,
     variants: Arena<Variant>,
+    structs: Arena<Struct>,
+    struct_fields: Arena<StructField>,
 }
 
 /// `Name` is a wrapper around string, which is used in hir for both references
@@ -373,6 +375,24 @@ pub struct EnumStruct {
     pub deprecated: bool,
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Struct {
+    pub name: Name,
+    pub fields: IdxRange<StructField>,
+    pub ast_id: AstId,
+    pub deprecated: bool,
+}
+
+/// A single field of a struct
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StructField {
+    pub name: Name,
+    pub const_: bool,
+    pub type_ref: TypeRef,
+    pub ast_id: AstId,
+    pub deprecated: bool,
+}
+
 /// A single field of an enum struct
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Field {
@@ -503,7 +523,8 @@ mod_items! {
     Typedef typedefs,
     Typeset typesets,
     Functag functags,
-    Funcenum funcenums
+    Funcenum funcenums,
+    Struct structs
 }
 
 macro_rules! impl_index {
@@ -522,7 +543,8 @@ macro_rules! impl_index {
 
 impl_index! {
     fields: Field,
-    params: Param
+    params: Param,
+    struct_fields: StructField
 }
 
 impl<N: ItemTreeNode> Index<ItemTreeId<N>> for ItemTree {

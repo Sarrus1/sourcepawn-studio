@@ -3,7 +3,8 @@ use hir_def::{
     child_by_source::ChildBySource,
     dyn_map::{keys, DynMap, Key},
     DefWithBodyId, EnumId, EnumStructId, ExprId, FieldId, FuncenumId, FunctagId, FunctionId,
-    GlobalId, InFile, MacroId, MethodmapId, NodePtr, PropertyId, TypedefId, TypesetId, VariantId,
+    GlobalId, InFile, MacroId, MethodmapId, NodePtr, PropertyId, StructFieldId, StructId,
+    TypedefId, TypesetId, VariantId,
 };
 use stdx::impl_from;
 use syntax::TSKind;
@@ -54,6 +55,12 @@ impl SourceToDefCtx<'_, '_> {
     }
     pub(super) fn funcenum_to_def(&mut self, src: InFile<NodePtr>) -> Option<FuncenumId> {
         self.to_def(src, keys::FUNCENUM)
+    }
+    pub(super) fn struct_to_def(&mut self, src: InFile<NodePtr>) -> Option<StructId> {
+        self.to_def(src, keys::STRUCT)
+    }
+    pub(super) fn struct_field_to_def(&mut self, src: InFile<NodePtr>) -> Option<StructFieldId> {
+        self.to_def(src, keys::STRUCT_FIELD)
     }
     pub(super) fn field_to_def(&mut self, src: InFile<NodePtr>) -> Option<FieldId> {
         self.to_def(src, keys::FIELD)
@@ -169,6 +176,11 @@ impl SourceToDefCtx<'_, '_> {
                         self.funcenum_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
                     return Some(ChildContainer::FuncenumId(funcenum));
                 }
+                TSKind::r#struct => {
+                    let struct_ =
+                        self.struct_to_def(InFile::new(src.file_id, NodePtr::from(&container)))?;
+                    return Some(ChildContainer::StructId(struct_));
+                }
                 _ => container = container.parent()?,
             }
         }
@@ -186,6 +198,7 @@ pub(crate) enum ChildContainer {
     TypesetId(TypesetId),
     FunctagId(FunctagId),
     FuncenumId(FuncenumId),
+    StructId(StructId),
 }
 
 impl_from! {
@@ -196,6 +209,7 @@ impl_from! {
     TypesetId,
     FunctagId,
     FuncenumId,
+    StructId,
     FileId
     for ChildContainer
 }
@@ -209,6 +223,7 @@ impl ChildContainer {
             ChildContainer::MethodmapId(id) => id.child_by_source(db, file_id),
             ChildContainer::TypesetId(id) => id.child_by_source(db, file_id),
             ChildContainer::FuncenumId(id) => id.child_by_source(db, file_id),
+            ChildContainer::StructId(id) => id.child_by_source(db, file_id),
             _ => unreachable!(),
         }
     }

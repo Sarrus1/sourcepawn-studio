@@ -399,6 +399,24 @@ pub fn completions(
                 })
             }));
         }
+        DefResolution::Struct(it) => {
+            res.push(CompletionItem {
+                label: it.name(db).to_string().into(),
+                kind: SymbolKind::Struct.into(),
+                data: Some(def.clone()),
+                deprecated: it.is_deprecated(db),
+                ..Default::default()
+            });
+        }
+        DefResolution::StructField(it) => {
+            res.push(CompletionItem {
+                label: it.name(db).to_string().into(),
+                kind: SymbolKind::Field.into(),
+                data: Some(def.clone()),
+                deprecated: it.is_deprecated(db),
+                ..Default::default()
+            });
+        }
         DefResolution::Field(it) => {
             res.push(CompletionItem {
                 label: it.name(db).to_string().into(),

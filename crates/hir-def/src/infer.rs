@@ -412,7 +412,10 @@ impl InferenceContext<'_> {
                         let item_tree = self.db.file_item_tree(it.file_id);
                         TypeRef::Name(item_tree[it.value.lookup(self.db).id].name.clone()).into()
                     }
-                    ValueNs::VariantId(_) | ValueNs::EnumId(_) | ValueNs::MacroId(_) => None,
+                    ValueNs::VariantId(_)
+                    | ValueNs::EnumId(_)
+                    | ValueNs::MacroId(_)
+                    | ValueNs::StructId(_) => None,
                 }
             }
             Expr::MethodCall {

@@ -6,8 +6,8 @@ use hir_def::{
     resolver::{HasResolver, ValueNs},
     type_string_from_node, DefDiagnostic, DefWithBodyId, EnumId, EnumStructId, ExprId, FuncenumId,
     FunctagId, FunctionId, FunctionKind, GlobalId, InFile, InferenceDiagnostic, ItemContainerId,
-    LocalFieldId, Lookup, MacroId, MethodmapExtension, MethodmapId, Name, NodePtr, PropertyId,
-    SpecialMethod, TypedefId, TypesetId, VariantId,
+    LocalFieldId, LocalStructFieldId, Lookup, MacroId, MethodmapExtension, MethodmapId, Name,
+    NodePtr, PropertyId, SpecialMethod, StructId, TypedefId, TypesetId, VariantId,
 };
 use itertools::Itertools;
 use la_arena::RawIdx;
@@ -45,6 +45,8 @@ pub enum DefResolution {
     Functag(Functag),
     Funcenum(Funcenum),
     Field(Field),
+    Struct(Struct),
+    StructField(StructField),
     Global(Global),
     Local((Option<Name>, Local)),
     File(File),
@@ -62,6 +64,8 @@ impl_from!(
     Typeset,
     Functag,
     Funcenum,
+    Struct,
+    StructField,
     File for DefResolution
 );
 
@@ -92,6 +96,7 @@ impl DefResolution {
             ValueNs::TypesetId(id) => DefResolution::Typeset(Typeset::from(id.value)).into(),
             ValueNs::FunctagId(id) => DefResolution::Functag(Functag::from(id.value)).into(),
             ValueNs::FuncenumId(id) => DefResolution::Funcenum(Funcenum::from(id.value)).into(),
+            ValueNs::StructId(id) => DefResolution::Struct(Struct::from(id.value)).into(),
         }
     }
 }
@@ -114,6 +119,8 @@ impl<'tree> HasSource<'tree> for DefResolution {
             DefResolution::Typeset(typeset) => typeset.source(db, tree),
             DefResolution::Functag(functag) => functag.source(db, tree),
             DefResolution::Funcenum(funcenum) => funcenum.source(db, tree),
+            DefResolution::Struct(struct_) => struct_.source(db, tree),
+            DefResolution::StructField(field) => field.source(db, tree),
             DefResolution::Field(field) => field.source(db, tree),
             DefResolution::Global(global) => global.source(db, tree),
             DefResolution::Local(local) => local.1.source(db, tree)?.source(db, tree),
@@ -136,6 +143,8 @@ impl DefResolution {
             DefResolution::Typeset(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Functag(it) => it.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Funcenum(it) => it.id.lookup(db.upcast()).id.file_id(),
+            DefResolution::Struct(it) => it.id.lookup(db.upcast()).id.file_id(),
+            DefResolution::StructField(it) => it.parent.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Field(it) => it.parent.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Global(it) => it.id.lookup(db.upcast()).file_id(),
             DefResolution::Local(it) => it.1.parent.file_id(db.upcast()),
@@ -156,6 +165,8 @@ impl DefResolution {
             DefResolution::Typeset(it) => Some(it.name(db)),
             DefResolution::Functag(it) => it.name(db),
             DefResolution::Funcenum(it) => Some(it.name(db)),
+            DefResolution::Struct(it) => Some(it.name(db)),
+            DefResolution::StructField(it) => Some(it.name(db)),
             DefResolution::Field(it) => Some(it.name(db)),
             DefResolution::Global(it) => Some(it.name(db)),
             DefResolution::Local(it) => {
@@ -182,6 +193,8 @@ impl DefResolution {
             DefResolution::Typeset(_) => self.clone().into(),
             DefResolution::Functag(_) => self.clone().into(),
             DefResolution::Funcenum(_) => self.clone().into(),
+            DefResolution::Struct(_) => self.clone().into(),
+            DefResolution::StructField(it) => it.type_(db),
             DefResolution::Field(it) => it.type_(db),
             DefResolution::Global(it) => it.type_(db),
             DefResolution::Local(it) => it.1.type_(db),
@@ -282,9 +295,10 @@ pub enum FileDef {
     Typeset(Typeset),
     Functag(Functag),
     Funcenum(Funcenum),
+    Struct(Struct),
 }
 
-impl_from!(Function, Macro, EnumStruct, Methodmap, Global, Enum, Variant, Typedef for FileDef);
+impl_from!(Function, Macro, EnumStruct, Methodmap, Global, Enum, Variant, Typedef, Typeset, Functag, Funcenum, Struct for FileDef);
 
 impl FileDef {
     pub fn diagnostics(self, db: &dyn HirDatabase) -> Vec<AnyDiagnostic> {
@@ -360,7 +374,8 @@ impl FileDef {
             | FileDef::Enum(_)
             | FileDef::Variant(_)
             | FileDef::Typeset(_)
-            | FileDef::Funcenum(_) => None,
+            | FileDef::Funcenum(_)
+            | FileDef::Struct(_) => None,
         }
     }
 }
@@ -1340,6 +1355,190 @@ impl Funcenum {
     /// This method is "fast" as it does not do a lookup of the node in the tree.
     pub fn is_deprecated(self, db: &dyn HirDatabase) -> bool {
         db.funcenum_data(self.id).deprecated
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct StructField {
+    pub(crate) parent: Struct,
+    pub(crate) id: LocalStructFieldId,
+}
+
+impl Serialize for StructField {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Field", 2)?;
+        state.serialize_field("parent", &self.parent)?;
+        state.serialize_field("id", &self.id.into_raw().into_u32())?;
+        state.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for StructField {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        enum FieldKey {
+            Parent,
+            Id,
+        }
+
+        impl<'de> Deserialize<'de> for FieldKey {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                struct KeyVisitor;
+
+                impl<'de> Visitor<'de> for KeyVisitor {
+                    type Value = FieldKey;
+
+                    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                        formatter.write_str("`parent` or `id`")
+                    }
+
+                    fn visit_str<E>(self, value: &str) -> Result<FieldKey, E>
+                    where
+                        E: de::Error,
+                    {
+                        match value {
+                            "parent" => Ok(FieldKey::Parent),
+                            "id" => Ok(FieldKey::Id),
+                            _ => Err(E::custom(format!("unexpected field: {}", value))),
+                        }
+                    }
+                }
+
+                deserializer.deserialize_identifier(KeyVisitor)
+            }
+        }
+
+        struct FieldVisitor;
+
+        impl<'de> Visitor<'de> for FieldVisitor {
+            type Value = StructField;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct Field")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<StructField, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                let mut parent = None;
+                let mut id = None;
+
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        FieldKey::Parent => {
+                            if parent.is_some() {
+                                return Err(de::Error::duplicate_field("parent"));
+                            }
+                            parent = Some(map.next_value()?);
+                        }
+                        FieldKey::Id => {
+                            if id.is_some() {
+                                return Err(de::Error::duplicate_field("id"));
+                            }
+                            let id_u32: u32 = map.next_value()?;
+                            id = Some(LocalStructFieldId::from_raw(RawIdx::from_u32(id_u32)));
+                        }
+                    }
+                }
+
+                let parent = parent.ok_or_else(|| de::Error::missing_field("parent"))?;
+                let id = id.ok_or_else(|| de::Error::missing_field("id"))?;
+
+                Ok(StructField { parent, id })
+            }
+        }
+
+        const FIELDS: &[&str] = &["parent", "id"];
+        deserializer.deserialize_struct("Field", FIELDS, FieldVisitor)
+    }
+}
+
+impl StructField {
+    pub fn name(self, db: &dyn HirDatabase) -> Name {
+        db.struct_data(self.parent.id).name.clone()
+    }
+
+    pub fn render(self, db: &dyn HirDatabase) -> String {
+        let mut buf = "public ".to_string();
+        let parent_data = db.struct_data(self.parent.id);
+        let data = parent_data.field(self.id);
+        if data.const_ {
+            buf.push_str("const ");
+        }
+        buf.push_str(&data.type_ref.to_string());
+        buf.push(' ');
+        buf.push_str(&data.name.to_string());
+        buf.push(';');
+
+        buf
+    }
+
+    pub fn type_(self, db: &dyn HirDatabase) -> Option<DefResolution> {
+        let parent_data = db.struct_data(self.parent.id);
+        let ty_str = parent_data.field(self.id).type_ref.type_as_string();
+        self.parent
+            .id
+            .resolver(db.upcast())
+            .resolve_ident(&ty_str)
+            .and_then(DefResolution::try_from)
+    }
+
+    pub fn type_def(self, db: &dyn HirDatabase) -> Vec<DefResolution> {
+        let mut res = Vec::new();
+
+        if let Some(type_) = self.type_(db) {
+            res.push(type_);
+        }
+
+        res.push(DefResolution::Struct(self.parent));
+
+        res
+    }
+
+    /// Returns whether the struct field is deprecated.
+    /// This method is "fast" as it does not do a lookup of the node in the tree.
+    pub fn is_deprecated(self, db: &dyn HirDatabase) -> bool {
+        db.struct_data(self.parent.id).field(self.id).deprecated
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Struct {
+    pub(crate) id: StructId,
+}
+
+impl Struct {
+    pub fn name(self, db: &dyn HirDatabase) -> Name {
+        db.struct_data(self.id).name.clone()
+    }
+
+    pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
+        format!("struct {}", self.name(db)).into()
+    }
+
+    pub fn field(self, db: &dyn HirDatabase, name: &str) -> Option<StructField> {
+        let data = db.struct_data(self.id);
+        StructField {
+            parent: self,
+            id: data.field_by_name(name)?,
+        }
+        .into()
+    }
+
+    /// Returns whether the struct is deprecated.
+    ///
+    /// This method is "fast" as it does not do a lookup of the node in the tree.
+    pub fn is_deprecated(self, db: &dyn HirDatabase) -> bool {
+        db.struct_data(self.id).deprecated
     }
 }
 

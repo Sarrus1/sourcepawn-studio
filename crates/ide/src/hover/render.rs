@@ -34,6 +34,8 @@ pub fn render_def(db: &RootDatabase, def: DefResolution) -> Option<Render> {
         DefResolution::Typeset(it) => it.render(db)?.into(),
         DefResolution::Functag(it) => it.render(db)?.into(),
         DefResolution::Funcenum(it) => it.render(db)?.into(),
+        DefResolution::Struct(it) => it.render(db)?.into(),
+        DefResolution::StructField(it) => it.render(db).into(),
         DefResolution::Global(it) => it.render(db)?.into(),
         DefResolution::Local(it) => it.1.render(db)?.into(),
         DefResolution::File(it) => it.file_id().into(),

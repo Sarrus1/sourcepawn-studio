@@ -7,7 +7,7 @@ use crate::{
     item_tree::Name,
     AdtId, DefDatabase, DefWithBodyId, EnumId, EnumStructId, FileDefId, FuncenumId, FunctagId,
     FunctionId, GlobalId, InFile, ItemContainerId, Lookup, MacroId, MethodmapId, PropertyId,
-    TypedefId, TypesetId, VariantId,
+    StructId, TypedefId, TypesetId, VariantId,
 };
 use itertools::Itertools;
 use smallvec::SmallVec;
@@ -261,6 +261,7 @@ fn to_valuens(entry: FileDefId, file_id: FileId) -> Option<ValueNs> {
         (FileDefId::TypesetId(it), file_id) => ValueNs::TypesetId(InFile::new(file_id, it)),
         (FileDefId::FunctagId(it), file_id) => ValueNs::FunctagId(InFile::new(file_id, it)),
         (FileDefId::FuncenumId(it), file_id) => ValueNs::FuncenumId(InFile::new(file_id, it)),
+        (FileDefId::StructId(it), file_id) => ValueNs::StructId(InFile::new(file_id, it)),
     }
     .into()
 }
@@ -281,6 +282,7 @@ pub enum ValueNs {
     TypesetId(InFile<TypesetId>),
     FunctagId(InFile<FunctagId>),
     FuncenumId(InFile<FuncenumId>),
+    StructId(InFile<StructId>),
 }
 
 pub trait HasResolver: Copy {
@@ -308,6 +310,12 @@ impl HasResolver for TypesetId {
 }
 
 impl HasResolver for FuncenumId {
+    fn resolver(self, db: &dyn DefDatabase) -> Resolver {
+        self.lookup(db).id.file_id().resolver(db)
+    }
+}
+
+impl HasResolver for StructId {
     fn resolver(self, db: &dyn DefDatabase) -> Resolver {
         self.lookup(db).id.file_id().resolver(db)
     }
