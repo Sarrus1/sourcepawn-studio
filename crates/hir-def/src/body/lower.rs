@@ -444,7 +444,7 @@ impl ExprCollector<'_> {
                         .collect::<Vec<_>>()
                         .into_boxed_slice(),
                 };
-                Some(self.alloc_expr(new, NodePtr::from(&expr)))
+                Some(self.alloc_expr(new, NodePtr::from(&constructor)))
             }
             TSKind::dynamic_array => {
                 let type_ = expr.child_by_field_name("type")?;
