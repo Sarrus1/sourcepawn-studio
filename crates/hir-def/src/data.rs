@@ -626,6 +626,14 @@ impl StructData {
     pub fn field(&self, item: Idx<StructFieldData>) -> &StructFieldData {
         &self.fields[item]
     }
+
+    pub fn field_by_name(&self, name: &str) -> Option<Idx<StructFieldData>> {
+        let name = Name::from(name);
+        self.fields
+            .iter()
+            .find(|(_, field)| field.name == name)
+            .map(|(idx, _)| idx)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

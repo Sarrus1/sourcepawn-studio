@@ -1525,6 +1525,15 @@ impl Struct {
         format!("struct {}", self.name(db)).into()
     }
 
+    pub fn field(self, db: &dyn HirDatabase, name: &str) -> Option<StructField> {
+        let data = db.struct_data(self.id);
+        StructField {
+            parent: self,
+            id: data.field_by_name(name)?,
+        }
+        .into()
+    }
+
     /// Returns whether the struct is deprecated.
     ///
     /// This method is "fast" as it does not do a lookup of the node in the tree.
