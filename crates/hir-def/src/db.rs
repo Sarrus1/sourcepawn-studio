@@ -200,6 +200,18 @@ pub fn resolve_include_node(
                     extension,
                 ));
             }
+            // Hack to detect `include` folders when it's a relative include.
+            let text_with_include = format!("include/{}", text);
+            if let Some(file_id) = db.resolve_path(AnchoredPath::new(file_id, &text_with_include)) {
+                return Some((
+                    Some(file_id),
+                    IncludeKind::Quotes,
+                    type_,
+                    text.to_string(),
+                    NodePtr::from(&path_node),
+                    extension,
+                ));
+            }
             (text, IncludeKind::Quotes)
         }
         _ => unreachable!(),

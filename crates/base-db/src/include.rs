@@ -135,6 +135,14 @@ pub(crate) fn file_includes_query(
                         res.push(Include::new(include_file_id, kind, type_, raw_ext));
                         continue;
                     }
+                    // Hack to detect `include` folders when it's a relative include.
+                    let raw_path_with_include = format!("include/{}", raw_path);
+                    if let Some(include_file_id) =
+                        db.resolve_path(AnchoredPath::new(file_id, &raw_path_with_include))
+                    {
+                        res.push(Include::new(include_file_id, kind, type_, raw_ext));
+                        continue;
+                    }
                     path = Some(raw_path);
                     ext = Some(raw_ext);
                 }

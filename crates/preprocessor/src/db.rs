@@ -94,6 +94,11 @@ pub(crate) fn _preprocess_file_params_query(
             infer_include_ext(&mut path);
             if quoted {
                 inc_file_id = db.resolve_path(AnchoredPath::new(file_id, &path));
+                if inc_file_id.is_none() {
+                    // Hack to try and resolve files in include folder.
+                    let path_with_include = format!("include/{}", path);
+                    inc_file_id = db.resolve_path(AnchoredPath::new(file_id, &path_with_include));
+                }
             };
             if inc_file_id.is_none() {
                 inc_file_id = db.resolve_path_relative_to_roots(&path);
@@ -155,6 +160,11 @@ pub(crate) fn _preprocess_file_data_query(
             infer_include_ext(&mut path);
             if quoted {
                 inc_file_id = db.resolve_path(AnchoredPath::new(file_id, &path));
+                if inc_file_id.is_none() {
+                    // Hack to try and resolve files in include folder.
+                    let path_with_include = format!("include/{}", path);
+                    inc_file_id = db.resolve_path(AnchoredPath::new(file_id, &path_with_include));
+                }
             };
             if inc_file_id.is_none() {
                 inc_file_id = db.resolve_path_relative_to_roots(&path);
