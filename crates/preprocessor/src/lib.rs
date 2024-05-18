@@ -6,7 +6,9 @@ use deepsize::DeepSizeOf;
 use fxhash::{FxHashMap, FxHashSet};
 use lsp_types::{Diagnostic, Position, Range};
 use smol_str::SmolStr;
-use sourcepawn_lexer::{Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind};
+use sourcepawn_lexer::{
+    Comment, Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind,
+};
 use stdx::hashable_hash_map::HashableHashMap;
 use symbol::RangeLessSymbol;
 use vfs::FileId;
@@ -726,6 +728,20 @@ where
                 ));
                 self.reset_current_line();
             }
+            TokenKind::Comment(Comment::BlockComment)
+                if symbol.range.end.line != symbol.range.start.line =>
+            {
+                // Keep multiline block spacing.
+                let line_delta = (symbol.range.end.line - symbol.range.start.line) as usize;
+                for _ in 0..line_delta {
+                    self.push_current_line();
+                    self.reset_current_line();
+                }
+                self.skipped_lines.push(lsp_types::Range::new(
+                    Position::new(symbol.range.start.line, self.skip_line_start_col),
+                    Position::new(symbol.range.end.line, symbol.range.end.character),
+                ));
+            }
             // Skip any token that is not a directive or a newline.
             _ => (),
         }
@@ -733,6 +749,7 @@ where
         Ok(())
     }
 
+    /// Push the whitespaces before the symbol based on the symbol's delta.
     fn push_ws(&mut self, symbol: &Symbol) {
         self.current_pos.character += symbol.delta.col.unsigned_abs();
         self.current_line

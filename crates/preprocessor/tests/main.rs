@@ -246,6 +246,36 @@ fn if_directive_nested_expansion_infinite_loop_1() {
 }
 
 #[test]
+fn multiline_block_comment_1() {
+    let input = r#"int foo;
+#if false
+  /*
+    A
+block
+            comment
+        */
+#endif
+int bar;
+"#;
+
+    assert_preproc_eq!(input);
+}
+
+#[test]
+fn multiline_block_comment_2() {
+    let input = r#"int foo;
+#if false /*
+    A
+block
+            comment
+        */ #endif
+int bar;
+"#;
+
+    assert_preproc_eq!(input);
+}
+
+#[test]
 fn elseif_directive_expansion_1() {
     let input = r#"#define FOO 1
 #if FOO == 2
