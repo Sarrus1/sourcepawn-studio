@@ -1,13 +1,13 @@
-use std::{env, path::PathBuf, time::Instant};
+use std::{path::PathBuf, time::Instant};
 
 use always_assert::always;
 use crossbeam::channel::Receiver;
 use lsp_server::Message;
 use lsp_types::{
-    notification::{Notification, ShowMessage},
+    notification::{DidOpenTextDocument, Notification, ShowMessage},
     request::{Request, WorkspaceConfiguration},
-    ConfigurationItem, ConfigurationParams, InitializeResult, MessageType, ServerInfo,
-    ShowMessageParams, Url,
+    ConfigurationItem, ConfigurationParams, DidOpenTextDocumentParams, InitializeResult,
+    MessageType, ServerInfo, ShowMessageParams, Url, WorkspaceFolder,
 };
 use paths::AbsPathBuf;
 use stdx::thread::ThreadIntent;
@@ -100,18 +100,7 @@ impl GlobalState {
             ..
         } = from_json::<lsp_types::InitializeParams>("InitializeParams", &initialize_params)?;
 
-        let root_path = match root_uri
-            .clone()
-            .and_then(|it| it.to_file_path().ok())
-            .map(patch_path_prefix)
-            .and_then(|it| AbsPathBuf::try_from(it).ok())
-        {
-            Some(it) => it,
-            None => {
-                let cwd = env::current_dir()?;
-                AbsPathBuf::assert(cwd)
-            }
-        };
+        let root_path = Self::root_path(root_uri.as_ref());
 
         let mut is_visual_studio_code = false;
         if let Some(client_info) = client_info {
@@ -123,18 +112,11 @@ impl GlobalState {
             is_visual_studio_code = client_info.name.starts_with("Visual Studio Code");
         }
 
-        let workspace_roots = workspace_folders
-            .map(|workspaces| {
-                workspaces
-                    .into_iter()
-                    .filter_map(|it| it.uri.to_file_path().ok())
-                    .collect::<Vec<_>>()
-            })
-            .filter(|workspaces| !workspaces.is_empty())
-            .unwrap_or_else(|| vec![root_path.clone().into()]);
+        let workspace_roots = Self::workspace_roots(workspace_folders.as_ref(), root_path.as_ref());
+
         let mut config = Config::new(
             root_path,
-            capabilities,
+            capabilities.clone(),
             workspace_roots,
             is_visual_studio_code,
         );
@@ -169,7 +151,19 @@ impl GlobalState {
             .initialize_finish(id, serde_json::to_value(result)?)?;
 
         let ignored = if config.caps().has_pull_configuration_support() {
-            let (config_data, ignored) = self.pull_config_sync(root_uri);
+            let (config_data, ignored, root_uri) = self.pull_config_sync(root_uri);
+            if root_uri.is_none() {
+                log::error!("root_uri is none. The LSP was not triggered from a workspace and could not infer a root_uri.");
+            }
+            let root_path = Self::root_path(root_uri.as_ref());
+            let workspace_roots =
+                Self::workspace_roots(workspace_folders.as_ref(), root_path.as_ref());
+            config = Config::new(
+                root_path,
+                capabilities,
+                workspace_roots,
+                is_visual_studio_code,
+            );
             if let Err(e) = config.update(config_data) {
                 let not = lsp_server::Notification::new(
                     ShowMessage::METHOD.to_string(),
@@ -195,11 +189,39 @@ impl GlobalState {
         Ok(ignored)
     }
 
+    /// Convert the `root_uri` to an `AbsPathBuf`.
+    ///
+    /// Will patch the path prefix on Windows to ensure that the drive letter is uppercase.
+    fn root_path(root_uri: Option<&Url>) -> Option<AbsPathBuf> {
+        root_uri
+            .and_then(|it| it.to_file_path().ok())
+            .map(patch_path_prefix)
+            .and_then(|it| AbsPathBuf::try_from(it).ok())
+    }
+
+    /// Convert the `workspace_folders` and `root_path` to a list of workspace roots.
+    fn workspace_roots(
+        workspace_folders: Option<&Vec<WorkspaceFolder>>,
+        root_path: Option<&AbsPathBuf>,
+    ) -> Vec<PathBuf> {
+        workspace_folders
+            .map(|workspaces| {
+                workspaces
+                    .iter()
+                    .filter_map(|it| it.uri.to_file_path().ok())
+                    .collect::<Vec<_>>()
+            })
+            .filter(|workspaces| !workspaces.is_empty())
+            .or_else(|| vec![root_path.cloned()?.into()].into())
+            .unwrap_or_default()
+    }
+
     /// Synchronously pull the configuration from the client and return it, along with any ignored messages.
     fn pull_config_sync(
         &self,
         scope_uri: Option<Url>,
-    ) -> (serde_json::Value, Vec<lsp_server::Message>) {
+    ) -> (serde_json::Value, Vec<lsp_server::Message>, Option<Url>) {
+        let mut root_uri = scope_uri.clone();
         let request_id = lsp_server::RequestId::from("initial_config_pull".to_string());
         let config_item = ConfigurationItem {
             scope_uri,
@@ -227,6 +249,23 @@ impl GlobalState {
                         config = serde_json::from_value(result).ok();
                     }
                 }
+                Ok(Message::Notification(notification))
+                    if notification.method == DidOpenTextDocument::METHOD && root_uri.is_none() =>
+                {
+                    if let Ok(params) = serde_json::from_value::<DidOpenTextDocumentParams>(
+                        notification.clone().params,
+                    ) {
+                        // HACK: If we do not have a root_uri yet, use the one from the first DidOpen notification.
+                        root_uri = params
+                            .text_document
+                            .uri
+                            .to_file_path()
+                            .ok()
+                            .and_then(|path| path.parent().map(|path| path.to_path_buf()))
+                            .and_then(|path| Url::from_file_path(path).ok());
+                    }
+                    ignored.push(notification.into());
+                }
                 Ok(e) => ignored.push(e),
                 Err(e) => panic!("Error receiving message: {:?}", e),
             }
@@ -242,6 +281,7 @@ impl GlobalState {
                 .expect("Empty configuration")
                 .clone(),
             ignored,
+            root_uri,
         )
     }
 
