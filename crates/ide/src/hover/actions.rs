@@ -14,11 +14,13 @@ pub fn goto_type_action_for_def(db: &RootDatabase, def: DefResolution) -> Option
         DefResolution::Global(it) => it.type_def(db),
         DefResolution::Local(it) => it.1.type_def(db),
         DefResolution::Variant(it) => it.type_def(db),
+        DefResolution::StructField(it) => it.type_def(db),
         DefResolution::Macro(_)
         | DefResolution::Enum(_)
         | DefResolution::Typeset(_)
         | DefResolution::EnumStruct(_)
         | DefResolution::Funcenum(_)
+        | DefResolution::Struct(_)
         | DefResolution::File(_) => vec![],
     };
 

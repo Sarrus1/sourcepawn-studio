@@ -22,10 +22,7 @@ export let lastActiveEditor: vscode.TextEditor
 export async function activate(context: vscode.ExtensionContext) {
   function didOpenTextDocument(document: vscode.TextDocument): void {
     // We are only interested in sourcepawn files.
-    if (
-      document.languageId !== "sourcepawn" ||
-      (document.uri.scheme !== "file" && document.uri.scheme !== "untitled")
-    ) {
+    if (document.languageId !== "sourcepawn" || document.uri.scheme !== "file") {
       return;
     }
 

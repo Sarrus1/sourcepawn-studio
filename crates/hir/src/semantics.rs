@@ -17,7 +17,7 @@ use crate::{
     source_analyzer::SourceAnalyzer,
     source_to_def::{SourceToDefCache, SourceToDefCtx},
     Attribute, DefResolution, Enum, EnumStruct, Field, File, Funcenum, Functag, Function, Global,
-    Local, Macro, Methodmap, Property, Typedef, Typeset, Variant,
+    Local, Macro, Methodmap, Property, Struct, StructField, Typedef, Typeset, Variant,
 };
 
 /// Primary API to get semantic information, like types, from syntax trees.
@@ -164,6 +164,19 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 .funcenum_to_def(src)
                 .map(Funcenum::from)
                 .map(DefResolution::Funcenum),
+            TSKind::r#struct => self
+                .struct_to_def(src)
+                .map(Struct::from)
+                .map(DefResolution::Struct),
+            TSKind::struct_field => self
+                .struct_field_to_def(src)
+                .map(StructField::from)
+                .map(DefResolution::StructField),
+            TSKind::struct_declaration => self
+                .global_to_def(src)
+                .map(Global::from)
+                .map(DefResolution::Global),
+            TSKind::struct_field_value => todo!(),
             _ => unreachable!(),
         }
     }
@@ -198,6 +211,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 TSKind::call_expression => node.child_by_field_name("function")?,
                 TSKind::ternary_expression => node.child_by_field_name("consequence")?,
                 TSKind::field_access => node.child_by_field_name("target")?,
+                TSKind::scope_access => node.child_by_field_name("scope")?,
                 TSKind::binary_expression => node.child_by_field_name("left")?,
                 TSKind::unary_expression => node.child_by_field_name("argument")?,
                 TSKind::update_expression => node.child_by_field_name("argument")?,
@@ -243,6 +257,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 | TSKind::methodmap_property_native
                 | TSKind::methodmap_property_method
                 | TSKind::typedef
+                | TSKind::struct_constructor
         ) {
             if let Some(candidate) = container.parent() {
                 container = candidate;
@@ -277,6 +292,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             TSKind::typedef => self.typedef_node_to_def(file_id, container, *node, source),
             TSKind::functag => self.functag_node_to_def(file_id, container, *node, source),
             TSKind::r#enum => self.source_node_to_def(file_id, *node, source), // Variants are in the global scope
+            TSKind::struct_constructor => {
+                self.struct_node_to_def(file_id, container.parent()?, *node, source)
+            }
             TSKind::source_file => self.source_node_to_def(file_id, *node, source),
             _ => todo!(),
         }
@@ -305,6 +323,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             ValueNs::MethodmapId(id) => DefResolution::Methodmap(Methodmap::from(id.value)).into(),
             ValueNs::EnumId(id) => DefResolution::Enum(Enum::from(id.value)).into(),
             ValueNs::VariantId(id) => DefResolution::Variant(Variant::from(id.value)).into(),
+            ValueNs::StructId(id) => DefResolution::Struct(Struct::from(id.value)).into(),
             _ => None,
         }
     }
@@ -437,7 +456,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         assert!(TSKind::from(body_node) == TSKind::block);
         let offset = node.start_position();
         match TSKind::from(parent) {
-            TSKind::field_access if is_field_receiver_node(&node) => {
+            TSKind::field_access | TSKind::scope_access if is_field_receiver_node(&node) => {
                 let analyzer = SourceAnalyzer::new_for_body(
                     self.db,
                     def,
@@ -566,6 +585,27 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         }
     }
 
+    pub fn struct_node_to_def(
+        &self,
+        file_id: FileId,
+        container: tree_sitter::Node,
+        node: tree_sitter::Node,
+        source: Arc<str>,
+    ) -> Option<DefResolution> {
+        let resolver = global_resolver(self.db, file_id);
+        let struct_name = container
+            .child_by_field_name("type")?
+            .utf8_text(source.as_bytes())
+            .ok()?;
+        let ValueNs::StructId(struct_) = resolver.resolve_ident(struct_name)? else {
+            return None;
+        };
+        let struct_: Struct = struct_.value.into();
+        let name = node.utf8_text(source.as_bytes()).ok()?;
+
+        DefResolution::StructField(struct_.field(self.db, name)?).into()
+    }
+
     pub fn to_file_def(&self, file_id: FileId) -> File {
         self.imp.file_to_def(file_id)
     }
@@ -646,5 +686,7 @@ impl<'db> SemanticsImpl<'db> {
         (crate::Typeset, typeset_to_def),
         (crate::Functag, functag_to_def),
         (crate::Funcenum, funcenum_to_def),
+        (crate::Struct, struct_to_def),
+        (crate::StructField, struct_field_to_def),
     ];
 }

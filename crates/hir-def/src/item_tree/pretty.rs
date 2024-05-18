@@ -4,8 +4,8 @@ use crate::db::DefDatabase;
 
 use super::{
     Enum, EnumStruct, EnumStructItemId, Field, FileItem, Funcenum, Functag, Function, FunctionKind,
-    ItemTree, Macro, Methodmap, MethodmapItemId, Property, RawVisibilityId, Typedef, Typeset,
-    Variable, Variant,
+    ItemTree, Macro, Methodmap, MethodmapItemId, Property, RawVisibilityId, Struct, StructField,
+    Typedef, Typeset, Variable, Variant,
 };
 
 pub fn print_item_tree(_db: &dyn DefDatabase, tree: &ItemTree) -> String {
@@ -22,6 +22,7 @@ pub fn print_item_tree(_db: &dyn DefDatabase, tree: &ItemTree) -> String {
             FileItem::Typeset(idx) => printer.print_typeset(idx),
             FileItem::Functag(idx) => printer.print_functag(idx),
             FileItem::Funcenum(idx) => printer.print_funcenum(idx),
+            FileItem::Struct(idx) => printer.print_struct(idx),
             FileItem::Variant(_) | FileItem::Property(_) => (),
         }
         printer.newline();
@@ -310,6 +311,8 @@ impl<'a> Printer<'a> {
         }
         self.push(format!("typeset {}", name).as_str());
         self.newline();
+        self.push("{");
+        self.newline();
         self.indent();
         for typedef in typedefs.clone() {
             self.print_typedef(&typedef);
@@ -382,9 +385,58 @@ impl<'a> Printer<'a> {
         }
         self.push(format!("funcenum {}", name).as_str());
         self.newline();
+        self.push("{");
+        self.newline();
         self.indent();
         for functag in functags.clone() {
             self.print_functag(&functag);
+        }
+        self.dedent();
+        self.push("};");
+        self.newline();
+    }
+
+    pub fn print_struct(&mut self, idx: &Idx<Struct>) {
+        let Struct {
+            name,
+            fields,
+            ast_id,
+            deprecated,
+        } = &self.tree[*idx];
+        self.push(format!("// {}", ast_id).as_str());
+        self.newline();
+        if *deprecated {
+            self.push("#pragma deprecated");
+            self.newline();
+        }
+        self.push(format!("struct {}", name).as_str());
+        self.newline();
+        self.push("{");
+        self.newline();
+        self.indent();
+        for idx in fields.clone() {
+            let StructField {
+                name,
+                const_,
+                type_ref,
+                ast_id,
+                deprecated,
+            } = &self.tree[idx];
+            self.push(format!("// {}", ast_id).as_str());
+            self.newline();
+            if *deprecated {
+                self.push("#pragma deprecated");
+                self.newline();
+            }
+            self.push("public");
+            if *const_ {
+                self.push(" const");
+            }
+            self.push(&name.to_string());
+            self.push(" ");
+            self.push(&type_ref.to_string());
+            self.push(";");
+            self.newline();
         }
         self.dedent();
         self.push("};");

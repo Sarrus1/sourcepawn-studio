@@ -361,7 +361,7 @@ impl ExprCollector<'_> {
                     scope: self.collect_expr(expr.child_by_field_name("scope")?),
                     field: Name::from_node(&field, self.source),
                 };
-                Some(self.alloc_expr(access, NodePtr::from(&expr)))
+                Some(self.alloc_expr(access, NodePtr::from(&field)))
             }
             TSKind::unary_expression | TSKind::update_expression => {
                 // For our needs, unary and update expressions are the same
@@ -444,7 +444,7 @@ impl ExprCollector<'_> {
                         .collect::<Vec<_>>()
                         .into_boxed_slice(),
                 };
-                Some(self.alloc_expr(new, NodePtr::from(&expr)))
+                Some(self.alloc_expr(new, NodePtr::from(&constructor)))
             }
             TSKind::dynamic_array => {
                 let type_ = expr.child_by_field_name("type")?;
