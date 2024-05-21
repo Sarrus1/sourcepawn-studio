@@ -491,3 +491,18 @@ int bar;
 "#,
     ));
 }
+
+#[test]
+fn include_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#include "foo.sp"
+           |
+           ^
+
+%! include/foo.sp
+int foo;
+"#,
+    ));
+}
