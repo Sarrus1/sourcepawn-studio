@@ -6,6 +6,7 @@ mod goto_definition;
 mod hover;
 mod markup;
 mod prime_caches;
+mod references;
 mod signature_help;
 mod status;
 mod syntax_highlighting;
@@ -205,6 +206,11 @@ impl Analysis {
         pos: FilePosition,
     ) -> Cancellable<Option<RangeInfo<Vec<NavigationTarget>>>> {
         self.with_db(|db| goto_definition::goto_definition(db, pos))
+    }
+
+    /// Returns the references for the symbol at `position`.
+    pub fn references(&self, pos: FilePosition) -> Cancellable<Option<Vec<FileRange>>> {
+        self.with_db(|db| references::references(db, pos))
     }
 
     /// Returns the hover information at `position`.

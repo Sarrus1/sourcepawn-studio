@@ -43,7 +43,20 @@ pub(crate) fn location_link(
         target_range,
         target_selection_range,
     };
+
     Ok(res)
+}
+
+pub(crate) fn references_response(
+    snap: &GlobalStateSnapshot,
+    targets: Vec<FileRange>,
+) -> Cancellable<Vec<lsp_types::Location>> {
+    let locations = targets
+        .into_iter()
+        .map(|frange| location(snap, frange))
+        .collect::<Cancellable<Vec<_>>>()?;
+
+    Ok(locations)
 }
 
 fn location_info(

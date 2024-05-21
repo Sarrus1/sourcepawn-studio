@@ -955,6 +955,7 @@ dependencies = [
  "serde",
  "smallvec",
  "smol_str",
+ "sourcepawn_lexer",
  "stdx",
  "syntax",
  "tracing",

@@ -6,7 +6,7 @@ mod item;
 use std::panic::AssertUnwindSafe;
 
 use base_db::FilePosition;
-use hir::{DefResolution, Field, Function, HasSource, Property, Semantics};
+use hir::{DefResolution, Field, Function, HasSource, LocalDef, Property, Semantics};
 use hir_def::{DefDatabase, FieldId, FunctionKind};
 use ide_db::{Documentation, RootDatabase, SymbolKind};
 pub use item::{CompletionItem, CompletionKind};
@@ -434,7 +434,7 @@ pub fn completions(
                 ..Default::default()
             });
         }
-        DefResolution::Local((name, _)) => {
+        DefResolution::Local(LocalDef { name, .. }) => {
             res.push(CompletionItem {
                 label: {
                     let Some(name) = name else {
