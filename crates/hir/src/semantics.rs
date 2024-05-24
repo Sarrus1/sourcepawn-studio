@@ -2,14 +2,22 @@
 
 use std::{cell::RefCell, fmt, ops, sync::Arc};
 
-use base_db::{is_field_receiver_node, is_name_node, Tree};
+use base_db::{is_field_receiver_node, is_name_node, FilePosition, FileRange, Tree};
 use hir_def::{
     resolve_include_node,
     resolver::{global_resolver, ValueNs},
     FileDefId, FunctionId, InFile, Name, NodePtr, PropertyItem,
 };
 use itertools::Itertools;
-use syntax::TSKind;
+use lazy_static::lazy_static;
+use preprocessor::{s_range_to_u_range, u_pos_to_s_pos, Offset};
+use smol_str::ToSmolStr;
+use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
+use syntax::{
+    utils::{lsp_position_to_ts_point, ts_range_to_lsp_range},
+    TSKind,
+};
+use tree_sitter::QueryCursor;
 use vfs::FileId;
 
 use crate::{
@@ -181,16 +189,22 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         }
     }
 
-    /// Find a macro definition by its index in the file.
-    ///
-    /// # Arguments
-    /// * `file_id` - The [`file_id`](FileId) of the file containing the macro definition.
-    /// * `idx` - The index of the macro definition in the file.
-    pub fn find_macro_def(&self, file_id: FileId, idx: u32) -> Option<Macro> {
-        self.db
-            .file_def_map(file_id)
-            .get_macro(&idx)
-            .map(Macro::from)
+    /// Try to find the definition of a macro at the given [`user seen position`](FilePosition).
+    pub fn find_macro_def(&self, fpos: &FilePosition) -> Option<(Offset, DefResolution)> {
+        let preprocessing_results = self.preprocess_file(fpos.file_id);
+        let offsets = preprocessing_results.offsets();
+        let offset = offsets
+            .get(&fpos.position.line)
+            .and_then(|offsets| offsets.iter().find(|offset| offset.contains(fpos.position)))?;
+        (
+            offset.to_owned(),
+            self.db
+                .file_def_map(offset.file_id)
+                .get_macro(&offset.idx)
+                .map(Macro::from)
+                .map(DefResolution::from)?,
+        )
+            .into()
     }
 
     /// Find the type of an expression node.
@@ -638,6 +652,117 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             .into_iter()
             .flat_map(DefResolution::try_from)
             .collect()
+    }
+
+    /// Find references to the definition at the given [`FilePosition`].
+    /// Handles both macros and regular definitions.
+    ///
+    /// # Arguments
+    /// * `fpos` - The [`user seen position`](FilePosition) to find references to.
+    ///
+    /// # Returns
+    /// A tuple containing the definition of the macro or regular definition and a list of [`user seen FileRanges`](FileRange).
+    pub fn find_references_from_pos(
+        &self,
+        mut fpos: FilePosition,
+    ) -> Option<(DefResolution, Vec<FileRange>)> {
+        lazy_static! {
+            static ref IDENT_QUERY: tree_sitter::Query = tree_sitter::Query::new(
+                &tree_sitter_sourcepawn::language(),
+                "(identifier) @identifier"
+            )
+            .expect("Could not build identifier query.");
+        }
+        let preprocessing_results = self.preprocess_file(fpos.file_id);
+        let source = self.preprocessed_text(fpos.file_id);
+        let offsets = preprocessing_results.offsets();
+        let tree = self.parse(fpos.file_id);
+        let root_node = tree.root_node();
+
+        if let Some(macro_refs) = self.find_macro_references(fpos) {
+            return Some(macro_refs);
+        }
+        let _ = u_pos_to_s_pos(
+            preprocessing_results.args_map(),
+            offsets,
+            &mut fpos.position,
+        );
+
+        let node = root_node.descendant_for_point_range(
+            lsp_position_to_ts_point(&fpos.position),
+            lsp_position_to_ts_point(&fpos.position),
+        )?;
+        let src_text = node.utf8_text(source.as_bytes()).ok()?;
+        let def = self.find_def(fpos.file_id, &node)?;
+        let mut res = Vec::new();
+        let file_ids = if let DefResolution::Local(_) = def {
+            // Only search in the current file for local definitions
+            vec![fpos.file_id]
+        } else {
+            let graph = self.db.projet_subgraph(fpos.file_id)?;
+            graph.nodes.iter().map(|n| n.file_id).collect()
+        };
+        for file_id in file_ids {
+            let file_tree = self.parse(file_id);
+            let file_source = self.preprocessed_text(file_id);
+            let preprocessing_results = self.preprocess_file(file_id);
+            let mut cursor = QueryCursor::new();
+            let matches =
+                cursor.captures(&IDENT_QUERY, file_tree.root_node(), file_source.as_bytes());
+            for (match_, _) in matches {
+                for c in match_.captures {
+                    let node = c.node;
+                    if let Ok(text) = node.utf8_text(file_source.as_bytes()) {
+                        if text != src_text {
+                            continue;
+                        }
+                        let file_def = self.find_def(file_id, &node);
+                        if file_def == Some(def.clone()) {
+                            res.push(FileRange {
+                                file_id,
+                                range: s_range_to_u_range(
+                                    preprocessing_results.offsets(),
+                                    ts_range_to_lsp_range(&node.range()),
+                                ),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        Some((def, res))
+    }
+
+    /// Find references to a macro at the given [`FilePosition`].
+    ///
+    /// # Arguments
+    /// * `fpos` - The [`user seen position`](FilePosition) to find references to.
+    ///
+    /// # Returns
+    /// A tuple containing the definition of the macro and a list of [`user seen FileRanges`](FileRange).
+    fn find_macro_references(&self, fpos: FilePosition) -> Option<(DefResolution, Vec<FileRange>)> {
+        let (_, def) = self.find_macro_def(&fpos)?;
+        let name = def.name(self.db).map(|it| it.to_smolstr())?;
+        let graph = self.db.projet_subgraph(fpos.file_id)?;
+        let mut res = Vec::new();
+        for graph_node in graph.nodes.iter() {
+            let file_id = graph_node.file_id;
+            let source = self.db.file_text(file_id);
+            let lexer = SourcepawnLexer::new(&source);
+            res.extend(lexer.filter_map(|token| {
+                if token.token_kind == TokenKind::Identifier && token.text() == name {
+                    return FileRange {
+                        file_id,
+                        range: token.range,
+                    }
+                    .into();
+                }
+                None
+            }));
+        }
+
+        Some((def, res))
     }
 }
 

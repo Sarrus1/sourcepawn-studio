@@ -25,6 +25,7 @@ lazy_static.workspace = true
 regex.workspace = true
 itertools.workspace = true
 serde.workspace = true
+sourcepawn_lexer.workspace = true
 
 
 # Local crates

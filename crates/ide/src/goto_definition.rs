@@ -1,10 +1,9 @@
 use std::hash::Hash;
 
 use base_db::FilePosition;
-use fxhash::FxHashMap;
-use hir::{DefResolution, HasSource, Semantics};
+use hir::{HasSource, Semantics};
 
-use preprocessor::{s_range_to_u_range, u_pos_to_s_pos, Offset};
+use preprocessor::{s_range_to_u_range, u_pos_to_s_pos};
 use smol_str::{SmolStr, ToSmolStr};
 use syntax::{
     utils::{lsp_position_to_ts_point, ts_range_to_lsp_range},
@@ -54,7 +53,7 @@ pub(crate) fn goto_definition(
     let tree = sema.parse(pos.file_id);
     let root_node = tree.root_node();
 
-    if let Some((offset, def)) = find_macro_def(offsets, &pos.position, sema) {
+    if let Some((offset, def)) = sema.find_macro_def(&pos) {
         let file_id = def.file_id(sema.db);
         let u_range = offset.range;
         let source_tree = sema.parse(file_id);
@@ -126,21 +125,4 @@ pub fn find_inner_name_range(node: &tree_sitter::Node) -> lsp_types::Range {
     .unwrap_or_else(|| node.range());
 
     ts_range_to_lsp_range(&name_range)
-}
-
-/// Try to find the definition of a macro at the given position.
-pub fn find_macro_def(
-    offsets: &FxHashMap<u32, Vec<Offset>>,
-    pos: &lsp_types::Position,
-    sema: &Semantics<RootDatabase>,
-) -> Option<(Offset, DefResolution)> {
-    let offset = offsets
-        .get(&pos.line)
-        .and_then(|offsets| offsets.iter().find(|offset| offset.contains(*pos)))?;
-    (
-        offset.to_owned(),
-        sema.find_macro_def(offset.file_id, offset.idx)
-            .map(DefResolution::from)?,
-    )
-        .into()
 }

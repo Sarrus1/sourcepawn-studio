@@ -23,6 +23,7 @@ line-index = "0.1.0-pre.1"
 tracing.workspace = true
 log.workspace = true
 indexmap.workspace = true
+nohash-hasher.workspace = true
 
 
 # Local crates

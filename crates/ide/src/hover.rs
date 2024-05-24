@@ -13,7 +13,7 @@ use vfs::FileId;
 
 use crate::{
     events::{event_hover, event_name},
-    goto_definition::{find_inner_name_range, find_macro_def},
+    goto_definition::find_inner_name_range,
     markup::Markup,
     FilePosition, NavigationTarget, RangeInfo,
 };
@@ -102,7 +102,7 @@ pub(crate) fn hover(
     let offsets = preprocessing_results.offsets();
     let tree = sema.parse(fpos.file_id);
     let root_node = tree.root_node();
-    if let Some(hover) = find_macro_hover(&preprocessing_results, sema, &fpos.position) {
+    if let Some(hover) = find_macro_hover(&preprocessing_results, sema, &fpos) {
         return Some(hover);
     }
 
@@ -165,9 +165,9 @@ pub(crate) fn hover(
 fn find_macro_hover(
     preprocessing_results: &PreprocessingResult,
     sema: &Semantics<RootDatabase>,
-    pos: &lsp_types::Position,
+    fpos: &FilePosition,
 ) -> Option<RangeInfo<HoverResult>> {
-    let (offset, def) = find_macro_def(preprocessing_results.offsets(), pos, sema)?;
+    let (offset, def) = sema.find_macro_def(fpos)?;
     let offsets = preprocessing_results.offsets();
     let preprocessed_text = preprocessing_results.preprocessed_text();
     let file_id = def.file_id(sema.db);
@@ -178,7 +178,7 @@ fn find_macro_hover(
 
     let mut start = offset.range.start.character;
     let mut end = offset.range.end.character;
-    offsets[&pos.line]
+    offsets[&fpos.position.line]
         .iter()
         .filter(|prev_offset| prev_offset.range.start.character < offset.range.start.character)
         .for_each(|prev_offset| {
@@ -200,7 +200,7 @@ fn find_macro_hover(
     // The preprocessed file might be shorter than the original file
     let hover_text = preprocessed_text
         .lines()
-        .nth(pos.line as usize)
+        .nth(fpos.position.line as usize)
         .and_then(|it| it.get(slc))
         .map(|it| it.to_string())
         .unwrap_or_default();

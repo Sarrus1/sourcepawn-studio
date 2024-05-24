@@ -1,4 +1,5 @@
 use core::fmt;
+use std::hash::Hash;
 
 use base_db::Tree;
 use db::HirDatabase;
@@ -31,6 +32,30 @@ mod source_to_def;
 
 pub use crate::{diagnostics::*, has_source::HasSource, semantics::Semantics};
 
+#[derive(Debug, Clone, Eq, Serialize, Deserialize)]
+pub struct LocalDef {
+    pub name: Option<Name>,
+    pub def: Local,
+}
+
+impl LocalDef {
+    pub fn new(def: Local) -> Self {
+        Self { name: None, def }
+    }
+}
+
+impl PartialEq for LocalDef {
+    fn eq(&self, other: &Self) -> bool {
+        self.def == other.def
+    }
+}
+
+impl Hash for LocalDef {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.def.hash(state)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DefResolution {
     Function(Function),
@@ -48,7 +73,7 @@ pub enum DefResolution {
     Struct(Struct),
     StructField(StructField),
     Global(Global),
-    Local((Option<Name>, Local)),
+    Local(LocalDef),
     File(File),
 }
 
@@ -71,7 +96,7 @@ impl_from!(
 
 impl From<Local> for DefResolution {
     fn from(local: Local) -> Self {
-        DefResolution::Local((None, local))
+        DefResolution::Local(LocalDef::new(local))
     }
 }
 
@@ -81,9 +106,11 @@ impl DefResolution {
             ValueNs::FunctionId(ids) => {
                 DefResolution::Function(Function::from(ids.first()?.value)).into()
             }
-            ValueNs::LocalId((name, id, expr)) => {
-                DefResolution::Local((name, Local::from((id, expr)))).into()
-            }
+            ValueNs::LocalId((name, id, expr)) => DefResolution::Local(LocalDef {
+                name,
+                def: Local::from((id, expr)),
+            })
+            .into(),
             ValueNs::MacroId(id) => DefResolution::Macro(Macro::from(id.value)).into(),
             ValueNs::GlobalId(id) => DefResolution::Global(Global::from(id.value)).into(),
             ValueNs::EnumStructId(id) => {
@@ -123,7 +150,7 @@ impl<'tree> HasSource<'tree> for DefResolution {
             DefResolution::StructField(field) => field.source(db, tree),
             DefResolution::Field(field) => field.source(db, tree),
             DefResolution::Global(global) => global.source(db, tree),
-            DefResolution::Local(local) => local.1.source(db, tree)?.source(db, tree),
+            DefResolution::Local(local) => local.def.source(db, tree)?.source(db, tree),
             DefResolution::File(file) => file.source(db, tree),
         }
     }
@@ -147,7 +174,7 @@ impl DefResolution {
             DefResolution::StructField(it) => it.parent.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Field(it) => it.parent.id.lookup(db.upcast()).id.file_id(),
             DefResolution::Global(it) => it.id.lookup(db.upcast()).file_id(),
-            DefResolution::Local(it) => it.1.parent.file_id(db.upcast()),
+            DefResolution::Local(it) => it.def.parent.file_id(db.upcast()),
             DefResolution::File(it) => it.id,
         }
     }
@@ -170,10 +197,10 @@ impl DefResolution {
             DefResolution::Field(it) => Some(it.name(db)),
             DefResolution::Global(it) => Some(it.name(db)),
             DefResolution::Local(it) => {
-                if let Some(name) = &it.0 {
+                if let Some(name) = &it.name {
                     Some(name.clone())
                 } else {
-                    it.1.name(db)
+                    it.def.name(db)
                 }
             }
             DefResolution::File(_) => None,
@@ -197,7 +224,7 @@ impl DefResolution {
             DefResolution::StructField(it) => it.type_(db),
             DefResolution::Field(it) => it.type_(db),
             DefResolution::Global(it) => it.type_(db),
-            DefResolution::Local(it) => it.1.type_(db),
+            DefResolution::Local(it) => it.def.type_(db),
             DefResolution::File(_) => None,
         }
     }

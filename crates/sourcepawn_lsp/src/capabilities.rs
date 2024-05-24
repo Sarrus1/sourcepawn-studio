@@ -1,9 +1,10 @@
 use ide::WideEncoding;
 use lsp_types::{
     ClientCapabilities, CompletionOptions, CompletionOptionsCompletionItem,
-    HoverProviderCapability, MarkupKind, OneOf, PositionEncodingKind, SemanticTokensFullOptions,
-    SemanticTokensLegend, SemanticTokensOptions, ServerCapabilities, SignatureHelpOptions,
-    TextDocumentSyncCapability, TextDocumentSyncKind, WorkDoneProgressOptions,
+    HoverProviderCapability, MarkupKind, OneOf, PositionEncodingKind, ReferencesOptions,
+    RenameOptions, SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
+    ServerCapabilities, SignatureHelpOptions, TextDocumentSyncCapability, TextDocumentSyncKind,
+    WorkDoneProgressOptions,
 };
 
 use crate::{
@@ -65,10 +66,19 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
             retrigger_characters: Some(vec![",".to_string(), "(".to_string()]),
             ..Default::default()
         }),
+        references_provider: Some(OneOf::Right(ReferencesOptions {
+            work_done_progress_options: WorkDoneProgressOptions {
+                work_done_progress: None,
+            },
+        })),
+        rename_provider: Some(OneOf::Right(RenameOptions {
+            prepare_provider: Some(false),
+            work_done_progress_options: WorkDoneProgressOptions {
+                work_done_progress: None,
+            },
+        })),
         /*
-        references_provider: Some(OneOf::Left(true)),
         document_symbol_provider: Some(OneOf::Left(true)),
-        rename_provider: Some(OneOf::Left(true)),
         call_hierarchy_provider: Some(CallHierarchyServerCapability::Simple(true)),
         */
         ..Default::default()
