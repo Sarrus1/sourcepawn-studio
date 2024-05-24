@@ -125,6 +125,20 @@ pub(crate) fn handle_references(
     Ok(Some(to_proto::references_response(&snap, franges)?))
 }
 
+pub(crate) fn handle_rename(
+    snap: GlobalStateSnapshot,
+    params: lsp_types::RenameParams,
+) -> anyhow::Result<Option<lsp_types::WorkspaceEdit>> {
+    let pos = from_proto::file_position(&snap, params.text_document_position.clone())?;
+
+    let source_change = match snap.analysis.rename(pos, &params.new_name)? {
+        None => return Ok(None),
+        Some(it) => it,
+    };
+
+    Ok(Some(to_proto::workspace_edit(&snap, source_change)))
+}
+
 pub(crate) fn handle_hover(
     snap: GlobalStateSnapshot,
     params: lsp_types::HoverParams,

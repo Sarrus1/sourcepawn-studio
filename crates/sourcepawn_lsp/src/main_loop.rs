@@ -417,6 +417,7 @@ impl GlobalState {
             .on::<lsp_request::GotoDefinition>(handlers::handle_goto_definition)
             .on::<lsp_request::SignatureHelpRequest>(handlers::handle_signature_help)
             .on::<lsp_request::References>(handlers::handle_references)
+            .on::<lsp_request::Rename>(handlers::handle_rename)
             .on::<lsp::ext::HoverRequest>(handlers::handle_hover)
             .on::<lsp::ext::SyntaxTree>(handlers::handle_syntax_tree)
             .on::<lsp::ext::ProjectsGraphviz>(handlers::handle_projects_graphviz)

@@ -8,7 +8,7 @@ use ide::{
     Cancellable, CompletionKind, Highlight, HlMod, HlRange, HlTag, Markup, NavigationTarget,
     Severity, SignatureHelp,
 };
-use ide_db::SymbolKind;
+use ide_db::{SourceChange, SymbolKind};
 use itertools::Itertools;
 use lsp_types::TextEdit;
 use paths::AbsPath;
@@ -277,6 +277,30 @@ pub(crate) fn signature_help(sig: SignatureHelp) -> lsp_types::SignatureHelp {
         }],
         active_signature: Default::default(),
         active_parameter: sig.active_parameter,
+    }
+}
+
+pub(crate) fn workspace_edit(
+    snap: &GlobalStateSnapshot,
+    source_change: SourceChange,
+) -> lsp_types::WorkspaceEdit {
+    let changes = source_change
+        .source_file_edits
+        .into_iter()
+        .map(|(file_id, edits)| {
+            let uri = url(snap, file_id);
+            let text_edits = edits
+                .into_iter()
+                .map(|edit| lsp_types::TextEdit::new(edit.range, edit.new_text))
+                .collect();
+            (uri, text_edits)
+        })
+        .collect();
+
+    lsp_types::WorkspaceEdit {
+        changes: Some(changes),
+        document_changes: None,
+        change_annotations: None,
     }
 }
 

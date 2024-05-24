@@ -1,6 +1,7 @@
 //! base_db defines basic database traits. The concrete DB is defined by ide.
 
 mod documentation;
+mod source_change;
 
 use std::{fmt, mem::ManuallyDrop, sync::Arc};
 
@@ -15,6 +16,7 @@ use salsa::{Cancelled, Durability};
 use vfs::FileId;
 
 pub use documentation::Documentation;
+pub use source_change::SourceChange;
 
 pub type Cancellable<T> = Result<T, Cancelled>;
 

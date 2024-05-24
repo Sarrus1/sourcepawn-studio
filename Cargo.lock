@@ -1139,6 +1139,7 @@ dependencies = [
  "line-index",
  "log",
  "lsp-types",
+ "nohash-hasher",
  "preprocessor",
  "regex",
  "salsa",

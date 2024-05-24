@@ -2,8 +2,8 @@ use ide::WideEncoding;
 use lsp_types::{
     ClientCapabilities, CompletionOptions, CompletionOptionsCompletionItem,
     HoverProviderCapability, MarkupKind, OneOf, PositionEncodingKind, ReferencesOptions,
-    SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions, ServerCapabilities,
-    SignatureHelpOptions, TextDocumentSyncCapability, TextDocumentSyncKind,
+    RenameOptions, SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
+    ServerCapabilities, SignatureHelpOptions, TextDocumentSyncCapability, TextDocumentSyncKind,
     WorkDoneProgressOptions,
 };
 
@@ -71,9 +71,14 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
                 work_done_progress: None,
             },
         })),
+        rename_provider: Some(OneOf::Right(RenameOptions {
+            prepare_provider: Some(false),
+            work_done_progress_options: WorkDoneProgressOptions {
+                work_done_progress: None,
+            },
+        })),
         /*
         document_symbol_provider: Some(OneOf::Left(true)),
-        rename_provider: Some(OneOf::Left(true)),
         call_hierarchy_provider: Some(CallHierarchyServerCapability::Simple(true)),
         */
         ..Default::default()
