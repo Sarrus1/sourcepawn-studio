@@ -40,11 +40,7 @@ impl GlobalState {
         if self.config.include_directories() != old_config.include_directories()
             || self.config.root_path() != old_config.root_path()
         {
-            let mut roots = self
-                .config
-                .root_path()
-                .map(|path| vec![VfsPath::from(path.clone())])
-                .unwrap_or_default();
+            let mut roots = vec![VfsPath::from(self.config.root_path().clone())];
             roots.extend(
                 self.config
                     .include_directories()
@@ -59,8 +55,11 @@ impl GlobalState {
                 .map(vfs::loader::Entry::sp_files_recursively)
                 .collect_vec();
             let watch = (0..load.len()).collect_vec();
-            if let Some(root_path) = self.config.root_path() {
-                load.push(vfs::loader::Entry::sp_files_recursively(root_path.clone()));
+            // The root_path can be the FS' root. Do not scrape the whole FS in that case.
+            if self.config.root_path().parent().is_some() {
+                load.push(vfs::loader::Entry::sp_files_recursively(
+                    self.config.root_path().clone(),
+                ));
             }
             self.vfs_config_version += 1;
             self.loader.handle.set_config(vfs::loader::Config {

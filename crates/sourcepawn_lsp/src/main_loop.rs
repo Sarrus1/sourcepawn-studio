@@ -1,13 +1,13 @@
-use std::{path::PathBuf, time::Instant};
+use std::{env, path::PathBuf, time::Instant};
 
 use always_assert::always;
 use crossbeam::channel::Receiver;
 use lsp_server::Message;
 use lsp_types::{
-    notification::{DidOpenTextDocument, Notification, ShowMessage},
+    notification::{Notification, ShowMessage},
     request::{Request, WorkspaceConfiguration},
-    ConfigurationItem, ConfigurationParams, DidOpenTextDocumentParams, InitializeResult,
-    MessageType, ServerInfo, ShowMessageParams, Url, WorkspaceFolder,
+    ConfigurationItem, ConfigurationParams, InitializeResult, MessageType, ServerInfo,
+    ShowMessageParams, Url, WorkspaceFolder,
 };
 use paths::AbsPathBuf;
 use stdx::thread::ThreadIntent;
@@ -100,7 +100,14 @@ impl GlobalState {
             ..
         } = from_json::<lsp_types::InitializeParams>("InitializeParams", &initialize_params)?;
 
-        let root_path = Self::root_path(root_uri.as_ref());
+        let root_path = Self::root_path(root_uri.clone().or_else(|| {
+            workspace_folders
+                .clone()
+                .and_then(|folders| folders.first().map(|wf| wf.uri.clone()))
+        }))
+        .unwrap_or_else(|| {
+            AbsPathBuf::try_from(env::current_dir().expect("no cwd")).expect("invalid cwd")
+        });
 
         let mut is_visual_studio_code = false;
         if let Some(client_info) = client_info {
@@ -112,12 +119,12 @@ impl GlobalState {
             is_visual_studio_code = client_info.name.starts_with("Visual Studio Code");
         }
 
-        let workspace_roots = Self::workspace_roots(workspace_folders.as_ref(), root_path.as_ref());
+        let workspace_roots = Self::workspace_roots(workspace_folders.as_ref(), &root_path);
 
         let mut config = Config::new(
-            root_path,
+            root_path.clone(),
             capabilities.clone(),
-            workspace_roots,
+            workspace_roots.clone(),
             is_visual_studio_code,
         );
 
@@ -151,19 +158,7 @@ impl GlobalState {
             .initialize_finish(id, serde_json::to_value(result)?)?;
 
         let ignored = if config.caps().has_pull_configuration_support() {
-            let (config_data, ignored, root_uri) = self.pull_config_sync(root_uri);
-            if root_uri.is_none() {
-                log::error!("root_uri is none. The LSP was not triggered from a workspace and could not infer a root_uri.");
-            }
-            let root_path = Self::root_path(root_uri.as_ref());
-            let workspace_roots =
-                Self::workspace_roots(workspace_folders.as_ref(), root_path.as_ref());
-            config = Config::new(
-                root_path,
-                capabilities,
-                workspace_roots,
-                is_visual_studio_code,
-            );
+            let (config_data, ignored) = self.pull_config_sync(root_uri);
             if let Err(e) = config.update(config_data) {
                 let not = lsp_server::Notification::new(
                     ShowMessage::METHOD.to_string(),
@@ -192,7 +187,7 @@ impl GlobalState {
     /// Convert the `root_uri` to an `AbsPathBuf`.
     ///
     /// Will patch the path prefix on Windows to ensure that the drive letter is uppercase.
-    fn root_path(root_uri: Option<&Url>) -> Option<AbsPathBuf> {
+    fn root_path(root_uri: Option<Url>) -> Option<AbsPathBuf> {
         root_uri
             .and_then(|it| it.to_file_path().ok())
             .map(patch_path_prefix)
@@ -202,7 +197,7 @@ impl GlobalState {
     /// Convert the `workspace_folders` and `root_path` to a list of workspace roots.
     fn workspace_roots(
         workspace_folders: Option<&Vec<WorkspaceFolder>>,
-        root_path: Option<&AbsPathBuf>,
+        root_path: &AbsPathBuf,
     ) -> Vec<PathBuf> {
         workspace_folders
             .map(|workspaces| {
@@ -212,7 +207,7 @@ impl GlobalState {
                     .collect::<Vec<_>>()
             })
             .filter(|workspaces| !workspaces.is_empty())
-            .or_else(|| vec![root_path.cloned()?.into()].into())
+            .or_else(|| vec![root_path.clone().into()].into())
             .unwrap_or_default()
     }
 
@@ -220,8 +215,7 @@ impl GlobalState {
     fn pull_config_sync(
         &self,
         scope_uri: Option<Url>,
-    ) -> (serde_json::Value, Vec<lsp_server::Message>, Option<Url>) {
-        let mut root_uri = scope_uri.clone();
+    ) -> (serde_json::Value, Vec<lsp_server::Message>) {
         let request_id = lsp_server::RequestId::from("initial_config_pull".to_string());
         let config_item = ConfigurationItem {
             scope_uri,
@@ -249,23 +243,6 @@ impl GlobalState {
                         config = serde_json::from_value(result).ok();
                     }
                 }
-                Ok(Message::Notification(notification))
-                    if notification.method == DidOpenTextDocument::METHOD && root_uri.is_none() =>
-                {
-                    if let Ok(params) = serde_json::from_value::<DidOpenTextDocumentParams>(
-                        notification.clone().params,
-                    ) {
-                        // HACK: If we do not have a root_uri yet, use the one from the first DidOpen notification.
-                        root_uri = params
-                            .text_document
-                            .uri
-                            .to_file_path()
-                            .ok()
-                            .and_then(|path| path.parent().map(|path| path.to_path_buf()))
-                            .and_then(|path| Url::from_file_path(path).ok());
-                    }
-                    ignored.push(notification.into());
-                }
                 Ok(e) => ignored.push(e),
                 Err(e) => panic!("Error receiving message: {:?}", e),
             }
@@ -281,7 +258,6 @@ impl GlobalState {
                 .expect("Empty configuration")
                 .clone(),
             ignored,
-            root_uri,
         )
     }
 

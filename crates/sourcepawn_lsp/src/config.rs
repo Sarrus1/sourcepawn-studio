@@ -92,7 +92,7 @@ pub struct Config {
     /// The workspace roots as registered by the LSP client
     workspace_roots: Vec<PathBuf>,
     caps: lsp_types::ClientCapabilities,
-    root_path: Option<AbsPathBuf>,
+    root_path: AbsPathBuf,
     data: ConfigData,
     is_visual_studio_code: bool,
 }
@@ -122,7 +122,7 @@ impl std::error::Error for ConfigError {}
 
 impl Config {
     pub fn new(
-        root_path: Option<AbsPathBuf>,
+        root_path: AbsPathBuf,
         caps: ClientCapabilities,
         workspace_roots: Vec<PathBuf>,
         is_visual_studio_code: bool,
@@ -161,12 +161,20 @@ impl Config {
         negotiated_encoding(&self.caps)
     }
 
-    pub fn root_path(&self) -> Option<&AbsPathBuf> {
-        self.root_path.as_ref()
+    pub fn root_path(&self) -> &AbsPathBuf {
+        &self.root_path
     }
 
     pub fn caps(&self) -> &lsp_types::ClientCapabilities {
         &self.caps
+    }
+
+    pub fn workspace_roots(&self) -> &[PathBuf] {
+        &self.workspace_roots
+    }
+
+    pub fn is_visual_studio_code(&self) -> bool {
+        self.is_visual_studio_code
     }
 
     #[cfg(test)]
