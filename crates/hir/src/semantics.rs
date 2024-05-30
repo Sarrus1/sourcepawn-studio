@@ -65,6 +65,10 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         self.db.parse(file_id)
     }
 
+    pub fn file_text(&self, file_id: FileId) -> Arc<str> {
+        self.db.file_text(file_id)
+    }
+
     pub fn preprocess_file(&self, file_id: FileId) -> Arc<preprocessor::PreprocessingResult> {
         self.db.preprocess_file(file_id)
     }

@@ -99,7 +99,9 @@ pub(crate) fn semantic_tokens(_text: &str, highlights: Vec<HlRange>) -> lsp_type
             continue;
         }
 
-        let (ty, mods) = semantic_token_type_and_modifiers(highlight_range.highlight);
+        let Some((ty, mods)) = semantic_token_type_and_modifiers(highlight_range.highlight) else {
+            continue;
+        };
 
         let token_index = semantic_tokens::type_index(ty);
         let modifier_bitset = mods.0;
@@ -120,14 +122,36 @@ pub(crate) fn semantic_token_delta(
 
 fn semantic_token_type_and_modifiers(
     highlight: Highlight,
-) -> (lsp_types::SemanticTokenType, semantic_tokens::ModifierSet) {
+) -> Option<(lsp_types::SemanticTokenType, semantic_tokens::ModifierSet)> {
     let mut mods = semantic_tokens::ModifierSet::default();
     let type_ = match highlight.tag {
         HlTag::Symbol(symbol) => match symbol {
             SymbolKind::Macro => semantic_tokens::MACRO,
-            _ => todo!(),
+            SymbolKind::Function => semantic_tokens::FUNCTION,
+            SymbolKind::Forward => semantic_tokens::INTERFACE,
+            SymbolKind::Constructor => semantic_tokens::METHOD,
+            SymbolKind::Destructor => semantic_tokens::METHOD,
+            SymbolKind::Typedef => semantic_tokens::INTERFACE,
+            SymbolKind::Typeset => semantic_tokens::INTERFACE,
+            SymbolKind::Functag => semantic_tokens::INTERFACE,
+            SymbolKind::Funcenum => semantic_tokens::INTERFACE,
+            SymbolKind::Method => semantic_tokens::METHOD,
+            SymbolKind::EnumStruct => semantic_tokens::STRUCT,
+            SymbolKind::Field => semantic_tokens::VARIABLE,
+            SymbolKind::Methodmap => semantic_tokens::CLASS,
+            SymbolKind::Property => semantic_tokens::PROPERTY,
+            SymbolKind::Struct => semantic_tokens::STRUCT,
+            SymbolKind::Enum => semantic_tokens::ENUM,
+            SymbolKind::Variant => semantic_tokens::ENUM_MEMBER,
+            SymbolKind::Global => semantic_tokens::VARIABLE,
+            SymbolKind::Local => semantic_tokens::VARIABLE,
         },
-        HlTag::None => semantic_tokens::GENERIC,
+        HlTag::BoolLiteral => semantic_tokens::BOOLEAN,
+        HlTag::StringLiteral => semantic_tokens::STRING,
+        HlTag::CharLiteral => semantic_tokens::CHAR,
+        HlTag::FloatLiteral | HlTag::IntLiteral => semantic_tokens::NUMBER,
+        HlTag::Comment => semantic_tokens::COMMENT,
+        HlTag::None => return None,
     };
 
     for modifier in highlight.mods.iter() {
@@ -137,7 +161,7 @@ fn semantic_token_type_and_modifiers(
         mods |= modifier;
     }
 
-    (type_, mods)
+    Some((type_, mods))
 }
 
 pub(crate) fn diagnostic_severity(severity: Severity) -> lsp_types::DiagnosticSeverity {

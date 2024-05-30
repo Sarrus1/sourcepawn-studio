@@ -1,9 +1,11 @@
 use std::fmt::{self, Debug, Write};
 
 use hir::Semantics;
+use hir_def::resolver::{HasResolver, ValueNs};
 use ide_db::{RootDatabase, SymbolKind};
 use itertools::Itertools;
-use syntax::utils::{intersect, ts_range_to_lsp_range};
+use sourcepawn_lexer::{Literal, SourcepawnLexer, TokenKind};
+use syntax::utils::intersect;
 use vfs::FileId;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -53,6 +55,13 @@ pub struct HlMods(u32);
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum HlTag {
     Symbol(SymbolKind),
+
+    BoolLiteral,
+    StringLiteral,
+    CharLiteral,
+    FloatLiteral,
+    IntLiteral,
+    Comment,
 
     // For things which don't have a specific highlight.
     None,
@@ -112,41 +121,85 @@ pub(crate) fn highlight(
     range_to_highlight: Option<lsp_types::Range>,
 ) -> Vec<HlRange> {
     let sema = Semantics::new(db);
-    // Determine the root based on the given range.
-    let tree = sema.parse(file_id);
-    let (_root, range_to_highlight) = {
-        let source_file = tree.root_node();
-        match range_to_highlight {
-            Some(range) => {
-                let node = match tree.covering_element(range) {
-                    Some(it) => it,
-                    None => source_file,
-                };
-                (node, range)
-            }
-            None => (source_file, ts_range_to_lsp_range(&source_file.range())),
-        }
+    let source = sema.file_text(file_id);
+    let range_to_highlight = if let Some(range_to_highlight) = range_to_highlight {
+        range_to_highlight
+    } else {
+        lsp_types::Range::new(
+            lsp_types::Position {
+                line: 0,
+                character: 0,
+            },
+            lsp_types::Position {
+                line: source.lines().count() as u32 + 1,
+                character: 0,
+            },
+        )
     };
-    let mut res = Vec::new();
-    let preprocessing_res = sema.preprocess_file(file_id);
-    for (_, offsets) in preprocessing_res
-        .offsets()
-        .iter()
-        .sorted_by_key(|(k, _)| *k)
-    {
-        offsets
-            .iter()
-            .filter(|offset| intersect(offset.range, range_to_highlight).is_some())
-            .for_each(|offset| {
-                res.push(HlRange {
-                    range: offset.range,
+    let lexer = SourcepawnLexer::new(&source);
+    let resolver = file_id.resolver(db);
+    /* Ideally, we would want to use the AST here and do some range adjustments to get the user visible ranges.
+    This would allow us to get proper modifiers for the symbols such as declarations or references.
+    However, the current implementation is much simpler and should be good enough for now.
+     */
+    lexer
+        .filter(|symbol| intersect(symbol.range, range_to_highlight).is_some())
+        .flat_map(|symbol| match symbol.token_kind {
+            TokenKind::Identifier => {
+                let kind = match resolver.resolve_ident(&symbol.text())? {
+                    ValueNs::MacroId(_) => SymbolKind::Macro,
+                    ValueNs::LocalId(_) => SymbolKind::Local,
+                    ValueNs::GlobalId(_) => SymbolKind::Global,
+                    ValueNs::FunctionId(_) => SymbolKind::Function,
+                    ValueNs::EnumStructId(_) => SymbolKind::EnumStruct,
+                    ValueNs::MethodmapId(_) => SymbolKind::Methodmap,
+                    ValueNs::EnumId(_) => SymbolKind::Enum,
+                    ValueNs::VariantId(_) => SymbolKind::Variant,
+                    ValueNs::TypedefId(_) => SymbolKind::Typedef,
+                    ValueNs::TypesetId(_) => SymbolKind::Typeset,
+                    ValueNs::FunctagId(_) => SymbolKind::Functag,
+                    ValueNs::FuncenumId(_) => SymbolKind::Funcenum,
+                    ValueNs::StructId(_) => SymbolKind::Struct,
+                };
+                Some(HlRange {
+                    range: symbol.range,
                     highlight: Highlight {
-                        tag: HlTag::Symbol(SymbolKind::Macro),
+                        tag: HlTag::Symbol(kind),
                         mods: HlMods::default(),
                     },
-                });
-            });
-    }
+                })
+            }
+            TokenKind::True | TokenKind::False => Some(HlRange {
+                range: symbol.range,
+                highlight: Highlight::new(HlTag::BoolLiteral),
+            }),
+            TokenKind::Comment(_) => Some(HlRange {
+                range: symbol.range,
+                highlight: Highlight::new(HlTag::Comment),
+            }),
+            TokenKind::Literal(lit) => match lit {
+                Literal::StringLiteral => Some(HlRange {
+                    range: symbol.range,
+                    highlight: Highlight::new(HlTag::StringLiteral),
+                }),
+                Literal::CharLiteral => Some(HlRange {
+                    range: symbol.range,
+                    highlight: Highlight::new(HlTag::CharLiteral),
+                }),
+                Literal::FloatLiteral => Some(HlRange {
+                    range: symbol.range,
+                    highlight: Highlight::new(HlTag::FloatLiteral),
+                }),
+                Literal::IntegerLiteral
+                | Literal::BinaryLiteral
+                | Literal::HexLiteral
+                | Literal::OctodecimalLiteral => Some(HlRange {
+                    range: symbol.range,
+                    highlight: Highlight::new(HlTag::IntLiteral),
+                }),
+            },
 
-    res
+            _ => None,
+        })
+        .collect_vec()
 }
