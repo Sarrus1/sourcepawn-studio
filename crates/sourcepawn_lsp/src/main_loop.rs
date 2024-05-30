@@ -106,7 +106,11 @@ impl GlobalState {
                 .and_then(|folders| folders.first().map(|wf| wf.uri.clone()))
         }))
         .unwrap_or_else(|| {
-            AbsPathBuf::try_from(env::current_dir().expect("no cwd")).expect("invalid cwd")
+            let mut root_path = env::current_dir().expect("no cwd");
+            while let Some(parent) = root_path.parent() {
+                root_path = parent.to_path_buf();
+            }
+            AbsPathBuf::try_from(root_path).expect("invalid cwd")
         });
 
         let mut is_visual_studio_code = false;
