@@ -1,6 +1,6 @@
 use ide::WideEncoding;
 use lsp_types::{
-    ClientCapabilities, CompletionOptions, CompletionOptionsCompletionItem,
+    ClientCapabilities, CompletionOptions, CompletionOptionsCompletionItem, DocumentSymbolOptions,
     HoverProviderCapability, MarkupKind, OneOf, PositionEncodingKind, ReferencesOptions,
     RenameOptions, SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
     ServerCapabilities, SignatureHelpOptions, TextDocumentSyncCapability, TextDocumentSyncKind,
@@ -76,8 +76,13 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
                 work_done_progress: None,
             },
         })),
+        document_symbol_provider: Some(OneOf::Right(DocumentSymbolOptions {
+            label: Some("SourcePawn".to_string()),
+            work_done_progress_options: WorkDoneProgressOptions {
+                work_done_progress: None,
+            },
+        })),
         /*
-        document_symbol_provider: Some(OneOf::Left(true)),
         call_hierarchy_provider: Some(CallHierarchyServerCapability::Simple(true)),
         */
         ..Default::default()

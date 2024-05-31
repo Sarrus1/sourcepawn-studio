@@ -24,6 +24,8 @@ tracing.workspace = true
 log.workspace = true
 indexmap.workspace = true
 nohash-hasher.workspace = true
+la-arena.workspace = true
+smol_str.workspace = true
 
 
 # Local crates

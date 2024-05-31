@@ -8,7 +8,7 @@ use ide::{
     Cancellable, CompletionKind, Highlight, HlMod, HlRange, HlTag, Markup, NavigationTarget,
     Severity, SignatureHelp,
 };
-use ide_db::{SourceChange, SymbolKind};
+use ide_db::{SourceChange, SymbolId, SymbolKind, Symbols};
 use itertools::Itertools;
 use lsp_types::TextEdit;
 use paths::AbsPath;
@@ -128,6 +128,7 @@ fn semantic_token_type_and_modifiers(
         HlTag::Symbol(symbol) => match symbol {
             SymbolKind::Macro => semantic_tokens::MACRO,
             SymbolKind::Function => semantic_tokens::FUNCTION,
+            SymbolKind::Native => semantic_tokens::FUNCTION,
             SymbolKind::Forward => semantic_tokens::INTERFACE,
             SymbolKind::Constructor => semantic_tokens::METHOD,
             SymbolKind::Destructor => semantic_tokens::METHOD,
@@ -253,6 +254,7 @@ pub(crate) fn completion_item_kind(kind: CompletionKind) -> lsp_types::Completio
 
     match kind {
         CompletionKind::SymbolKind(SymbolKind::Function) => CK::FUNCTION,
+        CompletionKind::SymbolKind(SymbolKind::Native) => CK::FUNCTION,
         CompletionKind::SymbolKind(SymbolKind::Forward) => CK::INTERFACE,
         CompletionKind::SymbolKind(SymbolKind::Constructor) => CK::CONSTRUCTOR,
         CompletionKind::SymbolKind(SymbolKind::Destructor) => CK::CONSTRUCTOR,
@@ -325,6 +327,66 @@ pub(crate) fn workspace_edit(
         changes: Some(changes),
         document_changes: None,
         change_annotations: None,
+    }
+}
+
+pub(crate) fn document_symbols(
+    _snap: &GlobalStateSnapshot,
+    symbols: Symbols,
+) -> Vec<lsp_types::DocumentSymbol> {
+    symbols
+        .into_iter()
+        .map(|idx| document_symbol(idx, &symbols))
+        .collect_vec()
+}
+
+fn document_symbol(idx: &SymbolId, symbols: &Symbols) -> lsp_types::DocumentSymbol {
+    use lsp_types::SymbolKind as SK;
+
+    let symbol = &symbols[idx];
+    let kind = match symbol.kind {
+        SymbolKind::Macro => SK::CONSTANT,
+        SymbolKind::Function => SK::FUNCTION,
+        SymbolKind::Native => SK::FUNCTION,
+        SymbolKind::Forward => SK::FUNCTION,
+        SymbolKind::Constructor => SK::CONSTRUCTOR,
+        SymbolKind::Destructor => SK::CONSTRUCTOR,
+        SymbolKind::Typedef | SymbolKind::Typeset | SymbolKind::Functag | SymbolKind::Funcenum => {
+            SK::INTERFACE
+        }
+        SymbolKind::Method => SK::METHOD,
+        SymbolKind::EnumStruct => SK::STRUCT,
+        SymbolKind::Field => SK::FIELD,
+        SymbolKind::Methodmap => SK::CLASS,
+        SymbolKind::Property => SK::PROPERTY,
+        SymbolKind::Struct => SK::STRUCT,
+        SymbolKind::Enum => SK::ENUM,
+        SymbolKind::Variant => SK::ENUM_MEMBER,
+        SymbolKind::Global | SymbolKind::Local => SK::VARIABLE,
+    };
+    #[allow(deprecated)]
+    lsp_types::DocumentSymbol {
+        name: symbol.name.to_string(),
+        detail: symbol.details.clone(),
+        kind,
+        tags: if symbol.deprecated {
+            Some(vec![lsp_types::SymbolTag::DEPRECATED])
+        } else {
+            None
+        },
+        deprecated: None,
+        range: symbol.full_range,
+        selection_range: symbol.focus_range.unwrap_or(symbol.full_range),
+        children: if symbol.children.is_empty() {
+            None
+        } else {
+            symbol
+                .children
+                .iter()
+                .map(|idx| document_symbol(idx, symbols))
+                .collect_vec()
+                .into()
+        },
     }
 }
 

@@ -10,6 +10,7 @@ mod references;
 mod rename;
 mod signature_help;
 mod status;
+mod symbols;
 mod syntax_highlighting;
 
 use std::{panic::AssertUnwindSafe, sync::Arc};
@@ -21,7 +22,7 @@ use fxhash::FxHashMap;
 use hir::DefResolution;
 use hir_def::{print_item_tree, DefDatabase};
 use hover::HoverResult;
-use ide_db::{RootDatabase, SourceChange};
+use ide_db::{RootDatabase, SourceChange, Symbols};
 use itertools::Itertools;
 use lsp_types::Url;
 use paths::AbsPathBuf;
@@ -217,6 +218,11 @@ impl Analysis {
     /// Returns the source change to rename the symbol at `position` to `new_name`.
     pub fn rename(&self, fpos: FilePosition, new_name: &str) -> Cancellable<Option<SourceChange>> {
         self.with_db(|db| rename::rename(db, fpos, new_name))
+    }
+
+    /// Returns the document symbol that corresponds to the `file_id`.
+    pub fn symbols(&self, file_id: FileId) -> Cancellable<Option<Symbols>> {
+        self.with_db(|db| symbols::symbols(db, file_id))
     }
 
     /// Returns the hover information at `position`.

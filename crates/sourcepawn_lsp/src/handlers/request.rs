@@ -5,9 +5,9 @@ use base_db::FileRange;
 use ide::{CompletionKind, HoverAction, HoverGotoTypeData};
 use ide_db::SymbolKind;
 use lsp_types::{
-    SemanticTokensDeltaParams, SemanticTokensFullDeltaResult, SemanticTokensParams,
-    SemanticTokensRangeParams, SemanticTokensRangeResult, SemanticTokensResult, SignatureHelp,
-    SignatureHelpParams, Url,
+    DocumentSymbolResponse, SemanticTokensDeltaParams, SemanticTokensFullDeltaResult,
+    SemanticTokensParams, SemanticTokensRangeParams, SemanticTokensRangeResult,
+    SemanticTokensResult, SignatureHelp, SignatureHelpParams, Url,
 };
 use stdx::format_to;
 use vfs::FileId;
@@ -137,6 +137,22 @@ pub(crate) fn handle_rename(
     };
 
     Ok(Some(to_proto::workspace_edit(&snap, source_change)))
+}
+
+pub(crate) fn handle_symbol(
+    snap: GlobalStateSnapshot,
+    params: lsp_types::DocumentSymbolParams,
+) -> anyhow::Result<Option<DocumentSymbolResponse>> {
+    let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
+
+    let symbols = match snap.analysis.symbols(file_id)? {
+        None => return Ok(None),
+        Some(it) => it,
+    };
+
+    Ok(Some(DocumentSymbolResponse::Nested(
+        to_proto::document_symbols(&snap, symbols),
+    )))
 }
 
 pub(crate) fn handle_hover(

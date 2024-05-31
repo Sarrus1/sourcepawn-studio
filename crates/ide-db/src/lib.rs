@@ -2,6 +2,7 @@
 
 mod documentation;
 mod source_change;
+mod symbols;
 
 use std::{fmt, mem::ManuallyDrop, sync::Arc};
 
@@ -17,6 +18,7 @@ use vfs::FileId;
 
 pub use documentation::Documentation;
 pub use source_change::SourceChange;
+pub use symbols::{Symbol, SymbolId, Symbols, SymbolsBuilder};
 
 pub type Cancellable<T> = Result<T, Cancelled>;
 
@@ -173,6 +175,7 @@ pub enum SymbolKind {
     Macro,
     Function,
     Forward,
+    Native,
     Constructor,
     Destructor,
     Typedef,
