@@ -120,27 +120,15 @@ impl Graph {
 }
 
 impl Graph {
-    pub fn add_file_id(
-        &mut self,
-        source_id: FileId,
-        source_extension: FileExtension,
-        target_id: FileId,
-        target_extension: FileExtension,
-    ) {
-        let source = Node {
-            file_id: source_id,
-            extension: source_extension,
-        };
-        let target = Node {
-            file_id: target_id,
-            extension: target_extension,
-        };
-        self.edges.insert(Edge {
-            source: source.clone(),
-            target: target.clone(),
-        });
-        self.nodes.insert(source);
-        self.nodes.insert(target);
+    pub fn add_file(&mut self, file_id: FileId, extension: FileExtension) -> Node {
+        let node = Node { file_id, extension };
+        self.nodes.insert(node.clone());
+
+        node
+    }
+
+    pub fn add_file_include(&mut self, source: Node, target: Node) {
+        self.edges.insert(Edge { source, target });
     }
 
     fn get_adjacent_targets(&self) -> FxHashMap<Node, FxHashSet<Node>> {
@@ -156,24 +144,20 @@ impl Graph {
     }
 
     pub fn find_roots(&self) -> Vec<Node> {
-        let mut adj_map: FxHashMap<Node, (u32, u32)> = FxHashMap::default();
+        let mut parents_count: FxHashMap<Node, u32> = FxHashMap::default();
         for edge in self.edges.iter() {
-            adj_map
-                .entry(edge.source.clone())
-                .or_insert_with(|| (0, 0))
-                .1 += 1;
-            adj_map
+            parents_count
                 .entry(edge.target.clone())
-                .or_insert_with(|| (0, 0))
-                .0 += 1;
+                .and_modify(|e| *e += 1)
+                .or_insert(1);
         }
         for node in self.nodes.iter() {
-            adj_map.entry(node.clone()).or_insert_with(|| (0, 0));
+            parents_count.entry(node.clone()).or_default();
         }
-        adj_map
+        parents_count
             .iter()
-            .filter_map(|(node, (nb_source, nb_target))| {
-                if *nb_target != 0 || *nb_source == 0 {
+            .filter_map(|(node, nb_parents)| {
+                if *nb_parents == 0 {
                     Some(node.clone())
                 } else {
                     None
@@ -387,3 +371,66 @@ static COLORS: [&str; 88] = [
     "mediumslateblue",
     "mediumspringgreen",
 ];
+
+#[cfg(test)]
+mod test {
+    use vfs::FileId;
+
+    use crate::{FileExtension, Graph};
+
+    #[test]
+    fn test_single_file_1() {
+        let mut graph = Graph::default();
+        let file_1 = FileId::from(1);
+        let node_1 = graph.add_file(file_1, FileExtension::Sp);
+        assert_eq!(graph.find_roots(), vec![node_1]);
+    }
+
+    #[test]
+    fn test_single_file_2() {
+        let mut graph = Graph::default();
+        let file_1 = FileId::from(1);
+        let node_1 = graph.add_file(file_1, FileExtension::Inc);
+        assert_eq!(graph.find_roots(), vec![node_1]);
+    }
+
+    #[test]
+    fn test_simple_include_1() {
+        let mut graph = Graph::default();
+        let file_1 = FileId::from(1);
+        let file_2 = FileId::from(2);
+        let node_1 = graph.add_file(file_1, FileExtension::Sp);
+        let node_2 = graph.add_file(file_2, FileExtension::Sp);
+        graph.add_file_include(node_1.clone(), node_2);
+        assert_eq!(graph.find_roots(), vec![node_1]);
+    }
+
+    #[test]
+    fn test_simple_include_2() {
+        let mut graph = Graph::default();
+        let file_1 = FileId::from(1);
+        let file_2 = FileId::from(2);
+        let file_3 = FileId::from(3);
+        let file_4 = FileId::from(4);
+        let node_1 = graph.add_file(file_1, FileExtension::Sp);
+        let node_2 = graph.add_file(file_2, FileExtension::Sp);
+        let node_3 = graph.add_file(file_3, FileExtension::Sp);
+        let node_4 = graph.add_file(file_4, FileExtension::Sp);
+        graph.add_file_include(node_1.clone(), node_2.clone());
+        graph.add_file_include(node_2.clone(), node_3.clone());
+        graph.add_file_include(node_2.clone(), node_4.clone());
+        assert_eq!(graph.find_roots(), vec![node_1]);
+    }
+
+    #[test]
+    fn test_circular_include_1() {
+        let mut graph = Graph::default();
+        let file_1 = FileId::from(1);
+        let file_2 = FileId::from(2);
+        let node_1 = graph.add_file(file_1, FileExtension::Sp);
+        let node_2 = graph.add_file(file_2, FileExtension::Sp);
+        graph.add_file_include(node_1.clone(), node_2.clone());
+        graph.add_file_include(node_2.clone(), node_1.clone());
+        assert_eq!(graph.find_roots(), vec![]);
+    }
+}
