@@ -1,10 +1,12 @@
 use std::panic::AssertUnwindSafe;
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use base_db::FileRange;
 use ide::{CompletionKind, HoverAction, HoverGotoTypeData};
 use ide_db::SymbolKind;
 use lsp_types::{
+    CallHierarchyIncomingCall, CallHierarchyIncomingCallsParams, CallHierarchyItem,
+    CallHierarchyOutgoingCall, CallHierarchyOutgoingCallsParams, CallHierarchyPrepareParams,
     DocumentSymbolResponse, SemanticTokensDeltaParams, SemanticTokensFullDeltaResult,
     SemanticTokensParams, SemanticTokensRangeParams, SemanticTokensRangeResult,
     SemanticTokensResult, SignatureHelp, SignatureHelpParams, Url,
@@ -325,6 +327,58 @@ pub(crate) fn handle_semantic_tokens_range(
     let semantic_tokens = to_proto::semantic_tokens(&text, highlights);
 
     Ok(Some(semantic_tokens.into()))
+}
+
+pub(crate) fn handle_call_hierarchy_prepare(
+    snap: GlobalStateSnapshot,
+    params: CallHierarchyPrepareParams,
+) -> anyhow::Result<Option<Vec<CallHierarchyItem>>> {
+    let fpos = from_proto::file_position(&snap, params.text_document_position_params)?;
+
+    let call_items = match snap.analysis.call_hierarchy_prepare(fpos)? {
+        Some(it) => it,
+        None => return Ok(None),
+    };
+
+    Ok(Some(to_proto::call_hierarchy_items(&snap, call_items)))
+}
+
+pub(crate) fn handle_call_hierarchy_incoming(
+    snap: GlobalStateSnapshot,
+    params: CallHierarchyIncomingCallsParams,
+) -> anyhow::Result<Option<Vec<CallHierarchyIncomingCall>>> {
+    let mut item = params.item;
+
+    let Some(data) = item.data.take() else {
+        bail!("no data attached to the incoming item");
+    };
+    let Some(incoming_items) = snap.analysis.call_hierarchy_incoming(data)? else {
+        bail!("could not resolve incoming calls");
+    };
+
+    Ok(Some(to_proto::call_hierarchy_incoming(
+        &snap,
+        incoming_items,
+    )))
+}
+
+pub(crate) fn handle_call_hierarchy_outgoing(
+    snap: GlobalStateSnapshot,
+    params: CallHierarchyOutgoingCallsParams,
+) -> anyhow::Result<Option<Vec<CallHierarchyOutgoingCall>>> {
+    let mut item = params.item;
+
+    let Some(data) = item.data.take() else {
+        bail!("no data attached to the incoming item");
+    };
+    let Some(outgoing_items) = snap.analysis.call_hierarchy_outgoing(data)? else {
+        bail!("could not resolve incoming calls");
+    };
+
+    Ok(Some(to_proto::call_hierarchy_outgoing(
+        &snap,
+        outgoing_items,
+    )))
 }
 
 pub(crate) fn handle_syntax_tree(

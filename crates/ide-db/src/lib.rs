@@ -1,5 +1,6 @@
 //! base_db defines basic database traits. The concrete DB is defined by ide.
 
+mod call_item;
 mod documentation;
 mod source_change;
 mod symbols;
@@ -16,6 +17,7 @@ use hir_def::DefDatabase;
 use salsa::{Cancelled, Durability};
 use vfs::FileId;
 
+pub use call_item::{CallItem, IncomingCallItem, OutgoingCallItem};
 pub use documentation::Documentation;
 pub use source_change::SourceChange;
 pub use symbols::{Symbol, SymbolId, Symbols, SymbolsBuilder};

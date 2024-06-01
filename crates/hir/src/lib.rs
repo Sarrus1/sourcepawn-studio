@@ -20,6 +20,7 @@ use serde::{
 };
 use stdx::impl_from;
 use syntax::TSKind;
+use tree_sitter::Node;
 use vfs::FileId;
 
 pub mod db;
@@ -579,6 +580,16 @@ impl Function {
         res
     }
 
+    pub fn signature(self, node: &Node, source: &str) -> Option<String> {
+        node.child_by_field_name("parameters")
+            .and_then(|params_node| {
+                params_node
+                    .utf8_text(source.as_bytes())
+                    .ok()
+                    .map(String::from)
+            })
+    }
+
     pub fn render(self, db: &dyn HirDatabase) -> Option<String> {
         let data = db.function_data(self.id);
 
@@ -606,18 +617,8 @@ impl Function {
         let node = self.source(db, &tree)?;
         let source = db.preprocessed_text(file_id);
 
-        if let Some(params) = node
-            .value
-            .child_by_field_name("parameters")
-            .and_then(|params_node| {
-                params_node
-                    .utf8_text(source.as_bytes())
-                    .ok()
-                    .map(String::from)
-            })
-        {
-            buf.push_str(&params);
-        }
+        buf.push_str(&self.signature(&node.value, &source).unwrap_or_default());
+
         let Some(parent) = node.value.parent() else {
             return buf.to_string().into();
         };

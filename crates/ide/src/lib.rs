@@ -1,5 +1,6 @@
 //! base_db defines basic database traits. The concrete DB is defined by ide.
 
+mod call_hierarchy;
 mod completion;
 mod events;
 mod goto_definition;
@@ -19,10 +20,10 @@ use base_db::{
     Change, FileExtension, FilePosition, FileRange, Graph, SourceDatabase, SourceDatabaseExt, Tree,
 };
 use fxhash::FxHashMap;
-use hir::DefResolution;
+use hir::{DefResolution, Function};
 use hir_def::{print_item_tree, DefDatabase};
 use hover::HoverResult;
-use ide_db::{RootDatabase, SourceChange, Symbols};
+use ide_db::{CallItem, IncomingCallItem, OutgoingCallItem, RootDatabase, SourceChange, Symbols};
 use itertools::Itertools;
 use lsp_types::Url;
 use paths::AbsPathBuf;
@@ -281,5 +282,27 @@ impl Analysis {
     /// Computes syntax highlighting for the given file range.
     pub fn highlight_range(&self, frange: FileRange) -> Cancellable<Vec<HlRange>> {
         self.with_db(|db| syntax_highlighting::highlight(db, frange.file_id, Some(frange.range)))
+    }
+
+    pub fn call_hierarchy_prepare(&self, fpos: FilePosition) -> Cancellable<Option<Vec<CallItem>>> {
+        self.with_db(|db| call_hierarchy::call_hierarchy_prepare(db, fpos))
+    }
+
+    pub fn call_hierarchy_incoming(
+        &self,
+        data: Value,
+    ) -> Cancellable<Option<Vec<IncomingCallItem>>> {
+        let func: Function =
+            serde_json::from_value(data).expect("failed to deserialize call_hierarchy_data");
+        self.with_db(|db| call_hierarchy::call_hierarchy_incoming(db, func))
+    }
+
+    pub fn call_hierarchy_outgoing(
+        &self,
+        data: Value,
+    ) -> Cancellable<Option<Vec<OutgoingCallItem>>> {
+        let func: Function =
+            serde_json::from_value(data).expect("failed to deserialize call_hierarchy_data");
+        self.with_db(|db| call_hierarchy::call_hierarchy_outgoing(db, func))
     }
 }

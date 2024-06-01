@@ -8,7 +8,9 @@ use ide::{
     Cancellable, CompletionKind, Highlight, HlMod, HlRange, HlTag, Markup, NavigationTarget,
     Severity, SignatureHelp,
 };
-use ide_db::{SourceChange, SymbolId, SymbolKind, Symbols};
+use ide_db::{
+    CallItem, IncomingCallItem, OutgoingCallItem, SourceChange, SymbolId, SymbolKind, Symbols,
+};
 use itertools::Itertools;
 use lsp_types::TextEdit;
 use paths::AbsPath;
@@ -387,6 +389,68 @@ fn document_symbol(idx: &SymbolId, symbols: &Symbols) -> lsp_types::DocumentSymb
                 .collect_vec()
                 .into()
         },
+    }
+}
+
+pub(crate) fn call_hierarchy_outgoing(
+    snap: &GlobalStateSnapshot,
+    outgoing_items: Vec<OutgoingCallItem>,
+) -> Vec<lsp_types::CallHierarchyOutgoingCall> {
+    outgoing_items
+        .into_iter()
+        .map(|item| lsp_types::CallHierarchyOutgoingCall {
+            to: call_hierarchy_item(snap, item.call_item),
+            from_ranges: item.ranges,
+        })
+        .collect()
+}
+
+pub(crate) fn call_hierarchy_incoming(
+    snap: &GlobalStateSnapshot,
+    incoming_items: Vec<IncomingCallItem>,
+) -> Vec<lsp_types::CallHierarchyIncomingCall> {
+    incoming_items
+        .into_iter()
+        .map(|item| lsp_types::CallHierarchyIncomingCall {
+            from: call_hierarchy_item(snap, item.call_item),
+            from_ranges: item.ranges,
+        })
+        .collect()
+}
+
+pub(crate) fn call_hierarchy_items(
+    snap: &GlobalStateSnapshot,
+    call_items: Vec<CallItem>,
+) -> Vec<lsp_types::CallHierarchyItem> {
+    call_items
+        .into_iter()
+        .map(|call_item| call_hierarchy_item(snap, call_item))
+        .collect()
+}
+
+fn call_hierarchy_item(
+    snap: &GlobalStateSnapshot,
+    call_item: CallItem,
+) -> lsp_types::CallHierarchyItem {
+    lsp_types::CallHierarchyItem {
+        name: call_item.name.to_string(),
+        kind: match call_item.kind {
+            SymbolKind::Method | SymbolKind::Constructor | SymbolKind::Destructor => {
+                lsp_types::SymbolKind::METHOD
+            }
+            SymbolKind::Function => lsp_types::SymbolKind::FUNCTION,
+            _ => unreachable!(),
+        },
+        tags: if call_item.deprecated {
+            Some(vec![lsp_types::SymbolTag::DEPRECATED])
+        } else {
+            None
+        },
+        detail: call_item.details,
+        uri: url(snap, call_item.file_id),
+        range: call_item.full_range,
+        selection_range: call_item.focus_range.unwrap_or(call_item.full_range),
+        data: call_item.data.and_then(|it| serde_json::to_value(it).ok()),
     }
 }
 
