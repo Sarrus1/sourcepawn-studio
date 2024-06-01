@@ -81,13 +81,10 @@ impl Documentation {
                 }
                 if let Some(prev_node) = node.prev_sibling() {
                     if TSKind::from(prev_node) == TSKind::preproc_pragma {
-                        pragma = Some(
-                            prev_node
-                                .utf8_text(source)
-                                .ok()?
-                                .trim_start_matches("#pragma deprecated")
-                                .trim(),
-                        );
+                        let text = prev_node.utf8_text(source).ok()?;
+                        if text.starts_with("#pragma deprecated") {
+                            pragma = Some(text.trim_start_matches("#pragma deprecated").trim());
+                        }
                     }
                 }
                 while let Some(next_node) = node.next_sibling() {
@@ -159,13 +156,10 @@ impl Documentation {
                         if pragma.is_some() {
                             break;
                         }
-                        pragma = Some(
-                            prev_node
-                                .utf8_text(source)
-                                .ok()?
-                                .trim_start_matches("#pragma deprecated")
-                                .trim(),
-                        );
+                        let text = prev_node.utf8_text(source).ok()?;
+                        if text.starts_with("#pragma deprecated") {
+                            pragma = Some(text.trim_start_matches("#pragma deprecated").trim());
+                        }
                         node = prev_node;
                         continue;
                     }
