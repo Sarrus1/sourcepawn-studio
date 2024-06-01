@@ -178,14 +178,7 @@ pub(crate) fn highlight(
                 highlight: Highlight::new(HlTag::Comment),
             }),
             TokenKind::Literal(lit) => match lit {
-                Literal::StringLiteral => Some(HlRange {
-                    range: symbol.range,
-                    highlight: Highlight::new(HlTag::StringLiteral),
-                }),
-                Literal::CharLiteral => Some(HlRange {
-                    range: symbol.range,
-                    highlight: Highlight::new(HlTag::CharLiteral),
-                }),
+                Literal::StringLiteral | Literal::CharLiteral => None, // FIXME: We can handle this but it overrides escaped characters.
                 Literal::FloatLiteral => Some(HlRange {
                     range: symbol.range,
                     highlight: Highlight::new(HlTag::FloatLiteral),
