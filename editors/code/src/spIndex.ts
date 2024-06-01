@@ -85,6 +85,8 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   }
 
+  migrateSettings();
+
   vscode.workspace.onDidOpenTextDocument(didOpenTextDocument);
   vscode.workspace.textDocuments.forEach(didOpenTextDocument);
   vscode.workspace.onDidChangeWorkspaceFolders((event) => {
@@ -159,6 +161,22 @@ export async function activate(context: vscode.ExtensionContext) {
       lastActiveEditor = editor;
     }
   })
+}
+
+// TODO: Remove after migration is done
+function migrateSettings() {
+  const oldIncludeDirs = vscode.workspace.getConfiguration(Section.LSP).get<string[]>("includesDirectories", []);
+  const newIncludeDirs = vscode.workspace.getConfiguration(Section.LSP).get<string[]>("includeDirectories", []);
+  console.log(newIncludeDirs)
+  if (newIncludeDirs.length === 0) {
+    vscode.workspace.getConfiguration(Section.LSP).update("includeDirectories", oldIncludeDirs, true);
+  }
+
+  const oldPath = vscode.workspace.getConfiguration(Section.LSP).get<string>("spcompPath", "");
+  const newPath = vscode.workspace.getConfiguration(Section.LSP).get<string>("compiler.path", "");
+  if (newPath === null) {
+    vscode.workspace.getConfiguration(Section.LSP).update("compiler.path", oldPath, true);
+  }
 }
 
 export function getCtxFromUri(uri: URI): Ctx | undefined {
