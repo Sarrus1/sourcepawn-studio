@@ -5,7 +5,7 @@ use std::{cell::RefCell, fmt, ops, sync::Arc};
 use base_db::{is_field_receiver_node, is_name_node, FilePosition, FileRange, Tree};
 use hir_def::{
     resolve_include_node,
-    resolver::{global_resolver, ValueNs},
+    resolver::{global_resolver, HasResolver, ValueNs},
     FileDefId, FunctionId, InFile, Name, NodePtr, PropertyItem,
 };
 use itertools::Itertools;
@@ -144,6 +144,16 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 .macro_to_def(src)
                 .map(Macro::from)
                 .map(DefResolution::Macro),
+            TSKind::preproc_undefine => {
+                let source = self.file_text(file_id);
+                let ValueNs::MacroId(id) = file_id
+                    .resolver(self.db)
+                    .resolve_ident(node.utf8_text(source.as_bytes()).ok()?)?
+                else {
+                    return None;
+                };
+                DefResolution::Macro(Macro::from(id.value)).into()
+            }
             TSKind::r#enum => self
                 .enum_to_def(src)
                 .map(Enum::from)
