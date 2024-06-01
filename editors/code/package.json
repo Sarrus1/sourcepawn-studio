@@ -475,7 +475,7 @@
           ]
         },
         "SourcePawnLanguageServer.hover.actions.debug.enable": {
-          "markdownDescription": "Whether to show `Debug` action. Only applies when\n`#sourcepawn-lsp.hover.actions.enable#` is set.",
+          "markdownDescription": "Whether to show `Debug` action. Only applies when\n`sourcepawn-lsp.hover.actions.enable` is set.",
           "default": true,
           "type": "boolean"
         },
@@ -485,7 +485,7 @@
           "type": "boolean"
         },
         "SourcePawnLanguageServer.hover.actions.gotoTypeDef.enable": {
-          "markdownDescription": "Whether to show `Go to Type Definition` action. Only applies when\n`#sourcepawn-lsp.hover.actions.enable#` is set.",
+          "markdownDescription": "Whether to show `Go to Type Definition` action. Only applies when\n[`hover.actions.enable`](#hoveractionsenable) is set.",
           "default": true,
           "type": "boolean"
         },

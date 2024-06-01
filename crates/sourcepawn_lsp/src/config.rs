@@ -53,12 +53,12 @@ config_data! {
         eventsGameName: Option<String> = "null",
 
         /// Whether to show `Debug` action. Only applies when
-        /// `#sourcepawn-lsp.hover.actions.enable#` is set.
+        /// `sourcepawn-lsp.hover.actions.enable` is set.
         hover_actions_debug_enable: bool           = "true",
         /// Whether to show HoverActions in Sourcepawn files.
         hover_actions_enable: bool          = "true",
         /// Whether to show `Go to Type Definition` action. Only applies when
-        /// `#sourcepawn-lsp.hover.actions.enable#` is set.
+        /// [`hover.actions.enable`](#hoveractionsenable) is set.
         hover_actions_gotoTypeDef_enable: bool     = "true",
         /// Whether to show `Implementations` action. Only applies when
         /// `#sourcepawn-lsp.hover.actions.enable#` is set.
@@ -578,23 +578,19 @@ fn manual(fields: &[(&'static str, &'static str, &[&str], &str)]) -> String {
         .iter()
         .map(|(field, _ty, doc, default)| {
             let name = format!("SourcePawnLanguageServer.{}", field.replace('_', "."));
+            let field = field.replace('_', ".");
             let doc = doc_comment_to_string(doc);
-            if default.contains('\n') {
-                format!(
-                    r#"[[{name}]]{name}::
-+
---
-Default:
-----
-{default}
-----
+            format!(
+                r#"## {field}
+
+**{name}**
+
 {doc}
---
-"#
-                )
-            } else {
-                format!("[[{name}]]{name} (default: `{default}`)::\n+\n--\n{doc}--\n")
-            }
+
+_Default_: `{default}`
+
+            "#
+            )
         })
         .collect::<String>()
 }
@@ -672,7 +668,7 @@ mod tests {
 
     #[test]
     fn generate_config_documentation() {
-        let docs_path = project_root().join("docs/user/generated_config.adoc");
+        let docs_path = project_root().join("docs/docs/configuration/settings.md");
         let expected = ConfigData::manual();
         ensure_file_contents(&docs_path, &expected);
     }
