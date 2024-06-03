@@ -12,7 +12,7 @@ For VSCode, install the extension from the [Marketplace](https://marketplace.vis
 
 Once the VSCode extension is installed, the quickest way to setup your Sourcemod environment is to press `Ctrl + Shift + P` and type `SM: Install Sourcemod`, press enter and choose the version you wish to use. This will download and configure the desired latest build of `spcomp` and the Sourcemod includes.
 
-For more information see the [Configuration](./configuration.md) section.
+For more information see the [Configuration](./configuration/generated_settings.md) section.
 
 ## Editing a project
 
