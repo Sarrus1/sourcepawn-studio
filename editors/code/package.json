@@ -475,7 +475,7 @@
           ]
         },
         "SourcePawnLanguageServer.hover.actions.debug.enable": {
-          "markdownDescription": "Whether to show `Debug` action. Only applies when\n`sourcepawn-lsp.hover.actions.enable` is set.",
+          "markdownDescription": "Whether to show `Debug` action. Only applies when\n`#SourcePawnLanguageServer.hover.actions.enable#` is set.",
           "default": true,
           "type": "boolean"
         },
@@ -485,22 +485,22 @@
           "type": "boolean"
         },
         "SourcePawnLanguageServer.hover.actions.gotoTypeDef.enable": {
-          "markdownDescription": "Whether to show `Go to Type Definition` action. Only applies when\n[`hover.actions.enable`](#hoveractionsenable) is set.",
+          "markdownDescription": "Whether to show `Go to Type Definition` action. Only applies when\n`#SourcePawnLanguageServer.hover.actions.enable#` is set.",
           "default": true,
           "type": "boolean"
         },
         "SourcePawnLanguageServer.hover.actions.implementations.enable": {
-          "markdownDescription": "Whether to show `Implementations` action. Only applies when\n`#sourcepawn-lsp.hover.actions.enable#` is set.",
+          "markdownDescription": "Whether to show `Implementations` action. Only applies when\n`#SourcePawnLanguageServer.hover.actions.enable#` is set.",
           "default": true,
           "type": "boolean"
         },
         "SourcePawnLanguageServer.hover.actions.references.enable": {
-          "markdownDescription": "Whether to show `References` action. Only applies when\n`#sourcepawn-lsp.hover.actions.enable#` is set.",
+          "markdownDescription": "Whether to show `References` action. Only applies when\n`#SourcePawnLanguageServer.hover.actions.enable#` is set.",
           "default": false,
           "type": "boolean"
         },
         "SourcePawnLanguageServer.hover.actions.run.enable": {
-          "markdownDescription": "Whether to show `Run` action. Only applies when\n`#sourcepawn-lsp.hover.actions.enable#` is set.",
+          "markdownDescription": "Whether to show `Run` action. Only applies when\n`#SourcePawnLanguageServer.hover.actions.enable#` is set.",
           "default": true,
           "type": "boolean"
         },

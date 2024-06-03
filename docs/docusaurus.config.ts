@@ -4,8 +4,8 @@ import type * as Preset from "@docusaurus/preset-classic";
 
 const config: Config = {
   title: "SourcePawn VSCode",
-  tagline: "An LSP implementation for SourcePawn, written in Rust 🦀",
-  favicon: "img/favicon.ico",
+  tagline: "Language Server for SourcePawn, written in Rust 🦀",
+  favicon: "img/sm.png",
 
   // Set the production url of your site here
   url: "https://sarrus1.github.io",
@@ -40,13 +40,7 @@ const config: Config = {
           editUrl:
             "https://github.com/Sarrus1/sourcepawn-vscode/tree/main/docs/docs/",
         },
-        blog: {
-          showReadingTime: true,
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            "https://github.com/Sarrus1/sourcepawn-vscode/tree/main/docs/docs/",
-        },
+        blog: false,
         theme: {
           customCss: "./src/css/custom.css",
         },
@@ -61,16 +55,21 @@ const config: Config = {
       title: "SourcePawn VSCode",
       logo: {
         alt: "SourcePawn VSCode Logo",
-        src: "img/logo.png",
+        src: "img/sm.png",
       },
       items: [
         {
           type: "docSidebar",
-          sidebarId: "tutorialSidebar",
+          sidebarId: "docSidebar",
           position: "left",
-          label: "Tutorial",
+          label: "User Guide",
         },
-        { to: "/blog", label: "Blog", position: "left" },
+        // {
+        //   type: "docSidebar",
+        //   sidebarId: "docSidebar",
+        //   position: "left",
+        //   label: "Developer Guide",
+        // },
         {
           href: "https://github.com/Sarrus1/sourcepawn-vscode",
           label: "GitHub",

@@ -53,21 +53,21 @@ config_data! {
         eventsGameName: Option<String> = "null",
 
         /// Whether to show `Debug` action. Only applies when
-        /// `sourcepawn-lsp.hover.actions.enable` is set.
+        /// `#SourcePawnLanguageServer.hover.actions.enable#` is set.
         hover_actions_debug_enable: bool           = "true",
         /// Whether to show HoverActions in Sourcepawn files.
         hover_actions_enable: bool          = "true",
         /// Whether to show `Go to Type Definition` action. Only applies when
-        /// [`hover.actions.enable`](#hoveractionsenable) is set.
+        /// `#SourcePawnLanguageServer.hover.actions.enable#` is set.
         hover_actions_gotoTypeDef_enable: bool     = "true",
         /// Whether to show `Implementations` action. Only applies when
-        /// `#sourcepawn-lsp.hover.actions.enable#` is set.
+        /// `#SourcePawnLanguageServer.hover.actions.enable#` is set.
         hover_actions_implementations_enable: bool = "true",
         /// Whether to show `References` action. Only applies when
-        /// `#sourcepawn-lsp.hover.actions.enable#` is set.
+        /// `#SourcePawnLanguageServer.hover.actions.enable#` is set.
         hover_actions_references_enable: bool      = "false",
         /// Whether to show `Run` action. Only applies when
-        /// `#sourcepawn-lsp.hover.actions.enable#` is set.
+        /// `#SourcePawnLanguageServer.hover.actions.enable#` is set.
         hover_actions_run_enable: bool             = "true",
 
         /// Include directories paths for the compiler and the linter.
@@ -579,26 +579,44 @@ fn manual(fields: &[(&'static str, &'static str, &[&str], &str)]) -> String {
         .map(|(field, _ty, doc, default)| {
             let name = format!("SourcePawnLanguageServer.{}", field.replace('_', "."));
             let field = field.replace('_', ".");
-            let doc = doc_comment_to_string(doc);
+            let doc = doc_comment_to_md_doc(&doc_comment_to_string(doc));
             format!(
                 r#"## {field}
 
 **{name}**
 
 {doc}
-
 _Default_: `{default}`
 
-            "#
+"#
             )
         })
-        .collect::<String>()
+        .fold(String::new(), |acc, it| acc + &it)
 }
 
 fn doc_comment_to_string(doc: &[&str]) -> String {
     doc.iter()
         .map(|it| it.strip_prefix(' ').unwrap_or(it))
         .fold(String::new(), |acc, it| acc + it + "\n")
+}
+
+fn doc_comment_to_md_doc(input: &str) -> String {
+    let pattern_start = "`#";
+    let pattern_end = "#`";
+
+    if let Some(start_index) = input.find(pattern_start) {
+        if let Some(end_index) = input.find(pattern_end) {
+            let key = &input[start_index + pattern_start.len()..end_index];
+            let link = format!(
+                "[`{}`](#{})",
+                key,
+                key.replace("SourcePawnLanguageServer", "").replace('.', "")
+            );
+            return input.replace(&format!("{}{}{}", pattern_start, key, pattern_end), &link);
+        }
+    }
+
+    input.to_string()
 }
 
 #[cfg(test)]
@@ -609,6 +627,8 @@ mod tests {
     use test_utils::{ensure_file_contents, project_root};
 
     use super::*;
+
+    static CONFIG_TEMPLATE_PATH: &str = "editors/code/package_template.json";
 
     #[test]
     fn generate_package_json_config() {
@@ -638,7 +658,7 @@ mod tests {
             }
         }
 
-        let package_template_json_path = project_root().join("editors/code/package_template.json");
+        let package_template_json_path = project_root().join(CONFIG_TEMPLATE_PATH);
         let package_json_path = project_root().join("editors/code/package.json");
         let mut package_json = fs::read_to_string(package_template_json_path).unwrap();
 
@@ -668,8 +688,71 @@ mod tests {
 
     #[test]
     fn generate_config_documentation() {
-        let docs_path = project_root().join("docs/docs/configuration/settings.md");
-        let expected = ConfigData::manual();
+        let docs_path = project_root().join("docs/docs/configuration/generated_settings.md");
+        let expected = format!(
+            r#"---
+id: lsp-settings-reference
+title: Server Settings Reference
+---
+
+{}"#,
+            ConfigData::manual()
+        );
+        ensure_file_contents(&docs_path, &expected);
+    }
+
+    #[test]
+    fn generate_vscode_config_documentation() {
+        let docs_path = project_root().join("docs/docs/configuration/generated_vscode_settings.md");
+
+        let package_template_json_path = project_root().join(CONFIG_TEMPLATE_PATH);
+        let mut package_json = fs::read_to_string(package_template_json_path).unwrap();
+
+        // Parse the package.json and insert the schema.
+        let mut config = serde_json::from_str::<Value>(&package_json).unwrap();
+        let mut config = config
+            .get_mut("contributes")
+            .unwrap()
+            .get_mut("configuration")
+            .unwrap()
+            .get_mut("properties")
+            .unwrap()
+            .as_object_mut()
+            .unwrap();
+
+        let expected = config
+            .iter()
+            .map(|(field, value)| {
+                let name = field.replace('_', ".");
+                let field = field.replace("sourcepawn.", "").replace('_', ".");
+                let doc = value.get("description").unwrap().as_str().unwrap();
+                let default = value
+                    .get("default")
+                    .map(|it| it.to_string())
+                    .unwrap_or_default();
+                format!(
+                    r#"## {field}
+
+**{name}**
+
+{doc}
+
+_Default_: `{default}`
+
+"#
+                )
+            })
+            .fold(String::new(), |acc, it| acc + &it);
+
+        let expected = format!(
+            r#"---
+id: vscode-settings-reference
+title: VSCode Settings Reference
+---
+
+{}"#,
+            expected
+        );
         ensure_file_contents(&docs_path, &expected);
     }
 
