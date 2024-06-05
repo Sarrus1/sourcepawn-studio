@@ -3,9 +3,9 @@ import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 
 const config: Config = {
-  title: "SourcePawn VSCode",
+  title: "SourcePawn Studio",
   tagline: "Language Server for SourcePawn, written in Rust 🦀",
-  favicon: "img/sm.png",
+  favicon: "img/sp-studio_square_128x128.png",
 
   // Set the production url of your site here
   url: "https://sarrus1.github.io",
@@ -52,10 +52,10 @@ const config: Config = {
     // Replace with your project's social card
     image: "img/docusaurus-social-card.jpg",
     navbar: {
-      title: "SourcePawn VSCode",
+      title: "SourcePawn Studio",
       logo: {
-        alt: "SourcePawn VSCode Logo",
-        src: "img/sm.png",
+        alt: "SourcePawn Studio Logo",
+        src: "img/sp-studio_square_256x256_alpha.png",
       },
       items: [
         {
@@ -84,8 +84,8 @@ const config: Config = {
           title: "Docs",
           items: [
             {
-              label: "Tutorial",
-              to: "/docs/intro",
+              label: "Quick Start",
+              to: "/docs/quick-start",
             },
           ],
         },

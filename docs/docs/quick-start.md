@@ -6,7 +6,18 @@ sidebar_position: 1
 
 ## Installation
 
-For VSCode, install the extension from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=Sarrus.sourcepawn-vscode). Pre-built LSP binaries are shipped with each [release](https://github.com/Sarrus1/sourcepawn-vscode/releases/latest).
+### Visual Studio Code
+
+1. [Install VSCode](https://code.visualstudio.com/) if you haven't done so already.
+2. Download and install the extension from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=Sarrus.sourcepawn-vscode). Clicking on _Install_ should open VSCode and automatically install the extension for you.
+
+### VSCodium
+
+We publish the exact same version of the VSCode extension to [https://open-vsx.org/](https://open-vsx.org/). You can install the extension with the exact same feature as VSCode, using VSCodium.
+
+### Other LSP Clients (Neovim, Lapce)
+
+LSP binaries are shipped with each [release](https://github.com/Sarrus1/sourcepawn-vscode/releases/latest).
 
 ## Configuration
 
