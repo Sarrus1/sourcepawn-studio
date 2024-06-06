@@ -50,7 +50,7 @@ const config: Config = {
 
   themeConfig: {
     // Replace with your project's social card
-    image: "img/docusaurus-social-card.jpg",
+    image: "img/sp-studio-social-card_500.png",
     navbar: {
       title: "SourcePawn Studio",
       logo: {
