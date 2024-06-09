@@ -29,22 +29,16 @@ pub fn event_name(node: &Node, source: &str) -> Option<String> {
     if TSKind::from(node) != TSKind::string_literal {
         return None;
     }
-    let Some(prev_sibling) = node.prev_sibling() else {
-        return None;
-    };
+    let prev_sibling = node.prev_sibling()?;
     if TSKind::from(&prev_sibling) != TSKind::anon_LPAREN {
         // Not element of a function call, cannot be an event name
         return None;
     }
-    let Some(parent) = node.parent() else {
-        return None;
-    };
+    let parent = node.parent()?;
     if TSKind::from(&parent) != TSKind::call_arguments {
         return None;
     }
-    let Some(function) = parent.prev_named_sibling() else {
-        return None;
-    };
+    let function = parent.prev_named_sibling()?;
     if TSKind::from(&function) != TSKind::identifier {
         return None;
     }

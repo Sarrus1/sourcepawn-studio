@@ -167,7 +167,6 @@ export async function activate(context: vscode.ExtensionContext) {
 function migrateSettings() {
   const oldIncludeDirs = vscode.workspace.getConfiguration(Section.LSP).get<string[]>("includesDirectories", []);
   const newIncludeDirs = vscode.workspace.getConfiguration(Section.LSP).get<string[]>("includeDirectories", []);
-  console.log(newIncludeDirs)
   if (newIncludeDirs.length === 0) {
     vscode.workspace.getConfiguration(Section.LSP).update("includeDirectories", oldIncludeDirs, true);
   }
