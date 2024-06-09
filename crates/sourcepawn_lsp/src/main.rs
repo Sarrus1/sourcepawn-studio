@@ -112,6 +112,7 @@ fn setup_logger(opts: Opts) {
             OpenOptions::new()
                 .write(true)
                 .create(true)
+                .truncate(true)
                 .open(log_file)
                 .expect("failed to open log file"),
         ),

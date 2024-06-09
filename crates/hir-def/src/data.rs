@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use fxhash::FxHashMap;
+use fxhash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
 use la_arena::{Arena, ArenaMap, Idx};
 use smol_str::ToSmolStr;
@@ -147,6 +147,8 @@ pub struct MethodmapData {
     pub name: Name,
     pub items: Arc<Arena<MethodmapItemData>>,
     pub items_map: Arc<FxHashMap<Name, Idx<MethodmapItemData>>>,
+    /// Items that were inherited
+    pub inherited_items: Arc<FxHashSet<Idx<MethodmapItemData>>>,
     pub extension: Option<MethodmapExtension>,
     pub inherits: Option<MethodmapId>,
     pub constructor: Option<Idx<MethodmapItemData>>,
@@ -240,6 +242,7 @@ impl MethodmapData {
         let mut inherits_id = None;
         let mut constructor = None;
         let mut destructor = None;
+        let mut inherited_items: FxHashSet<Idx<MethodmapItemData>> = FxHashSet::default();
         if let Some(inherits_name) = methodmap.inherits.clone() {
             let resolver = global_resolver(db, loc.file_id());
             if let Some(inherits) = resolver.resolve_ident(inherits_name.to_string().as_str()) {
@@ -260,6 +263,7 @@ impl MethodmapData {
                             })
                             .map(|(k, v)| (k.clone(), items.alloc(inherits_data.item(*v).clone()))),
                     );
+                    inherited_items.extend(inherits_data.items_map.values());
                 } else {
                     diags.push(DefDiagnostic::UnresolvedInherit {
                         inherit_name: inherits_name,
@@ -347,6 +351,7 @@ impl MethodmapData {
             name: methodmap.name.clone(),
             items: Arc::new(items),
             items_map: Arc::new(items_map),
+            inherited_items: Arc::new(inherited_items),
             extension: MethodmapExtension::from(methodmap.inherits.clone(), methodmap.nullable),
             inherits: inherits_id,
             constructor,
@@ -415,6 +420,15 @@ impl MethodmapData {
             MethodmapItemData::Static(id) => Some(*id),
             _ => None,
         })
+    }
+
+    /// Items that were not inherited.
+    pub fn local_items(
+        &self,
+    ) -> impl Iterator<Item = (Idx<MethodmapItemData>, &MethodmapItemData)> + '_ {
+        self.items
+            .iter()
+            .filter(|(idx, _)| !self.inherited_items.contains(idx))
     }
 
     pub fn methods(&self) -> impl Iterator<Item = FunctionId> + '_ {

@@ -152,7 +152,7 @@ impl ChildBySource for MethodmapId {
     fn child_by_source_to(&self, db: &dyn DefDatabase, map: &mut DynMap, file_id: FileId) {
         let data = db.methodmap_data(*self);
         let ast_id_map = db.ast_id_map(file_id);
-        data.items.iter().for_each(|(_, item)| match item {
+        data.local_items().for_each(|(_, item)| match item {
             MethodmapItemData::Property(PropertyData {
                 id,
                 getters_setters,

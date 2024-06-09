@@ -147,6 +147,27 @@ void main() {
 }
 
 #[test]
+fn methodmap_method_8() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+methodmap Foo < Bar {
+    public void foo() {}
+                 |
+                 ^
+}
+
+%! bar.sp
+methodmap Bar {
+    public void Bar1() {}
+    public void Bar2() {}
+    public void Bar3() {}
+}
+"#,
+    ));
+}
+
+#[test]
 fn methodmap_native_method_1() {
     assert_json_snapshot!(goto_definition(
         r#"
