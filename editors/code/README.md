@@ -52,7 +52,7 @@
   </p>
 </div>
 
-![Example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/example.gif)
+![Example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/showcase.gif)
 
 ## Features
 

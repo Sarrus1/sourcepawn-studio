@@ -40,10 +40,29 @@ function Feature({ title, Svg, description }: FeatureItem) {
   );
 }
 
+function Showcase(): JSX.Element {
+  return (
+    <div className="row">
+      <div className={clsx("col")}>
+        <img
+          src="img/showcase-1.gif"
+          style={{
+            maxHeight: "50vh",
+            display: "block",
+            marginLeft: "auto",
+            marginRight: "auto",
+          }}
+        ></img>
+      </div>
+    </div>
+  );
+}
+
 export default function HomepageFeatures(): JSX.Element {
   return (
     <section className={styles.features}>
       <div className="container">
+        <Showcase />
         <div className="row">
           {FeatureList.map((props, idx) => (
             <Feature key={idx} {...props} />

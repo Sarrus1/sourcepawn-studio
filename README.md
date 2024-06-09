@@ -30,7 +30,7 @@
   <br>
   <br>
   <p>
-    <img alt="Example" src="https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/images/example.gif">
+    <img alt="Example" src="https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/images/showcase.gif">
   </p>
   <!-- <img src="https://raw.githubusercontent.com/Sarrus1/sourcepawn-lsp/main/img/logo.png" alt="Logo"> -->
 </div>
