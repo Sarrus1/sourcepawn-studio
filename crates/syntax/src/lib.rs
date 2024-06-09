@@ -75,3 +75,13 @@ pub fn range_contains_pos(range: &Range, position: &Position) -> bool {
 
     true
 }
+
+/// Returns true if a [Range] is contained in a [Range].
+///
+/// # Arguments
+///
+/// * `a` - [Range] which contains.
+/// * `b` - [Range] which is contained.
+pub fn range_contains_range(a: &Range, b: &Range) -> bool {
+    range_contains_pos(a, &b.start) && range_contains_pos(a, &b.end)
+}

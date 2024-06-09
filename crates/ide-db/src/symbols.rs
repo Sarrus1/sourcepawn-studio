@@ -261,13 +261,7 @@ impl<'a> SymbolsBuilder<'a> {
             name,
             kind: SymbolKind::Property,
             full_range: self.s_range(&node.range()),
-            focus_range: self
-                .s_range(
-                    &name_node
-                        .map(|node| node.range())
-                        .unwrap_or_else(|| node.range()),
-                )
-                .into(),
+            focus_range: name_node.map(|node| self.s_range(&node.range())),
             children,
             details: None,
             deprecated: self.is_deprecated(node),
@@ -367,13 +361,7 @@ impl<'a> SymbolsBuilder<'a> {
             name,
             kind: SymbolKind::Typedef,
             full_range: self.s_range(&node.range()),
-            focus_range: self
-                .s_range(
-                    &name_node
-                        .map(|node| node.range())
-                        .unwrap_or_else(|| node.range()),
-                )
-                .into(),
+            focus_range: name_node.map(|node| self.s_range(&node.range())),
             children: vec![],
             details: node
                 .child_by_field_name("parameters")

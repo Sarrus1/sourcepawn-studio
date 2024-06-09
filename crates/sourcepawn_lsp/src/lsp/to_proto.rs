@@ -14,6 +14,7 @@ use ide_db::{
 use itertools::Itertools;
 use lsp_types::TextEdit;
 use paths::AbsPath;
+use syntax::range_contains_range;
 use vfs::FileId;
 
 use crate::global_state::GlobalStateSnapshot;
@@ -378,7 +379,15 @@ fn document_symbol(idx: &SymbolId, symbols: &Symbols) -> lsp_types::DocumentSymb
         },
         deprecated: None,
         range: symbol.full_range,
-        selection_range: symbol.focus_range.unwrap_or(symbol.full_range),
+        selection_range: if let Some(focus_range) = symbol.focus_range {
+            if range_contains_range(&symbol.full_range, &focus_range) {
+                focus_range
+            } else {
+                symbol.full_range
+            }
+        } else {
+            symbol.full_range
+        },
         children: if symbol.children.is_empty() {
             None
         } else {
