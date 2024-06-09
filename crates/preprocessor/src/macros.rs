@@ -321,7 +321,7 @@ fn expand_non_macro_define(
                 child.to_symbol(prev_range).into(),
                 if i == 0 { *delta } else { child.delta },
             );
-            prev_range = s.token.range().to_owned();
+            s.token.range().clone_into(&mut prev_range);
             s
         })
         .collect::<MacroContext>();

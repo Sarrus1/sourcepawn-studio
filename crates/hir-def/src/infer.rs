@@ -389,7 +389,7 @@ impl InferenceContext<'_> {
                         for fn_id in it.iter() {
                             let item_tree = self.db.file_item_tree(fn_id.file_id);
                             let function = &item_tree[fn_id.value.lookup(self.db).id];
-                            ret_type = function.ret_type.clone();
+                            ret_type.clone_from(&function.ret_type);
                         }
 
                         ret_type
