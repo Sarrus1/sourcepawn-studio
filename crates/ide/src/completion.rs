@@ -90,7 +90,7 @@ pub fn completions(
     let edit = create_edit(&preprocessed_text, point, token);
     let new_source_code = [
         &preprocessed_text[..edit.start_byte],
-        &token,
+        token,
         &preprocessed_text[edit.old_end_byte..],
     ]
     .concat();
