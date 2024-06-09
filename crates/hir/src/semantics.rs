@@ -267,6 +267,12 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             return res.into();
         }
 
+        if TSKind::from(node) == TSKind::anon_float {
+            // Avoid an edge case were the type `float` is mistaken for the method `float`.
+            // https://github.com/Sarrus1/sourcepawn-vscode/issues/400
+            return None;
+        }
+
         let mut container = node.parent()?;
         // If the node does not have a parent we are at the root, nothing to resolve.
         while !matches!(
