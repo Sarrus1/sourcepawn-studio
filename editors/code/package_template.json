@@ -1,12 +1,12 @@
 {
   "name": "sourcepawn-vscode",
-  "displayName": "SourcePawn",
+  "displayName": "SourcePawn Studio",
   "description": "SourcePawn highlighting, autocompletion and much more",
   "version": "7.2.11",
   "publisher": "Sarrus",
   "main": "./dist/spIndex.js",
-  "icon": "sm.png",
-  "homepage": "https://github.com/Sarrus1/sourcepawn-vscode/wiki",
+  "icon": "sp-studio_square_256x256.png",
+  "homepage": "https://Sarrus1.github.io/sourcepawn-vscode",
   "bugs": {
     "url": "https://github.com/Sarrus1/sourcepawn-vscode/issues"
   },
