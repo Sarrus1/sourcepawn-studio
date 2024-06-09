@@ -308,9 +308,9 @@ impl FlycheckActor {
         let mut command = Command::new(program);
 
         #[cfg(all(target_arch = "aarch64", target_os = "macos"))]
-        command.arg("-x86_64").arg(&self.config.command).args(args);
-        #[cfg(not(all(target_arch = "aarch64", target_os = "macos")))]
-        command.arg("-x86_64").arg(&self.config.command).args(args);
+        command.arg("-x86_64").arg(&self.config.command);
+
+        command.args(args);
 
         command
     }
