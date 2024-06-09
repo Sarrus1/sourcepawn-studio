@@ -1,5 +1,7 @@
 <div align="center">
-  <h1>SourcePawn for VSCode</h1>
+  <img width=367 height=128 src="https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/images/sp-studio-full_512.png" alt="Logo">
+  <br>
+  <br>
   <p>
     <strong>SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the SourceMod old and new syntax.
     </strong>
@@ -52,7 +54,7 @@
   </p>
 </div>
 
-![Example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/showcase.gif)
+![Showcase](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/showcase-1.gif)
 
 ## Features
 
@@ -74,7 +76,8 @@
 - Parse sourcemod files from a custom location.
 - Linter (error detection) for `.sp` and `.cfg` files.
 
-**Details on how to use the extension available in the [Wiki](https://github.com/Sarrus1/sourcepawn-vscode/wiki)**.
+**Follow the [Quick Start guide](https://sarrus1.github.io/sourcepawn-vscode/docs/quick-start)**
+
 **If you encounter an issue, press CTRL+SHIFT+P and type "SM: Doctor" to diagnose the problem.**
 
 - [Features](#features)
@@ -175,34 +178,3 @@
 
 Thanks for considering this. But please remember that all of this wouldn't be possible without the Alliedmodders community. If you wish to make a donation for this community, you can make it [here](https://sourcemod.net/donate.php).
 If you prefer to make a donation to me for this project, you can [buy me a coffee](https://www.buymeacoffee.com/sarrus)
-
-### How to install the beta build ?
-
-1. Open VSCode and go to the marketplace.
-2. In the search bar, type `SourcePawn` and select the extension.
-3. Click on `Switch to Pre-Release` (see screenshot below).
-
-![Pre-release](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/editors/code/images/pre-release.png)
-
-This will install the latest development build of the extension.
-
-Note that a new build might take a few minutes (up to 15) to propagate to the Marketplace after the commit has been pushed to the dev branch.
-
-You can also install the latest pre-release by downloading the .vsix from the [releases page](https://github.com/Sarrus1/sourcepawn-vscode/releases) and [installing it manually](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix).
-
-### How to contribute ?
-
-Pull requests and suggestions are welcome.
-
-- To make a suggestion or to report an issue, please create a new issue [here](https://github.com/Sarrus1/sourcepawn-vscode/issues).
-- To make a contribution, fork the repository, make the desired changes, and open a pull request.
-
-### How to run the extension from its source code ?
-
-To run the extension from the source, do the following:
-
-- Install [node.js](https://nodejs.org) on your machine. Make sure [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm/) is installed as well.
-- Fork this repository and clone it on your machine (do this with VSCode for easier manipulation).
-- Run `npm install` from the root of the project folder.
-- Run `npm run watch`.
-- Press `f5` to run the extension in dev mode.
