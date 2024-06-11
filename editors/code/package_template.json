@@ -232,13 +232,9 @@
           "description": "Whether to show the 'Compile Code' icon in editor title menu."
         },
         "sourcepawn.runServerCommands": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "afterCompile",
-            "afterUpload"
-          ],
-          "description": "Should the specified commands be executed on the server after a successful VSCode command or on `runServerCommands`.",
+          "type": "boolean",
+          "default": "false",
+          "description": "Run RCON commands after compiling.",
           "scope": "resource"
         },
         "sourcepawn.serverCommands": {
@@ -249,10 +245,10 @@
           "scope": "resource",
           "description": "A list of commands that will be sent to the server after a successful VSCode command or on `runServerCommands`."
         },
-        "sourcepawn.uploadAfterSuccessfulCompile": {
+        "sourcepawn.uploadToServer": {
           "type": "boolean",
           "default": false,
-          "description": "Should the upload command be executed on a successful compile.",
+          "description": "Upload files to FTP/SFTP after compiling.",
           "scope": "resource"
         },
         "sourcepawn.enableLinter": {

@@ -39,9 +39,9 @@ _Default_: `true`
 
 **sourcepawn.runServerCommands**
 
-Should the specified commands be executed on the server after a successful VSCode command or on `runServerCommands`.
+Run RCON commands after compiling.
 
-_Default_: ``
+_Default_: `"false"`
 
 ## serverCommands
 
@@ -51,11 +51,11 @@ A list of commands that will be sent to the server after a successful VSCode com
 
 _Default_: `["sm plugins refresh"]`
 
-## uploadAfterSuccessfulCompile
+## uploadToServer
 
-**sourcepawn.uploadAfterSuccessfulCompile**
+**sourcepawn.uploadToServer**
 
-Should the upload command be executed on a successful compile.
+Upload files to FTP/SFTP after compiling.
 
 _Default_: `false`
 
