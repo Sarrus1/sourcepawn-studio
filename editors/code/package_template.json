@@ -231,7 +231,7 @@
           "default": true,
           "description": "Whether to show the 'Compile Code' icon in editor title menu."
         },
-        "sourcepawn.runServerCommands": {
+        "sourcepawn.runServerCommandsAfterCompile": {
           "type": "boolean",
           "default": "false",
           "description": "Run RCON commands after compiling.",
@@ -245,7 +245,7 @@
           "scope": "resource",
           "description": "A list of commands that will be sent to the server after a successful VSCode command or on `runServerCommands`."
         },
-        "sourcepawn.uploadToServer": {
+        "sourcepawn.uploadToServerAfterCompile": {
           "type": "boolean",
           "default": false,
           "description": "Upload files to FTP/SFTP after compiling.",

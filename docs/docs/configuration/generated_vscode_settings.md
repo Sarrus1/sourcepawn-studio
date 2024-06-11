@@ -35,9 +35,9 @@ Whether to show the 'Compile Code' icon in editor title menu.
 
 _Default_: `true`
 
-## runServerCommands
+## runServerCommandsAfterCompile
 
-**sourcepawn.runServerCommands**
+**sourcepawn.runServerCommandsAfterCompile**
 
 Run RCON commands after compiling.
 
@@ -51,9 +51,9 @@ A list of commands that will be sent to the server after a successful VSCode com
 
 _Default_: `["sm plugins refresh"]`
 
-## uploadToServer
+## uploadToServerAfterCompile
 
-**sourcepawn.uploadToServer**
+**sourcepawn.uploadToServerAfterCompile**
 
 Upload files to FTP/SFTP after compiling.
 
