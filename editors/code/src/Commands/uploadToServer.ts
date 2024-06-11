@@ -1,5 +1,4 @@
 ﻿import path from "path";
-import { run as runServerCommands } from "./runServerCommands";
 import { getMainCompilationFile } from "../spUtils";
 import { ProgressLocation, WorkspaceFolder, window, workspace as Workspace } from "vscode";
 import { lastActiveEditor } from "../spIndex";
@@ -19,6 +18,8 @@ export interface UploadOptions {
   remoteRoot: string;
   exclude: string[];
 }
+
+let success: boolean;
 
 export async function run(args?: string): Promise<boolean> {
   let workspaceFolder: WorkspaceFolder;
@@ -100,7 +101,7 @@ export async function run(args?: string): Promise<boolean> {
 
           // Show success message
           window.showInformationMessage('Files uploaded successfully!');
-          return true;
+          success = true;
         }
         else {
           const ftp = new Client();
@@ -141,24 +142,19 @@ export async function run(args?: string): Promise<boolean> {
           window.showInformationMessage('Files uploaded successfully!');
           ftp.close();
 
-          // Run commands if configured
-          if (getConfig(Section.SourcePawn, "runServerCommands", workspaceFolder) === "afterUpload") {
-            await runServerCommands(fileToUpload);
-          }
-
-          return true;
+          success = true;
         }
       }
       catch (error) {
         if (!token.isCancellationRequested) {
           window.showErrorMessage('Failed to upload files! ' + error);
         }
-        return false;
+        success = false;
       }
       finally {
         client.end();
       }
     }
   );
-  return true;
+  return success;
 }
