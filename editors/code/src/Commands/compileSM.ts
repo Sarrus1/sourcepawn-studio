@@ -159,16 +159,14 @@ export async function run(args: URI): Promise<number> {
       // Little success message in console
       output.appendLine("Compilation successful.");
 
-      let uploadSuccessful: boolean = false;
+      // Get after-compile actions
+      const uploadFtp: boolean = getConfig(Section.SourcePawn, "uploadToServer", workspaceFolder);
+      const runCommands: boolean = getConfig(Section.SourcePawn, "runServerCommands", workspaceFolder);
 
-      // Run upload command if chosen
-      if (getConfig(Section.SourcePawn, "uploadAfterSuccessfulCompile", workspaceFolder)) {
-        uploadSuccessful = await uploadToServerCommand(fileToCompilePath);
-      }
+      // Run upload and run commands in order if both are true
+      const uploadSuccessful = uploadFtp ? await uploadToServerCommand(fileToCompilePath) : true;
 
-      // Run server commands if chosen
-      const commandsOption: string = getConfig(Section.SourcePawn, "runServerCommands", workspaceFolder);
-      if (uploadSuccessful && commandsOption === "afterCompile") {
+      if (uploadSuccessful && runCommands) {
         await runServerCommands(fileToCompilePath);
       }
 
