@@ -4,7 +4,7 @@
 
 ### Chore
 
-- Prerelease: Only GotoDefinition and Lints work for now.
+- Prerelease
 
 ## [0.12.0]
 
