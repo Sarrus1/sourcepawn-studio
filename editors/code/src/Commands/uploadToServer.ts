@@ -23,6 +23,7 @@ export interface UploadOptions {
 export async function run(args?: string): Promise<boolean> {
   let workspaceFolder: WorkspaceFolder;
   let fileToUpload: string;
+  let success = false;
 
   // If we receive arguments, the file to upload has already been figured out for us,
   // else, we use the user's choice, main compilation file or current editor
