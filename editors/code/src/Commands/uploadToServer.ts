@@ -19,7 +19,6 @@ export interface UploadOptions {
   exclude: string[];
 }
 
-let success: boolean;
 
 export async function run(args?: string): Promise<boolean> {
   let workspaceFolder: WorkspaceFolder;
