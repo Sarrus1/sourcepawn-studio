@@ -28,7 +28,7 @@ pub use countme;
 /// almost zero.
 pub use countme::Count;
 
-thread_local!(static IN_SCOPE: RefCell<bool> = RefCell::new(false));
+thread_local!(static IN_SCOPE: RefCell<bool> = const { RefCell::new(false) });
 
 /// Allows to check if the current code is within some dynamic scope, can be
 /// useful during debugging to figure out why a function is called.

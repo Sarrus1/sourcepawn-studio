@@ -198,6 +198,7 @@ impl<'a, A: ?Sized + Downcast, V: IntoBox<A>> VacantEntry<'a, A, V> {
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 mod tests {
     use super::*;
 

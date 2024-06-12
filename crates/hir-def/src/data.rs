@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{fmt, sync::Arc};
 
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
@@ -39,8 +39,8 @@ impl From<&Param> for ParamData {
     }
 }
 
-impl ToString for ParamData {
-    fn to_string(&self) -> String {
+impl fmt::Display for ParamData {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut s = String::new();
         if self.is_const {
             s.push_str("const ");
@@ -55,7 +55,8 @@ impl ToString for ParamData {
             // TODO: Show the actual default value
             s.push_str(" = ...");
         }
-        s
+
+        write!(f, "{}", s)
     }
 }
 

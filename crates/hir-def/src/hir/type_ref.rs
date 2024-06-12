@@ -1,3 +1,5 @@
+use std::fmt;
+
 use syntax::TSKind;
 use tree_sitter::Node;
 
@@ -100,9 +102,9 @@ impl TypeRef {
     }
 }
 
-impl ToString for TypeRef {
-    fn to_string(&self) -> String {
-        match self {
+impl fmt::Display for TypeRef {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
             TypeRef::Name(name) => String::from(name.clone()), //TODO: Can we avoid this clone?
             TypeRef::OldName(name) => format!("{}:", name),
             TypeRef::Int => "int".to_string(),
@@ -118,7 +120,9 @@ impl ToString for TypeRef {
                 res.push_str(&"[]".repeat(*size));
                 res
             }
-        }
+        };
+
+        write!(f, "{}", s)
     }
 }
 

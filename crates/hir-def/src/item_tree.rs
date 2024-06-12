@@ -74,8 +74,8 @@ impl fmt::Debug for RawVisibilityId {
     }
 }
 
-impl ToString for RawVisibilityId {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for RawVisibilityId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut s = String::new();
         if self.contains(Self::PUBLIC) {
             s.push_str("public ");
@@ -87,7 +87,7 @@ impl ToString for RawVisibilityId {
             s.push_str("static ");
         }
 
-        s.trim_end().to_string()
+        write!(f, "{}", s.trim_end())
     }
 }
 

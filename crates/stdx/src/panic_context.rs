@@ -43,7 +43,7 @@ impl Drop for PanicContext {
 
 fn with_ctx(f: impl FnOnce(&mut Vec<String>)) {
     thread_local! {
-        static CTX: RefCell<Vec<String>> = RefCell::new(Vec::new());
+        static CTX: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
     }
     CTX.with(|ctx| f(&mut ctx.borrow_mut()));
 }

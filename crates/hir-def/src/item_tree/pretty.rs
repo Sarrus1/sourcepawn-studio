@@ -147,7 +147,7 @@ impl<'a> Printer<'a> {
                         self.push("#pragma deprecated");
                         self.newline();
                     }
-                    self.push(&format!("{} {};", type_ref.to_string(), name.0));
+                    self.push(&format!("{} {};", type_ref, name.0));
                     self.newline();
                 }
                 EnumStructItemId::Method(method_idx) => self.print_function(method_idx),
@@ -192,7 +192,7 @@ impl<'a> Printer<'a> {
                         self.push("#pragma deprecated");
                         self.newline();
                     }
-                    self.push(&format!("property {} {} {{", type_ref.to_string(), name.0));
+                    self.push(&format!("property {} {} {{", type_ref, name.0));
                     self.indent();
                     self.newline();
                     for fn_idx in getters_setters.clone() {
@@ -279,7 +279,7 @@ impl<'a> Printer<'a> {
         if let Some(name) = name {
             self.push(format!("typedef {} = ", name).as_str());
         }
-        self.push(format!("function {}", type_ref.to_string()).as_str());
+        self.push(format!("function {}", type_ref).as_str());
         self.push("(");
         self.indent();
         for param in self.tree.data().params[params.clone()].iter() {

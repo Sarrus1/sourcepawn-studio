@@ -93,6 +93,7 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
     }
 }
 
+#[allow(dead_code)]
 pub trait ClientCapabilitiesExt {
     fn has_definition_link_support(&self) -> bool;
 
