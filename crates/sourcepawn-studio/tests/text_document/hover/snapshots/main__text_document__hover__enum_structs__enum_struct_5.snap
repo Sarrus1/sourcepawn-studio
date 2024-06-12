@@ -1,0 +1,48 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/hover/enum_structs.rs
+assertion_line: 72
+expression: "hover(r#\"\n%! main.sp\nenum struct Foo {\n    /**\n     * The foo method.\n     */\n    Foo foo() {}\n         |\n         ^\n}\n\"#)"
+---
+{
+  "contents": {
+    "kind": "markdown",
+    "value": "```sourcepawn\nFoo\nFoo foo()\n```\n\n---\n\nThe foo method."
+  },
+  "range": {
+    "start": {
+      "line": 4,
+      "character": 8
+    },
+    "end": {
+      "line": 4,
+      "character": 11
+    }
+  },
+  "actions": [
+    {
+      "title": "Go to ",
+      "commands": [
+        {
+          "title": "Foo",
+          "command": "sourcepawn-vscode.gotoLocation",
+          "arguments": [
+            {
+              "uri": "file:///main.sp",
+              "range": {
+                "start": {
+                  "line": 0,
+                  "character": 12
+                },
+                "end": {
+                  "line": 0,
+                  "character": 15
+                }
+              }
+            }
+          ],
+          "tooltip": ""
+        }
+      ]
+    }
+  ]
+}

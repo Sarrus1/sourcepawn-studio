@@ -8,14 +8,14 @@ export const preprocessedDocument = new lc.RequestType<
   PreprocessedDocumentParams,
   string,
   void
->("sourcepawn-lsp/preprocessedDocument");
+>("sourcepawn-studio/preprocessedDocument");
 
 export type PreprocessedDocumentParams = {
   textDocument?: lc.TextDocumentIdentifier;
 };
 
 export const serverStatus = new lc.NotificationType<ServerStatusParams>(
-  "sourcepawn-lsp/serverStatus"
+  "sourcepawn-studio/serverStatus"
 );
 export type ServerStatusParams = {
   health: "ok" | "warning" | "error";
@@ -24,7 +24,7 @@ export type ServerStatusParams = {
 };
 
 export const spcompStatus = new lc.NotificationType<ServerStatusParams>(
-  "sourcepawn-lsp/spcompStatus"
+  "sourcepawn-studio/spcompStatus"
 );
 export type SpcompStatusParams = {
   quiescent: boolean;

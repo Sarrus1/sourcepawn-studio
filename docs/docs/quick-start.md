@@ -17,7 +17,7 @@ We publish the exact same version of the VSCode extension to [https://open-vsx.o
 
 ### Other LSP Clients (Neovim, Lapce)
 
-LSP binaries are shipped with each [release](https://github.com/Sarrus1/sourcepawn-vscode/releases/latest).
+LSP binaries are shipped with each [release](https://github.com/Sarrus1/sourcepawn-studio/releases/latest).
 
 ## Configuration
 

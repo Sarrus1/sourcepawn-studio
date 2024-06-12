@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/goto_definition/mod.rs
+assertion_line: 497
+expression: "goto_definition(r#\"\n%! main.sp\n#include \"foo.sp\"\n           |\n           ^\n\n%! include/foo.sp\nint foo;\n\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 0,
+        "character": 9
+      },
+      "end": {
+        "line": 0,
+        "character": 17
+      }
+    },
+    "targetUri": "file:///include/foo.sp",
+    "targetRange": {
+      "start": {
+        "line": 0,
+        "character": 0
+      },
+      "end": {
+        "line": 0,
+        "character": 8
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 0,
+        "character": 0
+      },
+      "end": {
+        "line": 0,
+        "character": 8
+      }
+    }
+  }
+]

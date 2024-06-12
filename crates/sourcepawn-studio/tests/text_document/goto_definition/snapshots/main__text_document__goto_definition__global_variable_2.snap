@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/goto_definition/mod.rs
+assertion_line: 18
+expression: "goto_definition(r#\"\n%! main.sp\nint foo = 1;\n     |\n     ^\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 0,
+        "character": 4
+      },
+      "end": {
+        "line": 0,
+        "character": 7
+      }
+    },
+    "targetUri": "file:///main.sp",
+    "targetRange": {
+      "start": {
+        "line": 0,
+        "character": 4
+      },
+      "end": {
+        "line": 0,
+        "character": 11
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 0,
+        "character": 4
+      },
+      "end": {
+        "line": 0,
+        "character": 7
+      }
+    }
+  }
+]

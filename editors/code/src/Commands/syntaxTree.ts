@@ -6,7 +6,7 @@ import { Cmd, CtxInit } from "../ctx";
 export function syntaxTreeCommand(ctx: CtxInit): Cmd {
   const tdcp = new (class implements vscode.TextDocumentContentProvider {
     readonly uri = vscode.Uri.parse(
-      "sourcepawn-lsp-syntax-tree://syntaxTree/syntax.lisp"
+      "sourcepawn-studio-syntax-tree://syntaxTree/syntax.lisp"
     );
     readonly eventEmitter = new vscode.EventEmitter<vscode.Uri>();
     constructor() {
@@ -63,7 +63,7 @@ export function syntaxTreeCommand(ctx: CtxInit): Cmd {
 
   ctx.pushExtCleanup(
     vscode.workspace.registerTextDocumentContentProvider(
-      "sourcepawn-lsp-syntax-tree",
+      "sourcepawn-studio-syntax-tree",
       tdcp
     )
   );

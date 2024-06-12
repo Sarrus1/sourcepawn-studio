@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/goto_definition/mod.rs
+assertion_line: 376
+expression: "goto_definition(r#\"\n%! main.sp\nenum struct Foo {\n    void foo(int bar) {\n        bar = 1;\n         |\n         ^\n    };\n}\n\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 2,
+        "character": 8
+      },
+      "end": {
+        "line": 2,
+        "character": 11
+      }
+    },
+    "targetUri": "file:///main.sp",
+    "targetRange": {
+      "start": {
+        "line": 1,
+        "character": 13
+      },
+      "end": {
+        "line": 1,
+        "character": 20
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 1,
+        "character": 17
+      },
+      "end": {
+        "line": 1,
+        "character": 20
+      }
+    }
+  }
+]

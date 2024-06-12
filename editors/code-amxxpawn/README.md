@@ -5,17 +5,17 @@
     </strong>
   </p>
   <p style="margin-bottom: 0.5ex;">
-    <a href="https://github.com/Sarrus1/sourcepawn-vscode/releases/">
+    <a href="https://github.com/Sarrus1/sourcepawn-studio/releases/">
       <img
         src="https://img.shields.io/visual-studio-marketplace/v/Sarrus.amxxpawn-vscode?include_prereleases"
         />
     </a>
-    <a href="https://github.com/Sarrus1/sourcepawn-vscode/releases/latest">
+    <a href="https://github.com/Sarrus1/sourcepawn-studio/releases/latest">
       <img
         src="https://img.shields.io/visual-studio-marketplace/i/Sarrus.amxxpawn-vscode"
         />
     </a>
-    <a href="https://github.com/Sarrus1/sourcepawn-vscode/releases/latest">
+    <a href="https://github.com/Sarrus1/sourcepawn-studio/releases/latest">
       <img
         src="https://img.shields.io/visual-studio-marketplace/d/Sarrus.amxxpawn-vscode"
         />
@@ -26,27 +26,27 @@
         />
     </a>
     <img
-      src="https://img.shields.io/github/last-commit/Sarrus1/sourcepawn-vscode"
+      src="https://img.shields.io/github/last-commit/Sarrus1/sourcepawn-studio"
       />
-    <a href="https://github.com/Sarrus1/sourcepawn-vscode/issues">
+    <a href="https://github.com/Sarrus1/sourcepawn-studio/issues">
       <img
-        src="https://img.shields.io/github/issues/Sarrus1/sourcepawn-vscode"
+        src="https://img.shields.io/github/issues/Sarrus1/sourcepawn-studio"
         />
     </a>
-    <a href="https://github.com/Sarrus1/sourcepawn-vscode/issues?q=is%3Aissue+is%3Aclosed">
+    <a href="https://github.com/Sarrus1/sourcepawn-studio/issues?q=is%3Aissue+is%3Aclosed">
       <img
-        src="https://img.shields.io/github/issues-closed/Sarrus1/sourcepawn-vscode"
+        src="https://img.shields.io/github/issues-closed/Sarrus1/sourcepawn-studio"
         />
     </a>
     <img
-      src="https://www.codefactor.io/repository/github/Sarrus1/sourcepawn-vscode/badge"
+      src="https://www.codefactor.io/repository/github/Sarrus1/sourcepawn-studio/badge"
       />
     <img
-      src="https://img.shields.io/github/actions/workflow/status/Sarrus1/sourcepawn-vscode/release.yml?branch=master"
+      src="https://img.shields.io/github/actions/workflow/status/Sarrus1/sourcepawn-studio/release.yml?branch=main"
       />
-    <a href="https://codecov.io/gh/Sarrus1/sourcepawn-vscode">
+    <a href="https://codecov.io/gh/Sarrus1/sourcepawn-studio">
       <img
-        src="https://codecov.io/gh/Sarrus1/sourcepawn-vscode/branch/master/graph/badge.svg"
+        src="https://codecov.io/gh/Sarrus1/sourcepawn-studio/branch/main/graph/badge.svg"
         />
     </a>
   </p>
@@ -56,7 +56,7 @@
 
 Pull requests and suggestions are welcome.
 
-- To make a suggestion or to report an issue, please create a new issue [here](https://github.com/Sarrus1/sourcepawn-vscode/issues).
+- To make a suggestion or to report an issue, please create a new issue [here](https://github.com/Sarrus1/sourcepawn-studio/issues).
 - To make a contribution, fork the repository, make the desired changes, and open a pull request.
 
 ### How to run the extension from its source code ?

@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/goto_definition/function_declarations.rs
+assertion_line: 18
+expression: "goto_definition(r#\"\n%! main.sp\nforward int Foo(int bar);\n                     |\n                     ^\n\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 0,
+        "character": 20
+      },
+      "end": {
+        "line": 0,
+        "character": 23
+      }
+    },
+    "targetUri": "file:///main.sp",
+    "targetRange": {
+      "start": {
+        "line": 0,
+        "character": 16
+      },
+      "end": {
+        "line": 0,
+        "character": 23
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 0,
+        "character": 20
+      },
+      "end": {
+        "line": 0,
+        "character": 23
+      }
+    }
+  }
+]

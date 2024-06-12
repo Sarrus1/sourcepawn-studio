@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/goto_definition/mod.rs
+assertion_line: 116
+expression: "goto_definition(r#\"\n%! main.sp\nvoid bar(int foo) {\n              |\n              ^\n}\n\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 0,
+        "character": 13
+      },
+      "end": {
+        "line": 0,
+        "character": 16
+      }
+    },
+    "targetUri": "file:///main.sp",
+    "targetRange": {
+      "start": {
+        "line": 0,
+        "character": 9
+      },
+      "end": {
+        "line": 0,
+        "character": 16
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 0,
+        "character": 13
+      },
+      "end": {
+        "line": 0,
+        "character": 16
+      }
+    }
+  }
+]

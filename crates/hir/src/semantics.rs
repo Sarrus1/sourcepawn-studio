@@ -269,7 +269,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
 
         if TSKind::from(node) == TSKind::anon_float {
             // Avoid an edge case were the type `float` is mistaken for the method `float`.
-            // https://github.com/Sarrus1/sourcepawn-vscode/issues/400
+            // https://github.com/Sarrus1/sourcepawn-studio/issues/400
             return None;
         }
 

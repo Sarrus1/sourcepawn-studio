@@ -41,7 +41,7 @@ export class Ctx {
     this._serverPath = join(
       vscode.extensions.getExtension("Sarrus.sourcepawn-vscode").extensionPath,
       "languageServer",
-      platform() == "win32" ? "sourcepawn_lsp.exe" : "sourcepawn_lsp"
+      platform() == "win32" ? "sourcepawn-studio.exe" : "sourcepawn-studio"
     );
     this.clientOptions = clientOptions;
 
@@ -100,7 +100,7 @@ export class Ctx {
     return childProcess.stdout
       .toString()
       .trim()
-      .match(/^sourcepawn_lsp (\d+\.\d+\.\d+)$/)[1];
+      .match(/^sourcepawn-studio (\d+\.\d+\.\d+)$/)[1];
   }
 
   private async getOrCreateClient() {
@@ -146,7 +146,7 @@ export class Ctx {
         debug: {
           command: resolve(
             process.env["__SOURCEPAWN_LSP_SERVER_DEBUG"] +
-            (platform() == "win32" ? ".exe" : "")
+              (platform() == "win32" ? ".exe" : "")
           ),
           args: ["-vvv"],
         },
@@ -248,7 +248,7 @@ export class Ctx {
       } else {
         callback = () =>
           vscode.window.showErrorMessage(
-            `command ${fullName} failed: sourcepawn_lsp is not running`
+            `command ${fullName} failed: sourcepawn-studio is not running`
           );
       }
 
@@ -321,7 +321,7 @@ export class Ctx {
         statusBar.command = "sourcepawn-vscode.startServer";
         statusBar.color = undefined;
         statusBar.backgroundColor = undefined;
-        statusBar.text = `$(stop-circle) sourcepawn-lsp`;
+        statusBar.text = `$(stop-circle) sourcepawn-studio`;
         this.setSpcompStatus({
           quiescent: true,
         });
@@ -344,7 +344,7 @@ export class Ctx {
       "\n\n[Stop server](command:sourcepawn-vscode.stopServer)"
     );
     if (!status.quiescent) icon = "$(sync~spin) ";
-    statusBar.text = `${icon}sourcepawn-lsp`;
+    statusBar.text = `${icon}sourcepawn-studio`;
   }
 
   setSpcompStatus(status: lsp_ext.SpcompStatusParams) {

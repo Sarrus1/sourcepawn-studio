@@ -270,7 +270,7 @@
 
 ### Fixed
 
-- Fixed a potential panic in the resolver (see [#281](https://github.com/Sarrus1/sourcepawn-vscode/issues/281), thanks [Keldra](https://github.com/ddorab)!).
+- Fixed a potential panic in the resolver (see [#281](https://github.com/Sarrus1/sourcepawn-studio/issues/281), thanks [Keldra](https://github.com/ddorab)!).
 
 ## [0.9.2]
 

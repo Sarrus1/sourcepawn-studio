@@ -1,0 +1,22 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/hover/enums.rs
+assertion_line: 6
+expression: "hover(r#\"\n%! main.sp\n/**\n * The Foo enum.\n */\nenum Foo {}\n      |\n      ^\n\"#)"
+---
+{
+  "contents": {
+    "kind": "markdown",
+    "value": "```sourcepawn\nenum Foo\n```\n\n---\n\nThe Foo enum."
+  },
+  "range": {
+    "start": {
+      "line": 3,
+      "character": 5
+    },
+    "end": {
+      "line": 3,
+      "character": 8
+    }
+  },
+  "actions": []
+}

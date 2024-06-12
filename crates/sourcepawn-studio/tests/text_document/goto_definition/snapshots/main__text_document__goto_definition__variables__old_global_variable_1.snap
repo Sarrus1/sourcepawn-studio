@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/goto_definition/variables.rs
+assertion_line: 6
+expression: "goto_definition(r#\"\n%! main.sp\nnew foo;\n     |\n     ^             \n\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 0,
+        "character": 4
+      },
+      "end": {
+        "line": 0,
+        "character": 7
+      }
+    },
+    "targetUri": "file:///main.sp",
+    "targetRange": {
+      "start": {
+        "line": 0,
+        "character": 4
+      },
+      "end": {
+        "line": 0,
+        "character": 7
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 0,
+        "character": 4
+      },
+      "end": {
+        "line": 0,
+        "character": 7
+      }
+    }
+  }
+]

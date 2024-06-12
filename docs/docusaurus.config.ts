@@ -11,12 +11,12 @@ const config: Config = {
   url: "https://sarrus1.github.io",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: "/sourcepawn-vscode",
+  baseUrl: "/sourcepawn-studio",
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: "Sarrus1", // Usually your GitHub org/user name.
-  projectName: "sourcepawn-vscode", // Usually your repo name.
+  projectName: "sourcepawn-studio", // Usually your repo name.
 
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",

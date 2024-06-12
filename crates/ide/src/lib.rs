@@ -176,7 +176,7 @@ impl Analysis {
 
     /// Performs an operation on the database that may be canceled.
     ///
-    /// sourcepawn-lsp needs to be able to answer semantic questions about the
+    /// sourcepawn-studio needs to be able to answer semantic questions about the
     /// code while the code is being modified. A common problem is that a
     /// long-running query is being calculated when a new change arrives.
     ///

@@ -6,13 +6,13 @@
   "publisher": "Sarrus",
   "main": "./dist/index.js",
   "icon": "amxmodx.png",
-  "homepage": "https://github.com/Sarrus1/sourcepawn-vscode/wiki",
+  "homepage": "https://github.com/Sarrus1/sourcepawn-studio/wiki",
   "bugs": {
-    "url": "https://github.com/Sarrus1/sourcepawn-vscode/issues"
+    "url": "https://github.com/Sarrus1/sourcepawn-studio/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Sarrus1/sourcepawn-vscode.git"
+    "url": "https://github.com/Sarrus1/sourcepawn-studio.git"
   },
   "sponsor": {
     "url": "https://www.buymeacoffee.com/sarrus"

@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/goto_definition/typedefs.rs
+assertion_line: 180
+expression: "goto_definition(r#\"\n%! main.sp\nenum Bar {}\nfuncenum Foo {\n    int:public(Bar:foo),\n                |\n                ^\n}\n\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 2,
+        "character": 15
+      },
+      "end": {
+        "line": 2,
+        "character": 18
+      }
+    },
+    "targetUri": "file:///main.sp",
+    "targetRange": {
+      "start": {
+        "line": 0,
+        "character": 0
+      },
+      "end": {
+        "line": 0,
+        "character": 11
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 0,
+        "character": 5
+      },
+      "end": {
+        "line": 0,
+        "character": 8
+      }
+    }
+  }
+]

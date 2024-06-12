@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/goto_definition/mod.rs
+assertion_line: 82
+expression: "goto_definition(r#\"\n%! main.sp\n#define A_REALLY_LONG_INCLUDE(%1,%2) %1 + %2\nint foo;\nint bar = A_REALLY_LONG_INCLUDE(foo + foo, foo);\n                                 |\n                                 ^             \n\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 2,
+        "character": 32
+      },
+      "end": {
+        "line": 2,
+        "character": 35
+      }
+    },
+    "targetUri": "file:///main.sp",
+    "targetRange": {
+      "start": {
+        "line": 1,
+        "character": 4
+      },
+      "end": {
+        "line": 1,
+        "character": 7
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 1,
+        "character": 4
+      },
+      "end": {
+        "line": 1,
+        "character": 7
+      }
+    }
+  }
+]

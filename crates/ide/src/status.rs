@@ -25,12 +25,12 @@ use vfs::FileId;
 
 // Feature: Status
 //
-// Shows internal statistic about memory usage of sourcepawn-lsp.
+// Shows internal statistic about memory usage of sourcepawn-studio.
 //
 // |===
 // | Editor  | Action Name
 //
-// | VS Code | **sourcepawn-lsp: Status**
+// | VS Code | **sourcepawn-studio: Status**
 // |===
 pub(crate) fn status(db: &RootDatabase, _file_id: Option<FileId>) -> String {
     let mut buf = String::new();

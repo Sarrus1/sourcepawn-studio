@@ -2,7 +2,7 @@
 //!
 //! **Note:** This is heavily inspired from rust-analyzer.
 //!
-//! VFS stores all files read by sourcepawn-lsp. Reading file contents from VFS
+//! VFS stores all files read by sourcepawn-studio. Reading file contents from VFS
 //! always returns the same contents, unless VFS was explicitly modified with
 //! [`set_file_contents`]. All changes to VFS are logged, and can be retrieved via
 //! the [`take_changes`] method.

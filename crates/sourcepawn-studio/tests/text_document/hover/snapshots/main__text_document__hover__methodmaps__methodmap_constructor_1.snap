@@ -1,0 +1,48 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/hover/methodmaps.rs
+assertion_line: 38
+expression: "hover(r#\"\n%! main.sp\nmethodmap Foo {\n    /**\n     * The Foo constructor.\n     */\n    public Foo() {}\n            |\n            ^\n}\n\"#)"
+---
+{
+  "contents": {
+    "kind": "markdown",
+    "value": "```sourcepawn\nFoo\npublic Foo()\n```\n\n---\n\nThe Foo constructor."
+  },
+  "range": {
+    "start": {
+      "line": 4,
+      "character": 11
+    },
+    "end": {
+      "line": 4,
+      "character": 14
+    }
+  },
+  "actions": [
+    {
+      "title": "Go to ",
+      "commands": [
+        {
+          "title": "Foo",
+          "command": "sourcepawn-vscode.gotoLocation",
+          "arguments": [
+            {
+              "uri": "file:///main.sp",
+              "range": {
+                "start": {
+                  "line": 0,
+                  "character": 10
+                },
+                "end": {
+                  "line": 0,
+                  "character": 13
+                }
+              }
+            }
+          ],
+          "tooltip": ""
+        }
+      ]
+    }
+  ]
+}

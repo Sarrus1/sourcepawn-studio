@@ -1,5 +1,5 @@
 <div align="center">
-  <img width=367 height=128 src="https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/images/sp-studio-full_512.png" alt="Logo">
+  <img width=367 height=128 src="https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/main/images/sp-studio-full_512.png" alt="Logo">
   <br>
   <br>
   <p>
@@ -7,17 +7,17 @@
     </strong>
   </p>
   <p style="margin-bottom: 0.5ex;">
-    <a href="https://github.com/Sarrus1/sourcepawn-vscode/releases/">
+    <a href="https://github.com/Sarrus1/sourcepawn-studio/releases/">
       <img
         src="https://img.shields.io/visual-studio-marketplace/v/Sarrus.sourcepawn-vscode?include_prereleases"
         />
     </a>
-    <a href="https://github.com/Sarrus1/sourcepawn-vscode/releases/latest">
+    <a href="https://github.com/Sarrus1/sourcepawn-studio/releases/latest">
       <img
         src="https://img.shields.io/visual-studio-marketplace/i/Sarrus.sourcepawn-vscode"
         />
     </a>
-    <a href="https://github.com/Sarrus1/sourcepawn-vscode/releases/latest">
+    <a href="https://github.com/Sarrus1/sourcepawn-studio/releases/latest">
       <img
         src="https://img.shields.io/visual-studio-marketplace/d/Sarrus.sourcepawn-vscode"
         />
@@ -28,33 +28,33 @@
         />
     </a>
     <img
-      src="https://img.shields.io/github/last-commit/Sarrus1/sourcepawn-vscode"
+      src="https://img.shields.io/github/last-commit/Sarrus1/sourcepawn-studio"
       />
-    <a href="https://github.com/Sarrus1/sourcepawn-vscode/issues">
+    <a href="https://github.com/Sarrus1/sourcepawn-studio/issues">
       <img
-        src="https://img.shields.io/github/issues/Sarrus1/sourcepawn-vscode"
+        src="https://img.shields.io/github/issues/Sarrus1/sourcepawn-studio"
         />
     </a>
-    <a href="https://github.com/Sarrus1/sourcepawn-vscode/issues?q=is%3Aissue+is%3Aclosed">
+    <a href="https://github.com/Sarrus1/sourcepawn-studio/issues?q=is%3Aissue+is%3Aclosed">
       <img
-        src="https://img.shields.io/github/issues-closed/Sarrus1/sourcepawn-vscode"
+        src="https://img.shields.io/github/issues-closed/Sarrus1/sourcepawn-studio"
         />
     </a>
     <img
-      src="https://www.codefactor.io/repository/github/Sarrus1/sourcepawn-vscode/badge"
+      src="https://www.codefactor.io/repository/github/Sarrus1/sourcepawn-studio/badge"
       />
     <img
-      src="https://img.shields.io/github/actions/workflow/status/Sarrus1/sourcepawn-vscode/release.yml?branch=master"
+      src="https://img.shields.io/github/actions/workflow/status/Sarrus1/sourcepawn-studio/release.yml?branch=master"
       />
-    <a href="https://codecov.io/gh/Sarrus1/sourcepawn-vscode">
+    <a href="https://codecov.io/gh/Sarrus1/sourcepawn-studio">
       <img
-        src="https://codecov.io/gh/Sarrus1/sourcepawn-vscode/branch/master/graph/badge.svg"
+        src="https://codecov.io/gh/Sarrus1/sourcepawn-studio/branch/master/graph/badge.svg"
         />
     </a>
   </p>
 </div>
 
-![Showcase](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/master/images/showcase-1.gif)
+![Showcase](https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/master/images/showcase-1.gif)
 
 ## Features
 
@@ -76,7 +76,7 @@
 - Parse sourcemod files from a custom location.
 - Linter (error detection) for `.sp` and `.cfg` files.
 
-**Follow the [Quick Start guide](https://sarrus1.github.io/sourcepawn-vscode/docs/quick-start)**
+**Follow the [Quick Start guide](https://sarrus1.github.io/sourcepawn-studio/docs/quick-start)**
 
 **If you encounter an issue, press CTRL+SHIFT+P and type "SM: Doctor" to diagnose the problem.**
 
@@ -107,59 +107,59 @@
 
 ### .sp and .inc file highlighting
 
-![.sp highlighting example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/editors/code/images/highlighting-example-1.png)
+![.sp highlighting example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/main/editors/code/images/highlighting-example-1.png)
 
 ### .cfg file highlighting
 
-![Highlighting example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/editors/code/images/highlighting-example-2.png)
+![Highlighting example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/main/editors/code/images/highlighting-example-2.png)
 
 ### Code auto-completion
 
-![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/editors/code/images/completion-example-1.png)
+![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/main/editors/code/images/completion-example-1.png)
 
 ### Event auto-completion
 
-![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/editors/code/images/completion-example-2.png)
+![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/main/editors/code/images/completion-example-2.png)
 
 ### Include auto-completion
 
-![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/editors/code/images/completion-example-3.png)
+![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/main/editors/code/images/completion-example-3.png)
 
 ### Callback auto-completion
 
-![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/editors/code/images/completion-example-4.gif)
+![Completion example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/main/editors/code/images/completion-example-4.gif)
 
 ### Code outline
 
-![Outline example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/editors/code/images/outline-example-1.png)
+![Outline example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/main/editors/code/images/outline-example-1.png)
 
 ### Call Hierarchy
 
-![Hierarchy example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/editors/code/images/hierarchy-example-1.gif)
+![Hierarchy example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/main/editors/code/images/hierarchy-example-1.gif)
 
 ### Symbol references
 
-![References example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/editors/code/images/references-example-1.png)
+![References example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/main/editors/code/images/references-example-1.png)
 
 ### Symbol renaming
 
-![Renaming example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/editors/code/images/rename-example-1.png)
+![Renaming example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/main/editors/code/images/rename-example-1.png)
 
 ### Functions signature help
 
-![Signature example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/editors/code/images/signature-example-1.png)
+![Signature example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/main/editors/code/images/signature-example-1.png)
 
 ### Hover help
 
-![Hover example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/editors/code/images/hover-example-1.png)
+![Hover example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/main/editors/code/images/hover-example-1.png)
 
 ### Go To Definition
 
-![Go to definition example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/editors/code/images/go-to-definition-example-1.png)
+![Go to definition example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/main/editors/code/images/go-to-definition-example-1.png)
 
 ### Linter
 
-![Linter example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/editors/code/images/linter-example-1.png)
+![Linter example](https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/main/editors/code/images/linter-example-1.png)
 
 ## Credits
 

@@ -19,56 +19,56 @@ jobs:
             program: cargo
             platform: win32
             arch: x64
-            archive: sourcepawn_lsp-x86_64-windows.zip
+            archive: sourcepawn-studio-x86_64-windows.zip
 
           - os: windows-latest
             target: i686-pc-windows-msvc
             program: cargo
             platform: win32
             arch: ia32
-            archive: sourcepawn_lsp-i686-windows.zip
+            archive: sourcepawn-studio-i686-windows.zip
 
           - os: windows-latest
             target: aarch64-pc-windows-msvc
             program: cargo
             platform: win32
             arch: arm64
-            archive: sourcepawn_lsp-aarch64-windows.zip
+            archive: sourcepawn-studio-aarch64-windows.zip
 
           - os: macos-latest
             target: x86_64-apple-darwin
             program: cargo
             platform: darwin
             arch: x64
-            archive: sourcepawn_lsp-x86_64-macos.zip
+            archive: sourcepawn-studio-x86_64-macos.zip
 
           - os: macos-latest
             target: aarch64-apple-darwin
             program: cargo
             platform: darwin
             arch: arm64
-            archive: sourcepawn_lsp-aarch64-macos.zip
+            archive: sourcepawn-studio-aarch64-macos.zip
 
           - os: ubuntu-20.04
             target: x86_64-unknown-linux-gnu
             program: cargo
             platform: linux
             arch: x64
-            archive: sourcepawn_lsp-x86_64-linux.zip
+            archive: sourcepawn-studio-x86_64-linux.zip
 
           - os: ubuntu-20.04
             target: aarch64-unknown-linux-gnu
             program: cross
             platform: linux
             arch: arm64
-            archive: sourcepawn_lsp-aarch64-linux.zip
+            archive: sourcepawn-studio-aarch64-linux.zip
 
           - os: ubuntu-20.04
             target: armv7-unknown-linux-gnueabihf
             program: cross
             platform: linux
             arch: armhf
-            archive: sourcepawn_lsp-armv7hf-linux.zip
+            archive: sourcepawn-studio-armv7hf-linux.zip
 
     steps:
       - uses: actions/checkout@v4
@@ -96,13 +96,13 @@ jobs:
         run: ${{ matrix.program }} build --target ${{ matrix.target }} --all-features --release --locked
       - name: Compress (Windows)
         if: ${{ contains(matrix.os, 'windows') }}
-        run: ${{ format('Compress-Archive target/{0}/release/sourcepawn_lsp.exe {1}', matrix.target, matrix.archive) }}
+        run: ${{ format('Compress-Archive target/{0}/release/sourcepawn-studio.exe {1}', matrix.target, matrix.archive) }}
       - name: Compress (macOS)
         if: ${{ contains(matrix.os, 'macos') }}
-        run: ${{ format('zip -j {1} target/{0}/release/sourcepawn_lsp', matrix.target, matrix.archive) }}
+        run: ${{ format('zip -j {1} target/{0}/release/sourcepawn-studio', matrix.target, matrix.archive) }}
       - name: Compress (Linux)
         if: ${{ contains(matrix.os, 'ubuntu') }}
-        run: ${{ format('zip -j {1} target/{0}/release/sourcepawn_lsp', matrix.target, matrix.archive) }}
+        run: ${{ format('zip -j {1} target/{0}/release/sourcepawn-studio', matrix.target, matrix.archive) }}
       - name: Upload debug symbols
         run: sentry-cli upload-dif --wait target/${{ matrix.target }}/release/
 
@@ -113,23 +113,23 @@ jobs:
         run: npm install
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Bundle sourcepawn-lsp (Windows)
+      - name: Bundle sourcepawn-studio (Windows)
         if: ${{ contains(matrix.os, 'windows') }}
         shell: pwsh
         run: |
           mkdir -p editors/code-amxxpawn/languageServer
-          cp target/${{ matrix.target }}/release/sourcepawn_lsp.exe editors/code-amxxpawn/languageServer/
-      - name: Bundle sourcepawn-lsp
+          cp target/${{ matrix.target }}/release/sourcepawn-studio.exe editors/code-amxxpawn/languageServer/
+      - name: Bundle sourcepawn-studio
         if: ${{ !contains(matrix.os, 'windows') }}
         shell: pwsh
         run: |
           mkdir -p editors/code-amxxpawn/languageServer
-          cp target/${{ matrix.target }}/release/sourcepawn_lsp editors/code-amxxpawn/languageServer/
+          cp target/${{ matrix.target }}/release/sourcepawn-studio editors/code-amxxpawn/languageServer/
       - name: Package VSCode extension
         working-directory: ./editors/code-amxxpawn
         run: npx vsce package --target ${{ env.target }}
 
-      - name: Upload sourcepawn-lsp binary
+      - name: Upload sourcepawn-studio binary
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.target }}

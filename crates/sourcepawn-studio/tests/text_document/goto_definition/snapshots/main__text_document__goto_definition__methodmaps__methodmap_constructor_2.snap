@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/goto_definition/methodmaps.rs
+assertion_line: 90
+expression: "goto_definition(r#\"\n%! main.sp\nmethodmap Foo {\n    public Foo(int foo) {}\n                    |\n                    ^\n}\n\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 1,
+        "character": 19
+      },
+      "end": {
+        "line": 1,
+        "character": 22
+      }
+    },
+    "targetUri": "file:///main.sp",
+    "targetRange": {
+      "start": {
+        "line": 1,
+        "character": 15
+      },
+      "end": {
+        "line": 1,
+        "character": 22
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 1,
+        "character": 19
+      },
+      "end": {
+        "line": 1,
+        "character": 22
+      }
+    }
+  }
+]

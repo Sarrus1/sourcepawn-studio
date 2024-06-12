@@ -1,38 +1,38 @@
 <div align="center">
-  <img width=367 height=128 src="https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/images/sp-studio-full_512.png" alt="Logo">
+  <img width=367 height=128 src="https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/main/images/sp-studio-full_512.png" alt="Logo">
   <br>
   <br>
   <p>
     <strong>VSCode extension and LSP implementation for the SourcePawn programming language written in Rust</strong>
   </p>
   <p style="margin-bottom: 0.5ex;">
-    <a href="https://github.com/Sarrus1/sourcepawn-vscode/releases/">
+    <a href="https://github.com/Sarrus1/sourcepawn-studio/releases/">
       <img
         src="https://img.shields.io/visual-studio-marketplace/v/Sarrus.sourcepawn-vscode?include_prereleases"
         />
     </a>
-    <a href="https://github.com/Sarrus1/sourcepawn-vscode/releases/latest">
+    <a href="https://github.com/Sarrus1/sourcepawn-studio/releases/latest">
       <img
         src="https://img.shields.io/visual-studio-marketplace/i/Sarrus.sourcepawn-vscode"
         />
     </a>
-    <a href="https://github.com/Sarrus1/sourcepawn-vscode/releases/latest">
+    <a href="https://github.com/Sarrus1/sourcepawn-studio/releases/latest">
       <img
         src="https://img.shields.io/visual-studio-marketplace/d/Sarrus.sourcepawn-vscode"
         />
     </a>
-    <a href="https://github.com/Sarrus1/sourcepawn-vscode/actions/workflows/ci.yml">
+    <a href="https://github.com/Sarrus1/sourcepawn-studio/actions/workflows/ci.yml">
       <img
         alt="CI status"
-        src="https://github.com/Sarrus1/sourcepawn-vscode/actions/workflows/ci.yml/badge.svg"
+        src="https://github.com/Sarrus1/sourcepawn-studio/actions/workflows/ci.yml/badge.svg"
       />
     </a>
-    <img alt="GitHub" src="https://img.shields.io/github/license/Sarrus1/sourcepawn-lsp">
+    <img alt="GitHub" src="https://img.shields.io/github/license/Sarrus1/sourcepawn-studio">
   </p>
   <br>
   <br>
   <p>
-    <img alt="Showcase" src="https://raw.githubusercontent.com/Sarrus1/sourcepawn-vscode/main/images/showcase-1.gif">
+    <img alt="Showcase" src="https://raw.githubusercontent.com/Sarrus1/sourcepawn-studio/main/images/showcase-1.gif">
   </p>
 </div>
 
@@ -101,7 +101,7 @@ The Language Server is compatible with any text editor that implements the Langu
 
 ## VSCode support
 
-For ease of use with [Visual Studio Code](https://code.visualstudio.com/), an extension bundles `sourcepawn-lsp` with a build for each major platform and OS. You can download it from the marketplace [here](https://marketplace.visualstudio.com/items?itemName=Sarrus.sourcepawn-vscode).
+For ease of use with [Visual Studio Code](https://code.visualstudio.com/), the extension bundles a binary of the Language Server for each major platform and OS. You can download it from the marketplace [here](https://marketplace.visualstudio.com/items?itemName=Sarrus.sourcepawn-vscode).
 
 # AMXXPawn support
 
@@ -111,7 +111,7 @@ A VSCode extension exists which bundles the server with the correct launch flags
 
 # Installation
 
-Please follow the [Quick Start](https://sarrus1.github.io/sourcepawn-vscode/docs/quick-start) on the website.
+Please follow the [Quick Start](https://sarrus1.github.io/sourcepawn-studio/docs/quick-start) on the website.
 
 # Frequently Asked Questions
 
@@ -129,7 +129,7 @@ If you prefer to make a donation to me for this project, you can [buy me a coffe
 
 Pull requests and suggestions are welcome.
 
-- To make a suggestion or to report an issue, please create a new issue [here](https://github.com/Sarrus1/sourcepawn-vscode/issues).
+- To make a suggestion or to report an issue, please create a new issue [here](https://github.com/Sarrus1/sourcepawn-studio/issues).
 - To make a contribution, fork the repository, make the desired changes, and open a pull request.
 
 ## How to run the Language Server from its source code ?
@@ -141,4 +141,4 @@ To run the Language Server, with the VSCode extension, from source, do the follo
 - Fork this repository and clone it on your machine (do this with VSCode for easier manipulation).
 - From the root of the repository, run the following commands to install npm dependencies: `cd editors/code && npm i`.
 - Press `f5` and select the `Run Extension (Debug Build)` launch task in the prompt. This will compile the Language Server server from the source code and package the VSCode extension's source code.
-- (Optional) You can attach a debugger to the Language Server by doing the step above, then running another task called `Attach To Server` or `Win Attach To Server` on Windows and typing `sourcepawn-lsp` in the prompt.
+- (Optional) You can attach a debugger to the Language Server by doing the step above, then running another task called `Attach To Server` or `Win Attach To Server` on Windows and typing `sourcepawn-studio` in the prompt.

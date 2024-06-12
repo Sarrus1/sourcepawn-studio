@@ -8,14 +8,14 @@ export const preprocessedDocument = new lc.RequestType<
   PreprocessedDocumentParams,
   string,
   void
->("sourcepawn-lsp/preprocessedDocument");
+>("sourcepawn-studio/preprocessedDocument");
 
 export type PreprocessedDocumentParams = {
   textDocument?: lc.TextDocumentIdentifier;
 };
 
 export const syntaxTree = new lc.RequestType<SyntaxTreeParams, string, void>(
-  "sourcepawn-lsp/syntaxTree"
+  "sourcepawn-studio/syntaxTree"
 );
 
 export type SyntaxTreeParams = {
@@ -26,14 +26,14 @@ export const analyzerStatus = new lc.RequestType<
   AnalyzerStatusParams,
   string,
   void
->("sourcepawn-lsp/analyzerStatus");
+>("sourcepawn-studio/analyzerStatus");
 
 export type AnalyzerStatusParams = {
   textDocument?: lc.TextDocumentIdentifier;
 };
 
 export const itemTree = new lc.RequestType<ItemTreeParams, string, void>(
-  "sourcepawn-lsp/itemTree"
+  "sourcepawn-studio/itemTree"
 );
 
 export type ItemTreeParams = {
@@ -44,7 +44,7 @@ export const projectMainPath = new lc.RequestType<
   ProjectMainPathParams,
   lc.URI,
   void
->("sourcepawn-lsp/projectMainPath");
+>("sourcepawn-studio/projectMainPath");
 
 export type ProjectMainPathParams = {
   uri?: lc.URI;
@@ -54,14 +54,14 @@ export const projectsGraphviz = new lc.RequestType<
   ProjectsGraphvizParams,
   string,
   void
->("sourcepawn-lsp/projectsGraphviz");
+>("sourcepawn-studio/projectsGraphviz");
 
 export type ProjectsGraphvizParams = {
   textDocument?: lc.TextDocumentIdentifier;
 };
 
 export const serverStatus = new lc.NotificationType<ServerStatusParams>(
-  "sourcepawn-lsp/serverStatus"
+  "sourcepawn-studio/serverStatus"
 );
 export type ServerStatusParams = {
   health: "ok" | "warning" | "error";
@@ -70,7 +70,7 @@ export type ServerStatusParams = {
 };
 
 export const spcompStatus = new lc.NotificationType<ServerStatusParams>(
-  "sourcepawn-lsp/spcompStatus"
+  "sourcepawn-studio/spcompStatus"
 );
 export type SpcompStatusParams = {
   quiescent: boolean;

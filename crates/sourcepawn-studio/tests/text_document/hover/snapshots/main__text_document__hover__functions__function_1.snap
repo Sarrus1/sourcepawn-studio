@@ -1,0 +1,22 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/hover/functions.rs
+assertion_line: 6
+expression: "hover(r#\"\n%! main.sp\n/**\n * The foo function.\n */\nvoid foo(){}\n      |\n      ^\n\"#)"
+---
+{
+  "contents": {
+    "kind": "markdown",
+    "value": "```sourcepawn\nvoid foo()\n```\n\n---\n\nThe foo function."
+  },
+  "range": {
+    "start": {
+      "line": 3,
+      "character": 5
+    },
+    "end": {
+      "line": 3,
+      "character": 8
+    }
+  },
+  "actions": []
+}

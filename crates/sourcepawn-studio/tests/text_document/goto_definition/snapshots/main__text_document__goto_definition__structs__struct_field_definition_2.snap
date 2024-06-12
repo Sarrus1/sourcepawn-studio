@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/goto_definition/structs.rs
+assertion_line: 44
+expression: "goto_definition(r#\"\n%! main.sp\nstruct Plugin\n{\n   public const char[] name;        /**< Plugin Name */\n   public const char[] description; /**< Plugin Description */\n   public const char[] author;      /**< Plugin Author */\n                         |\n                         ^\n   public const char[] version;     /**< Plugin Version */\n   public const char[] url;         /**< Plugin URL */\n};\n\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 4,
+        "character": 23
+      },
+      "end": {
+        "line": 4,
+        "character": 29
+      }
+    },
+    "targetUri": "file:///main.sp",
+    "targetRange": {
+      "start": {
+        "line": 4,
+        "character": 3
+      },
+      "end": {
+        "line": 4,
+        "character": 30
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 4,
+        "character": 23
+      },
+      "end": {
+        "line": 4,
+        "character": 29
+      }
+    }
+  }
+]

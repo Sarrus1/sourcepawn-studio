@@ -6,7 +6,7 @@ import { Cmd, CtxInit } from "../ctx";
 export function itemTreeCommand(ctx: CtxInit): Cmd {
   const tdcp = new (class implements vscode.TextDocumentContentProvider {
     readonly uri = vscode.Uri.parse(
-      "sourcepawn-lsp-item-tree://itemTree/itemTree.sp"
+      "sourcepawn-studio-item-tree://itemTree/itemTree.sp"
     );
     readonly eventEmitter = new vscode.EventEmitter<vscode.Uri>();
     constructor() {
@@ -63,7 +63,7 @@ export function itemTreeCommand(ctx: CtxInit): Cmd {
 
   ctx.pushExtCleanup(
     vscode.workspace.registerTextDocumentContentProvider(
-      "sourcepawn-lsp-item-tree",
+      "sourcepawn-studio-item-tree",
       tdcp
     )
   );

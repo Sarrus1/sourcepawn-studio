@@ -25,13 +25,13 @@ export function createServerCommands(): Record<string, CommandFactory> {
     reload: {
       enabled: (ctx) => async () => {
         void vscode.window.showInformationMessage(
-          "Reloading sourcepawn_lsp..."
+          "Reloading sourcepawn-studio..."
         );
         await ctx.restart();
       },
       disabled: (ctx) => async () => {
         void vscode.window.showInformationMessage(
-          "Reloading sourcepawn_lsp..."
+          "Reloading sourcepawn-studio..."
         );
         await ctx.start();
       },

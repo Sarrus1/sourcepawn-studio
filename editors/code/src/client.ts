@@ -126,8 +126,8 @@ export async function createClient(
   };
 
   const client = new lc.LanguageClient(
-    "sourcepawn-vscode",
-    "SourcePawn Language Server",
+    "sourcepawn-studio",
+    "SourcePawn Studio",
     serverOptions,
     clientOptions
   );

@@ -1,0 +1,22 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/hover/macros.rs
+assertion_line: 73
+expression: "hover(r#\"\n%! main.sp\n#define FOO(%0) \tview_as<int>( %0 )\n#define BAR(%0,%1) foo[FOO( %0 )][%1]\n#define BAZ      (1 << 0)\nint foo[10][10];\nint bar = BAR( 1, 2 ) + BAZ;\n                         |\n                         ^\n\"#)"
+---
+{
+  "contents": {
+    "kind": "markdown",
+    "value": "```sourcepawn\n#define BAZ      (1 << 0)\n```\nExpands to:\n```sourcepawn\n(1 << 0)\n```"
+  },
+  "range": {
+    "start": {
+      "line": 4,
+      "character": 24
+    },
+    "end": {
+      "line": 4,
+      "character": 27
+    }
+  },
+  "actions": []
+}

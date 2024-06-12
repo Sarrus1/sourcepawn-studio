@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/goto_definition/enum_structs.rs
+assertion_line: 6
+expression: "goto_definition(r#\"\n%! main.sp\nenum struct Foo {\n    int foo[8];\n}\n\nvoid main() {\n    Foo::foo;\n          |\n          ^\n}\n\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 5,
+        "character": 9
+      },
+      "end": {
+        "line": 5,
+        "character": 12
+      }
+    },
+    "targetUri": "file:///main.sp",
+    "targetRange": {
+      "start": {
+        "line": 1,
+        "character": 4
+      },
+      "end": {
+        "line": 1,
+        "character": 15
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 1,
+        "character": 8
+      },
+      "end": {
+        "line": 1,
+        "character": 11
+      }
+    }
+  }
+]

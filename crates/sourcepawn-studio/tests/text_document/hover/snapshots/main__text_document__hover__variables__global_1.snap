@@ -1,0 +1,22 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/hover/variables.rs
+assertion_line: 6
+expression: "hover(r#\"\n%! main.sp\npublic const int MaxClients;   /**< Maximum number of players the server supports (dynamic) */\n                    |\n                    ^\n\"#)"
+---
+{
+  "contents": {
+    "kind": "markdown",
+    "value": "```sourcepawn\npublic int MaxClients;\n```\n\n---\n\nMaximum number of players the server supports (dynamic)"
+  },
+  "range": {
+    "start": {
+      "line": 0,
+      "character": 17
+    },
+    "end": {
+      "line": 0,
+      "character": 27
+    }
+  },
+  "actions": []
+}

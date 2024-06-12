@@ -74,9 +74,9 @@ class Doctor {
     <h2>Additional help</h2>
     <p>If all the above are green and the extension is still not behaving as expected, try the following:</p>
     <ul>
-      <li>Restart the SourcePawn Language Server (Hover your mouse on the "sourcepawn-lsp" logo on the bottom left of the screen and click on restart).</li>
+      <li>Restart the SourcePawn Language Server (Hover your mouse on the "sourcepawn-studio" logo on the bottom left of the screen and click on restart).</li>
       <li>Reload VSCode (CTRL+Shift+P and type "Reload Window").</li>
-      <li>Look in the logs for errors (Hover your mouse on the "sourcepawn-lsp" logo on the bottom left of the screen and click on Open Logs). You can set the verbosity of the server to "trace" in the "sourcepawn.trace.server" setting.</li>
+      <li>Look in the logs for errors (Hover your mouse on the "sourcepawn-studio" logo on the bottom left of the screen and click on Open Logs). You can set the verbosity of the server to "trace" in the "sourcepawn.trace.server" setting.</li>
       <li>Try to reproduce the issue in a new project.</li>
       <li>If the extension is still not working properly, try contacting Sarrus on Discord (sarrus_).</li>
       </ul>
@@ -214,7 +214,10 @@ class Doctor {
   }
 
   async checkIncludesDirectories() {
-    const includeDirectories: string[] = getConfig(Section.LSP, "includeDirectories");
+    const includeDirectories: string[] = getConfig(
+      Section.LSP,
+      "includeDirectories"
+    );
     if (!includeDirectories) {
       this.isSMInstalled = DiagnosticState.Error;
       return;

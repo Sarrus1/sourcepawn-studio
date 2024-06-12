@@ -1,0 +1,40 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/goto_definition/arrays.rs
+assertion_line: 41
+expression: "goto_definition(r#\"\n%! main.sp\nenum struct Foo {\n    int foo;\n}\n\nvoid foo() {\n    Foo baz[1][1] = {};\n    baz[0][0].foo = 1;\n               |\n               ^\n}\n\"#)"
+---
+[
+  {
+    "originSelectionRange": {
+      "start": {
+        "line": 6,
+        "character": 14
+      },
+      "end": {
+        "line": 6,
+        "character": 17
+      }
+    },
+    "targetUri": "file:///main.sp",
+    "targetRange": {
+      "start": {
+        "line": 1,
+        "character": 4
+      },
+      "end": {
+        "line": 1,
+        "character": 12
+      }
+    },
+    "targetSelectionRange": {
+      "start": {
+        "line": 1,
+        "character": 8
+      },
+      "end": {
+        "line": 1,
+        "character": 11
+      }
+    }
+  }
+]

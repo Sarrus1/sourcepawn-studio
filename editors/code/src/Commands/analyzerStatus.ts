@@ -4,7 +4,7 @@ import { Cmd, CtxInit } from "../ctx";
 
 export function analyzerStatusCommand(ctx: CtxInit): Cmd {
   const tdcp = new (class implements vscode.TextDocumentContentProvider {
-    readonly uri = vscode.Uri.parse("sourcepawn-lsp-status://status");
+    readonly uri = vscode.Uri.parse("sourcepawn-studio-status://status");
     readonly eventEmitter = new vscode.EventEmitter<vscode.Uri>();
 
     async provideTextDocumentContent(
@@ -35,7 +35,7 @@ export function analyzerStatusCommand(ctx: CtxInit): Cmd {
 
   ctx.pushExtCleanup(
     vscode.workspace.registerTextDocumentContentProvider(
-      "sourcepawn-lsp-status",
+      "sourcepawn-studio-status",
       tdcp
     )
   );

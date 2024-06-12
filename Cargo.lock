@@ -2478,20 +2478,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "sourcepawn_lexer"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "335d7870119403eecccf776aa4afb98d4a02e0c186c24556bdf40e7c186ea143"
-dependencies = [
- "lazy_static",
- "logos",
- "lsp-types",
- "regex",
- "smol_str",
-]
-
-[[package]]
-name = "sourcepawn_lsp"
+name = "sourcepawn-studio"
 version = "0.13.0"
 dependencies = [
  "always-assert",
@@ -2544,6 +2531,19 @@ dependencies = [
  "vfs-notify",
  "walkdir",
  "zip",
+]
+
+[[package]]
+name = "sourcepawn_lexer"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "335d7870119403eecccf776aa4afb98d4a02e0c186c24556bdf40e7c186ea143"
+dependencies = [
+ "lazy_static",
+ "logos",
+ "lsp-types",
+ "regex",
+ "smol_str",
 ]
 
 [[package]]

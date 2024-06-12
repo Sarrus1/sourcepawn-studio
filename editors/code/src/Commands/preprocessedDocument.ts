@@ -6,7 +6,7 @@ import { Cmd, CtxInit } from "../ctx";
 export function preprocessedDocumentCommand(ctx: CtxInit): Cmd {
   const tdcp = new (class implements vscode.TextDocumentContentProvider {
     readonly uri = vscode.Uri.parse(
-      "sourcepawn-lsp-preprocessed-file://preprocessedFile/file.sp"
+      "sourcepawn-studio-preprocessed-file://preprocessedFile/file.sp"
     );
     readonly eventEmitter = new vscode.EventEmitter<vscode.Uri>();
     constructor() {
@@ -63,7 +63,7 @@ export function preprocessedDocumentCommand(ctx: CtxInit): Cmd {
 
   ctx.pushExtCleanup(
     vscode.workspace.registerTextDocumentContentProvider(
-      "sourcepawn-lsp-preprocessed-file",
+      "sourcepawn-studio-preprocessed-file",
       tdcp
     )
   );
