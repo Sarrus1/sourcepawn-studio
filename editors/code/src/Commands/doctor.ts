@@ -68,7 +68,7 @@ class Doctor {
     </ul>
     <h2>Includes</h2>
     <ul>
-      ${this.includesDirectoriesToWebView()}
+      ${this.includeDirectoriesToWebView()}
     </ul>
 
     <h2>Additional help</h2>
@@ -86,7 +86,7 @@ class Doctor {
 
   async runDiagnostics() {
     this.checkSettings();
-    this.checkIncludesDirectories();
+    this.checkIncludeDirectories();
     this.checkSpComp();
   }
 
@@ -185,7 +185,7 @@ class Doctor {
     });
   }
 
-  includesDirectoriesToWebView(): string {
+  includeDirectoriesToWebView(): string {
     const diagnostics = [];
     switch (this.isSMInstalled) {
       case DiagnosticState.OK:
@@ -213,7 +213,7 @@ class Doctor {
     return diagnostics.map((d) => `<li>${d}</li>`).join("\n");
   }
 
-  async checkIncludesDirectories() {
+  async checkIncludeDirectories() {
     const includeDirectories: string[] = getConfig(
       Section.LSP,
       "includeDirectories"
@@ -251,7 +251,7 @@ class Doctor {
 
   async checkSettings() {
     this.checkSpComp();
-    this.checkIncludesDirectories();
+    this.checkIncludeDirectories();
   }
 }
 

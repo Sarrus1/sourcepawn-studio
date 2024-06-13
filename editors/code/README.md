@@ -6,6 +6,9 @@
     <strong>SourcePawn highlighting and autocompletion for Visual Studio Code. Supports the SourceMod old and new syntax.
     </strong>
   </p>
+  <a href="https://sarrus1.github.io/sourcepawn-studio/">Website</a>
+  <br>
+  <br>
   <p style="margin-bottom: 0.5ex;">
     <a href="https://github.com/Sarrus1/sourcepawn-studio/releases/">
       <img

@@ -1,5 +1,18 @@
 ## Release Notes
 
+## [8.0.0]
+
+### Added
+
+- New logo, new name, new website.
+- Added more precise progress bar when opening a project.
+- Better support for uploading files to a server (thanks [@maxijabase](https://github.com/maxijabase)!).
+- Better support for executing an RCON command after an upload (thanks [@maxijabase](https://github.com/maxijabase)!).
+
+### Fixed
+
+- Fixed an issue when using the reveal projects graph command.
+
 ## [7.2.12]
 
 ### Chore

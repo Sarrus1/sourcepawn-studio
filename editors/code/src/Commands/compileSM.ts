@@ -160,8 +160,8 @@ export async function run(args: URI): Promise<number> {
       output.appendLine("Compilation successful.");
 
       // Get after-compile actions
-      const uploadFtp: boolean = getConfig(Section.SourcePawn, "uploadToServer", workspaceFolder);
-      const runCommands: boolean = getConfig(Section.SourcePawn, "runServerCommands", workspaceFolder);
+      const uploadFtp: boolean = getConfig(Section.SourcePawn, "uploadToServerAfterCompile", workspaceFolder);
+      const runCommands: boolean = getConfig(Section.SourcePawn, "runServerCommandsAfterCompile", workspaceFolder);
 
       // Run upload and run commands in order if both are true
       const uploadSuccessful = uploadFtp ? await uploadToServerCommand(fileToCompilePath) : true;

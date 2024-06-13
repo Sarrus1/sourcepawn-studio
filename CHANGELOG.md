@@ -2,9 +2,12 @@
 
 ## [0.13.0]
 
-### Chore
+### Added
 
-- Prerelease
+- Added an incremental database using the Salsa incremental computation framework.
+- Made the preprocessor incremental.
+- Added a lot of unit tests.
+- Made all the request handlers UnwindSafe to reduce the amount of crashes.
 
 ## [0.12.0]
 
