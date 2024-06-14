@@ -47,6 +47,7 @@ class Doctor {
   isSPCompSet = DiagnosticState.None;
   isSPCompInstalled = DiagnosticState.None;
   isSPCompRunnable = DiagnosticState.None;
+  SPCompVersion: String = undefined;
 
   isSMInstalled = DiagnosticState.None;
 
@@ -113,12 +114,12 @@ class Doctor {
     switch (this.isSPCompInstalled) {
       case DiagnosticState.OK:
         diagnostics.push(
-          `✅ "SourcePawnLanguageServer.compiler.path" points to a file (value: ${this.compilerPath}).`
+          `✅ "SourcePawnLanguageServer.compiler.path" points to a file.`
         );
         break;
       case DiagnosticState.Error:
         diagnostics.push(
-          `❌ "SourcePawnLanguageServer.compiler.path" does not point to a file (value: ${this.compilerPath}).`
+          `❌ "SourcePawnLanguageServer.compiler.path" does not point to a file.`
         );
         break;
       case DiagnosticState.None:
@@ -131,12 +132,12 @@ class Doctor {
     switch (this.isSPCompRunnable) {
       case DiagnosticState.OK:
         diagnostics.push(
-          `✅ "SourcePawnLanguageServer.compiler.path" is executable (value: ${this.compilerPath}).`
+          `✅ "SourcePawnLanguageServer.compiler.path" is executable v${this.SPCompVersion}.`
         );
         break;
       case DiagnosticState.Error:
         diagnostics.push(
-          `❌ "SourcePawnLanguageServer.compiler.path" is not executable (value: ${this.compilerPath}).`
+          `❌ "SourcePawnLanguageServer.compiler.path" is not executable.`
         );
         break;
       case DiagnosticState.None:
@@ -170,11 +171,18 @@ class Doctor {
         return;
       }
       this.isSPCompInstalled = DiagnosticState.OK;
-
-      execFile(this.compilerPath, ["-h"], (err, stdout, stderr) => {
+      let command = this.compilerPath;
+      let args = ["-h"];
+      if (process.arch === "arm64" && process.platform === "darwin") {
+        command = "arch";
+        args = ["-x86_64", this.compilerPath, "-h"];
+      }
+      execFile(command, args, (err, stdout, stderr) => {
         if (err) {
-          if (stdout.startsWith("SourcePawn Compiler")) {
+          let match = stdout.match(/SourcePawn Compiler (.+)/);
+          if (match !== undefined) {
             this.isSPCompRunnable = DiagnosticState.OK;
+            this.SPCompVersion = match[1];
             return;
           }
           this.isSPCompRunnable = DiagnosticState.Error;
