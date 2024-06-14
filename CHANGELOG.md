@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [0.13.1]
+
+### Added
+
+- Added a setting to set the maximum amount of projects during cache priming, reducing RAM usage for larger workspaces.
+- Fixed some panics.
+
 ## [0.13.0]
 
 ### Added

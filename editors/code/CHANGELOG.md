@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [8.0.1]
+
+### Fixed
+
+- Improved the doctor.
+- LSP version bump
+
 ## [8.0.0]
 
 ### Added
