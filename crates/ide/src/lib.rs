@@ -162,6 +162,7 @@ impl Analysis {
     pub fn parallel_prime_caches<F1, F2>(
         &self,
         num_worker_threads: u8,
+        files_to_prime: Option<Vec<FileId>>,
         cb: F1,
         file_id_to_name: F2,
     ) -> Cancellable<()>
@@ -170,7 +171,13 @@ impl Analysis {
         F2: Fn(FileId) -> Option<String> + Sync + std::panic::UnwindSafe,
     {
         self.with_db(move |db| {
-            prime_caches::parallel_prime_caches(db, num_worker_threads, &cb, file_id_to_name)
+            prime_caches::parallel_prime_caches(
+                db,
+                num_worker_threads,
+                files_to_prime,
+                &cb,
+                file_id_to_name,
+            )
         })
     }
 

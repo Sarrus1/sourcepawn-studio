@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use base_db::{FileExtension, SourceDatabase, SubGraph};
 use crossbeam::channel::Sender;
-use fxhash::FxHashMap;
+use fxhash::{FxHashMap, FxHashSet};
 use hir_def::DefDatabase;
 use ide_db::{FxIndexMap, RootDatabase};
 use salsa::{Cancelled, Database, ParallelDatabase, Snapshot};
@@ -21,15 +21,28 @@ pub struct ParallelPrimeCachesProgress {
 pub(crate) fn parallel_prime_caches<F>(
     db: &RootDatabase,
     num_worker_threads: u8,
+    files_to_prime: Option<Vec<FileId>>,
     cb: &(dyn Fn(ParallelPrimeCachesProgress) + Sync),
     file_id_to_name: F,
 ) where
     F: Fn(FileId) -> Option<String> + Sync + std::panic::UnwindSafe,
 {
     let graph = db.graph();
-    let projects_to_prime = graph.subgraphs_with_roots();
-    let projects_to_prime = projects_to_prime
+    let subgraphs = graph.subgraphs_with_roots();
+    let mut projects_to_prime: FxHashSet<FileId> = FxHashSet::default();
+    if let Some(files_to_prime) = files_to_prime {
+        for file in files_to_prime {
+            if let Some((root, _)) = subgraphs.iter().find(|(_, v)| v.contains_file(file)) {
+                projects_to_prime.insert(*root);
+            }
+        }
+    } else {
+        projects_to_prime.extend(subgraphs.keys())
+    }
+
+    let projects_to_prime = subgraphs
         .into_iter()
+        .filter(|(k, _)| projects_to_prime.contains(k))
         .filter(|(_, subgraph)| subgraph.root.extension == FileExtension::Sp)
         .collect::<FxHashMap<_, _>>();
 

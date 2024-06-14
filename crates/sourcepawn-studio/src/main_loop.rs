@@ -1,7 +1,9 @@
 use std::{env, path::PathBuf, time::Instant};
 
 use always_assert::always;
+use base_db::SourceDatabase;
 use crossbeam::channel::Receiver;
+use itertools::Itertools;
 use lsp_server::Message;
 use lsp_types::{
     notification::{Notification, ShowMessage},
@@ -314,6 +316,18 @@ impl GlobalState {
         let num_worker_threads = self.config.prime_caches_num_threads();
         // FIXME: This is a full clone of the VFS
         let vfs = self.vfs.read().get_url_map();
+        let files_to_prime = self
+            .mem_docs
+            .iter()
+            .map(|path| self.vfs.read().file_id(path).unwrap())
+            .collect_vec();
+        let files_to_prime = if self.config.files_to_prime_below_threshold(
+            self.analysis_host.raw_database().graph().find_roots().len(),
+        ) {
+            None
+        } else {
+            Some(files_to_prime)
+        };
         self.task_pool
             .handle
             .spawn_with_sender(ThreadIntent::Worker, {
@@ -324,6 +338,7 @@ impl GlobalState {
                         .unwrap();
                     let res = analysis.parallel_prime_caches(
                         num_worker_threads,
+                        files_to_prime,
                         |progress| {
                             let report = PrimeCachesProgress::Report(progress);
                             sender.send(Task::PrimeCaches(report)).unwrap();

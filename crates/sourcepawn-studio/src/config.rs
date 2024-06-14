@@ -40,6 +40,12 @@ config_data! {
         cachePriming_enable: bool = "true",
         /// How many worker threads to handle priming caches. The default `0` means to pick automatically.
         cachePriming_numThreads: ParallelCachePrimingNumThreads = "0",
+        /// Number of projects above which cachePriming will only be done for the current project.
+        /// The more projects you have in one workspace, the more RAM cachePriming will consume.
+        /// Lower this setting or disable cachePriming with `#SourcePawnLanguageServer.cachePriming.enable#` to lower
+        /// the server's RAM usage.
+        /// `0` for unlimited projects.
+        cachePriming_projectsThreshold: usize = "5",
         /// Linter arguments that will be passed to spcomp.
         /// Note that the compilation target, include directories and output path are already handled by the server.
         compiler_arguments: Vec<String> = "[]",
@@ -255,6 +261,11 @@ impl Config {
 
     pub fn prefill_caches(&self) -> bool {
         self.data.cachePriming_enable
+    }
+
+    pub fn files_to_prime_below_threshold(&self, nb_projects: usize) -> bool {
+        self.data.cachePriming_projectsThreshold == 0
+            || nb_projects <= self.data.cachePriming_projectsThreshold
     }
 
     pub fn semantic_tokens_refresh(&self) -> bool {

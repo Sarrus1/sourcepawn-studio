@@ -441,6 +441,12 @@
           "minimum": 0,
           "maximum": 255
         },
+        "SourcePawnLanguageServer.cachePriming.projectsThreshold": {
+          "markdownDescription": "Number of projects above which cachePriming will only be done for the current project.\nThe more projects you have in one workspace, the more RAM cachePriming will consume.\nLower this setting or disable cachePriming with `#SourcePawnLanguageServer.cachePriming.enable#` to lower\nthe server's RAM usage.\n`0` for unlimited projects.",
+          "default": 5,
+          "type": "integer",
+          "minimum": 0
+        },
         "SourcePawnLanguageServer.compiler.arguments": {
           "markdownDescription": "Linter arguments that will be passed to spcomp.\nNote that the compilation target, include directories and output path are already handled by the server.",
           "default": [],

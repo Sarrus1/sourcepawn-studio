@@ -19,6 +19,18 @@ How many worker threads to handle priming caches. The default `0` means to pick 
 
 _Default_: `0`
 
+## cachePriming.projectsThreshold
+
+**SourcePawnLanguageServer.cachePriming.projectsThreshold**
+
+Number of projects above which cachePriming will only be done for the current project.
+The more projects you have in one workspace, the more RAM cachePriming will consume.
+Lower this setting or disable cachePriming with [`SourcePawnLanguageServer.cachePriming.enable`](#cachePrimingenable) to lower
+the server's RAM usage.
+`0` for unlimited projects.
+
+_Default_: `5`
+
 ## compiler.arguments
 
 **SourcePawnLanguageServer.compiler.arguments**
