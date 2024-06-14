@@ -330,7 +330,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 self.struct_node_to_def(file_id, container.parent()?, *node, source)
             }
             TSKind::source_file => self.source_node_to_def(file_id, *node, source),
-            _ => todo!(),
+            _ => unreachable!("{} is not expected", container.kind()),
         }
     }
 
