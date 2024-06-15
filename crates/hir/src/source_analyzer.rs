@@ -104,7 +104,7 @@ impl SourceAnalyzer {
         node: &tree_sitter::Node,
         parent: &tree_sitter::Node,
     ) -> Option<Attribute> {
-        assert!(matches!(
+        debug_assert!(matches!(
             TSKind::from(*parent),
             TSKind::field_access | TSKind::scope_access
         ));
@@ -122,7 +122,7 @@ impl SourceAnalyzer {
         node: &tree_sitter::Node,
         parent: &tree_sitter::Node,
     ) -> Option<Function> {
-        assert!(matches!(TSKind::from(*parent), TSKind::field_access));
+        debug_assert_eq!(TSKind::from(*parent), TSKind::field_access);
         let src = InFile::new(self.file_id, node);
         let expr_id = self.expr_id(db, src)?;
         self.infer
@@ -137,7 +137,7 @@ impl SourceAnalyzer {
         node: &tree_sitter::Node,
         parent: &tree_sitter::Node,
     ) -> Option<Function> {
-        assert!(matches!(TSKind::from(*parent), TSKind::new_expression));
+        debug_assert_eq!(TSKind::from(*parent), TSKind::new_expression);
         let src = InFile::new(self.file_id, node);
         let expr_id = self.expr_id(db, src)?;
         self.infer
@@ -152,7 +152,7 @@ impl SourceAnalyzer {
         node: &tree_sitter::Node,
         parent: &tree_sitter::Node,
     ) -> Option<Local> {
-        assert!(matches!(TSKind::from(*parent), TSKind::named_arg));
+        debug_assert_eq!(TSKind::from(*parent), TSKind::named_arg);
         let src = InFile::new(self.file_id, node);
         let expr_id = self.expr_id(db, src)?;
         let (parent, expr_id) = self.infer.as_ref()?.named_arg_resolution(expr_id)?;

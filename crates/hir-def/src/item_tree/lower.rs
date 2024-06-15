@@ -82,15 +82,20 @@ impl<'db> Ctx<'db> {
         for (match_, _) in matches {
             for c in match_.captures {
                 let node = c.node;
+                if node.is_error() || node.is_missing() {
+                    continue;
+                }
                 if let Some(name) = node
                     .child_by_field_name("name")
                     .and_then(|n| n.utf8_text(self.source.as_bytes()).ok())
                     .map(Name::from)
                 {
-                    let ast_id = self.source_ast_id_map.ast_id_of(&node);
+                    let Some(ast_id) = self.source_ast_id_map.maybe_ast_id_of(&node) else {
+                        continue;
+                    };
                     let res = Macro {
                         name,
-                        ast_id,
+                        ast_id: *ast_id,
                         deprecated: self.is_deprecated(&node),
                     };
                     let id = self.tree.data_mut().macros.alloc(res);
@@ -296,7 +301,7 @@ impl<'db> Ctx<'db> {
         let Some(params_node) = node.child_by_field_name("parameters") else {
             return IdxRange::new(start_param_idx..start_param_idx);
         };
-        assert!(TSKind::from(params_node) == TSKind::parameter_declarations);
+        debug_assert_eq!(TSKind::from(params_node), TSKind::parameter_declarations);
         params_node
             .children(&mut params_node.walk())
             .for_each(|n| match TSKind::from(n) {

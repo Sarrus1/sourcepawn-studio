@@ -119,7 +119,7 @@ impl AstIdMap {
     }
 
     fn from_source(root_node: &tree_sitter::Node) -> Self {
-        assert!(root_node.parent().is_none());
+        debug_assert!(root_node.parent().is_none());
         let mut arena = Arena::default();
         let mut map = FxHashMap::default();
         bdfs(root_node, &mut |node: tree_sitter::Node<'_>| {
@@ -201,6 +201,10 @@ impl AstIdMap {
                 panic!("Failed to find: {:?}", NodePtr::from(node))
             }
         }
+    }
+
+    pub fn maybe_ast_id_of(&self, node: &tree_sitter::Node) -> Option<&AstId> {
+        self.map.get(&NodePtr::from(node))
     }
 
     pub(crate) fn get_raw(&self, id: AstId) -> NodePtr {

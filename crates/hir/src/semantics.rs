@@ -300,6 +300,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             }
         }
 
+        if node.is_error() {
+            return None;
+        }
         let parent_kind = TSKind::from(node.parent()?);
         if parent_kind == TSKind::preproc_include || parent_kind == TSKind::preproc_tryinclude {
             return self.include_node_to_def(file_id, node.parent()?, source);
@@ -410,7 +413,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
 
         let def_map = self.db.file_def_map(file_id);
         let body_node = container.child_by_field_name("body")?;
-        assert!(TSKind::from(body_node) == TSKind::block);
+        debug_assert_eq!(TSKind::from(body_node), TSKind::block);
         let hir_def::FileDefId::MethodmapId(id) = def_map.get_first_from_str(methodmap_name)?
         else {
             return None;
@@ -487,7 +490,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             let analyzer = SourceAnalyzer::new_no_body_no_infer(self.db, def, file_id);
             return DefResolution::try_from(analyzer.resolver.resolve_ident(text)?);
         };
-        assert!(TSKind::from(body_node) == TSKind::block);
+        debug_assert_eq!(TSKind::from(body_node), TSKind::block);
         let offset = node.start_position();
         match TSKind::from(parent) {
             TSKind::field_access | TSKind::scope_access if is_field_receiver_node(&node) => {
@@ -559,15 +562,14 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             .child_by_field_name("name")?
             .utf8_text(source.as_ref().as_bytes())
             .ok()?;
-        let body_node = container.child_by_field_name("body")?;
-        match TSKind::from(body_node) {
-            TSKind::block => match def_map.get_first_from_str(parent_name)? {
-                hir_def::FileDefId::FunctionId(id) => {
-                    self.function_node_to_def_(file_id, container, parent, node, source, id)
-                }
-                _ => unreachable!("Expected a function"),
-            },
-            _ => todo!("Handle non block body"),
+        if container.child_by_field_name("body").is_none() {
+            return None;
+        }
+        match def_map.get_first_from_str(parent_name)? {
+            hir_def::FileDefId::FunctionId(id) => {
+                self.function_node_to_def_(file_id, container, parent, node, source, id)
+            }
+            _ => unreachable!("Expected a function"),
         }
     }
 

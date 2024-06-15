@@ -61,8 +61,6 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     let (connection, threads) = Connection::stdio();
     GlobalState::new(connection, opts.amxxpawn_mode).run()?;
     threads.join()?;
-    // Use a print to avoid a panic since the output channel might have been closed
-    eprintln!("Shutting down sourcepawn-studio");
 
     Ok(())
 }

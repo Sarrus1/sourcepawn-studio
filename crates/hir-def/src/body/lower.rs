@@ -61,7 +61,7 @@ impl ExprCollector<'_> {
                         .for_each(|child| self.collect_parameter_declaration(child));
                 }
                 TSKind::parameter_declaration => self.collect_parameter_declaration(params_list),
-                _ => todo!("Handle non argument declarations"),
+                _ => unreachable!("Expected parameters"),
             }
         }
         if let Some(body) = body {

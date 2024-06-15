@@ -197,9 +197,9 @@ impl PreOperator {
             PreOperator::Shr => left >> right,
             PreOperator::Ushr => (left as u32 >> right as u32) as i32,
             PreOperator::Percent => left % right,
-            PreOperator::Defined => todo!(),
-            PreOperator::Qmark => todo!(),
-            PreOperator::Not
+            PreOperator::Defined
+            | PreOperator::Qmark
+            | PreOperator::Not
             | PreOperator::Tilde
             | PreOperator::Negate
             | PreOperator::Confirm
