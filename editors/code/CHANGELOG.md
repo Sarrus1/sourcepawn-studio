@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [8.0.2]
+
+### Fixed
+
+- LSP version bump
+
 ## [8.0.1]
 
 ### Fixed

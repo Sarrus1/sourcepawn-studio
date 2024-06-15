@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.13.2]
+
+### Fixed
+
+- Fixed some unhandled panics.
+
 ## [0.13.1]
 
 ### Added
