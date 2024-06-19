@@ -16,5 +16,5 @@ tqdm==4.66.4
 trio==0.25.0
 trio-websocket==0.11.1
 typing_extensions==4.11.0
-urllib3==2.2.1
+urllib3==2.2.2
 wsproto==1.2.0
