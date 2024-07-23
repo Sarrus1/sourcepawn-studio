@@ -7,6 +7,7 @@
 - Fixed generic events not being included (see #411).
 - Fixed missing IntelliSense for some invalid syntax (see #406).
 - Fixed static expressions not being evaluated (see #412).
+- Fixed a bug when parsing arguments of macros (see #413).
 
 ## [0.13.2]
 
