@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [8.0.3]
+
+### Fixed
+
+- Fixed an ambiguous error message (see #408).
+- LSP version bump
+
 ## [8.0.2]
 
 ### Fixed
