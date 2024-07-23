@@ -62,3 +62,26 @@ void foo() {
 "#,
     ));
 }
+
+#[test]
+fn for_loop_5() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+enum struct Foo {
+    int bar;
+    void Get(int foo) {}
+}
+
+int main() {
+    Foo foo;
+    for (int i = 1; --i >= 0;) {
+        foo.Get(1);
+             |
+             ^
+    }
+    foo.Get(1);
+}
+"#,
+    ));
+}

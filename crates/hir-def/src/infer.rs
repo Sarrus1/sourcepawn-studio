@@ -212,11 +212,11 @@ impl InferenceContext<'_> {
                 for init in initialization.iter() {
                     self.infer_expr(init);
                 }
-                self.infer_expr(condition);
+                condition.map(|idx| self.infer_expr(&idx));
                 if let Some(iteration) = iteration {
                     self.infer_expr(iteration);
                 }
-                self.infer_expr(body);
+                body.map(|idx| self.infer_expr(&idx));
                 None
             }
             Expr::Condition {

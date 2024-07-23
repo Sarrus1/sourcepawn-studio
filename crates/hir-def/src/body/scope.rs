@@ -186,7 +186,9 @@ fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope
             for init in initialization.iter() {
                 compute_expr_scopes(*init, body, scopes, scope);
             }
-            compute_expr_scopes(*loop_body, body, scopes, scope);
+            if let Some(loop_body) = loop_body {
+                compute_expr_scopes(*loop_body, body, scopes, scope);
+            }
         }
         Expr::Condition {
             then_branch,

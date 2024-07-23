@@ -78,9 +78,9 @@ pub enum Expr {
     },
     Loop {
         initialization: Box<[ExprId]>,
-        condition: ExprId,
+        condition: Option<ExprId>,
         iteration: Option<ExprId>,
-        body: ExprId,
+        body: Option<ExprId>,
     },
     Switch {
         condition: ExprId,

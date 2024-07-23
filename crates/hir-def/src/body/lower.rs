@@ -193,25 +193,30 @@ impl ExprCollector<'_> {
                 for init in expr.children_by_field_name("initialization", &mut expr.walk()) {
                     initialization.push(self.collect_expr(init));
                 }
-                let condition = expr.child_by_field_name("condition")?;
-                let iteration = expr.child_by_field_name("iteration")?;
-                let body = expr.child_by_field_name("body")?;
                 let for_loop = Expr::Loop {
                     initialization: initialization.into_boxed_slice(),
-                    condition: self.collect_expr(condition),
-                    iteration: self.maybe_collect_expr(iteration),
-                    body: self.collect_expr(body),
+                    condition: expr
+                        .child_by_field_name("condition")
+                        .map(|it| self.collect_expr(it)),
+                    iteration: expr
+                        .child_by_field_name("iteration")
+                        .and_then(|it| self.maybe_collect_expr(it)),
+                    body: expr
+                        .child_by_field_name("body")
+                        .map(|it| self.collect_expr(it)),
                 };
                 Some(self.alloc_expr(for_loop, NodePtr::from(&expr)))
             }
             TSKind::while_statement | TSKind::do_while_statement => {
-                let condition = expr.child_by_field_name("condition")?;
-                let body = expr.child_by_field_name("body")?;
                 let loop_expr = Expr::Loop {
                     initialization: Default::default(),
-                    condition: self.collect_expr(condition),
+                    condition: expr
+                        .child_by_field_name("condition")
+                        .map(|it| self.collect_expr(it)),
                     iteration: None,
-                    body: self.collect_expr(body),
+                    body: expr
+                        .child_by_field_name("body")
+                        .map(|it| self.collect_expr(it)),
                 };
                 Some(self.alloc_expr(loop_expr, NodePtr::from(&expr)))
             }
