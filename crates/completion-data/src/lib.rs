@@ -108,6 +108,24 @@ impl<'a> Database<'a> {
 
         res
     }
+
+    /// Returns all the generic events as a vector of owned [`Events`](Event).
+    pub fn generic_events(&self) -> Vec<Event> {
+        let mut res = Vec::new();
+        let names = ["Generic Source", "Generic Source Server"];
+        for name in names {
+            res.extend(
+                self.0
+                    .get(name)
+                    .expect("expected generic events")
+                    .events
+                    .iter()
+                    .cloned(),
+            )
+        }
+
+        res
+    }
 }
 
 /// Bytes of the compressed JSON data for events completion.

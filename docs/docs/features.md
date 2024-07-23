@@ -26,7 +26,7 @@ Starting to type the name of a forward or a typedef, typeset, functag or a funce
 
 ### Events completions
 
-Opening the quotes in a call to `HookEvent`, `HookEventEx` or `UnhookEvent` will suggest all the known events with the game they belong to, as well as a description when available. To filter only a specific game, use the [`eventsGameName`](./configuration/generated_settings.md#eventsgamename) setting.
+Opening the quotes in a call to `HookEvent`, `HookEventEx` or `UnhookEvent` will suggest all the known events with the game they belong to, as well as a description when available. To filter only a specific game, use the [`eventsGameName`](./configuration/generated_settings.md#eventsgamename) setting. Note that when specifying an `eventsGameName`, the generic events will still be included.
 
 <div align="center">
 ![events completions example animation](./features_img/events-completion-example-1.gif)

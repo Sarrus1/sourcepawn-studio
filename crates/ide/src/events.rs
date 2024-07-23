@@ -68,11 +68,13 @@ pub fn events_completions(events_game_name: Option<&str>) -> Vec<CompletionItem>
             return game
                 .events()
                 .iter()
+                .cloned()
+                .chain(DATABASE.generic_events())
                 .map(|ev| CompletionItem {
                     label: ev.name().to_smolstr(),
                     kind: CompletionKind::Literal,
                     detail: Some(game_name.to_string()),
-                    documentation: Documentation::from(ev).into(),
+                    documentation: Documentation::from(&ev).into(),
                     ..Default::default()
                 })
                 .collect();

@@ -562,9 +562,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             .child_by_field_name("name")?
             .utf8_text(source.as_ref().as_bytes())
             .ok()?;
-        if container.child_by_field_name("body").is_none() {
-            return None;
-        }
+        container.child_by_field_name("body")?;
         match def_map.get_first_from_str(parent_name)? {
             hir_def::FileDefId::FunctionId(id) => {
                 self.function_node_to_def_(file_id, container, parent, node, source, id)

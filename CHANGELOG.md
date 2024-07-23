@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.13.3]
+
+### Fixed
+
+- Fixed generic events not being included (see #411).
+
 ## [0.13.2]
 
 ### Fixed
