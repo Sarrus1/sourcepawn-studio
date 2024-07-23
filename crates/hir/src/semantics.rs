@@ -10,6 +10,7 @@ use hir_def::{
 };
 use itertools::Itertools;
 use lazy_static::lazy_static;
+use log::warn;
 use preprocessor::{s_range_to_u_range, u_pos_to_s_pos, Offset};
 use smol_str::ToSmolStr;
 use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
@@ -333,7 +334,10 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                 self.struct_node_to_def(file_id, container.parent()?, *node, source)
             }
             TSKind::source_file => self.source_node_to_def(file_id, *node, source),
-            _ => unreachable!("{} is not expected", container.kind()),
+            _ => {
+                warn!("{} is not expected", container.kind());
+                None
+            }
         }
     }
 
