@@ -18,6 +18,22 @@ void foo() {
 }
 
 #[test]
+fn array_declaration_2() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+int arr[] =
+     |
+     ^
+{
+	(0 << 1)
+
+};
+"#,
+    ));
+}
+
+#[test]
 fn array_indexed_access_1() {
     assert_json_snapshot!(goto_definition(
         r#"

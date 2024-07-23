@@ -290,7 +290,9 @@ impl ExprCollector<'_> {
             }
             // endregion: Statements
             // region: Expressions
-            TSKind::assignment_expression | TSKind::binary_expression => {
+            TSKind::assignment_expression
+            | TSKind::binary_expression
+            | TSKind::preproc_binary_expression => {
                 let lhs = self.collect_expr(expr.child_by_field_name("left")?);
                 let rhs = self.collect_expr(expr.child_by_field_name("right")?);
                 let op = expr.child_by_field_name("operator").map(TSKind::from);
@@ -368,7 +370,9 @@ impl ExprCollector<'_> {
                 };
                 Some(self.alloc_expr(access, NodePtr::from(&field)))
             }
-            TSKind::unary_expression | TSKind::update_expression => {
+            TSKind::unary_expression
+            | TSKind::update_expression
+            | TSKind::preproc_unary_expression => {
                 // For our needs, unary and update expressions are the same
                 let expr = expr.child_by_field_name("argument")?;
                 let op = expr.child_by_field_name("operator").map(TSKind::from);
@@ -434,7 +438,7 @@ impl ExprCollector<'_> {
             TSKind::null => {
                 Some(self.alloc_expr(Expr::Literal(Literal::Null), NodePtr::from(&expr)))
             }
-            TSKind::parenthesized_expression => {
+            TSKind::parenthesized_expression | TSKind::preproc_parenthesized_expression => {
                 let expr = expr.child_by_field_name("expression")?;
                 self.maybe_collect_expr(expr)
             }
