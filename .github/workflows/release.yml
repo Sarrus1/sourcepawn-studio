@@ -79,7 +79,7 @@ jobs:
         with:
           token: ${{ SECRETS.SENTRY_AUTH_TOKEN }}
           organization: ${{ secrets.SENTRY_ORG }}
-          project: sourcepawn-lsp
+          project: sourcepawn-studio
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
@@ -201,7 +201,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Get Changelog Entry
-        id: changelog_sourcepawn_lsp
+        id: changelog_sourcepawn_studio
         uses: mindsers/changelog-reader-action@v2
         with:
           path: ./CHANGELOG.md
@@ -215,7 +215,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           id: ${{ github.event.release.id }}
-          body: "# Language Server\n\n${{ steps.changelog_sourcepawn_lsp.outputs.changes }}\n\n# VSCode Extension\n\n${{ steps.changelog_vscode_extension.outputs.changes }}"
+          body: "# Language Server\n\n${{ steps.changelog_sourcepawn_studio.outputs.changes }}\n\n# VSCode Extension\n\n${{ steps.changelog_vscode_extension.outputs.changes }}"
           replacebody: true
 
   homebrew:
