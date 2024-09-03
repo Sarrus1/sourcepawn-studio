@@ -147,7 +147,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
       - name: Publish VSIX package (Release)
         if: ${{ !github.event.release.prerelease }}
         run: npx vsce publish --packagePath $(find . -iname *.vsix)
@@ -165,7 +165,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
       - name: Publish VSIX package (Release)
         if: ${{ !github.event.release.prerelease }}
         run: npx ovsx publish -p $OVSX_TOKEN --packagePath $(find . -iname *.vsix)
