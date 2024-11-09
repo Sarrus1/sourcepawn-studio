@@ -389,6 +389,17 @@ impl GlobalStateSnapshot {
         file_id_to_url(&self.vfs_read(), id)
     }
 
+    pub(crate) fn file_line_index(&self, file_id: FileId) -> Cancellable<LineIndex> {
+        let endings = self.vfs.read().1[&file_id];
+        let index = self.analysis.file_line_index(file_id)?;
+        let res = LineIndex {
+            index,
+            endings,
+            encoding: self.config.position_encoding(),
+        };
+        Ok(res)
+    }
+
     #[allow(unused)]
     pub(crate) fn url_file_version(&self, uri: &Url) -> Option<i32> {
         let path = from_proto::vfs_path(uri).ok()?;

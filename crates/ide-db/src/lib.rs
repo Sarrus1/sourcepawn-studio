@@ -34,6 +34,7 @@ pub type FxIndexMap<K, V> =
     hir_def::db::InternDatabaseStorage,
     hir_def::db::DefDatabaseStorage,
     preprocessor::db::PreprocDatabaseStorage,
+    LineIndexDatabaseStorage,
     hir::db::HirDatabaseStorage
 )]
 pub struct RootDatabase {
@@ -169,6 +170,16 @@ impl salsa::ParallelDatabase for RootDatabase {
             storage: ManuallyDrop::new(self.storage.snapshot()),
         })
     }
+}
+
+#[salsa::query_group(LineIndexDatabaseStorage)]
+pub trait LineIndexDatabase: base_db::SourceDatabase {
+    fn line_index(&self, file_id: FileId) -> Arc<LineIndex>;
+}
+
+fn line_index(db: &dyn LineIndexDatabase, file_id: FileId) -> Arc<LineIndex> {
+    let text = db.file_text(file_id);
+    Arc::new(LineIndex::new(&text))
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]

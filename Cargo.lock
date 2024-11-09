@@ -159,6 +159,7 @@ dependencies = [
  "salsa",
  "sourcepawn_lexer",
  "syntax",
+ "text-size",
  "tracing",
  "tree-sitter",
  "tree-sitter-sourcepawn",
@@ -2542,14 +2543,15 @@ dependencies = [
 [[package]]
 name = "sourcepawn_lexer"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc584f76e156dbb67fce8368460cee2a68850a190de175d2e3b2034e98b1763c"
 dependencies = [
  "lazy_static",
  "logos",
  "lsp-types",
  "regex",
+ "serde",
+ "serde_json",
  "smol_str",
+ "text-size",
 ]
 
 [[package]]

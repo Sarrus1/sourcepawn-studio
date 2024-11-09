@@ -66,7 +66,7 @@ impl ArgumentsCollector {
     ///
     /// * `lexer` - [SourcepawnLexer](sourcepawn_lexer::lexer) to iterate over.
     /// * `args_stack` - [Vec](Vec) of [Symbols](sourcepawn_lexer::Symbol) that represent the
-    /// stack of arguments that are being processed.
+    ///   stack of arguments that are being processed.
     /// * `nb_params` - Number of parameters in the current macro.
     fn collect_arguments<T>(
         &mut self,
@@ -306,7 +306,7 @@ where
 ///
 /// * `macro_` - [Macro] we are expanding.
 /// * `delta` - [Delta](sourcepawn_lexer::Delta) of the [symbols](Symbol) we are expanding
-/// to use for the first symbol in the [macro's](Macro) body.
+///   to use for the first symbol in the [macro's](Macro) body.
 fn expand_non_macro_define(
     macro_: &Macro,
     delta: &sourcepawn_lexer::Delta,
@@ -346,7 +346,7 @@ fn expand_non_macro_define(
 /// * `args` - [`Arguments`](MacroArguments) of the macro call.
 /// * `macro_` - [`Macro`] we are expanding.
 /// * `symbol` - [`Symbol`] that originated the [`macro`](Macro) expansion. Used to keep track of the
-/// [`delta`](sourcepawn_lexer::Delta) to insert.
+///   [`delta`](sourcepawn_lexer::Delta) to insert.
 /// * `delta` - [`Delta`](sourcepawn_lexer::Delta) of the [`symbols`](Symbol) we are expanding.
 /// * `depth` - Depth of the macro expansion context.
 fn expand_macro(

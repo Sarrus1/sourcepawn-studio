@@ -23,7 +23,10 @@ use fxhash::FxHashMap;
 use hir::{DefResolution, Function};
 use hir_def::{print_item_tree, DefDatabase};
 use hover::HoverResult;
-use ide_db::{CallItem, IncomingCallItem, OutgoingCallItem, RootDatabase, SourceChange, Symbols};
+use ide_db::{
+    CallItem, IncomingCallItem, LineIndexDatabase, OutgoingCallItem, RootDatabase, SourceChange,
+    Symbols,
+};
 use itertools::Itertools;
 use lsp_types::Url;
 use paths::AbsPathBuf;
@@ -157,6 +160,12 @@ impl Analysis {
     /// Debug info about the current state of the analysis.
     pub fn status(&self, file_id: Option<FileId>) -> Cancellable<String> {
         self.with_db(|db| status::status(db, file_id))
+    }
+
+    /// Gets the file's `LineIndex`: data structure to convert between absolute
+    /// offsets and line/column representation.
+    pub fn file_line_index(&self, file_id: FileId) -> Cancellable<Arc<LineIndex>> {
+        self.with_db(|db| db.line_index(file_id))
     }
 
     pub fn parallel_prime_caches<F1, F2>(

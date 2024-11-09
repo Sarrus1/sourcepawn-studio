@@ -3,6 +3,7 @@ use std::{hash::Hash, sync::Arc};
 use include::file_includes_query;
 use input::{SourceRoot, SourceRootId};
 use syntax::utils::lsp_position_to_ts_point;
+use text_size::{TextRange, TextSize};
 use vfs::{AnchoredPath, FileId};
 
 mod change;
@@ -176,22 +177,20 @@ impl<T: SourceDatabaseExt> FileLoader for FileLoaderDelegate<&'_ T> {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct FilePosition {
     pub file_id: FileId,
-    pub position: lsp_types::Position,
+    pub position: TextSize,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct FileRange {
     pub file_id: FileId,
-    pub range: lsp_types::Range,
+    pub range: TextRange,
 }
 
 impl Hash for FileRange {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.file_id.hash(state);
-        self.range.start.line.hash(state);
-        self.range.start.character.hash(state);
-        self.range.end.line.hash(state);
-        self.range.end.character.hash(state);
+        self.range.start().hash(state);
+        self.range.end().hash(state);
     }
 }
 

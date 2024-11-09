@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use lazy_static::lazy_static;
-use lsp_types::{Position, Range};
 use regex::Regex;
 use sourcepawn_lexer::{PreprocDir, Symbol, TokenKind};
+use text_size::TextRange;
 use vfs::{AnchoredPath, FileId};
 
 use crate::{FileExtension, SourceDatabase};
@@ -69,7 +69,7 @@ impl Include {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct UnresolvedInclude {
     pub file_id: FileId,
-    pub range: lsp_types::Range,
+    pub range: TextRange,
     pub path: String,
 }
 
@@ -111,13 +111,11 @@ pub(crate) fn file_includes_query(
                     IncludeType::TryInclude
                 };
                 let text = symbol.inline_text().trim().to_string();
+                let start: u32 = symbol.range.start().into();
                 let symbol = Symbol::new(
                     symbol.token_kind,
                     Some(&text),
-                    Range::new(
-                        Position::new(symbol.range.start.line, symbol.range.start.character),
-                        Position::new(symbol.range.start.line, text.len() as u32),
-                    ),
+                    TextRange::new(start.into(), (start + (text.len() as u32)).into()),
                     symbol.delta,
                 );
 
