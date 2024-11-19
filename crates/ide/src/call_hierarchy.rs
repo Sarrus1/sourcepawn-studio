@@ -119,11 +119,7 @@ pub(crate) fn call_hierarchy_incoming(
             let tree = sema.parse(file_id);
             let preprocessing_results = sema.preprocess_file(file_id);
             let mut pos = frange.range.start;
-            let _ = u_pos_to_s_pos(
-                preprocessing_results.args_map(),
-                preprocessing_results.offsets(),
-                &mut pos,
-            );
+            let _ = u_pos_to_s_pos(preprocessing_results.offsets(), &mut pos);
             let node = tree.root_node().descendant_for_point_range(
                 lsp_position_to_ts_point(&pos),
                 lsp_position_to_ts_point(&pos),

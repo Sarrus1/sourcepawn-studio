@@ -1,10 +1,10 @@
-use lsp_types::Range;
+use sourcepawn_lexer::TextRange;
 use std::{error, fmt};
 
 pub trait PreprocessorError {
     fn text(&self) -> &str;
 
-    fn range(&self) -> &Range;
+    fn range(&self) -> &TextRange;
 }
 
 #[derive(Debug)]
@@ -39,11 +39,11 @@ impl error::Error for ExpansionError {}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MacroNotFoundError {
     pub(super) macro_name: String,
-    pub(super) range: Range,
+    pub(super) range: TextRange,
 }
 
 impl MacroNotFoundError {
-    pub(super) fn new(macro_name: String, range: Range) -> MacroNotFoundError {
+    pub(super) fn new(macro_name: String, range: TextRange) -> MacroNotFoundError {
         MacroNotFoundError { macro_name, range }
     }
 }
@@ -61,7 +61,7 @@ impl PreprocessorError for MacroNotFoundError {
         &self.macro_name
     }
 
-    fn range(&self) -> &Range {
+    fn range(&self) -> &TextRange {
         &self.range
     }
 }
@@ -69,7 +69,7 @@ impl PreprocessorError for MacroNotFoundError {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnresolvedIncludeError {
     pub(super) include_text: String,
-    pub(super) range: Range,
+    pub(super) range: TextRange,
 }
 
 impl PreprocessorError for UnresolvedIncludeError {
@@ -77,13 +77,13 @@ impl PreprocessorError for UnresolvedIncludeError {
         &self.include_text
     }
 
-    fn range(&self) -> &Range {
+    fn range(&self) -> &TextRange {
         &self.range
     }
 }
 
 impl UnresolvedIncludeError {
-    pub(super) fn new(include_text: String, range: Range) -> UnresolvedIncludeError {
+    pub(super) fn new(include_text: String, range: TextRange) -> UnresolvedIncludeError {
         UnresolvedIncludeError {
             include_text,
             range,
@@ -106,7 +106,7 @@ impl error::Error for UnresolvedIncludeError {}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct ParseIntError {
     pub(super) text: String,
-    pub(super) range: Range,
+    pub(super) range: TextRange,
 }
 
 impl PreprocessorError for ParseIntError {
@@ -114,13 +114,13 @@ impl PreprocessorError for ParseIntError {
         &self.text
     }
 
-    fn range(&self) -> &Range {
+    fn range(&self) -> &TextRange {
         &self.range
     }
 }
 
 impl ParseIntError {
-    pub(super) fn new(text: String, range: Range) -> ParseIntError {
+    pub(super) fn new(text: String, range: TextRange) -> ParseIntError {
         ParseIntError { text, range }
     }
 }
@@ -140,7 +140,7 @@ impl error::Error for ParseIntError {}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EvaluationError {
     pub(super) text: String,
-    pub(super) range: Range,
+    pub(super) range: TextRange,
 }
 
 impl PreprocessorError for EvaluationError {
@@ -148,13 +148,13 @@ impl PreprocessorError for EvaluationError {
         &self.text
     }
 
-    fn range(&self) -> &Range {
+    fn range(&self) -> &TextRange {
         &self.range
     }
 }
 
 impl EvaluationError {
-    pub(super) fn new(text: String, range: Range) -> EvaluationError {
+    pub(super) fn new(text: String, range: TextRange) -> EvaluationError {
         EvaluationError { text, range }
     }
 }

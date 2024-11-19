@@ -1,33 +1,31 @@
 use std::sync::Arc;
 
 use fxhash::FxHashMap;
+use sourcepawn_lexer::TextRange;
 
-use crate::{errors::PreprocessorErrors, ArgsMap, MacrosMap, Offset};
+use crate::{errors::PreprocessorErrors, macros::MacrosMap, offset::SourceMap};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PreprocessingResult {
     preprocessed_text: Arc<str>,
     macros: MacrosMap,
-    offsets: FxHashMap<u32, Vec<Offset>>,
-    args_map: ArgsMap,
+    source_map: SourceMap,
     errors: PreprocessorErrors,
-    inactive_ranges: Vec<lsp_types::Range>,
+    inactive_ranges: Vec<TextRange>,
 }
 
 impl PreprocessingResult {
     pub(crate) fn new(
         preprocessed_text: Arc<str>,
         macros: MacrosMap,
-        offsets: FxHashMap<u32, Vec<Offset>>,
-        args_map: ArgsMap,
+        source_map: SourceMap,
         errors: PreprocessorErrors,
-        inactive_ranges: Vec<lsp_types::Range>,
+        inactive_ranges: Vec<TextRange>,
     ) -> Self {
         Self {
             preprocessed_text,
             macros,
-            offsets,
-            args_map,
+            source_map,
             errors,
             inactive_ranges,
         }
@@ -35,27 +33,16 @@ impl PreprocessingResult {
 
     pub fn shrink_to_fit(&mut self) {
         self.macros.shrink_to_fit();
-        self.offsets.shrink_to_fit();
-        self.args_map.shrink_to_fit();
+        self.source_map.shrink_to_fit();
         self.errors.shrink_to_fit();
         self.inactive_ranges.shrink_to_fit();
-    }
-
-    pub fn sort_offsets(&mut self) {
-        for offsets in self.offsets.values_mut() {
-            offsets.sort_by(|a, b| match a.range.start.cmp(&b.range.start) {
-                std::cmp::Ordering::Equal => a.range.end.cmp(&b.range.end),
-                ord => ord,
-            });
-        }
     }
 
     pub fn default(text: &str) -> Self {
         Self {
             preprocessed_text: text.to_string().into(),
             macros: FxHashMap::default(),
-            offsets: FxHashMap::default(),
-            args_map: FxHashMap::default(),
+            source_map: Default::default(),
             errors: Default::default(),
             inactive_ranges: Default::default(),
         }
@@ -69,19 +56,15 @@ impl PreprocessingResult {
         &self.macros
     }
 
-    pub fn offsets(&self) -> &FxHashMap<u32, Vec<Offset>> {
-        &self.offsets
-    }
-
-    pub fn args_map(&self) -> &ArgsMap {
-        &self.args_map
+    pub fn source_map(&self) -> &SourceMap {
+        &self.source_map
     }
 
     pub fn errors(&self) -> &PreprocessorErrors {
         &self.errors
     }
 
-    pub fn inactive_ranges(&self) -> &[lsp_types::Range] {
+    pub fn inactive_ranges(&self) -> &[TextRange] {
         &self.inactive_ranges
     }
 }
