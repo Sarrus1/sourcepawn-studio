@@ -11,13 +11,10 @@ use hir_def::{
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use log::warn;
-use preprocessor::{s_range_to_u_range, u_pos_to_s_pos, Offset};
+use preprocessor::ExpandedSymbolOffset;
 use smol_str::ToSmolStr;
 use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
-use syntax::{
-    utils::{lsp_position_to_ts_point, ts_range_to_lsp_range},
-    TSKind,
-};
+use syntax::{utils::ts_range_to_text_range, TSKind};
 use tree_sitter::QueryCursor;
 use vfs::FileId;
 
@@ -205,17 +202,21 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
     }
 
     /// Try to find the definition of a macro at the given [`user seen position`](FilePosition).
-    pub fn find_macro_def(&self, fpos: &FilePosition) -> Option<(Offset, DefResolution)> {
+    pub fn find_macro_def(
+        &self,
+        fpos: &FilePosition,
+    ) -> Option<(ExpandedSymbolOffset, DefResolution)> {
         let preprocessing_results = self.preprocess_file(fpos.file_id);
-        let offsets = preprocessing_results.offsets();
-        let offset = offsets
-            .get(&fpos.position.line)
-            .and_then(|offsets| offsets.iter().find(|offset| offset.contains(fpos.position)))?;
+        let source_map = preprocessing_results.source_map();
+        let offset = source_map.expanded_symbol_from_u_pos(fpos.offset)?;
+        let file_id = offset.file_id();
+        let idx = offset.idx();
+
         (
-            offset.to_owned(),
+            offset,
             self.db
-                .file_def_map(offset.file_id)
-                .get_macro(&offset.idx)
+                .file_def_map(file_id)
+                .get_macro(&idx)
                 .map(Macro::from)
                 .map(DefResolution::from)?,
         )
@@ -699,23 +700,18 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         }
         let preprocessing_results = self.preprocess_file(fpos.file_id);
         let source = self.preprocessed_text(fpos.file_id);
-        let offsets = preprocessing_results.offsets();
         let tree = self.parse(fpos.file_id);
         let root_node = tree.root_node();
 
         if let Some(macro_refs) = self.find_macro_references(fpos) {
             return Some(macro_refs);
         }
-        let _ = u_pos_to_s_pos(
-            preprocessing_results.args_map(),
-            offsets,
-            &mut fpos.position,
-        );
+        fpos.offset = preprocessing_results
+            .source_map()
+            .closest_s_position(fpos.offset);
 
-        let node = root_node.descendant_for_point_range(
-            lsp_position_to_ts_point(&fpos.position),
-            lsp_position_to_ts_point(&fpos.position),
-        )?;
+        let node = root_node
+            .descendant_for_byte_range(fpos.raw_offset_usize(), fpos.raw_offset_usize())?;
         let src_text = node.utf8_text(source.as_bytes()).ok()?;
         let def = self.find_def(fpos.file_id, &node)?;
         let mut res = Vec::new();
@@ -744,10 +740,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                         if file_def == Some(def.clone()) {
                             res.push(FileRange {
                                 file_id,
-                                range: s_range_to_u_range(
-                                    preprocessing_results.offsets(),
-                                    ts_range_to_lsp_range(&node.range()),
-                                ),
+                                range: preprocessing_results
+                                    .source_map()
+                                    .closest_u_range(ts_range_to_text_range(&node.range())),
                             });
                         }
                     }

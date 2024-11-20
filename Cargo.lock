@@ -2625,6 +2625,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
+ "sourcepawn_lexer",
  "syn 2.0.43",
  "test-utils",
  "tree-sitter",

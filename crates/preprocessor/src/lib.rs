@@ -29,7 +29,7 @@ use buffer::PreprocessorBuffer;
 pub use errors::{EvaluationError, PreprocessorError};
 pub(crate) use macros::MacroStore;
 pub use macros::{HMacrosMap, MacrosMap};
-pub use offset::SourceMap;
+pub use offset::{ExpandedSymbolOffset, SourceMap};
 pub use result::PreprocessingResult;
 
 #[cfg(test)]

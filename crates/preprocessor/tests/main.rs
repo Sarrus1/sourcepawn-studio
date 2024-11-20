@@ -42,12 +42,12 @@ impl From<PreprocessingResult> for PreprocessingResult_ {
                 .iter()
                 .map(|e| {
                     (
-                        e.range.start().into(),
-                        e.range.end().into(),
-                        e.expanded_range.start().into(),
-                        e.expanded_range.end().into(),
-                        e.idx,
-                        e.file_id.0,
+                        e.range().start().into(),
+                        e.range().end().into(),
+                        e.expanded_range().start().into(),
+                        e.expanded_range().end().into(),
+                        e.idx(),
+                        e.file_id().0,
                     )
                 })
                 .collect(),

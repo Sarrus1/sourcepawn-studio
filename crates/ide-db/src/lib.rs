@@ -14,6 +14,7 @@ use base_db::{
 use fxhash::FxHashMap;
 use hir::{db::HirDatabase, FunctionType};
 use hir_def::DefDatabase;
+use line_index::LineIndex;
 use salsa::{Cancelled, Durability};
 use vfs::FileId;
 

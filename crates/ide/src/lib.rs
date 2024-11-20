@@ -28,6 +28,7 @@ use ide_db::{
     Symbols,
 };
 use itertools::Itertools;
+use line_index::TextRange;
 use lsp_types::Url;
 use paths::AbsPathBuf;
 use preprocessor::db::PreprocDatabase;
@@ -46,15 +47,15 @@ pub use prime_caches::ParallelPrimeCachesProgress;
 pub use signature_help::SignatureHelp;
 pub use syntax_highlighting::{Highlight, HlMod, HlMods, HlRange, HlTag};
 
-/// Info associated with a [`range`](lsp_types::Range).
+/// Info associated with a [`range`](TextRange).
 #[derive(Debug)]
 pub struct RangeInfo<T> {
-    pub range: lsp_types::Range,
+    pub range: TextRange,
     pub info: T,
 }
 
 impl<T> RangeInfo<T> {
-    pub fn new(range: lsp_types::Range, info: T) -> RangeInfo<T> {
+    pub fn new(range: TextRange, info: T) -> RangeInfo<T> {
         RangeInfo { range, info }
     }
 }

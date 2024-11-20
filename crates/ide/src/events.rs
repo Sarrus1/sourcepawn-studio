@@ -2,11 +2,10 @@
 //! check if events completions/hovers should be provided for a given node.
 
 use completion_data::DATABASE;
-use fxhash::FxHashMap;
 use ide_db::Documentation;
-use preprocessor::{s_range_to_u_range, Offset};
+use preprocessor::SourceMap;
 use smol_str::ToSmolStr;
-use syntax::{utils::ts_range_to_lsp_range, TSKind};
+use syntax::{utils::ts_range_to_text_range, TSKind};
 use tree_sitter::Node;
 
 use crate::{hover::HoverResult, CompletionItem, CompletionKind, Markup, RangeInfo};
@@ -107,7 +106,7 @@ pub fn event_hover(
     events_game_name: Option<&str>,
     name: &str,
     node: &Node,
-    offsets: &FxHashMap<u32, Vec<Offset>>,
+    source_map: &SourceMap,
 ) -> Option<RangeInfo<HoverResult>> {
     if let Some(game) = events_game_name {
         if let Some(ev) = DATABASE.get_event(game, name) {
@@ -121,7 +120,7 @@ pub fn event_hover(
                 actions: Default::default(),
             };
             return Some(RangeInfo::new(
-                s_range_to_u_range(offsets, ts_range_to_lsp_range(&node.range())),
+                source_map.closest_u_range(ts_range_to_text_range(&node.range())),
                 res,
             ));
         }
@@ -137,7 +136,7 @@ pub fn event_hover(
                 res.push(Documentation::from(&ev).to_markdown());
             });
         Some(RangeInfo::new(
-            s_range_to_u_range(offsets, ts_range_to_lsp_range(&node.range())),
+            source_map.closest_u_range(ts_range_to_text_range(&node.range())),
             HoverResult {
                 markup: Markup::from(res.join("\n\n")),
                 actions: Default::default(),

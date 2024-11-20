@@ -9,16 +9,34 @@ use crate::macros::Macro;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExpandedSymbolOffset {
     /// The range of the symbol that was expanded.
-    pub range: TextRange,
+    range: TextRange,
 
     /// The range of the expanded text.
-    pub expanded_range: TextRange,
+    expanded_range: TextRange,
 
     /// The index of the macro that was expanded.
-    pub idx: u32,
+    idx: u32,
 
     /// The [`file_id`](FileId) of the file containing the macro that was expanded.
-    pub file_id: FileId,
+    file_id: FileId,
+}
+
+impl ExpandedSymbolOffset {
+    pub fn range(&self) -> &TextRange {
+        &self.range
+    }
+
+    pub fn expanded_range(&self) -> &TextRange {
+        &self.expanded_range
+    }
+
+    pub fn idx(&self) -> u32 {
+        self.idx
+    }
+
+    pub fn file_id(&self) -> FileId {
+        self.file_id
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -81,6 +99,12 @@ impl SourceMap {
             .start()
             .checked_add(delta)
             .unwrap_or_default()
+    }
+
+    pub fn closest_u_range(&self, s_range: TextRange) -> TextRange {
+        let start = self.closest_u_position(s_range.start());
+        let end = self.closest_u_position(s_range.end());
+        TextRange::new(start, end)
     }
 
     pub fn shrink_to_fit(&mut self) {

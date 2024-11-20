@@ -177,7 +177,17 @@ impl<T: SourceDatabaseExt> FileLoader for FileLoaderDelegate<&'_ T> {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct FilePosition {
     pub file_id: FileId,
-    pub position: TextSize,
+    pub offset: TextSize,
+}
+
+impl FilePosition {
+    pub fn raw_offset(&self) -> u32 {
+        self.offset.into()
+    }
+
+    pub fn raw_offset_usize(&self) -> usize {
+        self.raw_offset() as usize
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

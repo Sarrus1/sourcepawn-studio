@@ -5,6 +5,7 @@
 //! be expressed in terms of hir types themselves.
 
 use hir_def::{InFile, Name, NodePtr};
+use sourcepawn_lexer::TextRange;
 
 macro_rules! diagnostics {
     ($($diag:ident,)*) => {
@@ -39,7 +40,7 @@ diagnostics![
 
 #[derive(Debug)]
 pub struct UnresolvedInclude {
-    pub range: lsp_types::Range,
+    pub range: TextRange,
     pub path: String,
 }
 
@@ -101,17 +102,17 @@ pub struct UnresolvedInherit {
 
 #[derive(Debug)]
 pub struct PreprocessorEvaluationError {
-    pub range: lsp_types::Range,
+    pub range: TextRange,
     pub text: String,
 }
 
 #[derive(Debug)]
 pub struct UnresolvedMacro {
-    pub range: lsp_types::Range,
+    pub range: TextRange,
     pub name: String,
 }
 
 #[derive(Debug)]
 pub struct InactiveCode {
-    pub range: lsp_types::Range,
+    pub range: TextRange,
 }
