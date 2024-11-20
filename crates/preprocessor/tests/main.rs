@@ -1,6 +1,7 @@
+use serde::Serialize;
 use vfs::FileId;
 
-use insta::assert_snapshot;
+use insta::assert_json_snapshot;
 
 fn extend_macros(
     _macro_store: &mut MacrosMap,
@@ -11,19 +12,60 @@ fn extend_macros(
     Ok(())
 }
 
+#[derive(Debug, Default, Serialize)]
+struct PreprocessingResult_ {
+    preprocessed_text: String,
+    vec: Vec<(u32, u32, u32, u32)>,
+    expanded_symbols: Vec<(u32, u32, u32, u32, u32, u32)>,
+}
+
+impl From<PreprocessingResult> for PreprocessingResult_ {
+    fn from(value: PreprocessingResult) -> Self {
+        Self {
+            preprocessed_text: value.preprocessed_text().to_string(),
+            vec: value
+                .source_map()
+                .source_map()
+                .iter()
+                .map(|e| {
+                    (
+                        e.0.start().into(),
+                        e.0.end().into(),
+                        e.1.start().into(),
+                        e.1.end().into(),
+                    )
+                })
+                .collect(),
+            expanded_symbols: value
+                .source_map()
+                .expanded_symbols()
+                .iter()
+                .map(|e| {
+                    (
+                        e.range.start().into(),
+                        e.range.end().into(),
+                        e.expanded_range.start().into(),
+                        e.expanded_range.end().into(),
+                        e.idx,
+                        e.file_id.0,
+                    )
+                })
+                .collect(),
+        }
+    }
+}
+
 #[allow(unused_macros)]
 macro_rules! assert_preproc_eq {
     ($input:expr) => {
-        assert_snapshot!(
+        assert_json_snapshot!(PreprocessingResult_::from(
             SourcepawnPreprocessor::new(FileId::from(0), $input, &mut extend_macros)
                 .preprocess_input()
-                .preprocessed_text()
-                .as_ref()
-        );
+        ));
     };
 }
 
-use preprocessor::{MacrosMap, SourcepawnPreprocessor};
+use preprocessor::{MacrosMap, PreprocessingResult, SourcepawnPreprocessor};
 #[test]
 fn no_preprocessor_directives() {
     let input = r#"

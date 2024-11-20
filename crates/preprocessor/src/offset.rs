@@ -93,4 +93,12 @@ impl SourceMap {
         self.expanded_symbols
             .sort_by(|a, b| a.range.ordering(b.range));
     }
+
+    pub fn source_map(&self) -> &[(TextRange, TextRange)] {
+        &self.vec
+    }
+
+    pub fn expanded_symbols(&self) -> &[ExpandedSymbolOffset] {
+        &self.expanded_symbols
+    }
 }

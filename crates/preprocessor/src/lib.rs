@@ -29,6 +29,7 @@ use buffer::PreprocessorBuffer;
 pub use errors::{EvaluationError, PreprocessorError};
 pub(crate) use macros::MacroStore;
 pub use macros::{HMacrosMap, MacrosMap};
+pub use offset::SourceMap;
 pub use result::PreprocessingResult;
 
 #[cfg(test)]
@@ -313,6 +314,9 @@ where
                     self.buffer.push_ws(&symbol);
                     break;
                 }
+                TokenKind::Newline => {
+                    self.buffer.push_new_line();
+                }
                 _ => self.buffer.push_symbol(&symbol),
             }
         }
@@ -326,7 +330,7 @@ where
             IfCondition::new(&mut self.macro_store, self.buffer.source_map_mut());
         while self.lexer.in_preprocessor() {
             if let Some(symbol) = self.lexer.next() {
-                if_condition.symbols.push(symbol.into());
+                if_condition.symbols.push(symbol);
             } else {
                 break;
             }

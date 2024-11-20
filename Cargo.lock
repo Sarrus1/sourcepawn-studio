@@ -1890,6 +1890,7 @@ dependencies = [
  "minreq",
  "regex",
  "salsa",
+ "serde",
  "smol_str",
  "sourcepawn_lexer",
  "stdx",

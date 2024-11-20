@@ -44,6 +44,8 @@ impl PreprocessorBuffer {
             symbol.range,
             TextRange::at(TextSize::new(self.offset), symbol.range.len()),
         );
+        let len: u32 = symbol.range.len().into();
+        self.offset += len;
     }
 
     pub fn push_str(&mut self, string: &str) {
