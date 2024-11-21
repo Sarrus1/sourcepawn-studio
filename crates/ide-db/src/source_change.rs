@@ -1,4 +1,4 @@
-use lsp_types::TextEdit;
+use line_index::TextRange;
 use nohash_hasher::IntMap;
 use vfs::FileId;
 
@@ -13,5 +13,20 @@ impl SourceChange {
             .entry(file_id)
             .or_default()
             .push(edit);
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct TextEdit {
+    range: TextRange,
+    replacement_text: String,
+}
+
+impl TextEdit {
+    pub fn new(range: TextRange, replacement_text: String) -> Self {
+        Self {
+            range,
+            replacement_text,
+        }
     }
 }

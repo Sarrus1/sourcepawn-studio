@@ -125,4 +125,8 @@ impl SourceMap {
     pub fn expanded_symbols(&self) -> &[ExpandedSymbolOffset] {
         &self.expanded_symbols
     }
+
+    pub fn vec_len(&self) -> usize {
+        self.vec.len()
+    }
 }

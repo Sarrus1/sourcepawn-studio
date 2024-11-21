@@ -13,7 +13,7 @@ use lazy_static::lazy_static;
 use log::warn;
 use preprocessor::ExpandedSymbolOffset;
 use smol_str::ToSmolStr;
-use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
+use sourcepawn_lexer::{SourcepawnLexer, TextSize, TokenKind};
 use syntax::{utils::ts_range_to_text_range, TSKind};
 use tree_sitter::QueryCursor;
 use vfs::FileId;
@@ -496,7 +496,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             return DefResolution::try_from(analyzer.resolver.resolve_ident(text)?);
         };
         debug_assert_eq!(TSKind::from(body_node), TSKind::block);
-        let offset = node.start_position();
+        let offset = TextSize::new(node.start_byte() as u32);
         match TSKind::from(parent) {
             TSKind::field_access | TSKind::scope_access if is_field_receiver_node(&node) => {
                 let analyzer = SourceAnalyzer::new_for_body(
@@ -660,16 +660,15 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
 
     pub fn defs_in_function_scope(
         &self,
-        file_id: FileId,
+        pos: FilePosition,
         def: FunctionId,
-        point: tree_sitter::Point,
         body_node: tree_sitter::Node,
     ) -> Vec<DefResolution> {
         let analyzer = SourceAnalyzer::new_for_body_no_infer(
             self.db,
             hir_def::DefWithBodyId::FunctionId(def),
-            InFile::new(file_id, body_node),
-            Some(point),
+            InFile::new(pos.file_id, body_node),
+            Some(pos.offset),
         );
         analyzer
             .resolver

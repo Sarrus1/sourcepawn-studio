@@ -8,7 +8,7 @@ pub(crate) fn symbols(db: &RootDatabase, file_id: FileId) -> Option<Symbols> {
     let preprocessing_results = sema.preprocess_file(file_id);
     let source = preprocessing_results.preprocessed_text();
 
-    SymbolsBuilder::new(preprocessing_results.offsets(), &tree, &source)
+    SymbolsBuilder::new(preprocessing_results.source_map(), &tree, &source)
         .build()
         .into()
 }

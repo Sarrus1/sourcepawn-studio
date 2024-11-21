@@ -12,7 +12,7 @@ use vfs::FileId;
 
 use errors::{ExpansionError, PreprocessorErrors, UnresolvedIncludeError};
 use evaluator::IfCondition;
-use macros::{expand_identifier, Macro};
+use macros::expand_identifier;
 
 mod buffer;
 mod conditions;
@@ -28,7 +28,7 @@ mod symbol;
 use buffer::PreprocessorBuffer;
 pub use errors::{EvaluationError, PreprocessorError};
 pub(crate) use macros::MacroStore;
-pub use macros::{HMacrosMap, MacrosMap};
+pub use macros::{HMacrosMap, Macro, MacrosMap};
 pub use offset::{ExpandedSymbolOffset, SourceMap};
 pub use result::PreprocessingResult;
 

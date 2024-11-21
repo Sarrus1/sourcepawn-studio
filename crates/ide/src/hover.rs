@@ -6,9 +6,9 @@ use std::panic::AssertUnwindSafe;
 use hir::{DefResolution, HasSource, Semantics};
 use ide_db::{Documentation, RootDatabase};
 use itertools::Itertools;
-use preprocessor::{db::PreprocDatabase, s_range_to_u_range, u_pos_to_s_pos, PreprocessingResult};
+use preprocessor::{db::PreprocDatabase, PreprocessingResult};
 use smol_str::ToSmolStr;
-use syntax::utils::{lsp_position_to_ts_point, ts_range_to_lsp_range};
+use syntax::utils::ts_range_to_text_range;
 use vfs::FileId;
 
 use crate::{
@@ -63,17 +63,18 @@ impl HoverAction {
                 let name_range = find_inner_name_range(&def_node);
 
                 let target_preprocessing_results = sema.preprocess_file(file_id);
-                let target_offsets = target_preprocessing_results.offsets();
                 Some(HoverGotoTypeData {
                     mod_path: Default::default(),
                     nav: NavigationTarget {
                         name,
                         file_id,
-                        full_range: s_range_to_u_range(
-                            target_offsets,
-                            ts_range_to_lsp_range(&def_node.range()),
-                        ),
-                        focus_range: s_range_to_u_range(target_offsets, name_range).into(),
+                        full_range: target_preprocessing_results
+                            .source_map()
+                            .closest_u_range(ts_range_to_text_range(&def_node.range())),
+                        focus_range: target_preprocessing_results
+                            .source_map()
+                            .closest_u_range(name_range)
+                            .into(),
                     },
                 })
             })
@@ -99,33 +100,31 @@ pub(crate) fn hover(
 ) -> Option<RangeInfo<HoverResult>> {
     let sema = &Semantics::new(db);
     let preprocessing_results = sema.preprocess_file(fpos.file_id);
-    let offsets = preprocessing_results.offsets();
     let tree = sema.parse(fpos.file_id);
     let root_node = tree.root_node();
     if let Some(hover) = find_macro_hover(&preprocessing_results, sema, &fpos) {
         return Some(hover);
     }
+    fpos.offset = preprocessing_results
+        .source_map()
+        .closest_u_position(fpos.offset);
 
-    let source_u_range = u_pos_to_s_pos(
-        preprocessing_results.args_map(),
-        offsets,
-        &mut fpos.position,
-    );
-
-    let node = root_node.descendant_for_point_range(
-        lsp_position_to_ts_point(&fpos.position),
-        lsp_position_to_ts_point(&fpos.position),
-    )?;
+    let node =
+        root_node.descendant_for_byte_range(fpos.raw_offset_usize(), fpos.raw_offset_usize())?;
 
     if let Some(name) = event_name(&node, &preprocessing_results.preprocessed_text()) {
-        return event_hover(events_game_name, &name, &node, offsets);
+        return event_hover(
+            events_game_name,
+            &name,
+            &node,
+            preprocessing_results.source_map(),
+        );
     }
 
     let def = sema.find_def(fpos.file_id, &node)?;
-    let u_range = match source_u_range {
-        Some(u_range) => u_range,
-        None => s_range_to_u_range(offsets, ts_range_to_lsp_range(&node.range())),
-    };
+    let u_range = preprocessing_results
+        .source_map()
+        .closest_u_range(ts_range_to_text_range(&node.range()));
 
     let file_id = def.file_id(db);
     let source_tree = sema.parse(file_id);
@@ -168,7 +167,6 @@ fn find_macro_hover(
     fpos: &FilePosition,
 ) -> Option<RangeInfo<HoverResult>> {
     let (offset, def) = sema.find_macro_def(fpos)?;
-    let offsets = preprocessing_results.offsets();
     let preprocessed_text = preprocessing_results.preprocessed_text();
     let file_id = def.file_id(sema.db);
     let source_tree = sema.parse(file_id);
@@ -176,33 +174,13 @@ fn find_macro_hover(
     let source = sema.db.preprocessed_text(file_id);
     let source_text = def_node.utf8_text(source.as_bytes()).ok()?;
 
-    let mut start = offset.range.start.character;
-    let mut end = offset.range.end.character;
-    offsets[&fpos.position.line]
-        .iter()
-        .filter(|prev_offset| prev_offset.range.start.character < offset.range.start.character)
-        .for_each(|prev_offset| {
-            start = start.saturating_add_signed(
-                prev_offset
-                    .diff
-                    .saturating_sub_unsigned(prev_offset.args_diff),
-            );
-            end = end.saturating_add_signed(
-                prev_offset
-                    .diff
-                    .saturating_sub_unsigned(prev_offset.args_diff),
-            );
-        });
-    end = end.saturating_add_signed(offset.diff);
-    let start = start as usize;
-    let end = end as usize;
-    let slc = start..end;
+    let start: u32 = offset.expanded_range().start().into();
+    let end: u32 = offset.expanded_range().end().into();
+    let slc = start as usize..end as usize;
     // The preprocessed file might be shorter than the original file
     let hover_text = preprocessed_text
-        .lines()
-        .nth(fpos.position.line as usize)
-        .and_then(|it| it.get(slc))
-        .map(|it| it.to_string())
+        .get(slc)
+        .map(String::from)
         .unwrap_or_default();
 
     let markup = Markup::from(format!(
@@ -227,5 +205,5 @@ fn find_macro_hover(
         }
     };
 
-    Some(RangeInfo::new(offset.range, res))
+    Some(RangeInfo::new(*offset.range(), res))
 }

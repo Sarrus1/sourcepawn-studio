@@ -1,7 +1,6 @@
 use base_db::FilePosition;
 use hir::Semantics;
-use ide_db::{RootDatabase, SourceChange};
-use lsp_types::TextEdit;
+use ide_db::{RootDatabase, SourceChange, TextEdit};
 
 pub(crate) fn rename(
     db: &RootDatabase,

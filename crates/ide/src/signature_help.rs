@@ -1,8 +1,7 @@
 use base_db::FilePosition;
 use hir::{DefResolution, HasSource, Semantics};
 use ide_db::{Documentation, RootDatabase};
-use preprocessor::u_pos_to_s_pos;
-use syntax::{utils::lsp_position_to_ts_point, TSKind};
+use syntax::TSKind;
 
 #[derive(Debug)]
 pub struct SignatureHelp {
@@ -16,7 +15,7 @@ pub(crate) fn signature_help(
     db: &RootDatabase,
     FilePosition {
         file_id,
-        mut position,
+        mut offset,
     }: FilePosition,
 ) -> Option<SignatureHelp> {
     let sema = &Semantics::new(db);
@@ -24,19 +23,21 @@ pub(crate) fn signature_help(
     let preprocessing_results = sema.preprocess_file(file_id);
 
     // TODO: If the range is some we are in a macro call, try to resolve it.
-    if u_pos_to_s_pos(
-        preprocessing_results.args_map(),
-        preprocessing_results.offsets(),
-        &mut position,
-    )
-    .is_some()
-    {
-        return None;
-    }
-    let point = lsp_position_to_ts_point(&position);
+    // if u_pos_to_s_pos(
+    //     preprocessing_results.args_map(),
+    //     preprocessing_results.offsets(),
+    //     &mut position,
+    // )
+    // .is_some()
+    // {
+    //     return None;
+    // }
+    offset = preprocessing_results
+        .source_map()
+        .closest_s_position(offset);
+    let raw_offset: u32 = offset.into();
     let root_node = tree.root_node();
-
-    let node = root_node.descendant_for_point_range(point, point)?;
+    let node = root_node.descendant_for_byte_range(raw_offset as usize, raw_offset as usize)?;
     let mut parent = node.parent()?;
 
     for depth in 0..3 {
@@ -55,7 +56,8 @@ pub(crate) fn signature_help(
         .children(&mut parent.walk())
         .filter(|c| {
             // Hack: if the node is an error, it's likely a comma
-            (TSKind::from(c) == TSKind::anon_COMMA || c.is_error()) && c.end_position() <= point
+            (TSKind::from(c) == TSKind::anon_COMMA || c.is_error())
+                && c.end_byte() <= raw_offset as usize
         })
         .count() as u32;
     let call_expression = parent.parent()?;

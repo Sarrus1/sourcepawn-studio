@@ -20,7 +20,7 @@ use vfs::FileId;
 
 pub use call_item::{CallItem, IncomingCallItem, OutgoingCallItem};
 pub use documentation::Documentation;
-pub use source_change::SourceChange;
+pub use source_change::{SourceChange, TextEdit};
 pub use symbols::{Symbol, SymbolId, Symbols, SymbolsBuilder};
 
 pub type Cancellable<T> = Result<T, Cancelled>;

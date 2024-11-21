@@ -17,8 +17,7 @@ use paths::AbsPathBuf;
 use preprocessor::db::PreprocDatabase;
 use regex::Regex;
 use smol_str::{SmolStr, ToSmolStr};
-use syntax::{utils::lsp_position_to_ts_point, TSKind};
-use tree_sitter::{InputEdit, Point};
+use syntax::TSKind;
 use vfs::FileId;
 
 use crate::{
@@ -45,12 +44,12 @@ pub fn completions(
 
     let tree = sema.parse(pos.file_id);
 
-    let point = lsp_position_to_ts_point(&pos.position);
-    let line = preprocessed_text.lines().nth(point.row)?;
-    let split_line = line.split_at(
-        line.char_indices()
-            .nth(point.column)
-            .map_or(line.len(), |(idx, _)| idx),
+    let offset = pos.offset;
+    let raw_offset: u32 = offset.into();
+    let split_line = preprocessed_text.split_at(raw_offset as usize);
+    let split_line = (
+        split_line.0.rsplitn(2, '\n').next()?,
+        split_line.1.splitn(2, '\n').next()?,
     );
     if let Some(include_st) = is_include_statement(split_line.0, split_line.1) {
         return get_include_completions(
@@ -67,7 +66,7 @@ pub fn completions(
     }
 
     if is_documentation_start(split_line.0, split_line.1) {
-        return get_doc_completion(db, point, pos.file_id);
+        return get_doc_completion(db, pos, &preprocessed_text);
     }
     if trigger_character == Some('*') {
         // We are past the doc comment check, so we can return early.
@@ -87,11 +86,10 @@ pub fn completions(
         "foo"
     };
 
-    let edit = create_edit(&preprocessed_text, point, token);
     let new_source_code = [
-        &preprocessed_text[..edit.start_byte],
+        &preprocessed_text[..raw_offset as usize],
         token,
-        &preprocessed_text[edit.old_end_byte..],
+        &preprocessed_text[raw_offset as usize..],
     ]
     .concat();
     // TODO: Use the edit to update the tree
@@ -104,10 +102,10 @@ pub fn completions(
 
     let root_node = new_tree.root_node();
     // get the node before the cursor
-    let mut point_off = point;
-    point_off.column = point_off.column.saturating_add(1);
-
-    let node = root_node.descendant_for_point_range(point_off, point_off)?;
+    let node = root_node.descendant_for_byte_range(
+        raw_offset.saturating_add(1) as usize,
+        raw_offset.saturating_add(1) as usize,
+    )?;
 
     // Check if we are in an event such as "EventHook"
     if event_name(&node, &preprocessed_text).is_some() {
@@ -172,7 +170,7 @@ pub fn completions(
         | TSKind::methodmap_method_constructor
         | TSKind::methodmap_method_destructor => {
             add_defaults = true;
-            if let Some(res) = in_function_completion(container, tree, sema, pos, point) {
+            if let Some(res) = in_function_completion(container, tree, sema, pos) {
                 res
             } else {
                 // If we can't resolve the function we are in, the AST is probably broken
@@ -546,7 +544,6 @@ fn in_function_completion(
     tree: base_db::Tree,
     sema: &Semantics<RootDatabase>,
     pos: FilePosition,
-    point: Point,
 ) -> Option<Vec<DefResolution>> {
     // Trick to get the function node in the original tree.
     // We get the byte range of the name node, as it is the same in both trees.
@@ -579,38 +576,7 @@ fn in_function_completion(
         return None;
     };
     let body_node = container.child_by_field_name("body")?;
-    Some(sema.defs_in_function_scope(pos.file_id, def.id(), point, body_node))
-}
-
-fn create_edit(source_code: &str, point: Point, token: &str) -> InputEdit {
-    let mut byte_offset = 0;
-    let mut current_row = 0;
-    let mut current_col = 0;
-
-    // Calculate the byte offset for the given row and column
-    for ch in source_code.chars() {
-        if current_row >= point.row && current_col >= point.column {
-            break;
-        }
-
-        if ch == '\n' {
-            current_row += 1;
-            current_col = 0;
-        } else {
-            current_col += 1;
-        }
-
-        byte_offset += ch.len_utf8();
-    }
-
-    InputEdit {
-        start_byte: byte_offset,
-        old_end_byte: byte_offset,
-        new_end_byte: byte_offset + token.len(),
-        start_position: point,
-        old_end_position: point,
-        new_end_position: Point::new(point.row, point.column + token.chars().count()),
-    }
+    Some(sema.defs_in_function_scope(pos, def.id(), body_node))
 }
 
 pub fn resolve_completion(
