@@ -89,8 +89,8 @@ where
         let inactive_ranges = self.get_inactive_ranges();
         let mut res = PreprocessingResult::new(
             self.buffer.contents().into(),
-            self.macro_store.to_macros_map(),
-            self.buffer.to_source_map(),
+            self.macro_store.into_macros_map(),
+            self.buffer.into_source_map(),
             self.errors,
             inactive_ranges,
         );
@@ -102,8 +102,8 @@ where
         let inactive_ranges = self.get_inactive_ranges();
         let mut res = PreprocessingResult::new(
             self.input.to_owned().into(),
-            self.macro_store.to_macros_map(),
-            self.buffer.to_source_map(),
+            self.macro_store.into_macros_map(),
+            self.buffer.into_source_map(),
             self.errors,
             inactive_ranges,
         );

@@ -50,10 +50,6 @@ pub struct ConditionOffsetStack {
 }
 
 impl ConditionOffsetStack {
-    pub fn top(&self) -> Option<&TextSize> {
-        self.stack.last()
-    }
-
     pub fn pop(&mut self) -> Option<TextSize> {
         self.stack.pop()
     }

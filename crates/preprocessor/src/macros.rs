@@ -3,7 +3,7 @@ use std::{cmp::Ordering, collections::VecDeque, sync::Arc};
 use deepsize::DeepSizeOf;
 use fxhash::{FxHashMap, FxHashSet};
 use smol_str::SmolStr;
-use sourcepawn_lexer::{Literal, Operator, Symbol, TextRange, TextSize, TokenKind};
+use sourcepawn_lexer::{Literal, Operator, Symbol, TextRange, TokenKind};
 use stdx::hashable_hash_map::HashableHashMap;
 use vfs::FileId;
 
@@ -74,7 +74,6 @@ impl ArgumentsCollector {
     fn collect_arguments<T>(
         &mut self,
         lexer: &mut T,
-        symbol: &Symbol,
         context: &mut MacroContext,
         nb_params: usize,
     ) -> Option<MacroArguments>
@@ -229,7 +228,6 @@ where
                 } else {
                     let Some(args) = &args_collector.collect_arguments(
                         lexer,
-                        &queued_symbol.symbol,
                         &mut current_context,
                         macro_.nb_params as usize,
                     ) else {
@@ -511,7 +509,7 @@ impl MacroStore {
         self.disabled_macros.contains(macro_)
     }
 
-    pub fn to_macros_map(self) -> MacrosMap {
+    pub fn into_macros_map(self) -> MacrosMap {
         self.map
     }
 }

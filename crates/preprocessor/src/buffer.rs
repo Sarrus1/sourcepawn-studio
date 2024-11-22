@@ -71,14 +71,14 @@ impl PreprocessorBuffer {
         &self.source_map
     }
 
-    pub fn to_source_map(self) -> SourceMap {
+    pub fn into_source_map(self) -> SourceMap {
         self.source_map
     }
 }
 
-impl ToString for PreprocessorBuffer {
-    fn to_string(&self) -> String {
-        self.contents.clone()
+impl std::fmt::Display for PreprocessorBuffer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.contents)
     }
 }
 
