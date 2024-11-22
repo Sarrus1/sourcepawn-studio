@@ -59,7 +59,7 @@ pub(crate) fn goto_definition(
     let def = sema.find_def(pos.file_id, &node)?;
     let u_range = preprocessing_results
         .source_map()
-        .closest_u_range(ts_range_to_text_range(&node.range()));
+        .closest_u_range(ts_range_to_text_range(&node.range())); // FIXME: This is wrong for macro arguments.
 
     let file_id = def.file_id(db);
     let source_tree = sema.parse(file_id);

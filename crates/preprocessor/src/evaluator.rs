@@ -192,7 +192,7 @@ impl<'a> IfCondition<'a> {
                 _ => {
                     if looking_for_defined {
                         if let Some(macro_) = self.macro_store.get(&symbol.text()) {
-                            self.source_map.push_expanded_symbol(symbol.range, symbol.range, macro_);
+                            self.source_map.push_expanded_symbol(symbol.range, symbol.range.start().into(), symbol.range.end().into(), macro_); // FIXME: This is wrong.
                             output_stack.push(1);
                         } else {
                             output_stack.push(0);
@@ -216,7 +216,7 @@ impl<'a> IfCondition<'a> {
                         ) {
                             Ok(()) => {
                                 if let Some(macro_) = self.macro_store.get(&symbol.text()) {
-                                    self.source_map.push_expanded_symbol(symbol.range, symbol.range, macro_);
+                                    self.source_map.push_expanded_symbol(symbol.range, symbol.range.start().into(), symbol.range.end().into(), macro_); // FIXME: This is wrong.
                                 }
                             }, // No need to keep track of expanded macros here, we do that when calling expand_symbol.
                             Err(ExpansionError::MacroNotFound(err)) => {

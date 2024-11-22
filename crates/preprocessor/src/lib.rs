@@ -1,4 +1,4 @@
-use std::{cmp::max, hash::Hash};
+use std::{cmp::max, hash::Hash, sync::Arc};
 
 use anyhow::{bail, Context};
 use base_db::{RE_CHEVRON, RE_QUOTE};
@@ -192,40 +192,21 @@ where
     pub fn preprocess_input(mut self) -> PreprocessingResult {
         self.include_sourcemod();
         let mut intrinsics_parse_status = None;
-        // let mut col_offset: Option<i32> = None;
-        // let mut expanded_symbol: Option<(Symbol, u32, FileId)> = None;
-        // let mut args_diff = 0u32;
+        let mut expanded_symbol: Option<(Symbol, Arc<Macro>, u32)> = None;
         while let Some(symbol) = if !self.expansion_stack.is_empty() {
             self.expansion_stack.pop()
         } else {
-            // if let Some((expanded_symbol, idx, file_id)) = expanded_symbol.take() {
-            //     if let Some(symbol) = symbol.clone() {
-            //         self.offsets
-            //             .entry(symbol.range.start.line)
-            //             .or_default()
-            //             .push(Offset {
-            //                 idx,
-            //                 file_id,
-            //                 range: expanded_symbol.range,
-            //                 diff: (col_offset.take().unwrap_or(0)
-            //                     - (expanded_symbol.range.end.character
-            //                         - expanded_symbol.range.start.character)
-            //                         as i32),
-            //                 args_diff,
-            //             });
-            //         args_diff = 0;
-            //     }
-            // }
-
+            if let Some((expanded_symbol, macro_, start_offset)) = expanded_symbol.take() {
+                let end_offset = self.buffer.offset();
+                self.buffer.source_map_mut().push_expanded_symbol(
+                    expanded_symbol.range,
+                    start_offset,
+                    end_offset,
+                    &macro_,
+                );
+            }
             self.lexer.next()
         } {
-            // if let Some(original_range) = token.original_range() {
-            //     let new_range = self.current_range(&token);
-            //     self.args_maps
-            //         .entry(original_range.start.line)
-            //         .or_default()
-            //         .push((original_range, new_range));
-            // }
             if self.conditions_stack.top_is_activated_or_not_activated() {
                 if self.process_negative_condition(&symbol).is_err() {
                     return self.error_result();
@@ -260,8 +241,6 @@ where
                                 self.buffer.push_symbol(&symbol);
                                 continue;
                             }
-                            let idx = macro_.idx;
-                            let file_id: FileId = macro_.file_id;
                             match expand_identifier(
                                 &mut self.lexer,
                                 &mut self.macro_store,
@@ -270,9 +249,7 @@ where
                                 true,
                             ) {
                                 Ok(()) => {
-                                    // expanded_symbol =
-                                    //     Some((token.symbol().to_owned(), idx, file_id));
-                                    // args_diff = args_diff_;
+                                    expanded_symbol = Some((symbol, macro_, self.buffer.offset()));
                                     continue;
                                 }
                                 Err(ExpansionError::MacroNotFound(err)) => {

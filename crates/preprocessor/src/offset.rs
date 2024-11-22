@@ -53,12 +53,13 @@ impl SourceMap {
     pub fn push_expanded_symbol(
         &mut self,
         range: TextRange,
-        expanded_range: TextRange,
+        start_offset: u32,
+        end_offset: u32,
         macro_: &Macro,
     ) {
         self.expanded_symbols.push(ExpandedSymbolOffset {
             range,
-            expanded_range,
+            expanded_range: TextRange::new(start_offset.into(), end_offset.into()),
             idx: macro_.idx,
             file_id: macro_.file_id,
         });
@@ -67,18 +68,32 @@ impl SourceMap {
     pub fn expanded_symbol_from_u_pos(&self, u_pos: TextSize) -> Option<ExpandedSymbolOffset> {
         let idx = self
             .expanded_symbols
-            .binary_search_by(|prob| match prob.range.start().cmp(&u_pos) {
-                Ordering::Greater => Ordering::Greater,
-                Ordering::Equal => Ordering::Equal,
-                Ordering::Less if prob.range.end().cmp(&u_pos) != Ordering::Less => Ordering::Equal,
-                Ordering::Less => Ordering::Less,
+            .binary_search_by(|symbol| {
+                if symbol.range.start() > u_pos {
+                    std::cmp::Ordering::Greater
+                } else if symbol.range.end() < u_pos {
+                    std::cmp::Ordering::Less
+                } else {
+                    std::cmp::Ordering::Equal
+                }
             })
             .ok()?;
         Some(self.expanded_symbols[idx].clone())
     }
 
     pub fn closest_s_position(&self, u_pos: TextSize) -> TextSize {
-        let idx = self.vec.partition_point(|&ranges| ranges.0.contains(u_pos));
+        let idx = self
+            .vec
+            .binary_search_by(|&(u_range, _)| {
+                if u_range.start() > u_pos {
+                    std::cmp::Ordering::Greater
+                } else if u_range.end() < u_pos {
+                    std::cmp::Ordering::Less
+                } else {
+                    std::cmp::Ordering::Equal
+                }
+            })
+            .unwrap_or_default();
         let delta = u_pos
             .checked_sub(self.vec[idx].0.start())
             .unwrap_or_default();
@@ -90,7 +105,18 @@ impl SourceMap {
     }
 
     pub fn closest_u_position(&self, s_pos: TextSize) -> TextSize {
-        let idx = self.vec.partition_point(|&ranges| ranges.1.contains(s_pos));
+        let idx = self
+            .vec
+            .binary_search_by(|&(_, s_range)| {
+                if s_range.start() > s_pos {
+                    std::cmp::Ordering::Greater
+                } else if s_range.end() < s_pos {
+                    std::cmp::Ordering::Less
+                } else {
+                    std::cmp::Ordering::Equal
+                }
+            })
+            .unwrap_or_default();
         let delta = s_pos
             .checked_sub(self.vec[idx].1.start())
             .unwrap_or_default();

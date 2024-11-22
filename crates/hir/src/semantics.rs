@@ -201,7 +201,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         }
     }
 
-    /// Try to find the definition of a macro at the given [`user seen position`](FilePosition).
+    /// Try to find the definition of a macro at the given [`user position`](FilePosition).
     pub fn find_macro_def(
         &self,
         fpos: &FilePosition,

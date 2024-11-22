@@ -386,7 +386,7 @@ fn expand_macro(
                         let symbol = Symbol::new(
                             TokenKind::Literal(Literal::StringLiteral),
                             Some(&stringized),
-                            TextRange::default(),
+                            TextRange::default(), // FIXME: It would be nice to be able to handle a proper range here. The only barrier seems to be in the tests?
                             delta,
                         );
                         new_context.push_back(QueuedSymbol::new(symbol, delta));
@@ -399,12 +399,7 @@ fn expand_macro(
                             } else {
                                 sub_child.delta
                             };
-                            let mut symbol = sub_child.to_owned();
-                            if depth == 0 {
-                                // FIXME: Test this
-                                symbol.range = sub_child.range
-                            }
-                            new_context.push_back(QueuedSymbol::new(symbol, delta));
+                            new_context.push_back(QueuedSymbol::new(sub_child.to_owned(), delta));
                         }
                     }
                 } else {
