@@ -29,4 +29,12 @@ impl TextEdit {
             replacement_text,
         }
     }
+
+    pub fn range(&self) -> &TextRange {
+        &self.range
+    }
+
+    pub fn replacement_text(&self) -> &str {
+        &self.replacement_text
+    }
 }

@@ -49,6 +49,7 @@ pub(crate) fn handle_completion(
     params: lsp_types::CompletionParams,
 ) -> anyhow::Result<Option<lsp_types::CompletionResponse>> {
     let position = from_proto::file_position(&snap, params.text_document_position.clone())?;
+    let line_index = snap.file_line_index(position.file_id)?;
     let trigger_character = params
         .context
         .and_then(|it| it.trigger_character.and_then(|it| it.chars().next()));
@@ -70,7 +71,7 @@ pub(crate) fn handle_completion(
                 .into_iter()
                 .map(|item| {
                     let kind = item.kind;
-                    let mut c_item = to_proto::completion_item(&snap, item);
+                    let mut c_item = to_proto::completion_item(&line_index, item);
                     match kind {
                         CompletionKind::SymbolKind(SymbolKind::Local)
                         | CompletionKind::SymbolKind(SymbolKind::Global) => {
@@ -146,6 +147,7 @@ pub(crate) fn handle_symbol(
     params: lsp_types::DocumentSymbolParams,
 ) -> anyhow::Result<Option<DocumentSymbolResponse>> {
     let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
+    let line_index = snap.file_line_index(file_id)?;
 
     let symbols = match snap.analysis.symbols(file_id)? {
         None => return Ok(None),
@@ -153,7 +155,7 @@ pub(crate) fn handle_symbol(
     };
 
     Ok(Some(DocumentSymbolResponse::Nested(
-        to_proto::document_symbols(&snap, symbols),
+        to_proto::document_symbols(&snap, &line_index, symbols),
     )))
 }
 
@@ -162,6 +164,7 @@ pub(crate) fn handle_hover(
     params: lsp_types::HoverParams,
 ) -> anyhow::Result<Option<lsp::ext::Hover>> {
     let pos = from_proto::file_position(&snap, params.text_document_position_params.clone())?;
+    let line_index = snap.file_line_index(pos.file_id)?;
 
     let file_id_to_url = &|id: FileId| {
         snap.file_id_to_url(id)
@@ -188,7 +191,7 @@ pub(crate) fn handle_hover(
                 info.info.markup,
                 snap.config.hover().format,
             )),
-            range: Some(info.range),
+            range: Some(line_index.range(info.range)),
         },
         actions: if snap.config.hover_actions().none() {
             Vec::new()
@@ -262,10 +265,12 @@ pub(crate) fn handle_semantic_tokens_full(
     params: SemanticTokensParams,
 ) -> anyhow::Result<Option<SemanticTokensResult>> {
     let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
+    let line_index = snap.file_line_index(file_id)?;
+
     let text = snap.analysis.file_text(file_id)?;
 
     let highlights = snap.analysis.highlight(file_id)?;
-    let semantic_tokens = to_proto::semantic_tokens(&text, highlights);
+    let semantic_tokens = to_proto::semantic_tokens(&text, &line_index, highlights);
 
     // Unconditionally cache the tokens
     snap.semantic_tokens_cache
@@ -280,11 +285,12 @@ pub(crate) fn handle_semantic_tokens_full_delta(
     params: SemanticTokensDeltaParams,
 ) -> anyhow::Result<Option<SemanticTokensFullDeltaResult>> {
     let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
+    let line_index = snap.file_line_index(file_id)?;
     let text = snap.analysis.file_text(file_id)?;
 
     let highlights = snap.analysis.highlight(file_id)?;
 
-    let semantic_tokens = to_proto::semantic_tokens(&text, highlights);
+    let semantic_tokens = to_proto::semantic_tokens(&text, &line_index, highlights);
 
     let cached_tokens = snap
         .semantic_tokens_cache
@@ -321,10 +327,11 @@ pub(crate) fn handle_semantic_tokens_range(
     params: SemanticTokensRangeParams,
 ) -> anyhow::Result<Option<SemanticTokensRangeResult>> {
     let frange = from_proto::file_range(&snap, &params.text_document, params.range)?;
+    let line_index = snap.file_line_index(frange.file_id)?;
     let text = snap.analysis.file_text(frange.file_id)?;
 
     let highlights = snap.analysis.highlight_range(frange)?;
-    let semantic_tokens = to_proto::semantic_tokens(&text, highlights);
+    let semantic_tokens = to_proto::semantic_tokens(&text, &line_index, highlights);
 
     Ok(Some(semantic_tokens.into()))
 }

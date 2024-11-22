@@ -148,13 +148,14 @@ pub(crate) fn fetch_native_diagnostics(
     subscriptions
         .into_iter()
         .filter_map(|file_id| {
+            let line_index = snapshot.file_line_index(file_id).ok()?;
             let diagnostics = snapshot
                 .analysis
                 .diagnostics(&snapshot.config.diagnostics(), file_id)
                 .ok()?
                 .into_iter()
                 .map(move |d| lsp_types::Diagnostic {
-                    range: d.range,
+                    range: line_index.range(d.range),
                     severity: Some(lsp::to_proto::diagnostic_severity(d.severity)),
                     code: Some(lsp_types::NumberOrString::String(
                         d.code.as_str().to_string(),

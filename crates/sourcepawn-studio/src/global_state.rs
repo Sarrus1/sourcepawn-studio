@@ -333,15 +333,16 @@ impl GlobalState {
                 // this allows delaying the re-acquisition of the write lock
                 bytes.push((file.file_id, text));
             }
-            let vfs = &mut *RwLockUpgradableReadGuard::upgrade(guard);
+            let (vfs, line_endings_map) = &mut *RwLockUpgradableReadGuard::upgrade(guard);
             bytes.into_iter().for_each(|(file_id, text)| match text {
                 None => change.change_file(file_id, None),
-                Some((text, _line_endings)) => {
+                Some((text, line_endings)) => {
+                    line_endings_map.insert(file_id, line_endings);
                     change.change_file(file_id, Some(text));
                 }
             });
             if has_structure_changes {
-                let roots = self.source_root_config.partition(&vfs.0);
+                let roots = self.source_root_config.partition(vfs);
                 change.set_roots(roots);
             }
             (change, changed_files)
@@ -380,7 +381,7 @@ pub(crate) struct GlobalStateSnapshot {
 impl std::panic::UnwindSafe for GlobalStateSnapshot {}
 
 impl GlobalStateSnapshot {
-    fn vfs_read(&self) -> MappedRwLockReadGuard<'_, vfs::Vfs> {
+    pub(crate) fn vfs_read(&self) -> MappedRwLockReadGuard<'_, vfs::Vfs> {
         RwLockReadGuard::map(self.vfs.read(), |(it, _)| it)
     }
 

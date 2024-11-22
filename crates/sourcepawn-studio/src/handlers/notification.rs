@@ -42,8 +42,8 @@ pub(crate) fn handle_did_change_text_document(
             state.config.position_encoding(),
             || {
                 let vfs = &state.vfs.read();
-                let file_id = vfs.file_id(&path).unwrap();
-                std::str::from_utf8(vfs.file_contents(file_id))
+                let file_id = vfs.0.file_id(&path).unwrap();
+                std::str::from_utf8(vfs.0.file_contents(file_id))
                     .unwrap()
                     .into()
             },
@@ -52,6 +52,7 @@ pub(crate) fn handle_did_change_text_document(
         state
             .vfs
             .write()
+            .0
             .set_file_contents(path, Some(text.into_bytes()));
     }
     Ok(())
@@ -79,6 +80,7 @@ pub(crate) fn handle_did_open_text_document(
         state
             .vfs
             .write()
+            .0
             .set_file_contents(path, Some(params.text_document.text.into_bytes()));
 
         log::debug!("Handled did open text document",);
@@ -100,7 +102,7 @@ pub(crate) fn handle_did_close_text_document(
             tracing::error!("orphan DidCloseTextDocument: {}", path);
         }
 
-        if let Some(file_id) = state.vfs.read().file_id(&path) {
+        if let Some(file_id) = state.vfs.read().0.file_id(&path) {
             state.diagnostics.clear_native_for(file_id);
         }
 
@@ -220,7 +222,7 @@ pub(crate) fn handle_did_change_configuration(
 }
 
 fn run_flycheck(state: &mut GlobalState, vfs_path: VfsPath) -> bool {
-    let file_id = state.vfs.read().file_id(&vfs_path);
+    let file_id = state.vfs.read().0.file_id(&vfs_path);
     let Some(file_id) = file_id else {
         return false;
     };

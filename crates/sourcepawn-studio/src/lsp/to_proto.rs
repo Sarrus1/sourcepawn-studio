@@ -14,10 +14,10 @@ use ide_db::{
 use itertools::Itertools;
 use lsp_types::TextEdit;
 use paths::AbsPath;
-use syntax::range_contains_range;
+use rowan::{TextRange, TextSize};
 use vfs::FileId;
 
-use crate::global_state::GlobalStateSnapshot;
+use crate::{global_state::GlobalStateSnapshot, line_index::LineIndex};
 
 use super::semantic_tokens;
 
@@ -38,7 +38,10 @@ pub(crate) fn location_link(
     src: Option<FileRange>,
     target: NavigationTarget,
 ) -> Cancellable<lsp_types::LocationLink> {
-    let origin_selection_range = src.map(|it| it.range);
+    let origin_selection_range = match src {
+        Some(src) => Some(snap.file_line_index(src.file_id)?.range(src.range)),
+        None => None,
+    };
     let (target_uri, target_range, target_selection_range) = location_info(snap, target)?;
     let res = lsp_types::LocationLink {
         origin_selection_range,
@@ -66,9 +69,11 @@ fn location_info(
     snap: &GlobalStateSnapshot,
     target: NavigationTarget,
 ) -> Cancellable<(lsp_types::Url, lsp_types::Range, lsp_types::Range)> {
+    let line_index = snap.file_line_index(target.file_id)?;
+
     let target_uri = url(snap, target.file_id);
-    let target_range = target.full_range;
-    let target_selection_range = target.focus_range.unwrap_or(target_range);
+    let target_range = line_index.range(target.full_range);
+    let target_selection_range = line_index.range(target.focus_range.unwrap_or(target.full_range));
     Ok((target_uri, target_range, target_selection_range))
 }
 
@@ -91,7 +96,11 @@ pub(crate) fn url(snap: &GlobalStateSnapshot, file_id: FileId) -> lsp_types::Url
 
 static TOKEN_RESULT_COUNTER: AtomicU32 = AtomicU32::new(1);
 
-pub(crate) fn semantic_tokens(_text: &str, highlights: Vec<HlRange>) -> lsp_types::SemanticTokens {
+pub(crate) fn semantic_tokens(
+    text: &str,
+    line_index: &LineIndex,
+    highlights: Vec<HlRange>,
+) -> lsp_types::SemanticTokens {
     let id = TOKEN_RESULT_COUNTER
         .fetch_add(1, Ordering::SeqCst)
         .to_string();
@@ -108,7 +117,15 @@ pub(crate) fn semantic_tokens(_text: &str, highlights: Vec<HlRange>) -> lsp_type
 
         let token_index = semantic_tokens::type_index(ty);
         let modifier_bitset = mods.0;
-        builder.push(highlight_range.range, token_index, modifier_bitset);
+
+        for mut text_range in line_index.index.lines(highlight_range.range) {
+            if text[text_range].ends_with('\n') {
+                text_range =
+                    TextRange::new(text_range.start(), text_range.end() - TextSize::of('\n'));
+            }
+            let range = line_index.range(text_range);
+            builder.push(range, token_index, modifier_bitset);
+        }
     }
 
     builder.build()
@@ -215,13 +232,14 @@ pub(crate) fn location(
     snap: &GlobalStateSnapshot,
     frange: FileRange,
 ) -> Cancellable<lsp_types::Location> {
+    let line_index = snap.file_line_index(frange.file_id)?;
     let url = url(snap, frange.file_id);
-    let loc = lsp_types::Location::new(url, frange.range);
+    let loc = lsp_types::Location::new(url, line_index.range(frange.range));
     Ok(loc)
 }
 
 pub(crate) fn completion_item(
-    _snap: &GlobalStateSnapshot,
+    line_index: &LineIndex,
     item: ide::CompletionItem,
 ) -> lsp_types::CompletionItem {
     lsp_types::CompletionItem {
@@ -237,6 +255,7 @@ pub(crate) fn completion_item(
         },
         filter_text: item.filter_text,
         text_edit: item.text_edit.map(|(range, new_text)| {
+            let range = line_index.range(range);
             lsp_types::CompletionTextEdit::Edit(TextEdit::new(range, new_text))
         }),
         deprecated: item.deprecated.into(),
@@ -316,13 +335,21 @@ pub(crate) fn workspace_edit(
     let changes = source_change
         .source_file_edits
         .into_iter()
-        .map(|(file_id, edits)| {
+        .flat_map(|(file_id, edits)| {
+            let Some(line_index) = snap.file_line_index(file_id).ok() else {
+                return None;
+            };
             let uri = url(snap, file_id);
             let text_edits = edits
                 .into_iter()
-                .map(|edit| lsp_types::TextEdit::new(edit.range, edit.new_text))
+                .map(|edit| {
+                    lsp_types::TextEdit::new(
+                        line_index.range(*edit.range()),
+                        edit.replacement_text().to_string(),
+                    )
+                })
                 .collect();
-            (uri, text_edits)
+            Some((uri, text_edits))
         })
         .collect();
 
@@ -335,15 +362,20 @@ pub(crate) fn workspace_edit(
 
 pub(crate) fn document_symbols(
     _snap: &GlobalStateSnapshot,
+    line_index: &LineIndex,
     symbols: Symbols,
 ) -> Vec<lsp_types::DocumentSymbol> {
     symbols
         .into_iter()
-        .map(|idx| document_symbol(idx, &symbols))
+        .map(|idx| document_symbol(idx, &symbols, line_index))
         .collect_vec()
 }
 
-fn document_symbol(idx: &SymbolId, symbols: &Symbols) -> lsp_types::DocumentSymbol {
+fn document_symbol(
+    idx: &SymbolId,
+    symbols: &Symbols,
+    line_index: &LineIndex,
+) -> lsp_types::DocumentSymbol {
     use lsp_types::SymbolKind as SK;
 
     let symbol = &symbols[idx];
@@ -367,6 +399,7 @@ fn document_symbol(idx: &SymbolId, symbols: &Symbols) -> lsp_types::DocumentSymb
         SymbolKind::Variant => SK::ENUM_MEMBER,
         SymbolKind::Global | SymbolKind::Local => SK::VARIABLE,
     };
+    let full_range = line_index.range(symbol.full_range);
     #[allow(deprecated)]
     lsp_types::DocumentSymbol {
         name: symbol.name.to_string(),
@@ -378,15 +411,15 @@ fn document_symbol(idx: &SymbolId, symbols: &Symbols) -> lsp_types::DocumentSymb
             None
         },
         deprecated: None,
-        range: symbol.full_range,
+        range: full_range,
         selection_range: if let Some(focus_range) = symbol.focus_range {
-            if range_contains_range(&symbol.full_range, &focus_range) {
-                focus_range
+            if symbol.full_range.contains_range(focus_range) {
+                line_index.range(focus_range)
             } else {
-                symbol.full_range
+                full_range
             }
         } else {
-            symbol.full_range
+            full_range
         },
         children: if symbol.children.is_empty() {
             None
@@ -394,7 +427,7 @@ fn document_symbol(idx: &SymbolId, symbols: &Symbols) -> lsp_types::DocumentSymb
             symbol
                 .children
                 .iter()
-                .map(|idx| document_symbol(idx, symbols))
+                .map(|idx| document_symbol(idx, symbols, line_index))
                 .collect_vec()
                 .into()
         },
@@ -407,9 +440,16 @@ pub(crate) fn call_hierarchy_outgoing(
 ) -> Vec<lsp_types::CallHierarchyOutgoingCall> {
     outgoing_items
         .into_iter()
-        .map(|item| lsp_types::CallHierarchyOutgoingCall {
-            to: call_hierarchy_item(snap, item.call_item),
-            from_ranges: item.ranges,
+        .flat_map(|item| {
+            let line_index = snap.file_line_index(item.call_item.file_id).ok()?;
+            Some(lsp_types::CallHierarchyOutgoingCall {
+                to: call_hierarchy_item(snap, item.call_item)?,
+                from_ranges: item
+                    .ranges
+                    .iter()
+                    .map(|range| line_index.range(*range))
+                    .collect(),
+            })
         })
         .collect()
 }
@@ -420,9 +460,16 @@ pub(crate) fn call_hierarchy_incoming(
 ) -> Vec<lsp_types::CallHierarchyIncomingCall> {
     incoming_items
         .into_iter()
-        .map(|item| lsp_types::CallHierarchyIncomingCall {
-            from: call_hierarchy_item(snap, item.call_item),
-            from_ranges: item.ranges,
+        .flat_map(|item| {
+            let line_index = snap.file_line_index(item.call_item.file_id).ok()?;
+            Some(lsp_types::CallHierarchyIncomingCall {
+                from: call_hierarchy_item(snap, item.call_item)?,
+                from_ranges: item
+                    .ranges
+                    .iter()
+                    .map(|range| line_index.range(*range))
+                    .collect(),
+            })
         })
         .collect()
 }
@@ -433,15 +480,17 @@ pub(crate) fn call_hierarchy_items(
 ) -> Vec<lsp_types::CallHierarchyItem> {
     call_items
         .into_iter()
-        .map(|call_item| call_hierarchy_item(snap, call_item))
+        .flat_map(|call_item| call_hierarchy_item(snap, call_item))
         .collect()
 }
 
 fn call_hierarchy_item(
     snap: &GlobalStateSnapshot,
     call_item: CallItem,
-) -> lsp_types::CallHierarchyItem {
-    lsp_types::CallHierarchyItem {
+) -> Option<lsp_types::CallHierarchyItem> {
+    let line_index = snap.file_line_index(call_item.file_id).ok()?;
+    let full_range = line_index.range(call_item.full_range);
+    Some(lsp_types::CallHierarchyItem {
         name: call_item.name.to_string(),
         kind: match call_item.kind {
             SymbolKind::Method | SymbolKind::Constructor | SymbolKind::Destructor => {
@@ -457,10 +506,13 @@ fn call_hierarchy_item(
         },
         detail: call_item.details,
         uri: url(snap, call_item.file_id),
-        range: call_item.full_range,
-        selection_range: call_item.focus_range.unwrap_or(call_item.full_range),
+        range: full_range,
+        selection_range: call_item
+            .focus_range
+            .map(|range| line_index.range(range))
+            .unwrap_or(full_range),
         data: call_item.data.and_then(|it| serde_json::to_value(it).ok()),
-    }
+    })
 }
 
 pub(crate) mod command {
