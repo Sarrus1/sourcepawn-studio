@@ -543,13 +543,7 @@ where
 
     fn process_include_directive(&mut self, symbol: &Symbol, is_try: bool) {
         let text = symbol.inline_text().trim().to_string();
-        let delta: u32 = symbol.range.len().into();
-        let symbol = Symbol::new(
-            symbol.token_kind,
-            Some(&text),
-            TextRange::at(symbol.range.start(), TextSize::new(text.len() as u32)),
-            symbol.delta,
-        );
+        let line_delta = linebreak_count(symbol.text().as_str());
 
         if let Some(path) = RE_CHEVRON.captures(&text).and_then(|c| c.get(1)) {
             match (self.include_file)(
@@ -604,8 +598,8 @@ where
             }
         };
 
-        self.buffer.push_symbol(&symbol);
-        self.buffer.push_new_lines(delta);
+        self.buffer.push_symbol(symbol);
+        self.buffer.push_new_lines(line_delta as u32);
     }
 
     fn process_negative_condition(&mut self, symbol: &Symbol) -> anyhow::Result<()> {

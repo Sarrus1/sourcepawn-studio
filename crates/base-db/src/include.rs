@@ -110,6 +110,7 @@ pub(crate) fn file_includes_query(
                 } else {
                     IncludeType::TryInclude
                 };
+                //TODO: Inlining the text might fail when reporting an error on a multiline inclue.
                 let text = symbol.inline_text().trim().to_string();
                 let start: u32 = symbol.range.start().into();
                 let symbol = Symbol::new(

@@ -1,7 +1,7 @@
 use serde::Serialize;
 use vfs::FileId;
 
-use insta::assert_json_snapshot;
+use insta::{assert_json_snapshot, assert_snapshot};
 
 fn extend_macros(
     _macro_store: &mut MacrosMap,
@@ -14,7 +14,6 @@ fn extend_macros(
 
 #[derive(Debug, Default, Serialize)]
 struct PreprocessingResult_ {
-    preprocessed_text: String,
     vec: Vec<(u32, u32, u32, u32)>,
     expanded_symbols: Vec<(u32, u32, u32, u32, u32, u32)>,
 }
@@ -22,7 +21,6 @@ struct PreprocessingResult_ {
 impl From<PreprocessingResult> for PreprocessingResult_ {
     fn from(value: PreprocessingResult) -> Self {
         Self {
-            preprocessed_text: value.preprocessed_text().to_string(),
             vec: value
                 .source_map()
                 .source_map()
@@ -58,10 +56,27 @@ impl From<PreprocessingResult> for PreprocessingResult_ {
 #[allow(unused_macros)]
 macro_rules! assert_preproc_eq {
     ($input:expr) => {
-        assert_json_snapshot!(PreprocessingResult_::from(
-            SourcepawnPreprocessor::new(FileId::from(0), $input, &mut extend_macros)
-                .preprocess_input()
-        ));
+        let res = SourcepawnPreprocessor::new(FileId::from(0), $input, &mut extend_macros)
+            .preprocess_input();
+        assert_snapshot!(res.preprocessed_text());
+        for (u_range, s_range) in res.source_map().source_map() {
+            let u_start: u32 = u_range.start().into();
+            let u_end: u32 = u_range.end().into();
+            let s_start: u32 = s_range.start().into();
+            let s_end: u32 = s_range.end().into();
+            let u_slc = u_start as usize..u_end as usize;
+            let s_slc = s_start as usize..s_end as usize;
+            assert_eq!(
+                $input[u_slc.clone()],
+                res.preprocessed_text()[s_slc.clone()],
+                "{:?} does not map to {:?}: {} is different from {}",
+                u_range,
+                s_range,
+                $input[u_slc].to_string(),
+                res.preprocessed_text()[s_slc].to_string()
+            )
+        }
+        assert_json_snapshot!(PreprocessingResult_::from(res));
     };
 }
 

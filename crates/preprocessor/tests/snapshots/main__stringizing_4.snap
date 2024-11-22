@@ -1,12 +1,12 @@
 ---
 source: crates/preprocessor/tests/main.rs
-assertion_line: 851
-expression: "SourcepawnPreprocessor::new(FileId::from(0), input,\n                &mut extend_macros).preprocess_input().preprocessed_text().as_ref()"
+assertion_line: 718
+expression: res.preprocessed_text()
 ---
 #define DISPOSE_MEMBER(%1) \
     Handle m_h%1; \
     if(this.GetValue("m_" ... #%1, m_h%1)){ \
         delete m_h%1;}
 void foo(){
-    Handle m_hFoo;    if(this.GetValue(    "m_" ...    "Foo", m_hFoo)){        delete m_hFoo;}
+    Handle m_hFoo;    if(this.GetValue("m_" ... "Foo", m_hFoo)){        delete m_hFoo;}
 }

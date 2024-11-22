@@ -1,0 +1,16 @@
+---
+source: crates/preprocessor/tests/main.rs
+assertion_line: 673
+expression: "PreprocessingResult_ :: from(res)"
+---
+{
+  "vec": [
+    [
+      0,
+      22,
+      0,
+      22
+    ]
+  ],
+  "expanded_symbols": []
+}

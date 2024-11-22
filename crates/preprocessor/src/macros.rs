@@ -252,20 +252,6 @@ where
                 context_stack.push(current_context);
                 context_stack.push(new_context);
             }
-            TokenKind::Literal(Literal::StringLiteral)
-            | TokenKind::Literal(Literal::CharLiteral) => {
-                let text = &queued_symbol.symbol.inline_text();
-                reversed_expansion_stack.push(Symbol::new(
-                    queued_symbol.symbol.token_kind,
-                    Some(text),
-                    TextRange::at(
-                        queued_symbol.symbol.range.start(),
-                        TextSize::new(text.len() as u32),
-                    ),
-                    symbol.delta.to_owned(),
-                ));
-                context_stack.push(current_context);
-            }
             TokenKind::Newline | TokenKind::LineContinuation | TokenKind::Comment(_) => {
                 context_stack.push(current_context);
             }
@@ -305,10 +291,7 @@ fn expand_non_macro_define(
         .iter()
         .enumerate()
         .map(|(i, child)| {
-            let s = QueuedSymbol::new(
-                child.to_symbol(prev_range),
-                if i == 0 { delta } else { child.delta },
-            );
+            let s = QueuedSymbol::new(child.into(), if i == 0 { delta } else { child.delta });
             s.symbol.range.clone_into(&mut prev_range);
             s
         })
@@ -347,14 +330,12 @@ fn expand_macro(
     let mut new_context = MacroContext::default();
     let mut consecutive_percent = 0;
     let mut stringize_delta = None;
-    let mut prev_range = symbol.range;
     for (i, child) in macro_
         .body
         .iter()
-        .map(|s| {
-            let s = s.to_symbol(prev_range);
-            prev_range = s.range;
-            s
+        .map(|it| {
+            let it: Symbol = it.into();
+            it
         })
         .enumerate()
     {
@@ -407,10 +388,7 @@ fn expand_macro(
                         let symbol = Symbol::new(
                             TokenKind::Literal(Literal::StringLiteral),
                             Some(&stringized),
-                            TextRange::at(
-                                symbol.range.start(),
-                                TextSize::new(stringized.len() as u32),
-                            ),
+                            TextRange::default(),
                             delta,
                         );
                         new_context.push_back(QueuedSymbol::new(symbol, delta));

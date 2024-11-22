@@ -1,12 +1,12 @@
 ---
 source: crates/preprocessor/tests/main.rs
-assertion_line: 710
-expression: "SourcepawnPreprocessor::new(FileId::from(0), input,\n                &mut extend_macros).preprocess_input().preprocessed_text().as_ref()"
+assertion_line: 604
+expression: res.preprocessed_text()
 ---
 #define GET_VALUE(%1,%2) \
     public %1 Get%2(){ \
         %1 i; \
         this.GetValue("m_" ... #%2, i); \
         return i;}
-        
-    public void GetFoo(){        void i;        this.GetValue(        "m_" ...        "Foo", i);        return i;}
+
+    public void GetFoo(){        void i;        this.GetValue("m_" ... "Foo", i);        return i;}

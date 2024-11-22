@@ -40,12 +40,14 @@ impl PreprocessorBuffer {
 
     pub fn push_symbol_no_delta(&mut self, symbol: &Symbol) {
         self.contents.push_str(&symbol.text());
-        self.source_map.push_new_range(
-            symbol.range,
-            TextRange::at(TextSize::new(self.offset), symbol.range.len()),
-        );
-        let len: u32 = symbol.range.len().into();
-        self.offset += len;
+        if !symbol.range.is_empty() {
+            // Symbols with empty ranges are expanded macros.
+            self.source_map.push_new_range(
+                symbol.range,
+                TextRange::at(TextSize::new(self.offset), symbol.range.len()),
+            );
+        }
+        self.offset += symbol.text().len() as u32;
     }
 
     pub fn push_str(&mut self, string: &str) {
