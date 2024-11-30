@@ -1,6 +1,6 @@
 ---
 source: crates/preprocessor/tests/main.rs
-assertion_line: 636
+assertion_line: 658
 expression: "PreprocessingResult_ :: from(res)"
 ---
 {
@@ -150,5 +150,18 @@ expression: "PreprocessingResult_ :: from(res)"
       89
     ]
   ],
-  "expanded_symbols": []
+  "expanded_symbols": [
+    {
+      "range": {
+        "start": 68,
+        "end": 71
+      },
+      "expanded_range": {
+        "start": 68,
+        "end": 72
+      },
+      "idx": 0,
+      "file_id": 0
+    }
+  ]
 }

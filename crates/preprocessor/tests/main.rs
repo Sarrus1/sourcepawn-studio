@@ -13,9 +13,40 @@ fn extend_macros(
 }
 
 #[derive(Debug, Default, Serialize)]
+struct Range {
+    start: u32,
+    end: u32,
+}
+
+#[derive(Debug, Default, Serialize)]
+struct ExpandedSymbol {
+    range: Range,
+    expanded_range: Range,
+    idx: u32,
+    file_id: u32,
+}
+
+impl From<&ExpandedSymbolOffset> for ExpandedSymbol {
+    fn from(value: &ExpandedSymbolOffset) -> Self {
+        Self {
+            range: Range {
+                start: value.range().start().into(),
+                end: value.range().end().into(),
+            },
+            expanded_range: Range {
+                start: value.expanded_range().start().into(),
+                end: value.expanded_range().end().into(),
+            },
+            idx: value.idx(),
+            file_id: value.file_id().0,
+        }
+    }
+}
+
+#[derive(Debug, Default, Serialize)]
 struct PreprocessingResult_ {
     vec: Vec<(u32, u32, u32, u32)>,
-    expanded_symbols: Vec<(u32, u32, u32, u32, u32, u32)>,
+    expanded_symbols: Vec<ExpandedSymbol>,
 }
 
 impl From<PreprocessingResult> for PreprocessingResult_ {
@@ -38,16 +69,7 @@ impl From<PreprocessingResult> for PreprocessingResult_ {
                 .source_map()
                 .expanded_symbols()
                 .iter()
-                .map(|e| {
-                    (
-                        e.range().start().into(),
-                        e.range().end().into(),
-                        e.expanded_range().start().into(),
-                        e.expanded_range().end().into(),
-                        e.idx(),
-                        e.file_id().0,
-                    )
-                })
+                .map(ExpandedSymbol::from)
                 .collect(),
         }
     }
@@ -80,7 +102,7 @@ macro_rules! assert_preproc_eq {
     };
 }
 
-use preprocessor::{MacrosMap, PreprocessingResult, SourcepawnPreprocessor};
+use preprocessor::{ExpandedSymbolOffset, MacrosMap, PreprocessingResult, SourcepawnPreprocessor};
 #[test]
 fn no_preprocessor_directives() {
     let input = r#"
