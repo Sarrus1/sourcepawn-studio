@@ -84,7 +84,7 @@ impl Attribute<'_> {
     }
 }
 
-impl<'a> Database<'a> {
+impl Database<'_> {
     // FIXME: Get rid of the double borrow
     pub fn iter(&self) -> impl Iterator<Item = (&&str, &Game)> + '_ {
         self.0.iter()

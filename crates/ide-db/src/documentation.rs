@@ -218,7 +218,7 @@ impl Documentation {
         let re = Regex::new(&format!(r"\s*@param\s+{}\s+", regex::escape(param_name))).ok()?;
         let start = re.find(self.as_str())?.end();
         let end = self.as_str()[start..]
-            .find(|c: char| c == '@')
+            .find('@')
             .map(|i| start + i)
             .unwrap_or_else(|| self.as_str().len());
         Some(self.as_str()[start..end].trim().to_string().into())

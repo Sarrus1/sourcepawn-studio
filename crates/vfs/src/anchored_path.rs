@@ -22,7 +22,7 @@ pub struct AnchoredPath<'a> {
     pub path: &'a str,
 }
 
-impl<'a> AnchoredPath<'a> {
+impl AnchoredPath<'_> {
     /// Create a new [`AnchoredUrl`] from `anchor` and `path`.
     pub fn new(anchor: FileId, path: &str) -> AnchoredPath<'_> {
         AnchoredPath { anchor, path }

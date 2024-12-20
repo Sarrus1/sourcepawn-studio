@@ -1421,7 +1421,7 @@ impl<'de> Deserialize<'de> for StructField {
             {
                 struct KeyVisitor;
 
-                impl<'de> Visitor<'de> for KeyVisitor {
+                impl Visitor<'_> for KeyVisitor {
                     type Value = FieldKey;
 
                     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -1654,7 +1654,7 @@ impl<'de> Deserialize<'de> for Field {
             {
                 struct KeyVisitor;
 
-                impl<'de> Visitor<'de> for KeyVisitor {
+                impl Visitor<'_> for KeyVisitor {
                     type Value = FieldKey;
 
                     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

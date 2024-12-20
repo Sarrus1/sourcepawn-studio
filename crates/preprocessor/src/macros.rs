@@ -10,6 +10,8 @@ use vfs::FileId;
 use super::errors::{ExpansionError, MacroNotFoundError, ParseIntError};
 use crate::symbol::RangeLessSymbol;
 
+const MAX_MACRO_EXPANSION_DEPTH: usize = 5;
+
 /// Arguments of a [macro](Macro) call.
 type MacroArguments = [Vec<Symbol>; 10];
 
@@ -195,7 +197,7 @@ where
         symbol.clone(),
         symbol.delta.to_owned(),
     )])];
-    while !context_stack.is_empty() && context_stack.len() < 6 {
+    while !context_stack.is_empty() && context_stack.len() <= MAX_MACRO_EXPANSION_DEPTH {
         let mut current_context = context_stack.pop().unwrap();
         let Some(queued_symbol) = current_context.pop_front() else {
             continue;
@@ -239,13 +241,7 @@ where
                         context_stack.push(current_context);
                         continue;
                     };
-                    expand_macro(
-                        args,
-                        macro_,
-                        &queued_symbol.symbol,
-                        &symbol.delta,
-                        context_stack.len(),
-                    )?
+                    expand_macro(args, macro_, &queued_symbol.symbol, &symbol.delta)?
                 };
                 context_stack.push(current_context);
                 context_stack.push(new_context);
@@ -317,13 +313,11 @@ fn expand_non_macro_define(
 /// * `symbol` - [`Symbol`] that originated the [`macro`](Macro) expansion. Used to keep track of the
 ///   [`delta`](sourcepawn_lexer::Delta) to insert.
 /// * `delta` - [`Delta`](sourcepawn_lexer::Delta) of the [`symbols`](Symbol) we are expanding.
-/// * `depth` - Depth of the macro expansion context.
 fn expand_macro(
     args: &MacroArguments,
     macro_: &Macro,
     symbol: &Symbol,
     delta: &sourcepawn_lexer::Delta,
-    depth: usize,
 ) -> Result<MacroContext, ParseIntError> {
     let mut new_context = MacroContext::default();
     let mut consecutive_percent = 0;

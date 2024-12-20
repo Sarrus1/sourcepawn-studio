@@ -48,8 +48,8 @@ pub fn completions(
     let raw_offset: u32 = offset.into();
     let split_line = preprocessed_text.split_at(raw_offset as usize);
     let split_line = (
-        split_line.0.rsplitn(2, '\n').next()?,
-        split_line.1.splitn(2, '\n').next()?,
+        split_line.0.rsplit('\n').next()?,
+        split_line.1.split('\n').next()?,
     );
     if let Some(include_st) = is_include_statement(split_line.0, split_line.1) {
         return get_include_completions(

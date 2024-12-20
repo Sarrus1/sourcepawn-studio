@@ -11,6 +11,7 @@ pub mod to_proto;
 
 // pub(crate) type CheckFixes = Arc<IntMap<usize, IntMap<FileId, Vec<Fix>>>>;
 
+#[allow(unused)]
 #[derive(Debug, Default, Clone)]
 pub struct DiagnosticsMapConfig {
     pub remap_prefix: FxHashMap<String, String>,
