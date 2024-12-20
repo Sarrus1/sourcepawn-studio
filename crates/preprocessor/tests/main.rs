@@ -54,7 +54,7 @@ impl From<PreprocessingResult> for PreprocessingResult_ {
         Self {
             vec: value
                 .source_map()
-                .source_map()
+                .u_range_to_s_range_vec()
                 .iter()
                 .map(|e| {
                     (
@@ -81,7 +81,7 @@ macro_rules! assert_preproc_eq {
         let res = SourcepawnPreprocessor::new(FileId::from(0), $input, &mut extend_macros)
             .preprocess_input();
         assert_snapshot!(res.preprocessed_text());
-        for (u_range, s_range) in res.source_map().source_map() {
+        for (u_range, s_range) in res.source_map().u_range_to_s_range_vec() {
             let u_start: u32 = u_range.start().into();
             let u_end: u32 = u_range.end().into();
             let s_start: u32 = s_range.start().into();

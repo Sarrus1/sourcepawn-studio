@@ -336,9 +336,7 @@ pub(crate) fn workspace_edit(
         .source_file_edits
         .into_iter()
         .flat_map(|(file_id, edits)| {
-            let Some(line_index) = snap.file_line_index(file_id).ok() else {
-                return None;
-            };
+            let line_index = snap.file_line_index(file_id).ok()?;
             let uri = url(snap, file_id);
             let text_edits = edits
                 .into_iter()

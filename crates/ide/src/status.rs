@@ -222,7 +222,7 @@ impl StatCollect<(FileId, Arc<PreprocessingParams>), Arc<PreprocessingResult>>
             .unwrap_or(0);
         self.offsets += value
             .as_ref()
-            .map(|it| it.source_map().vec_len())
+            .map(|it| it.source_map().arena_len())
             .unwrap_or(0);
         self.retained += value.is_some() as usize;
     }

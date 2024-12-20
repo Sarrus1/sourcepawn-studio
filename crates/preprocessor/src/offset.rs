@@ -1,5 +1,5 @@
-use std::cmp::Ordering;
-
+use itertools::Itertools;
+use la_arena::{Arena, Idx};
 use sourcepawn_lexer::{TextRange, TextSize};
 use vfs::FileId;
 
@@ -41,13 +41,18 @@ impl ExpandedSymbolOffset {
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct SourceMap {
-    vec: Vec<(TextRange, TextRange)>,
+    arena: Arena<TextRange>,
+    u_range_to_s_range: Vec<(Idx<TextRange>, Idx<TextRange>)>,
+    s_range_to_u_range: Vec<(Idx<TextRange>, Idx<TextRange>)>,
     expanded_symbols: Vec<ExpandedSymbolOffset>,
 }
 
 impl SourceMap {
     pub fn push_new_range(&mut self, u_range: TextRange, s_range: TextRange) {
-        self.vec.push((u_range, s_range));
+        let u_range_idx = self.arena.alloc(u_range);
+        let s_range_idx = self.arena.alloc(s_range);
+        self.u_range_to_s_range.push((u_range_idx, s_range_idx));
+        self.s_range_to_u_range.push((s_range_idx, u_range_idx));
     }
 
     pub fn push_expanded_symbol(
@@ -83,8 +88,9 @@ impl SourceMap {
 
     pub fn closest_s_position(&self, u_pos: TextSize) -> TextSize {
         let idx = self
-            .vec
-            .binary_search_by(|&(u_range, _)| {
+            .u_range_to_s_range
+            .binary_search_by(|&(u_range_idx, _)| {
+                let u_range = self.arena[u_range_idx];
                 if u_range.start() > u_pos {
                     std::cmp::Ordering::Greater
                 } else if u_range.end() < u_pos {
@@ -94,11 +100,11 @@ impl SourceMap {
                 }
             })
             .unwrap_or_default();
+        let (u_range_idx, s_range_idx) = self.u_range_to_s_range[idx];
         let delta = u_pos
-            .checked_sub(self.vec[idx].0.start())
+            .checked_sub(self.arena[u_range_idx].start())
             .unwrap_or_default();
-        self.vec[idx]
-            .1
+        self.arena[s_range_idx]
             .start()
             .checked_add(delta)
             .unwrap_or_default()
@@ -106,8 +112,9 @@ impl SourceMap {
 
     pub fn closest_u_position(&self, s_pos: TextSize) -> TextSize {
         let idx = self
-            .vec
-            .binary_search_by(|&(_, s_range)| {
+            .s_range_to_u_range
+            .binary_search_by(|&(s_range_idx, _)| {
+                let s_range = self.arena[s_range_idx];
                 if s_range.start() > s_pos {
                     std::cmp::Ordering::Greater
                 } else if s_range.end() < s_pos {
@@ -117,11 +124,11 @@ impl SourceMap {
                 }
             })
             .unwrap_or_default();
+        let (s_range_idx, u_range_idx) = self.s_range_to_u_range[idx];
         let delta = s_pos
-            .checked_sub(self.vec[idx].1.start())
+            .checked_sub(self.arena[s_range_idx].start())
             .unwrap_or_default();
-        self.vec[idx]
-            .0
+        self.arena[u_range_idx]
             .start()
             .checked_add(delta)
             .unwrap_or_default()
@@ -134,25 +141,33 @@ impl SourceMap {
     }
 
     pub fn shrink_to_fit(&mut self) {
-        self.vec.shrink_to_fit();
+        self.arena.shrink_to_fit();
+        self.u_range_to_s_range.shrink_to_fit();
+        self.s_range_to_u_range.shrink_to_fit();
         self.expanded_symbols.shrink_to_fit();
     }
 
     pub fn sort(&mut self) {
-        self.vec.sort_by(|a, b| a.0.ordering(b.0)); // FIXME: This might be wrong
+        self.u_range_to_s_range
+            .sort_by(|a, b| self.arena[a.0].ordering(self.arena[b.0]));
+        self.s_range_to_u_range
+            .sort_by(|a, b| self.arena[a.0].ordering(self.arena[b.0]));
         self.expanded_symbols
             .sort_by(|a, b| a.range.ordering(b.range));
     }
 
-    pub fn source_map(&self) -> &[(TextRange, TextRange)] {
-        &self.vec
+    pub fn u_range_to_s_range_vec(&self) -> Vec<(TextRange, TextRange)> {
+        self.u_range_to_s_range
+            .iter()
+            .map(|(u_range_idx, s_range_idx)| (self.arena[*u_range_idx], self.arena[*s_range_idx]))
+            .collect_vec()
     }
 
     pub fn expanded_symbols(&self) -> &[ExpandedSymbolOffset] {
         &self.expanded_symbols
     }
 
-    pub fn vec_len(&self) -> usize {
-        self.vec.len()
+    pub fn arena_len(&self) -> usize {
+        self.arena.len()
     }
 }

@@ -23,6 +23,7 @@ smol_str.workspace = true
 itertools.workspace = true
 deepsize.workspace = true
 serde.workspace = true
+la-arena.workspace = true
 
 vfs.workspace = true
 base-db.workspace = true
