@@ -18,10 +18,11 @@ impl PreprocessingResult {
     pub(crate) fn new(
         preprocessed_text: Arc<str>,
         macros: MacrosMap,
-        source_map: SourceMap,
+        mut source_map: SourceMap,
         errors: PreprocessorErrors,
         inactive_ranges: Vec<TextRange>,
     ) -> Self {
+        source_map.sort();
         Self {
             preprocessed_text,
             macros,

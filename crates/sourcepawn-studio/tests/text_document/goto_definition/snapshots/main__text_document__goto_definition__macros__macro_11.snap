@@ -1,39 +1,39 @@
 ---
 source: crates/sourcepawn-studio/tests/text_document/goto_definition/macros.rs
-assertion_line: 93
-expression: "goto_definition(r#\"\n%! main.sp\n#define FOO(%1) %1\nint foo;\nint bar = FOO(foo);\n               |\n               ^\n\"#,)"
+assertion_line: 216
+expression: "goto_definition(r#\"\n%! main.sp\n#define FOO(%1) int %1; %1 = 10;\nvoid main() {\n    FOO(foo)\n         |\n         ^\n}\n\"#,)"
 ---
 [
   {
     "originSelectionRange": {
       "start": {
         "line": 2,
-        "character": 14
+        "character": 8
       },
       "end": {
         "line": 2,
-        "character": 18
+        "character": 11
       }
     },
     "targetUri": "file:///main.sp",
     "targetRange": {
       "start": {
-        "line": 1,
-        "character": 4
+        "line": 2,
+        "character": 8
       },
       "end": {
-        "line": 1,
-        "character": 7
+        "line": 2,
+        "character": 11
       }
     },
     "targetSelectionRange": {
       "start": {
-        "line": 1,
-        "character": 4
+        "line": 2,
+        "character": 8
       },
       "end": {
-        "line": 1,
-        "character": 7
+        "line": 2,
+        "character": 11
       }
     }
   }

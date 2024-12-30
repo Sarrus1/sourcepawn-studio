@@ -212,6 +212,21 @@ void baz() {
 }
 
 #[test]
+fn macro_11() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+#define FOO(%1) int %1; %1 = 10;
+void main() {
+    FOO(foo)
+         |
+         ^
+}
+"#,
+    ));
+}
+
+#[test]
 fn preprocessor_offsetting_1() {
     assert_json_snapshot!(goto_definition(
         r#"

@@ -107,7 +107,7 @@ pub(crate) fn hover(
     }
     fpos.offset = preprocessing_results
         .source_map()
-        .closest_u_position(fpos.offset);
+        .closest_u_position(fpos.offset, false);
 
     let node =
         root_node.descendant_for_byte_range(fpos.raw_offset_usize(), fpos.raw_offset_usize())?;
@@ -205,5 +205,5 @@ fn find_macro_hover(
         }
     };
 
-    Some(RangeInfo::new(*offset.range(), res))
+    Some(RangeInfo::new(offset.name_range(), res))
 }

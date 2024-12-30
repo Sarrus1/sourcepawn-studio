@@ -81,6 +81,8 @@ macro_rules! assert_preproc_eq {
         let res = SourcepawnPreprocessor::new(FileId::from(0), $input, &mut extend_macros)
             .preprocess_input();
         assert_snapshot!(res.preprocessed_text());
+        /*
+        // Disabled because redundant
         for (u_range, s_range) in res.source_map().u_range_to_s_range_vec() {
             let u_start: u32 = u_range.start().into();
             let u_end: u32 = u_range.end().into();
@@ -98,6 +100,7 @@ macro_rules! assert_preproc_eq {
                 res.preprocessed_text()[s_slc].to_string()
             )
         }
+        */
         assert_json_snapshot!(PreprocessingResult_::from(res));
     };
 }

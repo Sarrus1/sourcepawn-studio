@@ -3,7 +3,7 @@ use std::{cmp::Ordering, collections::VecDeque, sync::Arc};
 use deepsize::DeepSizeOf;
 use fxhash::{FxHashMap, FxHashSet};
 use smol_str::SmolStr;
-use sourcepawn_lexer::{Literal, Operator, Symbol, TextRange, TokenKind};
+use sourcepawn_lexer::{Literal, Operator, Symbol, TextRange, TextSize, TokenKind};
 use stdx::hashable_hash_map::HashableHashMap;
 use vfs::FileId;
 
@@ -78,7 +78,7 @@ impl ArgumentsCollector {
         lexer: &mut T,
         context: &mut MacroContext,
         nb_params: usize,
-    ) -> Option<MacroArguments>
+    ) -> Option<(MacroArguments, TextSize)>
     where
         T: Iterator<Item = Symbol>,
     {
@@ -87,6 +87,7 @@ impl ArgumentsCollector {
         let mut arg_idx: usize = 0;
         let mut args: MacroArguments = Default::default();
         let mut found_left_paren = false;
+        let mut r_paren_offset: TextSize = TextSize::default();
         while let Some(sub_token) = if !context.is_empty() {
             Some(context.pop_front().unwrap().symbol)
         } else if !self.popped_symbols_stack.is_empty() {
@@ -131,6 +132,7 @@ impl ArgumentsCollector {
                     }
                     paren_depth -= 1;
                     if paren_depth == 0 {
+                        r_paren_offset = sub_token.range.end();
                         break;
                     }
                 }
@@ -157,7 +159,7 @@ impl ArgumentsCollector {
             }
         }
 
-        Some(args)
+        Some((args, r_paren_offset))
     }
 }
 
@@ -187,10 +189,11 @@ pub(super) fn expand_identifier<T>(
     symbol: &Symbol,
     expansion_stack: &mut Vec<Symbol>,
     allow_undefined_macros: bool,
-) -> Result<(), ExpansionError>
+) -> Result<Option<TextSize>, ExpansionError>
 where
     T: Iterator<Item = Symbol>,
 {
+    let mut r_paren_offset: Option<TextSize> = None;
     let mut reversed_expansion_stack = Vec::new();
     let mut args_collector = ArgumentsCollector::default();
     let mut context_stack = vec![VecDeque::from([QueuedSymbol::new(
@@ -228,7 +231,7 @@ where
                         queued_symbol.symbol.range.to_owned(),
                     )
                 } else {
-                    let Some(args) = &args_collector.collect_arguments(
+                    let Some((args, r_paren_offset_)) = &args_collector.collect_arguments(
                         lexer,
                         &mut current_context,
                         macro_.nb_params as usize,
@@ -241,6 +244,9 @@ where
                         context_stack.push(current_context);
                         continue;
                     };
+                    if context_stack.is_empty() {
+                        r_paren_offset = r_paren_offset_.to_owned().into();
+                    }
                     expand_macro(args, macro_, &queued_symbol.symbol, &symbol.delta)?
                 };
                 context_stack.push(current_context);
@@ -264,7 +270,7 @@ where
     // produces them in the correct order, therefore we have to reverse them.
     expansion_stack.extend(reversed_expansion_stack.into_iter().rev());
 
-    Ok(())
+    Ok(r_paren_offset)
 }
 
 /// Expand a non macro define by returning a new [context](MacroContext) of all the [symbols](Symbol)
@@ -428,6 +434,7 @@ pub struct Macro {
     pub(crate) params: Option<Vec<i8>>,
     pub(crate) nb_params: i8,
     pub(crate) body: Vec<RangeLessSymbol>,
+    pub(crate) name_len: usize,
 }
 
 impl DeepSizeOf for Macro {
@@ -448,6 +455,7 @@ impl Macro {
             params: None,
             nb_params: 0,
             body: vec![],
+            name_len: 0,
         }
     }
 }

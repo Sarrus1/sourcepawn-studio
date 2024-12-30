@@ -1,6 +1,5 @@
 ---
 source: crates/preprocessor/tests/main.rs
-assertion_line: 187
 expression: "PreprocessingResult_ :: from(res)"
 ---
 {

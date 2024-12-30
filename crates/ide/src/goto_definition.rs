@@ -35,7 +35,7 @@ pub(crate) fn goto_definition(
 
     if let Some((offset, def)) = sema.find_macro_def(&pos) {
         let file_id = def.file_id(sema.db);
-        let u_range = offset.range();
+        let u_range = offset.name_range();
         let source_tree = sema.parse(file_id);
         let name = def.name(db).map(|it| it.to_smolstr()).unwrap_or_default();
         let def_node = def.source(sema.db, &source_tree)?.value;
@@ -47,7 +47,7 @@ pub(crate) fn goto_definition(
             focus_range: name_range.into(),
         }];
 
-        return RangeInfo::new(*u_range, navs).into();
+        return RangeInfo::new(u_range, navs).into();
     }
 
     let offset: u32 = preprocessing_results
@@ -57,9 +57,8 @@ pub(crate) fn goto_definition(
 
     let node = root_node.descendant_for_byte_range(offset as usize, offset as usize)?;
     let def = sema.find_def(pos.file_id, &node)?;
-    let u_range = preprocessing_results
-        .source_map()
-        .closest_u_range(ts_range_to_text_range(&node.range())); // FIXME: This is wrong for macro arguments.
+    let ts_range = ts_range_to_text_range(&node.range());
+    let u_range = preprocessing_results.source_map().closest_u_range(ts_range);
 
     let file_id = def.file_id(db);
     let source_tree = sema.parse(file_id);

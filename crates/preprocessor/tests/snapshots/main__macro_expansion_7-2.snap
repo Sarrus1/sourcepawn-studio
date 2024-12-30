@@ -1,6 +1,5 @@
 ---
 source: crates/preprocessor/tests/main.rs
-assertion_line: 636
 expression: "PreprocessingResult_ :: from(res)"
 ---
 {
@@ -238,7 +237,7 @@ expression: "PreprocessingResult_ :: from(res)"
     {
       "range": {
         "start": 72,
-        "end": 75
+        "end": 81
       },
       "expanded_range": {
         "start": 71,

@@ -214,9 +214,14 @@ impl<'a> IfCondition<'a> {
                             &mut self.expansion_stack,
                             false,
                         ) {
-                            Ok(()) => {
+                            Ok(r_paren_offset) => {
                                 if let Some(macro_) = self.macro_store.get(&symbol.text()) {
-                                    self.source_map.push_expanded_symbol(symbol.range, symbol.range.start().into(), symbol.range.end().into(), macro_); // FIXME: This is wrong.
+                                    let s_range = if let Some(r_paren_offset) = r_paren_offset{
+                                        TextRange::new(symbol.range.start(), r_paren_offset)
+                                    } else {
+                                        symbol.range
+                                    };
+                                    self.source_map.push_expanded_symbol(s_range, symbol.range.start().into(), symbol.range.end().into(), macro_);
                                 }
                             }, // No need to keep track of expanded macros here, we do that when calling expand_symbol.
                             Err(ExpansionError::MacroNotFound(err)) => {

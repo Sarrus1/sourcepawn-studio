@@ -248,8 +248,20 @@ where
                                 &mut self.expansion_stack,
                                 true,
                             ) {
-                                Ok(()) => {
-                                    expanded_symbol = Some((symbol, macro_, self.buffer.offset()));
+                                Ok(r_paren_offset) => {
+                                    if let Some(r_paren_offset) = r_paren_offset {
+                                        let symbol = Symbol::new(
+                                            symbol.token_kind,
+                                            symbol.text().as_str().into(),
+                                            TextRange::new(symbol.range.start(), r_paren_offset),
+                                            symbol.delta,
+                                        );
+                                        expanded_symbol =
+                                            Some((symbol, macro_, self.buffer.offset()));
+                                    } else {
+                                        expanded_symbol =
+                                            Some((symbol, macro_, self.buffer.offset()));
+                                    }
                                     continue;
                                 }
                                 Err(ExpansionError::MacroNotFound(err)) => {
@@ -487,6 +499,7 @@ where
                     macro_.params = Some(args);
                 }
                 self.buffer.push_new_line();
+                macro_.name_len = macro_name.len();
                 self.macro_store.insert_macro(macro_name, macro_);
             }
             PreprocDir::MUndef => {
