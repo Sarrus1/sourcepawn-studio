@@ -52,7 +52,7 @@ tempfile = "3.4.0"
 clap = { version = "4.1.13", features = ["derive"] }
 fern = "0.6.2"
 humantime = "2.1.0"
-sourcepawn_lexer = { path = "../sourcepawn-lexer" }
+sourcepawn_lexer = "0.3.0"
 sentry = "0.32.2"
 parking_lot = "0.12.1"
 lsp-types = { version = "=0.94.1", features = ["proposed"] }
