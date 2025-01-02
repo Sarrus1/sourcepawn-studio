@@ -671,6 +671,12 @@ impl InferenceContext<'_> {
                         | MethodmapItemData::Constructor(method)
                         | MethodmapItemData::Destructor(method) => {
                             self.result.method_resolutions.insert(*receiver, *method);
+                            if let Some(current_call) = self.current_call_mut() {
+                                if current_call.id.is_none() {
+                                    let res = InFile::new(it.file_id, *method);
+                                    current_call.id = Some(ValueNs::FunctionId(smallvec![res;1]));
+                                }
+                            }
                             let function = method.lookup(self.db);
                             let item_tree = function.id.item_tree(self.db);
                             return item_tree[function.id.value].ret_type.clone();

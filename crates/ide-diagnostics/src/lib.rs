@@ -3,9 +3,9 @@ use fxhash::FxHashSet;
 use hir::{AnyDiagnostic, Semantics};
 use hir_def::{DefDatabase, InFile, NodePtr};
 use ide_db::RootDatabase;
-use preprocessor::s_range_to_u_range;
+use line_index::TextRange;
 use queries::ERROR_QUERY;
-use syntax::utils::ts_range_to_lsp_range;
+use syntax::utils::ts_range_to_text_range;
 use tree_sitter::{Point, QueryCursor, Range};
 use vfs::FileId;
 
@@ -33,7 +33,7 @@ impl DiagnosticCode {
 pub struct Diagnostic {
     pub code: DiagnosticCode,
     pub message: String,
-    pub range: lsp_types::Range,
+    pub range: TextRange,
     pub severity: Severity,
     pub unused: bool,
     pub experimental: bool,
@@ -65,21 +65,23 @@ impl Diagnostic {
             }
         };
 
-        Self::new_for_s_range(ctx, code, message, ts_range_to_lsp_range(&s_range))
+        Self::new_for_s_range(ctx, code, message, ts_range_to_text_range(&s_range))
     }
 
     fn new_for_s_range(
         ctx: &DiagnosticsContext<'_>,
         code: DiagnosticCode,
         message: impl Into<String>,
-        s_range: lsp_types::Range,
+        s_range: TextRange,
     ) -> Self {
         let preprocessing_results = ctx.sema.preprocess_file(ctx.file_id);
 
         Diagnostic {
             code,
             message: message.into(),
-            range: s_range_to_u_range(preprocessing_results.offsets(), s_range),
+            range: preprocessing_results
+                .source_map()
+                .closest_u_range_always(s_range),
             severity: match code {
                 DiagnosticCode::SpCompError(_) => Severity::Error,
                 DiagnosticCode::SpCompWarning(_) => Severity::Warning,
@@ -213,7 +215,7 @@ pub fn diagnostics(
 /// * `source` - Preprocessed text of the document.
 /// * `tree` - [Tree](base_db::Tree) of the document.
 /// * `diagnostics` - [Vec](std::vec::Vec) of [Diagnostic](crate::Diagnostic) to add the
-/// syntax errors to.
+///   syntax errors to.
 fn syntax_error_diagnostics(
     ctx: &DiagnosticsContext,
     source: &str,
@@ -229,7 +231,7 @@ fn syntax_error_diagnostics(
                     ctx,
                     DiagnosticCode::SpCompError("syntax-error"),
                     c.node.to_sexp(),
-                    ts_range_to_lsp_range(&c.node.range()),
+                    ts_range_to_text_range(&c.node.range()),
                 )
             })
         }));
@@ -255,7 +257,7 @@ fn missing_nodes(
             ctx,
             DiagnosticCode::SpCompError("missing-node"),
             format!("expected `{}`", node.kind()),
-            ts_range_to_lsp_range(&node.range()),
+            ts_range_to_text_range(&node.range()),
         );
         diagnostics.push(diagnostic);
     }
@@ -279,7 +281,7 @@ fn ts_error_to_diagnostic(ctx: &DiagnosticsContext, node: tree_sitter::Node) -> 
         ctx,
         DiagnosticCode::SpCompError("syntax-error"),
         format!("expected {:?}", expected.join(", ")),
-        ts_range_to_lsp_range(&node.range()),
+        ts_range_to_text_range(&node.range()),
     )
     .into()
 }

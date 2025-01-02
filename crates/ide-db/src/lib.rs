@@ -14,12 +14,13 @@ use base_db::{
 use fxhash::FxHashMap;
 use hir::{db::HirDatabase, FunctionType};
 use hir_def::DefDatabase;
+use line_index::LineIndex;
 use salsa::{Cancelled, Durability};
 use vfs::FileId;
 
 pub use call_item::{CallItem, IncomingCallItem, OutgoingCallItem};
 pub use documentation::Documentation;
-pub use source_change::SourceChange;
+pub use source_change::{SourceChange, TextEdit};
 pub use symbols::{Symbol, SymbolId, Symbols, SymbolsBuilder};
 
 pub type Cancellable<T> = Result<T, Cancelled>;
@@ -34,6 +35,7 @@ pub type FxIndexMap<K, V> =
     hir_def::db::InternDatabaseStorage,
     hir_def::db::DefDatabaseStorage,
     preprocessor::db::PreprocDatabaseStorage,
+    LineIndexDatabaseStorage,
     hir::db::HirDatabaseStorage
 )]
 pub struct RootDatabase {
@@ -169,6 +171,16 @@ impl salsa::ParallelDatabase for RootDatabase {
             storage: ManuallyDrop::new(self.storage.snapshot()),
         })
     }
+}
+
+#[salsa::query_group(LineIndexDatabaseStorage)]
+pub trait LineIndexDatabase: base_db::SourceDatabase {
+    fn line_index(&self, file_id: FileId) -> Arc<LineIndex>;
+}
+
+fn line_index(db: &dyn LineIndexDatabase, file_id: FileId) -> Arc<LineIndex> {
+    let text = db.file_text(file_id);
+    Arc::new(LineIndex::new(&text))
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]

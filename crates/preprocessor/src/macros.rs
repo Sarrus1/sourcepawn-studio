@@ -1,34 +1,39 @@
 use std::{cmp::Ordering, collections::VecDeque, sync::Arc};
 
-use fxhash::FxHashSet;
-use lsp_types::{Position, Range};
-use sourcepawn_lexer::{Literal, Operator, Symbol, TokenKind};
+use deepsize::DeepSizeOf;
+use fxhash::{FxHashMap, FxHashSet};
+use smol_str::SmolStr;
+use sourcepawn_lexer::{Literal, Operator, Symbol, TextRange, TextSize, TokenKind};
+use stdx::hashable_hash_map::HashableHashMap;
+use vfs::FileId;
 
 use super::errors::{ExpansionError, MacroNotFoundError, ParseIntError};
-use crate::{Macro, MacrosMap, Token};
+use crate::symbol::RangeLessSymbol;
+
+const MAX_MACRO_EXPANSION_DEPTH: usize = 5;
 
 /// Arguments of a [macro](Macro) call.
-type MacroArguments = [Vec<Token>; 10];
+type MacroArguments = [Vec<Symbol>; 10];
 
 /// Queue of symbols and the delta before the previous symbol in the expansion stack.
 ///
 /// The delta can be different from the symbol's delta, especially for nested macro calls.
-type MacroContext = VecDeque<QueuedToken>;
+type MacroContext = VecDeque<QueuedSymbol>;
 
 /// Representation of a queued [symbol](Symbol) after the expansion of a macro.
 #[derive(Debug, Clone)]
-struct QueuedToken {
+struct QueuedSymbol {
     /// Queued [symbol](Symbol).
-    token: Token,
+    symbol: Symbol,
 
     /// [Delta](sourcepawn_lexer::Delta) of the queued [symbol](Symbol) (which can be different than
     /// the [symbol](Symbol)'s [delta](sourcepawn_lexer::Delta)).
     delta: sourcepawn_lexer::Delta,
 }
 
-impl QueuedToken {
-    pub fn new(token: Token, delta: sourcepawn_lexer::Delta) -> Self {
-        Self { token, delta }
+impl QueuedSymbol {
+    pub fn new(symbol: Symbol, delta: sourcepawn_lexer::Delta) -> Self {
+        Self { symbol, delta }
     }
 }
 
@@ -47,7 +52,7 @@ impl QueuedToken {
 struct ArgumentsCollector {
     /// Stack that stores the [symbols](Symbol) we popped while looking for the opening parenthesis
     /// of the macro call.
-    popped_symbols_stack: Vec<Token>,
+    popped_symbols_stack: Vec<Symbol>,
 }
 
 impl ArgumentsCollector {
@@ -55,7 +60,7 @@ impl ArgumentsCollector {
     /// # Arguments
     ///
     /// * `expansion_stack` - Expansion stack of the main loop.
-    fn extend_expansion_stack(self, expansion_stack: &mut Vec<Token>) {
+    fn extend_expansion_stack(self, expansion_stack: &mut Vec<Symbol>) {
         expansion_stack.extend(self.popped_symbols_stack.into_iter().rev());
     }
 
@@ -66,15 +71,14 @@ impl ArgumentsCollector {
     ///
     /// * `lexer` - [SourcepawnLexer](sourcepawn_lexer::lexer) to iterate over.
     /// * `args_stack` - [Vec](Vec) of [Symbols](sourcepawn_lexer::Symbol) that represent the
-    /// stack of arguments that are being processed.
+    ///   stack of arguments that are being processed.
     /// * `nb_params` - Number of parameters in the current macro.
     fn collect_arguments<T>(
         &mut self,
         lexer: &mut T,
-        symbol: &Symbol,
         context: &mut MacroContext,
         nb_params: usize,
-    ) -> Option<(MacroArguments, u32)>
+    ) -> Option<(MacroArguments, TextSize)>
     where
         T: Iterator<Item = Symbol>,
     {
@@ -82,18 +86,18 @@ impl ArgumentsCollector {
         let mut paren_depth = 0;
         let mut arg_idx: usize = 0;
         let mut args: MacroArguments = Default::default();
-        let mut first_paren_col = None;
-        let mut last_paren_col = None;
+        let mut found_left_paren = false;
+        let mut r_paren_offset: TextSize = TextSize::default();
         while let Some(sub_token) = if !context.is_empty() {
-            Some(context.pop_front().unwrap().token)
+            Some(context.pop_front().unwrap().symbol)
         } else if !self.popped_symbols_stack.is_empty() {
             self.popped_symbols_stack.pop()
         } else {
-            lexer.next().map(Token::from)
+            lexer.next()
         } {
-            if first_paren_col.is_none() {
+            if !found_left_paren {
                 if !matches!(
-                    sub_token.token_kind(),
+                    sub_token.token_kind,
                     TokenKind::LParen | TokenKind::Comment(sourcepawn_lexer::Comment::BlockComment)
                 ) {
                     temp_expanded_stack.push(sub_token);
@@ -101,20 +105,21 @@ impl ArgumentsCollector {
                         .extend(temp_expanded_stack.into_iter().rev());
                     return None;
                 }
-                if sub_token.token_kind() == TokenKind::LParen {
-                    if sub_token.range().start.line != symbol.range.end.line {
-                        temp_expanded_stack.push(sub_token);
-                        self.popped_symbols_stack
-                            .extend(temp_expanded_stack.into_iter().rev());
-                        return None;
-                    }
-                    first_paren_col = Some(sub_token.range().start.character);
+                if sub_token.token_kind == TokenKind::LParen {
+                    // TODO: Do we really care?
+                    // if sub_token.range().start.line != symbol.range.end.line {
+                    //     temp_expanded_stack.push(sub_token);
+                    //     self.popped_symbols_stack
+                    //         .extend(temp_expanded_stack.into_iter().rev());
+                    //     return None;
+                    // }
+                    found_left_paren = true;
                 } else {
                     temp_expanded_stack.push(sub_token);
                     continue;
                 }
             }
-            match sub_token.token_kind() {
+            match sub_token.token_kind {
                 TokenKind::LParen => {
                     paren_depth += 1;
                     if paren_depth > 1 {
@@ -127,7 +132,7 @@ impl ArgumentsCollector {
                     }
                     paren_depth -= 1;
                     if paren_depth == 0 {
-                        last_paren_col = Some(sub_token.range().end.character);
+                        r_paren_offset = sub_token.range.end();
                         break;
                     }
                 }
@@ -153,12 +158,8 @@ impl ArgumentsCollector {
                 }
             }
         }
-        let diff = match (first_paren_col, last_paren_col) {
-            (Some(first), Some(last)) => last.saturating_sub(first),
-            _ => 0,
-        };
 
-        Some((args, diff))
+        Some((args, r_paren_offset))
     }
 }
 
@@ -178,48 +179,47 @@ impl ArgumentsCollector {
 /// # Arguments
 ///
 /// * `lexer` - [SourcepawnLexer](sourcepawn_lexer::lexer) to iterate over.
-/// * `macros` - Known macros.
+/// * `macro_store` - The store which is queried for the macros.
 /// * `symbol` - Identifier [symbol](Symbol) to expand.
 /// * `expansion_stack` - Expansion stack used instead of the lexer if it is not empty.
 /// * `allow_undefined_macros` - Should not found macros throw an error.
 pub(super) fn expand_identifier<T>(
     lexer: &mut T,
-    macros: &mut MacrosMap,
-    token: &Token,
-    expansion_stack: &mut Vec<Token>,
+    macro_store: &mut MacroStore,
+    symbol: &Symbol,
+    expansion_stack: &mut Vec<Symbol>,
     allow_undefined_macros: bool,
-    disabled_macros: &mut FxHashSet<Arc<Macro>>,
-) -> Result<u32, ExpansionError>
+) -> Result<Option<TextSize>, ExpansionError>
 where
     T: Iterator<Item = Symbol>,
 {
-    let mut args_diff = 0;
+    let mut r_paren_offset: Option<TextSize> = None;
     let mut reversed_expansion_stack = Vec::new();
     let mut args_collector = ArgumentsCollector::default();
-    let mut context_stack = vec![VecDeque::from([QueuedToken::new(
-        token.clone(),
-        token.delta().to_owned(),
+    let mut context_stack = vec![VecDeque::from([QueuedSymbol::new(
+        symbol.clone(),
+        symbol.delta.to_owned(),
     )])];
-    while !context_stack.is_empty() && context_stack.len() < 6 {
+    while !context_stack.is_empty() && context_stack.len() <= MAX_MACRO_EXPANSION_DEPTH {
         let mut current_context = context_stack.pop().unwrap();
         let Some(queued_symbol) = current_context.pop_front() else {
             continue;
         };
-        match queued_symbol.token.token_kind() {
+        match queued_symbol.symbol.token_kind {
             TokenKind::Identifier => {
-                let macro_ = match macros.get_mut(&queued_symbol.token.text()) {
+                let macro_ = match macro_store.get_mut(&queued_symbol.symbol.text()) {
                     Some(m) => m,
                     None => {
                         if !allow_undefined_macros {
                             return Err(MacroNotFoundError::new(
-                                queued_symbol.token.text().into(),
-                                queued_symbol.token.range().to_owned(),
+                                queued_symbol.symbol.text().into(),
+                                queued_symbol.symbol.range.to_owned(),
                             )
                             .into());
                         }
-                        let mut token = queued_symbol.token.clone();
-                        token.set_delta(queued_symbol.delta);
-                        reversed_expansion_stack.push(token);
+                        let mut symbol = queued_symbol.symbol.clone();
+                        symbol.delta = queued_symbol.delta;
+                        reversed_expansion_stack.push(symbol);
                         context_stack.push(current_context);
                         continue;
                     }
@@ -227,64 +227,38 @@ where
                 let new_context = if macro_.params.is_none() {
                     expand_non_macro_define(
                         macro_,
-                        token.delta(),
-                        queued_symbol.token.range().to_owned(),
+                        symbol.delta,
+                        queued_symbol.symbol.range.to_owned(),
                     )
                 } else {
-                    let Some((args, diff)) = &args_collector.collect_arguments(
+                    let Some((args, r_paren_offset_)) = &args_collector.collect_arguments(
                         lexer,
-                        queued_symbol.token.symbol(),
                         &mut current_context,
                         macro_.nb_params as usize,
                     ) else {
                         // The macro was not expanded, put it back on the expansion stack
                         // and disable it to avoid an infinite loop.
-                        reversed_expansion_stack.push(queued_symbol.token);
-                        disabled_macros.insert(macro_.clone());
+                        reversed_expansion_stack.push(queued_symbol.symbol);
+                        let cloned_macro = macro_.clone();
+                        macro_store.disable_macro(cloned_macro);
                         context_stack.push(current_context);
                         continue;
                     };
                     if context_stack.is_empty() {
-                        args_diff += *diff;
+                        r_paren_offset = r_paren_offset_.to_owned().into();
                     }
-                    expand_macro(
-                        args,
-                        macro_,
-                        queued_symbol.token.symbol(),
-                        token.delta(),
-                        context_stack.len(),
-                    )?
+                    expand_macro(args, macro_, &queued_symbol.symbol, &symbol.delta)?
                 };
                 context_stack.push(current_context);
                 context_stack.push(new_context);
-            }
-            TokenKind::Literal(Literal::StringLiteral)
-            | TokenKind::Literal(Literal::CharLiteral) => {
-                let text = &queued_symbol.token.inline_text();
-                reversed_expansion_stack.push(
-                    Symbol::new(
-                        queued_symbol.token.token_kind(),
-                        Some(text),
-                        Range::new(
-                            queued_symbol.token.range().start,
-                            Position::new(
-                                queued_symbol.token.range().start.line,
-                                queued_symbol.token.range().start.character + text.len() as u32,
-                            ),
-                        ),
-                        token.delta().to_owned(),
-                    )
-                    .into(),
-                );
-                context_stack.push(current_context);
             }
             TokenKind::Newline | TokenKind::LineContinuation | TokenKind::Comment(_) => {
                 context_stack.push(current_context);
             }
             _ => {
-                let mut token = queued_symbol.token.clone();
-                token.set_delta(queued_symbol.delta);
-                reversed_expansion_stack.push(token);
+                let mut symbol = queued_symbol.symbol.clone();
+                symbol.delta = queued_symbol.delta;
+                reversed_expansion_stack.push(symbol);
                 context_stack.push(current_context);
             }
         }
@@ -296,7 +270,7 @@ where
     // produces them in the correct order, therefore we have to reverse them.
     expansion_stack.extend(reversed_expansion_stack.into_iter().rev());
 
-    Ok(args_diff)
+    Ok(r_paren_offset)
 }
 
 /// Expand a non macro define by returning a new [context](MacroContext) of all the [symbols](Symbol)
@@ -306,22 +280,19 @@ where
 ///
 /// * `macro_` - [Macro] we are expanding.
 /// * `delta` - [Delta](sourcepawn_lexer::Delta) of the [symbols](Symbol) we are expanding
-/// to use for the first symbol in the [macro's](Macro) body.
+///   to use for the first symbol in the [macro's](Macro) body.
 fn expand_non_macro_define(
     macro_: &Macro,
-    delta: &sourcepawn_lexer::Delta,
-    mut prev_range: Range,
+    delta: sourcepawn_lexer::Delta,
+    mut prev_range: TextRange,
 ) -> MacroContext {
     let mut macro_context = macro_
         .body
         .iter()
         .enumerate()
         .map(|(i, child)| {
-            let s = QueuedToken::new(
-                child.to_symbol(prev_range).into(),
-                if i == 0 { *delta } else { child.delta },
-            );
-            s.token.range().clone_into(&mut prev_range);
+            let s = QueuedSymbol::new(child.into(), if i == 0 { delta } else { child.delta });
+            s.symbol.range.clone_into(&mut prev_range);
             s
         })
         .collect::<MacroContext>();
@@ -330,7 +301,7 @@ fn expand_non_macro_define(
     // when cancelling macro expansion for macro that are not called with their
     // parameters. So we skip it.
     if let Some(back) = macro_context.back() {
-        if back.token.token_kind() == TokenKind::Newline {
+        if back.symbol.token_kind == TokenKind::Newline {
             macro_context.pop_back();
         }
     };
@@ -346,27 +317,23 @@ fn expand_non_macro_define(
 /// * `args` - [`Arguments`](MacroArguments) of the macro call.
 /// * `macro_` - [`Macro`] we are expanding.
 /// * `symbol` - [`Symbol`] that originated the [`macro`](Macro) expansion. Used to keep track of the
-/// [`delta`](sourcepawn_lexer::Delta) to insert.
+///   [`delta`](sourcepawn_lexer::Delta) to insert.
 /// * `delta` - [`Delta`](sourcepawn_lexer::Delta) of the [`symbols`](Symbol) we are expanding.
-/// * `depth` - Depth of the macro expansion context.
 fn expand_macro(
     args: &MacroArguments,
     macro_: &Macro,
     symbol: &Symbol,
     delta: &sourcepawn_lexer::Delta,
-    depth: usize,
 ) -> Result<MacroContext, ParseIntError> {
     let mut new_context = MacroContext::default();
     let mut consecutive_percent = 0;
     let mut stringize_delta = None;
-    let mut prev_range = symbol.range;
     for (i, child) in macro_
         .body
         .iter()
-        .map(|s| {
-            let s = s.to_symbol(prev_range);
-            prev_range = s.range;
-            s
+        .map(|it| {
+            let it: Symbol = it.into();
+            it
         })
         .enumerate()
     {
@@ -379,12 +346,12 @@ fn expand_macro(
                 // there is an escaped %.
                 consecutive_percent += 1;
                 if consecutive_percent % 2 == 1 {
-                    new_context.push_back(QueuedToken::new(child.clone().into(), child.delta))
+                    new_context.push_back(QueuedSymbol::new(child.clone(), child.delta))
                 }
             }
             TokenKind::Operator(Operator::Stringize) => {
                 stringize_delta = Some(child.delta);
-                new_context.push_back(QueuedToken::new(child.clone().into(), child.delta))
+                new_context.push_back(QueuedSymbol::new(child.clone(), child.delta))
             }
             TokenKind::Literal(Literal::IntegerLiteral) => {
                 if consecutive_percent == 1 {
@@ -405,8 +372,8 @@ fn expand_macro(
                         new_context.pop_back();
                         let mut stringized = '"'.to_string();
                         for (j, sub_child) in args[arg_idx].iter().enumerate() {
-                            if j > 0 && sub_child.delta().col > 0 {
-                                stringized.push_str(&" ".repeat(sub_child.delta().col as usize));
+                            if j > 0 && sub_child.delta > 0 {
+                                stringized.push_str(&" ".repeat(sub_child.delta as usize));
                             }
                             stringized.push_str(&sub_child.inline_text());
                         }
@@ -419,16 +386,10 @@ fn expand_macro(
                         let symbol = Symbol::new(
                             TokenKind::Literal(Literal::StringLiteral),
                             Some(&stringized),
-                            Range::new(
-                                symbol.range.start,
-                                Position::new(
-                                    symbol.range.start.line,
-                                    symbol.range.start.character + stringized.len() as u32,
-                                ),
-                            ),
+                            TextRange::default(), // FIXME: It would be nice to be able to handle a proper range here. The only barrier seems to be in the tests?
                             delta,
                         );
-                        new_context.push_back(QueuedToken::new(symbol.into(), delta));
+                        new_context.push_back(QueuedSymbol::new(symbol, delta));
                     } else {
                         for (j, sub_child) in args[arg_idx].iter().enumerate() {
                             let delta = if i == 1 {
@@ -436,17 +397,13 @@ fn expand_macro(
                             } else if j == 0 {
                                 percent_symbol.delta
                             } else {
-                                sub_child.delta().to_owned()
+                                sub_child.delta
                             };
-                            let mut token = sub_child.to_owned();
-                            if token.original_range().is_none() && depth == 0 {
-                                token.set_original_range(*sub_child.range());
-                            }
-                            new_context.push_back(QueuedToken::new(token, delta));
+                            new_context.push_back(QueuedSymbol::new(sub_child.to_owned(), delta));
                         }
                     }
                 } else {
-                    new_context.push_back(QueuedToken::new(child.clone().into(), child.delta));
+                    new_context.push_back(QueuedSymbol::new(child.clone(), child.delta));
                 }
                 consecutive_percent = 0;
             }
@@ -457,8 +414,8 @@ fn expand_macro(
                 if child.token_kind == TokenKind::Newline && i == macro_.body.len() - 1 {
                     continue;
                 }
-                new_context.push_back(QueuedToken::new(
-                    child.clone().into(),
+                new_context.push_back(QueuedSymbol::new(
+                    child.clone(),
                     if i == 0 { *delta } else { child.delta },
                 ));
                 consecutive_percent = 0;
@@ -469,3 +426,90 @@ fn expand_macro(
 
     Ok(new_context)
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Macro {
+    pub(crate) file_id: FileId,
+    pub(crate) idx: u32,
+    pub(crate) params: Option<Vec<i8>>,
+    pub(crate) nb_params: i8,
+    pub(crate) body: Vec<RangeLessSymbol>,
+    pub(crate) name_len: usize,
+}
+
+impl DeepSizeOf for Macro {
+    fn deep_size_of_children(&self, context: &mut deepsize::Context) -> usize {
+        std::mem::size_of::<FileId>()
+            + self.idx.deep_size_of_children(context)
+            + self.params.deep_size_of_children(context)
+            + self.nb_params.deep_size_of_children(context)
+            + self.body.deep_size_of_children(context)
+    }
+}
+
+impl Macro {
+    pub fn default(file_id: FileId) -> Self {
+        Self {
+            file_id,
+            idx: 0,
+            params: None,
+            nb_params: 0,
+            body: vec![],
+            name_len: 0,
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct MacroStore {
+    idx: u32,
+    map: MacrosMap,
+    disabled_macros: FxHashSet<Arc<Macro>>,
+}
+
+impl MacroStore {
+    pub fn get(&self, name: &SmolStr) -> Option<&Arc<Macro>> {
+        self.map.get(name)
+    }
+
+    pub fn get_mut(&mut self, name: &SmolStr) -> Option<&mut Arc<Macro>> {
+        self.map.get_mut(name)
+    }
+
+    pub fn insert_macro(&mut self, name: SmolStr, mut macro_: Macro) {
+        macro_.idx = self.idx;
+        self.idx += 1;
+        self.map.insert(name, macro_.into());
+    }
+
+    pub fn extend(&mut self, map: MacrosMap) {
+        self.map.extend(map);
+    }
+
+    pub fn map_mut(&mut self) -> &mut MacrosMap {
+        &mut self.map
+    }
+
+    pub fn remove_macro(&mut self, name: &SmolStr) {
+        self.map.remove(name);
+    }
+
+    pub fn disable_macro(&mut self, macro_: Arc<Macro>) {
+        self.disabled_macros.insert(macro_);
+    }
+
+    pub fn enable_macro(&mut self, macro_: &Arc<Macro>) {
+        self.disabled_macros.remove(macro_);
+    }
+
+    pub fn is_macro_disabled(&mut self, macro_: &Arc<Macro>) -> bool {
+        self.disabled_macros.contains(macro_)
+    }
+
+    pub fn into_macros_map(self) -> MacrosMap {
+        self.map
+    }
+}
+
+pub type MacrosMap = FxHashMap<SmolStr, Arc<Macro>>;
+pub type HMacrosMap = HashableHashMap<SmolStr, Arc<Macro>>;

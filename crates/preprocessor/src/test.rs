@@ -1,19 +1,17 @@
-use fxhash::{FxHashMap, FxHashSet};
 use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
 
-use crate::evaluator::IfCondition;
+use crate::{evaluator::IfCondition, offset::SourceMap, MacroStore};
 
 fn evaluate_if_condition(input: &str) -> bool {
     let mut lexer = SourcepawnLexer::new(input);
-    let mut macros = FxHashMap::default();
-    let mut offsets = FxHashMap::default();
-    let mut disabled_macros = FxHashSet::default();
-    let mut if_condition = IfCondition::new(&mut macros, 0, &mut offsets, &mut disabled_macros);
+    let mut macro_store = MacroStore::default();
+    let mut source_map = SourceMap::default();
+    let mut if_condition = IfCondition::new(&mut macro_store, &mut source_map);
     if let Some(symbol) = lexer.next() {
         if TokenKind::PreprocDir(sourcepawn_lexer::PreprocDir::MIf) == symbol.token_kind {
             while lexer.in_preprocessor() {
                 if let Some(symbol) = lexer.next() {
-                    if_condition.tokens.push(symbol.into());
+                    if_condition.symbols.push(symbol);
                 } else {
                     break;
                 }

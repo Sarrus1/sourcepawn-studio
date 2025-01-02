@@ -68,13 +68,12 @@ pub(crate) fn file_id(snap: &GlobalStateSnapshot, uri: &Url) -> anyhow::Result<F
 
 pub(crate) fn file_position(
     snap: &GlobalStateSnapshot,
-    params: lsp_types::TextDocumentPositionParams,
+    tdpp: lsp_types::TextDocumentPositionParams,
 ) -> anyhow::Result<FilePosition> {
-    let file_id = file_id(snap, &params.text_document.uri)?;
-    Ok(FilePosition {
-        file_id,
-        position: params.position,
-    })
+    let file_id = file_id(snap, &tdpp.text_document.uri)?;
+    let line_index = snap.file_line_index(file_id)?;
+    let offset = offset(&line_index, tdpp.position)?;
+    Ok(FilePosition { file_id, offset })
 }
 
 pub(crate) fn file_range(
@@ -91,5 +90,7 @@ pub(crate) fn file_range_uri(
     range: lsp_types::Range,
 ) -> anyhow::Result<FileRange> {
     let file_id = file_id(snap, document)?;
+    let line_index = snap.file_line_index(file_id)?;
+    let range = text_range(&line_index, range)?;
     Ok(FileRange { file_id, range })
 }

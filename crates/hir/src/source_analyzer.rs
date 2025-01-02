@@ -9,8 +9,8 @@ use hir_def::{
     resolver::{resolver_for_scope, HasResolver, Resolver},
     DefWithBodyId, ExprId, InFile, InferenceResult,
 };
+use sourcepawn_lexer::TextSize;
 use syntax::TSKind;
-use tree_sitter::Point;
 use vfs::FileId;
 
 use crate::{db::HirDatabase, Attribute, Function, Local};
@@ -30,7 +30,7 @@ impl SourceAnalyzer {
         db: &dyn HirDatabase,
         def: DefWithBodyId,
         node @ InFile { file_id, .. }: InFile<tree_sitter::Node>,
-        offset: Option<Point>,
+        offset: Option<TextSize>,
     ) -> SourceAnalyzer {
         let (body, source_map) = db.body_with_source_map(def);
         let scopes = db.expr_scopes(def, file_id);
@@ -52,7 +52,7 @@ impl SourceAnalyzer {
         db: &dyn HirDatabase,
         def: DefWithBodyId,
         node @ InFile { file_id, .. }: InFile<tree_sitter::Node>,
-        offset: Option<Point>,
+        offset: Option<TextSize>,
     ) -> SourceAnalyzer {
         let (body, source_map) = db.body_with_source_map(def);
         let scopes = db.expr_scopes(def, file_id);
@@ -180,8 +180,9 @@ fn scope_for_offset(
     scopes: &ExprScopes,
     source_map: &BodySourceMap,
     file_id: FileId,
-    point: tree_sitter::Point,
+    offset: TextSize,
 ) -> Option<ScopeId> {
+    let raw_offset: u32 = offset.into();
     let tree = db.parse(file_id);
     scopes
         .scope_by_expr()
@@ -190,7 +191,9 @@ fn scope_for_offset(
             let ptr = source_map.expr_source(id)?;
             Some((ptr.value.to_node(&tree)?, scope))
         })
-        .filter(|(node, _scope)| node.start_position() <= point && point <= node.end_position())
+        .filter(|(node, _scope)| {
+            node.start_byte() <= raw_offset as usize && raw_offset as usize <= node.end_byte()
+        })
         .min_by_key(|(node, _)| node.end_byte() - node.start_byte())
         .map(|(_, id)| *id)
 }

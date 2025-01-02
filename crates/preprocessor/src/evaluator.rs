@@ -1,89 +1,100 @@
-use std::sync::Arc;
-
-use fxhash::{FxHashMap, FxHashSet};
-use lsp_types::{Position, Range};
-use sourcepawn_lexer::{Literal, Operator, TokenKind};
-use vfs::FileId;
+use sourcepawn_lexer::{Comment, Literal, Operator, Symbol, TextRange, TokenKind};
 
 use super::{
     errors::{EvaluationError, ExpansionError, MacroNotFoundError},
     macros::expand_identifier,
     preprocessor_operator::PreOperator,
 };
-use crate::{Macro, MacrosMap, Offset, Token};
+use crate::{linebreak_count, offset::SourceMap, MacroStore};
+
+#[derive(Debug, Default)]
+struct OperatorStack {
+    stack: Vec<(PreOperator, TextRange)>,
+}
+
+impl OperatorStack {
+    pub fn push(&mut self, operator: PreOperator, range: TextRange) {
+        self.stack.push((operator, range));
+    }
+
+    pub fn pop(&mut self) -> Option<(PreOperator, TextRange)> {
+        self.stack.pop()
+    }
+
+    pub fn top(&mut self) -> Option<&(PreOperator, TextRange)> {
+        self.stack.last()
+    }
+}
+
+#[derive(Debug, Default)]
+pub(crate) struct OutputStack {
+    stack: Vec<i32>,
+}
+
+impl OutputStack {
+    pub fn push(&mut self, value: i32) {
+        self.stack.push(value);
+    }
+
+    pub fn pop(&mut self) -> Option<i32> {
+        self.stack.pop()
+    }
+
+    pub fn top(&mut self) -> Option<&i32> {
+        self.stack.last()
+    }
+}
 
 #[derive(Debug)]
 pub struct IfCondition<'a> {
-    pub tokens: Vec<Token>,
+    pub symbols: Vec<Symbol>,
     pub(super) macro_not_found_errors: Vec<MacroNotFoundError>,
-    macro_store: &'a mut MacrosMap,
-    expansion_stack: Vec<Token>,
-    line_nb: u32,
-    offsets: &'a mut FxHashMap<u32, Vec<Offset>>,
-    disabled_macros: &'a mut FxHashSet<Arc<Macro>>,
+    macro_store: &'a mut MacroStore,
+    expansion_stack: Vec<Symbol>,
+    line_continuation_count: u32,
+    source_map: &'a mut SourceMap,
 }
 
 impl<'a> IfCondition<'a> {
-    pub(super) fn new(
-        macro_store: &'a mut MacrosMap,
-        line_nb: u32,
-        offsets: &'a mut FxHashMap<u32, Vec<Offset>>,
-        disabled_macros: &'a mut FxHashSet<Arc<Macro>>,
-    ) -> Self {
+    pub(super) fn new(macro_store: &'a mut MacroStore, source_map: &'a mut SourceMap) -> Self {
         Self {
-            tokens: vec![],
+            symbols: vec![],
             macro_not_found_errors: vec![],
             macro_store,
             expansion_stack: vec![],
-            line_nb,
-            offsets,
-            disabled_macros,
+            line_continuation_count: Default::default(),
+            source_map,
         }
     }
 
-    pub fn enable_macro(&mut self, macro_: Arc<Macro>) {
-        self.disabled_macros.remove(&macro_);
-    }
-
-    pub fn is_macro_disabled(&self, macro_: &Arc<Macro>) -> bool {
-        self.disabled_macros.contains(macro_)
-    }
-
     pub(super) fn evaluate(&mut self) -> Result<bool, EvaluationError> {
-        let mut output_queue: Vec<i32> = Vec::new();
-        let mut operator_stack: Vec<(PreOperator, Range)> = Vec::new();
+        let mut output_stack = OutputStack::default();
+        let mut operator_stack = OperatorStack::default();
         let mut may_be_unary = true;
         let mut looking_for_defined = false;
-        let mut current_symbol_range = Range::new(
-            Position::new(self.line_nb, 0),
-            Position::new(self.line_nb, 1000),
-        );
         let mut symbol_iter = self
-            .tokens
+            .symbols
             .clone() // TODO: This is horrible.
             .into_iter()
-            .map(|token| token.symbol().to_owned())
             .peekable();
         while let Some(symbol) = if !self.expansion_stack.is_empty() {
-            self.expansion_stack
-                .pop()
-                .map(|token| token.symbol().to_owned())
+            self.expansion_stack.pop()
         } else {
-            let symbol = symbol_iter.next();
-            if let Some(symbol) = &symbol {
-                current_symbol_range = symbol.range;
-            }
-            symbol
+            symbol_iter.next()
         } {
             match &symbol.token_kind {
+                TokenKind::LineContinuation | TokenKind::Newline => self.line_continuation_count += 1,
+                TokenKind::Comment(Comment::BlockComment) => {
+                   self.line_continuation_count +=  linebreak_count(symbol.text().as_str()) as u32;
+                }
                 TokenKind::LParen => {
-                    operator_stack.push((PreOperator::LParen, symbol.range));
+                    operator_stack.push(PreOperator::LParen, symbol.range);
                     if !looking_for_defined {
                         may_be_unary = true;
                     }
                 }
                 TokenKind::RParen => {
-                    while let Some((top, _)) = operator_stack.last() {
+                    while let Some((top, _)) = operator_stack.top() {
                         if PreOperator::LParen == *top {
                             operator_stack.pop();
                             may_be_unary = false;
@@ -95,10 +106,10 @@ impl<'a> IfCondition<'a> {
                                     EvaluationError::new(
                                         "Invalid preprocessor condition, expected an operator before ) token."
                                             .to_string(),
-                                        current_symbol_range,
+                                        symbol.range,
                                     )
                                 })?;
-                            op.process_op(&range, &mut output_queue)?;
+                            op.process_op(&range, &mut output_stack)?;
                         }
                     }
                 }
@@ -109,7 +120,7 @@ impl<'a> IfCondition<'a> {
                     let mut cur_op = PreOperator::convert(op).ok().ok_or_else(|| {
                         EvaluationError::new(
                             "Invalid preprocessor condition, expected a result.".to_string(),
-                            current_symbol_range,
+                            symbol.range,
                         )
                     })?;
                     if may_be_unary && is_unary(op) {
@@ -121,7 +132,7 @@ impl<'a> IfCondition<'a> {
                             _ => unreachable!(),
                         };
                     }
-                    while let Some((top, _)) = operator_stack.last() {
+                    while let Some((top, _)) = operator_stack.top() {
                         if top == &PreOperator::LParen {
                             break;
                         }
@@ -132,23 +143,23 @@ impl<'a> IfCondition<'a> {
                                 EvaluationError::new(
                                     "Invalid preprocessor condition, expected an operator."
                                         .to_string(),
-                                    current_symbol_range,
+                                    symbol.range,
                                 )
                             })?;
-                            op.process_op(&range, &mut output_queue)?;
+                            op.process_op(&range, &mut output_stack)?;
                         } else {
                             break;
                         }
                     }
-                    operator_stack.push((cur_op, symbol.range));
+                    operator_stack.push(cur_op, symbol.range);
                     may_be_unary = true;
                 }
                 TokenKind::True => {
-                    output_queue.push(1);
+                    output_stack.push(1);
                     may_be_unary = false;
                 }
                 TokenKind::False => {
-                    output_queue.push(0);
+                    output_stack.push(0);
                     may_be_unary = false;
                 }
                 TokenKind::Literal(lit) => match lit {
@@ -157,7 +168,7 @@ impl<'a> IfCondition<'a> {
                     | Literal::HexLiteral
                     | Literal::OctodecimalLiteral
                     | Literal::CharLiteral => {
-                        output_queue.push(symbol.to_int().unwrap_or(0) as i32);
+                        output_stack.push(symbol.to_int().unwrap_or(0) as i32);
                         may_be_unary = false;
                     }
                     _ => {
@@ -166,75 +177,64 @@ impl<'a> IfCondition<'a> {
                             "Literal {:?} is not supported in preprocessor expression evaluation.",
                             lit
                         ),
-                            current_symbol_range,
+                            symbol.range,
                         ))
                     }
                 },
-                TokenKind::Comment(_) | TokenKind::Newline | TokenKind::Eof => (),
+                TokenKind::Comment(_) | TokenKind::Eof => (),
                 TokenKind::PreprocDir(_) => {
                     return Err(EvaluationError::new(
                         "Preprocessor directives are not supported in preprocessor expression evaluation."
                             .to_string(),
-                        current_symbol_range,
+                        symbol.range,
                     ))
                 }
                 _ => {
                     if looking_for_defined {
                         if let Some(macro_) = self.macro_store.get(&symbol.text()) {
-                            self.offsets.entry(symbol.range.start.line).or_default().push(Offset {
-                                        file_id: macro_.file_id,
-                                        range: symbol.range,
-                                        diff: 0, // FIXME: This is the default value, we should calculate it.
-                                        idx: macro_.idx,
-                                        args_diff: 0
-                                    });
-                            output_queue.push(1);
+                            self.source_map.push_expanded_symbol(symbol.range, symbol.range.start().into(), symbol.range.end().into(), macro_); // FIXME: This is wrong.
+                            output_stack.push(1);
                         } else {
-                            output_queue.push(0);
+                            output_stack.push(0);
                         }
                         looking_for_defined = false;
                         may_be_unary = false;
                     } else {
                         // Skip the macro if it is disabled and reenable it.
-                        let mut attr: Option<(u32, FileId)> = None;
-                        if let Some(macro_) = self.macro_store.get(&symbol.text()) {
-                            attr = (macro_.idx, macro_.file_id).into();
-                            if self.is_macro_disabled(macro_) {
-                                self.enable_macro(macro_.clone());
+                        if let Some(macro_) = self.macro_store.get(&symbol.text()).cloned() {
+                            if self.macro_store.is_macro_disabled(&macro_) {
+                                self.macro_store.enable_macro(&macro_);
                                 continue;
                             }
                         };
                         match expand_identifier(
                             &mut symbol_iter,
                             self.macro_store,
-                            &symbol.clone().into(),
+                            &symbol,
                             &mut self.expansion_stack,
                             false,
-                            self.disabled_macros
                         ) {
-                            Ok(args_diff) => {
-                                if let Some((idx, file_id)) = attr {
-                                    self.offsets.entry(symbol.range.start.line).or_default().push(Offset {
-                                        file_id,
-                                        range: symbol.range,
-                                        diff: 0, // FIXME: This is the default value, we should calculate it.
-                                        idx,
-                                        args_diff
-                                    })
-                                    ;
+                            Ok(r_paren_offset) => {
+                                if let Some(macro_) = self.macro_store.get(&symbol.text()) {
+                                    let s_range = if let Some(r_paren_offset) = r_paren_offset{
+                                        TextRange::new(symbol.range.start(), r_paren_offset)
+                                    } else {
+                                        symbol.range
+                                    };
+                                    self.source_map.push_expanded_symbol(s_range, symbol.range.start().into(), symbol.range.end().into(), macro_);
                                 }
                             }, // No need to keep track of expanded macros here, we do that when calling expand_symbol.
                             Err(ExpansionError::MacroNotFound(err)) => {
                                 self.macro_not_found_errors.push(err.clone());
                                 return Err(EvaluationError::new(
                                     "Unresolved macro".into(), // The error is already propagated in `macro_not_found_errors`.
-                                    current_symbol_range,
+                                    symbol.range,
                                 ));
                             }
                             Err(ExpansionError::Parse(err)) => {
                                 return Err(EvaluationError::new(
                                     err.to_string(),
-                                    current_symbol_range,
+                                    symbol.range,
                                 ));
                             }
                         }
@@ -243,17 +243,21 @@ impl<'a> IfCondition<'a> {
             }
         }
         while let Some((op, range)) = operator_stack.pop() {
-            op.process_op(&range, &mut output_queue)?;
+            op.process_op(&range, &mut output_stack)?;
         }
 
-        let res = *output_queue.last().ok_or_else(|| {
+        let res = *output_stack.top().ok_or_else(|| {
             EvaluationError::new(
                 "Invalid preprocessor condition, expected a result.".to_string(),
-                current_symbol_range,
+                TextRange::default(), // FIXME: Default range
             )
         })?;
 
         Ok(res != 0)
+    }
+
+    pub fn line_continuation_count(&self) -> u32 {
+        self.line_continuation_count
     }
 }
 

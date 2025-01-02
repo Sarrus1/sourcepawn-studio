@@ -315,11 +315,11 @@ impl GlobalState {
         tracing::debug!(%cause, "will prime caches");
         let num_worker_threads = self.config.prime_caches_num_threads();
         // FIXME: This is a full clone of the VFS
-        let vfs = self.vfs.read().get_url_map();
+        let vfs = self.vfs.read().0.get_url_map();
         let files_to_prime = self
             .mem_docs
             .iter()
-            .map(|path| self.vfs.read().file_id(path).unwrap())
+            .map(|path| self.vfs.read().0.file_id(path).unwrap())
             .collect_vec();
         let files_to_prime = if self.config.files_to_prime_below_threshold(
             self.analysis_host.raw_database().graph().find_roots().len(),
@@ -457,7 +457,7 @@ impl GlobalState {
         let subscriptions = self
             .mem_docs
             .iter()
-            .map(|path| self.vfs.read().file_id(path).unwrap())
+            .map(|path| self.vfs.read().0.file_id(path).unwrap())
             // .filter(|&file_id| {
             //     let source_root = db.file_source_root(file_id);
             //     // Only publish diagnostics for files in the workspace, not from crates.io deps
@@ -487,7 +487,7 @@ impl GlobalState {
                 for (path, contents) in files {
                     let path = VfsPath::from(path);
                     if !self.mem_docs.contains(&path) {
-                        vfs.set_file_contents(path, contents);
+                        vfs.0.set_file_contents(path, contents);
                     }
                 }
             }
@@ -528,6 +528,7 @@ impl GlobalState {
                 if let Some(file_id) = self
                     .vfs
                     .read()
+                    .0
                     .file_id(&VfsPath::from(diagnostic.path().to_owned()))
                 {
                     self.diagnostics.add_check_diagnostic(id, file_id, diag)
@@ -733,7 +734,7 @@ impl GlobalState {
 
         if let Some(diagnostic_changes) = self.diagnostics.take_changes() {
             for file_id in diagnostic_changes {
-                let uri = file_id_to_url(&self.vfs.read(), file_id);
+                let uri = file_id_to_url(&self.vfs.read().0, file_id);
 
                 let mut diagnostics = self
                     .diagnostics

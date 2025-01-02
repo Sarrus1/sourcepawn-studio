@@ -23,8 +23,12 @@ use fxhash::FxHashMap;
 use hir::{DefResolution, Function};
 use hir_def::{print_item_tree, DefDatabase};
 use hover::HoverResult;
-use ide_db::{CallItem, IncomingCallItem, OutgoingCallItem, RootDatabase, SourceChange, Symbols};
+use ide_db::{
+    CallItem, IncomingCallItem, LineIndexDatabase, OutgoingCallItem, RootDatabase, SourceChange,
+    Symbols,
+};
 use itertools::Itertools;
+use line_index::TextRange;
 use lsp_types::Url;
 use paths::AbsPathBuf;
 use preprocessor::db::PreprocDatabase;
@@ -43,15 +47,15 @@ pub use prime_caches::ParallelPrimeCachesProgress;
 pub use signature_help::SignatureHelp;
 pub use syntax_highlighting::{Highlight, HlMod, HlMods, HlRange, HlTag};
 
-/// Info associated with a [`range`](lsp_types::Range).
+/// Info associated with a [`range`](TextRange).
 #[derive(Debug)]
 pub struct RangeInfo<T> {
-    pub range: lsp_types::Range,
+    pub range: TextRange,
     pub info: T,
 }
 
 impl<T> RangeInfo<T> {
-    pub fn new(range: lsp_types::Range, info: T) -> RangeInfo<T> {
+    pub fn new(range: TextRange, info: T) -> RangeInfo<T> {
         RangeInfo { range, info }
     }
 }
@@ -157,6 +161,12 @@ impl Analysis {
     /// Debug info about the current state of the analysis.
     pub fn status(&self, file_id: Option<FileId>) -> Cancellable<String> {
         self.with_db(|db| status::status(db, file_id))
+    }
+
+    /// Gets the file's `LineIndex`: data structure to convert between absolute
+    /// offsets and line/column representation.
+    pub fn file_line_index(&self, file_id: FileId) -> Cancellable<Arc<LineIndex>> {
+        self.with_db(|db| db.line_index(file_id))
     }
 
     pub fn parallel_prime_caches<F1, F2>(

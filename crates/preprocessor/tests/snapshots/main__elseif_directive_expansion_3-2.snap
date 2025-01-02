@@ -1,0 +1,70 @@
+---
+source: crates/preprocessor/tests/main.rs
+expression: "PreprocessingResult_ :: from(res)"
+---
+{
+  "vec": [
+    [
+      0,
+      7,
+      0,
+      7
+    ],
+    [
+      8,
+      11,
+      8,
+      11
+    ],
+    [
+      12,
+      13,
+      12,
+      13
+    ],
+    [
+      48,
+      51,
+      20,
+      23
+    ],
+    [
+      52,
+      55,
+      24,
+      27
+    ],
+    [
+      55,
+      56,
+      27,
+      28
+    ]
+  ],
+  "expanded_symbols": [
+    {
+      "range": {
+        "start": 18,
+        "end": 21
+      },
+      "expanded_range": {
+        "start": 18,
+        "end": 21
+      },
+      "idx": 0,
+      "file_id": 0
+    },
+    {
+      "range": {
+        "start": 35,
+        "end": 38
+      },
+      "expanded_range": {
+        "start": 35,
+        "end": 38
+      },
+      "idx": 0,
+      "file_id": 0
+    }
+  ]
+}

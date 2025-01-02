@@ -71,12 +71,11 @@ impl SourceToDefCtx<'_, '_> {
 
     pub(super) fn local_to_def(&mut self, src: InFile<NodePtr>) -> Option<(DefWithBodyId, ExprId)> {
         let container = self.find_container(src.as_ref())?;
-        match container {
-            ChildContainer::DefWithBodyId(def) => {
-                let (_, source_map) = self.db.body_with_source_map(def);
-                source_map.node_ptr_expr(src).map(|expr| (def, expr))
-            }
-            _ => unreachable!("Local should be in a function/method"),
+        if let ChildContainer::DefWithBodyId(def) = container {
+            let (_, source_map) = self.db.body_with_source_map(def);
+            source_map.node_ptr_expr(src).map(|expr| (def, expr))
+        } else {
+            None
         }
     }
 

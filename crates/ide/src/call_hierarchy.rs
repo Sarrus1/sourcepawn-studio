@@ -5,13 +5,10 @@ use hir_def::DefDatabase;
 use ide_db::{CallItem, IncomingCallItem, OutgoingCallItem, RootDatabase, SymbolKind};
 use itertools::Itertools;
 use lazy_static::lazy_static;
-use lsp_types::Range;
-use preprocessor::{db::PreprocDatabase, s_range_to_u_range, u_pos_to_s_pos};
+use line_index::TextRange;
+use preprocessor::db::PreprocDatabase;
 use smol_str::ToSmolStr;
-use syntax::{
-    utils::{lsp_position_to_ts_point, ts_range_to_lsp_range},
-    TSKind,
-};
+use syntax::{utils::ts_range_to_text_range, TSKind};
 use tree_sitter::QueryCursor;
 
 pub(crate) fn call_hierarchy_prepare(
@@ -20,7 +17,6 @@ pub(crate) fn call_hierarchy_prepare(
 ) -> Option<Vec<CallItem>> {
     let sema = &Semantics::new(db);
     let preprocessing_results = sema.preprocess_file(fpos.file_id);
-    let offsets = preprocessing_results.offsets();
     let tree = sema.parse(fpos.file_id);
     let root_node = tree.root_node();
 
@@ -28,16 +24,12 @@ pub(crate) fn call_hierarchy_prepare(
         return None;
     }
 
-    let _ = u_pos_to_s_pos(
-        preprocessing_results.args_map(),
-        offsets,
-        &mut fpos.position,
-    );
+    fpos.offset = preprocessing_results
+        .source_map()
+        .closest_s_position_always(fpos.offset);
 
-    let node = root_node.descendant_for_point_range(
-        lsp_position_to_ts_point(&fpos.position),
-        lsp_position_to_ts_point(&fpos.position),
-    )?;
+    let node =
+        root_node.descendant_for_byte_range(fpos.raw_offset_usize(), fpos.raw_offset_usize())?;
 
     let def = sema.find_def(fpos.file_id, &node)?;
     let DefResolution::Function(func) = def else {
@@ -52,8 +44,8 @@ fn func_to_call_item(sema: &Semantics<RootDatabase>, func: Function) -> Option<C
     let file_id = def.file_id(sema.db);
     let tree = sema.parse(file_id);
     let source_node = func.source(sema.db, &tree)?.value;
-    let preprocessing_data = sema.preprocess_file(file_id);
-    let source = preprocessing_data.preprocessed_text();
+    let preprocessing_result = sema.preprocess_file(file_id);
+    let source = preprocessing_result.preprocessed_text();
     let name_node = source_node.child_by_field_name("name");
     let res = CallItem {
         name: source_node.utf8_text(source.as_bytes()).ok()?.to_smolstr(),
@@ -68,15 +60,13 @@ fn func_to_call_item(sema: &Semantics<RootDatabase>, func: Function) -> Option<C
         deprecated: func.is_deprecated(sema.db),
         details: func.signature(&source_node, &source),
         file_id,
-        full_range: s_range_to_u_range(
-            preprocessing_data.offsets(),
-            ts_range_to_lsp_range(&source_node.range()),
-        ),
+        full_range: preprocessing_result
+            .source_map()
+            .closest_u_range_always(ts_range_to_text_range(&source_node.range())),
         focus_range: name_node.map(|n| {
-            s_range_to_u_range(
-                preprocessing_data.offsets(),
-                ts_range_to_lsp_range(&n.range()),
-            )
+            preprocessing_result
+                .source_map()
+                .closest_u_range_always(ts_range_to_text_range(&n.range()))
         }),
         data: Some(func),
     };
@@ -97,17 +87,16 @@ pub(crate) fn call_hierarchy_incoming(
     let source_preprocessing_results = db.preprocess_file(source_file_id);
     let source_node = func.source(db, &source_tree)?.value;
     let name_source_node = source_node.child_by_field_name("name")?;
-    let u_name_range = s_range_to_u_range(
-        source_preprocessing_results.offsets(),
-        ts_range_to_lsp_range(&name_source_node.range()),
-    );
-    let source_pos = u_name_range.start;
+    let u_name_range = source_preprocessing_results
+        .source_map()
+        .closest_u_range_always(ts_range_to_text_range(&name_source_node.range()));
+    let source_offset = u_name_range.start();
 
     let (_, references) = sema.find_references_from_pos(FilePosition {
         file_id: source_file_id,
-        position: source_pos,
+        offset: source_offset,
     })?;
-    let mut res: FxHashMap<Function, Vec<Range>> = FxHashMap::default();
+    let mut res: FxHashMap<Function, Vec<TextRange>> = FxHashMap::default();
     let _ = references
         .into_iter()
         .flat_map(|frange| {
@@ -118,16 +107,13 @@ pub(crate) fn call_hierarchy_incoming(
             let file_id = frange.file_id;
             let tree = sema.parse(file_id);
             let preprocessing_results = sema.preprocess_file(file_id);
-            let mut pos = frange.range.start;
-            let _ = u_pos_to_s_pos(
-                preprocessing_results.args_map(),
-                preprocessing_results.offsets(),
-                &mut pos,
-            );
-            let node = tree.root_node().descendant_for_point_range(
-                lsp_position_to_ts_point(&pos),
-                lsp_position_to_ts_point(&pos),
-            )?;
+            let offset: u32 = preprocessing_results
+                .source_map()
+                .closest_s_position_always(frange.range.start())
+                .into();
+            let node = tree
+                .root_node()
+                .descendant_for_byte_range(offset as usize, offset as usize)?;
 
             let mut container = node.parent()?;
             while !matches!(
@@ -195,7 +181,7 @@ pub(crate) fn call_hierarchy_outgoing(
         .expect("Could not build identifier query.");
     }
 
-    let mut res: FxHashMap<Function, Vec<Range>> = FxHashMap::default();
+    let mut res: FxHashMap<Function, Vec<TextRange>> = FxHashMap::default();
 
     let mut cursor = QueryCursor::new();
     let matches = cursor.captures(&CALL_QUERY, source_node, source.as_bytes());
@@ -214,10 +200,9 @@ pub(crate) fn call_hierarchy_outgoing(
                 }
                 _ => continue,
             }
-            let u_range = s_range_to_u_range(
-                preprocessing_results.offsets(),
-                ts_range_to_lsp_range(&node.range()),
-            );
+            let u_range = preprocessing_results
+                .source_map()
+                .closest_u_range_always(ts_range_to_text_range(&node.range()));
             let Some(DefResolution::Function(func)) = sema.find_def(file_id, &node) else {
                 continue;
             };

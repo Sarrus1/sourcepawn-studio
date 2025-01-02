@@ -21,6 +21,7 @@ tree-sitter-sourcepawn.workspace = true
 log.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sourcepawn_lexer.workspace = true
 
 # Local crates
 vfs.workspace = true

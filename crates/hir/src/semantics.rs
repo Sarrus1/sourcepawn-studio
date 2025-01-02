@@ -11,13 +11,10 @@ use hir_def::{
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use log::warn;
-use preprocessor::{s_range_to_u_range, u_pos_to_s_pos, Offset};
+use preprocessor::ExpandedSymbolOffset;
 use smol_str::ToSmolStr;
-use sourcepawn_lexer::{SourcepawnLexer, TokenKind};
-use syntax::{
-    utils::{lsp_position_to_ts_point, ts_range_to_lsp_range},
-    TSKind,
-};
+use sourcepawn_lexer::{SourcepawnLexer, TextSize, TokenKind};
+use syntax::{utils::ts_range_to_text_range, TSKind};
 use tree_sitter::QueryCursor;
 use vfs::FileId;
 
@@ -56,7 +53,7 @@ impl<'db, DB> ops::Deref for Semantics<'db, DB> {
     }
 }
 
-impl<'db, DB: HirDatabase> Semantics<'db, DB> {
+impl<DB: HirDatabase> Semantics<'_, DB> {
     pub fn new(db: &DB) -> Semantics<'_, DB> {
         let impl_ = SemanticsImpl::new(db);
         Semantics { db, imp: impl_ }
@@ -204,18 +201,22 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         }
     }
 
-    /// Try to find the definition of a macro at the given [`user seen position`](FilePosition).
-    pub fn find_macro_def(&self, fpos: &FilePosition) -> Option<(Offset, DefResolution)> {
+    /// Try to find the definition of a macro at the given [`user position`](FilePosition).
+    pub fn find_macro_def(
+        &self,
+        fpos: &FilePosition,
+    ) -> Option<(ExpandedSymbolOffset, DefResolution)> {
         let preprocessing_results = self.preprocess_file(fpos.file_id);
-        let offsets = preprocessing_results.offsets();
-        let offset = offsets
-            .get(&fpos.position.line)
-            .and_then(|offsets| offsets.iter().find(|offset| offset.contains(fpos.position)))?;
+        let source_map = preprocessing_results.source_map();
+        let offset = source_map.expanded_symbol_from_u_pos(fpos.offset)?;
+        let file_id = offset.file_id();
+        let idx = offset.idx();
+
         (
-            offset.to_owned(),
+            offset,
             self.db
-                .file_def_map(offset.file_id)
-                .get_macro(&offset.idx)
+                .file_def_map(file_id)
+                .get_macro(&idx)
                 .map(Macro::from)
                 .map(DefResolution::from)?,
         )
@@ -495,7 +496,7 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             return DefResolution::try_from(analyzer.resolver.resolve_ident(text)?);
         };
         debug_assert_eq!(TSKind::from(body_node), TSKind::block);
-        let offset = node.start_position();
+        let offset = TextSize::new(node.start_byte() as u32);
         match TSKind::from(parent) {
             TSKind::field_access | TSKind::scope_access if is_field_receiver_node(&node) => {
                 let analyzer = SourceAnalyzer::new_for_body(
@@ -567,11 +568,10 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
             .utf8_text(source.as_ref().as_bytes())
             .ok()?;
         container.child_by_field_name("body")?;
-        match def_map.get_first_from_str(parent_name)? {
-            hir_def::FileDefId::FunctionId(id) => {
-                self.function_node_to_def_(file_id, container, parent, node, source, id)
-            }
-            _ => unreachable!("Expected a function"),
+        if let hir_def::FileDefId::FunctionId(id) = def_map.get_first_from_str(parent_name)? {
+            self.function_node_to_def_(file_id, container, parent, node, source, id)
+        } else {
+            None
         }
     }
 
@@ -659,16 +659,15 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
 
     pub fn defs_in_function_scope(
         &self,
-        file_id: FileId,
+        pos: FilePosition,
         def: FunctionId,
-        point: tree_sitter::Point,
         body_node: tree_sitter::Node,
     ) -> Vec<DefResolution> {
         let analyzer = SourceAnalyzer::new_for_body_no_infer(
             self.db,
             hir_def::DefWithBodyId::FunctionId(def),
-            InFile::new(file_id, body_node),
-            Some(point),
+            InFile::new(pos.file_id, body_node),
+            Some(pos.offset),
         );
         analyzer
             .resolver
@@ -699,23 +698,18 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
         }
         let preprocessing_results = self.preprocess_file(fpos.file_id);
         let source = self.preprocessed_text(fpos.file_id);
-        let offsets = preprocessing_results.offsets();
         let tree = self.parse(fpos.file_id);
         let root_node = tree.root_node();
 
         if let Some(macro_refs) = self.find_macro_references(fpos) {
             return Some(macro_refs);
         }
-        let _ = u_pos_to_s_pos(
-            preprocessing_results.args_map(),
-            offsets,
-            &mut fpos.position,
-        );
+        fpos.offset = preprocessing_results
+            .source_map()
+            .closest_s_position_always(fpos.offset);
 
-        let node = root_node.descendant_for_point_range(
-            lsp_position_to_ts_point(&fpos.position),
-            lsp_position_to_ts_point(&fpos.position),
-        )?;
+        let node = root_node
+            .descendant_for_byte_range(fpos.raw_offset_usize(), fpos.raw_offset_usize())?;
         let src_text = node.utf8_text(source.as_bytes()).ok()?;
         let def = self.find_def(fpos.file_id, &node)?;
         let mut res = Vec::new();
@@ -744,10 +738,9 @@ impl<'db, DB: HirDatabase> Semantics<'db, DB> {
                         if file_def == Some(def.clone()) {
                             res.push(FileRange {
                                 file_id,
-                                range: s_range_to_u_range(
-                                    preprocessing_results.offsets(),
-                                    ts_range_to_lsp_range(&node.range()),
-                                ),
+                                range: preprocessing_results
+                                    .source_map()
+                                    .closest_u_range_always(ts_range_to_text_range(&node.range())),
                             });
                         }
                     }

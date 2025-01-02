@@ -17,8 +17,7 @@ import { join } from "path";
 import { execFileSync } from "child_process";
 import { Section, getConfig } from "../configUtils";
 
-export class SMDocumentFormattingEditProvider
-  implements DocumentFormattingEditProvider {
+export class SMDocumentFormattingEditProvider implements DocumentFormattingEditProvider {
   public provideDocumentFormattingEdits(
     document: TextDocument,
     options: FormattingOptions,
@@ -26,7 +25,7 @@ export class SMDocumentFormattingEditProvider
   ): ProviderResult<TextEdit[]> {
     // Get the user's settings.
     const insertSpaces: boolean = getConfig(Section.Editor, "insertSpaces") || false;
-    const UseTab: string = insertSpaces ? "Never" : "Always";
+    const useTab: string = insertSpaces ? "Never" : "Always";
     const tabSize: number = getConfig(Section.Editor, "tabSize") || 2;
 
     const workspaceFolder = Workspace.getWorkspaceFolder(document.uri);
@@ -35,14 +34,9 @@ export class SMDocumentFormattingEditProvider
     let default_style: string = "{" + defaultStyles.join(", ") + "}";
 
     // Apply user settings
-    default_style = default_style
-      .replace(/\${TabSize}/g, tabSize.toString())
-      .replace(/\${UseTab}/g, UseTab);
+    default_style = default_style.replace(/\${TabSize}/g, tabSize.toString()).replace(/\${UseTab}/g, useTab);
     const start = new Position(0, 0);
-    const end = new Position(
-      document.lineCount - 1,
-      document.lineAt(document.lineCount - 1).text.length
-    );
+    const end = new Position(document.lineCount - 1, document.lineAt(document.lineCount - 1).text.length);
     const range = new Range(start, end);
     const tempFile = join(__dirname, "temp_format.sp");
     const file = openSync(tempFile, "w", 0o765);
@@ -52,9 +46,7 @@ export class SMDocumentFormattingEditProvider
 
     // If process failed,
     if (text === undefined) {
-      window.showErrorMessage(
-        "The formatter failed to run, check the console for more details."
-      );
+      window.showErrorMessage("The formatter failed to run, check the console for more details.");
       return undefined;
     }
     text = fixFormatting(text);
@@ -67,11 +59,7 @@ export class SMDocumentFormattingEditProvider
 
   clangFormat(path: string, enc: string, style): string | undefined {
     const args = [`-style=${style}`, path];
-    const result = this.spawnClangFormat(args, [
-      "ignore",
-      "pipe",
-      process.stderr,
-    ]);
+    const result = this.spawnClangFormat(args, ["ignore", "pipe", process.stderr]);
     if (result) {
       return result;
     } else {
@@ -109,10 +97,7 @@ export class SMDocumentFormattingEditProvider
     if (sysPlatform === "win32") {
       nativeBinary = join(myExtDir, "/bin/win32/clang-format.exe");
     } else {
-      nativeBinary = join(
-        myExtDir,
-        `/bin/${sysPlatform}_${sysArch}/clang-format`
-      );
+      nativeBinary = join(myExtDir, `/bin/${sysPlatform}_${sysArch}/clang-format`);
     }
 
     if (existsSync(nativeBinary)) {
@@ -140,10 +125,7 @@ function fixFormatting(text: string): string {
   text = text.replace(/(?!(\*\/|\/\/.*)\r?\n)\s*public\r?\n/gm, "\n\npublic ");
 
   // clang-format also messes up the myinfo array.
-  text = text.replace(
-    /(public\s+Plugin\s+myinfo\s*=)\s*(\{[^}{]+)(\})/m,
-    "$1\n$2\n$3"
-  );
+  text = text.replace(/(public\s+Plugin\s+myinfo\s*=)\s*(\{[^}{]+)(\})/m, "$1\n$2\n$3");
 
   // clang-format messes up the trailing } of the myinfo array.
   text = text.replace(/\n{2,}\};/, "\n};");

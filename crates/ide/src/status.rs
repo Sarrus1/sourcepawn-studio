@@ -220,7 +220,10 @@ impl StatCollect<(FileId, Arc<PreprocessingParams>), Arc<PreprocessingResult>>
                     .sum::<usize>()
             })
             .unwrap_or(0);
-        self.offsets += value.as_ref().map(|it| it.offsets().len()).unwrap_or(0);
+        self.offsets += value
+            .as_ref()
+            .map(|it| it.source_map().arena_len())
+            .unwrap_or(0);
         self.retained += value.is_some() as usize;
     }
 }

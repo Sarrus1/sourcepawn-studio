@@ -1,6 +1,6 @@
 [package]
 name = "sourcepawn-studio"
-version = "0.13.2"
+version = "0.13.3"
 description = "Language Server implemention for the SourcePawn programming language."
 include = ["Cargo.toml", "src/"]
 edition.workspace = true
@@ -71,7 +71,7 @@ version = "0.10.66"
 [dev-dependencies]
 assert_unordered = "0.3.5"
 criterion = "0.5.1"
-insta = { version = "1.28.0", features = ["glob", "redactions", "json"] }
+insta.workspace = true
 minreq = { version = "2.7.0", features = ["https"] }
 test-utils.workspace = true
 

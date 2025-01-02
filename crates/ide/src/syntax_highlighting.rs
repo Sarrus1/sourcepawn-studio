@@ -4,8 +4,8 @@ use hir::Semantics;
 use hir_def::resolver::{HasResolver, ValueNs};
 use ide_db::{RootDatabase, SymbolKind};
 use itertools::Itertools;
+use line_index::{TextRange, TextSize};
 use sourcepawn_lexer::{Literal, SourcepawnLexer, TokenKind};
-use syntax::utils::intersect;
 use vfs::FileId;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -109,7 +109,7 @@ impl HlMods {
 
 #[derive(Debug, Clone, Copy)]
 pub struct HlRange {
-    pub range: lsp_types::Range,
+    pub range: TextRange,
     pub highlight: Highlight,
     // pub binding_hash: Option<u64>,
 }
@@ -118,23 +118,14 @@ pub(crate) fn highlight(
     db: &RootDatabase,
     // config: HighlightConfig,
     file_id: FileId,
-    range_to_highlight: Option<lsp_types::Range>,
+    range_to_highlight: Option<TextRange>,
 ) -> Vec<HlRange> {
     let sema = Semantics::new(db);
     let source = sema.file_text(file_id);
     let range_to_highlight = if let Some(range_to_highlight) = range_to_highlight {
         range_to_highlight
     } else {
-        lsp_types::Range::new(
-            lsp_types::Position {
-                line: 0,
-                character: 0,
-            },
-            lsp_types::Position {
-                line: source.lines().count() as u32 + 1,
-                character: 0,
-            },
-        )
+        TextRange::at(TextSize::new(0), TextSize::new(source.len() as u32))
     };
     let lexer = SourcepawnLexer::new(&source);
     let resolver = file_id.resolver(db);
@@ -143,7 +134,7 @@ pub(crate) fn highlight(
     However, the current implementation is much simpler and should be good enough for now.
      */
     lexer
-        .filter(|symbol| intersect(symbol.range, range_to_highlight).is_some())
+        .filter(|symbol| range_to_highlight.intersect(symbol.range).is_some())
         .flat_map(|symbol| match symbol.token_kind {
             TokenKind::Identifier => {
                 let kind = match resolver.resolve_ident(&symbol.text())? {

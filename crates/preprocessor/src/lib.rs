@@ -1,23 +1,21 @@
-use std::{hash::Hash, sync::Arc};
+use std::{cmp::max, hash::Hash, sync::Arc};
 
 use anyhow::{bail, Context};
 use base_db::{RE_CHEVRON, RE_QUOTE};
-use deepsize::DeepSizeOf;
-use fxhash::{FxHashMap, FxHashSet};
-use lsp_types::{Diagnostic, Position, Range};
+use conditions::{ConditionOffsetStack, ConditionStack, ConditionState};
+use lsp_types::Diagnostic;
 use smol_str::SmolStr;
 use sourcepawn_lexer::{
-    Comment, Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TokenKind,
+    Comment, Literal, Operator, PreprocDir, SourcepawnLexer, Symbol, TextRange, TextSize, TokenKind,
 };
-use stdx::hashable_hash_map::HashableHashMap;
-use symbol::RangeLessSymbol;
 use vfs::FileId;
 
 use errors::{ExpansionError, PreprocessorErrors, UnresolvedIncludeError};
 use evaluator::IfCondition;
 use macros::expand_identifier;
-use token::Token;
 
+mod buffer;
+mod conditions;
 pub mod db;
 mod errors;
 pub(crate) mod evaluator;
@@ -26,90 +24,32 @@ mod offset;
 mod preprocessor_operator;
 mod result;
 mod symbol;
-mod token;
-mod transforms;
 
+use buffer::PreprocessorBuffer;
 pub use errors::{EvaluationError, PreprocessorError};
-pub use offset::Offset;
+pub(crate) use macros::MacroStore;
+pub use macros::{HMacrosMap, Macro, MacrosMap};
+pub use offset::{ExpandedSymbolOffset, SourceMap};
 pub use result::PreprocessingResult;
-pub use transforms::{s_range_to_u_range, u_pos_to_s_pos};
 
 #[cfg(test)]
 mod test;
-
-/// State of a preprocessor condition.
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum ConditionState {
-    /// The condition is not activated and could be activated by an else/elseif directive.
-    NotActivated,
-
-    /// The condition has been activated, all related else/elseif directives should be skipped.
-    Activated,
-
-    /// The condition is active and the preprocessor should process the code.
-    Active,
-}
-
-pub type MacrosMap = FxHashMap<SmolStr, Arc<Macro>>;
-pub type HMacrosMap = HashableHashMap<SmolStr, Arc<Macro>>;
-pub type ArgsMap = FxHashMap<u32, Vec<(Range, Range)>>;
 
 #[derive(Debug)]
 pub struct SourcepawnPreprocessor<'a, F>
 where
     F: FnMut(&mut MacrosMap, String, FileId, bool) -> anyhow::Result<()>,
 {
-    /// The index of the current macro in the file.
-    idx: u32,
     lexer: SourcepawnLexer<'a>,
     input: &'a str,
-    macros: MacrosMap,
-    expansion_stack: Vec<Token>,
-    skip_line_start_col: u32,
-    skipped_lines: Vec<lsp_types::Range>,
+    macro_store: MacroStore,
+    expansion_stack: Vec<Symbol>,
     errors: PreprocessorErrors,
     file_id: FileId,
-    current_line: String,
-    conditions_stack: Vec<ConditionState>,
-    out: Vec<String>,
-    offsets: FxHashMap<u32, Vec<Offset>>,
-    args_maps: ArgsMap,
+    conditions_stack: ConditionStack,
+    condition_offsets_stack: ConditionOffsetStack,
+    buffer: PreprocessorBuffer,
     include_file: &'a mut F,
-    disabled_macros: FxHashSet<Arc<Macro>>,
-
-    /// The current position of the preprocessed text.
-    current_pos: Position,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Macro {
-    pub(crate) file_id: FileId,
-    pub(crate) idx: u32,
-    pub(crate) params: Option<Vec<i8>>,
-    pub(crate) nb_params: i8,
-    pub(crate) body: Vec<RangeLessSymbol>,
-}
-
-impl DeepSizeOf for Macro {
-    fn deep_size_of_children(&self, context: &mut deepsize::Context) -> usize {
-        std::mem::size_of::<FileId>()
-            + self.idx.deep_size_of_children(context)
-            + self.params.deep_size_of_children(context)
-            + self.nb_params.deep_size_of_children(context)
-            + self.body.deep_size_of_children(context)
-    }
-}
-
-impl Macro {
-    pub fn default(file_id: FileId) -> Self {
-        Self {
-            file_id,
-            idx: 0,
-            params: None,
-            nb_params: 0,
-            body: vec![],
-        }
-    }
 }
 
 /// Parse status of `using __intrinsics__.Handle;`.
@@ -132,55 +72,25 @@ where
             input,
             file_id,
             include_file,
-            idx: Default::default(),
-            current_line: Default::default(),
-            skip_line_start_col: Default::default(),
-            skipped_lines: Default::default(),
             errors: Default::default(),
             conditions_stack: Default::default(),
-            out: Default::default(),
-            macros: FxHashMap::default(),
+            condition_offsets_stack: Default::default(),
+            buffer: Default::default(),
+            macro_store: Default::default(),
             expansion_stack: Default::default(),
-            offsets: FxHashMap::default(),
-            args_maps: FxHashMap::default(),
-            disabled_macros: FxHashSet::default(),
-            current_pos: Default::default(),
         }
     }
 
-    pub fn set_macros(&mut self, macros: MacrosMap) {
-        self.macros.extend(macros);
+    pub fn set_macros(&mut self, map: MacrosMap) {
+        self.macro_store.extend(map);
     }
 
-    fn remove_macro(&mut self, name: &str) {
-        self.macros.remove(name);
-    }
-
-    pub fn insert_macro(&mut self, name: SmolStr, mut macro_: Macro) {
-        macro_.idx = self.idx;
-        self.idx += 1;
-        self.macros.insert(name, macro_.into());
-    }
-
-    pub fn disable_macro(&mut self, macro_: Arc<Macro>) {
-        self.disabled_macros.insert(macro_);
-    }
-
-    pub fn enable_macro(&mut self, macro_: Arc<Macro>) {
-        self.disabled_macros.remove(&macro_);
-    }
-
-    pub fn is_macro_disabled(&self, macro_: &Arc<Macro>) -> bool {
-        self.disabled_macros.contains(macro_)
-    }
-
-    pub fn result(self) -> PreprocessingResult {
+    pub fn result(mut self) -> PreprocessingResult {
         let inactive_ranges = self.get_inactive_ranges();
         let mut res = PreprocessingResult::new(
-            self.out.join("\n").into(),
-            self.macros,
-            self.offsets,
-            self.args_maps,
+            self.buffer.contents().into(),
+            self.macro_store.into_macros_map(),
+            self.buffer.into_source_map(),
             self.errors,
             inactive_ranges,
         );
@@ -188,13 +98,12 @@ where
         res
     }
 
-    pub fn error_result(self) -> PreprocessingResult {
+    pub fn error_result(mut self) -> PreprocessingResult {
         let inactive_ranges = self.get_inactive_ranges();
         let mut res = PreprocessingResult::new(
             self.input.to_owned().into(),
-            self.macros,
-            self.offsets,
-            self.args_maps,
+            self.macro_store.into_macros_map(),
+            self.buffer.into_source_map(),
             self.errors,
             inactive_ranges,
         );
@@ -208,23 +117,27 @@ where
         self.get_include_not_found_diagnostics(diagnostics);
     }
 
-    fn get_inactive_ranges(&self) -> Vec<lsp_types::Range> {
-        let mut ranges: Vec<lsp_types::Range> = vec![];
-        for range in self.skipped_lines.iter() {
-            if let Some(old_range) = ranges.pop() {
-                if old_range.end.line == range.start.line - 1 {
-                    ranges.push(lsp_types::Range::new(old_range.start, range.end));
-                    continue;
-                } else {
-                    ranges.push(old_range);
-                    ranges.push(*range);
-                }
+    fn get_inactive_ranges(&mut self) -> Vec<TextRange> {
+        if self.condition_offsets_stack.skipped_ranges().is_empty() {
+            return Vec::new();
+        }
+        self.condition_offsets_stack.sort_skipped_ranges();
+        let mut ranges = vec![*self
+            .condition_offsets_stack
+            .skipped_ranges()
+            .first()
+            .unwrap()];
+        for range in self.condition_offsets_stack.skipped_ranges() {
+            let last_range = ranges.pop().unwrap();
+            if last_range.end() >= range.start() {
+                ranges.push(TextRange::new(
+                    last_range.start(),
+                    max(last_range.end(), range.end()),
+                ));
             } else {
+                ranges.push(last_range);
                 ranges.push(*range);
             }
-        }
-        for range in ranges.iter_mut() {
-            range.start.character = 0;
         }
 
         ranges
@@ -236,7 +149,7 @@ where
                 .macro_not_found_errors
                 .iter()
                 .map(|err| Diagnostic {
-                    range: err.range,
+                    range: Default::default(), // FIXME: Default range
                     message: format!("Macro {} not found.", err.macro_name),
                     severity: Some(lsp_types::DiagnosticSeverity::ERROR),
                     ..Default::default()
@@ -250,7 +163,7 @@ where
                 .unresolved_include_errors
                 .iter()
                 .map(|err| Diagnostic {
-                    range: err.range,
+                    range: Default::default(), // FIXME: Default range
                     message: format!("Include \"{}\" not found.", err.include_text),
                     severity: Some(lsp_types::DiagnosticSeverity::ERROR),
                     ..Default::default()
@@ -260,120 +173,95 @@ where
 
     fn get_evaluation_error_diagnostics(&self, diagnostics: &mut Vec<Diagnostic>) {
         diagnostics.extend(self.errors.evaluation_errors.iter().map(|err| Diagnostic {
-            range: err.range,
+            range: Default::default(), // FIXME: Default range
             message: format!("Preprocessor condition is invalid: {}", err.text),
             severity: Some(lsp_types::DiagnosticSeverity::ERROR),
             ..Default::default()
         }));
     }
 
-    pub fn preprocess_input(mut self) -> PreprocessingResult {
+    fn include_sourcemod(&mut self) {
         let _ = (self.include_file)(
-            &mut self.macros,
+            self.macro_store.map_mut(),
             "sourcemod".to_string(),
             self.file_id,
             false,
         );
-        let mut intrinsics_parse_status = None;
-        let mut col_offset: Option<i32> = None;
-        let mut expanded_symbol: Option<(Symbol, u32, FileId)> = None;
-        let mut args_diff = 0u32;
-        while let Some(token) = if !self.expansion_stack.is_empty() {
-            let token = self.expansion_stack.pop().unwrap();
-            col_offset = Some(
-                col_offset.map_or(token.inline_text().len() as i32, |offset| {
-                    offset + token.delta().col + token.inline_text().len() as i32
-                }),
-            );
-            Some(token)
-        } else {
-            let symbol = self.lexer.next();
-            if let Some((expanded_symbol, idx, file_id)) = expanded_symbol.take() {
-                if let Some(symbol) = symbol.clone() {
-                    self.offsets
-                        .entry(symbol.range.start.line)
-                        .or_default()
-                        .push(Offset {
-                            idx,
-                            file_id,
-                            range: expanded_symbol.range,
-                            diff: (col_offset.take().unwrap_or(0)
-                                - (expanded_symbol.range.end.character
-                                    - expanded_symbol.range.start.character)
-                                    as i32),
-                            args_diff,
-                        });
-                    args_diff = 0;
-                }
-            }
+    }
 
-            symbol.map(Token::from)
-        } {
-            if let Some(original_range) = token.original_range() {
-                let new_range = self.current_range(&token);
-                self.args_maps
-                    .entry(original_range.start.line)
-                    .or_default()
-                    .push((original_range, new_range));
+    pub fn preprocess_input(mut self) -> PreprocessingResult {
+        self.include_sourcemod();
+        let mut intrinsics_parse_status = None;
+        let mut expanded_symbol: Option<(Symbol, Arc<Macro>, u32)> = None;
+        while let Some(symbol) = if !self.expansion_stack.is_empty() {
+            self.expansion_stack.pop()
+        } else {
+            if let Some((expanded_symbol, macro_, start_offset)) = expanded_symbol.take() {
+                let end_offset = self.buffer.offset();
+                self.buffer.source_map_mut().push_expanded_symbol(
+                    expanded_symbol.range,
+                    start_offset,
+                    end_offset,
+                    &macro_,
+                );
             }
-            if matches!(
-                self.conditions_stack
-                    .last()
-                    .unwrap_or(&ConditionState::Active),
-                ConditionState::Activated | ConditionState::NotActivated
-            ) {
-                if self.process_negative_condition(token.symbol()).is_err() {
+            self.lexer.next()
+        } {
+            if self.conditions_stack.top_is_activated_or_not_activated() {
+                if self.process_negative_condition(&symbol).is_err() {
                     return self.error_result();
                 }
                 continue;
             }
-            match &token.token_kind() {
+            match &symbol.token_kind {
                 TokenKind::Unknown => return self.error_result(),
                 TokenKind::PreprocDir(dir) => {
-                    if self.process_directive(dir, token.symbol()).is_err() {
+                    if self.process_directive(dir, &symbol).is_err() {
                         return self.error_result();
                     }
-                }
-                TokenKind::Newline => {
-                    self.push_ws(token.symbol());
-                    self.push_current_line();
-                    self.reset_current_line();
                 }
                 TokenKind::Identifier => {
                     // This is a hack to handle `using __intrinsics__.Handle;` in handles.inc, which
                     // is not a part of sourcemod as of 060c832f89709e6a6222cf039071061dcc0a36da.
                     // see: https://github.com/alliedmodders/sourcemod/commit/060c832f89709e6a6222cf039071061dcc0a36da
                     if intrinsics_parse_status == Some(IntrinsicsParseStatus::Dot) {
-                        if token.text() == "Handle" {
-                            self.current_line.push_str("methodmap Handle __nullable__ {public native ~Handle();public native void Close();};")
+                        if symbol.text() == "Handle" {
+                            self.buffer.push_str("methodmap Handle __nullable__ {public native ~Handle();public native void Close();};")
                         }
                         intrinsics_parse_status = Some(IntrinsicsParseStatus::Handle);
                         continue;
                     }
-                    match self.macros.get(&token.text()) {
+                    match self.macro_store.get(&symbol.text()).cloned() {
                         // TODO: Evaluate the performance dropoff of supporting macro expansion when overriding reserved keywords.
                         // This might only be a problem for a very small subset of users.
                         Some(macro_) => {
                             // Skip the macro if it is disabled and reenable it.
-                            if self.is_macro_disabled(macro_) {
-                                self.enable_macro(macro_.clone());
-                                self.push_symbol(token.symbol());
+                            if self.macro_store.is_macro_disabled(&macro_) {
+                                self.macro_store.enable_macro(&macro_);
+                                self.buffer.push_symbol(&symbol);
                                 continue;
                             }
-                            let idx = macro_.idx;
-                            let file_id: FileId = macro_.file_id;
                             match expand_identifier(
                                 &mut self.lexer,
-                                &mut self.macros,
-                                &token,
+                                &mut self.macro_store,
+                                &symbol,
                                 &mut self.expansion_stack,
                                 true,
-                                &mut self.disabled_macros,
                             ) {
-                                Ok(args_diff_) => {
-                                    expanded_symbol =
-                                        Some((token.symbol().to_owned(), idx, file_id));
-                                    args_diff = args_diff_;
+                                Ok(r_paren_offset) => {
+                                    if let Some(r_paren_offset) = r_paren_offset {
+                                        let symbol = Symbol::new(
+                                            symbol.token_kind,
+                                            symbol.text().as_str().into(),
+                                            TextRange::new(symbol.range.start(), r_paren_offset),
+                                            symbol.delta,
+                                        );
+                                        expanded_symbol =
+                                            Some((symbol, macro_, self.buffer.offset()));
+                                    } else {
+                                        expanded_symbol =
+                                            Some((symbol, macro_, self.buffer.offset()));
+                                    }
                                     continue;
                                 }
                                 Err(ExpansionError::MacroNotFound(err)) => {
@@ -386,7 +274,7 @@ where
                             }
                         }
                         None => {
-                            self.push_symbol(token.symbol());
+                            self.buffer.push_symbol(&symbol);
                         }
                     }
                 }
@@ -402,21 +290,23 @@ where
                 }
                 TokenKind::Semicolon => {
                     if intrinsics_parse_status.take() != Some(IntrinsicsParseStatus::Handle) {
-                        self.push_symbol(token.symbol());
+                        self.buffer.push_symbol(&symbol);
                     }
                 }
                 TokenKind::Dot => match intrinsics_parse_status {
                     Some(IntrinsicsParseStatus::Intrinsics) => {
                         intrinsics_parse_status = Some(IntrinsicsParseStatus::Dot);
                     }
-                    _ => self.push_symbol(token.symbol()),
+                    _ => self.buffer.push_symbol(&symbol),
                 },
                 TokenKind::Eof => {
-                    self.push_ws(token.symbol());
-                    self.push_current_line();
+                    self.buffer.push_ws(&symbol);
                     break;
                 }
-                _ => self.push_symbol(token.symbol()),
+                TokenKind::Newline => {
+                    self.buffer.push_new_line();
+                }
+                _ => self.buffer.push_symbol(&symbol),
             }
         }
 
@@ -424,16 +314,12 @@ where
     }
 
     fn process_if_directive(&mut self, symbol: &Symbol) {
-        let line_nb = symbol.range.start.line;
-        let mut if_condition = IfCondition::new(
-            &mut self.macros,
-            symbol.range.start.line,
-            &mut self.offsets,
-            &mut self.disabled_macros,
-        );
+        self.condition_offsets_stack.push(symbol.range.start());
+        let mut if_condition =
+            IfCondition::new(&mut self.macro_store, self.buffer.source_map_mut());
         while self.lexer.in_preprocessor() {
             if let Some(symbol) = self.lexer.next() {
-                if_condition.tokens.push(symbol.into());
+                if_condition.symbols.push(symbol);
             } else {
                 break;
             }
@@ -450,31 +336,63 @@ where
         if if_condition_eval {
             self.conditions_stack.push(ConditionState::Active);
         } else {
-            self.skip_line_start_col = symbol.range.end.character;
             self.conditions_stack.push(ConditionState::NotActivated);
         }
+        let line_continuation_count = if_condition.line_continuation_count();
         self.errors
             .macro_not_found_errors
-            .extend(if_condition.macro_not_found_errors);
-        if let Some(last_token) = if_condition.tokens.last() {
-            let line_diff = last_token.range().end.line - line_nb;
-            for _ in 0..line_diff {
-                self.out.push(String::new());
+            .extend(if_condition.macro_not_found_errors.clone());
+        drop(if_condition);
+        self.buffer.push_new_lines(line_continuation_count);
+    }
+
+    fn process_elseif_directive(&mut self, symbol: &Symbol) -> anyhow::Result<()> {
+        let top = self
+            .conditions_stack
+            .pop()
+            .context("Expect if before elseif clause.")?;
+        match top {
+            ConditionState::NotActivated => {
+                self.condition_offsets_stack
+                    .pop_and_push_skipped_range(symbol.range.end());
+                self.process_if_directive(symbol);
+            }
+            ConditionState::Active => {
+                let _ = self.condition_offsets_stack.pop();
+                self.condition_offsets_stack.push(symbol.range.start());
+                self.conditions_stack.push(ConditionState::Activated);
+            }
+            ConditionState::Activated => {
+                self.condition_offsets_stack
+                    .pop_and_push_skipped_range(symbol.range.end());
+                self.condition_offsets_stack.push(symbol.range.start());
+                self.conditions_stack.push(ConditionState::Activated);
             }
         }
+
+        Ok(())
     }
 
     fn process_else_directive(&mut self, symbol: &Symbol) -> anyhow::Result<()> {
-        let last = self
+        let top = self
             .conditions_stack
             .pop()
             .context("Expect if before else clause.")?;
-        match last {
+        match top {
             ConditionState::NotActivated => {
+                self.condition_offsets_stack
+                    .pop_and_push_skipped_range(symbol.range.end());
                 self.conditions_stack.push(ConditionState::Active);
             }
-            ConditionState::Active | ConditionState::Activated => {
-                self.skip_line_start_col = symbol.range.end.character;
+            ConditionState::Active => {
+                let _ = self.condition_offsets_stack.pop();
+                self.condition_offsets_stack.push(symbol.range.start());
+                self.conditions_stack.push(ConditionState::Activated);
+            }
+            ConditionState::Activated => {
+                self.condition_offsets_stack
+                    .pop_and_push_skipped_range(symbol.range.end());
+                self.condition_offsets_stack.push(symbol.range.start());
                 self.conditions_stack.push(ConditionState::Activated);
             }
         }
@@ -483,16 +401,14 @@ where
     }
 
     fn process_endif_directive(&mut self, symbol: &Symbol) -> anyhow::Result<()> {
-        self.conditions_stack
-            .pop()
-            .context("Expect if before endif clause")?;
-        // Skip the endif if it is in a nested condition.
-        if let Some(last) = self.conditions_stack.last() {
-            if *last != ConditionState::Active {
-                self.skipped_lines.push(lsp_types::Range::new(
-                    Position::new(symbol.range.start.line, self.skip_line_start_col),
-                    Position::new(symbol.range.start.line, symbol.range.end.character),
-                ));
+        // self.conditions_stack
+        //     .pop()
+        //     .context("Expect if before endif clause")?;
+        // // Skip the endif if it is in a nested condition.
+        if let Some(top) = self.conditions_stack.pop() {
+            if top != ConditionState::Active {
+                self.condition_offsets_stack
+                    .pop_and_push_skipped_range(symbol.range.end());
             }
         }
 
@@ -501,21 +417,8 @@ where
 
     fn process_directive(&mut self, dir: &PreprocDir, symbol: &Symbol) -> anyhow::Result<()> {
         match dir {
-            PreprocDir::MIf => self.process_if_directive(symbol),
-            PreprocDir::MElseif => {
-                let last = self
-                    .conditions_stack
-                    .pop()
-                    .context("Expect if before elseif clause.")?;
-                match last {
-                    ConditionState::NotActivated => self.process_if_directive(symbol),
-                    ConditionState::Active | ConditionState::Activated => {
-                        self.conditions_stack.push(ConditionState::Activated);
-                    }
-                }
-            }
             PreprocDir::MDefine => {
-                self.push_symbol(symbol);
+                self.buffer.push_symbol(symbol);
                 let mut macro_name = SmolStr::default();
                 let mut macro_ = Macro::default(self.file_id);
                 enum State {
@@ -532,9 +435,9 @@ where
                         if symbol.token_kind == TokenKind::Eof {
                             break;
                         }
-                        self.push_ws(&symbol);
+                        // self.buffer.push_ws(&symbol);
                         if !matches!(symbol.token_kind, TokenKind::Newline | TokenKind::Eof) {
-                            self.current_line.push_str(&symbol.text());
+                            self.buffer.push_symbol(&symbol);
                         }
                         match state {
                             State::Start => {
@@ -542,7 +445,7 @@ where
                                     && TokenKind::Identifier == symbol.token_kind
                                 {
                                     macro_name = symbol.text();
-                                } else if symbol.delta.col == 0
+                                } else if symbol.delta == 0
                                     && symbol.token_kind == TokenKind::LParen
                                 {
                                     state = State::Params;
@@ -552,7 +455,7 @@ where
                                 }
                             }
                             State::Params => {
-                                if symbol.delta.col > 0 {
+                                if symbol.delta > 0 {
                                     macro_.body.push(symbol.into());
                                     state = State::Body;
                                     continue;
@@ -595,30 +498,34 @@ where
                     macro_.nb_params = args.iter().filter(|&n| *n != -1).count() as i8;
                     macro_.params = Some(args);
                 }
-                self.push_current_line();
-                self.reset_current_line();
-                self.insert_macro(macro_name, macro_);
+                self.buffer.push_new_line();
+                macro_.name_len = macro_name.len();
+                self.macro_store.insert_macro(macro_name, macro_);
             }
             PreprocDir::MUndef => {
-                self.push_symbol(symbol);
+                self.buffer.push_symbol(symbol);
                 while self.lexer.in_preprocessor() {
                     if let Some(symbol) = self.lexer.next() {
-                        self.push_ws(&symbol);
+                        self.buffer.push_ws(&symbol);
                         if !matches!(symbol.token_kind, TokenKind::Newline | TokenKind::Eof) {
-                            self.current_line.push_str(&symbol.text());
+                            self.buffer.push_symbol_no_delta(&symbol);
                         }
                         if symbol.token_kind == TokenKind::Identifier {
-                            self.remove_macro(&symbol.text());
+                            self.macro_store.remove_macro(&symbol.text());
                             break;
                         }
+                    } else {
+                        break;
                     }
                 }
             }
-            PreprocDir::MEndif => self.process_endif_directive(symbol)?,
+            PreprocDir::MIf => self.process_if_directive(symbol),
+            PreprocDir::MElseif => self.process_elseif_directive(symbol)?,
             PreprocDir::MElse => self.process_else_directive(symbol)?,
+            PreprocDir::MEndif => self.process_endif_directive(symbol)?,
             PreprocDir::MInclude => self.process_include_directive(symbol, false),
             PreprocDir::MTryinclude => self.process_include_directive(symbol, true),
-            _ => self.push_symbol(symbol),
+            _ => self.buffer.push_symbol(symbol),
         }
 
         Ok(())
@@ -626,20 +533,11 @@ where
 
     fn process_include_directive(&mut self, symbol: &Symbol, is_try: bool) {
         let text = symbol.inline_text().trim().to_string();
-        let delta = symbol.range.end.line - symbol.range.start.line;
-        let symbol = Symbol::new(
-            symbol.token_kind,
-            Some(&text),
-            Range::new(
-                Position::new(symbol.range.start.line, symbol.range.start.character),
-                Position::new(symbol.range.start.line, text.len() as u32),
-            ),
-            symbol.delta,
-        );
+        let line_delta = linebreak_count(symbol.text().as_str());
 
         if let Some(path) = RE_CHEVRON.captures(&text).and_then(|c| c.get(1)) {
             match (self.include_file)(
-                &mut self.macros,
+                self.macro_store.map_mut(),
                 path.as_str().to_string(),
                 self.file_id,
                 false,
@@ -648,9 +546,11 @@ where
                 Err(_) => {
                     if !is_try {
                         // TODO: Emit a warning here for #tryinclude?
-                        let mut range = symbol.range;
-                        range.start.character = path.start() as u32;
-                        range.end.character = path.end() as u32;
+                        let start: usize = symbol.range.start().into();
+                        let range = TextRange::new(
+                            TextSize::new((start + path.start()) as u32),
+                            TextSize::new((start + path.end()) as u32),
+                        );
                         self.errors
                             .unresolved_include_errors
                             .push(UnresolvedIncludeError::new(
@@ -663,7 +563,7 @@ where
         };
         if let Some(path) = RE_QUOTE.captures(&text).and_then(|c| c.get(1)) {
             match (self.include_file)(
-                &mut self.macros,
+                self.macro_store.map_mut(),
                 path.as_str().to_string(),
                 self.file_id,
                 true,
@@ -672,9 +572,11 @@ where
                 Err(_) => {
                     if !is_try {
                         // TODO: Emit a warning here for #tryinclude?
-                        let mut range = symbol.range;
-                        range.start.character = path.start() as u32;
-                        range.end.character = path.end() as u32;
+                        let start: usize = symbol.range.start().into();
+                        let range = TextRange::new(
+                            TextSize::new((start + path.start()) as u32),
+                            TextSize::new((start + path.end()) as u32),
+                        );
                         self.errors
                             .unresolved_include_errors
                             .push(UnresolvedIncludeError::new(
@@ -686,14 +588,8 @@ where
             }
         };
 
-        self.push_symbol(&symbol);
-        if delta > 0 {
-            self.push_current_line();
-            self.reset_current_line();
-            for _ in 0..delta - 1 {
-                self.out.push(String::new());
-            }
-        }
+        self.buffer.push_symbol(symbol);
+        self.buffer.push_new_lines(line_delta as u32);
     }
 
     fn process_negative_condition(&mut self, symbol: &Symbol) -> anyhow::Result<()> {
@@ -705,42 +601,28 @@ where
                 }
                 PreprocDir::MEndif => self.process_endif_directive(symbol)?,
                 PreprocDir::MElse => self.process_else_directive(symbol)?,
-                PreprocDir::MElseif => {
-                    let last = self
-                        .conditions_stack
-                        .pop()
-                        .context("Expect if before elseif clause.")?;
-                    match last {
-                        ConditionState::NotActivated => self.process_if_directive(symbol),
-                        ConditionState::Active | ConditionState::Activated => {
-                            self.conditions_stack.push(ConditionState::Activated);
-                        }
-                    }
-                }
+                PreprocDir::MElseif => self.process_elseif_directive(symbol)?,
                 _ => (),
             },
             TokenKind::Newline => {
                 // Keep the newline to keep the line numbers in sync.
-                self.push_current_line();
-                self.skipped_lines.push(lsp_types::Range::new(
-                    Position::new(symbol.range.start.line, self.skip_line_start_col),
-                    Position::new(symbol.range.start.line, symbol.range.start.character),
-                ));
-                self.reset_current_line();
+                let start_offset = self.buffer.offset();
+                self.buffer.push_new_line();
+                self.condition_offsets_stack
+                    .push_skipped_range(TextRange::new(
+                        start_offset.into(),
+                        self.buffer.offset().into(),
+                    ));
             }
-            TokenKind::Comment(Comment::BlockComment)
-                if symbol.range.end.line != symbol.range.start.line =>
-            {
-                // Keep multiline block spacing.
-                let line_delta = (symbol.range.end.line - symbol.range.start.line) as usize;
-                for _ in 0..line_delta {
-                    self.push_current_line();
-                    self.reset_current_line();
-                }
-                self.skipped_lines.push(lsp_types::Range::new(
-                    Position::new(symbol.range.start.line, self.skip_line_start_col),
-                    Position::new(symbol.range.end.line, symbol.range.end.character),
-                ));
+            TokenKind::Comment(Comment::BlockComment) => {
+                let start_offset = self.buffer.offset();
+                let line_delta = linebreak_count(symbol.text().as_str());
+                self.buffer.push_new_lines(line_delta as u32);
+                self.condition_offsets_stack
+                    .push_skipped_range(TextRange::new(
+                        start_offset.into(),
+                        self.buffer.offset().into(),
+                    ));
             }
             // Skip any token that is not a directive or a newline.
             _ => (),
@@ -748,53 +630,12 @@ where
 
         Ok(())
     }
+}
 
-    /// Push the whitespaces before the symbol based on the symbol's delta.
-    fn push_ws(&mut self, symbol: &Symbol) {
-        self.current_pos.character += symbol.delta.col.unsigned_abs();
-        self.current_line
-            .push_str(&" ".repeat(symbol.delta.col.unsigned_abs() as usize));
-    }
-
-    fn push_current_line(&mut self) {
-        self.current_pos.line += 1;
-        self.current_pos.character = 0;
-        self.out.push(self.current_line.clone());
-    }
-
-    fn push_symbol(&mut self, symbol: &Symbol) {
-        if symbol.token_kind == TokenKind::Eof {
-            self.push_current_line();
-            return;
-        }
-        self.push_ws(symbol);
-        self.current_pos.character += symbol.text().len() as u32;
-        self.current_line.push_str(&symbol.text());
-    }
-
-    fn reset_current_line(&mut self) {
-        self.current_line = String::new();
-    }
-
-    fn current_range(&self, token: &Token) -> Range {
-        Range::new(
-            Position::new(
-                self.current_pos.line,
-                self.current_pos
-                    .character
-                    .saturating_add_signed(token.delta().col),
-            ),
-            Position::new(
-                self.current_pos.line,
-                self.current_pos
-                    .character
-                    .saturating_add_signed(token.delta().col)
-                    + token
-                        .range()
-                        .end
-                        .character
-                        .saturating_sub(token.range().start.character),
-            ),
-        )
-    }
+pub fn linebreak_count(text: &str) -> usize {
+    let substring = "\n".as_bytes();
+    text.as_bytes()
+        .windows(substring.len())
+        .filter(|&w| w == substring)
+        .count()
 }

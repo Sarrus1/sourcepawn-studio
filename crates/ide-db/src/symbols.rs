@@ -1,13 +1,14 @@
 use std::ops::Index;
 
 use base_db::Tree;
-use fxhash::{FxHashMap, FxHashSet};
+use fxhash::FxHashSet;
 use hir_def::FunctionKind;
 use la_arena::{Arena, Idx};
 use lazy_static::lazy_static;
-use preprocessor::{s_range_to_u_range, Offset};
+use line_index::TextRange;
+use preprocessor::SourceMap;
 use smol_str::{SmolStr, ToSmolStr};
-use syntax::{utils::ts_range_to_lsp_range, TSKind};
+use syntax::{utils::ts_range_to_text_range, TSKind};
 use tree_sitter::{Node, QueryCursor};
 
 use crate::SymbolKind;
@@ -23,7 +24,7 @@ lazy_static! {
 pub type SymbolId = Idx<Symbol>;
 
 pub struct SymbolsBuilder<'a> {
-    offsets: &'a FxHashMap<u32, Vec<Offset>>,
+    source_map: &'a SourceMap,
     top_level: Vec<SymbolId>,
     arena: Arena<Symbol>,
     deprecated: FxHashSet<usize>,
@@ -32,7 +33,7 @@ pub struct SymbolsBuilder<'a> {
 }
 
 impl<'a> SymbolsBuilder<'a> {
-    pub fn new(offsets: &'a FxHashMap<u32, Vec<Offset>>, tree: &'a Tree, source: &'a str) -> Self {
+    pub fn new(source_map: &'a SourceMap, tree: &'a Tree, source: &'a str) -> Self {
         let mut deprecated = FxHashSet::default();
         // query for all pragmas
         lazy_static! {
@@ -55,7 +56,7 @@ impl<'a> SymbolsBuilder<'a> {
             }
         }
         Self {
-            offsets,
+            source_map,
             top_level: Vec::new(),
             arena: Arena::new(),
             deprecated,
@@ -64,8 +65,10 @@ impl<'a> SymbolsBuilder<'a> {
         }
     }
 
-    fn s_range(&self, u_range: &tree_sitter::Range) -> lsp_types::Range {
-        s_range_to_u_range(self.offsets, ts_range_to_lsp_range(u_range))
+    fn s_range_to_u_range(&self, s_range: &tree_sitter::Range) -> TextRange {
+        // FIXME: This is going to be super slow.
+        let s_range = ts_range_to_text_range(s_range);
+        self.source_map.closest_u_range_always(s_range)
     }
 
     fn is_deprecated(&self, node: &tree_sitter::Node) -> bool {
@@ -140,8 +143,8 @@ impl<'a> SymbolsBuilder<'a> {
                 .ok()?
                 .to_smolstr(),
             kind,
-            full_range: self.s_range(&node.range()),
-            focus_range: self.s_range(&name_node.range()).into(),
+            full_range: self.s_range_to_u_range(&node.range()),
+            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
             children,
             details: node
                 .child_by_field_name("parameters")
@@ -180,8 +183,8 @@ impl<'a> SymbolsBuilder<'a> {
                 .ok()?
                 .to_smolstr(),
             kind: SymbolKind::Methodmap,
-            full_range: self.s_range(&node.range()),
-            focus_range: self.s_range(&name_node.range()).into(),
+            full_range: self.s_range_to_u_range(&node.range()),
+            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
             children,
             details: None,
             deprecated: self.is_deprecated(node),
@@ -215,8 +218,8 @@ impl<'a> SymbolsBuilder<'a> {
                 .ok()?
                 .to_smolstr(),
             kind: SymbolKind::Property,
-            full_range: self.s_range(&node.range()),
-            focus_range: self.s_range(&name_node.range()).into(),
+            full_range: self.s_range_to_u_range(&node.range()),
+            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
             children,
             details: type_,
             deprecated: self.is_deprecated(node),
@@ -245,8 +248,8 @@ impl<'a> SymbolsBuilder<'a> {
                                     .ok()?
                                     .to_smolstr(),
                                 kind: SymbolKind::Variant,
-                                full_range: self.s_range(&e.range()),
-                                focus_range: self.s_range(&name_node.range()).into(),
+                                full_range: self.s_range_to_u_range(&e.range()),
+                                focus_range: self.s_range_to_u_range(&name_node.range()).into(),
                                 children: vec![],
                                 details: None,
                                 deprecated: self.is_deprecated(&e),
@@ -260,8 +263,8 @@ impl<'a> SymbolsBuilder<'a> {
         let symbol = Symbol {
             name,
             kind: SymbolKind::Property,
-            full_range: self.s_range(&node.range()),
-            focus_range: name_node.map(|node| self.s_range(&node.range())),
+            full_range: self.s_range_to_u_range(&node.range()),
+            focus_range: name_node.map(|node| self.s_range_to_u_range(&node.range())),
             children,
             details: None,
             deprecated: self.is_deprecated(node),
@@ -284,8 +287,8 @@ impl<'a> SymbolsBuilder<'a> {
                 .ok()?
                 .to_smolstr(),
             kind: SymbolKind::Local,
-            full_range: self.s_range(&node.range()),
-            focus_range: self.s_range(&name_node.range()).into(),
+            full_range: self.s_range_to_u_range(&node.range()),
+            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
             children: vec![],
             details: type_,
             deprecated: self.is_deprecated(node),
@@ -325,8 +328,8 @@ impl<'a> SymbolsBuilder<'a> {
                             .ok()?
                             .to_smolstr(),
                         kind: SymbolKind::Variant,
-                        full_range: self.s_range(&child.range()),
-                        focus_range: self.s_range(&name_node.range()).into(),
+                        full_range: self.s_range_to_u_range(&child.range()),
+                        focus_range: self.s_range_to_u_range(&name_node.range()).into(),
                         children: vec![],
                         details: type_,
                         deprecated: self.is_deprecated(&child),
@@ -342,8 +345,8 @@ impl<'a> SymbolsBuilder<'a> {
                 .ok()?
                 .to_smolstr(),
             kind: SymbolKind::EnumStruct,
-            full_range: self.s_range(&node.range()),
-            focus_range: self.s_range(&name_node.range()).into(),
+            full_range: self.s_range_to_u_range(&node.range()),
+            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
             children,
             details: None,
             deprecated: self.is_deprecated(node),
@@ -360,8 +363,8 @@ impl<'a> SymbolsBuilder<'a> {
         let symbol = Symbol {
             name,
             kind: SymbolKind::Typedef,
-            full_range: self.s_range(&node.range()),
-            focus_range: name_node.map(|node| self.s_range(&node.range())),
+            full_range: self.s_range_to_u_range(&node.range()),
+            focus_range: name_node.map(|node| self.s_range_to_u_range(&node.range())),
             children: vec![],
             details: node
                 .child_by_field_name("parameters")
@@ -389,8 +392,8 @@ impl<'a> SymbolsBuilder<'a> {
                 .ok()?
                 .to_smolstr(),
             kind: SymbolKind::Typeset,
-            full_range: self.s_range(&node.range()),
-            focus_range: self.s_range(&name_node.range()).into(),
+            full_range: self.s_range_to_u_range(&node.range()),
+            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
             children,
             details: None,
             deprecated: self.is_deprecated(node),
@@ -406,8 +409,8 @@ impl<'a> SymbolsBuilder<'a> {
                 .ok()?
                 .to_smolstr(),
             kind: SymbolKind::Functag,
-            full_range: self.s_range(&node.range()),
-            focus_range: self.s_range(&name_node.range()).into(),
+            full_range: self.s_range_to_u_range(&node.range()),
+            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
             children: vec![],
             details: node
                 .child_by_field_name("parameters")
@@ -427,8 +430,8 @@ impl<'a> SymbolsBuilder<'a> {
                 let symbol = Symbol {
                     name: "functag".to_smolstr(),
                     kind: SymbolKind::Functag,
-                    full_range: self.s_range(&n.range()),
-                    focus_range: self.s_range(&n.range()).into(),
+                    full_range: self.s_range_to_u_range(&n.range()),
+                    focus_range: self.s_range_to_u_range(&n.range()).into(),
                     children: vec![],
                     details: node
                         .child_by_field_name("parameters")
@@ -445,8 +448,8 @@ impl<'a> SymbolsBuilder<'a> {
                 .ok()?
                 .to_smolstr(),
             kind: SymbolKind::Funcenum,
-            full_range: self.s_range(&node.range()),
-            focus_range: self.s_range(&name_node.range()).into(),
+            full_range: self.s_range_to_u_range(&node.range()),
+            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
             children,
             details: None,
             deprecated: self.is_deprecated(node),
@@ -467,8 +470,8 @@ impl<'a> SymbolsBuilder<'a> {
                         .ok()?
                         .to_smolstr(),
                     kind: SymbolKind::Field,
-                    full_range: self.s_range(&n.range()),
-                    focus_range: self.s_range(&name_node.range()).into(),
+                    full_range: self.s_range_to_u_range(&n.range()),
+                    focus_range: self.s_range_to_u_range(&name_node.range()).into(),
                     children: vec![],
                     details: None,
                     deprecated: self.is_deprecated(&n),
@@ -482,8 +485,8 @@ impl<'a> SymbolsBuilder<'a> {
                 .ok()?
                 .to_smolstr(),
             kind: SymbolKind::Struct,
-            full_range: self.s_range(&node.range()),
-            focus_range: self.s_range(&name_node.range()).into(),
+            full_range: self.s_range_to_u_range(&node.range()),
+            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
             children,
             details: None,
             deprecated: self.is_deprecated(node),
@@ -499,8 +502,8 @@ impl<'a> SymbolsBuilder<'a> {
                 .ok()?
                 .to_smolstr(),
             kind: SymbolKind::Struct,
-            full_range: self.s_range(&node.range()),
-            focus_range: self.s_range(&name_node.range()).into(),
+            full_range: self.s_range_to_u_range(&node.range()),
+            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
             children: vec![],
             details: None,
             deprecated: self.is_deprecated(node),
@@ -582,8 +585,8 @@ pub struct Symbol {
     pub name: SmolStr,
     pub details: Option<String>,
     pub kind: SymbolKind,
-    pub full_range: lsp_types::Range,
-    pub focus_range: Option<lsp_types::Range>,
+    pub full_range: TextRange,
+    pub focus_range: Option<TextRange>,
     pub children: Vec<SymbolId>,
     pub deprecated: bool,
 }

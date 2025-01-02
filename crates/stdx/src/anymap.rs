@@ -1,5 +1,6 @@
-//! This file is a port of only the necessary features from https://github.com/chris-morgan/anymap version 1.0.0-beta.2 for use within rust-analyzer.
-//! Copyright © 2014–2022 Chris Morgan. COPYING: https://github.com/chris-morgan/anymap/blob/master/COPYING"
+//! This file is a port of only the necessary features from <https://github.com/chris-morgan/anymap> version 1.0.0-beta.2 for use within rust-analyzer.
+//! Copyright © 2014–2022 Chris Morgan.
+//! COPYING: <https://github.com/chris-morgan/anymap/blob/master/COPYING>
 //! Note that the license is changed from Blue Oak Model 1.0.0 or MIT or Apache-2.0 to MIT OR Apache-2.0
 //!
 //! This implementation provides a safe and convenient store for one value of each type.
@@ -17,7 +18,6 @@
 
 #![warn(missing_docs, unused_results)]
 
-use core::convert::TryInto;
 use core::hash::Hasher;
 
 /// A hasher designed to eke a little more speed out, given `TypeId`’s known characteristics.
@@ -56,12 +56,13 @@ use core::any::{Any, TypeId};
 use core::hash::BuildHasherDefault;
 use core::marker::PhantomData;
 
-use ::std::collections::hash_map::{self, HashMap};
+use ::std::collections::hash_map;
 
 /// Raw access to the underlying `HashMap`.
 ///
 /// This alias is provided for convenience because of the ugly third generic parameter.
-pub type RawMap<A> = HashMap<TypeId, Box<A>, BuildHasherDefault<TypeIdHasher>>;
+#[allow(clippy::disallowed_types)] // Uses a custom hasher
+pub type RawMap<A> = hash_map::HashMap<TypeId, Box<A>, BuildHasherDefault<TypeIdHasher>>;
 
 /// A collection containing zero or one values for any given type and allowing convenient,
 /// type-safe access to those values.
@@ -69,8 +70,6 @@ pub type RawMap<A> = HashMap<TypeId, Box<A>, BuildHasherDefault<TypeIdHasher>>;
 /// The type parameter `A` allows you to use a different value type; normally you will want
 /// it to be `core::any::Any` (also known as `std::any::Any`), but there are other choices:
 ///
-/// - If you want the entire map to be cloneable, use `CloneAny` instead of `Any`; with
-///   that, you can only add types that implement `Clone` to the map.
 /// - You can add on `+ Send` or `+ Send + Sync` (e.g. `Map<dyn Any + Send>`) to add those
 ///   auto traits.
 ///
@@ -80,9 +79,6 @@ pub type RawMap<A> = HashMap<TypeId, Box<A>, BuildHasherDefault<TypeIdHasher>>;
 ///   also spelled [`AnyMap`] for convenience.
 /// - <code>[Map]&lt;dyn [core::any::Any] + Send&gt;</code>
 /// - <code>[Map]&lt;dyn [core::any::Any] + Send + Sync&gt;</code>
-/// - <code>[Map]&lt;dyn [CloneAny]&gt;</code>
-/// - <code>[Map]&lt;dyn [CloneAny] + Send&gt;</code>
-/// - <code>[Map]&lt;dyn [CloneAny] + Send + Sync&gt;</code>
 ///
 /// ## Example
 ///
@@ -198,24 +194,8 @@ impl<'a, A: ?Sized + Downcast, V: IntoBox<A>> VacantEntry<'a, A, V> {
 }
 
 #[cfg(test)]
-#[allow(dead_code)]
 mod tests {
     use super::*;
-
-    #[derive(Clone, Debug, PartialEq)]
-    struct A(i32);
-    #[derive(Clone, Debug, PartialEq)]
-    struct B(i32);
-    #[derive(Clone, Debug, PartialEq)]
-    struct C(i32);
-    #[derive(Clone, Debug, PartialEq)]
-    struct D(i32);
-    #[derive(Clone, Debug, PartialEq)]
-    struct E(i32);
-    #[derive(Clone, Debug, PartialEq)]
-    struct F(i32);
-    #[derive(Clone, Debug, PartialEq)]
-    struct J(i32);
 
     #[test]
     fn test_varieties() {
@@ -228,12 +208,6 @@ mod tests {
         assert_debug::<Map<dyn Any>>();
         assert_debug::<Map<dyn Any + Send>>();
         assert_debug::<Map<dyn Any + Send + Sync>>();
-        assert_send::<Map<dyn CloneAny + Send>>();
-        assert_send::<Map<dyn CloneAny + Send + Sync>>();
-        assert_sync::<Map<dyn CloneAny + Send + Sync>>();
-        assert_debug::<Map<dyn CloneAny>>();
-        assert_debug::<Map<dyn CloneAny + Send>>();
-        assert_debug::<Map<dyn CloneAny + Send + Sync>>();
     }
 
     #[test]
@@ -253,53 +227,6 @@ mod tests {
         verify_hashing_with(TypeId::of::<&str>());
         verify_hashing_with(TypeId::of::<Vec<u8>>());
     }
-}
-
-// impl some traits for dyn Any
-use core::fmt;
-
-#[doc(hidden)]
-pub trait CloneToAny {
-    /// Clone `self` into a new `Box<dyn CloneAny>` object.
-    fn clone_to_any(&self) -> Box<dyn CloneAny>;
-}
-
-impl<T: Any + Clone> CloneToAny for T {
-    #[inline]
-    fn clone_to_any(&self) -> Box<dyn CloneAny> {
-        Box::new(self.clone())
-    }
-}
-
-macro_rules! impl_clone {
-    ($t:ty) => {
-        impl Clone for Box<$t> {
-            #[inline]
-            fn clone(&self) -> Box<$t> {
-                // SAFETY: this dance is to reapply any Send/Sync marker. I’m not happy about this
-                // approach, given that I used to do it in safe code, but then came a dodgy
-                // future-compatibility warning where_clauses_object_safety, which is spurious for
-                // auto traits but still super annoying (future-compatibility lints seem to mean
-                // your bin crate needs a corresponding allow!). Although I explained my plight¹
-                // and it was all explained and agreed upon, no action has been taken. So I finally
-                // caved and worked around it by doing it this way, which matches what’s done for
-                // core::any², so it’s probably not *too* bad.
-                //
-                // ¹ https://github.com/rust-lang/rust/issues/51443#issuecomment-421988013
-                // ² https://github.com/rust-lang/rust/blob/e7825f2b690c9a0d21b6f6d84c404bb53b151b38/library/alloc/src/boxed.rs#L1613-L1616
-                let clone: Box<dyn CloneAny> = (**self).clone_to_any();
-                let raw: *mut dyn CloneAny = Box::into_raw(clone);
-                unsafe { Box::from_raw(raw as *mut $t) }
-            }
-        }
-
-        impl fmt::Debug for $t {
-            #[inline]
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                f.pad(stringify!($t))
-            }
-        }
-    };
 }
 
 /// Methods for downcasting from an `Any`-like trait object.
@@ -352,12 +279,12 @@ macro_rules! implement {
 
             #[inline]
             unsafe fn downcast_ref_unchecked<T: 'static>(&self) -> &T {
-                &*(self as *const Self as *const T)
+                unsafe { &*(self as *const Self as *const T) }
             }
 
             #[inline]
             unsafe fn downcast_mut_unchecked<T: 'static>(&mut self) -> &mut T {
-                &mut *(self as *mut Self as *mut T)
+                unsafe { &mut *(self as *mut Self as *mut T) }
             }
         }
 
@@ -373,16 +300,3 @@ macro_rules! implement {
 implement!(Any);
 implement!(Any + Send);
 implement!(Any + Send + Sync);
-
-/// [`Any`], but with cloning.
-///
-/// Every type with no non-`'static` references that implements `Clone` implements `CloneAny`.
-/// See [`core::any`] for more details on `Any` in general.
-pub trait CloneAny: Any + CloneToAny {}
-impl<T: Any + Clone> CloneAny for T {}
-implement!(CloneAny);
-implement!(CloneAny + Send);
-implement!(CloneAny + Send + Sync);
-impl_clone!(dyn CloneAny);
-impl_clone!(dyn CloneAny + Send);
-impl_clone!(dyn CloneAny + Send + Sync);

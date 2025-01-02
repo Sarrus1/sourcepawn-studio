@@ -1,12 +1,11 @@
+use base_db::FilePosition;
 use hir::{DefResolution, Semantics};
 use ide_db::RootDatabase;
 use lazy_static::lazy_static;
-use lsp_types::{Position, Range};
+use line_index::TextRange;
 use regex::Regex;
 use smol_str::ToSmolStr;
 use syntax::TSKind;
-use tree_sitter::Point;
-use vfs::FileId;
 
 use crate::CompletionItem;
 
@@ -25,27 +24,27 @@ pub(super) fn is_documentation_start(pre_line: &str, post_line: &str) -> bool {
 /// # Arguments
 ///
 /// * `db` - [`RootDatabase`] instance.
-/// * `point` - [`Point`] where the completion was triggered.
-/// * `file_id` - [`FileId`] where the completion was triggered.
+/// * `pos` - [`FilePosition`] where the completion was triggered.
+/// * `source` - The preprocessed text of the document.
 pub(super) fn get_doc_completion(
     db: &RootDatabase,
-    point: Point,
-    file_id: FileId,
+    pos: FilePosition,
+    source: &str,
 ) -> Option<Vec<crate::CompletionItem>> {
     let sema = &Semantics::new(db);
-    let tree = sema.parse(file_id);
-    let mut point_below = Point::new(point.row.saturating_add(1), point.column);
+    let tree = sema.parse(pos.file_id);
+    let mut offset_below = find_first_non_ws_after_newline(source, pos.raw_offset_usize())?;
     let mut node = tree
         .root_node()
-        .descendant_for_point_range(point_below, point_below)
+        .descendant_for_byte_range(offset_below, offset_below)
         .or_else(|| {
             // Hack:
             // Sometimes the lookup fails because of a type that is too short.
             // It also always fails for methodmap properties.
             // This is a hacky workaround to try again.
-            point_below.column = point_below.column.saturating_add(1);
+            offset_below += 1;
             tree.root_node()
-                .descendant_for_point_range(point_below, point_below)
+                .descendant_for_byte_range(offset_below, offset_below)
         })?;
 
     while let Some(parent) = node.parent() {
@@ -74,12 +73,8 @@ pub(super) fn get_doc_completion(
     }
     node = node.parent()?;
     let name = node.child_by_field_name("name")?;
-    let def = sema.find_name_def(file_id, &name)?;
-    let tab_str = tab_str(
-        sema.preprocessed_text(file_id)
-            .lines()
-            .nth(point_below.row)?,
-    )?;
+    let def = sema.find_name_def(pos.file_id, &name)?;
+    let tab_str = tab_str(&source[find_first_newline(source, pos.raw_offset_usize())?..])?;
     let res = match def {
         DefResolution::Function(it) => {
             snippet_builder(it.parameters(db), it.type_ref(db), &tab_str)
@@ -104,13 +99,7 @@ pub(super) fn get_doc_completion(
         kind: crate::CompletionKind::Snippet,
         filter_text: "/*".to_string().into(),
         insert_text: Some(res.clone()),
-        text_edit: Some((
-            Range::new(
-                Position::new(point.row as u32, 0),
-                Position::new(point.row as u32, 0),
-            ),
-            res,
-        )),
+        text_edit: Some((TextRange::at(pos.raw_offset().into(), 0.into()), res)),
         ..Default::default()
     }])
 }
@@ -164,4 +153,23 @@ fn tab_str(pre_line: &str) -> Option<String> {
         .as_str()
         .to_string()
         .into()
+}
+
+fn find_first_non_ws_after_newline(text: &str, raw_offset: usize) -> Option<usize> {
+    if raw_offset >= text.len() {
+        return None;
+    }
+    let newline_pos = text[raw_offset..].find('\n')?;
+    let after_newline_offset = raw_offset + newline_pos + 1;
+    text[after_newline_offset..]
+        .char_indices()
+        .find(|&(_, c)| !c.is_whitespace())
+        .map(|(i, _)| after_newline_offset + i)
+}
+
+fn find_first_newline(text: &str, raw_offset: usize) -> Option<usize> {
+    if raw_offset >= text.len() {
+        return None;
+    }
+    text[raw_offset..].find('\n')
 }

@@ -1,6 +1,6 @@
 use hir::DefResolution;
 use ide_db::{Documentation, SymbolKind};
-use lsp_types::Range;
+use line_index::TextRange;
 use smol_str::SmolStr;
 
 /// `CompletionItem` describes a single completion entity which expands to 1 or more entries in the
@@ -33,7 +33,7 @@ pub struct CompletionItem {
     /// after completion.
     pub trigger_call_info: bool,
 
-    pub text_edit: Option<(Range, String)>,
+    pub text_edit: Option<(TextRange, String)>,
 
     pub data: Option<DefResolution>,
 }

@@ -104,6 +104,7 @@ impl GlobalState {
                     ),
                     self.vfs
                         .read()
+                        .0
                         .file_path(root)
                         .as_path()
                         .unwrap()

@@ -1,9 +1,8 @@
 use std::hash::Hash;
 
 use deepsize::DeepSizeOf;
-use lsp_types::{Position, Range};
 use smol_str::SmolStr;
-use sourcepawn_lexer::{Delta, Symbol, TokenKind};
+use sourcepawn_lexer::{Delta, Symbol, TextRange, TokenKind};
 
 /// Wrapper around `Symbol` that does not contain range information.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -37,18 +36,14 @@ impl From<Symbol> for RangeLessSymbol {
     }
 }
 
-impl RangeLessSymbol {
-    pub fn to_symbol(&self, prev_range: Range) -> Symbol {
-        let range = Range::new(
-            Position::new(prev_range.end.line, prev_range.end.character),
-            Position::new(
-                prev_range.end.line.saturating_add_signed(self.delta.line),
-                prev_range
-                    .end
-                    .character
-                    .saturating_add_signed(self.delta.col),
-            ),
-        );
-        Symbol::new(self.token_kind, Some(&self.text), range, self.delta)
+#[allow(clippy::from_over_into)]
+impl Into<Symbol> for &RangeLessSymbol {
+    fn into(self) -> Symbol {
+        Symbol::new(
+            self.token_kind,
+            Some(&self.text),
+            TextRange::default(),
+            self.delta,
+        )
     }
 }

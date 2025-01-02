@@ -1,6 +1,7 @@
 use anyhow::bail;
-use lsp_types::Range;
-use sourcepawn_lexer::Operator;
+use sourcepawn_lexer::{Operator, TextRange};
+
+use crate::evaluator::OutputStack;
 
 use super::errors::EvaluationError;
 
@@ -154,8 +155,8 @@ impl PreOperator {
 
     pub(super) fn process_op(
         &self,
-        range: &Range,
-        stack: &mut Vec<i32>,
+        range: &TextRange,
+        stack: &mut OutputStack,
     ) -> Result<(), EvaluationError> {
         if self.is_unary() {
             let right = stack

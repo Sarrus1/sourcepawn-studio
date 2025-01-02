@@ -1,4 +1,5 @@
 use lsp_types::Position;
+use sourcepawn_lexer::{TextRange, TextSize};
 
 /// Convert a Tree-sitter [Range](tree_sitter::Range) to an LSP [Range](lsp_types::Range).
 ///
@@ -9,6 +10,17 @@ pub fn ts_range_to_lsp_range(range: &tree_sitter::Range) -> lsp_types::Range {
     let start = point_to_lsp_position(&range.start_point);
     let end = point_to_lsp_position(&range.end_point);
     lsp_types::Range { start, end }
+}
+
+/// Convert a Tree-sitter [Range](tree_sitter::Range) to a [TextRange](sourcepawn_lexer::TextRange).
+///
+/// # Arguments
+///
+/// * `range` - Tree-sitter [Range](tree_sitter::Range) to convert.
+pub fn ts_range_to_text_range(range: &tree_sitter::Range) -> TextRange {
+    let start = TextSize::new(range.start_byte as u32);
+    let end = TextSize::new(range.end_byte as u32);
+    TextRange::new(start, end)
 }
 
 /// Convert an LSP [Position](lsp_types::Position) to a Tree-sitter [Point](tree_sitter::Point).

@@ -1,5 +1,5 @@
 use hir::Function;
-use lsp_types::Range;
+use line_index::TextRange;
 use smol_str::SmolStr;
 use vfs::FileId;
 
@@ -12,19 +12,19 @@ pub struct CallItem {
     pub deprecated: bool,
     pub details: Option<String>,
     pub file_id: FileId,
-    pub full_range: Range,
-    pub focus_range: Option<Range>,
+    pub full_range: TextRange,
+    pub focus_range: Option<TextRange>,
     pub data: Option<Function>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IncomingCallItem {
     pub call_item: CallItem,
-    pub ranges: Vec<Range>,
+    pub ranges: Vec<TextRange>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OutgoingCallItem {
     pub call_item: CallItem,
-    pub ranges: Vec<Range>,
+    pub ranges: Vec<TextRange>,
 }

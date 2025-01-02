@@ -2,12 +2,16 @@ use base_db::{Change, FileExtension, SourceRootConfig};
 use crossbeam::channel::{unbounded, Receiver, Sender};
 use flycheck::FlycheckHandle;
 use fxhash::FxHashMap;
-use ide::{Analysis, AnalysisHost};
+use ide::{Analysis, AnalysisHost, Cancellable};
 
 use itertools::Itertools;
 use lsp_server::{Connection, ErrorCode, RequestId};
 use lsp_types::{SemanticTokens, Url};
-use parking_lot::{Mutex, RwLock, RwLockUpgradableReadGuard, RwLockWriteGuard};
+use nohash_hasher::IntMap;
+use parking_lot::{
+    MappedRwLockReadGuard, Mutex, RwLock, RwLockReadGuard, RwLockUpgradableReadGuard,
+    RwLockWriteGuard,
+};
 use serde::Serialize;
 use std::{sync::Arc, time::Instant};
 use tempfile::TempDir;
@@ -18,7 +22,7 @@ use crate::{
     client::LspClient,
     config::{Config, ConfigError},
     diagnostics::DiagnosticCollection,
-    line_index::LineEndings,
+    line_index::{LineEndings, LineIndex},
     lsp::{self, from_proto, to_proto::url_from_abs_path},
     main_loop::Task,
     mem_docs::MemDocs,
@@ -75,7 +79,7 @@ pub struct GlobalState {
 
     // VFS
     pub(crate) loader: Handle<Box<dyn vfs::loader::Handle>, Receiver<vfs::loader::Message>>,
-    pub(crate) vfs: Arc<RwLock<Vfs>>,
+    pub(crate) vfs: Arc<RwLock<(vfs::Vfs, IntMap<FileId, LineEndings>)>>,
     pub(crate) vfs_config_version: u32,
     pub(crate) vfs_progress_config_version: u32,
     pub(crate) vfs_progress_n_total: usize,
@@ -132,7 +136,7 @@ impl GlobalState {
             last_flycheck_error: None,
 
             loader,
-            vfs: Arc::new(RwLock::new(Vfs::default())),
+            vfs: Arc::new(RwLock::new((vfs::Vfs::default(), IntMap::default()))),
             vfs_config_version: 0,
             vfs_progress_config_version: 0,
             vfs_progress_n_total: 0,
@@ -207,7 +211,7 @@ impl GlobalState {
     }
 
     pub(crate) fn respond(&mut self, response: lsp_server::Response) {
-        if let Some((method, start)) = self.req_queue.incoming.complete(response.id.clone()) {
+        if let Some((method, start)) = self.req_queue.incoming.complete(&response.id) {
             let duration = start.elapsed();
             log::debug!(
                 "handled {} - ({}) in {:0.2?}",
@@ -235,14 +239,14 @@ impl GlobalState {
         let (change, _changed_files) = {
             let mut change = Change::new();
             let mut guard = self.vfs.write();
-            let changed_files = guard.take_changes();
+            let changed_files = guard.0.take_changes();
             if changed_files.is_empty() {
                 return false;
             }
 
             // downgrade to read lock to allow more readers while we are normalizing text
             let guard = RwLockWriteGuard::downgrade_to_upgradable(guard);
-            let vfs: &Vfs = &guard;
+            let vfs: &Vfs = &guard.0;
             // We need to fix up the changed events a bit. If we have a create or modify for a file
             // id that is followed by a delete we actually skip observing the file text from the
             // earlier event, to avoid problems later on.
@@ -329,10 +333,11 @@ impl GlobalState {
                 // this allows delaying the re-acquisition of the write lock
                 bytes.push((file.file_id, text));
             }
-            let vfs = &mut *RwLockUpgradableReadGuard::upgrade(guard);
+            let (vfs, line_endings_map) = &mut *RwLockUpgradableReadGuard::upgrade(guard);
             bytes.into_iter().for_each(|(file_id, text)| match text {
                 None => change.change_file(file_id, None),
-                Some((text, _line_endings)) => {
+                Some((text, line_endings)) => {
+                    line_endings_map.insert(file_id, line_endings);
                     change.change_file(file_id, Some(text));
                 }
             });
@@ -348,6 +353,7 @@ impl GlobalState {
         let mut files = self
             .vfs
             .read()
+            .0
             .iter()
             .flat_map(|(id, path)| {
                 let (_, ext) = path.name_and_extension()?;
@@ -369,16 +375,14 @@ pub(crate) struct GlobalStateSnapshot {
     pub(crate) mem_docs: MemDocs,
     pub(crate) semantic_tokens_cache: Arc<Mutex<FxHashMap<Url, SemanticTokens>>>,
     pub(crate) flycheck: Arc<FxHashMap<FileId, FlycheckHandle>>,
-    vfs: Arc<RwLock<vfs::Vfs>>,
+    vfs: Arc<RwLock<(vfs::Vfs, IntMap<FileId, LineEndings>)>>,
 }
 
 impl std::panic::UnwindSafe for GlobalStateSnapshot {}
 
 impl GlobalStateSnapshot {
-    pub(crate) fn vfs_read(
-        &self,
-    ) -> parking_lot::lock_api::RwLockReadGuard<'_, parking_lot::RawRwLock, Vfs> {
-        self.vfs.read()
+    pub(crate) fn vfs_read(&self) -> MappedRwLockReadGuard<'_, vfs::Vfs> {
+        RwLockReadGuard::map(self.vfs.read(), |(it, _)| it)
     }
 
     pub(crate) fn url_to_file_id(&self, uri: &Url) -> anyhow::Result<FileId> {
@@ -387,6 +391,17 @@ impl GlobalStateSnapshot {
 
     pub(crate) fn file_id_to_url(&self, id: FileId) -> Url {
         file_id_to_url(&self.vfs_read(), id)
+    }
+
+    pub(crate) fn file_line_index(&self, file_id: FileId) -> Cancellable<LineIndex> {
+        let endings = self.vfs.read().1[&file_id];
+        let index = self.analysis.file_line_index(file_id)?;
+        let res = LineIndex {
+            index,
+            endings,
+            encoding: self.config.position_encoding(),
+        };
+        Ok(res)
     }
 
     #[allow(unused)]
