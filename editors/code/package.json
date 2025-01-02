@@ -411,7 +411,7 @@
             "SpacesInSquareBrackets: false",
             "Standard: Auto",
             "TabWidth: ${TabSize}",
-            "UseTab: Always",
+            "UseTab: ${UseTab}",
             "CommentPragmas: '^#define|#tryinclude'"
           ],
           "description": "Settings for the formatter. Any setting supported by Clang Format can be used here.",
