@@ -568,11 +568,10 @@ impl<DB: HirDatabase> Semantics<'_, DB> {
             .utf8_text(source.as_ref().as_bytes())
             .ok()?;
         container.child_by_field_name("body")?;
-        match def_map.get_first_from_str(parent_name)? {
-            hir_def::FileDefId::FunctionId(id) => {
-                self.function_node_to_def_(file_id, container, parent, node, source, id)
-            }
-            _ => unreachable!("Expected a function"),
+        if let hir_def::FileDefId::FunctionId(id) = def_map.get_first_from_str(parent_name)? {
+            self.function_node_to_def_(file_id, container, parent, node, source, id)
+        } else {
+            None
         }
     }
 
