@@ -176,7 +176,7 @@ impl SourceMap {
     }
 
     pub fn closest_u_position(&self, s_pos: TextSize, end: bool) -> Option<TextSize> {
-        let idx = self
+        let Some(idx) = self
             .s_range_to_u_range
             .binary_search_by(|&(s_range_idx, _)| {
                 let s_range = self.arena[s_range_idx];
@@ -186,9 +186,9 @@ impl SourceMap {
                     s_range.start().cmp(&s_pos)
                 }
             })
-            .ok()?;
-        let (s_range_idx, u_range_idx) = self.s_range_to_u_range[idx];
-        if !self.arena[s_range_idx].contains_inclusive(s_pos) {
+            .ok()
+        else {
+            // Couldn't find a position, let's see if we are in an expanded range.
             if let Some(expanded_symbol) = self.expanded_symbol_from_s_pos(s_pos) {
                 let result = if end {
                     expanded_symbol.name_range().end()
@@ -197,7 +197,10 @@ impl SourceMap {
                 };
                 return Some(result);
             }
-        }
+            return None;
+        };
+        let (s_range_idx, u_range_idx) = self.s_range_to_u_range[idx];
+
         if end {
             let delta = s_pos
                 .checked_sub(self.arena[s_range_idx].end())
