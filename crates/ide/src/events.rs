@@ -120,7 +120,7 @@ pub fn event_hover(
                 actions: Default::default(),
             };
             return Some(RangeInfo::new(
-                source_map.closest_u_range(ts_range_to_text_range(&node.range())),
+                source_map.closest_u_range_always(ts_range_to_text_range(&node.range())),
                 res,
             ));
         }
@@ -136,7 +136,7 @@ pub fn event_hover(
                 res.push(Documentation::from(&ev).to_markdown());
             });
         Some(RangeInfo::new(
-            source_map.closest_u_range(ts_range_to_text_range(&node.range())),
+            source_map.closest_u_range_always(ts_range_to_text_range(&node.range())),
             HoverResult {
                 markup: Markup::from(res.join("\n\n")),
                 actions: Default::default(),

@@ -70,10 +70,10 @@ impl HoverAction {
                         file_id,
                         full_range: target_preprocessing_results
                             .source_map()
-                            .closest_u_range(ts_range_to_text_range(&def_node.range())),
+                            .closest_u_range_always(ts_range_to_text_range(&def_node.range())),
                         focus_range: target_preprocessing_results
                             .source_map()
-                            .closest_u_range(name_range)
+                            .closest_u_range_always(name_range)
                             .into(),
                     },
                 })
@@ -107,7 +107,7 @@ pub(crate) fn hover(
     }
     fpos.offset = preprocessing_results
         .source_map()
-        .closest_u_position(fpos.offset, false);
+        .closest_s_position_always(fpos.offset);
 
     let node =
         root_node.descendant_for_byte_range(fpos.raw_offset_usize(), fpos.raw_offset_usize())?;
@@ -124,7 +124,7 @@ pub(crate) fn hover(
     let def = sema.find_def(fpos.file_id, &node)?;
     let u_range = preprocessing_results
         .source_map()
-        .closest_u_range(ts_range_to_text_range(&node.range()));
+        .closest_u_range_always(ts_range_to_text_range(&node.range()));
 
     let file_id = def.file_id(db);
     let source_tree = sema.parse(file_id);

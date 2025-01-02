@@ -68,7 +68,7 @@ impl<'a> SymbolsBuilder<'a> {
     fn s_range_to_u_range(&self, s_range: &tree_sitter::Range) -> TextRange {
         // FIXME: This is going to be super slow.
         let s_range = ts_range_to_text_range(s_range);
-        self.source_map.closest_u_range(s_range)
+        self.source_map.closest_u_range_always(s_range)
     }
 
     fn is_deprecated(&self, node: &tree_sitter::Node) -> bool {

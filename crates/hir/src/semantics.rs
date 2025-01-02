@@ -707,7 +707,7 @@ impl<DB: HirDatabase> Semantics<'_, DB> {
         }
         fpos.offset = preprocessing_results
             .source_map()
-            .closest_s_position(fpos.offset);
+            .closest_s_position_always(fpos.offset);
 
         let node = root_node
             .descendant_for_byte_range(fpos.raw_offset_usize(), fpos.raw_offset_usize())?;
@@ -741,7 +741,7 @@ impl<DB: HirDatabase> Semantics<'_, DB> {
                                 file_id,
                                 range: preprocessing_results
                                     .source_map()
-                                    .closest_u_range(ts_range_to_text_range(&node.range())),
+                                    .closest_u_range_always(ts_range_to_text_range(&node.range())),
                             });
                         }
                     }

@@ -79,7 +79,9 @@ impl Diagnostic {
         Diagnostic {
             code,
             message: message.into(),
-            range: preprocessing_results.source_map().closest_u_range(s_range),
+            range: preprocessing_results
+                .source_map()
+                .closest_u_range_always(s_range),
             severity: match code {
                 DiagnosticCode::SpCompError(_) => Severity::Error,
                 DiagnosticCode::SpCompWarning(_) => Severity::Warning,

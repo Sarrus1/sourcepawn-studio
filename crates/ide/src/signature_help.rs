@@ -34,7 +34,7 @@ pub(crate) fn signature_help(
     // }
     offset = preprocessing_results
         .source_map()
-        .closest_s_position(offset);
+        .closest_s_position_always(offset);
     let raw_offset: u32 = offset.into();
     let root_node = tree.root_node();
     let node = root_node.descendant_for_byte_range(raw_offset as usize, raw_offset as usize)?;

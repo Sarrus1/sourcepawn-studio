@@ -52,13 +52,15 @@ pub(crate) fn goto_definition(
 
     let offset: u32 = preprocessing_results
         .source_map()
-        .closest_s_position(pos.offset)
+        .closest_s_position_always(pos.offset)
         .into();
 
     let node = root_node.descendant_for_byte_range(offset as usize, offset as usize)?;
     let def = sema.find_def(pos.file_id, &node)?;
     let ts_range = ts_range_to_text_range(&node.range());
-    let u_range = preprocessing_results.source_map().closest_u_range(ts_range);
+    let u_range = preprocessing_results
+        .source_map()
+        .closest_u_range_always(ts_range);
 
     let file_id = def.file_id(db);
     let source_tree = sema.parse(file_id);
@@ -73,10 +75,10 @@ pub(crate) fn goto_definition(
         file_id,
         full_range: target_preprocessing_results
             .source_map()
-            .closest_u_range(ts_range_to_text_range(&def_node.range())),
+            .closest_u_range_always(ts_range_to_text_range(&def_node.range())),
         focus_range: target_preprocessing_results
             .source_map()
-            .closest_u_range(name_range)
+            .closest_u_range_always(name_range)
             .into(),
     }];
 

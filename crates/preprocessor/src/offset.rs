@@ -149,9 +149,9 @@ impl SourceMap {
         Some(self.expanded_symbols[idx].clone())
     }
 
-    pub fn closest_s_position(&self, u_pos: TextSize) -> TextSize {
+    pub fn closest_s_position(&self, u_pos: TextSize) -> Option<TextSize> {
         if let Some(symbol) = self.expanded_symbol_from_u_pos(u_pos) {
-            return symbol.expanded_range.start(); // FIXME: ?
+            return Some(symbol.expanded_range.start());
         }
         let idx = self
             .u_range_to_s_range
@@ -165,18 +165,17 @@ impl SourceMap {
                     std::cmp::Ordering::Equal
                 }
             })
-            .unwrap_or_default();
+            .ok()?;
         let (u_range_idx, s_range_idx) = self.u_range_to_s_range[idx];
-        let delta = u_pos
-            .checked_sub(self.arena[u_range_idx].start())
-            .unwrap_or_default();
-        self.arena[s_range_idx]
-            .start()
-            .checked_add(delta)
-            .unwrap_or_default()
+        let delta = u_pos.checked_sub(self.arena[u_range_idx].start())?;
+        self.arena[s_range_idx].start().checked_add(delta)
     }
 
-    pub fn closest_u_position(&self, s_pos: TextSize, end: bool) -> TextSize {
+    pub fn closest_s_position_always(&self, u_pos: TextSize) -> TextSize {
+        self.closest_s_position(u_pos).unwrap_or(u_pos)
+    }
+
+    pub fn closest_u_position(&self, s_pos: TextSize, end: bool) -> Option<TextSize> {
         let idx = self
             .s_range_to_u_range
             .binary_search_by(|&(s_range_idx, _)| {
@@ -187,40 +186,46 @@ impl SourceMap {
                     s_range.start().cmp(&s_pos)
                 }
             })
-            .unwrap_or_default();
+            .ok()?;
         let (s_range_idx, u_range_idx) = self.s_range_to_u_range[idx];
         if !self.arena[s_range_idx].contains_inclusive(s_pos) {
             if let Some(expanded_symbol) = self.expanded_symbol_from_s_pos(s_pos) {
-                return if end {
+                let result = if end {
                     expanded_symbol.name_range().end()
                 } else {
                     expanded_symbol.name_range().start()
                 };
+                return Some(result);
             }
         }
         if end {
             let delta = s_pos
                 .checked_sub(self.arena[s_range_idx].end())
                 .unwrap_or_default();
-            self.arena[u_range_idx]
-                .end()
-                .checked_add(delta)
-                .unwrap_or_default()
+            self.arena[u_range_idx].end().checked_add(delta)
         } else {
             let delta = s_pos
                 .checked_sub(self.arena[s_range_idx].start())
                 .unwrap_or_default();
-            self.arena[u_range_idx]
-                .start()
-                .checked_add(delta)
-                .unwrap_or_default()
+            self.arena[u_range_idx].start().checked_add(delta)
         }
     }
 
-    pub fn closest_u_range(&self, s_range: TextRange) -> TextRange {
-        let start = self.closest_u_position(s_range.start(), false);
-        let end = self.closest_u_position(s_range.end(), true);
-        TextRange::new(start, end)
+    pub fn closest_u_position_always(&self, s_pos: TextSize, end: bool) -> TextSize {
+        self.closest_u_position(s_pos, end).unwrap_or(s_pos)
+    }
+
+    pub fn closest_u_range(&self, s_range: TextRange) -> Option<TextRange> {
+        let start = self.closest_u_position(s_range.start(), false)?;
+        let end = self.closest_u_position(s_range.end(), true)?;
+        if start > end {
+            return None;
+        }
+        Some(TextRange::new(start, end))
+    }
+
+    pub fn closest_u_range_always(&self, s_range: TextRange) -> TextRange {
+        self.closest_u_range(s_range).unwrap_or(s_range)
     }
 
     pub fn shrink_to_fit(&mut self) {

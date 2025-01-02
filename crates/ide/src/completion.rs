@@ -45,8 +45,10 @@ pub fn completions(
     let tree = sema.parse(pos.file_id);
 
     let offset = pos.offset;
-    let raw_offset: u32 = offset.into();
-    let split_line = preprocessed_text.split_at(raw_offset as usize);
+    let raw_offset = std::cmp::min(offset.into(), preprocessed_text.len().saturating_sub(1));
+    let split_line = preprocessed_text
+        .split_at_checked(raw_offset)
+        .unwrap_or((&preprocessed_text, ""));
     let split_line = (
         split_line.0.rsplit('\n').next()?,
         split_line.1.split('\n').next()?,
@@ -87,9 +89,9 @@ pub fn completions(
     };
 
     let new_source_code = [
-        &preprocessed_text[..raw_offset as usize],
+        &preprocessed_text[..raw_offset],
         token,
-        &preprocessed_text[raw_offset as usize..],
+        &preprocessed_text[raw_offset..],
     ]
     .concat();
     // TODO: Use the edit to update the tree
@@ -102,10 +104,8 @@ pub fn completions(
 
     let root_node = new_tree.root_node();
     // get the node before the cursor
-    let node = root_node.descendant_for_byte_range(
-        raw_offset.saturating_add(1) as usize,
-        raw_offset.saturating_add(1) as usize,
-    )?;
+    let node = root_node
+        .descendant_for_byte_range(raw_offset.saturating_add(1), raw_offset.saturating_add(1))?;
 
     // Check if we are in an event such as "EventHook"
     if event_name(&node, &preprocessed_text).is_some() {

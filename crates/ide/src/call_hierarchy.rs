@@ -26,7 +26,7 @@ pub(crate) fn call_hierarchy_prepare(
 
     fpos.offset = preprocessing_results
         .source_map()
-        .closest_s_position(fpos.offset);
+        .closest_s_position_always(fpos.offset);
 
     let node =
         root_node.descendant_for_byte_range(fpos.raw_offset_usize(), fpos.raw_offset_usize())?;
@@ -62,11 +62,11 @@ fn func_to_call_item(sema: &Semantics<RootDatabase>, func: Function) -> Option<C
         file_id,
         full_range: preprocessing_result
             .source_map()
-            .closest_u_range(ts_range_to_text_range(&source_node.range())),
+            .closest_u_range_always(ts_range_to_text_range(&source_node.range())),
         focus_range: name_node.map(|n| {
             preprocessing_result
                 .source_map()
-                .closest_u_range(ts_range_to_text_range(&n.range()))
+                .closest_u_range_always(ts_range_to_text_range(&n.range()))
         }),
         data: Some(func),
     };
@@ -89,7 +89,7 @@ pub(crate) fn call_hierarchy_incoming(
     let name_source_node = source_node.child_by_field_name("name")?;
     let u_name_range = source_preprocessing_results
         .source_map()
-        .closest_u_range(ts_range_to_text_range(&name_source_node.range()));
+        .closest_u_range_always(ts_range_to_text_range(&name_source_node.range()));
     let source_offset = u_name_range.start();
 
     let (_, references) = sema.find_references_from_pos(FilePosition {
@@ -109,7 +109,7 @@ pub(crate) fn call_hierarchy_incoming(
             let preprocessing_results = sema.preprocess_file(file_id);
             let offset: u32 = preprocessing_results
                 .source_map()
-                .closest_s_position(frange.range.start())
+                .closest_s_position_always(frange.range.start())
                 .into();
             let node = tree
                 .root_node()
@@ -202,7 +202,7 @@ pub(crate) fn call_hierarchy_outgoing(
             }
             let u_range = preprocessing_results
                 .source_map()
-                .closest_u_range(ts_range_to_text_range(&node.range()));
+                .closest_u_range_always(ts_range_to_text_range(&node.range()));
             let Some(DefResolution::Function(func)) = sema.find_def(file_id, &node) else {
                 continue;
             };
