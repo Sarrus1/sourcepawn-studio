@@ -40,11 +40,18 @@ pub(crate) fn goto_definition(
         let name = def.name(db).map(|it| it.to_smolstr()).unwrap_or_default();
         let def_node = def.source(sema.db, &source_tree)?.value;
         let name_range = find_inner_name_range(&def_node);
+        let target_preprocessing_results = sema.preprocess_file(file_id);
+
         let navs = vec![NavigationTarget {
             name,
             file_id,
-            full_range: ts_range_to_text_range(&def_node.range()),
-            focus_range: name_range.into(),
+            full_range: target_preprocessing_results
+                .source_map()
+                .closest_u_range_always(ts_range_to_text_range(&def_node.range())),
+            focus_range: target_preprocessing_results
+                .source_map()
+                .closest_u_range_always(name_range)
+                .into(),
         }];
 
         return RangeInfo::new(u_range, navs).into();
