@@ -133,7 +133,7 @@ jobs:
         run: npx vsce package --pre-release --target ${{ env.target }}
 
       - name: Upload sourcepawn-studio binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target }}
           path: ${{ matrix.archive }}
