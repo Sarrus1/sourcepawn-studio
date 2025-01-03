@@ -83,9 +83,19 @@ pub struct SourceMap {
     u_range_to_s_range: Vec<(Idx<TextRange>, Idx<TextRange>)>,
     s_range_to_u_range: Vec<(Idx<TextRange>, Idx<TextRange>)>,
     expanded_symbols: Vec<ExpandedSymbolOffset>,
+    source_len: Option<TextSize>,
+    preprocecessed_text_len: Option<TextSize>,
 }
 
 impl SourceMap {
+    pub fn set_source_len(&mut self, source_len: usize) {
+        self.source_len = Some(TextSize::new(source_len as u32))
+    }
+
+    pub fn set_preprocecessed_text_len(&mut self, preprocecessed_text_len: usize) {
+        self.preprocecessed_text_len = Some(TextSize::new(preprocecessed_text_len as u32))
+    }
+
     pub fn push_new_range(&mut self, u_range: TextRange, s_range: TextRange) {
         let u_range_idx = self.arena.alloc(u_range);
         let s_range_idx = self.arena.alloc(s_range);
@@ -172,7 +182,8 @@ impl SourceMap {
     }
 
     pub fn closest_s_position_always(&self, u_pos: TextSize) -> TextSize {
-        self.closest_s_position(u_pos).unwrap_or(u_pos)
+        self.closest_s_position(u_pos)
+            .unwrap_or_else(|| std::cmp::min(self.max_preprocessed_text_offset(), u_pos))
     }
 
     pub fn closest_u_position(&self, s_pos: TextSize, end: bool) -> Option<TextSize> {
@@ -215,7 +226,8 @@ impl SourceMap {
     }
 
     pub fn closest_u_position_always(&self, s_pos: TextSize, end: bool) -> TextSize {
-        self.closest_u_position(s_pos, end).unwrap_or(s_pos)
+        self.closest_u_position(s_pos, end)
+            .unwrap_or_else(|| std::cmp::min(self.max_source_offset(), s_pos))
     }
 
     pub fn closest_u_range(&self, s_range: TextRange) -> Option<TextRange> {
@@ -260,6 +272,20 @@ impl SourceMap {
 
     pub fn arena_len(&self) -> usize {
         self.arena.len()
+    }
+
+    fn max_source_offset(&self) -> TextSize {
+        self.source_len
+            .expect("should be set by now")
+            .checked_sub(TextSize::new(1))
+            .unwrap_or_default()
+    }
+
+    fn max_preprocessed_text_offset(&self) -> TextSize {
+        self.preprocecessed_text_len
+            .expect("should be set by now")
+            .checked_sub(TextSize::new(1))
+            .unwrap_or_default()
     }
 
     pub fn print_u_range_to_s_range(&self) {

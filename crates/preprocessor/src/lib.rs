@@ -87,10 +87,11 @@ where
 
     pub fn result(mut self) -> PreprocessingResult {
         let inactive_ranges = self.get_inactive_ranges();
+        let preprocessed_text: Arc<str> = self.buffer.contents().into();
         let mut res = PreprocessingResult::new(
-            self.buffer.contents().into(),
+            preprocessed_text.clone(),
             self.macro_store.into_macros_map(),
-            self.buffer.into_source_map(),
+            self.buffer.into_source_map(self.input, &preprocessed_text),
             self.errors,
             inactive_ranges,
         );
@@ -100,10 +101,11 @@ where
 
     pub fn error_result(mut self) -> PreprocessingResult {
         let inactive_ranges = self.get_inactive_ranges();
+        let preprocessed_text: Arc<str> = self.buffer.contents().into();
         let mut res = PreprocessingResult::new(
-            self.input.to_owned().into(),
+            preprocessed_text.clone(),
             self.macro_store.into_macros_map(),
-            self.buffer.into_source_map(),
+            self.buffer.into_source_map(self.input, &preprocessed_text),
             self.errors,
             inactive_ranges,
         );

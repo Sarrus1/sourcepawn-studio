@@ -67,12 +67,11 @@ impl PreprocessorBuffer {
         &mut self.source_map
     }
 
-    pub fn source_map(&self) -> &SourceMap {
-        &self.source_map
-    }
-
-    pub fn into_source_map(self) -> SourceMap {
-        self.source_map
+    pub fn into_source_map(self, source: &str, preprocessed_text: &str) -> SourceMap {
+        let mut source_map = self.source_map;
+        source_map.set_preprocecessed_text_len(preprocessed_text.len());
+        source_map.set_source_len(source.len());
+        source_map
     }
 }
 
