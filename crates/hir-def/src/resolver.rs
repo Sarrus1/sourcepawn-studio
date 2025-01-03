@@ -138,13 +138,25 @@ impl Resolver {
                                 return Some(ValueNs::MethodmapId(InFile::new(*file_id, *it)));
                             }
 
-                            let mut fn_ids: SmallVec<[InFile<FunctionId>; 1]> = SmallVec::new();
-                            for entry in entries {
-                                if let (FileDefId::FunctionId(it), file_id) = entry {
-                                    fn_ids.push(InFile::new(file_id, it));
-                                }
-                            }
-                            return Some(ValueNs::FunctionId(fn_ids));
+                            let fn_ids: SmallVec<[InFile<FunctionId>; 1]> = entries
+                                .iter()
+                                .flat_map(|entry| {
+                                    if let (FileDefId::FunctionId(it), file_id) = entry {
+                                        Some(InFile::new(*file_id, *it))
+                                    } else {
+                                        None
+                                    }
+                                })
+                                .collect();
+                            return if !fn_ids.is_empty() {
+                                Some(ValueNs::FunctionId(fn_ids))
+                            } else {
+                                // We got multiple values, but not functions. This means that the user has a definition
+                                // name clash. Fall back to the first entry.
+                                entries
+                                    .first()
+                                    .and_then(|(def_id, file_id)| to_valuens(*def_id, *file_id))
+                            };
                         }
                     }
                 }
