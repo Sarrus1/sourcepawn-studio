@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.13.4]
+
+### Fixed
+
+- Fixed diagnostics not being converted to u_range.
+
 ## [0.13.3]
 
 ### Fixed
