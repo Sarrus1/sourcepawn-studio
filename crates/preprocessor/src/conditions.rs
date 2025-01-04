@@ -73,6 +73,6 @@ impl ConditionOffsetStack {
     }
 
     pub fn sort_skipped_ranges(&mut self) {
-        self.skipped_ranges.sort_by(|a, b| a.ordering(*b));
+        self.skipped_ranges.sort_by_key(|k| k.start());
     }
 }

@@ -33,7 +33,7 @@ impl DiagnosticCode {
 pub struct Diagnostic {
     pub code: DiagnosticCode,
     pub message: String,
-    pub range: TextRange,
+    pub s_range: TextRange,
     pub severity: Severity,
     pub unused: bool,
     pub experimental: bool,
@@ -79,7 +79,7 @@ impl Diagnostic {
         Diagnostic {
             code,
             message: message.into(),
-            range: preprocessing_results
+            s_range: preprocessing_results
                 .source_map()
                 .closest_u_range_always(s_range),
             severity: match code {

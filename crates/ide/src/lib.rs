@@ -31,7 +31,7 @@ use itertools::Itertools;
 use line_index::TextRange;
 use lsp_types::Url;
 use paths::AbsPathBuf;
-use preprocessor::db::PreprocDatabase;
+use preprocessor::{db::PreprocDatabase, PreprocessingResult};
 use salsa::{Cancelled, ParallelDatabase};
 use serde_json::Value;
 use vfs::FileId;
@@ -167,6 +167,10 @@ impl Analysis {
     /// offsets and line/column representation.
     pub fn file_line_index(&self, file_id: FileId) -> Cancellable<Arc<LineIndex>> {
         self.with_db(|db| db.line_index(file_id))
+    }
+
+    pub fn preprocess_file(&self, file_id: FileId) -> Cancellable<Arc<PreprocessingResult>> {
+        self.with_db(|db| db.preprocess_file(file_id))
     }
 
     pub fn parallel_prime_caches<F1, F2>(
