@@ -1,12 +1,12 @@
 use base_db::Tree;
 use fxhash::FxHashSet;
 use hir::{AnyDiagnostic, Semantics};
-use hir_def::{DefDatabase, InFile, NodePtr};
+use hir_def::{InFile, NodePtr};
 use ide_db::RootDatabase;
-use line_index::TextRange;
+use line_index::{TextRange, TextSize};
 use queries::ERROR_QUERY;
 use syntax::utils::ts_range_to_text_range;
-use tree_sitter::{Point, QueryCursor, Range};
+use tree_sitter::QueryCursor;
 use vfs::FileId;
 
 mod handlers;
@@ -33,7 +33,7 @@ impl DiagnosticCode {
 pub struct Diagnostic {
     pub code: DiagnosticCode,
     pub message: String,
-    pub s_range: TextRange,
+    pub u_range: TextRange,
     pub severity: Severity,
     pub unused: bool,
     pub experimental: bool,
@@ -48,24 +48,12 @@ impl Diagnostic {
         message: impl Into<String>,
         node: InFile<NodePtr>,
     ) -> Diagnostic {
-        let file_id = node.file_id;
-        let tree = ctx.sema.db.parse(file_id);
-        let s_range = if let Some(node) = node.value.to_node(&tree) {
-            node.range()
-        } else {
-            // FIXME: Try to use the line index cache instead? this is inneficient.
-            let input = ctx.sema.preprocessed_text(file_id);
-            let start_point = byte_to_row_col(&input, node.value.start_byte())
-                .expect("failed to find diagnostic range");
-            Range {
-                start_byte: node.value.start_byte(),
-                end_byte: node.value.end_byte(),
-                start_point,
-                end_point: start_point,
-            }
-        };
+        let s_range = TextRange::new(
+            TextSize::new(node.value.start_byte() as u32),
+            TextSize::new(node.value.end_byte() as u32),
+        );
 
-        Self::new_for_s_range(ctx, code, message, ts_range_to_text_range(&s_range))
+        Self::new_for_s_range(ctx, code, message, s_range)
     }
 
     fn new_for_s_range(
@@ -76,12 +64,24 @@ impl Diagnostic {
     ) -> Self {
         let preprocessing_results = ctx.sema.preprocess_file(ctx.file_id);
 
+        Diagnostic::new_for_u_range(
+            code,
+            message,
+            preprocessing_results
+                .source_map()
+                .closest_u_range_always(s_range),
+        )
+    }
+
+    fn new_for_u_range(
+        code: DiagnosticCode,
+        message: impl Into<String>,
+        u_range: TextRange,
+    ) -> Self {
         Diagnostic {
             code,
             message: message.into(),
-            s_range: preprocessing_results
-                .source_map()
-                .closest_u_range_always(s_range),
+            u_range,
             severity: match code {
                 DiagnosticCode::SpCompError(_) => Severity::Error,
                 DiagnosticCode::SpCompWarning(_) => Severity::Warning,
@@ -107,35 +107,6 @@ impl Diagnostic {
         self.unused = unused;
         self
     }
-}
-
-fn byte_to_row_col(input: &str, byte_index: usize) -> Option<Point> {
-    let mut current_byte = 0;
-    let mut row = 1;
-    let mut col = 0;
-    let mut col_byte = 0;
-
-    for (i, c) in input.char_indices() {
-        if current_byte == byte_index {
-            return Some(Point { row, column: col });
-        }
-
-        if c == '\n' {
-            row += 1;
-            col = 0;
-            col_byte = i + c.len_utf8();
-        } else {
-            col = i - col_byte + 1;
-        }
-
-        current_byte += c.len_utf8();
-    }
-
-    if current_byte == byte_index {
-        return Some(Point { row, column: col });
-    }
-
-    None // if byte_index is out of bounds
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

@@ -73,6 +73,7 @@ impl ConditionOffsetStack {
     }
 
     pub fn sort_skipped_ranges(&mut self) {
-        self.skipped_ranges.sort_by_key(|k| k.start());
+        self.skipped_ranges
+            .sort_unstable_by(|a, b| a.start().cmp(&b.start()).then(a.end().cmp(&b.end())));
     }
 }

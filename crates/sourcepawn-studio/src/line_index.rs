@@ -41,6 +41,23 @@ impl LineIndex {
             }
         }
     }
+
+    pub fn try_range(&self, range: TextRange) -> Option<lsp_types::Range> {
+        let start = self.try_position(range.start())?;
+        let end = self.try_position(range.end())?;
+        lsp_types::Range::new(start, end).into()
+    }
+
+    pub fn try_position(&self, offset: TextSize) -> Option<lsp_types::Position> {
+        let line_col = self.index.try_line_col(offset)?;
+        match self.encoding {
+            PositionEncoding::Utf8 => lsp_types::Position::new(line_col.line, line_col.col).into(),
+            PositionEncoding::Wide(enc) => {
+                let line_col = self.index.to_wide(enc, line_col).unwrap();
+                lsp_types::Position::new(line_col.line, line_col.col).into()
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

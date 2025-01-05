@@ -169,10 +169,6 @@ impl Analysis {
         self.with_db(|db| db.line_index(file_id))
     }
 
-    pub fn preprocess_file(&self, file_id: FileId) -> Cancellable<Arc<PreprocessingResult>> {
-        self.with_db(|db| db.preprocess_file(file_id))
-    }
-
     pub fn parallel_prime_caches<F1, F2>(
         &self,
         num_worker_threads: u8,

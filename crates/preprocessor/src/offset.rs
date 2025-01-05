@@ -227,12 +227,22 @@ impl SourceMap {
 
     pub fn closest_u_position_always(&self, s_pos: TextSize, end: bool) -> TextSize {
         self.closest_u_position(s_pos, end)
-            .unwrap_or_else(|| std::cmp::min(self.max_source_offset(), s_pos))
+            .unwrap_or_else(|| self.clamp_u_pos(s_pos))
+    }
+
+    fn clamp_u_pos(&self, u_pos: TextSize) -> TextSize {
+        std::cmp::min(self.max_source_offset(), u_pos)
+    }
+
+    fn clamp_u_range(&self, u_range: &TextRange) -> TextRange {
+        let start = self.clamp_u_pos(u_range.start());
+        let end = self.clamp_u_pos(u_range.end());
+        TextRange::new(start, end)
     }
 
     pub fn closest_u_range(&self, s_range: TextRange) -> Option<TextRange> {
-        let start = self.closest_u_position(s_range.start(), false)?;
-        let end = self.closest_u_position(s_range.end(), true)?;
+        let start = self.closest_u_position_always(s_range.start(), false);
+        let end = self.closest_u_position_always(s_range.end(), true);
         if start > end {
             return None;
         }
@@ -240,7 +250,8 @@ impl SourceMap {
     }
 
     pub fn closest_u_range_always(&self, s_range: TextRange) -> TextRange {
-        self.closest_u_range(s_range).unwrap_or(s_range)
+        self.closest_u_range(s_range)
+            .unwrap_or_else(|| self.clamp_u_range(&s_range))
     }
 
     pub fn shrink_to_fit(&mut self) {
