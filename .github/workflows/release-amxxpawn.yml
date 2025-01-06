@@ -22,13 +22,6 @@ jobs:
             archive: sourcepawn-studio-x86_64-windows.zip
 
           - os: windows-latest
-            target: i686-pc-windows-msvc
-            program: cargo
-            platform: win32
-            arch: ia32
-            archive: sourcepawn-studio-i686-windows.zip
-
-          - os: windows-latest
             target: aarch64-pc-windows-msvc
             program: cargo
             platform: win32

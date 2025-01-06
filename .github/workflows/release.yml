@@ -20,13 +20,6 @@ jobs:
             archive: sourcepawn-studio-${{ github.event.release.tag_name }}-windows-amd64.zip
 
           - os: windows-latest
-            target: i686-pc-windows-msvc
-            program: cargo
-            platform: win32
-            arch: ia32
-            archive: sourcepawn-studio-${{ github.event.release.tag_name }}-windows-i686.zip
-
-          - os: windows-latest
             target: aarch64-pc-windows-msvc
             program: cargo
             platform: win32
@@ -168,12 +161,12 @@ jobs:
       - uses: actions/download-artifact@v4
       - name: Publish VSIX package (Release)
         if: ${{ !github.event.release.prerelease }}
-        run: npx vsce publish --packagePath $(find . -iname '*.vsix' ! -iname '*win32-ia32*')
+        run: npx vsce publish --packagePath $(find . -iname '*.vsix')
         env:
           VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
       - name: Publish VSIX package (Prerelease)
         if: ${{ github.event.release.prerelease }}
-        run: npx vsce publish --packagePath $(find . -iname '*.vsix' ! -iname '*win32-ia32*') --pre-release
+        run: npx vsce publish --packagePath $(find . -iname '*.vsix') --pre-release
         env:
           VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
 
