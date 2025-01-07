@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [0.13.5]
+
+### Fixed
+
+- Fixed an edge case were the SourceMap would not be properly initialized.
+- Fixed completions triggers not properly converting to a server range.
+
 ## [0.13.4]
 
 ### Fixed
