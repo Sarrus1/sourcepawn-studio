@@ -31,7 +31,7 @@ use itertools::Itertools;
 use line_index::TextRange;
 use lsp_types::Url;
 use paths::AbsPathBuf;
-use preprocessor::{db::PreprocDatabase, PreprocessingResult};
+use preprocessor::db::PreprocDatabase;
 use salsa::{Cancelled, ParallelDatabase};
 use serde_json::Value;
 use vfs::FileId;
