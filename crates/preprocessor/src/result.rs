@@ -40,10 +40,13 @@ impl PreprocessingResult {
     }
 
     pub fn default(text: &str) -> Self {
+        let mut source_map = SourceMap::default();
+        source_map.set_preprocecessed_text_len(text.len());
+        source_map.set_source_len(text.len());
         Self {
             preprocessed_text: text.to_string().into(),
             macros: FxHashMap::default(),
-            source_map: Default::default(),
+            source_map,
             errors: Default::default(),
             inactive_ranges: Default::default(),
         }

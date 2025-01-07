@@ -287,14 +287,14 @@ impl SourceMap {
 
     fn max_source_offset(&self) -> TextSize {
         self.source_len
-            .expect("should be set by now")
+            .expect("source_len should be set by now")
             .checked_sub(TextSize::new(1))
             .unwrap_or_default()
     }
 
     fn max_preprocessed_text_offset(&self) -> TextSize {
         self.preprocecessed_text_len
-            .expect("should be set by now")
+            .expect("preprocecessed_text_len should be set by now")
             .checked_sub(TextSize::new(1))
             .unwrap_or_default()
     }
