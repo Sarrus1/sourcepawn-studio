@@ -1,0 +1,49 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/hover/functions.rs
+assertion_line: 74
+expression: "hover(r#\"\n%! main.sp\nmethodmap Foo {}\nvoid bar(Foo foo){}\n              |\n              ^\n\"#,)"
+snapshot_kind: text
+---
+{
+  "contents": {
+    "kind": "markdown",
+    "value": "```sourcepawn\nFoo foo;\n```"
+  },
+  "range": {
+    "start": {
+      "line": 1,
+      "character": 13
+    },
+    "end": {
+      "line": 1,
+      "character": 16
+    }
+  },
+  "actions": [
+    {
+      "title": "Go to ",
+      "commands": [
+        {
+          "title": "Foo",
+          "command": "sourcepawn-vscode.gotoLocation",
+          "arguments": [
+            {
+              "uri": "file:///main.sp",
+              "range": {
+                "start": {
+                  "line": 0,
+                  "character": 10
+                },
+                "end": {
+                  "line": 0,
+                  "character": 13
+                }
+              }
+            }
+          ],
+          "tooltip": ""
+        }
+      ]
+    }
+  ]
+}

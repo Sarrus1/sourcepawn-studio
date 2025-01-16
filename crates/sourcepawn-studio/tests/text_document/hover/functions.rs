@@ -68,3 +68,16 @@ void foo(int bar,
 "#,
     ));
 }
+
+#[test]
+fn function_5() {
+    assert_json_snapshot!(hover(
+        r#"
+%! main.sp
+methodmap Foo {}
+void bar(Foo foo){}
+              |
+              ^
+"#,
+    ));
+}

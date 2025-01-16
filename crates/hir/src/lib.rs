@@ -1933,9 +1933,12 @@ impl<'tree> Local {
         let tree = db.parse(file_id);
         let source = db.preprocessed_text(file_id);
         let node = self.source(db, &tree).map(|s| s.source.value)?;
-        let type_node = node
-            .parent()
-            .and_then(|it| it.child_by_field_name("type"))?;
+        let node = if TSKind::from(node) == TSKind::parameter_declaration {
+            node
+        } else {
+            node.parent()?
+        };
+        let type_node = node.child_by_field_name("type")?;
         let ty_str = type_string_from_node(&type_node, &source);
         self.parent
             .resolver(db.upcast())
