@@ -2682,7 +2682,7 @@ dependencies = [
 
 [[package]]
 name = "sourcepawn-studio"
-version = "0.13.5"
+version = "0.13.6"
 dependencies = [
  "always-assert",
  "anyhow",

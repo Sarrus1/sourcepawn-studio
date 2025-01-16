@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.13.6]
+
+### Fixed
+
+- Fixed an issue when resolving the type of a function parameter.
+
 ## [0.13.5]
 
 ### Fixed
