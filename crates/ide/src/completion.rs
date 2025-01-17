@@ -161,6 +161,12 @@ pub fn completions(
     let mut add_defaults = false;
     let mut local_context = true;
 
+    if trigger_character == Some(':') && TSKind::from(container) != TSKind::scope_access {
+        // A ':' triggered a completion but it was not for a scope access. Do not suggest anything here.
+        // https://github.com/Sarrus1/sourcepawn-studio/issues/442
+        return None;
+    }
+
     log::debug!("completion container kind: {:?}", container.kind());
     log::debug!("completion node: {:?}", node.kind());
     let defs = match TSKind::from(container) {
