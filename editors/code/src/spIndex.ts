@@ -2,10 +2,7 @@ import * as vscode from "vscode";
 import { URI } from "vscode-uri";
 import * as lc from "vscode-languageclient/node";
 
-import {
-  createServerCommands,
-  registerSMCommands,
-} from "./Commands/registerCommands";
+import { createServerCommands, registerSMCommands } from "./Commands/registerCommands";
 import { SMDocumentFormattingEditProvider } from "./Formatters/spFormat";
 import { KVDocumentFormattingEditProvider } from "./Formatters/kvFormat";
 
@@ -17,7 +14,7 @@ import { Section, getConfig } from "./configUtils";
 
 export let defaultContext: Ctx;
 export const serverContexts: Map<string, Ctx> = new Map();
-export let lastActiveEditor: vscode.TextEditor
+export let lastActiveEditor: vscode.TextEditor;
 
 export async function activate(context: vscode.ExtensionContext) {
   function didOpenTextDocument(document: vscode.TextDocument): void {
@@ -32,57 +29,49 @@ export async function activate(context: vscode.ExtensionContext) {
       const clientOptions: lc.LanguageClientOptions = {
         documentSelector: [{ scheme: "untitled", language: "sourcepawn" }],
       };
-      defaultContext = new Ctx(
-        "default",
-        context,
-        createServerCommands(),
-        clientOptions
-      );
+      defaultContext = new Ctx("default", context, createServerCommands(), clientOptions);
       defaultContext.start();
       return;
     }
     let folder = vscode.workspace.getWorkspaceFolder(uri);
-    if (!folder) {
+    let parentDirectory = path.dirname(uri.fsPath);
+    if (folder) {
+      // If we have nested workspace folders we only start a server on the outer most workspace folder.
+      folder = getOuterMostWorkspaceFolder(folder);
+      parentDirectory = folder.uri.fsPath;
+    }
+    let parentDirectoryUri = URI.file(parentDirectory).toString();
+
+    if (serverContexts.has(parentDirectoryUri)) {
       return;
     }
-    // If we have nested workspace folders we only start a server on the outer most workspace folder.
-    folder = getOuterMostWorkspaceFolder(folder);
-    if (!serverContexts.has(folder.uri.toString())) {
-      // TODO: Check if we should update the pattern here when the options change.
-      const documentSelector: lc.DocumentSelector = [
-        {
+
+    // TODO: Check if we should update the pattern here when the options change.
+    const documentSelector: lc.DocumentSelector = [
+      {
+        scheme: "file",
+        language: "sourcepawn",
+        pattern: `${parentDirectory}/**/*.{inc,sp}`,
+      },
+    ].concat(
+      getConfig(Section.LSP, "includeDirectories", undefined, []).map((e) => {
+        return {
           scheme: "file",
           language: "sourcepawn",
-          pattern: `${folder.uri.fsPath}/**/*.{inc,sp}`,
-        },
-      ].concat(
-        getConfig(Section.LSP, "includeDirectories", undefined, [])
-          .map((e) => {
-            return {
-              scheme: "file",
-              language: "sourcepawn",
-              pattern: `${e}/**/*.{inc,sp}`,
-            };
-          })
-      );
-      const clientOptions: lc.LanguageClientOptions = {
-        documentSelector,
-        workspaceFolder: folder,
-        synchronize: {
-          fileEvents: vscode.workspace.createFileSystemWatcher(
-            `${folder.uri.fsPath}/**/*.{inc,sp}`
-          ),
-        },
-      };
-      let ctx = new Ctx(
-        folder.uri.toString(),
-        context,
-        createServerCommands(),
-        clientOptions
-      );
-      ctx.start();
-      serverContexts.set(folder.uri.toString(), ctx);
-    }
+          pattern: `${e}/**/*.{inc,sp}`,
+        };
+      })
+    );
+    const clientOptions: lc.LanguageClientOptions = {
+      documentSelector,
+      workspaceFolder: folder,
+      synchronize: {
+        fileEvents: vscode.workspace.createFileSystemWatcher(`${parentDirectory}/**/*.{inc,sp}`),
+      },
+    };
+    let ctx = new Ctx(parentDirectoryUri, context, createServerCommands(), clientOptions);
+    ctx.start();
+    serverContexts.set(parentDirectoryUri, ctx);
   }
 
   migrateSettings();
@@ -146,21 +135,17 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  context.subscriptions.push(
-    vscode.workspace.onDidChangeWorkspaceFolders(
-      () => (_sortedWorkspaceFolders = undefined)
-    )
-  );
+  context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(() => (_sortedWorkspaceFolders = undefined)));
 
   // Register KV linter
   registerKVLinter(context);
 
   // Set the last opened tab as the active document
-  vscode.window.visibleTextEditors.forEach(editor => {
+  vscode.window.visibleTextEditors.forEach((editor) => {
     if (path.isAbsolute(editor.document.fileName)) {
       lastActiveEditor = editor;
     }
-  })
+  });
 }
 
 // TODO: Remove after migration is done
@@ -193,24 +178,22 @@ function sortedWorkspaceFolders(): string[] {
   if (_sortedWorkspaceFolders === void 0) {
     _sortedWorkspaceFolders = vscode.workspace.workspaceFolders
       ? vscode.workspace.workspaceFolders
-        .map((folder) => {
-          let result = folder.uri.toString();
-          if (result.charAt(result.length - 1) !== "/") {
-            result = result + "/";
-          }
-          return result;
-        })
-        .sort((a, b) => {
-          return a.length - b.length;
-        })
+          .map((folder) => {
+            let result = folder.uri.toString();
+            if (result.charAt(result.length - 1) !== "/") {
+              result = result + "/";
+            }
+            return result;
+          })
+          .sort((a, b) => {
+            return a.length - b.length;
+          })
       : [];
   }
   return _sortedWorkspaceFolders;
 }
 
-export function getOuterMostWorkspaceFolder(
-  folder: vscode.WorkspaceFolder
-): vscode.WorkspaceFolder {
+export function getOuterMostWorkspaceFolder(folder: vscode.WorkspaceFolder): vscode.WorkspaceFolder {
   const sorted = sortedWorkspaceFolders();
   for (const element of sorted) {
     let uri = folder.uri.toString();

@@ -205,11 +205,7 @@ pub fn completions(
             .map(Function::from)
             .map(|it| it.into())
             .collect_vec(),
-        TSKind::comment => return None,
-        TSKind::string_literal => {
-            // Handle event completions here eventually.
-            return None;
-        }
+        TSKind::comment | TSKind::string_literal => return None,
         _ => {
             local_context = false;
             sema.defs_in_scope(pos.file_id)
