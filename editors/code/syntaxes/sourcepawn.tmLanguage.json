@@ -478,7 +478,7 @@
     "variable-declaration": {
       "patterns": [
         {
-          "match": "(?:(stock|public)\\s+)?((?:(?:const|static)\\s+)*)(\\w+)(\\s*(?:\\[[^\\]]*\\]\\s*)*)(?:(?:\\s*&\\s*)|\\s+)(\\w+)\\s*(\\s*(?:\\[[^\\]]*\\]\\s*)*)",
+          "match": "(?:(stock|public)\\s+)?((?:(?:const|static)\\s+)*)(\\w+)(\\s*(?:\\[[^\\]]*\\]\\s*)*)\\s+(\\w+)\\s*(\\s*(?:\\[[^\\]]*\\]\\s*)*)",
           "captures": {
             "1": {
               "patterns": [{ "include": "#keywords" }]
