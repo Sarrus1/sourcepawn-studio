@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [8.1.0]
+
+### Fixed
+
+- Made the extension work with single files, outside of a workspace.
+- LSP version bump
+
 ## [8.0.7]
 
 ### Fixed
