@@ -14,6 +14,11 @@
     },
     { "include": "#preproc" },
     {
+      "comment": "Control statements",
+      "name": "keyword.control.statement.sourcepawn",
+      "match": "\\b(?:if|else|for|while|do|switch|case|default|return|break|continue)\\b"
+    },
+    {
       "comment": "new statement",
       "match": "(new)\\s+(\\w+)\\s*\\(",
       "captures": {
@@ -66,11 +71,6 @@
           "patterns": [{ "include": "#variable_name" }]
         }
       }
-    },
-    {
-      "comment": "Control statements",
-      "name": "keyword.control.statement.sourcepawn",
-      "match": "\\b(?:if|else|for|while|do|switch|case|default|return|break|continue)\\b"
     },
 
     {
