@@ -137,21 +137,20 @@ impl<'a> SymbolsBuilder<'a> {
                 }
             }
         }
-        let symbol = Symbol {
-            name: name_node
+        let symbol = Symbol::try_new(
+            name_node
                 .utf8_text(self.source.as_bytes())
                 .ok()?
                 .to_smolstr(),
-            kind,
-            full_range: self.s_range_to_u_range(&node.range()),
-            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
-            children,
-            details: node
-                .child_by_field_name("parameters")
+            node.child_by_field_name("parameters")
                 .and_then(|n| n.utf8_text(self.source.as_bytes()).ok())
                 .map(ToString::to_string),
-            deprecated: self.is_deprecated(node),
-        };
+            kind,
+            self.s_range_to_u_range(&node.range()),
+            self.s_range_to_u_range(&name_node.range()).into(),
+            children,
+            self.is_deprecated(node),
+        )?;
         self.alloc(symbol).into()
     }
 
@@ -177,18 +176,18 @@ impl<'a> SymbolsBuilder<'a> {
                 _ => None,
             })
             .collect();
-        let symbol = Symbol {
-            name: name_node
+        let symbol = Symbol::try_new(
+            name_node
                 .utf8_text(self.source.as_bytes())
                 .ok()?
                 .to_smolstr(),
-            kind: SymbolKind::Methodmap,
-            full_range: self.s_range_to_u_range(&node.range()),
-            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
+            None,
+            SymbolKind::Methodmap,
+            self.s_range_to_u_range(&node.range()),
+            self.s_range_to_u_range(&name_node.range()).into(),
             children,
-            details: None,
-            deprecated: self.is_deprecated(node),
-        };
+            self.is_deprecated(node),
+        )?;
         self.alloc_top(symbol).into()
     }
 
@@ -212,18 +211,18 @@ impl<'a> SymbolsBuilder<'a> {
                 }
             })
             .collect();
-        let symbol = Symbol {
-            name: name_node
+        let symbol = Symbol::try_new(
+            name_node
                 .utf8_text(self.source.as_bytes())
                 .ok()?
                 .to_smolstr(),
-            kind: SymbolKind::Property,
-            full_range: self.s_range_to_u_range(&node.range()),
-            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
+            type_,
+            SymbolKind::Property,
+            self.s_range_to_u_range(&node.range()),
+            self.s_range_to_u_range(&name_node.range()).into(),
             children,
-            details: type_,
-            deprecated: self.is_deprecated(node),
-        };
+            self.is_deprecated(node),
+        )?;
         self.alloc(symbol).into()
     }
 
@@ -242,33 +241,33 @@ impl<'a> SymbolsBuilder<'a> {
                         .filter(|e| TSKind::from(e) == TSKind::enum_entry)
                         .flat_map(|e| {
                             let name_node = e.child_by_field_name("name")?;
-                            let symbol = Symbol {
-                                name: name_node
+                            let symbol = Symbol::try_new(
+                                name_node
                                     .utf8_text(self.source.as_bytes())
                                     .ok()?
                                     .to_smolstr(),
-                                kind: SymbolKind::Variant,
-                                full_range: self.s_range_to_u_range(&e.range()),
-                                focus_range: self.s_range_to_u_range(&name_node.range()).into(),
-                                children: vec![],
-                                details: None,
-                                deprecated: self.is_deprecated(&e),
-                            };
+                                None,
+                                SymbolKind::Variant,
+                                self.s_range_to_u_range(&e.range()),
+                                self.s_range_to_u_range(&name_node.range()).into(),
+                                vec![],
+                                self.is_deprecated(&e),
+                            )?;
                             Some(self.alloc(symbol))
                         })
                 }
                 .collect()
             })
             .unwrap_or_default();
-        let symbol = Symbol {
+        let symbol = Symbol::try_new(
             name,
-            kind: SymbolKind::Property,
-            full_range: self.s_range_to_u_range(&node.range()),
-            focus_range: name_node.map(|node| self.s_range_to_u_range(&node.range())),
+            None,
+            SymbolKind::Property,
+            self.s_range_to_u_range(&node.range()),
+            name_node.map(|node| self.s_range_to_u_range(&node.range())),
             children,
-            details: None,
-            deprecated: self.is_deprecated(node),
-        };
+            self.is_deprecated(node),
+        )?;
         self.alloc(symbol).into()
     }
 
@@ -281,18 +280,18 @@ impl<'a> SymbolsBuilder<'a> {
                     .and_then(|n| n.utf8_text(self.source.as_bytes()).ok())
             })
             .map(ToString::to_string);
-        let symbol = Symbol {
-            name: name_node
+        let symbol = Symbol::try_new(
+            name_node
                 .utf8_text(self.source.as_bytes())
                 .ok()?
                 .to_smolstr(),
-            kind: SymbolKind::Local,
-            full_range: self.s_range_to_u_range(&node.range()),
-            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
-            children: vec![],
-            details: type_,
-            deprecated: self.is_deprecated(node),
-        };
+            type_,
+            SymbolKind::Local,
+            self.s_range_to_u_range(&node.range()),
+            self.s_range_to_u_range(&name_node.range()).into(),
+            vec![],
+            self.is_deprecated(node),
+        )?;
         self.alloc(symbol).into()
     }
 
@@ -322,35 +321,35 @@ impl<'a> SymbolsBuilder<'a> {
                         .child_by_field_name("type")
                         .and_then(|n| n.utf8_text(self.source.as_bytes()).ok())
                         .map(ToString::to_string);
-                    let symbol = Symbol {
-                        name: name_node
+                    let symbol = Symbol::try_new(
+                        name_node
                             .utf8_text(self.source.as_bytes())
                             .ok()?
                             .to_smolstr(),
-                        kind: SymbolKind::Variant,
-                        full_range: self.s_range_to_u_range(&child.range()),
-                        focus_range: self.s_range_to_u_range(&name_node.range()).into(),
-                        children: vec![],
-                        details: type_,
-                        deprecated: self.is_deprecated(&child),
-                    };
+                        type_,
+                        SymbolKind::Variant,
+                        self.s_range_to_u_range(&child.range()),
+                        self.s_range_to_u_range(&name_node.range()).into(),
+                        vec![],
+                        self.is_deprecated(&child),
+                    )?;
                     Some(self.alloc(symbol))
                 }
                 _ => None,
             })
             .collect();
-        let symbol = Symbol {
-            name: name_node
+        let symbol = Symbol::try_new(
+            name_node
                 .utf8_text(self.source.as_bytes())
                 .ok()?
                 .to_smolstr(),
-            kind: SymbolKind::EnumStruct,
-            full_range: self.s_range_to_u_range(&node.range()),
-            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
+            None,
+            SymbolKind::EnumStruct,
+            self.s_range_to_u_range(&node.range()),
+            self.s_range_to_u_range(&name_node.range()).into(),
             children,
-            details: None,
-            deprecated: self.is_deprecated(node),
-        };
+            self.is_deprecated(node),
+        )?;
         self.alloc_top(symbol).into()
     }
 
@@ -360,18 +359,15 @@ impl<'a> SymbolsBuilder<'a> {
             .and_then(|n| n.utf8_text(self.source.as_bytes()).ok())
             .unwrap_or("typedef")
             .to_smolstr();
-        let symbol = Symbol {
+        let symbol = Symbol::try_new(
             name,
-            kind: SymbolKind::Typedef,
-            full_range: self.s_range_to_u_range(&node.range()),
-            focus_range: name_node.map(|node| self.s_range_to_u_range(&node.range())),
-            children: vec![],
-            details: node
-                .child_by_field_name("parameters")
-                .and_then(|n| n.utf8_text(self.source.as_bytes()).ok())
-                .map(ToString::to_string),
-            deprecated: self.is_deprecated(node),
-        };
+            None,
+            SymbolKind::Typedef,
+            self.s_range_to_u_range(&node.range()),
+            name_node.map(|node| self.s_range_to_u_range(&node.range())),
+            vec![],
+            self.is_deprecated(node),
+        )?;
         if name_node.is_some() {
             self.alloc_top(symbol).into()
         } else {
@@ -386,38 +382,37 @@ impl<'a> SymbolsBuilder<'a> {
             .filter(|n| TSKind::from(n) == TSKind::typedef_expression)
             .flat_map(|n| self.alloc_typedef(&n))
             .collect();
-        let symbol = Symbol {
-            name: name_node
+        let symbol = Symbol::try_new(
+            name_node
                 .utf8_text(self.source.as_bytes())
                 .ok()?
                 .to_smolstr(),
-            kind: SymbolKind::Typeset,
-            full_range: self.s_range_to_u_range(&node.range()),
-            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
+            None,
+            SymbolKind::Typeset,
+            self.s_range_to_u_range(&node.range()),
+            self.s_range_to_u_range(&name_node.range()).into(),
             children,
-            details: None,
-            deprecated: self.is_deprecated(node),
-        };
+            self.is_deprecated(node),
+        )?;
         self.alloc_top(symbol).into()
     }
 
     fn alloc_functag(&mut self, node: &Node) -> Option<SymbolId> {
         let name_node = node.child_by_field_name("name")?;
-        let symbol = Symbol {
-            name: name_node
+        let symbol = Symbol::try_new(
+            name_node
                 .utf8_text(self.source.as_bytes())
                 .ok()?
                 .to_smolstr(),
-            kind: SymbolKind::Functag,
-            full_range: self.s_range_to_u_range(&node.range()),
-            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
-            children: vec![],
-            details: node
-                .child_by_field_name("parameters")
+            node.child_by_field_name("parameters")
                 .and_then(|n| n.utf8_text(self.source.as_bytes()).ok())
                 .map(ToString::to_string),
-            deprecated: self.is_deprecated(node),
-        };
+            SymbolKind::Functag,
+            self.s_range_to_u_range(&node.range()),
+            self.s_range_to_u_range(&name_node.range()).into(),
+            vec![],
+            self.is_deprecated(node),
+        )?;
         self.alloc_top(symbol).into()
     }
 
@@ -426,34 +421,33 @@ impl<'a> SymbolsBuilder<'a> {
         let children = node
             .children(&mut node.walk())
             .filter(|n| TSKind::from(n) == TSKind::funcenum_member)
-            .map(|n| {
-                let symbol = Symbol {
-                    name: "functag".to_smolstr(),
-                    kind: SymbolKind::Functag,
-                    full_range: self.s_range_to_u_range(&n.range()),
-                    focus_range: self.s_range_to_u_range(&n.range()).into(),
-                    children: vec![],
-                    details: node
-                        .child_by_field_name("parameters")
+            .filter_map(|n| {
+                let symbol = Symbol::try_new(
+                    "functag".to_smolstr(),
+                    n.child_by_field_name("parameters")
                         .and_then(|n| n.utf8_text(self.source.as_bytes()).ok())
                         .map(ToString::to_string),
-                    deprecated: self.is_deprecated(&n),
-                };
-                self.alloc(symbol)
+                    SymbolKind::Functag,
+                    self.s_range_to_u_range(&n.range()),
+                    self.s_range_to_u_range(&n.range()).into(),
+                    vec![],
+                    self.is_deprecated(&n),
+                )?;
+                self.alloc(symbol).into()
             })
             .collect();
-        let symbol = Symbol {
-            name: name_node
+        let symbol = Symbol::try_new(
+            name_node
                 .utf8_text(self.source.as_bytes())
                 .ok()?
                 .to_smolstr(),
-            kind: SymbolKind::Funcenum,
-            full_range: self.s_range_to_u_range(&node.range()),
-            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
+            None,
+            SymbolKind::Funcenum,
+            self.s_range_to_u_range(&node.range()),
+            self.s_range_to_u_range(&name_node.range()).into(),
             children,
-            details: None,
-            deprecated: self.is_deprecated(node),
-        };
+            self.is_deprecated(node),
+        )?;
         self.alloc_top(symbol).into()
     }
 
@@ -464,50 +458,50 @@ impl<'a> SymbolsBuilder<'a> {
             .filter(|n| TSKind::from(n) == TSKind::struct_field)
             .flat_map(|n| {
                 let name_node = n.child_by_field_name("name")?;
-                let symbol = Symbol {
-                    name: name_node
+                let symbol = Symbol::try_new(
+                    name_node
                         .utf8_text(self.source.as_bytes())
                         .ok()?
                         .to_smolstr(),
-                    kind: SymbolKind::Field,
-                    full_range: self.s_range_to_u_range(&n.range()),
-                    focus_range: self.s_range_to_u_range(&name_node.range()).into(),
-                    children: vec![],
-                    details: None,
-                    deprecated: self.is_deprecated(&n),
-                };
+                    None,
+                    SymbolKind::Field,
+                    self.s_range_to_u_range(&n.range()),
+                    self.s_range_to_u_range(&name_node.range()).into(),
+                    vec![],
+                    self.is_deprecated(&n),
+                )?;
                 Some(self.alloc(symbol))
             })
             .collect();
-        let symbol = Symbol {
-            name: name_node
+        let symbol = Symbol::try_new(
+            name_node
                 .utf8_text(self.source.as_bytes())
                 .ok()?
                 .to_smolstr(),
-            kind: SymbolKind::Struct,
-            full_range: self.s_range_to_u_range(&node.range()),
-            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
+            None,
+            SymbolKind::Struct,
+            self.s_range_to_u_range(&node.range()),
+            self.s_range_to_u_range(&name_node.range()).into(),
             children,
-            details: None,
-            deprecated: self.is_deprecated(node),
-        };
+            self.is_deprecated(node),
+        )?;
         self.alloc_top(symbol).into()
     }
 
     fn alloc_struct_declaration(&mut self, node: &Node) -> Option<SymbolId> {
         let name_node = node.child_by_field_name("name")?;
-        let symbol = Symbol {
-            name: name_node
+        let symbol = Symbol::try_new(
+            name_node
                 .utf8_text(self.source.as_bytes())
                 .ok()?
                 .to_smolstr(),
-            kind: SymbolKind::Struct,
-            full_range: self.s_range_to_u_range(&node.range()),
-            focus_range: self.s_range_to_u_range(&name_node.range()).into(),
-            children: vec![],
-            details: None,
-            deprecated: self.is_deprecated(node),
-        };
+            None,
+            SymbolKind::Struct,
+            self.s_range_to_u_range(&node.range()),
+            self.s_range_to_u_range(&name_node.range()).into(),
+            vec![],
+            self.is_deprecated(node),
+        )?;
         self.alloc_top(symbol).into()
     }
 
@@ -582,11 +576,66 @@ impl<'a> IntoIterator for &'a Symbols {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Symbol {
-    pub name: SmolStr,
-    pub details: Option<String>,
-    pub kind: SymbolKind,
-    pub full_range: TextRange,
-    pub focus_range: Option<TextRange>,
-    pub children: Vec<SymbolId>,
-    pub deprecated: bool,
+    name: SmolStr,
+    details: Option<String>,
+    kind: SymbolKind,
+    full_range: TextRange,
+    focus_range: Option<TextRange>,
+    children: Vec<SymbolId>,
+    deprecated: bool,
+}
+
+impl Symbol {
+    pub fn try_new(
+        name: SmolStr,
+        details: Option<String>,
+        kind: SymbolKind,
+        full_range: TextRange,
+        focus_range: Option<TextRange>,
+        children: Vec<SymbolId>,
+        deprecated: bool,
+    ) -> Option<Self> {
+        if name.is_empty() {
+            // Name is falsy
+            return None;
+        }
+        Self {
+            name,
+            details,
+            kind,
+            full_range,
+            focus_range,
+            children,
+            deprecated,
+        }
+        .into()
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn details(&self) -> Option<&String> {
+        self.details.as_ref()
+    }
+
+    pub fn kind(&self) -> SymbolKind {
+        self.kind
+    }
+
+    pub fn full_range(&self) -> TextRange {
+        self.full_range
+    }
+
+    pub fn focus_range(&self) -> Option<TextRange> {
+        self.focus_range
+    }
+
+    pub fn children(&self) -> &[Idx<Symbol>] {
+        &self.children
+    }
+
+    pub fn deprecated(&self) -> bool {
+        self.deprecated
+    }
 }

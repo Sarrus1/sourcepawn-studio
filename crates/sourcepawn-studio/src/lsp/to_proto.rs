@@ -377,7 +377,7 @@ fn document_symbol(
     use lsp_types::SymbolKind as SK;
 
     let symbol = &symbols[idx];
-    let kind = match symbol.kind {
+    let kind = match symbol.kind() {
         SymbolKind::Macro => SK::CONSTANT,
         SymbolKind::Function => SK::FUNCTION,
         SymbolKind::Native => SK::FUNCTION,
@@ -397,21 +397,21 @@ fn document_symbol(
         SymbolKind::Variant => SK::ENUM_MEMBER,
         SymbolKind::Global | SymbolKind::Local => SK::VARIABLE,
     };
-    let full_range = line_index.range(symbol.full_range);
+    let full_range = line_index.range(symbol.full_range());
     #[allow(deprecated)]
     lsp_types::DocumentSymbol {
-        name: symbol.name.to_string(),
-        detail: symbol.details.clone(),
+        name: symbol.name().to_string(),
+        detail: symbol.details().cloned(),
         kind,
-        tags: if symbol.deprecated {
+        tags: if symbol.deprecated() {
             Some(vec![lsp_types::SymbolTag::DEPRECATED])
         } else {
             None
         },
         deprecated: None,
         range: full_range,
-        selection_range: if let Some(focus_range) = symbol.focus_range {
-            if symbol.full_range.contains_range(focus_range) {
+        selection_range: if let Some(focus_range) = symbol.focus_range() {
+            if symbol.full_range().contains_range(focus_range) {
                 line_index.range(focus_range)
             } else {
                 full_range
@@ -419,11 +419,11 @@ fn document_symbol(
         } else {
             full_range
         },
-        children: if symbol.children.is_empty() {
+        children: if symbol.children().is_empty() {
             None
         } else {
             symbol
-                .children
+                .children()
                 .iter()
                 .map(|idx| document_symbol(idx, symbols, line_index))
                 .collect_vec()
