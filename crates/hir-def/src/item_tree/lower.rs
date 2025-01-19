@@ -4,6 +4,7 @@ use base_db::Tree;
 use fxhash::FxHashSet;
 use la_arena::{Idx, IdxRange, RawIdx};
 use lazy_static::lazy_static;
+use streaming_iterator::StreamingIterator;
 use syntax::TSKind;
 use tree_sitter::QueryCursor;
 use vfs::FileId;
@@ -78,8 +79,8 @@ impl<'db> Ctx<'db> {
         }
 
         let mut cursor = QueryCursor::new();
-        let matches = cursor.captures(&MACRO_QUERY, tree.root_node(), self.source.as_bytes());
-        for (match_, _) in matches {
+        let mut matches = cursor.captures(&MACRO_QUERY, tree.root_node(), self.source.as_bytes());
+        while let Some((match_, _)) = matches.next() {
             for c in match_.captures {
                 let node = c.node;
                 if node.is_error() || node.is_missing() {
@@ -115,8 +116,8 @@ impl<'db> Ctx<'db> {
             .expect("Could not build pragma query.");
         }
         let mut cursor = QueryCursor::new();
-        let matches = cursor.captures(&MACRO_QUERY, tree.root_node(), self.source.as_bytes());
-        for (match_, _) in matches {
+        let mut matches = cursor.captures(&MACRO_QUERY, tree.root_node(), self.source.as_bytes());
+        while let Some((match_, _)) = matches.next() {
             for c in match_.captures {
                 let Ok(pragma) = c.node.utf8_text(self.source.as_bytes()) else {
                     return;

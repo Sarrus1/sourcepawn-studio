@@ -8,6 +8,7 @@ use lazy_static::lazy_static;
 use line_index::TextRange;
 use preprocessor::SourceMap;
 use smol_str::{SmolStr, ToSmolStr};
+use streaming_iterator::StreamingIterator;
 use syntax::{utils::ts_range_to_text_range, TSKind};
 use tree_sitter::{Node, QueryCursor};
 
@@ -44,8 +45,8 @@ impl<'a> SymbolsBuilder<'a> {
             .expect("Could not build pragma query.");
         }
         let mut cursor = QueryCursor::new();
-        let matches = cursor.captures(&MACRO_QUERY, tree.root_node(), source.as_bytes());
-        for (match_, _) in matches {
+        let mut matches = cursor.captures(&MACRO_QUERY, tree.root_node(), source.as_bytes());
+        while let Some((match_, _)) = matches.next() {
             for c in match_.captures {
                 let Ok(pragma) = c.node.utf8_text(source.as_bytes()) else {
                     continue;
@@ -129,8 +130,8 @@ impl<'a> SymbolsBuilder<'a> {
     ) -> Option<SymbolId> {
         let mut children = Vec::new();
         let mut cursor = QueryCursor::new();
-        let matches = cursor.captures(&VARIABLE_QUERY, *node, self.source.as_bytes());
-        for (match_, _) in matches {
+        let mut matches = cursor.captures(&VARIABLE_QUERY, *node, self.source.as_bytes());
+        while let Some((match_, _)) = matches.next() {
             for c in match_.captures {
                 if let Some(idx) = self.alloc_variable_declaration(&c.node) {
                     children.push(idx);

@@ -26,6 +26,7 @@ regex.workspace = true
 bitflags.workspace = true
 itertools.workspace = true
 serde.workspace = true
+streaming-iterator.workspace = true
 
 # Local crates
 syntax.workspace = true

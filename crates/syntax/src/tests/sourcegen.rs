@@ -40,7 +40,6 @@ fn generate_node_kinds() {
         quote! { #name = #kind_id }
     });
     let stream = quote! {
-        #![cfg_attr(rustfmt, rustfmt_skip)]
         #![allow(bad_style, missing_docs, unreachable_pub, unused)]
         #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
         #[repr(u16)]
@@ -178,7 +177,7 @@ fn ensure_rustfmt(sh: &Shell) {
 fn reformat(text: String) -> String {
     let sh = Shell::new().unwrap();
     ensure_rustfmt(&sh);
-    let mut stdout = cmd!(sh, "rustup run stable rustfmt --config fn_single_line=true")
+    let mut stdout = cmd!(sh, "rustup run stable rustfmt")
         .stdin(text)
         .read()
         .unwrap();

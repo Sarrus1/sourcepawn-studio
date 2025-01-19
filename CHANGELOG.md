@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.13.8]
+
+### Fixed
+
+- Fixed a parsing issue (see #415).
+
 ## [0.13.6]
 
 ### Fixed

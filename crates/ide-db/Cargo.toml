@@ -26,7 +26,7 @@ indexmap.workspace = true
 nohash-hasher.workspace = true
 la-arena.workspace = true
 smol_str.workspace = true
-
+streaming-iterator.workspace = true
 
 # Local crates
 

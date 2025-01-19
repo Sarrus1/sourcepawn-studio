@@ -8,6 +8,7 @@ use lazy_static::lazy_static;
 use line_index::TextRange;
 use preprocessor::db::PreprocDatabase;
 use smol_str::ToSmolStr;
+use streaming_iterator::StreamingIterator;
 use syntax::{utils::ts_range_to_text_range, TSKind};
 use tree_sitter::QueryCursor;
 
@@ -184,8 +185,8 @@ pub(crate) fn call_hierarchy_outgoing(
     let mut res: FxHashMap<Function, Vec<TextRange>> = FxHashMap::default();
 
     let mut cursor = QueryCursor::new();
-    let matches = cursor.captures(&CALL_QUERY, source_node, source.as_bytes());
-    for (match_, _) in matches {
+    let mut matches = cursor.captures(&CALL_QUERY, source_node, source.as_bytes());
+    while let Some((match_, _)) = matches.next() {
         for c in match_.captures {
             let Some(mut node) = c.node.child_by_field_name("function") else {
                 continue;

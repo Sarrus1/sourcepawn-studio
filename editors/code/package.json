@@ -2,7 +2,7 @@
   "name": "sourcepawn-vscode",
   "displayName": "SourcePawn Studio",
   "description": "SourcePawn highlighting, autocompletion and much more",
-  "version": "8.1.0",
+  "version": "8.1.1",
   "publisher": "Sarrus",
   "main": "./dist/spIndex.js",
   "icon": "sp-studio_square_256x256.png",

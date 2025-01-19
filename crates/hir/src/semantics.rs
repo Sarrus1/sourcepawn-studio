@@ -14,6 +14,7 @@ use log::warn;
 use preprocessor::ExpandedSymbolOffset;
 use smol_str::ToSmolStr;
 use sourcepawn_lexer::{SourcepawnLexer, TextSize, TokenKind};
+use streaming_iterator::StreamingIterator;
 use syntax::{utils::ts_range_to_text_range, TSKind};
 use tree_sitter::QueryCursor;
 use vfs::FileId;
@@ -725,9 +726,9 @@ impl<DB: HirDatabase> Semantics<'_, DB> {
             let file_source = self.preprocessed_text(file_id);
             let preprocessing_results = self.preprocess_file(file_id);
             let mut cursor = QueryCursor::new();
-            let matches =
+            let mut matches =
                 cursor.captures(&IDENT_QUERY, file_tree.root_node(), file_source.as_bytes());
-            for (match_, _) in matches {
+            while let Some((match_, _)) = matches.next() {
                 for c in match_.captures {
                     let node = c.node;
                     if let Ok(text) = node.utf8_text(file_source.as_bytes()) {

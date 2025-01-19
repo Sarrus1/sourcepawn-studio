@@ -5,6 +5,7 @@ use hir_def::{InFile, NodePtr};
 use ide_db::RootDatabase;
 use line_index::{TextRange, TextSize};
 use queries::ERROR_QUERY;
+use streaming_iterator::StreamingIterator;
 use syntax::utils::ts_range_to_text_range;
 use tree_sitter::QueryCursor;
 use vfs::FileId;
@@ -194,8 +195,8 @@ fn syntax_error_diagnostics(
     diagnostics: &mut Vec<Diagnostic>,
 ) {
     let mut cursor = QueryCursor::new();
-    let matches = cursor.captures(&ERROR_QUERY, tree.root_node(), source.as_bytes());
-    for (match_, _) in matches {
+    let mut matches = cursor.captures(&ERROR_QUERY, tree.root_node(), source.as_bytes());
+    while let Some((match_, _)) = matches.next() {
         diagnostics.extend(match_.captures.iter().map(|c| {
             ts_error_to_diagnostic(ctx, c.node).unwrap_or_else(|| {
                 Diagnostic::new_for_s_range(
