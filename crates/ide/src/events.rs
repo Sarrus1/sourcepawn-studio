@@ -18,7 +18,7 @@ use crate::{hover::HoverResult, CompletionItem, CompletionKind, Markup, RangeInf
 /// - `HookEventEx`
 /// - `UnhookEvent`
 ///
-/// # Parameters
+/// # Arguments
 /// - `node`: The node to check
 /// - `source`: The preprocessed source code
 ///
@@ -59,7 +59,7 @@ pub fn event_name(node: &Node, source: &str) -> Option<String> {
 /// If `events_game_name` is `Some`, and if the game exits in the database,
 /// only completions for the given game will be returned.
 ///
-/// # Parameters
+/// # Arguments
 /// - `events_game_name`: The name of the game to get completions for
 pub fn events_completions(events_game_name: Option<&str>) -> Vec<CompletionItem> {
     if let Some(game_name) = events_game_name {
@@ -97,7 +97,7 @@ pub fn events_completions(events_game_name: Option<&str>) -> Vec<CompletionItem>
 /// If `events_game_name` is `Some`, and if the game exits in the database, only return the
 /// hover information for the given game. Otherwise, return hover information for all games.
 ///
-/// # Parameters
+/// # Arguments
 /// - `events_game_name`: The name of the game to get hover information for
 /// - `name`: The name of the event
 /// - `node`: The node of the string literal of the event name

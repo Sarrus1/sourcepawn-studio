@@ -161,12 +161,6 @@ pub fn completions(
     let mut add_defaults = false;
     let mut local_context = true;
 
-    if trigger_character == Some(':') && TSKind::from(container) != TSKind::scope_access {
-        // A ':' triggered a completion but it was not for a scope access. Do not suggest anything here.
-        // https://github.com/Sarrus1/sourcepawn-studio/issues/442
-        return None;
-    }
-
     log::debug!("completion container kind: {:?}", container.kind());
     log::debug!("completion node: {:?}", node.kind());
     let defs = match TSKind::from(container) {
@@ -177,7 +171,9 @@ pub fn completions(
         | TSKind::methodmap_property_setter
         | TSKind::enum_struct_method
         | TSKind::methodmap_method_constructor
-        | TSKind::methodmap_method_destructor => {
+        | TSKind::methodmap_method_destructor
+            if !is_triggered_by_scope_or_field_access(trigger_character) =>
+        {
             add_defaults = true;
             if let Some(res) = in_function_completion(container, tree, sema, pos) {
                 res
@@ -190,11 +186,15 @@ pub fn completions(
                     .collect_vec()
             }
         }
-        TSKind::field_access => field_access_completions(container, sema, pos, false)?,
-        TSKind::scope_access | TSKind::array_scope_access => {
+        TSKind::field_access if is_triggered_by_scope_or_field_access(trigger_character) => {
+            field_access_completions(container, sema, pos, false)?
+        }
+        TSKind::scope_access | TSKind::array_scope_access
+            if is_triggered_by_scope_or_field_access(trigger_character) =>
+        {
             field_access_completions(container, sema, pos, true)?
         }
-        TSKind::new_expression => sema
+        TSKind::new_expression if !is_triggered_by_scope_or_field_access(trigger_character) => sema
             .defs_in_scope(pos.file_id)
             .into_iter()
             .filter_map(|it| match it {
@@ -206,13 +206,14 @@ pub fn completions(
             .map(|it| it.into())
             .collect_vec(),
         TSKind::comment | TSKind::string_literal => return None,
-        _ => {
+        _ if !is_triggered_by_scope_or_field_access(trigger_character) => {
             local_context = false;
             sema.defs_in_scope(pos.file_id)
                 .into_iter()
                 .filter(|it| !matches!(it, DefResolution::Local(_) | DefResolution::Global(_)))
                 .collect_vec()
         }
+        _ => Default::default(),
     };
 
     let mut res = Vec::new();
@@ -460,6 +461,60 @@ pub fn completions(
     res.into()
 }
 
+fn is_triggered_by_scope_or_field_access(trigger_character: Option<char>) -> bool {
+    // A ':' triggered a completion but it was not for a scope access. Do not suggest anything here.
+    // https://github.com/Sarrus1/sourcepawn-studio/issues/442
+    // https://github.com/Sarrus1/sourcepawn-studio/issues/443
+    let Some(trigger_character) = trigger_character else {
+        return false;
+    };
+    trigger_character == '.' || trigger_character == ':'
+}
+
+/// Get the target node of a field access node, given the parent of the field node.
+///
+/// # Justification
+/// Consider the following example: `foo.bar.baz`.
+/// This is parsed such as:
+/// ```
+///     foo.bar.baz
+///       /     \
+///   foo.bar   baz
+///   /    \
+/// foo    bar
+/// ```
+///
+/// This function takes the `foo` node and searches for the `bar` node.
+/// The `bar` node will be used to resolve the type of the target of `bar.baz`, in order
+/// to determine what are the possible completions that can take the place of baz.
+/// See https://github.com/Sarrus1/sourcepawn-studio/issues/443.
+///
+/// Without this function, completion breaks for nested field access. It would not be needed
+/// if we represented the AST such as below, because we would only have to go to the parent.
+/// However this would introduce other complications when lowering.
+/// ```
+///     foo.bar.baz
+///       /     \
+///     foo   bar.baz
+///            /    \
+///          bar    baz
+/// ```
+///
+/// # Arguments
+/// * `target` - The closest ancestor `field_access` node.
+fn get_previous_field_access_node(target: Option<tree_sitter::Node>) -> Option<tree_sitter::Node> {
+    let target = target?;
+    let field_name = match TSKind::from(target) {
+        TSKind::identifier => return Some(target),
+        TSKind::scope_access => "scope",
+        TSKind::array_indexed_access => "array",
+        TSKind::field_access => "field",
+        TSKind::call_expression => "function",
+        _ => return None,
+    };
+    get_previous_field_access_node(target.child_by_field_name(field_name))
+}
+
 fn field_access_completions(
     container: tree_sitter::Node,
     sema: &Semantics<RootDatabase>,
@@ -471,8 +526,13 @@ fn field_access_completions(
     let target = container.child_by_field_name(if is_scope { "scope" } else { "target" })?;
     let target = tree
         .root_node()
-        .descendant_for_byte_range(target.start_byte(), target.end_byte())?;
+        .descendant_for_byte_range(target.start_byte(), target.end_byte());
+    let target = get_previous_field_access_node(target)?;
     let def = sema.find_type_def(pos.file_id, target)?;
+    let def = match def {
+        DefResolution::Function(def) => def.return_type_def(sema.db)?,
+        _ => def,
+    };
     let target_text = target.utf8_text(source.as_bytes()).ok()?;
     Some(match def {
         DefResolution::Methodmap(it) if target_text == "this" => {
