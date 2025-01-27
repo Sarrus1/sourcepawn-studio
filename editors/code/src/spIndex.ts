@@ -35,14 +35,17 @@ export async function activate(context: vscode.ExtensionContext) {
     }
     let folder = vscode.workspace.getWorkspaceFolder(uri);
     let parentDirectory = path.dirname(uri.fsPath);
+    let parentDirectoryUri = URI.file(parentDirectory);
     if (folder) {
       // If we have nested workspace folders we only start a server on the outer most workspace folder.
       folder = getOuterMostWorkspaceFolder(folder);
       parentDirectory = folder.uri.fsPath;
+      parentDirectoryUri = URI.file(parentDirectory);
+    } else {
+      folder = { uri: parentDirectoryUri, name: parentDirectory, index: -1 };
     }
-    let parentDirectoryUri = URI.file(parentDirectory).toString();
 
-    if (serverContexts.has(parentDirectoryUri)) {
+    if (serverContexts.has(parentDirectoryUri.toString())) {
       return;
     }
 
@@ -69,9 +72,9 @@ export async function activate(context: vscode.ExtensionContext) {
         fileEvents: vscode.workspace.createFileSystemWatcher(`${parentDirectory}/**/*.{inc,sp}`),
       },
     };
-    let ctx = new Ctx(parentDirectoryUri, context, createServerCommands(), clientOptions);
+    let ctx = new Ctx(parentDirectoryUri.toString(), context, createServerCommands(), clientOptions);
     ctx.start();
-    serverContexts.set(parentDirectoryUri, ctx);
+    serverContexts.set(parentDirectoryUri.toString(), ctx);
   }
 
   migrateSettings();
