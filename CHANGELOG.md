@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.13.9]
+
+### Fixed
+
+- Fixed files not being read in time.
+
 ## [0.13.8]
 
 ### Fixed
