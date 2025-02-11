@@ -282,7 +282,7 @@
     "@types/node": "^16.13.2",
     "@types/vscode": "^1.63.0",
     "@vscode/test-electron": "^1.6.1",
-    "esbuild": "^0.18.16",
+    "esbuild": "^0.25.0",
     "node-loader": "2.0.0",
     "ovsx": "^0.8.2",
     "ts-loader": "^9.2.6",
