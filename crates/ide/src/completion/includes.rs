@@ -76,14 +76,15 @@ pub(super) fn get_include_completions(
         .try_into()
         .ok()?;
     let parent_folder: AbsPathBuf = path.parent()?.to_path_buf();
-    let mut known_paths: FxHashSet<AbsPathBuf> = FxHashSet::default();
-    known_paths.extend(db.known_files().iter().flat_map(|(file_id, _)| {
-        file_id_to_url(*file_id)
-            .to_file_path()
-            .ok()?
-            .try_into()
-            .ok()
-    }));
+    let mut known_paths: FxHashSet<AbsPathBuf> =
+        FxHashSet::from_iter(db.known_files().iter().flat_map(|(file_id, _)| {
+            file_id_to_url(*file_id)
+                .to_file_path()
+                .ok()?
+                .try_into()
+                .ok()
+        }));
+    known_paths.remove(&path);
 
     if !include_st.use_chevron {
         include_directories.push(parent_folder);

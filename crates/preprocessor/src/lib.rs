@@ -302,7 +302,7 @@ where
                     _ => self.buffer.push_symbol(&symbol),
                 },
                 TokenKind::Eof => {
-                    self.buffer.push_ws(&symbol);
+                    self.buffer.push_symbol(&symbol);
                     break;
                 }
                 TokenKind::Newline => {

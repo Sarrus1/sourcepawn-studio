@@ -63,6 +63,12 @@ expression: "PreprocessingResult_ :: from(res)"
       50,
       62,
       63
+    ],
+    [
+      51,
+      51,
+      64,
+      64
     ]
   ],
   "expanded_symbols": [

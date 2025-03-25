@@ -30,17 +30,15 @@ impl PreprocessorBuffer {
     }
 
     pub fn push_symbol(&mut self, symbol: &Symbol) {
-        if symbol.token_kind == TokenKind::Eof {
-            self.push_new_line();
-            return;
-        }
         self.push_ws(symbol);
         self.push_symbol_no_delta(symbol);
     }
 
     pub fn push_symbol_no_delta(&mut self, symbol: &Symbol) {
-        self.contents.push_str(&symbol.text());
-        if !symbol.range.is_empty() {
+        if symbol.token_kind != TokenKind::Eof {
+            self.contents.push_str(&symbol.text());
+        }
+        if symbol.token_kind == TokenKind::Eof || !symbol.range.is_empty() {
             // Symbols with empty ranges are expanded macros.
             self.source_map.push_new_range(
                 symbol.range,

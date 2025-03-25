@@ -10,6 +10,12 @@ expression: "PreprocessingResult_ :: from(res)"
       20,
       0,
       20
+    ],
+    [
+      20,
+      20,
+      20,
+      20
     ]
   ],
   "expanded_symbols": []

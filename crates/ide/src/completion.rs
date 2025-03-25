@@ -210,7 +210,7 @@ pub fn completions(
             local_context = false;
             sema.defs_in_scope(pos.file_id)
                 .into_iter()
-                .filter(|it| !matches!(it, DefResolution::Local(_) | DefResolution::Global(_)))
+                .filter(|it| !matches!(it, DefResolution::Local(_)))
                 .collect_vec()
         }
         _ => Default::default(),

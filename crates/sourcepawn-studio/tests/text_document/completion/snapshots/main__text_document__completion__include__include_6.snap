@@ -1,0 +1,15 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/completion/include.rs
+assertion_line: 86
+expression: "complete(r#\"\n%! main.sp\n#include \"sub_folder/\"\n                     |\n                     ^\nint main;\n%! sub_folder/foo.sp\nint foo;\"#,\nSome(\"/\".to_string()))"
+---
+[
+  {
+    "label": "foo.sp",
+    "kind": 17,
+    "detail": "foo.sp",
+    "deprecated": false,
+    "insertText": "foo.sp",
+    "insertTextFormat": 1
+  }
+]
