@@ -75,7 +75,7 @@ where
             errors: Default::default(),
             conditions_stack: Default::default(),
             condition_offsets_stack: Default::default(),
-            buffer: Default::default(),
+            buffer: PreprocessorBuffer::new(input.len()),
             macro_store: Default::default(),
             expansion_stack: Default::default(),
         }

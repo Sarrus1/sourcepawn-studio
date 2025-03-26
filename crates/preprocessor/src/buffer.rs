@@ -10,6 +10,15 @@ pub struct PreprocessorBuffer {
 }
 
 impl PreprocessorBuffer {
+    pub fn new(input_len: usize) -> Self {
+        let mut contents = String::new();
+        contents.reserve(input_len);
+        Self {
+            contents,
+            ..Default::default()
+        }
+    }
+
     /// Push the whitespaces before the symbol based on the symbol's delta.
     pub fn push_ws(&mut self, symbol: &Symbol) {
         let delta = symbol.delta.unsigned_abs();
