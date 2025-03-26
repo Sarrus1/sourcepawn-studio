@@ -1,10 +1,15 @@
 ---
 source: crates/preprocessor/tests/main.rs
-assertion_line: 91
 expression: "PreprocessingResult_ :: from(res)"
 ---
 {
   "vec": [
+    [
+      0,
+      1,
+      0,
+      1
+    ],
     [
       9,
       12,
@@ -22,6 +27,12 @@ expression: "PreprocessingResult_ :: from(res)"
       17,
       16,
       17
+    ],
+    [
+      17,
+      18,
+      17,
+      18
     ],
     [
       26,
@@ -42,10 +53,10 @@ expression: "PreprocessingResult_ :: from(res)"
       34
     ],
     [
-      43,
-      43,
-      43,
-      43
+      34,
+      35,
+      34,
+      35
     ]
   ],
   "expanded_symbols": []

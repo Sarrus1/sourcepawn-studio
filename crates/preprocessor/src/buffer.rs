@@ -38,7 +38,7 @@ impl PreprocessorBuffer {
         if symbol.token_kind != TokenKind::Eof {
             self.contents.push_str(&symbol.text());
         }
-        if symbol.token_kind == TokenKind::Eof || !symbol.range.is_empty() {
+        if !symbol.range.is_empty() {
             // Symbols with empty ranges are expanded macros.
             self.source_map.push_new_range(
                 symbol.range,

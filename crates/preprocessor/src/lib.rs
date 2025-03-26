@@ -306,7 +306,7 @@ where
                     break;
                 }
                 TokenKind::Newline => {
-                    self.buffer.push_new_line();
+                    self.buffer.push_symbol(&symbol);
                 }
                 _ => self.buffer.push_symbol(&symbol),
             }
