@@ -12,7 +12,7 @@ doctest = false
 [dependencies]
 tracing.workspace = true
 walkdir = "2.3.2"
-crossbeam-channel = "0.5.5"
+crossbeam-channel = "0.5.15"
 notify = "6.1.1"
 
 stdx.workspace = true
