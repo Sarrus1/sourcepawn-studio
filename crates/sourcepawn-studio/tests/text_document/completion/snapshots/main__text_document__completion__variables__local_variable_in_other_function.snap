@@ -1,0 +1,213 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/completion/variables.rs
+assertion_line: 143
+expression: "complete(r#\"\n%! main.sp\nvoid main() {\n  int foo;\n}\n\nvoid bar() {\n\n|\n^\n}\"#,\nNone)"
+---
+[
+  {
+    "label": "EOS",
+    "kind": 21,
+    "detail": "Hardcoded constant",
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "Float",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "INVALID_FUNCTION",
+    "kind": 21,
+    "detail": "Hardcoded constant",
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "String",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "__BINARY_NAME__",
+    "kind": 21,
+    "detail": "Hardcoded constant",
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "__BINARY_PATH__",
+    "kind": 21,
+    "detail": "Hardcoded constant",
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "__DATE__",
+    "kind": 21,
+    "detail": "Hardcoded constant",
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "__LINE__",
+    "kind": 21,
+    "detail": "Hardcoded constant",
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "__Pawn",
+    "kind": 21,
+    "detail": "Hardcoded constant",
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "__TIME__",
+    "kind": 21,
+    "detail": "Hardcoded constant",
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "any",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "bar",
+    "kind": 3,
+    "detail": "void bar()",
+    "deprecated": false,
+    "sortText": "0.1",
+    "insertTextFormat": 1
+  },
+  {
+    "label": "bool",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "break",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "case",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "cellmax",
+    "kind": 21,
+    "detail": "Hardcoded constant",
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "cellmin",
+    "kind": 21,
+    "detail": "Hardcoded constant",
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "char",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "const",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "continue",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "false",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "float",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "int",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "main",
+    "kind": 3,
+    "detail": "void main()",
+    "deprecated": false,
+    "sortText": "0.1",
+    "insertTextFormat": 1
+  },
+  {
+    "label": "null",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "return",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "sizeof",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "static",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "switch",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "this",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "true",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "view_as",
+    "kind": 14,
+    "deprecated": false,
+    "insertTextFormat": 1
+  }
+]

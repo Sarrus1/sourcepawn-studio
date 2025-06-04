@@ -1,0 +1,15 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/completion/variables.rs
+assertion_line: 127
+expression: "complete(r#\"\n%! main.sp\nvoid main() {\n  int foo;\n}\n\n|\n^\n\"#, None)"
+---
+[
+  {
+    "label": "main",
+    "kind": 3,
+    "detail": "void main()",
+    "deprecated": false,
+    "sortText": "0.1",
+    "insertTextFormat": 1
+  }
+]
