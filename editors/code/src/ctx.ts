@@ -18,9 +18,36 @@ export type CtxInit = Ctx & {
   readonly client: lc.LanguageClient;
 };
 
+class SpCompStatus {
+  readonly statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+  status = false;
+
+  enable() {
+    this.status = true;
+  }
+
+  disable() {
+    this.status = false;
+  }
+
+  hide() {
+    this.statusBar.hide();
+  }
+
+  show() {
+    if (this.status) {
+      this.statusBar.show();
+      this.statusBar.tooltip = "spcomp is running";
+      this.statusBar.color = undefined;
+      this.statusBar.backgroundColor = undefined;
+      this.statusBar.text = `$(sync~spin) spcomp`;
+    }
+  }
+}
+
 export class Ctx {
   readonly serverStatusBar: vscode.StatusBarItem;
-  readonly spcompStatusBar: vscode.StatusBarItem;
+  readonly spcompStatus: SpCompStatus;
 
   private _client: lc.LanguageClient | undefined;
   private _serverPath: string | undefined;
@@ -45,15 +72,10 @@ export class Ctx {
     );
     this.clientOptions = clientOptions;
 
-    this.serverStatusBar = vscode.window.createStatusBarItem(
-      vscode.StatusBarAlignment.Left
-    );
+    this.serverStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
     this.serverStatusBar.show();
 
-    this.spcompStatusBar = vscode.window.createStatusBarItem(
-      vscode.StatusBarAlignment.Left
-    );
-    this.spcompStatusBar.show();
+    this.spcompStatus = new SpCompStatus();
 
     this.clientSubscriptions = [];
     this.commandDisposables = [];
@@ -61,9 +83,7 @@ export class Ctx {
     try {
       this.updateCommands("disable");
     } catch {
-      console.error(
-        "Commands are already registered and will be handled later..."
-      );
+      console.error("Commands are already registered and will be handled later...");
     }
     this.setServerStatus({
       health: "stopped",
@@ -75,14 +95,14 @@ export class Ctx {
 
   public hideServer() {
     this.serverStatusBar.hide();
-    this.spcompStatusBar.hide();
+    this.spcompStatus.hide();
     this.commandDisposables.forEach((disposable) => disposable.dispose());
     this.commandDisposables = [];
   }
 
   public showServer() {
     this.serverStatusBar.show();
-    this.spcompStatusBar.show();
+    this.spcompStatus.show();
     this.updateCommands();
   }
 
@@ -105,15 +125,11 @@ export class Ctx {
 
   private async getOrCreateClient() {
     if (!this.traceOutputChannel) {
-      this.traceOutputChannel = new LazyOutputChannel(
-        "SourcePawn Language Server Trace"
-      );
+      this.traceOutputChannel = new LazyOutputChannel("SourcePawn Language Server Trace");
       this.pushExtCleanup(this.traceOutputChannel);
     }
     if (!this.outputChannel) {
-      this.outputChannel = vscode.window.createOutputChannel(
-        "SourcePawn Language Server"
-      );
+      this.outputChannel = vscode.window.createOutputChannel("SourcePawn Language Server");
       this.pushExtCleanup(this.outputChannel);
     }
 
@@ -144,30 +160,18 @@ export class Ctx {
           args,
         },
         debug: {
-          command: resolve(
-            process.env["__SOURCEPAWN_LSP_SERVER_DEBUG"] +
-              (platform() == "win32" ? ".exe" : "")
-          ),
+          command: resolve(process.env["__SOURCEPAWN_LSP_SERVER_DEBUG"] + (platform() == "win32" ? ".exe" : "")),
           args: ["-vvv"],
         },
       };
 
-      this._client = await createClient(
-        this.traceOutputChannel,
-        this.outputChannel,
-        serverOptions,
-        this.clientOptions
-      );
+      this._client = await createClient(this.traceOutputChannel, this.outputChannel, serverOptions, this.clientOptions);
 
       this.pushClientCleanup(
-        this._client.onNotification(lsp_ext.serverStatus, (params) =>
-          this.setServerStatus(params)
-        )
+        this._client.onNotification(lsp_ext.serverStatus, (params) => this.setServerStatus(params))
       );
       this.pushClientCleanup(
-        this._client.onNotification(lsp_ext.spcompStatus, (params) =>
-          this.setSpcompStatus(params)
-        )
+        this._client.onNotification(lsp_ext.spcompStatus, (params) => this.setSpcompStatus(params))
       );
       // this.pushClientCleanup(
       //   this._client.onNotification(lsp_ext.openServerLogs, () => {
@@ -177,12 +181,9 @@ export class Ctx {
       this.pushClientCleanup(
         vscode.workspace.onDidChangeConfiguration((event) => {
           if (event.affectsConfiguration("SourcePawnLanguageServer")) {
-            this._client.sendNotification(
-              lc.DidChangeConfigurationNotification.type,
-              {
-                settings: {},
-              }
-            );
+            this._client.sendNotification(lc.DidChangeConfigurationNotification.type, {
+              settings: {},
+            });
           }
         })
       );
@@ -246,15 +247,10 @@ export class Ctx {
       } else if (factory.disabled) {
         callback = factory.disabled(this);
       } else {
-        callback = () =>
-          vscode.window.showErrorMessage(
-            `command ${fullName} failed: sourcepawn-studio is not running`
-          );
+        callback = () => vscode.window.showErrorMessage(`command ${fullName} failed: sourcepawn-studio is not running`);
       }
 
-      this.commandDisposables.push(
-        vscode.commands.registerCommand(fullName, callback)
-      );
+      this.commandDisposables.push(vscode.commands.registerCommand(fullName, callback));
     }
   }
 
@@ -291,12 +287,8 @@ export class Ctx {
           statusBar.tooltip.appendText(status.message);
         }
         statusBar.command = "sourcepawn-vscode.stopServer";
-        statusBar.color = new vscode.ThemeColor(
-          "statusBarItem.warningForeground"
-        );
-        statusBar.backgroundColor = new vscode.ThemeColor(
-          "statusBarItem.warningBackground"
-        );
+        statusBar.color = new vscode.ThemeColor("statusBarItem.warningForeground");
+        statusBar.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground");
         icon = "$(warning) ";
         break;
       case "error":
@@ -305,19 +297,13 @@ export class Ctx {
         }
 
         statusBar.command = "sourcepawn-vscode.stopServer";
-        statusBar.color = new vscode.ThemeColor(
-          "statusBarItem.errorForeground"
-        );
-        statusBar.backgroundColor = new vscode.ThemeColor(
-          "statusBarItem.errorBackground"
-        );
+        statusBar.color = new vscode.ThemeColor("statusBarItem.errorForeground");
+        statusBar.backgroundColor = new vscode.ThemeColor("statusBarItem.errorBackground");
         icon = "$(error) ";
         break;
       case "stopped":
         statusBar.tooltip.appendText("Server is stopped");
-        statusBar.tooltip.appendMarkdown(
-          "\n\n[Start server](command:sourcepawn-vscode.startServer)"
-        );
+        statusBar.tooltip.appendMarkdown("\n\n[Start server](command:sourcepawn-vscode.startServer)");
         statusBar.command = "sourcepawn-vscode.startServer";
         statusBar.color = undefined;
         statusBar.backgroundColor = undefined;
@@ -330,33 +316,24 @@ export class Ctx {
     if (statusBar.tooltip.value) {
       statusBar.tooltip.appendText("\n\n");
     }
-    statusBar.tooltip.appendMarkdown(
-      "\n\n[Open logs](command:sourcepawn-vscode.openLogs)"
-    );
+    statusBar.tooltip.appendMarkdown("\n\n[Open logs](command:sourcepawn-vscode.openLogs)");
     // TODO:
     // statusBar.tooltip.appendMarkdown(
     //   "\n\n[Reload Workspace](command:sourcepawn-vscode.reloadWorkspace)"
     // );
-    statusBar.tooltip.appendMarkdown(
-      "\n\n[Restart server](command:sourcepawn-vscode.startServer)"
-    );
-    statusBar.tooltip.appendMarkdown(
-      "\n\n[Stop server](command:sourcepawn-vscode.stopServer)"
-    );
+    statusBar.tooltip.appendMarkdown("\n\n[Restart server](command:sourcepawn-vscode.startServer)");
+    statusBar.tooltip.appendMarkdown("\n\n[Stop server](command:sourcepawn-vscode.stopServer)");
     if (!status.quiescent) icon = "$(sync~spin) ";
     statusBar.text = `${icon}sourcepawn-studio`;
   }
 
   setSpcompStatus(status: lsp_ext.SpcompStatusParams) {
-    const statusBar = this.spcompStatusBar;
     if (status.quiescent) {
-      statusBar.hide();
+      this.spcompStatus.disable();
+      this.spcompStatus.hide();
     } else {
-      statusBar.show();
-      statusBar.tooltip = "spcomp is running";
-      statusBar.color = undefined;
-      statusBar.backgroundColor = undefined;
-      statusBar.text = `$(sync~spin) spcomp`;
+      this.spcompStatus.enable();
+      this.spcompStatus.show();
     }
   }
 
