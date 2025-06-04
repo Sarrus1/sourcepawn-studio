@@ -277,7 +277,6 @@ impl Analysis {
                 file_id_to_url,
                 events_game_name,
             )
-            .map(Into::into)
         })
     }
 

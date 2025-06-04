@@ -23,8 +23,8 @@ use crate::{
     db::HirDatabase,
     source_analyzer::SourceAnalyzer,
     source_to_def::{SourceToDefCache, SourceToDefCtx},
-    Attribute, DefResolution, Enum, EnumStruct, Field, File, Funcenum, Functag, Function, Global,
-    Local, Macro, Methodmap, Property, Struct, StructField, Typedef, Typeset, Variant,
+    Attribute, DefResolution, Enum, EnumStruct, Field, File, Function, Global, Macro, Methodmap,
+    Property, Struct, Variant,
 };
 
 /// Primary API to get semantic information, like types, from syntax trees.
@@ -118,9 +118,7 @@ impl<DB: HirDatabase> Semantics<'_, DB> {
                 .field_to_def(src)
                 .map(Field::from)
                 .map(DefResolution::Field),
-            TSKind::parameter_declaration => {
-                self.local_to_def(src).map(Local::from).map(|it| it.into())
-            }
+            TSKind::parameter_declaration => self.local_to_def(src).map(|it| it.into()),
             TSKind::variable_declaration
             | TSKind::old_variable_declaration
             | TSKind::dynamic_array_declaration => {
@@ -134,15 +132,14 @@ impl<DB: HirDatabase> Semantics<'_, DB> {
                     TSKind::variable_declaration_statement
                     | TSKind::old_variable_declaration_statement
                     | TSKind::old_for_loop_variable_declaration_statement => {
-                        self.local_to_def(src).map(Local::from).map(|it| it.into())
+                        self.local_to_def(src).map(|it| it.into())
                     }
                     _ => unreachable!(),
                 }
             }
-            TSKind::preproc_macro | TSKind::preproc_define => self
-                .macro_to_def(src)
-                .map(Macro::from)
-                .map(DefResolution::Macro),
+            TSKind::preproc_macro | TSKind::preproc_define => {
+                self.macro_to_def(src).map(DefResolution::Macro)
+            }
             TSKind::preproc_undefine => {
                 let source = self.file_text(file_id);
                 let ValueNs::MacroId(id) = file_id
@@ -153,45 +150,20 @@ impl<DB: HirDatabase> Semantics<'_, DB> {
                 };
                 DefResolution::Macro(Macro::from(id.value)).into()
             }
-            TSKind::r#enum => self
-                .enum_to_def(src)
-                .map(Enum::from)
-                .map(DefResolution::Enum),
-            TSKind::enum_entry => self
-                .variant_to_def(src)
-                .map(Variant::from)
-                .map(DefResolution::Variant),
-            TSKind::methodmap => self
-                .methodmap_to_def(src)
-                .map(Methodmap::from)
-                .map(DefResolution::Methodmap),
+            TSKind::r#enum => self.enum_to_def(src).map(DefResolution::Enum),
+            TSKind::enum_entry => self.variant_to_def(src).map(DefResolution::Variant),
+            TSKind::methodmap => self.methodmap_to_def(src).map(DefResolution::Methodmap),
             TSKind::methodmap_property => self
                 .property_to_def(src)
                 .map(Property::from)
                 .map(DefResolution::Property),
-            TSKind::typedef => self
-                .typedef_to_def(src)
-                .map(Typedef::from)
-                .map(DefResolution::Typedef),
-            TSKind::typeset => self
-                .typeset_to_def(src)
-                .map(Typeset::from)
-                .map(DefResolution::Typeset),
-            TSKind::functag => self
-                .functag_to_def(src)
-                .map(Functag::from)
-                .map(DefResolution::Functag),
-            TSKind::funcenum => self
-                .funcenum_to_def(src)
-                .map(Funcenum::from)
-                .map(DefResolution::Funcenum),
-            TSKind::r#struct => self
-                .struct_to_def(src)
-                .map(Struct::from)
-                .map(DefResolution::Struct),
+            TSKind::typedef => self.typedef_to_def(src).map(DefResolution::Typedef),
+            TSKind::typeset => self.typeset_to_def(src).map(DefResolution::Typeset),
+            TSKind::functag => self.functag_to_def(src).map(DefResolution::Functag),
+            TSKind::funcenum => self.funcenum_to_def(src).map(DefResolution::Funcenum),
+            TSKind::r#struct => self.struct_to_def(src).map(DefResolution::Struct),
             TSKind::struct_field => self
                 .struct_field_to_def(src)
-                .map(StructField::from)
                 .map(DefResolution::StructField),
             TSKind::struct_declaration => self
                 .global_to_def(src)
