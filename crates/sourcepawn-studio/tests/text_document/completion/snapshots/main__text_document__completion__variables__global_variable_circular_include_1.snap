@@ -1,0 +1,6 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/completion/variables.rs
+assertion_line: 35
+expression: "complete(r#\"\n%! foo.sp\n#include \"bar.sp\"\nint foo;\n%! bar.sp\n#include \"foo.sp\"\nint bar;\n\n|\n^\"#,\nNone)"
+---
+[]

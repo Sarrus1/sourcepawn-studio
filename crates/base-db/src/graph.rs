@@ -4,6 +4,7 @@ use std::{
 };
 
 use fxhash::{FxHashMap, FxHashSet};
+use tracing::warn;
 use vfs::FileId;
 
 use crate::{FileExtension, SourceDatabase};
@@ -154,7 +155,7 @@ impl Graph {
         for node in self.nodes.iter() {
             parents_count.entry(node.clone()).or_default();
         }
-        parents_count
+        let res = parents_count
             .iter()
             .filter_map(|(node, nb_parents)| {
                 if *nb_parents == 0 {
@@ -163,7 +164,11 @@ impl Graph {
                     None
                 }
             })
-            .collect::<Vec<Node>>()
+            .collect::<Vec<Node>>();
+        if res.is_empty() {
+            warn!("No root found in graph. There might be a circular include.")
+        }
+        res
     }
 
     pub fn get_subgraph_ids_from_root(&self, root_id: FileId) -> FxHashSet<FileId> {
