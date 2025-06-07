@@ -1,10 +1,4 @@
-import {
-  window,
-  ProgressLocation,
-  CancellationToken,
-  Progress,
-  QuickPickItem,
-} from "vscode";
+import { window, ProgressLocation, CancellationToken, Progress, QuickPickItem } from "vscode";
 import { join } from "path";
 import { platform, homedir } from "os";
 import { createWriteStream, existsSync, mkdirSync, rmSync } from "fs";
@@ -39,11 +33,7 @@ export async function run(args: any): Promise<void> {
   }
   if (compilerPath != "") {
     window
-      .showInformationMessage(
-        "The setting for compiler.path is not empty, do you want to override it?",
-        "Yes",
-        "No"
-      )
+      .showInformationMessage("The setting for compiler.path is not empty, do you want to override it?", "Yes", "No")
       .then((choice) => {
         if (choice === "Yes") {
           updatePath(smDir, spComp);
@@ -63,11 +53,7 @@ function updatePath(smDir: string, spComp: string): void {
     Array.from(new Set(includeDirectories)), // avoid duplicates
     true
   );
-  getConfig(Section.LSP).update(
-    "compiler.path",
-    spComp,
-    true
-  );
+  getConfig(Section.LSP).update("compiler.path", spComp, true);
 }
 
 async function getSourceModVersion(
@@ -78,22 +64,18 @@ async function getSourceModVersion(
   const value = await window.showQuickPick(buildQuickPickSMVersion(), {
     title: "Pick a version of Sourcemod to install",
   });
-  await downloadAndDecompressFile(
-    await getSourcemodUrl(value.label),
-    join(outputDir, "sm.gz"),
-    (newStatus: number) => {
-      if (newStatus === 100) {
-        progress.report({ message: "Unzipping..." });
-        return;
-      }
-      let inc = newStatus - oldStatus;
-      oldStatus = newStatus;
-      progress.report({
-        message: "Downloading...",
-        increment: inc,
-      });
+  await downloadAndDecompressFile(await getSourcemodUrl(value.label), join(outputDir, "sm.gz"), (newStatus: number) => {
+    if (newStatus === 100) {
+      progress.report({ message: "Unzipping..." });
+      return;
     }
-  );
+    let inc = newStatus - oldStatus;
+    oldStatus = newStatus;
+    progress.report({
+      message: "Downloading...",
+      increment: inc,
+    });
+  });
   return;
 }
 
@@ -103,8 +85,9 @@ function buildQuickPickSMVersion(): QuickPickItem[] {
     { label: "1.8", description: "Legacy" },
     { label: "1.9", description: "Legacy" },
     { label: "1.10", description: "Legacy" },
-    { label: "1.11", description: "Stable", picked: true },
-    { label: "1.12", description: "Dev" },
+    { label: "1.11", description: "Legacy" },
+    { label: "1.12", description: "Stable", picked: true },
+    { label: "1.13", description: "Dev" },
   ];
 }
 

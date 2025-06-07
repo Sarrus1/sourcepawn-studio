@@ -76,7 +76,7 @@ impl<K: Hash + Eq + 'static, V: 'static> Policy for (K, V) {
     fn is_empty(map: &DynMap) -> bool {
         map.map
             .get::<FxHashMap<K, V>>()
-            .map_or(true, |it| it.is_empty())
+            .is_none_or(|it| it.is_empty())
     }
 }
 

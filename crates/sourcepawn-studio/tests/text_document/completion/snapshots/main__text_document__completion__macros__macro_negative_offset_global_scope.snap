@@ -1,0 +1,22 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/completion/macros.rs
+assertion_line: 20
+expression: "complete(r#\"\n%! main.sp\n#define F 10000000\nint foo = F;\n\n|\n^\"#, None)"
+---
+[
+  {
+    "label": "F",
+    "kind": 21,
+    "detail": "#define F 10000000",
+    "deprecated": false,
+    "insertTextFormat": 1
+  },
+  {
+    "label": "foo",
+    "kind": 6,
+    "detail": "int foo;",
+    "deprecated": false,
+    "sortText": "0",
+    "insertTextFormat": 1
+  }
+]

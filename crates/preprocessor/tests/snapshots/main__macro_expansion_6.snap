@@ -1,6 +1,5 @@
 ---
 source: crates/preprocessor/tests/main.rs
-assertion_line: 604
 expression: res.preprocessed_text()
 ---
 #define GET_VALUE(%1,%2) \
@@ -8,5 +7,5 @@ expression: res.preprocessed_text()
         %1 i; \
         this.GetValue("m_" ... #%2, i); \
         return i;}
-
+        
     public void GetFoo(){        void i;        this.GetValue("m_" ... "Foo", i);        return i;}

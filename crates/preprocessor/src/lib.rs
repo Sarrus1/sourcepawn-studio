@@ -75,7 +75,7 @@ where
             errors: Default::default(),
             conditions_stack: Default::default(),
             condition_offsets_stack: Default::default(),
-            buffer: Default::default(),
+            buffer: PreprocessorBuffer::new(input.len()),
             macro_store: Default::default(),
             expansion_stack: Default::default(),
         }
@@ -302,11 +302,11 @@ where
                     _ => self.buffer.push_symbol(&symbol),
                 },
                 TokenKind::Eof => {
-                    self.buffer.push_ws(&symbol);
+                    self.buffer.push_symbol(&symbol);
                     break;
                 }
                 TokenKind::Newline => {
-                    self.buffer.push_new_line();
+                    self.buffer.push_symbol(&symbol);
                 }
                 _ => self.buffer.push_symbol(&symbol),
             }

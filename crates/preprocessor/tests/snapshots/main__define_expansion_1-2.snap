@@ -45,6 +45,12 @@ expression: "PreprocessingResult_ :: from(res)"
       28,
       25,
       26
+    ],
+    [
+      28,
+      29,
+      26,
+      27
     ]
   ],
   "expanded_symbols": [

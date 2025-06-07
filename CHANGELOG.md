@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [0.13.10]
+
+### Fixed
+
+- Fixed an error when parsing event names.
+- Fixed a few offset issues in the preprocessor.
+
 ## [0.13.9]
 
 ### Fixed

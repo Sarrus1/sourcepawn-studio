@@ -71,6 +71,12 @@ expression: "PreprocessingResult_ :: from(res)"
       70
     ],
     [
+      68,
+      69,
+      70,
+      71
+    ],
+    [
       69,
       72,
       71,
@@ -87,6 +93,12 @@ expression: "PreprocessingResult_ :: from(res)"
       77,
       78,
       79
+    ],
+    [
+      77,
+      78,
+      79,
+      80
     ]
   ],
   "expanded_symbols": [

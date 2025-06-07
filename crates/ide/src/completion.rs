@@ -111,7 +111,7 @@ pub fn completions(
         .descendant_for_byte_range(raw_s_pos.saturating_add(1), raw_s_pos.saturating_add(1))?;
 
     // Check if we are in an event such as "EventHook"
-    if event_name(&node, &preprocessed_text).is_some() {
+    if event_name(&node, &new_source_code).is_some() {
         return events_completions(events_game_name).into();
     }
     if trigger_character == Some('"') {
@@ -210,7 +210,7 @@ pub fn completions(
             local_context = false;
             sema.defs_in_scope(pos.file_id)
                 .into_iter()
-                .filter(|it| !matches!(it, DefResolution::Local(_) | DefResolution::Global(_)))
+                .filter(|it| !matches!(it, DefResolution::Local(_)))
                 .collect_vec()
         }
         _ => Default::default(),

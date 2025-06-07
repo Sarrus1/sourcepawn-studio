@@ -147,6 +147,7 @@ pub struct TestBed {
     locations: Vec<Location>,
     _temp_dir: TempDir,
     temp_dir_path: PathBuf,
+    #[allow(unused)]
     temp_sm_dir_path: PathBuf,
     pub internal_rx: Receiver<InternalMessage>,
     client: LspClient,
@@ -432,18 +433,8 @@ pub fn complete(fixture: &str, trigger_character: Option<String>) -> Vec<Complet
             Some(CompletionItemKind::FILE) | Some(CompletionItemKind::FOLDER)
         ) {
             item.detail = item.detail.as_mut().map(|detail| {
-                let detail_path = PathBuf::from(&detail).canonicalize().unwrap();
-                match detail_path.strip_prefix(&test_bed.temp_dir_path) {
-                    Ok(path) => path,
-                    Err(_) => detail_path
-                        .strip_prefix(&test_bed.temp_sm_dir_path)
-                        .unwrap(),
-                }
-                .to_str()
-                .unwrap()
-                .to_string()
                 // Account for windows paths
-                .replace('\\', "/")
+                detail.replace('\\', "/")
             });
         }
     }

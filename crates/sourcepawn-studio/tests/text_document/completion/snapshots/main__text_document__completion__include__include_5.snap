@@ -1,0 +1,15 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/completion/include.rs
+assertion_line: 70
+expression: "complete(r#\"\n%! bar.sp\nint bar;\n%! include/baz.inc\n#include \"\"\n          |\n          ^\n%! include/foo.inc\nint foo;\"#,\nSome('\"'.to_string()))"
+---
+[
+  {
+    "label": "foo.inc",
+    "kind": 17,
+    "detail": "foo.inc",
+    "deprecated": false,
+    "insertText": "foo",
+    "insertTextFormat": 1
+  }
+]

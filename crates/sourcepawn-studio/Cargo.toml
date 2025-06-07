@@ -1,6 +1,6 @@
 [package]
 name = "sourcepawn-studio"
-version = "0.13.9"
+version = "0.13.10"
 description = "Language Server implemention for the SourcePawn programming language."
 include = ["Cargo.toml", "src/"]
 edition.workspace = true
@@ -66,7 +66,7 @@ profile.workspace = true
 
 [dependencies.openssl]
 optional = true
-version = "0.10.70"
+version = "0.10.72"
 
 [dev-dependencies]
 assert_unordered = "0.3.5"

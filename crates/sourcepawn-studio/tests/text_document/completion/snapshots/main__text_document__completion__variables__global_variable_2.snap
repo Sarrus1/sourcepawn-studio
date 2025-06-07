@@ -1,0 +1,15 @@
+---
+source: crates/sourcepawn-studio/tests/text_document/completion/variables.rs
+assertion_line: 20
+expression: "complete(r#\"\n%! main.sp\nint foo = 1;\n\n|\n^\"#, None)"
+---
+[
+  {
+    "label": "foo",
+    "kind": 6,
+    "detail": "int foo;",
+    "deprecated": false,
+    "sortText": "0",
+    "insertTextFormat": 1
+  }
+]
