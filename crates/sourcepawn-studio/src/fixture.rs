@@ -147,6 +147,7 @@ pub struct TestBed {
     locations: Vec<Location>,
     _temp_dir: TempDir,
     temp_dir_path: PathBuf,
+    #[allow(unused)]
     temp_sm_dir_path: PathBuf,
     pub internal_rx: Receiver<InternalMessage>,
     client: LspClient,
