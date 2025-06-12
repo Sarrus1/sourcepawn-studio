@@ -26,26 +26,27 @@ pub(crate) struct LineIndex {
 
 impl LineIndex {
     pub fn range(&self, range: TextRange) -> lsp_types::Range {
-        let start = self.position(range.start());
-        let end = self.position(range.end());
-        lsp_types::Range::new(start, end)
-    }
-
-    pub fn position(&self, offset: TextSize) -> lsp_types::Position {
-        let line_col = self.index.line_col(offset);
-        match self.encoding {
-            PositionEncoding::Utf8 => lsp_types::Position::new(line_col.line, line_col.col),
-            PositionEncoding::Wide(enc) => {
-                let line_col = self.index.to_wide(enc, line_col).unwrap();
-                lsp_types::Position::new(line_col.line, line_col.col)
-            }
-        }
+        self.try_range(range).unwrap_or_else(|| {
+            panic!(
+                "{:?} - {:?} is not a valid range",
+                range.start(),
+                range.end()
+            )
+        })
     }
 
     pub fn try_range(&self, range: TextRange) -> Option<lsp_types::Range> {
-        let start = self.try_position(range.start())?;
-        let end = self.try_position(range.end())?;
-        lsp_types::Range::new(start, end).into()
+        let start = self.try_position(range.start());
+        let end = self.try_position(range.end());
+        match (start, end) {
+            (Some(start), Some(end)) => Some(lsp_types::Range::new(start, end)),
+            (_, _) => {
+                let start: usize = range.start().into();
+                let end: usize = range.end().into();
+                log::warn!("{:?} - {:?} is not a valid range", start, end);
+                None
+            }
+        }
     }
 
     pub fn try_position(&self, offset: TextSize) -> Option<lsp_types::Position> {
@@ -53,7 +54,7 @@ impl LineIndex {
         match self.encoding {
             PositionEncoding::Utf8 => lsp_types::Position::new(line_col.line, line_col.col).into(),
             PositionEncoding::Wide(enc) => {
-                let line_col = self.index.to_wide(enc, line_col).unwrap();
+                let line_col = self.index.to_wide(enc, line_col)?;
                 lsp_types::Position::new(line_col.line, line_col.col).into()
             }
         }

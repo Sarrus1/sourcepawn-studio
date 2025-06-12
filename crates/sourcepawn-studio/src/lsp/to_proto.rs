@@ -30,19 +30,22 @@ pub(crate) fn goto_definition_response(
         .into_iter()
         .map(|nav| location_link(snap, src, nav))
         .collect::<Cancellable<Vec<_>>>()?;
-    Ok(links.into())
+    Ok(links.into_iter().flatten().collect_vec().into())
 }
 
 pub(crate) fn location_link(
     snap: &GlobalStateSnapshot,
     src: Option<FileRange>,
     target: NavigationTarget,
-) -> Cancellable<lsp_types::LocationLink> {
+) -> Cancellable<Option<lsp_types::LocationLink>> {
     let origin_selection_range = match src {
-        Some(src) => Some(snap.file_line_index(src.file_id)?.range(src.range)),
+        Some(src) => snap.file_line_index(src.file_id)?.try_range(src.range),
         None => None,
     };
-    let (target_uri, target_range, target_selection_range) = location_info(snap, target)?;
+    let Some((target_uri, target_range, target_selection_range)) = location_info(snap, target)?
+    else {
+        return Ok(None);
+    };
     let res = lsp_types::LocationLink {
         origin_selection_range,
         target_uri,
@@ -50,7 +53,7 @@ pub(crate) fn location_link(
         target_selection_range,
     };
 
-    Ok(res)
+    Ok(Some(res))
 }
 
 pub(crate) fn references_response(
@@ -59,8 +62,9 @@ pub(crate) fn references_response(
 ) -> Cancellable<Vec<lsp_types::Location>> {
     let locations = targets
         .into_iter()
-        .map(|frange| location(snap, frange))
-        .collect::<Cancellable<Vec<_>>>()?;
+        .flat_map(|frange| location(snap, frange))
+        .flatten()
+        .collect_vec();
 
     Ok(locations)
 }
@@ -68,13 +72,18 @@ pub(crate) fn references_response(
 fn location_info(
     snap: &GlobalStateSnapshot,
     target: NavigationTarget,
-) -> Cancellable<(lsp_types::Url, lsp_types::Range, lsp_types::Range)> {
+) -> Cancellable<Option<(lsp_types::Url, lsp_types::Range, lsp_types::Range)>> {
     let line_index = snap.file_line_index(target.file_id)?;
 
     let target_uri = url(snap, target.file_id);
-    let target_range = line_index.range(target.full_range);
-    let target_selection_range = line_index.range(target.focus_range.unwrap_or(target.full_range));
-    Ok((target_uri, target_range, target_selection_range))
+    let Some(target_range) = line_index.try_range(target.full_range) else {
+        return Ok(None);
+    };
+    let target_selection_range = target
+        .focus_range
+        .and_then(|r| line_index.try_range(r))
+        .unwrap_or(target_range);
+    Ok(Some((target_uri, target_range, target_selection_range)))
 }
 
 pub(crate) fn markup_content(
@@ -231,11 +240,13 @@ pub(crate) fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
 pub(crate) fn location(
     snap: &GlobalStateSnapshot,
     frange: FileRange,
-) -> Cancellable<lsp_types::Location> {
+) -> Cancellable<Option<lsp_types::Location>> {
     let line_index = snap.file_line_index(frange.file_id)?;
     let url = url(snap, frange.file_id);
-    let loc = lsp_types::Location::new(url, line_index.range(frange.range));
-    Ok(loc)
+    let Some(range) = line_index.try_range(frange.range) else {
+        return Ok(None);
+    };
+    Ok(Some(lsp_types::Location::new(url, range)))
 }
 
 pub(crate) fn completion_item(
@@ -365,7 +376,7 @@ pub(crate) fn document_symbols(
 ) -> Vec<lsp_types::DocumentSymbol> {
     symbols
         .into_iter()
-        .map(|idx| document_symbol(idx, &symbols, line_index))
+        .flat_map(|idx| document_symbol(idx, &symbols, line_index))
         .collect_vec()
 }
 
@@ -373,7 +384,7 @@ fn document_symbol(
     idx: &SymbolId,
     symbols: &Symbols,
     line_index: &LineIndex,
-) -> lsp_types::DocumentSymbol {
+) -> Option<lsp_types::DocumentSymbol> {
     use lsp_types::SymbolKind as SK;
 
     let symbol = &symbols[idx];
@@ -397,9 +408,9 @@ fn document_symbol(
         SymbolKind::Variant => SK::ENUM_MEMBER,
         SymbolKind::Global | SymbolKind::Local => SK::VARIABLE,
     };
-    let full_range = line_index.range(symbol.full_range());
+    let full_range = line_index.try_range(symbol.full_range())?;
     #[allow(deprecated)]
-    lsp_types::DocumentSymbol {
+    let symbol = lsp_types::DocumentSymbol {
         name: symbol.name().to_string(),
         detail: symbol.details().cloned(),
         kind,
@@ -412,7 +423,7 @@ fn document_symbol(
         range: full_range,
         selection_range: if let Some(focus_range) = symbol.focus_range() {
             if symbol.full_range().contains_range(focus_range) {
-                line_index.range(focus_range)
+                line_index.try_range(focus_range)?
             } else {
                 full_range
             }
@@ -425,11 +436,13 @@ fn document_symbol(
             symbol
                 .children()
                 .iter()
-                .map(|idx| document_symbol(idx, symbols, line_index))
+                .flat_map(|idx| document_symbol(idx, symbols, line_index))
                 .collect_vec()
                 .into()
         },
-    }
+    };
+
+    symbol.into()
 }
 
 pub(crate) fn call_hierarchy_outgoing(
@@ -445,7 +458,7 @@ pub(crate) fn call_hierarchy_outgoing(
                 from_ranges: item
                     .ranges
                     .iter()
-                    .map(|range| line_index.range(*range))
+                    .flat_map(|range| line_index.try_range(*range))
                     .collect(),
             })
         })
@@ -465,7 +478,7 @@ pub(crate) fn call_hierarchy_incoming(
                 from_ranges: item
                     .ranges
                     .iter()
-                    .map(|range| line_index.range(*range))
+                    .flat_map(|range| line_index.try_range(*range))
                     .collect(),
             })
         })
@@ -487,7 +500,7 @@ fn call_hierarchy_item(
     call_item: CallItem,
 ) -> Option<lsp_types::CallHierarchyItem> {
     let line_index = snap.file_line_index(call_item.file_id).ok()?;
-    let full_range = line_index.range(call_item.full_range);
+    let full_range = line_index.try_range(call_item.full_range)?;
     Some(lsp_types::CallHierarchyItem {
         name: call_item.name.to_string(),
         kind: match call_item.kind {
@@ -507,7 +520,7 @@ fn call_hierarchy_item(
         range: full_range,
         selection_range: call_item
             .focus_range
-            .map(|range| line_index.range(range))
+            .and_then(|range| line_index.try_range(range))
             .unwrap_or(full_range),
         data: call_item.data.and_then(|it| serde_json::to_value(it).ok()),
     })

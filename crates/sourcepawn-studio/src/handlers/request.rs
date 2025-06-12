@@ -191,7 +191,7 @@ pub(crate) fn handle_hover(
                 info.info.markup,
                 snap.config.hover().format,
             )),
-            range: Some(line_index.range(info.range)),
+            range: line_index.try_range(info.range),
         },
         actions: if snap.config.hover_actions().none() {
             Vec::new()
