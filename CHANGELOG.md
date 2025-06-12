@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.13.11]
+
+### Fixed
+
+- Mitigated a panic due to an invalid offset.
+
 ## [0.13.10]
 
 ### Fixed
