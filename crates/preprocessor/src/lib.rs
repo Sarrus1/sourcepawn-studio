@@ -251,18 +251,26 @@ where
                                 true,
                             ) {
                                 Ok(r_paren_offset) => {
-                                    if let Some(r_paren_offset) = r_paren_offset {
-                                        let symbol = Symbol::new(
-                                            symbol.token_kind,
-                                            symbol.text().as_str().into(),
-                                            TextRange::new(symbol.range.start(), r_paren_offset),
-                                            symbol.delta,
-                                        );
-                                        expanded_symbol =
-                                            Some((symbol, macro_, self.buffer.offset()));
-                                    } else {
-                                        expanded_symbol =
-                                            Some((symbol, macro_, self.buffer.offset()));
+                                    match r_paren_offset {
+                                        Some(r_paren_offset)
+                                            if symbol.range.start() <= r_paren_offset =>
+                                        {
+                                            let symbol = Symbol::new(
+                                                symbol.token_kind,
+                                                symbol.text().as_str().into(),
+                                                TextRange::new(
+                                                    symbol.range.start(),
+                                                    r_paren_offset,
+                                                ),
+                                                symbol.delta,
+                                            );
+                                            expanded_symbol =
+                                                Some((symbol, macro_, self.buffer.offset()));
+                                        }
+                                        _ => {
+                                            expanded_symbol =
+                                                Some((symbol, macro_, self.buffer.offset()));
+                                        }
                                     }
                                     continue;
                                 }
