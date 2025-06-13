@@ -50,6 +50,19 @@ fn define_4() {
 }
 
 #[test]
+fn define_in_function_scope() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! main.sp
+int main() {
+#define FOO
+         |
+         ^
+}"#,
+    ));
+}
+
+#[test]
 fn macro_1() {
     assert_json_snapshot!(goto_definition(
         r#"

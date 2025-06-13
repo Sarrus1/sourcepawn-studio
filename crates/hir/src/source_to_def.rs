@@ -103,6 +103,14 @@ impl SourceToDefCtx<'_, '_> {
     pub(super) fn find_container(&mut self, src: InFile<&NodePtr>) -> Option<ChildContainer> {
         let tree = self.db.parse(src.file_id);
         let node = src.value.to_node(&tree)?;
+        if matches!(
+            TSKind::from(node),
+            TSKind::preproc_define | TSKind::preproc_macro
+        ) {
+            // A macro can be defined in a container. To avoid issues later on like resolving `child_to_src`
+            // for a function (which we can't), early return assuming the container is a file.
+            return Some(ChildContainer::FileId(src.file_id));
+        }
         let mut container = node.parent()?;
         loop {
             match TSKind::from(container) {
