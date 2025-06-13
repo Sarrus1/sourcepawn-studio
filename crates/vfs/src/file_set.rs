@@ -42,7 +42,7 @@ impl FileSet {
         }
 
         // Try relative to the anchor.
-        let mut base = self.uris[&path.anchor].clone();
+        let mut base = self.uris.get(&path.anchor)?.clone();
         base.pop();
         let path = base.join(path.path)?;
         self.files.get(&path).copied()
