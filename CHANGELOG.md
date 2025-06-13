@@ -1,5 +1,13 @@
 ## Release Notes
 
+## [0.13.12]
+
+### Fixed
+
+- Fixed crash when hovering over macro defined in function.
+- Fixed a potential indexing with an invalid key.
+- Fixed a panic due to invalid ranges.
+
 ## [0.13.11]
 
 ### Fixed

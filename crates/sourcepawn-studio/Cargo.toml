@@ -1,6 +1,6 @@
 [package]
 name = "sourcepawn-studio"
-version = "0.13.11"
+version = "0.13.12"
 description = "Language Server implemention for the SourcePawn programming language."
 include = ["Cargo.toml", "src/"]
 edition.workspace = true
