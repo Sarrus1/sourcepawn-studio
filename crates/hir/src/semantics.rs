@@ -245,7 +245,14 @@ impl<DB: HirDatabase> Semantics<'_, DB> {
         if TSKind::from(node) == TSKind::anon_float {
             // Avoid an edge case were the type `float` is mistaken for the method `float`.
             // https://github.com/Sarrus1/sourcepawn-studio/issues/400
-            return None;
+            let grandparent_kind = node
+                .parent()
+                .and_then(|parent| parent.parent())
+                .map(TSKind::from);
+
+            if grandparent_kind != Some(TSKind::call_expression) {
+                return None;
+            }
         }
 
         let mut container = node.parent()?;

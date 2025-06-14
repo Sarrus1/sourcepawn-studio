@@ -3124,9 +3124,9 @@ checksum = "c4013970217383f67b18aef68f6fb2e8d409bc5755227092d32efb0422ba24b8"
 
 [[package]]
 name = "tree-sitter-sourcepawn"
-version = "0.7.7"
+version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27a3ab65e701267ff3ebd61e1c26472ee53e61586093cd9bce0845ccb08221bb"
+checksum = "9e93fc6099e9e39e3e78c72dd728da456be406073e574905a8bc1628bd2bb179"
 dependencies = [
  "cc",
  "tree-sitter",

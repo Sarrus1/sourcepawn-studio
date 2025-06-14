@@ -304,7 +304,7 @@ impl ExprCollector<'_> {
                 let arguments = expr.child_by_field_name("arguments")?;
                 match TSKind::from(&function) {
                     // Function call
-                    TSKind::identifier => {
+                    TSKind::identifier | TSKind::builtin_type => {
                         let callee = self.collect_expr(function);
                         let args = arguments
                             .children(&mut arguments.walk())

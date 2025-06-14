@@ -59,7 +59,7 @@ lsp-types = { version = "=0.94.1", features = ["proposed"] }
 anyhow = "1.0.66"
 tree-sitter = "0.24.7"
 streaming-iterator = "0.1.9"
-tree-sitter-sourcepawn = "0.7.7"
+tree-sitter-sourcepawn = "0.7.8"
 strip_bom = "1.0.0"
 serde = "1.0.147"
 serde_json = { version = "^1.0.83", features = ["preserve_order"] }
