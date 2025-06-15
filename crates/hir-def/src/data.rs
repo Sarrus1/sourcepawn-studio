@@ -1,6 +1,6 @@
 use std::{fmt, sync::Arc};
 
-use fxhash::{FxHashMap, FxHashSet};
+use fxhash::FxHashMap;
 use itertools::Itertools;
 use la_arena::{Arena, ArenaMap, Idx};
 use smol_str::ToSmolStr;
@@ -148,8 +148,7 @@ pub struct MethodmapData {
     pub name: Name,
     pub items: Arc<Arena<MethodmapItemData>>,
     pub items_map: Arc<FxHashMap<Name, Idx<MethodmapItemData>>>,
-    /// Items that were inherited
-    pub inherited_items: Arc<FxHashSet<Idx<MethodmapItemData>>>,
+    pub last_inherited_item_idx: Option<u32>,
     pub extension: Option<MethodmapExtension>,
     pub inherits: Option<MethodmapId>,
     pub constructor: Option<Idx<MethodmapItemData>>,
@@ -243,7 +242,7 @@ impl MethodmapData {
         let mut inherits_id = None;
         let mut constructor = None;
         let mut destructor = None;
-        let mut inherited_items: FxHashSet<Idx<MethodmapItemData>> = FxHashSet::default();
+        let mut last_inherited_item_idx = None;
         if let Some(inherits_name) = methodmap.inherits.clone() {
             let resolver = global_resolver(db, loc.file_id());
             if let Some(inherits) = resolver.resolve_ident(inherits_name.to_string().as_str()) {
@@ -264,7 +263,10 @@ impl MethodmapData {
                             })
                             .map(|(k, v)| (k.clone(), items.alloc(inherits_data.item(*v).clone()))),
                     );
-                    inherited_items.extend(inherits_data.items_map.values());
+                    last_inherited_item_idx = items_map
+                        .values()
+                        .max()
+                        .map(|max| max.into_raw().into_u32());
                 } else {
                     diags.push(DefDiagnostic::UnresolvedInherit {
                         inherit_name: inherits_name,
@@ -352,7 +354,7 @@ impl MethodmapData {
             name: methodmap.name.clone(),
             items: Arc::new(items),
             items_map: Arc::new(items_map),
-            inherited_items: Arc::new(inherited_items),
+            last_inherited_item_idx,
             extension: MethodmapExtension::from(methodmap.inherits.clone(), methodmap.nullable),
             inherits: inherits_id,
             constructor,
@@ -423,13 +425,20 @@ impl MethodmapData {
         })
     }
 
+    fn is_local(&self, idx: Idx<MethodmapItemData>) -> bool {
+        match self.last_inherited_item_idx {
+            Some(max_idx) => idx.into_raw().into_u32() > max_idx,
+            None => true,
+        }
+    }
+
     /// Items that were not inherited.
     pub fn local_items(
         &self,
     ) -> impl Iterator<Item = (Idx<MethodmapItemData>, &MethodmapItemData)> + '_ {
         self.items
             .iter()
-            .filter(|(idx, _)| !self.inherited_items.contains(idx))
+            .filter(move |(idx, _)| self.is_local(*idx))
     }
 
     pub fn methods(&self) -> impl Iterator<Item = FunctionId> + '_ {

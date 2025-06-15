@@ -151,6 +151,7 @@ fn methodmap_method_8() {
     assert_json_snapshot!(goto_definition(
         r#"
 %! main.sp
+#include "bar.sp"
 methodmap Foo < Bar {
     public void foo() {}
                  |
@@ -593,6 +594,57 @@ methodmap Bar < Foo {
         public set(int value) {}
     }
 }
+Bar bar;
+void main() {
+    bar.Bar;
+         |
+         ^
+}
+"#,
+    ));
+}
+
+#[test]
+fn methodmap_inherit_4() {
+    assert_json_snapshot!(goto_definition(
+        r#"
+%! foo.sp
+methodmap Foo {
+    property int Foo1
+    {
+        public get() {}
+        public set(int value) {}
+    }
+    property int Foo2
+    {
+        public get() {}
+        public set(int value) {}
+    }
+    property int Foo3
+    {
+        public get() {}
+        public set(int value) {}
+    }
+    property int Bar
+    {
+        public get() {}
+        public set(int value) {}
+    }
+}
+
+%! bar.sp
+#include "foo.sp"
+methodmap Bar < Foo {
+    property int Bar
+    {
+        public get() {}
+        public set(int value) {}
+    }
+}
+
+%! main.sp
+#include "bar.sp"
+
 Bar bar;
 void main() {
     bar.Bar;
