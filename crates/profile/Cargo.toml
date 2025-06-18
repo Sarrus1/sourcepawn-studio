@@ -17,15 +17,8 @@ la-arena.workspace = true
 countme = { version = "3.0.1", features = ["enable"] }
 # jemalloc-ctl = { version = "0.5.0", package = "tikv-jemalloc-ctl", optional = true }
 
-# [target.'cfg(target_os = "linux")'.dependencies]
-# perf-event = "=0.4.7"
-
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", features = ["processthreadsapi", "psapi"] }
 
 [features]
-cpu_profiler = []
 jemalloc = []
-
-# Uncomment to enable for the whole crate graph
-# default = [ "cpu_profiler" ]
