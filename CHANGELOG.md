@@ -1,5 +1,13 @@
 ## Release Notes
 
+## [0.13.13]
+
+### Fixed
+
+- Fixed a false positive linting error when using the `float` native.
+- Fixed out of bounds access to methodmap data when using inheritance.
+- Fixed panic when triggering completions near non ASCII characters.
+
 ## [0.13.12]
 
 ### Fixed
