@@ -42,21 +42,21 @@ jobs:
             arch: arm64
             archive: sourcepawn-studio-aarch64-macos.zip
 
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             program: cargo
             platform: linux
             arch: x64
             archive: sourcepawn-studio-x86_64-linux.zip
 
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             target: aarch64-unknown-linux-gnu
             program: cross
             platform: linux
             arch: arm64
             archive: sourcepawn-studio-aarch64-linux.zip
 
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             target: armv7-unknown-linux-gnueabihf
             program: cross
             platform: linux

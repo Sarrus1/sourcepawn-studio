@@ -40,21 +40,21 @@ jobs:
             arch: arm64
             archive: sourcepawn-studio-${{ github.event.release.tag_name }}-darwin-arm64.tar.gz
 
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             program: cargo
             platform: linux
             arch: x64
             archive: sourcepawn-studio-${{ github.event.release.tag_name }}-linux-amd64.tar.gz
 
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             target: aarch64-unknown-linux-gnu
             program: cross
             platform: linux
             arch: arm64
             archive: sourcepawn-studio-${{ github.event.release.tag_name }}-linux-arm64.tar.gz
 
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             target: armv7-unknown-linux-gnueabihf
             program: cross
             platform: linux
