@@ -6,20 +6,11 @@
     semicolon_in_expressions_from_macros
 )]
 
-// #[cfg(feature = "cpu_profiler")]
-// mod google_cpu_profiler;
-// mod hprof;
 mod memory_usage;
-// mod stop_watch;
-// mod tree;
 
 use std::cell::RefCell;
 
-pub use crate::{
-    //     hprof::{heartbeat, heartbeat_span, init, init_from, span},
-    memory_usage::{Bytes, MemoryUsage},
-    //     stop_watch::{StopWatch, StopWatchSpan},
-};
+pub use crate::memory_usage::{Bytes, MemoryUsage};
 
 pub use countme;
 /// Include `_c: Count<Self>` field in important structs to count them.
