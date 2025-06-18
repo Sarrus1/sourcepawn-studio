@@ -23,9 +23,9 @@ countme = { version = "3.0.1", features = ["enable"] }
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", features = ["processthreadsapi", "psapi"] }
 
-# [features]
-# cpu_profiler = []
-# jemalloc = ["jemalloc-ctl"]
+[features]
+cpu_profiler = []
+jemalloc = []
 
 # Uncomment to enable for the whole crate graph
 # default = [ "cpu_profiler" ]
