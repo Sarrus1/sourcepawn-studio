@@ -7,7 +7,7 @@ use regex::Regex;
 use smol_str::ToSmolStr;
 use syntax::TSKind;
 
-use crate::CompletionItem;
+use crate::{completion::prev_char_boundary, CompletionItem};
 
 /// Check whether the current prefix line is the beginning of a doc comment.
 ///
@@ -159,12 +159,14 @@ fn find_first_non_ws_after_newline(text: &str, raw_offset: usize) -> Option<usiz
     if raw_offset >= text.len() {
         return None;
     }
-    let newline_pos = text[raw_offset..].find('\n')?;
-    let after_newline_offset = raw_offset + newline_pos + 1;
-    text[after_newline_offset..]
+    let safe_offset = prev_char_boundary(text, raw_offset);
+    let newline_pos = text[safe_offset..]
+        .find('\n')
+        .map(|pos| safe_offset + pos)?;
+    text[newline_pos..]
         .char_indices()
         .find(|&(_, c)| !c.is_whitespace())
-        .map(|(i, _)| after_newline_offset + i)
+        .map(|(i, _)| newline_pos + i)
 }
 
 fn find_first_newline(text: &str, raw_offset: usize) -> Option<usize> {

@@ -231,7 +231,7 @@ impl ChildContainer {
             ChildContainer::TypesetId(id) => id.child_by_source(db, file_id),
             ChildContainer::FuncenumId(id) => id.child_by_source(db, file_id),
             ChildContainer::StructId(id) => id.child_by_source(db, file_id),
-            _ => unreachable!(),
+            _ => unreachable!("{:?} cannot contain children.", self),
         }
     }
 }
