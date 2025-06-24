@@ -134,7 +134,7 @@ impl<DB: HirDatabase> Semantics<'_, DB> {
                     | TSKind::old_for_loop_variable_declaration_statement => {
                         self.local_to_def(src).map(|it| it.into())
                     }
-                    _ => unreachable!(),
+                    _ => None, // unreachable in theory
                 }
             }
             TSKind::preproc_macro | TSKind::preproc_define => {
@@ -170,7 +170,7 @@ impl<DB: HirDatabase> Semantics<'_, DB> {
                 .map(Global::from)
                 .map(DefResolution::Global),
             TSKind::struct_field_value => todo!(),
-            _ => unreachable!(),
+            _ => None, // unreachable in theory
         }
     }
 
