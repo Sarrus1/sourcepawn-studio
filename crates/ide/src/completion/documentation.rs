@@ -74,7 +74,9 @@ pub(super) fn get_doc_completion(
     node = node.parent()?;
     let name = node.child_by_field_name("name")?;
     let def = sema.find_name_def(pos.file_id, &name)?;
-    let tab_str = tab_str(&source[find_first_newline(source, pos.raw_offset_usize())?..])?;
+    let first_new_line = find_first_newline(source, pos.raw_offset_usize())
+        .map(|offset| prev_char_boundary(source, offset))?;
+    let tab_str = tab_str(&source[first_new_line..])?;
     let res = match def {
         DefResolution::Function(it) => {
             snippet_builder(it.parameters(db), it.type_ref(db), &tab_str)
