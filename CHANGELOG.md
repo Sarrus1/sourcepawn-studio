@@ -1,5 +1,12 @@
 ## Release Notes
 
+## [0.13.14]
+
+### Fixed
+
+- Fixed some panics due to incorrect `unreachable`.
+- Fixed a panic in doc completions due to non ASCII characters.
+
 ## [0.13.13]
 
 ### Fixed
