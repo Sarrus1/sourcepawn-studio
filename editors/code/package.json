@@ -611,7 +611,7 @@
   },
   "dependencies": {
     "@types/ssh2-sftp-client": "^9.0.3",
-    "axios": "^1.8.2",
+    "axios": "^1.12.0",
     "basic-ftp": "^5.0.5",
     "decompress": "^4.2.1",
     "glob": "^7.2.0",
