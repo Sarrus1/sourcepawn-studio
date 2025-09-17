@@ -171,12 +171,38 @@ pub(crate) fn file_includes_query(
                     }
                     _ => continue,
                 };
+                // Try resolving relative to the current file's directory first
+                if let Some(include_file_id) = db.resolve_path(AnchoredPath::new(file_id, &path)) {
+                    res.push(Include::new(include_file_id, kind, type_, ext));
+                    continue;
+                }
+                // Try resolving relative to the file's `include/` subdirectory
+                if kind == IncludeKind::Chevrons {
+                    let anchored_with_include = format!("include/{}", path);
+                    if let Some(include_file_id) =
+                        db.resolve_path(AnchoredPath::new(file_id, &anchored_with_include))
+                    {
+                        res.push(Include::new(include_file_id, kind, type_, ext));
+                        continue;
+                    }
+                }
+                // Try resolving relative to the configured source roots
                 match db.resolve_path_relative_to_roots(&path) {
                     Some(include_file_id) => {
                         res.push(Include::new(include_file_id, kind, type_, ext));
                         continue;
                     }
                     None => {
+                        // Try common include subdirectory fallback for chevron includes
+                        if kind == IncludeKind::Chevrons {
+                            let fallback = format!("include/{}", path);
+                            if let Some(include_file_id) =
+                                db.resolve_path_relative_to_roots(&fallback)
+                            {
+                                res.push(Include::new(include_file_id, kind, type_, ext));
+                                continue;
+                            }
+                        }
                         if type_ == IncludeType::Include {
                             // TODO: Optional diagnostic for tryinclude ?
                             // FIXME: Emit the diagnostics in the preprocessor. This would make more sense as some

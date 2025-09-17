@@ -218,8 +218,62 @@ pub fn resolve_include_node(
     };
     let extension = infer_include_ext(&mut text);
 
+    // Try resolving relative to current file directory first
+    if let Some(file_id) = db.resolve_path(AnchoredPath::new(file_id, &text)) {
+        return Some((
+            Some(file_id),
+            kind,
+            type_,
+            text.to_string(),
+            NodePtr::from(&path_node),
+            extension,
+        ));
+    }
+
+    // Try resolving relative to the file's include/ subdirectory for chevrons
+    if kind == IncludeKind::Chevrons {
+        let text_with_include = format!("include/{}", text);
+        if let Some(file_id) = db.resolve_path(AnchoredPath::new(file_id, &text_with_include)) {
+            return Some((
+                Some(file_id),
+                kind,
+                type_,
+                text.to_string(),
+                NodePtr::from(&path_node),
+                extension,
+            ));
+        }
+    }
+
+    // Try resolving relative to roots
+    if let Some(file_id) = db.resolve_path_relative_to_roots(&text) {
+        return Some((
+            Some(file_id),
+            kind,
+            type_,
+            text.to_string(),
+            NodePtr::from(&path_node),
+            extension,
+        ));
+    }
+
+    // Try resolving include/<path> relative to roots for chevrons
+    if kind == IncludeKind::Chevrons {
+        let text_with_include = format!("include/{}", text);
+        if let Some(file_id) = db.resolve_path_relative_to_roots(&text_with_include) {
+            return Some((
+                Some(file_id),
+                kind,
+                type_,
+                text.to_string(),
+                NodePtr::from(&path_node),
+                extension,
+            ));
+        }
+    }
+
     (
-        db.resolve_path_relative_to_roots(&text),
+        None,
         kind,
         type_,
         text,
