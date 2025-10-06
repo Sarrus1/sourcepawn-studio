@@ -22,7 +22,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: "1.89.0"
           override: true
       - uses: actions-rs/cargo@v1
         with:
@@ -36,7 +36,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: "1.89.0"
           override: true
       - run: rustup component add rustfmt
       - uses: actions-rs/cargo@v1
@@ -51,7 +51,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: "1.89.0"
           components: clippy
           override: true
       - uses: actions-rs/clippy-check@v1
