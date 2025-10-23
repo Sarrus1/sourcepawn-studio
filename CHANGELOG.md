@@ -1,5 +1,11 @@
 ## Release Notes
 
+## [0.13.15]
+
+### Fixed
+
+- Fixed includes not being parsed in the same directory as the compiler
+
 ## [0.13.14]
 
 ### Fixed
