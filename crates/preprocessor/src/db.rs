@@ -103,6 +103,15 @@ pub(crate) fn _preprocess_file_params_query(
             if inc_file_id.is_none() {
                 inc_file_id = db.resolve_path_relative_to_roots(&path);
             }
+            if inc_file_id.is_none() {
+                inc_file_id = db.resolve_path(AnchoredPath::new(file_id, &path));
+            }
+            if inc_file_id.is_none() && !quoted {
+                let path_with_include = format!("include/{}", path);
+                inc_file_id = db
+                    .resolve_path_relative_to_roots(&path_with_include)
+                    .or_else(|| db.resolve_path(AnchoredPath::new(file_id, &path_with_include)));
+            }
             let inc_file_id = inc_file_id.ok_or_else(|| anyhow::anyhow!("Include not found"))?;
             if being_preprocessed.contains(&inc_file_id) {
                 // Avoid cyclic deps
@@ -169,6 +178,15 @@ pub(crate) fn _preprocess_file_data_query(
             };
             if inc_file_id.is_none() {
                 inc_file_id = db.resolve_path_relative_to_roots(&path);
+            }
+            if inc_file_id.is_none() {
+                inc_file_id = db.resolve_path(AnchoredPath::new(file_id, &path));
+            }
+            if inc_file_id.is_none() && !quoted {
+                let path_with_include = format!("include/{}", path);
+                inc_file_id = db
+                    .resolve_path_relative_to_roots(&path_with_include)
+                    .or_else(|| db.resolve_path(AnchoredPath::new(file_id, &path_with_include)));
             }
             let inc_file_id = inc_file_id.ok_or_else(|| anyhow::anyhow!("Include not found"))?;
             macros.extend(
